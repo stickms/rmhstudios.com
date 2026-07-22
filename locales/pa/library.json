@@ -36,7 +36,7 @@
   "collection-by": "{{who}} ਦੁਆਰਾ",
   "collection-delete-confirm": "ਇਹ ਸੰਗ੍ਰਹਿ ਮਿਟਾਓ? ਕਿਤਾਬਾਂ ਮਿਟਾਈਆਂ ਨਹੀਂ ਜਾਣਗੀਆਂ।",
   "collection-desc-placeholder": "ਵਿਕਲਪਿਕ",
-  "collection-empty": "No books yet.",
+  "collection-empty": "ਅਜੇ ਤੱਕ ਕੋਈ ਕਿਤਾਬ ਨਹੀਂ ਹੈ।",
   "collection-rename-prompt": "ਸੰਗ੍ਰਹਿ ਦਾ ਨਾਮ",
   "collection-title-placeholder": "ਜਿਵੇਂ, ਮੇਰੀ ਪੜ੍ਹਨ ਸੂਚੀ",
   "collections-community": "Reader collections",
@@ -75,7 +75,7 @@
   "rename": "ਨਾਂ ਬਦਲੋ",
   "reported": "ਰਿਪੋਰਟ ਕੀਤਾ ਗਿਆ",
   "search-label": "ਲਾਇਬ੍ਰੇਰੀ ਖੋਜੋ",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "ਕਿਤਾਬਾਂ ਅਤੇ ਐਲਬਮਾਂ ਖੋਜੋ",
   "search-your-books": "ਆਪਣੀਆਂ ਕਿਤਾਬਾਂ ਖੋਜੋ…",
   "section-albums": "ਐਲਬਮਾਂ",
   "section-blog": "Blog",
@@ -88,6 +88,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "ਕਿਤਾਬ ਸ਼ਾਮਲ ਕਰੋ",
+  "upload-label": "PDF ਅਪਲੋਡ ਕਰੋ"
 }

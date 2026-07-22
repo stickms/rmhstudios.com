@@ -5,8 +5,11 @@ import teAdmin from "@/locales/te/admin.json";
 import teBuilds from "@/locales/te/builds.json";
 import teCAdmin from "@/locales/te/c-admin.json";
 import teCAltair from "@/locales/te/c-altair.json";
+import teCAwards from "@/locales/te/c-awards.json";
 import teCBlog from "@/locales/te/c-blog.json";
 import teCBuilds from "@/locales/te/c-builds.json";
+import teCCircle from "@/locales/te/c-circle.json";
+import teCCreator from "@/locales/te/c-creator.json";
 import teCCursedLogic from "@/locales/te/c-cursed-logic.json";
 import teCDailyPuzzles from "@/locales/te/c-daily-puzzles.json";
 import teCDoctrine from "@/locales/te/c-doctrine.json";
@@ -14,15 +17,20 @@ import teCDreamRift from "@/locales/te/c-dream-rift.json";
 import teCEconomy from "@/locales/te/c-economy.json";
 import teCForestExplorer from "@/locales/te/c-forest-explorer.json";
 import teCGame from "@/locales/te/c-game.json";
+import teCHistory from "@/locales/te/c-history.json";
 import teCHouseAlwaysWins from "@/locales/te/c-house-always-wins.json";
 import teCKowloonKnockout from "@/locales/te/c-kowloon-knockout.json";
 import teCLaundrySort from "@/locales/te/c-laundry-sort.json";
+import teCLayout from "@/locales/te/c-layout.json";
 import teCLibrary from "@/locales/te/c-library.json";
 import teCLightsOut from "@/locales/te/c-lights-out.json";
+import teCLists from "@/locales/te/c-lists.json";
 import teCLockdown from "@/locales/te/c-lockdown.json";
 import teCModeration from "@/locales/te/c-moderation.json";
 import teCNeonDriftway from "@/locales/te/c-neon-driftway.json";
 import teCNews from "@/locales/te/c-news.json";
+import teCPredictions from "@/locales/te/c-predictions.json";
+import teCProfileModules from "@/locales/te/c-profile-modules.json";
 import teCRideshare from "@/locales/te/c-rideshare.json";
 import teCRmhCapital from "@/locales/te/c-rmh-capital.json";
 import teCRmhPmc from "@/locales/te/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import teCRmhtube from "@/locales/te/c-rmhtube.json";
 import teCRmhtype from "@/locales/te/c-rmhtype.json";
 import teCRmhvibe from "@/locales/te/c-rmhvibe.json";
 import teCRoadmap from "@/locales/te/c-roadmap.json";
+import teCSaves from "@/locales/te/c-saves.json";
 import teCSignalForge from "@/locales/te/c-signal-forge.json";
+import teCStatus from "@/locales/te/c-status.json";
 import teCStudio from "@/locales/te/c-studio.json";
 import teCSynapseStorm from "@/locales/te/c-synapse-storm.json";
 import teCTempleOfJoy from "@/locales/te/c-temple-of-joy.json";
+import teCTournaments from "@/locales/te/c-tournaments.json";
 import teCUi from "@/locales/te/c-ui.json";
 import teCUserBuilds from "@/locales/te/c-user-builds.json";
 import teCVega from "@/locales/te/c-vega.json";
 import teCVersecraft from "@/locales/te/c-versecraft.json";
 import teCVoidBreaker from "@/locales/te/c-void-breaker.json";
+import teCWager from "@/locales/te/c-wager.json";
+import teCWishlist from "@/locales/te/c-wishlist.json";
 import teCommon from "@/locales/te/common.json";
 import teFeed from "@/locales/te/feed.json";
+import teGamesHub from "@/locales/te/games-hub.json";
 import teGroups from "@/locales/te/groups.json";
 import teLibrary from "@/locales/te/library.json";
 import teNav from "@/locales/te/nav.json";
@@ -61,8 +75,13 @@ import teRSliceIt from "@/locales/te/r-slice-it.json";
 import teRStrategies from "@/locales/te/r-strategies.json";
 import teRStudio from "@/locales/te/r-studio.json";
 import teRideshare from "@/locales/te/rideshare.json";
+import teSearch from "@/locales/te/search.json";
+import teSettingsAppearance from "@/locales/te/settings-appearance.json";
+import teSettingsContent from "@/locales/te/settings-content.json";
+import teSettingsNotifications from "@/locales/te/settings-notifications.json";
 import teShared from "@/locales/te/shared.json";
 import teSite from "@/locales/te/site.json";
+import teThemeStudio from "@/locales/te/theme-studio.json";
 import teUserBuilds from "@/locales/te/user-builds.json";
 import teV from "@/locales/te/v.json";
 
@@ -71,8 +90,11 @@ const teResources = {
   "builds": teBuilds,
   "c-admin": teCAdmin,
   "c-altair": teCAltair,
+  "c-awards": teCAwards,
   "c-blog": teCBlog,
   "c-builds": teCBuilds,
+  "c-circle": teCCircle,
+  "c-creator": teCCreator,
   "c-cursed-logic": teCCursedLogic,
   "c-daily-puzzles": teCDailyPuzzles,
   "c-doctrine": teCDoctrine,
@@ -80,15 +102,20 @@ const teResources = {
   "c-economy": teCEconomy,
   "c-forest-explorer": teCForestExplorer,
   "c-game": teCGame,
+  "c-history": teCHistory,
   "c-house-always-wins": teCHouseAlwaysWins,
   "c-kowloon-knockout": teCKowloonKnockout,
   "c-laundry-sort": teCLaundrySort,
+  "c-layout": teCLayout,
   "c-library": teCLibrary,
   "c-lights-out": teCLightsOut,
+  "c-lists": teCLists,
   "c-lockdown": teCLockdown,
   "c-moderation": teCModeration,
   "c-neon-driftway": teCNeonDriftway,
   "c-news": teCNews,
+  "c-predictions": teCPredictions,
+  "c-profile-modules": teCProfileModules,
   "c-rideshare": teCRideshare,
   "c-rmh-capital": teCRmhCapital,
   "c-rmh-pmc": teCRmhPmc,
@@ -102,17 +129,23 @@ const teResources = {
   "c-rmhtype": teCRmhtype,
   "c-rmhvibe": teCRmhvibe,
   "c-roadmap": teCRoadmap,
+  "c-saves": teCSaves,
   "c-signal-forge": teCSignalForge,
+  "c-status": teCStatus,
   "c-studio": teCStudio,
   "c-synapse-storm": teCSynapseStorm,
   "c-temple-of-joy": teCTempleOfJoy,
+  "c-tournaments": teCTournaments,
   "c-ui": teCUi,
   "c-user-builds": teCUserBuilds,
   "c-vega": teCVega,
   "c-versecraft": teCVersecraft,
   "c-void-breaker": teCVoidBreaker,
+  "c-wager": teCWager,
+  "c-wishlist": teCWishlist,
   "common": teCommon,
   "feed": teFeed,
+  "games-hub": teGamesHub,
   "groups": teGroups,
   "library": teLibrary,
   "nav": teNav,
@@ -127,8 +160,13 @@ const teResources = {
   "r-strategies": teRStrategies,
   "r-studio": teRStudio,
   "rideshare": teRideshare,
+  "search": teSearch,
+  "settings-appearance": teSettingsAppearance,
+  "settings-content": teSettingsContent,
+  "settings-notifications": teSettingsNotifications,
   "shared": teShared,
   "site": teSite,
+  "theme-studio": teThemeStudio,
   "user-builds": teUserBuilds,
   "v": teV,
 } as const;

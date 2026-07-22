@@ -36,7 +36,7 @@
   "collection-by": "{{who}} tarafından",
   "collection-delete-confirm": "Bu koleksiyon silinsin mi? Kitaplar silinmez.",
   "collection-desc-placeholder": "İsteğe bağlı",
-  "collection-empty": "No books yet.",
+  "collection-empty": "Henüz kitap yok.",
   "collection-rename-prompt": "Koleksiyon adı",
   "collection-title-placeholder": "örn. Okuma listem",
   "collections-community": "Reader collections",
@@ -75,7 +75,7 @@
   "rename": "Yeniden adlandır",
   "reported": "Bildirildi",
   "search-label": "Kütüphanede ara",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "Kitapları ve albümleri ara",
   "search-your-books": "Kitaplarınızda ara…",
   "section-albums": "Albümler",
   "section-blog": "Blog",
@@ -88,6 +88,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "Kitap ekle",
+  "upload-label": "PDF yükle"
 }

@@ -46,7 +46,7 @@
   "select-words-prompt_one": "Vyberte {{count}} slovo pro složení básně",
   "select-words-prompt_other": "Vyberte {{count}} slov pro složení básně",
   "settings": "Nastavení",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "Přihlaste se, abyste si ukládali své příběhy do cloudu a mohli je přehrávat kdekoli.",
   "sign-in-to-save": "Přihlaste se pro uložení postupu do cloudu",
   "skip": "Přeskočit",
   "slot-auto": "Auto",

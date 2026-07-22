@@ -36,7 +36,7 @@
   "collection-by": "от {{who}}",
   "collection-delete-confirm": "Удалить эту коллекцию? Книги не будут удалены.",
   "collection-desc-placeholder": "Необязательно",
-  "collection-empty": "No books yet.",
+  "collection-empty": "Книг пока нет.",
   "collection-rename-prompt": "Название коллекции",
   "collection-title-placeholder": "например, Мой список чтения",
   "collections-community": "Reader collections",
@@ -75,7 +75,7 @@
   "rename": "Переименовать",
   "reported": "Пожаловались",
   "search-label": "Поиск по библиотеке",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "Поиск книг и альбомов",
   "search-your-books": "Поиск по вашим книгам…",
   "section-albums": "Альбомы",
   "section-blog": "Blog",
@@ -88,6 +88,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "Добавить книгу",
+  "upload-label": "Загрузить PDF"
 }

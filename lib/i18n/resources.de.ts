@@ -5,8 +5,11 @@ import deAdmin from "@/locales/de/admin.json";
 import deBuilds from "@/locales/de/builds.json";
 import deCAdmin from "@/locales/de/c-admin.json";
 import deCAltair from "@/locales/de/c-altair.json";
+import deCAwards from "@/locales/de/c-awards.json";
 import deCBlog from "@/locales/de/c-blog.json";
 import deCBuilds from "@/locales/de/c-builds.json";
+import deCCircle from "@/locales/de/c-circle.json";
+import deCCreator from "@/locales/de/c-creator.json";
 import deCCursedLogic from "@/locales/de/c-cursed-logic.json";
 import deCDailyPuzzles from "@/locales/de/c-daily-puzzles.json";
 import deCDoctrine from "@/locales/de/c-doctrine.json";
@@ -14,15 +17,20 @@ import deCDreamRift from "@/locales/de/c-dream-rift.json";
 import deCEconomy from "@/locales/de/c-economy.json";
 import deCForestExplorer from "@/locales/de/c-forest-explorer.json";
 import deCGame from "@/locales/de/c-game.json";
+import deCHistory from "@/locales/de/c-history.json";
 import deCHouseAlwaysWins from "@/locales/de/c-house-always-wins.json";
 import deCKowloonKnockout from "@/locales/de/c-kowloon-knockout.json";
 import deCLaundrySort from "@/locales/de/c-laundry-sort.json";
+import deCLayout from "@/locales/de/c-layout.json";
 import deCLibrary from "@/locales/de/c-library.json";
 import deCLightsOut from "@/locales/de/c-lights-out.json";
+import deCLists from "@/locales/de/c-lists.json";
 import deCLockdown from "@/locales/de/c-lockdown.json";
 import deCModeration from "@/locales/de/c-moderation.json";
 import deCNeonDriftway from "@/locales/de/c-neon-driftway.json";
 import deCNews from "@/locales/de/c-news.json";
+import deCPredictions from "@/locales/de/c-predictions.json";
+import deCProfileModules from "@/locales/de/c-profile-modules.json";
 import deCRideshare from "@/locales/de/c-rideshare.json";
 import deCRmhCapital from "@/locales/de/c-rmh-capital.json";
 import deCRmhPmc from "@/locales/de/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import deCRmhtube from "@/locales/de/c-rmhtube.json";
 import deCRmhtype from "@/locales/de/c-rmhtype.json";
 import deCRmhvibe from "@/locales/de/c-rmhvibe.json";
 import deCRoadmap from "@/locales/de/c-roadmap.json";
+import deCSaves from "@/locales/de/c-saves.json";
 import deCSignalForge from "@/locales/de/c-signal-forge.json";
+import deCStatus from "@/locales/de/c-status.json";
 import deCStudio from "@/locales/de/c-studio.json";
 import deCSynapseStorm from "@/locales/de/c-synapse-storm.json";
 import deCTempleOfJoy from "@/locales/de/c-temple-of-joy.json";
+import deCTournaments from "@/locales/de/c-tournaments.json";
 import deCUi from "@/locales/de/c-ui.json";
 import deCUserBuilds from "@/locales/de/c-user-builds.json";
 import deCVega from "@/locales/de/c-vega.json";
 import deCVersecraft from "@/locales/de/c-versecraft.json";
 import deCVoidBreaker from "@/locales/de/c-void-breaker.json";
+import deCWager from "@/locales/de/c-wager.json";
+import deCWishlist from "@/locales/de/c-wishlist.json";
 import deCommon from "@/locales/de/common.json";
 import deFeed from "@/locales/de/feed.json";
+import deGamesHub from "@/locales/de/games-hub.json";
 import deGroups from "@/locales/de/groups.json";
 import deLibrary from "@/locales/de/library.json";
 import deNav from "@/locales/de/nav.json";
@@ -61,8 +75,13 @@ import deRSliceIt from "@/locales/de/r-slice-it.json";
 import deRStrategies from "@/locales/de/r-strategies.json";
 import deRStudio from "@/locales/de/r-studio.json";
 import deRideshare from "@/locales/de/rideshare.json";
+import deSearch from "@/locales/de/search.json";
+import deSettingsAppearance from "@/locales/de/settings-appearance.json";
+import deSettingsContent from "@/locales/de/settings-content.json";
+import deSettingsNotifications from "@/locales/de/settings-notifications.json";
 import deShared from "@/locales/de/shared.json";
 import deSite from "@/locales/de/site.json";
+import deThemeStudio from "@/locales/de/theme-studio.json";
 import deUserBuilds from "@/locales/de/user-builds.json";
 import deV from "@/locales/de/v.json";
 
@@ -71,8 +90,11 @@ const deResources = {
   "builds": deBuilds,
   "c-admin": deCAdmin,
   "c-altair": deCAltair,
+  "c-awards": deCAwards,
   "c-blog": deCBlog,
   "c-builds": deCBuilds,
+  "c-circle": deCCircle,
+  "c-creator": deCCreator,
   "c-cursed-logic": deCCursedLogic,
   "c-daily-puzzles": deCDailyPuzzles,
   "c-doctrine": deCDoctrine,
@@ -80,15 +102,20 @@ const deResources = {
   "c-economy": deCEconomy,
   "c-forest-explorer": deCForestExplorer,
   "c-game": deCGame,
+  "c-history": deCHistory,
   "c-house-always-wins": deCHouseAlwaysWins,
   "c-kowloon-knockout": deCKowloonKnockout,
   "c-laundry-sort": deCLaundrySort,
+  "c-layout": deCLayout,
   "c-library": deCLibrary,
   "c-lights-out": deCLightsOut,
+  "c-lists": deCLists,
   "c-lockdown": deCLockdown,
   "c-moderation": deCModeration,
   "c-neon-driftway": deCNeonDriftway,
   "c-news": deCNews,
+  "c-predictions": deCPredictions,
+  "c-profile-modules": deCProfileModules,
   "c-rideshare": deCRideshare,
   "c-rmh-capital": deCRmhCapital,
   "c-rmh-pmc": deCRmhPmc,
@@ -102,17 +129,23 @@ const deResources = {
   "c-rmhtype": deCRmhtype,
   "c-rmhvibe": deCRmhvibe,
   "c-roadmap": deCRoadmap,
+  "c-saves": deCSaves,
   "c-signal-forge": deCSignalForge,
+  "c-status": deCStatus,
   "c-studio": deCStudio,
   "c-synapse-storm": deCSynapseStorm,
   "c-temple-of-joy": deCTempleOfJoy,
+  "c-tournaments": deCTournaments,
   "c-ui": deCUi,
   "c-user-builds": deCUserBuilds,
   "c-vega": deCVega,
   "c-versecraft": deCVersecraft,
   "c-void-breaker": deCVoidBreaker,
+  "c-wager": deCWager,
+  "c-wishlist": deCWishlist,
   "common": deCommon,
   "feed": deFeed,
+  "games-hub": deGamesHub,
   "groups": deGroups,
   "library": deLibrary,
   "nav": deNav,
@@ -127,8 +160,13 @@ const deResources = {
   "r-strategies": deRStrategies,
   "r-studio": deRStudio,
   "rideshare": deRideshare,
+  "search": deSearch,
+  "settings-appearance": deSettingsAppearance,
+  "settings-content": deSettingsContent,
+  "settings-notifications": deSettingsNotifications,
   "shared": deShared,
   "site": deSite,
+  "theme-studio": deThemeStudio,
   "user-builds": deUserBuilds,
   "v": deV,
 } as const;

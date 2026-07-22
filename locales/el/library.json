@@ -36,7 +36,7 @@
   "collection-by": "από {{who}}",
   "collection-delete-confirm": "Διαγραφή αυτής της συλλογής; Τα βιβλία δεν διαγράφονται.",
   "collection-desc-placeholder": "Προαιρετικό",
-  "collection-empty": "No books yet.",
+  "collection-empty": "Δεν υπάρχουν ακόμα βιβλία.",
   "collection-rename-prompt": "Όνομα συλλογής",
   "collection-title-placeholder": "π.χ. Η λίστα ανάγνωσής μου",
   "collections-community": "Reader collections",
@@ -75,7 +75,7 @@
   "rename": "Μετονομασία",
   "reported": "Αναφέρθηκε",
   "search-label": "Αναζήτηση στη βιβλιοθήκη",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "Αναζήτηση βιβλίων και άλμπουμ",
   "search-your-books": "Αναζήτηση στα βιβλία σου…",
   "section-albums": "Άλμπουμ",
   "section-blog": "Blog",
@@ -88,6 +88,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "Προσθήκη βιβλίου",
+  "upload-label": "Ανέβασμα PDF"
 }

@@ -75,7 +75,7 @@
   "rename": "إعادة تسمية",
   "reported": "تم الإبلاغ",
   "search-label": "ابحث في المكتبة",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "ابحث عن الكتب والألبومات",
   "search-your-books": "ابحث في كتبك…",
   "section-albums": "الألبومات",
   "section-blog": "Blog",
@@ -88,6 +88,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "أضف كتابًا",
+  "upload-label": "رفع ملف PDF"
 }

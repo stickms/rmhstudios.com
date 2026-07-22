@@ -46,7 +46,7 @@
   "select-words-prompt_one": "अपनी कविता लिखने के लिए {{count}} शब्द चुनें",
   "select-words-prompt_other": "अपनी कविता लिखने के लिए {{count}} शब्द चुनें",
   "settings": "सेटिंग्स",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "अपनी कहानियों को क्लाउड पर सहेजने और कहीं भी उन्हें दोबारा चलाने के लिए साइन इन करें।",
   "sign-in-to-save": "क्लाउड पर अपनी प्रगति सहेजने के लिए साइन इन करें",
   "skip": "छोड़ें",
   "slot-auto": "ऑटो",

@@ -6,7 +6,7 @@
   "content-label": "Treść",
   "content-placeholder": "Write your post in Markdown…",
   "date-label": "Data",
-  "delete-confirm": "Czy na pewno chcesz usunąć „{{title}}”? Tej operacji nie można cofnąć.",
+  "delete-confirm": "Usunięcie \"{{title}}\" jest nieodwracalne.",
   "delete-failed": "Nie udało się usunąć posta",
   "delete-post": "Usuń post",
   "delete-success": "Usunięto post: {{slug}}.",

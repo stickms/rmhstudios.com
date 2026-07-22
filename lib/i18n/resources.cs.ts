@@ -5,8 +5,11 @@ import csAdmin from "@/locales/cs/admin.json";
 import csBuilds from "@/locales/cs/builds.json";
 import csCAdmin from "@/locales/cs/c-admin.json";
 import csCAltair from "@/locales/cs/c-altair.json";
+import csCAwards from "@/locales/cs/c-awards.json";
 import csCBlog from "@/locales/cs/c-blog.json";
 import csCBuilds from "@/locales/cs/c-builds.json";
+import csCCircle from "@/locales/cs/c-circle.json";
+import csCCreator from "@/locales/cs/c-creator.json";
 import csCCursedLogic from "@/locales/cs/c-cursed-logic.json";
 import csCDailyPuzzles from "@/locales/cs/c-daily-puzzles.json";
 import csCDoctrine from "@/locales/cs/c-doctrine.json";
@@ -14,15 +17,20 @@ import csCDreamRift from "@/locales/cs/c-dream-rift.json";
 import csCEconomy from "@/locales/cs/c-economy.json";
 import csCForestExplorer from "@/locales/cs/c-forest-explorer.json";
 import csCGame from "@/locales/cs/c-game.json";
+import csCHistory from "@/locales/cs/c-history.json";
 import csCHouseAlwaysWins from "@/locales/cs/c-house-always-wins.json";
 import csCKowloonKnockout from "@/locales/cs/c-kowloon-knockout.json";
 import csCLaundrySort from "@/locales/cs/c-laundry-sort.json";
+import csCLayout from "@/locales/cs/c-layout.json";
 import csCLibrary from "@/locales/cs/c-library.json";
 import csCLightsOut from "@/locales/cs/c-lights-out.json";
+import csCLists from "@/locales/cs/c-lists.json";
 import csCLockdown from "@/locales/cs/c-lockdown.json";
 import csCModeration from "@/locales/cs/c-moderation.json";
 import csCNeonDriftway from "@/locales/cs/c-neon-driftway.json";
 import csCNews from "@/locales/cs/c-news.json";
+import csCPredictions from "@/locales/cs/c-predictions.json";
+import csCProfileModules from "@/locales/cs/c-profile-modules.json";
 import csCRideshare from "@/locales/cs/c-rideshare.json";
 import csCRmhCapital from "@/locales/cs/c-rmh-capital.json";
 import csCRmhPmc from "@/locales/cs/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import csCRmhtube from "@/locales/cs/c-rmhtube.json";
 import csCRmhtype from "@/locales/cs/c-rmhtype.json";
 import csCRmhvibe from "@/locales/cs/c-rmhvibe.json";
 import csCRoadmap from "@/locales/cs/c-roadmap.json";
+import csCSaves from "@/locales/cs/c-saves.json";
 import csCSignalForge from "@/locales/cs/c-signal-forge.json";
+import csCStatus from "@/locales/cs/c-status.json";
 import csCStudio from "@/locales/cs/c-studio.json";
 import csCSynapseStorm from "@/locales/cs/c-synapse-storm.json";
 import csCTempleOfJoy from "@/locales/cs/c-temple-of-joy.json";
+import csCTournaments from "@/locales/cs/c-tournaments.json";
 import csCUi from "@/locales/cs/c-ui.json";
 import csCUserBuilds from "@/locales/cs/c-user-builds.json";
 import csCVega from "@/locales/cs/c-vega.json";
 import csCVersecraft from "@/locales/cs/c-versecraft.json";
 import csCVoidBreaker from "@/locales/cs/c-void-breaker.json";
+import csCWager from "@/locales/cs/c-wager.json";
+import csCWishlist from "@/locales/cs/c-wishlist.json";
 import csCommon from "@/locales/cs/common.json";
 import csFeed from "@/locales/cs/feed.json";
+import csGamesHub from "@/locales/cs/games-hub.json";
 import csGroups from "@/locales/cs/groups.json";
 import csLibrary from "@/locales/cs/library.json";
 import csNav from "@/locales/cs/nav.json";
@@ -61,8 +75,13 @@ import csRSliceIt from "@/locales/cs/r-slice-it.json";
 import csRStrategies from "@/locales/cs/r-strategies.json";
 import csRStudio from "@/locales/cs/r-studio.json";
 import csRideshare from "@/locales/cs/rideshare.json";
+import csSearch from "@/locales/cs/search.json";
+import csSettingsAppearance from "@/locales/cs/settings-appearance.json";
+import csSettingsContent from "@/locales/cs/settings-content.json";
+import csSettingsNotifications from "@/locales/cs/settings-notifications.json";
 import csShared from "@/locales/cs/shared.json";
 import csSite from "@/locales/cs/site.json";
+import csThemeStudio from "@/locales/cs/theme-studio.json";
 import csUserBuilds from "@/locales/cs/user-builds.json";
 import csV from "@/locales/cs/v.json";
 
@@ -71,8 +90,11 @@ const csResources = {
   "builds": csBuilds,
   "c-admin": csCAdmin,
   "c-altair": csCAltair,
+  "c-awards": csCAwards,
   "c-blog": csCBlog,
   "c-builds": csCBuilds,
+  "c-circle": csCCircle,
+  "c-creator": csCCreator,
   "c-cursed-logic": csCCursedLogic,
   "c-daily-puzzles": csCDailyPuzzles,
   "c-doctrine": csCDoctrine,
@@ -80,15 +102,20 @@ const csResources = {
   "c-economy": csCEconomy,
   "c-forest-explorer": csCForestExplorer,
   "c-game": csCGame,
+  "c-history": csCHistory,
   "c-house-always-wins": csCHouseAlwaysWins,
   "c-kowloon-knockout": csCKowloonKnockout,
   "c-laundry-sort": csCLaundrySort,
+  "c-layout": csCLayout,
   "c-library": csCLibrary,
   "c-lights-out": csCLightsOut,
+  "c-lists": csCLists,
   "c-lockdown": csCLockdown,
   "c-moderation": csCModeration,
   "c-neon-driftway": csCNeonDriftway,
   "c-news": csCNews,
+  "c-predictions": csCPredictions,
+  "c-profile-modules": csCProfileModules,
   "c-rideshare": csCRideshare,
   "c-rmh-capital": csCRmhCapital,
   "c-rmh-pmc": csCRmhPmc,
@@ -102,17 +129,23 @@ const csResources = {
   "c-rmhtype": csCRmhtype,
   "c-rmhvibe": csCRmhvibe,
   "c-roadmap": csCRoadmap,
+  "c-saves": csCSaves,
   "c-signal-forge": csCSignalForge,
+  "c-status": csCStatus,
   "c-studio": csCStudio,
   "c-synapse-storm": csCSynapseStorm,
   "c-temple-of-joy": csCTempleOfJoy,
+  "c-tournaments": csCTournaments,
   "c-ui": csCUi,
   "c-user-builds": csCUserBuilds,
   "c-vega": csCVega,
   "c-versecraft": csCVersecraft,
   "c-void-breaker": csCVoidBreaker,
+  "c-wager": csCWager,
+  "c-wishlist": csCWishlist,
   "common": csCommon,
   "feed": csFeed,
+  "games-hub": csGamesHub,
   "groups": csGroups,
   "library": csLibrary,
   "nav": csNav,
@@ -127,8 +160,13 @@ const csResources = {
   "r-strategies": csRStrategies,
   "r-studio": csRStudio,
   "rideshare": csRideshare,
+  "search": csSearch,
+  "settings-appearance": csSettingsAppearance,
+  "settings-content": csSettingsContent,
+  "settings-notifications": csSettingsNotifications,
   "shared": csShared,
   "site": csSite,
+  "theme-studio": csThemeStudio,
   "user-builds": csUserBuilds,
   "v": csV,
 } as const;

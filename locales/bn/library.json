@@ -36,7 +36,7 @@
   "collection-by": "{{who}} দ্বারা",
   "collection-delete-confirm": "এই সংগ্রহটি মুছে ফেলবেন? বইগুলো মুছে যাবে না।",
   "collection-desc-placeholder": "ঐচ্ছিক",
-  "collection-empty": "No books yet.",
+  "collection-empty": "এখনো কোনো বই নেই।",
   "collection-rename-prompt": "সংগ্রহের নাম",
   "collection-title-placeholder": "যেমন: আমার পড়ার তালিকা",
   "collections-community": "Reader collections",
@@ -75,7 +75,7 @@
   "rename": "পুনঃনামকরণ",
   "reported": "রিপোর্ট করা হয়েছে",
   "search-label": "লাইব্রেরি অনুসন্ধান করুন",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "বই ও অ্যালবাম খুঁজুন",
   "search-your-books": "আপনার বই অনুসন্ধান করুন…",
   "section-albums": "অ্যালবাম",
   "section-blog": "Blog",
@@ -88,6 +88,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "বই যোগ করুন",
+  "upload-label": "একটি PDF আপলোড করুন"
 }

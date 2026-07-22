@@ -36,7 +36,7 @@
   "collection-by": "بذریعہ {{who}}",
   "collection-delete-confirm": "یہ مجموعہ حذف کریں؟ کتابیں حذف نہیں ہوں گی۔",
   "collection-desc-placeholder": "اختیاری",
-  "collection-empty": "No books yet.",
+  "collection-empty": "ابھی تک کوئی کتاب نہیں ہے۔",
   "collection-rename-prompt": "مجموعے کا نام",
   "collection-title-placeholder": "مثلاً میری پڑھنے کی فہرست",
   "collections-community": "Reader collections",
@@ -75,7 +75,7 @@
   "rename": "نام تبدیل کریں",
   "reported": "رپورٹ کر دیا",
   "search-label": "لائبریری تلاش کریں",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "کتابیں اور البم تلاش کریں",
   "search-your-books": "اپنی کتابیں تلاش کریں…",
   "section-albums": "البمز",
   "section-blog": "Blog",
@@ -88,6 +88,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "کتاب شامل کریں",
+  "upload-label": "پی ڈی ایف اپ لوڈ کریں"
 }

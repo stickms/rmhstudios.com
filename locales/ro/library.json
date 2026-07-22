@@ -36,7 +36,7 @@
   "collection-by": "de {{who}}",
   "collection-delete-confirm": "Ștergi această colecție? Cărțile nu sunt șterse.",
   "collection-desc-placeholder": "Opțional",
-  "collection-empty": "No books yet.",
+  "collection-empty": "Nu există încă cărți.",
   "collection-rename-prompt": "Numele colecției",
   "collection-title-placeholder": "de ex. Lista mea de lectură",
   "collections-community": "Reader collections",
@@ -75,7 +75,7 @@
   "rename": "Redenumește",
   "reported": "Raportat",
   "search-label": "Caută în bibliotecă",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "Caută cărți și albume",
   "search-your-books": "Caută cărțile tale…",
   "section-albums": "Albume",
   "section-blog": "Blog",
@@ -88,6 +88,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "Adaugă o carte",
+  "upload-label": "Încarcă un PDF"
 }

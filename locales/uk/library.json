@@ -36,7 +36,7 @@
   "collection-by": "від {{who}}",
   "collection-delete-confirm": "Видалити цю колекцію? Книги не видаляються.",
   "collection-desc-placeholder": "Необов'язково",
-  "collection-empty": "No books yet.",
+  "collection-empty": "Поки що немає книг.",
   "collection-rename-prompt": "Назва колекції",
   "collection-title-placeholder": "напр. Мій список читання",
   "collections-community": "Reader collections",
@@ -75,7 +75,7 @@
   "rename": "Перейменувати",
   "reported": "Поскаржено",
   "search-label": "Пошук у бібліотеці",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "Пошук книг та альбомів",
   "search-your-books": "Пошук ваших книг…",
   "section-albums": "Альбоми",
   "section-blog": "Blog",
@@ -88,6 +88,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "Додати книгу",
+  "upload-label": "Завантажити PDF"
 }

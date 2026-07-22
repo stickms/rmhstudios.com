@@ -6,7 +6,7 @@
   "content-label": "বিষয়বস্তু",
   "content-placeholder": "Write your post in Markdown…",
   "date-label": "তারিখ",
-  "delete-confirm": "আপনি কি নিশ্চিত যে আপনি \"{{title}}\" মুছে ফেলতে চান? এটি পূর্বাবস্থায় ফেরানো যাবে না।",
+  "delete-confirm": "\"{{title}}\" মুছে ফেলা হলে তা ফিরিয়ে আনা যাবে না।",
   "delete-failed": "পোস্ট মুছে ফেলতে ব্যর্থ হয়েছে",
   "delete-post": "পোস্ট মুছুন",
   "delete-success": "ব্লগ পোস্ট মুছে ফেলা হয়েছে: {{slug}}।",

@@ -36,7 +36,7 @@
   "collection-by": "{{who}} 작성",
   "collection-delete-confirm": "이 컬렉션을 삭제하시겠습니까? 책은 삭제되지 않습니다.",
   "collection-desc-placeholder": "선택 사항",
-  "collection-empty": "No books yet.",
+  "collection-empty": "아직 책이 없습니다.",
   "collection-rename-prompt": "컬렉션 이름",
   "collection-title-placeholder": "예: 내 독서 목록",
   "collections-community": "Reader collections",
@@ -75,7 +75,7 @@
   "rename": "이름 변경",
   "reported": "신고됨",
   "search-label": "라이브러리 검색",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "책과 앨범 검색",
   "search-your-books": "내 책 검색…",
   "section-albums": "앨범",
   "section-blog": "Blog",
@@ -88,6 +88,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "책 추가",
+  "upload-label": "PDF 업로드"
 }
