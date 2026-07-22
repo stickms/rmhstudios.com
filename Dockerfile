@@ -311,7 +311,7 @@ RUN rm -rf /app/.output/public/library \
 # from the go-services module using the official Go toolchain. The binaries
 # are statically linked (CGO_ENABLED=0) so they drop cleanly into the musl
 # Alpine runner without libc ceremony.
-FROM golang:1.23-alpine AS go-builder
+FROM golang:1.23.12-alpine AS go-builder
 
 WORKDIR /build
 

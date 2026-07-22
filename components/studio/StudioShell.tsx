@@ -460,11 +460,11 @@ export default function StudioShell() {
       <Toolbar />
 
       <div className="flex-1 overflow-hidden">
-        <ResizablePanelGroup direction="horizontal">
+        <ResizablePanelGroup orientation="horizontal">
           {/* Sample browser sidebar (collapsible) */}
           {sampleBrowserOpen && (
             <>
-              <ResizablePanel defaultSize={15} minSize={10} maxSize={25}>
+              <ResizablePanel defaultSize="15%" minSize="10%" maxSize="25%">
                 <SampleBrowser />
               </ResizablePanel>
               <ResizableHandle />
@@ -472,17 +472,17 @@ export default function StudioShell() {
           )}
 
           {/* Main content area */}
-          <ResizablePanel defaultSize={sampleBrowserOpen ? 85 : 100}>
-            <ResizablePanelGroup direction="vertical">
+          <ResizablePanel defaultSize={sampleBrowserOpen ? '85%' : '100%'}>
+            <ResizablePanelGroup orientation="vertical">
               {/* Top: Arrangement / Piano Roll / Pattern */}
-              <ResizablePanel defaultSize={65} minSize={30}>
+              <ResizablePanel defaultSize="65%" minSize="30%">
                 <ActiveView />
               </ResizablePanel>
 
               <ResizableHandle withHandle />
 
               {/* Bottom: Mixer or Settings */}
-              <ResizablePanel defaultSize={35} minSize={20}>
+              <ResizablePanel defaultSize="35%" minSize="20%">
                 {settingsOpen ? <KeybindSettings /> : <MixerView />}
               </ResizablePanel>
             </ResizablePanelGroup>

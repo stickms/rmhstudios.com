@@ -118,7 +118,7 @@ const heavyExternals = [
   'react-easy-crop',
   // Audio (native/WASM — can't bundle)
   'tone',
-  'audio-decode',
+  '@audio/decode',
   'wasm-audio-decoders',
   '@wasm-audio-decoders/common',
   '@wasm-audio-decoders/ogg-vorbis',

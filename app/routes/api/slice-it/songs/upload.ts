@@ -7,7 +7,7 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { validateAudioBuffer, validateImageBuffer } from "@/lib/slice-it/upload-validation";
 import { optimizeImage } from "@/lib/image-optimize";
 import { transcodeAudioToAac } from "@/lib/audio/transcode.server";
-import decode from "audio-decode";
+import decode from "@audio/decode";
 
 // Album covers are display-only — a 1024px square WebP is plenty and a fraction
 // of the size of a raw PNG/JPEG upload.

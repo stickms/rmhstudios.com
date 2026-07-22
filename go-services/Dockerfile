@@ -18,7 +18,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ── Build stage ──────────────────────────────────────────────────────────────
-FROM golang:1.23-alpine AS build
+FROM golang:1.23.12-alpine AS build
 ARG SERVICE
 WORKDIR /src
 
