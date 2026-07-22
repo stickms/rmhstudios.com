@@ -36,7 +36,7 @@
   "collection-by": "{{who}} による",
   "collection-delete-confirm": "このコレクションを削除しますか？本は削除されません。",
   "collection-desc-placeholder": "任意",
-  "collection-empty": "No books yet.",
+  "collection-empty": "まだ本がありません。",
   "collection-rename-prompt": "コレクション名",
   "collection-title-placeholder": "例：私の読書リスト",
   "collections-community": "Reader collections",
@@ -75,7 +75,7 @@
   "rename": "名前を変更",
   "reported": "報告済み",
   "search-label": "ライブラリを検索",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "本とアルバムを検索",
   "search-your-books": "あなたの本を検索…",
   "section-albums": "アルバム",
   "section-blog": "Blog",
@@ -88,6 +88,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "本を追加",
+  "upload-label": "PDFをアップロード"
 }

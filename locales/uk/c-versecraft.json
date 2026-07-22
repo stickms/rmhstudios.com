@@ -46,7 +46,7 @@
   "select-words-prompt_one": "Виберіть {{count}} слово, щоб скласти вірш",
   "select-words-prompt_other": "Виберіть {{count}} слів, щоб скласти вірш",
   "settings": "Налаштування",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "Увійдіть, щоб зберігати свої історії в хмарі та відтворювати їх у будь-якому місці.",
   "sign-in-to-save": "Увійдіть, щоб зберегти свій прогрес у хмарі",
   "skip": "Пропустити",
   "slot-auto": "Авто",

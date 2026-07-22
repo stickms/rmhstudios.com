@@ -5,8 +5,11 @@ import roAdmin from "@/locales/ro/admin.json";
 import roBuilds from "@/locales/ro/builds.json";
 import roCAdmin from "@/locales/ro/c-admin.json";
 import roCAltair from "@/locales/ro/c-altair.json";
+import roCAwards from "@/locales/ro/c-awards.json";
 import roCBlog from "@/locales/ro/c-blog.json";
 import roCBuilds from "@/locales/ro/c-builds.json";
+import roCCircle from "@/locales/ro/c-circle.json";
+import roCCreator from "@/locales/ro/c-creator.json";
 import roCCursedLogic from "@/locales/ro/c-cursed-logic.json";
 import roCDailyPuzzles from "@/locales/ro/c-daily-puzzles.json";
 import roCDoctrine from "@/locales/ro/c-doctrine.json";
@@ -14,15 +17,20 @@ import roCDreamRift from "@/locales/ro/c-dream-rift.json";
 import roCEconomy from "@/locales/ro/c-economy.json";
 import roCForestExplorer from "@/locales/ro/c-forest-explorer.json";
 import roCGame from "@/locales/ro/c-game.json";
+import roCHistory from "@/locales/ro/c-history.json";
 import roCHouseAlwaysWins from "@/locales/ro/c-house-always-wins.json";
 import roCKowloonKnockout from "@/locales/ro/c-kowloon-knockout.json";
 import roCLaundrySort from "@/locales/ro/c-laundry-sort.json";
+import roCLayout from "@/locales/ro/c-layout.json";
 import roCLibrary from "@/locales/ro/c-library.json";
 import roCLightsOut from "@/locales/ro/c-lights-out.json";
+import roCLists from "@/locales/ro/c-lists.json";
 import roCLockdown from "@/locales/ro/c-lockdown.json";
 import roCModeration from "@/locales/ro/c-moderation.json";
 import roCNeonDriftway from "@/locales/ro/c-neon-driftway.json";
 import roCNews from "@/locales/ro/c-news.json";
+import roCPredictions from "@/locales/ro/c-predictions.json";
+import roCProfileModules from "@/locales/ro/c-profile-modules.json";
 import roCRideshare from "@/locales/ro/c-rideshare.json";
 import roCRmhCapital from "@/locales/ro/c-rmh-capital.json";
 import roCRmhPmc from "@/locales/ro/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import roCRmhtube from "@/locales/ro/c-rmhtube.json";
 import roCRmhtype from "@/locales/ro/c-rmhtype.json";
 import roCRmhvibe from "@/locales/ro/c-rmhvibe.json";
 import roCRoadmap from "@/locales/ro/c-roadmap.json";
+import roCSaves from "@/locales/ro/c-saves.json";
 import roCSignalForge from "@/locales/ro/c-signal-forge.json";
+import roCStatus from "@/locales/ro/c-status.json";
 import roCStudio from "@/locales/ro/c-studio.json";
 import roCSynapseStorm from "@/locales/ro/c-synapse-storm.json";
 import roCTempleOfJoy from "@/locales/ro/c-temple-of-joy.json";
+import roCTournaments from "@/locales/ro/c-tournaments.json";
 import roCUi from "@/locales/ro/c-ui.json";
 import roCUserBuilds from "@/locales/ro/c-user-builds.json";
 import roCVega from "@/locales/ro/c-vega.json";
 import roCVersecraft from "@/locales/ro/c-versecraft.json";
 import roCVoidBreaker from "@/locales/ro/c-void-breaker.json";
+import roCWager from "@/locales/ro/c-wager.json";
+import roCWishlist from "@/locales/ro/c-wishlist.json";
 import roCommon from "@/locales/ro/common.json";
 import roFeed from "@/locales/ro/feed.json";
+import roGamesHub from "@/locales/ro/games-hub.json";
 import roGroups from "@/locales/ro/groups.json";
 import roLibrary from "@/locales/ro/library.json";
 import roNav from "@/locales/ro/nav.json";
@@ -61,8 +75,13 @@ import roRSliceIt from "@/locales/ro/r-slice-it.json";
 import roRStrategies from "@/locales/ro/r-strategies.json";
 import roRStudio from "@/locales/ro/r-studio.json";
 import roRideshare from "@/locales/ro/rideshare.json";
+import roSearch from "@/locales/ro/search.json";
+import roSettingsAppearance from "@/locales/ro/settings-appearance.json";
+import roSettingsContent from "@/locales/ro/settings-content.json";
+import roSettingsNotifications from "@/locales/ro/settings-notifications.json";
 import roShared from "@/locales/ro/shared.json";
 import roSite from "@/locales/ro/site.json";
+import roThemeStudio from "@/locales/ro/theme-studio.json";
 import roUserBuilds from "@/locales/ro/user-builds.json";
 import roV from "@/locales/ro/v.json";
 
@@ -71,8 +90,11 @@ const roResources = {
   "builds": roBuilds,
   "c-admin": roCAdmin,
   "c-altair": roCAltair,
+  "c-awards": roCAwards,
   "c-blog": roCBlog,
   "c-builds": roCBuilds,
+  "c-circle": roCCircle,
+  "c-creator": roCCreator,
   "c-cursed-logic": roCCursedLogic,
   "c-daily-puzzles": roCDailyPuzzles,
   "c-doctrine": roCDoctrine,
@@ -80,15 +102,20 @@ const roResources = {
   "c-economy": roCEconomy,
   "c-forest-explorer": roCForestExplorer,
   "c-game": roCGame,
+  "c-history": roCHistory,
   "c-house-always-wins": roCHouseAlwaysWins,
   "c-kowloon-knockout": roCKowloonKnockout,
   "c-laundry-sort": roCLaundrySort,
+  "c-layout": roCLayout,
   "c-library": roCLibrary,
   "c-lights-out": roCLightsOut,
+  "c-lists": roCLists,
   "c-lockdown": roCLockdown,
   "c-moderation": roCModeration,
   "c-neon-driftway": roCNeonDriftway,
   "c-news": roCNews,
+  "c-predictions": roCPredictions,
+  "c-profile-modules": roCProfileModules,
   "c-rideshare": roCRideshare,
   "c-rmh-capital": roCRmhCapital,
   "c-rmh-pmc": roCRmhPmc,
@@ -102,17 +129,23 @@ const roResources = {
   "c-rmhtype": roCRmhtype,
   "c-rmhvibe": roCRmhvibe,
   "c-roadmap": roCRoadmap,
+  "c-saves": roCSaves,
   "c-signal-forge": roCSignalForge,
+  "c-status": roCStatus,
   "c-studio": roCStudio,
   "c-synapse-storm": roCSynapseStorm,
   "c-temple-of-joy": roCTempleOfJoy,
+  "c-tournaments": roCTournaments,
   "c-ui": roCUi,
   "c-user-builds": roCUserBuilds,
   "c-vega": roCVega,
   "c-versecraft": roCVersecraft,
   "c-void-breaker": roCVoidBreaker,
+  "c-wager": roCWager,
+  "c-wishlist": roCWishlist,
   "common": roCommon,
   "feed": roFeed,
+  "games-hub": roGamesHub,
   "groups": roGroups,
   "library": roLibrary,
   "nav": roNav,
@@ -127,8 +160,13 @@ const roResources = {
   "r-strategies": roRStrategies,
   "r-studio": roRStudio,
   "rideshare": roRideshare,
+  "search": roSearch,
+  "settings-appearance": roSettingsAppearance,
+  "settings-content": roSettingsContent,
+  "settings-notifications": roSettingsNotifications,
   "shared": roShared,
   "site": roSite,
+  "theme-studio": roThemeStudio,
   "user-builds": roUserBuilds,
   "v": roV,
 } as const;

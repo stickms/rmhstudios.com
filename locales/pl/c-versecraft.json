@@ -46,7 +46,7 @@
   "select-words-prompt_one": "Wybierz {{count}} słowo, aby ułożyć wiersz",
   "select-words-prompt_other": "Wybierz {{count}} słowa, aby ułożyć wiersz",
   "settings": "Ustawienia",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "Zaloguj się, aby zapisać swoje historie w chmurze i odtwarzać je w dowolnym miejscu.",
   "sign-in-to-save": "Zaloguj się, aby zapisać postęp w chmurze",
   "skip": "Pomiń",
   "slot-auto": "Auto",

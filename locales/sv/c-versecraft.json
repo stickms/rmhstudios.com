@@ -46,7 +46,7 @@
   "select-words-prompt_one": "Välj {{count}} ord för att skriva din dikt",
   "select-words-prompt_other": "Välj {{count}} ord för att skriva din dikt",
   "settings": "Inställningar",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "Logga in för att spara dina berättelser i molnet och spela upp dem var som helst.",
   "sign-in-to-save": "Logga in för att spara dina framsteg i molnet",
   "skip": "Hoppa över",
   "slot-auto": "Auto",

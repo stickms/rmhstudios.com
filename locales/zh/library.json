@@ -75,7 +75,7 @@
   "rename": "重命名",
   "reported": "已举报",
   "search-label": "搜索图书馆",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "搜索书籍和专辑",
   "search-your-books": "搜索你的书籍…",
   "section-albums": "相册",
   "section-blog": "Blog",
@@ -88,6 +88,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "添加一本书",
+  "upload-label": "上传PDF"
 }

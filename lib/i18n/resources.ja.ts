@@ -5,8 +5,11 @@ import jaAdmin from "@/locales/ja/admin.json";
 import jaBuilds from "@/locales/ja/builds.json";
 import jaCAdmin from "@/locales/ja/c-admin.json";
 import jaCAltair from "@/locales/ja/c-altair.json";
+import jaCAwards from "@/locales/ja/c-awards.json";
 import jaCBlog from "@/locales/ja/c-blog.json";
 import jaCBuilds from "@/locales/ja/c-builds.json";
+import jaCCircle from "@/locales/ja/c-circle.json";
+import jaCCreator from "@/locales/ja/c-creator.json";
 import jaCCursedLogic from "@/locales/ja/c-cursed-logic.json";
 import jaCDailyPuzzles from "@/locales/ja/c-daily-puzzles.json";
 import jaCDoctrine from "@/locales/ja/c-doctrine.json";
@@ -14,15 +17,20 @@ import jaCDreamRift from "@/locales/ja/c-dream-rift.json";
 import jaCEconomy from "@/locales/ja/c-economy.json";
 import jaCForestExplorer from "@/locales/ja/c-forest-explorer.json";
 import jaCGame from "@/locales/ja/c-game.json";
+import jaCHistory from "@/locales/ja/c-history.json";
 import jaCHouseAlwaysWins from "@/locales/ja/c-house-always-wins.json";
 import jaCKowloonKnockout from "@/locales/ja/c-kowloon-knockout.json";
 import jaCLaundrySort from "@/locales/ja/c-laundry-sort.json";
+import jaCLayout from "@/locales/ja/c-layout.json";
 import jaCLibrary from "@/locales/ja/c-library.json";
 import jaCLightsOut from "@/locales/ja/c-lights-out.json";
+import jaCLists from "@/locales/ja/c-lists.json";
 import jaCLockdown from "@/locales/ja/c-lockdown.json";
 import jaCModeration from "@/locales/ja/c-moderation.json";
 import jaCNeonDriftway from "@/locales/ja/c-neon-driftway.json";
 import jaCNews from "@/locales/ja/c-news.json";
+import jaCPredictions from "@/locales/ja/c-predictions.json";
+import jaCProfileModules from "@/locales/ja/c-profile-modules.json";
 import jaCRideshare from "@/locales/ja/c-rideshare.json";
 import jaCRmhCapital from "@/locales/ja/c-rmh-capital.json";
 import jaCRmhPmc from "@/locales/ja/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import jaCRmhtube from "@/locales/ja/c-rmhtube.json";
 import jaCRmhtype from "@/locales/ja/c-rmhtype.json";
 import jaCRmhvibe from "@/locales/ja/c-rmhvibe.json";
 import jaCRoadmap from "@/locales/ja/c-roadmap.json";
+import jaCSaves from "@/locales/ja/c-saves.json";
 import jaCSignalForge from "@/locales/ja/c-signal-forge.json";
+import jaCStatus from "@/locales/ja/c-status.json";
 import jaCStudio from "@/locales/ja/c-studio.json";
 import jaCSynapseStorm from "@/locales/ja/c-synapse-storm.json";
 import jaCTempleOfJoy from "@/locales/ja/c-temple-of-joy.json";
+import jaCTournaments from "@/locales/ja/c-tournaments.json";
 import jaCUi from "@/locales/ja/c-ui.json";
 import jaCUserBuilds from "@/locales/ja/c-user-builds.json";
 import jaCVega from "@/locales/ja/c-vega.json";
 import jaCVersecraft from "@/locales/ja/c-versecraft.json";
 import jaCVoidBreaker from "@/locales/ja/c-void-breaker.json";
+import jaCWager from "@/locales/ja/c-wager.json";
+import jaCWishlist from "@/locales/ja/c-wishlist.json";
 import jaCommon from "@/locales/ja/common.json";
 import jaFeed from "@/locales/ja/feed.json";
+import jaGamesHub from "@/locales/ja/games-hub.json";
 import jaGroups from "@/locales/ja/groups.json";
 import jaLibrary from "@/locales/ja/library.json";
 import jaNav from "@/locales/ja/nav.json";
@@ -61,8 +75,13 @@ import jaRSliceIt from "@/locales/ja/r-slice-it.json";
 import jaRStrategies from "@/locales/ja/r-strategies.json";
 import jaRStudio from "@/locales/ja/r-studio.json";
 import jaRideshare from "@/locales/ja/rideshare.json";
+import jaSearch from "@/locales/ja/search.json";
+import jaSettingsAppearance from "@/locales/ja/settings-appearance.json";
+import jaSettingsContent from "@/locales/ja/settings-content.json";
+import jaSettingsNotifications from "@/locales/ja/settings-notifications.json";
 import jaShared from "@/locales/ja/shared.json";
 import jaSite from "@/locales/ja/site.json";
+import jaThemeStudio from "@/locales/ja/theme-studio.json";
 import jaUserBuilds from "@/locales/ja/user-builds.json";
 import jaV from "@/locales/ja/v.json";
 
@@ -71,8 +90,11 @@ const jaResources = {
   "builds": jaBuilds,
   "c-admin": jaCAdmin,
   "c-altair": jaCAltair,
+  "c-awards": jaCAwards,
   "c-blog": jaCBlog,
   "c-builds": jaCBuilds,
+  "c-circle": jaCCircle,
+  "c-creator": jaCCreator,
   "c-cursed-logic": jaCCursedLogic,
   "c-daily-puzzles": jaCDailyPuzzles,
   "c-doctrine": jaCDoctrine,
@@ -80,15 +102,20 @@ const jaResources = {
   "c-economy": jaCEconomy,
   "c-forest-explorer": jaCForestExplorer,
   "c-game": jaCGame,
+  "c-history": jaCHistory,
   "c-house-always-wins": jaCHouseAlwaysWins,
   "c-kowloon-knockout": jaCKowloonKnockout,
   "c-laundry-sort": jaCLaundrySort,
+  "c-layout": jaCLayout,
   "c-library": jaCLibrary,
   "c-lights-out": jaCLightsOut,
+  "c-lists": jaCLists,
   "c-lockdown": jaCLockdown,
   "c-moderation": jaCModeration,
   "c-neon-driftway": jaCNeonDriftway,
   "c-news": jaCNews,
+  "c-predictions": jaCPredictions,
+  "c-profile-modules": jaCProfileModules,
   "c-rideshare": jaCRideshare,
   "c-rmh-capital": jaCRmhCapital,
   "c-rmh-pmc": jaCRmhPmc,
@@ -102,17 +129,23 @@ const jaResources = {
   "c-rmhtype": jaCRmhtype,
   "c-rmhvibe": jaCRmhvibe,
   "c-roadmap": jaCRoadmap,
+  "c-saves": jaCSaves,
   "c-signal-forge": jaCSignalForge,
+  "c-status": jaCStatus,
   "c-studio": jaCStudio,
   "c-synapse-storm": jaCSynapseStorm,
   "c-temple-of-joy": jaCTempleOfJoy,
+  "c-tournaments": jaCTournaments,
   "c-ui": jaCUi,
   "c-user-builds": jaCUserBuilds,
   "c-vega": jaCVega,
   "c-versecraft": jaCVersecraft,
   "c-void-breaker": jaCVoidBreaker,
+  "c-wager": jaCWager,
+  "c-wishlist": jaCWishlist,
   "common": jaCommon,
   "feed": jaFeed,
+  "games-hub": jaGamesHub,
   "groups": jaGroups,
   "library": jaLibrary,
   "nav": jaNav,
@@ -127,8 +160,13 @@ const jaResources = {
   "r-strategies": jaRStrategies,
   "r-studio": jaRStudio,
   "rideshare": jaRideshare,
+  "search": jaSearch,
+  "settings-appearance": jaSettingsAppearance,
+  "settings-content": jaSettingsContent,
+  "settings-notifications": jaSettingsNotifications,
   "shared": jaShared,
   "site": jaSite,
+  "theme-studio": jaThemeStudio,
   "user-builds": jaUserBuilds,
   "v": jaV,
 } as const;

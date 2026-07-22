@@ -5,8 +5,11 @@ import ukAdmin from "@/locales/uk/admin.json";
 import ukBuilds from "@/locales/uk/builds.json";
 import ukCAdmin from "@/locales/uk/c-admin.json";
 import ukCAltair from "@/locales/uk/c-altair.json";
+import ukCAwards from "@/locales/uk/c-awards.json";
 import ukCBlog from "@/locales/uk/c-blog.json";
 import ukCBuilds from "@/locales/uk/c-builds.json";
+import ukCCircle from "@/locales/uk/c-circle.json";
+import ukCCreator from "@/locales/uk/c-creator.json";
 import ukCCursedLogic from "@/locales/uk/c-cursed-logic.json";
 import ukCDailyPuzzles from "@/locales/uk/c-daily-puzzles.json";
 import ukCDoctrine from "@/locales/uk/c-doctrine.json";
@@ -14,15 +17,20 @@ import ukCDreamRift from "@/locales/uk/c-dream-rift.json";
 import ukCEconomy from "@/locales/uk/c-economy.json";
 import ukCForestExplorer from "@/locales/uk/c-forest-explorer.json";
 import ukCGame from "@/locales/uk/c-game.json";
+import ukCHistory from "@/locales/uk/c-history.json";
 import ukCHouseAlwaysWins from "@/locales/uk/c-house-always-wins.json";
 import ukCKowloonKnockout from "@/locales/uk/c-kowloon-knockout.json";
 import ukCLaundrySort from "@/locales/uk/c-laundry-sort.json";
+import ukCLayout from "@/locales/uk/c-layout.json";
 import ukCLibrary from "@/locales/uk/c-library.json";
 import ukCLightsOut from "@/locales/uk/c-lights-out.json";
+import ukCLists from "@/locales/uk/c-lists.json";
 import ukCLockdown from "@/locales/uk/c-lockdown.json";
 import ukCModeration from "@/locales/uk/c-moderation.json";
 import ukCNeonDriftway from "@/locales/uk/c-neon-driftway.json";
 import ukCNews from "@/locales/uk/c-news.json";
+import ukCPredictions from "@/locales/uk/c-predictions.json";
+import ukCProfileModules from "@/locales/uk/c-profile-modules.json";
 import ukCRideshare from "@/locales/uk/c-rideshare.json";
 import ukCRmhCapital from "@/locales/uk/c-rmh-capital.json";
 import ukCRmhPmc from "@/locales/uk/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import ukCRmhtube from "@/locales/uk/c-rmhtube.json";
 import ukCRmhtype from "@/locales/uk/c-rmhtype.json";
 import ukCRmhvibe from "@/locales/uk/c-rmhvibe.json";
 import ukCRoadmap from "@/locales/uk/c-roadmap.json";
+import ukCSaves from "@/locales/uk/c-saves.json";
 import ukCSignalForge from "@/locales/uk/c-signal-forge.json";
+import ukCStatus from "@/locales/uk/c-status.json";
 import ukCStudio from "@/locales/uk/c-studio.json";
 import ukCSynapseStorm from "@/locales/uk/c-synapse-storm.json";
 import ukCTempleOfJoy from "@/locales/uk/c-temple-of-joy.json";
+import ukCTournaments from "@/locales/uk/c-tournaments.json";
 import ukCUi from "@/locales/uk/c-ui.json";
 import ukCUserBuilds from "@/locales/uk/c-user-builds.json";
 import ukCVega from "@/locales/uk/c-vega.json";
 import ukCVersecraft from "@/locales/uk/c-versecraft.json";
 import ukCVoidBreaker from "@/locales/uk/c-void-breaker.json";
+import ukCWager from "@/locales/uk/c-wager.json";
+import ukCWishlist from "@/locales/uk/c-wishlist.json";
 import ukCommon from "@/locales/uk/common.json";
 import ukFeed from "@/locales/uk/feed.json";
+import ukGamesHub from "@/locales/uk/games-hub.json";
 import ukGroups from "@/locales/uk/groups.json";
 import ukLibrary from "@/locales/uk/library.json";
 import ukNav from "@/locales/uk/nav.json";
@@ -61,8 +75,13 @@ import ukRSliceIt from "@/locales/uk/r-slice-it.json";
 import ukRStrategies from "@/locales/uk/r-strategies.json";
 import ukRStudio from "@/locales/uk/r-studio.json";
 import ukRideshare from "@/locales/uk/rideshare.json";
+import ukSearch from "@/locales/uk/search.json";
+import ukSettingsAppearance from "@/locales/uk/settings-appearance.json";
+import ukSettingsContent from "@/locales/uk/settings-content.json";
+import ukSettingsNotifications from "@/locales/uk/settings-notifications.json";
 import ukShared from "@/locales/uk/shared.json";
 import ukSite from "@/locales/uk/site.json";
+import ukThemeStudio from "@/locales/uk/theme-studio.json";
 import ukUserBuilds from "@/locales/uk/user-builds.json";
 import ukV from "@/locales/uk/v.json";
 
@@ -71,8 +90,11 @@ const ukResources = {
   "builds": ukBuilds,
   "c-admin": ukCAdmin,
   "c-altair": ukCAltair,
+  "c-awards": ukCAwards,
   "c-blog": ukCBlog,
   "c-builds": ukCBuilds,
+  "c-circle": ukCCircle,
+  "c-creator": ukCCreator,
   "c-cursed-logic": ukCCursedLogic,
   "c-daily-puzzles": ukCDailyPuzzles,
   "c-doctrine": ukCDoctrine,
@@ -80,15 +102,20 @@ const ukResources = {
   "c-economy": ukCEconomy,
   "c-forest-explorer": ukCForestExplorer,
   "c-game": ukCGame,
+  "c-history": ukCHistory,
   "c-house-always-wins": ukCHouseAlwaysWins,
   "c-kowloon-knockout": ukCKowloonKnockout,
   "c-laundry-sort": ukCLaundrySort,
+  "c-layout": ukCLayout,
   "c-library": ukCLibrary,
   "c-lights-out": ukCLightsOut,
+  "c-lists": ukCLists,
   "c-lockdown": ukCLockdown,
   "c-moderation": ukCModeration,
   "c-neon-driftway": ukCNeonDriftway,
   "c-news": ukCNews,
+  "c-predictions": ukCPredictions,
+  "c-profile-modules": ukCProfileModules,
   "c-rideshare": ukCRideshare,
   "c-rmh-capital": ukCRmhCapital,
   "c-rmh-pmc": ukCRmhPmc,
@@ -102,17 +129,23 @@ const ukResources = {
   "c-rmhtype": ukCRmhtype,
   "c-rmhvibe": ukCRmhvibe,
   "c-roadmap": ukCRoadmap,
+  "c-saves": ukCSaves,
   "c-signal-forge": ukCSignalForge,
+  "c-status": ukCStatus,
   "c-studio": ukCStudio,
   "c-synapse-storm": ukCSynapseStorm,
   "c-temple-of-joy": ukCTempleOfJoy,
+  "c-tournaments": ukCTournaments,
   "c-ui": ukCUi,
   "c-user-builds": ukCUserBuilds,
   "c-vega": ukCVega,
   "c-versecraft": ukCVersecraft,
   "c-void-breaker": ukCVoidBreaker,
+  "c-wager": ukCWager,
+  "c-wishlist": ukCWishlist,
   "common": ukCommon,
   "feed": ukFeed,
+  "games-hub": ukGamesHub,
   "groups": ukGroups,
   "library": ukLibrary,
   "nav": ukNav,
@@ -127,8 +160,13 @@ const ukResources = {
   "r-strategies": ukRStrategies,
   "r-studio": ukRStudio,
   "rideshare": ukRideshare,
+  "search": ukSearch,
+  "settings-appearance": ukSettingsAppearance,
+  "settings-content": ukSettingsContent,
+  "settings-notifications": ukSettingsNotifications,
   "shared": ukShared,
   "site": ukSite,
+  "theme-studio": ukThemeStudio,
   "user-builds": ukUserBuilds,
   "v": ukV,
 } as const;

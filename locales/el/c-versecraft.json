@@ -46,7 +46,7 @@
   "select-words-prompt_one": "Επιλέξτε {{count}} λέξη για να συνθέσετε το ποίημά σας",
   "select-words-prompt_other": "Επιλέξτε {{count}} λέξεις για να συνθέσετε το ποίημά σας",
   "settings": "Ρυθμίσεις",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "Συνδεθείτε για να αποθηκεύσετε τις ιστορίες σας στο cloud και να τις αναπαράγετε οπουδήποτε.",
   "sign-in-to-save": "Συνδεθείτε για να αποθηκεύσετε την πρόοδό σας στο cloud",
   "skip": "Παράλειψη",
   "slot-auto": "Αυτόματο",

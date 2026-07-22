@@ -4,7 +4,7 @@
   "open-book": "Open {{title}}",
   "open-menu": "Open menu",
   "search-label": "Search the library",
-  "search-placeholder": "Search the library...",
-  "upload-button": "Upload",
-  "upload-label": "Upload a book"
+  "search-placeholder": "Search books and albums",
+  "upload-button": "Add a book",
+  "upload-label": "Upload a PDF"
 }
