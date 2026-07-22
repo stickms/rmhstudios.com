@@ -18,9 +18,10 @@
  *     so the panel visibly buds out of the trigger with a liquid neck that pinches
  *     off as separation completes.
  *  2. Act 2 — the settle (glass, overlapping last frames): the REAL
- *     `.glass-overlay` panel crossfades in on top (its opacity is driven 0→1 from
- *     the same progress value while the blob layer fades out), then the underlay
- *     unmounts. Content (menu items/text) rides the real panel only — never goo.
+ *     `.glass-overlay` panel crossfades in on top and shares the bud's progress:
+ *     it stretches away from the trigger, overshoots, squashes, and rebounds into
+ *     its final rect while the blob layer fades out. Content rides the real panel
+ *     only — never goo.
  *
  * Close plays the acts in reverse, faster (~130ms) — the blob reabsorbs into the
  * trigger. On close the consumer typically unmounts the panel instantly, so the
@@ -40,12 +41,24 @@
  * The underlay carries `contain: layout paint` and mounts ONLY while animating.
  */
 
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { m as motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { EASE } from '@/lib/motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useLiquidActive, useLiquidBody, useLiquidGroup } from '@/hooks/useLiquidBody';
+import {
+  FALLBACK_POP_DURATION_S,
+  FALLBACK_POP_PROGRESS,
+  FALLBACK_POP_TIMES,
+  PERF_POP_DURATION_S,
+  WEBGPU_POP_DURATION_S,
+  WEBGPU_POP_PROGRESS,
+  WEBGPU_POP_TIMES,
+  createPopPanelMotion,
+  popPanelTransform,
+  type PopPanelMotion,
+} from '@/lib/liquid-gl/pop-motion';
 
 // SSR-safe layout effect (avoids the useLayoutEffect-on-server warning). The DOM
 // work only ever runs on the client (open starts false during SSR anyway).
@@ -58,7 +71,6 @@ const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : use
 const BLOB_TINT =
   'color-mix(in srgb, var(--site-glass-tint-strong) 45%, var(--site-surface-opaque))';
 
-const OPEN_S = 0.22;
 const CLOSE_S = 0.13;
 
 // Geometry easing for the bud. A gentle symmetric curve (not the front-loaded
@@ -108,7 +120,12 @@ export interface LiquidPopResult {
   underlay: React.ReactNode;
 }
 
-export function useLiquidPop({ triggerRef, panelRef, open, z = 60 }: LiquidPopOptions): LiquidPopResult {
+export function useLiquidPop({
+  triggerRef,
+  panelRef,
+  open,
+  z = 60,
+}: LiquidPopOptions): LiquidPopResult {
   const reduced = useReducedMotion();
   const [active, setActive] = useState(false);
 
@@ -131,14 +148,29 @@ export function useLiquidPop({ triggerRef, panelRef, open, z = 60 }: LiquidPopOp
 
   const trigRect = useRef<Rect | null>(null);
   const panelRect = useRef<Rect | null>(null);
+  const panelMotion = useRef<PopPanelMotion | null>(null);
+  const animatedPanel = useRef<HTMLElement | null>(null);
   const radius = useRef(16);
   const modeRef = useRef<Mode>('full');
   const genRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevOpen = useRef(false);
 
-  // Panel crossfade: opacity follows progress. Full mode delays the fade to the
-  // back half (so Act 1's bud is seen alone first); perf mode is a plain fade.
+  const resetPanel = useCallback(() => {
+    const panel = animatedPanel.current;
+    if (panel) {
+      panel.style.removeProperty('opacity');
+      panel.style.removeProperty('transform');
+      panel.style.removeProperty('transform-origin');
+      panel.style.removeProperty('will-change');
+    }
+    animatedPanel.current = null;
+    panelMotion.current = null;
+  }, []);
+
+  // Panel crossfade + physical settle follow the SAME progress as the SDF/SVG
+  // bud. Progress above 1 is intentional: it carries the panel and shader body
+  // past their final rect before the squash/rebound settles at identity.
   useEffect(() => {
     const unsub = progress.on('change', (v) => {
       const panel = panelRef.current;
@@ -148,6 +180,7 @@ export function useLiquidPop({ triggerRef, panelRef, open, z = 60 }: LiquidPopOp
           ? Math.max(0, Math.min(1, (v - PANEL_GATE) / (1 - PANEL_GATE)))
           : v;
       panel.style.opacity = String(o);
+      if (panelMotion.current) panel.style.transform = popPanelTransform(panelMotion.current, v);
     });
     return unsub;
   }, [progress, panelRef]);
@@ -166,6 +199,7 @@ export function useLiquidPop({ triggerRef, panelRef, open, z = 60 }: LiquidPopOp
     const panel = panelRef.current;
 
     if (open) {
+      resetPanel();
       // Panel is committed this render; read its rect before paint so the goo
       // targets the real box and the opacity-0 is set with no flash.
       trigRect.current = readRect(triggerRef.current) ?? trigRect.current;
@@ -181,15 +215,26 @@ export function useLiquidPop({ triggerRef, panelRef, open, z = 60 }: LiquidPopOp
         return;
       }
 
+      if (panel && trigRect.current && panelRect.current) {
+        animatedPanel.current = panel;
+        panelMotion.current = createPopPanelMotion(trigRect.current, panelRect.current, glActive);
+        panel.style.transformOrigin = `${panelMotion.current.originX}px ${panelMotion.current.originY}px`;
+        panel.style.willChange = 'opacity, transform';
+        panel.style.transform = popPanelTransform(panelMotion.current, 0);
+      }
+
       if (mode === 'perf') {
-        // Skip Act 1 (no goo); keep a plain fade.
+        // Skip Act 1 (no goo); keep a short directional scale/fade fallback.
         if (panel) panel.style.opacity = '0';
         progress.set(0);
-        animate(progress, 1, { duration: 0.14, ease: EASE.standard });
-        timerRef.current = setTimeout(() => {
-          if (gen !== genRef.current) return;
-          if (panelRef.current) panelRef.current.style.opacity = '';
-        }, 160);
+        animate(progress, 1, { duration: PERF_POP_DURATION_S, ease: EASE.standard });
+        timerRef.current = setTimeout(
+          () => {
+            if (gen !== genRef.current) return;
+            resetPanel();
+          },
+          PERF_POP_DURATION_S * 1000 + 30,
+        );
         return;
       }
 
@@ -203,18 +248,35 @@ export function useLiquidPop({ triggerRef, panelRef, open, z = 60 }: LiquidPopOp
       discScale.set(1);
       blobOp.set(0);
       setActive(true);
-      animate(progress, 1, { duration: OPEN_S, ease: BUD_EASE });
-      animate(blobOp, [0, 1, 1, 0], { duration: OPEN_S, times: [0, 0.12, 0.72, 1], ease: 'easeInOut' });
+      const openDuration = glActive ? WEBGPU_POP_DURATION_S : FALLBACK_POP_DURATION_S;
+      animate(progress, glActive ? [...WEBGPU_POP_PROGRESS] : [...FALLBACK_POP_PROGRESS], {
+        duration: openDuration,
+        times: glActive ? [...WEBGPU_POP_TIMES] : [...FALLBACK_POP_TIMES],
+        ease: BUD_EASE,
+      });
+      animate(blobOp, [0, 1, 1, 0], {
+        duration: openDuration,
+        times: [0, 0.12, 0.72, 1],
+        ease: 'easeInOut',
+      });
       // Disc shrinks in the back half so the neck pinches off as the panel lands.
-      animate(discScale, [1, 1, 0.32], { duration: OPEN_S, times: [0, 0.6, 1], ease: 'easeIn' });
-      timerRef.current = setTimeout(() => {
-        if (gen !== genRef.current) return;
-        if (panelRef.current) panelRef.current.style.opacity = '';
-        setActive(false);
-      }, OPEN_S * 1000 + 30);
+      animate(discScale, glActive ? [1, 1.16, 0.18, 0.36, 0.28] : [1, 1.05, 0.32, 0.25], {
+        duration: openDuration,
+        times: glActive ? [0, 0.18, 0.65, 0.82, 1] : [0, 0.2, 0.72, 1],
+        ease: 'easeInOut',
+      });
+      timerRef.current = setTimeout(
+        () => {
+          if (gen !== genRef.current) return;
+          resetPanel();
+          setActive(false);
+        },
+        openDuration * 1000 + 30,
+      );
       return;
     }
 
+    resetPanel();
     // Closing — reabsorb the bud into the trigger against the cached rects.
     if (mode === 'full' && trigRect.current && panelRect.current) {
       progress.set(1);
@@ -222,25 +284,33 @@ export function useLiquidPop({ triggerRef, panelRef, open, z = 60 }: LiquidPopOp
       blobOp.set(0);
       setActive(true);
       animate(progress, 0, { duration: CLOSE_S, ease: [0.4, 0, 1, 1] });
-      animate(blobOp, [0, 1, 1, 0], { duration: CLOSE_S, times: [0, 0.22, 0.62, 1], ease: 'easeInOut' });
+      animate(blobOp, [0, 1, 1, 0], {
+        duration: CLOSE_S,
+        times: [0, 0.22, 0.62, 1],
+        ease: 'easeInOut',
+      });
       animate(discScale, [0.32, 1], { duration: CLOSE_S, ease: 'easeOut' });
-      timerRef.current = setTimeout(() => {
-        if (gen !== genRef.current) return;
-        setActive(false);
-      }, CLOSE_S * 1000 + 30);
+      timerRef.current = setTimeout(
+        () => {
+          if (gen !== genRef.current) return;
+          setActive(false);
+        },
+        CLOSE_S * 1000 + 30,
+      );
     } else {
       setActive(false);
     }
-  }, [open, reduced, triggerRef, panelRef, progress, blobOp, discScale]);
+  }, [open, reduced, triggerRef, panelRef, progress, blobOp, discScale, glActive, resetPanel]);
 
   // Unmount cleanup — kill the timer and invalidate the generation so a pending
   // completion never resurrects an underlay after the consumer is gone.
   useEffect(
     () => () => {
       if (timerRef.current) clearTimeout(timerRef.current);
+      resetPanel();
       genRef.current++;
     },
-    [],
+    [resetPanel],
   );
 
   // Growing rounded-rect: center travels trigger→panel, size grows start→panel.
