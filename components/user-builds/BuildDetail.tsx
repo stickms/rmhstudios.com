@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Heart, Eye, Github, ExternalLink, Calendar, ArrowLeft, Edit, Trash2, Loader2, Lock } from 'lucide-react';
+import { Heart, Eye, GitBranch, ExternalLink, Calendar, ArrowLeft, Edit, Trash2, Loader2, Lock } from 'lucide-react';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { BlurImage } from '@/components/ui/BlurImage';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -240,7 +240,7 @@ export function BuildDetail({ build: initialBuild, backHref = '/builds' }: Build
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2 rounded-full bg-site-surface border border-site-border text-site-text hover:border-site-border-bright transition-colors"
             >
-              <Github className="w-4 h-4" />
+              <GitBranch className="w-4 h-4" />
               {t("view-source", { defaultValue: "View Source" })}
             </a>
           )}

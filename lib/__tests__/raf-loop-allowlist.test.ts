@@ -24,6 +24,8 @@ import { join } from 'node:path';
  *   - components/ui/liquid-tabs.tsx   — one-shot rAF to move focus after a tab key.
  *   - lib/liquid-gl/index.ts          — render loop: idle-damped, paused on hide,
  *                                       torn down on teardown (no layout reads).
+ *   - lib/liquid-gl/renderer-webgl2.ts — one-shot shader-compile polling; stops
+ *                                       when compilation completes or context is lost.
  *   - hooks/useGlassLight.ts, hooks/useLiquidBackground.ts, lib/glass-lens.ts —
  *                                       rAF used as a per-event THROTTLE (one-shot).
  *   - hooks/useScrollRestoration.ts, hooks/useCardSheen.ts, hooks/useCelebration.ts,
@@ -95,6 +97,7 @@ const ALLOW = new Set<string>([
   'lib/library/epub-raster.ts',
   'lib/library/page-store.ts',
   'lib/liquid-gl/index.ts',
+  'lib/liquid-gl/renderer-webgl2.ts',
   'lib/rmhmusic/spotify-player.ts',
   'lib/rmhvibe/vibe.server.ts',
   'lib/vega/VegaGame.ts',

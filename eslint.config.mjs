@@ -10,9 +10,11 @@ export default tseslint.config(
       '.output/**',
       '.tanstack/**',
       '.vinxi/**',
+      'bazel-*/**',
       'dist-server/**',
       'build/**',
       'node_modules/**',
+      'public/vibe-packages/**',
       // Plain JS server files — CommonJS require() is intentional
       'webhook-server.cjs',
       'check_db.js',

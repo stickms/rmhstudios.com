@@ -202,10 +202,10 @@ export function MDXEditor({
       </div>
 
       <div className="flex-1 w-full relative">
-        <ResizablePanelGroup direction="horizontal">
+        <ResizablePanelGroup orientation="horizontal">
           <ResizablePanel
-            defaultSize={50}
-            minSize={25}
+            defaultSize="50%"
+            minSize="25%"
             className={`flex flex-col ${isPreviewMode ? 'hidden lg:flex' : 'flex'} relative h-full bg-site-surface min-h-0`}
           >
             <div className="flex-1 overflow-y-auto p-4 lg:p-6 flex flex-col gap-6 min-h-0">
@@ -351,8 +351,8 @@ export function MDXEditor({
           <ResizableHandle withHandle className="hidden lg:flex" />
 
           <ResizablePanel
-            defaultSize={50}
-            minSize={25}
+            defaultSize="50%"
+            minSize="25%"
             className={`h-full ${!isPreviewMode ? 'hidden lg:block' : 'block'} bg-site-bg overflow-y-auto relative border-l border-site-border lg:border-none min-h-0`}
           >
             <div className="sticky top-0 glass-chrome border-b border-site-border p-4 flex justify-between items-center z-10 w-full h-14">

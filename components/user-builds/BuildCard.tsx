@@ -2,7 +2,7 @@
 
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useRef } from 'react';
-import { Heart, MessageCircle, Eye, ExternalLink, Github, Award } from 'lucide-react';
+import { Heart, MessageCircle, Eye, ExternalLink, GitBranch, Award } from 'lucide-react';
 import type { Build } from '@/lib/user-builds-types';
 import { TechBadges } from './TechBadges';
 import { BlurImage } from '@/components/ui/BlurImage';
@@ -151,7 +151,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
                   className="hover:text-site-text transition-colors"
                   title={t("view-source", { defaultValue: "View source" })}
                 >
-                  <Github className="w-4 h-4" />
+                  <GitBranch className="w-4 h-4" />
                 </a>
               )}
               {build.demoUrl && (

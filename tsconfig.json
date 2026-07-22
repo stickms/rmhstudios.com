@@ -20,6 +20,7 @@
   "include": ["**/*.ts", "**/*.tsx", "**/*.mts", "app/routeTree.gen.ts"],
   "exclude": [
     "node_modules",
+    "bazel-*",
     "dist-server",
     "public/vibe-packages",
     "server/api-routes",
