@@ -139,7 +139,21 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
         
         try {
             console.log("Decoding audio on server...");
-            const audioBuffer = await decode(buffer);
+            const decodedAudio = await decode(buffer);
+            const sampleLength = decodedAudio.channelData[0]?.length ?? 0;
+            const audioBuffer = {
+                length: sampleLength,
+                duration: decodedAudio.sampleRate > 0 ? sampleLength / decodedAudio.sampleRate : 0,
+                sampleRate: decodedAudio.sampleRate,
+                numberOfChannels: decodedAudio.channelData.length,
+                getChannelData(channel: number) {
+                    const channelData = decodedAudio.channelData[channel];
+                    if (!channelData) {
+                        throw new RangeError(`Audio channel ${channel} is unavailable`);
+                    }
+                    return channelData;
+                },
+            };
             console.log("Generating beatmap...");
             analysisData = await BeatDetector.generateMap(
                 audioBuffer, 

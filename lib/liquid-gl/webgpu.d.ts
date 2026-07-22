@@ -43,6 +43,8 @@ declare global {
   interface GPUDevice {
     readonly queue: GPUQueue;
     readonly limits: GPUSupportedLimits;
+    readonly lost: Promise<unknown>;
+    addEventListener(type: 'uncapturederror', listener: (event: Event) => void): void;
     createShaderModule(descriptor: { code: string }): GPUShaderModule;
     createBuffer(descriptor: {
       size: number;

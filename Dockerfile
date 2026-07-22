@@ -50,7 +50,7 @@ ARG WEB_IMAGE=runner
 # Cached as long as package.json / lockfile don't change.
 # Prisma files are NOT copied here — schema changes should only trigger
 # a fast `prisma generate`, not a full 70s+ pnpm install.
-FROM node:24-alpine AS deps
+FROM node:24.18.0-alpine AS deps
 
 RUN corepack enable && corepack prepare pnpm@10.29.1 --activate
 
@@ -148,7 +148,7 @@ RUN pnpm exec esbuild \
     server/rmhtube/index.ts \
     server/ladder-worker/index.ts \
     server/homes-worker/index.ts \
-    --bundle --platform=node --target=node20 \
+    --bundle --platform=node --target=node24 \
     --outdir=dist-server --outbase=. \
     --format=cjs --out-extension:.js=.cjs --packages=external --tree-shaking=true \
     --tsconfig=tsconfig.server.json
@@ -351,7 +351,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} \
 #     deploy/hotswap-web.sh skip the web hotswap entirely (no second container,
 #     no health wait, no Apache reload) when nothing web-facing changed.
 # The heavier bits live in the runner-full stage below (supervisor + status).
-FROM node:24-alpine AS runner
+FROM node:24.18.0-alpine AS runner
 
 # curl: container healthchecks (compose) + the deploy's port probes.
 # ca-certificates: outbound TLS (R2 sync, DeepSeek, Discord, etc.).
