@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RMH Designs — Between the Screen and the Object</title>
+  <meta name="description" content="RMH Designs is a studio working across luminous interfaces and physical matter — specifying both on the same grid." />
+  <meta name="theme-color" content="#E6E5E0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght,wdth@100..900,62..125&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip" href="#work">Skip to work</a>
+
+  <!-- shared svg defs: glow + cast shadow -->
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+    <defs>
+      <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+        <feGaussianBlur stdDeviation="3.2" result="b" />
+        <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+      </filter>
+      <filter id="cast" x="-50%" y="-50%" width="200%" height="200%">
+        <feDropShadow dx="0" dy="14" stdDeviation="9" flood-color="#17171B" flood-opacity="0.32" />
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- MASTHEAD -->
+  <header class="masthead">
+    <a class="brand" href="#top" aria-label="RMH Designs, home">
+      <span class="mark" aria-hidden="true"></span>
+      <span><b>RMH</b> <span class="reg">Designs</span></span>
+    </a>
+    <span class="mast-center mono">Screen <span class="swap" aria-hidden="true">⇄</span> Object</span>
+    <div class="mast-right">
+      <button class="grid-toggle" aria-pressed="false" title="Reveal the coordinate grid (G)">
+        <span class="dot" aria-hidden="true"></span> Grid
+      </button>
+    </div>
+  </header>
+
+  <!-- GRID SCAFFOLD (populated by JS) -->
+  <div class="scaffold" aria-hidden="true"></div>
+
+  <main id="top">
+    <!-- HERO -->
+    <section class="hero wrap" data-sec="Hero">
+      <div class="hero-coord mono">
+        <span><span class="sig">⌗</span> A1 — Origin</span>
+        <span>36.85°S · 174.76°E</span>
+        <span>Est. MMXXV</span>
+        <span>Practice №01 — Screen &amp; Object</span>
+      </div>
+
+      <div class="hero-stage">
+        <h1 class="hero-headline materializing" aria-label="Between the screen and the object">
+          <span class="line">Between the</span>
+          <span class="line"><span class="lit">Screen</span> <span class="amp">&amp;</span> the</span>
+          <span class="line">Object</span>
+        </h1>
+        <canvas class="hero-pixels" aria-hidden="true"></canvas>
+      </div>
+
+      <p class="hero-lead">
+        RMH Designs is a studio working across <b>luminous interfaces</b> and physical
+        matter. We specify both on the same grid — a pixel and a plane are the same
+        problem, seen from two sides.
+      </p>
+
+      <div class="hero-cue mono">
+        <span class="down"><span class="arrow" aria-hidden="true">↓</span> Selected work</span>
+        <span>Color, here, is light</span>
+      </div>
+    </section>
+
+    <!-- MARQUEE -->
+    <div class="marquee" aria-hidden="true">
+      <ul>
+        <li>Screen &amp; Object</li><li>Design as Specification</li><li>Light = Screen · Matte = Object</li><li>36.85°S 174.76°E</li><li>RMH Designs</li>
+        <li>Screen &amp; Object</li><li>Design as Specification</li><li>Light = Screen · Matte = Object</li><li>36.85°S 174.76°E</li><li>RMH Designs</li>
+      </ul>
+    </div>
+
+    <!-- SELECTED WORK -->
+    <section class="section wrap" id="work" data-sec="Selected Work">
+      <div class="sec-head">
+        <span class="idx mono">§ 01</span>
+        <span class="meta mono">Six pieces · 2023–25</span>
+        <h2>Selected Work</h2>
+      </div>
+
+      <div class="work-list">
+
+        <!-- 01 SCREEN — Altair -->
+        <article class="work is-screen" data-reveal>
+          <div class="work-media"><div class="plate">
+            <svg class="visual" viewBox="0 0 200 125" fill="none" aria-hidden="true">
+              <g class="stroke" stroke-width="1" filter="url(#glow)">
+                <rect x="14" y="14" width="172" height="97" opacity="0.4"/>
+                <path class="dash" d="M40 92 L78 40 L120 70 L160 30"/>
+                <circle class="fill" cx="40" cy="92" r="3.5" stroke="none"/>
+                <circle class="fill" cx="78" cy="40" r="3.5" stroke="none"/>
+                <circle class="fill" cx="120" cy="70" r="3.5" stroke="none"/>
+                <circle class="fill" cx="160" cy="30" r="3.5" stroke="none"/>
+                <circle class="pulse" cx="120" cy="70" r="12" opacity="0.5"/>
+                <path d="M14 78 H186" opacity="0.25"/>
+                <path d="M100 14 V111" opacity="0.25"/>
+              </g>
+            </svg>
+          </div></div>
+          <div class="work-body">
+            <span class="work-tag mono"><span class="pip"></span><span class="state">Screen</span> — Interface</span>
+            <h3 class="work-title">Altair</h3>
+            <p class="work-desc">Real-time strategy interface and command HUD — a legible board for imperfect information.</p>
+            <div class="work-foot mono"><span>2025</span><span>⌗ A2–F7</span><span>UI · Motion</span></div>
+          </div>
+        </article>
+
+        <!-- 02 OBJECT — Monolith -->
+        <article class="work is-object" data-reveal>
+          <div class="work-media"><div class="plate">
+            <svg class="visual" viewBox="0 0 200 125" aria-hidden="true">
+              <ellipse cx="112" cy="112" rx="60" ry="9" fill="#17171B" opacity="0.18"/>
+              <g filter="url(#cast)">
+                <polygon fill="#B9B7B0" points="70,26 118,18 118,104 70,112"/>
+                <polygon fill="#8E8C85" points="118,18 150,30 150,116 118,104"/>
+                <polygon fill="#D6D4CD" points="70,26 118,18 150,30 102,38"/>
+                <path class="stroke" stroke-width="0.75" opacity="0.5" d="M70 52 L118 44 M70 78 L118 70"/>
+              </g>
+            </svg>
+          </div></div>
+          <div class="work-body">
+            <span class="work-tag mono"><span class="pip"></span><span class="state">Object</span> — Product</span>
+            <h3 class="work-title">Monolith</h3>
+            <p class="work-desc">Anodized aluminium desktop console. One block, milled — weight as an interface.</p>
+            <div class="work-foot mono"><span>2024</span><span>⌗ G1–K6</span><span>Product · CNC</span></div>
+          </div>
+        </article>
+
+        <!-- 03 SCREEN — RMH Auth -->
+        <article class="work is-screen" data-reveal>
+          <div class="work-media"><div class="plate">
+            <svg class="visual" viewBox="0 0 200 125" fill="none" aria-hidden="true">
+              <g class="stroke" stroke-width="1" filter="url(#glow)">
+                <g class="spin-slow" style="transform-origin:100px 56px">
+                  <circle cx="100" cy="56" r="34" opacity="0.5"/>
+                  <circle class="dash" cx="100" cy="56" r="46" opacity="0.7"/>
+                </g>
+                <rect class="fill" x="92" y="48" width="16" height="16" stroke="none"/>
+                <rect x="46" y="104" width="46" height="9" opacity="0.6"/>
+                <rect x="108" y="104" width="46" height="9" opacity="0.6"/>
+                <rect class="fill pulse" x="46" y="104" width="14" height="9" stroke="none"/>
+              </g>
+            </svg>
+          </div></div>
+          <div class="work-body">
+            <span class="work-tag mono"><span class="pip"></span><span class="state">Screen</span> — Identity</span>
+            <h3 class="work-title">RMH Auth</h3>
+            <p class="work-desc">Identity system, motion language and onboarding — trust rendered as a mark that resolves.</p>
+            <div class="work-foot mono"><span>2025</span><span>⌗ A9–E14</span><span>Brand · System</span></div>
+          </div>
+        </article>
+
+        <!-- 04 OBJECT — Plinth-01 -->
+        <article class="work is-object" data-reveal>
+          <div class="work-media"><div class="plate">
+            <svg class="visual" viewBox="0 0 200 125" aria-hidden="true">
+              <ellipse cx="104" cy="110" rx="66" ry="9" fill="#17171B" opacity="0.16"/>
+              <g filter="url(#cast)">
+                <polygon fill="#C4C2BB" points="44,64 96,52 96,96 44,108"/>
+                <polygon fill="#9C9A93" points="96,52 156,66 156,82 96,96"/>
+                <polygon fill="#DAD8D1" points="44,64 96,52 156,66 104,78"/>
+                <polygon fill="#B4B2AB" points="96,52 96,30 128,38 156,66" opacity="0.9"/>
+                <polygon fill="#CFCDC6" points="96,30 128,24 156,42 128,38"/>
+              </g>
+            </svg>
+          </div></div>
+          <div class="work-body">
+            <span class="work-tag mono"><span class="pip"></span><span class="state">Object</span> — Furniture</span>
+            <h3 class="work-title">Plinth·01</h3>
+            <p class="work-desc">Cast-concrete modular seating. A grid you can sit on — coordinates made habitable.</p>
+            <div class="work-foot mono"><span>2023</span><span>⌗ H8–L13</span><span>Furniture · Cast</span></div>
+          </div>
+        </article>
+
+        <!-- 05 SCREEN — Velum 2099 -->
+        <article class="work is-screen" data-reveal>
+          <div class="work-media"><div class="plate">
+            <svg class="visual" viewBox="0 0 200 125" fill="none" aria-hidden="true">
+              <g class="stroke" stroke-width="1" filter="url(#glow)">
+                <path d="M14 78 H186" opacity="0.4"/>
+                <path class="dash" d="M14 92 H186" opacity="0.5"/>
+                <g class="spin-slow" style="transform-origin:100px 56px">
+                  <circle cx="100" cy="56" r="26" opacity="0.6"/>
+                  <path d="M100 22 V38 M100 74 V90 M66 56 H82 M118 56 H134"/>
+                </g>
+                <rect class="fill" x="97" y="53" width="6" height="6" stroke="none"/>
+                <path class="fill" d="M150 30 l10 5 l-10 5 z" stroke="none"/>
+                <path class="fill" d="M50 30 l-10 5 l10 5 z" stroke="none"/>
+              </g>
+            </svg>
+          </div></div>
+          <div class="work-body">
+            <span class="work-tag mono"><span class="pip"></span><span class="state">Screen</span> — Motion</span>
+            <h3 class="work-title">Velum 2099</h3>
+            <p class="work-desc">HUD, wayfinding and type in motion for a city that never resolves — legibility at speed.</p>
+            <div class="work-foot mono"><span>2025</span><span>⌗ A16–F21</span><span>HUD · Type</span></div>
+          </div>
+        </article>
+
+        <!-- 06 OBJECT — Grid Lamp (the exception: the object that emits) -->
+        <article class="work is-object" data-reveal>
+          <div class="work-media"><div class="plate">
+            <svg class="visual" viewBox="0 0 200 125" aria-hidden="true">
+              <ellipse cx="100" cy="112" rx="52" ry="8" fill="#17171B" opacity="0.16"/>
+              <g filter="url(#cast)">
+                <rect x="86" y="30" width="8" height="78" fill="#8E8C85"/>
+                <g class="lamp-glow">
+                  <rect x="58" y="34" width="84" height="7" rx="1" fill="#CFCDC6"/>
+                  <rect x="58" y="34" width="84" height="7" rx="1" fill="#2338FF" opacity="0.5"/>
+                  <rect class="rise-bar" style="transform-origin:center" x="52" y="52" width="96" height="7" rx="1" fill="#DAD8D1"/>
+                  <rect class="rise-bar" style="transform-origin:center" x="52" y="52" width="96" height="7" rx="1" fill="#2338FF" opacity="0.5"/>
+                  <rect x="60" y="70" width="80" height="7" rx="1" fill="#CFCDC6"/>
+                  <rect x="60" y="70" width="80" height="7" rx="1" fill="#2338FF" opacity="0.5"/>
+                </g>
+              </g>
+            </svg>
+          </div></div>
+          <div class="work-body">
+            <span class="work-tag mono"><span class="pip"></span><span class="state">Object</span> — Light</span>
+            <h3 class="work-title">Grid Lamp</h3>
+            <p class="work-desc">Modular light system — the one object permitted to glow, because it makes light of its own.</p>
+            <div class="work-foot mono"><span>2024</span><span>⌗ G16–L21</span><span>Lighting · Modular</span></div>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- CAPABILITIES -->
+    <section class="section wrap" id="capabilities" data-sec="Capabilities">
+      <div class="sec-head">
+        <span class="idx mono">§ 02</span>
+        <span class="meta mono">Two sides · one grid</span>
+        <h2>Capabilities</h2>
+      </div>
+      <div class="matrix">
+        <div class="col-head screen">Screen <span class="mono" style="font-size:11px;opacity:.7">luminous</span></div>
+        <div class="col-head object">Object <span class="mono" style="font-size:11px;opacity:.7">matter</span></div>
+        <div class="col screen">
+          <div class="cap"><span class="n">S1</span><span class="name">Interface design</span></div>
+          <div class="cap"><span class="n">S2</span><span class="name">Interaction &amp; motion</span></div>
+          <div class="cap"><span class="n">S3</span><span class="name">Identity systems</span></div>
+          <div class="cap"><span class="n">S4</span><span class="name">Design systems</span></div>
+          <div class="cap"><span class="n">S5</span><span class="name">Prototyping</span></div>
+        </div>
+        <div class="col object">
+          <div class="cap"><span class="n">O1</span><span class="name">Product design</span></div>
+          <div class="cap"><span class="n">O2</span><span class="name">Furniture</span></div>
+          <div class="cap"><span class="n">O3</span><span class="name">Environmental type</span></div>
+          <div class="cap"><span class="n">O4</span><span class="name">Fabrication</span></div>
+          <div class="cap"><span class="n">O5</span><span class="name">Material research</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STUDIO / MANIFESTO -->
+    <section class="section manifesto" id="studio" data-sec="Studio">
+      <div class="wrap">
+        <div class="sec-head">
+          <span class="idx mono">§ 03</span>
+          <span class="meta mono">Practice</span>
+          <h2>Studio</h2>
+        </div>
+        <p class="creed">
+          <span class="word" style="--w:0">Every</span>
+          <span class="word" style="--w:1">design</span>
+          <span class="word" style="--w:2">is</span>
+          <span class="word" style="--w:3">a</span>
+          <span class="word" style="--w:4"><em>specification.</em></span>
+          <span class="word" style="--w:5">A</span>
+          <span class="word" style="--w:6">screen</span>
+          <span class="word" style="--w:7">and</span>
+          <span class="word" style="--w:8">a</span>
+          <span class="word" style="--w:9">shelf</span>
+          <span class="word" style="--w:10">pose</span>
+          <span class="word" style="--w:11">the</span>
+          <span class="word" style="--w:12">same</span>
+          <span class="word" style="--w:13">question.</span>
+        </p>
+        <p class="creed-note">
+          Constraints, a grid, a material, a tolerance — and the same discipline in
+          answering. We treat <b>light and matter</b> as one continuous medium and render
+          each with equal precision. Color, here, is light: anything that glows is a
+          screen, anything matte is an object. Only one piece is allowed to break the
+          rule — because it makes light of its own.
+        </p>
+      </div>
+    </section>
+
+    <!-- COLOPHON -->
+    <footer class="section colophon" id="contact" data-sec="Contact">
+      <div class="wrap">
+        <div class="legend mono">
+          <span class="item"><span class="sw light"></span> Blue = Screen (light)</span>
+          <span class="item"><span class="sw matter"></span> Graphite = Object (matter)</span>
+          <span class="item">Rule 01 — Color exists only as light</span>
+        </div>
+
+        <div class="colo-grid">
+          <div class="colo-brand">RMH<br>Designs</div>
+          <div class="colo-col">
+            <h3>Enquiries</h3>
+            <a href="mailto:studio@rmh.design">studio@rmh.design</a>
+            <a href="#work">See the work</a>
+            <a href="#capabilities">Capabilities</a>
+          </div>
+          <div class="colo-col">
+            <h3>Studio</h3>
+            <p>36.85°S 174.76°E</p>
+            <p>— and wherever the work is</p>
+            <p>Est. MMXXV</p>
+          </div>
+        </div>
+
+        <div class="colo-foot mono">
+          <span>© MMXXV RMH Designs — between the screen and the object</span>
+          <span>Set in Archivo &amp; IBM Plex · built on a 12-column grid</span>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- SPEC-SHEET READOUTS -->
+  <div class="readout scroll mono" aria-hidden="true">
+    <span class="sig">⌗</span> <span class="val tnum">000%</span> · <span class="sec">Hero</span>
+  </div>
+  <div class="readout ptr mono" aria-hidden="true">Ptr <span class="val tnum">0000,0000</span></div>
+
+  <script src="main.js"></script>
+</body>
+</html>
