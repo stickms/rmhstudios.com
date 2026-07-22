@@ -11,7 +11,6 @@
 
 import { useRef, useEffect, useCallback, useState, useImperativeHandle, forwardRef, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import type ReactPlayerType from 'react-player';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { emit, syncClock } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
@@ -46,7 +45,7 @@ export interface VideoPlayerHandle {
 
 const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
   function VideoPlayer({ url, isHost, isLeader = isHost, onEnded }, ref) {
-  const playerRef = useRef<ReactPlayerType>(null);
+  const playerRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoState = useRmhTubeStore((s) => s.room?.videoState);
   const masterVolume = useRmhTubeStore((s) => s.settings.masterVolume);
@@ -92,16 +91,9 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
   useImperativeHandle(ref, () => ({
     togglePiP: async () => {
-      const internal = playerRef.current?.getInternalPlayer();
-      if (!internal) return;
-
-      // Get the actual HTMLVideoElement (may be the internal player itself or nested)
-      const videoEl: HTMLVideoElement | null =
-        internal instanceof HTMLVideoElement
-          ? internal
-          : internal.getIframe?.()
-            ? null // YouTube iframes cannot use PiP directly via this API
-            : (internal as HTMLVideoElement);
+      const videoEl = playerRef.current;
+      // YouTube is iframe-backed and cannot use browser-native PiP directly.
+      if (!videoEl || (url && detectMediaType(url) === 'youtube')) return;
 
       if (!videoEl || typeof videoEl.requestPictureInPicture !== 'function') return;
 
@@ -128,7 +120,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         // Fullscreen may not be available
       }
     },
-  }), []);
+  }), [url]);
 
   // ─── Leader: Periodic state report ─────────────────────────────
 
@@ -137,24 +129,12 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
   const reportHostState = useCallback(() => {
     const player = playerRef.current;
     if (!player) return;
-    const internal = player.getInternalPlayer();
-
-    let actualRate = 1;
-    let playing = false;
-    if (internal instanceof HTMLMediaElement) {
-      actualRate = internal.playbackRate;
-      playing = !internal.paused && !internal.ended;
-    } else if (internal && typeof internal.getPlayerState === 'function') {
-      // YouTube: 1 = PLAYING, 3 = BUFFERING
-      actualRate = typeof internal.getPlaybackRate === 'function' ? (internal.getPlaybackRate() ?? 1) : 1;
-      playing = internal.getPlayerState() === 1;
-    } else {
-      playing = useRmhTubeStore.getState().room?.videoState.playing ?? false;
-    }
+    const actualRate = player.playbackRate || 1;
+    const playing = !player.paused && !player.ended;
 
     emit(C2S.SYNC_HOST_STATE, {
       playing,
-      currentTime: player.getCurrentTime() ?? 0,
+      currentTime: player.currentTime || 0,
       playbackRate: actualRate,
       timestamp: getServerNow(),
     });
@@ -177,15 +157,14 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const vs = useRmhTubeStore.getState().room?.videoState;
     if (!vs) return;
 
-    const internal = player.getInternalPlayer();
-    const isMedia = internal instanceof HTMLMediaElement;
     const roomSpeed = vs.playbackRate || 1;
+    const canNudge = !!url && detectMediaType(url) === 'direct';
 
     // Don't fight a throttled/stalled element.
     if ((hiddenRef.current || bufferingRef.current) && !force) return;
 
     const target = extrapolate(vs, getServerNow());
-    const localTime = player.getCurrentTime() ?? 0;
+    const localTime = player.currentTime || 0;
     const drift = target - localTime;
     const absDrift = Math.abs(drift);
 
@@ -194,18 +173,18 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     if (hardSeek) {
       forceResyncRef.current = false;
       // Restore the room speed (undo any nudge) and snap to the live position.
-      if (isMedia && nudgeActiveRef.current) {
-        internal.playbackRate = roomSpeed;
+      if (nudgeActiveRef.current) {
+        player.playbackRate = roomSpeed;
         nudgeActiveRef.current = false;
       }
-      if (absDrift > 0.25 || force) player.seekTo(Math.max(0, target), 'seconds');
+      if (absDrift > 0.25 || force) player.currentTime = Math.max(0, target);
       return;
     }
 
     if (absDrift <= SYNC_SOFT_TOLERANCE_S) {
       // In sync — make sure any nudge is reverted.
-      if (isMedia && nudgeActiveRef.current) {
-        internal.playbackRate = roomSpeed;
+      if (nudgeActiveRef.current) {
+        player.playbackRate = roomSpeed;
         nudgeActiveRef.current = false;
       }
       return;
@@ -214,12 +193,12 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     // Mid-band: gently nudge playback rate to close the gap without a jump.
     // Only HTML5 media supports fine-grained rates; YouTube/Twitch use discrete
     // rates, so for those we leave the small drift to the hard-seek threshold.
-    if (isMedia) {
+    if (canNudge) {
       const factor = drift > 0 ? 1 + SYNC_NUDGE_RATE : 1 - SYNC_NUDGE_RATE;
-      internal.playbackRate = roomSpeed * factor;
+      player.playbackRate = roomSpeed * factor;
       nudgeActiveRef.current = true;
     }
-  }, [isLeader, ready]);
+  }, [isLeader, ready, url]);
 
   useEffect(() => {
     if (isLeader) return;
@@ -257,12 +236,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         // without a gesture), surface the tap-to-resync CTA.
         setTimeout(() => {
           correct(true);
-          const internal = playerRef.current?.getInternalPlayer();
-          const paused = internal instanceof HTMLMediaElement
-            ? internal.paused
-            : internal && typeof internal.getPlayerState === 'function'
-              ? internal.getPlayerState() !== 1
-              : false;
+          const paused = playerRef.current?.paused ?? false;
           const roomPlaying = useRmhTubeStore.getState().room?.videoState.playing;
           if (paused && roomPlaying) setNeedsResync(true);
         }, 400);
@@ -360,129 +334,62 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     setNeedsResync(false);
     emit(C2S.SYNC_REQUEST, {});
     forceResyncRef.current = true;
-    const internal = playerRef.current?.getInternalPlayer();
+    const internal = playerRef.current;
     // This runs inside a user gesture, so resuming is permitted on mobile.
     try {
-      if (internal instanceof HTMLMediaElement) {
-        void internal.play();
-      } else if (internal && typeof internal.playVideo === 'function') {
-        internal.playVideo();
-      }
+      if (internal) void internal.play();
     } catch {
       // Resume may still be blocked; the hard-seek below keeps position correct.
     }
     setTimeout(() => correct(true), 200);
   }, [correct]);
 
-  // ─── Captions: Toggle via YouTube internal player API ────────
+  // ─── Captions: Toggle via the v3 media-element text-track API ────────
   useEffect(() => {
     if (!ready || !url) return;
-    const internal = playerRef.current?.getInternalPlayer();
-    if (!internal) return;
+    const player = playerRef.current;
+    if (!player) return;
 
-    const isYouTube = detectMediaType(url) === 'youtube';
-    if (isYouTube && typeof internal.loadModule === 'function') {
-      if (captionsEnabled) {
-        internal.loadModule('captions');
-      } else {
-        internal.unloadModule('captions');
-      }
+    for (const track of Array.from(player.textTracks)) {
+      track.mode = captionsEnabled ? 'showing' : 'disabled';
     }
   }, [captionsEnabled, ready, url]);
 
   // ─── Sync native player volume/captions back to store ─────────
   useEffect(() => {
     if (!ready || !url) return;
-    const internal = playerRef.current?.getInternalPlayer();
-    if (!internal) return;
-
-    const mediaType = detectMediaType(url);
+    const player = playerRef.current;
+    if (!player) return;
     const cleanups: (() => void)[] = [];
 
-    if (mediaType === 'youtube') {
-      // YouTube volume change event
-      if (typeof internal.addEventListener === 'function') {
-        const onVolumeChange = (e: { data: { volume: number; muted: boolean } }) => {
-          const vol = e.data.volume / 100;
-          const m = e.data.muted;
+    const onVolumeChange = () => {
+      const vol = player.volume;
+      const m = player.muted;
 
-          // Skip echoes from our own prop update
-          if (Math.abs(vol - volumeRef.current.volume) < 0.01 && m === volumeRef.current.muted) return;
+      // Skip echoes from our own prop update
+      if (Math.abs(vol - volumeRef.current.volume) < 0.01 && m === volumeRef.current.muted) return;
 
-          // Update local state immediately so ReactPlayer stays in sync
-          nativeAdjustingRef.current = true;
-          volumeRef.current = { volume: vol, muted: m };
-          setPlayerVolume(vol);
-          setPlayerMuted(m);
+      nativeAdjustingRef.current = true;
+      volumeRef.current = { volume: vol, muted: m };
+      setPlayerVolume(vol);
+      setPlayerMuted(m);
 
-          // Debounce the store update to prevent feedback loop
-          clearTimeout(volumeDebounceRef.current);
-          volumeDebounceRef.current = setTimeout(() => {
-            nativeAdjustingRef.current = false;
-            updateSettings({ masterVolume: vol, muted: m });
-          }, 200);
-        };
-        internal.addEventListener('onVolumeChange', onVolumeChange);
-        cleanups.push(() => {
-          try { internal.removeEventListener('onVolumeChange', onVolumeChange); } catch {}
-        });
-      }
+      clearTimeout(volumeDebounceRef.current);
+      volumeDebounceRef.current = setTimeout(() => {
+        nativeAdjustingRef.current = false;
+        updateSettings({ masterVolume: vol, muted: m });
+      }, 200);
+    };
+    player.addEventListener('volumechange', onVolumeChange);
+    cleanups.push(() => player.removeEventListener('volumechange', onVolumeChange));
 
-      // Poll for caption changes (YouTube has no caption toggle event)
-      if (typeof internal.getOptions === 'function') {
-        const id = setInterval(() => {
-          try {
-            const opts = internal.getOptions();
-            if (opts?.includes('captions')) {
-              const track = internal.getOption('captions', 'track');
-              const isOn = Boolean(track?.languageCode);
-              const { captionsEnabled: current } = useRmhTubeStore.getState().settings;
-              if (isOn !== current) {
-                updateSettings({ captionsEnabled: isOn });
-              }
-            }
-          } catch {}
-        }, 1000);
-        cleanups.push(() => clearInterval(id));
-      }
-    } else if (internal instanceof HTMLMediaElement) {
-      // HTML5 volume change
-      const onVolumeChange = () => {
-        const vol = internal.volume;
-        const m = internal.muted;
-
-        // Skip echoes from our own prop update
-        if (Math.abs(vol - volumeRef.current.volume) < 0.01 && m === volumeRef.current.muted) return;
-
-        // Update local state immediately so ReactPlayer stays in sync
-        nativeAdjustingRef.current = true;
-        volumeRef.current = { volume: vol, muted: m };
-        setPlayerVolume(vol);
-        setPlayerMuted(m);
-
-        // Debounce the store update to prevent feedback loop
-        clearTimeout(volumeDebounceRef.current);
-        volumeDebounceRef.current = setTimeout(() => {
-          nativeAdjustingRef.current = false;
-          updateSettings({ masterVolume: vol, muted: m });
-        }, 200);
-      };
-      internal.addEventListener('volumechange', onVolumeChange);
-      cleanups.push(() => internal.removeEventListener('volumechange', onVolumeChange));
-
-      // HTML5 caption track change
-      if (internal.textTracks) {
-        const onTrackChange = () => {
-          const hasActive = Array.from(internal.textTracks).some(t => t.mode === 'showing');
-          const { captionsEnabled: current } = useRmhTubeStore.getState().settings;
-          if (hasActive !== current) {
-            updateSettings({ captionsEnabled: hasActive });
-          }
-        };
-        internal.textTracks.addEventListener('change', onTrackChange);
-        cleanups.push(() => internal.textTracks.removeEventListener('change', onTrackChange));
-      }
-    }
+    const onTrackChange = () => {
+      const hasActive = Array.from(player.textTracks).some(t => t.mode === 'showing');
+      const { captionsEnabled: current } = useRmhTubeStore.getState().settings;
+      if (hasActive !== current) updateSettings({ captionsEnabled: hasActive });
+    };
+    player.textTracks.addEventListener('change', onTrackChange);
+    cleanups.push(() => player.textTracks.removeEventListener('change', onTrackChange));
 
     return () => cleanups.forEach(fn => fn());
   }, [ready, url, updateSettings]);
@@ -513,7 +420,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       <Suspense fallback={null}>
         <ReactPlayer
           ref={playerRef}
-          url={url}
+          src={url}
           playing={videoState?.playing ?? false}
           playbackRate={videoState?.playbackRate ?? 1}
           controls
@@ -523,18 +430,15 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           height="100%"
           onPlay={handlePlay}
           onPause={handlePause}
-          onSeek={handleSeek}
-          onBuffer={handleBuffer}
-          onBufferEnd={handleBufferEnd}
+          onSeeked={(event) => handleSeek(event.currentTarget.currentTime)}
+          onWaiting={handleBuffer}
+          onPlaying={handleBufferEnd}
           onReady={handleReady}
           onEnded={handleEnded}
           config={{
             youtube: {
-              playerVars: {
-                modestbranding: 1,
-                rel: 0,
-                cc_load_policy: captionsEnabled ? 1 : 0,
-              },
+              rel: 0,
+              cc_load_policy: captionsEnabled ? 1 : 0,
             },
           }}
         />

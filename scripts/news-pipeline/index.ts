@@ -2,7 +2,7 @@
  * RMH Studios Automated News Pipeline
  *
  * Run manually:  npx tsx scripts/news-pipeline/index.ts
- * Cron (VPS):    0 6,20 * * * cd /home/rmhstudios/rmhstudios.com && /home/rmhstudios/.nvm/versions/node/v25.6.1/bin/npx tsx scripts/news-pipeline/index.ts >> /var/log/news-pipeline.log 2>&1
+ * Cron (VPS):    0 6,20 * * * cd /home/rmhstudios/rmhstudios.com && /home/rmhstudios/.nvm/versions/node/v24.18.0/bin/npx tsx scripts/news-pipeline/index.ts >> /var/log/news-pipeline.log 2>&1
  *
  * Required env vars: ANTHROPIC_API_KEY, NEWS_APPROVAL_SECRET, NEWS_DISCORD_WEBHOOK_URL
  */

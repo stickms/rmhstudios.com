@@ -15,6 +15,13 @@
 import type { LiquidTier } from './types';
 import { preferredTierOrder } from './trust';
 
+/** Ordered backend candidates, with policy/accessibility gates applied. */
+export function liquidTierCandidates(): ('webgpu' | 'webgl2')[] {
+  if (liquidGlBlocked()) return [];
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  return preferredTierOrder(ua);
+}
+
 /** True when any accessibility/perf gate forbids the shader layer entirely. */
 export function liquidGlBlocked(): boolean {
   if (typeof window === 'undefined' || typeof document === 'undefined') return true;
@@ -53,15 +60,9 @@ export function webgl2Available(): boolean {
  * blocks or no context is available.
  */
 export async function detectLiquidTier(): Promise<LiquidTier> {
-  if (liquidGlBlocked()) return 'none';
-
-  // WebKit stays on the CSS tier. A compositor/GPU stall can block the same
-  // main thread that owns our watchdog, so attempting either native GPU tier
-  // and hoping to recover is not a reliable safety boundary on iOS Safari.
-  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-  const order = preferredTierOrder(ua);
-
-  for (const tier of order) {
+  // liquidTierCandidates applies both accessibility/performance gates and the
+  // WebKit CSS-only safety policy before either native GPU backend is touched.
+  for (const tier of liquidTierCandidates()) {
     if (tier === 'webgpu') {
       // WebGPU: present AND an adapter resolves.
       const gpu = typeof navigator !== 'undefined' ? navigator.gpu : undefined;

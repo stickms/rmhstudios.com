@@ -7,7 +7,7 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { validateAudioBuffer, validateImageBuffer } from "@/lib/slice-it/upload-validation";
 import { optimizeImage } from "@/lib/image-optimize";
 import { transcodeAudioToAac } from "@/lib/audio/transcode.server";
-import decode from "audio-decode";
+import decode from "@audio/decode";
 
 // Album covers are display-only — a 1024px square WebP is plenty and a fraction
 // of the size of a raw PNG/JPEG upload.
@@ -139,7 +139,21 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
         
         try {
             console.log("Decoding audio on server...");
-            const audioBuffer = await decode(buffer);
+            const decodedAudio = await decode(buffer);
+            const sampleLength = decodedAudio.channelData[0]?.length ?? 0;
+            const audioBuffer = {
+                length: sampleLength,
+                duration: decodedAudio.sampleRate > 0 ? sampleLength / decodedAudio.sampleRate : 0,
+                sampleRate: decodedAudio.sampleRate,
+                numberOfChannels: decodedAudio.channelData.length,
+                getChannelData(channel: number) {
+                    const channelData = decodedAudio.channelData[channel];
+                    if (!channelData) {
+                        throw new RangeError(`Audio channel ${channel} is unavailable`);
+                    }
+                    return channelData;
+                },
+            };
             console.log("Generating beatmap...");
             analysisData = await BeatDetector.generateMap(
                 audioBuffer, 

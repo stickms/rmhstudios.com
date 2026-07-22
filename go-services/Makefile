@@ -6,7 +6,7 @@
 # rewrite (design §5.2) — the Node hubs are the production realtime tier.
 SERVICES := recap doctrine-worker vibe-worker discord-bot
 IMAGE_PREFIX ?= rmhstudios-go
-GO_IMAGE := golang:1.23-alpine
+GO_IMAGE := golang:1.23.12-alpine
 MODCACHE := rmhgo-modcache
 BUILDCACHE := rmhgo-buildcache
 

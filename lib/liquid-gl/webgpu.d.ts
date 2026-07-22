@@ -43,6 +43,8 @@ declare global {
   interface GPUDevice {
     readonly queue: GPUQueue;
     readonly limits: GPUSupportedLimits;
+    readonly lost: Promise<unknown>;
+    addEventListener(type: 'uncapturederror', listener: (event: Event) => void): void;
     createShaderModule(descriptor: { code: string }): GPUShaderModule;
     createBuffer(descriptor: {
       size: number;
@@ -50,10 +52,9 @@ declare global {
       mappedAtCreation?: boolean;
     }): GPUBuffer;
     createBindGroupLayout(descriptor: unknown): GPUBindGroupLayout;
-    createPipelineLayout(descriptor: {
-      bindGroupLayouts: GPUBindGroupLayout[];
-    }): GPUPipelineLayout;
+    createPipelineLayout(descriptor: { bindGroupLayouts: GPUBindGroupLayout[] }): GPUPipelineLayout;
     createRenderPipeline(descriptor: unknown): GPURenderPipeline;
+    createRenderPipelineAsync?(descriptor: unknown): Promise<GPURenderPipeline>;
     createBindGroup(descriptor: unknown): GPUBindGroup;
     createCommandEncoder(): GPUCommandEncoder;
     destroy(): void;

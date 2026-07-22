@@ -16,12 +16,14 @@
 
 /**
  * Bump this whenever the GL renderers or this trust logic change. It is the value
- * persisted under {@link FAIL_KEY}: a device that recorded a failure is only kept
- * on CSS while the stored value still matches — so shipping a GL fix (new version)
- * automatically clears every stale block and lets those devices re-attempt. This
- * stands in for an app/build version (none is injected client-side today).
+ * persisted under {@link FAIL_KEY}: a matching version pauses retries for a short
+ * cooldown. Shipping a GL fix (new version) automatically clears stale blocks,
+ * and the cooldown lets transient driver failures recover without a release.
  */
-export const GL_TRUST_VERSION = '1';
+export const GL_TRUST_VERSION = '2';
+
+/** A failed driver gets another hidden, verified-frame attempt after this cooldown. */
+export const FAILURE_COOLDOWN_MS = 30 * 60_000;
 
 /** Clean probation frames required before `html.liquid-gl` is set (canvas revealed). */
 export const VERIFY_FRAMES = 5;
@@ -132,18 +134,40 @@ export function preferredTierOrder(ua: string): ('webgpu' | 'webgl2')[] {
 export function isBlockedByPriorFailure(
   version: string,
   get: (k: string) => string | null,
+  now = Date.now(),
 ): boolean {
   try {
-    return get(FAIL_KEY) === version;
+    const raw = get(FAIL_KEY);
+    if (!raw) return false;
+    const record = JSON.parse(raw) as { version?: unknown; failedAt?: unknown };
+    return (
+      record.version === version &&
+      typeof record.failedAt === 'number' &&
+      now - record.failedAt >= 0 &&
+      now - record.failedAt < FAILURE_COOLDOWN_MS
+    );
   } catch {
     return false;
   }
 }
 
-/** Persist a GL failure for this version so the next load skips the attempt. */
-export function recordFailure(version: string, set: (k: string, v: string) => void): void {
+/** Persist a timestamped failure so reload loops pause, but transient failures recover. */
+export function recordFailure(
+  version: string,
+  set: (k: string, v: string) => void,
+  now = Date.now(),
+): void {
   try {
-    set(FAIL_KEY, version);
+    set(FAIL_KEY, JSON.stringify({ version, failedAt: now }));
+  } catch {
+    /* private mode / storage disabled — best-effort only */
+  }
+}
+
+/** Remove a stale failure marker once a backend has proved it can render. */
+export function clearFailure(remove: (k: string) => void): void {
+  try {
+    remove(FAIL_KEY);
   } catch {
     /* private mode / storage disabled — best-effort only */
   }
