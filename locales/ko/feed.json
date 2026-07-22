@@ -384,6 +384,7 @@
   "leaderboard-friends": "친구",
   "leaderboard-global": "전체",
   "leaderboard-level": "Lv {{n}}",
+  "leaderboard-scope-aria": "Leaderboard scope",
   "leaderboard-subtitle": "누적 XP 기준으로 순위가 매겨집니다. 게시, 플레이, 학습 등으로 XP를 획득하세요.",
   "leaderboard-xp": "XP",
   "learn-more": "자세히 알아보기",

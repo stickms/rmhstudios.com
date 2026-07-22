@@ -12,7 +12,7 @@ import { join } from 'node:path';
  * `components/` + `app/routes/` that FAILS when new drift appears, so future work
  * can't reintroduce a bespoke tab strip past review.
  *
- * Three rules (each failure prints the offending file:line + this pointer):
+ * Four rules (each failure prints the offending file:line + this pointer):
  *   1. `role="tablist"` may only live in the shared renderer
  *      (`components/ui/liquid-tabs.tsx`). Everything else must ride `LiquidTabs`.
  *   2. No underline-active-tab pattern: an element with `aria-selected` must not
@@ -21,9 +21,23 @@ import { join } from 'node:path';
  *   3. Tab-capsule `layoutId` props may only live in sanctioned files — the
  *      renderer plus the sidebar's flowing nav capsule. Any other inline
  *      `layoutId` capsule is a hand-rolled tab strip that should be `LiquidTabs`.
+ *   4. (§17.5) No conditional accent-underline bar: an element that is `absolute`
+ *      + anchored to the bottom (`bottom-0`) + a hairline height (`h-px`/`h-0.5`/
+ *      `h-1`) + `bg-site-accent` is an active-tab underline indicator — the exact
+ *      shape RMHCoinsPage / LeaderboardColumn hand-rolled with NO tab semantics,
+ *      which is why rules 1–3 (they police `role="tablist"` / `aria-selected` /
+ *      `layoutId`) never saw them. This class-string signature is reliable and
+ *      low-false-positive (a badge like login.tsx's `-bottom-0.5 size-7` does not
+ *      match — it is neither `bottom-0` nor a hairline height).
  *
  * These are SOURCE checks (no build) so they run in the normal suite and fail the
  * moment someone re-forks a tab strip.
+ *
+ * MANUAL-REVIEW RULE (not executable — no reliable low-false-positive grep exists):
+ * a role-less switcher that indicates its active slot by ANY means other than the
+ * rule-4 underline shape (e.g. a conditional accent PILL, a segmented control, a
+ * `flex-1` button row with an active tint) still belongs on `LiquidTabs`. Reviewers
+ * must catch those by eye; rule 4 only nails the most common escapee shape.
  */
 
 const ROOT = process.cwd();
@@ -120,10 +134,16 @@ function enclosingTag(src: string, idx: number): string {
 
 type Violation = { file: string; line: number; detail: string };
 
-function scanAll(): { tablist: Violation[]; underline: Violation[]; layoutId: Violation[] } {
+function scanAll(): {
+  tablist: Violation[];
+  underline: Violation[];
+  layoutId: Violation[];
+  accentBar: Violation[];
+} {
   const tablist: Violation[] = [];
   const underline: Violation[] = [];
   const layoutId: Violation[] = [];
+  const accentBar: Violation[] = [];
 
   // A bottom-border marker (border-b / -2 / -4 / -[..]) but NOT border-b-0.
   const borderBottom = /\bborder-b(?!-0)(?:-(?:2|4|\[[^\]]*\]))?(?![\w-])/;
@@ -132,6 +152,13 @@ function scanAll(): { tablist: Violation[]; underline: Violation[]; layoutId: Vi
   const ariaSelected = /aria-selected/g;
   const roleTablist = /role=(["'])tablist\1/g;
   const layoutIdProp = /\blayoutId\s*=\s*[{"]/g;
+  // Rule 4 (§17.5) — the conditional accent-underline bar. `bg-site-accent` (not
+  // -dim/-fg), enclosed in a tag that is also `absolute`, anchored `bottom-0` (a
+  // real word token, so `-bottom-0.5` badges are excluded), with a hairline height.
+  const accentFill = /\bbg-site-accent(?![\w-])/g;
+  const isAbsolute = /(?<![\w-])absolute(?![\w-])/;
+  const bottomZero = /(?<![\w.-])bottom-0(?![\w.-])/;
+  const hairline = /\bh-(?:px|0\.5|1)(?![\d.])/;
 
   for (const file of FILES) {
     const src = readFileSync(join(ROOT, file), 'utf8');
@@ -162,8 +189,19 @@ function scanAll(): { tablist: Violation[]; underline: Violation[]; layoutId: Vi
         });
       }
     }
+
+    while ((m = accentFill.exec(src))) {
+      const tag = enclosingTag(src, m.index);
+      if (isAbsolute.test(tag) && bottomZero.test(tag) && hairline.test(tag)) {
+        accentBar.push({
+          file,
+          line: lineAt(src, m.index),
+          detail: 'conditional accent-underline bar (hand-rolled active-tab indicator)',
+        });
+      }
+    }
   }
-  return { tablist, underline, layoutId };
+  return { tablist, underline, layoutId, accentBar };
 }
 
 function report(label: string, v: Violation[]): string {
@@ -175,7 +213,7 @@ function report(label: string, v: Violation[]): string {
 }
 
 describe('design consistency — one tab-strip grammar (§16.2)', () => {
-  const { tablist, underline, layoutId } = scanAll();
+  const { tablist, underline, layoutId, accentBar } = scanAll();
 
   it('scans a non-trivial set of production sources', () => {
     // Guards the walker itself — a broken path would make every rule vacuously pass.
@@ -193,5 +231,9 @@ describe('design consistency — one tab-strip grammar (§16.2)', () => {
 
   it('tab-capsule layoutId props live only in sanctioned files', () => {
     expect(layoutId, report('Ad-hoc tab-capsule layoutId', layoutId)).toEqual([]);
+  });
+
+  it('no conditional accent-underline bar (§17.5 hand-rolled active-tab indicator)', () => {
+    expect(accentBar, report('Conditional accent-underline bar', accentBar)).toEqual([]);
   });
 });

@@ -384,6 +384,7 @@
   "leaderboard-friends": "الأصدقاء",
   "leaderboard-global": "عالمي",
   "leaderboard-level": "المستوى {{n}}",
+  "leaderboard-scope-aria": "Leaderboard scope",
   "leaderboard-subtitle": "مرتب حسب نقاط الخبرة الإجمالية. اكسب نقاط الخبرة عبر النشر واللعب والدراسة والمزيد.",
   "leaderboard-xp": "نقاط الخبرة",
   "learn-more": "اعرف المزيد",

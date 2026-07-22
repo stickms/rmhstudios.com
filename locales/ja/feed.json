@@ -384,6 +384,7 @@
   "leaderboard-friends": "友達",
   "leaderboard-global": "グローバル",
   "leaderboard-level": "Lv {{n}}",
+  "leaderboard-scope-aria": "Leaderboard scope",
   "leaderboard-subtitle": "累計XPでランク付けされます。投稿、プレイ、学習などでXPを獲得できます。",
   "leaderboard-xp": "XP",
   "learn-more": "詳しく見る",

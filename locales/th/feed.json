@@ -384,6 +384,7 @@
   "leaderboard-friends": "เพื่อน",
   "leaderboard-global": "ทั่วโลก",
   "leaderboard-level": "เลเวล {{n}}",
+  "leaderboard-scope-aria": "Leaderboard scope",
   "leaderboard-subtitle": "จัดอันดับตาม XP สะสมตลอดกาล รับ XP ได้จากการโพสต์ เล่นเกม เรียนรู้ และอื่น ๆ",
   "leaderboard-xp": "XP",
   "learn-more": "เรียนรู้เพิ่มเติม",

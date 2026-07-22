@@ -384,6 +384,7 @@
   "leaderboard-friends": "Arkadaşlar",
   "leaderboard-global": "Genel",
   "leaderboard-level": "Sv {{n}}",
+  "leaderboard-scope-aria": "Leaderboard scope",
   "leaderboard-subtitle": "Toplam XP'ye göre sıralanır. Gönderi paylaşarak, oyun oynayarak, çalışarak ve daha fazlasıyla XP kazanın.",
   "leaderboard-xp": "XP",
   "learn-more": "Daha fazla bilgi",

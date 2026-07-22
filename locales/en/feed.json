@@ -384,6 +384,7 @@
   "leaderboard-friends": "Friends",
   "leaderboard-global": "Global",
   "leaderboard-level": "Lv {{n}}",
+  "leaderboard-scope-aria": "Leaderboard scope",
   "leaderboard-subtitle": "Ranked by lifetime XP. Earn XP by posting, playing, studying, and more.",
   "leaderboard-xp": "XP",
   "learn-more": "Learn more",

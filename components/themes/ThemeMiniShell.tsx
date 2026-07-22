@@ -44,7 +44,10 @@ export function ThemeMiniShell({
       aria-hidden
       style={{ ...vars, background: 'var(--site-canvas)' } as React.CSSProperties}
       className={cn(
-        'pointer-events-none relative isolate overflow-hidden rounded-site select-none',
+        // §17.3: `contain: layout paint` isolates each mini shell's recalc/repaint
+        // so a grid of them (or a root theme-preview swap) can't cascade a
+        // full-document style/layout storm through every glass surface inside them.
+        'pointer-events-none relative isolate overflow-hidden rounded-site select-none [contain:layout_paint]',
         size === 'lg' ? 'min-h-[320px] p-4' : 'h-[132px] p-2',
         className,
       )}
