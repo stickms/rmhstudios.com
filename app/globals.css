@@ -1111,6 +1111,56 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
   .glass-sheen-hover:hover {
     animation: glass-sheen-once 0.9s cubic-bezier(0.22, 1, 0.36, 1);
   }
+
+  /* Mobile glass needs a stronger opacity floor: the smaller viewport places
+     text directly over more of the moving aurora, and iOS's safety tier disables
+     the aside blur carrier. Keep the material translucent, but never so clear
+     that page content competes with navigation, headers, cards, or menus. */
+  @media (max-width: 767.98px) {
+    .glass-fill {
+      background: color-mix(
+        in srgb,
+        var(--site-surface-opaque) clamp(24%, calc(34% * var(--glass-user-tint, 1)), 46%),
+        var(--site-glass-tint)
+      );
+    }
+    .glass-pane {
+      background-color: color-mix(
+        in srgb,
+        var(--site-surface-opaque) clamp(34%, calc(46% * var(--glass-user-tint, 1)), 62%),
+        var(--site-glass-tint)
+      );
+    }
+    .glass-chrome {
+      background-color: color-mix(
+        in srgb,
+        var(--site-bg) clamp(58%, calc(72% * var(--glass-user-tint, 1)), 90%),
+        transparent
+      );
+    }
+    .glass-chrome[data-scrolled] {
+      background-color: color-mix(
+        in srgb,
+        var(--site-bg) clamp(70%, calc(82% * var(--glass-user-tint, 1)), 94%),
+        transparent
+      );
+    }
+    .glass-chrome--aside {
+      background-color: color-mix(
+        in srgb,
+        var(--site-bg) clamp(78%, calc(88% * var(--glass-user-tint, 1)), 96%),
+        transparent
+      );
+    }
+    .glass-overlay {
+      max-width: calc(100dvw - 24px);
+      background-color: color-mix(
+        in srgb,
+        var(--site-bg) clamp(76%, calc(86% * var(--glass-user-tint, 1)), 96%),
+        transparent
+      );
+    }
+  }
 }
 
 /* Touch / coarse pointers (§4.35): background-attachment: fixed is unreliable on
@@ -1602,7 +1652,10 @@ html.readable-font body {
    toolbar height (100lvh − 100dvh) on top — verified on-device that it stacks a
    second bar's worth of space and floats the dock ~100px too high. */
 :root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
 
   /* Overhang for the mobile drawer's glass so it reaches the PHYSICAL screen
      bottom. No CSS viewport unit can express that region: 100dvh stops at the

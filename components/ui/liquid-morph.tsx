@@ -76,6 +76,9 @@ const OPACITY_CAP = 0.7; //  seen for most of the motion, not glimpsed at peak s
 // `activeKey`/resize/GL-toggle change.
 const SETTLE_FRAMES = 6;
 const MOVE_EPS = 0.05; // px — below this per-axis delta the capsule is at rest
+// Hold the renderer out of its 30fps idle tier briefly after the latest scroll
+// event. This covers momentum-scroll gaps without leaving work running at rest.
+const SCROLL_ACTIVE_MS = 96;
 
 interface LiquidMorphOptions {
   /** Ref to the OUTER `layoutId` capsule element (the projected box we sample). */
@@ -183,6 +186,7 @@ export function useLiquidMorph({
   const rafRef = useRef(0);
   const settleRef = useRef(0);
   const prevBox = useRef({ x: 0, y: 0, w: 0, h: 0 });
+  const scrollActiveUntil = useRef(0);
   const kickRef = useRef<() => void>(() => {});
 
   const sampleRef = useRef<() => boolean>(() => false);
@@ -211,13 +215,14 @@ export function useLiquidMorph({
 
     if (glActive) {
       const moving = Math.abs(v.get()) > 40;
+      const scrolling = performance.now() < scrollActiveUntil.current;
       capBody.set({
         cx: c.left + c.width / 2,
         cy: c.top + c.height / 2,
         hw: c.width / 2,
         hh: c.height / 2,
         radius: Math.min(c.width, c.height) / 2,
-        active: moving,
+        active: moving || scrolling,
       });
       const dd = dropD.get();
       dropBody.set({
@@ -226,7 +231,7 @@ export function useLiquidMorph({
         hw: dd / 2,
         hh: dd / 2,
         radius: dd / 2,
-        active: moving,
+        active: moving || scrolling,
       });
     }
 
@@ -243,8 +248,9 @@ export function useLiquidMorph({
     p.w = c.width;
     p.h = c.height;
     const dropSettled =
-      Math.abs(dropCx.get() - cx.get()) <= MOVE_EPS && Math.abs(dropCy.get() - cy.get()) <= MOVE_EPS;
-    return moved || !dropSettled;
+      Math.abs(dropCx.get() - cx.get()) <= MOVE_EPS &&
+      Math.abs(dropCy.get() - cy.get()) <= MOVE_EPS;
+    return moved || !dropSettled || performance.now() < scrollActiveUntil.current;
   };
 
   useEffect(() => {
@@ -264,6 +270,14 @@ export function useLiquidMorph({
     kickRef.current = kick;
     kick(); // sample the initial rest position once, then idle
     const onWake = () => kick();
+    const onScroll = () => {
+      scrollActiveUntil.current = performance.now() + SCROLL_ACTIVE_MS;
+      // Scroll is delivered before paint. Sample immediately so the renderer's
+      // next rAF sees current viewport coordinates rather than drawing one stale
+      // frame and visibly chasing the DOM at 60/120Hz.
+      sampleRef.current();
+      kick();
+    };
     window.addEventListener('resize', onWake, { passive: true });
     // §17.4 scroll anchoring: the GL body is drawn in VIEWPORT coords, so a scroll
     // moves the capsule element but leaves the (idle) shader drawing its glass at the
@@ -273,12 +287,12 @@ export function useLiquidMorph({
     // then idles again after SETTLE_FRAMES (§16.4 zero-reads-at-rest preserved).
     // `capture` catches scrolls in nested/inner containers too; the squash path stays
     // inert because mx/my are underlay-relative (both scroll together → no velocity).
-    window.addEventListener('scroll', onWake, { passive: true, capture: true });
+    window.addEventListener('scroll', onScroll, { passive: true, capture: true });
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = 0;
       window.removeEventListener('resize', onWake);
-      window.removeEventListener('scroll', onWake, { capture: true });
+      window.removeEventListener('scroll', onScroll, { capture: true });
     };
     // Stable loop; `sampleRef.current` is refreshed each render so it stays current.
   }, []);

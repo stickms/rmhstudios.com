@@ -24,7 +24,6 @@ import {
   MAX_IMAGE_ALT_LENGTH,
 } from '@/lib/rmhark-schema';
 import { clearComposeDraft, useComposeDraftAutosave } from '@/hooks/useComposeDraft';
-import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 
 const MAX_IMAGES = 4;
 
@@ -78,7 +77,6 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent = '' }: 
   });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
-  useMenuViewportFit(menuOpen, menuPopRef);
   const { prependItem } = useFeedStore();
   const { data: session } = authClient.useSession();
   const { resolved: resolvedUser } = useResolvedUser();

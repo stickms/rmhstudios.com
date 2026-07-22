@@ -46,6 +46,7 @@ import { createPortal } from 'react-dom';
 import { m as motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { EASE } from '@/lib/motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 import { useLiquidActive, useLiquidBody, useLiquidGroup } from '@/hooks/useLiquidBody';
 import {
   FALLBACK_POP_DURATION_S,
@@ -134,6 +135,9 @@ export function useLiquidPop({
   // two bodies while the pop animates and skip the `.lg-goo` portal below. Their
   // geometry comes from the same cached-rect motion values (zero layout reads).
   const glActive = useLiquidActive();
+  // Central visual-viewport clamp: every current and future liquid popover gets
+  // mobile edge/safe-area protection without per-consumer positioning code.
+  useMenuViewportFit(open, panelRef, [], { margin: 12 });
   const group = useLiquidGroup();
   const budBody = useLiquidBody({ kind: 'bud', group, enabled: glActive && active });
   const discBody = useLiquidBody({ kind: 'droplet', group, enabled: glActive && active });
