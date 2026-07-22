@@ -77,8 +77,11 @@ const OPACITY_CAP = 0.7; //  seen for most of the motion, not glimpsed at peak s
 const SETTLE_FRAMES = 6;
 const MOVE_EPS = 0.05; // px — below this per-axis delta the capsule is at rest
 // Hold the renderer out of its 30fps idle tier briefly after the latest scroll
-// event. This covers momentum-scroll gaps without leaving work running at rest.
-const SCROLL_ACTIVE_MS = 96;
+// input/event. Wheel and touch input can move an elastically overscrolled layer
+// without changing scrollTop (and therefore without emitting `scroll`), so they
+// must keep viewport-space shader bodies anchored through the boundary bounce.
+const SCROLL_ACTIVE_MS = 180;
+const ELASTIC_SETTLE_MS = 360;
 
 interface LiquidMorphOptions {
   /** Ref to the OUTER `layoutId` capsule element (the projected box we sample). */
@@ -281,14 +284,18 @@ export function useLiquidMorph({
     kickRef.current = kick;
     kick(); // sample the initial rest position once, then idle
     const onWake = () => kick();
-    const onScroll = () => {
-      scrollActiveUntil.current = performance.now() + SCROLL_ACTIVE_MS;
+    const onScrollActivity = (settleMs = SCROLL_ACTIVE_MS) => {
+      scrollActiveUntil.current = performance.now() + settleMs;
       // Scroll is delivered before paint. Sample immediately so the renderer's
       // next rAF sees current viewport coordinates rather than drawing one stale
       // frame and visibly chasing the DOM at 60/120Hz.
       sampleRef.current();
       kick();
     };
+    const onScroll = () => onScrollActivity();
+    const onWheel = () => onScrollActivity(ELASTIC_SETTLE_MS);
+    const onTouchMove = () => onScrollActivity();
+    const onTouchEnd = () => onScrollActivity(ELASTIC_SETTLE_MS);
     window.addEventListener('resize', onWake, { passive: true });
     // §17.4 scroll anchoring: the GL body is drawn in VIEWPORT coords, so a scroll
     // moves the capsule element but leaves the (idle) shader drawing its glass at the
@@ -296,14 +303,25 @@ export function useLiquidMorph({
     // is therefore a WAKE signal, same class as resize/activeKey: it re-arms the
     // sampler, which re-reads the capsule's viewport box and re-anchors the GL body,
     // then idles again after SETTLE_FRAMES (§16.4 zero-reads-at-rest preserved).
-    // `capture` catches scrolls in nested/inner containers too; the squash path stays
-    // inert because mx/my are underlay-relative (both scroll together → no velocity).
+    // `capture` catches scrolls in nested/inner containers too. Wheel/touchmove are
+    // also wake signals because a scroller already at its boundary may rubber-band
+    // visually without changing scrollTop or firing `scroll`. touchend keeps the
+    // sampler alive through the short elastic snap-back. The squash path stays inert
+    // because mx/my are underlay-relative (both scroll together → no velocity).
     window.addEventListener('scroll', onScroll, { passive: true, capture: true });
+    window.addEventListener('wheel', onWheel, { passive: true, capture: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: true, capture: true });
+    window.addEventListener('touchend', onTouchEnd, { passive: true, capture: true });
+    window.addEventListener('touchcancel', onTouchEnd, { passive: true, capture: true });
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = 0;
       window.removeEventListener('resize', onWake);
       window.removeEventListener('scroll', onScroll, { capture: true });
+      window.removeEventListener('wheel', onWheel, { capture: true });
+      window.removeEventListener('touchmove', onTouchMove, { capture: true });
+      window.removeEventListener('touchend', onTouchEnd, { capture: true });
+      window.removeEventListener('touchcancel', onTouchEnd, { capture: true });
     };
     // Stable loop; `sampleRef.current` is refreshed each render so it stays current.
   }, []);
