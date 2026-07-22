@@ -12,5 +12,7 @@
   "move-up": "Move up{{name}}",
   "next-page": "Next page",
   "page-of": "Page {{page}} of {{total}}",
-  "prev-page": "Previous page"
+  "prev-page": "Previous page",
+  "scroll-back": "Scroll left",
+  "scroll-forward": "Scroll right"
 }

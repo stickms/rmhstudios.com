@@ -1,23 +1,22 @@
 /**
- * Motion design tokens — the shared vocabulary for the Apple-style UI overhaul.
- *
- * Every value here is transform/opacity only. Durations are in seconds
- * (framer-motion's unit). These freeze once Phase 2 lands; the seven
- * restyling tracks build against them, so keep additions minimal.
+ * Compatibility aliases for the component-level motion primitives. The actual
+ * timing source of truth is `lib/motion.ts`; keeping these aliases means older
+ * Reveal consumers get the same quick cadence as newer surfaces.
  */
 import type { Variants } from 'framer-motion';
+import { DURATION, EASE } from '@/lib/motion';
 
 /** Ease-out-expo: fast start, long soft settle — the signature Apple curve. */
-export const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
+export const EASE_OUT_EXPO = EASE.emphasized;
 
 /** Durations (seconds). */
-export const DUR_FAST = 0.5;
-export const DUR_BASE = 0.7;
-export const DUR_SLOW = 0.9;
+export const DUR_FAST = DURATION.fast;
+export const DUR_BASE = DURATION.base;
+export const DUR_SLOW = DURATION.slow;
 
 /** Stagger gaps between children (seconds). */
-export const STAGGER = 0.08;
-export const STAGGER_SLOW = 0.12;
+export const STAGGER = 0.04;
+export const STAGGER_SLOW = 0.06;
 
 /** Fade + rise: opacity 0→1, y 16→0. The default section-reveal motion. */
 export const fadeRise: Variants = {

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Hash, Loader2 } from 'lucide-react';
 import { VirtualPostList } from './VirtualPostList';
 import { ColumnHeader } from './ColumnHeader';
-import { Reveal } from '@/components/motion';
+import { AsyncReveal } from '@/components/motion';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -70,22 +70,23 @@ export function TagColumn({
     <div className="min-h-screen">
       <ColumnHeader icon={Hash} title={tag} />
 
-      {loading ? (
+      {loading && (
         <div className="flex justify-center py-20">
           <Spinner />
         </div>
-      ) : items.length === 0 ? (
-        <Reveal>
+      )}
+      <AsyncReveal show={!loading}>
+        {items.length === 0 ? (
           <EmptyState
             description={t('no-posts-with-tag', {
               tag,
               defaultValue: 'No posts with #{{tag}} yet.',
             })}
           />
-        </Reveal>
-      ) : (
-        <VirtualPostList items={items} />
-      )}
+        ) : (
+          <VirtualPostList items={items} />
+        )}
+      </AsyncReveal>
 
       {hasMore && (
         <div className="flex justify-center py-4">

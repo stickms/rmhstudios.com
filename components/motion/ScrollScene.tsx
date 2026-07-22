@@ -13,21 +13,17 @@
  *
  * Under reduced motion the stage is NOT pinned: children render stacked in
  * natural flow with `progress` fixed at 1 (end state), no sticky, no forced
- * viewport height. ScrollScene is forbidden inside infinite-scroll columns.
+ * viewport height. The DOM structure stays identical while that preference is
+ * resolving, so loaded media and child entrances are not restarted.
  *
  * REDUCED-MOTION FALLBACK CONTRACT (intended, load-bearing — read before use):
  *   (a) The reduced-motion fallback renders children statically stacked in
  *       natural flow with `progress` fixed at 1 (the animation's end state) —
  *       no sticky pin, no forced viewport height.
- *   (b) `useReducedMotion` returns false on the server AND on the first client
- *       render, so ScrollScene SSR-renders the pinned tree and only swaps to
- *       the static stacked tree AFTER mount (the hook resolves client-side via
- *       effect). Reduced-motion users therefore see a ONE-TIME layout settle on
- *       first paint as the pinned tree is replaced by the stacked one. Pages
- *       using ScrollScene MUST tolerate this post-mount swap/layout settle.
- *   (c) There is NO React hydration mismatch: the first client render matches
- *       the SSR output exactly (both render the pinned tree). The swap to the
- *       static tree happens post-hydration inside an effect, not during it.
+ *   (b) `useReducedMotion` returns false on the server and first client render.
+ *       When it resolves, only the existing wrappers' styles and MotionValue
+ *       change; descendants keep their React identity.
+ *   (c) There is no hydration mismatch: the first client render matches SSR.
  */
 import type { ReactNode } from 'react';
 import { createContext, useContext, useRef } from 'react';
@@ -68,26 +64,28 @@ export function ScrollScene({ screens = 3, className, children }: ScrollScenePro
   // A static MotionValue used only in the reduced-motion path (end state).
   const staticProgress = useMotionValue(1);
 
-  if (reduced) {
-    return (
-      <ScrollSceneCtx.Provider value={staticProgress}>
-        <div className={className}>{children(staticProgress)}</div>
-      </ScrollSceneCtx.Provider>
-    );
-  }
+  const progress = reduced ? staticProgress : scrollYProgress;
 
   return (
-    <ScrollSceneCtx.Provider value={scrollYProgress}>
-      <div ref={ref} className={className} style={{ height: `${screens * 100}vh` }}>
+    <ScrollSceneCtx.Provider value={progress}>
+      <div
+        ref={ref}
+        className={className}
+        style={reduced ? undefined : { height: `${screens * 100}vh` }}
+      >
         <motion.div
-          style={{
-            position: 'sticky',
-            top: 0,
-            height: '100svh',
-            overflow: 'hidden',
-          }}
+          style={
+            reduced
+              ? undefined
+              : {
+                  position: 'sticky',
+                  top: 0,
+                  height: '100svh',
+                  overflow: 'hidden',
+                }
+          }
         >
-          {children(scrollYProgress)}
+          {children(progress)}
         </motion.div>
       </div>
     </ScrollSceneCtx.Provider>

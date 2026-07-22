@@ -2,6 +2,7 @@
   "all": "Lahat",
   "article-count_one": "{{count}} artikulo",
   "article-count_other": "{{count}} mga artikulo",
+  "categories-label": "News categories",
   "clear": "Alisin",
   "clear-all-filters": "Alisin Lahat ng Filter",
   "clear-filters": "Alisin ang mga filter",

@@ -18,6 +18,8 @@ import { Link, useNavigate, useSearch, Await } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { PostListSkeleton } from '@/components/ui/skeletons/PostCardSkeleton';
 import type { FeedItem as FeedItemType } from '@/lib/feed-types';
+import { AsyncReveal, Reveal } from '@/components/motion';
+import { useStableListMotion } from '@/hooks/useStableListMotion';
 
 // The authored-thread composer is signed-in-only and rarely the first thing a
 // reader reaches for, so it loads as its own chunk instead of riding in the feed
@@ -64,9 +66,14 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
   const urlQuery = (useSearch({ strict: false }) as { q?: string }).q ?? null;
   const [searchInput, setSearchInput] = useState(urlQuery ?? '');
   const [userResults, setUserResults] = useState<SearchUser[]>([]);
+  const enteringUsers = useStableListMotion(
+    userResults.map((user) => user.id),
+    { skipFirstAddition: true },
+  );
   const searchRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const userDebounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const userRequestRef = useRef<AbortController | null>(null);
 
   // Connect to real-time feed SSE stream
   useFeedSSE();
@@ -84,22 +91,30 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
     }, 300);
 
     clearTimeout(userDebounceRef.current);
+    userRequestRef.current?.abort();
     const trimmed = value.trim();
     if (!trimmed) {
       setUserResults([]);
       return;
     }
     userDebounceRef.current = setTimeout(() => {
-      fetch(`/api/users/search?q=${encodeURIComponent(trimmed)}`)
+      const controller = new AbortController();
+      userRequestRef.current = controller;
+      fetch(`/api/users/search?q=${encodeURIComponent(trimmed)}`, { signal: controller.signal })
         .then((res) => res.json())
-        .then((data) => setUserResults(data.users ?? []))
-        .catch(() => setUserResults([]));
+        .then((data) => {
+          if (!controller.signal.aborted) setUserResults(data.users ?? []);
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) setUserResults([]);
+        });
     }, 300);
   };
 
   const clearSearch = () => {
     setSearchInput('');
     setUserResults([]);
+    userRequestRef.current?.abort();
     navigate({ to: '/', search: {} });
     searchRef.current?.focus();
   };
@@ -115,6 +130,15 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
   useEffect(() => {
     setSearchInput(urlQuery ?? '');
   }, [urlQuery]);
+
+  useEffect(
+    () => () => {
+      clearTimeout(debounceRef.current);
+      clearTimeout(userDebounceRef.current);
+      userRequestRef.current?.abort();
+    },
+    [],
+  );
 
   const handleModeChange = (newMode: 'feed' | 'friends') => {
     setMode(newMode);
@@ -197,48 +221,46 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
         </div>
 
         {/* User search results */}
-        {userResults.length > 0 && (
-          <section
-            className="glass-fill mx-3 overflow-hidden"
-            aria-label={t('people', { defaultValue: 'People' })}
-          >
-            <div className="px-4 py-2">
-              <p className="text-xs font-semibold text-site-text-dim uppercase tracking-wide mb-1">
-                {t('people', { defaultValue: 'People' })}
-              </p>
-            </div>
-            {userResults.map((user) => (
-              <Link
-                key={user.id}
-                to={`/u/${user.handle || user.id}` as string}
-                className="flex min-h-12 items-center gap-3 border-t border-site-border px-4 py-2.5 transition-colors first:border-t-0 hover:bg-site-surface-hover"
-              >
-                <UserAvatar
-                  src={user.image ?? undefined}
-                  alt={user.name || t('user-alt', { defaultValue: 'User' })}
-                  size={32}
-                  fallbackName={user.name ?? undefined}
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1">
-                    <span className="font-semibold text-sm text-site-text truncate">
-                      {user.name || t('unknown-user', { defaultValue: 'Unknown' })}
-                    </span>
-                    {user.isVerified && (
-                      <BadgeCheck className="w-3.5 h-3.5 text-site-success shrink-0" aria-hidden />
-                    )}
-                    {user.isAdmin && (
-                      <ShieldCheck className="w-3.5 h-3.5 text-site-accent shrink-0" aria-hidden />
-                    )}
-                  </div>
-                  {user.handle && (
-                    <span className="text-xs text-site-text-dim">@{user.handle}</span>
+        <AsyncReveal
+          show={userResults.length > 0}
+          as="section"
+          className="glass-fill mx-3 overflow-hidden"
+          aria-label={t('people', { defaultValue: 'People' })}
+        >
+          <div className="px-4 py-2">
+            <p className="text-xs font-semibold text-site-text-dim uppercase tracking-wide mb-1">
+              {t('people', { defaultValue: 'People' })}
+            </p>
+          </div>
+          {userResults.map((user) => (
+            <Link
+              key={user.id}
+              to={`/u/${user.handle || user.id}` as string}
+              className={`flex min-h-12 items-center gap-3 border-t border-site-border px-4 py-2.5 transition-colors first:border-t-0 hover:bg-site-surface-hover ${enteringUsers.has(user.id) ? 'content-item-enter' : ''}`}
+            >
+              <UserAvatar
+                src={user.image ?? undefined}
+                alt={user.name || t('user-alt', { defaultValue: 'User' })}
+                size={32}
+                fallbackName={user.name ?? undefined}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold text-sm text-site-text truncate">
+                    {user.name || t('unknown-user', { defaultValue: 'Unknown' })}
+                  </span>
+                  {user.isVerified && (
+                    <BadgeCheck className="w-3.5 h-3.5 text-site-success shrink-0" aria-hidden />
+                  )}
+                  {user.isAdmin && (
+                    <ShieldCheck className="w-3.5 h-3.5 text-site-accent shrink-0" aria-hidden />
                   )}
                 </div>
-              </Link>
-            ))}
-          </section>
-        )}
+                {user.handle && <span className="text-xs text-site-text-dim">@{user.handle}</span>}
+              </div>
+            </Link>
+          ))}
+        </AsyncReveal>
 
         {/* Admin announcements, pinned above the composer */}
         {!search && <FeedAnnouncements />}
@@ -286,13 +308,15 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
           <Suspense fallback={<PostListSkeleton count={6} />}>
             <Await promise={initialFeed}>
               {(feed) => (
-                <FeedList
-                  onSwitchToForYou={() => handleModeChange('feed')}
-                  initialItems={feed.items}
-                  initialCursor={feed.nextCursor}
-                  initialHasMore={feed.hasMore}
-                  initialMutedWords={feed.mutedWords}
-                />
+                <Reveal y={0}>
+                  <FeedList
+                    onSwitchToForYou={() => handleModeChange('feed')}
+                    initialItems={feed.items}
+                    initialCursor={feed.nextCursor}
+                    initialHasMore={feed.hasMore}
+                    initialMutedWords={feed.mutedWords}
+                  />
+                </Reveal>
               )}
             </Await>
           </Suspense>

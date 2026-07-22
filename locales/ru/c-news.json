@@ -2,6 +2,7 @@
   "all": "Все",
   "article-count_one": "{{count}} статья",
   "article-count_other": "{{count}} статей",
+  "categories-label": "News categories",
   "clear": "Очистить",
   "clear-all-filters": "Очистить все фильтры",
   "clear-filters": "Очистить фильтры",

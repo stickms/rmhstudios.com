@@ -410,6 +410,7 @@ export function DailyPuzzlesHub() {
             value={filter}
             onChange={(id) => setFilter(id as Filter)}
             size="sm"
+            scroll
             aria-label={t('filter-label', { defaultValue: 'Filter puzzles' })}
           />
 

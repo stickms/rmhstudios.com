@@ -40,9 +40,19 @@ export function InboxColumn({
   const { count: unreadNotifications } = useNotificationCount(!!session);
 
   const tabs: { id: InboxTab; label: string; icon: typeof MessageCircle; badge?: number }[] = [
-    { id: 'messages', label: t('inbox-tab-messages', { defaultValue: 'Messages' }), icon: MessageCircle, badge: unreadMessages },
+    {
+      id: 'messages',
+      label: t('inbox-tab-messages', { defaultValue: 'Messages' }),
+      icon: MessageCircle,
+      badge: unreadMessages,
+    },
     { id: 'groups', label: t('inbox-tab-groups', { defaultValue: 'Groups' }), icon: Users },
-    { id: 'notifications', label: t('inbox-tab-notifications', { defaultValue: 'Notifications' }), icon: Bell, badge: unreadNotifications },
+    {
+      id: 'notifications',
+      label: t('inbox-tab-notifications', { defaultValue: 'Notifications' }),
+      icon: Bell,
+      badge: unreadNotifications,
+    },
   ];
 
   return (
@@ -61,13 +71,14 @@ export function InboxColumn({
       {/* §15.1/§5.45: inbox sections as a unified sheet + flowing-capsule strip,
           standalone below the title chrome (was a flat-pill row inside it). The
           w-fit pill scrolls in the shared tab-sheet track on narrow screens. */}
-      <div className="my-4 px-2 tab-sheet-scroll md:px-3">
+      <div className="my-4 px-2 md:px-3">
         <LiquidTabs
           size="sm"
           aria-label={t('inbox-sections-label', { defaultValue: 'Inbox sections' })}
           value={tab}
           onChange={(id) => setTab(id as InboxTab)}
           tabs={tabs}
+          scroll
         />
       </div>
 

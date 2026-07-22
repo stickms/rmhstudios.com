@@ -2,6 +2,7 @@
   "all": "Alla",
   "article-count_one": "{{count}} artikel",
   "article-count_other": "{{count}} artiklar",
+  "categories-label": "News categories",
   "clear": "Rensa",
   "clear-all-filters": "Rensa alla filter",
   "clear-filters": "Rensa filter",

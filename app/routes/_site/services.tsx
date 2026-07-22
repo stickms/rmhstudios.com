@@ -133,19 +133,21 @@ function ServicesPage() {
   const activeName = t(active.navKey, { ns: 'feed', defaultValue: active.name });
 
   return (
-    <PageLayout title={t('nav-services', { ns: 'feed', defaultValue: 'Services' })}>
+    <PageLayout
+      title={t('nav-services', { ns: 'feed', defaultValue: 'Services' })}
+      description={t('services-subtitle', {
+        defaultValue: 'Housing, career, and transportation tools built around the community.',
+      })}
+    >
       <div className="px-4 pt-3 pb-12">
-        <p className="mb-4 max-w-xl text-sm text-site-text-muted">
-          {t('services-subtitle', {
-            defaultValue: 'Our standalone product verticals — pick one to dive in.',
-          })}
-        </p>
-
         {/* §5.45 tab sheet — its own glass pill, below the title. */}
         <LiquidTabs
           tabs={tabs}
           value={tab}
           onChange={setTab}
+          idBase="services"
+          fullWidth
+          scroll
           aria-label={t('nav-services', { ns: 'feed', defaultValue: 'Services' })}
         />
 
@@ -153,7 +155,7 @@ function ServicesPage() {
         <section
           id={`services-panel-${active.id}`}
           role="tabpanel"
-          aria-label={activeName}
+          aria-labelledby={`services-tab-${active.id}`}
           className="glass-pane rounded-site mt-4 p-6 sm:p-8"
         >
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start">

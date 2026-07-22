@@ -11,17 +11,24 @@ import { Clock, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useRecents } from '@/hooks/useRecents';
 import { openCommandPalette } from '@/components/site/command-palette-bus';
+import { HorizontalScroller } from '@/components/ui/horizontal-scroller';
+import { AsyncReveal } from '@/components/motion';
+import { useStableListMotion } from '@/hooks/useStableListMotion';
 
 export function JumpBackIn() {
   const { t } = useTranslation('feed');
   const recents = useRecents();
-
-  if (recents.length === 0) return null;
+  const enteringItems = useStableListMotion(
+    recents.map((recent) => recent.href),
+    { skipFirstAddition: true },
+  );
 
   return (
-    <section
+    <AsyncReveal
+      show={recents.length > 0}
+      as="section"
       aria-label={t('jump-back-in', { defaultValue: 'Jump back in' })}
-      className="border-b border-site-border px-4 py-3"
+      className="glass-fill mx-3 mt-3 rounded-site p-3"
     >
       <div className="mb-2 flex items-center gap-2">
         <Clock className="h-4 w-4 text-site-accent" aria-hidden />
@@ -29,13 +36,16 @@ export function JumpBackIn() {
           {t('jump-back-in', { defaultValue: 'Jump back in' })}
         </h2>
       </div>
-      <div className="-mx-1 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <HorizontalScroller
+        aria-label={t('jump-back-recent', { defaultValue: 'Recently opened games and apps' })}
+        surface="none"
+      >
         {recents.map((r) => (
           <Link
             key={r.href}
             to={r.href}
             title={r.title}
-            className="group relative flex h-16 w-32 shrink-0 flex-col justify-end overflow-hidden rounded-site border border-site-border p-2"
+            className={`group relative flex h-16 w-32 shrink-0 flex-col justify-end overflow-hidden rounded-site border border-site-border p-2 ${enteringItems.has(r.href) ? 'content-item-enter' : ''}`}
           >
             {/* Prefer the game/app's own thumbnail; fall back to its gradient. */}
             {r.image ? (
@@ -70,7 +80,7 @@ export function JumpBackIn() {
             {t('jump-back-all-label', { defaultValue: 'All' })}
           </span>
         </button>
-      </div>
-    </section>
+      </HorizontalScroller>
+    </AsyncReveal>
   );
 }

@@ -61,16 +61,21 @@ function ArcadePage() {
   };
 
   const tabs: { id: ArcadeTab; label: string; icon: typeof Gamepad2 }[] = [
-    { id: 'challenges', label: t('arcade-tab-challenges', { defaultValue: 'Challenges' }), icon: Gamepad2 },
-    { id: 'leaderboard', label: t('arcade-tab-leaderboard', { defaultValue: 'Leaderboard' }), icon: Trophy },
+    {
+      id: 'challenges',
+      label: t('arcade-tab-challenges', { defaultValue: 'Challenges' }),
+      icon: Gamepad2,
+    },
+    {
+      id: 'leaderboard',
+      label: t('arcade-tab-leaderboard', { defaultValue: 'Leaderboard' }),
+      icon: Trophy,
+    },
   ];
 
   return (
     <>
-      <AnimatedMain
-        className="w-full min-w-0 pb-dock"
-        targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
-      >
+      <AnimatedMain className="w-full min-w-0 pb-dock" targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}>
         {/* Mobile-only header; the tab bar below is the primary chrome on every
             breakpoint, and each tab's content renders header-less beneath it so
             no big section header stacks under the tabs. */}
@@ -79,12 +84,14 @@ function ArcadePage() {
         {/* §15.1: unified sheet + flowing-capsule tab strip (was a border-b
             underline row). This is the arcade's primary chrome on every
             breakpoint; content renders header-less beneath it. */}
-        <div className="my-3 px-2 tab-sheet-scroll md:px-3">
+        <div className="my-3 px-2 md:px-3">
           <LiquidTabs
             aria-label={title}
             value={tab}
             onChange={(id) => setTab(id as ArcadeTab)}
             tabs={tabs}
+            fullWidth
+            scroll
           />
         </div>
 

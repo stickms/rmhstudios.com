@@ -6,6 +6,7 @@
   "error": "Couldn't update saves",
   "folder-created": "Folder created",
   "folder-error": "Couldn't create the folder",
+  "folders-label": "Saved item folders",
   "folder-name": "Folder name",
   "load-error": "Couldn't load your saves",
   "load-more": "Load more",

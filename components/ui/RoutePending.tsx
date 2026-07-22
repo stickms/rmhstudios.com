@@ -1,7 +1,10 @@
-import { useContext } from 'react';
+'use client';
+
+import { useContext, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ShellLayoutContext } from '@/components/feed/shell-context';
 import { DEFAULT_WIDTH } from '@/lib/layout-width';
+import { markPageEnterComplete } from '@/lib/motion';
 
 /**
  * Default `pendingComponent` for the router (see `app/router.tsx`).
@@ -27,6 +30,16 @@ export function RoutePending() {
   // routes (which own their whole viewport).
   const inShell = useContext(ShellLayoutContext);
 
+  useEffect(
+    () => () => {
+      // Suspense/pending UI already communicated that navigation is underway.
+      // Passive unmount cleanup runs after React commits the destination DOM, so
+      // it can be marked immediately before the global page entrance can replay.
+      markPageEnterComplete();
+    },
+    [],
+  );
+
   return inShell ? <SitePagePending /> : <GenericPending />;
 }
 
@@ -34,23 +47,23 @@ export function RoutePending() {
  *  geometry so `_site` routes don't reflow when their content arrives. */
 function SitePagePending() {
   return (
-    <>
+    <div data-route-pending="" className="contents">
       {/* Center column — same box as `AnimatedMain` at its default width (a plain
           div, not another <main>, since the `_site` layout already owns the
           #main-content landmark). */}
       <div
         role="status"
         aria-label="Loading"
-        className="w-full min-w-0 border-r border-site-border pb-dock animate-in fade-in duration-200"
+        className="w-full min-w-0 pb-dock"
         style={{ maxWidth: DEFAULT_WIDTH }}
       >
         {/* Sticky-header-height placeholder so content below doesn't jump. */}
-        <div className="h-18 border-b border-site-border flex items-center px-4">
+        <div className="mx-2 mb-2 mt-2 flex h-18 items-center rounded-site glass-chrome px-4 shadow-site-sm md:mx-3 md:mb-3 md:mt-3">
           <Skeleton shimmer className="h-6 w-40" />
         </div>
-        <div className="p-4 space-y-8">
+        <div className="space-y-3 px-3">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="flex gap-3">
+            <div key={i} className="glass-fill flex gap-3 rounded-site p-4">
               <Skeleton shimmer className="size-10 shrink-0 rounded-full" />
               <div className="min-w-0 flex-1 space-y-3">
                 <Skeleton shimmer className="h-3.5 w-40" />
@@ -65,8 +78,8 @@ function SitePagePending() {
       </div>
       {/* Right-sidebar gutter — matches `PageLayout`'s non-wide default so the
           column stays put once the sidebar streams in. */}
-      <div className="hidden lg:block w-80 shrink-0" />
-    </>
+      <div className="hidden w-72 shrink-0 xl:block 2xl:w-80" />
+    </div>
   );
 }
 
@@ -76,7 +89,8 @@ function GenericPending() {
     <div
       role="status"
       aria-label="Loading"
-      className="mx-auto w-full max-w-2xl px-4 py-8 animate-in fade-in duration-200"
+      data-route-pending=""
+      className="mx-auto w-full max-w-2xl px-4 py-8"
     >
       <div className="flex gap-3">
         <Skeleton shimmer className="size-10 shrink-0 rounded-full" />

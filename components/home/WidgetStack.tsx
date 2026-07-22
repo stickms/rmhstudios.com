@@ -121,25 +121,23 @@ export function WidgetStack({ className }: { className?: string }) {
               }
               className="[&>div:last-child]:p-0"
             >
-              {reduced ? (
-                collapsed ? null : <div className="px-4 py-4">{body}</div>
-              ) : (
-                <AnimatePresence initial={false}>
-                  {collapsed ? null : (
-                    <motion.div
-                      key="body"
-                      variants={PANEL}
-                      initial="closed"
-                      animate="open"
-                      exit="closed"
-                      transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
-                      className="overflow-hidden"
-                    >
-                      <div className="px-4 py-4">{body}</div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              )}
+              <AnimatePresence initial={false}>
+                {collapsed ? null : (
+                  <motion.div
+                    key="body"
+                    variants={PANEL}
+                    initial={reduced ? false : 'closed'}
+                    animate="open"
+                    exit="closed"
+                    transition={
+                      reduced ? { duration: 0 } : { duration: 0.22, ease: [0.32, 0.72, 0, 1] }
+                    }
+                    className="overflow-hidden"
+                  >
+                    <div className="px-4 py-4">{body}</div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </WidgetFrame>
           );
         })}

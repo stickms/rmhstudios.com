@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Bookmark, Loader2 } from 'lucide-react';
 import { VirtualPostList } from './VirtualPostList';
 import { ColumnHeader } from './ColumnHeader';
-import { Reveal } from '@/components/motion';
+import { AsyncReveal } from '@/components/motion';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import type { FeedItem } from '@/lib/feed-types';
@@ -56,27 +56,30 @@ export function BookmarksColumn({
     <div className="min-h-screen">
       <ColumnHeader icon={Bookmark} title={t('bookmarks-title', { defaultValue: 'Bookmarks' })} />
 
-      {loading ? (
+      {loading && (
         <div className="flex justify-center py-20">
           <Spinner />
         </div>
-      ) : items.length === 0 ? (
-        <Reveal className="flex flex-col items-center justify-center gap-3 px-6 py-24 text-center">
-          <div className="rounded-site border border-site-border bg-site-surface p-4">
-            <Bookmark className="h-8 w-8 text-site-text-muted" />
-          </div>
-          <p className="font-medium text-site-text">
-            {t('no-bookmarks-yet', { defaultValue: 'No bookmarks yet' })}
-          </p>
-          <p className="max-w-xs text-sm text-site-text-muted">
-            {t('no-bookmarks-hint', {
-              defaultValue: 'Save posts from the “…” menu and they’ll show up here.',
-            })}
-          </p>
-        </Reveal>
-      ) : (
-        <VirtualPostList items={items} />
       )}
+      <AsyncReveal show={!loading}>
+        {items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 px-6 py-24 text-center">
+            <div className="rounded-site border border-site-border bg-site-surface p-4">
+              <Bookmark className="h-8 w-8 text-site-text-muted" />
+            </div>
+            <p className="font-medium text-site-text">
+              {t('no-bookmarks-yet', { defaultValue: 'No bookmarks yet' })}
+            </p>
+            <p className="max-w-xs text-sm text-site-text-muted">
+              {t('no-bookmarks-hint', {
+                defaultValue: 'Save posts from the “…” menu and they’ll show up here.',
+              })}
+            </p>
+          </div>
+        ) : (
+          <VirtualPostList items={items} />
+        )}
+      </AsyncReveal>
 
       {hasMore && (
         <div className="flex justify-center py-4">

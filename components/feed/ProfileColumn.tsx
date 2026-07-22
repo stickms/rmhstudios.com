@@ -529,7 +529,7 @@ export function ProfileColumn({
 
       {/* Tab bar → shared LiquidTabs (§5.4). handleTabChange keeps the lazy
           liked-posts fetch on first switch. */}
-      <div className="px-3 py-3 tab-sheet-scroll">
+      <div className="px-3 py-3">
         <LiquidTabs
           tabs={[
             {
@@ -543,6 +543,7 @@ export function ProfileColumn({
           ]}
           value={tab}
           onChange={(id) => handleTabChange(id as ProfileTab)}
+          scroll
         />
       </div>
 

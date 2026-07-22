@@ -71,6 +71,7 @@ export function JourneyColumn({
         <ColumnHeader className="px-2 py-2 md:px-2">
           <LiquidTabs
             fullWidth
+            scroll
             sheet={false}
             aria-label={t('journey-sections-label', { defaultValue: 'Journey sections' })}
             value={tab}

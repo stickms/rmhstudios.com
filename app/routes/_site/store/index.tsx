@@ -59,7 +59,11 @@ export const Route = createFileRoute('/_site/store/')({
   head: () => ({
     meta: [
       { title: 'Store — RMH Studios' },
-      { name: 'description', content: 'Membership tiers, the cosmetics shop, and the player marketplace — all in one place.' },
+      {
+        name: 'description',
+        content:
+          'Membership tiers, the cosmetics shop, and the player marketplace — all in one place.',
+      },
     ],
   }),
   validateSearch: (search: Record<string, unknown>): { tab?: StoreTab } => {
@@ -116,13 +120,19 @@ function Store() {
             value={tab}
             onChange={setTab}
             idBase="store"
+            fullWidth
+            scroll
             aria-label={t('store-title', { defaultValue: 'Store' })}
           />
         </div>
 
         {tab === 'shop' && (
           <div role="tabpanel" id="store-panel-shop" aria-labelledby="store-tab-shop">
-            <MembershipPanel currentTier={currentTier} returnPath="/store" coinShopAnchorId="coins-shop" />
+            <MembershipPanel
+              currentTier={currentTier}
+              returnPath="/store"
+              coinShopAnchorId="coins-shop"
+            />
             <div id="coins-shop" className="scroll-mt-4 border-t border-site-border">
               <ShopColumn initialData={shop} />
             </div>

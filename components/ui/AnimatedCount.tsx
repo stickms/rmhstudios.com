@@ -14,7 +14,7 @@ interface AnimatedCountProps {
    */
   hideZero?: boolean;
   className?: string;
-  /** Tween duration in ms (default 500). */
+  /** Tween duration in ms (default 280). */
   durationMs?: number;
 }
 
@@ -32,7 +32,7 @@ export function AnimatedCount({
   format = String,
   hideZero = false,
   className,
-  durationMs = 500,
+  durationMs = 280,
 }: AnimatedCountProps) {
   const target = value ?? 0;
   const [display, setDisplay] = useState(target);

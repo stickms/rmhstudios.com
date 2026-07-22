@@ -2,6 +2,7 @@
   "all": "সব",
   "article-count_one": "{{count}}টি নিবন্ধ",
   "article-count_other": "{{count}}টি নিবন্ধ",
+  "categories-label": "News categories",
   "clear": "মুছুন",
   "clear-all-filters": "সব ফিল্টার মুছুন",
   "clear-filters": "ফিল্টার মুছুন",

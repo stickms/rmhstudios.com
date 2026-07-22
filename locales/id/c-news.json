@@ -2,6 +2,7 @@
   "all": "Semua",
   "article-count_one": "{{count}} artikel",
   "article-count_other": "{{count}} artikel",
+  "categories-label": "News categories",
   "clear": "Hapus",
   "clear-all-filters": "Hapus Semua Filter",
   "clear-filters": "Hapus filter",

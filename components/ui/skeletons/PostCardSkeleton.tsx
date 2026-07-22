@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 /** A single feed post / RMHark placeholder. */
 export function PostCardSkeleton() {
   return (
-    <div className="flex gap-3 border-b border-site-border p-4" aria-hidden="true">
+    <div className="glass-fill mx-3 mt-3 flex gap-3 rounded-site p-4" aria-hidden="true">
       <Skeleton className="size-10 shrink-0 rounded-full" />
       <div className="min-w-0 flex-1 space-y-3">
         <div className="flex items-center gap-2">

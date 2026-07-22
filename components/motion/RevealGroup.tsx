@@ -31,19 +31,17 @@ export interface RevealItemProps {
 
 /**
  * A single staggered child. Consumes the parent's `fadeRise` variants — no
- * props needed beyond content. Under reduced motion renders a plain element.
+ * props needed beyond content. Its element type stays stable when the user's
+ * reduced-motion preference resolves after hydration.
  */
 export function RevealItem({ as = 'div', className, children }: RevealItemProps) {
   const reduced = useReducedMotion();
-
-  if (reduced) {
-    const Tag = as as 'div';
-    return <Tag className={className}>{children}</Tag>;
-  }
-
   const MotionTag = motion[as as keyof typeof motion] as typeof motion.div;
+  const variants = reduced
+    ? { hidden: { opacity: 1, y: 0 }, visible: { opacity: 1, y: 0 } }
+    : fadeRise;
   return (
-    <MotionTag className={className} variants={fadeRise}>
+    <MotionTag className={className} variants={variants}>
       {children}
     </MotionTag>
   );
@@ -57,12 +55,6 @@ export function RevealGroup({
   children,
 }: RevealGroupProps) {
   const reduced = useReducedMotion();
-
-  if (reduced) {
-    const Tag = as as 'div';
-    return <Tag className={className}>{children}</Tag>;
-  }
-
   const container: Variants = {
     hidden: {},
     visible: {
@@ -76,7 +68,7 @@ export function RevealGroup({
     <MotionTag
       className={className}
       variants={container}
-      initial="hidden"
+      initial={reduced ? false : 'hidden'}
       whileInView="visible"
       viewport={{ once: true, margin: '-10% 0px' }}
     >

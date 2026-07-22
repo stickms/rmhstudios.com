@@ -17,9 +17,11 @@
 }
 
 /* ── Responsive site shell ──────────────────────────────────────────────────
-   Keep the reading column generous on laptops: the navigation stays an icon
-   rail until 1536px and the contextual rail does not appear until 1280px. The
-   old 1280px expansion squeezed a feed + context rail into less than 600px. */
+   Tablet widths use a compact icon rail. At the ordinary desktop `lg`
+   breakpoint there is enough room for a readable 240px navigation sidebar plus
+   the canonical 648px content column, so labels become visible there rather
+   than waiting until an ultra-wide 2xl display. The context rail narrows at xl
+   and grows back to its full size at 2xl, preserving the reading column. */
 .site-shell {
   display: flex;
   min-height: 100dvh;
@@ -33,7 +35,7 @@
 
 @media (min-width: 768px) {
   .site-shell {
-    max-width: 1600px;
+    max-width: 1760px;
     margin-inline: auto;
     flex-direction: row;
     justify-content: center;
@@ -44,8 +46,8 @@
   .site-shell__rail-slot {
     position: relative;
     display: block;
-    width: 64px;
-    flex: 0 0 64px;
+    width: 72px;
+    flex: 0 0 72px;
   }
 
   .site-shell__rail {
@@ -53,8 +55,11 @@
     top: 0;
     z-index: 30;
     height: 100dvh;
-    width: 64px;
-    overflow: hidden;
+    width: 72px;
+    /* Menus and notification popovers are allowed to leave the rail. The nav
+       itself owns its bounded scrollport, so clipping this ancestor only cuts
+       off legitimate floating UI. */
+    overflow: visible;
   }
 
   .site-shell__rail-glass {
@@ -62,8 +67,25 @@
     height: calc(100% - 16px);
     margin: 8px;
     flex-direction: column;
-    overflow: hidden;
+    min-height: 0;
+    overflow: visible;
     border-radius: var(--site-radius);
+  }
+}
+
+@media (min-width: 1024px) {
+  .site-shell__rail-slot,
+  .site-shell__rail {
+    width: 240px;
+  }
+
+  .site-shell__rail-slot {
+    flex-basis: 240px;
+  }
+
+  .site-shell__rail-glass {
+    height: calc(100% - 20px);
+    margin: 10px;
   }
 }
 
@@ -91,6 +113,21 @@
   .site-shell__rail-glass {
     height: calc(100% - 24px);
     margin: 12px;
+  }
+}
+
+/* A real box on mobile makes the skip-link target focusable and gives every
+   route a predictable inline overflow boundary. Desktop promotes the main to
+   `contents` so the center and context columns remain siblings in the shell. */
+.site-shell__main {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .site-shell__main {
+    display: contents;
   }
 }
 

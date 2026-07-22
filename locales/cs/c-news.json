@@ -2,6 +2,7 @@
   "all": "Vše",
   "article-count_one": "{{count}} článek",
   "article-count_other": "{{count}} článků",
+  "categories-label": "News categories",
   "clear": "Vymazat",
   "clear-all-filters": "Vymazat všechny filtry",
   "clear-filters": "Vymazat filtry",

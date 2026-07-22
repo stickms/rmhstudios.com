@@ -77,7 +77,7 @@ function OnlineNowPill() {
   const idle = useIdleReady();
   const [count, setCount] = useState<number | null>(null);
 
-  // Desktop-only + idle-deferred: this pill sits in the `hidden lg:block`
+  // Desktop-only + idle-deferred: this pill sits in the `hidden xl:block`
   // sidebar, so mobile clients skip the fetch/poll entirely.
   useEffect(() => {
     if (!isDesktop || !idle) return;

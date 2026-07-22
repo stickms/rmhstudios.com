@@ -38,7 +38,7 @@
  *    element that is both sticky and overflow-x drops horizontal touch scroll).
  */
 
-import { useId, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { m as motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -137,6 +137,7 @@ export function LiquidTabs({
 }: LiquidTabsProps) {
   const uid = useId();
   const reduced = useReducedMotion();
+  const listRef = useRef<HTMLElement>(null);
   // useId scopes the capsule's layoutId so multiple LiquidTabs never collide.
   const layoutId = `liquid-tab-${uid}`;
   // §16.2: with `idBase` the tab dom ids are deterministic so callers can wire
@@ -162,6 +163,21 @@ export function LiquidTabs({
   });
 
   const link = Boolean(renderTab);
+  const activeTabId = tabId(value);
+
+  // Route-backed tabs can mount with an active item outside the visible part of
+  // a narrow strip. Bring only that item into the nearest horizontal viewport;
+  // `block: nearest` prevents this from unexpectedly repositioning the page.
+  useEffect(() => {
+    if (!scroll) return;
+    const item = document.getElementById(activeTabId);
+    if (!item || !listRef.current?.contains(item)) return;
+    item.scrollIntoView({
+      behavior: reduced ? 'auto' : 'smooth',
+      block: 'nearest',
+      inline: 'nearest',
+    });
+  }, [activeTabId, reduced, scroll]);
 
   // Roving keyboard nav (WAI-ARIA tabs pattern): ←/→/↑/↓ move, Home/End jump to
   // the ends, and focus follows. Disabled tabs are skipped. Tablist mode only —
@@ -169,7 +185,7 @@ export function LiquidTabs({
   const step = (from: number, dir: 1 | -1) => {
     const n = tabs.length;
     for (let i = 1; i <= n; i++) {
-      const j = ((from + dir * i) % n + n) % n;
+      const j = (((from + dir * i) % n) + n) % n;
       if (!tabs[j].disabled) return j;
     }
     return from;
@@ -195,11 +211,11 @@ export function LiquidTabs({
     requestAnimationFrame(() => document.getElementById(tabId(nextId))?.focus());
   };
 
-  const pad = size === 'sm' ? 'px-3 py-1 text-xs' : 'px-4 py-1.5 text-sm';
+  const pad = size === 'sm' ? 'min-h-9 px-3 py-1 text-xs' : 'min-h-10 px-4 py-1.5 text-sm';
 
   const itemClass = (active: boolean) =>
     cn(
-      'relative inline-flex items-center justify-center gap-1.5 rounded-full font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+      'relative inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-40',
       pad,
       fullWidth && 'flex-1',
       active ? 'text-site-accent' : 'text-site-text-muted hover:text-site-text',
@@ -244,11 +260,7 @@ export function LiquidTabs({
   const innerClass = cn(
     'relative flex items-center gap-1',
     // Scroll overflows inside the sheet; otherwise size to content (or full width).
-    scroll
-      ? 'tab-sheet-scroll w-full min-w-0'
-      : fullWidth
-        ? 'w-full'
-        : 'inline-flex',
+    scroll ? 'tab-sheet-scroll w-full min-w-0' : fullWidth ? 'w-full' : 'inline-flex',
     !sheet && className,
   );
 
@@ -295,12 +307,18 @@ export function LiquidTabs({
   // with roving nav. The morph underlay is an invisible coordinate anchor for
   // tabs; the distracting lagging droplet is disabled above.
   const list = link ? (
-    <nav aria-label={ariaLabel} data-slot="liquid-tabs" className={innerClass}>
+    <nav
+      ref={listRef as React.Ref<HTMLElement>}
+      aria-label={ariaLabel}
+      data-slot="liquid-tabs"
+      className={innerClass}
+    >
       {underlay}
       {items}
     </nav>
   ) : (
     <div
+      ref={listRef as React.Ref<HTMLDivElement>}
       role="tablist"
       aria-label={ariaLabel}
       onKeyDown={onKeyDown}
@@ -321,8 +339,9 @@ export function LiquidTabs({
     <div
       data-slot="liquid-tabs-sheet"
       className={cn(
-        'glass-fill glass-bevel-sm rounded-full p-1',
-        fullWidth ? 'w-full' : 'w-fit',
+        'glass-fill glass-bevel-sm min-w-0 max-w-full rounded-full p-1',
+        scroll && 'overflow-hidden',
+        fullWidth || scroll ? 'w-full' : 'w-fit',
         className,
       )}
     >

@@ -2,6 +2,7 @@
   "all": "所有",
   "article-count_one": "{{count}} 篇文章",
   "article-count_other": "{{count}} 篇文章",
+  "categories-label": "News categories",
   "clear": "清楚",
   "clear-all-filters": "清除所有筛选器",
   "clear-filters": "清除筛选",

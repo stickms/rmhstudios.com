@@ -2,6 +2,7 @@
   "all": "ทั้งหมด",
   "article-count_one": "{{count}} บทความ",
   "article-count_other": "{{count}} บทความ",
+  "categories-label": "News categories",
   "clear": "ล้าง",
   "clear-all-filters": "ล้างตัวกรองทั้งหมด",
   "clear-filters": "ล้างตัวกรอง",

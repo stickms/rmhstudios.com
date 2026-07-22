@@ -194,13 +194,14 @@ export function ShopColumn({
       {/* Category tabs → standalone glass sheet below the hero (§5.45). The pill
           scrolls horizontally in the shared tab-sheet track (overflow + edge fade,
           §5.5x A.4); ARIA/state are unchanged. */}
-      <div className="my-3 px-3 tab-sheet-scroll">
+      <div className="my-3 px-3">
         <LiquidTabs
           size="sm"
           aria-label={t('shop-categories-label', { defaultValue: 'Shop categories' })}
           value={tab}
           onChange={(id) => setTab(id as ShopItemKind)}
           tabs={KIND_ORDER.map((k) => ({ id: k, label: KIND_LABELS[k] }))}
+          scroll
         />
       </div>
 

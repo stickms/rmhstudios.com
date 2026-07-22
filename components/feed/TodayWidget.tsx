@@ -59,7 +59,9 @@ function TaskRow({
       >
         {done ? <Check className="h-3.5 w-3.5" aria-hidden /> : icon}
       </span>
-      <span className={`min-w-0 flex-1 text-sm ${done ? 'text-site-text-muted' : 'text-site-text'}`}>
+      <span
+        className={`min-w-0 flex-1 text-sm ${done ? 'text-site-text-muted' : 'text-site-text'}`}
+      >
         {label}
       </span>
       {hint && <span className="shrink-0 text-xs text-site-text-dim">{hint}</span>}
@@ -84,7 +86,7 @@ export function TodayWidget() {
     }
   }, []);
 
-  // Desktop-only (this lives in the `hidden lg:block` right sidebar) and deferred
+  // Desktop-only (this lives in the `hidden xl:block` right sidebar) and deferred
   // to idle so it doesn't fetch on mobile or contend during hydration.
   useEffect(() => {
     if (session?.user && isDesktop && idle) void load();
@@ -105,9 +107,11 @@ export function TodayWidget() {
           t('freeze-bought', {
             defaultValue: 'Streak freeze bought! You now hold {{count}}.',
             count: body.freezeTokens,
-          })
+          }),
         );
-        setData((d) => (d ? { ...d, streak: { ...d.streak, freezeTokens: body.freezeTokens } } : d));
+        setData((d) =>
+          d ? { ...d, streak: { ...d.streak, freezeTokens: body.freezeTokens } } : d,
+        );
       } else {
         toast.error(body.error ?? t('freeze-failed', { defaultValue: 'Could not buy a freeze.' }));
       }

@@ -47,7 +47,11 @@ export function SiteShell({ children, overlays }: SiteShellProps) {
         </div>
 
         <MobileSidebarShell>
-          <main id="main-content" tabIndex={-1} className="contents page-root">
+          <main
+            id="main-content"
+            tabIndex={-1}
+            className="site-shell__main page-root focus:outline-none"
+          >
             {children}
           </main>
         </MobileSidebarShell>

@@ -112,7 +112,7 @@ export function AchievementsColumn({
       </div>
       <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-site-surface">
         <div
-          className="h-full rounded-full bg-site-accent transition-all"
+          className="h-full rounded-full bg-site-accent transition-[width] duration-300"
           style={{ width: `${pct}%` }}
         />
       </div>
