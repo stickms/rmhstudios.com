@@ -1,6 +1,7 @@
 'use client';
 
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
+import { isWebKit } from '@/lib/liquid-gl/trust';
 
 type ViewTransition = {
   finished: Promise<void>;
@@ -28,6 +29,18 @@ const SKIP_BUDGET_MS = 180;
 // otherwise we navigate plain. That converts the budget from a Chromium-only
 // escape hatch into a universal pre-condition.
 const PRELOAD_BUDGET_MS = 160;
+
+/**
+ * WebKit's View Transition implementation has no `skipTransition()` escape.
+ * If capture or the DOM update wedges, its rendering freeze can outlive every
+ * JS watchdog because those timers share the blocked main thread. Keep the
+ * enhancement on engines where it can be synchronously abandoned; Safari
+ * receives the same navigation and lightweight page/component animations,
+ * just without the native snapshot morph.
+ */
+export function nativeViewTransitionsAllowed(ua: string): boolean {
+  return !isWebKit(ua);
+}
 
 /**
  * Runs a DOM-updating callback inside a scoped View Transition when the browser
@@ -84,7 +97,12 @@ export function runViewTransition(
     return;
   }
   const doc = document as VTDocument;
-  if (typeof doc.startViewTransition !== 'function' || prefersReducedMotion()) {
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  if (
+    typeof doc.startViewTransition !== 'function' ||
+    prefersReducedMotion() ||
+    !nativeViewTransitionsAllowed(ua)
+  ) {
     plain();
     return;
   }

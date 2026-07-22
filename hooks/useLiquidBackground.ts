@@ -55,6 +55,10 @@ export function useLiquidBackground(): void {
     if (typeof window === 'undefined') return;
 
     const root = document.documentElement;
+    // iOS/WebKit uses the static CSS aurora. Moving a fixed, oversized gradient
+    // underneath multiple translucent surfaces can wedge WebKit's compositor;
+    // keeping this hook detached preserves ordinary component animations.
+    if (root.classList.contains('ios-webkit')) return;
     if (root.classList.contains('perf-lite')) return;
     if (root.classList.contains('reduce-motion')) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;

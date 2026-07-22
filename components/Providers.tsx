@@ -39,6 +39,7 @@ import {
 import { useGlassLight } from '@/hooks/useGlassLight';
 import { useLiquidBackground } from '@/hooks/useLiquidBackground';
 import { useIdleReady } from '@/hooks/useIdleReady';
+import { shouldUsePerfLite } from '@/lib/performance-tier';
 import { useLocaleStore, writeLocaleCookie } from '@/stores/localeStore';
 import { applyHtmlLangDir } from '@/lib/i18n/dom';
 import { games } from '@/lib/games';
@@ -264,6 +265,7 @@ export function Providers({
   // via CSS only — no component branches. Chrome keeps its blur (few elements,
   // carry the identity).
   useEffect(() => {
+    const root = document.documentElement;
     const nav = navigator as Navigator & {
       deviceMemory?: number;
       connection?: { saveData?: boolean };
@@ -271,11 +273,20 @@ export function Providers({
     // perf audit §6.4: widened from ≤4GB/≤4-core to ≤6GB/≤6-core so more
     // mid-range devices drop the expensive backdrop blur, and honor the
     // browser's Data Saver / reduced-data signal when present.
-    const lite =
-      (nav.deviceMemory ?? 8) <= 6 ||
-      (navigator.hardwareConcurrency ?? 8) <= 6 ||
-      nav.connection?.saveData === true;
-    document.documentElement.classList.toggle('perf-lite', lite);
+    // iPhones commonly expose six logical cores regardless of device class, so
+    // the generic core-count heuristic classified even current flagship phones
+    // as perf-lite and removed the visible liquid-glass treatment. iOS WebKit has
+    // its own compositor-safe tier: keep the CSS glass material, while the GPU
+    // canvas, native View Transitions, moving aurora and SVG lens are gated at
+    // their respective sources. Explicit Data Saver still wins everywhere.
+    const iosWebKit = root.classList.contains('ios-webkit');
+    const lite = shouldUsePerfLite({
+      deviceMemory: nav.deviceMemory,
+      hardwareConcurrency: navigator.hardwareConcurrency,
+      saveData: nav.connection?.saveData,
+      iosWebKit,
+    });
+    root.classList.toggle('perf-lite', lite);
   }, []);
 
   // Sync the locale store to the SSR-resolved locale and reconcile <html lang/dir>

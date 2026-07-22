@@ -125,10 +125,10 @@ describe('WebKit caution tier (§16.4b.3)', () => {
   const EDGE_DESKTOP =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0';
 
-  it('treats Safari (iOS + macOS) and iOS Chrome as WebKit → WebGL2 only', () => {
+  it('keeps Safari (iOS + macOS) and iOS Chrome on the CSS tier', () => {
     for (const ua of [SAFARI_IOS, SAFARI_MAC, CHROME_IOS]) {
       expect(isWebKit(ua)).toBe(true);
-      expect(preferredTierOrder(ua)).toEqual(['webgl2']);
+      expect(preferredTierOrder(ua)).toEqual([]);
     }
   });
 

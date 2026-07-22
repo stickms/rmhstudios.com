@@ -1330,6 +1330,31 @@ html.perf-lite body::after {
   display: none;
 }
 
+/* iOS/WebKit compositor safety tier. WebKit can wedge the page while compositing
+   an animated fixed gradient through SVG-displaced surfaces; when that happens
+   JS timers and recovery watchdogs cannot run either. Keep the visible CSS glass
+   material (tint, blur, glint and depth) plus ordinary component animations, but
+   make the full-screen backdrop static and remove the expensive displacement /
+   ambient-motion layers so navigation and interaction always retain a frame. */
+html.ios-webkit:not(.app-route) body::before {
+  animation: none;
+  transition: none;
+  will-change: auto;
+  translate: none;
+  transform: scale(1.08);
+}
+html.ios-webkit body::after,
+html.ios-webkit .glass-chrome--aside::before,
+html.ios-webkit .glass-refract::before,
+html.ios-webkit .glass-interactive::after,
+html.ios-webkit .lg-goo {
+  display: none;
+}
+html.ios-webkit .glass-liquid {
+  animation: none;
+  background-image: var(--site-glass-noise);
+}
+
 /* Forced colors / Windows High Contrast strips backgrounds — keep structural
    borders so panes retain their shape; make sure the v2 optics pseudos paint
    nothing (their backgrounds are already stripped, this is belt-and-suspenders). */

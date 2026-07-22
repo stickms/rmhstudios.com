@@ -60,6 +60,8 @@ export function webgl2Available(): boolean {
  * blocks or no context is available.
  */
 export async function detectLiquidTier(): Promise<LiquidTier> {
+  // liquidTierCandidates applies both accessibility/performance gates and the
+  // WebKit CSS-only safety policy before either native GPU backend is touched.
   for (const tier of liquidTierCandidates()) {
     if (tier === 'webgpu') {
       // WebGPU: present AND an adapter resolves.
