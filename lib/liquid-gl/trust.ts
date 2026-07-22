@@ -20,7 +20,7 @@
  * cooldown. Shipping a GL fix (new version) automatically clears stale blocks,
  * and the cooldown lets transient driver failures recover without a release.
  */
-export const GL_TRUST_VERSION = '2';
+export const GL_TRUST_VERSION = '3';
 
 /** A failed driver gets another hidden, verified-frame attempt after this cooldown. */
 export const FAILURE_COOLDOWN_MS = 30 * 60_000;
@@ -106,24 +106,40 @@ export function watchdogFailed(args: {
 /**
  * WebKit detection for the compositor-safe tier. iOS Chrome/Edge/Firefox use
  * WebKit too (their UAs carry `CriOS`/`EdgiOS`/`FxiOS`, not the bare
- * `Chrome`/`Edg` desktop-Blink tokens), so they correctly receive the same
- * CSS-only fallback as Safari.
+ * `Chrome`/`Edg` desktop-Blink tokens). Those UAs lack Safari's authoritative
+ * `Version/x.y` token, so they conservatively remain on the CSS fallback.
  */
 export function isWebKit(ua: string): boolean {
   return /AppleWebKit/.test(ua) && !/\bChrome\/|Chromium|\bEdg\/|OPR\//.test(ua);
 }
 
 /**
+ * Safari 26.0 shipped WebGPU on Apple platforms, but its canvas compositor could
+ * flicker or wedge through 26.3. WebKit fixed that regression in Safari/iOS 26.4.
+ * The OS token cannot be used here because iOS 26 freezes it at `OS 18_6`; the
+ * `Version/x.y` token is the browser release and remains the useful safety gate.
+ */
+export function webKitWebGPUIsSafe(ua: string): boolean {
+  if (!isWebKit(ua)) return false;
+  const match = ua.match(/\bVersion\/(\d+)(?:\.(\d+))?/);
+  if (!match) return false;
+  const major = Number(match[1]);
+  const minor = Number(match[2] ?? 0);
+  return major > 26 || (major === 26 && minor >= 4);
+}
+
+/**
  * Tier attempt order for this UA.
  *
- * WebKit is deliberately CSS-only. A GPU/compositor stall can block the main
- * thread before the verified-frame watchdog gets a chance to run, so trying
- * WebGL2 and recovering afterward is not a safe failure mode on iOS. The CSS
- * liquid treatment remains the supported fallback there; Blink/Gecko retain
+ * Safari 26.4+ can use WebGPU now that WebKit's canvas-compositor regression is
+ * fixed. Older/unknown WebKit releases stay CSS-only: a compositor stall can
+ * block the main thread before the verified-frame watchdog gets a chance to run.
+ * WebKit never falls through to WebGL2 for the same reason. Blink/Gecko retain
  * the normal WebGPU → WebGL2 order.
  */
 export function preferredTierOrder(ua: string): ('webgpu' | 'webgl2')[] {
-  return isWebKit(ua) ? [] : ['webgpu', 'webgl2'];
+  if (!isWebKit(ua)) return ['webgpu', 'webgl2'];
+  return webKitWebGPUIsSafe(ua) ? ['webgpu'] : [];
 }
 
 /**

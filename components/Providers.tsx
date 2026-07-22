@@ -409,8 +409,9 @@ export function Providers({
 
   // Shader-grade liquid layer (§16.1). Initialised after idle from the optional
   // code-split chunk warmed above; it never gates the LCP/load path. It self-gates
-  // (WebGPU→WebGL2→none, off under perf-lite / reduced
-  // motion / high-contrast / reduce-transparency) and, when a tier initialises,
+  // (WebGPU→WebGL2→none, with WebKit WebGPU gated to fixed releases; off
+  // under perf-lite / reduced motion / high-contrast / reduce-transparency) and,
+  // when a tier initialises,
   // sets `html.liquid-gl` so the CSS aurora + goo underlays hide (no double
   // render). When no tier is available the untouched CSS/SVG stack renders.
   useEffect(() => {

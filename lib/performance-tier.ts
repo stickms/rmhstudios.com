@@ -9,9 +9,10 @@ export interface PerformanceTierSignals {
 /**
  * Whether to apply the reduced-cost glass tier.
  *
- * iOS WebKit has a dedicated safe CSS tier, so its commonly reported six-core
- * value must not erase the liquid-glass material on otherwise capable iPhones.
- * An explicit Data Saver request remains authoritative on every platform.
+ * iOS WebKit has dedicated compositor-safe handling (CSS on affected releases,
+ * WebGPU where fixed), so its commonly reported six-core value must not erase
+ * the liquid-glass material on otherwise capable iPhones. An explicit Data Saver
+ * request remains authoritative on every platform.
  */
 export function shouldUsePerfLite(signals: PerformanceTierSignals): boolean {
   if (signals.saveData) return true;
