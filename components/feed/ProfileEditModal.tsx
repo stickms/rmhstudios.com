@@ -1,18 +1,50 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { Camera, X, Check, RotateCcw, Plus } from 'lucide-react';
-import { MAX_PROFILE_LINKS } from '@/lib/profile-schema';
-import { Spinner } from '@/components/ui/spinner';
-import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
-import { ImageCropModal } from './ImageCropModal';
-import { SpotifySongSearch, type SpotifyTrack } from './SpotifySongSearch';
-import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
-import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
-import { useResolvedUser } from '@/components/Providers';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
+import {
+  Camera,
+  Check,
+  Coins,
+  Eye,
+  Image as ImageIcon,
+  Link as LinkIcon,
+  LockKeyhole,
+  Music2,
+  Palette,
+  Plus,
+  RotateCcw,
+  Sparkles,
+  Trash2,
+  UserRound,
+  X,
+} from 'lucide-react';
+
+import { useResolvedUser } from '@/components/Providers';
+import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Select } from '@/components/ui/select';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { Spinner } from '@/components/ui/spinner';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { useConfirm } from '@/components/ui/confirm-dialog';
+import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
+import { MAX_PROFILE_LINKS } from '@/lib/profile-schema';
+import { cn } from '@/lib/utils';
+import { ImageCropModal } from './ImageCropModal';
+import { SpotifySongSearch, type SpotifyTrack } from './SpotifySongSearch';
 
 interface ProfileSongData {
   profileSongSpotifyId: string | null;
@@ -22,22 +54,26 @@ interface ProfileSongData {
   profileSongAlbumArt: string | null;
 }
 
+export interface SavedProfileData extends Partial<ProfileSongData> {
+  displayName?: string | null;
+  handle?: string | null;
+  image?: string | null;
+  bio?: string | null;
+  location?: string | null;
+  website?: string | null;
+  links?: { label: string; url: string }[];
+  bannerUrl?: string | null;
+  tipGoal?: number | null;
+  tipGoalLabel?: string | null;
+  membershipPriceCoins?: number | null;
+  showLikes?: boolean;
+  dmPrivacy?: string;
+}
+
 interface ProfileEditModalProps {
   open: boolean;
   onClose: () => void;
-  onSaved: (data: {
-    displayName?: string | null;
-    handle?: string | null;
-    image?: string | null;
-    bio: string | null;
-    location: string | null;
-    website: string | null;
-    links?: { label: string; url: string }[];
-    bannerUrl?: string | null;
-    membershipPriceCoins?: number | null;
-    showLikes: boolean;
-    dmPrivacy: string;
-  } & ProfileSongData) => void;
+  onSaved: (data: SavedProfileData) => void;
   initial: {
     handle: string | null;
     handleCooldownMs: number;
@@ -57,6 +93,9 @@ interface ProfileEditModalProps {
   } & ProfileSongData;
 }
 
+type EditorSection = 'identity' | 'links' | 'creator' | 'privacy';
+type HandleStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
+
 const MAX_NAME = 50;
 const MAX_BIO = 160;
 const MAX_LOCATION = 100;
@@ -65,17 +104,104 @@ const MAX_AVATAR_MB = 5;
 const MAX_BANNER_MB = 8;
 const MAX_HANDLE = 20;
 
-function formatCooldown(ms: number, t: TFunction<"feed">): string {
+function formatCooldown(ms: number, t: TFunction<'feed'>): string {
   const days = Math.ceil(ms / (1000 * 60 * 60 * 24));
-  if (days <= 1) return t("cooldown-less-than-a-day", { defaultValue: "less than a day" });
-  return t("cooldown-days", { days, defaultValue: "{{days}} days" });
+  if (days <= 1) {
+    return t('cooldown-less-than-a-day', { defaultValue: 'less than a day' });
+  }
+  return t('cooldown-days', { days, defaultValue: '{{days}} days' });
+}
+
+function FieldHeader({
+  htmlFor,
+  label,
+  hint,
+  count,
+}: {
+  htmlFor?: string;
+  label: string;
+  hint?: string;
+  count?: React.ReactNode;
+}) {
+  return (
+    <div className="mb-2 flex items-end justify-between gap-3">
+      <div>
+        {htmlFor ? (
+          <Label htmlFor={htmlFor}>{label}</Label>
+        ) : (
+          <p className="text-sm font-medium text-site-text">{label}</p>
+        )}
+        {hint ? <p className="mt-1 text-xs text-site-text-dim">{hint}</p> : null}
+      </div>
+      {count ? (
+        <span className="shrink-0 font-mono text-xs text-site-text-dim">{count}</span>
+      ) : null}
+    </div>
+  );
+}
+
+function EditorPreview({
+  name,
+  handle,
+  bio,
+  image,
+  banner,
+}: {
+  name: string;
+  handle: string;
+  bio: string;
+  image: string | null;
+  banner: string | null;
+}) {
+  const { t } = useTranslation('feed');
+  return (
+    <div className="glass-fill overflow-hidden rounded-site shadow-site-sm">
+      <div className="relative h-24 overflow-hidden bg-linear-to-br from-site-accent-dim via-site-glass-tint to-site-bg-subtle">
+        {banner ? <img src={banner} alt="" className="size-full object-cover" /> : null}
+        <div
+          className="absolute inset-0 bg-linear-to-t from-site-surface-opaque to-transparent"
+          aria-hidden
+        />
+      </div>
+      <div className="relative px-4 pb-4">
+        <div className="-mt-9 flex size-18 items-center justify-center overflow-hidden rounded-full border-[3px] border-site-glass-rim bg-site-surface-opaque text-xl font-bold text-site-text shadow-site-sm">
+          {image ? (
+            <img
+              src={image}
+              alt={t('avatar-alt', { defaultValue: 'Avatar' })}
+              className="size-full object-cover"
+            />
+          ) : (
+            (name[0] || 'U').toUpperCase()
+          )}
+        </div>
+        <p className="mt-3 truncate text-lg font-bold text-site-text">
+          {name || t('display-name-placeholder', { defaultValue: 'Your display name' })}
+        </p>
+        <p className="truncate text-xs text-site-text-dim">
+          @{handle || t('handle-placeholder', { defaultValue: 'your_handle' })}
+        </p>
+        <p
+          className={cn(
+            'mt-3 line-clamp-3 text-sm leading-relaxed',
+            bio ? 'text-site-text-muted' : 'text-site-text-dim',
+          )}
+        >
+          {bio || t('bio-preview-placeholder', { defaultValue: 'Your bio will appear here.' })}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEditModalProps) {
-  const { t } = useTranslation("feed");
+  const { t } = useTranslation('feed');
+  const confirm = useConfirm();
+  const navigate = useNavigate();
   const { refresh: refreshResolvedUser } = useResolvedUser();
+  const [section, setSection] = useState<EditorSection>('identity');
   const [handle, setHandle] = useState(initial.handle ?? '');
-  const [handleStatus, setHandleStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
+  const [handleStatus, setHandleStatus] = useState<HandleStatus>('idle');
   const [displayName, setDisplayName] = useState(initial.name ?? '');
   const [bio, setBio] = useState(initial.bio ?? '');
   const [location, setLocation] = useState(initial.location ?? '');
@@ -83,256 +209,295 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
   const [links, setLinks] = useState<{ label: string; url: string }[]>(initial.links ?? []);
   const [showLikes, setShowLikes] = useState(initial.showLikes);
   const [dmPrivacy, setDmPrivacy] = useState(initial.dmPrivacy ?? 'EVERYONE');
-  const [tipGoal, setTipGoal] = useState<string>(initial.tipGoal ? String(initial.tipGoal) : '');
+  const [tipGoal, setTipGoal] = useState(initial.tipGoal ? String(initial.tipGoal) : '');
   const [tipGoalLabel, setTipGoalLabel] = useState(initial.tipGoalLabel ?? '');
-  const [membershipPrice, setMembershipPrice] = useState<string>(initial.membershipPriceCoins ? String(initial.membershipPriceCoins) : '');
+  const [membershipPrice, setMembershipPrice] = useState(
+    initial.membershipPriceCoins ? String(initial.membershipPriceCoins) : '',
+  );
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(initial.image);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(initial.bannerUrl ?? null);
   const [bannerRemoved, setBannerRemoved] = useState(false);
-  const bannerInputRef = useRef<HTMLInputElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const [resettingAvatar, setResettingAvatar] = useState(false);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [hasCustomAvatar, setHasCustomAvatar] = useState(initial.hasCustomAvatar ?? false);
-  const [avatarWasReset, setAvatarWasReset] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const handleCheckTimeout = useRef<NodeJS.Timeout | null>(null);
-  const bioRef = useRef<HTMLTextAreaElement>(null);
-  const insertBioEmoji = useEmojiInsert(bioRef, bio, setBio);
-
   const [selectedSong, setSelectedSong] = useState<SpotifyTrack | null>(
     initial.profileSongSpotifyId
       ? {
           id: initial.profileSongSpotifyId,
           title: initial.profileSongTitle ?? '',
           artist: initial.profileSongArtist ?? '',
-          previewUrl: initial.profileSongPreviewUrl ?? '',
+          previewUrl: initial.profileSongPreviewUrl,
           albumArt: initial.profileSongAlbumArt,
         }
-      : null
+      : null,
   );
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const handleCheckTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bioRef = useRef<HTMLTextAreaElement>(null);
+  const insertBioEmoji = useEmojiInsert(bioRef, bio, setBio);
 
   const bioRemaining = MAX_BIO - bio.length;
   const nameRemaining = MAX_NAME - displayName.length;
   const handleChanged = handle !== (initial.handle ?? '');
   const handleOnCooldown = initial.handleCooldownMs > 0;
+  const songChanged = selectedSong?.id !== initial.profileSongSpotifyId;
+  const linksChanged = JSON.stringify(links) !== JSON.stringify(initial.links ?? []);
+  const dirty =
+    displayName !== (initial.name ?? '') ||
+    handleChanged ||
+    bio !== (initial.bio ?? '') ||
+    location !== (initial.location ?? '') ||
+    website !== (initial.website ?? '') ||
+    linksChanged ||
+    showLikes !== initial.showLikes ||
+    dmPrivacy !== (initial.dmPrivacy ?? 'EVERYONE') ||
+    tipGoal !== (initial.tipGoal ? String(initial.tipGoal) : '') ||
+    tipGoalLabel !== (initial.tipGoalLabel ?? '') ||
+    membershipPrice !==
+      (initial.membershipPriceCoins ? String(initial.membershipPriceCoins) : '') ||
+    avatarFile !== null ||
+    bannerFile !== null ||
+    bannerRemoved ||
+    songChanged;
+  const canSave =
+    displayName.trim().length > 0 &&
+    nameRemaining >= 0 &&
+    bioRemaining >= 0 &&
+    (!handleChanged || handleStatus === 'available');
 
-  // Handle availability check with debounce
-  const checkHandle = useCallback(async (value: string) => {
-    if (!value || value === initial.handle) {
-      setHandleStatus('idle');
-      return;
-    }
-
-    if (value.length < 3 || !/^[a-z][a-z0-9_]*$/.test(value)) {
-      setHandleStatus('invalid');
-      return;
-    }
-
-    setHandleStatus('checking');
-    try {
-      const res = await fetch(`/api/handle/check?handle=${encodeURIComponent(value)}`);
-      const data = await res.json();
-      if (data.available) {
-        setHandleStatus('available');
-      } else {
-        setHandleStatus(data.reason ? 'invalid' : 'taken');
+  const checkHandle = useCallback(
+    async (value: string) => {
+      if (!value || value === initial.handle) {
+        setHandleStatus('idle');
+        return;
       }
-    } catch {
-      setHandleStatus('idle');
-    }
-  }, [initial.handle]);
+      if (value.length < 3 || !/^[a-z][a-z0-9_]*$/.test(value)) {
+        setHandleStatus('invalid');
+        return;
+      }
+      setHandleStatus('checking');
+      try {
+        const res = await fetch(`/api/handle/check?handle=${encodeURIComponent(value)}`);
+        const data = (await res.json()) as { available?: boolean; reason?: string };
+        setHandleStatus(data.available ? 'available' : data.reason ? 'invalid' : 'taken');
+      } catch {
+        setHandleStatus('idle');
+      }
+    },
+    [initial.handle],
+  );
 
   const handleHandleChange = (value: string) => {
-    const sanitized = value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, MAX_HANDLE);
+    const sanitized = value
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, '')
+      .slice(0, MAX_HANDLE);
     setHandle(sanitized);
-
+    setHandleStatus('idle');
     if (handleCheckTimeout.current) clearTimeout(handleCheckTimeout.current);
     handleCheckTimeout.current = setTimeout(() => checkHandle(sanitized), 400);
   };
 
-  // Prevent body scroll
-  useEffect(() => {
-    if (open) document.body.style.overflow = 'hidden';
-    else document.body.style.overflow = '';
-    return () => { document.body.style.overflow = ''; };
-  }, [open]);
+  useEffect(
+    () => () => {
+      if (handleCheckTimeout.current) clearTimeout(handleCheckTimeout.current);
+    },
+    [],
+  );
 
-  // Cleanup blob URLs on unmount
-  useEffect(() => {
-    return () => {
-      if (avatarPreview && avatarPreview.startsWith('blob:')) {
-        URL.revokeObjectURL(avatarPreview);
-      }
-      if (cropSrc && cropSrc.startsWith('blob:')) {
-        URL.revokeObjectURL(cropSrc);
-      }
-      if (bannerPreview && bannerPreview.startsWith('blob:')) {
-        URL.revokeObjectURL(bannerPreview);
-      }
-    };
-  }, [avatarPreview, cropSrc, bannerPreview]);
+  useEffect(
+    () => () => {
+      if (avatarPreview?.startsWith('blob:')) URL.revokeObjectURL(avatarPreview);
+    },
+    [avatarPreview],
+  );
+  useEffect(
+    () => () => {
+      if (cropSrc?.startsWith('blob:')) URL.revokeObjectURL(cropSrc);
+    },
+    [cropSrc],
+  );
+  useEffect(
+    () => () => {
+      if (bannerPreview?.startsWith('blob:')) URL.revokeObjectURL(bannerPreview);
+    },
+    [bannerPreview],
+  );
 
-  const handleBannerSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const requestClose = async () => {
+    if (submitting) return;
+    if (
+      dirty &&
+      !(await confirm({
+        title: t('discard-profile-changes-title', { defaultValue: 'Discard profile changes?' }),
+        description: t('discard-profile-changes-body', {
+          defaultValue: 'Your unsaved profile updates will be lost.',
+        }),
+        confirmLabel: t('discard-changes', { defaultValue: 'Discard changes' }),
+        danger: true,
+      }))
+    ) {
+      return;
+    }
+    onClose();
+  };
+
+  const handleBannerSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (!file) return;
     if (file.size > MAX_BANNER_MB * 1024 * 1024) {
-      setError(t("banner-size-error", { maxMb: MAX_BANNER_MB, defaultValue: `Banner must be under ${MAX_BANNER_MB} MB` }));
+      setError(
+        t('banner-size-error', {
+          maxMb: MAX_BANNER_MB,
+          defaultValue: 'Banner must be under {{maxMb}} MB',
+        }),
+      );
       return;
     }
     setError(null);
-    if (bannerPreview && bannerPreview.startsWith('blob:')) URL.revokeObjectURL(bannerPreview);
+    if (bannerPreview?.startsWith('blob:')) URL.revokeObjectURL(bannerPreview);
     setBannerFile(file);
     setBannerPreview(URL.createObjectURL(file));
     setBannerRemoved(false);
-    if (bannerInputRef.current) bannerInputRef.current.value = '';
+    event.target.value = '';
   };
 
   const handleRemoveBanner = () => {
-    if (bannerPreview && bannerPreview.startsWith('blob:')) URL.revokeObjectURL(bannerPreview);
+    if (bannerPreview?.startsWith('blob:')) URL.revokeObjectURL(bannerPreview);
     setBannerFile(null);
     setBannerPreview(null);
     setBannerRemoved(true);
   };
 
-  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleAvatarSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (!file) return;
-
     if (file.size > MAX_AVATAR_MB * 1024 * 1024) {
-      setError(t("avatar-size-error", { maxMb: MAX_AVATAR_MB, defaultValue: `Avatar must be under ${MAX_AVATAR_MB} MB` }));
+      setError(
+        t('avatar-size-error', {
+          maxMb: MAX_AVATAR_MB,
+          defaultValue: 'Avatar must be under {{maxMb}} MB',
+        }),
+      );
       return;
     }
-
     setError(null);
-    const objectUrl = URL.createObjectURL(file);
-    setCropSrc(objectUrl);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    setCropSrc(URL.createObjectURL(file));
+    event.target.value = '';
   };
 
   const handleCropDone = (croppedBlob: Blob) => {
-    if (cropSrc && cropSrc.startsWith('blob:')) URL.revokeObjectURL(cropSrc);
-    setCropSrc(null);
-    if (avatarPreview && avatarPreview.startsWith('blob:')) URL.revokeObjectURL(avatarPreview);
-
+    if (cropSrc?.startsWith('blob:')) URL.revokeObjectURL(cropSrc);
+    if (avatarPreview?.startsWith('blob:')) URL.revokeObjectURL(avatarPreview);
     const croppedFile = new File([croppedBlob], 'avatar.png', { type: 'image/png' });
+    setCropSrc(null);
     setAvatarFile(croppedFile);
     setAvatarPreview(URL.createObjectURL(croppedBlob));
   };
 
   const handleCropCancel = () => {
-    if (cropSrc && cropSrc.startsWith('blob:')) URL.revokeObjectURL(cropSrc);
+    if (cropSrc?.startsWith('blob:')) URL.revokeObjectURL(cropSrc);
     setCropSrc(null);
   };
 
   const handleResetAvatar = async () => {
+    const approved = await confirm({
+      title: t('reset-avatar-confirm-title', { defaultValue: 'Reset avatar?' }),
+      description: t('reset-avatar-confirm-body', {
+        defaultValue: 'This removes your custom avatar and restores your account picture.',
+      }),
+      confirmLabel: t('reset-avatar-btn', { defaultValue: 'Reset avatar' }),
+      danger: true,
+    });
+    if (!approved) return;
+
     setResettingAvatar(true);
     setError(null);
     try {
       const res = await fetch('/api/profile/avatar', { method: 'DELETE' });
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || t("failed-reset-avatar", { defaultValue: "Failed to reset avatar" }));
-        return;
-      }
-      const data = await res.json();
-      // Clear local avatar state, show fallback (OAuth image or default)
+      const data = (await res.json().catch(() => ({}))) as {
+        image?: string | null;
+        error?: string;
+      };
+      if (!res.ok) throw new Error(data.error);
       setAvatarFile(null);
-      if (avatarPreview && avatarPreview.startsWith('blob:')) URL.revokeObjectURL(avatarPreview);
-      setAvatarPreview(data.image);
+      if (avatarPreview?.startsWith('blob:')) URL.revokeObjectURL(avatarPreview);
+      setAvatarPreview(data.image ?? null);
       setHasCustomAvatar(false);
-      setAvatarWasReset(true);
-      // Update sidebar/navbar immediately
       refreshResolvedUser();
-      // Notify parent so profile page updates the displayed image
       onSaved({
-        image: data.image,
-        displayName: displayName.trim() || initial.name,
-        bio: bio.trim() || null,
-        location: location.trim() || null,
-        website: website.trim() || null,
-        showLikes,
-        dmPrivacy,
-        profileSongSpotifyId: selectedSong?.id ?? null,
-        profileSongTitle: selectedSong?.title ?? null,
-        profileSongArtist: selectedSong?.artist ?? null,
-        profileSongPreviewUrl: selectedSong?.previewUrl ?? null,
-        profileSongAlbumArt: selectedSong?.albumArt ?? null,
+        image: data.image ?? null,
       });
-    } catch {
-      setError(t("failed-reset-avatar", { defaultValue: "Failed to reset avatar" }));
+    } catch (resetError) {
+      setError(
+        resetError instanceof Error && resetError.message
+          ? resetError.message
+          : t('failed-reset-avatar', { defaultValue: 'Failed to reset avatar' }),
+      );
     } finally {
       setResettingAvatar(false);
-      setShowResetConfirm(false);
     }
   };
 
   const handleSave = async () => {
-    if (submitting) return;
-
-    const trimmedName = displayName.trim();
-    if (trimmedName.length === 0) {
-      setError(t("display-name-empty", { defaultValue: "Display name cannot be empty" }));
-      return;
-    }
-
-    if (handleChanged && handleStatus === 'taken') {
-      setError(t("handle-taken", { defaultValue: "Handle is already taken" }));
-      return;
-    }
-
-    if (handleChanged && handleStatus === 'invalid') {
-      setError(t("handle-invalid", { defaultValue: "Handle must start with a letter and contain only lowercase letters, numbers, and underscores (min 3 chars)" }));
-      return;
-    }
-
+    if (submitting || !canSave) return;
     setSubmitting(true);
     setError(null);
 
-    // Drop blank rows; the server re-validates and caps the count.
     const cleanedLinks = links
-      .map((l) => ({ label: l.label.trim(), url: l.url.trim() }))
-      .filter((l) => l.label && l.url);
+      .map((link) => ({ label: link.label.trim(), url: link.url.trim() }))
+      .filter((link) => link.label && link.url);
 
     try {
       let newImageUrl: string | undefined;
-
       if (avatarFile) {
         const formData = new FormData();
         formData.append('avatar', avatarFile);
-        const avatarRes = await fetch('/api/profile/avatar', {
-          method: 'POST',
-          body: formData,
-        });
-        if (!avatarRes.ok) {
-          const data = await avatarRes.json();
-          setError(data.error || t("failed-upload-avatar", { defaultValue: "Failed to upload avatar" }));
-          setSubmitting(false);
-          return;
+        const avatarRes = await fetch('/api/profile/avatar', { method: 'POST', body: formData });
+        const avatarData = (await avatarRes.json().catch(() => ({}))) as {
+          image?: string;
+          error?: string;
+        };
+        if (!avatarRes.ok || !avatarData.image) {
+          throw new Error(
+            avatarData.error ||
+              t('failed-upload-avatar', { defaultValue: 'Failed to upload avatar' }),
+          );
         }
-        const avatarData = await avatarRes.json();
         newImageUrl = avatarData.image;
       }
 
-      // Banner: upload a new one, or delete when the user cleared it.
       let newBannerUrl: string | null | undefined;
       if (bannerFile) {
         const bannerForm = new FormData();
         bannerForm.append('banner', bannerFile);
         const bannerRes = await fetch('/api/profile/banner', { method: 'POST', body: bannerForm });
-        if (!bannerRes.ok) {
-          const data = await bannerRes.json().catch(() => ({}));
-          setError(data.error || t("failed-upload-banner", { defaultValue: "Failed to upload banner" }));
-          setSubmitting(false);
-          return;
+        const bannerData = (await bannerRes.json().catch(() => ({}))) as {
+          bannerUrl?: string;
+          error?: string;
+        };
+        if (!bannerRes.ok || !bannerData.bannerUrl) {
+          throw new Error(
+            bannerData.error ||
+              t('failed-upload-banner', { defaultValue: 'Failed to upload banner' }),
+          );
         }
-        newBannerUrl = (await bannerRes.json()).bannerUrl;
+        newBannerUrl = bannerData.bannerUrl;
       } else if (bannerRemoved && initial.bannerUrl) {
-        await fetch('/api/profile/banner', { method: 'DELETE' }).catch(() => {});
+        const bannerRes = await fetch('/api/profile/banner', { method: 'DELETE' });
+        if (!bannerRes.ok) {
+          const bannerData = (await bannerRes.json().catch(() => ({}))) as { error?: string };
+          throw new Error(
+            bannerData.error ||
+              t('failed-remove-banner', { defaultValue: 'Failed to remove banner' }),
+          );
+        }
         newBannerUrl = null;
       }
 
@@ -341,14 +506,16 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...(handleChanged ? { handle: handle.trim() } : {}),
-          displayName: trimmedName,
+          displayName: displayName.trim(),
           bio: bio.trim() || null,
           location: location.trim() || null,
           website: website.trim() || null,
           links: cleanedLinks,
-          tipGoal: tipGoal.trim() ? Math.max(0, parseInt(tipGoal, 10) || 0) : null,
+          tipGoal: tipGoal.trim() ? Math.max(0, Number.parseInt(tipGoal, 10) || 0) : null,
           tipGoalLabel: tipGoalLabel.trim() || null,
-          membershipPriceCoins: membershipPrice.trim() ? Math.max(0, parseInt(membershipPrice, 10) || 0) : null,
+          membershipPriceCoins: membershipPrice.trim()
+            ? Math.max(0, Number.parseInt(membershipPrice, 10) || 0)
+            : null,
           showLikes,
           dmPrivacy,
           profileSongSpotifyId: selectedSong?.id ?? null,
@@ -358,446 +525,733 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
           profileSongAlbumArt: selectedSong?.albumArt ?? null,
         }),
       });
+      const data = (await res.json().catch(() => ({}))) as SavedProfileData & { error?: string };
+      if (!res.ok)
+        throw new Error(data.error || t('failed-save', { defaultValue: 'Failed to save' }));
 
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || t("failed-save", { defaultValue: "Failed to save" }));
-        setSubmitting(false);
-        return;
-      }
-
-      const data = await res.json();
       onSaved({
         ...data,
-        ...(newImageUrl !== undefined
-          ? { image: newImageUrl }
-          : avatarWasReset
-            ? { image: avatarPreview }
-            : {}),
+        ...(newImageUrl !== undefined ? { image: newImageUrl } : {}),
         ...(newBannerUrl !== undefined ? { bannerUrl: newBannerUrl } : {}),
       });
       onClose();
-    } catch {
-      setError(t("failed-save", { defaultValue: "Failed to save" }));
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error && saveError.message
+          ? saveError.message
+          : t('failed-save', { defaultValue: 'Failed to save' }),
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (!open) return null;
+  const sectionTabs = [
+    {
+      id: 'identity',
+      label: t('profile-editor-identity', { defaultValue: 'Identity' }),
+      icon: UserRound,
+    },
+    { id: 'links', label: t('profile-editor-links', { defaultValue: 'Links' }), icon: LinkIcon },
+    {
+      id: 'creator',
+      label: t('profile-editor-creator', { defaultValue: 'Creator' }),
+      icon: Sparkles,
+    },
+    {
+      id: 'privacy',
+      label: t('profile-editor-privacy', { defaultValue: 'Privacy' }),
+      icon: LockKeyhole,
+    },
+  ];
 
   return (
     <>
-      <div className="fixed inset-0 z-[200] flex items-center justify-center" onClick={onClose}>
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-
-        <div
-          className="relative glass-overlay w-full max-w-md mx-4 flex flex-col max-h-[90vh]"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-site-border">
-            <h2 className="font-bold text-site-text">{t("edit-profile", { defaultValue: "Edit Profile" })}</h2>
-            <button
-              onClick={onClose}
-              aria-label={t("close", { defaultValue: "Close" })}
-              className="p-1.5 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors active:scale-95"
-            >
-              <X className="w-5 h-5" />
-            </button>
+      <Sheet
+        open={open}
+        onOpenChange={(next) => {
+          if (!next) void requestClose();
+        }}
+      >
+        <SheetContent className="max-h-[96dvh] px-0 pb-0 pt-2 md:max-h-[92dvh] md:w-[min(900px,calc(100vw-2rem))] md:max-w-none md:px-0 md:pb-0 md:pt-0">
+          <div className="border-b border-site-border px-4 pb-3 pt-2 md:px-6 md:pt-6">
+            <SheetHeader className="pr-10">
+              <SheetTitle>{t('edit-profile', { defaultValue: 'Edit profile' })}</SheetTitle>
+              <SheetDescription>
+                {t('profile-editor-description', {
+                  defaultValue: 'Shape how your profile looks, feels, and connects with people.',
+                })}
+              </SheetDescription>
+            </SheetHeader>
+            <LiquidTabs
+              tabs={sectionTabs}
+              value={section}
+              onChange={(value) => {
+                setSection(value as EditorSection);
+                setError(null);
+              }}
+              size="sm"
+              scroll
+              className="mt-1 max-w-full"
+              aria-label={t('profile-editor-sections', { defaultValue: 'Profile editor sections' })}
+            />
           </div>
 
-          {/* Form */}
-          <div className="px-4 py-4 space-y-4 overflow-y-auto">
-            {/* Banner / cover */}
-            <div>
-              <button
-                type="button"
-                onClick={() => bannerInputRef.current?.click()}
-                aria-label={t("banner-change-hint", { maxMb: MAX_BANNER_MB, defaultValue: "Click to change banner (max {{maxMb}} MB)" })}
-                className="group relative block h-28 w-full overflow-hidden rounded-site border border-site-border bg-site-surface"
-              >
-                {bannerPreview ? (
-                  <img src={bannerPreview} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-r from-site-surface to-site-bg-subtle" />
-                )}
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover:opacity-100">
-                  <Camera className="h-6 w-6 text-white" />
-                </div>
-              </button>
-              <input
-                ref={bannerInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/gif"
-                className="hidden"
-                onChange={handleBannerSelect}
-              />
-              <div className="mt-1.5 flex items-center justify-between">
-                <p className="text-xs text-site-text-dim">
-                  {t("banner-change-hint", { maxMb: MAX_BANNER_MB, defaultValue: "Click to change banner (max {{maxMb}} MB)" })}
-                </p>
-                {bannerPreview && (
-                  <button
-                    type="button"
-                    onClick={handleRemoveBanner}
-                    className="text-xs font-medium text-site-text-muted hover:text-site-danger transition-colors"
-                  >
-                    {t("remove-banner", { defaultValue: "Remove" })}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Avatar */}
-            <div className="flex flex-col items-center gap-2">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                aria-label={t("avatar-change-hint", { maxMb: MAX_AVATAR_MB, defaultValue: "Click to change avatar (max {{maxMb}} MB)" })}
-                className="relative group w-20 h-20 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-site-bg font-bold text-2xl ring-4 ring-site-bg shrink-0 overflow-hidden cursor-pointer transition-transform active:scale-95"
-              >
-                {avatarPreview ? (
-                  <img src={avatarPreview} alt={t("avatar-alt", { defaultValue: "Avatar" })} className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
-                ) : (
-                  (displayName?.[0] || initial.name?.[0] || 'U').toUpperCase()
-                )}
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
-                  <Camera className="w-6 h-6 text-white" />
-                </div>
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/gif,image/webp"
-                className="hidden"
-                onChange={handleAvatarSelect}
-              />
-              <p className="text-xs text-site-text-dim">{t("avatar-change-hint", { maxMb: MAX_AVATAR_MB, defaultValue: "Click to change avatar (max {{maxMb}} MB)" })}</p>
-              {(hasCustomAvatar || avatarFile) && (
-                <button
-                  type="button"
-                  onClick={() => setShowResetConfirm(true)}
-                  className="flex items-center gap-1 text-xs text-site-text-dim hover:text-site-danger transition-colors active:scale-95"
-                  title={t("reset-avatar-title", { defaultValue: "Reset to default avatar" })}
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  {t("reset-avatar", { defaultValue: "Reset avatar" })}
-                </button>
-              )}
-            </div>
-
-            {/* Handle */}
-            <div>
-              <label className="block text-xs font-medium text-site-text-dim mb-1.5">{t("handle-label", { defaultValue: "Handle" })}</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-site-text-dim text-sm">@</span>
-                <input
-                  type="text"
-                  value={handle}
-                  onChange={(e) => handleHandleChange(e.target.value)}
-                  placeholder={t("handle-placeholder", { defaultValue: "your_handle" })}
-                  maxLength={MAX_HANDLE}
-                  disabled={handleOnCooldown}
-                  className={`w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 pl-7 border outline-none transition-colors ${
-                    handleOnCooldown
-                      ? 'border-site-border opacity-60 cursor-not-allowed'
-                      : handleStatus === 'available'
-                      ? 'border-site-success'
-                      : handleStatus === 'taken' || handleStatus === 'invalid'
-                      ? 'border-site-danger'
-                      : 'border-site-border focus:border-site-accent'
-                  }`}
-                />
-                {handleChanged && handleStatus === 'checking' && (
-                  <Spinner size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-site-text-dim" />
-                )}
-                {handleChanged && handleStatus === 'available' && (
-                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-success" />
-                )}
-                {handleChanged && handleStatus === 'taken' && (
-                  <X className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-danger" />
-                )}
-              </div>
-              <div className="mt-1">
-                {handleOnCooldown ? (
-                  <p className="text-xs text-site-text-dim">
-                    {t("handle-cooldown", { cooldown: formatCooldown(initial.handleCooldownMs, t), defaultValue: "You can change your handle again in {{cooldown}}" })}
-                  </p>
-                ) : handleChanged && handleStatus === 'available' ? (
-                  <p className="text-xs text-site-success">{t("handle-available", { defaultValue: "Handle is available" })}</p>
-                ) : handleChanged && handleStatus === 'taken' ? (
-                  <p className="text-xs text-site-danger">{t("handle-taken", { defaultValue: "Handle is already taken" })}</p>
-                ) : handleChanged && handleStatus === 'invalid' ? (
-                  <p className="text-xs text-site-danger">{t("handle-invalid-hint", { defaultValue: "Must start with a letter, 3-20 chars, lowercase letters/numbers/underscores only" })}</p>
-                ) : (
-                  <p className="text-xs text-site-text-dim">{t("handle-hint", { defaultValue: "Your unique handle for @mentions and profile URL" })}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Display Name */}
-            <div>
-              <label className="block text-xs font-medium text-site-text-dim mb-1.5">{t("display-name-label", { defaultValue: "Display Name" })}</label>
-              <input
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder={t("display-name-placeholder", { defaultValue: "Your display name" })}
-                maxLength={MAX_NAME}
-                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
-              />
-              <span className={`text-xs font-mono ${nameRemaining <= 10 ? 'text-site-warning' : 'text-site-text-dim'}`}>
-                {nameRemaining}
-              </span>
-            </div>
-
-            {/* Bio */}
-            <div>
-              <label className="block text-xs font-medium text-site-text-dim mb-1.5">{t("bio-label", { defaultValue: "Bio" })}</label>
-              <textarea
-                ref={bioRef}
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder={t("bio-placeholder", { defaultValue: "Tell people about yourself" })}
-                rows={3}
-                maxLength={MAX_BIO}
-                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
-              />
-              <div className="flex items-center justify-between">
-                <EmojiPickerButton direction="down" onSelect={insertBioEmoji} />
-                <span className={`text-xs font-mono ${bioRemaining <= 20 ? 'text-site-warning' : 'text-site-text-dim'}`}>
-                  {bioRemaining}
-                </span>
-              </div>
-            </div>
-
-            {/* Location */}
-            <div>
-              <label className="block text-xs font-medium text-site-text-dim mb-1.5">{t("location-label", { defaultValue: "Location" })}</label>
-              <input
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder={t("location-placeholder", { defaultValue: "Where are you based?" })}
-                maxLength={MAX_LOCATION}
-                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
-              />
-            </div>
-
-            {/* Website */}
-            <div>
-              <label className="block text-xs font-medium text-site-text-dim mb-1.5">{t("website-label", { defaultValue: "Website" })}</label>
-              <input
-                type="url"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-                placeholder="https://example.com"
-                maxLength={MAX_WEBSITE}
-                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
-              />
-            </div>
-
-            {/* Link-in-bio */}
-            <div>
-              <label className="block text-xs font-medium text-site-text-dim mb-1.5">
-                {t("links-label", { defaultValue: "Links" })}
-                <span className="ml-1 text-site-text-dim/70">({links.length}/{MAX_PROFILE_LINKS})</span>
-              </label>
-              <div className="space-y-2">
-                {links.map((link, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={link.label}
-                      onChange={(e) =>
-                        setLinks((prev) => prev.map((l, j) => (j === i ? { ...l, label: e.target.value } : l)))
-                      }
-                      placeholder={t("link-label-placeholder", { defaultValue: "Label" })}
-                      maxLength={30}
-                      aria-label={t("link-label-aria", { count: i + 1, defaultValue: "Link {{count}} label" })}
-                      className="w-28 shrink-0 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-2.5 border border-site-border outline-none focus:border-site-accent transition-colors"
+          <div className="grid gap-6 px-4 py-5 md:grid-cols-[minmax(0,1fr)_17rem] md:px-6">
+            <div className="min-w-0">
+              {section === 'identity' ? (
+                <div role="tabpanel" className="space-y-5">
+                  <div className="md:hidden">
+                    <EditorPreview
+                      name={displayName}
+                      handle={handle}
+                      bio={bio}
+                      image={avatarPreview}
+                      banner={bannerPreview}
                     />
-                    <input
-                      type="url"
-                      value={link.url}
-                      onChange={(e) =>
-                        setLinks((prev) => prev.map((l, j) => (j === i ? { ...l, url: e.target.value } : l)))
-                      }
-                      placeholder="https://example.com"
-                      maxLength={200}
-                      aria-label={t("link-url-aria", { count: i + 1, defaultValue: "Link {{count}} URL" })}
-                      className="min-w-0 flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-2.5 border border-site-border outline-none focus:border-site-accent transition-colors"
+                  </div>
+
+                  <div>
+                    <FieldHeader
+                      label={t('profile-cover', { defaultValue: 'Profile cover' })}
+                      hint={t('profile-cover-hint', {
+                        maxMb: MAX_BANNER_MB,
+                        defaultValue: 'Wide images work best. Maximum {{maxMb}} MB.',
+                      })}
                     />
                     <button
                       type="button"
-                      onClick={() => setLinks((prev) => prev.filter((_, j) => j !== i))}
-                      aria-label={t("remove-link-aria", { count: i + 1, defaultValue: "Remove link {{count}}" })}
-                      className="shrink-0 p-1.5 rounded-full text-site-text-dim hover:text-site-danger hover:bg-site-danger/10 transition-colors"
+                      onClick={() => bannerInputRef.current?.click()}
+                      className="glass-fill glass-interactive group relative block h-32 w-full overflow-hidden rounded-site"
+                      data-glass-light=""
                     >
-                      <X className="w-4 h-4" />
+                      {bannerPreview ? (
+                        <img src={bannerPreview} alt="" className="size-full object-cover" />
+                      ) : (
+                        <span className="flex size-full items-center justify-center bg-linear-to-br from-site-accent-dim via-site-glass-tint to-site-bg-subtle text-site-text-muted">
+                          <ImageIcon className="size-6" aria-hidden />
+                        </span>
+                      )}
+                      <span className="absolute inset-0 flex items-center justify-center bg-site-bg/55 text-sm font-medium text-site-text opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                        <Camera className="mr-2 size-4" aria-hidden />
+                        {t('change-cover', { defaultValue: 'Change cover' })}
+                      </span>
                     </button>
+                    <input
+                      ref={bannerInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/gif,image/webp"
+                      className="hidden"
+                      onChange={handleBannerSelect}
+                    />
+                    {bannerPreview ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="xs"
+                        className="mt-2 text-site-danger"
+                        onClick={handleRemoveBanner}
+                      >
+                        <Trash2 aria-hidden />
+                        {t('remove-banner', { defaultValue: 'Remove cover' })}
+                      </Button>
+                    ) : null}
                   </div>
-                ))}
-              </div>
-              {links.length < MAX_PROFILE_LINKS && (
-                <button
-                  type="button"
-                  onClick={() => setLinks((prev) => [...prev, { label: '', url: '' }])}
-                  className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-site-accent hover:underline"
-                >
-                  <Plus className="w-4 h-4" />
-                  {t("add-link", { defaultValue: "Add link" })}
-                </button>
-              )}
+
+                  <div>
+                    <FieldHeader
+                      label={t('profile-photo', { defaultValue: 'Profile photo' })}
+                      hint={t('avatar-change-hint', {
+                        maxMb: MAX_AVATAR_MB,
+                        defaultValue: 'Square images work best. Maximum {{maxMb}} MB.',
+                      })}
+                    />
+                    <div className="flex items-center gap-4">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="glass-fill glass-interactive group relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-full text-2xl font-bold text-site-text"
+                        data-glass-light=""
+                        aria-label={t('change-avatar', { defaultValue: 'Change profile photo' })}
+                      >
+                        {avatarPreview ? (
+                          <img
+                            src={avatarPreview}
+                            alt={t('avatar-alt', { defaultValue: 'Avatar' })}
+                            className="size-full object-cover"
+                          />
+                        ) : (
+                          (displayName[0] || 'U').toUpperCase()
+                        )}
+                        <span className="absolute inset-0 flex items-center justify-center bg-site-bg/55 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                          <Camera className="size-5" aria-hidden />
+                        </span>
+                      </button>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <Camera aria-hidden />
+                          {t('upload-photo', { defaultValue: 'Upload photo' })}
+                        </Button>
+                        {hasCustomAvatar || avatarFile ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-site-danger"
+                            loading={resettingAvatar}
+                            onClick={handleResetAvatar}
+                          >
+                            <RotateCcw aria-hidden />
+                            {t('reset-avatar', { defaultValue: 'Reset' })}
+                          </Button>
+                        ) : null}
+                      </div>
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/gif,image/webp"
+                      className="hidden"
+                      onChange={handleAvatarSelect}
+                    />
+                  </div>
+
+                  <div>
+                    <FieldHeader
+                      htmlFor="profile-display-name"
+                      label={t('display-name-label', { defaultValue: 'Display name' })}
+                      count={nameRemaining}
+                    />
+                    <Input
+                      id="profile-display-name"
+                      value={displayName}
+                      onChange={(event) => setDisplayName(event.target.value)}
+                      maxLength={MAX_NAME}
+                      placeholder={t('display-name-placeholder', {
+                        defaultValue: 'Your display name',
+                      })}
+                      aria-invalid={displayName.trim().length === 0}
+                    />
+                  </div>
+
+                  <div>
+                    <FieldHeader
+                      htmlFor="profile-handle"
+                      label={t('handle-label', { defaultValue: 'Handle' })}
+                      count={`${handle.length}/${MAX_HANDLE}`}
+                    />
+                    <div className="relative">
+                      <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-site-text-dim">
+                        @
+                      </span>
+                      <Input
+                        id="profile-handle"
+                        value={handle}
+                        onChange={(event) => handleHandleChange(event.target.value)}
+                        disabled={handleOnCooldown}
+                        className={cn(
+                          'pl-8 pr-10',
+                          handleChanged && handleStatus === 'available' && 'border-site-success',
+                          handleChanged &&
+                            (handleStatus === 'taken' || handleStatus === 'invalid') &&
+                            'border-site-danger',
+                        )}
+                        aria-invalid={
+                          handleChanged && (handleStatus === 'taken' || handleStatus === 'invalid')
+                        }
+                      />
+                      {handleChanged && handleStatus === 'checking' ? (
+                        <Spinner
+                          size={16}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2"
+                        />
+                      ) : null}
+                      {handleChanged && handleStatus === 'available' ? (
+                        <Check
+                          className="absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-site-success"
+                          aria-hidden
+                        />
+                      ) : null}
+                      {handleChanged && (handleStatus === 'taken' || handleStatus === 'invalid') ? (
+                        <X
+                          className="absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-site-danger"
+                          aria-hidden
+                        />
+                      ) : null}
+                    </div>
+                    <p
+                      className={cn(
+                        'mt-1.5 text-xs',
+                        handleStatus === 'available'
+                          ? 'text-site-success'
+                          : handleStatus === 'taken' || handleStatus === 'invalid'
+                            ? 'text-site-danger'
+                            : 'text-site-text-dim',
+                      )}
+                    >
+                      {handleOnCooldown
+                        ? t('handle-cooldown', {
+                            cooldown: formatCooldown(initial.handleCooldownMs, t),
+                            defaultValue: 'You can change your handle again in {{cooldown}}',
+                          })
+                        : handleChanged && handleStatus === 'available'
+                          ? t('handle-available', { defaultValue: 'Handle is available' })
+                          : handleChanged && handleStatus === 'taken'
+                            ? t('handle-taken', { defaultValue: 'Handle is already taken' })
+                            : handleChanged && handleStatus === 'invalid'
+                              ? t('handle-invalid-hint', {
+                                  defaultValue:
+                                    'Use 3–20 lowercase letters, numbers, or underscores; start with a letter.',
+                                })
+                              : t('handle-hint', {
+                                  defaultValue: 'Used for mentions and your profile URL.',
+                                })}
+                    </p>
+                  </div>
+
+                  <div>
+                    <FieldHeader
+                      htmlFor="profile-bio"
+                      label={t('bio-label', { defaultValue: 'Bio' })}
+                      count={bioRemaining}
+                    />
+                    <Textarea
+                      ref={bioRef}
+                      id="profile-bio"
+                      value={bio}
+                      onChange={(event) => setBio(event.target.value)}
+                      rows={4}
+                      maxLength={MAX_BIO}
+                      placeholder={t('bio-placeholder', {
+                        defaultValue: 'Tell people what you make, play, or care about.',
+                      })}
+                    />
+                    <div className="mt-1 flex justify-between">
+                      <EmojiPickerButton direction="down" onSelect={insertBioEmoji} />
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              {section === 'links' ? (
+                <div role="tabpanel" className="space-y-5">
+                  <div>
+                    <FieldHeader
+                      htmlFor="profile-location"
+                      label={t('location-label', { defaultValue: 'Location' })}
+                    />
+                    <Input
+                      id="profile-location"
+                      value={location}
+                      onChange={(event) => setLocation(event.target.value)}
+                      maxLength={MAX_LOCATION}
+                      placeholder={t('location-placeholder', {
+                        defaultValue: 'Where are you based?',
+                      })}
+                    />
+                  </div>
+                  <div>
+                    <FieldHeader
+                      htmlFor="profile-website"
+                      label={t('website-label', { defaultValue: 'Website' })}
+                    />
+                    <Input
+                      id="profile-website"
+                      type="url"
+                      inputMode="url"
+                      value={website}
+                      onChange={(event) => setWebsite(event.target.value)}
+                      maxLength={MAX_WEBSITE}
+                      placeholder="https://example.com"
+                    />
+                  </div>
+                  <div>
+                    <FieldHeader
+                      label={t('links-label', { defaultValue: 'Featured links' })}
+                      hint={t('links-editor-hint', {
+                        defaultValue:
+                          'Add up to five links. They appear as quick-access glass chips.',
+                      })}
+                      count={`${links.length}/${MAX_PROFILE_LINKS}`}
+                    />
+                    <div className="space-y-3">
+                      {links.map((link, index) => (
+                        <div key={index} className="glass-fill rounded-site-sm p-3">
+                          <div className="flex items-center gap-2">
+                            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
+                              <LinkIcon className="size-4" aria-hidden />
+                            </span>
+                            <Input
+                              value={link.label}
+                              onChange={(event) =>
+                                setLinks((current) =>
+                                  current.map((item, itemIndex) =>
+                                    itemIndex === index
+                                      ? { ...item, label: event.target.value }
+                                      : item,
+                                  ),
+                                )
+                              }
+                              maxLength={30}
+                              placeholder={t('link-label-placeholder', { defaultValue: 'Label' })}
+                              aria-label={t('link-label-aria', {
+                                count: index + 1,
+                                defaultValue: 'Link {{count}} label',
+                              })}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-site-danger"
+                              onClick={() =>
+                                setLinks((current) =>
+                                  current.filter((_, itemIndex) => itemIndex !== index),
+                                )
+                              }
+                              aria-label={t('remove-link-aria', {
+                                count: index + 1,
+                                defaultValue: 'Remove link {{count}}',
+                              })}
+                            >
+                              <Trash2 aria-hidden />
+                            </Button>
+                          </div>
+                          <Input
+                            type="url"
+                            inputMode="url"
+                            value={link.url}
+                            onChange={(event) =>
+                              setLinks((current) =>
+                                current.map((item, itemIndex) =>
+                                  itemIndex === index ? { ...item, url: event.target.value } : item,
+                                ),
+                              )
+                            }
+                            maxLength={200}
+                            placeholder="https://example.com"
+                            aria-label={t('link-url-aria', {
+                              count: index + 1,
+                              defaultValue: 'Link {{count}} URL',
+                            })}
+                            className="mt-2"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    {links.length < MAX_PROFILE_LINKS ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => setLinks((current) => [...current, { label: '', url: '' }])}
+                      >
+                        <Plus aria-hidden />
+                        {t('add-link', { defaultValue: 'Add link' })}
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
+              {section === 'creator' ? (
+                <div role="tabpanel" className="space-y-5">
+                  <section className="glass-fill rounded-site p-4">
+                    <div className="mb-4 flex items-start gap-3">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-warning/10 text-site-warning">
+                        <Coins className="size-4" aria-hidden />
+                      </span>
+                      <div>
+                        <h3 className="font-semibold text-site-text">
+                          {t('creator-support', { defaultValue: 'Creator support' })}
+                        </h3>
+                        <p className="text-sm text-site-text-muted">
+                          {t('creator-support-hint', {
+                            defaultValue:
+                              'Set optional goals and membership pricing for supporters.',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <FieldHeader
+                          htmlFor="profile-tip-goal"
+                          label={t('monthly-tip-goal', { defaultValue: 'Monthly tip goal' })}
+                        />
+                        <Input
+                          id="profile-tip-goal"
+                          type="number"
+                          inputMode="numeric"
+                          min={0}
+                          value={tipGoal}
+                          onChange={(event) => setTipGoal(event.target.value)}
+                          placeholder="1000"
+                        />
+                      </div>
+                      <div>
+                        <FieldHeader
+                          htmlFor="profile-membership-price"
+                          label={t('membership-price-short', {
+                            defaultValue: 'Membership / month',
+                          })}
+                        />
+                        <Input
+                          id="profile-membership-price"
+                          type="number"
+                          inputMode="numeric"
+                          min={0}
+                          value={membershipPrice}
+                          onChange={(event) => setMembershipPrice(event.target.value)}
+                          placeholder="500"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <FieldHeader
+                        htmlFor="profile-tip-label"
+                        label={t('tip-goal-name', { defaultValue: 'Goal name' })}
+                      />
+                      <Input
+                        id="profile-tip-label"
+                        value={tipGoalLabel}
+                        onChange={(event) => setTipGoalLabel(event.target.value)}
+                        maxLength={80}
+                        placeholder={t('tip-goal-label-placeholder', {
+                          defaultValue: 'New microphone fund',
+                        })}
+                      />
+                    </div>
+                  </section>
+
+                  <section className="glass-fill rounded-site p-4">
+                    <div className="mb-4 flex items-start gap-3">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
+                        <Music2 className="size-4" aria-hidden />
+                      </span>
+                      <div>
+                        <h3 className="font-semibold text-site-text">
+                          {t('profile-soundtrack', { defaultValue: 'Profile soundtrack' })}
+                        </h3>
+                        <p className="text-sm text-site-text-muted">
+                          {t('profile-soundtrack-hint', {
+                            defaultValue: 'Pick a song visitors can play from your cover.',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <SpotifySongSearch selected={selectedSong} onSelect={setSelectedSong} />
+                  </section>
+
+                  <section className="glass-fill rounded-site p-4">
+                    <div className="flex items-start gap-3">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
+                        <Palette className="size-4" aria-hidden />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-site-text">
+                          {t('profile-look', { defaultValue: 'Profile look' })}
+                        </h3>
+                        <p className="mt-1 text-sm text-site-text-muted">
+                          {t('profile-look-hint', {
+                            defaultValue:
+                              'Equip themes, frames, badges, and banners from profile customization.',
+                          })}
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="mt-3"
+                          onClick={async () => {
+                            if (
+                              dirty &&
+                              !(await confirm({
+                                title: t('discard-profile-changes-title', {
+                                  defaultValue: 'Discard profile changes?',
+                                }),
+                                description: t('discard-profile-changes-body', {
+                                  defaultValue: 'Your unsaved profile updates will be lost.',
+                                }),
+                                confirmLabel: t('discard-changes', {
+                                  defaultValue: 'Discard changes',
+                                }),
+                                danger: true,
+                              }))
+                            ) {
+                              return;
+                            }
+                            onClose();
+                            navigate({ to: '/settings/profile' });
+                          }}
+                        >
+                          <Palette aria-hidden />
+                          {t('profile-cosmetics-title', { defaultValue: 'Profile customization' })}
+                        </Button>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+              ) : null}
+
+              {section === 'privacy' ? (
+                <div role="tabpanel" className="space-y-4">
+                  <section className="glass-fill rounded-site p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
+                          <Eye className="size-4" aria-hidden />
+                        </span>
+                        <div>
+                          <Label htmlFor="profile-show-likes">
+                            {t('show-liked-posts', { defaultValue: 'Show liked posts' })}
+                          </Label>
+                          <p
+                            id="profile-show-likes-hint"
+                            className="mt-1 text-sm text-site-text-muted"
+                          >
+                            {t('show-liked-posts-hint', {
+                              defaultValue: "Let others see posts you've liked.",
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        id="profile-show-likes"
+                        checked={showLikes}
+                        onCheckedChange={setShowLikes}
+                        aria-describedby="profile-show-likes-hint"
+                      />
+                    </div>
+                  </section>
+
+                  <section className="glass-fill rounded-site p-4">
+                    <div className="mb-4 flex items-start gap-3">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
+                        <LockKeyhole className="size-4" aria-hidden />
+                      </span>
+                      <div>
+                        <h3 className="font-semibold text-site-text">
+                          {t('direct-messages', { defaultValue: 'Direct messages' })}
+                        </h3>
+                        <p className="text-sm text-site-text-muted">
+                          {t('direct-messages-hint', {
+                            defaultValue: 'Choose who can start a new conversation with you.',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <Label htmlFor="profile-dm-privacy">
+                      {t('dm-privacy-label', { defaultValue: 'Who can message you' })}
+                    </Label>
+                    <Select
+                      id="profile-dm-privacy"
+                      value={dmPrivacy}
+                      onChange={(event) => setDmPrivacy(event.target.value)}
+                      className="mt-2"
+                    >
+                      <option value="EVERYONE">
+                        {t('dm-everyone', { defaultValue: 'Everyone' })}
+                      </option>
+                      <option value="FOLLOWERS">
+                        {t('dm-followers', { defaultValue: 'People I follow' })}
+                      </option>
+                      <option value="NONE">{t('dm-none', { defaultValue: 'Nobody' })}</option>
+                    </Select>
+                    <p className="mt-2 text-xs text-site-text-dim">
+                      {dmPrivacy === 'EVERYONE'
+                        ? t('dm-everyone-hint', {
+                            defaultValue: 'Anyone can send you a direct message.',
+                          })
+                        : dmPrivacy === 'FOLLOWERS'
+                          ? t('dm-followers-hint', {
+                              defaultValue: 'Only people you follow can message you.',
+                            })
+                          : t('dm-none-hint', {
+                              defaultValue: 'No one can send you direct messages.',
+                            })}
+                    </p>
+                  </section>
+                </div>
+              ) : null}
             </div>
 
-            {/* Tip goal (creator) */}
-            <div>
-              <label className="block text-xs font-medium text-site-text-dim mb-1.5">{t("tip-goal-label", { defaultValue: "Monthly tip goal (coins) — optional" })}</label>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  min={0}
-                  value={tipGoal}
-                  onChange={(e) => setTipGoal(e.target.value)}
-                  placeholder="e.g. 1000"
-                  className="w-32 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
+            <aside className="hidden md:block">
+              <div className="sticky top-0 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+                  <Sparkles className="size-3.5" aria-hidden />
+                  {t('live-preview', { defaultValue: 'Live preview' })}
+                </div>
+                <EditorPreview
+                  name={displayName}
+                  handle={handle}
+                  bio={bio}
+                  image={avatarPreview}
+                  banner={bannerPreview}
                 />
-                <input
-                  type="text"
-                  value={tipGoalLabel}
-                  onChange={(e) => setTipGoalLabel(e.target.value)}
-                  placeholder={t("tip-goal-label-placeholder", { defaultValue: "Goal label (e.g. New mic fund)" })}
-                  maxLength={80}
-                  className="flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
-                />
+                <p className="text-xs leading-relaxed text-site-text-dim">
+                  {t('live-preview-hint', {
+                    defaultValue:
+                      'Your theme, badges, and frame remain applied when these changes are saved.',
+                  })}
+                </p>
               </div>
-            </div>
+            </aside>
+          </div>
 
-            {/* Per-creator membership price */}
-            <div>
-              <label className="block text-xs font-medium text-site-text-dim mb-1.5">
-                {t("membership-price-label", { defaultValue: "Membership price (coins/month) — optional" })}
-              </label>
-              <input
-                type="number"
-                min={0}
-                value={membershipPrice}
-                onChange={(e) => setMembershipPrice(e.target.value)}
-                placeholder="e.g. 500"
-                className="w-32 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
-              />
-              <p className="mt-1 text-xs text-site-text-dim">
-                {t("membership-price-help", { defaultValue: "Let supporters pay coins monthly to become a member. Leave empty to turn off." })}
-              </p>
+          {error ? (
+            <div
+              className="mx-4 mb-3 rounded-site-sm border border-site-danger/40 bg-site-danger/10 px-3 py-2 text-sm text-site-danger md:mx-6"
+              role="alert"
+            >
+              {error}
             </div>
+          ) : null}
 
-            {/* Show Likes toggle */}
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-site-text">{t("show-liked-posts", { defaultValue: "Show liked posts" })}</p>
-                <p className="text-xs text-site-text-dim mt-0.5">{t("show-liked-posts-hint", { defaultValue: "Let others see posts you've liked" })}</p>
-              </div>
-              <button
+          <div className="glass-fill sticky bottom-0 flex items-center justify-between gap-3 border-x-0 border-b-0 px-4 py-3 md:px-6">
+            <p className="hidden text-xs text-site-text-dim sm:block">
+              {dirty
+                ? t('unsaved-profile-changes', { defaultValue: 'You have unsaved changes.' })
+                : t('profile-up-to-date', { defaultValue: 'Your profile is up to date.' })}
+            </p>
+            <div className="ml-auto flex items-center gap-2">
+              <Button
                 type="button"
-                onClick={() => setShowLikes(!showLikes)}
-                role="switch"
-                aria-checked={showLikes}
-                aria-label={t("show-liked-posts", { defaultValue: "Show liked posts" })}
-                className={`relative w-10 h-5 rounded-full transition-colors duration-150 ${
-                  showLikes ? 'bg-site-accent' : 'bg-site-surface border border-site-border'
-                }`}
+                variant="ghost"
+                onClick={() => void requestClose()}
+                disabled={submitting}
               >
-                <span
-                  className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform duration-150 ${
-                    showLikes ? 'translate-x-5' : ''
-                  }`}
-                />
-              </button>
-            </div>
-
-            {/* DM Privacy */}
-            <div>
-              <label htmlFor="profile-dm-privacy" className="block text-xs font-medium text-site-text-dim mb-1.5">{t("dm-privacy-label", { defaultValue: "Who can message you" })}</label>
-              <Select
-                id="profile-dm-privacy"
-                value={dmPrivacy}
-                onChange={(e) => setDmPrivacy(e.target.value)}
+                {t('cancel', { defaultValue: 'Cancel' })}
+              </Button>
+              <Button
+                type="button"
+                variant="accent"
+                onClick={handleSave}
+                loading={submitting}
+                loadingText={t('saving', { defaultValue: 'Saving…' })}
+                disabled={!dirty || !canSave}
               >
-                <option value="EVERYONE">{t("dm-everyone", { defaultValue: "Everyone" })}</option>
-                <option value="FOLLOWERS">{t("dm-followers", { defaultValue: "People I follow" })}</option>
-                <option value="NONE">{t("dm-none", { defaultValue: "Nobody" })}</option>
-              </Select>
-              <p className="text-xs text-site-text-dim mt-1">
-                {dmPrivacy === 'EVERYONE' && t("dm-everyone-hint", { defaultValue: "Anyone can send you a direct message." })}
-                {dmPrivacy === 'FOLLOWERS' && t("dm-followers-hint", { defaultValue: "Only people you follow can message you." })}
-                {dmPrivacy === 'NONE' && t("dm-none-hint", { defaultValue: "No one can send you direct messages." })}
-              </p>
+                <Sparkles aria-hidden />
+                {t('save-profile', { defaultValue: 'Save profile' })}
+              </Button>
             </div>
-
-            {/* Profile Song */}
-            <SpotifySongSearch
-              selected={selectedSong}
-              onSelect={setSelectedSong}
-            />
-
-            {error && (
-              <p className="text-sm text-site-danger">{error}</p>
-            )}
           </div>
+        </SheetContent>
+      </Sheet>
 
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-site-border">
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              {t("cancel", { defaultValue: "Cancel" })}
-            </Button>
-            <Button variant="accent" size="sm" disabled={submitting || bioRemaining < 0} onClick={handleSave}>
-              {submitting ? t("saving", { defaultValue: "Saving..." }) : t("save", { defaultValue: "Save" })}
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Image crop modal */}
-      {cropSrc && (
+      {cropSrc ? (
         <ImageCropModal
           imageSrc={cropSrc}
           onCropDone={handleCropDone}
           onCancel={handleCropCancel}
         />
-      )}
-
-      {/* Reset avatar confirmation */}
-      {showResetConfirm && (
-        <div className="fixed inset-0 z-300 flex items-center justify-center" onClick={() => setShowResetConfirm(false)}>
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          <div
-            className="relative glass-overlay w-full max-w-sm mx-4 p-5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="font-bold text-site-text mb-2">{t("reset-avatar-confirm-title", { defaultValue: "Reset avatar?" })}</h3>
-            <p className="text-sm text-site-text-muted mb-4">
-              {t("reset-avatar-confirm-body", { defaultValue: "This will remove your custom avatar and revert to your default profile picture. This action cannot be undone." })}
-            </p>
-            {error && <p className="text-sm text-site-danger mb-3">{error}</p>}
-            <div className="flex items-center justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setShowResetConfirm(false)} disabled={resettingAvatar}>
-                {t("cancel", { defaultValue: "Cancel" })}
-              </Button>
-              <Button
-                variant="accent"
-                size="sm"
-                disabled={resettingAvatar}
-                onClick={handleResetAvatar}
-                className="bg-site-danger hover:bg-site-danger/80 text-white"
-              >
-                {resettingAvatar ? t("resetting", { defaultValue: "Resetting..." }) : t("reset-avatar-btn", { defaultValue: "Reset Avatar" })}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      ) : null}
     </>
   );
 }
