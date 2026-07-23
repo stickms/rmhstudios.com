@@ -420,6 +420,10 @@ export function RightSidebar({
           <a href="/rmh-internal-affairs" className="hover:text-site-text transition-colors">
             {t('internal-affairs', { defaultValue: 'Internal Affairs' })}
           </a>
+          {/* Static microsite under /public — full-load anchor, not a router Link. */}
+          <a href="/rmh-designs/" className="hover:text-site-text transition-colors">
+            {t('designs', { defaultValue: 'Designs' })}
+          </a>
           <Link to="/roadmap" className="hover:text-site-text transition-colors">
             {t('roadmap', { defaultValue: 'Roadmap' })}
           </Link>
