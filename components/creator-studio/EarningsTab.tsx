@@ -232,8 +232,11 @@ export function EarningsTab() {
         <div className="flex items-center justify-between pt-1">
           <div className="text-sm text-site-text-dim">
             {t('cost', { defaultValue: 'Cost' })}:{' '}
-            <span className={`font-semibold ${overMax ? 'text-site-danger' : 'text-site-text'}`}>
-              {cost} 🪙
+            <span
+              className={`inline-flex items-center gap-1 font-semibold ${overMax ? 'text-site-danger' : 'text-site-text'}`}
+            >
+              {cost}
+              <Coins className="size-3.5 text-yellow-500" aria-hidden />
             </span>
           </div>
           <Button onClick={submit} loading={submitting} disabled={overMax || cost < MIN_REDEMPTION_COINS}>
@@ -267,7 +270,10 @@ export function EarningsTab() {
                       ? t('merch', { defaultValue: 'Merch' })
                       : t('payout', { defaultValue: 'Payout' })}
                   {' · '}
-                  <span className="text-site-text-dim">{r.amountCoins} 🪙</span>
+                  <span className="inline-flex items-center gap-1 text-site-text-dim">
+                    {r.amountCoins}
+                    <Coins className="size-3.5 text-yellow-500" aria-hidden />
+                  </span>
                 </span>
                 {statusBadge(r.status)}
               </div>

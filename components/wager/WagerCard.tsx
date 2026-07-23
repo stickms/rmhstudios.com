@@ -146,7 +146,8 @@ export function WagerCard({ wager, viewerId, onChange }: Props) {
       <div className="flex flex-wrap gap-2 pt-1">
         {wager.status === 'OPEN' && !isChallenger && viewerId && (
           <Button size="sm" onClick={accept} loading={busy}>
-            {t('accept', { defaultValue: 'Accept' })} · {wager.stakeCoins} 🪙
+            {t('accept', { defaultValue: 'Accept' })} · {wager.stakeCoins}
+            <Coins className="size-3.5" aria-hidden />
           </Button>
         )}
         {wager.status === 'OPEN' && isChallenger && (
