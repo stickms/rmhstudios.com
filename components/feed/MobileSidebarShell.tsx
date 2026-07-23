@@ -448,27 +448,19 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
         </aside>
 
         {/* iOS 26 Safari samples fixed elements near both viewport edges to tint
-            the status-bar and floating-toolbar regions. While the tall drawer
-            is painted, its opaque theme background would otherwise win those
-            sampling passes. These tiny, transparent, higher-z-index targets
-            give WebKit explicit neutral samples at the top and bottom. CSS
-            keeps them absent outside mobile iOS WebKit, and the conditional
-            mount (rather than opacity:0) keeps the closed drawer from affecting
-            the browser chrome. */}
-        {asideRevealed && (
-          <>
-            <div
-              className="safari-chrome-sampler safari-chrome-sampler--top"
-              data-safari-chrome-sampler="top"
-              aria-hidden="true"
-            />
-            <div
-              className="safari-chrome-sampler safari-chrome-sampler--bottom"
-              data-safari-chrome-sampler="bottom"
-              aria-hidden="true"
-            />
-          </>
-        )}
+            the status-bar and floating-toolbar regions. Keep these CSS-gated
+            backdrop-filter targets mounted across drawer state changes so the
+            browser never switches to (and fades in) the drawer's opaque colour. */}
+        <div
+          className="safari-chrome-sampler safari-chrome-sampler--top"
+          data-safari-chrome-sampler="top"
+          aria-hidden="true"
+        />
+        <div
+          className="safari-chrome-sampler safari-chrome-sampler--bottom"
+          data-safari-chrome-sampler="bottom"
+          aria-hidden="true"
+        />
       </div>
     </MobileSidebarContext.Provider>
   );
