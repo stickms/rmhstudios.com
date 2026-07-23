@@ -46,7 +46,7 @@
   "select-words-prompt_one": "选择{{count}}个词来创作你的诗",
   "select-words-prompt_other": "选择{{count}}个词来创作你的诗",
   "settings": "设置",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "登录以将您的故事保存到云端，并在任何地方重播它们。",
   "sign-in-to-save": "登录以将您的进度保存到云端",
   "skip": "跳过",
   "slot-auto": "自动",

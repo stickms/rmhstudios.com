@@ -5,8 +5,11 @@ import arAdmin from "@/locales/ar/admin.json";
 import arBuilds from "@/locales/ar/builds.json";
 import arCAdmin from "@/locales/ar/c-admin.json";
 import arCAltair from "@/locales/ar/c-altair.json";
+import arCAwards from "@/locales/ar/c-awards.json";
 import arCBlog from "@/locales/ar/c-blog.json";
 import arCBuilds from "@/locales/ar/c-builds.json";
+import arCCircle from "@/locales/ar/c-circle.json";
+import arCCreator from "@/locales/ar/c-creator.json";
 import arCCursedLogic from "@/locales/ar/c-cursed-logic.json";
 import arCDailyPuzzles from "@/locales/ar/c-daily-puzzles.json";
 import arCDoctrine from "@/locales/ar/c-doctrine.json";
@@ -14,19 +17,25 @@ import arCDreamRift from "@/locales/ar/c-dream-rift.json";
 import arCEconomy from "@/locales/ar/c-economy.json";
 import arCForestExplorer from "@/locales/ar/c-forest-explorer.json";
 import arCGame from "@/locales/ar/c-game.json";
+import arCHistory from "@/locales/ar/c-history.json";
 import arCHouseAlwaysWins from "@/locales/ar/c-house-always-wins.json";
 import arCKowloonKnockout from "@/locales/ar/c-kowloon-knockout.json";
 import arCLaundrySort from "@/locales/ar/c-laundry-sort.json";
+import arCLayout from "@/locales/ar/c-layout.json";
 import arCLibrary from "@/locales/ar/c-library.json";
 import arCLightsOut from "@/locales/ar/c-lights-out.json";
+import arCLists from "@/locales/ar/c-lists.json";
 import arCLockdown from "@/locales/ar/c-lockdown.json";
 import arCModeration from "@/locales/ar/c-moderation.json";
 import arCNeonDriftway from "@/locales/ar/c-neon-driftway.json";
 import arCNews from "@/locales/ar/c-news.json";
+import arCPredictions from "@/locales/ar/c-predictions.json";
+import arCProfileModules from "@/locales/ar/c-profile-modules.json";
 import arCRideshare from "@/locales/ar/c-rideshare.json";
 import arCRmhCapital from "@/locales/ar/c-rmh-capital.json";
 import arCRmhPmc from "@/locales/ar/c-rmh-pmc.json";
 import arCRmhbox from "@/locales/ar/c-rmhbox.json";
+import arCRmhcalculator from "@/locales/ar/c-rmhcalculator.json";
 import arCRmhcode from "@/locales/ar/c-rmhcode.json";
 import arCRmhcoins from "@/locales/ar/c-rmhcoins.json";
 import arCRmhmusic from "@/locales/ar/c-rmhmusic.json";
@@ -36,18 +45,24 @@ import arCRmhtube from "@/locales/ar/c-rmhtube.json";
 import arCRmhtype from "@/locales/ar/c-rmhtype.json";
 import arCRmhvibe from "@/locales/ar/c-rmhvibe.json";
 import arCRoadmap from "@/locales/ar/c-roadmap.json";
+import arCSaves from "@/locales/ar/c-saves.json";
 import arCSignalForge from "@/locales/ar/c-signal-forge.json";
+import arCStatus from "@/locales/ar/c-status.json";
 import arCStudio from "@/locales/ar/c-studio.json";
 import arCSynapseStorm from "@/locales/ar/c-synapse-storm.json";
 import arCTempleOfJoy from "@/locales/ar/c-temple-of-joy.json";
+import arCTournaments from "@/locales/ar/c-tournaments.json";
 import arCUi from "@/locales/ar/c-ui.json";
 import arCUserBuilds from "@/locales/ar/c-user-builds.json";
 import arCVega from "@/locales/ar/c-vega.json";
 import arCVelum2099 from "@/locales/ar/c-velum2099.json";
 import arCVersecraft from "@/locales/ar/c-versecraft.json";
 import arCVoidBreaker from "@/locales/ar/c-void-breaker.json";
+import arCWager from "@/locales/ar/c-wager.json";
+import arCWishlist from "@/locales/ar/c-wishlist.json";
 import arCommon from "@/locales/ar/common.json";
 import arFeed from "@/locales/ar/feed.json";
+import arGamesHub from "@/locales/ar/games-hub.json";
 import arGroups from "@/locales/ar/groups.json";
 import arLibrary from "@/locales/ar/library.json";
 import arNav from "@/locales/ar/nav.json";
@@ -63,8 +78,13 @@ import arRSliceIt from "@/locales/ar/r-slice-it.json";
 import arRStrategies from "@/locales/ar/r-strategies.json";
 import arRStudio from "@/locales/ar/r-studio.json";
 import arRideshare from "@/locales/ar/rideshare.json";
+import arSearch from "@/locales/ar/search.json";
+import arSettingsAppearance from "@/locales/ar/settings-appearance.json";
+import arSettingsContent from "@/locales/ar/settings-content.json";
+import arSettingsNotifications from "@/locales/ar/settings-notifications.json";
 import arShared from "@/locales/ar/shared.json";
 import arSite from "@/locales/ar/site.json";
+import arThemeStudio from "@/locales/ar/theme-studio.json";
 import arUserBuilds from "@/locales/ar/user-builds.json";
 import arV from "@/locales/ar/v.json";
 
@@ -73,8 +93,11 @@ const arResources = {
   "builds": arBuilds,
   "c-admin": arCAdmin,
   "c-altair": arCAltair,
+  "c-awards": arCAwards,
   "c-blog": arCBlog,
   "c-builds": arCBuilds,
+  "c-circle": arCCircle,
+  "c-creator": arCCreator,
   "c-cursed-logic": arCCursedLogic,
   "c-daily-puzzles": arCDailyPuzzles,
   "c-doctrine": arCDoctrine,
@@ -82,19 +105,25 @@ const arResources = {
   "c-economy": arCEconomy,
   "c-forest-explorer": arCForestExplorer,
   "c-game": arCGame,
+  "c-history": arCHistory,
   "c-house-always-wins": arCHouseAlwaysWins,
   "c-kowloon-knockout": arCKowloonKnockout,
   "c-laundry-sort": arCLaundrySort,
+  "c-layout": arCLayout,
   "c-library": arCLibrary,
   "c-lights-out": arCLightsOut,
+  "c-lists": arCLists,
   "c-lockdown": arCLockdown,
   "c-moderation": arCModeration,
   "c-neon-driftway": arCNeonDriftway,
   "c-news": arCNews,
+  "c-predictions": arCPredictions,
+  "c-profile-modules": arCProfileModules,
   "c-rideshare": arCRideshare,
   "c-rmh-capital": arCRmhCapital,
   "c-rmh-pmc": arCRmhPmc,
   "c-rmhbox": arCRmhbox,
+  "c-rmhcalculator": arCRmhcalculator,
   "c-rmhcode": arCRmhcode,
   "c-rmhcoins": arCRmhcoins,
   "c-rmhmusic": arCRmhmusic,
@@ -104,18 +133,24 @@ const arResources = {
   "c-rmhtype": arCRmhtype,
   "c-rmhvibe": arCRmhvibe,
   "c-roadmap": arCRoadmap,
+  "c-saves": arCSaves,
   "c-signal-forge": arCSignalForge,
+  "c-status": arCStatus,
   "c-studio": arCStudio,
   "c-synapse-storm": arCSynapseStorm,
   "c-temple-of-joy": arCTempleOfJoy,
+  "c-tournaments": arCTournaments,
   "c-ui": arCUi,
   "c-user-builds": arCUserBuilds,
   "c-vega": arCVega,
   "c-velum2099": arCVelum2099,
   "c-versecraft": arCVersecraft,
   "c-void-breaker": arCVoidBreaker,
+  "c-wager": arCWager,
+  "c-wishlist": arCWishlist,
   "common": arCommon,
   "feed": arFeed,
+  "games-hub": arGamesHub,
   "groups": arGroups,
   "library": arLibrary,
   "nav": arNav,
@@ -131,8 +166,13 @@ const arResources = {
   "r-strategies": arRStrategies,
   "r-studio": arRStudio,
   "rideshare": arRideshare,
+  "search": arSearch,
+  "settings-appearance": arSettingsAppearance,
+  "settings-content": arSettingsContent,
+  "settings-notifications": arSettingsNotifications,
   "shared": arShared,
   "site": arSite,
+  "theme-studio": arThemeStudio,
   "user-builds": arUserBuilds,
   "v": arV,
 } as const;

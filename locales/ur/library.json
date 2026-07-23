@@ -36,7 +36,7 @@
   "collection-by": "بذریعہ {{who}}",
   "collection-delete-confirm": "یہ مجموعہ حذف کریں؟ کتابیں حذف نہیں ہوں گی۔",
   "collection-desc-placeholder": "اختیاری",
-  "collection-empty": "No books yet.",
+  "collection-empty": "ابھی تک کوئی کتاب نہیں ہے۔",
   "collection-rename-prompt": "مجموعے کا نام",
   "collection-title-placeholder": "مثلاً میری پڑھنے کی فہرست",
   "collections-community": "Reader collections",
@@ -80,7 +80,7 @@
   "result-count_one": "{{count}} things to explore",
   "result-count_other": "{{count}} things to explore",
   "search-label": "لائبریری تلاش کریں",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "کتابیں، البمز، پلے لسٹس اور پڑھنے والی چیزیں تلاش کریں…",
   "search-your-books": "اپنی کتابیں تلاش کریں…",
   "section-albums": "البمز",
   "section-blog": "Blog",
@@ -93,6 +93,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "کتاب شامل کریں",
+  "upload-label": "پی ڈی ایف اپ لوڈ کریں"
 }
