@@ -19,7 +19,7 @@
 //
 // Server-side rendering reads through resources.server.ts (stubbed out of the
 // client bundle), which reuses the LOCALE_LOADERS below to load ONLY the active
-// language on demand (no longer all 32 statically at boot — cold-start win) and
+// language on demand (no longer all 16 statically at boot — cold-start win) and
 // caches it for the synchronous SSR i18n init.
 import type { Locale } from '@/lib/i18n/config';
 import enCore from '@/lib/i18n/resources.en-core';
@@ -64,20 +64,4 @@ export const LOCALE_LOADERS: Record<Locale, () => Promise<LocaleBundle>> = {
   vi: () => import('@/lib/i18n/resources.vi').then((m) => m.default as LocaleBundle),
   tr: () => import('@/lib/i18n/resources.tr').then((m) => m.default as LocaleBundle),
   ur: () => import('@/lib/i18n/resources.ur').then((m) => m.default as LocaleBundle),
-  bn: () => import('@/lib/i18n/resources.bn').then((m) => m.default as LocaleBundle),
-  pa: () => import('@/lib/i18n/resources.pa').then((m) => m.default as LocaleBundle),
-  ta: () => import('@/lib/i18n/resources.ta').then((m) => m.default as LocaleBundle),
-  te: () => import('@/lib/i18n/resources.te').then((m) => m.default as LocaleBundle),
-  mr: () => import('@/lib/i18n/resources.mr').then((m) => m.default as LocaleBundle),
-  fa: () => import('@/lib/i18n/resources.fa').then((m) => m.default as LocaleBundle),
-  th: () => import('@/lib/i18n/resources.th').then((m) => m.default as LocaleBundle),
-  pl: () => import('@/lib/i18n/resources.pl').then((m) => m.default as LocaleBundle),
-  uk: () => import('@/lib/i18n/resources.uk').then((m) => m.default as LocaleBundle),
-  nl: () => import('@/lib/i18n/resources.nl').then((m) => m.default as LocaleBundle),
-  fil: () => import('@/lib/i18n/resources.fil').then((m) => m.default as LocaleBundle),
-  ms: () => import('@/lib/i18n/resources.ms').then((m) => m.default as LocaleBundle),
-  ro: () => import('@/lib/i18n/resources.ro').then((m) => m.default as LocaleBundle),
-  el: () => import('@/lib/i18n/resources.el').then((m) => m.default as LocaleBundle),
-  cs: () => import('@/lib/i18n/resources.cs').then((m) => m.default as LocaleBundle),
-  sv: () => import('@/lib/i18n/resources.sv').then((m) => m.default as LocaleBundle),
 };
