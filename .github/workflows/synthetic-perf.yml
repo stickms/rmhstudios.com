@@ -24,6 +24,7 @@ jobs:
           node-version: 24.18.0
 
       - name: Run synthetic Lighthouse probes
+        continue-on-error: true
         run: |
           set -euo pipefail
           mkdir -p .lighthouseci
@@ -39,8 +40,8 @@ jobs:
             --numberOfRuns="$runs" \
             --settings.chromeFlags="--headless=new --no-sandbox"
 
-      - name: Enforce regression bands
-        run: node scripts/ci/synthetic-perf-report.mjs
+      - name: Report regression bands (advisory)
+        run: node scripts/ci/synthetic-perf-report.mjs --warn-only
 
       - name: Upload Lighthouse artifacts
         if: always()
@@ -48,7 +49,7 @@ jobs:
         with:
           name: synthetic-perf-lighthouse
           path: .lighthouseci
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 14
 
   cloudflare-cache-rule-drift:

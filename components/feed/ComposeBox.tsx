@@ -20,7 +20,6 @@ import {
   MessageCircle,
   AtSign,
   AlertTriangle,
-  ChevronDown,
 } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { GifPicker } from './GifPicker';
@@ -33,6 +32,7 @@ import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 import { useLiquidPop } from '@/components/ui/liquid-pop';
 import { useFeedStore } from '@/stores/feedStore';
 import {
@@ -673,27 +673,22 @@ export function ComposeBox({
                 <span className="text-xs text-site-text-dim">
                   {t('poll-length-label', { defaultValue: 'Poll length' })}
                 </span>
-                {/* §16.3.1: recessed glass well — `appearance-none` strips the
-                    native select chrome (whose bevel/shadow doubled up over the
-                    old border+bg), leaving `.glass-inset`'s inner shadow only, with
-                    a lucide chevron like every other select (ui/select.tsx). */}
-                <span className="relative inline-flex">
-                  <select
-                    value={pollDuration}
-                    onChange={(e) => setPollDuration(Number(e.target.value))}
-                    className="glass-inset appearance-none px-2 py-1 pr-7 text-xs text-site-text outline-none transition-[color,box-shadow,border-color] focus-visible:border-site-accent"
-                  >
-                    <option value={0}>
-                      {t('poll-duration-no-limit', { defaultValue: 'No limit' })}
-                    </option>
-                    <option value={1}>{t('poll-duration-1h', { defaultValue: '1 hour' })}</option>
-                    <option value={6}>{t('poll-duration-6h', { defaultValue: '6 hours' })}</option>
-                    <option value={24}>{t('poll-duration-1d', { defaultValue: '1 day' })}</option>
-                    <option value={72}>{t('poll-duration-3d', { defaultValue: '3 days' })}</option>
-                    <option value={168}>{t('poll-duration-1w', { defaultValue: '1 week' })}</option>
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-site-text-dim" aria-hidden />
-                </span>
+                <Select
+                  controlSize="sm"
+                  value={pollDuration}
+                  onChange={(e) => setPollDuration(Number(e.target.value))}
+                  containerClassName="inline-block w-auto"
+                  className="w-auto min-w-28"
+                >
+                  <option value={0}>
+                    {t('poll-duration-no-limit', { defaultValue: 'No limit' })}
+                  </option>
+                  <option value={1}>{t('poll-duration-1h', { defaultValue: '1 hour' })}</option>
+                  <option value={6}>{t('poll-duration-6h', { defaultValue: '6 hours' })}</option>
+                  <option value={24}>{t('poll-duration-1d', { defaultValue: '1 day' })}</option>
+                  <option value={72}>{t('poll-duration-3d', { defaultValue: '3 days' })}</option>
+                  <option value={168}>{t('poll-duration-1w', { defaultValue: '1 week' })}</option>
+                </Select>
               </label>
             </div>
           )}

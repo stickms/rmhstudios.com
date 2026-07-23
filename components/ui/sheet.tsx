@@ -95,7 +95,7 @@ const SheetContent = React.forwardRef<
             ? 'inset-0 h-dvh max-h-none w-dvw rounded-none px-0 pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)]'
             : 'bottom-2 left-1/2 max-h-[calc(100dvh-1rem)] w-[calc(100dvw-1rem)] -translate-x-1/2 rounded-site px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2',
           // Desktop: centered dialog.
-          'md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:h-auto md:w-full md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-site md:px-6 md:pb-6 md:pt-6',
+          'md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:h-auto md:w-full md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-site md:px-5 md:pb-5 md:pt-5',
           className,
         )}
         {...props}
@@ -116,7 +116,7 @@ const SheetContent = React.forwardRef<
         <DialogPrimitive.Close
           ref={closeRef}
           className={cn(
-            'absolute right-4 rounded-full p-1.5 text-site-text-muted opacity-80 outline-none transition-opacity hover:bg-site-surface-hover hover:opacity-100 focus-visible:ring-2 focus-visible:ring-site-accent/50 disabled:pointer-events-none md:top-4',
+            'absolute right-3 inline-flex size-11 items-center justify-center rounded-full text-site-text-muted opacity-80 outline-none transition-opacity hover:bg-site-surface-hover hover:opacity-100 focus-visible:ring-2 focus-visible:ring-site-accent/50 disabled:pointer-events-none md:right-4 md:top-3 md:size-9',
             mobileFullscreen ? 'top-[max(.75rem,env(safe-area-inset-top))]' : 'top-3',
           )}
         >
@@ -130,13 +130,13 @@ const SheetContent = React.forwardRef<
 SheetContent.displayName = 'SheetContent';
 
 function SheetHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('flex flex-col gap-1.5 pb-3 text-start', className)} {...props} />;
+  return <div className={cn('flex flex-col gap-1 pb-2.5 text-start', className)} {...props} />;
 }
 
 function SheetFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-end', className)}
+      className={cn('flex flex-col-reverse gap-2 pt-3 sm:flex-row sm:justify-end', className)}
       {...props}
     />
   );

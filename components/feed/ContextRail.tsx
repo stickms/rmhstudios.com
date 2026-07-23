@@ -21,7 +21,7 @@ export function ContextRail({
     return (
       <aside
         data-slot="context-rail"
-        className={cn('hidden w-72 shrink-0 self-start xl:block 2xl:w-80', className)}
+        className={cn('hidden w-64 shrink-0 self-start xl:block 2xl:w-72', className)}
       >
         {children}
       </aside>
@@ -35,7 +35,7 @@ export function ContextRail({
       aria-hidden="true"
       data-slot="context-rail-spacer"
       className={
-        compactReserve ? 'hidden w-4 shrink-0 xl:block' : 'hidden w-72 shrink-0 xl:block 2xl:w-80'
+        compactReserve ? 'hidden w-3 shrink-0 xl:block' : 'hidden w-64 shrink-0 xl:block 2xl:w-72'
       }
     />
   );

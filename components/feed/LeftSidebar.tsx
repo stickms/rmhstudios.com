@@ -60,7 +60,7 @@ type SidebarSessionUser = {
 export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   // When expanded=true (e.g. in mobile drawer), always show labels.
   // Otherwise, labels stay hidden on the tablet rail and appear at the ordinary
-  // desktop breakpoint, where the shell expands to a readable 240px sidebar.
+  // desktop breakpoint, where the shell expands to a readable 216px sidebar.
   const labelClass = expanded ? '' : 'hidden lg:block';
   const logoFullClass = expanded ? '' : 'hidden lg:block';
   const logoShortClass = expanded ? 'hidden' : 'lg:hidden';
@@ -72,7 +72,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   // Collapsed rail (md, 64px): tighter padding so the icon pills breathe inside
   // the m-2 rail panel instead of being crushed + clipped (§5.5x A.3). p-4 returns
   // at lg where the rail expands and shows labels.
-  const paddingClass = expanded ? 'px-4 pt-4' : 'p-1.5 lg:p-4';
+  const paddingClass = expanded ? 'px-3 pt-3' : 'p-1 lg:p-3';
   const logoAlignClass = expanded ? 'justify-start' : 'justify-center lg:justify-start';
   const iconMrClass = expanded ? 'mr-2' : 'lg:mr-2';
   const itemJustifyClass = expanded ? '' : 'md:justify-center lg:justify-start';
@@ -249,14 +249,14 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     const hostsCapsule = isActive && canHost;
     const indent = nested
       ? expanded
-        ? 'pl-10'
-        : 'md:justify-center lg:justify-start lg:pl-10'
+        ? 'pl-9'
+        : 'md:justify-center lg:justify-start lg:pl-9'
       : itemJustifyClass;
     // The active pill is now the flowing layoutId capsule (below) — the leaf
     // itself only carries the accent text + hover states. `relative` anchors the
     // absolute capsule; inactive pills keep the pointer light via
     // .glass-interactive + data-glass-light.
-    const leafClass = `glass-interactive relative flex items-center gap-3 ${itemPadXClass} ${nested ? 'py-2' : 'py-3'} rounded-full text-sm font-medium transition-colors ${indent} ${
+    const leafClass = `glass-interactive relative flex min-h-11 items-center gap-2.5 ${itemPadXClass} py-2 rounded-[var(--site-control-radius)] text-sm font-medium transition-colors md:min-h-10 ${indent} ${
       isActive
         ? 'text-site-accent'
         : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
@@ -276,13 +276,13 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             transition={reduced ? { duration: 0 } : SPRING.snappy}
           >
             <motion.span
-              className="glass-liquid absolute inset-0 rounded-full bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]"
+              className="glass-liquid absolute inset-0 rounded-[var(--site-control-radius)] bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]"
               style={squashStyle}
             />
           </motion.span>
         )}
         {/* Labels/icons ride above the capsule + goo underlay (never filtered). */}
-        <span className="relative z-[1] flex min-w-0 items-center gap-3">
+        <span className="relative z-[1] flex min-w-0 items-center gap-2.5">
           {link.badge === 'inbox' ? (
             <span className="relative shrink-0">
               <Icon className="w-5 h-5" aria-hidden />
@@ -367,7 +367,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   return (
     <div
       ref={rootRef}
-      className={`flex flex-col gap-1 ${rootSizeClass} ${paddingClass}`}
+      className={`flex flex-col gap-0.5 ${rootSizeClass} ${paddingClass}`}
       style={
         expanded
           ? {
@@ -390,7 +390,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           button pushed to the far edge; on the desktop rail the row has a single
           child, so logoAlignClass centers/starts it exactly as before. */}
       <div
-        className={`mb-6 flex items-center shrink-0 ${
+        className={`mb-3 flex items-center shrink-0 ${
           expanded ? 'justify-between gap-2' : logoAlignClass
         }`}
       >
@@ -419,8 +419,8 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           capsule's coordinate space — it wraps ALL leaves (incl. expanding group
           submenus) so the underlay covers the full content height and stays
           registered with the capsule through scroll (§5.47). */}
-      <nav ref={navRef} className={`${navScrollClass} lg:pr-1.5`}>
-        <div className="relative flex flex-col gap-1">
+      <nav ref={navRef} className={`${navScrollClass} lg:pr-1`}>
+        <div className="relative flex flex-col gap-0.5">
           {/* Goo underlay (§5.47) — capsule-only, behind the leaves. */}
           {capsuleUnderlay}
           {orderedNav.map((item) => {
@@ -441,14 +441,14 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
               ? item.children.filter((c) => pinned.includes(c.href))
               : [];
             return (
-              <div key={item.group} className="flex flex-col gap-1">
+              <div key={item.group} className="flex flex-col gap-0.5">
                 {pinnedChildren.map((c) => renderPinnable(c, false))}
                 <button
                   type="button"
                   onClick={() => toggleGroup(item.group)}
                   aria-expanded={isOpen}
                   aria-label={groupLabel}
-                  className={`flex items-center gap-3 ${itemPadXClass} py-3 rounded-full text-sm font-medium transition-colors w-full ${itemJustifyClass} ${
+                  className={`flex min-h-11 items-center gap-2.5 ${itemPadXClass} py-2 rounded-[var(--site-control-radius)] text-sm font-medium transition-colors w-full md:min-h-10 ${itemJustifyClass} ${
                     groupActive
                       ? 'text-site-accent bg-site-accent-dim'
                       : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
@@ -475,7 +475,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                       className="overflow-hidden"
                     >
                       <motion.div
-                        className="flex flex-col gap-1 pt-1"
+                        className="flex flex-col gap-0.5 pt-0.5"
                         variants={reduced ? undefined : SUBMENU_LIST}
                         initial={reduced ? false : 'closed'}
                         animate="open"
@@ -501,14 +501,14 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           <NotificationsPopover
             count={notificationCount}
             refreshCount={refreshNotificationCount}
-            className={`flex items-center gap-3 ${itemPadXClass} py-3 rounded-full text-sm font-medium transition-colors w-full text-site-text-muted hover:text-site-text hover:bg-site-surface ${itemJustifyClass}`}
+            className={`flex min-h-11 items-center gap-2.5 ${itemPadXClass} py-2 rounded-[var(--site-control-radius)] text-sm font-medium transition-colors w-full text-site-text-muted hover:text-site-text hover:bg-site-surface md:min-h-10 ${itemJustifyClass}`}
             labelClass={labelClass}
           />
         </div>
       )}
 
       {/* Auth Section — pinned to bottom */}
-      <div className="border-t border-site-border pt-3 shrink-0">
+      <div className="border-t border-site-border pt-2 shrink-0">
         {isPending ? (
           <div className="h-10 bg-site-surface rounded-full animate-pulse" />
         ) : session ? (

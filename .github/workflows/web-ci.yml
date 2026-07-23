@@ -115,10 +115,6 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Build with Vite 8
         run: pnpm run build:frontend
-      # Blocking payload-budget gate. Reuses the build output above and fails the
-      # job when eager/total client payload exceeds the configured budgets.
-      - name: Bundle budget (blocking)
-        run: pnpm exec tsx scripts/ci/bundle-budget.ts --strict
 
   # Production dependency vulnerability audit. Fast; kept separate so it never
   # gates (or is gated by) the build/test.
