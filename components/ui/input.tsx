@@ -15,7 +15,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           // backdrop blur — legibility + cost). Focus fills the well with light.
           // §15.4: compact padding is canonical on fine pointers; the global
           // coarse-pointer rule restores the 44px mobile tap target.
-          'flex h-10 w-full rounded-[var(--site-control-radius,12px)] border border-site-border/70 bg-site-surface/60 backdrop-blur-sm text-site-text px-3.5 py-2 text-sm transition-all duration-150 ease-out placeholder:text-site-text-dim hover:border-site-border-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent/40 focus-visible:border-site-accent focus-visible:bg-site-surface disabled:cursor-not-allowed disabled:opacity-50 shadow-inner',
+          'flex h-10 w-full rounded-full border border-site-border bg-site-surface px-4 py-2 text-sm text-site-text transition-all duration-200 ease-out placeholder:text-site-text-dim hover:border-site-text/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent focus-visible:border-site-accent disabled:cursor-not-allowed disabled:opacity-50 shadow-xs',
           className,
         )}
         ref={ref}
