@@ -11,7 +11,6 @@ import { Switch } from '@/components/ui/switch';
 import { useThemeStore } from '@/stores/themeStore';
 import { FONT_SCALES, HEX_RE, type FontScale } from '@/lib/appearance/prefs';
 import { ensureReadableAccent } from '@/lib/appearance/contrast';
-import { GlassClarityControl } from '@/components/settings/GlassClarityControl';
 import { TiltEffectsRow } from '@/components/settings/TiltEffectsRow';
 
 async function persist(body: Record<string, unknown>) {
@@ -39,7 +38,7 @@ const FONT_LABELS: Record<FontScale, string> = {
 export function AppearancePanel() {
   const { t } = useTranslation('settings-appearance');
   const store = useThemeStore();
-  const [hexDraft, setHexDraft] = useState(store.customAccent ?? '#8b5cf6');
+  const [hexDraft, setHexDraft] = useState(store.customAccent ?? '#0b0b0b');
 
   function setFontScale(value: FontScale) {
     store.setFontScale(value === 1000 ? null : value);
@@ -137,7 +136,7 @@ export function AppearancePanel() {
         <div className="flex items-center gap-3">
           <input
             type="color"
-            value={HEX_RE.test(hexDraft) ? hexDraft : '#8b5cf6'}
+            value={HEX_RE.test(hexDraft) ? hexDraft : '#0b0b0b'}
             onChange={(e) => applyCustomAccent(e.target.value)}
             aria-label={t('custom-accent', { defaultValue: 'Custom accent' })}
             className="h-10 w-14 cursor-pointer rounded-site-sm border border-site-border bg-transparent"
@@ -181,12 +180,6 @@ export function AppearancePanel() {
             orientation behind a permission prompt (iOS). Self-contained consent. */}
         <TiltEffectsRow />
       </Section>
-
-      {/* Glass clarity (§5.46) — the frosted↔clear slider (stop 0 Opaque is the
-          old reduce-transparency behavior). Self-contained: applies + persists. */}
-      <Section title={t('glass-section', { defaultValue: 'Glass' })}>
-        <GlassClarityControl />
-      </Section>
     </div>
   );
 }
@@ -203,7 +196,11 @@ function Section({
   return (
     <section>
       <h3 className="text-sm font-semibold text-site-text">{title}</h3>
-      {description ? <p className="mb-3 text-sm text-site-text-muted">{description}</p> : <div className="mb-3" />}
+      {description ? (
+        <p className="mb-3 text-sm text-site-text-muted">{description}</p>
+      ) : (
+        <div className="mb-3" />
+      )}
       {children}
     </section>
   );
@@ -224,7 +221,9 @@ function ToggleRow({
     <label className="flex items-center justify-between gap-4 py-2.5">
       <span className="min-w-0">
         <span className="block text-sm text-site-text">{label}</span>
-        {description ? <span className="block text-xs text-site-text-muted">{description}</span> : null}
+        {description ? (
+          <span className="block text-xs text-site-text-muted">{description}</span>
+        ) : null}
       </span>
       <Switch checked={checked} onCheckedChange={onChange} />
     </label>

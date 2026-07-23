@@ -17,6 +17,7 @@ import {
   useThemeStore,
   SITE_STYLES,
   THEME_BG,
+  APP_THEME_BG,
   DEFAULT_STYLE,
   SiteStyle,
   REDUCE_TRANSPARENCY_KEY,
@@ -36,10 +37,8 @@ import {
   isGlassLevel,
   applyGlassLevel,
 } from '@/lib/appearance/prefs';
-import { useGlassLight } from '@/hooks/useGlassLight';
-import { useLiquidBackground } from '@/hooks/useLiquidBackground';
+import { useSpatialParallax } from '@/hooks/useSpatialParallax';
 import { useIdleReady } from '@/hooks/useIdleReady';
-import { shouldUsePerfLite } from '@/lib/performance-tier';
 import { useLocaleStore, writeLocaleCookie } from '@/stores/localeStore';
 import { applyHtmlLangDir } from '@/lib/i18n/dom';
 import { games } from '@/lib/games';
@@ -190,32 +189,9 @@ const STYLE_CLASSES = SITE_STYLES.map((s) => `style-${s.id}`);
 // `m` component (aliased as `motion`) and picks these up from LazyMotion context.
 const loadMotionFeatures = () => import('@/lib/motion-features').then((mod) => mod.default);
 
-// Start fetching the optional shader chunk once the document's critical load is
-// complete, then reuse the same promise when the idle gate starts it. This warms
-// Vite's module cache without putting liquid glass on the load/LCP critical path.
-// A rejected fetch is deliberately evicted so a later idle attempt can retry.
-interface LiquidGLModule {
-  initLiquidGL(): () => void;
-}
-let liquidGLImport: Promise<LiquidGLModule> | null = null;
-
-function loadLiquidGL(): Promise<LiquidGLModule> {
-  if (liquidGLImport) return liquidGLImport;
-  const pending: Promise<LiquidGLModule> = import('@/lib/liquid-gl');
-  const cached = pending.catch((error) => {
-    if (liquidGLImport === cached) liquidGLImport = null;
-    throw error;
-  });
-  liquidGLImport = cached;
-  return cached;
-}
-
 // THEME_BG (theme → document background color) lives in stores/themeStore.ts,
 // derived from SITE_STYLES, so the runtime and the no-flash inline script share
-// one source. Excluded app/game routes always paint THEME_BG.default (pure
-// black) — matching their :root tokens and the `.vibe-app`/`.vibe-screen`
-// shells (a non-black document background there makes the browser bar tint and
-// overscroll diverge from the app chrome, a bug we have shipped before).
+// one source.
 
 /**
  * Routes where the site-wide theme must NOT be applied (apps/games own their
@@ -261,46 +237,9 @@ export function Providers({
     return () => window.clearTimeout(recovery);
   }, [pathname]);
 
-  // The pointer-tracked specular highlight for interactive glass — one
-  // document-level rAF-throttled listener, mounted once here (§5.1).
-  useGlassLight();
-
-  // Makes the aurora canvas react to pointer / device motion with a gentle
-  // parallax drift (pairs with the ambient `aurora-drift` flow in globals.css),
-  // so the shared glass backdrop feels alive. Gated off under reduced motion and
-  // on low-end devices. One rAF-throttled listener, mounted once here (§5.1).
-  useLiquidBackground();
-
-  // Device tiering (§6.4): a one-time heuristic demotes the glass on low-end
-  // devices (drops refraction + pointer light, flattens L2 panes to L1 fills)
-  // via CSS only — no component branches. Chrome keeps its blur (few elements,
-  // carry the identity).
-  useEffect(() => {
-    const root = document.documentElement;
-    const nav = navigator as Navigator & {
-      deviceMemory?: number;
-      connection?: { saveData?: boolean; effectiveType?: string; downlink?: number };
-    };
-    // perf audit §6.4: widened from ≤4GB/≤4-core to ≤6GB/≤6-core so more
-    // mid-range devices drop the expensive backdrop blur, and honor the
-    // browser's Data Saver / reduced-data signal when present.
-    // iPhones commonly expose six logical cores regardless of device class, so
-    // the generic core-count heuristic classified even current flagship phones
-    // as perf-lite and removed the visible liquid-glass treatment. iOS WebKit has
-    // its own compositor-safe tier: keep the CSS glass material, while the GPU
-    // canvas, native View Transitions, moving aurora and SVG lens are gated at
-    // their respective sources. Explicit Data Saver still wins everywhere.
-    const iosWebKit = root.classList.contains('ios-webkit');
-    const lite = shouldUsePerfLite({
-      deviceMemory: nav.deviceMemory,
-      hardwareConcurrency: navigator.hardwareConcurrency,
-      saveData: nav.connection?.saveData,
-      effectiveType: nav.connection?.effectiveType,
-      downlinkMbps: nav.connection?.downlink,
-      iosWebKit,
-    });
-    root.classList.toggle('perf-lite', lite);
-  }, []);
+  // A single rAF-throttled listener gives the monochrome spatial backdrop its
+  // restrained depth response. It automatically stands down for reduced motion.
+  useSpatialParallax();
 
   // Sync the locale store to the SSR-resolved locale and reconcile <html lang/dir>
   // so a user whose locale was resolved via Accept-Language (no cookie yet) gets
@@ -400,64 +339,6 @@ export function Providers({
       setResolvedUser(null);
     }
   }, [userId, idleReady, fetchResolvedUser]);
-
-  // Opportunistically warm the liquid runtime only after the window load event.
-  // The handler returns immediately (it never awaits the chunk), so images,
-  // fonts, hydration, and the load event are not held up by this enhancement.
-  useEffect(() => {
-    let cancelled = false;
-    let timer = 0;
-    const warm = () => {
-      if (cancelled) return;
-      // The CSS fallback is complete. Do not spend bandwidth on the optional
-      // shader chunk when the one-shot device/network tier already rejected it.
-      if (document.documentElement.classList.contains('perf-lite')) return;
-      void loadLiquidGL().catch(() => {});
-    };
-    if (document.readyState === 'complete') timer = window.setTimeout(warm, 0);
-    else window.addEventListener('load', warm, { once: true });
-    return () => {
-      cancelled = true;
-      if (timer) window.clearTimeout(timer);
-      window.removeEventListener('load', warm);
-    };
-  }, []);
-
-  // Shader-grade liquid layer (§16.1). Initialised after idle from the optional
-  // code-split chunk warmed above; it never gates the LCP/load path. It self-gates
-  // (WebGPU→WebGL2→none, with WebKit WebGPU gated to fixed releases; off
-  // under perf-lite / reduced motion / high-contrast / reduce-transparency) and,
-  // when a tier initialises,
-  // sets `html.liquid-gl` so the CSS aurora + goo underlays hide (no double
-  // render). When no tier is available the untouched CSS/SVG stack renders.
-  useEffect(() => {
-    if (!idleReady) return;
-    if (document.documentElement.classList.contains('perf-lite')) return;
-    let cancelled = false;
-    let dispose: (() => void) | undefined;
-    let retryTimer = 0;
-    let attempts = 0;
-    const start = () => {
-      attempts++;
-      loadLiquidGL()
-        .then((m) => {
-          if (!cancelled) dispose = m.initLiquidGL();
-        })
-        .catch(() => {
-          // A flaky chunk request should not disable glass for the whole visit.
-          // Retry twice in the background; CSS remains the complete fallback.
-          if (!cancelled && attempts < 3) {
-            retryTimer = window.setTimeout(start, attempts * 1_500);
-          }
-        });
-    };
-    start();
-    return () => {
-      cancelled = true;
-      if (retryTimer) window.clearTimeout(retryTimer);
-      dispose?.();
-    };
-  }, [idleReady]);
 
   // Referral attribution: /ref/$code stashes an invite code before sign-up;
   // claim it once a session exists (works for email and OAuth flows alike).
@@ -658,7 +539,7 @@ export function Providers({
     const bg = userThemeOn
       ? (activeUserTheme as AppliedUserTheme).bg
       : isAppRoute
-        ? THEME_BG.default
+        ? APP_THEME_BG
         : (THEME_BG[activeStyle] ?? THEME_BG.default);
     html.style.backgroundColor = bg;
     document.body.style.backgroundColor = bg;
@@ -848,15 +729,18 @@ export function Providers({
                 </ConfirmProvider>
               </ResolvedUserCtx.Provider>
               <Toaster
-                theme={style === 'light' || style === 'sepia' ? 'light' : 'dark'}
+                theme={
+                  style === 'graphite' ||
+                  style === 'nocturne' ||
+                  style === 'ultra' ||
+                  style === 'high-contrast'
+                    ? 'dark'
+                    : 'light'
+                }
                 position="bottom-left"
                 toastOptions={{
                   style: {
-                    // L4 glass — floating UI, more opaque so content never ghosts
-                    // through toast text over a bright aurora corner (§7.3).
-                    background: 'color-mix(in srgb, var(--site-bg) 62%, transparent)',
-                    backdropFilter: 'blur(28px) saturate(180%)',
-                    WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+                    background: 'var(--site-surface)',
                     border: '1px solid var(--site-border)',
                     borderRadius: 'var(--site-radius-sm)',
                     boxShadow: 'var(--site-shadow)',

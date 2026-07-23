@@ -53,11 +53,11 @@ export function PageLayout({
   const hasBreadcrumbs = Boolean(breadcrumbs?.length);
   const expandedHeaderHeight = description
     ? hasBreadcrumbs
-      ? 'h-22 sm:h-26'
-      : 'h-22'
+      ? 'min-h-28 sm:min-h-32'
+      : 'min-h-28'
     : hasBreadcrumbs
-      ? 'h-18 sm:h-22'
-      : 'h-18';
+      ? 'min-h-24 sm:min-h-28'
+      : 'min-h-24';
   const targetWidth = wide
     ? hasRightSidebar
       ? WIDE_WIDTH
@@ -94,17 +94,25 @@ export function PageLayout({
           {/* Scroll sentinel — sits at the very top so the header knows when the
               page has scrolled beneath it. */}
           <div ref={sentinelRef} aria-hidden className="h-px" />
-          {/* Sticky Header — L3 glass-chrome floating capsule (§8.2). The shared
-              sticky class owns its responsive edge inset, stacking level, and
-              header→content breathing room. It still condenses on scroll (height
-              + tint + blur + glint via [data-scrolled]). */}
+          {/* Editorial page masthead. It keeps route context visible while
+              collapsing to a compact rule on scroll. */}
           <header
             ref={headerRef}
             data-slot="page-header"
             aria-describedby={description ? descriptionId : undefined}
-            className={`group glass-chrome site-sticky-chrome transition-[height] data-[scrolled]:h-16 ${expandedHeaderHeight}`}
+            className={`group site-sticky-chrome spatial-page-header transition-[min-height,height] duration-300 data-[scrolled]:h-16 data-[scrolled]:min-h-16 ${expandedHeaderHeight}`}
           >
-            <div className="flex h-full min-w-0 items-center gap-3 px-4 py-3 sm:px-5">
+            <div className="flex h-full min-w-0 items-center gap-4 px-5 py-5 sm:px-7">
+              <span
+                aria-hidden
+                className="hidden text-[10px] font-semibold tracking-[0.22em] text-site-text-dim sm:block"
+              >
+                RMH / 01
+              </span>
+              <span
+                aria-hidden
+                className="hidden h-8 w-px bg-site-border sm:block group-data-[scrolled]:h-5"
+              />
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 {/* Mobile: always show the sidebar button in the top-left */}
                 <MobileMenuButton />
@@ -124,7 +132,7 @@ export function PageLayout({
                       className="mb-0.5 hidden sm:block group-data-[scrolled]:hidden"
                     />
                   )}
-                  <h1 className="flex min-w-0 items-center gap-2 truncate font-(family-name:--site-font-display) text-xl font-semibold text-site-text [letter-spacing:var(--site-letter-spacing)] sm:text-2xl">
+                  <h1 className="flex min-w-0 items-center gap-2 truncate font-(family-name:--site-font-display) text-3xl font-medium leading-none text-site-text [letter-spacing:var(--site-letter-spacing)] group-data-[scrolled]:font-(family-name:--site-font-body) group-data-[scrolled]:text-xl group-data-[scrolled]:font-semibold sm:text-4xl">
                     {/* Mobile: "RMH |" brand prefix before the page title */}
                     <MobileBrandPrefix />
                     {title}
@@ -133,7 +141,7 @@ export function PageLayout({
                     <p
                       id={descriptionId}
                       data-slot="page-description"
-                      className="mt-0.5 line-clamp-1 text-xs text-site-text-muted group-data-[scrolled]:hidden sm:text-sm"
+                      className="mt-2 line-clamp-2 max-w-2xl text-sm leading-relaxed text-site-text-muted group-data-[scrolled]:hidden"
                     >
                       {description}
                     </p>

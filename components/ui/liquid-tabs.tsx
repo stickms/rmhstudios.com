@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * LiquidTabs — the ONE shared tab-strip renderer (§16.2). A thin, presentational
+ * LiquidTabs — the shared tab-strip renderer. A thin, presentational
  * tablist (a styled radiogroup, not a router): the caller owns `value`/`onChange`
  * and any URL/panel wiring. The active capsule is one framer-motion `layoutId`
  * element that morphs between tab positions with SPRING.snappy, so switching tabs
@@ -19,8 +19,6 @@
  *    don't apply — every link is reachable with Tab/Shift+Tab as usual.
  *
  * Constraints:
- *  - The capsule carries `.glass-liquid` (ambient sheen) — it IS a signature
- *    surface, so it counts against the ≤3 ambient-sheen-per-page budget (§5.2).
  *  - `layoutId` is `useId()`-scoped so several LiquidTabs on one page never
  *    share a capsule and morph into each other.
  *  - Roving arrow-key nav (WAI-ARIA tabs pattern): ←/→/↑/↓ move, Home/End jump,
@@ -45,7 +43,6 @@ import { cn } from '@/lib/utils';
 import { SPRING } from '@/lib/motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { NotificationBadge } from '@/components/ui/notification-badge';
-import { useLiquidMorph } from './liquid-morph';
 
 export interface LiquidTab {
   id: string;
@@ -146,22 +143,6 @@ export function LiquidTabs({
   const tabId = (id: string) => (idBase ? `${idBase}-tab-${id}` : `${layoutId}-${id}`);
   const panelId = (id: string) => (idBase ? `${idBase}-panel-${id}` : undefined);
 
-  // §5.47 true liquid morphing: velocity squash/stretch on the capsule + a gooey
-  // trailing droplet in an underlay. Rides on top of the layoutId spring, which
-  // stays the reduced-motion fallback. The capsule lives inside/behind the active
-  // tab (pixel-accurate via layout projection); the underlay anchors the shared
-  // material sampler without rendering a trailing droplet for tabs.
-  const capsuleRef = useRef<HTMLSpanElement>(null);
-  const { squashStyle, underlay } = useLiquidMorph({
-    capsuleRef,
-    axis: 'x',
-    reduced,
-    activeKey: value,
-    // A lagging metaball can detach on wide jumps and reads as an idle dot.
-    // Tabs keep the cohesive active pill and its squash/layout animation only.
-    trail: false,
-  });
-
   const link = Boolean(renderTab);
   const activeTabId = tabId(value);
 
@@ -218,7 +199,7 @@ export function LiquidTabs({
       'relative inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-40',
       pad,
       fullWidth && 'flex-1',
-      active ? 'text-site-accent' : 'text-site-text-muted hover:text-site-text',
+      active ? 'text-site-accent-fg' : 'text-site-text-muted hover:text-site-text',
     );
 
   // The active capsule — identical material in both modes. Outer element owns the
@@ -227,16 +208,12 @@ export function LiquidTabs({
   const capsule = (active: boolean) =>
     active ? (
       <motion.span
-        ref={capsuleRef}
         layoutId={layoutId}
         aria-hidden
         className="absolute inset-0"
         transition={reduced ? { duration: 0 } : SPRING.snappy}
       >
-        <motion.span
-          className="glass-liquid absolute inset-0 rounded-full bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim)]"
-          style={squashStyle}
-        />
+        <span className="absolute inset-0 rounded-full bg-site-accent" />
       </motion.span>
     ) : null;
 
@@ -304,8 +281,7 @@ export function LiquidTabs({
   });
 
   // Link mode → a <nav> (aria-current semantics); tablist mode → role="tablist"
-  // with roving nav. The morph underlay is an invisible coordinate anchor for
-  // tabs; the distracting lagging droplet is disabled above.
+  // with roving nav.
   const list = link ? (
     <nav
       ref={listRef as React.Ref<HTMLElement>}
@@ -313,7 +289,6 @@ export function LiquidTabs({
       data-slot="liquid-tabs"
       className={innerClass}
     >
-      {underlay}
       {items}
     </nav>
   ) : (
@@ -325,21 +300,17 @@ export function LiquidTabs({
       data-slot="liquid-tabs"
       className={innerClass}
     >
-      {underlay}
       {items}
     </div>
   );
 
   if (!sheet) return list;
 
-  // §5.45: the tab strip rides its own L1 glass pill (cheap, repeatable; the
-  // hairline glint edge comes from .glass-fill). The wrapper is presentational
-  // only — the roving nav + layoutId capsule stay on the inner tablist/nav.
   return (
     <div
       data-slot="liquid-tabs-sheet"
       className={cn(
-        'glass-fill glass-bevel-sm min-w-0 max-w-full rounded-full p-1',
+        'min-w-0 max-w-full rounded-full border border-site-border bg-site-surface p-1 shadow-site-sm',
         scroll && 'overflow-hidden',
         fullWidth || scroll ? 'w-full' : 'w-fit',
         className,

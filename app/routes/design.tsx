@@ -4,17 +4,16 @@ import { LiquidGlassPage } from '@/components/design/LiquidGlassPage';
 export const Route = createFileRoute('/design')({
   head: () => ({
     meta: [
-      { title: 'Liquid Glass | RMH Studios' },
+      { title: 'Spatial Minimalism | RMH Studios' },
       {
         name: 'description',
         content:
-          'The material system behind RMH Studios: physically-plausible liquid glass that refracts, reflects your light, and moves like something poured — rendered by shader on capable devices and gracefully everywhere else.',
+          'The spatial-minimal design system behind RMH Studios: simple color, editorial hierarchy, purposeful motion, and a quieter interface.',
       },
-      { property: 'og:title', content: 'Liquid Glass | RMH Studios' },
+      { property: 'og:title', content: 'Spatial Minimalism | RMH Studios' },
       {
         property: 'og:description',
-        content:
-          'Not a skin. A material. How every surface on RMH Studios refracts, reflects, and flows.',
+        content: 'Paper, ink, proportion, and motion—the new visual foundation for RMH Studios.',
       },
       { property: 'og:type', content: 'website' },
       { property: 'og:url', content: 'https://rmhstudios.com/design' },

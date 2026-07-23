@@ -33,8 +33,6 @@ import { usePresenceHeartbeat } from '@/lib/usePresenceHeartbeat';
 import { AnimatePresence, m as motion } from 'framer-motion';
 import { SPRING } from '@/lib/motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { useLiquidMorph } from '@/components/ui/liquid-morph';
-import { useLiquidPop } from '@/components/ui/liquid-pop';
 
 // Dropdown motion for collapsible nav groups (e.g. "More"): the panel expands
 // its height while its items fade/slide in with a slight stagger.
@@ -106,36 +104,18 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const toggleGroup = (g: string) => setOpenGroups((s) => ({ ...s, [g]: !s[g] }));
   const reduced = useReducedMotion();
 
-  // §5.47: the active-nav capsule FLOWS between items on route change — a
-  // layoutId pill that morphs vertically, with velocity squash/stretch and a
-  // gooey trailing droplet (useLiquidMorph). Both LeftSidebar instances (desktop
-  // rail + mobile drawer) are mounted at once, so the layoutId is useId-scoped so
-  // their capsules never share one element. The capsule renders inside whichever
-  // active leaf `canHost`s it (deduped so a pinned + submenu duplicate never
-  // mounts two elements with the same layoutId).
+  // Both sidebar instances are mounted at once, so the active route marker uses
+  // an instance-scoped layout id. The restrained projection animation preserves
+  // continuity without the previous shader/goo treatment.
   const capsuleUid = useId();
   const capsuleLayoutId = `rmh-sidebar-capsule-${capsuleUid}`;
-  const capsuleRef = useRef<HTMLSpanElement>(null);
-  const { squashStyle, underlay: capsuleUnderlay } = useLiquidMorph({
-    capsuleRef,
-    axis: 'y',
-    reduced,
-    activeKey: pathname,
-  });
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const userMenuBtnRef = useRef<HTMLButtonElement>(null);
-  const userMenuPopRef = useRef<HTMLDivElement>(null);
   const [userMenuPos, setUserMenuPos] = useState({ bottom: 0, right: 0 });
   // The click handler positions the menu from a hardcoded size estimate; this
   // clamps the actually-rendered element so a taller/narrower menu (or a small
   // viewport) can't still push it off-screen. Re-fit when the anchor moves.
-  // §15.6 liquid pop — the user menu buds out of the "more options" trigger.
-  const { underlay: userMenuUnderlay } = useLiquidPop({
-    triggerRef: userMenuBtnRef,
-    panelRef: userMenuPopRef,
-    open: showUserMenu,
-  });
   const rootRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLElement>(null);
 
@@ -252,13 +232,9 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         ? 'pl-10'
         : 'md:justify-center lg:justify-start lg:pl-10'
       : itemJustifyClass;
-    // The active pill is now the flowing layoutId capsule (below) — the leaf
-    // itself only carries the accent text + hover states. `relative` anchors the
-    // absolute capsule; inactive pills keep the pointer light via
-    // .glass-interactive + data-glass-light.
-    const leafClass = `glass-interactive relative flex items-center gap-3 ${itemPadXClass} ${nested ? 'py-2' : 'py-3'} rounded-full text-sm font-medium transition-colors ${indent} ${
+    const leafClass = `relative flex items-center gap-3 ${itemPadXClass} ${nested ? 'py-2' : 'py-3'} rounded-[var(--site-control-radius)] text-sm font-medium transition-colors ${indent} ${
       isActive
-        ? 'text-site-accent'
+        ? 'text-site-accent-fg'
         : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
     }`;
     const leafInner = (
@@ -269,16 +245,12 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           // transform. `.glass-liquid` keeps the capsule a signature sheen surface
           // (one active leaf at a time → within the ≤3 ambient-sheen budget, §5.2).
           <motion.span
-            ref={capsuleRef}
             layoutId={capsuleLayoutId}
             aria-hidden
             className="absolute inset-0 z-0"
             transition={reduced ? { duration: 0 } : SPRING.snappy}
           >
-            <motion.span
-              className="glass-liquid absolute inset-0 rounded-full bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]"
-              style={squashStyle}
-            />
+            <span className="absolute inset-0 rounded-[var(--site-control-radius)] bg-site-accent" />
           </motion.span>
         )}
         {/* Labels/icons ride above the capsule + goo underlay (never filtered). */}
@@ -310,7 +282,6 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         <a
           key={link.href}
           href={link.href}
-          data-glass-light=""
           className={leafClass}
           title={label}
           aria-label={label}
@@ -324,7 +295,6 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
       <Link
         key={link.href}
         to={link.href}
-        data-glass-light=""
         className={leafClass}
         title={label}
         aria-label={label}
@@ -421,8 +391,6 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           registered with the capsule through scroll (§5.47). */}
       <nav ref={navRef} className={`${navScrollClass} lg:pr-1.5`}>
         <div className="relative flex flex-col gap-1">
-          {/* Goo underlay (§5.47) — capsule-only, behind the leaves. */}
-          {capsuleUnderlay}
           {orderedNav.map((item) => {
             if (!isNavGroup(item)) {
               if (item.requiresAuth && !session) return null;
@@ -450,7 +418,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                   aria-label={groupLabel}
                   className={`flex items-center gap-3 ${itemPadXClass} py-3 rounded-full text-sm font-medium transition-colors w-full ${itemJustifyClass} ${
                     groupActive
-                      ? 'text-site-accent bg-site-accent-dim'
+                      ? 'bg-site-accent text-site-accent-fg'
                       : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
                   }`}
                   title={groupLabel}
@@ -568,10 +536,8 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             >
               <MoreHorizontal className="w-4 h-4" />
             </button>
-            {userMenuUnderlay}
             {showUserMenu && (
               <div
-                ref={userMenuPopRef}
                 className="glass-overlay fixed w-48 py-1 z-50"
                 style={{
                   bottom: `${userMenuPos.bottom}px`,

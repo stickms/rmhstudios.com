@@ -25,12 +25,11 @@ export function FeedTabs({ mode, onModeChange }: FeedTabsProps) {
     { id: 'blog', label: t('feed-filter-blog', { defaultValue: 'Blog' }) },
   ];
 
-  // §5.45: the tab strips are standalone glass sheets BELOW the header capsule
-  // (FeedColumn positions them), separated by the standard gutter. The For You /
-  // Following selector shows at every breakpoint now (the desktop copy that used
-  // to live inline in the header is gone). Each LiquidTabs is its own pill sheet.
   return (
-    <section className="glass-fill rounded-site p-2.5 sm:p-3" aria-labelledby="feed-view-heading">
+    <section
+      className="rounded-site border border-site-border bg-site-surface p-3 shadow-site-sm"
+      aria-labelledby="feed-view-heading"
+    >
       {/* The hierarchy is explicit instead of presenting two unexplained rows of
           pills: the first row chooses the timeline; the second refines content. */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

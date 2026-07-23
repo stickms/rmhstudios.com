@@ -156,18 +156,41 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
   return (
     <PullToRefresh onRefresh={refreshFeed}>
       <div className="feed-column flex flex-col">
-        {/* Header — floating L3 glass-chrome capsule (§8.2): insets from the
-            column edges so aurora shows around it. It now carries only the sticky
-            search (the For You / Following + content-type tabs moved out to their
-            own sheet strips below, §5.45). The glass-chrome bg + blur + glint edge
-            all clip to rounded-site on their own. */}
-        <header data-slot="feed-header" className="site-sticky-chrome glass-chrome">
+        <section
+          className="spatial-feed-intro mx-3 mt-3 overflow-hidden"
+          aria-labelledby="feed-title"
+        >
+          <div aria-hidden className="spatial-feed-intro__field">
+            <span className="spatial-feed-intro__orb" />
+            <span className="spatial-feed-intro__grid" />
+          </div>
+          <div className="relative z-1 max-w-xl">
+            <p className="mb-5 text-[10px] font-semibold uppercase tracking-[0.24em] text-site-text-dim">
+              {t('feed-kicker', { defaultValue: '01 / RMH Studios' })}
+            </p>
+            <h1
+              id="feed-title"
+              className="font-(family-name:--site-font-display) text-[clamp(2.35rem,8vw,4.5rem)] font-medium leading-[0.94] tracking-[-0.055em] text-site-text"
+            >
+              {t('feed-hero-title', { defaultValue: 'Make. Play. Share.' })}
+            </h1>
+            <p className="mt-5 max-w-md text-sm leading-relaxed text-site-text-muted sm:text-base">
+              {t('feed-hero-body', {
+                defaultValue:
+                  'Original games, useful tools, and the people building what comes next.',
+              })}
+            </p>
+          </div>
+        </section>
+
+        {/* Search stays reachable while the editorial introduction scrolls away. */}
+        <header data-slot="feed-header" className="site-sticky-chrome spatial-feed-search">
           {/* Mobile chrome row: drawer button + centered RMH branding. Desktop has
               the sidebar, so this row is mobile-only; the spacer balances the 44px
               menu button so the wordmark stays centered. */}
           <div className="flex items-center justify-between px-4 pt-3 md:hidden">
             <MobileMenuButton />
-            <span className="text-site-accent font-(family-name:--site-font-display) font-bold text-lg">
+            <span className="font-(family-name:--site-font-display) text-lg font-bold text-site-text">
               RMH
             </span>
             <span className="w-11" aria-hidden />
@@ -178,7 +201,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
             <label htmlFor="feed-search" className="sr-only">
               {t('search-placeholder', { defaultValue: 'Search posts and people' })}
             </label>
-            <div className="glass-inset relative">
+            <div className="relative rounded-[var(--site-control-radius)] border border-site-border bg-site-surface">
               <Search
                 className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-dim"
                 aria-hidden
@@ -191,7 +214,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
                 onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder={t('search-placeholder', { defaultValue: 'Search...' })}
                 enterKeyHint="search"
-                className="w-full rounded-site-sm bg-transparent py-2.5 pl-10 pr-11 text-base text-site-text outline-none placeholder:text-site-text-dim sm:text-sm"
+                className="w-full rounded-[var(--site-control-radius)] bg-transparent py-3 pl-10 pr-11 text-base text-site-text outline-none placeholder:text-site-text-dim focus:ring-2 focus:ring-site-accent/15 sm:text-sm"
                 onKeyDown={(e) => {
                   if (e.key === 'Escape') clearSearch();
                 }}

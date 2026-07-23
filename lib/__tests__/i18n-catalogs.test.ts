@@ -28,6 +28,23 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // pnpm i18n:resources` has been run and the catalogs committed.
   'c-ui': ['move-down', 'move-up'],
   feed: [
+    // Spatial-minimal redesign. Runtime falls back to English until the
+    // translation pipeline fills every locale catalog.
+    'design-system',
+    'explore-new-ui',
+    'feed-hero-body',
+    'feed-hero-title',
+    'feed-kicker',
+    'spatial-feature-motion-body',
+    'spatial-feature-motion-title',
+    'spatial-feature-space-body',
+    'spatial-feature-space-title',
+    'spatial-feature-system-body',
+    'spatial-feature-system-title',
+    'whatsnew-kicker',
+    'whatsnew-subtitle-spatial',
+    'whatsnew-title-spatial',
+    'whatsnew-version',
     'menu-audience',
     'menu-content-warning',
     'menu-reply-control',
@@ -107,6 +124,32 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'settings-back',
     'settings-premium-themes-equip-link',
     'settings-premium-themes-or',
+  ],
+  site: [
+    // Public spatial design-system story. Runtime falls back to English until
+    // the translation pipeline fills every locale catalog.
+    'built-for-everyone',
+    'design-at-rmh',
+    'design-cta',
+    'design-cta-body',
+    'design-statement',
+    'make-it-yours',
+    'new-foundation',
+    'open-appearance',
+    'operating-principles',
+    'rmh-studios',
+    'skip-to-content',
+    'spatial-design-lede',
+    'spatial-minimalism',
+    'spatial-principle-focus-body',
+    'spatial-principle-focus-title',
+    'spatial-principle-motion-body',
+    'spatial-principle-motion-title',
+    'spatial-principle-system-body',
+    'spatial-principle-system-title',
+    'spatial-system-name',
+    'spatial-system-version',
+    'three-rules',
   ],
   // Daily Puzzles hub strings added with the non-3D /daily rewrite; awaiting the
   // DeepSeek translate pipeline. Runtime falls back to English per key. Remove

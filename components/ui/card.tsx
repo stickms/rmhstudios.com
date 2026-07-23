@@ -2,14 +2,7 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
-/**
- * Card — the repeated content surface. Defaults to the L1 `.glass-fill`
- * elevation (translucent tint + specular rim via shadow-site-sm, no blur — cheap
- * and unlimited per page). Pass `pane` for a singular L2 `.glass-pane` (blur +
- * micro-noise) on hero/section panels, and `interactive` to add the hover
- * tint-raise, press flex, and pointer-tracked specular highlight (for cards that
- * are link/button targets). See the redesign doc §7.2.
- */
+/** Shared spatial-minimal content surface. */
 function Card({
   className,
   pane = false,
@@ -24,11 +17,10 @@ function Card({
   return (
     <div
       data-slot="card"
-      data-glass-light={interactive ? '' : undefined}
       className={cn(
-        pane ? 'glass-pane' : 'glass-fill',
-        'text-site-text flex flex-col gap-5 py-5 sm:gap-6 sm:py-6 transition-[box-shadow,border-color,transform,background-color]',
-        interactive && 'glass-interactive hover:-translate-y-px',
+        'flex flex-col gap-5 rounded-site border border-site-border bg-site-surface py-5 text-site-text shadow-site-sm transition-[box-shadow,border-color,transform,background-color] duration-200 sm:gap-6 sm:py-6',
+        pane && 'shadow-site',
+        interactive && 'hover:-translate-y-0.5 hover:border-site-border-bright hover:shadow-site',
         className,
       )}
       {...props}

@@ -6,31 +6,18 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  // The transform transition rides the theme's press duration + --ease-glass
-  // (§5.3), so each material can tune its release without changing the
-  // primitive; colour/shadow/opacity stay on a plain quick ease.
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--site-control-radius,999px)] text-sm font-medium tracking-[-0.01em] [transition:transform_var(--site-press-duration,340ms)_var(--ease-glass),color_0.15s_ease,background-color_0.15s_ease,border-color_0.15s_ease,box-shadow_0.15s_ease,opacity_0.15s_ease] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-site-accent/50 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-site-bg aria-invalid:ring-site-danger/30 aria-invalid:border-site-danger",
+  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--site-control-radius)] border border-transparent text-sm font-semibold tracking-[-0.015em] transition-[transform,color,background-color,border-color,box-shadow,opacity] duration-200 ease-out active:translate-y-px disabled:pointer-events-none disabled:opacity-45 disabled:active:translate-y-0 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 outline-none focus-visible:ring-site-accent/35 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-site-bg aria-invalid:ring-site-danger/30 aria-invalid:border-site-danger",
   {
     variants: {
       variant: {
-        // Solid variants read as *colored glass*: a near-opaque accent/danger
-        // body with a top specular rim, so they sit in the same material system
-        // as the surfaces around them (§7.2). The rim brightens toward the light
-        // on hover as the body goes fully opaque.
-        default:
-          'glass-sheen-hover bg-site-accent/90 text-site-accent-fg hover:bg-site-accent-hover shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]',
-        destructive:
-          'bg-site-danger/90 text-white hover:bg-site-danger shadow-[inset_0_1px_0_var(--site-glass-rim-soft)] focus-visible:ring-site-danger/40',
-        danger:
-          'bg-site-danger/90 text-white hover:bg-site-danger shadow-[inset_0_1px_0_var(--site-glass-rim-soft)] focus-visible:ring-site-danger/40',
-        outline:
-          'border border-site-border bg-transparent text-site-text hover:bg-site-surface-hover hover:border-site-border-bright',
-        secondary:
-          'border border-site-border bg-site-surface text-site-text hover:bg-site-surface-hover shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]',
+        default: 'bg-site-accent text-site-accent-fg hover:bg-site-accent-hover',
+        destructive: 'bg-site-danger text-white hover:opacity-85 focus-visible:ring-site-danger/40',
+        danger: 'bg-site-danger text-white hover:opacity-85 focus-visible:ring-site-danger/40',
+        outline: 'border-site-border bg-transparent text-site-text hover:border-site-text',
+        secondary: 'border-site-border bg-site-surface text-site-text hover:bg-site-surface-hover',
         ghost: 'text-site-text hover:bg-site-surface-hover',
         link: 'text-site-accent underline-offset-4 hover:underline',
-        accent:
-          'glass-sheen-hover bg-site-accent/90 text-site-accent-fg hover:bg-site-accent-hover shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]',
+        accent: 'bg-site-accent text-site-accent-fg hover:bg-site-accent-hover',
         'accent-outline': 'border border-site-accent text-site-accent hover:bg-site-accent-dim',
         'accent-ghost': 'text-site-accent hover:bg-site-accent-dim',
       },

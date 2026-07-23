@@ -62,7 +62,7 @@ function RightSidebarSkeleton() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="space-y-2 rounded-site border border-site-border bg-site-surface p-4"
+          className="space-y-2 rounded-site border border-site-border bg-site-surface p-4 shadow-site-sm"
         >
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-3 w-full" />
@@ -76,9 +76,7 @@ function RightSidebarSkeleton() {
 export function FeedLayout({ sidebar, initialFeed }: FeedLayoutProps) {
   return (
     <>
-      {/* Center Feed – width animates when arriving from a wide page. The old
-          app-frame border-r is gone (§8.2): the column is a transparent track and
-          its content floats as glass cards over the aurora gutters. */}
+      {/* Center feed — a quiet editorial track shared with the rest of the site. */}
       <AnimatedMain className="w-full min-w-0 pb-dock">
         <FeedColumn initialFeed={initialFeed} />
       </AnimatedMain>

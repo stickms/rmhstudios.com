@@ -157,5 +157,79 @@
 /* Logo wordmark — Playfair Display serif, matching the membership page. */
 .site-logo {
   font-family: var(--font-playfair), Georgia, serif;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.045em;
+}
+
+/* Spatial-minimal shell: the navigation becomes a quiet architectural plane,
+   while content and context rails sit in generous paper gutters. */
+.site-shell {
+  position: relative;
+  isolation: isolate;
+}
+
+@media (min-width: 768px) {
+  .site-shell {
+    max-width: 1680px;
+    align-items: flex-start;
+    padding-block: var(--site-sticky-edge);
+  }
+
+  .site-shell__rail-slot,
+  .site-shell__rail {
+    width: 80px;
+  }
+
+  .site-shell__rail-slot {
+    flex-basis: 80px;
+  }
+
+  .site-shell__rail {
+    top: 0;
+  }
+
+  .site-shell__rail-glass {
+    height: calc(100% - var(--site-sticky-edge) - var(--site-sticky-edge));
+    margin: var(--site-sticky-edge) 0;
+    border-radius: var(--site-radius);
+    background: var(--site-surface);
+    box-shadow: var(--site-shadow-sm);
+  }
+}
+
+@media (min-width: 1024px) {
+  .site-shell__rail-slot,
+  .site-shell__rail {
+    width: 252px;
+  }
+
+  .site-shell__rail-slot {
+    flex-basis: 252px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .site-shell__rail-slot,
+  .site-shell__rail {
+    width: 276px;
+  }
+
+  .site-shell__rail-slot {
+    flex-basis: 276px;
+  }
+}
+
+[data-slot='site-main-column'] {
+  border-radius: var(--site-radius);
+}
+
+[data-slot='context-rail'] {
+  padding-bottom: var(--site-page-bottom-space);
+}
+
+.feed-column {
+  gap: var(--site-section-gap);
+}
+
+.feed-column > :not(.spatial-feed-intro, [data-slot='feed-header']) {
+  position: relative;
 }
