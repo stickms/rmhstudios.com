@@ -447,19 +447,27 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
           <LeftSidebar expanded />
         </aside>
 
-        {/* iOS 26 Safari samples fixed elements near the viewport edge to tint
-            its floating toolbar. While the tall drawer is painted, its opaque
-            theme background would otherwise win that sampling pass. This tiny,
-            transparent, higher-z-index target gives WebKit an explicit neutral
-            sample instead. CSS keeps it absent outside mobile iOS WebKit, and
-            the conditional mount (rather than opacity:0) keeps the closed
-            drawer from affecting the browser toolbar. */}
+        {/* iOS 26 Safari samples fixed elements near both viewport edges to tint
+            the status-bar and floating-toolbar regions. While the tall drawer
+            is painted, its opaque theme background would otherwise win those
+            sampling passes. These tiny, transparent, higher-z-index targets
+            give WebKit explicit neutral samples at the top and bottom. CSS
+            keeps them absent outside mobile iOS WebKit, and the conditional
+            mount (rather than opacity:0) keeps the closed drawer from affecting
+            the browser chrome. */}
         {asideRevealed && (
-          <div
-            className="safari-toolbar-sampler"
-            data-safari-toolbar-sampler=""
-            aria-hidden="true"
-          />
+          <>
+            <div
+              className="safari-chrome-sampler safari-chrome-sampler--top"
+              data-safari-chrome-sampler="top"
+              aria-hidden="true"
+            />
+            <div
+              className="safari-chrome-sampler safari-chrome-sampler--bottom"
+              data-safari-chrome-sampler="bottom"
+              aria-hidden="true"
+            />
+          </>
         )}
       </div>
     </MobileSidebarContext.Provider>
