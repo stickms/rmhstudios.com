@@ -48,6 +48,7 @@ import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
 import { CommandPaletteMount } from '@/components/site/CommandPaletteMount';
 import { ThemePreviewBar } from '@/components/themes/ThemePreviewBar';
 import { RecentsTracker } from '@/components/site/RecentsTracker';
+import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import { ConfirmProvider } from '@/components/ui/confirm-dialog';
 import type { Locale } from '@/lib/i18n/config';
 import type { LocaleBundle } from '@/lib/i18n/resources';
@@ -831,11 +832,19 @@ export function Providers({
               >
                 <ConfirmProvider>
                   {children}
-                  <CommandPaletteMount />
-                  <RecentsTracker />
-                  {/* §14: the floating try-before-buy / preview-on-site confirm bar,
-                      mounted globally so it survives navigation under a previewed theme. */}
-                  <ThemePreviewBar />
+                  {/* Globally-mounted, non-critical chrome. Isolate it so a throw
+                      in the command palette / recents tracker / theme-preview bar
+                      is reported and swallowed instead of bubbling to the root
+                      errorComponent and taking down the whole app. `children`
+                      (the page) is deliberately OUTSIDE this boundary — primary
+                      content must still surface a real route-level error. */}
+                  <SilentErrorBoundary label="global-chrome">
+                    <CommandPaletteMount />
+                    <RecentsTracker />
+                    {/* §14: the floating try-before-buy / preview-on-site confirm bar,
+                        mounted globally so it survives navigation under a previewed theme. */}
+                    <ThemePreviewBar />
+                  </SilentErrorBoundary>
                 </ConfirmProvider>
               </ResolvedUserCtx.Provider>
               <Toaster

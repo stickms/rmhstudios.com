@@ -10,6 +10,7 @@ import { lazy, Suspense } from 'react';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { RouteErrorFallback } from '@/components/errors/RouteErrorFallback';
 import { NotFound } from '@/components/errors/NotFound';
+import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import { SiteShell } from '@/components/feed/SiteShell';
 import '@/components/feed/feed.css';
 
@@ -54,7 +55,11 @@ function SiteLayout() {
   return (
     <SiteShell
       overlays={
-        <>
+        // These overlays are non-critical chrome (first-run/promo modals, the
+        // cookie notice, global shortcuts, the music mini-player). Isolate them
+        // so a throw in any one is reported and swallowed instead of bubbling to
+        // the route errorComponent and blanking the whole shell + feed.
+        <SilentErrorBoundary label="shell-overlays">
           <Suspense fallback={null}>
             <LanguageFirstRunModal />
             <WelcomeModal />
@@ -64,7 +69,7 @@ function SiteLayout() {
             <KeyboardShortcuts />
             <MiniPlayer />
           </Suspense>
-        </>
+        </SilentErrorBoundary>
       }
     >
       <Outlet />
