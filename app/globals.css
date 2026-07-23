@@ -970,11 +970,11 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     /* §4.35: the aside carries its glint in its OWN background now (its ::after
        ring was deleted). Blur stays on ::before (§3.3.1 containing-block rule),
        so the glint cannot ride a pseudo here — it rides the border-box layer. */
-    background-color: color-mix(
-      in srgb,
-      var(--site-bg) calc(40% * var(--glass-user-tint, 1)),
-      transparent
-    );
+    /* Keep the oversized Safari drawer continuous with the root colour exposed
+       behind the translucent bottom tab bar. The deliberate 100lvh + bleed
+       geometry remains unchanged; only the material base is made opaque so the
+       browser-chrome region does not read as a separate coloured strip. */
+    background-color: var(--site-bg);
     background-image: var(--glass-glint-layer);
     background-clip: border-box;
     background-origin: border-box;
