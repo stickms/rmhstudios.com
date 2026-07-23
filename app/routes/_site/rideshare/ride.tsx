@@ -27,12 +27,7 @@ import { RideClassPicker } from '@/components/rideshare/RideClassPicker';
 import { FareBreakdown } from '@/components/rideshare/FareBreakdown';
 import { ActiveRidePanel } from '@/components/rideshare/ActiveRidePanel';
 import { SavedPlaces } from '@/components/rideshare/SavedPlaces';
-import {
-  estimateFareCents,
-  formatDistance,
-  formatUsd,
-  type RidePlace,
-} from '@/lib/rideshare/geo';
+import { estimateFareCents, formatDistance, formatUsd, type RidePlace } from '@/lib/rideshare/geo';
 import { RIDE_CLASSES, rideClassName, type RideClassId } from '@/lib/rideshare/classes';
 
 export const Route = createFileRoute('/_site/rideshare/ride')({
@@ -95,7 +90,10 @@ function RequestRidePage() {
   const [scheduleMode, setScheduleMode] = useState(false);
   const [scheduledFor, setScheduledFor] = useState('');
 
-  const [routeInfo, setRouteInfo] = useState<{ distanceMeters: number; durationSeconds: number } | null>(null);
+  const [routeInfo, setRouteInfo] = useState<{
+    distanceMeters: number;
+    durationSeconds: number;
+  } | null>(null);
   const [routing, setRouting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -120,13 +118,15 @@ function RequestRidePage() {
     if (res.ok) {
       const data = await res.json();
       setSavedPlaces(
-        (data.places ?? []).map((p: { id: string; label: string; address: string; lat: number; lng: number }) => ({
-          id: p.id,
-          savedLabel: p.label,
-          label: p.address,
-          lat: p.lat,
-          lng: p.lng,
-        })),
+        (data.places ?? []).map(
+          (p: { id: string; label: string; address: string; lat: number; lng: number }) => ({
+            id: p.id,
+            savedLabel: p.label,
+            label: p.address,
+            lat: p.lat,
+            lng: p.lng,
+          }),
+        ),
       );
     }
   }, []);
@@ -159,7 +159,10 @@ function RequestRidePage() {
       .then((data) => {
         if (cancelled) return;
         if (typeof data.distanceMeters === 'number') {
-          setRouteInfo({ distanceMeters: data.distanceMeters, durationSeconds: data.durationSeconds });
+          setRouteInfo({
+            distanceMeters: data.distanceMeters,
+            durationSeconds: data.durationSeconds,
+          });
         }
       })
       .catch(() => {})
@@ -189,11 +192,17 @@ function RequestRidePage() {
 
   async function submit() {
     if (!pickup || !dropoff) {
-      toast.error(t('error-missing-locations', { defaultValue: 'Please set both a pickup and a drop-off.' }));
+      toast.error(
+        t('error-missing-locations', { defaultValue: 'Please set both a pickup and a drop-off.' }),
+      );
       return;
     }
     if (scheduleMode && !scheduledFor) {
-      toast.error(t('error-missing-schedule-time', { defaultValue: 'Pick a date and time for your scheduled ride.' }));
+      toast.error(
+        t('error-missing-schedule-time', {
+          defaultValue: 'Pick a date and time for your scheduled ride.',
+        }),
+      );
       return;
     }
     setSubmitting(true);
@@ -210,18 +219,25 @@ function RequestRidePage() {
           dropoffLat: dropoff.lat,
           dropoffLng: dropoff.lng,
           notes: notes.trim() || undefined,
-          scheduledFor: scheduleMode && scheduledFor ? new Date(scheduledFor).toISOString() : undefined,
+          scheduledFor:
+            scheduleMode && scheduledFor ? new Date(scheduledFor).toISOString() : undefined,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || t('error-request-failed', { defaultValue: 'Could not request your ride.' }));
+        toast.error(
+          data.error || t('error-request-failed', { defaultValue: 'Could not request your ride.' }),
+        );
         return;
       }
       toast.success(
         scheduleMode
-          ? t('success-ride-scheduled', { defaultValue: "Ride scheduled! We'll match a driver near your pickup time." })
-          : t('success-ride-requested', { defaultValue: 'Ride requested! Hang tight while we find a driver.' }),
+          ? t('success-ride-scheduled', {
+              defaultValue: "Ride scheduled! We'll match a driver near your pickup time.",
+            })
+          : t('success-ride-requested', {
+              defaultValue: 'Ride requested! Hang tight while we find a driver.',
+            }),
       );
       setPickup(null);
       setDropoff(null);
@@ -267,8 +283,14 @@ function RequestRidePage() {
       <PageLayout title={t('page-title', { defaultValue: 'Request a ride' })} wide>
         <div className="mx-auto max-w-md px-4 py-20 text-center">
           <Navigation className="mx-auto h-10 w-10 text-site-accent" />
-          <h2 className="mt-4 text-xl font-bold text-site-text">{t('sign-in-heading', { defaultValue: 'Sign in to request a ride' })}</h2>
-          <p className="mt-2 text-site-text-muted">{t('sign-in-description', { defaultValue: 'You need an RMH account to use RMH Rideshare.' })}</p>
+          <h2 className="mt-4 text-xl font-bold text-site-text">
+            {t('sign-in-heading', { defaultValue: 'Sign in to request a ride' })}
+          </h2>
+          <p className="mt-2 text-site-text-muted">
+            {t('sign-in-description', {
+              defaultValue: 'You need an RMH account to use RMH Rideshare.',
+            })}
+          </p>
           <Link
             to="/login"
             search={{ callbackURL: '/rideshare/ride' }}
@@ -303,7 +325,9 @@ function RequestRidePage() {
             {/* Left: form */}
             <div className="space-y-5">
               <div className="rounded-site border border-site-border bg-site-surface/80 p-5">
-                <h2 className="mb-4 text-lg font-bold text-site-text">{t('where-to-heading', { defaultValue: 'Where to?' })}</h2>
+                <h2 className="mb-4 text-lg font-bold text-site-text">
+                  {t('where-to-heading', { defaultValue: 'Where to?' })}
+                </h2>
                 <div className="space-y-3">
                   <LocationSearch
                     label={t('pickup-label', { defaultValue: 'Pickup' })}
@@ -327,14 +351,21 @@ function RequestRidePage() {
 
                 {routing && !routeInfo && (
                   <div className="mt-4 flex items-center gap-2 rounded-site border border-site-border bg-site-surface px-4 py-3 text-sm text-site-text-muted">
-                    <Loader2 className="h-4 w-4 animate-spin" /> {t('calculating-route', { defaultValue: 'Calculating route…' })}
+                    <Loader2 className="h-4 w-4 animate-spin" />{' '}
+                    {t('calculating-route', { defaultValue: 'Calculating route…' })}
                   </div>
                 )}
               </div>
 
               <div className="rounded-site border border-site-border bg-site-surface/80 p-5">
-                <h2 className="mb-3 text-lg font-bold text-site-text">{t('pick-your-ride-heading', { defaultValue: 'Pick your ride' })}</h2>
-                <RideClassPicker value={rideClass} onChange={setRideClass} fareLabels={fareLabels} />
+                <h2 className="mb-3 text-lg font-bold text-site-text">
+                  {t('pick-your-ride-heading', { defaultValue: 'Pick your ride' })}
+                </h2>
+                <RideClassPicker
+                  value={rideClass}
+                  onChange={setRideClass}
+                  fareLabels={fareLabels}
+                />
               </div>
 
               {routeInfo && (
@@ -354,7 +385,9 @@ function RequestRidePage() {
                   onChange={(e) => setNotes(e.target.value)}
                   maxLength={500}
                   rows={2}
-                  placeholder={t('notes-placeholder', { defaultValue: "e.g. I'll be by the main entrance" })}
+                  placeholder={t('notes-placeholder', {
+                    defaultValue: "e.g. I'll be by the main entrance",
+                  })}
                   className="w-full resize-none rounded-site-sm border border-site-border bg-site-surface px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm"
                 />
               </div>
@@ -363,7 +396,8 @@ function RequestRidePage() {
               <div className="rounded-site border border-site-border bg-site-surface/80 p-5">
                 <label className="flex cursor-pointer items-center justify-between gap-3">
                   <span className="flex items-center gap-2 text-sm font-medium text-site-text">
-                    <CalendarClock className="h-4 w-4 text-site-accent" /> {t('schedule-for-later', { defaultValue: 'Schedule for later' })}
+                    <CalendarClock className="h-4 w-4 text-site-accent" />{' '}
+                    {t('schedule-for-later', { defaultValue: 'Schedule for later' })}
                   </span>
                   <input
                     type="checkbox"
@@ -396,13 +430,19 @@ function RequestRidePage() {
                   <Car className="h-4 w-4" />
                 )}
                 {scheduleMode
-                  ? t('schedule-ride-button', { rideClass: rideClassName(rideClass), defaultValue: 'Schedule {{rideClass}}' })
-                  : t('request-ride-button', { rideClass: rideClassName(rideClass), defaultValue: 'Request {{rideClass}}' })}
+                  ? t('schedule-ride-button', {
+                      rideClass: rideClassName(rideClass),
+                      defaultValue: 'Schedule {{rideClass}}',
+                    })
+                  : t('request-ride-button', {
+                      rideClass: rideClassName(rideClass),
+                      defaultValue: 'Request {{rideClass}}',
+                    })}
               </button>
             </div>
 
             {/* Right: live map preview + saved places */}
-            <div className="space-y-5 lg:sticky lg:top-20 lg:self-start">
+            <div className="space-y-5 lg:sticky lg:top-[var(--site-sticky-secondary-top)] lg:self-start">
               <RideMap pickup={pickup} dropoff={dropoff} className="h-80" />
               <SavedPlaces places={savedPlaces} onChanged={loadPlaces} />
             </div>
@@ -413,7 +453,8 @@ function RequestRidePage() {
         {upcomingRides.length > 0 && (
           <div>
             <h2 className="mb-3 flex items-center gap-2 text-lg font-bold text-site-text">
-              <CalendarClock className="h-5 w-5 text-site-accent" /> {t('upcoming-rides-heading', { defaultValue: 'Upcoming rides' })}
+              <CalendarClock className="h-5 w-5 text-site-accent" />{' '}
+              {t('upcoming-rides-heading', { defaultValue: 'Upcoming rides' })}
             </h2>
             <ul className="space-y-3">
               {upcomingRides.map((ride) => (
@@ -428,11 +469,15 @@ function RequestRidePage() {
                       {rideClassName(ride.rideClass)}
                       {ride.scheduledFor && (
                         <span className="flex items-center gap-1 text-xs font-normal text-site-accent">
-                          <Clock className="h-3 w-3" /> {format(new Date(ride.scheduledFor), 'EEE d MMM, h:mm a')}
+                          <Clock className="h-3 w-3" />{' '}
+                          {format(new Date(ride.scheduledFor), 'EEE d MMM, h:mm a')}
                         </span>
                       )}
                     </div>
-                    <div className="truncate text-xs text-site-text-muted" title={`${ride.pickupLabel} → ${ride.dropoffLabel}`}>
+                    <div
+                      className="truncate text-xs text-site-text-muted"
+                      title={`${ride.pickupLabel} → ${ride.dropoffLabel}`}
+                    >
                       {ride.pickupLabel} → {ride.dropoffLabel}
                     </div>
                   </div>
@@ -440,7 +485,8 @@ function RequestRidePage() {
                     onClick={() => cancelScheduled(ride.id)}
                     className="flex shrink-0 items-center gap-1 text-xs text-site-danger transition-colors hover:text-site-danger"
                   >
-                    <XCircle className="h-3.5 w-3.5" /> {t('cancel-button', { defaultValue: 'Cancel' })}
+                    <XCircle className="h-3.5 w-3.5" />{' '}
+                    {t('cancel-button', { defaultValue: 'Cancel' })}
                   </button>
                 </motion.li>
               ))}
@@ -451,7 +497,9 @@ function RequestRidePage() {
         {/* Ride history */}
         <div>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-site-text">{t('ride-history-heading', { defaultValue: 'Ride history' })}</h2>
+            <h2 className="text-lg font-bold text-site-text">
+              {t('ride-history-heading', { defaultValue: 'Ride history' })}
+            </h2>
             <button onClick={loadRides} className="text-xs text-site-accent hover:underline">
               {t('refresh-button', { defaultValue: 'Refresh' })}
             </button>
@@ -465,7 +513,9 @@ function RequestRidePage() {
             <p className="rounded-site border border-dashed border-site-border px-4 py-8 text-center text-sm text-site-text-muted">
               {focusRideId || upcomingRides.length > 0
                 ? t('past-trips-placeholder', { defaultValue: 'Your past trips will appear here.' })
-                : t('no-rides-placeholder', { defaultValue: 'No rides yet. Request your first ride!' })}
+                : t('no-rides-placeholder', {
+                    defaultValue: 'No rides yet. Request your first ride!',
+                  })}
             </p>
           ) : (
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -477,19 +527,27 @@ function RequestRidePage() {
                   className="rounded-site border border-site-border bg-site-surface/80 p-4"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-semibold text-site-text">{rideClassName(ride.rideClass)}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_META[ride.status].className}`}>
+                    <span className="text-sm font-semibold text-site-text">
+                      {rideClassName(ride.rideClass)}
+                    </span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_META[ride.status].className}`}
+                    >
                       {STATUS_META[ride.status].label}
                     </span>
                   </div>
                   <div className="mt-2 space-y-1 text-xs text-site-text-muted">
                     <div className="flex items-center gap-1.5">
                       <span className="h-2 w-2 rounded-full bg-site-success" />
-                      <span className="truncate" title={ride.pickupLabel}>{ride.pickupLabel}</span>
+                      <span className="truncate" title={ride.pickupLabel}>
+                        {ride.pickupLabel}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span className="h-2 w-2 rounded-full bg-site-accent" />
-                      <span className="truncate" title={ride.dropoffLabel}>{ride.dropoffLabel}</span>
+                      <span className="truncate" title={ride.dropoffLabel}>
+                        {ride.dropoffLabel}
+                      </span>
                     </div>
                   </div>
                   <div className="mt-3 flex items-center gap-3 text-xs text-site-text-dim">
@@ -500,7 +558,8 @@ function RequestRidePage() {
                     )}
                     {ride.status === 'COMPLETED' && (
                       <span className="flex items-center gap-1 text-site-success">
-                        <CheckCircle2 className="h-3 w-3" /> {t('done-label', { defaultValue: 'Done' })}
+                        <CheckCircle2 className="h-3 w-3" />{' '}
+                        {t('done-label', { defaultValue: 'Done' })}
                       </span>
                     )}
                   </div>

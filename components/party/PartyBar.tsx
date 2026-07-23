@@ -167,7 +167,7 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
   }
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-16 z-40 flex justify-center px-3 md:bottom-4">
+    <div className="pointer-events-none bottom-above-dock fixed inset-x-0 z-40 flex justify-center px-3 md:bottom-4">
       <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-site-border bg-site-surface/95 px-3 py-2 shadow-site backdrop-blur">
         {core}
       </div>

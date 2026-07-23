@@ -6,6 +6,8 @@
 
 .cstudio-screen {
   --studio-gutter: clamp(16px, 4vw, 40px);
+  /* The sticky LiquidTabs sheet is the primary group for this custom column. */
+  --site-sticky-primary-height: 3rem;
 }
 
 /* Sit on the glass aurora like every other _site page — .vibe-screen's opaque
@@ -68,10 +70,10 @@
    this sticky element (the mobile-Safari sticky+overflow bug). */
 .cstudio-tabs {
   position: sticky;
-  top: 12px;
-  z-index: 20;
-  max-width: calc(100% - 2 * var(--studio-gutter));
-  margin: clamp(20px, 4vw, 32px) var(--studio-gutter) clamp(12px, 2vw, 20px);
+  top: var(--site-sticky-edge);
+  z-index: 30;
+  max-width: calc(100% - var(--studio-gutter) - var(--studio-gutter));
+  margin: clamp(20px, 4vw, 32px) var(--studio-gutter) var(--site-section-gap);
 }
 
 /* ── Tab body ────────────────────────────────────────────────────────────── */
@@ -161,7 +163,10 @@
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
   white-space: nowrap;
 }
 

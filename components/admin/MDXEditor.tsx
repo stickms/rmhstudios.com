@@ -355,7 +355,7 @@ export function MDXEditor({
             minSize="25%"
             className={`h-full ${!isPreviewMode ? 'hidden lg:block' : 'block'} bg-site-bg overflow-y-auto relative border-l border-site-border lg:border-none min-h-0`}
           >
-            <div className="sticky top-0 glass-chrome border-b border-site-border p-4 flex justify-between items-center z-10 w-full h-14">
+            <div className="glass-chrome site-sticky-contained flex h-16 w-full items-center justify-between gap-3 px-4 py-3">
               <h2 className="text-sm font-bold font-display text-site-text uppercase tracking-wider text-site-text-dim">
                 {t('live-preview', { defaultValue: 'Live Preview' })}
               </h2>

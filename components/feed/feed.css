@@ -16,6 +16,20 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* The feed's primary sticky contains both the mobile brand row and search well,
+   so it is taller than the standard 64px page-header capsule on phones. Child
+   stickies (new-post affordance) inherit the real clearance instead of a magic
+   `top-24` that used to slide underneath the mobile search surface. */
+.feed-column {
+  --site-sticky-primary-height: 7.25rem;
+}
+
+@media (min-width: 768px) {
+  .feed-column {
+    --site-sticky-primary-height: 4.25rem;
+  }
+}
+
 /* ── Responsive site shell ──────────────────────────────────────────────────
    Tablet widths use a compact icon rail. At the ordinary desktop `lg`
    breakpoint there is enough room for a readable 240px navigation sidebar plus
@@ -39,8 +53,8 @@
     margin-inline: auto;
     flex-direction: row;
     justify-content: center;
-    gap: 16px;
-    padding-inline: 12px;
+    gap: var(--site-shell-gap);
+    padding-inline: var(--site-page-gutter);
   }
 
   .site-shell__rail-slot {
@@ -64,8 +78,8 @@
 
   .site-shell__rail-glass {
     display: flex;
-    height: calc(100% - 16px);
-    margin: 8px;
+    height: calc(100% - var(--site-sticky-edge) - var(--site-sticky-edge));
+    margin: var(--site-sticky-edge);
     flex-direction: column;
     min-height: 0;
     overflow: visible;
@@ -84,23 +98,18 @@
   }
 
   .site-shell__rail-glass {
-    height: calc(100% - 20px);
-    margin: 10px;
+    height: calc(100% - var(--site-sticky-edge) - var(--site-sticky-edge));
+    margin: var(--site-sticky-edge);
   }
 }
 
 @media (min-width: 1280px) {
   .site-shell {
-    gap: 20px;
-    padding-inline: 16px;
+    padding-inline: var(--site-section-gap);
   }
 }
 
 @media (min-width: 1536px) {
-  .site-shell {
-    gap: 24px;
-  }
-
   .site-shell__rail-slot,
   .site-shell__rail {
     width: 264px;
@@ -111,8 +120,8 @@
   }
 
   .site-shell__rail-glass {
-    height: calc(100% - 24px);
-    margin: 12px;
+    height: calc(100% - var(--site-sticky-edge) - var(--site-sticky-edge));
+    margin: var(--site-sticky-edge);
   }
 }
 
@@ -123,6 +132,20 @@
   display: block;
   width: 100%;
   min-width: 0;
+}
+
+[data-slot='site-main-column'] {
+  min-inline-size: 0;
+  flex: 0 1 auto;
+}
+
+[data-slot='context-rail'] {
+  position: sticky;
+  inset-block-start: var(--site-sticky-edge);
+  max-block-size: calc(100dvh - var(--site-sticky-edge) - var(--site-sticky-edge));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 @media (min-width: 768px) {

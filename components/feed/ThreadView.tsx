@@ -13,7 +13,7 @@ export function ThreadView({ items }: { items: FeedItem[] }) {
   const { t } = useTranslation('feed');
   return (
     <div className="min-h-screen">
-      <header className="sticky top-2 z-10 mx-2 flex items-center gap-2 rounded-site glass-chrome px-4 py-3 shadow-site-sm md:top-3 md:mx-3">
+      <header className="site-sticky-chrome glass-chrome flex items-center gap-3 px-4 py-3">
         <Link
           to="/"
           className="rounded-site-sm p-1 text-site-text-muted hover:bg-site-surface hover:text-site-text"
@@ -22,7 +22,9 @@ export function ThreadView({ items }: { items: FeedItem[] }) {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <MessagesSquare className="h-5 w-5 text-site-accent" />
-        <h1 className="text-lg font-bold text-site-text">{t('thread-title', { defaultValue: 'Thread' })}</h1>
+        <h1 className="text-lg font-bold text-site-text">
+          {t('thread-title', { defaultValue: 'Thread' })}
+        </h1>
         <span className="ml-auto text-xs text-site-text-dim">
           {t('thread-count', { defaultValue: '{{n}} posts', n: items.length })}
         </span>

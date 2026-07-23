@@ -73,12 +73,17 @@ export function PagesTab({
       if (!res.ok) throw new Error(data.error || 'Request failed');
       window.alert(
         t('backfill-thumbs-done', {
-          defaultValue: 'Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.',
+          defaultValue:
+            'Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.',
           count: data.count ?? 0,
         }),
       );
     } catch {
-      window.alert(t('backfill-thumbs-failed', { defaultValue: 'Failed to queue thumbnail backfill. Try again.' }));
+      window.alert(
+        t('backfill-thumbs-failed', {
+          defaultValue: 'Failed to queue thumbnail backfill. Try again.',
+        }),
+      );
     } finally {
       setBackfilling(false);
     }
@@ -173,7 +178,7 @@ export function PagesTab({
   );
 
   const toolbar = (
-    <header className="vibe-gallery__head store-pages__head">
+    <header className="vibe-gallery__head store-pages__head glass-chrome">
       <h3 className="vibe-gallery__title">{t('pages-title', { defaultValue: 'Pages' })}</h3>
       <div className="vibe-search">
         <Search size={16} className="vibe-search__icon" aria-hidden="true" />
@@ -207,7 +212,9 @@ export function PagesTab({
       {/* Prompt hero: generate a new page. */}
       <section className="vibe-gallery__hero">
         <p className="vibe-rise vibe-presents mb-3">RMH Studios presents</p>
-        <h2 className="vibe-rise-2 vibe-title">{t('hero-headline', { defaultValue: 'The everything platform.' })}</h2>
+        <h2 className="vibe-rise-2 vibe-title">
+          {t('hero-headline', { defaultValue: 'The everything platform.' })}
+        </h2>
         <div className="mt-8 flex w-full justify-center">
           <div className="vibe-dock vibe-dock--area vibe-rise-soft">
             <textarea
@@ -217,12 +224,19 @@ export function PagesTab({
               autoComplete="off"
               onKeyDown={handlePromptKeyDown}
               placeholder={t('prompt-placeholder', { defaultValue: 'Where do you want to go?' })}
-              aria-label={t('prompt-aria-label', { defaultValue: 'Describe the page you want to create' })}
+              aria-label={t('prompt-aria-label', {
+                defaultValue: 'Describe the page you want to create',
+              })}
               className="vibe-dock__textarea"
             />
             <div className="vibe-dock__footer">
               <ModelSelect value={model} onChange={setModel} />
-              <button type="button" onClick={submit} aria-label={t('generate-aria-label', { defaultValue: 'Generate' })} className="vibe-dock__submit">
+              <button
+                type="button"
+                onClick={submit}
+                aria-label={t('generate-aria-label', { defaultValue: 'Generate' })}
+                className="vibe-dock__submit"
+              >
                 <ArrowRight size={20} />
               </button>
             </div>
@@ -246,7 +260,11 @@ export function PagesTab({
       </div>
 
       <div ref={sentinelRef} aria-hidden="true" className="h-px w-full" />
-      {loading && <p className="vibe-hint vibe-gallery__loading">{t('loading', { defaultValue: 'Loading…' })}</p>}
+      {loading && (
+        <p className="vibe-hint vibe-gallery__loading">
+          {t('loading', { defaultValue: 'Loading…' })}
+        </p>
+      )}
     </div>
   );
 }

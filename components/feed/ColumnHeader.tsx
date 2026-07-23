@@ -60,9 +60,7 @@ export function ColumnHeader({
         // Sticky column headers float as L3 glass-chrome capsules inset from the
         // column edges (§8.2); embedded (sticky={false}) headers stay inline with
         // a hairline divider. The optics-ring glint comes free from .glass-chrome.
-        sticky
-          ? 'sticky top-2 z-10 mx-2 mb-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3 md:mb-3'
-          : 'border-b border-site-border',
+        sticky ? 'site-sticky-chrome glass-chrome' : 'border-b border-site-border',
         className,
       )}
     >
