@@ -204,7 +204,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  role="dialog"
  aria-modal="true"
  aria-label={t('palette-new-post', { defaultValue:'New post'})}
- className="bg-site-surface border border-site-border rounded-2xl shadow-xs absolute inset-0 h-dvh max-h-none overflow-y-auto rounded-none pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] animate-in fade-in zoom-in-95 duration-200 sm:inset-x-4 sm:bottom-auto sm:top-[10vh] sm:mx-auto sm:h-auto sm:max-h-[80dvh] sm:max-w-lg sm:rounded-site sm:p-0"
+ className="bg-site-surface border border-site-border shadow-xs absolute inset-0 h-dvh max-h-none overflow-y-auto rounded-none pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] animate-in fade-in zoom-in-95 duration-200 sm:inset-x-4 sm:bottom-auto sm:top-[10vh] sm:mx-auto sm:h-auto sm:max-h-[80dvh] sm:max-w-lg sm:rounded-site sm:p-0"
  >
  {/* Header */}
  <div className="flex items-center justify-between px-4 py-3 border-b border-site-border">

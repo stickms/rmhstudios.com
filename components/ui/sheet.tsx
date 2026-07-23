@@ -93,9 +93,9 @@ const SheetContent = React.forwardRef<
  // complex editors can opt into the full visual viewport instead.
  mobileFullscreen
  ? 'inset-0 h-dvh max-h-none w-dvw rounded-none px-0 pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)]'
- : 'bottom-2 left-1/2 max-h-[calc(100dvh-1rem)] w-[calc(100dvw-1rem)] -translate-x-1/2 rounded-2xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2',
+ : 'bottom-2 left-1/2 max-h-[calc(100dvh-1rem)] w-[calc(100dvw-1rem)] -translate-x-1/2 rounded-site px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2',
  // Desktop: centered dialog.
- 'md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:h-auto md:w-full md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl md:px-5 md:pb-5 md:pt-5',
+ 'md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:h-auto md:w-full md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-site md:px-5 md:pb-5 md:pt-5',
  className,
  )}
  {...props}

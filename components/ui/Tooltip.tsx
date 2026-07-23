@@ -117,7 +117,7 @@ export function Tooltip({ content, children, className, delay = 0.2 }: TooltipPr
  >
  {content}
  {/* Arrow */}
- <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-0.5 border-4 border-site-border border-t-site-border" />
+ <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-0.5 border-4 border-transparent border-t-site-border" />
  </motion.div>
  </div>
  )}

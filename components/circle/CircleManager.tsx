@@ -155,7 +155,7 @@ export function CircleManager() {
         </ul>
       )}
 
-      <div className="sticky bottom-0 flex items-center justify-between gap-3 border-t border-site-border bg-site-bg/85 py-3 ">
+      <div className="sticky bottom-0 flex items-center justify-between gap-3 border-t border-site-border bg-site-surface py-3">
         <span className="text-sm text-site-text-muted">
           {selected.size}/{MAX_CIRCLE}
         </span>

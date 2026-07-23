@@ -349,7 +349,7 @@ export function RankedColumn({
  <TierBadge tier={r.tier} />
  </span>
  <span className="shrink-0 text-sm text-site-text-dim">
- <strong className="text-site-text">{fmt(r.rating)}</strong> · {r.wins}W{''}
+ <strong className="text-site-text">{fmt(r.rating)}</strong> · {r.wins}W{' '}
  {r.losses}L {r.draws}D
  </span>
  </div>

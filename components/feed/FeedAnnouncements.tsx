@@ -90,7 +90,7 @@ export function FeedAnnouncements() {
  key={a.id}
  // Floating announcement slab (§8.3): L2 bg-site-surface border border-site-border rounded-2xl shadow-xs carries the border +
  // ring glint; the variant utilities tint it and set the accent rim.
- className={`relative bg-site-surface border border-site-border rounded-2xl shadow-xs rounded-site p-3 pr-9 ${VARIANT_STYLES[a.variant] ?? VARIANT_STYLES.info} ${enteringItems.has(a.id) ?'content-item-enter':''}`}
+ className={`relative border border-site-border shadow-xs rounded-site p-3 pr-9 ${VARIANT_STYLES[a.variant] ?? VARIANT_STYLES.info} ${enteringItems.has(a.id) ?'content-item-enter':''}`}
  >
  <button
  onClick={() => dismiss(a.id)}

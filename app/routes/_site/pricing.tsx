@@ -45,13 +45,14 @@ function Pricing() {
     <>
       <AnimatedMain
         className="relative isolate min-h-screen w-full min-w-0 pb-dock"
+        targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         {/* Mobile: hamburger + brand (this page leads with an editorial hero) */}
         <MobileTopBar title={t('membership-title', { defaultValue: 'Membership' })} />
         <MembershipPanel currentTier={currentTier} returnPath="/pricing" />
       </AnimatedMain>
       {/* Trailing gutter to match the blog/library layout */}
-      <ContextRail reserve />
+      <ContextRail reserve compactReserve />
     </>
   );
 }

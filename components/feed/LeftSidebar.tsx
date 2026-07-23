@@ -234,7 +234,9 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
       : itemJustifyClass;
     const leafClass = `relative flex items-center gap-3 ${itemPadXClass} ${nested ? 'py-2' : 'py-3'} rounded-[var(--site-control-radius)] text-sm font-medium transition-colors ${indent} ${
       isActive
-        ? 'text-site-accent-fg'
+        ? hostsCapsule
+          ? 'text-site-accent-fg'
+          : 'text-site-accent'
         : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
     }`;
     const leafInner = (

@@ -179,7 +179,7 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
  key={u.id}
  type="button"
  className={`flex w-full items-center gap-2 px-3 py-2 text-left transition-colors ${
- i === activeIndex ?'bg-site-surface':'hover:bg-site-surface'
+ i === activeIndex ?'bg-site-surface-active':'hover:bg-site-surface-hover'
  }`}
  onMouseEnter={() => setActiveIndex(i)}
  onClick={() => apply(u)}
