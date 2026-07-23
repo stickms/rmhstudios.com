@@ -262,7 +262,7 @@ export function FeedList({
     <div>
       {/* "N new posts" pill — never auto-yanks the scroll (Twitter pattern) */}
       {pendingItems.length > 0 && (
-        <div className="sticky top-24 z-20 mt-4 flex justify-center pointer-events-none">
+        <div className="site-sticky-secondary mt-4 flex justify-center pointer-events-none">
           <button
             onClick={handleShowNew}
             className="pointer-events-auto flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-site-accent text-site-accent-fg text-sm font-bold shadow-site hover:bg-site-accent-hover transition-[transform,background-color] duration-150 active:scale-95"

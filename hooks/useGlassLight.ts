@@ -10,16 +10,13 @@ import { initGlassLens } from '@/lib/glass-lens';
  *  1. **Per-element diffuse hotspot** (v1, unchanged): the hovered
  *     `[data-glass-light]` element gets `--glass-px/--glass-py` (percent coords)
  *     so `.glass-interactive`'s `::after` can draw the light where the cursor is.
- *  2. **Global specular light** (v2): the pointer's viewport position, quantised
- *     to 8px, is written as `--light-x/--light-y` on `<html>`. Every optics-ring
- *     `::before` (§4.2) reads those through a `background-attachment: fixed`
- *     radial gradient, so one light sweeps every pane's rim at once. Absence of
- *     the vars = the CSS "sun" default (top centre) — restored on `pointerleave`.
+ *  2. **Global scene light** (v2): the pointer's viewport position, quantised
+ *     to 8px, is written as `--light-x/--light-y` on `<html>` for the liquid
+ *     renderer. CSS glass rims intentionally keep an element-anchored top sun:
+ *     fixed background paint across many panes can trail during scroll/rubber-band.
  *
- * Cost: two `<html>`-level custom-property writes invalidate only the elements
- * whose computed styles reference them (the ≤10 always-on rings + the hovered
- * card), each repainting a thin masked band. 8px quantisation + rAF batching
- * keeps that well under a frame.
+ * Cost: two `<html>`-level custom-property writes feed the single renderer.
+ * 8px quantisation + rAF batching keep updates bounded.
  *
  * Gates: fine pointer only (touch keeps the CSS sun), off under `perf-lite`, and
  * static under reduced motion (OS preference OR the `html.reduce-motion` account
@@ -73,8 +70,7 @@ export function useGlassLight(): void {
       if (raf) return;
       raf = requestAnimationFrame(() => {
         raf = 0;
-        const el =
-          (e.target as Element | null)?.closest<HTMLElement>('[data-glass-light]') ?? null;
+        const el = (e.target as Element | null)?.closest<HTMLElement>('[data-glass-light]') ?? null;
         if (last && last !== el) clear(last);
         if (el) {
           const r = el.getBoundingClientRect();

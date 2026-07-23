@@ -117,9 +117,10 @@ Work through this for every new or edited page:
       own markup and add the `layoutId` capsule + sheet wrapper directly. Every
       such custom capsule still carries the §5.47 morph underlay (`useLiquidMorph` + the two-layer outer-`layoutId`/inner-material span split) — a strip is
       either fully liquid or it isn't shipped (§15.1).
-- [ ] **Spacing rhythm (§15.4):** 12px (`space-y-3` / `gap-3`) between sibling
-      glass elements in a column; responsive `SiteShell` gutters between columns; `mt-3` from
-      a header/hero capsule to the first content below it. Internal padding at the
+- [ ] **Spacing rhythm (§15.4):** use `--site-section-gap` (12–16px) between
+      sibling glass elements in a column; responsive `SiteShell` gutters between
+      columns; `PageLayout`/`.site-sticky-chrome` owns the gap from a page header
+      to the first content below it. Internal padding at the
       primitive's canonical value, never a cramped per-page override: text
       inputs/wells `px-3.5 py-2.5` (16px font floor on phones), card content
       `px-4 py-3`+, menu/list rows ≥12px inline padding (text never touches the
@@ -133,8 +134,10 @@ Work through this for every new or edited page:
 - [ ] **Sticky stacking (§15.5):** a column has **one sticky group**. Either
       _merge_ related co-stickies (tabs + search) into a single sticky glass
       container, or _cascade_ independent stickies with cumulative `top` offsets
-      (account for the condensed `data-scrolled` header height and the smaller
-      `top-2` mobile offset). Never pin two stickies to the same `top` — they
+      using `.site-sticky-secondary` (which accounts for the condensed header,
+      viewport edge, and section gutter). Primary column chrome uses
+      `.site-sticky-chrome`; editor-internal sticky bars use
+      `.site-sticky-contained`. Never pin two stickies to the same `top` — they
       overlap and hide each other while scrolled.
 - [ ] v2 optics come free — don't re-add them: panes/overlays/chrome get the
       specular rim glint automatically; interactive fills glint on hover. Only

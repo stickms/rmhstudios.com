@@ -155,16 +155,13 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
 
   return (
     <PullToRefresh onRefresh={refreshFeed}>
-      <div className="flex flex-col">
+      <div className="feed-column flex flex-col">
         {/* Header — floating L3 glass-chrome capsule (§8.2): insets from the
             column edges so aurora shows around it. It now carries only the sticky
             search (the For You / Following + content-type tabs moved out to their
             own sheet strips below, §5.45). The glass-chrome bg + blur + glint edge
             all clip to rounded-site on their own. */}
-        <header
-          data-slot="feed-header"
-          className="sticky top-2 z-10 mx-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3"
-        >
+        <header data-slot="feed-header" className="site-sticky-chrome glass-chrome">
           {/* Mobile chrome row: drawer button + centered RMH branding. Desktop has
               the sidebar, so this row is mobile-only; the spacer balances the 44px
               menu button so the wordmark stays centered. */}

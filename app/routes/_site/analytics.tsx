@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
+import { PageLayout } from '@/components/feed/PageLayout';
 import { AnalyticsDashboard } from '@/components/creator-studio/AnalyticsDashboard';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -17,17 +16,8 @@ function AnalyticsPage() {
   const { data: session, isPending } = useSession();
 
   return (
-    <>
-      <AnimatedMain
-        className="w-full min-w-0 pb-dock"
-        targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
-      >
-        <div className="sticky top-0 z-10 border-b border-site-border glass-chrome px-4 py-3">
-          <h1 className="font-(family-name:--site-font-display) text-lg font-bold text-site-text">
-            {t('creator-analytics', { defaultValue: 'Creator Analytics' })}
-          </h1>
-        </div>
-
+    <PageLayout title={t('creator-analytics', { defaultValue: 'Creator Analytics' })} wide>
+      <div className="min-w-0 px-4 pb-[var(--site-page-bottom-space)]">
         {isPending ? (
           <div className="flex justify-center py-20">
             <Spinner />
@@ -44,8 +34,7 @@ function AnalyticsPage() {
         ) : (
           <AnalyticsDashboard />
         )}
-      </AnimatedMain>
-      <div className="hidden lg:block w-4 shrink-0" />
-    </>
+      </div>
+    </PageLayout>
   );
 }

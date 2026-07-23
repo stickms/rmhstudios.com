@@ -152,13 +152,15 @@
      each glass surface (not a masked pseudo ring), so it lives inside the 1px
      border ring while the structural border itself goes transparent — glass reads
      as one lit sheet, not an outlined frame. --glass-glint-layer is the shared
-     paint; --glass-glint-attach is `fixed` (one viewport-anchored scene light) on
-     fine pointers and swaps to `scroll` (static top-edge sun) on touch/perf-lite;
+     paint. It is deliberately element-anchored on every input mode: a fixed
+     background on dozens of translucent surfaces is re-sampled during every
+     scroll frame and can visibly trail sticky/rubber-banding elements. The GL
+     scene still receives the live pointer light; CSS surfaces use the stable sun.
      --glass-glint-hover (registered <number>, default 1) multiplies the opacity so
      repeated interactive fills can fade their glint 0→1 on hover only. */
-  --glass-glint-attach: fixed;
+  --glass-glint-attach: scroll;
   --glass-glint-layer: radial-gradient(
-    var(--glass-glint-size, 340px) circle at var(--light-x, 50%) var(--light-y, -8%),
+    var(--glass-glint-size, 340px) circle at 50% -8%,
     color-mix(
         in srgb,
         var(--site-glass-glint, var(--site-glass-rim))
@@ -206,6 +208,24 @@
   --site-glow: none;
   --site-text-shadow: none;
   --site-letter-spacing: -0.022em;
+  /* ── Layout rhythm ───────────────────────────────────────────────────────
+     One fluid spacing and sticky contract for the shared site shell. Feature
+     pages may compose these values, but should not invent competing top offsets.
+     The compact primary header is 64px; independent secondary stickies clear it
+     plus the same section gutter used between ordinary glass surfaces. */
+  --site-page-gutter: clamp(0.625rem, 1.5vw, 0.875rem);
+  --site-section-gap: clamp(0.75rem, 1.2vw, 1rem);
+  --site-panel-padding: clamp(1rem, 1.5vw, 1.5rem);
+  --site-shell-gap: clamp(1rem, 1.5vw, 1.5rem);
+  --site-sticky-edge: clamp(0.5rem, 1.2vw, 0.75rem);
+  --site-sticky-primary-height: 4rem;
+  --site-sticky-secondary-top: calc(
+    var(--site-sticky-edge) + var(--site-sticky-primary-height) + var(--site-section-gap)
+  );
+  --site-touch-target: 2.75rem;
+  --site-page-bottom-space: clamp(3rem, 7vw, 5rem);
+  --site-mobile-content-end: clamp(2.5rem, 9vw, 3.5rem);
+  --site-floating-edge: clamp(1rem, 4vw, 1.5rem);
   /* The aurora canvas painted on <body> (background-attachment: fixed). Every
      theme defines one; glass over a flat colour reads as gray plastic. The
      ThemeGallery preview swatch reads var(--site-canvas, var(--site-bg)). */
@@ -880,7 +900,7 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     background-image: var(--site-glass-noise), var(--glass-glint-layer);
     background-clip: padding-box, border-box;
     background-origin: padding-box, border-box;
-    background-attachment: scroll, var(--glass-glint-attach, fixed);
+    background-attachment: scroll, var(--glass-glint-attach, scroll);
     box-shadow: var(--site-shadow-sm);
     border: var(--site-border-width) solid transparent;
     border-radius: var(--site-radius);
@@ -910,8 +930,9 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     background-image: var(--glass-glint-layer);
     background-clip: border-box;
     background-origin: border-box;
-    background-attachment: var(--glass-glint-attach, fixed);
+    background-attachment: var(--glass-glint-attach, scroll);
     border: var(--site-border-width) solid transparent;
+    box-shadow: var(--site-shadow-sm);
     -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1)))
       saturate(150%);
     backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1)))
@@ -949,15 +970,15 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     /* §4.35: the aside carries its glint in its OWN background now (its ::after
        ring was deleted). Blur stays on ::before (§3.3.1 containing-block rule),
        so the glint cannot ride a pseudo here — it rides the border-box layer. */
-    background-color: color-mix(
-      in srgb,
-      var(--site-bg) calc(40% * var(--glass-user-tint, 1)),
-      transparent
-    );
+    /* Keep the oversized Safari drawer continuous with the root colour exposed
+       behind the translucent bottom tab bar. The deliberate 100lvh + bleed
+       geometry remains unchanged; only the material base is made opaque so the
+       browser-chrome region does not read as a separate coloured strip. */
+    background-color: var(--site-bg);
     background-image: var(--glass-glint-layer);
     background-clip: border-box;
     background-origin: border-box;
-    background-attachment: var(--glass-glint-attach, fixed);
+    background-attachment: var(--glass-glint-attach, scroll);
     border: var(--site-border-width) solid transparent;
   }
   .glass-chrome--aside::before {
@@ -995,7 +1016,7 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     background-image: var(--glass-glint-layer);
     background-clip: border-box;
     background-origin: border-box;
-    background-attachment: var(--glass-glint-attach, fixed);
+    background-attachment: var(--glass-glint-attach, scroll);
     box-shadow: var(--site-shadow);
     border: var(--site-border-width) solid transparent;
     border-radius: var(--site-radius);
@@ -1036,6 +1057,33 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     box-shadow:
       inset 0 1px 2px rgb(0 0 0 / 0.35),
       inset 0 -1px 0 var(--site-glass-rim-soft);
+  }
+
+  /* Shared sticky geometry. The primary chrome owns the page-edge inset and a
+     full section of breathing room below it. A secondary sticky is an explicit
+     cascade level: it clears the compact 64px primary header instead of racing it
+     for the same `top`. Related controls should still be merged into one surface. */
+  .site-sticky-chrome {
+    position: sticky;
+    inset-block-start: var(--site-sticky-edge);
+    z-index: 30;
+    margin-inline: var(--site-page-gutter);
+    margin-block-end: calc(var(--site-sticky-edge) + var(--site-section-gap));
+    border-radius: var(--site-radius);
+    isolation: isolate;
+  }
+
+  .site-sticky-secondary {
+    position: sticky;
+    inset-block-start: var(--site-sticky-secondary-top);
+    z-index: 20;
+  }
+
+  .site-sticky-contained {
+    position: sticky;
+    inset-block-start: var(--site-sticky-edge);
+    z-index: 20;
+    align-self: start;
   }
 
   /* Full-screen fixed takeovers that must hide the page beneath (§3.3.2). */
@@ -1110,7 +1158,7 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     background-image: var(--glass-glint-layer);
     background-clip: border-box;
     background-origin: border-box;
-    background-attachment: var(--glass-glint-attach, fixed);
+    background-attachment: var(--glass-glint-attach, scroll);
     border-color: transparent;
     transition:
       background-color var(--site-transition-speed),
@@ -1206,7 +1254,7 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     @media (hover: hover) and (pointer: fine) {
       .glass-refract::before {
         background-image: var(--site-canvas);
-        background-attachment: fixed;
+        background-attachment: scroll;
         background-repeat: no-repeat;
         background-position: calc(50% + var(--aurora-mx, 0px)) calc(50% + var(--aurora-my, 0px));
         background-size: 104vw 104vh; /* ≈ body::before oversize, viewport units */
@@ -1327,14 +1375,9 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
   }
 }
 
-/* Touch / coarse pointers (§4.35): background-attachment: fixed is unreliable on
-   iOS and there is no pointer to track — swap the whole glint layer to a static
-   element-anchored top-edge sun in the same border-box slot. Redefined on
-   every glass surface inherits the static sun. Coarse-pointer devices keep this
-   element-anchored even when tilt input is live: mobile engines can composite a
-   fixed background a frame behind its scrolling parent, which reads as a detached
-   shadow/glint during page and tab transitions. Tilt still moves the shared aurora;
-   the per-surface edge remains physically attached to its glass. */
+/* Touch / coarse pointers (§4.35): use a simpler linear top-edge sun. All input
+   modes are element-anchored now; the coarse tier merely reduces paint cost. Tilt
+   still moves the shared aurora while the surface edge remains attached. */
 @media not ((hover: hover) and (pointer: fine)) {
   html {
     --glass-glint-attach: scroll;
@@ -1800,8 +1843,8 @@ html.readable-font body {
   --shadow-neon: 0 0 10px var(--neon-purple), 0 0 20px var(--neon-purple);
 }
 
-/* Bottom inset shared by floating mobile UI (dock, FAB, mini-player,
-   back-to-top) and content columns (.pb-dock).
+/* Bottom inset shared by floating mobile UI (FAB, mini-player, back-to-top)
+   and content columns (the legacy-named .pb-dock utility).
 
    Just env(safe-area-inset-bottom) — deliberately. On iOS Safari, including
    iOS 26's floating tab bar, position:fixed is anchored to the VISUAL viewport,
@@ -1810,7 +1853,7 @@ html.readable-font body {
    it collapses on scroll. So env() alone lands fixed UI just above whatever is
    at the bottom (browser bar or home indicator) in every state. Do NOT add the
    toolbar height (100lvh − 100dvh) on top — verified on-device that it stacks a
-   second bar's worth of space and floats the dock ~100px too high. */
+   second bar's worth of space and floats controls ~100px too high. */
 :root {
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
@@ -1859,13 +1902,12 @@ html.readable-font body {
   }
 
   /* Center-column bottom padding. Mobile _site pages scroll the DOCUMENT, so
-     content flows to the physical bottom behind the floating dock, iOS Safari's
-     bar (which minimizes as you scroll), and the home indicator. This inset just
-     reserves room for the last item to clear the floating dock: --safe-bottom
-     (the home indicator, exposed once Safari's bar minimizes) + 92px (the dock's
-     height plus a breathing gap). 0 at md+, where the sidebar replaces the dock. */
+     content flows behind Safari chrome and the home indicator. The old 92px
+     reserve belonged to a bottom dock that no longer exists; keeping it left a
+     conspicuous empty shelf at the end of every mobile page. Reserve only the
+     safe area plus a calm content-ending gutter. */
   .pb-dock {
-    padding-bottom: calc(var(--safe-bottom) + 92px);
+    padding-bottom: calc(var(--safe-bottom) + var(--site-mobile-content-end));
   }
   @media (min-width: 768px) {
     .pb-dock {
@@ -1873,12 +1915,11 @@ html.readable-font body {
     }
   }
 
-  /* Fixed floating UI that must sit just above the dock (mini-player,
-     back-to-top). Mobile only — desktop keeps its own md:bottom-* class, so we
-     stop just below Tailwind's md breakpoint (768px) with no sub-pixel gap. */
+  /* Fixed floating UI shares one safe, visually consistent viewport edge.
+     Desktop keeps its own md:bottom-* class, so this stops below md. */
   @media (max-width: 767.98px) {
     .bottom-above-dock {
-      bottom: calc(var(--safe-bottom) + 92px);
+      bottom: calc(var(--safe-bottom) + var(--site-floating-edge));
     }
 
     /* §5.5x A.1 — mobile floating-bottom stack. The cookie bar, mini-player and
@@ -1903,14 +1944,15 @@ html.readable-font body {
     }
     /* Mini-player rides above the cookie bar. */
     .vibe-app:has([data-floating='cookie']) [data-floating='miniplayer'] {
-      bottom: calc(var(--safe-bottom) + 92px + var(--float-lift-cookie));
+      bottom: calc(var(--safe-bottom) + var(--site-floating-edge) + var(--float-lift-cookie));
     }
     /* Back-to-top rides above whichever of the two are present (both vars add;
        an absent one is 0). */
     .vibe-app:has([data-floating='cookie']) [data-floating='backtotop'],
     .vibe-app:has([data-floating='miniplayer']) [data-floating='backtotop'] {
       bottom: calc(
-        var(--safe-bottom) + 92px + var(--float-lift-cookie) + var(--float-lift-miniplayer)
+        var(--safe-bottom) + var(--site-floating-edge) + var(--float-lift-cookie) +
+          var(--float-lift-miniplayer)
       );
     }
   }
@@ -2254,6 +2296,7 @@ html {
   overflow-y: auto;
   min-height: 100%;
   background-color: var(--site-bg);
+  scroll-padding-top: calc(var(--site-sticky-secondary-top) + var(--site-section-gap));
   /* Suppress horizontal overscroll → reduces the browser's edge "go back"
      gesture (Chrome Android) so a left-edge swipe can open the sidebar. */
   overscroll-behavior-x: none;
@@ -2275,10 +2318,10 @@ body {
   overflow-x: clip;
   min-height: 100%;
   /* With viewport-fit=cover the page renders edge-to-edge behind the
-     home-indicator bar and iOS Safari's floating tab bar (content scrolls under
-     the floating dock). Reachability is handled per-column — PageLayout / feed
-     columns carry the .pb-dock utility so the last content clears the dock, the
-     home indicator, and the browser bottom bar (--safe-bottom). */
+     home-indicator bar and iOS Safari's floating tab bar. Reachability is
+     handled per-column — PageLayout / feed columns carry the legacy-named
+     .pb-dock utility so the last content clears floating controls, the home
+     indicator, and the browser bottom bar (--safe-bottom). */
 }
 
 /* Prevent iOS Safari from auto-zooming the page when a form control is focused.
@@ -2291,6 +2334,16 @@ body {
   select,
   textarea {
     font-size: 16px;
+  }
+}
+
+/* Coarse pointers need a real 44px hit box even when a compact visual variant
+   is used inside a toolbar. The glyph/pill styling stays compact; only the
+   interactive box grows, which also gives adjacent controls reliable air. */
+@media (pointer: coarse) {
+  [data-slot='button'],
+  [data-slot='select'] {
+    min-block-size: var(--site-touch-target);
   }
 }
 

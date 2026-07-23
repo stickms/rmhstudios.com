@@ -23,13 +23,10 @@ export const Route = createFileRoute('/_site/help')({
 function HelpPage() {
   return (
     <>
-      <AnimatedMain
-        className="w-full min-w-0"
-        targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
-      >
+      <AnimatedMain className="w-full min-w-0" targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}>
         <div className="flex flex-col h-screen">
           {/* Sticky header — matches the full-height chat layout used elsewhere. */}
-          <div className="glass-chrome sticky top-0 z-10 h-18 border-b border-site-border shrink-0">
+          <div className="glass-chrome site-sticky-chrome h-18 shrink-0">
             <div className="h-full flex items-center gap-3 px-4 py-3">
               <MobileMenuButton />
               <h1 className="font-(family-name:--site-font-display) font-semibold text-2xl tracking-[-0.022em] text-site-text flex items-center gap-2 min-w-0 truncate">

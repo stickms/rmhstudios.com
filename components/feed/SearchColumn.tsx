@@ -207,7 +207,7 @@ export function SearchColumn({
           §8.2); the category tabs are a standalone sheet BELOW the search well
           (§5.45), never inside the sticky block. bg/blur/glint clip to
           rounded-site on their own. */}
-      <div className="sticky top-2 z-10 mx-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3">
+      <div className="site-sticky-chrome glass-chrome">
         <ColumnHeader sticky={false} className="border-b-0">
           <div className="flex items-center gap-2 rounded-full border border-site-border bg-site-surface px-4 py-2">
             <Search className="h-4 w-4 text-site-text-muted" />

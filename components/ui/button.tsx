@@ -1,9 +1,9 @@
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-import { Slot } from "@radix-ui/react-slot"
-import { Loader2 } from "lucide-react"
+import * as React from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { Slot } from '@radix-ui/react-slot';
+import { Loader2 } from 'lucide-react';
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
   // The transform transition rides the theme's press duration + --ease-glass
@@ -18,77 +18,74 @@ const buttonVariants = cva(
         // as the surfaces around them (§7.2). The rim brightens toward the light
         // on hover as the body goes fully opaque.
         default:
-          "glass-sheen-hover bg-site-accent/90 text-site-accent-fg hover:bg-site-accent-hover shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]",
+          'glass-sheen-hover bg-site-accent/90 text-site-accent-fg hover:bg-site-accent-hover shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]',
         destructive:
-          "bg-site-danger/90 text-white hover:bg-site-danger shadow-[inset_0_1px_0_var(--site-glass-rim-soft)] focus-visible:ring-site-danger/40",
+          'bg-site-danger/90 text-white hover:bg-site-danger shadow-[inset_0_1px_0_var(--site-glass-rim-soft)] focus-visible:ring-site-danger/40',
         danger:
-          "bg-site-danger/90 text-white hover:bg-site-danger shadow-[inset_0_1px_0_var(--site-glass-rim-soft)] focus-visible:ring-site-danger/40",
+          'bg-site-danger/90 text-white hover:bg-site-danger shadow-[inset_0_1px_0_var(--site-glass-rim-soft)] focus-visible:ring-site-danger/40',
         outline:
-          "border border-site-border bg-transparent text-site-text hover:bg-site-surface-hover hover:border-site-border-bright",
+          'border border-site-border bg-transparent text-site-text hover:bg-site-surface-hover hover:border-site-border-bright',
         secondary:
-          "border border-site-border bg-site-surface text-site-text hover:bg-site-surface-hover shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]",
-        ghost:
-          "text-site-text hover:bg-site-surface-hover",
-        link: "text-site-accent underline-offset-4 hover:underline",
+          'border border-site-border bg-site-surface text-site-text hover:bg-site-surface-hover shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]',
+        ghost: 'text-site-text hover:bg-site-surface-hover',
+        link: 'text-site-accent underline-offset-4 hover:underline',
         accent:
-          "glass-sheen-hover bg-site-accent/90 text-site-accent-fg hover:bg-site-accent-hover shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]",
-        "accent-outline":
-          "border border-site-accent text-site-accent hover:bg-site-accent-dim",
-        "accent-ghost":
-          "text-site-accent hover:bg-site-accent-dim",
+          'glass-sheen-hover bg-site-accent/90 text-site-accent-fg hover:bg-site-accent-hover shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]',
+        'accent-outline': 'border border-site-accent text-site-accent hover:bg-site-accent-dim',
+        'accent-ghost': 'text-site-accent hover:bg-site-accent-dim',
       },
       size: {
-        default: "h-10 px-5 py-2 has-[>svg]:px-4",
-        xs: "h-6 gap-1 px-2.5 text-xs has-[>svg]:px-2 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-8 gap-1.5 px-4 has-[>svg]:px-3",
-        lg: "h-12 px-7 text-[0.9375rem] has-[>svg]:px-5",
-        icon: "size-10",
-        "icon-xs": "size-6 [&_svg:not([class*='size-'])]:size-3",
-        "icon-sm": "size-8",
-        "icon-lg": "size-12",
+        default: 'h-11 px-5 py-2.5 has-[>svg]:px-4',
+        xs: "h-7 gap-1 px-2.5 text-xs has-[>svg]:px-2 [&_svg:not([class*='size-'])]:size-3",
+        sm: 'h-9 gap-1.5 px-4 has-[>svg]:px-3',
+        lg: 'h-12 px-7 text-[0.9375rem] has-[>svg]:px-5',
+        icon: 'size-11',
+        'icon-xs': "size-7 [&_svg:not([class*='size-'])]:size-3",
+        'icon-sm': 'size-9',
+        'icon-lg': 'size-12',
       },
     },
     defaultVariants: {
-      variant: "default",
-      size: "default",
+      variant: 'default',
+      size: 'default',
     },
-  }
-)
+  },
+);
 
 function Button({
   className,
-  variant = "default",
-  size = "default",
+  variant = 'default',
+  size = 'default',
   asChild = false,
   loading = false,
   loadingText,
   disabled,
   children,
   ...props
-}: React.ComponentProps<"button"> &
+}: React.ComponentProps<'button'> &
   VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
+    asChild?: boolean;
     /**
      * Show an inline spinner, disable interaction, and set `aria-busy`. This is
      * the canonical way to give a button in-flight feedback — don't hand-roll
      * `disabled={x}` + a separate `<Loader2 />`. Ignored when `asChild` (a Slot
      * must wrap a single child, so no spinner is injected).
      */
-    loading?: boolean
+    loading?: boolean;
     /** Optional label to swap in while loading (e.g. "Saving…"). Falls back to the button's children. */
-    loadingText?: React.ReactNode
+    loadingText?: React.ReactNode;
   }) {
-  const Comp = asChild ? Slot : "button"
+  const Comp = asChild ? Slot : 'button';
   // The spinner can only be injected into a real <button>; a Slot must receive a
   // single child, so for asChild we only carry the busy/disabled semantics.
-  const showSpinner = loading && !asChild
+  const showSpinner = loading && !asChild;
 
   return (
     <Comp
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      data-loading={loading ? "" : undefined}
+      data-loading={loading ? '' : undefined}
       className={cn(buttonVariants({ variant, size, className }))}
       disabled={asChild ? disabled : disabled || loading}
       aria-busy={loading || undefined}
@@ -103,7 +100,7 @@ function Button({
         children
       )}
     </Comp>
-  )
+  );
 }
 
-export { Button, buttonVariants }
+export { Button, buttonVariants };

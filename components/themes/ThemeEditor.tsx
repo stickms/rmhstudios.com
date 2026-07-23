@@ -25,7 +25,17 @@ import {
 import { useThemeStore } from '@/stores/themeStore';
 import { ThemeMiniShell } from './ThemeMiniShell';
 
-type ColorKey = 'canvasBase' | 'glow1' | 'glow2' | 'glow3' | 'tint' | 'text' | 'textMuted' | 'accent' | 'accentFg' | 'border';
+type ColorKey =
+  | 'canvasBase'
+  | 'glow1'
+  | 'glow2'
+  | 'glow3'
+  | 'tint'
+  | 'text'
+  | 'textMuted'
+  | 'accent'
+  | 'accentFg'
+  | 'border';
 
 const SCENE_FIELDS: { key: ColorKey; label: string }[] = [
   { key: 'canvasBase', label: 'Canvas base' },
@@ -49,7 +59,13 @@ const CONTRAST_LABEL: Record<string, string> = {
   'accentFg-on-accent': 'Accent label on accent',
 };
 
-export function ThemeEditor({ initial, onDone }: { initial: UserThemeView | null; onDone: () => void }) {
+export function ThemeEditor({
+  initial,
+  onDone,
+}: {
+  initial: UserThemeView | null;
+  onDone: () => void;
+}) {
   const { t } = useTranslation('theme-studio');
   const isNew = initial === null;
   const [name, setName] = useState(initial?.name ?? 'My theme');
@@ -64,7 +80,8 @@ export function ThemeEditor({ initial, onDone }: { initial: UserThemeView | null
   const editable = !published; // token map is immutable once published
   const issues = lintThemeContrast(tokens);
 
-  const tintMax = relativeLuminance(tokens.canvasBase) >= 0.5 ? TINT_ALPHA_MAX_LIGHT : TINT_ALPHA_MAX_DARK;
+  const tintMax =
+    relativeLuminance(tokens.canvasBase) >= 0.5 ? TINT_ALPHA_MAX_LIGHT : TINT_ALPHA_MAX_DARK;
 
   function setColor(key: ColorKey, value: string) {
     setTokens((prev) => {
@@ -135,7 +152,11 @@ export function ThemeEditor({ initial, onDone }: { initial: UserThemeView | null
 
   function previewOnSite() {
     setUserThemePreview({ ...deriveAppliedTheme(themeId ?? 'draft', tokens), name });
-    toast.success(t('preview-on-site-toast', { defaultValue: 'Previewing on the whole site — use the bar to exit' }));
+    toast.success(
+      t('preview-on-site-toast', {
+        defaultValue: 'Previewing on the whole site — use the bar to exit',
+      }),
+    );
   }
 
   function done() {
@@ -147,7 +168,7 @@ export function ThemeEditor({ initial, onDone }: { initial: UserThemeView | null
     <div className="grid gap-4 md:grid-cols-2 md:gap-6">
       {/* Live preview (§14.3): sticky on top below md, right column on desktop. */}
       <div className="md:order-2">
-        <div className="sticky top-16 z-10 space-y-3 md:top-4">
+        <div className="site-sticky-secondary space-y-3">
           <ThemeMiniShell tokens={tokens} size="lg" />
 
           {/* Contrast guardrails */}
@@ -155,14 +176,15 @@ export function ThemeEditor({ initial, onDone }: { initial: UserThemeView | null
             <ul className="rounded-site border border-site-warning/40 bg-site-warning/5 p-3 text-xs text-site-warning">
               {issues.map((i) => (
                 <li key={i.pair}>
-                  {t(`contrast-${i.pair}`, { defaultValue: CONTRAST_LABEL[i.pair] ?? i.pair })}: {i.ratio}:1 (
-                  {t('contrast-need', { defaultValue: 'need' })}{' '}
-                  {i.need}:1)
+                  {t(`contrast-${i.pair}`, { defaultValue: CONTRAST_LABEL[i.pair] ?? i.pair })}:{' '}
+                  {i.ratio}:1 ({t('contrast-need', { defaultValue: 'need' })} {i.need}:1)
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-xs text-site-success">{t('gate-pass', { defaultValue: 'Passes contrast checks ✓' })}</p>
+            <p className="text-xs text-site-success">
+              {t('gate-pass', { defaultValue: 'Passes contrast checks ✓' })}
+            </p>
           )}
 
           <Button variant="outline" size="sm" onClick={previewOnSite} className="w-full">
@@ -186,14 +208,25 @@ export function ThemeEditor({ initial, onDone }: { initial: UserThemeView | null
             <Section title={t('section-scene', { defaultValue: 'Scene' })}>
               <div className="grid grid-cols-2 gap-3">
                 {SCENE_FIELDS.map((f) => (
-                  <ColorField key={f.key} field={f} value={tokens[f.key]} onChange={setColor} t={t} />
+                  <ColorField
+                    key={f.key}
+                    field={f}
+                    value={tokens[f.key]}
+                    onChange={setColor}
+                    t={t}
+                  />
                 ))}
               </div>
             </Section>
 
             <Section title={t('section-material', { defaultValue: 'Glass material' })}>
               <div className="grid grid-cols-2 gap-3">
-                <ColorField field={{ key: 'tint', label: 'Glass tint' }} value={tokens.tint} onChange={setColor} t={t} />
+                <ColorField
+                  field={{ key: 'tint', label: 'Glass tint' }}
+                  value={tokens.tint}
+                  onChange={setColor}
+                  t={t}
+                />
               </div>
               <RangeRow
                 label={t('tint-alpha', { defaultValue: 'Tint strength' })}
@@ -202,7 +235,9 @@ export function ThemeEditor({ initial, onDone }: { initial: UserThemeView | null
                 step={0.01}
                 value={tokens.tintAlpha}
                 display={tokens.tintAlpha.toFixed(2)}
-                onChange={(v) => setTokens((p) => ({ ...p, tintAlpha: clampTintAlpha(v, p.canvasBase) }))}
+                onChange={(v) =>
+                  setTokens((p) => ({ ...p, tintAlpha: clampTintAlpha(v, p.canvasBase) }))
+                }
               />
               <RangeRow
                 label={t('glint-strength', { defaultValue: 'Rim / glint' })}
@@ -218,7 +253,13 @@ export function ThemeEditor({ initial, onDone }: { initial: UserThemeView | null
             <Section title={t('section-ink', { defaultValue: 'Ink & accent' })}>
               <div className="grid grid-cols-2 gap-3">
                 {INK_FIELDS.map((f) => (
-                  <ColorField key={f.key} field={f} value={tokens[f.key]} onChange={setColor} t={t} />
+                  <ColorField
+                    key={f.key}
+                    field={f}
+                    value={tokens[f.key]}
+                    onChange={setColor}
+                    t={t}
+                  />
                 ))}
               </div>
               <RangeRow
@@ -234,7 +275,9 @@ export function ThemeEditor({ initial, onDone }: { initial: UserThemeView | null
           </>
         ) : (
           <p className="text-sm text-site-text-muted">
-            {t('published-note', { defaultValue: 'Published themes are locked. Delist to edit colors.' })}
+            {t('published-note', {
+              defaultValue: 'Published themes are locked. Delist to edit colors.',
+            })}
           </p>
         )}
 
@@ -254,7 +297,12 @@ export function ThemeEditor({ initial, onDone }: { initial: UserThemeView | null
                 aria-label={t('price', { defaultValue: 'Price in coins' })}
                 className="w-24"
               />
-              <Button variant="outline" size="sm" onClick={publish} disabled={busy || issues.length > 0}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={publish}
+                disabled={busy || issues.length > 0}
+              >
                 {t('publish', { defaultValue: 'Publish' })}
               </Button>
             </>

@@ -34,7 +34,9 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
   const search = useCallback(async (q: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/study/marketplace?q=${encodeURIComponent(q)}`, { credentials: 'include' });
+      const res = await fetch(`/api/study/marketplace?q=${encodeURIComponent(q)}`, {
+        credentials: 'include',
+      });
       if (res.ok) {
         const data = (await res.json()) as MarketplaceData;
         setDecks(data.decks);
@@ -85,7 +87,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-2 z-10 mx-2 flex items-center gap-2 rounded-site glass-chrome px-4 py-3 shadow-site-sm md:top-3 md:mx-3">
+      <header className="site-sticky-chrome glass-chrome flex items-center gap-3 px-4 py-3">
         <Link
           to="/study"
           className="rounded-site-sm p-1 text-site-text-muted hover:text-site-text hover:bg-site-surface"
@@ -94,7 +96,9 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <Library className="h-5 w-5 text-site-accent" />
-        <h1 className="text-lg font-bold text-site-text">{t('deck-marketplace', { defaultValue: 'Browse decks' })}</h1>
+        <h1 className="text-lg font-bold text-site-text">
+          {t('deck-marketplace', { defaultValue: 'Browse decks' })}
+        </h1>
       </header>
 
       <div className="space-y-4 p-4">
@@ -113,7 +117,9 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
           <EmptyState
             icon={Library}
             title={t('deck-empty-title', { defaultValue: 'No public decks found' })}
-            description={t('deck-empty-desc', { defaultValue: 'Try a different search, or publish one of your own decks.' })}
+            description={t('deck-empty-desc', {
+              defaultValue: 'Try a different search, or publish one of your own decks.',
+            })}
           />
         ) : (
           <div className={`grid gap-3 sm:grid-cols-2 ${loading ? 'opacity-60' : ''}`}>
@@ -126,10 +132,14 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
                   className="flex flex-col rounded-site border border-site-border bg-site-surface p-4"
                 >
                   <Link to="/study/$deckId" params={{ deckId: deck.id }} className="min-w-0">
-                    <h2 className="truncate text-sm font-bold text-site-text hover:text-site-accent">{deck.title}</h2>
+                    <h2 className="truncate text-sm font-bold text-site-text hover:text-site-accent">
+                      {deck.title}
+                    </h2>
                   </Link>
                   {deck.description && (
-                    <p className="mt-1 line-clamp-2 text-xs text-site-text-muted">{deck.description}</p>
+                    <p className="mt-1 line-clamp-2 text-xs text-site-text-muted">
+                      {deck.description}
+                    </p>
                   )}
                   <p className="mt-2 text-[11px] text-site-text-dim">
                     {t('deck-card-count', { defaultValue: '{{n}} cards', n: deck.cardCount })}
@@ -144,7 +154,8 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
                       </span>
                     ) : added ? (
                       <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-site-success">
-                        <Check className="h-4 w-4" aria-hidden /> {t('deck-added', { defaultValue: 'Added' })}
+                        <Check className="h-4 w-4" aria-hidden />{' '}
+                        {t('deck-added', { defaultValue: 'Added' })}
                       </span>
                     ) : (
                       <button

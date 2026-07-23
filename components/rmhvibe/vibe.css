@@ -9,12 +9,7 @@
   background: var(--site-bg);
   color: var(--site-text);
   font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "SF Pro Display",
-    "SF Pro Text",
-    "Helvetica Neue",
-    Arial,
+    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial,
     sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -90,7 +85,9 @@
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.07) inset,
     0 24px 64px rgba(0, 0, 0, 0.55);
-  transition: border-color 200ms ease, box-shadow 200ms ease;
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease;
 }
 
 .vibe-dock:focus-within {
@@ -168,7 +165,9 @@
   background: var(--site-text);
   color: var(--site-bg);
   cursor: pointer;
-  transition: background 160ms ease, transform 160ms ease;
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
 }
 
 .vibe-dock__submit:hover {
@@ -200,7 +199,7 @@
   border-top-color: var(--site-border-bright);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
   font-family:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
 }
 
 .vibe-toolbar__icon {
@@ -214,7 +213,9 @@
   color: var(--site-text);
   cursor: pointer;
   text-decoration: none;
-  transition: background 160ms ease, color 160ms ease;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
 }
 
 .vibe-toolbar__icon:hover {
@@ -236,7 +237,9 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 160ms ease, transform 160ms ease;
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
 }
 
 .vibe-toolbar__cta:hover {
@@ -259,7 +262,7 @@
     0 24px 64px rgba(0, 0, 0, 0.6);
   color: var(--site-text);
   font-family:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
 }
 
 .vibe-panel__title {
@@ -278,7 +281,9 @@
   background: transparent;
   color: var(--site-text-muted);
   cursor: pointer;
-  transition: background 160ms ease, color 160ms ease;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
 }
 
 .vibe-panel__close:hover {
@@ -324,7 +329,9 @@
   background: var(--site-text);
   color: var(--site-bg);
   cursor: pointer;
-  transition: background 160ms ease, transform 160ms ease;
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
 }
 
 .vibe-panel__submit:hover {
@@ -367,8 +374,7 @@
   background: var(--site-surface);
   border: 0.5px solid var(--site-border);
   color: var(--site-text-muted);
-  font-family:
-    var(--font-jetbrains-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-family: var(--font-jetbrains-mono), ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   font-size: 0.78rem;
   line-height: 1.6;
   white-space: pre-wrap;
@@ -411,7 +417,7 @@
   background: var(--site-surface);
   border: 0.5px solid var(--site-border);
   font-family:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
 }
 
 .vibe-progress__head {
@@ -447,8 +453,7 @@
   background: var(--site-surface);
   border: 0.5px solid var(--site-border);
   color: var(--site-text);
-  font-family:
-    var(--font-jetbrains-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-family: var(--font-jetbrains-mono), ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   font-size: 0.7rem;
 }
 
@@ -475,8 +480,7 @@
   align-items: center;
   gap: 8px;
   padding: 5px 4px;
-  font-family:
-    var(--font-jetbrains-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-family: var(--font-jetbrains-mono), ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   font-size: 0.78rem;
   color: var(--site-text-muted);
   animation: vibe-rise-soft 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -622,7 +626,9 @@
   letter-spacing: 0.02em;
   color: var(--site-text-dim);
   text-decoration: none;
-  transition: color 160ms ease, transform 160ms ease;
+  transition:
+    color 160ms ease,
+    transform 160ms ease;
 }
 
 .vibe-ghost-link:hover {
@@ -736,7 +742,9 @@
   letter-spacing: 0.02em;
   color: var(--site-text);
   text-decoration: none;
-  transition: background 160ms ease, color 160ms ease;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
 }
 
 .vibe-account__item:hover {
@@ -763,16 +771,15 @@
 
 .vibe-gallery__head {
   position: sticky;
-  top: 0;
-  z-index: 10;
+  top: var(--site-sticky-secondary-top);
+  z-index: 20;
   display: flex;
   align-items: center;
   gap: 16px;
   padding: 14px clamp(16px, 4vw, 40px);
-  background: color-mix(in srgb, var(--site-bg) 72%, transparent);
-  backdrop-filter: saturate(180%) blur(24px);
-  -webkit-backdrop-filter: saturate(180%) blur(24px);
-  border-bottom: 0.5px solid var(--site-border);
+  border: var(--site-border-width) solid var(--site-border);
+  border-radius: var(--site-radius);
+  box-shadow: var(--site-shadow-sm);
 }
 
 .vibe-gallery__title {
@@ -832,7 +839,10 @@
   border: 0.5px solid var(--site-border);
   color: var(--site-text-muted);
   cursor: pointer;
-  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease,
+    background 160ms ease;
 }
 
 .vibe-backfill:hover:not(:disabled) {
@@ -867,7 +877,9 @@
   /* Hidden until revealed by .is-in (scroll-into-view). Hover only animates
      shadow/border here — the reveal owns transform, so they never conflict. */
   opacity: 0;
-  transition: border-color 250ms ease, box-shadow 250ms ease;
+  transition:
+    border-color 250ms ease,
+    box-shadow 250ms ease;
   will-change: transform, opacity;
 }
 
@@ -905,7 +917,9 @@
   opacity: 0;
   transform: scale(1.06);
   /* Soft fade + slow settle on load; doubles as a gentle zoom-in on hover. */
-  transition: opacity 450ms ease, transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    opacity 450ms ease,
+    transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .vibe-card__img.is-loaded {
@@ -931,8 +945,13 @@
 }
 
 @keyframes vibe-pulse {
-  0%, 100% { opacity: 0.55; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .vibe-card__body {
@@ -996,7 +1015,10 @@
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease;
 }
 
 .vibe-model-select__button:hover:not(:disabled),
@@ -1081,7 +1103,9 @@
   font-size: 0.82rem;
   text-align: left;
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
 }
 
 .vibe-model-select__option:hover {
@@ -1124,7 +1148,7 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
   color: var(--site-text);
   font-family:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
   font-size: 0.8rem;
   font-weight: 500;
 }
@@ -1143,7 +1167,9 @@
   font-size: 0.76rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 160ms ease, transform 160ms ease;
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
 }
 
 .vibe-version-banner__btn:hover {
@@ -1173,7 +1199,7 @@
     0 24px 64px rgba(0, 0, 0, 0.6);
   color: var(--site-text);
   font-family:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
 }
 
 .vibe-history__list {
@@ -1202,7 +1228,9 @@
   background: var(--site-surface);
   color: inherit;
   cursor: pointer;
-  transition: background 160ms ease, border-color 160ms ease;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
 }
 
 .vibe-history__item:hover:not(:disabled) {
