@@ -852,7 +852,7 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     box-shadow: var(--site-shadow);
     border: var(--site-border-width) solid var(--site-border);
     border-radius: var(--site-radius);
-  }
+    
     /* Last-line viewport safety for every floating surface, including older
        hand-positioned menus that do not use the measured liquid-pop hook. The
        hook still supplies precise x/y clamping; these limits guarantee that no
@@ -861,25 +861,6 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     max-block-size: calc(100dvh - var(--safe-top, 0px) - var(--safe-bottom, 0px) - 24px);
     overflow-y: auto;
     overscroll-behavior: contain;
-    /* §4.35: single glint layer, tint fills to border-box, transparent border. */
-    background-color: color-mix(
-      in srgb,
-      var(--site-bg) calc(62% * var(--glass-user-tint, 1)),
-      transparent
-    );
-    background-image: var(--glass-glint-layer);
-    background-clip: border-box;
-    background-origin: border-box;
-    background-attachment: var(--glass-glint-attach, scroll);
-    box-shadow: var(--site-shadow);
-    border: var(--site-border-width) solid transparent;
-    border-radius: var(--site-radius);
-    -webkit-backdrop-filter: blur(
-        calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1))
-      )
-      saturate(180%);
-    backdrop-filter: blur(calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1)))
-      saturate(180%);
   }
 
   /* Full-screen mobile editors intentionally consume the visual viewport. This
