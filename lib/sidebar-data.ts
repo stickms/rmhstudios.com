@@ -79,7 +79,7 @@ async function getUserBuilds(): Promise<SidebarBuild[]> {
         visibility: 'PUBLIC',
       },
       orderBy: [{ likeCount: 'desc' }, { viewCount: 'desc' }, { publishedAt: 'desc' }],
-      take: 4,
+      take: 3,
       select: {
         id: true,
         slug: true,
@@ -145,7 +145,7 @@ async function getRecommendCandidates(): Promise<SidebarUser[]> {
       },
       // A pool (not just 5) so the per-viewer exclusion below still yields
       // recommendations for viewers who already follow the very top accounts.
-      take: 30,
+      take: 20,
       select: {
         id: true,
         name: true,
@@ -179,12 +179,12 @@ async function getRecommendCandidates(): Promise<SidebarUser[]> {
 async function getRecommendedUsers(viewerId: string | null): Promise<SidebarUser[]> {
   const pool = await getRecommendCandidates();
   // Never recommend the viewer themselves or people they already follow.
-  if (!viewerId) return pool.slice(0, 5);
+  if (!viewerId) return pool.slice(0, 4);
 
   // Shared cached follow graph — the feed read on the same page already warmed it.
   const followingIds = await getFollowingIds(viewerId);
   const exclude = new Set<string>([viewerId, ...followingIds]);
-  return pool.filter((u) => !exclude.has(u.id)).slice(0, 5);
+  return pool.filter((u) => !exclude.has(u.id)).slice(0, 4);
 }
 
 async function getBlogPosts(): Promise<SidebarPost[]> {
@@ -192,7 +192,7 @@ async function getBlogPosts(): Promise<SidebarPost[]> {
   return cached<SidebarPost[]>('sidebar:blogPosts', BLOG_TTL, async () => {
     return prisma.blogPost.findMany({
       orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
-      take: 4,
+      take: 3,
       select: {
         slug: true,
         title: true,

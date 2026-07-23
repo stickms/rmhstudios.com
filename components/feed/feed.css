@@ -21,18 +21,18 @@
    stickies (new-post affordance) inherit the real clearance instead of a magic
    `top-24` that used to slide underneath the mobile search surface. */
 .feed-column {
-  --site-sticky-primary-height: 7.25rem;
+  --site-sticky-primary-height: 6.5rem;
 }
 
 @media (min-width: 768px) {
   .feed-column {
-    --site-sticky-primary-height: 4.25rem;
+    --site-sticky-primary-height: 3.75rem;
   }
 }
 
 /* ── Responsive site shell ──────────────────────────────────────────────────
    Tablet widths use a compact icon rail. At the ordinary desktop `lg`
-   breakpoint there is enough room for a readable 240px navigation sidebar plus
+   breakpoint there is enough room for a readable 216px navigation sidebar plus
    the canonical 648px content column, so labels become visible there rather
    than waiting until an ultra-wide 2xl display. The context rail narrows at xl
    and grows back to its full size at 2xl, preserving the reading column. */
@@ -49,7 +49,7 @@
 
 @media (min-width: 768px) {
   .site-shell {
-    max-width: 1760px;
+    max-width: 1680px;
     margin-inline: auto;
     flex-direction: row;
     justify-content: center;
@@ -60,8 +60,8 @@
   .site-shell__rail-slot {
     position: relative;
     display: block;
-    width: 72px;
-    flex: 0 0 72px;
+    width: 64px;
+    flex: 0 0 64px;
   }
 
   .site-shell__rail {
@@ -69,7 +69,7 @@
     top: 0;
     z-index: 30;
     height: 100dvh;
-    width: 72px;
+    width: 64px;
     /* Menus and notification popovers are allowed to leave the rail. The nav
        itself owns its bounded scrollport, so clipping this ancestor only cuts
        off legitimate floating UI. */
@@ -90,11 +90,11 @@
 @media (min-width: 1024px) {
   .site-shell__rail-slot,
   .site-shell__rail {
-    width: 240px;
+    width: 216px;
   }
 
   .site-shell__rail-slot {
-    flex-basis: 240px;
+    flex-basis: 216px;
   }
 
   .site-shell__rail-glass {
@@ -112,11 +112,11 @@
 @media (min-width: 1536px) {
   .site-shell__rail-slot,
   .site-shell__rail {
-    width: 264px;
+    width: 232px;
   }
 
   .site-shell__rail-slot {
-    flex-basis: 264px;
+    flex-basis: 232px;
   }
 
   .site-shell__rail-glass {
@@ -140,12 +140,8 @@
 }
 
 [data-slot='context-rail'] {
-  position: sticky;
-  inset-block-start: var(--site-sticky-edge);
-  max-block-size: calc(100dvh - var(--site-sticky-edge) - var(--site-sticky-edge));
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
+  position: relative;
+  align-self: flex-start;
 }
 
 @media (min-width: 768px) {

@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { Sparkles } from 'lucide-react';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { ContextRail } from "@/components/feed/ContextRail";
 import { MobileMenuButton } from '@/components/feed/MobileMenuButton';
 import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
 import { ConciergePanel } from '@/components/assistant/ConciergePanel';
@@ -23,7 +24,7 @@ export const Route = createFileRoute('/_site/help')({
 function HelpPage() {
   return (
     <>
-      <AnimatedMain className="w-full min-w-0" targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}>
+      <AnimatedMain className="w-full min-w-0">
         <div className="flex flex-col h-screen">
           {/* Sticky header — matches the full-height chat layout used elsewhere. */}
           <div className="glass-chrome site-sticky-chrome h-18 shrink-0">
@@ -42,7 +43,7 @@ function HelpPage() {
       </AnimatedMain>
 
       {/* Trailing gutter, matching the wide-no-right-sidebar pages. */}
-      <div className="hidden lg:block w-4 shrink-0" />
+      <ContextRail reserve />
     </>
   );
 }

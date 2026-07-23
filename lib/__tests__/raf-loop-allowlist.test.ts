@@ -28,6 +28,7 @@ import { join } from 'node:path';
  *                                       when compilation completes or context is lost.
  *   - hooks/useGlassLight.ts, hooks/useLiquidBackground.ts, lib/glass-lens.ts —
  *                                       rAF used as a per-event THROTTLE (one-shot).
+ *   - hooks/useParallax.ts            — pointer lerp stops once it settles at target.
  *   - hooks/useSpatialParallax.ts     — pointer-event throttle; cancels on unmount.
  *   - hooks/useScrollRestoration.ts, hooks/useCardSheen.ts, hooks/useCelebration.ts,
  *     components/ui/back-to-top.tsx, components/ui/AnimatedCount.tsx,
@@ -87,6 +88,7 @@ const ALLOW = new Set<string>([
   'hooks/useCelebration.ts',
   'hooks/useGlassLight.ts',
   'hooks/useLiquidBackground.ts',
+  'hooks/useParallax.ts',
   'hooks/useScrollRestoration.ts',
   'hooks/useSpatialParallax.ts',
   'lib/altair/engine/game-loop.ts',

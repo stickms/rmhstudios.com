@@ -1,6 +1,7 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { ContextRail } from "@/components/feed/ContextRail";
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { SpaceRoom } from '@/components/spaces/SpaceRoom';
 import { getSpace } from '@/lib/spaces.server';
@@ -32,11 +33,10 @@ function SpacePage() {
     <>
       <AnimatedMain
         className="w-full min-w-0 pb-dock"
-        targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         <SpaceRoom initialSpace={space} />
       </AnimatedMain>
-      <div className="hidden lg:block w-4 shrink-0" />
+      <ContextRail reserve />
     </>
   );
 }

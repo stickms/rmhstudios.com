@@ -29,7 +29,7 @@ const fetchInitialFeed = createServerFn({ method: 'GET' }).handler(async () => {
     surface: 'foryou',
     filter: 'all',
     cursor: null,
-    limit: 20,
+    limit: 15,
     search: null,
   });
   return {

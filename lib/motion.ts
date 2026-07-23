@@ -34,11 +34,11 @@ type Bezier = [number, number, number, number];
  */
 export const DURATION = {
   /** Micro-feedback: hovers, taps, tiny state flips. */
-  fast: 0.12,
+  fast: 0.1,
   /** The default for most enters/exits. */
-  base: 0.18,
+  base: 0.16,
   /** Larger surfaces (dialogs, sheets) that need a touch more travel. */
-  slow: 0.28,
+  slow: 0.22,
 } as const;
 
 /**
@@ -52,21 +52,12 @@ export const EASE = {
   emphasized: [0.16, 1, 0.3, 1] as Bezier,
   inOut: [0.65, 0, 0.35, 1] as Bezier,
   /**
-   * Springy overshoot for liquid-glass interactions (press-release flex, dock
-   * grow, tab-capsule settle). Overshoots past 1 then settles, so glass reads
-   * as elastic material. Formerly `GLASS_EASE` in components/ui/liquid-glass.tsx.
+   * Spatial spring physics (press-release flex, dock grow, tab-capsule settle).
    */
-  glass: [0.175, 0.885, 0.32, 2.2] as Bezier,
+  glass: [0.16, 1, 0.3, 1] as Bezier,
 } as const;
 
-/**
- * CSS `cubic-bezier(...)` string form of {@link EASE.glass}, for inline styles.
- * The canonical CSS home of this curve is the `--ease-glass` token in
- * `app/globals.css` (§5.3): site press physics (`.glass-interactive`, `Button`)
- * reference that token so a re-tune is one line. This string mirrors it for the
- * rare inline-style consumer that cannot reach the token — keep the two in sync.
- */
-export const GLASS_EASE_CSS = 'cubic-bezier(0.175, 0.885, 0.32, 2.2)';
+export const GLASS_EASE_CSS = 'cubic-bezier(0.16, 1, 0.3, 1)';
 
 /**
  * Spring presets for physical, interruptible motion (drag, reorder, pop-in).
@@ -74,8 +65,8 @@ export const GLASS_EASE_CSS = 'cubic-bezier(0.175, 0.885, 0.32, 2.2)';
  * immediate.
  */
 export const SPRING = {
-  soft: { type: 'spring', stiffness: 300, damping: 30, mass: 0.8 },
-  snappy: { type: 'spring', stiffness: 500, damping: 32, mass: 0.7 },
+  soft: { type: 'spring', stiffness: 360, damping: 32, mass: 0.72 },
+  snappy: { type: 'spring', stiffness: 620, damping: 38, mass: 0.62 },
 } as const satisfies Record<string, Transition>;
 
 /** The default tweened transition — smooth, quick, used by the variants below. */

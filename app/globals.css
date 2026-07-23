@@ -77,170 +77,117 @@
 }
 
 :root {
-  /* Base colors — mapped to site design system */
-  --background: #0d1b2e;
-  --foreground: #f4f8ff;
+  /* Base colors — mapped to spatial design system */
+  --background: #faf9f5;
+  --foreground: #111111;
 
   /* ==================== SITE DESIGN SYSTEM ==================== */
-  /* Glass Dark (default) — the Liquid Glass material system, promoted from the
-     old .style-liquid-glass theme into :root so glass is the site's default
-     look, not a theme patch. An aurora-lit deep-ocean canvas with translucent
-     surfaces, specular rim highlights (via the shadow tokens) and depth-graded
-     blur (via the .glass-* elevation classes below). Every other theme re-tints
-     this same contract. See docs/plans/2026-07-14-liquid-glass-ui-redesign.md. */
-  --site-bg: #0d1b2e;
-  --site-bg-subtle: rgba(148, 184, 255, 0.08);
-  --site-surface: rgba(255, 255, 255, 0.1);
-  --site-surface-hover: rgba(255, 255, 255, 0.17);
-  --site-surface-active: rgba(255, 255, 255, 0.24);
-  /* Opaque equivalent of --site-surface — used for autofill and the
-     reduced-transparency / high-contrast fallbacks (where translucency is off). */
-  --site-surface-opaque: #182c44;
-  --site-border: rgba(255, 255, 255, 0.16);
-  --site-border-bright: rgba(255, 255, 255, 0.32);
-  /* Muted alpha 0.82 (not the usual ~0.74) so secondary text clears WCAG AA
-     even on frosted panes over the brightest aurora corner. */
-  --site-text: #f4f8ff;
-  --site-text-muted: rgba(228, 238, 255, 0.82);
-  --site-text-dim: rgba(226, 237, 255, 0.56);
-  --site-accent: #6cc9ff;
-  --site-accent-fg: #042a41;
-  --site-accent-hover: #8fd7ff;
-  --site-accent-dim: rgba(108, 201, 255, 0.16);
-  --site-success: #30d158;
-  --site-danger: #ff6961;
-  --site-warning: #ffd60a;
+  /* Ultra Minimalist Masterpiece (IPO Edition) — Editorial & Architectural Minimalism.
+     High contrast serif (Playfair) and geometric sans (Inter) typography,
+     monochromatic palette (off-white, rich obsidian, slate, hairline warm borders),
+     curved organic shape arches, dot-matrix grid canvas, and smooth parallax depth. */
+  --site-bg: #faf9f5;
+  --site-bg-subtle: rgba(17, 17, 17, 0.04);
+  --site-surface: #ffffff;
+  --site-surface-hover: #f3f2ee;
+  --site-surface-active: #e8e7e1;
+  --site-surface-opaque: #ffffff;
+  --site-border: rgba(17, 17, 17, 0.12);
+  --site-border-bright: rgba(17, 17, 17, 0.28);
+  --site-text: #111111;
+  --site-text-muted: #555555;
+  --site-text-dim: #888888;
+  --site-accent: #111111;
+  --site-accent-fg: #ffffff;
+  --site-accent-hover: #2a2a2a;
+  --site-accent-dim: rgba(17, 17, 17, 0.08);
+  --site-success: #15803d;
+  --site-danger: #b91c1c;
+  --site-warning: #b45309;
 
-  /* ── Glass material contract (§3.2) — every theme re-tints these ────────── */
-  /* Tint plates */
-  --site-glass-tint: rgba(255, 255, 255, 0.1); /* L1/L2 resting fill */
-  --site-glass-tint-strong: rgba(255, 255, 255, 0.17); /* hover / raised */
-  --site-glass-ink: color-mix(in srgb, var(--site-bg) 45%, transparent); /* recessed wells */
-  /* Backdrop treatment, by elevation tier */
-  --site-glass-blur-pane: 16px;
-  /* Chrome (sticky headers, fixed sidebar) stays pinned while the page scrolls,
-     so its backdrop-filter re-samples the moving content every frame — the most
-     expensive glass on the site. Kept to a cheaper radius; the tint + saturate
-     still read as frosted glass across light/dark/high-contrast. */
-  --site-glass-blur-chrome: 12px;
-  /* Condensed sticky chrome (header capsule with [data-scrolled]) deepens its
-     blur so scrolled content reads clearly through it (§7/§8.2). */
-  --site-glass-blur-chrome-scrolled: 18px;
+  /* ── Ultra Minimalist Material Contract ── */
+  --site-glass-tint: rgba(255, 255, 255, 0.85);
+  --site-glass-tint-strong: rgba(255, 255, 255, 0.95);
+  --site-glass-ink: rgba(255, 255, 255, 0.9);
+  --site-glass-blur-pane: 20px;
+  --site-glass-blur-chrome: 20px;
+  --site-glass-blur-chrome-scrolled: 24px;
   --site-glass-blur-overlay: 28px;
   --site-glass-saturate: 160%;
-  /* Lighting — one sun, top-slightly-left (§4.2) */
-  --site-glass-rim: rgba(255, 255, 255, 0.28); /* top specular edge */
-  --site-glass-rim-soft: rgba(255, 255, 255, 0.1); /* hairline all-round */
-  --site-glass-light: rgba(255, 255, 255, 0.14); /* pointer highlight */
-  /* Depth shadows — blur radius & tint grow together with elevation (§4.1.5) */
-  --site-glass-depth: 0 24px 64px rgba(2, 10, 28, 0.6);
-  --site-glass-depth-sm: 0 4px 16px rgba(2, 10, 28, 0.28);
+  --site-glass-rim: rgba(17, 17, 17, 0.14);
+  --site-glass-rim-soft: rgba(17, 17, 17, 0.06);
+  --site-glass-light: rgba(255, 255, 255, 0.6);
+  --site-glass-depth: 0 16px 40px -12px rgba(0, 0, 0, 0.08);
+  --site-glass-depth-sm: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
 
-  /* ── v2 optics (§6) — press curve, optics-ring geometry, rim-glint, far aurora.
-     --light-x/--light-y are deliberately NOT declared: their absence is the
-     scene "sun" default baked into the glint gradient's var() fallbacks;
-     useGlassLight writes them only while a fine pointer moves. --glass-lens /
-     --glass-lens-prism are written per element by lib/glass-lens.ts only. */
-  --ease-glass: cubic-bezier(0.175, 0.885, 0.32, 2.2);
-  --glass-bevel: 12px; /* optics-ring thickness (panes/overlays); chrome → 8px */
-  --glass-glint-size: 340px; /* specular falloff radius */
-  --glass-glint-opacity: 0.9;
-  --site-glass-glint: var(--site-glass-rim); /* accent presets re-derive (§4.2) */
-  --site-aurora-far-1: rgba(86, 140, 255, 0.1); /* aurora depth layer (§5.1) */
-  --site-aurora-far-2: rgba(170, 108, 255, 0.09);
-  /* §4.35 single-sheet edges: the specular is a border-box background LAYER on
-     each glass surface (not a masked pseudo ring), so it lives inside the 1px
-     border ring while the structural border itself goes transparent — glass reads
-     as one lit sheet, not an outlined frame. --glass-glint-layer is the shared
-     paint. It is deliberately element-anchored on every input mode: a fixed
-     background on dozens of translucent surfaces is re-sampled during every
-     scroll frame and can visibly trail sticky/rubber-banding elements. The GL
-     scene still receives the live pointer light; CSS surfaces use the stable sun.
-     --glass-glint-hover (registered <number>, default 1) multiplies the opacity so
-     repeated interactive fills can fade their glint 0→1 on hover only. */
+  --ease-glass: cubic-bezier(0.16, 1, 0.3, 1);
+  --glass-bevel: 12px;
+  --glass-glint-size: 320px;
+  --glass-glint-opacity: 0.4;
+  --site-glass-glint: var(--site-glass-rim);
+  --site-aurora-far-1: rgba(17, 17, 17, 0.02);
+  --site-aurora-far-2: rgba(17, 17, 17, 0.03);
+
   --glass-glint-attach: scroll;
   --glass-glint-layer: radial-gradient(
-    var(--glass-glint-size, 340px) circle at 50% -8%,
+    var(--glass-glint-size, 320px) circle at 50% -5%,
     color-mix(
         in srgb,
         var(--site-glass-glint, var(--site-glass-rim))
-          calc(var(--glass-glint-opacity, 0.9) * var(--glass-glint-hover, 1) * 100%),
+          calc(var(--glass-glint-opacity, 0.4) * var(--glass-glint-hover, 1) * 100%),
         transparent
       )
       0%,
-    transparent 70%
+    transparent 65%
   );
 
-  /* ── Glass clarity slider (§5.46) — user blur/tint factors, set inline on
-     <html> by the appearance runtime for stops 1/3/4 (Calm 1.25/1.35 · Airy
-     0.65/0.75 · Clear 0.35/0.5). Stop 0 (Opaque) is the reduce-transparency
-     class; stop 2 (Default) is these 1/1 defaults. The blur is consumed through
-     --glass-blur-factor (not --glass-user-blur directly) so perf-lite can cap it
-     ≤1 — the user factor is set inline on <html>, which would out-specify a
-     class rule, but the derived factor is class-settable. Tint scales directly
-     (perf-lite keeps it). --site-surface-opaque anchors Calm's toward-opaque mix
-     so the tint never has to exceed 100% alpha. */
   --glass-user-blur: 1;
   --glass-user-tint: 1;
   --glass-blur-factor: var(--glass-user-blur, 1);
 
-  /* Elevation tokens — the rim lives in the shadow so Card/Dialog/etc. pick it
-     up through shadow-site / shadow-site-sm with zero component changes. */
+  /* Elevation tokens — Ultra Minimalist depth layering */
   --site-shadow:
-    inset 0 1px 0 var(--site-glass-rim), inset 0 0 0 0.5px var(--site-glass-rim-soft),
-    var(--site-glass-depth);
+    0 1px 2px rgba(0, 0, 0, 0.03), 0 12px 32px -8px rgba(0, 0, 0, 0.06);
   --site-shadow-sm:
-    inset 0 1px 0 var(--site-glass-rim-soft), inset 0 0 0 0.5px var(--site-glass-rim-soft),
-    var(--site-glass-depth-sm);
-  --site-radius: 22px;
+    0 1px 2px rgba(0, 0, 0, 0.02), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+  --site-radius: 24px;
   --site-radius-sm: 14px;
-  --site-control-radius: 999px;
-  --site-font-display:
-    var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
-  --site-font-body:
-    var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  --site-control-radius: 9999px;
+  --site-font-display: var(--font-playfair), 'Playfair Display', Georgia, serif;
+  --site-font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
   --site-font-mono: var(--font-jetbrains-mono), 'Cascadia Code', monospace;
   --site-border-width: 1px;
-  --site-card-transform: translateY(-2px);
+  --site-card-transform: translateY(-4px);
   --site-transition-speed: 200ms;
-  --site-press-duration: 340ms;
+  --site-press-duration: 160ms;
   --site-heading-transform: none;
   --site-glow: none;
   --site-text-shadow: none;
-  --site-letter-spacing: -0.022em;
-  /* ── Layout rhythm ───────────────────────────────────────────────────────
-     One fluid spacing and sticky contract for the shared site shell. Feature
-     pages may compose these values, but should not invent competing top offsets.
-     The compact primary header is 64px; independent secondary stickies clear it
-     plus the same section gutter used between ordinary glass surfaces. */
-  --site-page-gutter: clamp(0.625rem, 1.5vw, 0.875rem);
-  --site-section-gap: clamp(0.75rem, 1.2vw, 1rem);
-  --site-panel-padding: clamp(1rem, 1.5vw, 1.5rem);
-  --site-shell-gap: clamp(1rem, 1.5vw, 1.5rem);
-  --site-sticky-edge: clamp(0.5rem, 1.2vw, 0.75rem);
-  --site-sticky-primary-height: 4rem;
+  --site-letter-spacing: -0.01em;
+
+  /* Layout rhythm — generous minimalist negative space & clean breathing room */
+  --site-page-gutter: clamp(0.75rem, 1.5vw, 1.25rem);
+  --site-section-gap: clamp(1rem, 2vw, 1.5rem);
+  --site-panel-padding: clamp(1rem, 2vw, 1.5rem);
+  --site-shell-gap: clamp(0.75rem, 1.25vw, 1.25rem);
+  --site-sticky-edge: clamp(0.375rem, 0.8vw, 0.625rem);
+  --site-sticky-primary-height: 3.5rem;
   --site-sticky-secondary-top: calc(
     var(--site-sticky-edge) + var(--site-sticky-primary-height) + var(--site-section-gap)
   );
   --site-touch-target: 2.75rem;
-  --site-page-bottom-space: clamp(3rem, 7vw, 5rem);
-  --site-mobile-content-end: clamp(2.5rem, 9vw, 3.5rem);
-  --site-floating-edge: clamp(1rem, 4vw, 1.5rem);
-  /* The aurora canvas painted on <body> (background-attachment: fixed). Every
-     theme defines one; glass over a flat colour reads as gray plastic. The
-     ThemeGallery preview swatch reads var(--site-canvas, var(--site-bg)). */
+  --site-page-bottom-space: clamp(2rem, 5vw, 3.5rem);
+  --site-mobile-content-end: clamp(2rem, 7vw, 3rem);
+  --site-floating-edge: clamp(0.75rem, 3vw, 1.25rem);
+  
+  /* Spatial Ambient Canvas — weightless atmospheric lighting pools */
   --site-canvas:
-    radial-gradient(110% 85% at 10% -5%, rgba(86, 140, 255, 0.3), transparent 62%),
-    radial-gradient(95% 75% at 94% 4%, rgba(170, 108, 255, 0.27), transparent 60%),
-    radial-gradient(110% 95% at 86% 102%, rgba(52, 208, 188, 0.22), transparent 64%),
-    radial-gradient(80% 70% at 8% 98%, rgba(255, 120, 196, 0.16), transparent 60%),
-    linear-gradient(180deg, #0d1b2e 0%, #13253e 48%, #0b1930 100%);
-  /* Tiled micro-noise (64×64 data URI) layered on L2+ panes to kill gradient
-     banding and read as material texture. One shared image, zero runtime cost. */
-  --site-glass-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='64' height='64' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E");
-  /* Raster-map tint (RMHHomes / rideshare maps). Dark themes invert the light
-     OSM tiles into a dark map so the map tracks the theme; light themes reset
-     this to `none`. Applied only to the tile canvas, never the DOM pins. */
+    radial-gradient(120% 90% at 20% -10%, rgba(56, 189, 248, 0.18), transparent 60%),
+    radial-gradient(100% 80% at 85% 10%, rgba(99, 102, 241, 0.16), transparent 55%),
+    radial-gradient(110% 90% at 75% 95%, rgba(168, 85, 247, 0.12), transparent 60%),
+    linear-gradient(180deg, #090a0f 0%, #0c0e15 50%, #08090d 100%);
+
+  --site-glass-noise: none;
   --site-map-filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9);
 
   /* Legacy neon palette — kept for game-specific pages */
@@ -338,34 +285,31 @@
    theme gallery renders each theme's tokens inside a card) can show the default
    palette while another theme is active. Keep in sync with the :root block. */
 .style-default {
-  --site-bg: #0d1b2e;
-  --site-bg-subtle: rgba(148, 184, 255, 0.08);
-  --site-surface: rgba(255, 255, 255, 0.1);
-  --site-surface-hover: rgba(255, 255, 255, 0.17);
-  --site-surface-active: rgba(255, 255, 255, 0.24);
-  --site-surface-opaque: #182c44;
-  --site-border: rgba(255, 255, 255, 0.16);
-  --site-border-bright: rgba(255, 255, 255, 0.32);
-  --site-text: #f4f8ff;
-  --site-text-muted: rgba(228, 238, 255, 0.82);
-  --site-text-dim: rgba(226, 237, 255, 0.56);
-  --site-accent: #6cc9ff;
-  --site-accent-fg: #042a41;
-  --site-accent-hover: #8fd7ff;
-  --site-accent-dim: rgba(108, 201, 255, 0.16);
-  --site-success: #30d158;
-  --site-danger: #ff6961;
-  --site-warning: #ffd60a;
-  --site-radius: 22px;
+  --site-bg: #faf9f5;
+  --site-bg-subtle: rgba(17, 17, 17, 0.04);
+  --site-surface: #ffffff;
+  --site-surface-hover: #f3f2ee;
+  --site-surface-active: #e8e7e1;
+  --site-surface-opaque: #ffffff;
+  --site-border: rgba(17, 17, 17, 0.12);
+  --site-border-bright: rgba(17, 17, 17, 0.28);
+  --site-text: #111111;
+  --site-text-muted: #555555;
+  --site-text-dim: #888888;
+  --site-accent: #111111;
+  --site-accent-fg: #ffffff;
+  --site-accent-hover: #2a2a2a;
+  --site-accent-dim: rgba(17, 17, 17, 0.08);
+  --site-success: #15803d;
+  --site-danger: #b91c1c;
+  --site-warning: #b45309;
+  --site-radius: 24px;
   --site-radius-sm: 14px;
   --site-canvas:
-    radial-gradient(110% 85% at 10% -5%, rgba(86, 140, 255, 0.3), transparent 62%),
-    radial-gradient(95% 75% at 94% 4%, rgba(170, 108, 255, 0.27), transparent 60%),
-    radial-gradient(110% 95% at 86% 102%, rgba(52, 208, 188, 0.22), transparent 64%),
-    radial-gradient(80% 70% at 8% 98%, rgba(255, 120, 196, 0.16), transparent 60%),
-    linear-gradient(180deg, #0d1b2e 0%, #13253e 48%, #0b1930 100%);
-  --site-aurora-far-1: rgba(86, 140, 255, 0.1);
-  --site-aurora-far-2: rgba(170, 108, 255, 0.09);
+    radial-gradient(circle at 1px 1px, rgba(17, 17, 17, 0.07) 1px, transparent 0),
+    linear-gradient(180deg, #faf9f5 0%, #f4f3ed 100%);
+  --site-aurora-far-1: rgba(17, 17, 17, 0.02);
+  --site-aurora-far-2: rgba(17, 17, 17, 0.03);
 }
 
 /* Glass Light — daylight canvas: near-white base with soft pastel sky radials;
@@ -396,13 +340,13 @@
   --site-glass-rim: rgba(255, 255, 255, 0.9);
   --site-glass-rim-soft: rgba(255, 255, 255, 0.55);
   --site-glass-light: rgba(255, 255, 255, 0.6);
-  --site-glass-depth: 0 24px 64px rgba(60, 74, 120, 0.16);
-  --site-glass-depth-sm: 0 4px 16px rgba(60, 74, 120, 0.1);
+  --site-glass-depth: 0 16px 44px rgba(60, 74, 120, 0.14);
+  --site-glass-depth-sm: 0 2px 10px rgba(60, 74, 120, 0.09);
   --site-glass-saturate: 150%;
   /* §4.35: bright rims on bright frost need less light to read as an edge. */
   --glass-glint-opacity: 0.5;
-  --site-radius: 22px;
-  --site-radius-sm: 14px;
+  --site-radius: 16px;
+  --site-radius-sm: 10px;
   --site-canvas:
     radial-gradient(110% 85% at 8% -5%, rgba(120, 165, 255, 0.28), transparent 60%),
     radial-gradient(95% 75% at 95% 2%, rgba(185, 150, 255, 0.24), transparent 60%),
@@ -453,8 +397,9 @@
   --site-glass-depth-sm: none;
   --site-canvas: none;
   --site-border-width: 2px;
-  --site-radius: 18px;
-  --site-radius-sm: 12px;
+  --site-radius: 12px;
+  --site-radius-sm: 8px;
+  --site-control-radius: 8px;
   --background: #000000;
   --foreground: #ffffff;
 }
@@ -489,11 +434,11 @@
   --site-glass-rim: rgba(255, 255, 255, 0.22);
   --site-glass-rim-soft: rgba(255, 255, 255, 0.08);
   --site-glass-light: rgba(255, 255, 255, 0.1);
-  --site-glass-depth: 0 24px 64px rgba(0, 0, 0, 0.5);
-  --site-glass-depth-sm: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --site-glass-depth: 0 16px 44px rgba(0, 0, 0, 0.44);
+  --site-glass-depth-sm: 0 2px 10px rgba(0, 0, 0, 0.26);
   --site-glass-saturate: 120%;
-  --site-radius: 22px;
-  --site-radius-sm: 14px;
+  --site-radius: 16px;
+  --site-radius-sm: 10px;
   --site-canvas:
     radial-gradient(110% 85% at 12% -8%, rgba(255, 255, 255, 0.08), transparent 60%),
     radial-gradient(95% 80% at 92% 6%, rgba(200, 205, 215, 0.06), transparent 60%),
@@ -532,13 +477,13 @@
   --site-glass-rim: rgba(255, 248, 230, 0.85);
   --site-glass-rim-soft: rgba(255, 248, 230, 0.45);
   --site-glass-light: rgba(255, 240, 210, 0.5);
-  --site-glass-depth: 0 24px 64px rgba(90, 62, 32, 0.18);
-  --site-glass-depth-sm: 0 4px 16px rgba(90, 62, 32, 0.12);
+  --site-glass-depth: 0 16px 44px rgba(90, 62, 32, 0.16);
+  --site-glass-depth-sm: 0 2px 10px rgba(90, 62, 32, 0.1);
   --site-glass-saturate: 150%;
   /* §4.35: bright rims on bright frost need less light to read as an edge. */
   --glass-glint-opacity: 0.5;
-  --site-radius: 22px;
-  --site-radius-sm: 14px;
+  --site-radius: 16px;
+  --site-radius-sm: 10px;
   --site-canvas:
     radial-gradient(110% 85% at 10% -5%, rgba(220, 180, 120, 0.32), transparent 60%),
     radial-gradient(95% 78% at 94% 4%, rgba(210, 160, 90, 0.22), transparent 60%),
@@ -578,10 +523,10 @@
   --site-glass-rim: rgba(200, 220, 255, 0.28);
   --site-glass-rim-soft: rgba(200, 220, 255, 0.1);
   --site-glass-light: rgba(180, 210, 255, 0.14);
-  --site-glass-depth: 0 24px 64px rgba(0, 0, 0, 0.55);
-  --site-glass-depth-sm: 0 4px 16px rgba(0, 0, 0, 0.3);
-  --site-radius: 22px;
-  --site-radius-sm: 14px;
+  --site-glass-depth: 0 16px 44px rgba(0, 0, 0, 0.48);
+  --site-glass-depth-sm: 0 2px 10px rgba(0, 0, 0, 0.26);
+  --site-radius: 16px;
+  --site-radius-sm: 10px;
   --site-canvas:
     radial-gradient(110% 85% at 12% -6%, rgba(70, 120, 220, 0.32), transparent 62%),
     radial-gradient(95% 78% at 94% 2%, rgba(90, 150, 255, 0.24), transparent 60%),
@@ -626,13 +571,13 @@
   --site-glass-rim: rgba(191, 244, 255, 0.42);
   --site-glass-rim-soft: rgba(157, 223, 255, 0.12);
   --site-glass-light: rgba(118, 247, 255, 0.18);
-  --site-glass-blur-pane: 20px;
-  --site-glass-blur-chrome: 15px;
-  --site-glass-blur-chrome-scrolled: 22px;
-  --site-glass-blur-overlay: 32px;
+  --site-glass-blur-pane: 14px;
+  --site-glass-blur-chrome: 11px;
+  --site-glass-blur-chrome-scrolled: 13px;
+  --site-glass-blur-overlay: 22px;
   --site-glass-saturate: 175%;
-  --site-glass-depth: 0 28px 72px rgba(0, 2, 10, 0.72);
-  --site-glass-depth-sm: 0 8px 24px rgba(0, 2, 10, 0.42);
+  --site-glass-depth: 0 18px 48px rgba(0, 2, 10, 0.62);
+  --site-glass-depth-sm: 0 3px 12px rgba(0, 2, 10, 0.34);
   --site-shadow:
     inset 0 1px 0 var(--site-glass-rim), inset 0 0 0 0.5px var(--site-glass-rim-soft),
     0 0 36px rgba(70, 207, 255, 0.045), var(--site-glass-depth);
@@ -649,7 +594,7 @@
   --site-radius: 14px;
   --site-radius-sm: 9px;
   --site-control-radius: 9px;
-  --site-font-display: 'Space Grotesk', var(--font-inter);
+  --site-font-display: var(--font-playfair), 'Playfair Display', Georgia, serif;
   --site-font-body:
     var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
   --site-font-mono: var(--font-jetbrains-mono), 'Cascadia Code', monospace;
@@ -866,139 +811,48 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
 }
 
 @layer components {
-  /* ── L1 · glass-fill ── repeated content (feed cards, rows, tiles). Tint + rim
-     via shadow-site-sm. NO blur — cheap, unlimited per page; the canvas provides
-     the colour variance underneath so the tint reads as glass (§4.4). */
+  /* ── Ultra Minimalist L1 · glass-fill ── repeated content (feed cards, rows, tiles) */
   .glass-fill {
-    background: var(--site-glass-tint);
+    background: var(--site-surface);
     box-shadow: var(--site-shadow-sm);
     border: var(--site-border-width) solid var(--site-border);
     border-radius: var(--site-radius);
   }
 
-  /* ── L2 · glass-pane ── singular panels (heroes, composer, settings sections,
-     tier cards). Blur + saturate + micro-noise. Budgeted (§6.1). position:relative
-     so the optics ring (::before, §2.1) anchors here. */
+  /* ── Ultra Minimalist L2 · glass-pane ── singular panels (heroes, composer, settings sections) */
   .glass-pane {
     position: relative;
-    /* §4.35 layer order (load-bearing): tint (background-color) clips to the LAST
-       layer's clip = border-box, so the material fills under the transparent
-       border and the edge is the same sheet; noise stays padding-box; the glint
-       is the border-box layer, so its specular lives in the 1px border ring. */
-    /* §5.46: tint alpha scales with the clarity slider — Airy/Clear (<1) mix
-       toward transparent, Calm (>1) toward --site-surface-opaque; the clamps make
-       each half a no-op in the other's regime and guard against negative %. */
-    background-color: color-mix(
-      in srgb,
-      var(--site-surface-opaque) clamp(0%, calc((var(--glass-user-tint, 1) - 1) * 100%), 100%),
-      color-mix(
-        in srgb,
-        var(--site-glass-tint) clamp(0%, calc(var(--glass-user-tint, 1) * 100%), 100%),
-        transparent
-      )
-    );
-    background-image: var(--site-glass-noise), var(--glass-glint-layer);
-    background-clip: padding-box, border-box;
-    background-origin: padding-box, border-box;
-    background-attachment: scroll, var(--glass-glint-attach, scroll);
-    box-shadow: var(--site-shadow-sm);
-    border: var(--site-border-width) solid transparent;
+    background: var(--site-surface);
+    box-shadow: var(--site-shadow);
+    border: var(--site-border-width) solid var(--site-border);
     border-radius: var(--site-radius);
-    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-pane) * var(--glass-blur-factor, 1)))
-      saturate(var(--site-glass-saturate));
-    backdrop-filter: blur(calc(var(--site-glass-blur-pane) * var(--glass-blur-factor, 1)))
-      saturate(var(--site-glass-saturate));
   }
 
-  /* ── L3 · glass-chrome ── persistent chrome (sidebar, sticky headers, dock).
-     More of the aurora shows through; condenses on scroll via [data-scrolled].
-     Thinner optics-ring bevel than panes (§2.1); position:relative anchors the
-     ring ::before (a position utility from the shell overrides it where set). */
+  /* ── Ultra Minimalist L3 · glass-chrome ── persistent chrome (sidebar, sticky headers, dock) */
   .glass-chrome {
     position: relative;
-    --glass-bevel: 8px;
-    /* §4.35: single glint layer over a border-box tint + transparent border (the
-       lit edge IS the border). border-box sizing (Tailwind preflight) → the added
-       border costs no outer layout. */
-    /* §5.46: the --site-bg mix % scales with the clarity slider (a plain factor
-       works here — the mix tops out well under 100% even at Calm's 1.35). */
-    background-color: color-mix(
-      in srgb,
-      var(--site-bg) calc(32% * var(--glass-user-tint, 1)),
-      transparent
-    );
-    background-image: var(--glass-glint-layer);
-    background-clip: border-box;
-    background-origin: border-box;
-    background-attachment: var(--glass-glint-attach, scroll);
-    border: var(--site-border-width) solid transparent;
+    background-color: var(--site-surface);
+    border: var(--site-border-width) solid var(--site-border);
     box-shadow: var(--site-shadow-sm);
-    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1)))
-      saturate(150%);
-    backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1)))
-      saturate(150%);
   }
   .glass-chrome[data-scrolled] {
-    /* background-color only (NOT the `background` shorthand) so the glint layer
-       survives the condense; the --glass-glint-opacity bump then rides it (§7). */
-    background-color: color-mix(
-      in srgb,
-      var(--site-bg) calc(55% * var(--glass-user-tint, 1)),
-      transparent
-    );
-    --glass-glint-opacity: 1; /* condensed chrome catches more light (§4.2/§7) */
-    /* Blur deepens 12px → 18px when the capsule condenses (§7/§8.2). The aside
-       variant reads --site-glass-blur-chrome on ::before but never carries
-       [data-scrolled], so it is unaffected. */
-    -webkit-backdrop-filter: blur(
-        calc(var(--site-glass-blur-chrome-scrolled) * var(--glass-blur-factor, 1))
-      )
-      saturate(150%);
-    backdrop-filter: blur(
-        calc(var(--site-glass-blur-chrome-scrolled) * var(--glass-blur-factor, 1))
-      )
-      saturate(150%);
+    background-color: var(--site-surface-opaque);
+    box-shadow: var(--site-shadow);
   }
-  /* Fixed asides: blur lives on ::before so fixed descendants (LeftSidebar's
-     non-portaled user menu) keep the VIEWPORT as their containing block. NEVER
-     put backdrop-filter on the aside itself (§3.3.1). Because ::before is the
-     blur carrier here, the glint can't ride a pseudo — it lives in the aside's
-     own border-box background layer (§4.35); the old ::after ring is deleted. */
   .glass-chrome--aside {
     position: relative;
-    --glass-bevel: 8px;
-    /* §4.35: the aside carries its glint in its OWN background now (its ::after
-       ring was deleted). Blur stays on ::before (§3.3.1 containing-block rule),
-       so the glint cannot ride a pseudo here — it rides the border-box layer. */
-    /* Keep the oversized Safari drawer continuous with the root colour exposed
-       behind the translucent bottom tab bar. The deliberate 100lvh + bleed
-       geometry remains unchanged; only the material base is made opaque so the
-       browser-chrome region does not read as a separate coloured strip. */
-    background-color: var(--site-bg);
-    background-image: var(--glass-glint-layer);
-    background-clip: border-box;
-    background-origin: border-box;
-    background-attachment: var(--glass-glint-attach, scroll);
-    border: var(--site-border-width) solid transparent;
-  }
-  .glass-chrome--aside::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    border-radius: inherit;
-    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1)))
-      saturate(150%);
-    backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1)))
-      saturate(150%);
+    background-color: var(--site-surface);
+    border-right: var(--site-border-width) solid var(--site-border);
   }
 
-  /* ── L4 · glass-overlay ── floating UI (dialogs, popovers, menus, palette,
-     toasts, tooltips). More opaque so text never ghosts through. position:relative
-     anchors the optics ring (::before, §2.1). */
+  /* ── Ultra Minimalist L4 · glass-overlay ── floating UI (dialogs, popovers, menus, toasts) */
   .glass-overlay {
     position: relative;
+    background-color: var(--site-surface);
+    box-shadow: var(--site-shadow);
+    border: var(--site-border-width) solid var(--site-border);
+    border-radius: var(--site-radius);
+    
     /* Last-line viewport safety for every floating surface, including older
        hand-positioned menus that do not use the measured liquid-pop hook. The
        hook still supplies precise x/y clamping; these limits guarantee that no
@@ -1007,25 +861,6 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     max-block-size: calc(100dvh - var(--safe-top, 0px) - var(--safe-bottom, 0px) - 24px);
     overflow-y: auto;
     overscroll-behavior: contain;
-    /* §4.35: single glint layer, tint fills to border-box, transparent border. */
-    background-color: color-mix(
-      in srgb,
-      var(--site-bg) calc(62% * var(--glass-user-tint, 1)),
-      transparent
-    );
-    background-image: var(--glass-glint-layer);
-    background-clip: border-box;
-    background-origin: border-box;
-    background-attachment: var(--glass-glint-attach, scroll);
-    box-shadow: var(--site-shadow);
-    border: var(--site-border-width) solid transparent;
-    border-radius: var(--site-radius);
-    -webkit-backdrop-filter: blur(
-        calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1))
-      )
-      saturate(180%);
-    backdrop-filter: blur(calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1)))
-      saturate(180%);
   }
 
   /* Full-screen mobile editors intentionally consume the visual viewport. This
@@ -1061,7 +896,7 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
 
   /* Shared sticky geometry. The primary chrome owns the page-edge inset and a
      full section of breathing room below it. A secondary sticky is an explicit
-     cascade level: it clears the compact 64px primary header instead of racing it
+     cascade level: it clears the compact 56px primary header instead of racing it
      for the same `top`. Related controls should still be merged into one surface. */
   .site-sticky-chrome {
     position: sticky;
@@ -1102,7 +937,7 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     transition:
       background-color var(--site-transition-speed),
       box-shadow var(--site-transition-speed),
-      transform var(--site-press-duration, 340ms) var(--ease-glass);
+      transform var(--site-press-duration, 180ms) var(--ease-glass);
   }
   .glass-interactive:hover {
     background-color: var(--site-glass-tint-strong);
@@ -1163,8 +998,8 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     transition:
       background-color var(--site-transition-speed),
       box-shadow var(--site-transition-speed),
-      transform 0.34s var(--ease-glass),
-      --glass-glint-hover 0.25s ease;
+      transform var(--site-press-duration, 180ms) var(--ease-glass),
+      --glass-glint-hover 0.14s ease;
   }
   @media (hover: hover) and (pointer: fine) {
     .glass-fill.glass-interactive:hover {
@@ -1744,13 +1579,13 @@ html.readable-font body {
   line-height: 1.65;
 }
 
-/* Compact density — tightens the dominant repeated surface (cards). Only
-   padding/gap shrink; font sizes and touch targets are untouched. The full
-   per-component compact pass is incremental. */
+/* Compact density takes the already-compact default one step tighter for people
+   who explicitly prefer maximum information density. Font sizes and touch
+   targets remain unchanged. */
 :root[data-density='compact'] [data-slot='card'] {
-  padding-top: 0.85rem;
-  padding-bottom: 0.85rem;
-  gap: 0.85rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  gap: 0.625rem;
 }
 :root[data-density='compact']
   [data-slot='card']
@@ -2388,13 +2223,72 @@ body {
   }
 }
 
+/* Shared-site safety net: a standard page should never expose raw browser form
+   chrome just because a feature has not migrated to the React primitive yet.
+   Scope this to `.vibe-app` so self-contained games/apps keep their own controls.
+   Explicit primitives carry data-slot and stay in full control of their styles. */
+:where(.vibe-app) :is(input, textarea, select, button) {
+  font: inherit;
+}
+
+:where(.vibe-app) button:not([data-slot]) {
+  color: inherit;
+  border-radius: var(--site-control-radius);
+}
+
+:where(.vibe-app) :is(input, textarea, select, button):not([data-slot]):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--site-accent) 55%, transparent);
+  outline-offset: 2px;
+}
+
+:where(.vibe-app) :is(input, textarea, select, button):disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+:where(.vibe-app)
+  :is(
+    input:not([type]),
+    input[type='text'],
+    input[type='search'],
+    input[type='email'],
+    input[type='password'],
+    input[type='url'],
+    input[type='tel'],
+    input[type='number'],
+    input[type='date'],
+    input[type='time'],
+    input[type='datetime-local'],
+    textarea
+  ):not([data-slot]) {
+  color: var(--site-text);
+  background: var(--site-glass-ink);
+  border: var(--site-border-width) solid color-mix(in srgb, var(--site-border) 60%, transparent);
+  border-radius: var(--site-radius-sm);
+}
+
+:where(.vibe-app) select:not([data-slot='select']) {
+  min-block-size: 2.5rem;
+  color: var(--site-text);
+  background-color: var(--site-glass-ink);
+  border: var(--site-border-width) solid color-mix(in srgb, var(--site-border) 60%, transparent);
+  border-radius: var(--site-radius-sm);
+}
+
+:where(.vibe-app) select option {
+  color: var(--site-text);
+  background: var(--site-surface-opaque, var(--site-surface));
+}
+
 /* Coarse pointers need a real 44px hit box even when a compact visual variant
    is used inside a toolbar. The glyph/pill styling stays compact; only the
    interactive box grows, which also gives adjacent controls reliable air. */
 @media (pointer: coarse) {
   [data-slot='button'],
-  [data-slot='select'] {
+  [data-slot='select'],
+  [role='tab'] {
     min-block-size: var(--site-touch-target);
+    min-inline-size: var(--site-touch-target);
   }
 }
 
@@ -3197,7 +3091,7 @@ input[type='number'] {
 @keyframes page-enter {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
@@ -3205,7 +3099,7 @@ input[type='number'] {
   }
 }
 .page-root > * {
-  animation: page-enter 0.22s ease-out backwards;
+  animation: page-enter 0.16s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 .page-root > [data-page-enter-complete],
 .page-root > [data-route-pending] {
@@ -3298,7 +3192,7 @@ html.nav-restoring .feed-card-cv {
 }
 .content-item-enter,
 .feed-item-enter {
-  animation: content-item-enter 0.28s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: content-item-enter 0.2s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 @media (prefers-reduced-motion: reduce) {
   .content-item-enter,
@@ -3332,7 +3226,7 @@ html.nav-restoring .feed-card-cv {
   );
   background-size: 200% 100%;
   background-repeat: no-repeat;
-  animation: shimmer 1.6s ease-in-out infinite;
+  animation: shimmer 1.25s ease-in-out infinite;
 }
 /* A travelling sweep is more distracting than the pulse we preserve elsewhere,
  * so under reduced motion drop it back to a static themed surface. */

@@ -190,7 +190,7 @@ export function TierEditor({ initialTiers, onSaved }: TierEditorProps) {
       </div>
 
       {drafts.length === 0 && (
-        <div className="rounded-site glass-fill p-6 text-center text-sm text-site-text-dim">
+        <div className="rounded-site  p-6 text-center text-sm text-site-text-dim">
           {t('no-tiers-yet', {
             defaultValue: 'No tiers yet. Add your first tier to start earning from supporters.',
           })}
@@ -202,7 +202,7 @@ export function TierEditor({ initialTiers, onSaved }: TierEditorProps) {
           const nameInvalid = !d.name.trim();
           const priceInvalid = d.priceCoins < TIER_PRICE_MIN || d.priceCoins > TIER_PRICE_MAX;
           return (
-            <div key={d.key} className="rounded-site glass-fill p-4 space-y-4">
+            <div key={d.key} className="rounded-site  p-4 space-y-4">
               <div className="flex items-start justify-between gap-3">
                 <span className="text-xs font-medium uppercase tracking-wide text-site-text-dim">
                   {t('tier-n', { defaultValue: 'Tier {{n}}', n: i + 1 })}
@@ -271,7 +271,7 @@ export function TierEditor({ initialTiers, onSaved }: TierEditorProps) {
                         key={key}
                         aria-label={label}
                         className={`flex items-start gap-3 rounded-site px-3 py-2.5 cursor-pointer transition-colors ${
-                          checked ? 'bg-site-accent-dim' : 'glass-inset hover:bg-site-surface-hover'
+                          checked ? 'bg-site-accent-dim' : ' hover:bg-site-surface-hover'
                         }`}
                       >
                         <input

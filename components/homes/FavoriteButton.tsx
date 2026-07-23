@@ -52,7 +52,7 @@ export function FavoriteButton({ listingId, favorited, onChange, compact }: Favo
         onClick={toggle}
         aria-pressed={isFav}
         aria-label={isFav ? 'Remove from saved' : 'Save listing'}
-        className="grid h-9 w-9 place-items-center rounded-full bg-black/45 text-white backdrop-blur transition hover:bg-black/65 active:scale-95"
+        className="grid h-9 w-9 place-items-center rounded-full bg-black/45 text-white  transition hover:bg-black/65 active:scale-95"
       >
         {busy ? (
           <Loader2 className="h-4 w-4 animate-spin" />

@@ -18,6 +18,7 @@ import { FileText, Gamepad2, AppWindow, Boxes, Bot, Coins } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { ContextRail } from "@/components/feed/ContextRail";
 import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { listCuratedBuilds } from '@/lib/builds/curated';
@@ -95,7 +96,6 @@ function CreatorStudio() {
     <>
       <AnimatedMain
         className="cstudio-screen vibe-screen min-h-screen w-full min-w-0 pb-dock"
-        targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         <MobileTopBar title={t('creator-studio', { defaultValue: 'Creator Studio' })} />
 
@@ -174,7 +174,7 @@ function CreatorStudio() {
         )}
       </AnimatedMain>
       {/* Trailing gutter to match the feed/blog layout */}
-      <div className="hidden lg:block w-4 shrink-0" />
+      <ContextRail reserve />
     </>
   );
 }

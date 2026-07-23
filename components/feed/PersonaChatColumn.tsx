@@ -1,292 +1,292 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Link } from '@tanstack/react-router';
-import { Loader2, Bot, Send, ArrowLeft, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
-import { useConfirm } from '@/components/ui/confirm-dialog';
-import { liquidVTName } from '@/lib/view-transition';
+import { useEffect, useRef, useState, useCallback } from'react';
+import { useTranslation } from'react-i18next';
+import { Link } from'@tanstack/react-router';
+import { Loader2, Bot, Send, ArrowLeft, Trash2 } from'lucide-react';
+import { Button } from'@/components/ui/button';
+import { Spinner } from'@/components/ui/spinner';
+import { useConfirm } from'@/components/ui/confirm-dialog';
+import { liquidVTName } from'@/lib/view-transition';
 
 interface Msg {
-  role: string;
-  content: string;
+ role: string;
+ content: string;
 }
 interface Persona {
-  id: string;
-  name: string;
-  tagline: string | null;
-  greeting: string | null;
-  emoji: string | null;
-  avatarUrl?: string | null;
-  chatCount: number;
-  isOwner: boolean;
-  owner: { name: string | null; handle: string | null };
+ id: string;
+ name: string;
+ tagline: string | null;
+ greeting: string | null;
+ emoji: string | null;
+ avatarUrl?: string | null;
+ chatCount: number;
+ isOwner: boolean;
+ owner: { name: string | null; handle: string | null };
 }
 
 export function PersonaChatColumn({
-  id,
-  initialData,
+ id,
+ initialData,
 }: {
-  id: string;
-  /**
-   * Persona (and conversation) prefetched by the route loader. `null` means the
-   * loader determined not-found / private; `undefined` means unseeded (the
-   * column falls back to its client fetch).
-   */
-  initialData?: { persona: Persona; messages: Msg[]; signedIn: boolean } | null;
+ id: string;
+ /**
+ * Persona (and conversation) prefetched by the route loader. `null`means the
+ * loader determined not-found / private; `undefined`means unseeded (the
+ * column falls back to its client fetch).
+ */
+ initialData?: { persona: Persona; messages: Msg[]; signedIn: boolean } | null;
 }) {
-  const { t } = useTranslation('feed');
-  const confirm = useConfirm();
-  // Seed from the loader when it ran (even a `null` result is a definitive
-  // not-found seed) so the column paints immediately without a mount fetch.
-  const seeded = useRef(initialData !== undefined);
-  const [persona, setPersona] = useState<Persona | null>(initialData?.persona ?? null);
-  const [messages, setMessages] = useState<Msg[]>(initialData?.messages ?? []);
-  const [signedIn, setSignedIn] = useState(!!initialData?.signedIn);
-  const [loading, setLoading] = useState(initialData === undefined);
-  const [notFound, setNotFound] = useState(initialData === null);
-  const [input, setInput] = useState('');
-  const [sending, setSending] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+ const { t } = useTranslation('feed');
+ const confirm = useConfirm();
+ // Seed from the loader when it ran (even a `null`result is a definitive
+ // not-found seed) so the column paints immediately without a mount fetch.
+ const seeded = useRef(initialData !== undefined);
+ const [persona, setPersona] = useState<Persona | null>(initialData?.persona ?? null);
+ const [messages, setMessages] = useState<Msg[]>(initialData?.messages ?? []);
+ const [signedIn, setSignedIn] = useState(!!initialData?.signedIn);
+ const [loading, setLoading] = useState(initialData === undefined);
+ const [notFound, setNotFound] = useState(initialData === null);
+ const [input, setInput] = useState('');
+ const [sending, setSending] = useState(false);
+ const scrollRef = useRef<HTMLDivElement>(null);
 
-  const load = useCallback(async () => {
-    const res = await fetch(`/api/personas/${encodeURIComponent(id)}`, { credentials: 'include' });
-    if (res.status === 404) {
-      setNotFound(true);
-      return;
-    }
-    if (res.ok) {
-      const data = await res.json();
-      setPersona(data.persona);
-      setMessages(data.messages ?? []);
-      setSignedIn(!!data.signedIn);
-    }
-  }, [id]);
+ const load = useCallback(async () => {
+ const res = await fetch(`/api/personas/${encodeURIComponent(id)}`, { credentials:'include'});
+ if (res.status === 404) {
+ setNotFound(true);
+ return;
+ }
+ if (res.ok) {
+ const data = await res.json();
+ setPersona(data.persona);
+ setMessages(data.messages ?? []);
+ setSignedIn(!!data.signedIn);
+ }
+ }, [id]);
 
-  useEffect(() => {
-    // When the loader already seeded the persona, skip the mount fetch.
-    if (seeded.current) return;
-    let active = true;
-    (async () => {
-      try {
-        await load();
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [load]);
+ useEffect(() => {
+ // When the loader already seeded the persona, skip the mount fetch.
+ if (seeded.current) return;
+ let active = true;
+ (async () => {
+ try {
+ await load();
+ } finally {
+ if (active) setLoading(false);
+ }
+ })();
+ return () => {
+ active = false;
+ };
+ }, [load]);
 
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages, sending]);
+ useEffect(() => {
+ scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior:'smooth'});
+ }, [messages, sending]);
 
-  async function send() {
-    const text = input.trim();
-    if (!text || sending) return;
-    setInput('');
-    setMessages((m) => [...m, { role: 'user', content: text }]);
-    setSending(true);
-    try {
-      const res = await fetch(`/api/personas/${encodeURIComponent(id)}/chat`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        setMessages((m) => [...m, { role: 'assistant', content: data.reply }]);
-      } else {
-        setMessages((m) => [
-          ...m,
-          {
-            role: 'assistant',
-            content: `(${data.error ?? t('chat-error', { defaultValue: 'Something went wrong' })})`,
-          },
-        ]);
-      }
-    } finally {
-      setSending(false);
-    }
-  }
+ async function send() {
+ const text = input.trim();
+ if (!text || sending) return;
+ setInput('');
+ setMessages((m) => [...m, { role:'user', content: text }]);
+ setSending(true);
+ try {
+ const res = await fetch(`/api/personas/${encodeURIComponent(id)}/chat`, {
+ method:'POST',
+ credentials:'include',
+ headers: {'Content-Type':'application/json'},
+ body: JSON.stringify({ message: text }),
+ });
+ const data = await res.json().catch(() => ({}));
+ if (res.ok) {
+ setMessages((m) => [...m, { role:'assistant', content: data.reply }]);
+ } else {
+ setMessages((m) => [
+ ...m,
+ {
+ role:'assistant',
+ content: `(${data.error ?? t('chat-error', { defaultValue:'Something went wrong'})})`,
+ },
+ ]);
+ }
+ } finally {
+ setSending(false);
+ }
+ }
 
-  async function del() {
-    if (
-      !(await confirm({
-        title: t('delete-persona-confirm', { defaultValue: 'Delete this persona?' }),
-        danger: true,
-      }))
-    )
-      return;
-    const res = await fetch(`/api/personas/${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-    if (res.ok) window.location.href = '/personas';
-  }
+ async function del() {
+ if (
+ !(await confirm({
+ title: t('delete-persona-confirm', { defaultValue:'Delete this persona?'}),
+ danger: true,
+ }))
+ )
+ return;
+ const res = await fetch(`/api/personas/${encodeURIComponent(id)}`, {
+ method:'DELETE',
+ credentials:'include',
+ });
+ if (res.ok) window.location.href ='/personas';
+ }
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-20">
-        <Spinner />
-      </div>
-    );
-  }
-  if (notFound || !persona) {
-    return (
-      <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-        <p className="font-medium text-site-text">
-          {t('persona-not-found', { defaultValue: 'Persona not found' })}
-        </p>
-        <Link to="/personas">
-          <Button variant="outline">
-            {t('browse-personas', { defaultValue: 'Browse personas' })}
-          </Button>
-        </Link>
-      </div>
-    );
-  }
+ if (loading) {
+ return (
+ <div className="flex justify-center py-20">
+ <Spinner />
+ </div>
+ );
+ }
+ if (notFound || !persona) {
+ return (
+ <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
+ <p className="font-medium text-site-text">
+ {t('persona-not-found', { defaultValue:'Persona not found'})}
+ </p>
+ <Link to="/personas">
+ <Button variant="outline">
+ {t('browse-personas', { defaultValue:'Browse personas'})}
+ </Button>
+ </Link>
+ </div>
+ );
+ }
 
-  const greetingShown = messages.length === 0 && persona.greeting;
+ const greetingShown = messages.length === 0 && persona.greeting;
 
-  return (
-    <div className="flex h-screen flex-col">
-      <header className="site-sticky-chrome glass-chrome flex items-center gap-3 px-4 py-3">
-        <Link to="/personas" className="text-site-text-dim hover:text-site-text">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        {/* §5.48 liquid-open hero — the persona tile avatar morphs into this. */}
-        <div
-          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-site-sm bg-site-accent/12 text-lg"
-          style={{ viewTransitionName: liquidVTName('persona', persona.id) }}
-        >
-          {persona.avatarUrl ? (
-            <img src={persona.avatarUrl} alt="" className="h-full w-full object-cover" />
-          ) : (
-            persona.emoji || <Bot className="h-4 w-4 text-site-accent" />
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-bold text-site-text">{persona.name}</p>
-          {persona.tagline && (
-            <p className="truncate text-xs text-site-text-dim">{persona.tagline}</p>
-          )}
-        </div>
-        {persona.isOwner && (
-          <button
-            onClick={del}
-            className="text-site-text-dim hover:text-site-danger"
-            title={t('delete-persona', { defaultValue: 'Delete persona' })}
-            aria-label={t('delete-persona', { defaultValue: 'Delete persona' })}
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        )}
-      </header>
+ return (
+ <div className="flex h-screen flex-col">
+ <header className="site-sticky-chrome bg-site-surface border border-site-border rounded-2xl shadow-xs flex items-center gap-3 px-4 py-3">
+ <Link to="/personas"className="text-site-text-dim hover:text-site-text">
+ <ArrowLeft className="h-5 w-5"/>
+ </Link>
+ {/* §5.48 liquid-open hero — the persona tile avatar morphs into this. */}
+ <div
+ className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-site-sm bg-site-accent/12 text-lg"
+ style={{ viewTransitionName: liquidVTName('persona', persona.id) }}
+ >
+ {persona.avatarUrl ? (
+ <img src={persona.avatarUrl} alt=""className="h-full w-full object-cover"/>
+ ) : (
+ persona.emoji || <Bot className="h-4 w-4 text-site-accent"/>
+ )}
+ </div>
+ <div className="min-w-0 flex-1">
+ <p className="truncate text-sm font-bold text-site-text">{persona.name}</p>
+ {persona.tagline && (
+ <p className="truncate text-xs text-site-text-dim">{persona.tagline}</p>
+ )}
+ </div>
+ {persona.isOwner && (
+ <button
+ onClick={del}
+ className="text-site-text-dim hover:text-site-danger"
+ title={t('delete-persona', { defaultValue:'Delete persona'})}
+ aria-label={t('delete-persona', { defaultValue:'Delete persona'})}
+ >
+ <Trash2 className="h-4 w-4"/>
+ </button>
+ )}
+ </header>
 
-      <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
-        {greetingShown && (
-          <Bubble role="assistant" emoji={persona.emoji} avatarUrl={persona.avatarUrl}>
-            {persona.greeting}
-          </Bubble>
-        )}
-        {messages.map((m, i) => (
-          <Bubble key={i} role={m.role} emoji={persona.emoji} avatarUrl={persona.avatarUrl}>
-            {m.content}
-          </Bubble>
-        ))}
-        {sending && (
-          <Bubble role="assistant" emoji={persona.emoji} avatarUrl={persona.avatarUrl}>
-            <span className="inline-flex items-center gap-1 text-site-text-dim">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />{' '}
-              {t('typing', { defaultValue: 'typing…' })}
-            </span>
-          </Bubble>
-        )}
-      </div>
+ <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
+ {greetingShown && (
+ <Bubble role="assistant"emoji={persona.emoji} avatarUrl={persona.avatarUrl}>
+ {persona.greeting}
+ </Bubble>
+ )}
+ {messages.map((m, i) => (
+ <Bubble key={i} role={m.role} emoji={persona.emoji} avatarUrl={persona.avatarUrl}>
+ {m.content}
+ </Bubble>
+ ))}
+ {sending && (
+ <Bubble role="assistant"emoji={persona.emoji} avatarUrl={persona.avatarUrl}>
+ <span className="inline-flex items-center gap-1 text-site-text-dim">
+ <Loader2 className="h-3.5 w-3.5 animate-spin"/>{''}
+ {t('typing', { defaultValue:'typing…'})}
+ </span>
+ </Bubble>
+ )}
+ </div>
 
-      <div className="border-t border-site-border p-3">
-        {signedIn ? (
-          <div className="flex items-end gap-2">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  send();
-                }
-              }}
-              placeholder={t('message-placeholder', {
-                name: persona.name,
-                defaultValue: 'Message {{name}}…',
-              })}
-              rows={1}
-              maxLength={1000}
-              className="max-h-32 flex-1 resize-none rounded-site border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
-            />
-            <Button
-              variant="accent"
-              size="sm"
-              disabled={!input.trim() || sending}
-              onClick={send}
-              className="h-9 gap-1"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
-        ) : (
-          <p className="py-2 text-center text-sm text-site-text-muted">
-            <Link
-              to="/login"
-              search={{ callbackURL: `/personas/${id}` }}
-              className="font-semibold text-site-accent hover:underline"
-            >
-              {t('sign-in', { defaultValue: 'Sign in' })}
-            </Link>{' '}
-            {t('sign-in-to-chat', { name: persona.name, defaultValue: 'to chat with {{name}}.' })}
-          </p>
-        )}
-      </div>
-    </div>
-  );
+ <div className="border-t border-site-border p-3">
+ {signedIn ? (
+ <div className="flex items-end gap-2">
+ <textarea
+ value={input}
+ onChange={(e) => setInput(e.target.value)}
+ onKeyDown={(e) => {
+ if (e.key ==='Enter'&& !e.shiftKey) {
+ e.preventDefault();
+ send();
+ }
+ }}
+ placeholder={t('message-placeholder', {
+ name: persona.name,
+ defaultValue:'Message {{name}}…',
+ })}
+ rows={1}
+ maxLength={1000}
+ className="max-h-32 flex-1 resize-none rounded-site border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+ />
+ <Button
+ variant="accent"
+ size="sm"
+ disabled={!input.trim() || sending}
+ onClick={send}
+ className="h-9 gap-1"
+ >
+ <Send className="h-4 w-4"/>
+ </Button>
+ </div>
+ ) : (
+ <p className="py-2 text-center text-sm text-site-text-muted">
+ <Link
+ to="/login"
+ search={{ callbackURL: `/personas/${id}`}}
+ className="font-semibold text-site-accent hover:underline"
+ >
+ {t('sign-in', { defaultValue:'Sign in'})}
+ </Link>{''}
+ {t('sign-in-to-chat', { name: persona.name, defaultValue:'to chat with {{name}}.'})}
+ </p>
+ )}
+ </div>
+ </div>
+ );
 }
 
 function Bubble({
-  role,
-  emoji,
-  avatarUrl,
-  children,
+ role,
+ emoji,
+ avatarUrl,
+ children,
 }: {
-  role: string;
-  emoji: string | null;
-  avatarUrl?: string | null;
-  children: React.ReactNode;
+ role: string;
+ emoji: string | null;
+ avatarUrl?: string | null;
+ children: React.ReactNode;
 }) {
-  const isUser = role === 'user';
-  return (
-    <div className={`flex gap-2 ${isUser ? 'flex-row-reverse' : ''}`}>
-      {!isUser && (
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-site-sm bg-site-accent/12 text-sm">
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
-          ) : (
-            emoji || <Bot className="h-3.5 w-3.5 text-site-accent" />
-          )}
-        </div>
-      )}
-      <div
-        className={`max-w-[80%] whitespace-pre-wrap break-words rounded-site px-3 py-2 text-sm ${
-          isUser ? 'bg-site-accent text-(--site-accent-fg)' : 'bg-site-surface text-site-text'
-        }`}
-      >
-        {children}
-      </div>
-    </div>
-  );
+ const isUser = role ==='user';
+ return (
+ <div className={`flex gap-2 ${isUser ?'flex-row-reverse':''}`}>
+ {!isUser && (
+ <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-site-sm bg-site-accent/12 text-sm">
+ {avatarUrl ? (
+ <img src={avatarUrl} alt=""className="h-full w-full object-cover"loading="lazy"/>
+ ) : (
+ emoji || <Bot className="h-3.5 w-3.5 text-site-accent"/>
+ )}
+ </div>
+ )}
+ <div
+ className={`max-w-[80%] whitespace-pre-wrap break-words rounded-site px-3 py-2 text-sm ${
+ isUser ?'bg-site-accent text-(--site-accent-fg)':'bg-site-surface text-site-text'
+ }`}
+ >
+ {children}
+ </div>
+ </div>
+ );
 }

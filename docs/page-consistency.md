@@ -122,7 +122,7 @@ Work through this for every new or edited page:
       columns; `PageLayout`/`.site-sticky-chrome` owns the gap from a page header
       to the first content below it. Internal padding at the
       primitive's canonical value, never a cramped per-page override: text
-      inputs/wells `px-3.5 py-2.5` (16px font floor on phones), card content
+      inputs/wells `px-3 py-2` (with 44px targets restored for coarse pointers), card content
       `px-4 py-3`+, menu/list rows ≥12px inline padding (text never touches the
       glass edge).
 - [ ] **Dialogs and editors:** standard dialogs use `DialogContent` and remain
@@ -239,7 +239,7 @@ These are the mistakes that make a page feel "off" — reviewers will flag them:
 1. Hardcoded colors (`bg-zinc-900`, `text-white`, hex values) instead of
    `site-*` tokens — breaks every theme at once.
 2. `rounded-lg`/`rounded-2xl` instead of `rounded-site*` — hardcodes a radius
-   that ignores each theme's `--site-radius` (22px) / `--site-radius-sm` (14px).
+   that ignores each theme's `--site-radius` (16px) / `--site-radius-sm` (10px).
 3. Custom headers instead of `PageLayout`'s sticky header.
 4. Arbitrary column widths instead of `lib/layout-width.ts` constants.
 5. Hand-rolled modals/spinners/empty states/copy-buttons instead of the

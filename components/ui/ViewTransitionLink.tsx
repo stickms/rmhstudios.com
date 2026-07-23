@@ -24,27 +24,27 @@ import { runViewTransition } from '@/lib/view-transition';
  * or the user prefers reduced motion (handled inside `runViewTransition`).
  */
 export const ViewTransitionLink: LinkComponent<'a'> = (props) => {
-  const navigate = useNavigate();
-  const { onClick, target } = props;
+ const navigate = useNavigate();
+ const { onClick, target } = props;
 
-  return (
-    // The outer signature keeps route-aware generics for callers; inside, the
-    // generic props are forwarded to the concrete `<Link>` via its collapsed
-    // (non-generic) prop type.
-    <Link
-      {...(props as ComponentProps<typeof Link>)}
-      onClick={(e) => {
-        onClick?.(e);
-        if (e.defaultPrevented) return;
-        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-        if (target && target !== '_self') return;
-        e.preventDefault(); // stop Link's own navigation; we drive it in the transition
-        runViewTransition(() =>
-          // Forward the destination verbatim; navigate's options are a superset
-          // of Link's `to`/`params`/`search`.
-          navigate({ to: props.to, params: props.params, search: props.search } as never)
-        );
-      }}
-    />
-  );
+ return (
+ // The outer signature keeps route-aware generics for callers; inside, the
+ // generic props are forwarded to the concrete `<Link>` via its collapsed
+ // (non-generic) prop type.
+ <Link
+ {...(props as ComponentProps<typeof Link>)}
+ onClick={(e) => {
+ onClick?.(e);
+ if (e.defaultPrevented) return;
+ if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+ if (target && target !== '_self') return;
+ e.preventDefault(); // stop Link's own navigation; we drive it in the transition
+ runViewTransition(() =>
+ // Forward the destination verbatim; navigate's options are a superset
+ // of Link's `to`/`params`/`search`.
+ navigate({ to: props.to, params: props.params, search: props.search } as never)
+ );
+ }}
+ />
+ );
 };
