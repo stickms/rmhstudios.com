@@ -109,7 +109,7 @@ export function DailyWheel() {
  return (
  <div
  key={i}
- className="absolute left-1/2 top-1/2 flex items-center gap-0.5 text-xs font-bold text-white drop-shadow"
+ className="text-on-media absolute left-1/2 top-1/2 flex items-center gap-0.5 text-xs font-bold"
  style={{
  transform: `rotate(${a}deg) translate(0, -88px) rotate(${-a - angle}deg)`,
  transformOrigin:'center',

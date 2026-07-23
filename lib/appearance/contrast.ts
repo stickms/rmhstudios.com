@@ -40,6 +40,28 @@ export function relativeLuminance(hex: string): number {
   return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
 }
 
+/**
+ * Which CSS `color-scheme` a background belongs to, by WCAG luminance. Used to
+ * pin the UA colour scheme (native form controls, scrollbars, autofill, and
+ * `<select>` option popups) to the ACTUAL theme background — built-in, curated,
+ * marketplace user theme, or full-screen app chrome alike — so it never falls
+ * back to the OS default, which is what makes native UI render white-on-white or
+ * black-on-black when the visitor's system theme disagrees with the site theme.
+ *
+ * Lenient on purpose: accepts 3- or 6-digit hex (theme backgrounds include short
+ * forms like `#000`) and returns `'light'` for anything it can't parse, so it can
+ * never throw inside the pre-paint theme script.
+ */
+export function colorSchemeForBackground(bg: string): 'light' | 'dark' {
+  try {
+    let h = bg.trim().replace(/^#/, '');
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    return relativeLuminance(`#${h}`) < 0.5 ? 'dark' : 'light';
+  } catch {
+    return 'light';
+  }
+}
+
 /** WCAG contrast ratio (1..21) between two colors. */
 export function contrastRatio(a: string, b: string): number {
   const la = relativeLuminance(a);

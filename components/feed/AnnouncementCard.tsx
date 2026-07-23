@@ -57,9 +57,9 @@ export function AnnouncementCard({ item, variant }: AnnouncementCardProps) {
  <div className="flex gap-3">
  {/* Icon avatar */}
  <div
- className={`w-10 h-10 rounded-full bg-linear-to-br ${item.gradient ||'from-site-accent to-site-accent-hover'} flex items-center justify-center shrink-0`}
+ className={`text-on-media w-10 h-10 rounded-full bg-linear-to-br ${item.gradient ||'from-site-accent to-site-accent-hover'} flex items-center justify-center shrink-0`}
  >
- <TypeIcon type={item.type} className="w-5 h-5 text-white"/>
+ <TypeIcon type={item.type} className="w-5 h-5"/>
  </div>
 
  <div className="flex-1 min-w-0">
