@@ -45,6 +45,7 @@ import { PlaylistsColumn } from '@/components/feed/PlaylistsColumn';
 import { LibraryBlogRow } from '@/components/library/LibraryBlogRow';
 import { LibraryRevealProvider, useReveal } from '@/components/library/LibraryReveal';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { ContextRail } from "@/components/feed/ContextRail";
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { useSession } from '@/components/Providers';
 import { UploadModal } from '@/components/library/UploadModal';
@@ -443,7 +444,6 @@ function Library() {
     <>
       <AnimatedMain
         className="vibe-screen lib lib--glass-playground min-h-screen w-full min-w-0 pb-dock"
-        targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         <div className="lib-playground" {...orbit}>
           <LibraryRevealProvider instant={hasFiltered}>
@@ -722,7 +722,7 @@ function Library() {
           </LibraryRevealProvider>
         </div>
       </AnimatedMain>
-      <div className="hidden lg:block w-4 shrink-0" />
+      <ContextRail reserve />
       {uploadOpen && (
         <UploadModal isAdmin={isAdmin} onClose={() => setUploadOpen(false)} onUploaded={refresh} />
       )}

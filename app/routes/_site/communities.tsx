@@ -5,6 +5,7 @@ import { getRequest } from '@tanstack/react-start/server';
 import { useTranslation } from 'react-i18next';
 import { Users, CalendarDays, Radio } from 'lucide-react';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { ContextRail } from "@/components/feed/ContextRail";
 import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
@@ -50,10 +51,10 @@ export const Route = createFileRoute('/_site/communities')({
 function CommunitiesShell({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <AnimatedMain className="w-full min-w-0 pb-dock" targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}>
+      <AnimatedMain className="w-full min-w-0 pb-dock">
         {children}
       </AnimatedMain>
-      <div className="hidden lg:block w-4 shrink-0" />
+      <ContextRail reserve />
     </>
   );
 }

@@ -50,18 +50,13 @@ export function PageLayout({
  const descriptionId = useId();
  const hasRightSidebar = Boolean(rightSidebar);
  const hasBreadcrumbs = Boolean(breadcrumbs?.length);
- const expandedHeaderHeight = description
- ? hasBreadcrumbs
- ?'h-14 sm:h-20'
- :'h-14 sm:h-18'
- : hasBreadcrumbs
- ?'h-14 sm:h-18'
- :'h-14';
- const targetWidth = wide
- ? hasRightSidebar
- ? WIDE_WIDTH
- : WIDE_NO_RIGHT_SIDEBAR_WIDTH
- : DEFAULT_WIDTH;
+  const expandedHeaderHeight = description
+    ? hasBreadcrumbs
+      ? 'h-14 sm:h-20'
+      : 'h-14 sm:h-18'
+    : hasBreadcrumbs
+    ? 'h-14 sm:h-18'
+    : 'h-14';
 
  // Scroll-reactive chrome (§5.3): a 1px sentinel above the content toggles
  // `data-scrolled`on the sticky header, which condenses (more opaque, shorter)
@@ -88,7 +83,7 @@ export function PageLayout({
  <>
  {/* Center Column – width animates between pages. Bottom padding preserves a
  safe-area-aware content runway for floating controls. */}
- <AnimatedMain className="w-full min-w-0 pb-dock"targetWidth={targetWidth}>
+ <AnimatedMain className="w-full min-w-0 pb-dock">
  <div className="flex flex-col">
  {/* Scroll sentinel — sits at the very top so the header knows when the
  page has scrolled beneath it. */}

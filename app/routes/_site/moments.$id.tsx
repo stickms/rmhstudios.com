@@ -10,6 +10,7 @@ import { createFileRoute, notFound, Link } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { useTranslation } from 'react-i18next';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { ContextRail } from "@/components/feed/ContextRail";
 import { Button } from '@/components/ui/button';
 import { buildMeta, buildCanonical } from '@/lib/seo';
 import { getMoment } from '@/lib/moments.server';
@@ -67,7 +68,6 @@ function MomentPage() {
     <>
       <AnimatedMain
         className="w-full min-w-0 pb-dock"
-        targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         <div className="mx-auto flex max-w-2xl flex-col items-center gap-6 px-4 py-12 text-center">
           <p className="text-sm font-semibold uppercase tracking-wide text-site-accent">{label}</p>
@@ -109,7 +109,7 @@ function MomentPage() {
           </div>
         </div>
       </AnimatedMain>
-      <div className="hidden lg:block w-4 shrink-0" />
+      <ContextRail reserve />
     </>
   );
 }

@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { ContextRail } from "@/components/feed/ContextRail";
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { PersonaChatColumn } from '@/components/feed/PersonaChatColumn';
 import { auth } from '@/lib/auth';
@@ -31,13 +32,12 @@ function PersonaChatPage() {
     <>
       <AnimatedMain
         className="w-full min-w-0"
-        targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         {/* `key` remounts the column on persona→persona navigation so it
             re-seeds cleanly from the new loader data (no stale-state carryover). */}
         <PersonaChatColumn key={id} id={id} initialData={personaChat} />
       </AnimatedMain>
-      <div className="hidden lg:block w-4 shrink-0" />
+      <ContextRail reserve />
     </>
   );
 }

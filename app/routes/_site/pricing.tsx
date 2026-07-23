@@ -12,6 +12,7 @@ import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { getUserTier, type Tier } from '@/lib/entitlements';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { ContextRail } from "@/components/feed/ContextRail";
 import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
@@ -44,14 +45,13 @@ function Pricing() {
     <>
       <AnimatedMain
         className="relative isolate min-h-screen w-full min-w-0 pb-dock"
-        targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         {/* Mobile: hamburger + brand (this page leads with an editorial hero) */}
         <MobileTopBar title={t('membership-title', { defaultValue: 'Membership' })} />
         <MembershipPanel currentTier={currentTier} returnPath="/pricing" />
       </AnimatedMain>
       {/* Trailing gutter to match the blog/library layout */}
-      <div className="hidden lg:block w-4 shrink-0" />
+      <ContextRail reserve />
     </>
   );
 }
