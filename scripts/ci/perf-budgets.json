@@ -1,5 +1,5 @@
 {
-  "$comment": "Payload budgets from docs/full-rewrite-design-2026-07-18.md §2.1. Brotli KB. Enforced warn-only by scripts/ci/bundle-budget.ts (R0-T3); flips to blocking with --strict once the frontend decomposition (R3) lands. Corroborated by the team analysis (2026-07-18): built globals.css ~380KB uncompressed, shared entry index~540KB + src~340KB uncompressed.",
+  "$comment": "Payload budgets from docs/full-rewrite-design-2026-07-18.md §2.1, measured in Brotli KB by scripts/ci/bundle-budget.ts --strict. Eager JS/CSS are blocking; the whole-site lazy JS surface remains an advisory drift signal because it is not a per-navigation cost.",
   "brotli_kb": {
     "platform_shell_eager_js": 300,
     "platform_eager_css": 40,

@@ -13,10 +13,11 @@
 #      build + Chromium layer that `runner-full` adds run in parallel with it,
 #      not serialized behind a second `docker build`. Both are pushed to GHCR
 #      tagged with the commit SHA (+ :latest).
-#   3. `deploy-gate` (needs ci + build + perf-gate) POSTs the HMAC-signed request to the
-#      VPS webhook listener (webhook-server.cjs) with the built SHA — but ONLY
-#      when CI is green. The listener runs `deploy.sh production <sha>`, which
-#      PULLS these images, migrates, and blue/green-swaps — see deploy.sh.
+#   3. `perf-gate` probes the currently live production routes while the candidate
+#      image builds. `deploy-gate` waits for ci + build + perf-gate, then POSTs the
+#      HMAC-signed request to the VPS listener — but ONLY when all are green.
+#      The listener runs `deploy.sh production <sha>`, which PULLS these images,
+#      migrates, and blue/green-swaps — see deploy.sh.
 #
 # Gating the *webhook trigger* (not the image build) preserves the exact safety
 # of the old serial gate — red CI ⇒ no webhook ⇒ nothing ships — while letting
@@ -157,7 +158,9 @@ jobs:
         continue-on-error: true
 
   build:
-    # NO `needs:` — runs concurrently with `ci`/`perf-gate`. `deploy-gate` waits on all gates.
+    # NO `needs:` — runs concurrently with `ci`/`perf-gate`. `deploy-gate` waits
+    # on all gates. The Dockerfile enforces the strict bundle budget against the
+    # exact candidate output inside this one shared BuildKit graph.
     # Native ARM64 hosted runner (free on public repos) — builds arm64 images for
     # the Oracle ARM VPS without slow QEMU emulation.
     runs-on: ubuntu-24.04-arm
@@ -338,62 +341,49 @@ jobs:
             "⏹️ [PRODUCTION] Commit ${COMMIT_SHORT:-} — build superseded by a newer commit" \
             "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
 
-  # ── Perf guardrail gate (bundle budget + synthetic probes) ───────────────────
-  # Runs independently of image build so it sits in the build's shadow, then
-  # contributes a hard gate in deploy-gate below.
+  # ── Live-production synthetic preflight ──────────────────────────────────────
+  # Runs independently so it sits in the image build's shadow. Candidate bundle
+  # budgets are enforced inside the Dockerfile's shared Vite stage; do not add a
+  # second frontend build here and lengthen push-to-deploy time.
   perf-gate:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 25
     permissions:
       contents: read
-    env:
-      NODE_OPTIONS: --max-old-space-size=8192
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-
-      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
-        with:
-          version: 10
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24.18.0
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build with Vite 8
-        run: pnpm run build:frontend
-
-      - name: Bundle budget (strict)
-        run: pnpm exec tsx scripts/ci/bundle-budget.ts --strict
-
-      - name: Install Chrome
-        uses: browser-actions/setup-chrome@v1
 
       - name: Run synthetic Lighthouse probes
         run: |
           set -euo pipefail
           mkdir -p .lighthouseci
+          runs="$(node -p "require('./scripts/ci/synthetic-perf-bands.json').lighthouseRuns")"
+          urls=()
           while IFS= read -r url; do
             [ -z "$url" ] && continue
-            npx -y @lhci/cli@0.15.1 collect \
-              --url="$url" \
-              --numberOfRuns=3 \
-              --settings.chromeFlags="--headless=new --no-sandbox"
+            urls+=("--url=$url")
           done < <(node -e "const c=require('./scripts/ci/synthetic-perf-bands.json');for(const u of c.urls) console.log(u.url)")
+          [ "${#urls[@]}" -gt 0 ]
+          npx -y @lhci/cli@0.15.1 collect \
+            "${urls[@]}" \
+            --numberOfRuns="$runs" \
+            --settings.chromeFlags="--headless=new --no-sandbox"
 
       - name: Enforce synthetic regression bands
         run: node scripts/ci/synthetic-perf-report.mjs
 
       - name: Upload Lighthouse artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: deploy-perf-gate-lighthouse
           path: .lighthouseci
-          if-no-files-found: warn
+          if-no-files-found: error
+          retention-days: 14
 
   # ── Deploy gate: fire the VPS webhook ONLY when CI + build + perf are green ──
   # `if: always()` so this runs even when `ci` fails (so it can mark the embed

@@ -40,6 +40,8 @@
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
 : "${CLOUDFLARE_API_TOKEN:?set CLOUDFLARE_API_TOKEN (scoped: Zone Cache Rules Edit)}"
 : "${CLOUDFLARE_ZONE_ID:?set CLOUDFLARE_ZONE_ID (from the Cloudflare dashboard)}"
 
@@ -91,29 +93,10 @@ if [ "${VERIFY_ONLY:-0}" = "1" ]; then
   echo "Verifying cache ruleset drift for zone $CLOUDFLARE_ZONE_ID …"
   RESP="$(curl -sS \
     "$API/zones/$CLOUDFLARE_ZONE_ID/rulesets/phases/$PHASE/entrypoint" \
-    -H "Authorization: ******")"
+    -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")"
 
-  if ! printf '%s' "$RESP" | grep -q '"success":true'; then
-    echo "✗ Cloudflare API returned an error:"
-    printf '%s\n' "$RESP"
-    exit 1
-  fi
-
-  for snippet in \
-    "cache image-proxy + feed image transforms" \
-    "starts_with(http.request.uri.path, \\\"/api/image-proxy\\\")" \
-    "starts_with(http.request.uri.path, \\\"/api/feed/image/\\\")" \
-    "cache anonymous default-locale homepage HTML" \
-    "http.request.uri.path eq \\\"/\\\"" \
-    "http.cookie contains \\\"session_token\\\"" \
-    "http.cookie contains \\\"rmh-lang=\\\""; do
-    if ! printf '%s' "$RESP" | grep -q "$snippet"; then
-      echo "✗ Missing expected cache-rule snippet: $snippet"
-      exit 1
-    fi
-  done
-
-  echo "✓ Cache ruleset matches expected performance rules."
+  printf '%s' "$RESP" |
+    EXPECTED_RULESET="$BODY" node "$REPO_DIR/scripts/ci/verify-cloudflare-cache-rules.mjs"
   exit 0
 fi
 
@@ -124,11 +107,10 @@ RESP="$(curl -sS -X PUT \
   -H "Content-Type: application/json" \
   --data "$BODY")"
 
-# Report success/failure from the API envelope without needing jq.
-if printf '%s' "$RESP" | grep -q '"success":true'; then
+# Report success/failure and confirm Cloudflare stored the committed semantics.
+if printf '%s' "$RESP" |
+  EXPECTED_RULESET="$BODY" node "$REPO_DIR/scripts/ci/verify-cloudflare-cache-rules.mjs"; then
   echo "✓ Cache rule applied."
 else
-  echo "✗ Cloudflare API returned an error:"
-  printf '%s\n' "$RESP"
   exit 1
 fi
