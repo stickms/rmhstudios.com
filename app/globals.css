@@ -811,142 +811,48 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
 }
 
 @layer components {
-  /* ── L1 · glass-fill ── repeated content (feed cards, rows, tiles). Tint + rim
-     via shadow-site-sm. NO blur — cheap, unlimited per page; the canvas provides
-     the colour variance underneath so the tint reads as glass (§4.4). */
+  /* ── Ultra Minimalist L1 · glass-fill ── repeated content (feed cards, rows, tiles) */
   .glass-fill {
-    background: var(--site-glass-tint);
+    background: var(--site-surface);
     box-shadow: var(--site-shadow-sm);
     border: var(--site-border-width) solid var(--site-border);
     border-radius: var(--site-radius);
   }
 
-  /* ── L2 · glass-pane ── singular panels (heroes, composer, settings sections,
-     tier cards). Blur + saturate + micro-noise. Budgeted (§6.1). position:relative
-     so the optics ring (::before, §2.1) anchors here. */
+  /* ── Ultra Minimalist L2 · glass-pane ── singular panels (heroes, composer, settings sections) */
   .glass-pane {
     position: relative;
-    /* §4.35 layer order (load-bearing): tint (background-color) clips to the LAST
-       layer's clip = border-box, so the material fills under the transparent
-       border and the edge is the same sheet; noise stays padding-box; the glint
-       is the border-box layer, so its specular lives in the 1px border ring. */
-    /* §5.46: tint alpha scales with the clarity slider — Airy/Clear (<1) mix
-       toward transparent, Calm (>1) toward --site-surface-opaque; the clamps make
-       each half a no-op in the other's regime and guard against negative %. */
-    background-color: color-mix(
-      in srgb,
-      var(--site-surface-opaque) clamp(0%, calc((var(--glass-user-tint, 1) - 1) * 100%), 100%),
-      color-mix(
-        in srgb,
-        var(--site-glass-tint) clamp(0%, calc(var(--glass-user-tint, 1) * 100%), 100%),
-        transparent
-      )
-    );
-    background-image: var(--site-glass-noise), var(--glass-glint-layer);
-    background-clip: padding-box, border-box;
-    background-origin: padding-box, border-box;
-    background-attachment: scroll, var(--glass-glint-attach, scroll);
-    box-shadow: var(--site-shadow-sm);
-    border: var(--site-border-width) solid transparent;
+    background: var(--site-surface);
+    box-shadow: var(--site-shadow);
+    border: var(--site-border-width) solid var(--site-border);
     border-radius: var(--site-radius);
-    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-pane) * var(--glass-blur-factor, 1)))
-      saturate(var(--site-glass-saturate));
-    backdrop-filter: blur(calc(var(--site-glass-blur-pane) * var(--glass-blur-factor, 1)))
-      saturate(var(--site-glass-saturate));
   }
 
-  /* ── L3 · glass-chrome ── persistent chrome (sidebar, sticky headers, dock).
-     More of the aurora shows through; condenses on scroll via [data-scrolled].
-     Thinner optics-ring bevel than panes (§2.1); position:relative anchors the
-     ring ::before (a position utility from the shell overrides it where set). */
+  /* ── Ultra Minimalist L3 · glass-chrome ── persistent chrome (sidebar, sticky headers, dock) */
   .glass-chrome {
     position: relative;
-    --glass-bevel: 8px;
-    /* §4.35: single glint layer over a border-box tint + transparent border (the
-       lit edge IS the border). border-box sizing (Tailwind preflight) → the added
-       border costs no outer layout. */
-    /* §5.46: the --site-bg mix % scales with the clarity slider (a plain factor
-       works here — the mix tops out well under 100% even at Calm's 1.35). */
-    background-color: color-mix(
-      in srgb,
-      var(--site-bg) calc(32% * var(--glass-user-tint, 1)),
-      transparent
-    );
-    background-image: var(--glass-glint-layer);
-    background-clip: border-box;
-    background-origin: border-box;
-    background-attachment: var(--glass-glint-attach, scroll);
-    border: var(--site-border-width) solid transparent;
+    background-color: var(--site-surface);
+    border: var(--site-border-width) solid var(--site-border);
     box-shadow: var(--site-shadow-sm);
-    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1)))
-      saturate(150%);
-    backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1)))
-      saturate(150%);
   }
   .glass-chrome[data-scrolled] {
-    /* background-color only (NOT the `background` shorthand) so the glint layer
-       survives the condense; the --glass-glint-opacity bump then rides it (§7). */
-    background-color: color-mix(
-      in srgb,
-      var(--site-bg) calc(55% * var(--glass-user-tint, 1)),
-      transparent
-    );
-    --glass-glint-opacity: 1; /* condensed chrome catches more light (§4.2/§7) */
-    /* The condensed tier only nudges the blur radius. Large blur-kernel swaps on
-       a sticky element force expensive backdrop re-rasterization during scroll;
-       opacity carries most of the legibility change while the small blur delta
-       stays smooth at the display's native refresh rate. The aside
-       variant reads --site-glass-blur-chrome on ::before but never carries
-       [data-scrolled], so it is unaffected. */
-    -webkit-backdrop-filter: blur(
-        calc(var(--site-glass-blur-chrome-scrolled) * var(--glass-blur-factor, 1))
-      )
-      saturate(150%);
-    backdrop-filter: blur(
-        calc(var(--site-glass-blur-chrome-scrolled) * var(--glass-blur-factor, 1))
-      )
-      saturate(150%);
+    background-color: var(--site-surface-opaque);
+    box-shadow: var(--site-shadow);
   }
-  /* Fixed asides: blur lives on ::before so fixed descendants (LeftSidebar's
-     non-portaled user menu) keep the VIEWPORT as their containing block. NEVER
-     put backdrop-filter on the aside itself (§3.3.1). Because ::before is the
-     blur carrier here, the glint can't ride a pseudo — it lives in the aside's
-     own border-box background layer (§4.35); the old ::after ring is deleted. */
   .glass-chrome--aside {
     position: relative;
-    --glass-bevel: 8px;
-    /* §4.35: the aside carries its glint in its OWN background now (its ::after
-       ring was deleted). Blur stays on ::before (§3.3.1 containing-block rule),
-       so the glint cannot ride a pseudo here — it rides the border-box layer. */
-    /* Keep the oversized Safari drawer continuous with the root colour exposed
-       behind the translucent bottom tab bar. The deliberate 100lvh + bleed
-       geometry remains unchanged; only the material base is made opaque so the
-       browser-chrome region does not read as a separate coloured strip. */
-    background-color: var(--site-bg);
-    background-image: var(--glass-glint-layer);
-    background-clip: border-box;
-    background-origin: border-box;
-    background-attachment: var(--glass-glint-attach, scroll);
-    border: var(--site-border-width) solid transparent;
-  }
-  .glass-chrome--aside::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    border-radius: inherit;
-    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1)))
-      saturate(150%);
-    backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1)))
-      saturate(150%);
+    background-color: var(--site-surface);
+    border-right: var(--site-border-width) solid var(--site-border);
   }
 
-  /* ── L4 · glass-overlay ── floating UI (dialogs, popovers, menus, palette,
-     toasts, tooltips). More opaque so text never ghosts through. position:relative
-     anchors the optics ring (::before, §2.1). */
+  /* ── Ultra Minimalist L4 · glass-overlay ── floating UI (dialogs, popovers, menus, toasts) */
   .glass-overlay {
     position: relative;
+    background-color: var(--site-surface);
+    box-shadow: var(--site-shadow);
+    border: var(--site-border-width) solid var(--site-border);
+    border-radius: var(--site-radius);
+  }
     /* Last-line viewport safety for every floating surface, including older
        hand-positioned menus that do not use the measured liquid-pop hook. The
        hook still supplies precise x/y clamping; these limits guarantee that no

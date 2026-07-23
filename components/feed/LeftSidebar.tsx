@@ -405,7 +405,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           <span
             className={`site-logo font-serif font-bold text-xl tracking-tight text-site-text group-hover:opacity-80 transition-opacity ${logoFullClass}`}
           >
-            RMH<span className="font-sans font-light text-xs uppercase tracking-widest text-site-text-muted ml-1.5">Studio</span>
+            RMH<span className="font-sans font-normal text-xs uppercase tracking-widest text-site-text-muted ml-1.5">Studios</span>
           </span>
           <span
             className={`site-logo font-serif font-bold text-xl text-site-text ${logoShortClass}`}
