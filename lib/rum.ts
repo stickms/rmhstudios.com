@@ -3,9 +3,9 @@
  *
  * Uses the `web-vitals` library to capture LCP, CLS, INP, FCP and TTFB at their
  * correct moments (including bfcache restores) and beacons each metric to the
- * server, where it is rate-limited and (for poor metrics) logged. Anonymous —
- * no PII, only the metric and the pathname. Wire-compatible with forwarding to
- * a hosted RUM/analytics backend later.
+ * server, where it is rate-limited and logged as a structured sample for
+ * aggregate percentile reporting. Anonymous — the server reduces the pathname
+ * to a low-cardinality first-segment route label before logging it.
  */
 
 import { onCLS, onFCP, onINP, onLCP, onTTFB, type Metric } from 'web-vitals';

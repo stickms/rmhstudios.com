@@ -17,6 +17,7 @@ writing, not necessarily the current code).
 | [`codebase-overview.md`](./codebase-overview.md) | Canonical code-layout overview: stack, repo layout, conventions, where to look first                        |
 | [`architecture.md`](./architecture.md)           | Runtime topology + deploy pipeline: what runs where in production, images, CI, ports, auth across tiers     |
 | [`testing.md`](./testing.md)                     | Test suites (Vitest main + epic, Go Bazel), how to run them, and which CI workflows gate them               |
+| [`performance-slo.md`](./performance-slo.md)     | Performance guardrails: bundle budgets, synthetic probes, RUM SLO bands, and rollback trigger policy         |
 | [`design-language.md`](./design-language.md)     | The visual system: `--site-*` token contract, themes + accent presets, primitives, typography, motion, a11y |
 | [`page-consistency.md`](./page-consistency.md)   | Checklist + recipes for building pages that look native                                                     |
 | [`developer-api.md`](./developer-api.md)         | Scoped public developer API summary (canonical spec is in-app at `/developer/docs`)                         |

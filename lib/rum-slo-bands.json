@@ -1,0 +1,6 @@
+{
+  "core": { "LCP": 2500, "INP": 200, "CLS": 0.1, "TTFB": 800, "FCP": 1800 },
+  "content": { "LCP": 3000, "INP": 250, "CLS": 0.15, "TTFB": 1000, "FCP": 2200 },
+  "interactive": { "LCP": 3500, "INP": 300, "CLS": 0.2, "TTFB": 1200, "FCP": 2500 },
+  "realtime": { "LCP": 4000, "INP": 350, "CLS": 0.2, "TTFB": 1500, "FCP": 2800 }
+}

@@ -76,15 +76,15 @@ CI runs this in `vitest-coverage.yml` and writes the text report to the job
 
 ~45 workflows live in `.github/workflows/`. The ones that touch tests/quality:
 
-| Workflow | Runs | Gate?  |
-|---|---|---|
-| `web-ci.yml` (`check` job) | `tsc --noEmit` → `pnpm lint` → `vitest run` | typecheck + lint **block**; the **vitest step is advisory** (`continue-on-error` — a red test shows in annotations/summary but doesn't fail the job) |
-| `web-ci.yml` (`build` job) | `build:frontend` + a bundle-budget check | build **blocks**; bundle budget is warn-only |
-| `web-ci.yml` (`audit` job) | `pnpm audit --prod --audit-level=high` | blocks on high-severity prod advisories |
-| `typecheck-server.yml` | typechecks the Node service tier vs. `tsconfig.server.json` | blocks |
-| `vitest-coverage.yml` | vitest with V8 coverage → step summary | report-only |
-| `epic-tests.yml` | `pnpm epic:test` | blocks |
-| `go-microservices.yml` | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**` | blocks |
+| Workflow                   | Runs                                                                                    | Gate?                                                                                                                                                |
+| -------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `web-ci.yml` (`check` job) | `tsc --noEmit` → `pnpm lint` → `vitest run`                                             | typecheck + lint **block**; the **vitest step is advisory** (`continue-on-error` — a red test shows in annotations/summary but doesn't fail the job) |
+| `web-ci.yml` (`build` job) | `build:frontend` + strict bundle-budget check                                           | build and bundle budget **block**                                                                                                                    |
+| `web-ci.yml` (`audit` job) | `pnpm audit --prod --audit-level=high`                                                  | blocks on high-severity prod advisories                                                                                                              |
+| `typecheck-server.yml`     | typechecks the Node service tier vs. `tsconfig.server.json`                             | blocks                                                                                                                                               |
+| `vitest-coverage.yml`      | vitest with V8 coverage → step summary                                                  | report-only                                                                                                                                          |
+| `epic-tests.yml`           | `pnpm epic:test`                                                                        | blocks                                                                                                                                               |
+| `go-microservices.yml`     | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**` | blocks                                                                                                                                               |
 
 Plus SAST/quality gates that aren't tests but run on PRs: `codeql.yml`,
 `semgrep`, `trivy-fs`, `trufflehog`, `checkov`, `zizmor`, `go-gosec`/`go-vuln`/

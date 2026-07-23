@@ -265,6 +265,8 @@ ENV DATABASE_URL=${DATABASE_URL} \
 # NODE_OPTIONS prevents OOM on large bundles (three.js, codemirror, r3f, etc.)
 # (build-vibe-packages moved to the cached vibe-builder stage above; its output is
 # COPYd in before this RUN, so it is no longer bundled on the vite critical path.)
+# The final command enforces the payload gate against this exact candidate output
+# inside the shared BuildKit graph instead of rebuilding Vite in a separate CI job.
 RUN --mount=type=cache,id=vinxi-cache-${COMPOSE_PROJECT_NAME},target=/app/.vinxi,sharing=locked \
     rm -rf .output \
     # i18n translation is NOT run here. It used to call the DeepSeek API to
@@ -279,7 +281,8 @@ RUN --mount=type=cache,id=vinxi-cache-${COMPOSE_PROJECT_NAME},target=/app/.vinxi
     && echo "[i18n] regenerating resource modules from committed locales (translation runs in CI, not here)" \
     && pnpm exec tsx scripts/gen-i18n-resources.ts \
     && NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
-    && node scripts/fix-ssr-css-hash.mjs
+    && node scripts/fix-ssr-css-hash.mjs \
+    && pnpm exec tsx scripts/ci/bundle-budget.ts --strict
 
 # Validate, prune, and COPY straight from /app/.output. `.output` is a plain
 # layer dir (only .vinxi / .cache are cache mounts), so the runner stage can
