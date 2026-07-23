@@ -56,7 +56,7 @@ class):
 | Elevation / shape | `--site-shadow` (prominent: modals/popovers/floating chrome), `--site-shadow-sm` (resting: cards/surfaces), `--site-radius`, `--site-radius-sm`, `--site-control-radius` (shared button geometry)                                                           |
 | Layout rhythm     | `--site-page-gutter`, `--site-section-gap`, `--site-panel-padding`, `--site-shell-gap`, `--site-sticky-edge`, `--site-sticky-primary-height`, `--site-sticky-secondary-top`, `--site-touch-target`, `--site-page-bottom-space`                              |
 | Typography        | `--site-font-display`, `--site-font-body`, `--site-font-mono`                                                                                                                                                                                               |
-| Motion / flourish | `--site-transition-speed` (200ms default), `--site-press-duration`, `--site-card-transform`, `--site-glow`, `--site-text-shadow`, `--site-letter-spacing`, `--site-heading-transform`                                                                       |
+| Motion / flourish | `--site-transition-speed` (140ms default), `--site-press-duration`, `--site-card-transform`, `--site-glow`, `--site-text-shadow`, `--site-letter-spacing`, `--site-heading-transform`                                                                       |
 
 ### Tailwind utilities — use these, never raw hex/oklch
 
@@ -201,7 +201,7 @@ Sticky glass uses the shared layout contract rather than local `top-*` values:
   the viewport edge, inline gutter, z-index, radius, and the breathing room
   below the surface.
 - `.site-sticky-secondary` is the cascade level for an independent sticky
-  below the primary. Its offset clears the compact 64px primary header plus
+  below the primary. Its offset clears the compact 56px primary header plus
   `--site-section-gap`.
 - `.site-sticky-contained` is for a sticky toolbar inside its own editor or
   scroll region; it does not add page margins.
@@ -287,7 +287,7 @@ close-button clearance stay consistent.
 
 The `_site` layout route delegates to `components/feed/SiteShell.tsx`, which
 provides the **floating glass shell**: the desktop sidebar is an inset rounded
-`glass-chrome--aside` rail (64px from `md`, expanding to 264px at `2xl` so laptop
+`glass-chrome--aside` rail (64px from `md`, expanding to 232px at `2xl` so laptop
 reading width is never sacrificed), `MobileSidebarShell` (mobile drawer + dock),
 skip link, aurora gutters between rail/content/right-rail, and the single
 `<main id="main-content">` with the `.page-root` enter animation. **Pages
@@ -334,8 +334,8 @@ no shell.
   re-tune stays a one-line change.
 - `<MotionConfig reducedMotion="user">` wraps the app (`Providers.tsx`), so
   framer-motion automatically respects OS reduced-motion.
-- CSS motion: `.page-root > *` runs the `page-enter` animation (0.22s fade +
-  6px rise), suppressed on history-back (`html.nav-pop`) and during View
+- CSS motion: `.page-root > *` runs the `page-enter` animation (0.16s fade +
+  4px rise), suppressed on history-back (`html.nav-pop`) and during View
   Transitions (`html.vt-active`). Feed items use `.feed-item-enter`.
   Shared-element View Transitions go through `lib/view-transition.ts`.
 - **Living backdrop (v2 — two layers):** the aurora canvas (`body::before`)

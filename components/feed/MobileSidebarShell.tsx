@@ -356,7 +356,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
       setAsidePainted(true);
       return;
     }
-    const id = window.setTimeout(() => setAsidePainted(false), 420);
+    const id = window.setTimeout(() => setAsidePainted(false), 260);
     return () => window.clearTimeout(id);
   }, [offset]);
   const asideRevealed = offset > 0 || asidePainted;
@@ -432,7 +432,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
           } ${
             dragging
               ? ''
-              : 'transition-transform duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none motion-reduce:duration-0'
+              : 'transition-transform duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none motion-reduce:duration-0'
           }`}
           style={{
             transform: sidebarTransform,

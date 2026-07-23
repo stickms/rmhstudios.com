@@ -20,6 +20,8 @@ export function NavigationProgress() {
   const [progress, setProgress] = useState(0);
   const [visible, setVisible] = useState(false);
   const trickle = useRef<ReturnType<typeof setInterval> | null>(null);
+  const showDelay = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shown = useRef(false);
   // Tracks whether a bar is currently shown so the initial (idle) mount doesn't
   // run the "finish" animation for a navigation that never started.
   const active = useRef(false);
@@ -30,27 +32,42 @@ export function NavigationProgress() {
         clearInterval(trickle.current);
         trickle.current = null;
       }
+      if (showDelay.current) {
+        clearTimeout(showDelay.current);
+        showDelay.current = null;
+      }
     };
 
     if (isNavigating) {
       active.current = true;
-      setVisible(true);
       setProgress(8);
-      // Ease toward 90% and hold — the real completion snaps it to 100%.
-      trickle.current = setInterval(() => {
-        setProgress((p) => (p < 90 ? p + (90 - p) * 0.15 : p));
-      }, 200);
+      // Keep instant/cache-hit navigations visually quiet. Press feedback
+      // acknowledges them; the persistent bar only appears when useful.
+      showDelay.current = setTimeout(() => {
+        shown.current = true;
+        setVisible(true);
+        showDelay.current = null;
+        // Ease toward 90% and hold — the real completion snaps it to 100%.
+        trickle.current = setInterval(() => {
+          setProgress((p) => (p < 90 ? p + (90 - p) * 0.18 : p));
+        }, 160);
+      }, 90);
       return clearTrickle;
     }
 
     clearTrickle();
     if (!active.current) return; // nothing was in flight — stay hidden
     active.current = false;
+    if (!shown.current) {
+      setProgress(0);
+      return;
+    }
+    shown.current = false;
     setProgress(100);
     const hide = setTimeout(() => {
       setVisible(false);
       setProgress(0);
-    }, 250);
+    }, 140);
     return () => clearTimeout(hide);
   }, [isNavigating]);
 
@@ -62,8 +79,8 @@ export function NavigationProgress() {
       }`}
     >
       <div
-        className="h-full bg-site-accent shadow-[0_0_8px_var(--site-accent)] transition-[width] duration-200 ease-out"
-        style={{ width: `${progress}%` }}
+        className="h-full origin-left bg-site-accent shadow-[0_0_6px_var(--site-accent)] transition-transform duration-150 ease-out"
+        style={{ transform: `scaleX(${progress / 100})` }}
       />
     </div>
   );

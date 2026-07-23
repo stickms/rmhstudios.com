@@ -7,7 +7,6 @@ import { useTranslation } from 'react-i18next';
 import { AnimatedMain } from './AnimatedMain';
 import { ContextRail } from './ContextRail';
 import { MobileMenuButton } from './MobileMenuButton';
-import { MobileBrandPrefix } from './MobileHeader';
 import { Breadcrumbs, type BreadcrumbItem } from '@/components/ui/breadcrumbs';
 import { DEFAULT_WIDTH, WIDE_NO_RIGHT_SIDEBAR_WIDTH, WIDE_WIDTH } from '@/lib/layout-width';
 
@@ -53,11 +52,11 @@ export function PageLayout({
   const hasBreadcrumbs = Boolean(breadcrumbs?.length);
   const expandedHeaderHeight = description
     ? hasBreadcrumbs
-      ? 'h-22 sm:h-26'
-      : 'h-22'
+      ? 'h-14 sm:h-20'
+      : 'h-14 sm:h-18'
     : hasBreadcrumbs
-      ? 'h-18 sm:h-22'
-      : 'h-18';
+      ? 'h-14 sm:h-18'
+      : 'h-14';
   const targetWidth = wide
     ? hasRightSidebar
       ? WIDE_WIDTH
@@ -102,17 +101,17 @@ export function PageLayout({
             ref={headerRef}
             data-slot="page-header"
             aria-describedby={description ? descriptionId : undefined}
-            className={`group glass-chrome site-sticky-chrome transition-[height] data-[scrolled]:h-16 ${expandedHeaderHeight}`}
+            className={`group glass-chrome site-sticky-chrome transition-[height] duration-150 data-[scrolled]:h-14 ${expandedHeaderHeight}`}
           >
-            <div className="flex h-full min-w-0 items-center gap-3 px-4 py-3 sm:px-5">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="flex h-full min-w-0 items-center gap-2.5 px-3 py-1.5 sm:px-4 sm:py-2">
+              <div className="flex min-w-0 flex-1 items-center gap-2.5">
                 {/* Mobile: always show the sidebar button in the top-left */}
                 <MobileMenuButton />
                 {backTo && (
                   <Link
                     to={backTo}
                     aria-label={backLabel ?? t('back', { defaultValue: 'Back' })}
-                    className="shrink-0 -ml-1 rounded-full p-1.5 text-site-text-muted transition-colors hover:bg-site-surface hover:text-site-text active:scale-95"
+                    className="-ml-1 inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full text-site-text-muted transition-colors hover:bg-site-surface hover:text-site-text active:scale-95 sm:min-h-9 sm:min-w-9"
                   >
                     <ArrowLeft className="h-5 w-5" aria-hidden />
                   </Link>
@@ -124,16 +123,14 @@ export function PageLayout({
                       className="mb-0.5 hidden sm:block group-data-[scrolled]:hidden"
                     />
                   )}
-                  <h1 className="flex min-w-0 items-center gap-2 truncate font-(family-name:--site-font-display) text-xl font-semibold text-site-text [letter-spacing:var(--site-letter-spacing)] sm:text-2xl">
-                    {/* Mobile: "RMH |" brand prefix before the page title */}
-                    <MobileBrandPrefix />
+                  <h1 className="flex min-w-0 items-center gap-2 truncate font-(family-name:--site-font-display) text-lg font-semibold text-site-text [letter-spacing:var(--site-letter-spacing)] sm:text-xl">
                     {title}
                   </h1>
                   {description && (
                     <p
                       id={descriptionId}
                       data-slot="page-description"
-                      className="mt-0.5 line-clamp-1 text-xs text-site-text-muted group-data-[scrolled]:hidden sm:text-sm"
+                      className="mt-0.5 hidden line-clamp-1 text-xs text-site-text-muted group-data-[scrolled]:hidden sm:block"
                     >
                       {description}
                     </p>

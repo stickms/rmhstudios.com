@@ -28,8 +28,8 @@ export function getRouter() {
     // `defaultPendingMinMs` keeps it up long enough to avoid a jarring blink
     // once it does show.
     defaultPendingComponent: RoutePending,
-    defaultPendingMs: 150,
-    defaultPendingMinMs: 300,
+    defaultPendingMs: 180,
+    defaultPendingMinMs: 220,
   });
 
   return router;

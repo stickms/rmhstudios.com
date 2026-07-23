@@ -21,15 +21,15 @@ export function EmptyState({ icon: Icon, title, description, action, className }
     <div
       data-slot="empty-state"
       className={cn(
-        'flex flex-col items-center justify-center gap-4 px-6 py-[clamp(3.5rem,10vw,6rem)] text-center',
+        'flex flex-col items-center justify-center gap-3 px-5 py-[clamp(2.5rem,7vw,4rem)] text-center',
         className,
       )}
     >
       {Icon ? (
         // Etched glass medallion — the icon sits "sandblasted into" a recessed
         // glass-inset disc (§7.2).
-        <div className="glass-inset flex h-16 w-16 items-center justify-center rounded-full">
-          <Icon className="h-7 w-7 text-site-text-dim" aria-hidden />
+        <div className="glass-inset flex h-12 w-12 items-center justify-center rounded-full">
+          <Icon className="h-5 w-5 text-site-text-dim" aria-hidden />
         </div>
       ) : null}
       {title ? <p className="text-base font-semibold text-site-text">{title}</p> : null}

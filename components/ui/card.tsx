@@ -27,7 +27,7 @@ function Card({
       data-glass-light={interactive ? '' : undefined}
       className={cn(
         pane ? 'glass-pane' : 'glass-fill',
-        'text-site-text flex flex-col gap-5 py-5 sm:gap-6 sm:py-6 transition-[box-shadow,border-color,transform,background-color]',
+        'text-site-text flex flex-col gap-3 py-4 sm:gap-4 transition-[box-shadow,border-color,transform,background-color]',
         interactive && 'glass-interactive hover:-translate-y-px',
         className,
       )}
@@ -41,7 +41,7 @@ function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="card-header"
       className={cn(
-        '@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-5 sm:px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-5 sm:[.border-b]:pb-6',
+        '@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-4 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-4',
         className,
       )}
       {...props}
@@ -80,17 +80,14 @@ function CardAction({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 function CardContent({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="card-content" className={cn('px-5 sm:px-6', className)} {...props} />;
+  return <div data-slot="card-content" className={cn('px-4', className)} {...props} />;
 }
 
 function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="card-footer"
-      className={cn(
-        'flex items-center px-5 sm:px-6 [.border-t]:pt-5 sm:[.border-t]:pt-6',
-        className,
-      )}
+      className={cn('flex items-center px-4 [.border-t]:pt-4', className)}
       {...props}
     />
   );

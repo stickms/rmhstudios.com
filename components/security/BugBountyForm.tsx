@@ -1,10 +1,8 @@
 import { useId, useState, type FormEvent } from 'react';
 import { ShieldCheck, Send, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { submitSecurityReport } from '@/lib/security-reports';
-import {
-  SECURITY_CATEGORIES,
-  SECURITY_SEVERITIES,
-} from '@/lib/security-report-schema';
+import { SECURITY_CATEGORIES, SECURITY_SEVERITIES } from '@/lib/security-report-schema';
+import { Select } from '@/components/ui/select';
 
 /**
  * Public bug-bounty submission form on /security. Calls the `submitSecurityReport`
@@ -27,16 +25,24 @@ export function BugBountyForm() {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'done'>('idle');
   const [error, setError] = useState<string | null>(null);
 
-  const set = (key: keyof typeof values) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-  ) => setValues((v) => ({ ...v, [key]: e.target.value }));
+  const set =
+    (key: keyof typeof values) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+      setValues((v) => ({ ...v, [key]: e.target.value }));
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
 
-    if (!values.title.trim() || !values.category || !values.severity || values.description.trim().length < 40) {
-      setError('Please add a title, pick a category and severity, and describe the issue (at least 40 characters).');
+    if (
+      !values.title.trim() ||
+      !values.category ||
+      !values.severity ||
+      values.description.trim().length < 40
+    ) {
+      setError(
+        'Please add a title, pick a category and severity, and describe the issue (at least 40 characters).',
+      );
       return;
     }
 
@@ -63,8 +69,8 @@ export function BugBountyForm() {
         </span>
         <h3 className="sec-form__done-title">Report received. Thank you.</h3>
         <p className="sec-form__done-body">
-          Our security team reviews every submission. If we need more detail — or
-          you’re in line for a reward — we’ll reach out to the contact you gave us.
+          Our security team reviews every submission. If we need more detail — or you’re in line for
+          a reward — we’ll reach out to the contact you gave us.
         </p>
       </div>
     );
@@ -104,7 +110,7 @@ export function BugBountyForm() {
           <label className="sec-field__label" htmlFor={`${uid}-category`}>
             Category <span aria-hidden="true">*</span>
           </label>
-          <select
+          <Select
             id={`${uid}-category`}
             className="sec-field__input"
             required
@@ -119,14 +125,14 @@ export function BugBountyForm() {
                 {c.label}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
         <div className="sec-field">
           <label className="sec-field__label" htmlFor={`${uid}-severity`}>
             Severity <span aria-hidden="true">*</span>
           </label>
-          <select
+          <Select
             id={`${uid}-severity`}
             className="sec-field__input"
             required
@@ -141,7 +147,7 @@ export function BugBountyForm() {
                 {s.label}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
       </div>
 

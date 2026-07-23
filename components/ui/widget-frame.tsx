@@ -78,7 +78,7 @@ export function WidgetFrame({
         {action ? <div className="shrink-0">{action}</div> : null}
       </div>
 
-      <div className="px-4 py-4" aria-busy={loading}>
+      <div className="px-4 py-3" aria-busy={loading}>
         {initialLoading && (
           <div className="space-y-2" aria-hidden>
             <Skeleton className="h-4 w-3/4" />

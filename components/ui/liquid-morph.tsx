@@ -52,9 +52,9 @@ import { computeDroplet } from '@/lib/liquid-gl/droplet';
 
 const STRETCH_K = 0.0004; // |velocity px/s| → stretch factor (§5.47 sketch)
 const STRETCH_MAX = 0.5; // §15.3: volume-conserving cap raised to 0.5 for tab-scale jumps
-// §15.3: trail droplet spring ≈ ⅓ the snappy capsule stiffness (SPRING.snappy =
-// 500) so it lags the capsule noticeably — the goo reads the lag as a longer,
-// clearly-visible stretching tail (½-stiffness was too tight to see mid-switch).
+// §15.3: trail droplet spring is deliberately softer than the shared snappy
+// capsule spring so it lags noticeably — the goo reads the lag as a longer,
+// clearly-visible stretching tail (a tighter spring was too subtle mid-switch).
 // §17.3 spring rest: explicit rest thresholds (px units) so the trail spring can
 // never oscillate below visibility forever — it lands and the idle sampler stops.
 const TRAIL_SPRING = {
@@ -83,6 +83,77 @@ const MOVE_EPS = 0.05; // px — below this per-axis delta the capsule is at res
 const SCROLL_ACTIVE_MS = 180;
 const ELASTIC_SETTLE_MS = 360;
 const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
+type ProjectionWakeSubscriber = (settleMs: number) => void;
+const projectionWakeSubscribers = new Set<ProjectionWakeSubscriber>();
+let projectionWakeCleanup: (() => void) | null = null;
+
+function emitProjectionWake(settleMs: number): void {
+  for (const subscriber of projectionWakeSubscribers) subscriber(settleMs);
+}
+
+/**
+ * One shared scroll/viewport signal for every liquid capsule. Several tab strips
+ * and both navigation rails can be mounted together; attaching the same global
+ * listener set per instance multiplies main-thread work during scroll. A shared
+ * fan-out keeps a single browser listener while each live capsule still samples
+ * its own projected box before paint and renders at the display's native rAF.
+ */
+function ensureProjectionWakeListeners(): void {
+  if (projectionWakeCleanup || typeof window === 'undefined') return;
+
+  const onScroll = () => emitProjectionWake(SCROLL_ACTIVE_MS);
+  const onElasticInput = () => emitProjectionWake(ELASTIC_SETTLE_MS);
+  const onViewportChange = () => emitProjectionWake(ELASTIC_SETTLE_MS);
+  const onVisibility = () => {
+    if (document.visibilityState === 'visible') emitProjectionWake(ELASTIC_SETTLE_MS);
+  };
+
+  window.addEventListener('scroll', onScroll, { passive: true, capture: true });
+  window.addEventListener('wheel', onElasticInput, { passive: true, capture: true });
+  window.addEventListener('touchmove', onScroll, { passive: true, capture: true });
+  window.addEventListener('touchend', onElasticInput, { passive: true, capture: true });
+  window.addEventListener('touchcancel', onElasticInput, { passive: true, capture: true });
+  window.addEventListener('resize', onViewportChange, { passive: true });
+  window.visualViewport?.addEventListener('scroll', onScroll);
+  window.visualViewport?.addEventListener('resize', onViewportChange);
+  document.addEventListener('visibilitychange', onVisibility);
+  window.addEventListener('pageshow', onViewportChange);
+
+  let layoutObserver: PerformanceObserver | null = null;
+  if (typeof PerformanceObserver !== 'undefined') {
+    try {
+      layoutObserver = new PerformanceObserver(onScroll);
+      layoutObserver.observe({ type: 'layout-shift' });
+    } catch {
+      layoutObserver = null;
+    }
+  }
+
+  projectionWakeCleanup = () => {
+    window.removeEventListener('scroll', onScroll, { capture: true });
+    window.removeEventListener('wheel', onElasticInput, { capture: true });
+    window.removeEventListener('touchmove', onScroll, { capture: true });
+    window.removeEventListener('touchend', onElasticInput, { capture: true });
+    window.removeEventListener('touchcancel', onElasticInput, { capture: true });
+    window.removeEventListener('resize', onViewportChange);
+    window.visualViewport?.removeEventListener('scroll', onScroll);
+    window.visualViewport?.removeEventListener('resize', onViewportChange);
+    document.removeEventListener('visibilitychange', onVisibility);
+    window.removeEventListener('pageshow', onViewportChange);
+    layoutObserver?.disconnect();
+    projectionWakeCleanup = null;
+  };
+}
+
+function subscribeProjectionWake(subscriber: ProjectionWakeSubscriber): () => void {
+  projectionWakeSubscribers.add(subscriber);
+  ensureProjectionWakeListeners();
+  return () => {
+    projectionWakeSubscribers.delete(subscriber);
+    if (projectionWakeSubscribers.size === 0) projectionWakeCleanup?.();
+  };
+}
 
 interface LiquidMorphOptions {
   /** Ref to the OUTER `layoutId` capsule element (the projected box we sample). */
@@ -284,7 +355,6 @@ export function useLiquidMorph({
     };
     kickRef.current = kick;
     kick(); // sample the initial rest position once, then idle
-    const onWake = () => kick();
     const onScrollActivity = (settleMs = SCROLL_ACTIVE_MS) => {
       scrollActiveUntil.current = performance.now() + settleMs;
       // Scroll is delivered before paint. Sample immediately so the renderer's
@@ -293,15 +363,7 @@ export function useLiquidMorph({
       sampleRef.current();
       kick();
     };
-    const onScroll = () => onScrollActivity();
-    const onWheel = () => onScrollActivity(ELASTIC_SETTLE_MS);
-    const onTouchMove = () => onScrollActivity();
-    const onTouchEnd = () => onScrollActivity(ELASTIC_SETTLE_MS);
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') onScrollActivity(ELASTIC_SETTLE_MS);
-    };
-    const onPageShow = () => onScrollActivity(ELASTIC_SETTLE_MS);
-    window.addEventListener('resize', onWake, { passive: true });
+    const unsubscribeProjectionWake = subscribeProjectionWake(onScrollActivity);
     // §17.4 scroll anchoring: the GL body is drawn in VIEWPORT coords, so a scroll
     // moves the capsule element but leaves the (idle) shader drawing its glass at the
     // stale screen position — the owner's "shadow follows the screen" report. Scroll
@@ -313,43 +375,10 @@ export function useLiquidMorph({
     // visually without changing scrollTop or firing `scroll`. touchend keeps the
     // sampler alive through the short elastic snap-back. The squash path stays inert
     // because mx/my are underlay-relative (both scroll together → no velocity).
-    window.addEventListener('scroll', onScroll, { passive: true, capture: true });
-    window.addEventListener('wheel', onWheel, { passive: true, capture: true });
-    window.addEventListener('touchmove', onTouchMove, { passive: true, capture: true });
-    window.addEventListener('touchend', onTouchEnd, { passive: true, capture: true });
-    window.addEventListener('touchcancel', onTouchEnd, { passive: true, capture: true });
-    window.visualViewport?.addEventListener('scroll', onScroll);
-    window.visualViewport?.addEventListener('resize', onScroll);
-    document.addEventListener('visibilitychange', onVisibility);
-    window.addEventListener('pageshow', onPageShow);
-
-    // Async fonts, streamed content, and route transitions can reposition a
-    // resting capsule without emitting scroll/resize. Chromium exposes those as
-    // layout-shift entries; wake only when such an entry occurs, then return to
-    // zero layout reads after the normal settle window.
-    let layoutObserver: PerformanceObserver | null = null;
-    if (typeof PerformanceObserver !== 'undefined') {
-      try {
-        layoutObserver = new PerformanceObserver(() => onScrollActivity());
-        layoutObserver.observe({ type: 'layout-shift' });
-      } catch {
-        layoutObserver = null;
-      }
-    }
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = 0;
-      window.removeEventListener('resize', onWake);
-      window.removeEventListener('scroll', onScroll, { capture: true });
-      window.removeEventListener('wheel', onWheel, { capture: true });
-      window.removeEventListener('touchmove', onTouchMove, { capture: true });
-      window.removeEventListener('touchend', onTouchEnd, { capture: true });
-      window.removeEventListener('touchcancel', onTouchEnd, { capture: true });
-      window.visualViewport?.removeEventListener('scroll', onScroll);
-      window.visualViewport?.removeEventListener('resize', onScroll);
-      document.removeEventListener('visibilitychange', onVisibility);
-      window.removeEventListener('pageshow', onPageShow);
-      layoutObserver?.disconnect();
+      unsubscribeProjectionWake();
     };
     // Stable loop; `sampleRef.current` is refreshed each render so it stays current.
   }, []);

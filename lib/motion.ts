@@ -34,11 +34,11 @@ type Bezier = [number, number, number, number];
  */
 export const DURATION = {
   /** Micro-feedback: hovers, taps, tiny state flips. */
-  fast: 0.12,
+  fast: 0.1,
   /** The default for most enters/exits. */
-  base: 0.18,
+  base: 0.16,
   /** Larger surfaces (dialogs, sheets) that need a touch more travel. */
-  slow: 0.28,
+  slow: 0.22,
 } as const;
 
 /**
@@ -74,8 +74,8 @@ export const GLASS_EASE_CSS = 'cubic-bezier(0.175, 0.885, 0.32, 2.2)';
  * immediate.
  */
 export const SPRING = {
-  soft: { type: 'spring', stiffness: 300, damping: 30, mass: 0.8 },
-  snappy: { type: 'spring', stiffness: 500, damping: 32, mass: 0.7 },
+  soft: { type: 'spring', stiffness: 360, damping: 32, mass: 0.72 },
+  snappy: { type: 'spring', stiffness: 620, damping: 38, mass: 0.62 },
 } as const satisfies Record<string, Transition>;
 
 /** The default tweened transition — smooth, quick, used by the variants below. */

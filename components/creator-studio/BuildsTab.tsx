@@ -16,6 +16,7 @@ import { Link } from '@tanstack/react-router';
 import { Search, Plus, Heart } from 'lucide-react';
 import type { CuratedBuild } from '@/lib/builds/curated';
 import { Storefront, type StoreItem } from '@/components/creator-studio/storefront';
+import { Select } from '@/components/ui/select';
 
 type UserSort = 'recent' | 'popular' | 'views';
 type CuratedSort = 'featured' | 'name';
@@ -83,7 +84,11 @@ export function CuratedBuildsTab({
         hue: b.hue,
         tags: b.tags,
         cta: b.cta,
-        badge: b.status || (b.kind === 'game' ? t('badge-game', { defaultValue: 'Game' }) : t('badge-app', { defaultValue: 'App' })),
+        badge:
+          b.status ||
+          (b.kind === 'game'
+            ? t('badge-game', { defaultValue: 'Game' })
+            : t('badge-app', { defaultValue: 'App' })),
         href: b.href,
         detailsTo: `/builds/${b.slug}`,
         detailsLabel: t('build-details', { defaultValue: 'Build details' }),
@@ -100,17 +105,26 @@ export function CuratedBuildsTab({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={searchPlaceholder ?? t('search-builds-placeholder', { defaultValue: 'Search builds...' })}
+            placeholder={
+              searchPlaceholder ??
+              t('search-builds-placeholder', { defaultValue: 'Search builds...' })
+            }
             aria-label={t('search-builds-label', { defaultValue: 'Search builds' })}
             className="vibe-search__input"
           />
         </div>
         <label className="builds-sort">
-          <span className="builds-sort__label">{t('sort-label', { defaultValue: 'Sort' })}</span>
-          <select value={sort} onChange={(e) => setSort(e.target.value as CuratedSort)} className="builds-sort__select">
+          <span className="sr-only">{t('sort-label', { defaultValue: 'Sort' })}</span>
+          <Select
+            controlSize="sm"
+            value={sort}
+            onChange={(e) => setSort(e.target.value as CuratedSort)}
+            aria-label={t('sort-label', { defaultValue: 'Sort' })}
+            containerClassName="w-36"
+          >
             <option value="featured">{t('sort-featured', { defaultValue: 'Featured' })}</option>
             <option value="name">{t('sort-name-az', { defaultValue: 'Name (A–Z)' })}</option>
-          </select>
+          </Select>
         </label>
       </div>
     </div>
@@ -122,7 +136,9 @@ export function CuratedBuildsTab({
       seed={seed}
       featured={!query.trim() && sort === 'featured'}
       toolbar={toolbar}
-      emptyLabel={emptyLabel ?? t('empty-curated', { defaultValue: 'No builds match that search.' })}
+      emptyLabel={
+        emptyLabel ?? t('empty-curated', { defaultValue: 'No builds match that search.' })
+      }
     />
   );
 }
@@ -232,7 +248,9 @@ export function UserBuildsTab({ seed }: { seed: number }) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('search-user-builds-placeholder', { defaultValue: 'Search user builds...' })}
+            placeholder={t('search-user-builds-placeholder', {
+              defaultValue: 'Search user builds...',
+            })}
             aria-label={t('search-builds-label', { defaultValue: 'Search builds' })}
             className="vibe-search__input"
           />
@@ -242,12 +260,18 @@ export function UserBuildsTab({ seed }: { seed: number }) {
           <span>{t('submit', { defaultValue: 'Submit' })}</span>
         </Link>
         <label className="builds-sort">
-          <span className="builds-sort__label">{t('sort-label', { defaultValue: 'Sort' })}</span>
-          <select value={userSort} onChange={(e) => setUserSort(e.target.value as UserSort)} className="builds-sort__select">
+          <span className="sr-only">{t('sort-label', { defaultValue: 'Sort' })}</span>
+          <Select
+            controlSize="sm"
+            value={userSort}
+            onChange={(e) => setUserSort(e.target.value as UserSort)}
+            aria-label={t('sort-label', { defaultValue: 'Sort' })}
+            containerClassName="w-36"
+          >
             <option value="recent">{t('sort-recent', { defaultValue: 'Recent' })}</option>
             <option value="popular">{t('sort-most-liked', { defaultValue: 'Most liked' })}</option>
             <option value="views">{t('sort-most-viewed', { defaultValue: 'Most viewed' })}</option>
-          </select>
+          </Select>
         </label>
       </div>
     </div>
@@ -264,12 +288,18 @@ export function UserBuildsTab({ seed }: { seed: number }) {
           isEmpty
             ? query.trim()
               ? t('empty-user-search', { defaultValue: 'No user builds match that search.' })
-              : t('empty-user-no-builds', { defaultValue: 'No user builds yet — be the first to submit one.' })
+              : t('empty-user-no-builds', {
+                  defaultValue: 'No user builds yet — be the first to submit one.',
+                })
             : t('loading', { defaultValue: 'Loading…' })
         }
       />
       <div ref={sentinelRef} aria-hidden="true" className="h-px w-full" />
-      {loading && userItems.length > 0 && <p className="vibe-hint vibe-gallery__loading">{t('loading', { defaultValue: 'Loading…' })}</p>}
+      {loading && userItems.length > 0 && (
+        <p className="vibe-hint vibe-gallery__loading">
+          {t('loading', { defaultValue: 'Loading…' })}
+        </p>
+      )}
     </>
   );
 }
