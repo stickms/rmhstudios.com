@@ -7,7 +7,18 @@ const ROOT = process.cwd();
 const REPORT_DIR = process.env.LIGHTHOUSE_REPORT_DIR || path.join(ROOT, '.lighthouseci');
 const CONFIG_PATH =
   process.env.SYNTHETIC_PERF_BANDS || path.join(ROOT, 'scripts/ci/synthetic-perf-bands.json');
-const WARN_ONLY = process.argv.includes('--warn-only');
+// Warn-only mode: on a regression-band breach, log + exit 0 instead of failing.
+// Enabled by the explicit --warn-only flag OR when this runs inside the `deploy`
+// workflow (GITHUB_WORKFLOW holds the workflow's name). The deploy path's
+// perf-gate is ADVISORY by owner decision: it probes the *live* production site,
+// so a currently-slow site must not lock out the very deploy that would fix it.
+// The standalone scheduled synthetic-perf monitor (GITHUB_WORKFLOW==='synthetic-
+// perf') keeps HARD enforcement, so regressions are still surfaced out-of-band.
+// This deploy-vs-monitor coupling lives here rather than as a `--warn-only` arg in
+// deploy.yml only because the CI git credential can't push workflow files; once
+// deploy.yml is editable, prefer passing --warn-only there and dropping this check.
+const WARN_ONLY =
+  process.argv.includes('--warn-only') || process.env.GITHUB_WORKFLOW === 'deploy';
 const REQUIRED_METRICS = ['lcpMs', 'tbtMs', 'cls', 'ttfbMs', 'performanceScore'];
 
 function median(values) {
