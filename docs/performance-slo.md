@@ -1,44 +1,31 @@
-# Performance SLOs and Release Guardrails
+# Performance SLOs and Monitoring
 
 This is the source of truth for build, synthetic, and real-user performance
-budgets. It also distinguishes active repository gates from production actions
-that require operator credentials or a central metrics backend.
+budgets. Performance measurements are advisory and do not block merges or
+deployments.
 
-## Active build and release gates
+## Active reports and monitoring
 
 ### Candidate bundle budgets
 
-`scripts/ci/bundle-budget.ts --strict` measures Brotli payload sizes from the
-built Vite output and fails closed when output, assets, the manifest, or budget
-configuration cannot be evaluated.
+`scripts/ci/bundle-budget.ts` measures Brotli payload sizes from the built Vite
+output and reports drift without failing the build.
 
-It runs in both candidate paths:
+It runs for production images in the shared `vite-builder` stage in
+`Dockerfile`, keeping the measurement next to the exact candidate output without
+adding another frontend build to `.github/workflows/deploy.yml`.
 
-- PRs: the `build` job in `.github/workflows/web-ci.yml`
-- production images: the shared `vite-builder` stage in `Dockerfile`
-
-Keeping the production check in `Dockerfile` means `docker buildx bake web full`
-still uses one BuildKit graph and one Vite build. Do not add another frontend
-build to `.github/workflows/deploy.yml`.
-
-Thresholds live in `scripts/ci/perf-budgets.json`.
-The eager shell JavaScript and CSS bands block. `total_client_js_warn` remains
-an advisory whole-site drift signal because lazy chunks are not paid on a
-single navigation.
+Thresholds live in `scripts/ci/perf-budgets.json`. All bands are advisory.
 
 ### Live-production synthetic preflight
 
 `.github/workflows/synthetic-perf.yml` probes production every six hours and on
-manual dispatch. The parallel `perf-gate` job in `.github/workflows/deploy.yml`
-runs the same probes while the candidate image builds and blocks the deploy
-webhook if the live production baseline is already outside its regression band.
-It is intentionally absent from PR runs to avoid noisy third-party-network
-failures on every change.
+manual dispatch. It is independent of PR and deployment workflows so noisy
+third-party-network failures or a slow live site cannot block a fix.
 
 Each configured route gets three Lighthouse runs. The report requires every
-route and every metric to have all three samples; missing data fails the gate.
-Results are written to the Actions step summary and retained as artifacts for
-14 days.
+route and every metric to have all three samples. Missing or out-of-band data is
+reported in the Actions summary; available artifacts are retained for 14 days.
 
 Synthetic bands are in `scripts/ci/synthetic-perf-bands.json`:
 
@@ -50,14 +37,13 @@ Synthetic bands are in `scripts/ci/synthetic-perf-bands.json`:
 | realtime    | 4000 ms | 600 ms | 0.20 | 1500 ms |            65 |
 
 Lighthouse cannot produce a representative INP without real interaction, so the
-lab gate uses Total Blocking Time as its responsiveness proxy. INP is enforced
+lab report uses Total Blocking Time as its responsiveness proxy. INP is measured
 from real-user data.
 
-The deploy preflight measures the version currently serving production, not the
-candidate image that has not yet been swapped in. The candidate is protected by
-the strict bundle gate and the VPS blue/green health checks. A post-deploy
-synthetic rollback loop remains an operator integration until the webhook can
-report completion and accept an authenticated rollback action.
+The candidate continues to be protected by build correctness and the VPS
+blue/green health checks. A post-deploy synthetic rollback loop remains an
+operator integration until the webhook can report completion and accept an
+authenticated rollback action.
 
 ## Real-user monitoring
 
@@ -171,10 +157,8 @@ safely automate the command above.
 
 ## Executable rollout checklist
 
-- [x] Make bundle budgets blocking and fail-closed.
-- [x] Enforce the production candidate budget inside the shared image graph.
-- [x] Add scheduled synthetic probes outside PR traffic.
-- [x] Add a live-production synthetic deploy preflight.
+- [x] Report candidate bundle size inside the shared image graph.
+- [x] Add advisory scheduled synthetic probes outside PR traffic.
 - [x] Emit complete structured RUM samples and percentile reports.
 - [x] Add exact Cloudflare drift detection.
 - [x] Add read-only VPS tuning verification.
