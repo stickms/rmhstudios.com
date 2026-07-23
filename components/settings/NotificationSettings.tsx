@@ -191,7 +191,7 @@ export function NotificationSettings() {
               type="time"
               value={toHHMM(prefs.quietStart)}
               onChange={(e) => setQuiet('quietStart', e.target.value)}
-              className="glass-inset rounded-site-sm px-2 py-1 text-site-text"
+              className=" rounded-site-sm px-2 py-1 text-site-text"
               aria-label={t('quiet-start', { defaultValue: 'Quiet hours start' })}
             />
           </label>
@@ -201,7 +201,7 @@ export function NotificationSettings() {
               type="time"
               value={toHHMM(prefs.quietEnd)}
               onChange={(e) => setQuiet('quietEnd', e.target.value)}
-              className="glass-inset rounded-site-sm px-2 py-1 text-site-text"
+              className=" rounded-site-sm px-2 py-1 text-site-text"
               aria-label={t('quiet-end', { defaultValue: 'Quiet hours end' })}
             />
           </label>

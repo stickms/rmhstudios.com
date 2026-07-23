@@ -378,7 +378,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
         />
         {resultMessage && (
           <div
-            className={`absolute inset-0 flex items-center justify-center backdrop-blur-[1px] ${
+            className={`absolute inset-0 flex items-center justify-center -[1px] ${
               resultWon ? 'bg-site-success/15' : 'bg-site-danger/15'
             }`}
           >

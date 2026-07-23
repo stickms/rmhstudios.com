@@ -36,7 +36,7 @@ export function AccentPicker() {
           'flex h-9 w-9 items-center justify-center rounded-full border-2 bg-site-surface transition-all',
           accent === null
             ? 'border-site-accent ring-2 ring-site-accent'
-            : 'border-site-border hover:border-site-border-bright'
+            : 'border-site-border hover:border-site-text/40'
         )}
       >
         {/* A dot in the live theme accent hints "use the theme's own color". */}
@@ -56,7 +56,7 @@ export function AccentPicker() {
             title={preset.label}
             className={cn(
               'flex h-9 w-9 items-center justify-center rounded-full border-2 transition-all',
-              active ? 'border-site-text ring-2 ring-site-text/40' : 'border-transparent hover:scale-110'
+              active ? 'border-site-text ring-2 ring-site-text/40' : 'border-site-border hover:scale-110'
             )}
             style={{ background: preset.value }}
           >

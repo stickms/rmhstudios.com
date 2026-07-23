@@ -249,8 +249,7 @@
   background: rgba(0, 0, 0, 0.55);
   padding: 2px 7px;
   border-radius: 9999px;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+
   white-space: nowrap;
 }
 
@@ -303,8 +302,7 @@
   color: #f5f5f7;
   background: rgba(10, 10, 10, 0.55);
   border: 0.5px solid rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+
   opacity: 0;
   transform: translateY(-4px);
   transition: opacity 200ms ease, transform 200ms ease, background 160ms ease;

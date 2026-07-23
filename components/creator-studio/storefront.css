@@ -96,8 +96,7 @@
   background: rgba(0, 0, 0, 0.6);
   padding: 3px 9px;
   border-radius: 9999px;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+
   white-space: nowrap;
 }
 
@@ -117,8 +116,7 @@
   border: 0.5px solid rgba(255, 255, 255, 0.14);
   padding: 3px 9px;
   border-radius: 9999px;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+
 }
 
 /* Toolbars (search/sort/submit) are rendered inside .store — strip their own
@@ -525,8 +523,7 @@
   color: var(--site-text);
   background: var(--site-surface);
   border: 0.5px solid var(--site-border);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+
   opacity: 0;
   transform: translateY(-4px);
   transition: opacity 200ms ease, transform 200ms ease, background 160ms ease;

@@ -8,43 +8,43 @@
  * users get an instant appearance (the global reduce rule also neutralizes it).
  */
 @media (prefers-reduced-motion: no-preference) {
-  [data-slot="dialog-overlay"][data-state="open"] {
-    animation: ui-dialog-overlay-in 0.3s ease-out;
-  }
-  [data-slot="dialog-overlay"][data-state="closed"] {
-    animation: ui-dialog-overlay-out 0.2s ease-in forwards;
-  }
-  [data-slot="dialog-content"][data-state="open"] {
-    animation: ui-dialog-content-in 0.3s var(--ease-glass);
-  }
-  [data-slot="dialog-content"][data-state="closed"] {
-    animation: ui-dialog-content-out 0.15s ease-in forwards;
-  }
+ [data-slot="dialog-overlay"][data-state="open"] {
+ animation: ui-dialog-overlay-in 0.3s ease-out;
+ }
+ [data-slot="dialog-overlay"][data-state="closed"] {
+ animation: ui-dialog-overlay-out 0.2s ease-in forwards;
+ }
+ [data-slot="dialog-content"][data-state="open"] {
+ animation: ui-dialog-content-in 0.3s var(--ease-glass);
+ }
+ [data-slot="dialog-content"][data-state="closed"] {
+ animation: ui-dialog-content-out 0.15s ease-in forwards;
+ }
 }
 
 @keyframes ui-dialog-overlay-in {
-  from {
-    opacity: 0;
-  }
+ from {
+ opacity: 0;
+ }
 }
 @keyframes ui-dialog-overlay-out {
-  to {
-    opacity: 0;
-  }
+ to {
+ opacity: 0;
+ }
 }
 /* The pre-blurred glass pane scales up from 0.94 while the scrim fades in — the
  * --ease-glass curve overshoots 1 for a whisper of springy overshoot (§5.5). The
  * scale composes with the native `translate` centering; transitioning
- * backdrop-filter itself is janky, so we never animate the blur. */
+ * itself is janky, so we never animate the blur. */
 @keyframes ui-dialog-content-in {
-  from {
-    opacity: 0;
-    transform: scale(0.94);
-  }
+ from {
+ opacity: 0;
+ transform: scale(0.94);
+ }
 }
 @keyframes ui-dialog-content-out {
-  to {
-    opacity: 0;
-    transform: translateY(8px) scale(0.96);
-  }
+ to {
+ opacity: 0;
+ transform: translateY(8px) scale(0.96);
+ }
 }

@@ -123,7 +123,7 @@ export function ThemeGallery() {
                     'overflow-hidden rounded-site border text-left transition-all',
                     active
                       ? 'border-site-accent ring-2 ring-site-accent'
-                      : 'border-site-border hover:border-site-border-bright'
+                      : 'border-site-border hover:border-site-text/40'
                   )}
                 >
                   <ThemePreviewSwatch styleId={s.id} />

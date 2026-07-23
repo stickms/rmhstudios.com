@@ -111,7 +111,7 @@ export function GlassClarityControl() {
         className="relative mb-3 h-20 overflow-hidden rounded-site-sm border border-site-border"
         style={{ background: 'var(--site-canvas, var(--site-bg))' }}
       >
-        <div className="glass-pane absolute inset-3 rounded-site-sm p-2.5" style={paneStyle}>
+        <div className=" absolute inset-3 rounded-site-sm p-2.5" style={paneStyle}>
           <div className="h-1.5 w-2/5 rounded-full bg-site-text opacity-90" />
           <div className="mt-1.5 h-1.5 w-3/5 rounded-full bg-site-text-dim" />
           <div className="mt-2 h-3 w-8 rounded-full bg-site-accent" />
