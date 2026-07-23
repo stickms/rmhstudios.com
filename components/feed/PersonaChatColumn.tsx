@@ -248,7 +248,7 @@ export function PersonaChatColumn({
  className="font-semibold text-site-accent hover:underline"
  >
  {t('sign-in', { defaultValue:'Sign in'})}
- </Link>{''}
+ </Link>{' '}
  {t('sign-in-to-chat', { name: persona.name, defaultValue:'to chat with {{name}}.'})}
  </p>
  )}

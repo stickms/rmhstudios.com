@@ -102,7 +102,7 @@ export function VirtualPostList({ items, className }: VirtualPostListProps) {
  return (
  <div
  ref={parentRef}
- className={`${windowed ?'relative':''}w-full ${className ??''}`.trim()}
+ className={`${windowed ? 'relative ' : ''}w-full ${className ?? ''}`.trim()}
  style={windowed ? { height: `${virtualizer.getTotalSize()}px`} : undefined}
  >
  {rows.map((row) => {

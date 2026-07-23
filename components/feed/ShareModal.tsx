@@ -24,7 +24,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
  const [showQr, setShowQr] = useState(false);
 
  const embedCode = embedId
- ? `<iframe src="https://rmhstudios.com/embed/post/${embedId}"width="100%"height="320"frameborder="0"style="border:1px solid #2a2a2a;border-radius:16px;max-width:560px"title="RMH Studios post"></iframe>`
+ ? `<iframe src="https://rmhstudios.com/embed/post/${embedId}" width="100%" height="320" frameborder="0" style="border:1px solid #2a2a2a;border-radius:16px;max-width:560px" title="RMH Studios post"></iframe>`
  : null;
 
  const handleCopy = () => copy(url);

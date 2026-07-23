@@ -248,11 +248,11 @@ export function MembershipPanel({
                     aren't clobbered by the RevealItem motion node's inline
                     transform. */}
                 <article
-                  // Floating L2 slabs (§8.4): . owns the frost/tint/
+                  // Floating L2 slabs (§8.4): .glass-pane owns the frost/tint/
                   // border/ring; the featured tier additionally takes the page's
                   // one prism refract slot + ambient sheen + per-element lens.
                   data-glass-lens={plan.featured ? '' : undefined}
-                  className={`pricing-card group relative flex w-full flex-col  rounded-site p-6 ${
+                  className={`pricing-card group relative flex w-full flex-col glass-pane rounded-site p-6 ${
                     plan.featured
                       ? 'pricing-card--featured glass-refract glass-refract--prism glass-liquid'
                       : ''

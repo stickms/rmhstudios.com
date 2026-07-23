@@ -245,7 +245,7 @@
 .rmhc-root .path:hover{background:var(--ink)}
 .rmhc-root .path .ix{display:none}
 .rmhc-root .path h3{font-family:var(--serif);font-size:24px;color:var(--ivory);font-weight:500;margin:14px 0 12px}
-.rmhc-root .path p{display:none}
+.rmhc-root .path p{font-size:15px;line-height:1.6}
 @media(max-width:760px){.rmhc-root .pathgrid{grid-template-columns:1fr}}
 .rmhc-root .cta-band{background:linear-gradient(120deg,var(--ink),var(--void));border:1px solid var(--line);padding:clamp(40px,6vw,76px);text-align:center}
 .rmhc-root .cta-band h2{font-family:var(--serif);font-size:clamp(26px,3.6vw,42px);color:var(--ivory);font-weight:500;margin-bottom:18px}

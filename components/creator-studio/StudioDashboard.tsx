@@ -143,7 +143,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
 
         <div className="grid grid-cols-3 gap-3">
           {sources.map(({ key, label, bar }) => (
-            <div key={key} className=" rounded-site px-3 py-3">
+            <div key={key} className="glass-inset rounded-site px-3 py-3">
               <div className="flex items-center gap-1.5 text-xs text-site-text-dim">
                 <span className={`inline-block size-2.5 rounded-full ${bar}`} aria-hidden />
                 {label}
@@ -217,7 +217,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
             {recentTips.map((tip) => (
               <div
                 key={tip.id}
-                className="flex items-center justify-between gap-3  rounded-site px-3 py-2.5"
+                className="flex items-center justify-between gap-3 glass-fill rounded-site px-3 py-2.5"
               >
                 <div className="min-w-0">
                   <span className="text-sm font-medium text-site-text">

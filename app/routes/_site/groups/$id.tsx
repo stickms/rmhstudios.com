@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { ContextRail } from "@/components/feed/ContextRail";
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { GroupChatView } from '@/components/feed/GroupChatView';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';

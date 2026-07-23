@@ -105,10 +105,10 @@ export function ProfileHoverCard({
  >
  {!profile ? (
  <div className="flex animate-pulse items-center gap-3">
- <div className="h-12 w-12 rounded-full bg-site-surface"/>
+ <div className="h-12 w-12 rounded-full bg-site-surface-active"/>
  <div className="flex-1 space-y-2">
- <div className="h-3.5 w-2/3 rounded bg-site-surface"/>
- <div className="h-3 w-1/3 rounded bg-site-surface"/>
+ <div className="h-3.5 w-2/3 rounded bg-site-surface-active"/>
+ <div className="h-3 w-1/3 rounded bg-site-surface-active"/>
  </div>
  </div>
  ) : (
@@ -152,11 +152,11 @@ export function ProfileHoverCard({
  )}
  <div className="mt-2 flex gap-4 text-sm">
  <span>
- <AnimatedCount value={profile.followingCount} format={(n) => n.toLocaleString()} className="font-bold text-site-text"/>{''}
+ <AnimatedCount value={profile.followingCount} format={(n) => n.toLocaleString()} className="font-bold text-site-text"/>{' '}
  <span className="text-site-text-dim">{t('following-label', { defaultValue:'Following'})}</span>
  </span>
  <span>
- <AnimatedCount value={profile.followerCount} format={(n) => n.toLocaleString()} className="font-bold text-site-text"/>{''}
+ <AnimatedCount value={profile.followerCount} format={(n) => n.toLocaleString()} className="font-bold text-site-text"/>{' '}
  <span className="text-site-text-dim">{t('followers-label', { defaultValue:'Followers'})}</span>
  </span>
  </div>

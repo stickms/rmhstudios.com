@@ -21,7 +21,7 @@ export function showMentionToast(n: MentionNotification, navigate: NavigateFn) {
  navigate({ to:'/u/$userid/post/$postid', params: { userid, postid: n.rmharkId } });
  toast.dismiss(id);
  }}
- className="flex items-start gap-3 w-full text-left p-3 bg-site-surface border border-site-border rounded-2xl shadow-xs hover:bg-site-surface transition-colors"
+ className="flex items-start gap-3 w-full text-left p-3 bg-site-surface border border-site-border rounded-2xl shadow-xs hover:bg-site-surface-hover transition-colors"
  >
  <span className="w-9 h-9 rounded-full bg-white/10 shrink-0 overflow-hidden flex items-center justify-center text-sm font-bold text-site-text">
  {n.author.image ? (

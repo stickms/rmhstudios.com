@@ -92,7 +92,7 @@ export function AppearancePanel() {
                 'flex-1 rounded-site-sm py-2 text-center transition-colors',
                 activeFontScale === scale
                   ? 'bg-site-accent text-site-accent-fg'
-                  : ' text-site-text hover:border-site-text/40',
+                  : 'border border-site-border bg-site-surface text-site-text hover:border-site-text/40',
               )}
             >
               {FONT_LABELS[scale]}
@@ -117,7 +117,7 @@ export function AppearancePanel() {
                 'flex-1 rounded-site-sm py-2 text-center capitalize transition-colors',
                 activeDensity === d
                   ? 'bg-site-accent text-site-accent-fg'
-                  : ' text-site-text hover:border-site-text/40',
+                  : 'border border-site-border bg-site-surface text-site-text hover:border-site-text/40',
               )}
             >
               {t(`density-${d}`, { defaultValue: d })}

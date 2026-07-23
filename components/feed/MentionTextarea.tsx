@@ -316,7 +316,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  suggestions.map((suggestion, i) => {
  const active = i === activeIndex;
  const rowClass = `flex items-center gap-2 w-full px-3 py-2 text-left transition-colors ${
- active ?'bg-site-surface':'hover:bg-site-surface'
+ active ?'bg-site-surface-hover':'hover:bg-site-surface-hover'
  }`;
  if (suggestion.kind ==='user') {
  const u = suggestion.user;

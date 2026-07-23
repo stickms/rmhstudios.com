@@ -312,14 +312,14 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  <div ref={menuPanelRef} className="absolute right-0 top-full mt-1 w-44 bg-site-surface border border-site-border rounded-2xl shadow-xs py-1 z-30">
  <button
  onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+ className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <Heart className="w-4 h-4 text-site-text-dim"/>
  {t('liked-by', { defaultValue:'Liked by'})}
  </button>
  <button
  onClick={() => { setMenuOpen(false); setEngagementModal('reposts'); }}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+ className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <Repeat className="w-4 h-4 text-site-text-dim"/>
  {t('rermarkd-by', { defaultValue:"reRMHark'd by"})}
@@ -328,7 +328,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  <button
  onClick={handleTranslate}
  disabled={translating}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors disabled:opacity-60"
+ className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors disabled:opacity-60"
  >
  <Languages className="w-4 h-4 text-site-text-dim"/>
  {translating ? t('translating', { defaultValue:'Translating…'}) : translatedText ? (showTranslated ? t('show-original', { defaultValue:'Show original'}) : t('show-translation', { defaultValue:'Show translation'})) : t('translate', { defaultValue:'Translate'})}

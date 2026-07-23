@@ -166,7 +166,7 @@ const GlassFilter: React.FC = () => (
 );
 
 /**
- * GlassPane — a thin wrapper over the L2 `.bg-site-surface border border-site-border` elevation class with the
+ * GlassPane — a thin wrapper over the L2 `.glass-pane` elevation class with the
  * optional interactive pointer-light, for pages that need a one-off pane without
  * hand-writing the class trio. Renders a plain `<div>` by default.
  */
@@ -198,14 +198,14 @@ const GlassPane: React.FC<GlassPaneProps> = ({
  ...props
 }) => (
  <div
- data-slot="bg-site-surface border border-site-border"
+ data-slot="glass-pane"
  data-glass-light={interactive ? '' : undefined}
  data-glass-lens={refract ? '' : undefined}
  className={cn(
- 'bg-site-surface border border-site-border',
- interactive && '',
- refract && '',
- liquid && '',
+ 'glass-pane',
+ interactive && 'glass-interactive',
+ refract && 'glass-refract',
+ liquid && 'glass-liquid',
  className,
  )}
  {...props}

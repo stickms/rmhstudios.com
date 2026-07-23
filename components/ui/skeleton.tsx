@@ -24,7 +24,7 @@ function Skeleton({ className, shimmer = false, ...props }: SkeletonProps) {
  className={cn(
  // Glass tint fill — reads as light moving through frosted glass; the
  // shimmer highlight (globals.css) rides on top.
- "rounded-2xl bg-site-surface",
+ "rounded-site-sm bg-site-surface-hover",
  shimmer ? "animate-shimmer" : "animate-pulse",
  className,
  )}

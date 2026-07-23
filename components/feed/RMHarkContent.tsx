@@ -120,7 +120,7 @@ function Spoiler({ children }: { children: React.ReactNode }) {
  setRevealed(true);
  }}
  onKeyDown={(e) => {
- if (e.key ==='Enter'|| e.key ==='') {
+ if (e.key === 'Enter' || e.key === ' ') {
  e.preventDefault();
  e.stopPropagation();
  setRevealed(true);

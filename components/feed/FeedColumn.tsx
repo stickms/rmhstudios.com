@@ -156,23 +156,25 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
   return (
     <PullToRefresh onRefresh={refreshFeed}>
       <div className="feed-column flex flex-col">
-        <section
-          className="spatial-feed-intro mx-3 mt-3 overflow-hidden"
-          aria-labelledby="feed-title"
-        >
-          <div aria-hidden className="spatial-feed-intro__field">
-            <span className="spatial-feed-intro__orb" />
-            <span className="spatial-feed-intro__grid" />
-          </div>
-          <div className="spatial-feed-intro__copy">
-            <h1
-              id="feed-title"
-              className="font-(family-name:--site-font-display) text-[clamp(2.35rem,8vw,4.5rem)] font-medium leading-[0.94] tracking-[-0.055em] text-site-text"
-            >
-              {t('feed-hero-title', { defaultValue: 'Make. Play. Share.' })}
-            </h1>
-          </div>
-        </section>
+        {!search && (
+          <section
+            className="spatial-feed-intro mx-3 mt-3 overflow-hidden"
+            aria-labelledby="feed-title"
+          >
+            <div aria-hidden className="spatial-feed-intro__field">
+              <span className="spatial-feed-intro__orb" />
+              <span className="spatial-feed-intro__grid" />
+            </div>
+            <div className="spatial-feed-intro__copy">
+              <h1
+                id="feed-title"
+                className="font-(family-name:--site-font-display) text-[clamp(2.35rem,8vw,4.5rem)] font-medium leading-[0.94] tracking-[-0.055em] text-site-text"
+              >
+                {t('feed-hero-title', { defaultValue: 'Make. Play. Share.' })}
+              </h1>
+            </div>
+          </section>
+        )}
 
         {/* Search stays reachable while the editorial introduction scrolls away. */}
         <header data-slot="feed-header" className="site-sticky-chrome spatial-feed-search">
