@@ -5,12 +5,12 @@
 // never reach the browser — on the client, languages load per-chunk via
 // resources.ts's LOCALE_LOADERS.
 //
-// COLD-START: previously this file STATICALLY imported all 32 per-language
+// COLD-START: previously this file STATICALLY imported all 16 per-language
 // bundles (each of which statically imports its ~66 namespace JSON files). Since
 // __root.tsx imports this module on every render, that forced the entire
-// ~30 MB / ~2,100-file translation catalog to be parsed into the heap the first
+// translation catalog to be parsed into the heap the first
 // time the SSR root module evaluated — a large, pure cold-boot cost paid even by
-// English visitors who never use the other 31 languages.
+// English visitors who never use the other 15 languages.
 //
 // Now each locale is loaded on demand via a dynamic import (its own async chunk,
 // reusing the same per-locale loaders the client uses) and cached. The SSR entry

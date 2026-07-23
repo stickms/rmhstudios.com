@@ -18,8 +18,8 @@ Node realtime hubs and a Go worker fleet behind it.
 (some old docs/specs say otherwise — they are stale). TypeScript strict,
 Tailwind CSS v4, framer-motion, Zustand + React Query, PostgreSQL + Prisma 7
 (`@prisma/adapter-pg`), Better Auth (Discord/Google/GitHub + passkeys +
-Stripe), Socket.io Node hubs, Go microservices built with Bazel, i18next (32
-locales, RTL for ar/ur/fa).
+Stripe), Socket.io Node hubs, Go microservices built with Bazel, i18next (16
+locales, RTL for ar/ur).
 
 ## Repository map
 
@@ -33,7 +33,7 @@ locales, RTL for ar/ur/fa).
 | `stores/`      | Site-level Zustand stores (theme, locale, feed, user display).                                                                                                                                           | `lib/CLAUDE.md`                                  |
 | `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, …).                                                                                                                                    | `lib/CLAUDE.md`                                  |
 | `prisma/`      | `schema.prisma` (234 models) + migrations.                                                                                                                                                               | `lib/CLAUDE.md`                                  |
-| `locales/`     | 32 locales × 69 namespaces; `en` is authoritative.                                                                                                                                                       | `lib/CLAUDE.md` §i18n                            |
+| `locales/`     | 16 locales × 69 namespaces; `en` is authoritative.                                                                                                                                                       | `lib/CLAUDE.md` §i18n                            |
 | `data/`        | Static JSON (RMHBox content packs, library metadata).                                                                                                                                                    | —                                                |
 | `public/`      | Static assets, `robots.txt`, `manifest.webmanifest`.                                                                                                                                                     | —                                                |
 | `scripts/`     | Seeding, i18n pipeline, OG/icon generation, ladder pipeline, news pipeline, epic build.                                                                                                                  | `docs/README.md`                                 |
