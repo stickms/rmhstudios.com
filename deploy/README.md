@@ -23,7 +23,7 @@ Terraform DNS config.
 | `backup/`                        | DB backup scripts (driven by the systemd timer)                    |
 | `systemd/`                       | units: `rmh-db-backup.{service,timer}`, `rmhstudios-perf-tuning.service` |
 | `terraform/`                     | Cloudflare **DNS** as code — see [`terraform/README.md`](./terraform/README.md) |
-| `apply-cloudflare-cache-rules.sh`, `apply-perf-tuning.sh` | one-shot host/CDN tuning helpers                 |
+| `apply-cloudflare-cache-rules.sh`, `apply-perf-tuning.sh` | idempotent host/CDN tuning helpers with `VERIFY_ONLY=1` drift checks |
 | `disk-report.sh`, `move-docker-storage.sh` | disk diagnostics + moving Docker's data-root onto a separate volume |
 
 ## The deploy pipeline (push → production)

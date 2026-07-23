@@ -18,6 +18,7 @@
 #   export CLOUDFLARE_API_TOKEN=...      # NOT the global key — a scoped token
 #   export CLOUDFLARE_ZONE_ID=...        # dashboard → your domain → API section
 #   bash deploy/apply-cloudflare-cache-rules.sh
+# Verify drift only (no write): VERIFY_ONLY=1 bash deploy/apply-cloudflare-cache-rules.sh
 # Dry run (prints the request body, makes no call): DRY_RUN=1 bash deploy/apply-cloudflare-cache-rules.sh
 #
 # This ruleset now also caches the ANONYMOUS homepage HTML (perf audit §1.2 /
@@ -38,6 +39,8 @@
 # thereafter. Not a data leak (both parties are anonymous).
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
+
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 : "${CLOUDFLARE_API_TOKEN:?set CLOUDFLARE_API_TOKEN (scoped: Zone Cache Rules Edit)}"
 : "${CLOUDFLARE_ZONE_ID:?set CLOUDFLARE_ZONE_ID (from the Cloudflare dashboard)}"
@@ -86,6 +89,17 @@ if [ "${DRY_RUN:-0}" = "1" ]; then
   exit 0
 fi
 
+if [ "${VERIFY_ONLY:-0}" = "1" ]; then
+  echo "Verifying cache ruleset drift for zone $CLOUDFLARE_ZONE_ID …"
+  RESP="$(curl -sS \
+    "$API/zones/$CLOUDFLARE_ZONE_ID/rulesets/phases/$PHASE/entrypoint" \
+    -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")"
+
+  printf '%s' "$RESP" |
+    EXPECTED_RULESET="$BODY" node "$REPO_DIR/scripts/ci/verify-cloudflare-cache-rules.mjs"
+  exit 0
+fi
+
 echo "Applying cache rule to zone $CLOUDFLARE_ZONE_ID …"
 RESP="$(curl -sS -X PUT \
   "$API/zones/$CLOUDFLARE_ZONE_ID/rulesets/phases/$PHASE/entrypoint" \
@@ -93,11 +107,10 @@ RESP="$(curl -sS -X PUT \
   -H "Content-Type: application/json" \
   --data "$BODY")"
 
-# Report success/failure from the API envelope without needing jq.
-if printf '%s' "$RESP" | grep -q '"success":true'; then
+# Report success/failure and confirm Cloudflare stored the committed semantics.
+if printf '%s' "$RESP" |
+  EXPECTED_RULESET="$BODY" node "$REPO_DIR/scripts/ci/verify-cloudflare-cache-rules.mjs"; then
   echo "✓ Cache rule applied."
 else
-  echo "✗ Cloudflare API returned an error:"
-  printf '%s\n' "$RESP"
   exit 1
 fi

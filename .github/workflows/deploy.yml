@@ -13,10 +13,11 @@
 #      build + Chromium layer that `runner-full` adds run in parallel with it,
 #      not serialized behind a second `docker build`. Both are pushed to GHCR
 #      tagged with the commit SHA (+ :latest).
-#   3. `deploy-gate` (needs BOTH ci + build) POSTs the HMAC-signed request to the
-#      VPS webhook listener (webhook-server.cjs) with the built SHA — but ONLY
-#      when CI is green. The listener runs `deploy.sh production <sha>`, which
-#      PULLS these images, migrates, and blue/green-swaps — see deploy.sh.
+#   3. `perf-gate` probes the currently live production routes while the candidate
+#      image builds. `deploy-gate` waits for ci + build + perf-gate, then POSTs the
+#      HMAC-signed request to the VPS listener — but ONLY when all are green.
+#      The listener runs `deploy.sh production <sha>`, which PULLS these images,
+#      migrates, and blue/green-swaps — see deploy.sh.
 #
 # Gating the *webhook trigger* (not the image build) preserves the exact safety
 # of the old serial gate — red CI ⇒ no webhook ⇒ nothing ships — while letting
@@ -157,7 +158,9 @@ jobs:
         continue-on-error: true
 
   build:
-    # NO `needs:` — runs concurrently with `ci`. `deploy-gate` waits on both.
+    # NO `needs:` — runs concurrently with `ci`/`perf-gate`. `deploy-gate` waits
+    # on all gates. The Dockerfile enforces the strict bundle budget against the
+    # exact candidate output inside this one shared BuildKit graph.
     # Native ARM64 hosted runner (free on public repos) — builds arm64 images for
     # the Oracle ARM VPS without slow QEMU emulation.
     runs-on: ubuntu-24.04-arm
@@ -338,13 +341,57 @@ jobs:
             "⏹️ [PRODUCTION] Commit ${COMMIT_SHORT:-} — build superseded by a newer commit" \
             "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
 
-  # ── Deploy gate: fire the VPS webhook ONLY when CI + build are both green ────
+  # ── Live-production synthetic preflight ──────────────────────────────────────
+  # Runs independently so it sits in the image build's shadow. Candidate bundle
+  # budgets are enforced inside the Dockerfile's shared Vite stage; do not add a
+  # second frontend build here and lengthen push-to-deploy time.
+  perf-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.18.0
+
+      - name: Run synthetic Lighthouse probes
+        run: |
+          set -euo pipefail
+          mkdir -p .lighthouseci
+          runs="$(node -p "require('./scripts/ci/synthetic-perf-bands.json').lighthouseRuns")"
+          urls=()
+          while IFS= read -r url; do
+            [ -z "$url" ] && continue
+            urls+=("--url=$url")
+          done < <(node -e "const c=require('./scripts/ci/synthetic-perf-bands.json');for(const u of c.urls) console.log(u.url)")
+          [ "${#urls[@]}" -gt 0 ]
+          npx -y @lhci/cli@0.15.1 collect \
+            "${urls[@]}" \
+            --numberOfRuns="$runs" \
+            --settings.chromeFlags="--headless=new --no-sandbox"
+
+      - name: Enforce synthetic regression bands
+        run: node scripts/ci/synthetic-perf-report.mjs
+
+      - name: Upload Lighthouse artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: deploy-perf-gate-lighthouse
+          path: .lighthouseci
+          if-no-files-found: error
+          retention-days: 14
+
+  # ── Deploy gate: fire the VPS webhook ONLY when CI + build + perf are green ──
   # `if: always()` so this runs even when `ci` fails (so it can mark the embed
   # red). The trigger step is guarded on BOTH jobs succeeding; the failure step
   # fires when either genuinely failed. Cancellation (superseded) is handled by
   # `build` above, so neither step runs then.
   deploy-gate:
-    needs: [ci, build]
+    needs: [ci, build, perf-gate]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -365,12 +412,12 @@ jobs:
         with:
           sparse-checkout: .github/scripts
 
-      - name: Gate failed — CI, build, or a stall blocked the deploy
+      - name: Gate failed — CI/build/perf or a stall blocked the deploy
         # `!= 'success'` (not `== 'failure'`) so a CANCELLED or TIMED-OUT job — i.e. a
         # stalled run that hit its timeout-minutes — also alerts, not just a clean
         # lint/test failure. This exactly complements the trigger step's
         # `success && success` guard, so precisely one of the two steps runs.
-        if: needs.ci.result != 'success' || needs.build.result != 'success'
+        if: needs.ci.result != 'success' || needs.build.result != 'success' || needs.perf-gate.result != 'success'
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_MSG_ID: ${{ needs.build.outputs.discord_msg_id }}
@@ -385,14 +432,14 @@ jobs:
             # id to edit, so post a fresh red alert instead of silently no-opping.
             # Fall back to the raw SHA for the label if the build never exported one.
             bash .github/scripts/discord-notify.sh edit-or-post 15158332 \
-              "🔴 [PRODUCTION] Commit ${COMMIT_SHORT:-${GIT_SHA:0:7}} — deploy BLOCKED (CI=${{ needs.ci.result }}, build=${{ needs.build.result }}); nothing shipped" \
+              "🔴 [PRODUCTION] Commit ${COMMIT_SHORT:-${GIT_SHA:0:7}} — deploy BLOCKED (CI=${{ needs.ci.result }}, build=${{ needs.build.result }}, perf=${{ needs.perf-gate.result }}); nothing shipped" \
               "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}" || true
           fi
-          echo "::error::Deploy gate failed — CI=${{ needs.ci.result }}, build=${{ needs.build.result }}. Images (if any) are inert; nothing shipped."
+          echo "::error::Deploy gate failed — CI=${{ needs.ci.result }}, build=${{ needs.build.result }}, perf=${{ needs.perf-gate.result }}. Images (if any) are inert; nothing shipped."
           exit 1
 
       - name: Trigger VPS deploy (webhook listener)
-        if: needs.ci.result == 'success' && needs.build.result == 'success'
+        if: needs.ci.result == 'success' && needs.build.result == 'success' && needs.perf-gate.result == 'success'
         env:
           DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
@@ -431,7 +478,7 @@ jobs:
           esac
 
       - name: Discord — trigger failed (post-build handoff)
-        if: failure() && needs.ci.result == 'success' && needs.build.result == 'success' && github.ref == 'refs/heads/main'
+        if: failure() && needs.ci.result == 'success' && needs.build.result == 'success' && needs.perf-gate.result == 'success' && github.ref == 'refs/heads/main'
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_MSG_ID: ${{ needs.build.outputs.discord_msg_id }}
