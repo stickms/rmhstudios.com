@@ -6,6 +6,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { MessagesRightSidebar } from '@/components/feed/MessagesRightSidebar';
+import { ContextRail } from '@/components/feed/ContextRail';
 import { ConversationView } from '@/components/feed/ConversationView';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { auth } from '@/lib/auth';
@@ -39,9 +40,9 @@ function ConversationPage() {
       </AnimatedMain>
 
       {/* Right Sidebar */}
-      <aside className="hidden lg:block w-80 shrink-0 self-start">
+      <ContextRail>
         <MessagesRightSidebar />
-      </aside>
+      </ContextRail>
     </>
   );
 }

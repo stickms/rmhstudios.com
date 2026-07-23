@@ -763,7 +763,7 @@ export function ComposeBox({
  }
  className={`absolute bottom-1 left-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wide transition-colors ${
  hasAlt
- ?'bg-site-accent text-white'
+ ?'bg-site-accent text-site-accent-fg'
  :'bg-black/60 text-white/90 hover:bg-black/80'
  }`}
  >

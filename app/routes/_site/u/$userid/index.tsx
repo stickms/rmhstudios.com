@@ -6,6 +6,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { RightSidebar } from '@/components/feed/RightSidebar';
+import { ContextRail } from '@/components/feed/ContextRail';
 import { ProfileColumn } from '@/components/feed/ProfileColumn';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { getSidebarData } from '@/lib/sidebar-data';
@@ -114,14 +115,14 @@ function ProfilePage() {
         <ProfileColumn key={userId} userId={userId} initialProfile={profile} />
       </AnimatedMain>
 
-      <aside className="hidden lg:block w-80 shrink-0 self-start">
+      <ContextRail>
         <RightSidebar
           officialBuilds={sidebar.officialBuilds}
           userBuilds={sidebar.userBuilds}
           recommendedUsers={sidebar.recommendedUsers}
           blogPosts={sidebar.blogPosts}
         />
-      </aside>
+      </ContextRail>
     </>
   );
 }

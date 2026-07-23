@@ -25,7 +25,7 @@ import {
 } from '@/stores/themeStore';
 import { clearThemeTokens, type AppliedUserTheme } from '@/lib/themes/tokens';
 import { applyAccent, isAccentId, ACCENT_STORAGE_KEY, accentCssVars } from '@/lib/appearance';
-import { ensureReadableAccent } from '@/lib/appearance/contrast';
+import { ensureReadableAccent, colorSchemeForBackground } from '@/lib/appearance/contrast';
 import {
   HEX_RE,
   FONT_SCALE_KEY,
@@ -543,6 +543,13 @@ export function Providers({
         : (THEME_BG[activeStyle] ?? THEME_BG.default);
     html.style.backgroundColor = bg;
     document.body.style.backgroundColor = bg;
+
+    // Pin the UA colour scheme to the ACTUAL background (built-in, curated, user
+    // theme, or app-route chrome) so native controls, scrollbars, autofill and
+    // <select> popups never fall back to the OS default and misrender. Derived
+    // from luminance so it stays correct for marketplace themes that carry no
+    // style class. Mirrors the pre-paint themeScript in app/routes/__root.tsx.
+    html.style.colorScheme = colorSchemeForBackground(bg);
 
     // Also update theme-color meta for older Safari / other browsers.
     const metas = document.querySelectorAll('meta[name="theme-color"]');

@@ -1,22 +1,11 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from "@/components/feed/ContextRail";
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 
-/** Shared shell for the developer area (keys dashboard + docs wiki). */
+/**
+ * Passthrough layout for the developer area. Each child owns its own shell:
+ * the keys dashboard (`index`) renders `PageLayout`, and the docs wiki
+ * (`docs/route.tsx`) renders its own `AnimatedMain` + `ContextRail`. Wrapping a
+ * shell here as well would double-wrap the reading column for `index`.
+ */
 export const Route = createFileRoute('/_site/developer')({
-  component: DeveloperLayout,
+  component: () => <Outlet />,
 });
-
-function DeveloperLayout() {
-  return (
-    <>
-      <AnimatedMain
-        className="w-full min-w-0 pb-dock"
-      >
-        <Outlet />
-      </AnimatedMain>
-      <ContextRail reserve />
-    </>
-  );
-}

@@ -16,7 +16,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
  <select
  data-slot="select"
  className={cn(
- 'flex w-full cursor-pointer appearance-none rounded-full border border-site-border bg-site-surface text-site-text transition-all duration-200 hover:border-site-text/40 [&_option]:bg-[#111111] [&_option]:text-[#ffffff] font-mono text-xs font-bold uppercase tracking-wider',
+ 'flex w-full cursor-pointer appearance-none rounded-full border border-site-border bg-site-surface text-site-text transition-all duration-200 hover:border-site-text/40 [&_option]:bg-site-surface-opaque [&_option]:text-site-text font-mono text-xs font-bold uppercase tracking-wider',
  controlSize === 'sm' ? 'h-8 px-3.5 py-1 pr-8 text-[11px]' : 'h-10 px-4 py-2 pr-10 text-xs',
  'focus-visible:border-site-accent focus-visible:bg-site-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent',
  'disabled:cursor-not-allowed disabled:opacity-50 shadow-xs',

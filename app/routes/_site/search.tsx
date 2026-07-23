@@ -4,6 +4,7 @@ import { SearchColumn } from '@/components/feed/SearchColumn';
 import { SavedSearches } from '@/components/search/SavedSearches';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { RightSidebar } from '@/components/feed/RightSidebar';
+import { ContextRail } from '@/components/feed/ContextRail';
 import { getSidebarData } from '@/lib/sidebar-data';
 
 const fetchSidebarData = createServerFn({ method: 'GET' }).handler(async () => {
@@ -40,15 +41,15 @@ function SearchPage() {
         />
       </AnimatedMain>
 
-      {/* Right Sidebar - hidden below lg, scrolls with page */}
-      <aside className="hidden lg:block w-80 shrink-0 self-start">
+      {/* Right Sidebar — mirrors the feed's ContextRail (xl+, symmetric rail width) */}
+      <ContextRail>
         <RightSidebar
           officialBuilds={officialBuilds}
           userBuilds={userBuilds}
           recommendedUsers={recommendedUsers}
           blogPosts={blogPosts}
         />
-      </aside>
+      </ContextRail>
     </>
   );
 }

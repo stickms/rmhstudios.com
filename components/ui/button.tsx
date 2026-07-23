@@ -11,8 +11,10 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: 'bg-site-accent text-site-accent-fg hover:bg-site-accent-hover',
-        destructive: 'bg-site-danger text-white hover:opacity-85 focus-visible:ring-site-danger/40',
-        danger: 'bg-site-danger text-white hover:opacity-85 focus-visible:ring-site-danger/40',
+        destructive:
+          'bg-site-danger text-site-danger-fg hover:opacity-85 focus-visible:ring-site-danger/40',
+        danger:
+          'bg-site-danger text-site-danger-fg hover:opacity-85 focus-visible:ring-site-danger/40',
         outline: 'border-site-border bg-transparent text-site-text hover:border-site-text',
         secondary: 'border-site-border bg-site-surface text-site-text hover:bg-site-surface-hover',
         ghost: 'text-site-text hover:bg-site-surface-hover',

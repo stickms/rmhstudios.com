@@ -5,6 +5,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { RightSidebar } from '@/components/feed/RightSidebar';
+import { ContextRail } from '@/components/feed/ContextRail';
 import { PostDetail } from '@/components/feed/PostDetail';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { getSidebarData } from '@/lib/sidebar-data';
@@ -121,14 +122,14 @@ function PostPage() {
       </AnimatedMain>
 
       {/* Right Sidebar */}
-      <aside className="hidden lg:block w-80 shrink-0 self-start">
+      <ContextRail>
         <RightSidebar
           officialBuilds={sidebar.officialBuilds}
           userBuilds={sidebar.userBuilds}
           recommendedUsers={sidebar.recommendedUsers}
           blogPosts={sidebar.blogPosts}
         />
-      </aside>
+      </ContextRail>
     </>
   );
 }

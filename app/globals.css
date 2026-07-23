@@ -77,6 +77,14 @@
 }
 
 :root {
+  /* Pin the UA colour scheme to the active theme so native controls (form
+     widgets, <select> option popups, scrollbars, date pickers, autofill) are
+     rendered by the browser in a palette that matches — never the OS default,
+     which is what produces white-on-white / black-on-black text when the visitor's
+     system theme disagrees with the site theme. The default/Paper theme is light;
+     every theme below overrides this to match its own brightness. */
+  color-scheme: light;
+
   /* Base colors — mapped to spatial design system */
   --background: #faf9f5;
   --foreground: #111111;
@@ -103,6 +111,7 @@
   --site-accent-dim: rgba(17, 17, 17, 0.08);
   --site-success: #15803d;
   --site-danger: #b91c1c;
+  --site-danger-fg: #ffffff;
   --site-warning: #b45309;
 
   /* ── Ultra Minimalist Material Contract ── */
@@ -284,6 +293,7 @@
    theme gallery renders each theme's tokens inside a card) can show the default
    palette while another theme is active. Keep in sync with the :root block. */
 .style-default {
+  color-scheme: light;
   --site-bg: #faf9f5;
   --site-bg-subtle: rgba(17, 17, 17, 0.04);
   --site-surface: #ffffff;
@@ -301,6 +311,7 @@
   --site-accent-dim: rgba(17, 17, 17, 0.08);
   --site-success: #15803d;
   --site-danger: #b91c1c;
+  --site-danger-fg: #ffffff;
   --site-warning: #b45309;
   --site-radius: 24px;
   --site-radius-sm: 14px;
@@ -314,6 +325,7 @@
 /* Glass Light — daylight canvas: near-white base with soft pastel sky radials;
    white frost at higher opacity, dark ink, cooler/lighter depth shadows. */
 .style-light {
+  color-scheme: light;
   --site-bg: #e9edf6;
   --site-bg-subtle: rgba(120, 145, 195, 0.09);
   --site-surface: rgba(255, 255, 255, 0.55);
@@ -331,6 +343,7 @@
   --site-accent-dim: rgba(106, 79, 208, 0.12);
   --site-success: #1f9d40;
   --site-danger: #d70015;
+  --site-danger-fg: #ffffff;
   --site-warning: #a8730a;
   /* Light glass: brighter frost, white rims, cool low-alpha depth. */
   --site-glass-tint: rgba(255, 255, 255, 0.55);
@@ -363,6 +376,7 @@
 /* High Contrast — maximal legibility (WCAG AAA): pure black, pure white text,
    yellow accent, bright white borders. For low-vision / high-glare users. */
 .style-high-contrast {
+  color-scheme: dark;
   --site-bg: #000000;
   --site-bg-subtle: #000000;
   --site-surface: #000000;
@@ -380,6 +394,7 @@
   --site-accent-dim: rgba(255, 255, 0, 0.18);
   --site-success: #00e676;
   --site-danger: #ff8080;
+  --site-danger-fg: #000000;
   --site-warning: #ffd54a;
   /* No glass: flat, opaque, hard-edged. The .glass-* classes are neutralised
      to opaque surfaces by a global rule (§10); these tokens just make sure any
@@ -410,6 +425,7 @@
 /* Graphite Glass — monochrome smoke over near-black; neutral gray tint, silver
    rims, desaturated (glass saturate 120%). Easy on the eyes for long sessions. */
 .style-graphite {
+  color-scheme: dark;
   --site-bg: #17171a;
   --site-bg-subtle: rgba(255, 255, 255, 0.05);
   --site-surface: rgba(255, 255, 255, 0.07);
@@ -427,6 +443,7 @@
   --site-accent-dim: rgba(182, 160, 255, 0.16);
   --site-success: #30d158;
   --site-danger: #ff6961;
+  --site-danger-fg: #1a0a0c;
   --site-warning: #ffd60a;
   --site-glass-tint: rgba(255, 255, 255, 0.07);
   --site-glass-tint-strong: rgba(255, 255, 255, 0.12);
@@ -452,6 +469,7 @@
 /* Sepia Glass — warm parchment gradients, warm-white frost, amber accent,
    golden rim. Book-like reading warmth with the glass material on top. */
 .style-sepia {
+  color-scheme: light;
   --site-bg: #efe4cf;
   --site-bg-subtle: rgba(120, 90, 50, 0.08);
   --site-surface: rgba(255, 250, 238, 0.6);
@@ -469,6 +487,7 @@
   --site-accent-dim: rgba(162, 89, 46, 0.14);
   --site-success: #4f7d3a;
   --site-danger: #b23a2f;
+  --site-danger-fg: #ffffff;
   --site-warning: #a8730a;
   --site-glass-tint: rgba(255, 250, 238, 0.6);
   --site-glass-tint-strong: rgba(255, 250, 238, 0.78);
@@ -499,6 +518,7 @@
 /* Nocturne Glass — deep-navy nightscape with a sky-blue aurora; cool
    blue-shifted tint and rims. A calmer alternative to Glass Dark. */
 .style-nocturne {
+  color-scheme: dark;
   --site-bg: #0a1424;
   --site-bg-subtle: rgba(150, 185, 255, 0.08);
   --site-surface: rgba(150, 185, 255, 0.09);
@@ -516,6 +536,7 @@
   --site-accent-dim: rgba(94, 157, 255, 0.16);
   --site-success: #30d158;
   --site-danger: #ff6961;
+  --site-danger-fg: #1a0a0c;
   --site-warning: #ffd60a;
   --site-glass-tint: rgba(150, 185, 255, 0.09);
   --site-glass-tint-strong: rgba(150, 185, 255, 0.15);
@@ -561,6 +582,7 @@
   --site-accent-dim: rgba(118, 247, 255, 0.14);
   --site-success: #62f6b8;
   --site-danger: #ff668f;
+  --site-danger-fg: #210711;
   --site-warning: #ffd166;
 
   /* Clearer, colder material with a narrow high-energy edge. */
@@ -1617,6 +1639,9 @@ html.readable-font body {
   --color-site-accent-dim: var(--site-accent-dim);
   --color-site-success: var(--site-success);
   --color-site-danger: var(--site-danger);
+  /* Guaranteed-legible ink for text/icons ON a --site-danger fill. Falls back to
+     white for themes that predate the token; every built-in theme sets it. */
+  --color-site-danger-fg: var(--site-danger-fg, #fff);
   --color-site-warning: var(--site-warning);
 
   /* Glass material tokens → bg-site-glass-tint, ring-site-glass-rim-soft, … */
@@ -1783,6 +1808,50 @@ html.readable-font body {
     .pb-dock {
       padding-bottom: 0;
     }
+  }
+
+  /* ── Media overlay legibility ─────────────────────────────────────────────
+     Text placed on top of a photo / video / decorative SVG can land on ANY
+     luminance, so a theme text token (or a bare browser default) is never a safe
+     colour there — that is what produces white-on-white / black-on-black titles
+     over thumbnails. These utilities guarantee contrast independently of the
+     image and of the active theme:
+       • .media-scrim / .media-scrim-full — an absolutely-positioned darkening
+         layer to drop between the media and the text (bottom-anchored, or an
+         even wash for centred overlays). Pointer events pass through.
+       • .text-on-media — force a light ink + shadow halo on the text itself, so
+         it stays legible even where the scrim is thin. Use together for belt-
+         and-suspenders contrast on any overlay. */
+  .media-scrim,
+  .media-scrim-full {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .media-scrim {
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.72) 0%,
+      rgba(0, 0, 0, 0.36) 34%,
+      rgba(0, 0, 0, 0) 64%
+    );
+  }
+
+  .media-scrim-full {
+    background: rgba(0, 0, 0, 0.45);
+  }
+
+  .text-on-media {
+    color: #fff;
+    text-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.7),
+      0 2px 10px rgba(0, 0, 0, 0.45);
+  }
+
+  .text-on-media :is(svg, img) {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
   }
 
   /* Fixed floating UI shares one safe, visually consistent viewport edge.
