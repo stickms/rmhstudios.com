@@ -11,18 +11,16 @@ import { cn } from "@/lib/utils"
  * so every status/label pill looks the same.
  */
 const badgeVariants = cva(
-  "inline-flex items-center gap-1 rounded-full font-medium whitespace-nowrap shrink-0 transition-colors [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-3",
+  "inline-flex items-center gap-1 rounded-full font-mono text-[10px] font-bold uppercase tracking-widest whitespace-nowrap shrink-0 transition-colors [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-3",
   {
     variants: {
-      // Tinted micro-glass capsules: a translucent fill + a hairline top rim so
-      // the pill reads as a small slab of glass. No blur (repeated element).
       variant: {
-        default: "border border-site-border bg-site-glass-tint text-site-text-muted shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]",
-        accent: "bg-site-accent-dim text-site-accent shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]",
-        solid: "bg-site-accent/90 text-site-accent-fg shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]",
-        success: "bg-site-success/15 text-site-success shadow-[inset_0_1px_0_color-mix(in_srgb,var(--site-success)_35%,transparent)]",
-        warning: "bg-site-warning/15 text-site-warning shadow-[inset_0_1px_0_color-mix(in_srgb,var(--site-warning)_35%,transparent)]",
-        danger: "bg-site-danger/15 text-site-danger shadow-[inset_0_1px_0_color-mix(in_srgb,var(--site-danger)_35%,transparent)]",
+        default: "border border-site-border bg-site-bg-subtle text-site-text shadow-xs",
+        accent: "bg-site-accent text-site-accent-fg font-bold shadow-xs",
+        solid: "bg-site-text text-site-bg font-bold shadow-xs",
+        success: "bg-site-success/15 text-site-success border border-site-success/30",
+        warning: "bg-site-warning/15 text-site-warning border border-site-warning/30",
+        danger: "bg-site-danger/15 text-site-danger border border-site-danger/30",
         outline: "border border-site-border text-site-text-muted",
       },
       size: {

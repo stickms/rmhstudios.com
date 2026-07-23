@@ -100,8 +100,8 @@ export function WhatsNewModal() {
           <DialogTitle className="text-2xl sm:text-3xl font-serif font-bold text-site-text tracking-tight">
             {t("whatsnew-ipo-title", { defaultValue: "Minimalism Redefined" })}
           </DialogTitle>
-          <p className="mx-auto mt-2 max-w-md text-sm text-site-text-muted">
-            {t("whatsnew-ipo-subtitle", { defaultValue: "Welcome to our newly refactored website UI. An ultra-minimalist masterpiece crafted for clarity, speed, and elegance." })}
+          <p className="mx-auto mt-2 max-w-sm text-sm text-site-text-muted">
+            {t("whatsnew-ipo-subtitle", { defaultValue: "Ultra-minimalist UI. Crafted for clarity and speed." })}
           </p>
         </div>
 

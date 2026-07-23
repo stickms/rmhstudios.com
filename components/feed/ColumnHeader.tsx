@@ -69,7 +69,11 @@ export function ColumnHeader({
       {/* min-w-0 + truncate because several callers pass user-supplied text
           (a tag name, a creator's display name) that would otherwise push the
           actions off the row instead of ellipsing. */}
-      {title && <h1 className="min-w-0 truncate text-lg font-bold text-site-text">{title}</h1>}
+      {title && (
+        <h1 className="min-w-0 truncate font-serif text-xl font-bold tracking-tight text-site-text sm:text-2xl">
+          {title}
+        </h1>
+      )}
       {children && <div className="min-w-0 flex-1">{children}</div>}
       {actions && <div className="ml-auto flex shrink-0 items-center gap-1.5">{actions}</div>}
     </header>

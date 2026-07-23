@@ -219,11 +219,11 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
               </span>
               <span className="font-mono">VOL. 2026</span>
             </div>
-            <h2 className="font-serif font-bold text-2xl sm:text-3xl text-site-text tracking-tight mb-2">
-              The Studio Dispatch
+            <h2 className="font-serif font-bold text-2xl sm:text-3xl text-site-text tracking-tight mb-1.5">
+              Studio Dispatch
             </h2>
-            <p className="text-xs sm:text-sm text-site-text-muted max-w-lg leading-relaxed mb-4">
-              Explore ultra-minimalist community builds, real-time social harks, and high-performance interactive experiences.
+            <p className="text-xs sm:text-sm text-site-text-muted max-w-md leading-normal mb-4">
+              Curated feed and community builds.
             </p>
             <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-site-border/60">
               <span className="px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-site-accent text-site-accent-fg uppercase tracking-widest">
