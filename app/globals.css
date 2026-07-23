@@ -1608,6 +1608,36 @@ html.ios-webkit .glass-liquid {
   background-image: var(--site-glass-noise);
 }
 
+/* iOS 26 Safari derives its floating toolbar material from fixed/sticky layers
+   within roughly 5px of the viewport edge. The open mobile drawer deliberately
+   extends behind that toolbar, so without a higher fixed target WebKit samples
+   the drawer's opaque theme colour and paints a solid coloured band.
+
+   MobileSidebarShell mounts this neutral sampler only while the drawer is
+   painted. Five pixels covers WebKit's observed sampling strip; z-index 10000
+   is one above the highest app layer, and pointer-events:none makes the shim
+   inert. Explicitly disabling both backdrop-filter spellings prevents Safari
+   from treating it as another glass material. */
+.safari-toolbar-sampler {
+  display: none;
+}
+
+@media (max-width: 47.999rem) {
+  html.ios-webkit .safari-toolbar-sampler {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 10000;
+    display: block;
+    height: 5px;
+    pointer-events: none;
+    background-color: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
 /* Forced colors / Windows High Contrast strips backgrounds — keep structural
    borders so panes retain their shape; make sure the v2 optics pseudos paint
    nothing (their backgrounds are already stripped, this is belt-and-suspenders). */

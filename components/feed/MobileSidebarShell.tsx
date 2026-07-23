@@ -446,6 +446,21 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
         >
           <LeftSidebar expanded />
         </aside>
+
+        {/* iOS 26 Safari samples fixed elements near the viewport edge to tint
+            its floating toolbar. While the tall drawer is painted, its opaque
+            theme background would otherwise win that sampling pass. This tiny,
+            transparent, higher-z-index target gives WebKit an explicit neutral
+            sample instead. CSS keeps it absent outside mobile iOS WebKit, and
+            the conditional mount (rather than opacity:0) keeps the closed
+            drawer from affecting the browser toolbar. */}
+        {asideRevealed && (
+          <div
+            className="safari-toolbar-sampler"
+            data-safari-toolbar-sampler=""
+            aria-hidden="true"
+          />
+        )}
       </div>
     </MobileSidebarContext.Provider>
   );
