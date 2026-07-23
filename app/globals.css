@@ -1609,16 +1609,14 @@ html.ios-webkit .glass-liquid {
 }
 
 /* iOS 26 Safari derives the material behind its status bar and floating toolbar
-   from fixed/sticky layers within roughly 5px of the corresponding viewport
-   edge. The open mobile drawer deliberately extends behind both regions, so
-   without higher fixed targets WebKit samples the drawer's opaque theme colour
-   and replaces the intended translucency with solid coloured bands.
+   from fixed/sticky layers near the corresponding viewport edge. Keep these
+   targets mounted through drawer state changes so WebKit never switches from
+   them to the drawer and fades in a solid sampled colour.
 
-   MobileSidebarShell mounts neutral top and bottom samplers only while the
-   drawer is painted. Five pixels covers WebKit's observed sampling strips;
-   z-index 10000 is one above the highest app layer, and pointer-events:none
-   makes the shims inert. Explicitly disabling both backdrop-filter spellings
-   prevents Safari from treating them as another glass material. */
+   A transparent target alone is insufficient: WebKit samples through it and
+   still finds the opaque drawer. A real, minimal backdrop filter makes WebKit
+   preserve its translucent browser material. Five pixels reaches both edge
+   probes, and the maximum practical z-index keeps app overlays from winning. */
 .safari-chrome-sampler {
   display: none;
 }
@@ -1628,13 +1626,13 @@ html.ios-webkit .glass-liquid {
     position: fixed;
     right: 0;
     left: 0;
-    z-index: 10000;
+    z-index: 2147483647;
     display: block;
     height: 5px;
     pointer-events: none;
     background-color: transparent;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
+    -webkit-backdrop-filter: blur(1px);
+    backdrop-filter: blur(1px);
   }
 
   html.ios-webkit .safari-chrome-sampler--top {
@@ -2343,6 +2341,21 @@ html {
 /* Reserve scrollbar space on main UI pages to prevent layout shift */
 html:not(.app-route) {
   scrollbar-gutter: stable;
+}
+
+/* Fixed descendants are clipped to Safari's visual viewport, leaving the
+   physical strips behind the status and floating tab bars without the aurora.
+   The root canvas is allowed to paint those strips, so mirror the site canvas
+   there on mobile iOS. Keeping it viewport-fixed also prevents a tall scrolling
+   page from exposing the end of the gradient at either edge. */
+@media (max-width: 47.999rem) {
+  html.ios-webkit:not(.app-route) {
+    background-image: var(--site-canvas);
+    background-repeat: no-repeat;
+    background-position: center top;
+    background-size: cover;
+    background-attachment: fixed;
+  }
 }
 
 body {
