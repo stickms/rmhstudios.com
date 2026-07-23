@@ -1,278 +1,174 @@
+'use client';
+
 import { useEffect, useRef, type CSSProperties } from 'react';
-import {
-  Droplets,
-  Sun,
-  Waves,
-  Layers,
-  Palette,
-  Accessibility,
-  ChevronLeft,
-  ArrowRight,
-  Cpu,
-  MonitorSmartphone,
-  Sparkles,
-  type LucideIcon,
-} from 'lucide-react';
-import '@/components/security/security.css';
-import { PinnedHero } from '@/components/feed/PinnedHero';
+import { ArrowRight, ChevronLeft, Circle, Grid2X2, Move3D } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 /**
- * /design — a standalone, Apple-styled page telling the Liquid Glass story:
- * the material system behind every surface on rmhstudios.com. Sibling of
- * /security and /optimization (shares their `sec-*` document grammar from
- * security.css). Every claim maps to a real mechanism in this codebase —
- * the shader layer (lib/liquid-gl), the scene light (useGlassLight), the
- * clarity slider, the theme marketplace — so the page stays honest.
- *
- * Motion is progressive enhancement: everything renders visible on the
- * server; scroll-reveal turns on only for visitors without reduced motion.
+ * Public design-system story. The legacy export name remains internal-only so
+ * the route can stay stable while the page itself is completely redesigned.
  */
-
-interface Pillar {
-  icon: LucideIcon;
-  title: string;
-  body: string;
-  tag: string;
-}
-
-const PILLARS: Pillar[] = [
-  {
-    icon: Droplets,
-    title: 'It really refracts',
-    body: 'Edges of glass bend what sits behind them through a genuine lens displacement — on capable browsers, a shader computes the refraction per pixel, chromatic dispersion included. No painted-on gradients pretending to be optics.',
-    tag: 'SDF lenses · dispersion',
-  },
-  {
-    icon: Sun,
-    title: 'One light, every surface answers',
-    body: 'A single scene light lives where your attention is — your cursor on desktop, the tilt of your phone in your hand. Every pane, capsule, and menu catches it on the rim as it passes.',
-    tag: 'Pointer · tilt · fresnel',
-  },
-  {
-    icon: Waves,
-    title: 'Moves like liquid',
-    body: 'Controls do not slide — they flow. The active tab stretches with its own velocity, pinches into a teardrop, and reabsorbs on arrival. Menus bud out of the button you pressed. Posts open by becoming the page.',
-    tag: 'Metaballs · morph opens',
-  },
-  {
-    icon: Layers,
-    title: 'Depth you can feel',
-    body: 'Behind everything, a two-layer aurora drifts on its own time and parallaxes against your movement. Glass is only glass when there is a world behind it.',
-    tag: 'Aurora · parallax',
-  },
-  {
-    icon: Palette,
-    title: 'Your glass, your way',
-    body: 'A clarity slider runs the material from fully opaque to nearly clear. Six built-in themes tint the same glass — and the theme studio lets members craft new tints anyone can buy with RMH coins.',
-    tag: 'Clarity · themes · studio',
-  },
-  {
-    icon: Accessibility,
-    title: 'Beauty that backs off',
-    body: 'Reduced motion stills every animation. Reduced transparency and High Contrast turn the glass solid. The whole system degrades tier by tier — the same interface, never a lesser one.',
-    tag: 'A11y-first fallbacks',
-  },
-];
-
-interface Tier {
-  icon: LucideIcon;
-  title: string;
-  body: string;
-}
-
-const TIERS: Tier[] = [
-  {
-    icon: Cpu,
-    title: 'WebGPU & WebGL2',
-    body: 'A single lazily-loaded canvas renders the aurora and every liquid body in one pass — capped resolution, paused when hidden, idle-damped to sip power.',
-  },
-  {
-    icon: MonitorSmartphone,
-    title: 'Every other browser',
-    body: 'The same design renders through layered CSS and SVG filters — blur, glint, and morph included. Different plumbing, one look.',
-  },
-  {
-    icon: Sparkles,
-    title: 'Your preferences win',
-    body: 'Motion, transparency, and contrast preferences override everything above. The prettiest tier is always the one you asked for.',
-  },
-];
-
 export function LiquidGlassPage() {
+  const { t } = useTranslation('site');
   const pageRef = useRef<HTMLDivElement>(null);
+
+  const principles = [
+    {
+      icon: Circle,
+      number: '01',
+      title: t('spatial-principle-focus-title', { defaultValue: 'Content is the interface.' }),
+      body: t('spatial-principle-focus-body', {
+        defaultValue:
+          'Every screen begins with what people came to do. Navigation recedes, hierarchy sharpens, and empty space becomes useful structure.',
+      }),
+    },
+    {
+      icon: Grid2X2,
+      number: '02',
+      title: t('spatial-principle-system-title', { defaultValue: 'One system, everywhere.' }),
+      body: t('spatial-principle-system-body', {
+        defaultValue:
+          'Games, tools, community, and commerce share the same proportions, typography, controls, and interaction logic.',
+      }),
+    },
+    {
+      icon: Move3D,
+      number: '03',
+      title: t('spatial-principle-motion-title', { defaultValue: 'Depth without noise.' }),
+      body: t('spatial-principle-motion-body', {
+        defaultValue:
+          'Motion clarifies relationships. Quiet parallax, route continuity, and precise state changes make the platform feel physical—not busy.',
+      }),
+    },
+  ];
 
   useEffect(() => {
     const page = pageRef.current;
     if (!page || typeof IntersectionObserver === 'undefined') return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced) return;
-
-    page.setAttribute('data-animate', '');
-    const revealables = Array.from(page.querySelectorAll<HTMLElement>('.sec-reveal'));
-
+    page.dataset.animate = '';
+    const elements = Array.from(page.querySelectorAll<HTMLElement>('[data-spatial-reveal]'));
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-visible');
-            observer.unobserve(entry.target);
-          }
+          if (!entry.isIntersecting) continue;
+          const target = entry.target as HTMLElement;
+          target.dataset.visible = '';
+          observer.unobserve(target);
         }
       },
-      { rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
+      { threshold: 0.12, rootMargin: '0px 0px -7% 0px' },
     );
-
-    revealables.forEach((el) => observer.observe(el));
+    elements.forEach((element) => observer.observe(element));
     return () => observer.disconnect();
   }, []);
 
   return (
-    <div ref={pageRef} className="sec-page">
-      <a className="sec-skip" href="#lg-main">
-        Skip to content
+    <div ref={pageRef} className="spatial-design-page">
+      <a className="sr-only focus:not-sr-only" href="#spatial-design-main">
+        {t('skip-to-content', { defaultValue: 'Skip to content' })}
       </a>
 
-      <header>
-        <nav className="sec-nav" aria-label="Liquid Glass">
-          <div className="sec-nav__inner">
-            <a className="sec-nav__back" href="/">
-              <ChevronLeft size={15} strokeWidth={2.2} aria-hidden="true" />
-              RMH Studios
-            </a>
-            <span className="sec-nav__sep" aria-hidden="true">
-              /
-            </span>
-            <span className="sec-nav__title">Liquid Glass</span>
-            <a className="sec-nav__cta" href="/liquid-glass">
-              Open the design lab
-              <ArrowRight size={14} aria-hidden="true" />
-            </a>
-          </div>
-        </nav>
+      <header className="spatial-design-nav">
+        <a href="/" className="spatial-design-nav__brand">
+          <ChevronLeft aria-hidden />
+          <span>{t('rmh-studios', { defaultValue: 'RMH Studios' })}</span>
+        </a>
+        <p>{t('spatial-system-name', { defaultValue: 'Spatial system / 01' })}</p>
+        <a href="/settings/appearance" className="spatial-design-nav__action">
+          {t('make-it-yours', { defaultValue: 'Make it yours' })}
+          <ArrowRight aria-hidden />
+        </a>
       </header>
 
-      <main id="lg-main">
-        <PinnedHero
-          eyebrow="Design at RMH Studios"
-          title={
-            <>
-              Liquid <span className="text-site-accent">Glass.</span>
-            </>
-          }
-          subtitle="Not a skin. A material. Every surface here is built from one physically-plausible glass — it refracts what is behind it, reflects the light you bring, and moves like something poured, not painted."
-          scrollCue="What makes it liquid"
-          actions={
-            <>
-              <a className="sec-btn sec-btn--primary" href="/liquid-glass">
-                Explore the design lab
-                <ArrowRight aria-hidden="true" />
-              </a>
-              <a className="sec-btn sec-btn--ghost" href="/studio/themes">
-                Open the theme studio
-                <ArrowRight aria-hidden="true" />
-              </a>
-            </>
-          }
-        />
+      <main id="spatial-design-main">
+        <section className="spatial-design-hero">
+          <div aria-hidden className="spatial-design-hero__art">
+            <span />
+          </div>
+          <div className="spatial-design-hero__copy">
+            <p className="spatial-design-kicker">
+              {t('design-at-rmh', { defaultValue: 'Design at RMH Studios' })}
+            </p>
+            <h1>{t('spatial-minimalism', { defaultValue: 'Spatial minimalism.' })}</h1>
+            <p className="spatial-design-hero__lede">
+              {t('spatial-design-lede', {
+                defaultValue:
+                  'A quieter foundation for an ambitious platform. Paper, ink, proportion, and motion—nothing without a reason.',
+              })}
+            </p>
+          </div>
+          <p className="spatial-design-hero__index" aria-hidden>
+            01 — 03
+          </p>
+        </section>
 
-      <section className="sec-section sec-statement" aria-labelledby="lg-statement-title">
-        <div className="sec-shell">
-          <h2 id="lg-statement-title" className="sec-statement__text sec-reveal">
-            Most “glassmorphism” is fog on plastic. Ours has thickness, a light source, and
-            surface tension.
+        <section className="spatial-design-statement" aria-labelledby="design-statement">
+          <p className="spatial-design-kicker">
+            {t('new-foundation', { defaultValue: 'The new foundation' })}
+          </p>
+          <h2 id="design-statement" data-spatial-reveal>
+            {t('design-statement', {
+              defaultValue:
+                'Simple does not mean empty. It means every remaining detail carries more weight.',
+            })}
           </h2>
-        </div>
-      </section>
+        </section>
 
-      <section className="sec-section sec-section--hair" aria-labelledby="lg-pillars-title">
-        <div className="sec-shell">
-          <div className="sec-section__head">
-            <h2 id="lg-pillars-title" className="sec-section__title sec-reveal">
-              What makes it liquid
-            </h2>
-            <p className="sec-section__sub sec-reveal">
-              Six behaviors, one material — live on every page you visit.
+        <section className="spatial-design-principles" aria-labelledby="design-principles">
+          <div className="spatial-design-section-head">
+            <p className="spatial-design-kicker">
+              {t('operating-principles', { defaultValue: 'Operating principles' })}
             </p>
+            <h2 id="design-principles">
+              {t('three-rules', { defaultValue: 'Three rules. Every surface.' })}
+            </h2>
           </div>
-          <div className="sec-grid">
-            {PILLARS.map((pillar, i) => {
-              const Icon = pillar.icon;
+
+          <div className="spatial-design-principles__grid">
+            {principles.map((principle, index) => {
+              const Icon = principle.icon;
               return (
                 <article
-                  key={pillar.title}
-                  className="sec-card sec-reveal"
-                  style={{ '--sec-delay': `${(i % 3) * 80}ms` } as CSSProperties}
+                  key={principle.number}
+                  data-spatial-reveal
+                  style={{ '--spatial-delay': `${index * 90}ms` } as CSSProperties}
                 >
-                  <span className="sec-card__icon">
-                    <Icon aria-hidden="true" />
-                  </span>
-                  <h3 className="sec-card__title">{pillar.title}</h3>
-                  <p className="sec-card__body">{pillar.body}</p>
-                  <p className="sec-card__tag">{pillar.tag}</p>
+                  <div>
+                    <span>{principle.number}</span>
+                    <Icon aria-hidden />
+                  </div>
+                  <h3>{principle.title}</h3>
+                  <p>{principle.body}</p>
                 </article>
               );
             })}
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="sec-section sec-section--hair" aria-labelledby="lg-tiers-title">
-        <div className="sec-shell">
-          <div className="sec-section__head">
-            <h2 id="lg-tiers-title" className="sec-section__title sec-reveal">
-              Rendered to your hardware
-            </h2>
-            <p className="sec-section__sub sec-reveal">
-              The material adapts to what your device and your preferences allow — never the
-              other way around.
-            </p>
-          </div>
-          <div className="sec-grid">
-            {TIERS.map((tier, i) => {
-              const Icon = tier.icon;
-              return (
-                <article
-                  key={tier.title}
-                  className="sec-card sec-reveal"
-                  style={{ '--sec-delay': `${(i % 3) * 80}ms` } as CSSProperties}
-                >
-                  <span className="sec-card__icon">
-                    <Icon aria-hidden="true" />
-                  </span>
-                  <h3 className="sec-card__title">{tier.title}</h3>
-                  <p className="sec-card__body">{tier.body}</p>
-                </article>
-              );
+        <section className="spatial-design-cta" data-spatial-reveal>
+          <p className="spatial-design-kicker">
+            {t('built-for-everyone', { defaultValue: 'Built for everyone' })}
+          </p>
+          <h2>{t('design-cta', { defaultValue: 'Quiet by default. Yours by choice.' })}</h2>
+          <p>
+            {t('design-cta-body', {
+              defaultValue:
+                'Choose a paper or ink palette, adjust type and density, and reduce motion whenever you want.',
             })}
-          </div>
-        </div>
-      </section>
-
-      <section className="sec-section" aria-labelledby="lg-cta-title">
-        <div className="sec-shell">
-          <div className="sec-section__head">
-            <h2 id="lg-cta-title" className="sec-section__title sec-reveal">
-              See it. Then make it yours.
-            </h2>
-            <p className="sec-section__sub sec-reveal">
-              The design lab shows every optic live — refraction on and off, the light, the
-              morph — and the theme studio turns the same material into something only you ship.
-            </p>
-          </div>
-          <div className="sec-reveal" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-            <a className="sec-btn sec-btn--primary" href="/liquid-glass">
-              Explore the design lab
-              <ArrowRight aria-hidden="true" />
-            </a>
-            <a className="sec-btn sec-btn--ghost" href="/studio/themes">
-              Open the theme studio
-              <ArrowRight aria-hidden="true" />
-            </a>
-          </div>
-        </div>
-      </section>
+          </p>
+          <a href="/settings/appearance">
+            {t('open-appearance', { defaultValue: 'Open appearance settings' })}
+            <ArrowRight aria-hidden />
+          </a>
+        </section>
       </main>
+
+      <footer className="spatial-design-footer">
+        <span>{t('rmh-studios', { defaultValue: 'RMH Studios' })}</span>
+        <span>{t('spatial-system-version', { defaultValue: 'Spatial system / 2026' })}</span>
+      </footer>
     </div>
   );
 }

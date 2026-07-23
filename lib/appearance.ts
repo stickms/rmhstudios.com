@@ -27,33 +27,23 @@ export interface AccentPreset {
 }
 
 /**
- * The accent palette. Each `fg` is chosen (black vs. white) for legible contrast
- * on its `value`. Ordered roughly around the wheel. Not exhaustive — a deliberate,
- * on-brand spread. `null` accent (no entry here) means "use the theme's own
- * accent", which the picker surfaces as the "Theme default" tile.
+ * The accent palette is intentionally monochrome. Each foreground is chosen for
+ * legible contrast on its value. `null` means "use the theme's own accent".
  */
 export const ACCENT_PRESETS = [
-  { id: 'violet', label: 'Violet', value: '#8b5cf6', fg: '#ffffff' },
-  { id: 'indigo', label: 'Indigo', value: '#6366f1', fg: '#ffffff' },
-  { id: 'blue', label: 'Blue', value: '#3b82f6', fg: '#ffffff' },
-  { id: 'sky', label: 'Sky', value: '#0ea5e9', fg: '#ffffff' },
-  { id: 'cyan', label: 'Cyan', value: '#06b6d4', fg: '#00131a' },
-  { id: 'teal', label: 'Teal', value: '#14b8a6', fg: '#00201c' },
-  { id: 'emerald', label: 'Emerald', value: '#10b981', fg: '#00231a' },
-  { id: 'lime', label: 'Lime', value: '#84cc16', fg: '#12210a' },
-  { id: 'amber', label: 'Amber', value: '#f59e0b', fg: '#231600' },
-  { id: 'orange', label: 'Orange', value: '#f97316', fg: '#200c00' },
-  { id: 'rose', label: 'Rose', value: '#f43f5e', fg: '#ffffff' },
-  { id: 'pink', label: 'Pink', value: '#ec4899', fg: '#ffffff' },
-  { id: 'fuchsia', label: 'Fuchsia', value: '#d946ef', fg: '#ffffff' },
-  { id: 'red', label: 'Red', value: '#ef4444', fg: '#ffffff' },
+  { id: 'ink', label: 'Ink', value: '#0b0b0b', fg: '#ffffff' },
+  { id: 'graphite', label: 'Graphite', value: '#343432', fg: '#ffffff' },
+  { id: 'slate', label: 'Slate', value: '#62625e', fg: '#ffffff' },
+  { id: 'stone', label: 'Stone', value: '#a7a69f', fg: '#111111' },
+  { id: 'paper', label: 'Paper', value: '#e8e8e3', fg: '#111111' },
+  { id: 'white', label: 'White', value: '#ffffff', fg: '#111111' },
 ] as const satisfies readonly AccentPreset[];
 
 export type AccentId = (typeof ACCENT_PRESETS)[number]['id'];
 
 /** id → preset lookup, also the compact map serialized into the no-flash script. */
 export const ACCENT_MAP: Record<string, { value: string; fg: string }> = Object.fromEntries(
-  ACCENT_PRESETS.map((a) => [a.id, { value: a.value, fg: a.fg }])
+  ACCENT_PRESETS.map((a) => [a.id, { value: a.value, fg: a.fg }]),
 );
 
 /** Narrow an arbitrary string (from storage / the API) to a known accent id. */
@@ -86,7 +76,14 @@ export function accentCssVars(value: string, fg: string): Record<string, string>
   };
 }
 
-const ACCENT_VAR_NAMES = ['--site-accent', '--site-accent-fg', '--site-accent-hover', '--site-accent-dim', '--site-glass-light', '--site-glass-glint'];
+const ACCENT_VAR_NAMES = [
+  '--site-accent',
+  '--site-accent-fg',
+  '--site-accent-hover',
+  '--site-accent-dim',
+  '--site-glass-light',
+  '--site-glass-glint',
+];
 
 /** Apply an accent id's tokens to an element (usually <html>), or clear them. */
 export function applyAccent(el: HTMLElement, id: string | null | undefined): void {

@@ -43,7 +43,7 @@ export function usePointerParallax(sensitivity = 15): PointerParallax {
   const [offset, setOffset] = useState<PointerParallax>({ x: 0, y: 0 });
   const target = useRef<PointerParallax>({ x: 0, y: 0 });
   const current = useRef<PointerParallax>({ x: 0, y: 0 });
-  const rafId = useRef<number>(0);
+  const rafId = useRef<number | null>(null);
 
   const lerp = useCallback((a: number, b: number, t: number) => a + (b - a) * t, []);
 
@@ -53,33 +53,42 @@ export function usePointerParallax(sensitivity = 15): PointerParallax {
     const handleMouseMove = (e: MouseEvent) => {
       const { innerWidth, innerHeight } = window;
       target.current = {
-        x: ((e.clientX / innerWidth) - 0.5) * sensitivity,
-        y: ((e.clientY / innerHeight) - 0.5) * sensitivity,
+        x: (e.clientX / innerWidth - 0.5) * sensitivity,
+        y: (e.clientY / innerHeight - 0.5) * sensitivity,
       };
+      if (rafId.current === null) {
+        rafId.current = requestAnimationFrame(tick);
+      }
     };
 
-    const tick = () => {
+    function tick() {
       const { x: cx, y: cy } = current.current;
       const { x: tx, y: ty } = target.current;
+      const deltaX = tx - cx;
+      const deltaY = ty - cy;
+
+      if (Math.abs(deltaX) <= 0.05 && Math.abs(deltaY) <= 0.05) {
+        current.current = { x: tx, y: ty };
+        setOffset({ x: tx, y: ty });
+        rafId.current = null;
+        return;
+      }
+
       // Lerp factor 0.08 = smooth, organic lag
       const nx = lerp(cx, tx, 0.08);
       const ny = lerp(cy, ty, 0.08);
 
-      // Only update state when the delta is perceptible (>0.05px)
-      if (Math.abs(nx - cx) > 0.05 || Math.abs(ny - cy) > 0.05) {
-        current.current = { x: nx, y: ny };
-        setOffset({ x: nx, y: ny });
-      }
+      current.current = { x: nx, y: ny };
+      setOffset({ x: nx, y: ny });
 
       rafId.current = requestAnimationFrame(tick);
-    };
+    }
 
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    rafId.current = requestAnimationFrame(tick);
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
-      cancelAnimationFrame(rafId.current);
+      if (rafId.current !== null) cancelAnimationFrame(rafId.current);
     };
   }, [sensitivity, prefersReduced, lerp]);
 

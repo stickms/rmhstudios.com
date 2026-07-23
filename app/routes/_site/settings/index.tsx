@@ -24,7 +24,6 @@ import {
 import { PageLayout } from '@/components/feed/PageLayout';
 import { ThemeGallery } from '@/components/settings/ThemeGallery';
 import { AccentPicker } from '@/components/settings/AccentPicker';
-import { GlassClarityControl } from '@/components/settings/GlassClarityControl';
 import { NotificationPrefsPanel } from '@/components/settings/NotificationPrefsPanel';
 import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
 import { useSession } from '@/components/Providers';
@@ -156,14 +155,6 @@ function SettingsPage() {
             </p>
             <AccentPicker />
           </div>
-
-          {/* Glass clarity slider (§5.46) — replaces the old reduce-transparency
-                toggle. Stop 0 (Opaque) is that same mechanism; the other stops tune
-                how much scene shows through. Applies live + follows the account. */}
-          <div className="mt-5 border-t border-site-border pt-4">
-            <GlassClarityControl />
-          </div>
-
           <div className="mt-4 flex items-center gap-2 rounded-site border border-site-border bg-site-bg-subtle px-3 py-2.5">
             <Sparkles className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />
             <p className="text-xs text-site-text-muted">

@@ -22,9 +22,8 @@ import { installGlobalErrorHandlers } from '@/lib/client-errors';
 import { initWebVitals } from '@/lib/rum';
 import { registerServiceWorker } from '@/lib/sw-register';
 import { organizationSchema, websiteSchema, jsonLdScript } from '@/lib/schema';
-import { GlassFilter } from '@/components/ui/liquid-glass';
 import { getRequestSession } from '@/lib/auth-session.server';
-import { THEME_BG, DEFAULT_STYLE } from '@/stores/themeStore';
+import { APP_THEME_BG, THEME_BG, DEFAULT_STYLE } from '@/stores/themeStore';
 import { ACCENT_MAP } from '@/lib/appearance';
 import { GLASS_LEVEL_VARS, GLASS_LEVEL_KEY } from '@/lib/appearance/prefs';
 import appCss from '@/app/globals.css?url';
@@ -109,7 +108,7 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
  * single source (stores/themeStore.ts, lib/appearance.ts) so this script never
  * drifts from the runtime that mirrors it.
  */
-const themeScript = `(function(){try{var m=${JSON.stringify(THEME_BG)};var D=${JSON.stringify(DEFAULT_STYLE)};var EX=${JSON.stringify(THEME_EXCLUDED_ROUTES)};var s=localStorage.getItem("rmh-style");if(!s||!m.hasOwnProperty(s)){if(s)localStorage.setItem("rmh-style",D);s=D}var app=false;var p=location.pathname;for(var i=0;i<EX.length;i++){if(p.indexOf(EX[i])===0){app=true;break}}if(s!=="default"&&!app){document.documentElement.classList.add("style-"+s)}var GV=${JSON.stringify(GLASS_LEVEL_VARS)};var gl=parseInt(localStorage.getItem(${JSON.stringify(GLASS_LEVEL_KEY)}),10);if(gl===0&&localStorage.getItem("rmh-reduce-transparency")==="1"){gl=2}if(isNaN(gl)||gl<0||gl>4){gl=2}if(gl===0){document.documentElement.classList.add("reduce-transparency")}else if(GV[gl]){document.documentElement.style.setProperty("--glass-user-blur",String(GV[gl].blur));document.documentElement.style.setProperty("--glass-user-tint",String(GV[gl].tint))}var bg=app?m["default"]:m[s];var UT=localStorage.getItem("rmh-user-theme");if(UT&&s!=="high-contrast"&&!app){try{var utj=JSON.parse(UT);if(utj&&utj.vars){var uts=document.documentElement.style;for(var uk in utj.vars){uts.setProperty(uk,utj.vars[uk])}if(typeof utj.bg==="string")bg=utj.bg}}catch(e){}}window.__themeBg=bg;document.documentElement.style.backgroundColor=bg;var t=document.querySelector('meta[name="theme-color"]');if(t)t.content=bg;else{t=document.createElement("meta");t.name="theme-color";t.content=bg;document.head.appendChild(t)}var A=${JSON.stringify(ACCENT_MAP)};var ac=localStorage.getItem("rmh-accent");if(ac&&A[ac]&&!app){var d=document.documentElement.style;d.setProperty("--site-accent",A[ac].value);d.setProperty("--site-accent-fg",A[ac].fg);d.setProperty("--site-accent-hover","color-mix(in oklab,"+A[ac].value+" 82%, #000)");d.setProperty("--site-accent-dim","color-mix(in oklab,"+A[ac].value+" 15%, transparent)");d.setProperty("--site-glass-light","color-mix(in srgb,"+A[ac].value+" 20%, rgba(255,255,255,0.14))")}var fs=localStorage.getItem("rmh-font-scale");if(fs&&/^(875|1125|1250)$/.test(fs)){document.documentElement.style.fontSize=(parseInt(fs,10)/10)+"%"}if(localStorage.getItem("rmh-density")==="compact"){document.documentElement.setAttribute("data-density","compact")}if(localStorage.getItem("rmh-readable-font")==="1"){document.documentElement.classList.add("readable-font")}if(localStorage.getItem("rmh-reduce-motion")==="1"){document.documentElement.classList.add("reduce-motion")}var ca=localStorage.getItem("rmh-custom-accent");if(ca&&/^#[0-9a-fA-F]{6}$/.test(ca)&&!app){var cr=parseInt(ca.substr(1,2),16),cg=parseInt(ca.substr(3,2),16),cb=parseInt(ca.substr(5,2),16);var cl=(0.2126*cr+0.7152*cg+0.0722*cb)/255;var cf=cl>0.55?"#111111":"#ffffff";var dc=document.documentElement.style;dc.setProperty("--site-accent",ca);dc.setProperty("--site-accent-fg",cf);dc.setProperty("--site-accent-hover","color-mix(in oklab,"+ca+" 82%, #000)");dc.setProperty("--site-accent-dim","color-mix(in oklab,"+ca+" 15%, transparent)");dc.setProperty("--site-glass-light","color-mix(in srgb,"+ca+" 20%, rgba(255,255,255,0.14))")}}catch(e){}})()`;
+const themeScript = `(function(){try{var m=${JSON.stringify(THEME_BG)};var B=${JSON.stringify(APP_THEME_BG)};var D=${JSON.stringify(DEFAULT_STYLE)};var EX=${JSON.stringify(THEME_EXCLUDED_ROUTES)};var s=localStorage.getItem("rmh-style");if(!s||!m.hasOwnProperty(s)){if(s)localStorage.setItem("rmh-style",D);s=D}var app=false;var p=location.pathname;for(var i=0;i<EX.length;i++){if(p.indexOf(EX[i])===0){app=true;break}}if(s!=="default"&&!app){document.documentElement.classList.add("style-"+s)}var GV=${JSON.stringify(GLASS_LEVEL_VARS)};var gl=parseInt(localStorage.getItem(${JSON.stringify(GLASS_LEVEL_KEY)}),10);if(gl===0&&localStorage.getItem("rmh-reduce-transparency")==="1"){gl=2}if(isNaN(gl)||gl<0||gl>4){gl=2}if(gl===0){document.documentElement.classList.add("reduce-transparency")}else if(GV[gl]){document.documentElement.style.setProperty("--glass-user-blur",String(GV[gl].blur));document.documentElement.style.setProperty("--glass-user-tint",String(GV[gl].tint))}var bg=app?B:m[s];var UT=localStorage.getItem("rmh-user-theme");if(UT&&s!=="high-contrast"&&!app){try{var utj=JSON.parse(UT);if(utj&&utj.vars){var uts=document.documentElement.style;for(var uk in utj.vars){uts.setProperty(uk,utj.vars[uk])}if(typeof utj.bg==="string")bg=utj.bg}}catch(e){}}window.__themeBg=bg;document.documentElement.style.backgroundColor=bg;var t=document.querySelector('meta[name="theme-color"]');if(t)t.content=bg;else{t=document.createElement("meta");t.name="theme-color";t.content=bg;document.head.appendChild(t)}var A=${JSON.stringify(ACCENT_MAP)};var ac=localStorage.getItem("rmh-accent");if(ac&&A[ac]&&!app){var d=document.documentElement.style;d.setProperty("--site-accent",A[ac].value);d.setProperty("--site-accent-fg",A[ac].fg);d.setProperty("--site-accent-hover","color-mix(in oklab,"+A[ac].value+" 82%, #000)");d.setProperty("--site-accent-dim","color-mix(in oklab,"+A[ac].value+" 15%, transparent)");d.setProperty("--site-glass-light","color-mix(in srgb,"+A[ac].value+" 20%, rgba(255,255,255,0.14))")}var fs=localStorage.getItem("rmh-font-scale");if(fs&&/^(875|1125|1250)$/.test(fs)){document.documentElement.style.fontSize=(parseInt(fs,10)/10)+"%"}if(localStorage.getItem("rmh-density")==="compact"){document.documentElement.setAttribute("data-density","compact")}if(localStorage.getItem("rmh-readable-font")==="1"){document.documentElement.classList.add("readable-font")}if(localStorage.getItem("rmh-reduce-motion")==="1"){document.documentElement.classList.add("reduce-motion")}var ca=localStorage.getItem("rmh-custom-accent");if(ca&&/^#[0-9a-fA-F]{6}$/.test(ca)&&!app){var cr=parseInt(ca.substr(1,2),16),cg=parseInt(ca.substr(3,2),16),cb=parseInt(ca.substr(5,2),16);var cl=(0.2126*cr+0.7152*cg+0.0722*cb)/255;var cf=cl>0.55?"#111111":"#ffffff";var dc=document.documentElement.style;dc.setProperty("--site-accent",ca);dc.setProperty("--site-accent-fg",cf);dc.setProperty("--site-accent-hover","color-mix(in oklab,"+ca+" 82%, #000)");dc.setProperty("--site-accent-dim","color-mix(in oklab,"+ca+" 15%, transparent)");dc.setProperty("--site-glass-light","color-mix(in srgb,"+ca+" 20%, rgba(255,255,255,0.14))")}}catch(e){}})()`;
 
 /**
  * Mark iOS WebKit before first paint so its compositor-safe glass tier applies
@@ -207,11 +206,25 @@ export const Route = createRootRoute({
       meta: [
         { charSet: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-        { title: 'RMH Studios — The everything platform.' },
+        { title: 'RMH Studios — Make. Play. Share.' },
         {
           name: 'description',
-          content: 'Type a prompt and get an instant, shareable, collaboratively-editable webpage.',
+          content:
+            'One considered space for original games, creative tools, music, learning, and community.',
         },
+        { property: 'og:site_name', content: 'RMH Studios' },
+        { property: 'og:title', content: 'RMH Studios — Make. Play. Share.' },
+        {
+          property: 'og:description',
+          content:
+            'One considered space for original games, creative tools, music, learning, and community.',
+        },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:image', content: 'https://rmhstudios.com/og.webp' },
+        { property: 'og:image:width', content: '1536' },
+        { property: 'og:image:height', content: '1024' },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:image', content: 'https://rmhstudios.com/og.webp' },
       ],
       links: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
@@ -259,11 +272,6 @@ function RootDocument({ children }: { children: ReactNode }) {
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
         <script dangerouslySetInnerHTML={{ __html: bodyThemeScript }} />
-        {/* SVG lens filters (#glass-lens / #glass-lens-prism) sampled by
-            .glass-refract surfaces via backdrop-filter (components/ui/liquid-glass.tsx;
-            per-size buckets appended at runtime by lib/glass-lens.ts). Mounted
-            once here so glass refraction works on every route. */}
-        <GlassFilter />
         {children}
         <Scripts />
       </body>

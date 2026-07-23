@@ -1,21 +1,21 @@
-import { DEFAULT_WIDTH } from'@/lib/layout-width';
+import { DEFAULT_WIDTH } from '@/lib/layout-width';
 
 interface AnimatedMainProps {
- children: React.ReactNode;
- className?: string;
+  children: React.ReactNode;
+  className?: string;
+  targetWidth?: number;
 }
 
 export function AnimatedMain({
- children,
- className,
+  children,
+  className,
+  targetWidth = DEFAULT_WIDTH,
 }: AnimatedMainProps) {
- // A plain layout column, NOT a landmark: the `_site`shell already renders the
- // single `<main id="main-content">`(skip-link target) around its Outlet, so a
- // <main> here would nest mains and duplicate the id. (RoutePending's skeleton
- // makes the same choice.)
- return (
- <div data-slot="site-main-column" className={className} style={{ maxWidth: DEFAULT_WIDTH }}>
- {children}
- </div>
- );
+  // A plain layout column, NOT a landmark: the `_site` shell already renders
+  // the single <main id="main-content"> skip-link target around its Outlet.
+  return (
+    <div data-slot="site-main-column" className={className} style={{ maxWidth: targetWidth }}>
+      {children}
+    </div>
+  );
 }

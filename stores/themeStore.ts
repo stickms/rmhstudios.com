@@ -7,29 +7,31 @@ import type { AppliedUserTheme, AppliedUserThemePreview } from '@/lib/themes/tok
 // derive `THEME_BG` from here — adding a theme no longer means editing a
 // hand-copied color map in two other files.
 //
-// Themes are now TINTS OF THE GLASS: each re-tints the shared --site-* + glass
-// material contract in app/globals.css over its own --site-canvas aurora. The
-// former `liquid-glass` id is retired into `default` (Glass Dark) — the site
-// default; persisted `liquid-glass` prefs self-heal to `default` in Providers.
+// Built-in styles are deliberately restrained variations of the spatial
+// minimal system. The ids remain stable because they are persisted, while the
+// labels and palettes now describe the redesigned material.
 export const SITE_STYLES = [
-  { id: 'default', label: 'Ultra Minimalist', icon: '◽', group: 'Base', bg: '#faf9f5' },
-  { id: 'light', label: 'Minimalist Light', icon: '☀️', group: 'Base', bg: '#ffffff' },
-  { id: 'high-contrast', label: 'High Contrast', icon: '◐', group: 'Base', bg: '#000000' },
-  { id: 'graphite', label: 'Minimalist Graphite', icon: '🪨', group: 'Curated', bg: '#17171a' },
-  { id: 'sepia', label: 'Minimalist Sepia', icon: '📖', group: 'Curated', bg: '#efe4cf' },
-  { id: 'nocturne', label: 'Minimalist Nocturne', icon: '🌌', group: 'Curated', bg: '#0a1424' },
-  { id: 'ultra', label: 'Minimalist Ultra', icon: '✦', group: 'Base', bg: '#07090f' },
+  { id: 'default', label: 'Paper', icon: '○', group: 'Base', bg: '#f2f2ef' },
+  { id: 'light', label: 'White', icon: '□', group: 'Base', bg: '#fafaf8' },
+  { id: 'high-contrast', label: 'High Contrast', icon: '◐', group: 'Base', bg: '#000' },
+  { id: 'graphite', label: 'Graphite', icon: '●', group: 'Curated', bg: '#151515' },
+  { id: 'sepia', label: 'Warm Paper', icon: '◌', group: 'Curated', bg: '#eee9df' },
+  { id: 'nocturne', label: 'Night', icon: '■', group: 'Curated', bg: '#101010' },
+  { id: 'ultra', label: 'Gallery', icon: '◇', group: 'Base', bg: '#0b0b0b' },
 ] as const;
 
 /**
  * Theme applied when the visitor has no stored/saved preference. Must stay in
  * sync with the fallback in app/routes/__root.tsx's inline themeScript and the
- * self-heal rewrite in components/Providers.tsx. Glass Dark (`default`, the
- * bare :root) is the site default.
+ * self-heal rewrite in components/Providers.tsx. Paper (`default`, the bare
+ * :root) is the site default.
  */
 export const DEFAULT_STYLE: SiteStyle = 'default';
 
 export type SiteStyle = (typeof SITE_STYLES)[number]['id'];
+
+/** Neutral document chrome for full-screen games/apps that own their palette. */
+export const APP_THEME_BG = '#0b0b0b';
 
 /**
  * Theme → document background color, derived from SITE_STYLES. Used to paint the

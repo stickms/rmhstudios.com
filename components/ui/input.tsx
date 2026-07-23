@@ -5,24 +5,19 @@ import { cn } from '@/lib/utils';
 export type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
- ({ className, type, ...props }, ref) => {
- return (
- <input
- data-slot="input"
- type={type}
- className={cn(
- // .bg-site-surface border border-site-border shadow-xs: a recessed well (ink fill + inverted inner shadow, no
- // backdrop blur — legibility + cost). Focus fills the well with light.
- // §15.4: compact padding is canonical on fine pointers; the global
- // coarse-pointer rule restores the 44px mobile tap target.
- 'flex h-10 w-full rounded-full border border-site-border bg-site-surface px-4 py-2 text-sm text-site-text transition-all duration-200 ease-out placeholder:text-site-text-dim hover:border-site-text/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent focus-visible:border-site-accent disabled:cursor-not-allowed disabled:opacity-50 shadow-xs',
- className,
- )}
- ref={ref}
- {...props}
- />
- );
- },
+  ({ className, type, ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={cn(
+          'flex h-11 w-full rounded-[var(--site-control-radius)] border border-site-border bg-site-surface px-3.5 py-2.5 text-sm text-site-text transition-[color,box-shadow,border-color,background-color] placeholder:text-site-text-dim hover:border-site-border-bright focus-visible:border-site-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent/20 disabled:cursor-not-allowed disabled:opacity-50',
+          className,
+        )}
+        ref={ref}
+        {...props}
+      />
+    );
+  },
 );
 Input.displayName = 'Input';
 
