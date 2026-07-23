@@ -21,6 +21,7 @@
   --mono:'JetBrains Mono',ui-monospace,monospace;
   --maxw:1240px;
   --pad:clamp(20px,5vw,64px);
+  --spatial-radius:12px;
 
   font-family:var(--sans);
   background:var(--void);
@@ -37,7 +38,8 @@
 .rmhc-root img{max-width:100%;display:block}
 .rmhc-root a{color:inherit;text-decoration:none}
 .rmhc-root ::selection{background:rgba(227,194,119,0.22);color:var(--ivory)}
-.rmhc-root :focus-visible{outline:2px solid var(--gold-bright);outline-offset:3px;border-radius:2px}
+.rmhc-root :focus-visible{outline:2px solid var(--gold-bright);outline-offset:3px;border-radius:var(--spatial-radius)}
+.rmhc-root :is(.btn,.nav-cta,.nav-toggle,.feature-media,.card,.chip,.caps li,.featured,.featured-main,.fside-item,input,textarea,select){border-radius:var(--spatial-radius)}
 
 /* ── type primitives ── */
 .rmhc-root .serif{font-family:var(--serif);color:var(--ivory);font-weight:500;line-height:1.08;letter-spacing:-0.01em}
@@ -107,7 +109,7 @@
 
 /* ════ HERO (gold great-circle arc) ════ */
 .rmhc-root .hero{position:relative;min-height:clamp(620px,92vh,920px);display:flex;align-items:center;overflow:hidden;border-bottom:1px solid var(--line-soft)}
-.rmhc-root .hero-bg{position:absolute;inset:0;z-index:0;pointer-events:none}
+.rmhc-root .hero-bg{position:absolute;inset:0;z-index:0;pointer-events:none;transform:translate3d(0,calc(var(--spatial-scroll-y,0px) * .1),0);will-change:transform}
 .rmhc-root .hero-bg::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 78% 28%,rgba(200,162,74,0.10),transparent 58%),radial-gradient(80% 80% at 12% 100%,rgba(17,26,42,0.7),transparent 60%),linear-gradient(180deg,transparent 40%,var(--void) 99%)}
 .rmhc-root .hero-arc{position:absolute;top:50%;right:-8%;transform:translateY(-50%);width:min(78vh,860px);height:min(78vh,860px);opacity:.85}
 .rmhc-root .hero-content{position:relative;z-index:2;max-width:760px;padding-top:40px;padding-bottom:40px}
@@ -144,7 +146,7 @@
 .rmhc-root .feature{display:grid;grid-template-columns:1fr 1fr;gap:clamp(36px,6vw,88px);align-items:center;padding:clamp(48px,7vw,92px) 0;border-bottom:1px solid var(--line-soft)}
 .rmhc-root .feature:last-child{border-bottom:0}
 .rmhc-root .feature.flip .feature-media{order:2}
-.rmhc-root .feature-num{font-family:var(--mono);font-size:13px;color:var(--gold);letter-spacing:0.1em}
+.rmhc-root .feature-num{display:none}
 .rmhc-root .feature h3{font-size:clamp(24px,3vw,34px);margin:18px 0 18px;font-family:var(--serif);color:var(--ivory);font-weight:500;line-height:1.12}
 .rmhc-root .feature p{margin-bottom:24px}
 .rmhc-root .feature-media{position:relative;aspect-ratio:4/3;border:1px solid var(--line);background:linear-gradient(135deg,var(--ink),var(--void));overflow:hidden;display:flex;align-items:center;justify-content:center}
@@ -159,10 +161,11 @@
 .rmhc-root .cards.c3{grid-template-columns:repeat(3,1fr)}
 .rmhc-root .card{background:var(--void);padding:clamp(28px,3.4vw,44px);display:flex;flex-direction:column;gap:14px;transition:background .3s;position:relative;min-height:230px}
 .rmhc-root .card:hover{background:var(--ink)}
-.rmhc-root .card .ix{font-family:var(--mono);font-size:12px;color:var(--gold)}
+.rmhc-root .card .ix{display:none}
 .rmhc-root .card h3{font-family:var(--serif);font-size:clamp(20px,2.2vw,26px);color:var(--ivory);font-weight:500;line-height:1.15}
 .rmhc-root .card-brand{font-family:var(--serif);font-style:italic;font-weight:400;font-size:15px;color:var(--gold-bright);line-height:1.2;margin-top:-8px}
 .rmhc-root .card p{font-size:15px;line-height:1.6;flex:1}
+.rmhc-root .cards .card p{display:none}
 .rmhc-root .card .card-link{font-size:13px;font-weight:600;color:var(--gold-bright);display:inline-flex;align-items:center;gap:7px;margin-top:auto}
 .rmhc-root .card .card-link .arw{transition:transform .25s}
 .rmhc-root .card:hover .card-link .arw{transform:translateX(4px)}
@@ -171,7 +174,7 @@
 
 /* ════ PAGE HEADER (interior pages) ════ */
 .rmhc-root .pagehead{position:relative;padding:clamp(72px,11vw,150px) 0 clamp(48px,7vw,84px);border-bottom:1px solid var(--line-soft);overflow:hidden}
-.rmhc-root .pagehead::before{content:"";position:absolute;inset:0;background:radial-gradient(90% 120% at 85% 0%,rgba(200,162,74,0.09),transparent 55%);pointer-events:none}
+.rmhc-root .pagehead::before{content:"";position:absolute;inset:-8%;background:radial-gradient(90% 120% at 85% 0%,rgba(200,162,74,0.09),transparent 55%);pointer-events:none;transform:translate3d(0,calc(var(--spatial-scroll-y,0px) * .045),0);will-change:transform}
 .rmhc-root .pagehead-inner{position:relative;z-index:1;max-width:840px}
 .rmhc-root .pagehead h1{font-size:clamp(34px,5.4vw,64px);margin:22px 0 24px}
 .rmhc-root .pagehead .lede{max-width:54ch}
@@ -225,7 +228,7 @@
 .rmhc-root .biz-stage{font-family:var(--mono);font-size:12px;letter-spacing:0.1em;color:var(--gold);text-transform:uppercase;margin-bottom:16px}
 .rmhc-root .biz h2{font-family:var(--serif);font-size:clamp(26px,3.4vw,40px);color:var(--ivory);font-weight:500;line-height:1.1;margin-bottom:6px}
 .rmhc-root .biz-brand{font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(16px,1.9vw,21px);color:var(--gold-bright);line-height:1.2}
-.rmhc-root .biz .biz-num{display:block;margin-top:16px;font-family:var(--mono);font-size:13px;color:var(--gray-dim)}
+.rmhc-root .biz .biz-num{display:none}
 .rmhc-root .biz p{margin-bottom:24px;max-width:60ch}
 .rmhc-root .caps{list-style:none;display:flex;flex-wrap:wrap;gap:10px;padding:0;margin:0}
 .rmhc-root .caps li{font-size:13px;color:var(--gray);border:1px solid var(--line-soft);padding:8px 14px;border-radius:100px}
@@ -240,9 +243,9 @@
 .rmhc-root .pathgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line-soft);border:1px solid var(--line)}
 .rmhc-root .path{background:var(--void);padding:clamp(30px,3.6vw,46px);transition:background .3s}
 .rmhc-root .path:hover{background:var(--ink)}
-.rmhc-root .path .ix{font-family:var(--mono);font-size:12px;color:var(--gold)}
+.rmhc-root .path .ix{display:none}
 .rmhc-root .path h3{font-family:var(--serif);font-size:24px;color:var(--ivory);font-weight:500;margin:14px 0 12px}
-.rmhc-root .path p{font-size:15px;line-height:1.6}
+.rmhc-root .path p{display:none}
 @media(max-width:760px){.rmhc-root .pathgrid{grid-template-columns:1fr}}
 .rmhc-root .cta-band{background:linear-gradient(120deg,var(--ink),var(--void));border:1px solid var(--line);padding:clamp(40px,6vw,76px);text-align:center}
 .rmhc-root .cta-band h2{font-family:var(--serif);font-size:clamp(26px,3.6vw,42px);color:var(--ivory);font-weight:500;margin-bottom:18px}
@@ -258,7 +261,7 @@
 .rmhc-root .form-field label{display:block;font-size:12.5px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--gold);margin-bottom:9px}
 .rmhc-root .form-field input,.rmhc-root .form-field select,.rmhc-root .form-field textarea{
   width:100%;background:var(--ink);border:1px solid var(--line-soft);color:var(--ivory);
-  font-family:var(--sans);font-size:15px;padding:14px 16px;transition:border-color .2s;border-radius:0;
+  font-family:var(--sans);font-size:15px;padding:14px 16px;transition:border-color .2s;border-radius:var(--spatial-radius);
 }
 .rmhc-root .form-field input:focus,.rmhc-root .form-field select:focus,.rmhc-root .form-field textarea:focus{outline:none;border-color:var(--gold)}
 .rmhc-root .form-field textarea{resize:vertical;min-height:130px}
@@ -290,6 +293,9 @@
 @media(max-width:860px){.rmhc-root .footer-top{grid-template-columns:1fr 1fr;gap:36px}}
 @media(max-width:480px){.rmhc-root .footer-top{grid-template-columns:1fr}}
 
+/* Spatial consistency pass: visible interactive surfaces share one geometry. */
+.rmhc-root :is(a,button,input,textarea,select,.card,.feature-media,.featured,.fside-item,.caps li,.chip){border-radius:var(--spatial-radius)}
+
 /* ════ REVEAL ════ */
 .rmhc-root .reveal{opacity:0;transform:translateY(24px);transition:opacity .8s cubic-bezier(.2,.6,.2,1),transform .8s cubic-bezier(.2,.6,.2,1)}
 .rmhc-root .reveal.in{opacity:1;transform:none}
@@ -302,6 +308,7 @@
 @keyframes rmhc-spin{to{transform:rotate(360deg)}}
 
 @media(prefers-reduced-motion:reduce){
+  .rmhc-root .hero-bg,.rmhc-root .pagehead::before{transform:none;will-change:auto}
   .rmhc-root .reveal{opacity:1;transform:none;transition:none}
   .rmhc-root .arc-draw{animation:none;stroke-dashoffset:0}
   .rmhc-root .spin-slow,.rmhc-root .ticker-track{animation:none}

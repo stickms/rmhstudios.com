@@ -13,7 +13,7 @@ import { DEFAULT_WIDTH, WIDE_NO_RIGHT_SIDEBAR_WIDTH, WIDE_WIDTH } from '@/lib/la
 
 interface PageLayoutProps {
   title: string;
-  /** Short orientation copy shown with the title and hidden when chrome condenses. */
+  /** Short orientation copy kept available to assistive technology. */
   description?: string;
   children: React.ReactNode;
   rightSidebar?: React.ReactNode;
@@ -50,14 +50,6 @@ export function PageLayout({
   const { t } = useTranslation('feed');
   const descriptionId = useId();
   const hasRightSidebar = Boolean(rightSidebar);
-  const hasBreadcrumbs = Boolean(breadcrumbs?.length);
-  const expandedHeaderHeight = description
-    ? hasBreadcrumbs
-      ? 'min-h-28 sm:min-h-32'
-      : 'min-h-28'
-    : hasBreadcrumbs
-      ? 'min-h-24 sm:min-h-28'
-      : 'min-h-24';
   const targetWidth = wide
     ? hasRightSidebar
       ? WIDE_WIDTH
@@ -100,19 +92,9 @@ export function PageLayout({
             ref={headerRef}
             data-slot="page-header"
             aria-describedby={description ? descriptionId : undefined}
-            className={`group site-sticky-chrome spatial-page-header transition-[min-height,height] duration-300 data-[scrolled]:h-16 data-[scrolled]:min-h-16 ${expandedHeaderHeight}`}
+            className="group site-sticky-chrome spatial-page-header h-24 min-h-24 transition-[min-height,height] duration-300 data-[scrolled]:h-16 data-[scrolled]:min-h-16"
           >
             <div className="flex h-full min-w-0 items-center gap-4 px-5 py-5 sm:px-7">
-              <span
-                aria-hidden
-                className="hidden text-[10px] font-semibold tracking-[0.22em] text-site-text-dim sm:block"
-              >
-                RMH / 01
-              </span>
-              <span
-                aria-hidden
-                className="hidden h-8 w-px bg-site-border sm:block group-data-[scrolled]:h-5"
-              />
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 {/* Mobile: always show the sidebar button in the top-left */}
                 <MobileMenuButton />
@@ -120,7 +102,7 @@ export function PageLayout({
                   <Link
                     to={backTo}
                     aria-label={backLabel ?? t('back', { defaultValue: 'Back' })}
-                    className="shrink-0 -ml-1 rounded-full p-1.5 text-site-text-muted transition-colors hover:bg-site-surface hover:text-site-text active:scale-95"
+                    className="-ml-1 shrink-0 rounded-[var(--site-control-radius)] p-1.5 text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text active:scale-95"
                   >
                     <ArrowLeft className="h-5 w-5" aria-hidden />
                   </Link>
@@ -138,11 +120,7 @@ export function PageLayout({
                     {title}
                   </h1>
                   {description && (
-                    <p
-                      id={descriptionId}
-                      data-slot="page-description"
-                      className="mt-2 line-clamp-2 max-w-2xl text-sm leading-relaxed text-site-text-muted group-data-[scrolled]:hidden"
-                    >
+                    <p id={descriptionId} data-slot="page-description" className="sr-only">
                       {description}
                     </p>
                   )}

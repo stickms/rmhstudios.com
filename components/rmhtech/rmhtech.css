@@ -22,7 +22,7 @@
 .rmht :focus-visible{outline:1px solid var(--accent);outline-offset:4px;border-radius:2px}
 
 /* full-bleed animated liquid background */
-.rmht .liquid{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block;opacity:0;transition:opacity 1.6s ease}
+.rmht .liquid{position:fixed;inset:-3%;width:106%;height:106%;z-index:0;pointer-events:none;display:block;opacity:0;transition:opacity 1.6s ease;transform:translate3d(0,calc(var(--spatial-scroll-y,0px) * -.018),0) scale(1.02);will-change:transform}
 .rmht .liquid.on{opacity:1}
 /* faint grain over the liquid for texture */
 .rmht .grain{
@@ -40,7 +40,7 @@
 .rmht .mark{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:.92rem;letter-spacing:.02em;font-weight:500}
 .rmht .mark .glyph{width:26px;height:26px;flex:0 0 auto;display:block;opacity:.92}
 .rmht .req{font-family:var(--mono);font-size:.74rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);
-  border:1px solid var(--line);border-radius:100px;padding:9px 18px;transition:.35s}
+  border:1px solid var(--line);border-radius:12px;padding:9px 18px;transition:.35s}
 .rmht .req:hover{color:var(--bg);background:var(--accent);border-color:var(--accent)}
 .rmht .bar-left{display:flex;align-items:center;gap:18px}
 .rmht .backlink{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);padding-right:18px;border-right:1px solid var(--line);transition:color .3s}
@@ -66,7 +66,7 @@
 /* liquid-metal (chrome) button — centered */
 .rmht .metal{
   position:relative;display:inline-flex;align-items:center;justify-content:center;
-  margin:0 auto;padding:18px 44px;border-radius:100px;cursor:pointer;border:0;isolation:isolate;overflow:hidden;
+  margin:0 auto;padding:18px 44px;border-radius:12px;cursor:pointer;border:0;isolation:isolate;overflow:hidden;
   font-family:var(--mono);font-weight:500;font-size:.76rem;letter-spacing:.2em;text-transform:uppercase;color:#0c0c0c;
   background:linear-gradient(110deg,#3a3a3a 0%,#8f8f8f 11%,#e9e9e9 22%,#ffffff 30%,#c2c2c2 40%,#6b6b6b 50%,#cccccc 60%,#f6f6f6 70%,#9a9a9a 82%,#454545 100%);
   background-size:300% 100%;
@@ -95,7 +95,7 @@
 
 /* essence — three pillars as plain lines, hairline-separated */
 .rmht .essence{padding:clamp(90px,14vh,160px) 0;border-top:1px solid var(--line)}
-.rmht .pillar{display:grid;grid-template-columns:minmax(0,.34fr) minmax(0,.66fr);gap:clamp(20px,6vw,80px);
+.rmht .pillar{display:grid;grid-template-columns:1fr;gap:clamp(20px,6vw,80px);
   align-items:baseline;padding:clamp(34px,5vh,52px) 0;border-bottom:1px solid var(--line);
   opacity:0;transform:translateY(22px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1)}
 .rmht .pillar.in{opacity:1;transform:none}
@@ -117,7 +117,7 @@
 .rmht .col a{display:block;font-size:.8rem;letter-spacing:.02em;color:var(--ink-soft);transition:color .3s;margin-bottom:9px}
 .rmht .col a:hover{color:var(--ink)}
 .rmht .col .hiring{display:inline-block;font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent-dim);
-  border:1px solid var(--line);border-radius:100px;padding:5px 12px;margin-top:2px}
+  border:1px solid var(--line);border-radius:12px;padding:5px 12px;margin-top:2px}
 .rmht .col .note{font-size:.66rem;letter-spacing:.03em;line-height:1.65;color:var(--ink-faint);margin-top:14px;max-width:26ch}
 .rmht .foot-base{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
   margin-top:clamp(44px,7vh,76px);padding-top:26px;border-top:1px solid var(--line);
@@ -136,7 +136,9 @@
 @media(max-width:740px){.rmht .pillar{grid-template-columns:1fr;gap:14px}}
 @media(max-width:760px){.rmht .foot-grid{grid-template-columns:1fr 1fr}.rmht .foot-brand{grid-column:1/-1}}
 @media(max-width:460px){.rmht .foot-grid{grid-template-columns:1fr}}
+.rmht :is(a,button,input,textarea,select){border-radius:12px}
 @media(prefers-reduced-motion:reduce){
+  .rmht .liquid{transform:none;will-change:auto}
   .rmht *,.rmht *::before,.rmht *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
   .rmht .ai-logo-wrap,.rmht .eyebrow,.rmht h1,.rmht .sub,.rmht .metal{opacity:1;transform:none}
   .rmht .ai-logo{animation:none;filter:none}

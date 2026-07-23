@@ -164,22 +164,13 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
             <span className="spatial-feed-intro__orb" />
             <span className="spatial-feed-intro__grid" />
           </div>
-          <div className="relative z-1 max-w-xl">
-            <p className="mb-5 text-[10px] font-semibold uppercase tracking-[0.24em] text-site-text-dim">
-              {t('feed-kicker', { defaultValue: '01 / RMH Studios' })}
-            </p>
+          <div className="spatial-feed-intro__copy">
             <h1
               id="feed-title"
               className="font-(family-name:--site-font-display) text-[clamp(2.35rem,8vw,4.5rem)] font-medium leading-[0.94] tracking-[-0.055em] text-site-text"
             >
               {t('feed-hero-title', { defaultValue: 'Make. Play. Share.' })}
             </h1>
-            <p className="mt-5 max-w-md text-sm leading-relaxed text-site-text-muted sm:text-base">
-              {t('feed-hero-body', {
-                defaultValue:
-                  'Original games, useful tools, and the people building what comes next.',
-              })}
-            </p>
           </div>
         </section>
 

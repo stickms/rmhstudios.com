@@ -146,15 +146,14 @@
   --glass-blur-factor: var(--glass-user-blur, 1);
 
   /* Elevation tokens — Ultra Minimalist depth layering */
-  --site-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.03), 0 12px 32px -8px rgba(0, 0, 0, 0.06);
-  --site-shadow-sm:
-    0 1px 2px rgba(0, 0, 0, 0.02), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+  --site-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 12px 32px -8px rgba(0, 0, 0, 0.06);
+  --site-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.02), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
   --site-radius: 24px;
   --site-radius-sm: 14px;
   --site-control-radius: 9999px;
   --site-font-display: var(--font-playfair), 'Playfair Display', Georgia, serif;
-  --site-font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  --site-font-body:
+    var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
   --site-font-mono: var(--font-jetbrains-mono), 'Cascadia Code', monospace;
   --site-border-width: 1px;
   --site-card-transform: translateY(-4px);
@@ -179,7 +178,7 @@
   --site-page-bottom-space: clamp(2rem, 5vw, 3.5rem);
   --site-mobile-content-end: clamp(2rem, 7vw, 3rem);
   --site-floating-edge: clamp(0.75rem, 3vw, 1.25rem);
-  
+
   /* Spatial Ambient Canvas — weightless atmospheric lighting pools */
   --site-canvas:
     radial-gradient(120% 90% at 20% -10%, rgba(56, 189, 248, 0.18), transparent 60%),
@@ -852,7 +851,7 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     box-shadow: var(--site-shadow);
     border: var(--site-border-width) solid var(--site-border);
     border-radius: var(--site-radius);
-    
+
     /* Last-line viewport safety for every floating surface, including older
        hand-positioned menus that do not use the measured liquid-pop hook. The
        hook still supplies precise x/y clamping; these limits guarantee that no
@@ -3263,6 +3262,10 @@ html.nav-restoring .feed-card-cv {
   --site-accent-fg: #ffffff;
   --site-accent-hover: #2a2a28;
   --site-accent-dim: rgba(11, 11, 11, 0.08);
+  --site-inverse-bg: #0b0b0b;
+  --site-inverse-text: #ffffff;
+  --site-inverse-muted: #c7c7c1;
+  --site-inverse-border: #444440;
   --site-success: #1f6b45;
   --site-danger: #9f3434;
   --site-warning: #805d16;
@@ -3276,9 +3279,9 @@ html.nav-restoring .feed-card-cv {
   --site-glass-depth-sm: 0 10px 30px rgba(11, 11, 11, 0.055);
   --site-shadow: 0 26px 70px rgba(11, 11, 11, 0.1);
   --site-shadow-sm: 0 10px 30px rgba(11, 11, 11, 0.055);
-  --site-radius: 20px;
-  --site-radius-sm: 10px;
-  --site-control-radius: 9px;
+  --site-radius: 12px;
+  --site-radius-sm: 12px;
+  --site-control-radius: 12px;
   --site-font-display: var(--font-playfair), Georgia, serif;
   --site-font-body:
     var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
@@ -3316,6 +3319,10 @@ html.nav-restoring .feed-card-cv {
   --site-accent-fg: #faf7f0;
   --site-accent-hover: #343128;
   --site-accent-dim: rgba(23, 21, 16, 0.08);
+  --site-inverse-bg: #171510;
+  --site-inverse-text: #faf7f0;
+  --site-inverse-muted: #cbc4b8;
+  --site-inverse-border: #514d45;
   --site-glass-tint: var(--site-surface);
   --site-glass-tint-strong: var(--site-surface-hover);
   --site-glass-ink: var(--site-bg-subtle);
@@ -3348,6 +3355,10 @@ html.nav-restoring .feed-card-cv {
   --site-accent-fg: #111111;
   --site-accent-hover: #d8d8d3;
   --site-accent-dim: rgba(247, 247, 244, 0.1);
+  --site-inverse-bg: #f7f7f4;
+  --site-inverse-text: #111111;
+  --site-inverse-muted: #555550;
+  --site-inverse-border: #b9b9b3;
   --site-glass-tint: var(--site-surface);
   --site-glass-tint-strong: var(--site-surface-hover);
   --site-glass-ink: var(--site-bg-subtle);
@@ -3398,6 +3409,55 @@ html.nav-restoring .feed-card-cv {
 body {
   background: var(--site-bg);
   color: var(--site-text);
+}
+
+/* Inverse surfaces carry their own complete color contract. This prevents a
+   theme switch from pairing a light-theme foreground with a dark-theme card. */
+.site-inverse,
+[data-contrast='inverse'] {
+  --site-surface: var(--site-inverse-bg);
+  --site-surface-hover: color-mix(in srgb, var(--site-inverse-text) 12%, var(--site-inverse-bg));
+  --site-surface-active: color-mix(in srgb, var(--site-inverse-text) 18%, var(--site-inverse-bg));
+  --site-border: var(--site-inverse-border);
+  --site-border-bright: var(--site-inverse-muted);
+  --site-text: var(--site-inverse-text);
+  --site-text-muted: var(--site-inverse-muted);
+  --site-text-dim: color-mix(in srgb, var(--site-inverse-muted) 72%, transparent);
+  --site-accent: var(--site-inverse-text);
+  --site-accent-fg: var(--site-inverse-bg);
+  --site-accent-hover: var(--site-inverse-muted);
+  background: var(--site-inverse-bg);
+  color: var(--site-inverse-text);
+}
+
+/* Shared controls and content surfaces resolve to one visibly consistent
+   geometry. True circular data marks (avatars, status dots, toggles) are not
+   included in this contract. */
+:where(
+  [data-slot='button'],
+  [data-slot='badge'],
+  [data-slot='input'],
+  [data-slot='card'],
+  [data-slot='dialog-content']:not([data-mobile-fullscreen]),
+  [data-slot='liquid-tabs-sheet'],
+  [data-slot='liquid-tabs'] button,
+  .site-sticky-chrome
+) {
+  border-radius: var(--site-radius) !important;
+}
+
+:where(
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  [role='button'],
+  [role='tab'],
+  [role='option'],
+  [role='menuitem']
+)[class~='rounded-full'] {
+  border-radius: var(--site-radius) !important;
 }
 
 body::before,
@@ -3543,6 +3603,22 @@ body::after {
   isolation: isolate;
 }
 
+.spatial-feed-intro::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: 34% 24% 0 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--site-surface) 28%, transparent 84%);
+  pointer-events: none;
+}
+
+.spatial-feed-intro__copy {
+  position: relative;
+  z-index: 2;
+  max-width: min(70%, 32rem);
+}
+
 .spatial-feed-intro__field {
   position: absolute;
   inset: 0;
@@ -3561,7 +3637,7 @@ body::after {
   opacity: 0.94;
   transform: translate3d(
       calc(var(--spatial-parallax-x, 0) * 0.7),
-      calc(var(--spatial-parallax-y, 0) * 0.7),
+      calc(var(--spatial-parallax-y, 0px) * 0.7 + var(--spatial-scroll-y, 0px) * 0.055),
       0
     )
     rotate(12deg);
@@ -3579,7 +3655,7 @@ body::after {
   opacity: 0.68;
   transform: translate3d(
     calc(var(--spatial-parallax-x, 0) * -0.35),
-    calc(var(--spatial-parallax-y, 0) * -0.35),
+    calc(var(--spatial-parallax-y, 0px) * -0.35 + var(--spatial-scroll-y, 0px) * -0.025),
     0
   );
   transition: transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -3645,6 +3721,15 @@ body::after {
     width: 9rem;
     right: 7%;
   }
+
+  .spatial-feed-intro::after {
+    inset: 42% 0 0;
+    background: linear-gradient(to top, var(--site-surface) 55%, transparent);
+  }
+
+  .spatial-feed-intro__copy {
+    max-width: 100%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3670,7 +3755,7 @@ body::after {
   top: clamp(0.75rem, 2vw, 1.5rem);
   z-index: 30;
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: 1fr 1fr;
   align-items: center;
   min-height: 4rem;
   padding: 0 1.25rem;
@@ -3702,14 +3787,6 @@ body::after {
   height: 0.95rem;
 }
 
-.spatial-design-nav > p {
-  font-size: 0.625rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--site-text-dim);
-}
-
 .spatial-design-nav__action {
   justify-self: end;
 }
@@ -3727,6 +3804,16 @@ body::after {
   background: var(--site-surface);
   box-shadow: var(--site-shadow-sm);
   isolation: isolate;
+}
+
+.spatial-design-hero::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: 32% 34% 0 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--site-surface) 36%, transparent 86%);
+  pointer-events: none;
 }
 
 .spatial-design-hero__art {
@@ -3747,7 +3834,7 @@ body::after {
   background: var(--site-text);
   transform: translate3d(
       calc(var(--spatial-parallax-x, 0) * 0.9),
-      calc(var(--spatial-parallax-y, 0) * 0.9),
+      calc(var(--spatial-parallax-y, 0px) * 0.9 + var(--spatial-scroll-y, 0px) * 0.08),
       0
     )
     rotate(11deg);
@@ -3766,7 +3853,7 @@ body::after {
   opacity: 0.72;
   transform: translate3d(
     calc(var(--spatial-parallax-x, 0) * -0.4),
-    calc(var(--spatial-parallax-y, 0) * -0.4),
+    calc(var(--spatial-parallax-y, 0px) * -0.4 + var(--spatial-scroll-y, 0px) * -0.035),
     0
   );
   transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -3774,8 +3861,8 @@ body::after {
 
 .spatial-design-hero__copy {
   position: relative;
-  z-index: 1;
-  max-width: 58rem;
+  z-index: 2;
+  max-width: min(64%, 58rem);
 }
 
 .spatial-design-kicker {
@@ -3804,17 +3891,6 @@ body::after {
   color: var(--site-text-muted);
 }
 
-.spatial-design-hero__index {
-  position: absolute;
-  right: clamp(1.5rem, 4vw, 4rem);
-  bottom: clamp(1.5rem, 4vw, 4rem);
-  z-index: 1;
-  font-size: 0.625rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  color: var(--site-text-dim);
-}
-
 .spatial-design-statement,
 .spatial-design-principles {
   padding: clamp(5rem, 13vw, 12rem) clamp(1.5rem, 8vw, 9rem);
@@ -3830,10 +3906,8 @@ body::after {
 }
 
 .spatial-design-section-head {
-  display: grid;
-  grid-template-columns: minmax(10rem, 0.5fr) 1fr;
-  gap: 2rem;
-  align-items: end;
+  display: flex;
+  align-items: flex-end;
   padding-bottom: clamp(2rem, 5vw, 4rem);
   border-bottom: 1px solid var(--site-border);
 }
@@ -3852,9 +3926,9 @@ body::after {
 
 .spatial-design-principles__grid article {
   display: grid;
-  grid-template-columns: minmax(10rem, 0.5fr) minmax(12rem, 0.65fr) 1fr;
+  grid-template-columns: minmax(4rem, 0.2fr) 1fr;
   gap: 2rem;
-  align-items: start;
+  align-items: center;
   padding: clamp(2rem, 5vw, 4rem) 0;
   border-bottom: 1px solid var(--site-border);
 }
@@ -3862,14 +3936,7 @@ body::after {
 .spatial-design-principles__grid article > div {
   display: flex;
   align-items: center;
-  gap: 1rem;
   color: var(--site-text-dim);
-}
-
-.spatial-design-principles__grid article > div span {
-  font-size: 0.625rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
 }
 
 .spatial-design-principles__grid article svg {
@@ -3886,19 +3953,15 @@ body::after {
   letter-spacing: -0.045em;
 }
 
-.spatial-design-principles__grid article > p {
-  max-width: 39rem;
-  font-size: clamp(0.95rem, 1.2vw, 1.1rem);
-  line-height: 1.75;
-  color: var(--site-text-muted);
-}
-
 .spatial-design-cta {
   margin: 0 clamp(0rem, 5vw, 6rem) clamp(1rem, 4vw, 4rem);
   padding: clamp(3rem, 8vw, 8rem);
   border-radius: var(--site-radius);
-  background: var(--site-text);
-  color: var(--site-accent-fg);
+}
+
+.spatial-design-cta.site-inverse {
+  background: var(--site-inverse-bg);
+  color: var(--site-inverse-text);
 }
 
 .spatial-design-cta .spatial-design-kicker {
@@ -3914,13 +3977,6 @@ body::after {
   letter-spacing: -0.06em;
 }
 
-.spatial-design-cta > p:not(.spatial-design-kicker) {
-  max-width: 34rem;
-  margin-top: 2rem;
-  line-height: 1.7;
-  color: color-mix(in srgb, var(--site-accent-fg) 70%, transparent);
-}
-
 .spatial-design-cta a {
   display: inline-flex;
   align-items: center;
@@ -3928,7 +3984,7 @@ body::after {
   min-height: 2.75rem;
   margin-top: 2.5rem;
   padding: 0 1.1rem;
-  border: 1px solid color-mix(in srgb, var(--site-accent-fg) 40%, transparent);
+  border: 1px solid color-mix(in srgb, var(--site-text) 40%, transparent);
   border-radius: var(--site-control-radius);
   font-size: 0.82rem;
   font-weight: 700;
@@ -3938,8 +3994,8 @@ body::after {
 }
 
 .spatial-design-cta a:hover {
-  background: var(--site-accent-fg);
-  color: var(--site-text);
+  background: var(--site-text);
+  color: var(--site-surface);
 }
 
 .spatial-design-cta a svg {
@@ -3976,10 +4032,6 @@ body::after {
     grid-template-columns: 1fr auto;
   }
 
-  .spatial-design-nav > p {
-    display: none;
-  }
-
   .spatial-design-hero {
     min-height: calc(100dvh - 6rem);
   }
@@ -3993,6 +4045,15 @@ body::after {
   .spatial-design-hero__art span {
     width: 13rem;
     right: -3%;
+  }
+
+  .spatial-design-hero::after {
+    inset: 40% 0 0;
+    background: linear-gradient(to top, var(--site-surface) 58%, transparent);
+  }
+
+  .spatial-design-hero__copy {
+    max-width: 100%;
   }
 
   .spatial-design-hero h1 {
@@ -4020,6 +4081,8 @@ body::after {
 @media (prefers-reduced-motion: reduce) {
   .spatial-design-hero__art::before,
   .spatial-design-hero__art span,
+  .spatial-feed-intro__orb,
+  .spatial-feed-intro__grid,
   [data-animate] [data-spatial-reveal] {
     opacity: 1;
     transform: none;
