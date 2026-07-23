@@ -210,10 +210,37 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
           </div>
         </header>
 
-        {/* Tab strips — standalone glass sheets BELOW the header capsule (§5.45),
-            separated by the standard gutter. State wiring (mode + useFeedStore
-            filter) is unchanged. */}
-        <div className="my-4 px-2 md:px-3">
+        {/* Editorial Spotlight Banner (IPO Edition Layout Redesign) */}
+        <div className="mx-3 mt-4 mb-2">
+          <div className="rounded-tr-[2.5rem] rounded-bl-[2.5rem] rounded-tl-2xl rounded-br-2xl border border-site-border bg-site-surface p-5 sm:p-6 shadow-sm relative overflow-hidden transition-all duration-300 hover:border-site-text/30">
+            <div className="flex items-center justify-between gap-2 text-xs font-mono uppercase tracking-widest text-site-text-muted mb-3">
+              <span className="flex items-center gap-1.5 font-bold text-site-text">
+                <span className="inline-block h-2 w-2 rounded-full bg-site-text" /> IPO EDITION 2.0
+              </span>
+              <span className="font-mono">VOL. 2026</span>
+            </div>
+            <h2 className="font-serif font-bold text-2xl sm:text-3xl text-site-text tracking-tight mb-2">
+              The Studio Dispatch
+            </h2>
+            <p className="text-xs sm:text-sm text-site-text-muted max-w-lg leading-relaxed mb-4">
+              Explore ultra-minimalist community builds, real-time social harks, and high-performance interactive experiences.
+            </p>
+            <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-site-border/60">
+              <span className="px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-site-accent text-site-accent-fg uppercase tracking-widest">
+                01 / MINIMALIST UI
+              </span>
+              <span className="px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-site-bg-subtle text-site-text uppercase tracking-widest border border-site-border">
+                02 / PARALLAX MOTION
+              </span>
+              <span className="px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-site-bg-subtle text-site-text uppercase tracking-widest border border-site-border">
+                03 / HIGH SPEED
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Tab strips — standalone glass sheets BELOW the header capsule */}
+        <div className="my-3 px-2 md:px-3">
           <FeedTabs mode={mode} onModeChange={handleModeChange} />
         </div>
 
