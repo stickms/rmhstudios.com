@@ -252,6 +252,9 @@ import { Route as ApiVoidBreakerScoreRouteImport } from './routes/api/void-break
 import { Route as ApiVoidBreakerLeaderboardRouteImport } from './routes/api/void-breaker/leaderboard'
 import { Route as ApiVibeStreamRouteImport } from './routes/api/vibe/stream'
 import { Route as ApiVibeAiRouteImport } from './routes/api/vibe/ai'
+import { Route as RmhcalculatorRouteImport } from './routes/rmhcalculator'
+import { Route as ApiRmhcalculatorComputeRouteImport } from './routes/api/rmhcalculator/compute'
+import { Route as ApiRmhcalculatorGraphRouteImport } from './routes/api/rmhcalculator/graph'
 import { Route as ApiVersecraftWorldRouteImport } from './routes/api/versecraft/world'
 import { Route as ApiVersecraftSaveRouteImport } from './routes/api/versecraft/save'
 import { Route as ApiVersecraftProgressRouteImport } from './routes/api/versecraft/progress'
@@ -1940,6 +1943,21 @@ const ApiVibeStreamRoute = ApiVibeStreamRouteImport.update({
 const ApiVibeAiRoute = ApiVibeAiRouteImport.update({
   id: '/api/vibe/ai',
   path: '/api/vibe/ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RmhcalculatorRoute = RmhcalculatorRouteImport.update({
+  id: '/rmhcalculator',
+  path: '/rmhcalculator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRmhcalculatorComputeRoute = ApiRmhcalculatorComputeRouteImport.update({
+  id: '/api/rmhcalculator/compute',
+  path: '/api/rmhcalculator/compute',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRmhcalculatorGraphRoute = ApiRmhcalculatorGraphRouteImport.update({
+  id: '/api/rmhcalculator/graph',
+  path: '/api/rmhcalculator/graph',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiVersecraftWorldRoute = ApiVersecraftWorldRouteImport.update({
@@ -4376,6 +4394,7 @@ export interface FileRoutesByFullPath {
   '/lights-out': typeof LightsOutRoute
   '/liquid-glass': typeof LiquidGlassRoute
   '/login': typeof LoginRoute
+  '/rmhcalculator': typeof RmhcalculatorRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
   '/optimization': typeof OptimizationRoute
@@ -4767,6 +4786,8 @@ export interface FileRoutesByFullPath {
   '/api/versecraft/save': typeof ApiVersecraftSaveRoute
   '/api/versecraft/world': typeof ApiVersecraftWorldRoute
   '/api/vibe/ai': typeof ApiVibeAiRoute
+  '/api/rmhcalculator/compute': typeof ApiRmhcalculatorComputeRoute
+  '/api/rmhcalculator/graph': typeof ApiRmhcalculatorGraphRoute
   '/api/vibe/stream': typeof ApiVibeStreamRoute
   '/api/void-breaker/leaderboard': typeof ApiVoidBreakerLeaderboardRoute
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
@@ -5080,6 +5101,7 @@ export interface FileRoutesByTo {
   '/lights-out': typeof LightsOutRoute
   '/liquid-glass': typeof LiquidGlassRoute
   '/login': typeof LoginRoute
+  '/rmhcalculator': typeof RmhcalculatorRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
   '/optimization': typeof OptimizationRoute
@@ -5451,6 +5473,8 @@ export interface FileRoutesByTo {
   '/api/versecraft/save': typeof ApiVersecraftSaveRoute
   '/api/versecraft/world': typeof ApiVersecraftWorldRoute
   '/api/vibe/ai': typeof ApiVibeAiRoute
+  '/api/rmhcalculator/compute': typeof ApiRmhcalculatorComputeRoute
+  '/api/rmhcalculator/graph': typeof ApiRmhcalculatorGraphRoute
   '/api/vibe/stream': typeof ApiVibeStreamRoute
   '/api/void-breaker/leaderboard': typeof ApiVoidBreakerLeaderboardRoute
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
@@ -5770,6 +5794,7 @@ export interface FileRoutesById {
   '/lights-out': typeof LightsOutRoute
   '/liquid-glass': typeof LiquidGlassRoute
   '/login': typeof LoginRoute
+  '/rmhcalculator': typeof RmhcalculatorRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
   '/optimization': typeof OptimizationRoute
@@ -6162,6 +6187,8 @@ export interface FileRoutesById {
   '/api/versecraft/save': typeof ApiVersecraftSaveRoute
   '/api/versecraft/world': typeof ApiVersecraftWorldRoute
   '/api/vibe/ai': typeof ApiVibeAiRoute
+  '/api/rmhcalculator/compute': typeof ApiRmhcalculatorComputeRoute
+  '/api/rmhcalculator/graph': typeof ApiRmhcalculatorGraphRoute
   '/api/vibe/stream': typeof ApiVibeStreamRoute
   '/api/void-breaker/leaderboard': typeof ApiVoidBreakerLeaderboardRoute
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
@@ -6482,6 +6509,7 @@ export interface FileRouteTypes {
     | '/lights-out'
     | '/liquid-glass'
     | '/login'
+    | '/rmhcalculator'
     | '/neon-driftway'
     | '/offline'
     | '/optimization'
@@ -6873,6 +6901,8 @@ export interface FileRouteTypes {
     | '/api/versecraft/save'
     | '/api/versecraft/world'
     | '/api/vibe/ai'
+    | '/api/rmhcalculator/compute'
+    | '/api/rmhcalculator/graph'
     | '/api/vibe/stream'
     | '/api/void-breaker/leaderboard'
     | '/api/void-breaker/score'
@@ -7186,6 +7216,7 @@ export interface FileRouteTypes {
     | '/lights-out'
     | '/liquid-glass'
     | '/login'
+    | '/rmhcalculator'
     | '/neon-driftway'
     | '/offline'
     | '/optimization'
@@ -7557,6 +7588,8 @@ export interface FileRouteTypes {
     | '/api/versecraft/save'
     | '/api/versecraft/world'
     | '/api/vibe/ai'
+    | '/api/rmhcalculator/compute'
+    | '/api/rmhcalculator/graph'
     | '/api/vibe/stream'
     | '/api/void-breaker/leaderboard'
     | '/api/void-breaker/score'
@@ -7875,6 +7908,7 @@ export interface FileRouteTypes {
     | '/lights-out'
     | '/liquid-glass'
     | '/login'
+    | '/rmhcalculator'
     | '/neon-driftway'
     | '/offline'
     | '/optimization'
@@ -8267,6 +8301,8 @@ export interface FileRouteTypes {
     | '/api/versecraft/save'
     | '/api/versecraft/world'
     | '/api/vibe/ai'
+    | '/api/rmhcalculator/compute'
+    | '/api/rmhcalculator/graph'
     | '/api/vibe/stream'
     | '/api/void-breaker/leaderboard'
     | '/api/void-breaker/score'
@@ -8586,6 +8622,7 @@ export interface RootRouteChildren {
   LightsOutRoute: typeof LightsOutRoute
   LiquidGlassRoute: typeof LiquidGlassRoute
   LoginRoute: typeof LoginRoute
+  RmhcalculatorRoute: typeof RmhcalculatorRoute
   NeonDriftwayRoute: typeof NeonDriftwayRoute
   OfflineRoute: typeof OfflineRoute
   OptimizationRoute: typeof OptimizationRoute
@@ -8812,6 +8849,8 @@ export interface RootRouteChildren {
   ApiVersecraftSaveRoute: typeof ApiVersecraftSaveRoute
   ApiVersecraftWorldRoute: typeof ApiVersecraftWorldRoute
   ApiVibeAiRoute: typeof ApiVibeAiRoute
+  ApiRmhcalculatorComputeRoute: typeof ApiRmhcalculatorComputeRoute
+  ApiRmhcalculatorGraphRoute: typeof ApiRmhcalculatorGraphRoute
   ApiVibeStreamRoute: typeof ApiVibeStreamRoute
   ApiVoidBreakerLeaderboardRoute: typeof ApiVoidBreakerLeaderboardRoute
   ApiVoidBreakerScoreRoute: typeof ApiVoidBreakerScoreRoute
@@ -9159,6 +9198,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rmhcalculator': {
+      id: '/rmhcalculator'
+      path: '/rmhcalculator'
+      fullPath: '/rmhcalculator'
+      preLoaderRoute: typeof RmhcalculatorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/liquid-glass': {
@@ -10664,6 +10710,20 @@ declare module '@tanstack/react-router' {
       path: '/api/vibe/ai'
       fullPath: '/api/vibe/ai'
       preLoaderRoute: typeof ApiVibeAiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rmhcalculator/compute': {
+      id: '/api/rmhcalculator/compute'
+      path: '/api/rmhcalculator/compute'
+      fullPath: '/api/rmhcalculator/compute'
+      preLoaderRoute: typeof ApiRmhcalculatorComputeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rmhcalculator/graph': {
+      id: '/api/rmhcalculator/graph'
+      path: '/api/rmhcalculator/graph'
+      fullPath: '/api/rmhcalculator/graph'
+      preLoaderRoute: typeof ApiRmhcalculatorGraphRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/versecraft/world': {
@@ -15366,6 +15426,7 @@ const rootRouteChildren: RootRouteChildren = {
   LightsOutRoute: LightsOutRoute,
   LiquidGlassRoute: LiquidGlassRoute,
   LoginRoute: LoginRoute,
+  RmhcalculatorRoute: RmhcalculatorRoute,
   NeonDriftwayRoute: NeonDriftwayRoute,
   OfflineRoute: OfflineRoute,
   OptimizationRoute: OptimizationRoute,
@@ -15593,6 +15654,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVersecraftSaveRoute: ApiVersecraftSaveRoute,
   ApiVersecraftWorldRoute: ApiVersecraftWorldRoute,
   ApiVibeAiRoute: ApiVibeAiRoute,
+  ApiRmhcalculatorComputeRoute: ApiRmhcalculatorComputeRoute,
+  ApiRmhcalculatorGraphRoute: ApiRmhcalculatorGraphRoute,
   ApiVibeStreamRoute: ApiVibeStreamRoute,
   ApiVoidBreakerLeaderboardRoute: ApiVoidBreakerLeaderboardRoute,
   ApiVoidBreakerScoreRoute: ApiVoidBreakerScoreRoute,

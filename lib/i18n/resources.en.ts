@@ -27,6 +27,7 @@ import enCRideshare from "@/locales/en/c-rideshare.json";
 import enCRmhCapital from "@/locales/en/c-rmh-capital.json";
 import enCRmhPmc from "@/locales/en/c-rmh-pmc.json";
 import enCRmhbox from "@/locales/en/c-rmhbox.json";
+import enCRmhcalculator from "@/locales/en/c-rmhcalculator.json";
 import enCRmhcode from "@/locales/en/c-rmhcode.json";
 import enCRmhcoins from "@/locales/en/c-rmhcoins.json";
 import enCRmhmusic from "@/locales/en/c-rmhmusic.json";
@@ -95,6 +96,7 @@ const enResources = {
   "c-rmh-capital": enCRmhCapital,
   "c-rmh-pmc": enCRmhPmc,
   "c-rmhbox": enCRmhbox,
+  "c-rmhcalculator": enCRmhcalculator,
   "c-rmhcode": enCRmhcode,
   "c-rmhcoins": enCRmhcoins,
   "c-rmhmusic": enCRmhmusic,
