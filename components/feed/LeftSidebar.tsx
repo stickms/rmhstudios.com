@@ -390,24 +390,27 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           button pushed to the far edge; on the desktop rail the row has a single
           child, so logoAlignClass centers/starts it exactly as before. */}
       <div
-        className={`mb-3 flex items-center shrink-0 ${
+        className={`mb-4 flex items-center shrink-0 border-b border-site-border/60 pb-3 ${
           expanded ? 'justify-between gap-2' : logoAlignClass
         }`}
       >
         <Link
           to="/"
-          className="flex items-center"
+          className="flex items-center gap-2 group"
           aria-label={t('nav-home', { defaultValue: 'RMH Studios home' })}
         >
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-site-text text-site-bg text-xs font-bold font-mono">
+            01
+          </div>
           <span
-            className={`site-logo font-playfair font-bold text-xl text-site-text ${logoFullClass}`}
+            className={`site-logo font-serif font-bold text-xl tracking-tight text-site-text group-hover:opacity-80 transition-opacity ${logoFullClass}`}
           >
-            RMH<span className="text-site-text-muted font-semibold">Studios</span>
+            RMH<span className="font-sans font-light text-xs uppercase tracking-widest text-site-text-muted ml-1.5">Studio</span>
           </span>
           <span
-            className={`site-logo font-playfair font-bold text-xl text-site-text ${logoShortClass}`}
+            className={`site-logo font-serif font-bold text-xl text-site-text ${logoShortClass}`}
           >
-            RMH
+            R
           </span>
         </Link>
         {expanded && <MobileSidebarCloseButton />}

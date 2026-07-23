@@ -183,9 +183,9 @@ export function RightSidebar({
       <InviteFriendsCard />
 
       {/* Official Builds */}
-      <section className="glass-fill p-4">
-        <h2 className="font-(family-name:--site-font-display) font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-3">
-          <Package className="w-5 h-5 text-site-accent" />
+      <section className="glass-fill p-5 rounded-tr-[2rem] rounded-bl-[2rem] rounded-tl-xl rounded-br-xl border border-site-border bg-site-surface shadow-sm">
+        <h2 className="font-serif font-bold tracking-tight text-lg text-site-text flex items-center gap-2 mb-3">
+          <Package className="w-4 h-4 text-site-text" />
           {t('official-builds', { defaultValue: 'Official Builds' })}
         </h2>
         <div className="space-y-2.5">
@@ -262,9 +262,9 @@ export function RightSidebar({
       </section>
 
       {/* User Builds */}
-      <section className="glass-fill p-4">
-        <h2 className="font-(family-name:--site-font-display) font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-3">
-          <Hammer className="w-5 h-5 text-site-accent" />
+      <section className="glass-fill p-5 rounded-tr-[2rem] rounded-bl-[2rem] rounded-tl-xl rounded-br-xl border border-site-border bg-site-surface shadow-sm">
+        <h2 className="font-serif font-bold tracking-tight text-lg text-site-text flex items-center gap-2 mb-3">
+          <Hammer className="w-4 h-4 text-site-text" />
           {t('user-builds', { defaultValue: 'User Builds' })}
         </h2>
         <div className="space-y-2.5">
@@ -330,9 +330,9 @@ export function RightSidebar({
       </section>
 
       {/* Recommended Users */}
-      <section className="glass-fill p-4">
-        <h2 className="font-(family-name:--site-font-display) font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-3">
-          <UserPlus className="w-5 h-5 text-site-accent" />
+      <section className="glass-fill p-5 rounded-tr-[2rem] rounded-bl-[2rem] rounded-tl-xl rounded-br-xl border border-site-border bg-site-surface shadow-sm">
+        <h2 className="font-serif font-bold tracking-tight text-lg text-site-text flex items-center gap-2 mb-3">
+          <UserPlus className="w-4 h-4 text-site-text" />
           {t('recommended-users', { defaultValue: 'Recommended Users' })}
         </h2>
         <div className="space-y-2.5">
@@ -378,9 +378,9 @@ export function RightSidebar({
       </section>
 
       {/* Blog */}
-      <section className="glass-fill p-4">
-        <h2 className="font-(family-name:--site-font-display) font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-3">
-          <BookOpen className="w-5 h-5 text-site-accent" />
+      <section className="glass-fill p-5 rounded-tr-[2rem] rounded-bl-[2rem] rounded-tl-xl rounded-br-xl border border-site-border bg-site-surface shadow-sm">
+        <h2 className="font-serif font-bold tracking-tight text-lg text-site-text flex items-center gap-2 mb-3">
+          <BookOpen className="w-4 h-4 text-site-text" />
           {t('blog', { defaultValue: 'Blog' })}
         </h2>
         <div className="space-y-3">

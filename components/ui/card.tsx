@@ -14,12 +14,15 @@ function Card({
   className,
   pane = false,
   interactive = false,
+  organic = false,
   ...props
 }: React.ComponentProps<'div'> & {
   /** Use the L2 `.glass-pane` (blur + noise) instead of the default L1 fill. */
   pane?: boolean;
   /** Add hover tint-raise + press flex + pointer specular highlight. */
   interactive?: boolean;
+  /** Organic arched corner geometry from minimalist design system. */
+  organic?: boolean;
 }) {
   return (
     <div
@@ -27,8 +30,9 @@ function Card({
       data-glass-light={interactive ? '' : undefined}
       className={cn(
         pane ? 'glass-pane' : 'glass-fill',
-        'text-site-text flex flex-col gap-3 py-4 sm:gap-4 transition-all duration-200 ease-out',
-        interactive && 'glass-interactive hover:-translate-y-0.5 hover:scale-[1.006] hover:shadow-lg',
+        'text-site-text flex flex-col gap-3 py-4 sm:gap-4 transition-all duration-300 ease-out border border-site-border bg-site-surface shadow-site-sm',
+        organic ? 'rounded-tr-[2.5rem] rounded-bl-[2.5rem] rounded-tl-2xl rounded-br-2xl' : 'rounded-site',
+        interactive && 'glass-interactive hover:-translate-y-1 hover:shadow-site hover:border-site-border-bright',
         className,
       )}
       {...props}

@@ -6,26 +6,26 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[var(--site-control-radius,12px)] text-sm font-medium tracking-[-0.015em] transition-all duration-150 ease-out active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-site-accent/60 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-site-bg aria-invalid:ring-site-danger/30 aria-invalid:border-site-danger",
+  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full text-xs font-semibold uppercase tracking-wider transition-all duration-200 ease-out active:scale-[0.96] disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 outline-none focus-visible:ring-site-accent/80 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-site-bg",
   {
     variants: {
       variant: {
         default:
-          'bg-site-accent text-site-accent-fg hover:bg-site-accent-hover shadow-[0_4px_16px_-2px_rgba(56,189,248,0.3),inset_0_1px_0_rgba(255,255,255,0.4)] border border-white/20',
+          'bg-site-accent text-site-accent-fg hover:bg-site-accent-hover shadow-sm border border-site-accent',
         destructive:
-          'bg-site-danger text-white hover:bg-site-danger/90 shadow-[0_4px_16px_-2px_rgba(248,113,113,0.3),inset_0_1px_0_rgba(255,255,255,0.4)] focus-visible:ring-site-danger/40',
+          'bg-site-danger text-white hover:bg-site-danger/90 shadow-sm border border-site-danger',
         danger:
-          'bg-site-danger text-white hover:bg-site-danger/90 shadow-[0_4px_16px_-2px_rgba(248,113,113,0.3),inset_0_1px_0_rgba(255,255,255,0.4)] focus-visible:ring-site-danger/40',
+          'bg-site-danger text-white hover:bg-site-danger/90 shadow-sm border border-site-danger',
         outline:
-          'border border-site-border bg-site-surface/50 backdrop-blur-md text-site-text hover:bg-site-surface-hover hover:border-site-border-bright shadow-sm',
+          'border border-site-border bg-site-surface text-site-text hover:bg-site-surface-hover hover:border-site-text/40 shadow-sm',
         secondary:
-          'border border-site-border/80 bg-site-surface backdrop-blur-md text-site-text hover:bg-site-surface-hover shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]',
+          'border border-site-border bg-site-bg-subtle text-site-text hover:bg-site-surface-hover',
         ghost: 'text-site-text hover:bg-site-surface-hover',
-        link: 'text-site-accent underline-offset-4 hover:underline',
+        link: 'text-site-accent underline-offset-4 hover:underline lowercase tracking-normal text-sm font-medium',
         accent:
-          'bg-site-accent text-site-accent-fg hover:bg-site-accent-hover shadow-[0_4px_16px_-2px_rgba(56,189,248,0.3),inset_0_1px_0_rgba(255,255,255,0.4)] border border-white/20',
-        'accent-outline': 'border border-site-accent text-site-accent hover:bg-site-accent-dim',
-        'accent-ghost': 'text-site-accent hover:bg-site-accent-dim',
+          'bg-site-accent text-site-accent-fg hover:bg-site-accent-hover shadow-sm border border-site-accent',
+        'accent-outline': 'border border-site-text text-site-text hover:bg-site-text hover:text-site-bg',
+        'accent-ghost': 'text-site-text hover:bg-site-surface-hover',
       },
       size: {
         default: 'h-10 px-4 py-2 has-[>svg]:px-3.5',

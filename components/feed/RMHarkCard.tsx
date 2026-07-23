@@ -227,7 +227,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
       // ring and pointer light (data-glass-light marks it for useGlassLight).
       // Cards stay L1 — NEVER add .glass-pane/blur to a repeated list item (§9).
       data-glass-light=""
-      className={`relative glass-fill rounded-site px-4 py-3 ${
+      className={`relative glass-fill rounded-2xl border border-site-border bg-site-surface p-4 transition-all duration-300 hover:border-site-text/30 shadow-sm ${
         item.pending
           ? 'opacity-60 pointer-events-none select-none'
           : 'glass-interactive cursor-pointer'

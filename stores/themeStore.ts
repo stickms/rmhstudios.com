@@ -12,13 +12,13 @@ import type { AppliedUserTheme, AppliedUserThemePreview } from '@/lib/themes/tok
 // former `liquid-glass` id is retired into `default` (Glass Dark) — the site
 // default; persisted `liquid-glass` prefs self-heal to `default` in Providers.
 export const SITE_STYLES = [
-  { id: 'default', label: 'Spatial Dark', icon: '🌌', group: 'Base', bg: '#090a0f' },
-  { id: 'light', label: 'Spatial Light', icon: '☀️', group: 'Base', bg: '#eef1f8' },
-  { id: 'high-contrast', label: 'High Contrast', icon: '◐', group: 'Base', bg: '#000' },
-  { id: 'graphite', label: 'Spatial Graphite', icon: '🪨', group: 'Curated', bg: '#17171a' },
-  { id: 'sepia', label: 'Spatial Sepia', icon: '📖', group: 'Curated', bg: '#efe4cf' },
-  { id: 'nocturne', label: 'Spatial Nocturne', icon: '🌌', group: 'Curated', bg: '#0a1424' },
-  { id: 'ultra', label: 'Spatial Ultra', icon: '✦', group: 'Base', bg: '#07090f' },
+  { id: 'default', label: 'Ultra Minimalist', icon: '◽', group: 'Base', bg: '#faf9f5' },
+  { id: 'light', label: 'Minimalist Light', icon: '☀️', group: 'Base', bg: '#ffffff' },
+  { id: 'high-contrast', label: 'High Contrast', icon: '◐', group: 'Base', bg: '#000000' },
+  { id: 'graphite', label: 'Minimalist Graphite', icon: '🪨', group: 'Curated', bg: '#17171a' },
+  { id: 'sepia', label: 'Minimalist Sepia', icon: '📖', group: 'Curated', bg: '#efe4cf' },
+  { id: 'nocturne', label: 'Minimalist Nocturne', icon: '🌌', group: 'Curated', bg: '#0a1424' },
+  { id: 'ultra', label: 'Minimalist Ultra', icon: '✦', group: 'Base', bg: '#07090f' },
 ] as const;
 
 /**

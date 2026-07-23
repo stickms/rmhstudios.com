@@ -78,55 +78,55 @@
 
 :root {
   /* Base colors — mapped to spatial design system */
-  --background: #090a0f;
-  --foreground: #f5f7fb;
+  --background: #faf9f5;
+  --foreground: #111111;
 
   /* ==================== SITE DESIGN SYSTEM ==================== */
-  /* Spatial Minimalism (default) — Apple Vision Pro inspired design scheme.
-     Floating translucent panels with soft 3D spatial depth shadows, hairline
-     specular borders, weightless geometry, and crisp high-legibility Inter
-     typography over an ethereal atmospheric ambient light canvas. */
-  --site-bg: #090a0f;
-  --site-bg-subtle: rgba(56, 189, 248, 0.06);
-  --site-surface: rgba(255, 255, 255, 0.05);
-  --site-surface-hover: rgba(255, 255, 255, 0.09);
-  --site-surface-active: rgba(255, 255, 255, 0.14);
-  --site-surface-opaque: #12151e;
-  --site-border: rgba(255, 255, 255, 0.12);
-  --site-border-bright: rgba(255, 255, 255, 0.26);
-  --site-text: #f5f7fb;
-  --site-text-muted: rgba(240, 244, 252, 0.78);
-  --site-text-dim: rgba(240, 244, 252, 0.52);
-  --site-accent: #38bdf8;
-  --site-accent-fg: #021627;
-  --site-accent-hover: #7dd3fc;
-  --site-accent-dim: rgba(56, 189, 248, 0.15);
-  --site-success: #34d399;
-  --site-danger: #f87171;
-  --site-warning: #fbbf24;
+  /* Ultra Minimalist Masterpiece (IPO Edition) — Editorial & Architectural Minimalism.
+     High contrast serif (Playfair) and geometric sans (Inter) typography,
+     monochromatic palette (off-white, rich obsidian, slate, hairline warm borders),
+     curved organic shape arches, dot-matrix grid canvas, and smooth parallax depth. */
+  --site-bg: #faf9f5;
+  --site-bg-subtle: rgba(17, 17, 17, 0.04);
+  --site-surface: #ffffff;
+  --site-surface-hover: #f3f2ee;
+  --site-surface-active: #e8e7e1;
+  --site-surface-opaque: #ffffff;
+  --site-border: rgba(17, 17, 17, 0.12);
+  --site-border-bright: rgba(17, 17, 17, 0.28);
+  --site-text: #111111;
+  --site-text-muted: #555555;
+  --site-text-dim: #888888;
+  --site-accent: #111111;
+  --site-accent-fg: #ffffff;
+  --site-accent-hover: #2a2a2a;
+  --site-accent-dim: rgba(17, 17, 17, 0.08);
+  --site-success: #15803d;
+  --site-danger: #b91c1c;
+  --site-warning: #b45309;
 
-  /* ── Spatial Glass Material Contract ── */
-  --site-glass-tint: rgba(255, 255, 255, 0.05);
-  --site-glass-tint-strong: rgba(255, 255, 255, 0.09);
-  --site-glass-ink: rgba(6, 8, 14, 0.6);
-  --site-glass-blur-pane: 16px;
-  --site-glass-blur-chrome: 14px;
-  --site-glass-blur-chrome-scrolled: 18px;
-  --site-glass-blur-overlay: 24px;
-  --site-glass-saturate: 140%;
-  --site-glass-rim: rgba(255, 255, 255, 0.25);
-  --site-glass-rim-soft: rgba(255, 255, 255, 0.1);
-  --site-glass-light: rgba(255, 255, 255, 0.12);
-  --site-glass-depth: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
-  --site-glass-depth-sm: 0 8px 24px -4px rgba(0, 0, 0, 0.3);
+  /* ── Ultra Minimalist Material Contract ── */
+  --site-glass-tint: rgba(255, 255, 255, 0.85);
+  --site-glass-tint-strong: rgba(255, 255, 255, 0.95);
+  --site-glass-ink: rgba(255, 255, 255, 0.9);
+  --site-glass-blur-pane: 20px;
+  --site-glass-blur-chrome: 20px;
+  --site-glass-blur-chrome-scrolled: 24px;
+  --site-glass-blur-overlay: 28px;
+  --site-glass-saturate: 160%;
+  --site-glass-rim: rgba(17, 17, 17, 0.14);
+  --site-glass-rim-soft: rgba(17, 17, 17, 0.06);
+  --site-glass-light: rgba(255, 255, 255, 0.6);
+  --site-glass-depth: 0 16px 40px -12px rgba(0, 0, 0, 0.08);
+  --site-glass-depth-sm: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
 
   --ease-glass: cubic-bezier(0.16, 1, 0.3, 1);
-  --glass-bevel: 10px;
+  --glass-bevel: 12px;
   --glass-glint-size: 320px;
-  --glass-glint-opacity: 0.8;
+  --glass-glint-opacity: 0.4;
   --site-glass-glint: var(--site-glass-rim);
-  --site-aurora-far-1: rgba(56, 189, 248, 0.08);
-  --site-aurora-far-2: rgba(129, 140, 248, 0.07);
+  --site-aurora-far-1: rgba(17, 17, 17, 0.02);
+  --site-aurora-far-2: rgba(17, 17, 17, 0.03);
 
   --glass-glint-attach: scroll;
   --glass-glint-layer: radial-gradient(
@@ -134,7 +134,7 @@
     color-mix(
         in srgb,
         var(--site-glass-glint, var(--site-glass-rim))
-          calc(var(--glass-glint-opacity, 0.8) * var(--glass-glint-hover, 1) * 100%),
+          calc(var(--glass-glint-opacity, 0.4) * var(--glass-glint-hover, 1) * 100%),
         transparent
       )
       0%,
@@ -145,29 +145,25 @@
   --glass-user-tint: 1;
   --glass-blur-factor: var(--glass-user-blur, 1);
 
-  /* Elevation tokens — Spatial depth layering */
+  /* Elevation tokens — Ultra Minimalist depth layering */
   --site-shadow:
-    inset 0 1px 0 var(--site-glass-rim), inset 0 0 0 0.5px var(--site-glass-rim-soft),
-    var(--site-glass-depth);
+    0 1px 2px rgba(0, 0, 0, 0.03), 0 12px 32px -8px rgba(0, 0, 0, 0.06);
   --site-shadow-sm:
-    inset 0 1px 0 var(--site-glass-rim-soft), inset 0 0 0 0.5px var(--site-glass-rim-soft),
-    var(--site-glass-depth-sm);
-  --site-radius: 20px;
-  --site-radius-sm: 12px;
-  --site-control-radius: 12px;
-  --site-font-display:
-    var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
-  --site-font-body:
-    var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+    0 1px 2px rgba(0, 0, 0, 0.02), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+  --site-radius: 24px;
+  --site-radius-sm: 14px;
+  --site-control-radius: 9999px;
+  --site-font-display: var(--font-playfair), 'Playfair Display', Georgia, serif;
+  --site-font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
   --site-font-mono: var(--font-jetbrains-mono), 'Cascadia Code', monospace;
   --site-border-width: 1px;
-  --site-card-transform: translateY(-2px);
-  --site-transition-speed: 160ms;
+  --site-card-transform: translateY(-4px);
+  --site-transition-speed: 200ms;
   --site-press-duration: 160ms;
   --site-heading-transform: none;
   --site-glow: none;
   --site-text-shadow: none;
-  --site-letter-spacing: -0.02em;
+  --site-letter-spacing: -0.01em;
 
   /* Layout rhythm */
   --site-page-gutter: clamp(0.5rem, 1vw, 0.75rem);
@@ -289,34 +285,31 @@
    theme gallery renders each theme's tokens inside a card) can show the default
    palette while another theme is active. Keep in sync with the :root block. */
 .style-default {
-  --site-bg: #0d1b2e;
-  --site-bg-subtle: rgba(148, 184, 255, 0.08);
-  --site-surface: rgba(255, 255, 255, 0.1);
-  --site-surface-hover: rgba(255, 255, 255, 0.17);
-  --site-surface-active: rgba(255, 255, 255, 0.24);
-  --site-surface-opaque: #182c44;
-  --site-border: rgba(255, 255, 255, 0.16);
-  --site-border-bright: rgba(255, 255, 255, 0.32);
-  --site-text: #f4f8ff;
-  --site-text-muted: rgba(228, 238, 255, 0.82);
-  --site-text-dim: rgba(226, 237, 255, 0.56);
-  --site-accent: #6cc9ff;
-  --site-accent-fg: #042a41;
-  --site-accent-hover: #8fd7ff;
-  --site-accent-dim: rgba(108, 201, 255, 0.16);
-  --site-success: #30d158;
-  --site-danger: #ff6961;
-  --site-warning: #ffd60a;
-  --site-radius: 16px;
-  --site-radius-sm: 10px;
+  --site-bg: #faf9f5;
+  --site-bg-subtle: rgba(17, 17, 17, 0.04);
+  --site-surface: #ffffff;
+  --site-surface-hover: #f3f2ee;
+  --site-surface-active: #e8e7e1;
+  --site-surface-opaque: #ffffff;
+  --site-border: rgba(17, 17, 17, 0.12);
+  --site-border-bright: rgba(17, 17, 17, 0.28);
+  --site-text: #111111;
+  --site-text-muted: #555555;
+  --site-text-dim: #888888;
+  --site-accent: #111111;
+  --site-accent-fg: #ffffff;
+  --site-accent-hover: #2a2a2a;
+  --site-accent-dim: rgba(17, 17, 17, 0.08);
+  --site-success: #15803d;
+  --site-danger: #b91c1c;
+  --site-warning: #b45309;
+  --site-radius: 24px;
+  --site-radius-sm: 14px;
   --site-canvas:
-    radial-gradient(110% 85% at 10% -5%, rgba(86, 140, 255, 0.3), transparent 62%),
-    radial-gradient(95% 75% at 94% 4%, rgba(170, 108, 255, 0.27), transparent 60%),
-    radial-gradient(110% 95% at 86% 102%, rgba(52, 208, 188, 0.22), transparent 64%),
-    radial-gradient(80% 70% at 8% 98%, rgba(255, 120, 196, 0.16), transparent 60%),
-    linear-gradient(180deg, #0d1b2e 0%, #13253e 48%, #0b1930 100%);
-  --site-aurora-far-1: rgba(86, 140, 255, 0.1);
-  --site-aurora-far-2: rgba(170, 108, 255, 0.09);
+    radial-gradient(circle at 1px 1px, rgba(17, 17, 17, 0.07) 1px, transparent 0),
+    linear-gradient(180deg, #faf9f5 0%, #f4f3ed 100%);
+  --site-aurora-far-1: rgba(17, 17, 17, 0.02);
+  --site-aurora-far-2: rgba(17, 17, 17, 0.03);
 }
 
 /* Glass Light — daylight canvas: near-white base with soft pastel sky radials;
@@ -601,7 +594,7 @@
   --site-radius: 14px;
   --site-radius-sm: 9px;
   --site-control-radius: 9px;
-  --site-font-display: 'Space Grotesk', var(--font-inter);
+  --site-font-display: var(--font-playfair), 'Playfair Display', Georgia, serif;
   --site-font-body:
     var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
   --site-font-mono: var(--font-jetbrains-mono), 'Cascadia Code', monospace;

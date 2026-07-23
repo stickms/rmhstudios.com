@@ -123,7 +123,7 @@ export function PageLayout({
                       className="mb-0.5 hidden sm:block group-data-[scrolled]:hidden"
                     />
                   )}
-                  <h1 className="flex min-w-0 items-center gap-2 truncate font-(family-name:--site-font-display) text-lg font-semibold text-site-text [letter-spacing:var(--site-letter-spacing)] sm:text-xl">
+                  <h1 className="flex min-w-0 items-center gap-2 truncate font-serif text-xl font-bold tracking-tight text-site-text sm:text-2xl">
                     {title}
                   </h1>
                   {description && (
