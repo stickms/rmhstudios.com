@@ -407,27 +407,16 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
           />
         )}
 
-        {/* Sidebar — Liquid Glass overlay. top-0 + an explicit height, NOT
-            inset-y-0: position:fixed anchors to the VISUAL viewport on iOS, which
-            sits above Safari's floating bottom bar, so inset-y-0 ended the glass
-            a bar's height short of the physical bottom and let feed content show
-            through beneath it. Anchoring the TOP and sizing to 100lvh + the
-            --drawer-bleed overhang (see globals.css) runs the glass behind the bar
-            to the physical bottom; 100lvh alone still stopped ~248 device-px short,
-            since lvh only reaches the bar's minimized pill. (bottom-0 + a height is
-            the thing that does NOT work — it anchors to the physical bottom and
-            pushes the panel down.) Blur lives on glass-chrome--aside's
-            ::before so the aside isn't a backdrop-filter containing block; the
-            transform keeps LeftSidebar's non-portaled fixed user menu inside it.
-            The bottom inset lives INSIDE LeftSidebar (its footer padding), not as
-            aside paddingBottom — a trailing pad here left an empty tinted strip
-            below the last item that read as a stray colored band above the bottom
-            bar. That footer padding now also carries the (100lvh − 100dvh)
-            toolbar overlap so the footer still clears the bar. */}
+        {/* Sidebar — Liquid Glass overlay. `h-screen` resolves to 100dvh in the
+            shared utilities, so the drawer follows Safari's live visual viewport:
+            it is full-height above the browser controls without manufacturing a
+            tinted overhang behind the floating tab bar. Blur lives on
+            glass-chrome--aside's ::before so the aside itself does not become a
+            containing block for LeftSidebar's non-portaled fixed user menu. */}
         <aside
           id="mobile-site-drawer"
           ref={asideRef}
-          className={`glass-chrome--aside md:hidden fixed top-0 left-0 z-[60] flex w-64 flex-col border-r border-site-border shadow-site overscroll-contain touch-pan-y ${
+          className={`glass-chrome--aside md:hidden fixed top-0 left-0 z-[60] flex h-screen w-64 flex-col border-r border-site-border shadow-site overscroll-contain touch-pan-y ${
             asideRevealed ? '' : 'invisible'
           } ${
             dragging
@@ -436,7 +425,6 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
           }`}
           style={{
             transform: sidebarTransform,
-            height: 'calc(100lvh + var(--drawer-bleed))',
           }}
           aria-hidden={!isOpen}
           role="dialog"

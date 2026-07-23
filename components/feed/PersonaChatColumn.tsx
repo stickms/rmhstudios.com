@@ -102,7 +102,13 @@ export function PersonaChatColumn({
       if (res.ok) {
         setMessages((m) => [...m, { role: 'assistant', content: data.reply }]);
       } else {
-        setMessages((m) => [...m, { role: 'assistant', content: `(${data.error ?? t('chat-error', { defaultValue: 'Something went wrong' })})` }]);
+        setMessages((m) => [
+          ...m,
+          {
+            role: 'assistant',
+            content: `(${data.error ?? t('chat-error', { defaultValue: 'Something went wrong' })})`,
+          },
+        ]);
       }
     } finally {
       setSending(false);
@@ -110,8 +116,17 @@ export function PersonaChatColumn({
   }
 
   async function del() {
-    if (!(await confirm({ title: t('delete-persona-confirm', { defaultValue: 'Delete this persona?' }), danger: true }))) return;
-    const res = await fetch(`/api/personas/${encodeURIComponent(id)}`, { method: 'DELETE', credentials: 'include' });
+    if (
+      !(await confirm({
+        title: t('delete-persona-confirm', { defaultValue: 'Delete this persona?' }),
+        danger: true,
+      }))
+    )
+      return;
+    const res = await fetch(`/api/personas/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
     if (res.ok) window.location.href = '/personas';
   }
 
@@ -125,9 +140,13 @@ export function PersonaChatColumn({
   if (notFound || !persona) {
     return (
       <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-        <p className="font-medium text-site-text">{t('persona-not-found', { defaultValue: 'Persona not found' })}</p>
+        <p className="font-medium text-site-text">
+          {t('persona-not-found', { defaultValue: 'Persona not found' })}
+        </p>
         <Link to="/personas">
-          <Button variant="outline">{t('browse-personas', { defaultValue: 'Browse personas' })}</Button>
+          <Button variant="outline">
+            {t('browse-personas', { defaultValue: 'Browse personas' })}
+          </Button>
         </Link>
       </div>
     );
@@ -137,7 +156,7 @@ export function PersonaChatColumn({
 
   return (
     <div className="flex h-screen flex-col">
-      <header className="sticky top-2 z-10 mx-2 flex items-center gap-3 rounded-site glass-chrome px-4 py-3 shadow-site-sm md:top-3 md:mx-3">
+      <header className="site-sticky-chrome glass-chrome flex items-center gap-3 px-4 py-3">
         <Link to="/personas" className="text-site-text-dim hover:text-site-text">
           <ArrowLeft className="h-5 w-5" />
         </Link>
@@ -154,10 +173,17 @@ export function PersonaChatColumn({
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold text-site-text">{persona.name}</p>
-          {persona.tagline && <p className="truncate text-xs text-site-text-dim">{persona.tagline}</p>}
+          {persona.tagline && (
+            <p className="truncate text-xs text-site-text-dim">{persona.tagline}</p>
+          )}
         </div>
         {persona.isOwner && (
-          <button onClick={del} className="text-site-text-dim hover:text-site-danger" title={t('delete-persona', { defaultValue: 'Delete persona' })} aria-label={t('delete-persona', { defaultValue: 'Delete persona' })}>
+          <button
+            onClick={del}
+            className="text-site-text-dim hover:text-site-danger"
+            title={t('delete-persona', { defaultValue: 'Delete persona' })}
+            aria-label={t('delete-persona', { defaultValue: 'Delete persona' })}
+          >
             <Trash2 className="h-4 w-4" />
           </button>
         )}
@@ -177,7 +203,8 @@ export function PersonaChatColumn({
         {sending && (
           <Bubble role="assistant" emoji={persona.emoji} avatarUrl={persona.avatarUrl}>
             <span className="inline-flex items-center gap-1 text-site-text-dim">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('typing', { defaultValue: 'typing…' })}
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />{' '}
+              {t('typing', { defaultValue: 'typing…' })}
             </span>
           </Bubble>
         )}
@@ -195,12 +222,21 @@ export function PersonaChatColumn({
                   send();
                 }
               }}
-              placeholder={t('message-placeholder', { name: persona.name, defaultValue: 'Message {{name}}…' })}
+              placeholder={t('message-placeholder', {
+                name: persona.name,
+                defaultValue: 'Message {{name}}…',
+              })}
               rows={1}
               maxLength={1000}
               className="max-h-32 flex-1 resize-none rounded-site border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
-            <Button variant="accent" size="sm" disabled={!input.trim() || sending} onClick={send} className="h-9 gap-1">
+            <Button
+              variant="accent"
+              size="sm"
+              disabled={!input.trim() || sending}
+              onClick={send}
+              className="h-9 gap-1"
+            >
               <Send className="h-4 w-4" />
             </Button>
           </div>
@@ -221,7 +257,17 @@ export function PersonaChatColumn({
   );
 }
 
-function Bubble({ role, emoji, avatarUrl, children }: { role: string; emoji: string | null; avatarUrl?: string | null; children: React.ReactNode }) {
+function Bubble({
+  role,
+  emoji,
+  avatarUrl,
+  children,
+}: {
+  role: string;
+  emoji: string | null;
+  avatarUrl?: string | null;
+  children: React.ReactNode;
+}) {
   const isUser = role === 'user';
   return (
     <div className={`flex gap-2 ${isUser ? 'flex-row-reverse' : ''}`}>

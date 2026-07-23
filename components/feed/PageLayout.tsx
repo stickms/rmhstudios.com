@@ -87,33 +87,25 @@ export function PageLayout({
 
   return (
     <>
-      {/* Center Column – width animates between pages. Bottom padding clears the
-          floating mobile dock (§8.3). */}
+      {/* Center Column – width animates between pages. Bottom padding preserves a
+          safe-area-aware content runway for floating controls. */}
       <AnimatedMain className="w-full min-w-0 pb-dock" targetWidth={targetWidth}>
         <div className="flex flex-col">
           {/* Scroll sentinel — sits at the very top so the header knows when the
               page has scrolled beneath it. */}
           <div ref={sentinelRef} aria-hidden className="h-px" />
-          {/* Sticky Header — L3 glass-chrome floating capsule (§8.2): insets from
-              the column edges (mx-2 mobile → mx-3 ≥md) so the aurora shows around
-              it. Still condenses on scroll (height + tint + blur + glint via
-              [data-scrolled]). The optics-ring glint is always-on and comes free
-              from .glass-chrome — no per-header work. */}
-          {/* §17.6 header→content rhythm: the header is `sticky top-2`, so at rest
-              it renders ~top-offset px BELOW its flow box — which silently ate the
-              page's first-content gutter (subtitle/tab sheet sat flush under it, the
-              owner's /services report). Reserve that sticky shift with a matching
-              bottom margin (mb-2 = top-2, md:mb-3 = md:top-3) so every page's own
-              first-content padding (§15.4 mt-3/space-y-3) is honoured, from the
-              SHARED layer — it can no longer be eaten per-page. */}
+          {/* Sticky Header — L3 glass-chrome floating capsule (§8.2). The shared
+              sticky class owns its responsive edge inset, stacking level, and
+              header→content breathing room. It still condenses on scroll (height
+              + tint + blur + glint via [data-scrolled]). */}
           <header
             ref={headerRef}
             data-slot="page-header"
             aria-describedby={description ? descriptionId : undefined}
-            className={`group glass-chrome sticky top-2 z-10 mx-2 mb-2 rounded-site shadow-site-sm transition-[height] data-[scrolled]:h-16 md:top-3 md:mx-3 md:mb-3 ${expandedHeaderHeight}`}
+            className={`group glass-chrome site-sticky-chrome transition-[height] data-[scrolled]:h-16 ${expandedHeaderHeight}`}
           >
-            <div className="flex h-full min-w-0 items-center gap-3 px-3 py-3 sm:px-4">
-              <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+            <div className="flex h-full min-w-0 items-center gap-3 px-4 py-3 sm:px-5">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
                 {/* Mobile: always show the sidebar button in the top-left */}
                 <MobileMenuButton />
                 {backTo && (
@@ -153,7 +145,9 @@ export function PageLayout({
           </header>
 
           {/* Page Content */}
-          {children}
+          <div data-slot="page-content" className="min-w-0">
+            {children}
+          </div>
         </div>
       </AnimatedMain>
 

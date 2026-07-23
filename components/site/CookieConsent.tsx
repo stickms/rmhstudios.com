@@ -67,7 +67,7 @@ export function CookieConsent() {
       // §5.5x A.1: bottom-most member of the mobile floating stack — its presence
       // lifts the mini-player / back-to-top clear of it (globals.css :has() rules).
       data-floating="cookie"
-      className="glass-chrome fixed inset-x-2 bottom-16 z-40 mx-auto max-w-2xl rounded-site border border-site-border p-4 shadow-site md:bottom-4"
+      className="glass-chrome bottom-above-dock fixed inset-x-3 z-40 mx-auto max-w-2xl rounded-site p-4 shadow-site md:bottom-4"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Cookie className="hidden h-5 w-5 shrink-0 text-site-accent sm:block" aria-hidden />
@@ -78,7 +78,9 @@ export function CookieConsent() {
           })}{' '}
           <a
             href="/cookies"
-            aria-label={t('cookie-consent-learn-aria', { defaultValue: 'Learn more about our cookie policy' })}
+            aria-label={t('cookie-consent-learn-aria', {
+              defaultValue: 'Learn more about our cookie policy',
+            })}
             className="text-site-accent hover:underline"
           >
             {t('cookie-consent-learn', { defaultValue: 'Learn more' })}

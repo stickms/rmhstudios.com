@@ -66,9 +66,8 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const logoShortClass = expanded ? 'hidden' : 'lg:hidden';
   // Mobile drawer (`expanded`): pad x/top uniformly; the bottom inset is applied
   // inline (see the root div) as 1rem + the OS safe-area, so the sidebar body
-  // fills the drawer to the bottom with no empty tinted band while the footer
-  // still clears the home indicator once Safari's bottom bar collapses (env() is
-  // 0 while that bar is shown).
+  // fills the dynamic viewport with no tinted overhang while its footer clears
+  // the home indicator.
   // Collapsed rail (md, 64px): tighter padding so the icon pills breathe inside
   // the m-2 rail panel instead of being crushed + clipped (§5.5x A.3). p-4 returns
   // at lg where the rail expands and shows labels.
@@ -371,17 +370,10 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
       style={
         expanded
           ? {
-              // The drawer aside is fixed top-0 with height 100lvh +
-              // --drawer-bleed, so its box deliberately runs past the visual
-              // viewport to the physical screen bottom. Add that overhang back as
-              // padding so the footer lands above Safari's bar rather than behind
-              // it: (100lvh − 100dvh) is the bar itself and collapses to 0 once it
-              // minimizes on scroll; --drawer-bleed is the fixed overhang. Not the
-              // double-count warned about in globals.css §--safe-bottom — that's
-              // about offsetting *fixed* UI, which is already visual-viewport
-              // anchored; this is inner padding of an oversized panel.
-              paddingBottom:
-                'calc(1rem + var(--safe-bottom) + (100lvh - 100dvh) + var(--drawer-bleed))',
+              // The drawer follows 100dvh, so only the actual device safe-area
+              // belongs inside it. Adding Safari's toolbar delta here creates a
+              // visible empty band above the bottom tab bar.
+              paddingBottom: 'calc(1rem + var(--safe-bottom))',
             }
           : undefined
       }

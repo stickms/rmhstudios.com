@@ -2890,13 +2890,13 @@
    travel together, so category changes never create colliding chrome. */
 .lib-explorer {
   position: sticky;
-  inset-block-start: 10px;
+  inset-block-start: var(--site-sticky-edge);
   z-index: 35;
   display: grid;
-  gap: 8px;
+  gap: var(--site-section-gap);
   max-width: var(--lib-content);
-  margin: 12px auto 18px;
-  padding: 9px;
+  margin: var(--site-section-gap) auto clamp(1rem, 2vw, 1.5rem);
+  padding: var(--site-section-gap);
   border-radius: calc(var(--site-radius) * 1.25);
 }
 

@@ -51,7 +51,7 @@ export function ThemePreviewBar() {
     <div
       role="region"
       aria-label={t('preview-bar-label', { defaultValue: 'Theme preview' })}
-      className="glass-overlay fixed inset-x-0 bottom-4 z-[60] mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] items-center gap-3 rounded-full px-4 py-2 shadow-site"
+      className="glass-overlay fixed inset-x-0 bottom-[calc(var(--safe-bottom)+var(--site-floating-edge))] z-[60] mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] items-center gap-3 rounded-full px-4 py-2 shadow-site"
     >
       <span className="min-w-0 truncate text-sm text-site-text">
         {t('previewing', { defaultValue: 'Previewing' })}

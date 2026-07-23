@@ -68,7 +68,9 @@ export function DeckStudyColumn({
   const [adding, setAdding] = useState(false);
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/study/decks/${encodeURIComponent(deckId)}`, { credentials: 'include' });
+    const res = await fetch(`/api/study/decks/${encodeURIComponent(deckId)}`, {
+      credentials: 'include',
+    });
     if (res.status === 404) {
       setNotFound(true);
       return;
@@ -98,7 +100,9 @@ export function DeckStudyColumn({
   }, [load]);
 
   async function startReview() {
-    const res = await fetch(`/api/study/decks/${encodeURIComponent(deckId)}/review`, { credentials: 'include' });
+    const res = await fetch(`/api/study/decks/${encodeURIComponent(deckId)}/review`, {
+      credentials: 'include',
+    });
     if (res.ok) {
       const data = await res.json();
       setQueue(data.due ?? []);
@@ -152,8 +156,17 @@ export function DeckStudyColumn({
   }
 
   async function deleteDeck() {
-    if (!(await confirm({ title: t('delete-deck-confirm', { defaultValue: 'Delete this deck and all its cards?' }), danger: true }))) return;
-    const res = await fetch(`/api/study/decks/${encodeURIComponent(deckId)}`, { method: 'DELETE', credentials: 'include' });
+    if (
+      !(await confirm({
+        title: t('delete-deck-confirm', { defaultValue: 'Delete this deck and all its cards?' }),
+        danger: true,
+      }))
+    )
+      return;
+    const res = await fetch(`/api/study/decks/${encodeURIComponent(deckId)}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
     if (res.ok) navigate({ to: '/study' });
   }
 
@@ -167,7 +180,9 @@ export function DeckStudyColumn({
   if (notFound || !deck) {
     return (
       <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-        <p className="font-medium text-site-text">{t('deck-not-found', { defaultValue: 'Deck not found' })}</p>
+        <p className="font-medium text-site-text">
+          {t('deck-not-found', { defaultValue: 'Deck not found' })}
+        </p>
         <Link to="/study">
           <Button variant="outline">{t('back-to-decks', { defaultValue: 'Back to decks' })}</Button>
         </Link>
@@ -180,12 +195,17 @@ export function DeckStudyColumn({
     const card = queue[idx];
     return (
       <div className="min-h-screen">
-        <header className="sticky top-2 z-10 mx-2 flex items-center gap-2 rounded-site glass-chrome px-4 py-3 shadow-site-sm md:top-3 md:mx-3">
-          <button onClick={() => setQueue(null)} className="text-site-text-dim hover:text-site-text">
+        <header className="site-sticky-chrome glass-chrome flex items-center gap-3 px-4 py-3">
+          <button
+            onClick={() => setQueue(null)}
+            className="text-site-text-dim hover:text-site-text"
+          >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <h1 className="text-sm font-bold text-site-text">{deck.title}</h1>
-          <span className="ml-auto text-xs text-site-text-dim">{idx + 1} / {queue.length}</span>
+          <span className="ml-auto text-xs text-site-text-dim">
+            {idx + 1} / {queue.length}
+          </span>
         </header>
         <div className="p-4">
           <div className="flex min-h-64 flex-col items-center justify-center rounded-site border border-site-border bg-site-surface p-8 text-center">
@@ -200,7 +220,13 @@ export function DeckStudyColumn({
           {revealed ? (
             <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {GRADES.map((g) => (
-                <Button key={g.grade} variant="outline" disabled={reviewBusy} onClick={() => grade(g.grade)} className={`flex-col ${g.cls}`}>
+                <Button
+                  key={g.grade}
+                  variant="outline"
+                  disabled={reviewBusy}
+                  onClick={() => grade(g.grade)}
+                  className={`flex-col ${g.cls}`}
+                >
                   {t(`grade-${g.grade}`, { defaultValue: g.label })}
                 </Button>
               ))}
@@ -217,16 +243,23 @@ export function DeckStudyColumn({
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-2 z-10 mx-2 flex items-center gap-2 rounded-site glass-chrome px-4 py-3 shadow-site-sm md:top-3 md:mx-3">
+      <header className="site-sticky-chrome glass-chrome flex items-center gap-3 px-4 py-3">
         <Link to="/study" className="text-site-text-dim hover:text-site-text">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-lg font-bold text-site-text">{deck.title}</h1>
-          {deck.description && <p className="truncate text-xs text-site-text-dim">{deck.description}</p>}
+          {deck.description && (
+            <p className="truncate text-xs text-site-text-dim">{deck.description}</p>
+          )}
         </div>
         {deck.isOwner && (
-          <button onClick={deleteDeck} className="text-site-text-dim hover:text-site-danger" title={t('delete-deck', { defaultValue: 'Delete deck' })} aria-label={t('delete-deck', { defaultValue: 'Delete deck' })}>
+          <button
+            onClick={deleteDeck}
+            className="text-site-text-dim hover:text-site-danger"
+            title={t('delete-deck', { defaultValue: 'Delete deck' })}
+            aria-label={t('delete-deck', { defaultValue: 'Delete deck' })}
+          >
             <Trash2 className="h-4 w-4" />
           </button>
         )}
@@ -235,15 +268,27 @@ export function DeckStudyColumn({
       <div className="space-y-4 p-4">
         {signedIn && (
           <Reveal>
-            <Button variant="accent" className="w-full gap-2" disabled={cards.length === 0} onClick={startReview}>
+            <Button
+              variant="accent"
+              className="w-full gap-2"
+              disabled={cards.length === 0}
+              onClick={startReview}
+            >
               <GraduationCap className="h-4 w-4" />
-              {dueCount > 0 ? t('study-due-cards', { count: dueCount, defaultValue: 'Study {{count}} due card' }) : t('review-deck', { defaultValue: 'Review deck' })}
+              {dueCount > 0
+                ? t('study-due-cards', {
+                    count: dueCount,
+                    defaultValue: 'Study {{count}} due card',
+                  })
+                : t('review-deck', { defaultValue: 'Review deck' })}
             </Button>
           </Reveal>
         )}
 
         {deck.isOwner && (
-          <Reveal className={`rounded-site border border-site-border bg-site-surface p-3 ${LIFT_CARD}`}>
+          <Reveal
+            className={`rounded-site border border-site-border bg-site-surface p-3 ${LIFT_CARD}`}
+          >
             <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
               <Plus className="h-3.5 w-3.5" /> {t('add-a-card', { defaultValue: 'Add a card' })}
             </p>
@@ -264,8 +309,19 @@ export function DeckStudyColumn({
                 className="w-full resize-none rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
               />
               <div className="flex justify-end">
-                <Button size="sm" variant="accent" disabled={adding || !front.trim() || !back.trim()} onClick={addCard} className="gap-1">
-                  {adding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} {t('add', { defaultValue: 'Add' })}
+                <Button
+                  size="sm"
+                  variant="accent"
+                  disabled={adding || !front.trim() || !back.trim()}
+                  onClick={addCard}
+                  className="gap-1"
+                >
+                  {adding ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Check className="h-3.5 w-3.5" />
+                  )}{' '}
+                  {t('add', { defaultValue: 'Add' })}
                 </Button>
               </div>
             </div>
@@ -274,11 +330,15 @@ export function DeckStudyColumn({
 
         <Reveal as="section">
           <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
-            <RotateCcw className="h-3.5 w-3.5" /> {t('card-count', { count: cards.length, defaultValue: '{{count}} card' })}
+            <RotateCcw className="h-3.5 w-3.5" />{' '}
+            {t('card-count', { count: cards.length, defaultValue: '{{count}} card' })}
           </h2>
           <div className="space-y-1">
             {cards.map((c) => (
-              <div key={c.id} className={`rounded-site-sm border border-site-border bg-site-surface p-3 ${LIFT_CARD}`}>
+              <div
+                key={c.id}
+                className={`rounded-site-sm border border-site-border bg-site-surface p-3 ${LIFT_CARD}`}
+              >
                 <p className="text-sm font-medium text-site-text">{c.front}</p>
                 <p className="mt-0.5 text-sm text-site-text-muted">{c.back}</p>
               </div>

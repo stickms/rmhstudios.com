@@ -468,7 +468,7 @@ export function ProfileColumn({
   return (
     <div className="flex flex-col" style={themeStyle}>
       {/* Compact identity chrome stays visible while the full glass hero scrolls away. */}
-      <div className="glass-chrome sticky top-2 z-10 mx-2 rounded-site shadow-site-sm md:top-3 md:mx-3">
+      <div className="glass-chrome site-sticky-chrome">
         <div className="flex items-center gap-3 px-4 py-3">
           <MobileMenuButton />
           <div className="min-w-0 flex-1">
