@@ -10,6 +10,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { InboxColumn } from '@/components/feed/InboxColumn';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { ContextRail } from "@/components/feed/ContextRail";
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { auth } from '@/lib/auth';
 import { listConversations } from '@/lib/messages.server';
@@ -44,13 +45,12 @@ function InboxPage() {
     <>
       <AnimatedMain
         className="w-full min-w-0 pb-dock"
-        targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         <InboxColumn initialTab={tab} initialMessages={messages} />
       </AnimatedMain>
 
       {/* Trailing gutter to match the wide layout */}
-      <div className="hidden lg:block w-4 shrink-0" />
+      <ContextRail reserve />
     </>
   );
 }

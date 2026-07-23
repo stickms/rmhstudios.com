@@ -11,6 +11,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { RoadmapSection } from '@/components/roadmap/RoadmapSection';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { ContextRail } from "@/components/feed/ContextRail";
 import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 
@@ -30,13 +31,12 @@ function RoadmapPage() {
     <>
       <AnimatedMain
         className="relative isolate min-h-screen w-full min-w-0 pb-dock"
-        targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         <MobileTopBar title={t('roadmap-title', { defaultValue: 'Roadmap' })} />
         <RoadmapSection />
       </AnimatedMain>
       {/* Trailing gutter to match the blog/library/store layout. */}
-      <div className="hidden lg:block w-4 shrink-0" />
+      <ContextRail reserve />
     </>
   );
 }

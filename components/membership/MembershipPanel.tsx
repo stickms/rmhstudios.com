@@ -193,7 +193,7 @@ export function MembershipPanel({
                 type="button"
                 onClick={manageBilling}
                 disabled={busy === 'portal'}
-                className="inline-flex items-center gap-2 rounded-full border border-site-border bg-site-surface/60 px-5 py-2.5 text-sm font-semibold text-site-text transition-colors hover:bg-site-surface-hover disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-full border border-site-border bg-site-surface px-5 py-2.5 text-sm font-semibold text-site-text transition-colors hover:bg-site-surface-hover disabled:opacity-50"
               >
                 {busy === 'portal' ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUpRight className="h-4 w-4" />}
                 {t('manage-billing', { defaultValue: 'Manage billing' })}
@@ -223,7 +223,7 @@ export function MembershipPanel({
             className={`mb-10 flex items-center justify-between gap-3 rounded-site border px-5 py-3.5 text-sm ${
               status === 'success'
                 ? 'border-[color:var(--site-success)]/30 bg-[color:var(--site-success)]/10 text-[color:var(--site-success)]'
-                : 'border-site-border bg-site-surface/60 text-site-text-muted'
+                : 'border-site-border bg-site-surface text-site-text-muted'
             }`}
           >
             <span>
@@ -248,11 +248,11 @@ export function MembershipPanel({
                     aren't clobbered by the RevealItem motion node's inline
                     transform. */}
                 <article
-                  // Floating L2 slabs (§8.4): .glass-pane owns the frost/tint/
+                  // Floating L2 slabs (§8.4): . owns the frost/tint/
                   // border/ring; the featured tier additionally takes the page's
                   // one prism refract slot + ambient sheen + per-element lens.
                   data-glass-lens={plan.featured ? '' : undefined}
-                  className={`pricing-card group relative flex w-full flex-col glass-pane rounded-site p-6 ${
+                  className={`pricing-card group relative flex w-full flex-col  rounded-site p-6 ${
                     plan.featured
                       ? 'pricing-card--featured glass-refract glass-refract--prism glass-liquid'
                       : ''
@@ -380,7 +380,7 @@ function PricingStyles() {
       /* The pricing panel sits directly on the aurora canvas — no opaque slab
          (the old panel background was deleted with the glass redesign). */
 
-      /* Cards — the .glass-pane class owns the frost/tint/border/blur now (§8.4);
+      /* Cards — the . class owns the frost/tint/border/blur now (§8.4);
          this only layers the hover-lift + featured gold glow on top. */
       .pricing-card {
         transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;

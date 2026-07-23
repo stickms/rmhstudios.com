@@ -3,10 +3,10 @@ import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface SpinnerProps {
-  /** Pixel size of the spinner (default 24). */
-  size?: number
-  className?: string
-  label?: string
+ /** Pixel size of the spinner (default 24). */
+ size?: number
+ className?: string
+ label?: string
 }
 
 /**
@@ -15,12 +15,12 @@ interface SpinnerProps {
  * across 40+ feed components so size/colour stay consistent.
  */
 export function Spinner({ size = 24, className, label }: SpinnerProps) {
-  return (
-    <Loader2
-      role="status"
-      aria-label={label ?? "Loading"}
-      className={cn("animate-spin text-site-accent", className)}
-      style={{ width: size, height: size }}
-    />
-  )
+ return (
+ <Loader2
+ role="status"
+ aria-label={label ?? "Loading"}
+ className={cn("animate-spin text-site-accent", className)}
+ style={{ width: size, height: size }}
+ />
+ )
 }

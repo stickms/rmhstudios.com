@@ -140,12 +140,8 @@
 }
 
 [data-slot='context-rail'] {
-  position: sticky;
-  inset-block-start: var(--site-sticky-edge);
-  max-block-size: calc(100dvh - var(--site-sticky-edge) - var(--site-sticky-edge));
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
+  position: relative;
+  align-self: flex-start;
 }
 
 @media (min-width: 768px) {

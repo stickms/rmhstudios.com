@@ -21,6 +21,7 @@ import { ShoppingBag, Store as StoreIcon } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { getUserTier, type Tier } from '@/lib/entitlements';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { ContextRail } from "@/components/feed/ContextRail";
 import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { ShopColumn } from '@/components/feed/ShopColumn';
@@ -95,7 +96,6 @@ function Store() {
     <>
       <AnimatedMain
         className="relative isolate min-h-screen w-full min-w-0 pb-dock"
-        targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         <MobileTopBar title={t('store-title', { defaultValue: 'Store' })} />
 
@@ -145,7 +145,7 @@ function Store() {
         )}
       </AnimatedMain>
       {/* Trailing gutter to match the blog/library layout */}
-      <div className="hidden lg:block w-4 shrink-0" />
+      <ContextRail reserve />
     </>
   );
 }

@@ -3,6 +3,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { Gamepad2, Trophy } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { ContextRail } from "@/components/feed/ContextRail";
 import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { useSession } from '@/components/Providers';
@@ -75,7 +76,7 @@ function ArcadePage() {
 
   return (
     <>
-      <AnimatedMain className="w-full min-w-0 pb-dock" targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}>
+      <AnimatedMain className="w-full min-w-0 pb-dock">
         {/* Mobile-only header; the tab bar below is the primary chrome on every
             breakpoint, and each tab's content renders header-less beneath it so
             no big section header stacks under the tabs. */}
@@ -116,7 +117,7 @@ function ArcadePage() {
           </div>
         )}
       </AnimatedMain>
-      <div className="hidden lg:block w-4 shrink-0" />
+      <ContextRail reserve />
     </>
   );
 }

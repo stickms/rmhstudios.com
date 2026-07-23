@@ -103,7 +103,7 @@ export function WatchButton({ filters, center }: WatchButtonProps) {
             type="button"
             aria-label="Close"
             onClick={() => setOpen(false)}
-            className="absolute inset-0 h-full w-full cursor-default bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 h-full w-full cursor-default bg-black/60 "
           />
           <div
             role="dialog"

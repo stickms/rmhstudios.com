@@ -18,27 +18,27 @@ import { markPageEnterComplete } from '@/lib/motion';
  * then clear it after the remount so the next link click animates normally.
  */
 export function BackNavAnimation() {
-  useEffect(() => {
-    const root = document.documentElement;
-    let clearTimer: ReturnType<typeof setTimeout> | undefined;
-    const onPop = () => {
-      root.classList.add('nav-pop');
-      if (clearTimer) clearTimeout(clearTimer);
-      // Long enough to cover the route remount + first paint, short enough that
-      // a link click shortly after still animates.
-      clearTimer = setTimeout(() => {
-        // The restored page has already landed at its saved scroll position.
-        // Freeze that settled state before removing the temporary suppression,
-        // otherwise `page-enter` can start 400ms late.
-        markPageEnterComplete();
-        root.classList.remove('nav-pop');
-      }, 400);
-    };
-    window.addEventListener('popstate', onPop);
-    return () => {
-      window.removeEventListener('popstate', onPop);
-      if (clearTimer) clearTimeout(clearTimer);
-    };
-  }, []);
-  return null;
+ useEffect(() => {
+ const root = document.documentElement;
+ let clearTimer: ReturnType<typeof setTimeout> | undefined;
+ const onPop = () => {
+ root.classList.add('nav-pop');
+ if (clearTimer) clearTimeout(clearTimer);
+ // Long enough to cover the route remount + first paint, short enough that
+ // a link click shortly after still animates.
+ clearTimer = setTimeout(() => {
+ // The restored page has already landed at its saved scroll position.
+ // Freeze that settled state before removing the temporary suppression,
+ // otherwise `page-enter` can start 400ms late.
+ markPageEnterComplete();
+ root.classList.remove('nav-pop');
+ }, 400);
+ };
+ window.addEventListener('popstate', onPop);
+ return () => {
+ window.removeEventListener('popstate', onPop);
+ if (clearTimer) clearTimeout(clearTimer);
+ };
+ }, []);
+ return null;
 }

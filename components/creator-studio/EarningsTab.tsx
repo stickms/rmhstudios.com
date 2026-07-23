@@ -159,7 +159,7 @@ export function EarningsTab() {
               className={`flex flex-col items-center gap-1 rounded-site px-2 py-3 text-sm font-medium transition-colors ${
                 kind === k
                   ? 'bg-site-accent-dim text-site-accent'
-                  : 'glass-inset text-site-text-dim hover:text-site-text'
+                  : ' text-site-text-dim hover:text-site-text'
               }`}
             >
               <Icon className="size-5" aria-hidden />
@@ -258,7 +258,7 @@ export function EarningsTab() {
           </h3>
           <div className="space-y-2">
             {requests.map((r) => (
-              <div key={r.id} className="flex items-center justify-between glass-fill rounded-site px-3 py-2 text-sm">
+              <div key={r.id} className="flex items-center justify-between  rounded-site px-3 py-2 text-sm">
                 <span>
                   {r.kind === 'SUB_CREDIT'
                     ? t('sub-summary', {
