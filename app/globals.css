@@ -77,124 +77,84 @@
 }
 
 :root {
-  /* Base colors — mapped to site design system */
-  --background: #0d1b2e;
-  --foreground: #f4f8ff;
+  /* Base colors — mapped to spatial design system */
+  --background: #090a0f;
+  --foreground: #f5f7fb;
 
   /* ==================== SITE DESIGN SYSTEM ==================== */
-  /* Glass Dark (default) — the Liquid Glass material system, promoted from the
-     old .style-liquid-glass theme into :root so glass is the site's default
-     look, not a theme patch. An aurora-lit deep-ocean canvas with translucent
-     surfaces, specular rim highlights (via the shadow tokens) and depth-graded
-     blur (via the .glass-* elevation classes below). Every other theme re-tints
-     this same contract. See docs/plans/2026-07-14-liquid-glass-ui-redesign.md. */
-  --site-bg: #0d1b2e;
-  --site-bg-subtle: rgba(148, 184, 255, 0.08);
-  --site-surface: rgba(255, 255, 255, 0.1);
-  --site-surface-hover: rgba(255, 255, 255, 0.17);
-  --site-surface-active: rgba(255, 255, 255, 0.24);
-  /* Opaque equivalent of --site-surface — used for autofill and the
-     reduced-transparency / high-contrast fallbacks (where translucency is off). */
-  --site-surface-opaque: #182c44;
-  --site-border: rgba(255, 255, 255, 0.16);
-  --site-border-bright: rgba(255, 255, 255, 0.32);
-  /* Muted alpha 0.82 (not the usual ~0.74) so secondary text clears WCAG AA
-     even on frosted panes over the brightest aurora corner. */
-  --site-text: #f4f8ff;
-  --site-text-muted: rgba(228, 238, 255, 0.82);
-  --site-text-dim: rgba(226, 237, 255, 0.56);
-  --site-accent: #6cc9ff;
-  --site-accent-fg: #042a41;
-  --site-accent-hover: #8fd7ff;
-  --site-accent-dim: rgba(108, 201, 255, 0.16);
-  --site-success: #30d158;
-  --site-danger: #ff6961;
-  --site-warning: #ffd60a;
+  /* Spatial Minimalism (default) — Apple Vision Pro inspired design scheme.
+     Floating translucent panels with soft 3D spatial depth shadows, hairline
+     specular borders, weightless geometry, and crisp high-legibility Inter
+     typography over an ethereal atmospheric ambient light canvas. */
+  --site-bg: #090a0f;
+  --site-bg-subtle: rgba(56, 189, 248, 0.06);
+  --site-surface: rgba(255, 255, 255, 0.05);
+  --site-surface-hover: rgba(255, 255, 255, 0.09);
+  --site-surface-active: rgba(255, 255, 255, 0.14);
+  --site-surface-opaque: #12151e;
+  --site-border: rgba(255, 255, 255, 0.12);
+  --site-border-bright: rgba(255, 255, 255, 0.26);
+  --site-text: #f5f7fb;
+  --site-text-muted: rgba(240, 244, 252, 0.78);
+  --site-text-dim: rgba(240, 244, 252, 0.52);
+  --site-accent: #38bdf8;
+  --site-accent-fg: #021627;
+  --site-accent-hover: #7dd3fc;
+  --site-accent-dim: rgba(56, 189, 248, 0.15);
+  --site-success: #34d399;
+  --site-danger: #f87171;
+  --site-warning: #fbbf24;
 
-  /* ── Glass material contract (§3.2) — every theme re-tints these ────────── */
-  /* Tint plates */
-  --site-glass-tint: rgba(255, 255, 255, 0.1); /* L1/L2 resting fill */
-  --site-glass-tint-strong: rgba(255, 255, 255, 0.17); /* hover / raised */
-  --site-glass-ink: color-mix(in srgb, var(--site-bg) 45%, transparent); /* recessed wells */
-  /* Backdrop treatment, by elevation tier */
-  --site-glass-blur-pane: 12px;
-  /* Chrome (sticky headers, fixed sidebar) stays pinned while the page scrolls,
-     so its backdrop-filter re-samples the moving content every frame — the most
-     expensive glass on the site. Kept to a cheaper radius; the tint + saturate
-     still read as frosted glass across light/dark/high-contrast. */
-  --site-glass-blur-chrome: 10px;
-  /* Condensed sticky chrome (header capsule with [data-scrolled]) deepens its
-     blur so scrolled content reads clearly through it (§7/§8.2). */
-  --site-glass-blur-chrome-scrolled: 12px;
-  --site-glass-blur-overlay: 20px;
-  --site-glass-saturate: 145%;
-  /* Lighting — one sun, top-slightly-left (§4.2) */
-  --site-glass-rim: rgba(255, 255, 255, 0.28); /* top specular edge */
-  --site-glass-rim-soft: rgba(255, 255, 255, 0.1); /* hairline all-round */
-  --site-glass-light: rgba(255, 255, 255, 0.14); /* pointer highlight */
-  /* Depth shadows — blur radius & tint grow together with elevation (§4.1.5) */
-  --site-glass-depth: 0 16px 44px rgba(2, 10, 28, 0.48);
-  --site-glass-depth-sm: 0 2px 10px rgba(2, 10, 28, 0.24);
+  /* ── Spatial Glass Material Contract ── */
+  --site-glass-tint: rgba(255, 255, 255, 0.05);
+  --site-glass-tint-strong: rgba(255, 255, 255, 0.09);
+  --site-glass-ink: rgba(6, 8, 14, 0.6);
+  --site-glass-blur-pane: 16px;
+  --site-glass-blur-chrome: 14px;
+  --site-glass-blur-chrome-scrolled: 18px;
+  --site-glass-blur-overlay: 24px;
+  --site-glass-saturate: 140%;
+  --site-glass-rim: rgba(255, 255, 255, 0.25);
+  --site-glass-rim-soft: rgba(255, 255, 255, 0.1);
+  --site-glass-light: rgba(255, 255, 255, 0.12);
+  --site-glass-depth: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
+  --site-glass-depth-sm: 0 8px 24px -4px rgba(0, 0, 0, 0.3);
 
-  /* ── v2 optics (§6) — press curve, optics-ring geometry, rim-glint, far aurora.
-     --light-x/--light-y are deliberately NOT declared: their absence is the
-     scene "sun" default baked into the glint gradient's var() fallbacks;
-     useGlassLight writes them only while a fine pointer moves. --glass-lens /
-     --glass-lens-prism are written per element by lib/glass-lens.ts only. */
-  --ease-glass: cubic-bezier(0.175, 0.885, 0.32, 2.2);
-  --glass-bevel: 12px; /* optics-ring thickness (panes/overlays); chrome → 8px */
-  --glass-glint-size: 340px; /* specular falloff radius */
-  --glass-glint-opacity: 0.9;
-  --site-glass-glint: var(--site-glass-rim); /* accent presets re-derive (§4.2) */
-  --site-aurora-far-1: rgba(86, 140, 255, 0.1); /* aurora depth layer (§5.1) */
-  --site-aurora-far-2: rgba(170, 108, 255, 0.09);
-  /* §4.35 single-sheet edges: the specular is a border-box background LAYER on
-     each glass surface (not a masked pseudo ring), so it lives inside the 1px
-     border ring while the structural border itself goes transparent — glass reads
-     as one lit sheet, not an outlined frame. --glass-glint-layer is the shared
-     paint. It is deliberately element-anchored on every input mode: a fixed
-     background on dozens of translucent surfaces is re-sampled during every
-     scroll frame and can visibly trail sticky/rubber-banding elements. The GL
-     scene still receives the live pointer light; CSS surfaces use the stable sun.
-     --glass-glint-hover (registered <number>, default 1) multiplies the opacity so
-     repeated interactive fills can fade their glint 0→1 on hover only. */
+  --ease-glass: cubic-bezier(0.16, 1, 0.3, 1);
+  --glass-bevel: 10px;
+  --glass-glint-size: 320px;
+  --glass-glint-opacity: 0.8;
+  --site-glass-glint: var(--site-glass-rim);
+  --site-aurora-far-1: rgba(56, 189, 248, 0.08);
+  --site-aurora-far-2: rgba(129, 140, 248, 0.07);
+
   --glass-glint-attach: scroll;
   --glass-glint-layer: radial-gradient(
-    var(--glass-glint-size, 340px) circle at 50% -8%,
+    var(--glass-glint-size, 320px) circle at 50% -5%,
     color-mix(
         in srgb,
         var(--site-glass-glint, var(--site-glass-rim))
-          calc(var(--glass-glint-opacity, 0.9) * var(--glass-glint-hover, 1) * 100%),
+          calc(var(--glass-glint-opacity, 0.8) * var(--glass-glint-hover, 1) * 100%),
         transparent
       )
       0%,
-    transparent 70%
+    transparent 65%
   );
 
-  /* ── Glass clarity slider (§5.46) — user blur/tint factors, set inline on
-     <html> by the appearance runtime for stops 1/3/4 (Calm 1.25/1.35 · Airy
-     0.65/0.75 · Clear 0.35/0.5). Stop 0 (Opaque) is the reduce-transparency
-     class; stop 2 (Default) is these 1/1 defaults. The blur is consumed through
-     --glass-blur-factor (not --glass-user-blur directly) so perf-lite can cap it
-     ≤1 — the user factor is set inline on <html>, which would out-specify a
-     class rule, but the derived factor is class-settable. Tint scales directly
-     (perf-lite keeps it). --site-surface-opaque anchors Calm's toward-opaque mix
-     so the tint never has to exceed 100% alpha. */
   --glass-user-blur: 1;
   --glass-user-tint: 1;
   --glass-blur-factor: var(--glass-user-blur, 1);
 
-  /* Elevation tokens — the rim lives in the shadow so Card/Dialog/etc. pick it
-     up through shadow-site / shadow-site-sm with zero component changes. */
+  /* Elevation tokens — Spatial depth layering */
   --site-shadow:
     inset 0 1px 0 var(--site-glass-rim), inset 0 0 0 0.5px var(--site-glass-rim-soft),
     var(--site-glass-depth);
   --site-shadow-sm:
     inset 0 1px 0 var(--site-glass-rim-soft), inset 0 0 0 0.5px var(--site-glass-rim-soft),
     var(--site-glass-depth-sm);
-  --site-radius: 16px;
-  --site-radius-sm: 10px;
-  --site-control-radius: 10px;
+  --site-radius: 20px;
+  --site-radius-sm: 12px;
+  --site-control-radius: 12px;
   --site-font-display:
     var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
   --site-font-body:
@@ -202,17 +162,14 @@
   --site-font-mono: var(--font-jetbrains-mono), 'Cascadia Code', monospace;
   --site-border-width: 1px;
   --site-card-transform: translateY(-2px);
-  --site-transition-speed: 140ms;
-  --site-press-duration: 180ms;
+  --site-transition-speed: 160ms;
+  --site-press-duration: 160ms;
   --site-heading-transform: none;
   --site-glow: none;
   --site-text-shadow: none;
-  --site-letter-spacing: -0.022em;
-  /* ── Layout rhythm ───────────────────────────────────────────────────────
-     One fluid spacing and sticky contract for the shared site shell. Feature
-     pages may compose these values, but should not invent competing top offsets.
-     The compact primary header is 56px; independent secondary stickies clear it
-     plus the same section gutter used between ordinary glass surfaces. */
+  --site-letter-spacing: -0.02em;
+
+  /* Layout rhythm */
   --site-page-gutter: clamp(0.5rem, 1vw, 0.75rem);
   --site-section-gap: clamp(0.5rem, 1vw, 0.75rem);
   --site-panel-padding: clamp(0.75rem, 1.25vw, 1.125rem);
@@ -226,21 +183,15 @@
   --site-page-bottom-space: clamp(2rem, 5vw, 3.5rem);
   --site-mobile-content-end: clamp(2rem, 7vw, 3rem);
   --site-floating-edge: clamp(0.75rem, 3vw, 1.25rem);
-  /* The aurora canvas painted on <body> (background-attachment: fixed). Every
-     theme defines one; glass over a flat colour reads as gray plastic. The
-     ThemeGallery preview swatch reads var(--site-canvas, var(--site-bg)). */
+  
+  /* Spatial Ambient Canvas — weightless atmospheric lighting pools */
   --site-canvas:
-    radial-gradient(110% 85% at 10% -5%, rgba(86, 140, 255, 0.3), transparent 62%),
-    radial-gradient(95% 75% at 94% 4%, rgba(170, 108, 255, 0.27), transparent 60%),
-    radial-gradient(110% 95% at 86% 102%, rgba(52, 208, 188, 0.22), transparent 64%),
-    radial-gradient(80% 70% at 8% 98%, rgba(255, 120, 196, 0.16), transparent 60%),
-    linear-gradient(180deg, #0d1b2e 0%, #13253e 48%, #0b1930 100%);
-  /* Tiled micro-noise (64×64 data URI) layered on L2+ panes to kill gradient
-     banding and read as material texture. One shared image, zero runtime cost. */
-  --site-glass-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='64' height='64' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E");
-  /* Raster-map tint (RMHHomes / rideshare maps). Dark themes invert the light
-     OSM tiles into a dark map so the map tracks the theme; light themes reset
-     this to `none`. Applied only to the tile canvas, never the DOM pins. */
+    radial-gradient(120% 90% at 20% -10%, rgba(56, 189, 248, 0.18), transparent 60%),
+    radial-gradient(100% 80% at 85% 10%, rgba(99, 102, 241, 0.16), transparent 55%),
+    radial-gradient(110% 90% at 75% 95%, rgba(168, 85, 247, 0.12), transparent 60%),
+    linear-gradient(180deg, #090a0f 0%, #0c0e15 50%, #08090d 100%);
+
+  --site-glass-noise: none;
   --site-map-filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9);
 
   /* Legacy neon palette — kept for game-specific pages */

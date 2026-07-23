@@ -12,13 +12,13 @@ import type { AppliedUserTheme, AppliedUserThemePreview } from '@/lib/themes/tok
 // former `liquid-glass` id is retired into `default` (Glass Dark) — the site
 // default; persisted `liquid-glass` prefs self-heal to `default` in Providers.
 export const SITE_STYLES = [
-  { id: 'default', label: 'Glass Dark', icon: '🫧', group: 'Base', bg: '#0d1b2e' },
-  { id: 'light', label: 'Glass Light', icon: '☀️', group: 'Base', bg: '#e9edf6' },
+  { id: 'default', label: 'Spatial Dark', icon: '🌌', group: 'Base', bg: '#090a0f' },
+  { id: 'light', label: 'Spatial Light', icon: '☀️', group: 'Base', bg: '#eef1f8' },
   { id: 'high-contrast', label: 'High Contrast', icon: '◐', group: 'Base', bg: '#000' },
-  { id: 'graphite', label: 'Graphite Glass', icon: '🪨', group: 'Curated', bg: '#17171a' },
-  { id: 'sepia', label: 'Sepia Glass', icon: '📖', group: 'Curated', bg: '#efe4cf' },
-  { id: 'nocturne', label: 'Nocturne Glass', icon: '🌌', group: 'Curated', bg: '#0a1424' },
-  { id: 'ultra', label: 'Ultra', icon: '✦', group: 'Base', bg: '#07090f' },
+  { id: 'graphite', label: 'Spatial Graphite', icon: '🪨', group: 'Curated', bg: '#17171a' },
+  { id: 'sepia', label: 'Spatial Sepia', icon: '📖', group: 'Curated', bg: '#efe4cf' },
+  { id: 'nocturne', label: 'Spatial Nocturne', icon: '🌌', group: 'Curated', bg: '#0a1424' },
+  { id: 'ultra', label: 'Spatial Ultra', icon: '✦', group: 'Base', bg: '#07090f' },
 ] as const;
 
 /**
