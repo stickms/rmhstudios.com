@@ -225,29 +225,17 @@ export default function RmhtechLanding() {
             <div className="pillar">
               <div>
                 <div className="name">Co-Scientist</div>
-                <div className="meta">{t('pillar1-meta', { defaultValue: '01 — The agent' })}</div>
               </div>
-              <p className="desc">
-                {t('pillar1-desc', { defaultValue: 'Reads your intent, plans the analysis, runs the tools, interprets the results, and drafts the methods. It shows its work. Correctness over autonomy — a plausible-but-wrong figure is worse than no figure at all.' })}
-              </p>
             </div>
             <div className="pillar">
               <div>
                 <div className="name">Ledger</div>
-                <div className="meta">{t('pillar2-meta', { defaultValue: '02 — The substrate' })}</div>
               </div>
-              <p className="desc">
-                {t('pillar2-desc', { defaultValue: 'Every artifact is content-addressed, versioned, and re-runnable by identifier. Each figure carries its own address — click it to see the exact parameters, or re-run it on different infrastructure, years later.' })}
-              </p>
             </div>
             <div className="pillar">
               <div>
                 <div className="name">Fleet</div>
-                <div className="meta">{t('pillar3-meta', { defaultValue: '03 — The compute' })}</div>
               </div>
-              <p className="desc">
-                {t('pillar3-desc', { defaultValue: 'Kubernetes, Helm, and Terraform driving a Go worker fleet that executes pipelines at institutional scale, with hard multi-tenant isolation. The substrate that turns a three-month core-queue into an afternoon.' })}
-              </p>
             </div>
           </section>
 

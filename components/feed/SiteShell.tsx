@@ -32,7 +32,7 @@ export function SiteShell({ children, overlays }: SiteShellProps) {
         {/* Global Parallax Background — pointer + scroll driven organic shapes */}
         <div
           aria-hidden
-          className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+          className="pointer-events-none fixed inset-0 z-0 hidden overflow-hidden md:block"
           style={{ willChange: 'transform' }}
         >
           {/* Top-right blob: pointer + scroll parallax */}
@@ -66,7 +66,7 @@ export function SiteShell({ children, overlays }: SiteShellProps) {
 
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-site-accent focus:px-4 focus:py-2 focus:text-xs focus:font-semibold focus:uppercase focus:text-site-accent-fg"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-[var(--site-control-radius)] focus:bg-site-accent focus:px-4 focus:py-2 focus:text-xs focus:font-semibold focus:uppercase focus:text-site-accent-fg"
         >
           {t('skipToContent', { defaultValue: 'Skip to content' })}
         </a>

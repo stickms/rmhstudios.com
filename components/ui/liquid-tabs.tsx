@@ -196,7 +196,7 @@ export function LiquidTabs({
 
   const itemClass = (active: boolean) =>
     cn(
-      'relative inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+      'relative inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[var(--site-control-radius)] font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-40',
       pad,
       fullWidth && 'flex-1',
       active ? 'text-site-accent-fg' : 'text-site-text-muted hover:text-site-text',
@@ -213,7 +213,7 @@ export function LiquidTabs({
         className="absolute inset-0"
         transition={reduced ? { duration: 0 } : SPRING.snappy}
       >
-        <span className="absolute inset-0 rounded-full bg-site-accent" />
+        <span className="absolute inset-0 rounded-[var(--site-control-radius)] bg-site-accent" />
       </motion.span>
     ) : null;
 
@@ -310,7 +310,7 @@ export function LiquidTabs({
     <div
       data-slot="liquid-tabs-sheet"
       className={cn(
-        'min-w-0 max-w-full rounded-full border border-site-border bg-site-surface p-1 shadow-site-sm',
+        'min-w-0 max-w-full rounded-[var(--site-control-radius)] border border-site-border bg-site-surface p-1 shadow-site-sm',
         scroll && 'overflow-hidden',
         fullWidth || scroll ? 'w-full' : 'w-fit',
         className,

@@ -32,28 +32,18 @@ function markAsPresented() {
 const FEATURES = [
   {
     icon: ScanLine,
-    number: '01',
     titleKey: 'spatial-feature-space-title',
-    titleDefault: 'More space. Less chrome.',
-    bodyKey: 'spatial-feature-space-body',
-    bodyDefault: 'Pages now lead with the work, using clear hierarchy and room to breathe.',
+    titleDefault: 'More space',
   },
   {
     icon: Grid2X2,
-    number: '02',
     titleKey: 'spatial-feature-system-title',
-    titleDefault: 'One visual language.',
-    bodyKey: 'spatial-feature-system-body',
-    bodyDefault: 'Navigation, cards, search, and controls now share one quiet monochrome system.',
+    titleDefault: 'One visual language',
   },
   {
     icon: Move3D,
-    number: '03',
     titleKey: 'spatial-feature-motion-title',
-    titleDefault: 'Motion with purpose.',
-    bodyKey: 'spatial-feature-motion-body',
-    bodyDefault:
-      'Subtle parallax and transitions add depth while respecting reduced-motion settings.',
+    titleDefault: 'Motion with purpose',
   },
 ] as const;
 
@@ -95,59 +85,44 @@ export function WhatsNewModal() {
       }}
     >
       <DialogContent className="max-w-2xl gap-0 overflow-hidden p-0">
-        <div className="relative overflow-hidden border-b border-site-border px-6 py-8 sm:px-9 sm:py-10">
+        <div className="relative overflow-hidden border-b border-site-border px-5 py-7 pr-16 sm:px-9 sm:py-10 sm:pr-16">
           <div aria-hidden className="spatial-modal-art">
             <span />
           </div>
           <div className="relative z-1 max-w-md">
-            <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.24em] text-site-text-dim">
-              {t('whatsnew-kicker', { defaultValue: "What's new / 01" })}
-            </p>
-            <DialogTitle className="font-(family-name:--site-font-display) text-4xl font-medium leading-[0.98] tracking-[-0.045em] sm:text-5xl">
+            <DialogTitle className="font-(family-name:--site-font-display) text-3xl font-medium leading-[0.98] tracking-[-0.045em] sm:text-5xl">
               {t('whatsnew-title-spatial', { defaultValue: 'Welcome to a quieter RMH.' })}
             </DialogTitle>
             <DialogDescription className="mt-4 max-w-sm text-sm leading-relaxed text-site-text-muted">
               {t('whatsnew-subtitle-spatial', {
-                defaultValue:
-                  'The entire interface has been rebuilt around spatial minimalism: simple color, sharper hierarchy, and fewer distractions.',
+                defaultValue: 'A simpler interface with more room for what matters.',
               })}
             </DialogDescription>
           </div>
         </div>
 
-        <div className="divide-y divide-site-border px-6 sm:px-9">
+        <div className="grid grid-cols-1 px-4 py-3 sm:grid-cols-3 sm:gap-3 sm:px-9 sm:py-6">
           {FEATURES.map((feature) => {
             const Icon = feature.icon;
             return (
               <div
-                key={feature.number}
-                className="grid grid-cols-[2rem_1fr] gap-4 py-5 sm:grid-cols-[2rem_2.5rem_1fr]"
+                key={feature.titleKey}
+                className="grid min-w-0 grid-cols-[2.5rem_1fr] items-center gap-3 border-t border-site-border py-3 sm:flex sm:flex-col sm:items-start sm:pt-4"
               >
-                <span className="pt-1 text-[10px] font-semibold tracking-[0.2em] text-site-text-dim">
-                  {feature.number}
-                </span>
-                <span className="hidden size-10 items-center justify-center rounded-full border border-site-border sm:flex">
+                <span className="flex size-10 items-center justify-center rounded-[var(--site-control-radius)] border border-site-border text-site-text">
                   <Icon className="size-4" aria-hidden />
                 </span>
-                <div>
-                  <h3 className="text-sm font-semibold text-site-text">
-                    {t(feature.titleKey, { defaultValue: feature.titleDefault })}
-                  </h3>
-                  <p className="mt-1 text-xs leading-relaxed text-site-text-muted sm:text-sm">
-                    {t(feature.bodyKey, { defaultValue: feature.bodyDefault })}
-                  </p>
-                </div>
+                <h3 className="text-xs font-semibold leading-tight text-site-text sm:text-sm">
+                  {t(feature.titleKey, { defaultValue: feature.titleDefault })}
+                </h3>
               </div>
             );
           })}
         </div>
 
-        <div className="flex items-center justify-between gap-4 border-t border-site-border px-6 py-5 sm:px-9">
-          <p className="hidden text-xs text-site-text-dim sm:block">
-            {t('whatsnew-version', { defaultValue: 'Spatial system / July 2026' })}
-          </p>
-          <Button className="ml-auto" onClick={dismiss}>
-            {t('explore-new-ui', { defaultValue: 'Explore the new UI' })}
+        <div className="flex items-center justify-end border-t border-site-border px-4 py-4 sm:px-9 sm:py-5">
+          <Button className="w-full sm:ml-auto sm:w-auto" onClick={dismiss}>
+            {t('explore-new-ui', { defaultValue: 'Explore' })}
             <ArrowRight aria-hidden />
           </Button>
         </div>
