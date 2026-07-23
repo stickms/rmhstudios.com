@@ -5,8 +5,11 @@ import frAdmin from "@/locales/fr/admin.json";
 import frBuilds from "@/locales/fr/builds.json";
 import frCAdmin from "@/locales/fr/c-admin.json";
 import frCAltair from "@/locales/fr/c-altair.json";
+import frCAwards from "@/locales/fr/c-awards.json";
 import frCBlog from "@/locales/fr/c-blog.json";
 import frCBuilds from "@/locales/fr/c-builds.json";
+import frCCircle from "@/locales/fr/c-circle.json";
+import frCCreator from "@/locales/fr/c-creator.json";
 import frCCursedLogic from "@/locales/fr/c-cursed-logic.json";
 import frCDailyPuzzles from "@/locales/fr/c-daily-puzzles.json";
 import frCDoctrine from "@/locales/fr/c-doctrine.json";
@@ -14,15 +17,20 @@ import frCDreamRift from "@/locales/fr/c-dream-rift.json";
 import frCEconomy from "@/locales/fr/c-economy.json";
 import frCForestExplorer from "@/locales/fr/c-forest-explorer.json";
 import frCGame from "@/locales/fr/c-game.json";
+import frCHistory from "@/locales/fr/c-history.json";
 import frCHouseAlwaysWins from "@/locales/fr/c-house-always-wins.json";
 import frCKowloonKnockout from "@/locales/fr/c-kowloon-knockout.json";
 import frCLaundrySort from "@/locales/fr/c-laundry-sort.json";
+import frCLayout from "@/locales/fr/c-layout.json";
 import frCLibrary from "@/locales/fr/c-library.json";
 import frCLightsOut from "@/locales/fr/c-lights-out.json";
+import frCLists from "@/locales/fr/c-lists.json";
 import frCLockdown from "@/locales/fr/c-lockdown.json";
 import frCModeration from "@/locales/fr/c-moderation.json";
 import frCNeonDriftway from "@/locales/fr/c-neon-driftway.json";
 import frCNews from "@/locales/fr/c-news.json";
+import frCPredictions from "@/locales/fr/c-predictions.json";
+import frCProfileModules from "@/locales/fr/c-profile-modules.json";
 import frCRideshare from "@/locales/fr/c-rideshare.json";
 import frCRmhCapital from "@/locales/fr/c-rmh-capital.json";
 import frCRmhPmc from "@/locales/fr/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import frCRmhtube from "@/locales/fr/c-rmhtube.json";
 import frCRmhtype from "@/locales/fr/c-rmhtype.json";
 import frCRmhvibe from "@/locales/fr/c-rmhvibe.json";
 import frCRoadmap from "@/locales/fr/c-roadmap.json";
+import frCSaves from "@/locales/fr/c-saves.json";
 import frCSignalForge from "@/locales/fr/c-signal-forge.json";
+import frCStatus from "@/locales/fr/c-status.json";
 import frCStudio from "@/locales/fr/c-studio.json";
 import frCSynapseStorm from "@/locales/fr/c-synapse-storm.json";
 import frCTempleOfJoy from "@/locales/fr/c-temple-of-joy.json";
+import frCTournaments from "@/locales/fr/c-tournaments.json";
 import frCUi from "@/locales/fr/c-ui.json";
 import frCUserBuilds from "@/locales/fr/c-user-builds.json";
 import frCVega from "@/locales/fr/c-vega.json";
 import frCVersecraft from "@/locales/fr/c-versecraft.json";
 import frCVoidBreaker from "@/locales/fr/c-void-breaker.json";
+import frCWager from "@/locales/fr/c-wager.json";
+import frCWishlist from "@/locales/fr/c-wishlist.json";
 import frCommon from "@/locales/fr/common.json";
 import frFeed from "@/locales/fr/feed.json";
+import frGamesHub from "@/locales/fr/games-hub.json";
 import frGroups from "@/locales/fr/groups.json";
 import frLibrary from "@/locales/fr/library.json";
 import frNav from "@/locales/fr/nav.json";
@@ -61,8 +75,13 @@ import frRSliceIt from "@/locales/fr/r-slice-it.json";
 import frRStrategies from "@/locales/fr/r-strategies.json";
 import frRStudio from "@/locales/fr/r-studio.json";
 import frRideshare from "@/locales/fr/rideshare.json";
+import frSearch from "@/locales/fr/search.json";
+import frSettingsAppearance from "@/locales/fr/settings-appearance.json";
+import frSettingsContent from "@/locales/fr/settings-content.json";
+import frSettingsNotifications from "@/locales/fr/settings-notifications.json";
 import frShared from "@/locales/fr/shared.json";
 import frSite from "@/locales/fr/site.json";
+import frThemeStudio from "@/locales/fr/theme-studio.json";
 import frUserBuilds from "@/locales/fr/user-builds.json";
 import frV from "@/locales/fr/v.json";
 
@@ -71,8 +90,11 @@ const frResources = {
   "builds": frBuilds,
   "c-admin": frCAdmin,
   "c-altair": frCAltair,
+  "c-awards": frCAwards,
   "c-blog": frCBlog,
   "c-builds": frCBuilds,
+  "c-circle": frCCircle,
+  "c-creator": frCCreator,
   "c-cursed-logic": frCCursedLogic,
   "c-daily-puzzles": frCDailyPuzzles,
   "c-doctrine": frCDoctrine,
@@ -80,15 +102,20 @@ const frResources = {
   "c-economy": frCEconomy,
   "c-forest-explorer": frCForestExplorer,
   "c-game": frCGame,
+  "c-history": frCHistory,
   "c-house-always-wins": frCHouseAlwaysWins,
   "c-kowloon-knockout": frCKowloonKnockout,
   "c-laundry-sort": frCLaundrySort,
+  "c-layout": frCLayout,
   "c-library": frCLibrary,
   "c-lights-out": frCLightsOut,
+  "c-lists": frCLists,
   "c-lockdown": frCLockdown,
   "c-moderation": frCModeration,
   "c-neon-driftway": frCNeonDriftway,
   "c-news": frCNews,
+  "c-predictions": frCPredictions,
+  "c-profile-modules": frCProfileModules,
   "c-rideshare": frCRideshare,
   "c-rmh-capital": frCRmhCapital,
   "c-rmh-pmc": frCRmhPmc,
@@ -102,17 +129,23 @@ const frResources = {
   "c-rmhtype": frCRmhtype,
   "c-rmhvibe": frCRmhvibe,
   "c-roadmap": frCRoadmap,
+  "c-saves": frCSaves,
   "c-signal-forge": frCSignalForge,
+  "c-status": frCStatus,
   "c-studio": frCStudio,
   "c-synapse-storm": frCSynapseStorm,
   "c-temple-of-joy": frCTempleOfJoy,
+  "c-tournaments": frCTournaments,
   "c-ui": frCUi,
   "c-user-builds": frCUserBuilds,
   "c-vega": frCVega,
   "c-versecraft": frCVersecraft,
   "c-void-breaker": frCVoidBreaker,
+  "c-wager": frCWager,
+  "c-wishlist": frCWishlist,
   "common": frCommon,
   "feed": frFeed,
+  "games-hub": frGamesHub,
   "groups": frGroups,
   "library": frLibrary,
   "nav": frNav,
@@ -127,8 +160,13 @@ const frResources = {
   "r-strategies": frRStrategies,
   "r-studio": frRStudio,
   "rideshare": frRideshare,
+  "search": frSearch,
+  "settings-appearance": frSettingsAppearance,
+  "settings-content": frSettingsContent,
+  "settings-notifications": frSettingsNotifications,
   "shared": frShared,
   "site": frSite,
+  "theme-studio": frThemeStudio,
   "user-builds": frUserBuilds,
   "v": frV,
 } as const;

@@ -46,7 +46,7 @@
   "select-words-prompt_one": "Выберите {{count}} слово для составления стихотворения",
   "select-words-prompt_other": "Выберите {{count}} слов для составления стихотворения",
   "settings": "Настройки",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "Войдите, чтобы сохранить свои истории в облаке и воспроизводить их где угодно.",
   "sign-in-to-save": "Войдите, чтобы сохранить прогресс в облаке",
   "skip": "Пропустить",
   "slot-auto": "Авто",

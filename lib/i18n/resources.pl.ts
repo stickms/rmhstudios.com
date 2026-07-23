@@ -5,8 +5,11 @@ import plAdmin from "@/locales/pl/admin.json";
 import plBuilds from "@/locales/pl/builds.json";
 import plCAdmin from "@/locales/pl/c-admin.json";
 import plCAltair from "@/locales/pl/c-altair.json";
+import plCAwards from "@/locales/pl/c-awards.json";
 import plCBlog from "@/locales/pl/c-blog.json";
 import plCBuilds from "@/locales/pl/c-builds.json";
+import plCCircle from "@/locales/pl/c-circle.json";
+import plCCreator from "@/locales/pl/c-creator.json";
 import plCCursedLogic from "@/locales/pl/c-cursed-logic.json";
 import plCDailyPuzzles from "@/locales/pl/c-daily-puzzles.json";
 import plCDoctrine from "@/locales/pl/c-doctrine.json";
@@ -14,15 +17,20 @@ import plCDreamRift from "@/locales/pl/c-dream-rift.json";
 import plCEconomy from "@/locales/pl/c-economy.json";
 import plCForestExplorer from "@/locales/pl/c-forest-explorer.json";
 import plCGame from "@/locales/pl/c-game.json";
+import plCHistory from "@/locales/pl/c-history.json";
 import plCHouseAlwaysWins from "@/locales/pl/c-house-always-wins.json";
 import plCKowloonKnockout from "@/locales/pl/c-kowloon-knockout.json";
 import plCLaundrySort from "@/locales/pl/c-laundry-sort.json";
+import plCLayout from "@/locales/pl/c-layout.json";
 import plCLibrary from "@/locales/pl/c-library.json";
 import plCLightsOut from "@/locales/pl/c-lights-out.json";
+import plCLists from "@/locales/pl/c-lists.json";
 import plCLockdown from "@/locales/pl/c-lockdown.json";
 import plCModeration from "@/locales/pl/c-moderation.json";
 import plCNeonDriftway from "@/locales/pl/c-neon-driftway.json";
 import plCNews from "@/locales/pl/c-news.json";
+import plCPredictions from "@/locales/pl/c-predictions.json";
+import plCProfileModules from "@/locales/pl/c-profile-modules.json";
 import plCRideshare from "@/locales/pl/c-rideshare.json";
 import plCRmhCapital from "@/locales/pl/c-rmh-capital.json";
 import plCRmhPmc from "@/locales/pl/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import plCRmhtube from "@/locales/pl/c-rmhtube.json";
 import plCRmhtype from "@/locales/pl/c-rmhtype.json";
 import plCRmhvibe from "@/locales/pl/c-rmhvibe.json";
 import plCRoadmap from "@/locales/pl/c-roadmap.json";
+import plCSaves from "@/locales/pl/c-saves.json";
 import plCSignalForge from "@/locales/pl/c-signal-forge.json";
+import plCStatus from "@/locales/pl/c-status.json";
 import plCStudio from "@/locales/pl/c-studio.json";
 import plCSynapseStorm from "@/locales/pl/c-synapse-storm.json";
 import plCTempleOfJoy from "@/locales/pl/c-temple-of-joy.json";
+import plCTournaments from "@/locales/pl/c-tournaments.json";
 import plCUi from "@/locales/pl/c-ui.json";
 import plCUserBuilds from "@/locales/pl/c-user-builds.json";
 import plCVega from "@/locales/pl/c-vega.json";
 import plCVersecraft from "@/locales/pl/c-versecraft.json";
 import plCVoidBreaker from "@/locales/pl/c-void-breaker.json";
+import plCWager from "@/locales/pl/c-wager.json";
+import plCWishlist from "@/locales/pl/c-wishlist.json";
 import plCommon from "@/locales/pl/common.json";
 import plFeed from "@/locales/pl/feed.json";
+import plGamesHub from "@/locales/pl/games-hub.json";
 import plGroups from "@/locales/pl/groups.json";
 import plLibrary from "@/locales/pl/library.json";
 import plNav from "@/locales/pl/nav.json";
@@ -61,8 +75,13 @@ import plRSliceIt from "@/locales/pl/r-slice-it.json";
 import plRStrategies from "@/locales/pl/r-strategies.json";
 import plRStudio from "@/locales/pl/r-studio.json";
 import plRideshare from "@/locales/pl/rideshare.json";
+import plSearch from "@/locales/pl/search.json";
+import plSettingsAppearance from "@/locales/pl/settings-appearance.json";
+import plSettingsContent from "@/locales/pl/settings-content.json";
+import plSettingsNotifications from "@/locales/pl/settings-notifications.json";
 import plShared from "@/locales/pl/shared.json";
 import plSite from "@/locales/pl/site.json";
+import plThemeStudio from "@/locales/pl/theme-studio.json";
 import plUserBuilds from "@/locales/pl/user-builds.json";
 import plV from "@/locales/pl/v.json";
 
@@ -71,8 +90,11 @@ const plResources = {
   "builds": plBuilds,
   "c-admin": plCAdmin,
   "c-altair": plCAltair,
+  "c-awards": plCAwards,
   "c-blog": plCBlog,
   "c-builds": plCBuilds,
+  "c-circle": plCCircle,
+  "c-creator": plCCreator,
   "c-cursed-logic": plCCursedLogic,
   "c-daily-puzzles": plCDailyPuzzles,
   "c-doctrine": plCDoctrine,
@@ -80,15 +102,20 @@ const plResources = {
   "c-economy": plCEconomy,
   "c-forest-explorer": plCForestExplorer,
   "c-game": plCGame,
+  "c-history": plCHistory,
   "c-house-always-wins": plCHouseAlwaysWins,
   "c-kowloon-knockout": plCKowloonKnockout,
   "c-laundry-sort": plCLaundrySort,
+  "c-layout": plCLayout,
   "c-library": plCLibrary,
   "c-lights-out": plCLightsOut,
+  "c-lists": plCLists,
   "c-lockdown": plCLockdown,
   "c-moderation": plCModeration,
   "c-neon-driftway": plCNeonDriftway,
   "c-news": plCNews,
+  "c-predictions": plCPredictions,
+  "c-profile-modules": plCProfileModules,
   "c-rideshare": plCRideshare,
   "c-rmh-capital": plCRmhCapital,
   "c-rmh-pmc": plCRmhPmc,
@@ -102,17 +129,23 @@ const plResources = {
   "c-rmhtype": plCRmhtype,
   "c-rmhvibe": plCRmhvibe,
   "c-roadmap": plCRoadmap,
+  "c-saves": plCSaves,
   "c-signal-forge": plCSignalForge,
+  "c-status": plCStatus,
   "c-studio": plCStudio,
   "c-synapse-storm": plCSynapseStorm,
   "c-temple-of-joy": plCTempleOfJoy,
+  "c-tournaments": plCTournaments,
   "c-ui": plCUi,
   "c-user-builds": plCUserBuilds,
   "c-vega": plCVega,
   "c-versecraft": plCVersecraft,
   "c-void-breaker": plCVoidBreaker,
+  "c-wager": plCWager,
+  "c-wishlist": plCWishlist,
   "common": plCommon,
   "feed": plFeed,
+  "games-hub": plGamesHub,
   "groups": plGroups,
   "library": plLibrary,
   "nav": plNav,
@@ -127,8 +160,13 @@ const plResources = {
   "r-strategies": plRStrategies,
   "r-studio": plRStudio,
   "rideshare": plRideshare,
+  "search": plSearch,
+  "settings-appearance": plSettingsAppearance,
+  "settings-content": plSettingsContent,
+  "settings-notifications": plSettingsNotifications,
   "shared": plShared,
   "site": plSite,
+  "theme-studio": plThemeStudio,
   "user-builds": plUserBuilds,
   "v": plV,
 } as const;

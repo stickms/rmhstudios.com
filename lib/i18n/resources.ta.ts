@@ -5,8 +5,11 @@ import taAdmin from "@/locales/ta/admin.json";
 import taBuilds from "@/locales/ta/builds.json";
 import taCAdmin from "@/locales/ta/c-admin.json";
 import taCAltair from "@/locales/ta/c-altair.json";
+import taCAwards from "@/locales/ta/c-awards.json";
 import taCBlog from "@/locales/ta/c-blog.json";
 import taCBuilds from "@/locales/ta/c-builds.json";
+import taCCircle from "@/locales/ta/c-circle.json";
+import taCCreator from "@/locales/ta/c-creator.json";
 import taCCursedLogic from "@/locales/ta/c-cursed-logic.json";
 import taCDailyPuzzles from "@/locales/ta/c-daily-puzzles.json";
 import taCDoctrine from "@/locales/ta/c-doctrine.json";
@@ -14,15 +17,20 @@ import taCDreamRift from "@/locales/ta/c-dream-rift.json";
 import taCEconomy from "@/locales/ta/c-economy.json";
 import taCForestExplorer from "@/locales/ta/c-forest-explorer.json";
 import taCGame from "@/locales/ta/c-game.json";
+import taCHistory from "@/locales/ta/c-history.json";
 import taCHouseAlwaysWins from "@/locales/ta/c-house-always-wins.json";
 import taCKowloonKnockout from "@/locales/ta/c-kowloon-knockout.json";
 import taCLaundrySort from "@/locales/ta/c-laundry-sort.json";
+import taCLayout from "@/locales/ta/c-layout.json";
 import taCLibrary from "@/locales/ta/c-library.json";
 import taCLightsOut from "@/locales/ta/c-lights-out.json";
+import taCLists from "@/locales/ta/c-lists.json";
 import taCLockdown from "@/locales/ta/c-lockdown.json";
 import taCModeration from "@/locales/ta/c-moderation.json";
 import taCNeonDriftway from "@/locales/ta/c-neon-driftway.json";
 import taCNews from "@/locales/ta/c-news.json";
+import taCPredictions from "@/locales/ta/c-predictions.json";
+import taCProfileModules from "@/locales/ta/c-profile-modules.json";
 import taCRideshare from "@/locales/ta/c-rideshare.json";
 import taCRmhCapital from "@/locales/ta/c-rmh-capital.json";
 import taCRmhPmc from "@/locales/ta/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import taCRmhtube from "@/locales/ta/c-rmhtube.json";
 import taCRmhtype from "@/locales/ta/c-rmhtype.json";
 import taCRmhvibe from "@/locales/ta/c-rmhvibe.json";
 import taCRoadmap from "@/locales/ta/c-roadmap.json";
+import taCSaves from "@/locales/ta/c-saves.json";
 import taCSignalForge from "@/locales/ta/c-signal-forge.json";
+import taCStatus from "@/locales/ta/c-status.json";
 import taCStudio from "@/locales/ta/c-studio.json";
 import taCSynapseStorm from "@/locales/ta/c-synapse-storm.json";
 import taCTempleOfJoy from "@/locales/ta/c-temple-of-joy.json";
+import taCTournaments from "@/locales/ta/c-tournaments.json";
 import taCUi from "@/locales/ta/c-ui.json";
 import taCUserBuilds from "@/locales/ta/c-user-builds.json";
 import taCVega from "@/locales/ta/c-vega.json";
 import taCVersecraft from "@/locales/ta/c-versecraft.json";
 import taCVoidBreaker from "@/locales/ta/c-void-breaker.json";
+import taCWager from "@/locales/ta/c-wager.json";
+import taCWishlist from "@/locales/ta/c-wishlist.json";
 import taCommon from "@/locales/ta/common.json";
 import taFeed from "@/locales/ta/feed.json";
+import taGamesHub from "@/locales/ta/games-hub.json";
 import taGroups from "@/locales/ta/groups.json";
 import taLibrary from "@/locales/ta/library.json";
 import taNav from "@/locales/ta/nav.json";
@@ -61,8 +75,13 @@ import taRSliceIt from "@/locales/ta/r-slice-it.json";
 import taRStrategies from "@/locales/ta/r-strategies.json";
 import taRStudio from "@/locales/ta/r-studio.json";
 import taRideshare from "@/locales/ta/rideshare.json";
+import taSearch from "@/locales/ta/search.json";
+import taSettingsAppearance from "@/locales/ta/settings-appearance.json";
+import taSettingsContent from "@/locales/ta/settings-content.json";
+import taSettingsNotifications from "@/locales/ta/settings-notifications.json";
 import taShared from "@/locales/ta/shared.json";
 import taSite from "@/locales/ta/site.json";
+import taThemeStudio from "@/locales/ta/theme-studio.json";
 import taUserBuilds from "@/locales/ta/user-builds.json";
 import taV from "@/locales/ta/v.json";
 
@@ -71,8 +90,11 @@ const taResources = {
   "builds": taBuilds,
   "c-admin": taCAdmin,
   "c-altair": taCAltair,
+  "c-awards": taCAwards,
   "c-blog": taCBlog,
   "c-builds": taCBuilds,
+  "c-circle": taCCircle,
+  "c-creator": taCCreator,
   "c-cursed-logic": taCCursedLogic,
   "c-daily-puzzles": taCDailyPuzzles,
   "c-doctrine": taCDoctrine,
@@ -80,15 +102,20 @@ const taResources = {
   "c-economy": taCEconomy,
   "c-forest-explorer": taCForestExplorer,
   "c-game": taCGame,
+  "c-history": taCHistory,
   "c-house-always-wins": taCHouseAlwaysWins,
   "c-kowloon-knockout": taCKowloonKnockout,
   "c-laundry-sort": taCLaundrySort,
+  "c-layout": taCLayout,
   "c-library": taCLibrary,
   "c-lights-out": taCLightsOut,
+  "c-lists": taCLists,
   "c-lockdown": taCLockdown,
   "c-moderation": taCModeration,
   "c-neon-driftway": taCNeonDriftway,
   "c-news": taCNews,
+  "c-predictions": taCPredictions,
+  "c-profile-modules": taCProfileModules,
   "c-rideshare": taCRideshare,
   "c-rmh-capital": taCRmhCapital,
   "c-rmh-pmc": taCRmhPmc,
@@ -102,17 +129,23 @@ const taResources = {
   "c-rmhtype": taCRmhtype,
   "c-rmhvibe": taCRmhvibe,
   "c-roadmap": taCRoadmap,
+  "c-saves": taCSaves,
   "c-signal-forge": taCSignalForge,
+  "c-status": taCStatus,
   "c-studio": taCStudio,
   "c-synapse-storm": taCSynapseStorm,
   "c-temple-of-joy": taCTempleOfJoy,
+  "c-tournaments": taCTournaments,
   "c-ui": taCUi,
   "c-user-builds": taCUserBuilds,
   "c-vega": taCVega,
   "c-versecraft": taCVersecraft,
   "c-void-breaker": taCVoidBreaker,
+  "c-wager": taCWager,
+  "c-wishlist": taCWishlist,
   "common": taCommon,
   "feed": taFeed,
+  "games-hub": taGamesHub,
   "groups": taGroups,
   "library": taLibrary,
   "nav": taNav,
@@ -127,8 +160,13 @@ const taResources = {
   "r-strategies": taRStrategies,
   "r-studio": taRStudio,
   "rideshare": taRideshare,
+  "search": taSearch,
+  "settings-appearance": taSettingsAppearance,
+  "settings-content": taSettingsContent,
+  "settings-notifications": taSettingsNotifications,
   "shared": taShared,
   "site": taSite,
+  "theme-studio": taThemeStudio,
   "user-builds": taUserBuilds,
   "v": taV,
 } as const;

@@ -5,8 +5,11 @@ import svAdmin from "@/locales/sv/admin.json";
 import svBuilds from "@/locales/sv/builds.json";
 import svCAdmin from "@/locales/sv/c-admin.json";
 import svCAltair from "@/locales/sv/c-altair.json";
+import svCAwards from "@/locales/sv/c-awards.json";
 import svCBlog from "@/locales/sv/c-blog.json";
 import svCBuilds from "@/locales/sv/c-builds.json";
+import svCCircle from "@/locales/sv/c-circle.json";
+import svCCreator from "@/locales/sv/c-creator.json";
 import svCCursedLogic from "@/locales/sv/c-cursed-logic.json";
 import svCDailyPuzzles from "@/locales/sv/c-daily-puzzles.json";
 import svCDoctrine from "@/locales/sv/c-doctrine.json";
@@ -14,15 +17,20 @@ import svCDreamRift from "@/locales/sv/c-dream-rift.json";
 import svCEconomy from "@/locales/sv/c-economy.json";
 import svCForestExplorer from "@/locales/sv/c-forest-explorer.json";
 import svCGame from "@/locales/sv/c-game.json";
+import svCHistory from "@/locales/sv/c-history.json";
 import svCHouseAlwaysWins from "@/locales/sv/c-house-always-wins.json";
 import svCKowloonKnockout from "@/locales/sv/c-kowloon-knockout.json";
 import svCLaundrySort from "@/locales/sv/c-laundry-sort.json";
+import svCLayout from "@/locales/sv/c-layout.json";
 import svCLibrary from "@/locales/sv/c-library.json";
 import svCLightsOut from "@/locales/sv/c-lights-out.json";
+import svCLists from "@/locales/sv/c-lists.json";
 import svCLockdown from "@/locales/sv/c-lockdown.json";
 import svCModeration from "@/locales/sv/c-moderation.json";
 import svCNeonDriftway from "@/locales/sv/c-neon-driftway.json";
 import svCNews from "@/locales/sv/c-news.json";
+import svCPredictions from "@/locales/sv/c-predictions.json";
+import svCProfileModules from "@/locales/sv/c-profile-modules.json";
 import svCRideshare from "@/locales/sv/c-rideshare.json";
 import svCRmhCapital from "@/locales/sv/c-rmh-capital.json";
 import svCRmhPmc from "@/locales/sv/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import svCRmhtube from "@/locales/sv/c-rmhtube.json";
 import svCRmhtype from "@/locales/sv/c-rmhtype.json";
 import svCRmhvibe from "@/locales/sv/c-rmhvibe.json";
 import svCRoadmap from "@/locales/sv/c-roadmap.json";
+import svCSaves from "@/locales/sv/c-saves.json";
 import svCSignalForge from "@/locales/sv/c-signal-forge.json";
+import svCStatus from "@/locales/sv/c-status.json";
 import svCStudio from "@/locales/sv/c-studio.json";
 import svCSynapseStorm from "@/locales/sv/c-synapse-storm.json";
 import svCTempleOfJoy from "@/locales/sv/c-temple-of-joy.json";
+import svCTournaments from "@/locales/sv/c-tournaments.json";
 import svCUi from "@/locales/sv/c-ui.json";
 import svCUserBuilds from "@/locales/sv/c-user-builds.json";
 import svCVega from "@/locales/sv/c-vega.json";
 import svCVersecraft from "@/locales/sv/c-versecraft.json";
 import svCVoidBreaker from "@/locales/sv/c-void-breaker.json";
+import svCWager from "@/locales/sv/c-wager.json";
+import svCWishlist from "@/locales/sv/c-wishlist.json";
 import svCommon from "@/locales/sv/common.json";
 import svFeed from "@/locales/sv/feed.json";
+import svGamesHub from "@/locales/sv/games-hub.json";
 import svGroups from "@/locales/sv/groups.json";
 import svLibrary from "@/locales/sv/library.json";
 import svNav from "@/locales/sv/nav.json";
@@ -61,8 +75,13 @@ import svRSliceIt from "@/locales/sv/r-slice-it.json";
 import svRStrategies from "@/locales/sv/r-strategies.json";
 import svRStudio from "@/locales/sv/r-studio.json";
 import svRideshare from "@/locales/sv/rideshare.json";
+import svSearch from "@/locales/sv/search.json";
+import svSettingsAppearance from "@/locales/sv/settings-appearance.json";
+import svSettingsContent from "@/locales/sv/settings-content.json";
+import svSettingsNotifications from "@/locales/sv/settings-notifications.json";
 import svShared from "@/locales/sv/shared.json";
 import svSite from "@/locales/sv/site.json";
+import svThemeStudio from "@/locales/sv/theme-studio.json";
 import svUserBuilds from "@/locales/sv/user-builds.json";
 import svV from "@/locales/sv/v.json";
 
@@ -71,8 +90,11 @@ const svResources = {
   "builds": svBuilds,
   "c-admin": svCAdmin,
   "c-altair": svCAltair,
+  "c-awards": svCAwards,
   "c-blog": svCBlog,
   "c-builds": svCBuilds,
+  "c-circle": svCCircle,
+  "c-creator": svCCreator,
   "c-cursed-logic": svCCursedLogic,
   "c-daily-puzzles": svCDailyPuzzles,
   "c-doctrine": svCDoctrine,
@@ -80,15 +102,20 @@ const svResources = {
   "c-economy": svCEconomy,
   "c-forest-explorer": svCForestExplorer,
   "c-game": svCGame,
+  "c-history": svCHistory,
   "c-house-always-wins": svCHouseAlwaysWins,
   "c-kowloon-knockout": svCKowloonKnockout,
   "c-laundry-sort": svCLaundrySort,
+  "c-layout": svCLayout,
   "c-library": svCLibrary,
   "c-lights-out": svCLightsOut,
+  "c-lists": svCLists,
   "c-lockdown": svCLockdown,
   "c-moderation": svCModeration,
   "c-neon-driftway": svCNeonDriftway,
   "c-news": svCNews,
+  "c-predictions": svCPredictions,
+  "c-profile-modules": svCProfileModules,
   "c-rideshare": svCRideshare,
   "c-rmh-capital": svCRmhCapital,
   "c-rmh-pmc": svCRmhPmc,
@@ -102,17 +129,23 @@ const svResources = {
   "c-rmhtype": svCRmhtype,
   "c-rmhvibe": svCRmhvibe,
   "c-roadmap": svCRoadmap,
+  "c-saves": svCSaves,
   "c-signal-forge": svCSignalForge,
+  "c-status": svCStatus,
   "c-studio": svCStudio,
   "c-synapse-storm": svCSynapseStorm,
   "c-temple-of-joy": svCTempleOfJoy,
+  "c-tournaments": svCTournaments,
   "c-ui": svCUi,
   "c-user-builds": svCUserBuilds,
   "c-vega": svCVega,
   "c-versecraft": svCVersecraft,
   "c-void-breaker": svCVoidBreaker,
+  "c-wager": svCWager,
+  "c-wishlist": svCWishlist,
   "common": svCommon,
   "feed": svFeed,
+  "games-hub": svGamesHub,
   "groups": svGroups,
   "library": svLibrary,
   "nav": svNav,
@@ -127,8 +160,13 @@ const svResources = {
   "r-strategies": svRStrategies,
   "r-studio": svRStudio,
   "rideshare": svRideshare,
+  "search": svSearch,
+  "settings-appearance": svSettingsAppearance,
+  "settings-content": svSettingsContent,
+  "settings-notifications": svSettingsNotifications,
   "shared": svShared,
   "site": svSite,
+  "theme-studio": svThemeStudio,
   "user-builds": svUserBuilds,
   "v": svV,
 } as const;

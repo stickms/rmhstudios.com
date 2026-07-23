@@ -46,7 +46,7 @@
   "select-words-prompt_one": "Sélectionnez {{count}} mot pour composer votre poème",
   "select-words-prompt_other": "Sélectionnez {{count}} mots pour composer votre poème",
   "settings": "Paramètres",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "Connectez-vous pour sauvegarder vos histoires dans le cloud et les rejouer n'importe où.",
   "sign-in-to-save": "Connectez-vous pour sauvegarder votre progression dans le cloud",
   "skip": "Passer",
   "slot-auto": "Auto",
