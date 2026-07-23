@@ -95,12 +95,12 @@ export function ExploreColumn({
       <ColumnHeader icon={Compass} title={t('explore-title', { defaultValue: 'Explore' })} />
 
       {/* Ask the feed */}
-      <section className="border-b border-site-border p-4">
+      <section className="m-4 rounded-tr-[2.5rem] rounded-bl-[2.5rem] rounded-tl-2xl rounded-br-2xl border border-site-border bg-site-surface p-5 shadow-sm">
         <label
           htmlFor="ask-feed"
-          className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-site-text"
+          className="mb-3 flex items-center gap-2 font-serif text-lg font-bold text-site-text"
         >
-          <Sparkles className="h-4 w-4 text-site-accent" />{' '}
+          <Sparkles className="h-4 w-4 text-site-text" />{' '}
           {t('ask-the-feed', { defaultValue: 'Ask the feed' })}
         </label>
         <div className="flex gap-2">
@@ -110,19 +110,20 @@ export function ExploreColumn({
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && ask()}
             placeholder={t('ask-placeholder', { defaultValue: "What's everyone talking about?" })}
-            className="flex-1 rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+            className="flex-1 rounded-full border border-site-border bg-site-bg px-4 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-text focus:outline-none"
           />
           <Button
             variant="accent"
             onClick={ask}
             loading={asking}
             disabled={question.trim().length < 3}
+            className="rounded-full px-5"
           >
             {t('ask-button', { defaultValue: 'Ask' })}
           </Button>
         </div>
         {answer && (
-          <p className="mt-3 whitespace-pre-line rounded-site-sm bg-site-surface p-3 text-sm text-site-text">
+          <p className="mt-3 whitespace-pre-line rounded-2xl border border-site-border bg-site-bg-subtle p-4 text-sm text-site-text leading-relaxed">
             {answer}
           </p>
         )}
