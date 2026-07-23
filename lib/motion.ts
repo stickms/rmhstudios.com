@@ -52,21 +52,12 @@ export const EASE = {
   emphasized: [0.16, 1, 0.3, 1] as Bezier,
   inOut: [0.65, 0, 0.35, 1] as Bezier,
   /**
-   * Springy overshoot for liquid-glass interactions (press-release flex, dock
-   * grow, tab-capsule settle). Overshoots past 1 then settles, so glass reads
-   * as elastic material. Formerly `GLASS_EASE` in components/ui/liquid-glass.tsx.
+   * Spatial spring physics (press-release flex, dock grow, tab-capsule settle).
    */
-  glass: [0.175, 0.885, 0.32, 2.2] as Bezier,
+  glass: [0.16, 1, 0.3, 1] as Bezier,
 } as const;
 
-/**
- * CSS `cubic-bezier(...)` string form of {@link EASE.glass}, for inline styles.
- * The canonical CSS home of this curve is the `--ease-glass` token in
- * `app/globals.css` (§5.3): site press physics (`.glass-interactive`, `Button`)
- * reference that token so a re-tune is one line. This string mirrors it for the
- * rare inline-style consumer that cannot reach the token — keep the two in sync.
- */
-export const GLASS_EASE_CSS = 'cubic-bezier(0.175, 0.885, 0.32, 2.2)';
+export const GLASS_EASE_CSS = 'cubic-bezier(0.16, 1, 0.3, 1)';
 
 /**
  * Spring presets for physical, interruptible motion (drag, reorder, pop-in).

@@ -27,8 +27,8 @@ function Card({
       data-glass-light={interactive ? '' : undefined}
       className={cn(
         pane ? 'glass-pane' : 'glass-fill',
-        'text-site-text flex flex-col gap-3 py-4 sm:gap-4 transition-[box-shadow,border-color,transform,background-color]',
-        interactive && 'glass-interactive hover:-translate-y-px',
+        'text-site-text flex flex-col gap-3 py-4 sm:gap-4 transition-all duration-200 ease-out',
+        interactive && 'glass-interactive hover:-translate-y-0.5 hover:scale-[1.006] hover:shadow-lg',
         className,
       )}
       {...props}

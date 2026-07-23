@@ -6,31 +6,24 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  // The transform transition rides the theme's press duration + --ease-glass
-  // (§5.3), so each material can tune its release without changing the
-  // primitive; colour/shadow/opacity stay on a plain quick ease.
-  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[var(--site-control-radius,10px)] text-sm font-medium tracking-[-0.01em] [transition:transform_var(--site-press-duration,180ms)_var(--ease-glass),color_0.14s_ease,background-color_0.14s_ease,border-color_0.14s_ease,box-shadow_0.14s_ease,opacity_0.14s_ease] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-site-accent/50 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-site-bg aria-invalid:ring-site-danger/30 aria-invalid:border-site-danger",
+  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[var(--site-control-radius,12px)] text-sm font-medium tracking-[-0.015em] transition-all duration-150 ease-out active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-site-accent/60 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-site-bg aria-invalid:ring-site-danger/30 aria-invalid:border-site-danger",
   {
     variants: {
       variant: {
-        // Solid variants read as *colored glass*: a near-opaque accent/danger
-        // body with a top specular rim, so they sit in the same material system
-        // as the surfaces around them (§7.2). The rim brightens toward the light
-        // on hover as the body goes fully opaque.
         default:
-          'glass-sheen-hover bg-site-accent/90 text-site-accent-fg hover:bg-site-accent-hover shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]',
+          'bg-site-accent text-site-accent-fg hover:bg-site-accent-hover shadow-[0_4px_16px_-2px_rgba(56,189,248,0.3),inset_0_1px_0_rgba(255,255,255,0.4)] border border-white/20',
         destructive:
-          'bg-site-danger/90 text-white hover:bg-site-danger shadow-[inset_0_1px_0_var(--site-glass-rim-soft)] focus-visible:ring-site-danger/40',
+          'bg-site-danger text-white hover:bg-site-danger/90 shadow-[0_4px_16px_-2px_rgba(248,113,113,0.3),inset_0_1px_0_rgba(255,255,255,0.4)] focus-visible:ring-site-danger/40',
         danger:
-          'bg-site-danger/90 text-white hover:bg-site-danger shadow-[inset_0_1px_0_var(--site-glass-rim-soft)] focus-visible:ring-site-danger/40',
+          'bg-site-danger text-white hover:bg-site-danger/90 shadow-[0_4px_16px_-2px_rgba(248,113,113,0.3),inset_0_1px_0_rgba(255,255,255,0.4)] focus-visible:ring-site-danger/40',
         outline:
-          'border border-site-border bg-transparent text-site-text hover:bg-site-surface-hover hover:border-site-border-bright',
+          'border border-site-border bg-site-surface/50 backdrop-blur-md text-site-text hover:bg-site-surface-hover hover:border-site-border-bright shadow-sm',
         secondary:
-          'border border-site-border bg-site-surface text-site-text hover:bg-site-surface-hover shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]',
+          'border border-site-border/80 bg-site-surface backdrop-blur-md text-site-text hover:bg-site-surface-hover shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]',
         ghost: 'text-site-text hover:bg-site-surface-hover',
         link: 'text-site-accent underline-offset-4 hover:underline',
         accent:
-          'glass-sheen-hover bg-site-accent/90 text-site-accent-fg hover:bg-site-accent-hover shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]',
+          'bg-site-accent text-site-accent-fg hover:bg-site-accent-hover shadow-[0_4px_16px_-2px_rgba(56,189,248,0.3),inset_0_1px_0_rgba(255,255,255,0.4)] border border-white/20',
         'accent-outline': 'border border-site-accent text-site-accent hover:bg-site-accent-dim',
         'accent-ghost': 'text-site-accent hover:bg-site-accent-dim',
       },
