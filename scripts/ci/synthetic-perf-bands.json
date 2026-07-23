@@ -1,0 +1,16 @@
+{
+  "$comment": "Synthetic performance guardrails for production-route probes.",
+  "lighthouseRuns": 3,
+  "urls": [
+    { "url": "https://rmhstudios.com/", "routeClass": "core" },
+    { "url": "https://rmhstudios.com/library", "routeClass": "content" },
+    { "url": "https://rmhstudios.com/rmhtube", "routeClass": "interactive" },
+    { "url": "https://rmhstudios.com/rmhbox", "routeClass": "realtime" }
+  ],
+  "thresholds": {
+    "core": { "lcpMs": 2500, "inpMs": 200, "cls": 0.1, "ttfbMs": 800, "performanceScore": 80 },
+    "content": { "lcpMs": 3000, "inpMs": 250, "cls": 0.15, "ttfbMs": 1000, "performanceScore": 75 },
+    "interactive": { "lcpMs": 3500, "inpMs": 300, "cls": 0.2, "ttfbMs": 1200, "performanceScore": 70 },
+    "realtime": { "lcpMs": 4000, "inpMs": 350, "cls": 0.2, "ttfbMs": 1500, "performanceScore": 65 }
+  }
+}

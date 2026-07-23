@@ -1,14 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { classifyRumRoute, getRumThreshold } from '@/lib/rum-slo';
 
 /**
  * POST /api/rum — sink for Core Web Vitals reports from `lib/rum.ts`.
  *
  * Accepts and validates every metric (ready to forward to a hosted RUM backend
- * later) but only logs the `poor`-rated ones, so the server logs surface
- * actionable real-user regressions without per-pageload noise. `console.warn`
- * is preserved in production bundles (see `vite.config.ts` esbuild.pure).
+ * later), logs Web Vitals' own `poor` ratings, and emits a second guardrail log
+ * when a route-class-specific SLO threshold is exceeded.
  */
 
 const MetricSchema = z.object({
@@ -40,6 +40,8 @@ export const Route = createFileRoute('/api/rum')({
         if (!parsed.success) return new Response(null, { status: 400 });
 
         const m = parsed.data;
+        const routeClass = classifyRumRoute(m.path);
+        const threshold = getRumThreshold(routeClass, m.name);
         if (m.rating === 'poor') {
           console.warn(
             '[rum:poor]',
@@ -47,6 +49,20 @@ export const Route = createFileRoute('/api/rum')({
               name: m.name,
               value: m.value,
               path: m.path,
+              routeClass,
+              navigationType: m.navigationType,
+            }),
+          );
+        }
+        if (threshold != null && Number.isFinite(m.value) && m.value > threshold) {
+          console.warn(
+            '[rum:slo-breach]',
+            JSON.stringify({
+              name: m.name,
+              value: m.value,
+              threshold,
+              path: m.path,
+              routeClass,
               navigationType: m.navigationType,
             }),
           );

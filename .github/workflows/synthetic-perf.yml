@@ -1,0 +1,61 @@
+name: synthetic-perf
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+
+concurrency:
+  group: synthetic-perf-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Run synthetic Lighthouse probes
+        run: |
+          set -euo pipefail
+          mkdir -p .lighthouseci
+          while IFS= read -r url; do
+            [ -z "$url" ] && continue
+            npx -y @lhci/cli@0.15.1 collect \
+              --url="$url" \
+              --numberOfRuns=3 \
+              --settings.chromeFlags="--headless=new --no-sandbox"
+          done < <(node -e "const c=require('./scripts/ci/synthetic-perf-bands.json');for(const u of c.urls) console.log(u.url)")
+
+      - name: Enforce regression bands
+        run: node scripts/ci/synthetic-perf-report.mjs
+
+      - name: Upload Lighthouse artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-perf-lighthouse
+          path: .lighthouseci
+          if-no-files-found: error
+
+  cloudflare-cache-rule-drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ZONE_ID != '' }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Verify Cloudflare cache-rule drift
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          VERIFY_ONLY: '1'
+        run: bash deploy/apply-cloudflare-cache-rules.sh

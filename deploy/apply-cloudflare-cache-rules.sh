@@ -18,6 +18,7 @@
 #   export CLOUDFLARE_API_TOKEN=...      # NOT the global key — a scoped token
 #   export CLOUDFLARE_ZONE_ID=...        # dashboard → your domain → API section
 #   bash deploy/apply-cloudflare-cache-rules.sh
+# Verify drift only (no write): VERIFY_ONLY=1 bash deploy/apply-cloudflare-cache-rules.sh
 # Dry run (prints the request body, makes no call): DRY_RUN=1 bash deploy/apply-cloudflare-cache-rules.sh
 #
 # This ruleset now also caches the ANONYMOUS homepage HTML (perf audit §1.2 /
@@ -83,6 +84,36 @@ JSON
 if [ "${DRY_RUN:-0}" = "1" ]; then
   echo "(DRY RUN) would PUT $API/zones/$CLOUDFLARE_ZONE_ID/rulesets/phases/$PHASE/entrypoint"
   echo "$BODY"
+  exit 0
+fi
+
+if [ "${VERIFY_ONLY:-0}" = "1" ]; then
+  echo "Verifying cache ruleset drift for zone $CLOUDFLARE_ZONE_ID …"
+  RESP="$(curl -sS \
+    "$API/zones/$CLOUDFLARE_ZONE_ID/rulesets/phases/$PHASE/entrypoint" \
+    -H "Authorization: ******")"
+
+  if ! printf '%s' "$RESP" | grep -q '"success":true'; then
+    echo "✗ Cloudflare API returned an error:"
+    printf '%s\n' "$RESP"
+    exit 1
+  fi
+
+  for snippet in \
+    "cache image-proxy + feed image transforms" \
+    "starts_with(http.request.uri.path, \\\"/api/image-proxy\\\")" \
+    "starts_with(http.request.uri.path, \\\"/api/feed/image/\\\")" \
+    "cache anonymous default-locale homepage HTML" \
+    "http.request.uri.path eq \\\"/\\\"" \
+    "http.cookie contains \\\"session_token\\\"" \
+    "http.cookie contains \\\"rmh-lang=\\\""; do
+    if ! printf '%s' "$RESP" | grep -q "$snippet"; then
+      echo "✗ Missing expected cache-rule snippet: $snippet"
+      exit 1
+    fi
+  done
+
+  echo "✓ Cache ruleset matches expected performance rules."
   exit 0
 fi
 
