@@ -85,12 +85,12 @@ export function WhatsNewModal() {
       }}
     >
       <DialogContent className="max-w-2xl gap-0 overflow-hidden p-0">
-        <div className="relative overflow-hidden border-b border-site-border px-6 py-8 sm:px-9 sm:py-10">
+        <div className="relative overflow-hidden border-b border-site-border px-5 py-7 pr-16 sm:px-9 sm:py-10 sm:pr-16">
           <div aria-hidden className="spatial-modal-art">
             <span />
           </div>
           <div className="relative z-1 max-w-md">
-            <DialogTitle className="font-(family-name:--site-font-display) text-4xl font-medium leading-[0.98] tracking-[-0.045em] sm:text-5xl">
+            <DialogTitle className="font-(family-name:--site-font-display) text-3xl font-medium leading-[0.98] tracking-[-0.045em] sm:text-5xl">
               {t('whatsnew-title-spatial', { defaultValue: 'Welcome to a quieter RMH.' })}
             </DialogTitle>
             <DialogDescription className="mt-4 max-w-sm text-sm leading-relaxed text-site-text-muted">
@@ -101,13 +101,13 @@ export function WhatsNewModal() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 px-6 py-6 sm:px-9">
+        <div className="grid grid-cols-1 px-4 py-3 sm:grid-cols-3 sm:gap-3 sm:px-9 sm:py-6">
           {FEATURES.map((feature) => {
             const Icon = feature.icon;
             return (
               <div
                 key={feature.titleKey}
-                className="flex min-w-0 flex-col gap-3 border-t border-site-border pt-4"
+                className="grid min-w-0 grid-cols-[2.5rem_1fr] items-center gap-3 border-t border-site-border py-3 sm:flex sm:flex-col sm:items-start sm:pt-4"
               >
                 <span className="flex size-10 items-center justify-center rounded-[var(--site-control-radius)] border border-site-border text-site-text">
                   <Icon className="size-4" aria-hidden />
@@ -120,8 +120,8 @@ export function WhatsNewModal() {
           })}
         </div>
 
-        <div className="flex items-center justify-end border-t border-site-border px-6 py-5 sm:px-9">
-          <Button className="ml-auto" onClick={dismiss}>
+        <div className="flex items-center justify-end border-t border-site-border px-4 py-4 sm:px-9 sm:py-5">
+          <Button className="w-full sm:ml-auto sm:w-auto" onClick={dismiss}>
             {t('explore-new-ui', { defaultValue: 'Explore' })}
             <ArrowRight aria-hidden />
           </Button>

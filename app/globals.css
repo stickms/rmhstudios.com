@@ -3706,9 +3706,13 @@ body::after {
 }
 
 @media (max-width: 767px) {
+  .site-sticky-chrome {
+    top: calc(var(--safe-top) + var(--site-sticky-edge));
+  }
+
   .spatial-feed-intro {
-    min-height: 22rem;
-    padding: 2rem;
+    min-height: clamp(18rem, 72svh, 22rem);
+    padding: clamp(1.5rem, 6vw, 2rem);
   }
 
   .spatial-feed-intro__orb {
@@ -3729,6 +3733,20 @@ body::after {
 
   .spatial-feed-intro__copy {
     max-width: 100%;
+  }
+
+  [data-slot='page-content'] {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 479px) {
+  [data-slot='page-header-action'] [data-slot='button'] {
+    width: 2.75rem;
+    min-width: 2.75rem;
+    padding-inline: 0;
+    gap: 0;
+    font-size: 0;
   }
 }
 
@@ -3752,7 +3770,7 @@ body::after {
 
 .spatial-design-nav {
   position: sticky;
-  top: clamp(0.75rem, 2vw, 1.5rem);
+  top: calc(var(--safe-top) + clamp(0.75rem, 2vw, 1.5rem));
   z-index: 30;
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -4028,12 +4046,19 @@ body::after {
 }
 
 @media (max-width: 767px) {
+  .spatial-design-page {
+    padding: 0.75rem;
+  }
+
   .spatial-design-nav {
     grid-template-columns: 1fr auto;
+    min-height: 3.5rem;
+    padding-inline: 1rem;
   }
 
   .spatial-design-hero {
     min-height: calc(100dvh - 6rem);
+    padding: clamp(1.5rem, 7vw, 2.5rem);
   }
 
   .spatial-design-hero__art::before {
@@ -4057,7 +4082,20 @@ body::after {
   }
 
   .spatial-design-hero h1 {
-    font-size: clamp(3.5rem, 18vw, 6rem);
+    font-size: clamp(3rem, 17vw, 5rem);
+  }
+
+  .spatial-design-hero__lede {
+    line-height: 1.5;
+  }
+
+  .spatial-design-statement,
+  .spatial-design-principles {
+    padding: 4rem 0.75rem;
+  }
+
+  .spatial-design-statement h2 {
+    font-size: clamp(2.4rem, 12vw, 4rem);
   }
 
   .spatial-design-section-head,
@@ -4075,6 +4113,27 @@ body::after {
 
   .spatial-design-cta {
     margin-inline: 0;
+    padding: 2.5rem 1.5rem;
+  }
+
+  .spatial-design-cta h2 {
+    font-size: clamp(2.4rem, 13vw, 4.5rem);
+  }
+
+  .spatial-design-cta a {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .spatial-design-footer {
+    gap: 1rem;
+    padding-inline: 0.75rem;
+  }
+}
+
+@media (max-width: 419px) {
+  .spatial-design-footer {
+    flex-direction: column;
   }
 }
 

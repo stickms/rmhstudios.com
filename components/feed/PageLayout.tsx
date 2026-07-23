@@ -94,8 +94,8 @@ export function PageLayout({
             aria-describedby={description ? descriptionId : undefined}
             className="group site-sticky-chrome spatial-page-header h-24 min-h-24 transition-[min-height,height] duration-300 data-[scrolled]:h-16 data-[scrolled]:min-h-16"
           >
-            <div className="flex h-full min-w-0 items-center gap-4 px-5 py-5 sm:px-7">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="flex h-full min-w-0 items-center gap-2 px-3 py-4 sm:gap-4 sm:px-7 sm:py-5">
+              <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
                 {/* Mobile: always show the sidebar button in the top-left */}
                 <MobileMenuButton />
                 {backTo && (
@@ -114,10 +114,10 @@ export function PageLayout({
                       className="mb-0.5 hidden sm:block group-data-[scrolled]:hidden"
                     />
                   )}
-                  <h1 className="flex min-w-0 items-center gap-2 truncate font-(family-name:--site-font-display) text-3xl font-medium leading-none text-site-text [letter-spacing:var(--site-letter-spacing)] group-data-[scrolled]:font-(family-name:--site-font-body) group-data-[scrolled]:text-xl group-data-[scrolled]:font-semibold sm:text-4xl">
+                  <h1 className="flex min-w-0 items-center gap-2 font-(family-name:--site-font-display) text-3xl font-medium leading-none text-site-text [letter-spacing:var(--site-letter-spacing)] group-data-[scrolled]:font-(family-name:--site-font-body) group-data-[scrolled]:text-xl group-data-[scrolled]:font-semibold sm:text-4xl">
                     {/* Mobile: "RMH |" brand prefix before the page title */}
                     <MobileBrandPrefix />
-                    {title}
+                    <span className="min-w-0 truncate">{title}</span>
                   </h1>
                   {description && (
                     <p id={descriptionId} data-slot="page-description" className="sr-only">
@@ -126,7 +126,14 @@ export function PageLayout({
                   )}
                 </div>
               </div>
-              {headerRight && <div className="min-w-0 shrink-0">{headerRight}</div>}
+              {headerRight && (
+                <div
+                  data-slot="page-header-action"
+                  className="min-w-0 max-w-[45%] shrink-0 overflow-hidden sm:max-w-none"
+                >
+                  {headerRight}
+                </div>
+              )}
             </div>
           </header>
 

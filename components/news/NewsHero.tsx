@@ -80,12 +80,17 @@ export function NewsHero({ articles }: NewsHeroProps) {
       className="relative mb-12"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
+      onPointerDown={() => setIsPaused(true)}
+      onFocusCapture={() => setIsPaused(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setIsPaused(false);
+      }}
     >
       <div className="-mx-3 overflow-hidden rounded-site" ref={emblaRef}>
         <div className="flex">
           {articles.map((article) => (
             <div key={article.slug} className="min-w-0 flex-[0_0_100%] px-3">
-              <article className="site-inverse relative flex min-h-[320px] flex-col justify-end overflow-hidden rounded-site border border-site-border bg-site-surface p-8 md:p-12">
+              <article className="site-inverse relative flex min-h-[260px] flex-col justify-end overflow-hidden rounded-site border border-site-border bg-site-surface p-5 sm:min-h-[320px] sm:p-8 md:p-12">
                 <div
                   aria-hidden
                   className="absolute -right-20 -top-36 size-96 rounded-[44%_56%_62%_38%] bg-site-text opacity-8"
@@ -120,7 +125,8 @@ export function NewsHero({ articles }: NewsHeroProps) {
         <div className="mt-4 flex items-center justify-center gap-3">
           <button
             onClick={scrollPrev}
-            className="rounded-[var(--site-control-radius)] border border-site-border bg-site-surface p-1.5 text-site-text transition-colors hover:bg-site-accent hover:text-site-accent-fg"
+            data-slot="news-hero-control"
+            className="inline-flex size-11 shrink-0 touch-manipulation items-center justify-center rounded-site border border-site-border bg-site-surface text-site-text transition-colors hover:bg-site-accent hover:text-site-accent-fg active:bg-site-surface-active"
             aria-label={t('prev-featured-article', {
               defaultValue: 'Previous featured article',
             })}
@@ -128,38 +134,45 @@ export function NewsHero({ articles }: NewsHeroProps) {
             <ChevronLeft className="size-4" aria-hidden />
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex max-w-full items-center overflow-x-auto">
             {scrollSnaps.map((_, index) => (
               <button
                 key={index}
                 onClick={() => scrollTo(index)}
+                data-slot="news-hero-dot"
                 aria-current={index === selectedIndex ? 'true' : undefined}
-                className={`relative h-1.5 overflow-hidden rounded-full transition-all duration-300 ${
-                  index === selectedIndex
-                    ? 'w-8 bg-site-accent/30'
-                    : 'w-1.5 bg-site-border hover:bg-site-text-dim'
+                className={`flex h-11 shrink-0 touch-manipulation items-center justify-center transition-[width] duration-300 ${
+                  index === selectedIndex ? 'w-11' : 'w-8'
                 }`}
                 aria-label={t('go-to-featured-article', {
                   defaultValue: 'Go to featured article {{n}}',
                   n: index + 1,
                 })}
               >
-                {index === selectedIndex && (
-                  <span
-                    className="absolute inset-0 rounded-full bg-site-accent"
-                    style={{
-                      transform: `scaleX(${progress})`,
-                      transformOrigin: 'left',
-                    }}
-                  />
-                )}
+                <span
+                  aria-hidden
+                  className={`relative h-1.5 overflow-hidden rounded-site transition-[width,background-color] duration-300 ${
+                    index === selectedIndex ? 'w-8 bg-site-accent/30' : 'w-1.5 bg-site-border'
+                  }`}
+                >
+                  {index === selectedIndex && (
+                    <span
+                      className="absolute inset-0 rounded-site bg-site-accent"
+                      style={{
+                        transform: `scaleX(${progress})`,
+                        transformOrigin: 'left',
+                      }}
+                    />
+                  )}
+                </span>
               </button>
             ))}
           </div>
 
           <button
             onClick={scrollNext}
-            className="rounded-[var(--site-control-radius)] border border-site-border bg-site-surface p-1.5 text-site-text transition-colors hover:bg-site-accent hover:text-site-accent-fg"
+            data-slot="news-hero-control"
+            className="inline-flex size-11 shrink-0 touch-manipulation items-center justify-center rounded-site border border-site-border bg-site-surface text-site-text transition-colors hover:bg-site-accent hover:text-site-accent-fg active:bg-site-surface-active"
             aria-label={t('next-featured-article', { defaultValue: 'Next featured article' })}
           >
             <ChevronRight className="size-4" aria-hidden />

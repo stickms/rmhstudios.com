@@ -30,7 +30,7 @@
   line-height:1.7;
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
-  overflow-x:hidden;
+  overflow-x:clip;
   min-height:100vh;
 }
 
@@ -62,7 +62,7 @@
 .rmhc-root .rule-soft{height:1px;background:var(--line-soft);border:0}
 
 /* ════ TOP NAV ════ */
-.rmhc-root .topnav{position:sticky;top:0;z-index:90;background:rgba(6,9,15,0.72);backdrop-filter:blur(16px) saturate(130%);border-bottom:1px solid var(--line-soft);transition:border-color .3s}
+.rmhc-root .topnav{position:sticky;top:0;z-index:90;padding-top:env(safe-area-inset-top,0px);background:rgba(6,9,15,0.72);backdrop-filter:blur(16px) saturate(130%);border-bottom:1px solid var(--line-soft);transition:border-color .3s}
 .rmhc-root .topnav.scrolled{border-bottom-color:var(--line);background:rgba(6,9,15,0.9)}
 .rmhc-root .topnav-inner{max-width:var(--maxw);margin:0 auto;padding:0 var(--pad);height:74px;display:flex;align-items:center;justify-content:space-between;gap:24px}
 .rmhc-root .topnav-left{display:flex;align-items:center;gap:20px;flex:0 0 auto}

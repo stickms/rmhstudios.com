@@ -38,7 +38,7 @@
   line-height:1.62;
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
-  overflow-x:hidden;
+  overflow-x:clip;
   min-height:100vh;
 }
 
@@ -106,7 +106,7 @@
 }
 
 /* ════ COMMAND BAR (top) ════ */
-.rmhp-root .cmdbar{position:sticky;top:0;z-index:90;background:rgba(11,14,17,0.8);backdrop-filter:blur(14px) saturate(120%);border-bottom:1px solid var(--line-soft);transition:border-color .3s,background .3s}
+.rmhp-root .cmdbar{position:sticky;top:0;z-index:90;padding-top:env(safe-area-inset-top,0px);background:rgba(11,14,17,0.8);backdrop-filter:blur(14px) saturate(120%);border-bottom:1px solid var(--line-soft);transition:border-color .3s,background .3s}
 .rmhp-root .cmdbar.scrolled{border-bottom-color:var(--line);background:rgba(11,14,17,0.94)}
 .rmhp-root .cmdbar-inner{max-width:calc(var(--maxw) + var(--gut));margin:0 auto;padding:0 var(--pad);height:62px;display:flex;align-items:center;justify-content:space-between;gap:22px}
 .rmhp-root .cmdbar-left{display:flex;align-items:center;gap:18px;flex:0 0 auto}

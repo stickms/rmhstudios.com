@@ -32,7 +32,7 @@ export function SiteShell({ children, overlays }: SiteShellProps) {
         {/* Global Parallax Background — pointer + scroll driven organic shapes */}
         <div
           aria-hidden
-          className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+          className="pointer-events-none fixed inset-0 z-0 hidden overflow-hidden md:block"
           style={{ willChange: 'transform' }}
         >
           {/* Top-right blob: pointer + scroll parallax */}
