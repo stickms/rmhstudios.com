@@ -18,7 +18,7 @@ import { FileText, Gamepad2, AppWindow, Boxes, Bot, Coins } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from "@/components/feed/ContextRail";
+import { ContextRail } from '@/components/feed/ContextRail';
 import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { listCuratedBuilds } from '@/lib/builds/curated';
@@ -87,16 +87,18 @@ function CreatorStudio() {
     { id: 'pages', label: t('studio-tab-pages', { defaultValue: 'Pages' }), icon: FileText },
     { id: 'games', label: t('studio-tab-games', { defaultValue: 'Games' }), icon: Gamepad2 },
     { id: 'apps', label: t('studio-tab-apps', { defaultValue: 'Apps' }), icon: AppWindow },
-    { id: 'user-builds', label: t('studio-tab-user-builds', { defaultValue: 'User Builds' }), icon: Boxes },
+    {
+      id: 'user-builds',
+      label: t('studio-tab-user-builds', { defaultValue: 'User Builds' }),
+      icon: Boxes,
+    },
     { id: 'personas', label: t('studio-tab-personas', { defaultValue: 'AI Personas' }), icon: Bot },
     { id: 'earnings', label: t('studio-tab-earnings', { defaultValue: 'Earnings' }), icon: Coins },
   ];
 
   return (
     <>
-      <AnimatedMain
-        className="cstudio-screen vibe-screen min-h-screen w-full min-w-0 pb-dock"
-      >
+      <AnimatedMain className="cstudio-screen vibe-screen min-h-screen w-full min-w-0 pb-dock">
         <MobileTopBar title={t('creator-studio', { defaultValue: 'Creator Studio' })} />
 
         <header className="cstudio-head">
@@ -126,16 +128,27 @@ function CreatorStudio() {
           onChange={setTab}
           idBase="cstudio"
           scroll
+          iconOnly
           aria-label={t('creator-studio', { defaultValue: 'Creator Studio' })}
         />
 
         {tab === 'pages' && (
-          <div className="cstudio-body cstudio-body--pages" role="tabpanel" id="cstudio-panel-pages" aria-labelledby="cstudio-tab-pages">
+          <div
+            className="cstudio-body cstudio-body--pages"
+            role="tabpanel"
+            id="cstudio-panel-pages"
+            aria-labelledby="cstudio-tab-pages"
+          >
             <PagesTab initial={gallery} seed={seed} fetchGallery={fetchGallery} />
           </div>
         )}
         {tab === 'games' && (
-          <div className="cstudio-body" role="tabpanel" id="cstudio-panel-games" aria-labelledby="cstudio-tab-games">
+          <div
+            className="cstudio-body"
+            role="tabpanel"
+            id="cstudio-panel-games"
+            aria-labelledby="cstudio-tab-games"
+          >
             <PartyBar inline />
             <RankedSummary />
             <CuratedBuildsTab
@@ -147,7 +160,12 @@ function CreatorStudio() {
           </div>
         )}
         {tab === 'apps' && (
-          <div className="cstudio-body" role="tabpanel" id="cstudio-panel-apps" aria-labelledby="cstudio-tab-apps">
+          <div
+            className="cstudio-body"
+            role="tabpanel"
+            id="cstudio-panel-apps"
+            aria-labelledby="cstudio-tab-apps"
+          >
             <CuratedBuildsTab
               curated={apps}
               seed={seed + 2}
@@ -157,17 +175,32 @@ function CreatorStudio() {
           </div>
         )}
         {tab === 'user-builds' && (
-          <div className="cstudio-body" role="tabpanel" id="cstudio-panel-user-builds" aria-labelledby="cstudio-tab-user-builds">
+          <div
+            className="cstudio-body"
+            role="tabpanel"
+            id="cstudio-panel-user-builds"
+            aria-labelledby="cstudio-tab-user-builds"
+          >
             <UserBuildsTab seed={seed + 3} />
           </div>
         )}
         {tab === 'personas' && (
-          <div className="cstudio-body" role="tabpanel" id="cstudio-panel-personas" aria-labelledby="cstudio-tab-personas">
+          <div
+            className="cstudio-body"
+            role="tabpanel"
+            id="cstudio-panel-personas"
+            aria-labelledby="cstudio-tab-personas"
+          >
             <PersonasTab seed={seed + 4} />
           </div>
         )}
         {tab === 'earnings' && (
-          <div className="cstudio-body" role="tabpanel" id="cstudio-panel-earnings" aria-labelledby="cstudio-tab-earnings">
+          <div
+            className="cstudio-body"
+            role="tabpanel"
+            id="cstudio-panel-earnings"
+            aria-labelledby="cstudio-tab-earnings"
+          >
             <StudioDashboard />
             <EarningsTab />
           </div>
