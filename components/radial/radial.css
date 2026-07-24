@@ -249,11 +249,39 @@
   outline: 3px solid var(--site-text);
   outline-offset: 3px;
 }
-.radial-hub__mark {
-  font-weight: 800;
-  font-size: 0.95rem;
-  letter-spacing: 0.1em;
-  line-height: 1;
+/* The RMH mark (radial spirograph SVG) drawn in the orb's accent-contrast ink. */
+.radial-hub__logo {
+  display: block;
+  width: 74%;
+  height: 74%;
+  overflow: visible;
+  color: inherit;
+}
+.radial-hub__logo path {
+  stroke-width: 3.4;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+/* On mount the mark blooms open — scaling + rotating out of the core while its
+   stroke draws itself (pathLength-normalised), leaning into the SVG. */
+@media (prefers-reduced-motion: no-preference) {
+  .radial-hub__logo {
+    animation: rmh-logo-bloom 1.05s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)) both;
+  }
+  .radial-hub__logo path {
+    animation: rmh-logo-draw 1.3s ease both;
+  }
+}
+@keyframes rmh-logo-bloom {
+  from {
+    transform: scale(0.15) rotate(-50deg);
+    opacity: 0;
+  }
+}
+@keyframes rmh-logo-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
 }
 
 /* ── Radial navigation overlay ────────────────────────────────────────── */
