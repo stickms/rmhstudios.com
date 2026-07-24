@@ -263,10 +263,11 @@
   color: inherit;
 }
 .radial-hub__logo path {
-  /* Thin line-art: the mark is a very dense spirograph, so a heavy stroke bleeds
-     the curves into a solid muddy blob. A fine stroke keeps it crisp white
-     line-art on the accent orb (and stays sharp on retina phones). */
-  stroke-width: 1.5;
+  /* Hairline line-art: the mark is a very dense spirograph rendered tiny (~44px
+     in the orb), so any weight bleeds the overlapping curves into a solid muddy
+     blob. Kept very fine (this scales DOWN with the geometry, so on-screen it's
+     a sub-pixel filigree) → a delicate white mark, not a heavy black disc. */
+  stroke-width: 0.8;
   stroke-dasharray: 1;
   stroke-dashoffset: 0;
 }
