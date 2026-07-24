@@ -2,14 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
-import { AnimatePresence, motion } from 'framer-motion';
 import { LogOut, Settings, X, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SIDEBAR_NAV, isNavGroup, type NavLeaf } from '@/lib/sidebar-nav';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 type HubUser = { id: string; handle?: string | null; isAdmin?: boolean };
 
@@ -26,22 +24,22 @@ const isActive = (pathname: string, href: string) =>
 /**
  * The RMH radial navigator. A fixed central orb that, on open, blooms the
  * platform's destinations outward along a ring — each spoke travelling from the
- * core to its resting position with a staggered, GPU-composited transform. It is
- * the persistent navigation surface shared by every page, replacing the old flat
- * sidebar. The bloom is a CSS keyframe (compositor-only), so it holds the
- * display's full refresh rate and collapses cleanly under reduced-motion.
+ * core to its resting position with a staggered, GPU-composited transform.
+ *
+ * Deliberately framer-motion-free: the orb is plain HTML/CSS and the bloom is a
+ * CSS keyframe, so the always-rendered shell keeps no animation library on the
+ * critical path — which is what keeps first load light on mobile.
  */
 export function RadialHub() {
   const { t } = useTranslation('feed');
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const reduced = useReducedMotion();
   const { data: session } = useSession();
   const { resolved } = useResolvedUser();
   const user = session?.user as HubUser | undefined;
 
   const [open, setOpen] = useState(false);
-  const stageRef = useRef<HTMLDivElement | null>(null);
+  const stageRef = useRef<HTMLElement | null>(null);
 
   // Flatten the canonical nav into a single ring of reachable destinations,
   // honouring auth/admin gating so signed-out visitors never see gated spokes.
@@ -117,137 +115,136 @@ export function RadialHub() {
         <span className="radial-hub__ring" aria-hidden />
       </button>
 
-      <AnimatePresence>
-        {open ? (
-          <motion.div
-            className="radial-hub__overlay"
-            data-reduced={reduced || undefined}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: reduced ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
-            role="presentation"
-          >
-            <button
-              type="button"
-              className="radial-hub__scrim"
-              onClick={close}
-              aria-label={t('close', { defaultValue: 'Close' })}
-              tabIndex={-1}
-            />
+      <div
+        className={'radial-hub__overlay' + (open ? ' is-open' : '')}
+        aria-hidden={!open}
+        role="presentation"
+      >
+        <button
+          type="button"
+          className="radial-hub__scrim"
+          onClick={close}
+          aria-label={t('close', { defaultValue: 'Close' })}
+          tabIndex={open ? 0 : -1}
+        />
 
-            <nav
-              ref={stageRef}
-              className="radial-hub__ring-stage"
-              style={{ '--radial-hub-r': 'min(30vh, 32vw, 210px)' } as CSSProperties}
-              aria-label={t('section-navigation', { defaultValue: 'Browse RMH Studios' })}
-            >
-              <div className="radial-hub__core" aria-hidden>
-                <span>RMH</span>
-                <small>{t('studio-wordmark', { defaultValue: 'Studios' })}</small>
-              </div>
+        <nav
+          ref={stageRef}
+          className="radial-hub__ring-stage"
+          style={{ '--radial-hub-r': 'min(30vh, 32vw, 210px)' } as CSSProperties}
+          aria-label={t('section-navigation', { defaultValue: 'Browse RMH Studios' })}
+        >
+          <div className="radial-hub__core" aria-hidden>
+            <span>RMH</span>
+            <small>{t('studio-wordmark', { defaultValue: 'Studios' })}</small>
+          </div>
 
-              <ul className="radial-hub__spokes">
-                {spokes.map((spoke, i) => {
-                  const Icon = spoke.icon as LucideIcon;
-                  const active = isActive(pathname, spoke.href);
-                  const label = t(spoke.tKey, { defaultValue: spoke.label });
-                  const style = {
-                    '--sx': spoke.ux,
-                    '--sy': spoke.uy,
-                    '--i': i,
-                  } as CSSProperties;
-                  const cls = 'radial-hub__spoke' + (active ? ' is-active' : '');
-                  const inner = (
-                    <>
-                      <span className="radial-hub__spoke-icon">
-                        <Icon aria-hidden />
-                      </span>
-                      <span className="radial-hub__spoke-label">{label}</span>
-                    </>
-                  );
-                  return (
-                    <li key={spoke.id} className="radial-hub__spoke-wrap" style={style}>
-                      {spoke.external ? (
-                        <a
-                          href={spoke.href}
-                          className={cls}
-                          onClick={close}
-                          aria-current={active ? 'page' : undefined}
-                        >
-                          {inner}
-                        </a>
-                      ) : (
-                        <Link
-                          to={spoke.href}
-                          className={cls}
-                          onClick={close}
-                          aria-current={active ? 'page' : undefined}
-                        >
-                          {inner}
-                        </Link>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </nav>
-
-            <div className="radial-hub__foot">
-              {session && user ? (
+          <ul className="radial-hub__spokes">
+            {spokes.map((spoke, i) => {
+              const Icon = spoke.icon as LucideIcon;
+              const active = isActive(pathname, spoke.href);
+              const label = t(spoke.tKey, { defaultValue: spoke.label });
+              const style = {
+                '--sx': spoke.ux,
+                '--sy': spoke.uy,
+                '--i': i,
+              } as CSSProperties;
+              const cls = 'radial-hub__spoke' + (active ? ' is-active' : '');
+              const inner = (
                 <>
-                  <Link
-                    to={`/u/${user.handle || user.id}` as string}
-                    className="radial-hub__identity"
-                    onClick={close}
-                  >
-                    <UserAvatar
-                      src={resolved?.image || session.user.image}
-                      alt={resolved?.name || session.user.name || 'You'}
-                      size={30}
-                      fallbackName={resolved?.name || session.user.name}
-                    />
-                    <span>{resolved?.name || session.user.name}</span>
-                  </Link>
-                  <Link
-                    to="/settings"
-                    className="radial-hub__foot-btn"
-                    onClick={close}
-                    aria-label={t('settings', { defaultValue: 'Settings' })}
-                  >
-                    <Settings aria-hidden />
-                  </Link>
-                  <button
-                    type="button"
-                    className="radial-hub__foot-btn"
-                    onClick={signOut}
-                    aria-label={t('sign-out', { defaultValue: 'Sign out' })}
-                  >
-                    <LogOut aria-hidden />
-                  </button>
+                  <span className="radial-hub__spoke-icon">
+                    <Icon aria-hidden />
+                  </span>
+                  <span className="radial-hub__spoke-label">{label}</span>
                 </>
-              ) : (
-                <Link
-                  to="/login"
-                  search={{ callbackURL: undefined }}
-                  className="radial-hub__signin"
-                  onClick={close}
-                >
-                  {t('sign-in', { defaultValue: 'Sign in' })}
-                </Link>
-              )}
+              );
+              return (
+                <li key={spoke.id} className="radial-hub__spoke-wrap" style={style}>
+                  {spoke.external ? (
+                    <a
+                      href={spoke.href}
+                      className={cls}
+                      onClick={close}
+                      tabIndex={open ? 0 : -1}
+                      aria-current={active ? 'page' : undefined}
+                    >
+                      {inner}
+                    </a>
+                  ) : (
+                    <Link
+                      to={spoke.href}
+                      className={cls}
+                      onClick={close}
+                      tabIndex={open ? 0 : -1}
+                      aria-current={active ? 'page' : undefined}
+                    >
+                      {inner}
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        <div className="radial-hub__foot">
+          {session && user ? (
+            <>
+              <Link
+                to={`/u/${user.handle || user.id}` as string}
+                className="radial-hub__identity"
+                onClick={close}
+                tabIndex={open ? 0 : -1}
+              >
+                <UserAvatar
+                  src={resolved?.image || session.user.image}
+                  alt={resolved?.name || session.user.name || 'You'}
+                  size={30}
+                  fallbackName={resolved?.name || session.user.name}
+                />
+                <span>{resolved?.name || session.user.name}</span>
+              </Link>
+              <Link
+                to="/settings"
+                className="radial-hub__foot-btn"
+                onClick={close}
+                tabIndex={open ? 0 : -1}
+                aria-label={t('settings', { defaultValue: 'Settings' })}
+              >
+                <Settings aria-hidden />
+              </Link>
               <button
                 type="button"
-                className="radial-hub__foot-btn radial-hub__close"
-                onClick={close}
-                aria-label={t('close', { defaultValue: 'Close' })}
+                className="radial-hub__foot-btn"
+                onClick={signOut}
+                tabIndex={open ? 0 : -1}
+                aria-label={t('sign-out', { defaultValue: 'Sign out' })}
               >
-                <X aria-hidden />
+                <LogOut aria-hidden />
               </button>
-            </div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+            </>
+          ) : (
+            <Link
+              to="/login"
+              search={{ callbackURL: undefined }}
+              className="radial-hub__signin"
+              onClick={close}
+              tabIndex={open ? 0 : -1}
+            >
+              {t('sign-in', { defaultValue: 'Sign in' })}
+            </Link>
+          )}
+          <button
+            type="button"
+            className="radial-hub__foot-btn radial-hub__close"
+            onClick={close}
+            tabIndex={open ? 0 : -1}
+            aria-label={t('close', { defaultValue: 'Close' })}
+          >
+            <X aria-hidden />
+          </button>
+        </div>
+      </div>
     </>
   );
 }

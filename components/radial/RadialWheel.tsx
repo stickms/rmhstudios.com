@@ -67,6 +67,7 @@ export function RadialWheel({
       if (Math.abs(deg) >= 95) {
         el.style.visibility = 'hidden';
         el.style.pointerEvents = 'none';
+        el.style.willChange = 'auto'; // off-window: drop the compositor layer
         el.setAttribute('aria-hidden', 'true');
         return;
       }
@@ -79,6 +80,8 @@ export function RadialWheel({
       const opacity = Math.max(0, c) ** 0.6;
 
       el.style.visibility = 'visible';
+      el.style.willChange = 'transform, opacity'; // only the ~5 on-screen facets
+
       el.style.transform = `translate(-50%, -50%) rotateX(${(-deg).toFixed(2)}deg) translateZ(${PRISM_RADIUS}px)`;
       el.style.opacity = opacity.toFixed(3);
       el.style.pointerEvents = focused ? 'auto' : 'none';
@@ -112,6 +115,7 @@ export function RadialWheel({
     sensitivity: 1,
     onActiveChange,
     axis: 'y',
+    haptics: true,
   });
 
   return (

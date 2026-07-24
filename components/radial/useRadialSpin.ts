@@ -31,6 +31,9 @@ export interface RadialSpinOptions {
   onActiveChange?: (index: number) => void;
   /** Axis a drag reads from. `y` = vertical rolodex, `x` = horizontal. */
   axis?: 'x' | 'y';
+  /** Emit a short Vibration-API tick each time the focused slot changes — the
+   *  physical detent feel of a real wheel. No-op where unsupported (e.g. iOS). */
+  haptics?: boolean;
 }
 
 export interface RadialSpinHandle {
@@ -68,19 +71,32 @@ export function useRadialSpin(options: RadialSpinOptions): RadialSpinHandle {
   const reducedRef = useRef(reduced);
   const snapRef = useRef(snap);
   const sensRef = useRef(sensitivity);
+  const hapticsRef = useRef(options.haptics);
   onRenderRef.current = options.onRender;
   onActiveRef.current = options.onActiveChange;
   lenRef.current = length;
   reducedRef.current = reduced;
   snapRef.current = snap;
   sensRef.current = sensitivity;
+  hapticsRef.current = options.haptics;
 
   const emitActive = useCallback((pos: number) => {
     const len = lenRef.current;
     if (len <= 0) return;
     const idx = ((Math.round(pos) % len) + len) % len;
-    if (idx !== activeRef.current) {
+    const prev = activeRef.current;
+    if (idx !== prev) {
       activeRef.current = idx;
+      // A crisp detent tick as each card clicks into focus — but never on the
+      // initial paint (prev === -1), only on real transitions.
+      if (
+        prev !== -1 &&
+        hapticsRef.current &&
+        typeof navigator !== 'undefined' &&
+        typeof navigator.vibrate === 'function'
+      ) {
+        navigator.vibrate(5);
+      }
       onActiveRef.current?.(idx);
     }
   }, []);
