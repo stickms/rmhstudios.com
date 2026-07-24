@@ -279,8 +279,10 @@
     0 10px 30px -8px rgba(0, 0, 0, 0.5),
     0 2px 8px rgba(0, 0, 0, 0.25);
   will-change: transform;
+  /* 0.5s matches the blur / dial / wedge motion so the whole thing rises and
+     falls as ONE synchronous animation. */
   transition:
-    transform 0.45s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
+    transform 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
     box-shadow 0.28s ease;
 }
 /* Hover/press lift only while docked (closed) — never fight the glide-to-centre. */
@@ -290,13 +292,16 @@
 .radial-hub[data-phase='closed'] .radial-hub__orb:active {
   transform: translateX(-50%) scale(0.96);
 }
-/* Glide to the middle of the screen the moment the menu is invoked, and stay
-   there while it is open/closing; it becomes the hub the wedges radiate from.
-   translateY = (bottom offset + half the orb) − half the viewport → dead-centre. */
-.radial-hub[data-phase='centering'] .radial-hub__orb,
+/* Stay above the overlay for the whole open AND close motion. */
 .radial-hub[data-phase='open'] .radial-hub__orb,
 .radial-hub[data-phase='closing'] .radial-hub__orb {
   z-index: 95;
+}
+/* Centre only while OPEN — it becomes the hub the wedges radiate from. On
+   'closing' the base (docked) transform takes over, so the orb glides home in
+   sync with the blur contracting. translateY = (bottom + half orb) − half
+   viewport → dead-centre. */
+.radial-hub[data-phase='open'] .radial-hub__orb {
   transform: translate(-50%, calc(var(--orb-bottom) + 50% - 50dvh));
 }
 .radial-hub__orb:focus-visible {
@@ -343,10 +348,10 @@
 }
 
 /* ── Radial navigation overlay ────────────────────────────────────────── */
-/* Driven by the phase on `.radial-hub`: `centering` keeps it hidden while the
-   orb glides to the middle; `open`/`closing` reveal it. There is NO drawn colour
-   disc — an expanding CIRCULAR BLUR grows from the centre and the wedges bloom
-   over it. */
+/* Driven by the phase on `.radial-hub`: hidden when `closed`; `open`/`closing`
+   keep it mounted so every layer can animate IN and OUT. There is NO drawn
+   colour disc — an expanding CIRCULAR BLUR grows from the centre and the wedges
+   bloom over it, all in sync with the orb gliding to the middle. */
 .radial-hub__overlay {
   position: fixed;
   inset: 0;
@@ -386,7 +391,7 @@
   -webkit-backdrop-filter: blur(20px) saturate(118%);
   backdrop-filter: blur(20px) saturate(118%);
   clip-path: circle(0 at 50% 50%);
-  transition: clip-path 0.52s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+  transition: clip-path 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
 }
 .radial-hub[data-phase='open'] .radial-hub__blur {
   clip-path: circle(150vmax at 50% 50%);
@@ -401,21 +406,17 @@
   height: var(--dial);
   --dial: min(86vw, 70vh, 460px);
   border-radius: 50%;
+  /* Blooms in / collapses out via TRANSITION (not a one-shot keyframe), so it
+     animates both ways and stays in sync with the blur + orb. */
+  opacity: 0;
+  transform: scale(0.82);
+  transition:
+    opacity 0.4s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
+    transform 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
 }
 .radial-hub[data-phase='open'] .radial-hub__dial {
-  animation: radial-dial-in 0.42s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)) both;
-}
-@keyframes radial-dial-in {
-  from {
-    transform: scale(0.72);
-    opacity: 0;
-  }
-}
-/* Collapse: the wedges + foot fade as the circular blur contracts to the centre. */
-.radial-hub[data-phase='closing'] .radial-hub__dial,
-.radial-hub[data-phase='closing'] .radial-hub__foot {
-  opacity: 0;
-  transition: opacity 0.26s ease;
+  opacity: 1;
+  transform: scale(1);
 }
 .radial-hub__wedges {
   position: absolute;
@@ -434,15 +435,20 @@
      only catches clicks inside its own pie sector. */
   pointer-events: none;
 }
-.radial-hub[data-phase='open'] .radial-hub__wedge-wrap {
-  animation: radial-wedge-in 0.4s ease both;
-  animation-delay: calc(120ms + var(--i) * 22ms);
+/* Wedges bloom out from the centre and collapse back on TRANSITIONS (both ways),
+   with a light per-wedge stagger on open. On close they fade together (no delay)
+   as the blur contracts — one synchronous motion. */
+.radial-hub__wedge-wrap {
+  opacity: 0;
+  transform: scale(0.9);
+  transition:
+    opacity 0.34s ease,
+    transform 0.4s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
 }
-@keyframes radial-wedge-in {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
+.radial-hub[data-phase='open'] .radial-hub__wedge-wrap {
+  opacity: 1;
+  transform: scale(1);
+  transition-delay: calc(var(--i) * 20ms);
 }
 .radial-hub__wedge {
   position: absolute;
@@ -504,17 +510,26 @@
   position: absolute;
   left: 50%;
   bottom: clamp(1rem, 4vw, 2rem);
-  transform: translateX(-50%);
   z-index: 2;
+  /* Fades + rises in with the rest, and back out on close — one motion. */
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+  transition:
+    opacity 0.4s ease,
+    transform 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--rad-2);
   padding: 0.4rem 0.5rem;
   border-radius: 999px;
   background: var(--site-surface);
   border: 1px solid var(--site-border);
   box-shadow: var(--site-shadow);
   max-width: calc(100vw - 2rem);
+}
+.radial-hub[data-phase='open'] .radial-hub__foot {
+  opacity: 1;
+  transform: translateX(-50%);
 }
 .radial-hub__identity {
   display: inline-flex;
@@ -897,19 +912,19 @@
 /* ── Reduced motion: kill all continuous / decorative animation ───────── */
 @media (prefers-reduced-motion: reduce) {
   .radial-backdrop__ring,
-  .radial-hub__dial,
-  .radial-hub__wedge-wrap,
   .radial-feed__skeleton .radial-core {
     animation: none !important;
   }
-  .radial-hub__wedge-wrap {
-    opacity: 1;
-  }
+  /* The hub open/close is now transition-driven — collapse every layer's
+     duration so it snaps instantly under reduced motion. */
   .radial-skip,
   .radial-topbar__btn,
   .radial-hub__orb,
   .radial-hub__blur,
+  .radial-hub__dial,
+  .radial-hub__wedge-wrap,
   .radial-hub__wedge,
+  .radial-hub__foot,
   .rmhark,
   .radial-feed__compose {
     transition-duration: 0.001ms;
