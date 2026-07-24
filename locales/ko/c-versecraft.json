@@ -46,7 +46,7 @@
   "select-words-prompt_one": "시를 짓기 위해 {{count}}개의 단어를 선택하세요",
   "select-words-prompt_other": "시를 짓기 위해 {{count}}개의 단어를 선택하세요",
   "settings": "설정",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "로그인하여 스토리를 클라우드에 저장하고 어디서나 다시 재생하세요.",
   "sign-in-to-save": "로그인하여 진행 상황을 클라우드에 저장하세요",
   "skip": "건너뛰기",
   "slot-auto": "자동",
