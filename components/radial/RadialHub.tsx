@@ -11,9 +11,12 @@ import { SIDEBAR_NAV, isNavGroup, type NavLeaf } from '@/lib/sidebar-nav';
 
 type HubUser = { id: string; handle?: string | null; isAdmin?: boolean };
 
-interface Spoke extends NavLeaf {
-  ux: number;
-  uy: number;
+interface Wedge extends NavLeaf {
+  /** clip-path polygon (in % of the square dial) that carves this pie slice. */
+  clip: string;
+  /** Centroid of the visible annulus, in % — where the icon + label sit. */
+  cx: number;
+  cy: number;
 }
 
 const DEG = Math.PI / 180;
@@ -21,14 +24,25 @@ const DEG = Math.PI / 180;
 const isActive = (pathname: string, href: string) =>
   href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
 
+/** A pie-slice polygon from the dial centre out to its edge, over [a0,a1] degrees. */
+function slicePolygon(a0: number, a1: number): string {
+  const pts = ['50% 50%'];
+  const steps = 8;
+  for (let k = 0; k <= steps; k++) {
+    const t = (a0 + ((a1 - a0) * k) / steps) * DEG;
+    const x = 50 + 50 * Math.cos(t);
+    const y = 50 + 50 * Math.sin(t);
+    pts.push(`${x.toFixed(2)}% ${y.toFixed(2)}%`);
+  }
+  return `polygon(${pts.join(', ')})`;
+}
+
 /**
- * The RMH radial navigator. A fixed central orb that, on open, blooms the
- * platform's destinations outward along a ring — each spoke travelling from the
- * core to its resting position with a staggered, GPU-composited transform.
- *
- * Deliberately framer-motion-free: the orb is plain HTML/CSS and the bloom is a
- * CSS keyframe, so the always-rendered shell keeps no animation library on the
- * critical path — which is what keeps first load light on mobile.
+ * The RMH radial navigator. A fixed central orb that opens a **pie/wedge menu**:
+ * the platform's destinations tile a disc as clickable sectors radiating from
+ * the RMH core, so there are no gaps for a click to fall through to the feed
+ * behind. framer-motion-free (CSS-only open/bloom) to keep the shell light on
+ * mobile; icon-only wedges under 480px so 14 destinations never crowd.
  */
 export function RadialHub() {
   const { t } = useTranslation('feed');
@@ -39,10 +53,8 @@ export function RadialHub() {
   const user = session?.user as HubUser | undefined;
 
   const [open, setOpen] = useState(false);
-  const stageRef = useRef<HTMLElement | null>(null);
+  const dialRef = useRef<HTMLDivElement | null>(null);
 
-  // Flatten the canonical nav into a single ring of reachable destinations,
-  // honouring auth/admin gating so signed-out visitors never see gated spokes.
   const leaves = useMemo<NavLeaf[]>(() => {
     const out: NavLeaf[] = [];
     for (const item of SIDEBAR_NAV) {
@@ -56,19 +68,29 @@ export function RadialHub() {
     });
   }, [session, user?.isAdmin]);
 
-  // Lay the spokes on a unit ring starting at the top (−90°), clockwise. The
-  // pixel radius is a CSS var so the ring stays responsive without JS re-layout.
-  const spokes = useMemo<Spoke[]>(() => {
+  // Carve the disc into one wedge per destination, starting at the top and going
+  // clockwise, with a thin gap between wedges (thin radial dividers) and the icon
+  // + label placed in the middle of each wedge's visible annulus.
+  const wedges = useMemo<Wedge[]>(() => {
     const n = Math.max(1, leaves.length);
+    const seg = 360 / n;
+    const gap = Math.min(1.4, seg * 0.06);
     return leaves.map((leaf, i) => {
-      const a = (-90 + (360 / n) * i) * DEG;
-      return { ...leaf, ux: Math.cos(a), uy: Math.sin(a) };
+      const a0 = -90 + i * seg + gap / 2;
+      const a1 = -90 + (i + 1) * seg - gap / 2;
+      const am = ((a0 + a1) / 2) * DEG;
+      const rm = 36; // centroid radius (% of dial) — between the core and the rim
+      return {
+        ...leaf,
+        clip: slicePolygon(a0, a1),
+        cx: 50 + rm * Math.cos(am),
+        cy: 50 + rm * Math.sin(am),
+      };
     });
   }, [leaves]);
 
   const close = useCallback(() => setOpen(false), []);
 
-  // Lock body scroll, wire Escape, and move focus into the menu on open.
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -78,7 +100,7 @@ export function RadialHub() {
     };
     window.addEventListener('keydown', onKey);
     const raf = requestAnimationFrame(() =>
-      stageRef.current?.querySelector<HTMLElement>('a[href], [tabindex]')?.focus(),
+      dialRef.current?.querySelector<HTMLElement>('a[href], [tabindex]')?.focus(),
     );
     return () => {
       document.body.style.overflow = prev;
@@ -112,7 +134,6 @@ export function RadialHub() {
         <span className="radial-hub__mark" aria-hidden>
           RMH
         </span>
-        <span className="radial-hub__ring" aria-hidden />
       </button>
 
       <div
@@ -128,55 +149,51 @@ export function RadialHub() {
           tabIndex={open ? 0 : -1}
         />
 
-        <nav
-          ref={stageRef}
-          className="radial-hub__ring-stage"
-          style={{ '--radial-hub-r': 'min(30vh, 32vw, 210px)' } as CSSProperties}
+        <div
+          ref={dialRef}
+          className="radial-hub__dial"
+          role="menu"
           aria-label={t('section-navigation', { defaultValue: 'Browse RMH Studios' })}
         >
-          <div className="radial-hub__core" aria-hidden>
-            <span>RMH</span>
-            <small>{t('studio-wordmark', { defaultValue: 'Studios' })}</small>
-          </div>
-
-          <ul className="radial-hub__spokes">
-            {spokes.map((spoke, i) => {
-              const Icon = spoke.icon as LucideIcon;
-              const active = isActive(pathname, spoke.href);
-              const label = t(spoke.tKey, { defaultValue: spoke.label });
-              const style = {
-                '--sx': spoke.ux,
-                '--sy': spoke.uy,
-                '--i': i,
-              } as CSSProperties;
-              const cls = 'radial-hub__spoke' + (active ? ' is-active' : '');
+          <ul className="radial-hub__wedges">
+            {wedges.map((w, i) => {
+              const Icon = w.icon as LucideIcon;
+              const active = isActive(pathname, w.href);
+              const label = t(w.tKey, { defaultValue: w.label });
+              const wrapStyle = { '--i': i } as CSSProperties;
+              const cls = 'radial-hub__wedge' + (active ? ' is-active' : '');
+              const innerStyle = { left: `${w.cx}%`, top: `${w.cy}%` } as CSSProperties;
               const inner = (
-                <>
-                  <span className="radial-hub__spoke-icon">
-                    <Icon aria-hidden />
-                  </span>
-                  <span className="radial-hub__spoke-label">{label}</span>
-                </>
+                <span className="radial-hub__wedge-inner" style={innerStyle}>
+                  <Icon aria-hidden />
+                  <span className="radial-hub__wedge-label">{label}</span>
+                </span>
               );
               return (
-                <li key={spoke.id} className="radial-hub__spoke-wrap" style={style}>
-                  {spoke.external ? (
+                <li key={w.id} className="radial-hub__wedge-wrap" style={wrapStyle} role="none">
+                  {w.external ? (
                     <a
-                      href={spoke.href}
+                      href={w.href}
                       className={cls}
+                      style={{ clipPath: w.clip }}
+                      role="menuitem"
                       onClick={close}
                       tabIndex={open ? 0 : -1}
                       aria-current={active ? 'page' : undefined}
+                      aria-label={label}
                     >
                       {inner}
                     </a>
                   ) : (
                     <Link
-                      to={spoke.href}
+                      to={w.href}
                       className={cls}
+                      style={{ clipPath: w.clip }}
+                      role="menuitem"
                       onClick={close}
                       tabIndex={open ? 0 : -1}
                       aria-current={active ? 'page' : undefined}
+                      aria-label={label}
                     >
                       {inner}
                     </Link>
@@ -185,7 +202,12 @@ export function RadialHub() {
               );
             })}
           </ul>
-        </nav>
+
+          <div className="radial-hub__core" aria-hidden>
+            <span>RMH</span>
+            <small>{t('studio-wordmark', { defaultValue: 'Studios' })}</small>
+          </div>
+        </div>
 
         <div className="radial-hub__foot">
           {session && user ? (
