@@ -19,7 +19,6 @@ import { useTranslation } from 'react-i18next';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { ContextRail } from '@/components/feed/ContextRail';
-import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { listCuratedBuilds } from '@/lib/builds/curated';
 import { listVibePages } from '@/lib/rmhvibe/vibe.server';
@@ -99,8 +98,6 @@ function CreatorStudio() {
   return (
     <>
       <AnimatedMain className="cstudio-screen vibe-screen min-h-screen w-full min-w-0 pb-dock">
-        <MobileTopBar title={t('creator-studio', { defaultValue: 'Creator Studio' })} />
-
         <header className="cstudio-head">
           <h1 className="cstudio-title">
             {t('studio-headline', { defaultValue: 'Make anything.' })}

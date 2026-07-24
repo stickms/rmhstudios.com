@@ -385,10 +385,9 @@ export function NotificationsColumn({
  return (
  <div className="min-h-screen">
  {/* Embedded (as a profile tab) this is just a toolbar: the host page owns
- the heading, the sticky bar and the drawer button. */}
+ the heading and the sticky bar. */}
  <ColumnHeader
  sticky={!embedded}
- showMenuButton={!embedded}
  title={embedded ? undefined : t('notifications-heading', { defaultValue:'Notifications'})}
  actions={
  <>

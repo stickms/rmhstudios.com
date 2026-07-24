@@ -17,13 +17,12 @@ import { useNavigate, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Radio, Plus } from 'lucide-react';
 import { toast } from 'sonner';
-import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
 import type { LiveSpaceSummary } from '@/lib/spaces/types';
 
-export function SpacesColumn({ embedded = false }: { embedded?: boolean }) {
+export function SpacesColumn() {
   const { t } = useTranslation('site');
   const { data: session } = useSession();
   const navigate = useNavigate();
@@ -79,8 +78,6 @@ export function SpacesColumn({ embedded = false }: { embedded?: boolean }) {
 
   return (
     <div className="min-h-screen">
-      {!embedded && <MobileTopBar title={t('spaces-title', { defaultValue: 'Spaces' })} />}
-
       <div className="border-b border-site-border p-4">
         <h1 className="mb-1 text-lg font-bold text-site-text">
           {t('spaces-title', { defaultValue: 'Spaces' })}

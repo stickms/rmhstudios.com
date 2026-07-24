@@ -132,7 +132,6 @@ export function GroupChatsColumn({
  <div className="min-h-screen">
  <ColumnHeader
  sticky={!embedded}
- showMenuButton={!embedded}
  icon={embedded ? undefined : Users}
  title={embedded ? undefined : t('group-chats', { defaultValue:'Group chats'})}
  actions={

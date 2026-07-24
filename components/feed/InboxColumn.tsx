@@ -3,7 +3,6 @@
 import { useState } from'react';
 import { MessageCircle, Users, Bell } from'lucide-react';
 import { useTranslation } from'react-i18next';
-import { MobileMenuButton } from'./MobileMenuButton';
 import { MobileBrandPrefix } from'./MobileHeader';
 import { useSession } from'@/components/Providers';
 import { LiquidTabs } from'@/components/ui/liquid-tabs';
@@ -60,7 +59,6 @@ export function InboxColumn({
  {/* Shared header + tab switcher */}
  <div className="site-sticky-chrome bg-site-surface border border-site-border rounded-2xl shadow-xs">
  <div className="flex items-center gap-3 px-4 py-3">
- <MobileMenuButton />
  <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 min-w-0">
  <MobileBrandPrefix />
  {t('inbox-title', { defaultValue:'Inbox'})}

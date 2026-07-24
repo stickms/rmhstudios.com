@@ -4,7 +4,6 @@ import { Gamepad2, Trophy } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { ContextRail } from "@/components/feed/ContextRail";
-import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -77,10 +76,9 @@ function ArcadePage() {
   return (
     <>
       <AnimatedMain className="w-full min-w-0 pb-dock">
-        {/* Mobile-only header; the tab bar below is the primary chrome on every
-            breakpoint, and each tab's content renders header-less beneath it so
-            no big section header stacks under the tabs. */}
-        <MobileTopBar title={title} />
+        {/* The tab bar below is the primary chrome on every breakpoint, and each
+            tab's content renders header-less beneath it so no big section header
+            stacks under the tabs. */}
 
         {/* §15.1: unified sheet + flowing-capsule tab strip (was a border-b
             underline row). This is the arcade's primary chrome on every

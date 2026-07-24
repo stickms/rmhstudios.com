@@ -3,7 +3,6 @@
 import type { LucideIcon } from'lucide-react';
 import type { ReactNode } from'react';
 import { cn } from'@/lib/utils';
-import { MobileMenuButton } from'./MobileMenuButton';
 
 type ColumnHeaderProps = {
  /** Heading text. Omit for a header that is entirely custom (see `children`). */
@@ -14,7 +13,7 @@ type ColumnHeaderProps = {
  actions?: ReactNode;
  /**
  * Custom content in place of the icon/title pair — e.g. SearchColumn's input.
- * Stretches to fill the row. The menu button and `actions`still bracket it.
+ * Stretches to fill the row, with `actions`after it.
  */
  children?: ReactNode;
  /**
@@ -22,27 +21,17 @@ type ColumnHeaderProps = {
  * embedded as a tab inside another page, where a second sticky bar would stack.
  */
  sticky?: boolean;
- /**
- * Escape hatch for columns rendered as a tab inside another page, which
- * already have a page header carrying the drawer button — a second one would
- * be a duplicate control. Page-level headers should never set this.
- */
- showMenuButton?: boolean;
  className?: string;
 };
 
 /**
  * The standard header for a feed"column"page (Communities, Notifications,
- * Bookmarks, …).
+ * Bookmarks, …) — one consistent icon/title/actions row.
  *
- * Exists because the mobile hamburger is opt-in per page, not rendered by the
- * `_site`layout: pages that bypassed PageLayout and hand-rolled a `<header>`
- * silently shipped without any way to open the drawer on mobile. Routing every
- * column header through here makes MobileMenuButton structural rather than
- * something each page has to remember.
- *
- * MobileMenuButton is itself `md:hidden`, so on desktop this renders exactly the
- * icon/title/actions row it always did.
+ * It used to also render the mobile hamburger that opened the push drawer. The
+ * radial redesign replaced that drawer with the RMH hub orb, which the shell
+ * renders on every page, so the per-header button is gone: it had nothing left
+ * to open and did nothing when tapped.
  */
 export function ColumnHeader({
  title,
@@ -50,7 +39,6 @@ export function ColumnHeader({
  actions,
  children,
  sticky = true,
- showMenuButton = true,
  className,
 }: ColumnHeaderProps) {
  return (
@@ -64,7 +52,6 @@ export function ColumnHeader({
  className,
  )}
  >
- {showMenuButton && <MobileMenuButton />}
  {Icon && <Icon className="h-5 w-5 shrink-0 text-site-accent"aria-hidden />}
  {/* min-w-0 + truncate because several callers pass user-supplied text
  (a tag name, a creator's display name) that would otherwise push the

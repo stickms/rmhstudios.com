@@ -7,7 +7,6 @@ import { Spinner } from'@/components/ui/spinner';
 import { UserAvatar } from'@/components/ui/UserAvatar';
 import { Reveal } from'@/components/motion';
 import { Link, useNavigate } from'@tanstack/react-router';
-import { MobileMenuButton } from'./MobileMenuButton';
 import { MobileBrandPrefix } from'./MobileHeader';
 import { useSession } from'@/components/Providers';
 import { Button } from'@/components/ui/button';
@@ -279,7 +278,6 @@ export function MessagesColumn({
  >
  {!embedded && (
  <div className="flex items-center gap-3 px-4 pt-3">
- <MobileMenuButton />
  <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 min-w-0">
  <MobileBrandPrefix />
  {t('messages-heading', { defaultValue:'Messages'})}

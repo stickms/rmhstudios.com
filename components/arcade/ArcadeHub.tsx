@@ -125,7 +125,7 @@ export function ArcadeHub({
 
   return (
     <div>
-      {/* Desktop header row (mobile uses MobileTopBar from the page). */}
+      {/* Desktop header row (on mobile the page's tab strip is the chrome). */}
       {!hideHeader && (
         <div className="hidden md:flex items-center gap-2 border-b border-site-border px-5 py-4">
           <Gamepad2 className="h-5 w-5 text-site-accent" aria-hidden />

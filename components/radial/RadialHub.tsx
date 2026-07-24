@@ -65,6 +65,7 @@ export function RadialHub() {
 
   const [phase, setPhase] = useState<Phase>('closed');
   const dialRef = useRef<HTMLDivElement | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const menuVisible = phase === 'open' || phase === 'closing';
 
@@ -124,19 +125,30 @@ export function RadialHub() {
     });
   }, [reduced]);
 
-  // Lock scroll + wire Escape while the menu is active; move focus into the dial
-  // once it has bloomed.
+  // Block background scroll + wire Escape while the menu is active; move focus
+  // into the dial once it has bloomed.
+  //
+  // Deliberately NOT a CSS scroll-lock on the document. Both `overflow: hidden`
+  // and the position:fixed body technique clip the document to the visual
+  // viewport, which on iOS leaves the bare page background showing behind
+  // Safari's floating bottom bar as a stray band — the reason the mobile drawer
+  // this hub replaced avoided them (see the note in MobileSidebarShell.tsx).
+  // Touch panning is blocked by `touch-action: none` on the overlay (radial.css);
+  // wheel is blocked here, since touch-action doesn't cover pointer devices.
   useEffect(() => {
     if (phase === 'closed') return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close();
     };
+    const onWheel = (e: WheelEvent) => {
+      if (e.cancelable) e.preventDefault();
+    };
+    const overlay = overlayRef.current;
     window.addEventListener('keydown', onKey);
+    overlay?.addEventListener('wheel', onWheel, { passive: false });
     return () => {
-      document.body.style.overflow = prev;
       window.removeEventListener('keydown', onKey);
+      overlay?.removeEventListener('wheel', onWheel);
     };
   }, [phase, close]);
 
@@ -169,6 +181,11 @@ export function RadialHub() {
       <button
         type="button"
         className="radial-hub__orb"
+        // §5.5x A.1: bottom member of the mobile floating-bottom stack. Present on
+        // every _site page, so globals.css lifts the cookie bar, mini-player and
+        // back-to-top clear of it (and of the feed's compose FAB, which shares
+        // this row but is shorter).
+        data-floating="hub"
         aria-haspopup="menu"
         aria-expanded={phase !== 'closed'}
         aria-label={t('open-menu', { defaultValue: 'Open navigation' })}
@@ -177,7 +194,12 @@ export function RadialHub() {
         <RmhLogo className="radial-hub__logo" />
       </button>
 
-      <div className="radial-hub__overlay" role="presentation" aria-hidden={!menuVisible}>
+      <div
+        ref={overlayRef}
+        className="radial-hub__overlay"
+        role="presentation"
+        aria-hidden={!menuVisible}
+      >
         <button
           type="button"
           className="radial-hub__scrim"

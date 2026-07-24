@@ -2,7 +2,6 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Sparkles } from 'lucide-react';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { ContextRail } from "@/components/feed/ContextRail";
-import { MobileMenuButton } from '@/components/feed/MobileMenuButton';
 import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
 import { ConciergePanel } from '@/components/assistant/ConciergePanel';
 import { buildMeta, buildCanonical } from '@/lib/seo';
@@ -28,7 +27,6 @@ function HelpPage() {
           {/* Sticky header — matches the full-height chat layout used elsewhere. */}
           <div className="glass-chrome site-sticky-chrome h-18 shrink-0">
             <div className="h-full flex items-center gap-3 px-4 py-3">
-              <MobileMenuButton />
               <h1 className="font-(family-name:--site-font-display) font-semibold text-2xl tracking-[-0.022em] text-site-text flex items-center gap-2 min-w-0 truncate">
                 <MobileBrandPrefix />
                 <Sparkles className="size-5 text-site-accent" aria-hidden />
