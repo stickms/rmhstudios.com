@@ -46,7 +46,7 @@
   "select-words-prompt_one": "詩を作成するために{{count}}語を選択してください",
   "select-words-prompt_other": "詩を作成するために{{count}}語を選択してください",
   "settings": "設定",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "サインインしてストーリーをクラウドに保存し、どこでも再生できるようにしましょう。",
   "sign-in-to-save": "サインインして進行状況をクラウドに保存",
   "skip": "スキップ",
   "slot-auto": "自動",
