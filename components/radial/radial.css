@@ -87,9 +87,10 @@
   gap: 0.75rem;
   height: 3.5rem;
   padding: 0 clamp(0.85rem, 3vw, 1.5rem);
-  background: color-mix(in srgb, var(--site-bg) 72%, transparent);
-  backdrop-filter: saturate(140%) blur(16px);
-  -webkit-backdrop-filter: saturate(140%) blur(16px);
+  /* Mobile-first: a near-opaque bar with NO backdrop-filter. backdrop-filter
+     blur is a heavy per-frame GPU cost on phones (slow paint / janky scroll);
+     the frosted look is added back only on ≥768px screens below. */
+  background: color-mix(in srgb, var(--site-bg) 92%, transparent);
   border-bottom: 1px solid var(--site-border);
 }
 .radial-topbar__brand {
@@ -174,7 +175,10 @@
 }
 .radial-shell[data-home] .radial-shell__main {
   max-width: none;
-  padding-inline: 0;
+  /* Home fills the viewport (minus the top bar) with no padding, so the feed
+     can centre the prism in the whole area rather than being pushed down by a
+     header or up by bottom padding. */
+  padding: 0;
   display: flex;
   flex-direction: column;
 }
@@ -244,12 +248,23 @@
 }
 
 /* ── Radial navigation overlay ────────────────────────────────────────── */
+/* Always mounted (framer-motion-free) — toggled via `.is-open`. Closed it is
+   invisible AND removed from the tab order / a11y tree via visibility:hidden. */
 .radial-hub__overlay {
   position: fixed;
   inset: 0;
   z-index: 90;
   display: grid;
   place-items: center;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.24s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
+    visibility 0.24s;
+}
+.radial-hub__overlay.is-open {
+  opacity: 1;
+  visibility: visible;
 }
 .radial-hub__scrim {
   position: absolute;
@@ -259,9 +274,8 @@
   margin: 0;
   appearance: none;
   cursor: default;
-  background: color-mix(in srgb, var(--site-bg) 60%, transparent);
-  backdrop-filter: blur(22px) saturate(120%);
-  -webkit-backdrop-filter: blur(22px) saturate(120%);
+  /* Near-opaque on mobile (no blur — expensive on phones); frosted ≥768px. */
+  background: color-mix(in srgb, var(--site-bg) 86%, transparent);
 }
 .radial-hub__ring-stage {
   position: relative;
@@ -316,7 +330,10 @@
     calc(var(--sx) * var(--radial-hub-r)),
     calc(var(--sy) * var(--radial-hub-r))
   );
-  will-change: transform, opacity;
+}
+/* The bloom plays only while the menu is open — and restarts each open because
+   adding the class re-applies the animation. */
+.radial-hub__overlay.is-open .radial-hub__spoke-wrap {
   animation: radial-spoke-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
   animation-delay: calc(var(--i) * 32ms);
 }
@@ -462,18 +479,36 @@
   text-decoration: none;
 }
 
-/* ── The feed wheel (3D rolodex) ──────────────────────────────────────── */
+/* ── The feed prism ───────────────────────────────────────────────────── */
+/* The feed fills the whole area below the top bar; the head floats over the top
+   (pointer-events pass through its empty middle) so it never displaces the
+   prism. The wheel then centres the focused facet in the FULL area — dead-centre
+   vertically and horizontally. */
 .radial-feed {
+  position: relative;
   flex: 1;
-  display: flex;
-  flex-direction: column;
   min-height: calc(100dvh - 3.5rem);
 }
 .radial-feed__head {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem clamp(1rem, 4vw, 2rem) 0;
+  padding: 0.6rem clamp(1rem, 4vw, 2rem) 0;
+  pointer-events: none;
+}
+.radial-feed__head > * {
+  pointer-events: auto;
+}
+.radial-feed .radial-wheel,
+.radial-feed > .radial-feed__empty,
+.radial-feed > .radial-feed__skeleton {
+  position: absolute;
+  inset: 0;
 }
 .radial-feed__eyebrow {
   font-size: 0.72rem;
@@ -509,7 +544,10 @@
   min-height: 30rem;
   display: grid;
   place-items: center;
-  perspective: 1200px;
+  /* Look straight down the prism axis (centred), so the focused facet faces us
+     head-on. */
+  perspective: 1300px;
+  perspective-origin: 50% 50%;
   touch-action: pan-x;
   outline: none;
   cursor: grab;
@@ -526,24 +564,35 @@
   height: 100%;
   transform-style: preserve-3d;
 }
-/* The RMH core lives in a fixed left gutter and stays fully on-screen; RMHarks
-   radiate to its right. Mobile-first: the gutter + card widths are tuned so the
-   focused card never overlaps the core and never crosses the viewport edge. */
+/* The RMH core sits dead-centre, just BEHIND the prism's front facet: the
+   focused card covers it at rest, and it is revealed between the cards as they
+   rake away mid-spin — RMHarks visibly emanating from the central RMH mark. */
 .radial-wheel__hub {
   position: absolute;
-  left: clamp(2.25rem, 12vw, 3.5rem);
+  left: 50%;
   top: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 500;
+  transform: translate(-50%, -50%) translateZ(-28px);
+}
+/* The prism body. Pushed back by exactly the prism radius so the front facet
+   (slot translateZ(+320px)) lands on the z=0 plane at scale 1. MUST match
+   PRISM_RADIUS in RadialWheel.tsx. */
+.radial-wheel__drum {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform: translateZ(-320px);
 }
 .radial-wheel__slot {
   position: absolute;
-  left: 62%;
+  left: 50%;
   top: 50%;
-  width: min(60vw, 20rem);
-  transform: translate3d(-50%, -50%, 0);
+  width: min(86vw, 22rem);
+  /* Hidden until the spin engine places it on a facet (avoids a first-frame
+     pile at the anchor); backface-hidden folds away facets past 90°. `will-change`
+     is set by the spin loop ONLY on the handful of visible facets, so a long feed
+     never promotes dozens of compositor layers (mobile memory / paint cost). */
+  visibility: hidden;
   backface-visibility: hidden;
-  will-change: transform, opacity;
 }
 
 /* ── The RMH core disc ────────────────────────────────────────────────── */
@@ -729,17 +778,25 @@
 
 /* ── Desktop refinements ──────────────────────────────────────────────── */
 @media (min-width: 768px) {
-  .radial-wheel__hub {
-    left: 3.25rem;
-  }
   .radial-wheel__slot {
-    left: 58%;
-    width: min(46vw, 24rem);
+    width: min(44vw, 26rem);
   }
   .radial-topbar {
     height: 4rem;
   }
-  .radial-shell__main {
+  /* Frosted chrome is only worth its GPU cost on desktop — restore it here. */
+  .radial-topbar {
+    background: color-mix(in srgb, var(--site-bg) 72%, transparent);
+    backdrop-filter: saturate(140%) blur(16px);
+    -webkit-backdrop-filter: saturate(140%) blur(16px);
+  }
+  .radial-hub__scrim {
+    background: color-mix(in srgb, var(--site-bg) 60%, transparent);
+    backdrop-filter: blur(22px) saturate(120%);
+    -webkit-backdrop-filter: blur(22px) saturate(120%);
+  }
+  .radial-shell[data-home] .radial-shell__main,
+  .radial-feed {
     min-height: calc(100dvh - 4rem);
   }
 }
