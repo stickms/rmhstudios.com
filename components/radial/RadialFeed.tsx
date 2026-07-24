@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Await, Link } from '@tanstack/react-router';
 import { PenLine } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -10,31 +10,11 @@ import { type InitialFeed } from '@/components/feed/FeedColumn';
 import { RadialWheel, type RadialWheelItem } from './RadialWheel';
 import { RmharkCard } from './RmharkCard';
 
-function WheelCore({
-  active,
-  total,
-  loading,
-}: {
-  active: number;
-  total: number;
-  loading: boolean;
-}) {
-  return (
-    <div className="radial-core" data-loading={loading || undefined} aria-hidden>
-      <span className="radial-core__mark">RMH</span>
-      <span className="radial-core__count">
-        {total > 0 ? `${Math.min(active + 1, total)} / ${total}${loading ? '…' : ''}` : '—'}
-      </span>
-    </div>
-  );
-}
-
 /**
- * The live feed wheel. It renders off the shared `feedStore`, so every existing
- * feed behaviour keeps working: the streamed first page hydrates the store, live
- * SSE ticks flow through (`useFeedSSE`), and spinning toward the end of the
- * loaded set lazily fetches the next page — the wheel's equivalent of the
- * infinite-scroll sentinel.
+ * The live feed. It renders off the shared `feedStore`, so every existing feed
+ * behaviour keeps working: the streamed first page hydrates the store, live SSE
+ * ticks flow through (`useFeedSSE`), and reaching the end of the loaded set
+ * lazily fetches the next page.
  */
 function FeedWheel({ initial }: { initial: InitialFeed }) {
   const { t } = useTranslation('feed');
@@ -45,7 +25,6 @@ function FeedWheel({ initial }: { initial: InitialFeed }) {
   const hydrate = useFeedStore((s) => s.hydrate);
   const fetchNextPage = useFeedStore((s) => s.fetchNextPage);
   const retry = useFeedStore((s) => s.retry);
-  const [active, setActive] = useState(0);
   const seeded = useRef(false);
 
   // Live real-time stream (likes/comments/reposts/new posts), same as the classic feed.
@@ -66,14 +45,11 @@ function FeedWheel({ initial }: { initial: InitialFeed }) {
     }
   }, [initial, hydrate, fetchNextPage]);
 
-  // Infinite scroll: when the focused card nears the end of the loaded set, pull
-  // the next page. `fetchNextPage` no-ops when already loading or drained.
-  const onActiveChange = useCallback((index: number) => {
-    setActive(index);
+  // Infinite scroll: the wheel fires this as its sentinel nears the viewport.
+  // `fetchNextPage` no-ops when already loading or drained.
+  const onEndReached = useCallback(() => {
     const s = useFeedStore.getState();
-    if (s.hasMore && !s.loading && index >= s.items.length - 4) {
-      void s.fetchNextPage();
-    }
+    if (s.hasMore && !s.loading) void s.fetchNextPage();
   }, []);
 
   const wheelItems = useMemo<RadialWheelItem[]>(
@@ -86,7 +62,7 @@ function FeedWheel({ initial }: { initial: InitialFeed }) {
     if (error && initialized) {
       return (
         <div className="radial-feed__empty">
-          <WheelCore active={0} total={0} loading={false} />
+          <FeedGlyph />
           <p>{t('feed-error', { defaultValue: 'Could not load the feed.' })}</p>
           <button type="button" className="radial-feed__compose" onClick={() => retry()}>
             {t('retry', { defaultValue: 'Try again' })}
@@ -97,7 +73,7 @@ function FeedWheel({ initial }: { initial: InitialFeed }) {
     if (initialized && !loading) {
       return (
         <div className="radial-feed__empty">
-          <WheelCore active={0} total={0} loading={false} />
+          <FeedGlyph />
           <p>{t('feed-empty', { defaultValue: 'Nothing here yet. Be the first to post.' })}</p>
           <Link to="/create" className="radial-feed__compose">
             <PenLine aria-hidden />
@@ -110,20 +86,20 @@ function FeedWheel({ initial }: { initial: InitialFeed }) {
   }
 
   return (
-    // No central disc behind the cards — it showed through at rest and got in the
-    // way. Identity lives in the top bar + hub; the live position moves to the hint.
     <RadialWheel
       items={wheelItems}
-      onActiveChange={onActiveChange}
+      onEndReached={onEndReached}
+      haptics
       ariaLabel={t('feed', { defaultValue: 'Feed' })}
-    >
-      <p className="radial-feed__hint" aria-hidden>
-        <span className="radial-feed__count">
-          {Math.min(active + 1, wheelItems.length)} / {wheelItems.length}
-          {loading ? ' …' : ''}
-        </span>
-      </p>
-    </RadialWheel>
+    />
+  );
+}
+
+function FeedGlyph() {
+  return (
+    <div className="radial-core" aria-hidden>
+      <span className="radial-core__mark">RMH</span>
+    </div>
   );
 }
 
@@ -138,9 +114,9 @@ function FeedWheelSkeleton() {
 }
 
 /**
- * The radial home feed. RMHarks orbit the central RMH core; spinning the wheel
- * rolls each into focus. The first page streams in from the route loader, so
- * the core paints instantly and the ring fills as the timeline resolves.
+ * The radial home feed: a gently-curved column of RMHarks on native momentum
+ * scroll. The first page streams in from the route loader; more pages load as
+ * you reach the end.
  */
 export function RadialFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed> | null }) {
   const { t } = useTranslation('feed');
@@ -148,7 +124,6 @@ export function RadialFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed>
   return (
     <section className="radial-feed" aria-label={t('feed', { defaultValue: 'Feed' })}>
       <header className="radial-feed__head">
-        <p className="radial-feed__eyebrow">{t('the-feed', { defaultValue: 'The Feed' })}</p>
         <Link to="/create" className="radial-feed__compose">
           <PenLine aria-hidden />
           {t('compose', { defaultValue: 'Compose' })}

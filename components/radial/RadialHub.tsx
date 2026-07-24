@@ -8,6 +8,7 @@ import { authClient } from '@/lib/auth-client';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SIDEBAR_NAV, isNavGroup, type NavLeaf } from '@/lib/sidebar-nav';
+import { RmhLogo } from './RmhLogo';
 
 type HubUser = { id: string; handle?: string | null; isAdmin?: boolean };
 
@@ -131,9 +132,7 @@ export function RadialHub() {
         aria-label={t('open-menu', { defaultValue: 'Open navigation' })}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="radial-hub__mark" aria-hidden>
-          RMH
-        </span>
+        <RmhLogo className="radial-hub__logo" />
       </button>
 
       <div

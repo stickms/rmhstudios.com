@@ -1,14 +1,8 @@
 'use client';
 
-import { useCallback, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { useRadialSpin } from './useRadialSpin';
-
-// Prism radius (px). Facet spacing on the surface is ~R·stepRadians; at R=320,
-// step=36° that is ~200px, so cards sit edge-to-edge. MUST match the compensating
-// `translateZ(-320px)` on `.radial-wheel__drum` in radial.css (front facet → z0).
-const PRISM_RADIUS = 320;
 
 export interface RadialWheelItem {
   id: string;
@@ -17,125 +11,177 @@ export interface RadialWheelItem {
 
 interface RadialWheelProps {
   items: RadialWheelItem[];
-  /** The persistent hub rendered at the pivot — the "RMH" mark. */
-  center?: ReactNode;
-  /** Degrees of arc between neighbouring facets on the cylinder. Default 36. */
-  step?: number;
-  /** Fires when the focused (front) slot settles on a new index. */
-  onActiveChange?: (index: number) => void;
+  /** Called (rAF-debounced) when the scroll nears the end — drives lazy loading. */
+  onEndReached?: () => void;
   ariaLabel?: string;
   className?: string;
   children?: ReactNode;
+  /** Short haptic tick each time a new card crosses the focus line. */
+  haptics?: boolean;
 }
 
-const DEG = Math.PI / 180;
+const MAX_TILT = 15; // deg of rake at the edges of the focus band
+const EDGE_SCALE = 0.12;
+const EDGE_Z = 64; // px pushed back at the edges
+const FADE_START = 0.62; // |t| where cards begin to dim
+const VISIBLE = 2.2; // |t| beyond which a card is off the focus band (flat, no layer)
 
 /**
- * A 3D prism carousel. Each RMHark sits on a facet of a vertical prism pivoting
- * off the central RMH hub — rotated to its own angle (`rotateX · translateZ`),
- * not billboarded — so neighbours meet edge-to-edge instead of overlapping and
- * occlusion stays continuous (no z-index, no pop as depths cross). Cards enter
- * and leave the visible arc past the 90° fold, where they are already invisible
- * (backface-hidden + faded), so there is no pop-in. Spin it with the wheel, a
- * drag, or the arrow keys — every frame the spin engine writes each facet's
- * `transform`/`opacity` straight to the DOM, so motion tracks the display
- * refresh rate with zero React churn.
+ * The feed as a gently curved column on NATIVE scroll. Cards flow at their own
+ * natural heights — so tall and short RMHarks never overlap — and the browser's
+ * own momentum/rubber-band drives the scroll (the authentic Apple feel; no
+ * hijacked physics to go wonky). A rAF-throttled scroll pass rakes each card
+ * onto a shallow cylinder by its distance from the focus line using cached
+ * offsets (no per-frame layout reads → no thrash), so it stays buttery at any
+ * refresh rate. Under reduced-motion the curve is dropped and it is a plain list.
  */
 export function RadialWheel({
   items,
-  center,
-  step = 36,
-  onActiveChange,
+  onEndReached,
   ariaLabel,
   className,
   children,
+  haptics = false,
 }: RadialWheelProps) {
   const reduced = useReducedMotion();
-  const stageRef = useRef<HTMLDivElement | null>(null);
-  const slotsRef = useRef<HTMLDivElement[]>([]);
-  const count = items.length;
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const slotsRef = useRef<HTMLElement[]>([]);
+  const centersRef = useRef<number[]>([]);
+  const rafRef = useRef<number | null>(null);
+  const focusRef = useRef(-1);
 
-  const place = useCallback(
-    (el: HTMLDivElement, rel: number) => {
-      // Each facet's angle around the prism. The drum's own rotation is baked in
-      // by feeding `rel = index - position`, so the focused facet sits at 0°.
-      const deg = rel * step;
+  // Cache each card's centre (layout-stable; transforms don't affect offsetTop),
+  // so the scroll pass is pure math. Rebuilt when the set or any height changes.
+  const buildCache = useCallback(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const els = Array.from(track.querySelectorAll<HTMLElement>('.radial-wheel__slot'));
+    slotsRef.current = els;
+    centersRef.current = els.map((el) => el.offsetTop + el.offsetHeight / 2);
+  }, []);
 
-      // Past the 90° fold the facet has turned away — hide it there (it is already
-      // invisible via backface + fade), which is what removes the pop-in when
-      // cards enter/leave the window.
-      if (Math.abs(deg) >= 95) {
-        el.style.visibility = 'hidden';
-        el.style.pointerEvents = 'none';
-        el.style.willChange = 'auto'; // off-window: drop the compositor layer
-        el.setAttribute('aria-hidden', 'true');
-        return;
+  const apply = useCallback(() => {
+    const scroller = scrollRef.current;
+    if (!scroller) return;
+    const half = scroller.clientHeight / 2;
+    if (half <= 0) return;
+    const viewCenter = scroller.scrollTop + half;
+    const els = slotsRef.current;
+    const centers = centersRef.current;
+    let nearest = -1;
+    let nearestDist = Infinity;
+
+    for (let i = 0; i < els.length; i++) {
+      const el = els[i];
+      const dy = centers[i] - viewCenter;
+      const ad = Math.abs(dy);
+      if (ad < nearestDist) {
+        nearestDist = ad;
+        nearest = i;
       }
-
-      const c = Math.cos(deg * DEG);
-      const focused = Math.abs(deg) < step * 0.5;
-      // The rotation itself carries the depth (foreshortening); a gentle cos-fade
-      // keeps the read continuous as a facet approaches the fold. No z-index — the
-      // preserve-3d cylinder sorts occlusion by real depth, continuously.
-      const opacity = Math.max(0, c) ** 0.6;
-
-      el.style.visibility = 'visible';
-      el.style.willChange = 'transform, opacity'; // only the ~5 on-screen facets
-
-      el.style.transform = `translate(-50%, -50%) rotateX(${(-deg).toFixed(2)}deg) translateZ(${PRISM_RADIUS}px)`;
-      el.style.opacity = opacity.toFixed(3);
-      el.style.pointerEvents = focused ? 'auto' : 'none';
-      el.setAttribute('aria-hidden', focused ? 'false' : 'true');
-    },
-    [step],
-  );
-
-  // Resolve slot nodes from the stage in DOM order rather than per-item refs, so
-  // pagination appends and live-SSE re-renders never churn a ref (which would
-  // drop a frame's transform). The cache refreshes only when the count changes.
-  const onRender = useCallback(
-    (pos: number) => {
-      const stage = stageRef.current;
-      if (!stage) return;
-      let slots = slotsRef.current;
-      if (slots.length !== count) {
-        slots = Array.from(stage.querySelectorAll<HTMLDivElement>('.radial-wheel__slot'));
-        slotsRef.current = slots;
+      const t = dy / half;
+      const at = Math.abs(t);
+      if (reduced || at > VISIBLE) {
+        el.style.transform = '';
+        el.style.opacity = '1';
+        el.style.willChange = 'auto';
+        continue;
       }
-      for (let i = 0; i < slots.length; i++) place(slots[i], i - pos);
-    },
-    [count, place],
-  );
+      const rot = Math.max(-MAX_TILT, Math.min(MAX_TILT, -t * MAX_TILT));
+      const clamped = Math.min(at, 1);
+      const scale = 1 - clamped * EDGE_SCALE;
+      const tz = -Math.min(at, 1.5) * EDGE_Z;
+      const op = 1 - Math.min(1, Math.max(0, at - FADE_START) / (VISIBLE - FADE_START)) * 0.82;
+      // Per-card perspective() (rather than perspective on the scroll container,
+      // which is quirky across browsers) keeps the projection self-contained.
+      el.style.transform = `perspective(1500px) translateZ(${tz.toFixed(1)}px) rotateX(${rot.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+      el.style.opacity = op.toFixed(3);
+      el.style.willChange = 'transform';
+    }
 
-  const { surfaceRef } = useRadialSpin({
-    length: count,
-    onRender,
-    reduced,
-    snap: true,
-    sensitivity: 1,
-    onActiveChange,
-    axis: 'y',
-    haptics: true,
-  });
+    if (nearest !== focusRef.current) {
+      const prev = focusRef.current;
+      focusRef.current = nearest;
+      if (
+        haptics &&
+        prev !== -1 &&
+        !reduced &&
+        typeof navigator !== 'undefined' &&
+        typeof navigator.vibrate === 'function'
+      ) {
+        navigator.vibrate(4);
+      }
+    }
+  }, [reduced, haptics]);
+
+  const onScroll = useCallback(() => {
+    if (rafRef.current !== null) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      apply();
+    });
+  }, [apply]);
+
+  // Rebuild + repaint on mount, when the set changes, and on any content resize
+  // (late images, reflow) so variable heights always stay correctly spaced.
+  useEffect(() => {
+    buildCache();
+    apply();
+    const track = trackRef.current;
+    if (!track || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => {
+      buildCache();
+      apply();
+    });
+    ro.observe(track);
+    return () => ro.disconnect();
+  }, [buildCache, apply, items.length]);
+
+  useEffect(() => {
+    const onResize = () => {
+      buildCache();
+      apply();
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
+  }, [buildCache, apply]);
+
+  // Lazy-load: fire when the sentinel enters the scroll viewport (with headroom).
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    const root = scrollRef.current;
+    if (!sentinel || !root || !onEndReached) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) onEndReached();
+      },
+      { root, rootMargin: '800px 0px' },
+    );
+    io.observe(sentinel);
+    return () => io.disconnect();
+  }, [onEndReached]);
 
   return (
     <div
-      ref={surfaceRef}
+      ref={scrollRef}
       className={cn('radial-wheel', className)}
-      role="listbox"
+      onScroll={onScroll}
       aria-label={ariaLabel}
-      tabIndex={0}
+      role="feed"
     >
-      <div className="radial-wheel__stage" ref={stageRef}>
-        {center ? <div className="radial-wheel__hub">{center}</div> : null}
-        <div className="radial-wheel__drum">
-          {items.map((item) => (
-            <div key={item.id} role="option" aria-selected={false} className="radial-wheel__slot">
-              {item.node}
-            </div>
-          ))}
-        </div>
+      <div ref={trackRef} className="radial-wheel__track">
+        {items.map((item) => (
+          <div key={item.id} className="radial-wheel__slot" role="article">
+            {item.node}
+          </div>
+        ))}
       </div>
+      <div ref={sentinelRef} className="radial-wheel__sentinel" aria-hidden />
       {children}
     </div>
   );

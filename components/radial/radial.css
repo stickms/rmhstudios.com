@@ -132,10 +132,17 @@
   font-size: 1.05rem;
 }
 .radial-topbar__brand small {
+  /* Mobile-first: just "RMH". The "Studios" wordmark returns on wider screens. */
+  display: none;
   color: var(--site-text-muted);
   font-size: 0.68rem;
   letter-spacing: 0.24em;
   text-transform: uppercase;
+}
+@media (min-width: 640px) {
+  .radial-topbar__brand small {
+    display: inline;
+  }
 }
 .radial-topbar__actions {
   display: inline-flex;
@@ -242,11 +249,39 @@
   outline: 3px solid var(--site-text);
   outline-offset: 3px;
 }
-.radial-hub__mark {
-  font-weight: 800;
-  font-size: 0.95rem;
-  letter-spacing: 0.1em;
-  line-height: 1;
+/* The RMH mark (radial spirograph SVG) drawn in the orb's accent-contrast ink. */
+.radial-hub__logo {
+  display: block;
+  width: 74%;
+  height: 74%;
+  overflow: visible;
+  color: inherit;
+}
+.radial-hub__logo path {
+  stroke-width: 3.4;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+/* On mount the mark blooms open — scaling + rotating out of the core while its
+   stroke draws itself (pathLength-normalised), leaning into the SVG. */
+@media (prefers-reduced-motion: no-preference) {
+  .radial-hub__logo {
+    animation: rmh-logo-bloom 1.05s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)) both;
+  }
+  .radial-hub__logo path {
+    animation: rmh-logo-draw 1.3s ease both;
+  }
+}
+@keyframes rmh-logo-bloom {
+  from {
+    transform: scale(0.15) rotate(-50deg);
+    opacity: 0;
+  }
+}
+@keyframes rmh-logo-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
 }
 
 /* ── Radial navigation overlay ────────────────────────────────────────── */
@@ -396,10 +431,16 @@
   letter-spacing: 0.12em;
 }
 .radial-hub__core small {
+  display: none;
   font-size: 0.54rem;
   letter-spacing: 0.24em;
   text-transform: uppercase;
   opacity: 0.72;
+}
+@media (min-width: 640px) {
+  .radial-hub__core small {
+    display: block;
+  }
 }
 
 .radial-hub__foot {
@@ -490,7 +531,7 @@
   z-index: 5;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 0.6rem clamp(1rem, 4vw, 2rem) 0;
   pointer-events: none;
 }
@@ -502,13 +543,6 @@
 .radial-feed > .radial-feed__skeleton {
   position: absolute;
   inset: 0;
-}
-.radial-feed__eyebrow {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: var(--site-text-muted);
 }
 .radial-feed__compose {
   display: inline-flex;
@@ -531,61 +565,41 @@
   height: 1rem;
 }
 
+/* Native momentum scroll with a gentle scroll-driven 3D rake. Cards flow at
+   their OWN natural heights (variable, so tall and short RMHarks never overlap),
+   and the browser owns the momentum + rubber-band — the authentic Apple feel,
+   not a hijacked wheel. The 3D curve is applied per-card by a rAF scroll pass. */
 .radial-wheel {
-  position: relative;
-  flex: 1;
-  min-height: 30rem;
-  display: grid;
-  place-items: center;
-  /* Look straight down the prism axis (centred), so the focused facet faces us
-     head-on. */
-  perspective: 1300px;
-  perspective-origin: 50% 50%;
-  touch-action: pan-x;
-  outline: none;
-  cursor: grab;
-}
-.radial-wheel:active {
-  cursor: grabbing;
-}
-.radial-wheel:focus-visible {
-  outline: none;
-}
-.radial-wheel__stage {
-  position: relative;
-  width: min(94vw, 34rem);
-  height: 100%;
-  transform-style: preserve-3d;
-}
-/* The RMH core sits dead-centre, just BEHIND the prism's front facet: the
-   focused card covers it at rest, and it is revealed between the cards as they
-   rake away mid-spin — RMHarks visibly emanating from the central RMH mark. */
-.radial-wheel__hub {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%) translateZ(-28px);
-}
-/* The prism body. Pushed back by exactly the prism radius so the front facet
-   (slot translateZ(+320px)) lands on the z=0 plane at scale 1. MUST match
-   PRISM_RADIUS in RadialWheel.tsx. */
-.radial-wheel__drum {
   position: absolute;
   inset: 0;
-  transform-style: preserve-3d;
-  transform: translateZ(-320px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  outline: none;
+  scrollbar-width: none;
+}
+.radial-wheel::-webkit-scrollbar {
+  display: none;
+}
+.radial-wheel__track {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.85rem, 2.5vw, 1.35rem);
+  /* Room top and bottom so the first and last card can settle at the focus line. */
+  padding-block: 44vh;
 }
 .radial-wheel__slot {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: min(86vw, 22rem);
-  /* Hidden until the spin engine places it on a facet (avoids a first-frame
-     pile at the anchor); backface-hidden folds away facets past 90°. `will-change`
-     is set by the spin loop ONLY on the handful of visible facets, so a long feed
-     never promotes dozens of compositor layers (mobile memory / paint cost). */
-  visibility: hidden;
+  width: min(92vw, 34rem);
+  transform-origin: center center;
   backface-visibility: hidden;
+  /* `will-change` is toggled by the scroll pass onto only the cards in the focus
+     band, so a long feed never permanently promotes dozens of compositor layers. */
+}
+.radial-wheel__sentinel {
+  width: 100%;
+  height: 1px;
 }
 
 /* ── The RMH core disc ────────────────────────────────────────────────── */
@@ -709,27 +723,6 @@
   height: 0.95rem;
 }
 
-.radial-feed__hint {
-  position: absolute;
-  left: 50%;
-  bottom: clamp(5.5rem, 16vw, 7rem);
-  transform: translateX(-50%);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  white-space: nowrap;
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--site-text-dim);
-  pointer-events: none;
-}
-.radial-feed__count {
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  color: var(--site-text);
-  letter-spacing: 0.08em;
-}
 .radial-feed__empty {
   flex: 1;
   display: grid;
@@ -768,7 +761,7 @@
 /* ── Desktop refinements ──────────────────────────────────────────────── */
 @media (min-width: 768px) {
   .radial-wheel__slot {
-    width: min(44vw, 26rem);
+    width: min(72vw, 38rem);
   }
   .radial-topbar {
     height: 4rem;
