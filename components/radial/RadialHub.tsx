@@ -6,11 +6,15 @@ import { LogOut, Settings, X, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser, useSession } from '@/components/Providers';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SIDEBAR_NAV, isNavGroup, type NavLeaf } from '@/lib/sidebar-nav';
 import { RmhLogo } from './RmhLogo';
 
 type HubUser = { id: string; handle?: string | null; isAdmin?: boolean };
+
+/** closed → centering (orb glides to the middle) → open (menu blooms) → closing. */
+type Phase = 'closed' | 'centering' | 'open' | 'closing';
 
 interface Wedge extends NavLeaf {
   /** clip-path polygon (in % of the square dial) that carves this pie slice. */
@@ -21,6 +25,8 @@ interface Wedge extends NavLeaf {
 }
 
 const DEG = Math.PI / 180;
+const CENTER_MS = 430; // orb glide-to-centre before the menu opens
+const COLLAPSE_MS = 300; // menu collapse before the orb glides home
 
 const isActive = (pathname: string, href: string) =>
   href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
@@ -39,22 +45,26 @@ function slicePolygon(a0: number, a1: number): string {
 }
 
 /**
- * The RMH radial navigator. A fixed central orb that opens a **pie/wedge menu**:
- * the platform's destinations tile a disc as clickable sectors radiating from
- * the RMH core, so there are no gaps for a click to fall through to the feed
- * behind. framer-motion-free (CSS-only open/bloom) to keep the shell light on
- * mobile; icon-only wedges under 480px so 14 destinations never crowd.
+ * The RMH radial navigator. Tapping the fixed RMH orb first glides it smoothly to
+ * the **centre of the screen**, then blooms a **pie/wedge menu** while the
+ * backdrop reveals under an expanding **circular blur** (no drawn colour disc —
+ * just frosted glass growing from the centre). The orb itself becomes the hub the
+ * wedges radiate from. framer-motion-free (CSS transitions/clip-path) to stay
+ * light on mobile; icon-only wedges under 480px so destinations never crowd.
  */
 export function RadialHub() {
   const { t } = useTranslation('feed');
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const reduced = useReducedMotion();
   const { data: session } = useSession();
   const { resolved } = useResolvedUser();
   const user = session?.user as HubUser | undefined;
 
-  const [open, setOpen] = useState(false);
+  const [phase, setPhase] = useState<Phase>('closed');
   const dialRef = useRef<HTMLDivElement | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const menuVisible = phase === 'open' || phase === 'closing';
 
   const leaves = useMemo<NavLeaf[]>(() => {
     const out: NavLeaf[] = [];
@@ -70,8 +80,8 @@ export function RadialHub() {
   }, [session, user?.isAdmin]);
 
   // Carve the disc into one wedge per destination, starting at the top and going
-  // clockwise, with a thin gap between wedges (thin radial dividers) and the icon
-  // + label placed in the middle of each wedge's visible annulus.
+  // clockwise, with a thin gap between wedges and the icon + label in the middle
+  // of each wedge's visible annulus.
   const wedges = useMemo<Wedge[]>(() => {
     const n = Math.max(1, leaves.length);
     const seg = 360 / n;
@@ -90,63 +100,93 @@ export function RadialHub() {
     });
   }, [leaves]);
 
-  const close = useCallback(() => setOpen(false), []);
+  const clearTimer = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = null;
+  };
 
+  const close = useCallback(() => {
+    clearTimer();
+    setPhase((p) => (p === 'closed' ? p : 'closing'));
+    timerRef.current = setTimeout(() => setPhase('closed'), reduced ? 0 : COLLAPSE_MS);
+  }, [reduced]);
+
+  const toggle = useCallback(() => {
+    setPhase((p) => {
+      if (p === 'closed') {
+        clearTimer();
+        timerRef.current = setTimeout(() => setPhase('open'), reduced ? 0 : CENTER_MS);
+        return 'centering';
+      }
+      clearTimer();
+      timerRef.current = setTimeout(() => setPhase('closed'), reduced ? 0 : COLLAPSE_MS);
+      return 'closing';
+    });
+  }, [reduced]);
+
+  // Lock scroll + wire Escape while the menu is active; move focus into the dial
+  // once it has bloomed.
   useEffect(() => {
-    if (!open) return;
+    if (phase === 'closed') return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') close();
     };
     window.addEventListener('keydown', onKey);
-    const raf = requestAnimationFrame(() =>
-      dialRef.current?.querySelector<HTMLElement>('a[href], [tabindex]')?.focus(),
-    );
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener('keydown', onKey);
-      cancelAnimationFrame(raf);
     };
-  }, [open]);
+  }, [phase, close]);
+
+  useEffect(() => {
+    if (phase !== 'open') return;
+    const raf = requestAnimationFrame(() =>
+      dialRef.current?.querySelector<HTMLElement>('a[href], [tabindex]')?.focus(),
+    );
+    return () => cancelAnimationFrame(raf);
+  }, [phase]);
+
+  useEffect(() => () => clearTimer(), []);
 
   const signOut = useCallback(async () => {
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
-          setOpen(false);
+          close();
           navigate({ to: '/' });
           window.location.reload();
         },
       },
     });
-  }, [navigate]);
+  }, [navigate, close]);
+
+  const tab = menuVisible ? 0 : -1;
 
   return (
-    <>
+    <div className="radial-hub" data-phase={phase}>
       <button
         type="button"
         className="radial-hub__orb"
         aria-haspopup="menu"
-        aria-expanded={open}
+        aria-expanded={phase !== 'closed'}
         aria-label={t('open-menu', { defaultValue: 'Open navigation' })}
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
       >
         <RmhLogo className="radial-hub__logo" />
       </button>
 
-      <div
-        className={'radial-hub__overlay' + (open ? ' is-open' : '')}
-        aria-hidden={!open}
-        role="presentation"
-      >
+      <div className="radial-hub__overlay" role="presentation" aria-hidden={!menuVisible}>
         <button
           type="button"
           className="radial-hub__scrim"
           onClick={close}
           aria-label={t('close', { defaultValue: 'Close' })}
-          tabIndex={open ? 0 : -1}
+          tabIndex={tab}
         />
+
+        <div className="radial-hub__blur" aria-hidden />
 
         <div
           ref={dialRef}
@@ -177,7 +217,7 @@ export function RadialHub() {
                       style={{ clipPath: w.clip }}
                       role="menuitem"
                       onClick={close}
-                      tabIndex={open ? 0 : -1}
+                      tabIndex={tab}
                       aria-current={active ? 'page' : undefined}
                       aria-label={label}
                     >
@@ -190,7 +230,7 @@ export function RadialHub() {
                       style={{ clipPath: w.clip }}
                       role="menuitem"
                       onClick={close}
-                      tabIndex={open ? 0 : -1}
+                      tabIndex={tab}
                       aria-current={active ? 'page' : undefined}
                       aria-label={label}
                     >
@@ -201,11 +241,6 @@ export function RadialHub() {
               );
             })}
           </ul>
-
-          <div className="radial-hub__core" aria-hidden>
-            <span>RMH</span>
-            <small>{t('studio-wordmark', { defaultValue: 'Studios' })}</small>
-          </div>
         </div>
 
         <div className="radial-hub__foot">
@@ -215,7 +250,7 @@ export function RadialHub() {
                 to={`/u/${user.handle || user.id}` as string}
                 className="radial-hub__identity"
                 onClick={close}
-                tabIndex={open ? 0 : -1}
+                tabIndex={tab}
               >
                 <UserAvatar
                   src={resolved?.image || session.user.image}
@@ -229,7 +264,7 @@ export function RadialHub() {
                 to="/settings"
                 className="radial-hub__foot-btn"
                 onClick={close}
-                tabIndex={open ? 0 : -1}
+                tabIndex={tab}
                 aria-label={t('settings', { defaultValue: 'Settings' })}
               >
                 <Settings aria-hidden />
@@ -238,7 +273,7 @@ export function RadialHub() {
                 type="button"
                 className="radial-hub__foot-btn"
                 onClick={signOut}
-                tabIndex={open ? 0 : -1}
+                tabIndex={tab}
                 aria-label={t('sign-out', { defaultValue: 'Sign out' })}
               >
                 <LogOut aria-hidden />
@@ -250,7 +285,7 @@ export function RadialHub() {
               search={{ callbackURL: undefined }}
               className="radial-hub__signin"
               onClick={close}
-              tabIndex={open ? 0 : -1}
+              tabIndex={tab}
             >
               {t('sign-in', { defaultValue: 'Sign in' })}
             </Link>
@@ -259,13 +294,13 @@ export function RadialHub() {
             type="button"
             className="radial-hub__foot-btn radial-hub__close"
             onClick={close}
-            tabIndex={open ? 0 : -1}
+            tabIndex={tab}
             aria-label={t('close', { defaultValue: 'Close' })}
           >
             <X aria-hidden />
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 }
