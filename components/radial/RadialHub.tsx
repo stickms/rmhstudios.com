@@ -13,8 +13,8 @@ import { RmhLogo } from './RmhLogo';
 
 type HubUser = { id: string; handle?: string | null; isAdmin?: boolean };
 
-/** closed → centering (orb glides to the middle) → open (menu blooms) → closing. */
-type Phase = 'closed' | 'centering' | 'open' | 'closing';
+/** closed → open (orb glides to centre AS the menu blooms) → closing → closed. */
+type Phase = 'closed' | 'open' | 'closing';
 
 interface Wedge extends NavLeaf {
   /** clip-path polygon (in % of the square dial) that carves this pie slice. */
@@ -25,8 +25,10 @@ interface Wedge extends NavLeaf {
 }
 
 const DEG = Math.PI / 180;
-const CENTER_MS = 430; // orb glide-to-centre before the menu opens
-const COLLAPSE_MS = 300; // menu collapse before the orb glides home
+// One synchronous motion: the orb, the circular blur, the wedges and the foot all
+// animate together over this long. It also gates how long the overlay stays
+// mounted while closing so the whole thing animates OUT before it hides.
+const MOTION_MS = 500;
 
 const isActive = (pathname: string, href: string) =>
   href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
@@ -45,11 +47,11 @@ function slicePolygon(a0: number, a1: number): string {
 }
 
 /**
- * The RMH radial navigator. Tapping the fixed RMH orb first glides it smoothly to
- * the **centre of the screen**, then blooms a **pie/wedge menu** while the
- * backdrop reveals under an expanding **circular blur** (no drawn colour disc —
- * just frosted glass growing from the centre). The orb itself becomes the hub the
- * wedges radiate from. framer-motion-free (CSS transitions/clip-path) to stay
+ * The RMH radial navigator. Tapping the fixed RMH orb glides it to the **centre of
+ * the screen** while — in the SAME synchronous motion — the backdrop reveals under
+ * an expanding **circular blur** and a **pie/wedge menu** blooms around it (no
+ * drawn colour disc; just frosted glass growing from the centre). Closing reverses
+ * every layer together. framer-motion-free (CSS transitions/clip-path) to stay
  * light on mobile; icon-only wedges under 480px so destinations never crowd.
  */
 export function RadialHub() {
@@ -108,18 +110,16 @@ export function RadialHub() {
   const close = useCallback(() => {
     clearTimer();
     setPhase((p) => (p === 'closed' ? p : 'closing'));
-    timerRef.current = setTimeout(() => setPhase('closed'), reduced ? 0 : COLLAPSE_MS);
+    // Keep the overlay mounted while every layer animates out, then hide it.
+    timerRef.current = setTimeout(() => setPhase('closed'), reduced ? 0 : MOTION_MS);
   }, [reduced]);
 
   const toggle = useCallback(() => {
+    clearTimer();
     setPhase((p) => {
-      if (p === 'closed') {
-        clearTimer();
-        timerRef.current = setTimeout(() => setPhase('open'), reduced ? 0 : CENTER_MS);
-        return 'centering';
-      }
-      clearTimer();
-      timerRef.current = setTimeout(() => setPhase('closed'), reduced ? 0 : COLLAPSE_MS);
+      // Opening is a single synchronous transition — no pre-centring step.
+      if (p === 'closed') return 'open';
+      timerRef.current = setTimeout(() => setPhase('closed'), reduced ? 0 : MOTION_MS);
       return 'closing';
     });
   }, [reduced]);

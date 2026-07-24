@@ -71,6 +71,8 @@ export interface LiquidTabRenderProps {
   'aria-current': 'page' | undefined;
   /** Class string matching a tablist-mode tab (pad + accent-on-active). */
   className: string;
+  /** Hover tooltip — set to the label in `iconOnly` mode; spread it onto the link. */
+  title?: string;
   /** Pre-composed icon + label + count/badge, already at z-1 above the capsule. */
   children: React.ReactNode;
 }
@@ -101,6 +103,13 @@ interface LiquidTabsProps {
    */
   scroll?: boolean;
   /**
+   * Icon-forward: visually hide each tab's text label (kept as an accessible
+   * name via `sr-only` + a hover `title` tooltip) for tabs that carry an `icon`,
+   * so crowded strips read as a compact icon row. Tabs without an icon keep
+   * their label as a fallback, so this is safe to set on any strip.
+   */
+  iconOnly?: boolean;
+  /**
    * Tablist-mode ARIA panel wiring (§16.2). When set, each tab gets a stable dom
    * id `${idBase}-tab-${id}` (instead of the useId-scoped default) and
    * `aria-controls="${idBase}-panel-${id}"`, so the caller can render matching
@@ -128,6 +137,7 @@ export function LiquidTabs({
   sheet = true,
   fullWidth = false,
   scroll = false,
+  iconOnly = false,
   idBase,
   renderTab,
   'aria-label': ariaLabel,
@@ -198,6 +208,8 @@ export function LiquidTabs({
     cn(
       'relative inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[var(--site-control-radius)] font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-40',
       pad,
+      // Tighter, more square padding for an icon-only strip.
+      iconOnly && (size === 'sm' ? 'px-2.5' : 'px-3'),
       fullWidth && 'flex-1',
       active ? 'text-site-accent-fg' : 'text-site-text-muted hover:text-site-text',
     );
@@ -217,13 +229,24 @@ export function LiquidTabs({
       </motion.span>
     ) : null;
 
-  // Icon + label + count/badge, each above the capsule at z-1.
+  // Icon + label + count/badge, each above the capsule at z-1. In `iconOnly` mode
+  // a tab that has an icon hides its label visually but keeps it as the
+  // `sr-only` accessible name (the button/link also gets a `title` tooltip).
   const content = (tab: LiquidTab) => {
     const Icon = tab.icon;
+    const hideLabel = iconOnly && Boolean(Icon);
     return (
       <>
-        {Icon && <Icon className="relative z-1 h-4 w-4 shrink-0" aria-hidden />}
-        <span className="relative z-1">{tab.label}</span>
+        {Icon && (
+          <Icon
+            className={cn(
+              'relative z-1 shrink-0',
+              iconOnly ? 'h-[1.15rem] w-[1.15rem]' : 'h-4 w-4',
+            )}
+            aria-hidden
+          />
+        )}
+        <span className={cn('relative z-1', hideLabel && 'sr-only')}>{tab.label}</span>
         {typeof tab.count === 'number' && (
           <span className="relative z-1 text-xs opacity-70 tabular-nums">{tab.count}</span>
         )}
@@ -255,6 +278,7 @@ export function LiquidTabs({
             id: tabId(tab.id),
             'aria-current': active ? 'page' : undefined,
             className: itemClass(active),
+            title: iconOnly && tab.icon ? tab.label : undefined,
             children: content(tab),
           })}
         </div>
@@ -272,6 +296,7 @@ export function LiquidTabs({
         disabled={tab.disabled}
         tabIndex={active ? 0 : -1}
         onClick={() => onChange?.(tab.id)}
+        title={iconOnly && tab.icon ? tab.label : undefined}
         className={itemClass(active)}
       >
         {capsule(active)}
