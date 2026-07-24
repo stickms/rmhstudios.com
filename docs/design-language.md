@@ -1,36 +1,57 @@
-# Design Language — rmhstudios.com
+# Design Language — Radial Avant-Garde Glass
 
 > Audience: humans **and** coding agents. This is the reference for how the site
 > looks and feels, and how to build UI that is visually native to it. For the
 > step-by-step "build a page that fits" checklist, see
 > [`docs/page-consistency.md`](./page-consistency.md).
 
-The whole visual system rests on one idea: **a single CSS custom-property
-contract (`--site-*`) that every theme re-defines.** Components never hardcode
-colors, radii, fonts, or shadows — they consume the contract through Tailwind
-utilities. Because of that, every theme — the base themes (Glass Dark, Glass
-Light, High Contrast), the curated set (Graphite / Sepia / Nocturne Glass), Ultra, and
-any accent preset layered on top — restyles the entire site without a single
-component change.
+The design language is **Radial Avant-Garde Glass** — a bold, experimental take
+on **Apple's Liquid Glass** material, draped over a **radial** information
+architecture. Two ideas, one language:
 
-**Liquid Glass is the material system, not a theme.** The site's default look is
-physically-plausible layered glass with **live optics** (v2): translucent
-surfaces over a **two-layer, depth-parallaxing aurora canvas** that flows and
-follows pointer / device motion; a **specular rim glint on every glass
-surface** that tracks the scene light (the pointer on desktop, a fixed top
-"sun" otherwise); **lens-model edge refraction** (a real displacement height
-field, Chromium-enhanced) with an optional chromatic **prism** dispersion on
-one flagship surface per page; a pointer-tracked diffuse light on interactive
-elements; and travelling **liquid sheens** on signature surfaces. The shell
-itself is **floating glass**: an inset rounded sidebar rail, floating header
-capsules, and content panes separated by aurora gutters instead of an
-app-frame of borders.
-It is expressed as an **elevation system of explicit CSS classes**
-(`.glass-fill` / `.glass-pane` / `.glass-chrome` / `.glass-overlay` /
-`.glass-inset`, plus the modifiers in §5.1) placed _on_ components. Every
-theme is a _tint_ of that glass; `high-contrast` turns the glass off (opaque,
-blur-free). Specs: [v1 material system](./plans/2026-07-14-liquid-glass-ui-redesign.md)
-· [v2 optics & floating shell](./plans/2026-07-21-liquid-glass-v2-optics.md).
+- **Radial.** The site orbits a central **RMH** mark; content radiates from the
+  centre. The home feed is a vertically-scrolling **wheel** of cards (on the
+  document's own scroll) that rake onto a shallow cylinder as they cross the
+  focus line, led by an inline compose box; navigation lives in a fixed **RMH
+  hub** that, when tapped, first **glides the orb to the middle of the screen**
+  and then **blooms a pie/wedge dial** the orb radiates from. A gooey
+  **metaball** cursor and a soft parallax **ring backdrop** keep the whole
+  surface feeling liquid and continuous. Mobile-first, with a strict
+  **high-contrast monochrome** palette.
+- **Avant-garde glass.** The material is Apple's Liquid Glass used
+  _theatrically_, not literally: physically-plausible layered translucent glass
+  with **live optics** — a specular rim glint that tracks the scene light,
+  lens-model edge refraction (with an optional chromatic **prism** on one
+  flagship surface), a depth-parallaxing aurora canvas, a pointer-tracked
+  diffuse light, and travelling liquid sheens — deployed for signature radial
+  moments (the menu is an **expanding circular blur** growing from the centre,
+  not a drawn disc; the wedges are translucent frosted sectors over it). It is
+  expressed as an **elevation system of explicit CSS classes** (`.glass-fill` /
+  `.glass-pane` / `.glass-chrome` / `.glass-overlay` / `.glass-inset`, plus the
+  modifiers in §5.1) placed _on_ components.
+
+**Everything rests on one contract:** a single set of CSS custom properties
+(`--site-*`) that every theme re-defines. Components never hardcode colors,
+radii, fonts, or shadows — they consume the contract through Tailwind utilities,
+so any theme (and any accent preset layered on top) restyles the entire site
+without a single component change.
+
+> **Implemented vs. referenced — read this first.** The **radial** layer (shell,
+> hub, wheel feed, metaball cursor) ships today in
+> [`components/radial/`](../components/radial/README.md), and the current
+> **default renders it as a flattened, strict black-&-white baseline**: the
+> radial shell demotes the glass classes to opaque flat `--site-surface` cards
+> (the same flatten `high-contrast` uses), so content pages read as clean
+> monochrome, not frosted glass. The full **Liquid Glass optics _on the radial
+> surfaces_ are the north star this language references** — the material system
+> documented below (§2, §5.1, §7) is real and lives in the codebase, and is what
+> the radial UI grows back into as the optics are re-enabled over the monochrome
+> shell. **Build new UI to the Radial Avant-Garde Glass vision**; where the flat
+> baseline is what ships today, it degrades cleanly to it.
+
+Specs: [radial UI](../components/radial/README.md) ·
+[v1 glass material](./plans/2026-07-14-liquid-glass-ui-redesign.md) ·
+[v2 optics & floating shell](./plans/2026-07-21-liquid-glass-v2-optics.md).
 
 ---
 
@@ -38,8 +59,9 @@ blur-free). Specs: [v1 material system](./plans/2026-07-14-liquid-glass-ui-redes
 
 Tailwind v4 is imported at the top of `app/globals.css`; an `@theme inline`
 block binds the `--site-*` variables to utility classes. The `:root` block is
-the **default (dark) theme** — there is no `.style-default` class; default is
-the absence of any `.style-*` class on `<html>`.
+the **default theme** — the strict-monochrome Radial Avant-Garde Glass baseline (a
+light palette: white canvas, ink text and accent). There is no `.style-default`
+class; default is the absence of any `.style-*` class on `<html>`.
 
 Tokens every theme defines (set in `:root`, overridden by each `.style-*`
 class):
@@ -82,20 +104,25 @@ theme mechanism.
 
 ---
 
-## 2. Themes (7, all glass tints) + accent presets
+## 2. Themes + accent presets
 
-The catalog is a tight, tasteful set — every theme is a **tint of the glass**
-over its own `--site-canvas` aurora. Theme = a `.style-<id>` class on `<html>`
-(the default `Glass Dark` is the bare `:root` — no class). The catalog lives in
-`stores/themeStore.ts` (`SITE_STYLES`, with id/label/icon/group); the CSS for
-each lives in `app/globals.css`. Visitors with no saved preference get
-`DEFAULT_STYLE` (`default`). The old `liquid-glass` id is retired — it _became_
-the default; persisted prefs self-heal in `Providers.tsx`.
+Theme = a `.style-<id>` class on `<html>`; the catalog lives in
+`stores/themeStore.ts` (`SITE_STYLES`, with id/label/icon/group) and the CSS for
+each in `app/globals.css`. Visitors with no saved preference get `DEFAULT_STYLE`
+(`default`), and persisted-but-unknown prefs self-heal in `Providers.tsx`.
 
-| Group   | Themes                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Base    | `default` (**Glass Dark** — the site default: aurora-lit deep-ocean canvas, translucent surfaces, specular rims), `light` (**Glass Light** — daylight canvas, brighter white frost, dark ink), `high-contrast` (WCAG AAA, **no glass**: opaque black/white, yellow accent, 2px borders), `ultra` (**Ultra** — near-black spectral canvas, precision geometry, ice-cyan signal color, fast motion and restrained violet energy) |
-| Curated | `graphite` (Graphite Glass — monochrome smoke, desaturated), `sepia` (Sepia Glass — warm parchment, amber accent), `nocturne` (Nocturne Glass — deep-navy nightscape, sky-blue aurora)                                                                                                                                                                                                                                         |
+The **default** (`default` = the bare `:root`, no class) is the **Radial Liquid
+Glass baseline**: strict high-contrast **monochrome** — white canvas, ink text,
+an ink accent, hairline black borders — the palette the radial shell renders
+**flat** (see the "implemented vs. referenced" callout above). The other themes
+remain **tints of the Liquid Glass material** over their own `--site-canvas`
+aurora, and are the live reference for the optics the radial surfaces grow back
+into. (The old `liquid-glass` theme id is retired — it _became_ the shell.)
+
+| Group   | Themes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Base    | `default` (**Radial Monochrome** — the site default: strict high-contrast black-&-white, ink accent, flat surfaces; the radial shell's flattened baseline that de-glasses content pages), `light` (**Glass Light** — daylight canvas, brighter white frost, dark ink), `high-contrast` (WCAG AAA, **no glass**: opaque black/white, yellow accent, 2px borders), `ultra` (**Ultra** — near-black spectral canvas, precision geometry, ice-cyan signal color, fast motion and restrained violet energy) |
+| Curated | `graphite` (Graphite Glass — monochrome smoke, desaturated), `sepia` (Sepia Glass — warm parchment, amber accent), `nocturne` (Nocturne Glass — deep-navy nightscape, sky-blue aurora)                                                                                                                                                                                                                                                                                                                 |
 
 The glass primitives live in `components/ui/liquid-glass.tsx` (`GlassPane` and
 `GlassFilter` — the v2 lens-filter host mounted globally in `__root.tsx`) with a
@@ -285,44 +312,73 @@ close-button clearance stay consistent.
 
 ## 6. Layout system & page anatomy
 
-The `_site` layout route delegates to `components/feed/SiteShell.tsx`, which
-provides the **floating glass shell**: the desktop sidebar is an inset rounded
-`glass-chrome--aside` rail (64px from `md`, expanding to 232px at `2xl` so laptop
-reading width is never sacrificed), `MobileSidebarShell` (mobile drawer + dock),
-skip link, aurora gutters between rail/content/right-rail, and the single
-`<main id="main-content">` with the `.page-root` enter animation. **Pages
-never re-add sidebars** (and `AnimatedMain` renders a `<div>` — the shell's
-`<main>` is the one landmark).
+The `_site` layout route delegates to `components/feed/SiteShell.tsx`, which now
+renders the **radial shell** ([`components/radial/RadialShell.tsx`](../components/radial/RadialShell.tsx)):
+a fixed parallax **ring backdrop**, a slim sticky **utility top bar** (brand ·
+search · inbox · avatar), the central **RMH hub** (`RadialHub`), a site-wide
+gooey **metaball cursor** (desktop / fine-pointer), and the single
+`<main id="main-content">` landmark. This replaced the old floating-glass
+sidebar shell (inset rail, floating header capsules, aurora gutters). **Pages
+never add sidebars or a page-frame** (and `AnimatedMain` renders a `<div>` — the
+shell's `<main>` is the one landmark).
+
+The hub is a phase state machine: tapping the fixed orb **glides it to the
+centre of the screen** (`centering`), then opens the menu (`open`) as an
+**expanding circular blur** grows from the centre and translucent pie/wedge
+sectors bloom around the orb — no drawn colour disc. The orb owns navigation, so
+**there is no sidebar**. Closing reverses it (the blur contracts, then the orb
+glides home).
+
+The home (`/`) is a full-bleed **radial feed**
+([`RadialFeed`](../components/radial/RadialFeed.tsx) → `RadialWheel`): a wheel of
+cards raked onto a shallow cylinder on the **document's own scroll** (no inner
+scroll region — that is what lets mobile Safari collapse its toolbars), led by an
+inline compose box, with a floating compose button that opens the new-rmhark
+modal. Every other `_site` route flows the same way — natural document scroll,
+**no pinned/sticky page chrome** — inside a centred content column
+(`.radial-shell__main`, `max-width: 72rem`) on the backdrop. The radial shell
+**flattens content to the monochrome baseline** — it demotes the glass classes
+to flat `--site-surface` cards (de-glass, §5.1), strips PageLayout's header card,
+and unpins sticky headers/tabs/search — so pages read as clean flat monochrome.
+(Re-enabling the Liquid Glass optics over these radial surfaces is the referenced
+direction — see the top-of-file callout.)
 
 Two page archetypes (see `docs/page-consistency.md` for full code):
 
-1. **Standard content page** — wrap in
-   `components/feed/PageLayout.tsx`:
+1. **Standard content page** — wrap in `components/feed/PageLayout.tsx`:
    `PageLayout({ title, children, rightSidebar?, headerRight?, wide?, backTo?, backLabel?, breadcrumbs? })`.
-   It renders the **floating header capsule**
-   (`.glass-chrome sticky top-2 mx-2 rounded-site shadow-site-sm md:top-3 md:mx-3`,
-   condensing on scroll via `data-scrolled`: shorter, more opaque, more blur,
-   brighter glint), the transparent center column, and a right sidebar
-   (a floating widget stack, visible from `xl`) or spacer.
-2. **Feed-column page** — use `AnimatedMain` directly with a target width from
-   `lib/layout-width.ts`.
+   In the radial shell its `.page-heading` renders as a **flat, transparent
+   big-type header** floating directly on the ring backdrop (the radial content
+   layer strips the old bordered header capsule), followed by the content column
+   and an optional right widget rail.
+2. **Feed-column / bespoke page** — use `AnimatedMain` directly with a target
+   width from `lib/layout-width.ts`, or (home) the radial wheel.
 
 Column widths come from `lib/layout-width.ts`: `DEFAULT_WIDTH = 648`,
 `WIDE_WIDTH = 800`, `WIDE_NO_RIGHT_SIDEBAR_WIDTH = 952`. Inner content is
 usually `px-4 pt-4 pb-12 max-w-2xl mx-auto`; the column always carries
-`pb-dock` (clears the mobile dock) and **no `border-r`** — the old app-frame
-edge is gone. Repeated content floats as spaced `.glass-fill` cards
-(`space-y-3 px-3`); hairline `divide-y` rhythm lives _inside_ container
-cards, not between page-level sections.
+`pb-dock` and **no `border-r`** — there is no app-frame edge. Repeated content
+floats as spaced cards (`space-y-3 px-3`); hairline `divide-y` rhythm lives
+_inside_ container cards, not between page-level sections.
 
 Full-screen experiences (games, `/login`, legal pages, Discord activities) live
 at the **top level** of `app/routes/` — outside `_site/` — and deliberately get
-no shell.
+no shell (no radial chrome, no de-glass — they own their own look).
 
 ---
 
 ## 7. Motion
 
+- **Radial motion (the shipped layer).** The radial UI is CSS/rAF-driven and
+  framer-motion-free for the shell: the feed **wheel** rakes each card onto a
+  shallow cylinder on a rAF window-scroll pass with cached offsets (no layout
+  thrash — `RadialWheel`), the **hub** glides the orb to centre then blooms the
+  wedges under an expanding `clip-path` **circular blur** (CSS-only phase
+  machine), the **metaball** cursor trails on one rAF tick (`MetaballCursor`),
+  the **ring backdrop** parallaxes to the pointer, and page headers/heroes rise
+  in on mount (`radial-page-rise`). All of it is `transform`/`opacity` only and gated off
+  under reduced motion; optional scroll **haptics** (`navigator.vibrate`) tick
+  as cards cross the focus line.
 - **framer-motion** is the animation library. Reach for the shared motion
   system in **`lib/motion.ts`** rather than hand-typing durations/easings:
   it exports the timing tokens (`DURATION`, `EASE`, `SPRING`, `transition`)
@@ -338,7 +394,10 @@ no shell.
   4px rise), suppressed on history-back (`html.nav-pop`) and during View
   Transitions (`html.vt-active`). Feed items use `.feed-item-enter`.
   Shared-element View Transitions go through `lib/view-transition.ts`.
-- **Living backdrop (v2 — two layers):** the aurora canvas (`body::before`)
+- **Living backdrop (Liquid Glass material — v2, two layers):** part of the
+  glass layer, so it is dormant under the flat monochrome default
+  (`--site-canvas` is `none`) and returns with the optics. The aurora canvas
+  (`body::before`)
   runs an ultra-slow transform-only `aurora-drift` keyframe, and a far-field
   layer (`body::after`, per-theme `--site-aurora-far-*` stops) counter-drifts
   at `-0.6×` the pointer parallax — so pointer motion produces visible depth.

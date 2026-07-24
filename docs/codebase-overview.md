@@ -22,19 +22,19 @@ realtime hubs (Socket.IO) and a Go worker fleet behind it.
 
 ## 1. Tech stack
 
-| Layer | Choice |
-|---|---|
-| Framework / router | [TanStack Start](https://tanstack.com/start) (file-based routing) on [Vite 8](https://vite.dev) |
-| SSR runtime | [Nitro](https://nitro.build) |
-| Language | TypeScript (strict) |
-| UI | React 19, Tailwind CSS v4, Framer Motion, Radix primitives |
-| State / data | Zustand, TanStack React Query |
-| DB / ORM | PostgreSQL + Prisma 7 (`@prisma/adapter-pg`) |
-| Auth | Better Auth (email/password + Discord/GitHub/Google), Stripe via `@better-auth/stripe` |
-| Realtime | Socket.io (Node) hubs; a Go worker fleet (Bazel) for background jobs / status / assets |
-| 3D / audio / canvas | React Three Fiber + Rapier, Pixi.js, Howler, Tone.js |
-| i18n | i18next / react-i18next — 32 locales, RTL for ar/ur/fa |
-| Media / OG | satori + `@resvg/resvg-js` (dynamic OG cards), sharp |
+| Layer               | Choice                                                                                          |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| Framework / router  | [TanStack Start](https://tanstack.com/start) (file-based routing) on [Vite 8](https://vite.dev) |
+| SSR runtime         | [Nitro](https://nitro.build)                                                                    |
+| Language            | TypeScript (strict)                                                                             |
+| UI                  | React 19, Tailwind CSS v4, Framer Motion, Radix primitives                                      |
+| State / data        | Zustand, TanStack React Query                                                                   |
+| DB / ORM            | PostgreSQL + Prisma 7 (`@prisma/adapter-pg`)                                                    |
+| Auth                | Better Auth (email/password + Discord/GitHub/Google), Stripe via `@better-auth/stripe`          |
+| Realtime            | Socket.io (Node) hubs; a Go worker fleet (Bazel) for background jobs / status / assets          |
+| 3D / audio / canvas | React Three Fiber + Rapier, Pixi.js, Howler, Tone.js                                            |
+| i18n                | i18next / react-i18next — 32 locales, RTL for ar/ur/fa                                          |
+| Media / OG          | satori + `@resvg/resvg-js` (dynamic OG cards), sharp                                            |
 
 ---
 
@@ -45,13 +45,13 @@ app/                TanStack Start routes (file-based)
   routes/
     __root.tsx      Root document: head, theme/locale bootstrap, error + 404 boundaries,
                     client error reporting + Core Web Vitals (RUM), site-wide JSON-LD
-    _site.tsx       Pathless layout for the public site (sidebar, mobile nav, <main> landmark)
+    _site.tsx       Pathless layout for the public site (radial shell: ring backdrop, top bar, central hub nav, <main> landmark)
     _site/          Public pages: feed (index), profiles (u/$userid), messages, explore,
                     search, achievements, ranked, wallet, admin, developer docs, …
     api/            Server routes (~415 files): feed, auth, games, AI, og, rum, client-error, …
     <game>.tsx      Full-screen games/apps (altair, rmhbox, velum2099, slice-it, …)
     sitemap[.]xml.ts  Dynamic sitemap
-  globals.css       Theme tokens (7 themes + accent presets; liquid-glass default), reduced-motion gate
+  globals.css       Theme tokens (base + curated themes + accent presets; radial-monochrome default — design language is Radial Avant-Garde Glass), reduced-motion gate
   router.tsx        Router config (intent preloading), routeTree.gen.ts (generated)
 components/          React components by feature (~860 files); ui/ holds shared primitives
 lib/                Utilities, schemas, server helpers (~950 files); seo.ts, schema.ts, rum.ts,
@@ -77,15 +77,15 @@ locales/            32 locale dirs × 66 namespaces (en is the reference)
 
 `pnpm dev` runs Vite (the SSR app) plus the Node WebSocket servers concurrently.
 
-| Service | Port | Role |
-|---|---|---|
-| web (Vite/Nitro) | 7005 | React SSR app + API routes |
-| socket-server | 7001 | Games realtime hub (Slice It!, Neon Driftway, …) — also hosts rmhmusic |
-| rmhtube | 7003 | Watch-together |
-| rmhbox | 7676 | Party-game hub |
-| ladder-worker | — | RMHLadder job-discovery cron (`lib/rmhladder` pipeline) |
-| homes-worker | — | RMHHomes listings-scraper cron (`lib/homes`) |
-| jobs | — | Durable async backbone (pg-boss): progression, event reminders, weekly digest |
+| Service          | Port | Role                                                                          |
+| ---------------- | ---- | ----------------------------------------------------------------------------- |
+| web (Vite/Nitro) | 7005 | React SSR app + API routes                                                    |
+| socket-server    | 7001 | Games realtime hub (Slice It!, Neon Driftway, …) — also hosts rmhmusic        |
+| rmhtube          | 7003 | Watch-together                                                                |
+| rmhbox           | 7676 | Party-game hub                                                                |
+| ladder-worker    | —    | RMHLadder job-discovery cron (`lib/rmhladder` pipeline)                       |
+| homes-worker     | —    | RMHHomes listings-scraper cron (`lib/homes`)                                  |
+| jobs             | —    | Durable async backbone (pg-boss): progression, event reminders, weekly digest |
 
 In production these same Node services serve traffic directly behind Apache —
 there is no Go edge/gateway in front of them. See
@@ -104,11 +104,11 @@ Helm/k3s charts) was **removed in the rewrite** — it never served production.
 Details: [`architecture.md`](./architecture.md) and
 [`../go-services/CLAUDE.md`](../go-services/CLAUDE.md).
 
-| Service | Port | Role |
-|---|---|---|
+| Service      | Port           | Role                                                                                                                  |
+| ------------ | -------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `supervisor` | 9090 (metrics) | Runs six background workers as goroutines: discord-bot, recap, doctrine-worker, vibe-worker, bot-worker, streak-saver |
-| `status` | 7008 | Standalone health dashboard (`/`, `/api/status`); survives outages |
-| `assets` | 7007 | Range-aware S3/R2 asset streaming (`/library` `/music` `/models` `/sprites`) |
+| `status`     | 7008           | Standalone health dashboard (`/`, `/api/status`); survives outages                                                    |
+| `assets`     | 7007           | Range-aware S3/R2 asset streaming (`/library` `/music` `/models` `/sprites`)                                          |
 
 ```bash
 make gazelle        # regenerate Bazel BUILD files after adding Go files
@@ -141,10 +141,11 @@ stage (`go build ./cmd/...`), not Bazel; Bazel is the CI unit-test gate.
   rate-limit writes/AI/uploads via `lib/rate-limit.ts` (`rateLimit`, `getClientIp`).
 - **i18n:** user-facing strings go through `t(...)`. Run `pnpm i18n:coverage` to
   see per-locale key coverage vs. `en`.
-- **Theming/motion:** 7 themes (`.style-*` classes: default, light,
-  high-contrast, graphite, liquid-glass, nocturne, sepia) plus accent presets,
-  over CSS tokens in `globals.css` (`liquid-glass` is the default); a global
-  `prefers-reduced-motion` gate is respected there and via the
+- **Theming/motion:** themes (`.style-*` classes: default, light,
+  high-contrast, ultra, graphite, sepia, nocturne) plus accent presets, over CSS
+  tokens in `globals.css`. The **default** is the strict-monochrome **Radial
+  Liquid Glass** baseline (the old `liquid-glass` id is retired — it became the
+  shell); a global `prefers-reduced-motion` gate is respected there and via the
   `useReducedMotion()` hook.
 - **Accessibility:** `eslint-plugin-jsx-a11y` runs at "warn"; native/Radix
   primitives preferred; the site shell exposes a `<main>` landmark + skip link.
@@ -170,7 +171,7 @@ pnpm build              # Vite/Nitro build + esbuild bundles the WS servers
   removed in the rewrite.)
 - **Go tier:** Bazel unit-test gate in `.github/workflows/go-microservices.yml`
   (`bazelisk test --build_tests_only //go-services/...`); the old e2e + `helm
-  lint` jobs were removed. Production binaries build via the root `Dockerfile`.
+lint` jobs were removed. Production binaries build via the root `Dockerfile`.
 - **CI overall:** `web-ci.yml` gates the frontend (typecheck, lint, vitest,
   `build:frontend`, prod dependency audit); `typecheck-server.yml` and
   `vitest-coverage.yml` add server typecheck + coverage; `codeql.yml` runs SAST;
@@ -182,12 +183,12 @@ pnpm build              # Vite/Nitro build + esbuild bundles the WS servers
 
 ## 7. Where to look first
 
-| I want to… | Start at |
-|---|---|
-| Understand the shell / global setup | `app/routes/__root.tsx`, `app/routes/_site.tsx`, `components/Providers.tsx` |
-| Add a page | a new file under `app/routes/_site/` |
-| Add an API endpoint | a new file under `app/routes/api/` (then regenerate the route tree) |
-| Work on the feed | `components/feed/*`, `app/routes/api/rmharks.ts`, `lib/feed/*` |
-| Work on a game | `app/routes/<game>.tsx` + `components/<game>/*` + `server/socket-server/*` (or `go-services/`) |
-| Change theming | `app/globals.css`, `stores/themeStore.ts` |
-| Understand priorities / open work | `docs/website-improvement-plan.md` |
+| I want to…                          | Start at                                                                                       |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Understand the shell / global setup | `app/routes/__root.tsx`, `app/routes/_site.tsx`, `components/Providers.tsx`                    |
+| Add a page                          | a new file under `app/routes/_site/`                                                           |
+| Add an API endpoint                 | a new file under `app/routes/api/` (then regenerate the route tree)                            |
+| Work on the feed                    | `components/feed/*`, `app/routes/api/rmharks.ts`, `lib/feed/*`                                 |
+| Work on a game                      | `app/routes/<game>.tsx` + `components/<game>/*` + `server/socket-server/*` (or `go-services/`) |
+| Change theming                      | `app/globals.css`, `stores/themeStore.ts`                                                      |
+| Understand priorities / open work   | `docs/website-improvement-plan.md`                                                             |
