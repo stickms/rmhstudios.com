@@ -509,7 +509,10 @@
   min-height: 30rem;
   display: grid;
   place-items: center;
-  perspective: 1200px;
+  /* Look straight down the prism axis (which sits at the slots' x), so the
+     focused facet faces us head-on rather than at a skew. */
+  perspective: 1300px;
+  perspective-origin: 62% 50%;
   touch-action: pan-x;
   outline: none;
   cursor: grab;
@@ -526,9 +529,9 @@
   height: 100%;
   transform-style: preserve-3d;
 }
-/* The RMH core lives in a fixed left gutter and stays fully on-screen; RMHarks
-   radiate to its right. Mobile-first: the gutter + card widths are tuned so the
-   focused card never overlaps the core and never crosses the viewport edge. */
+/* The RMH core lives in a fixed left gutter and stays fully on-screen; the
+   RMHark prism turns to its right. Mobile-first: the gutter + facet widths are
+   tuned so the focused facet never overlaps the core or crosses the viewport. */
 .radial-wheel__hub {
   position: absolute;
   left: clamp(2.25rem, 12vw, 3.5rem);
@@ -536,12 +539,23 @@
   transform: translate(-50%, -50%);
   z-index: 500;
 }
+/* The prism body. Pushed back by exactly the prism radius so the front facet
+   (slot translateZ(+320px)) lands on the z=0 plane at scale 1. MUST match
+   PRISM_RADIUS in RadialWheel.tsx. */
+.radial-wheel__drum {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform: translateZ(-320px);
+}
 .radial-wheel__slot {
   position: absolute;
   left: 62%;
   top: 50%;
   width: min(60vw, 20rem);
-  transform: translate3d(-50%, -50%, 0);
+  /* Hidden until the spin engine places it on a facet (avoids a first-frame
+     pile at the anchor); backface-hidden folds away facets past 90°. */
+  visibility: hidden;
   backface-visibility: hidden;
   will-change: transform, opacity;
 }
@@ -729,6 +743,9 @@
 
 /* ── Desktop refinements ──────────────────────────────────────────────── */
 @media (min-width: 768px) {
+  .radial-wheel {
+    perspective-origin: 58% 50%;
+  }
   .radial-wheel__hub {
     left: 3.25rem;
   }

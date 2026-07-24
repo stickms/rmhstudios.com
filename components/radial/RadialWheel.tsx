@@ -1,9 +1,14 @@
 'use client';
 
-import { useCallback, useMemo, useRef, type ReactNode } from 'react';
+import { useCallback, useRef, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useRadialSpin } from './useRadialSpin';
+
+// Prism radius (px). Facet spacing on the surface is ~R·stepRadians; at R=320,
+// step=36° that is ~200px, so cards sit edge-to-edge. MUST match the compensating
+// `translateZ(-320px)` on `.radial-wheel__drum` in radial.css (front facet → z0).
+const PRISM_RADIUS = 320;
 
 export interface RadialWheelItem {
   id: string;
@@ -14,7 +19,7 @@ interface RadialWheelProps {
   items: RadialWheelItem[];
   /** The persistent hub rendered at the pivot — the "RMH" mark. */
   center?: ReactNode;
-  /** Degrees of arc between neighbouring slots. Default 34. */
+  /** Degrees of arc between neighbouring facets on the cylinder. Default 36. */
   step?: number;
   /** Fires when the focused (front) slot settles on a new index. */
   onActiveChange?: (index: number) => void;
@@ -26,16 +31,20 @@ interface RadialWheelProps {
 const DEG = Math.PI / 180;
 
 /**
- * A 3D radial rolodex. Items ride a vertical cylinder pivoting off the central
- * RMH hub: the focused slot faces front and upright, its neighbours roll up and
- * back into depth. Spin it with the wheel, a drag, or the arrow keys — every
- * frame each card's `transform`/`opacity` is written directly to the DOM by the
- * spin engine, so motion tracks the display refresh rate with zero React churn.
+ * A 3D prism carousel. Each RMHark sits on a facet of a vertical prism pivoting
+ * off the central RMH hub — rotated to its own angle (`rotateX · translateZ`),
+ * not billboarded — so neighbours meet edge-to-edge instead of overlapping and
+ * occlusion stays continuous (no z-index, no pop as depths cross). Cards enter
+ * and leave the visible arc past the 90° fold, where they are already invisible
+ * (backface-hidden + faded), so there is no pop-in. Spin it with the wheel, a
+ * drag, or the arrow keys — every frame the spin engine writes each facet's
+ * `transform`/`opacity` straight to the DOM, so motion tracks the display
+ * refresh rate with zero React churn.
  */
 export function RadialWheel({
   items,
   center,
-  step = 26,
+  step = 36,
   onActiveChange,
   ariaLabel,
   className,
@@ -46,49 +55,36 @@ export function RadialWheel({
   const slotsRef = useRef<HTMLDivElement[]>([]);
   const count = items.length;
 
-  // Visible half-window: cards beyond this arc are parked (opacity 0, inert).
-  const halfWindow = useMemo(() => Math.max(2, Math.round(96 / step)), [step]);
-
   const place = useCallback(
     (el: HTMLDivElement, rel: number) => {
-      const phi = rel * step * DEG;
-      const c = Math.cos(phi);
-      const s = Math.sin(phi);
-      // Hide cards more than ~78° around the arc so only ~5 ever paint; keeps the
-      // stack clean and cheap.
-      const visible = Math.abs(rel) <= halfWindow && c > 0.2;
+      // Each facet's angle around the prism. The drum's own rotation is baked in
+      // by feeding `rel = index - position`, so the focused facet sits at 0°.
+      const deg = rel * step;
 
-      if (!visible) {
-        el.style.opacity = '0';
-        el.style.pointerEvents = 'none';
+      // Past the 90° fold the facet has turned away — hide it there (it is already
+      // invisible via backface + fade), which is what removes the pop-in when
+      // cards enter/leave the window.
+      if (Math.abs(deg) >= 95) {
         el.style.visibility = 'hidden';
+        el.style.pointerEvents = 'none';
         el.setAttribute('aria-hidden', 'true');
         return;
       }
 
-      // Separate vertical-travel and depth radii. The travel radius is large
-      // relative to a card so neighbours clear the focused card instead of piling
-      // on top of it; the depth radius pushes them firmly behind it (paint order
-      // in a preserve-3d context is decided by translateZ, not z-index).
-      const travel = 232;
-      const depth = 340;
-      const y = s * travel;
-      const z = (c - 1) * depth;
-      const rotX = -rel * step * 0.5;
-      const scale = 0.5 + 0.5 * c;
-      const focused = Math.abs(rel) < 0.5;
-      // Focused card is fully opaque and occludes its neighbours; the rest fade
-      // off quickly so the stack never looks muddy.
-      const opacity = focused ? 1 : Math.max(0, c) ** 1.7;
+      const c = Math.cos(deg * DEG);
+      const focused = Math.abs(deg) < step * 0.5;
+      // The rotation itself carries the depth (foreshortening); a gentle cos-fade
+      // keeps the read continuous as a facet approaches the fold. No z-index — the
+      // preserve-3d cylinder sorts occlusion by real depth, continuously.
+      const opacity = Math.max(0, c) ** 0.6;
 
       el.style.visibility = 'visible';
-      el.style.transform = `translate3d(-50%, calc(-50% + ${y.toFixed(2)}px), ${z.toFixed(2)}px) rotateX(${rotX.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+      el.style.transform = `translate(-50%, -50%) rotateX(${(-deg).toFixed(2)}deg) translateZ(${PRISM_RADIUS}px)`;
       el.style.opacity = opacity.toFixed(3);
-      el.style.zIndex = String(200 + Math.round(c * 100));
       el.style.pointerEvents = focused ? 'auto' : 'none';
       el.setAttribute('aria-hidden', focused ? 'false' : 'true');
     },
-    [step, halfWindow],
+    [step],
   );
 
   // Resolve slot nodes from the stage in DOM order rather than per-item refs, so
@@ -128,11 +124,13 @@ export function RadialWheel({
     >
       <div className="radial-wheel__stage" ref={stageRef}>
         {center ? <div className="radial-wheel__hub">{center}</div> : null}
-        {items.map((item) => (
-          <div key={item.id} role="option" aria-selected={false} className="radial-wheel__slot">
-            {item.node}
-          </div>
-        ))}
+        <div className="radial-wheel__drum">
+          {items.map((item) => (
+            <div key={item.id} role="option" aria-selected={false} className="radial-wheel__slot">
+              {item.node}
+            </div>
+          ))}
+        </div>
       </div>
       {children}
     </div>
