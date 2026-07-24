@@ -1,0 +1,766 @@
+/* ==========================================================================
+   RMH Radial UI — the monochrome, circular design language.
+   Every colour comes from a --site-* token (theme-safe). Every animation runs
+   on transform/opacity only, so the compositor holds 60fps+ on any refresh rate.
+   Mobile-first: base rules target phones; @media (min-width) layers on space.
+   ========================================================================== */
+
+.radial-shell {
+  position: relative;
+  min-height: 100dvh;
+  isolation: isolate;
+  background: transparent;
+}
+
+.radial-skip {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 200;
+  transform: translateY(-160%);
+  border-radius: 999px;
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  padding: 0.6rem 1.1rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  transition: transform 0.2s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+}
+.radial-skip:focus {
+  transform: translateY(0);
+}
+
+/* ── Fixed radial backdrop ────────────────────────────────────────────── */
+.radial-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background: var(--site-canvas);
+}
+.radial-backdrop__rings {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 0;
+  height: 0;
+  will-change: transform;
+}
+.radial-backdrop__ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(38vmin + var(--i) * 22vmin);
+  height: calc(38vmin + var(--i) * 22vmin);
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--site-border);
+  border-radius: 50%;
+  opacity: calc(0.5 - var(--i) * 0.06);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .radial-backdrop__ring {
+    animation: radial-breathe 14s ease-in-out infinite;
+    animation-delay: calc(var(--i) * -1.6s);
+  }
+}
+@keyframes radial-breathe {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.035);
+  }
+}
+
+/* ── Top utility bar ──────────────────────────────────────────────────── */
+.radial-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  height: 3.5rem;
+  padding: 0 clamp(0.85rem, 3vw, 1.5rem);
+  background: color-mix(in srgb, var(--site-bg) 72%, transparent);
+  backdrop-filter: saturate(140%) blur(16px);
+  -webkit-backdrop-filter: saturate(140%) blur(16px);
+  border-bottom: 1px solid var(--site-border);
+}
+.radial-topbar__brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  color: var(--site-text);
+  text-decoration: none;
+}
+.radial-topbar__mark {
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  font-size: 1.05rem;
+}
+.radial-topbar__brand small {
+  color: var(--site-text-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+.radial-topbar__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.radial-topbar__btn {
+  display: inline-grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  color: var(--site-text);
+  transition:
+    transform 0.18s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
+    background-color 0.18s ease;
+}
+.radial-topbar__btn:hover {
+  background: var(--site-surface-hover);
+  transform: translateY(-1px);
+}
+.radial-topbar__btn svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+.radial-topbar__avatar {
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  outline: 2px solid transparent;
+  transition: outline-color 0.18s ease;
+}
+.radial-topbar__avatar:hover {
+  outline-color: var(--site-border-bright);
+}
+.radial-topbar__signin {
+  border-radius: 999px;
+  border: 1px solid var(--site-border-bright);
+  padding: 0.45rem 0.95rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--site-text);
+  transition:
+    transform 0.18s ease,
+    background-color 0.18s ease,
+    color 0.18s ease;
+}
+.radial-topbar__signin:hover {
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  transform: translateY(-1px);
+}
+
+/* ── Main content region ──────────────────────────────────────────────── */
+.radial-shell__main {
+  position: relative;
+  z-index: 1;
+  min-height: calc(100dvh - 3.5rem);
+  padding: clamp(1rem, 3vw, 2rem) var(--site-page-gutter, 1rem)
+    clamp(6.5rem, 14vw, 8.5rem);
+  margin-inline: auto;
+  max-width: 72rem;
+}
+.radial-shell[data-home] .radial-shell__main {
+  max-width: none;
+  padding-inline: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── The RMH hub orb (persistent nav trigger) ─────────────────────────── */
+.radial-hub__orb {
+  position: fixed;
+  left: 50%;
+  bottom: clamp(1rem, 4vw, 1.75rem);
+  z-index: 80;
+  transform: translateX(-50%);
+  display: grid;
+  place-items: center;
+  width: clamp(3.75rem, 15vw, 4.5rem);
+  height: clamp(3.75rem, 15vw, 4.5rem);
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  color: var(--site-accent-fg);
+  background: var(--site-accent);
+  box-shadow:
+    0 10px 30px -8px rgba(0, 0, 0, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.25);
+  will-change: transform;
+  transition:
+    transform 0.28s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
+    box-shadow 0.28s ease;
+}
+.radial-hub__orb:hover {
+  transform: translateX(-50%) translateY(-3px) scale(1.04);
+}
+.radial-hub__orb:active {
+  transform: translateX(-50%) scale(0.96);
+}
+.radial-hub__orb:focus-visible {
+  outline: 3px solid var(--site-text);
+  outline-offset: 3px;
+}
+.radial-hub__mark {
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.1em;
+  line-height: 1;
+}
+.radial-hub__ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+  border: 1.5px solid var(--site-accent);
+  opacity: 0.35;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .radial-hub__ring {
+    animation: radial-pulse 2.8s ease-out infinite;
+  }
+}
+@keyframes radial-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  70%,
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* ── Radial navigation overlay ────────────────────────────────────────── */
+.radial-hub__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+}
+.radial-hub__scrim {
+  position: absolute;
+  inset: 0;
+  border: none;
+  padding: 0;
+  margin: 0;
+  appearance: none;
+  cursor: default;
+  background: color-mix(in srgb, var(--site-bg) 60%, transparent);
+  backdrop-filter: blur(22px) saturate(120%);
+  -webkit-backdrop-filter: blur(22px) saturate(120%);
+}
+.radial-hub__ring-stage {
+  position: relative;
+  width: 1px;
+  height: 1px;
+  z-index: 1;
+}
+.radial-hub__core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  width: clamp(5rem, 24vw, 6.5rem);
+  height: clamp(5rem, 24vw, 6.5rem);
+  border-radius: 999px;
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.55);
+}
+.radial-hub__core span {
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: 0.12em;
+}
+.radial-hub__core small {
+  font-size: 0.6rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.radial-hub__spokes {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.radial-hub__spoke-wrap {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  /* Resting position on the ring. The bloom keyframe animates FROM the core to
+     here, so the base transform is the destination (compositor-only motion). */
+  transform: translate(
+    calc(var(--sx) * var(--radial-hub-r)),
+    calc(var(--sy) * var(--radial-hub-r))
+  );
+  will-change: transform, opacity;
+  animation: radial-spoke-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i) * 32ms);
+}
+@keyframes radial-spoke-in {
+  from {
+    transform: translate(0, 0) scale(0.2);
+    opacity: 0;
+  }
+}
+.radial-hub__spoke {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  width: clamp(3.75rem, 17vw, 5.25rem);
+  text-align: center;
+  color: var(--site-text);
+  text-decoration: none;
+}
+.radial-hub__spoke-icon {
+  display: grid;
+  place-items: center;
+  width: clamp(2.65rem, 11vw, 3.4rem);
+  height: clamp(2.65rem, 11vw, 3.4rem);
+  border-radius: 999px;
+  background: var(--site-surface);
+  border: 1px solid var(--site-border);
+  box-shadow: var(--site-shadow-sm);
+  transition:
+    transform 0.2s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+.radial-hub__spoke-icon svg {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+.radial-hub__spoke-label {
+  display: none;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  color: var(--site-text-muted);
+  transition: color 0.2s ease;
+}
+/* Mobile-first: icon-only spokes so 14 destinations never overlap or leave the
+   viewport on a phone; labels return once there is room. */
+@media (min-width: 480px) {
+  .radial-hub__spoke-label {
+    display: block;
+  }
+}
+.radial-hub__spoke:hover .radial-hub__spoke-icon,
+.radial-hub__spoke:focus-visible .radial-hub__spoke-icon {
+  transform: translateY(-3px) scale(1.06);
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  border-color: var(--site-accent);
+}
+.radial-hub__spoke:hover .radial-hub__spoke-label,
+.radial-hub__spoke:focus-visible .radial-hub__spoke-label {
+  color: var(--site-text);
+}
+.radial-hub__spoke.is-active .radial-hub__spoke-icon {
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  border-color: var(--site-accent);
+}
+.radial-hub__spoke.is-active .radial-hub__spoke-label {
+  color: var(--site-text);
+}
+
+.radial-hub__foot {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(1rem, 4vw, 2rem);
+  transform: translateX(-50%);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 999px;
+  background: var(--site-surface);
+  border: 1px solid var(--site-border);
+  box-shadow: var(--site-shadow);
+  max-width: calc(100vw - 2rem);
+}
+.radial-hub__identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.6rem 0.25rem 0.3rem;
+  border-radius: 999px;
+  color: var(--site-text);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  max-width: 40vw;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.radial-hub__identity:hover {
+  background: var(--site-surface-hover);
+}
+.radial-hub__foot-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--site-text);
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    transform 0.18s ease;
+}
+.radial-hub__foot-btn:hover {
+  background: var(--site-surface-hover);
+  transform: translateY(-1px);
+}
+.radial-hub__foot-btn svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+.radial-hub__close {
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+}
+.radial-hub__signin {
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-decoration: none;
+}
+
+/* ── The feed wheel (3D rolodex) ──────────────────────────────────────── */
+.radial-feed {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 3.5rem);
+}
+.radial-feed__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem clamp(1rem, 4vw, 2rem) 0;
+}
+.radial-feed__eyebrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--site-text-muted);
+}
+.radial-feed__compose {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 0.18s ease;
+}
+.radial-feed__compose:hover {
+  transform: translateY(-2px);
+}
+.radial-feed__compose svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.radial-wheel {
+  position: relative;
+  flex: 1;
+  min-height: 30rem;
+  display: grid;
+  place-items: center;
+  perspective: 1200px;
+  touch-action: pan-x;
+  outline: none;
+  cursor: grab;
+}
+.radial-wheel:active {
+  cursor: grabbing;
+}
+.radial-wheel:focus-visible {
+  outline: none;
+}
+.radial-wheel__stage {
+  position: relative;
+  width: min(94vw, 34rem);
+  height: 100%;
+  transform-style: preserve-3d;
+}
+/* The RMH core lives in a fixed left gutter and stays fully on-screen; RMHarks
+   radiate to its right. Mobile-first: the gutter + card widths are tuned so the
+   focused card never overlaps the core and never crosses the viewport edge. */
+.radial-wheel__hub {
+  position: absolute;
+  left: clamp(2.25rem, 12vw, 3.5rem);
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 500;
+}
+.radial-wheel__slot {
+  position: absolute;
+  left: 62%;
+  top: 50%;
+  width: min(60vw, 20rem);
+  transform: translate3d(-50%, -50%, 0);
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+}
+
+/* ── The RMH core disc ────────────────────────────────────────────────── */
+.radial-core {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 0.15rem;
+  width: clamp(4.5rem, 20vw, 6rem);
+  height: clamp(4.5rem, 20vw, 6rem);
+  border-radius: 999px;
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  box-shadow: 0 14px 40px -12px rgba(0, 0, 0, 0.5);
+}
+/* A quiet ring pulse around the core while the next page lazily loads. */
+.radial-core[data-loading]::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 999px;
+  border: 2px solid var(--site-accent);
+  opacity: 0.4;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .radial-core[data-loading]::after {
+    animation: radial-pulse 1.6s ease-out infinite;
+  }
+}
+.radial-core__mark {
+  font-weight: 800;
+  font-size: clamp(1rem, 4vw, 1.3rem);
+  letter-spacing: 0.1em;
+}
+.radial-core__count {
+  font-size: 0.62rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  opacity: 0.72;
+}
+
+/* ── RMHark card ──────────────────────────────────────────────────────── */
+.rmhark__link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+.rmhark {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: clamp(1rem, 4vw, 1.35rem);
+  border-radius: var(--site-radius, 22px);
+  background: var(--site-surface);
+  border: 1px solid var(--site-border);
+  box-shadow: var(--site-shadow);
+  transition:
+    transform 0.2s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
+    border-color 0.2s ease;
+}
+.rmhark__link:hover .rmhark {
+  border-color: var(--site-border-bright);
+  transform: translateY(-2px);
+}
+.rmhark__head {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+.rmhark__who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.rmhark__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--site-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rmhark__verified {
+  width: 0.95rem;
+  height: 0.95rem;
+  color: var(--site-text);
+}
+.rmhark__meta {
+  font-size: 0.75rem;
+  color: var(--site-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rmhark__content {
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: var(--site-text);
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.rmhark__kicker {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--site-text-muted);
+}
+.rmhark__title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--site-text);
+}
+.rmhark__stats {
+  display: flex;
+  gap: 1.1rem;
+  color: var(--site-text-muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+.rmhark__stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.rmhark__stats svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.radial-feed__hint {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(5.5rem, 16vw, 7rem);
+  transform: translateX(-50%);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--site-text-dim);
+  pointer-events: none;
+}
+.radial-feed__empty {
+  flex: 1;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1rem;
+  text-align: center;
+  color: var(--site-text-muted);
+  padding: 2rem;
+}
+.radial-feed__skeleton {
+  flex: 1;
+  display: grid;
+  place-items: center;
+}
+.radial-feed__skeleton .radial-core {
+  opacity: 0.5;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .radial-feed__skeleton .radial-core {
+    animation: radial-pulse-soft 1.6s ease-in-out infinite;
+  }
+}
+@keyframes radial-pulse-soft {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.7;
+  }
+}
+
+/* ── Desktop refinements ──────────────────────────────────────────────── */
+@media (min-width: 768px) {
+  .radial-wheel__hub {
+    left: 3.25rem;
+  }
+  .radial-wheel__slot {
+    left: 58%;
+    width: min(46vw, 24rem);
+  }
+  .radial-topbar {
+    height: 4rem;
+  }
+  .radial-shell__main {
+    min-height: calc(100dvh - 4rem);
+  }
+}
+
+/* ── Reduced motion: kill all continuous / decorative animation ───────── */
+@media (prefers-reduced-motion: reduce) {
+  .radial-backdrop__ring,
+  .radial-hub__ring,
+  .radial-hub__spoke-wrap,
+  .radial-feed__skeleton .radial-core {
+    animation: none !important;
+  }
+  .radial-hub__spoke-wrap {
+    opacity: 1;
+  }
+  .radial-skip,
+  .radial-topbar__btn,
+  .radial-hub__orb,
+  .radial-hub__spoke-icon,
+  .rmhark,
+  .radial-feed__compose {
+    transition-duration: 0.001ms;
+  }
+}

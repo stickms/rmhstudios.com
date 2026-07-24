@@ -1,27 +1,21 @@
 /**
  * Home / Feed Page Route (/)
  *
- * The social feed, rendered inside the site layout (left sidebar + feed +
- * right sidebar). This is the site's root landing page.
+ * The RMH radial home feed: RMHarks orbit the central RMH core and spin into
+ * focus. The first timeline page is streamed UNAWAITED from the loader so the
+ * core paints immediately and the ring fills as the feed resolves.
  */
 
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { FeedLayout } from '@/components/feed/FeedLayout';
-import { getSidebarData } from '@/lib/sidebar-data';
+import { RadialFeed } from '@/components/radial/RadialFeed';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getTimeline } from '@/lib/feed/timeline';
 
-const fetchSidebarData = createServerFn({ method: 'GET' }).handler(async () => {
-  return getSidebarData();
-});
-
 // The first feed page is fetched by its own server fn so the loader can return
-// it UNAWAITED (deferred) — it streams into the page after the shell instead of
+// it UNAWAITED (deferred) — it streams into the wheel after the shell instead of
 // blocking the initial response.
 const fetchInitialFeed = createServerFn({ method: 'GET' }).handler(async () => {
-  // Shares the request-scoped session resolution with the root loader and the
-  // sidebar server fn, so the homepage resolves the viewer once, not three times.
   const session = await getRequestSession();
   const viewerId: string | null = session?.user?.id ?? null;
   const feed = await getTimeline({
@@ -36,30 +30,18 @@ const fetchInitialFeed = createServerFn({ method: 'GET' }).handler(async () => {
     items: feed.items,
     nextCursor: feed.nextCursor,
     hasMore: feed.hasMore,
-    // Carry the viewer's muted words so the client filters live SSE posts without
-    // a separate /api/preferences/muted-words request at hydration.
     mutedWords: feed.mutedWords ?? [],
   };
 });
 
 export const Route = createFileRoute('/_site/')({
-  // `?q=` drives the feed search so a search (or hashtag click) is shareable.
+  // `?q=` is preserved so existing shareable search/hashtag links still resolve.
   validateSearch: (search: Record<string, unknown>): { q?: string } => {
     const q = typeof search.q === 'string' ? search.q.trim() : '';
     return q ? { q } : {};
   },
-  // Back-nav / repeat visits within 60s reuse the cached loader payload instead
-  // of re-running both server fns (each a full session resolution + timeline
-  // query). The module-level feed store is the live source of truth after
-  // hydration — the loader result is only consumed by a pristine store, so
-  // re-running it sooner is pure waste.
   staleTime: 60_000,
-  // Return BOTH the sidebar and the feed as deferred promises so neither DB
-  // read blocks the first byte: the feed column + composer + skeleton paint
-  // immediately and each region streams into its own <Suspense> slot. This is
-  // the "fast shell, content streams" pattern social feeds use — previously the
-  // awaited sidebar gated even the feed skeleton from painting.
-  loader: () => ({ sidebar: fetchSidebarData(), initialFeed: fetchInitialFeed() }),
+  loader: () => ({ initialFeed: fetchInitialFeed() }),
   head: () => ({
     meta: [
       { title: 'RMH Studios' },
@@ -70,7 +52,6 @@ export const Route = createFileRoute('/_site/')({
 });
 
 function Home() {
-  const { sidebar, initialFeed } = Route.useLoaderData();
-
-  return <FeedLayout sidebar={sidebar} initialFeed={initialFeed} />;
+  const { initialFeed } = Route.useLoaderData();
+  return <RadialFeed initialFeed={initialFeed} />;
 }
