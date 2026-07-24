@@ -851,3 +851,70 @@
     transition-duration: 0.001ms;
   }
 }
+
+/* ==========================================================================
+   Radial content pages
+   Every non-home _site route renders its own layout inside .radial-shell__main.
+   The shell chrome + monochrome tokens already reach them, but their bodies
+   still carry the OLD idioms — PageLayout's card-style header and the "liquid
+   glass" panels the bespoke pages (library, creator studio, …) are built on.
+   These scoped rules finish the job: strip that chrome back to the flat,
+   monochrome, backdrop-floating radial language so the whole site reads as one.
+   ========================================================================== */
+
+/* ── Shared PageLayout header (used by ~53 routes) ─────────────────────────
+   feed.css renders .page-heading as a bordered, shadowed surface card; on the
+   ring backdrop that reads as leftover chrome. Flatten it to clean type that
+   sits directly on the backdrop, matching the home. (The h1 already uses the
+   display font — we only drop the card and enlarge a touch.) */
+.radial-shell .page-heading {
+  margin: 0 0 clamp(1.25rem, 4vw, 2rem);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.radial-shell .page-heading h1 {
+  font-size: clamp(2rem, 8vw, 3.4rem);
+  letter-spacing: -0.04em;
+}
+
+/* ── De-glass: flat monochrome surfaces everywhere ────────────────────────
+   The radial language is flat, so demote every "liquid glass" panel to a solid
+   --site-surface card with a real border and no blur/optics — the exact
+   treatment the high-contrast theme already uses (globals.css). This carries
+   the flat radial look onto every content page still built on the glass
+   primitives (library, creator studio, explore, market, …) in a single pass. */
+.radial-shell
+  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-chrome--aside, .glass-overlay, .glass-inset) {
+  background: var(--site-surface) !important;
+  border-color: var(--site-border) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+/* Kill the remaining glass optics (edge lens, pointer hotspot, ambient sheen). */
+.radial-shell .glass-chrome--aside::before,
+.radial-shell .glass-refract::before,
+.radial-shell .glass-interactive::after {
+  display: none;
+}
+.radial-shell .glass-liquid {
+  background-image: none;
+  animation: none;
+}
+
+/* ── Soft radial entrance for page headers / heroes ───────────────────────
+   A gentle rise as each page's title mounts — a fresh element on every client
+   nav, so it re-runs — carrying the home's flowy feel to every page. The
+   no-preference gate turns it off under reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .radial-shell:not([data-home]) :is(.page-heading, .lib-hero, .cstudio-head) {
+    animation: radial-page-rise 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)) both;
+  }
+}
+@keyframes radial-page-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
