@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { BackToTop } from '@/components/ui/back-to-top';
 import { MobileSidebarShell } from './MobileSidebarShell';
 import { ShellLayoutContext } from './shell-context';
-import { SpatialTopNav } from './SpatialTopNav';
+import { MobileDock, SiteNavigation } from './SiteNavigation';
 
 interface SiteShellProps {
   children: ReactNode;
@@ -13,7 +13,7 @@ interface SiteShellProps {
   overlays?: ReactNode;
 }
 
-/** One calm navigation plane and one uninterrupted content canvas. */
+/** Mobile-first application frame shared by every standard route. */
 export function SiteShell({ children, overlays }: SiteShellProps) {
   const { t } = useTranslation('common');
 
@@ -27,11 +27,12 @@ export function SiteShell({ children, overlays }: SiteShellProps) {
           {t('skipToContent', { defaultValue: 'Skip to content' })}
         </a>
 
-        <SpatialTopNav />
         <MobileSidebarShell>
+          <SiteNavigation />
           <main id="main-content" tabIndex={-1} className="site-shell__main page-root">
             {children}
           </main>
+          <MobileDock />
         </MobileSidebarShell>
 
         {overlays}

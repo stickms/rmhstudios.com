@@ -27,35 +27,30 @@ export function FeedTabs({ mode, onModeChange }: FeedTabsProps) {
   ];
 
   return (
-    <section className="spatial-feed-index" aria-labelledby="feed-view-heading">
-      <div className="spatial-feed-index__head">
-        <div>
-          <span>{t('feed-index-label', { defaultValue: 'Community index' })}</span>
-          <h2 id="feed-view-heading">
-            {t('feed-view-heading-rewrite', { defaultValue: 'What people are making' })}
-          </h2>
-        </div>
-        <div
-          className="spatial-feed-index__timeline"
-          aria-label={t('feed-view-heading-rewrite', { defaultValue: 'What people are making' })}
-        >
-          {timelines.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              aria-pressed={mode === tab.id}
-              data-active={mode === tab.id || undefined}
-              onClick={() => onModeChange(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+    <section
+      className="feed-tabs"
+      aria-label={t('feed-view-heading-rewrite', { defaultValue: 'Choose your feed' })}
+    >
+      <div
+        className="feed-tabs__timeline"
+        aria-label={t('feed-view-heading-rewrite', { defaultValue: 'Choose your feed' })}
+      >
+        {timelines.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            aria-pressed={mode === tab.id}
+            data-active={mode === tab.id || undefined}
+            onClick={() => onModeChange(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {mode === 'feed' && (
         <div
-          className="spatial-feed-index__filters"
+          className="feed-tabs__filters"
           aria-label={t('feed-content-filter-label', { defaultValue: 'Content type' })}
         >
           {filters.map((tab) => (

@@ -311,7 +311,7 @@ export function FeedList({
  {/* Padding lives on the same inner node in both modes. New content
  animates here so it never competes with the positioning transform. */}
  <div
- className={`px-3 pt-3 ${contentVisibility} ${entering ?'content-item-enter':''}`.trim()}
+ className={`social-feed-row ${contentVisibility} ${entering ?'content-item-enter':''}`.trim()}
  >
  <FeedItem item={item} />
  </div>

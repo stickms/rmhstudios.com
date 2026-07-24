@@ -21,10 +21,7 @@ interface PageLayoutProps {
   breadcrumbs?: BreadcrumbItem[];
 }
 
-/**
- * Editorial masthead shared by standard routes. Route identity is part of the
- * page again instead of being trapped inside a sticky utility capsule.
- */
+/** Compact, mobile-first title block shared by standard routes. */
 export function PageLayout({
   title,
   description,
@@ -50,30 +47,29 @@ export function PageLayout({
       <AnimatedMain className="w-full min-w-0 pb-dock" targetWidth={targetWidth}>
         <header
           data-slot="page-header"
-          className="spatial-masthead"
+          className="page-heading"
           aria-describedby={description ? descriptionId : undefined}
         >
-          <div className="spatial-masthead__meta">
+          <div className="page-heading__meta">
             {backTo ? (
               <Link
                 to={backTo}
-                className="spatial-masthead__back"
+                className="page-heading__back"
                 aria-label={backLabel ?? t('back', { defaultValue: 'Back' })}
               >
                 <ArrowLeft aria-hidden />
                 <span>{backLabel ?? t('back', { defaultValue: 'Back' })}</span>
               </Link>
             ) : (
-              <span>{t('rmh-digital-space', { defaultValue: 'RMH / Digital space' })}</span>
+              <span>{t('rmh-digital-space', { defaultValue: 'RMH Studios' })}</span>
             )}
-            <span aria-hidden>©26</span>
           </div>
 
           {breadcrumbs && breadcrumbs.length > 0 && (
-            <Breadcrumbs items={breadcrumbs} className="spatial-masthead__breadcrumbs" />
+            <Breadcrumbs items={breadcrumbs} className="page-heading__breadcrumbs" />
           )}
 
-          <div className="spatial-masthead__heading">
+          <div className="page-heading__content">
             <div className="min-w-0">
               <h1>
                 <span className="min-w-0 truncate">{title}</span>

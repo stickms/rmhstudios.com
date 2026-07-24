@@ -1,0 +1,356 @@
+/*
+ * RMH Studios 2026 theme.
+ *
+ * This file is the single visual source of truth for the shared website. The
+ * legacy `--site-*` names remain as an API for existing product pages, while
+ * every value, surface treatment, and mode below is new.
+ */
+
+:root,
+.style-default {
+  color-scheme: light;
+
+  --background: #f3f5fb;
+  --foreground: #151624;
+  --site-bg: #f3f5fb;
+  --site-bg-subtle: #e9ecf6;
+  --site-surface: #ffffff;
+  --site-surface-hover: #f9f9ff;
+  --site-surface-active: #f0f1fa;
+  --site-surface-opaque: #ffffff;
+  --site-border: #dfe2ef;
+  --site-border-bright: #b9bed2;
+  --site-text: #151624;
+  --site-text-muted: #60647a;
+  --site-text-dim: #8d91a6;
+  --site-accent: #5759d9;
+  --site-accent-fg: #ffffff;
+  --site-accent-hover: #4547bd;
+  --site-accent-dim: rgb(87 89 217 / 0.11);
+  --site-success: #147a50;
+  --site-danger: #bd3f55;
+  --site-danger-fg: #ffffff;
+  --site-warning: #90620f;
+
+  --site-inverse-bg: #151624;
+  --site-inverse-text: #ffffff;
+  --site-inverse-muted: #c6c8d7;
+  --site-inverse-border: #404255;
+
+  --site-radius: 18px;
+  --site-radius-sm: 12px;
+  --site-control-radius: 999px;
+  --site-border-width: 1px;
+  --site-shadow: 0 1px 2px rgb(26 27 45 / 0.04), 0 12px 38px rgb(26 27 45 / 0.1);
+  --site-shadow-sm: 0 1px 2px rgb(26 27 45 / 0.025), 0 5px 18px rgb(26 27 45 / 0.055);
+
+  --site-font-display:
+    var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  --site-font-body:
+    var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  --site-font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --site-letter-spacing: -0.025em;
+  --site-heading-transform: none;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-glass: var(--ease-out);
+  --site-transition-speed: 160ms;
+  --site-press-duration: 140ms;
+  --site-card-transform: translateY(-2px);
+
+  --site-page-gutter: clamp(0.75rem, 1.5vw, 1.25rem);
+  --site-section-gap: clamp(0.75rem, 1.4vw, 1.1rem);
+  --site-panel-padding: clamp(1rem, 2vw, 1.5rem);
+  --site-shell-gap: clamp(0.85rem, 1.5vw, 1.35rem);
+  --site-sticky-edge: 0.75rem;
+  --site-sticky-primary-height: 3.5rem;
+  --site-sticky-secondary-top: 7.75rem;
+  --site-touch-target: 2.75rem;
+  --site-page-bottom-space: 3rem;
+  --site-mobile-content-end: 6.5rem;
+  --site-floating-edge: 5.75rem;
+
+  /* Compatibility values for primitives that still use the former material API. */
+  --site-glass-tint: var(--site-surface);
+  --site-glass-tint-strong: var(--site-surface-hover);
+  --site-glass-ink: var(--site-bg-subtle);
+  --site-glass-rim: var(--site-border);
+  --site-glass-rim-soft: var(--site-border);
+  --site-glass-light: transparent;
+  --site-glass-blur-pane: 0px;
+  --site-glass-blur-chrome: 0px;
+  --site-glass-blur-overlay: 0px;
+  --site-glass-saturate: 100%;
+  --site-glass-depth: var(--site-shadow);
+  --site-glass-depth-sm: var(--site-shadow-sm);
+  --site-glass-noise: none;
+  --site-canvas:
+    radial-gradient(circle at 15% -10%, rgb(136 127 255 / 0.16), transparent 34rem),
+    radial-gradient(circle at 95% 18%, rgb(64 190 255 / 0.11), transparent 28rem), var(--site-bg);
+
+  /* shadcn-compatible aliases */
+  --radius: 0.75rem;
+  --card: #ffffff;
+  --card-foreground: #151624;
+  --popover: #ffffff;
+  --popover-foreground: #151624;
+  --primary: #5759d9;
+  --primary-foreground: #ffffff;
+  --secondary: #e9ecf6;
+  --secondary-foreground: #25273a;
+  --muted: #e9ecf6;
+  --muted-foreground: #60647a;
+  --accent: #e8e8fb;
+  --accent-foreground: #3638a3;
+  --destructive: #bd3f55;
+  --border: #dfe2ef;
+  --input: #dfe2ef;
+  --ring: #5759d9;
+  --chart-1: #5759d9;
+  --chart-2: #16876a;
+  --chart-3: #d07a30;
+  --chart-4: #b34bc2;
+  --chart-5: #3d80c9;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #151624;
+  --sidebar-primary: #5759d9;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8e8fb;
+  --sidebar-accent-foreground: #3638a3;
+  --sidebar-border: #dfe2ef;
+  --sidebar-ring: #5759d9;
+}
+
+.style-graphite {
+  color-scheme: dark;
+
+  --background: #0e1018;
+  --foreground: #f7f7fb;
+  --site-bg: #0e1018;
+  --site-bg-subtle: #151823;
+  --site-surface: #181b27;
+  --site-surface-hover: #1e2231;
+  --site-surface-active: #282c3d;
+  --site-surface-opaque: #181b27;
+  --site-border: #2d3142;
+  --site-border-bright: #50566e;
+  --site-text: #f7f7fb;
+  --site-text-muted: #b8bbca;
+  --site-text-dim: #7d8197;
+  --site-accent: #9a8cff;
+  --site-accent-fg: #171225;
+  --site-accent-hover: #b0a5ff;
+  --site-accent-dim: rgb(154 140 255 / 0.14);
+  --site-success: #4bd699;
+  --site-danger: #ff7e91;
+  --site-danger-fg: #2b0b12;
+  --site-warning: #f1bd58;
+
+  --site-inverse-bg: #f7f7fb;
+  --site-inverse-text: #11131c;
+  --site-inverse-muted: #5e6170;
+  --site-inverse-border: #c8cad5;
+  --site-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 16px 44px rgb(0 0 0 / 0.34);
+  --site-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.22), 0 7px 22px rgb(0 0 0 / 0.2);
+  --site-canvas:
+    radial-gradient(circle at 14% -8%, rgb(113 93 255 / 0.17), transparent 32rem),
+    radial-gradient(circle at 96% 20%, rgb(35 137 196 / 0.11), transparent 27rem), var(--site-bg);
+
+  --card: #181b27;
+  --card-foreground: #f7f7fb;
+  --popover: #181b27;
+  --popover-foreground: #f7f7fb;
+  --primary: #9a8cff;
+  --primary-foreground: #171225;
+  --secondary: #252938;
+  --secondary-foreground: #f7f7fb;
+  --muted: #252938;
+  --muted-foreground: #b8bbca;
+  --accent: #2d2946;
+  --accent-foreground: #d5ceff;
+  --destructive: #ff7e91;
+  --border: #2d3142;
+  --input: #2d3142;
+  --ring: #9a8cff;
+  --sidebar: #181b27;
+  --sidebar-foreground: #f7f7fb;
+  --sidebar-primary: #9a8cff;
+  --sidebar-primary-foreground: #171225;
+  --sidebar-accent: #2d2946;
+  --sidebar-accent-foreground: #d5ceff;
+  --sidebar-border: #2d3142;
+  --sidebar-ring: #9a8cff;
+}
+
+.style-high-contrast {
+  color-scheme: dark;
+
+  --background: #000000;
+  --foreground: #ffffff;
+  --site-bg: #000000;
+  --site-bg-subtle: #000000;
+  --site-surface: #000000;
+  --site-surface-hover: #171717;
+  --site-surface-active: #242424;
+  --site-surface-opaque: #000000;
+  --site-border: #ffffff;
+  --site-border-bright: #ffffff;
+  --site-text: #ffffff;
+  --site-text-muted: #ffffff;
+  --site-text-dim: #dedede;
+  --site-accent: #ffff00;
+  --site-accent-fg: #000000;
+  --site-accent-hover: #ffff6b;
+  --site-accent-dim: rgb(255 255 0 / 0.2);
+  --site-success: #4dff9a;
+  --site-danger: #ff8fa0;
+  --site-danger-fg: #000000;
+  --site-warning: #ffe66a;
+  --site-shadow: none;
+  --site-shadow-sm: none;
+  --site-border-width: 2px;
+  --site-radius: 10px;
+  --site-radius-sm: 8px;
+  --site-control-radius: 8px;
+  --site-canvas: #000000;
+}
+
+html:not(.app-route),
+html:not(.app-route) body {
+  background-color: var(--site-bg);
+}
+
+html:not(.app-route) body {
+  background-image: var(--site-canvas);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
+  color: var(--site-text);
+}
+
+html:not(.app-route) body::before,
+html:not(.app-route) body::after,
+html:not(.app-route) #liquid-layer,
+html:not(.app-route) .lg-goo {
+  display: none !important;
+}
+
+/* Former material hooks now resolve to a quiet, solid elevation system. */
+:is(.glass-fill, .glass-pane, .glass-chrome, .glass-chrome--aside, .glass-overlay, .glass-inset) {
+  border: var(--site-border-width) solid var(--site-border);
+  background: var(--site-surface);
+  background-image: none !important;
+  color: var(--site-text);
+  box-shadow: var(--site-shadow-sm);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+:is(.glass-fill, .glass-pane, .glass-chrome, .glass-chrome--aside, .glass-overlay) {
+  border-radius: var(--site-radius);
+}
+
+.glass-pane,
+.glass-overlay {
+  box-shadow: var(--site-shadow);
+}
+
+.glass-inset {
+  border-radius: var(--site-control-radius);
+  background: var(--site-bg-subtle);
+  box-shadow: none;
+}
+
+:is(
+  .glass-fill,
+  .glass-pane,
+  .glass-chrome,
+  .glass-chrome--aside,
+  .glass-overlay,
+  .glass-inset,
+  .glass-liquid,
+  .glass-interactive
+)::before,
+:is(
+  .glass-fill,
+  .glass-pane,
+  .glass-chrome,
+  .glass-chrome--aside,
+  .glass-overlay,
+  .glass-inset,
+  .glass-liquid,
+  .glass-interactive
+)::after {
+  display: none !important;
+}
+
+.glass-liquid {
+  background: var(--site-accent) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.glass-interactive {
+  transition:
+    transform var(--site-press-duration) var(--ease-out),
+    border-color var(--site-transition-speed) ease,
+    background-color var(--site-transition-speed) ease;
+}
+
+.site-inverse,
+[data-contrast='inverse'] {
+  --site-surface: var(--site-inverse-bg);
+  --site-surface-hover: color-mix(in srgb, var(--site-inverse-text) 10%, var(--site-inverse-bg));
+  --site-surface-active: color-mix(in srgb, var(--site-inverse-text) 16%, var(--site-inverse-bg));
+  --site-border: var(--site-inverse-border);
+  --site-border-bright: var(--site-inverse-muted);
+  --site-text: var(--site-inverse-text);
+  --site-text-muted: var(--site-inverse-muted);
+  --site-text-dim: color-mix(in srgb, var(--site-inverse-muted) 72%, transparent);
+  --site-accent: var(--site-inverse-text);
+  --site-accent-fg: var(--site-inverse-bg);
+  background: var(--site-inverse-bg);
+  color: var(--site-inverse-text);
+}
+
+.site-sticky-chrome {
+  top: var(--site-sticky-edge);
+  margin-inline: var(--site-page-gutter);
+  border: var(--site-border-width) solid var(--site-border);
+  border-radius: var(--site-radius);
+  background: var(--site-surface);
+  box-shadow: var(--site-shadow-sm);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.pb-dock {
+  padding-bottom: calc(var(--safe-bottom) + 6.5rem);
+}
+
+@media (min-width: 768px) {
+  .pb-dock {
+    padding-bottom: 0;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .glass-interactive:hover {
+    border-color: var(--site-border-bright);
+    background: var(--site-surface-hover);
+  }
+}
+
+:where(a, button, [role='button'], [role='tab'], [role='menuitem']):not(:disabled):active {
+  transform: scale(0.97);
+  transition-duration: var(--site-press-duration);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(a, button, [role='button'], [role='tab'], [role='menuitem']):not(:disabled):active {
+    transform: none;
+  }
+}

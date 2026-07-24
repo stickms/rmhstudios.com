@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, Suspense, lazy } from 'react';
-import { ArrowUpRight, BadgeCheck, Search, ShieldCheck, X } from 'lucide-react';
+import { BadgeCheck, Search, ShieldCheck, X } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { FeedTabs } from './FeedTabs';
 import { ComposeBoxLazy } from './ComposeBoxLazy';
@@ -156,42 +156,23 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
     <PullToRefresh onRefresh={refreshFeed}>
       <div className="feed-column flex flex-col">
         {!search && (
-          <section className="spatial-home-hero" aria-labelledby="feed-title">
-            <div className="spatial-home-hero__meta">
-              <span>{t('home-studio-label', { defaultValue: 'Independent digital studio' })}</span>
-              <span aria-hidden>Rochester / NY</span>
-            </div>
-            <div className="spatial-home-hero__copy">
+          <section className="feed-heading" aria-labelledby="feed-title">
+            <div>
+              <span className="feed-heading__eyebrow">
+                {t('community-feed-label', { defaultValue: 'Community feed' })}
+              </span>
               <h1 id="feed-title">
-                {t('feed-hero-title-rewrite', {
-                  defaultValue: 'Make what the internet is missing.',
-                })}
+                {t('feed-heading', { defaultValue: 'What’s happening at RMH' })}
               </h1>
-              <p>
-                {t('feed-hero-description-rewrite', {
-                  defaultValue:
-                    'Original games, creative tools, music, learning, and community—composed as one considered space.',
-                })}
-              </p>
-              <div className="spatial-home-hero__actions">
-                <Link to="/create">
-                  {t('start-creating', { defaultValue: 'Start creating' })}
-                  <ArrowUpRight aria-hidden />
-                </Link>
-                <Link to="/arcade">
-                  {t('explore-arcade', { defaultValue: 'Explore the arcade' })}
-                </Link>
-              </div>
             </div>
-            <div className="spatial-home-hero__object" aria-hidden>
-              <span className="spatial-home-hero__orb" />
-              <span className="spatial-home-hero__mesh" />
-              <small>RMH / 26</small>
-            </div>
+            <span className="feed-heading__live">
+              <span aria-hidden />
+              {t('live-now', { defaultValue: 'Live' })}
+            </span>
           </section>
         )}
 
-        <header data-slot="feed-header" className="spatial-feed-search">
+        <header data-slot="feed-header" className="feed-search">
           <label htmlFor="feed-search" className="sr-only">
             {t('search-placeholder', { defaultValue: 'Search posts and people' })}
           </label>
@@ -219,10 +200,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
           )}
         </header>
 
-        {/* Tab strips — standalone glass sheets BELOW the header capsule (§5.45),
-            separated by the standard gutter. State wiring (mode + useFeedStore
-            filter) is unchanged. */}
-        <div>
+        <div className="feed-tabs-wrap">
           <FeedTabs mode={mode} onModeChange={handleModeChange} />
         </div>
 
