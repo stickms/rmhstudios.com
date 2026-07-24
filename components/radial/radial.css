@@ -10,6 +10,29 @@
   min-height: 100dvh;
   isolation: isolate;
   background: transparent;
+
+  /* ── One spacing scale for the whole radial UI ─────────────────────────
+     Everything (gutters, card padding, gaps, column widths) is expressed in
+     these steps so margins and rhythm stay consistent across the shell, feed,
+     hub and every content page. */
+  --rad-1: 0.25rem;
+  --rad-2: 0.5rem;
+  --rad-3: 0.75rem;
+  --rad-4: 1rem;
+  --rad-5: 1.5rem;
+  --rad-6: 2rem;
+  --rad-7: 2.75rem;
+  --rad-8: 4rem;
+  /* Page gutter (side padding) + generous top/bottom breathing room. */
+  --rad-gutter: clamp(1.15rem, 5vw, 2.25rem);
+  --rad-top: clamp(1.5rem, 4vw, 2.75rem);
+  --rad-bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(7rem, 16vw, 9rem));
+  /* Comfortable reading measure for content + the feed column. */
+  --rad-col: 40rem;
+  --rad-col-wide: 52rem;
+  /* Card interior padding + the gap between stacked cards. */
+  --rad-card-pad: clamp(1.15rem, 4.5vw, 1.6rem);
+  --rad-card-gap: clamp(0.9rem, 3vw, 1.4rem);
 }
 /* Text on the accent auto-contrasts against the accent itself: pure white on
    dark accents, pure black on light — computed from the accent's OWN OKLCH
@@ -115,9 +138,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: var(--rad-3);
   height: 3.5rem;
-  padding: 0 clamp(0.85rem, 3vw, 1.5rem);
+  /* Line the bar's edges up with the content gutter below it. */
+  padding: 0 var(--rad-gutter);
   /* Mobile-first: a near-opaque bar with NO backdrop-filter. backdrop-filter
      blur is a heavy per-frame GPU cost on phones (slow paint / janky scroll);
      the frosted look is added back only on ≥768px screens below. */
@@ -206,9 +230,17 @@
   position: relative;
   z-index: 1;
   min-height: calc(100dvh - 3.5rem);
-  padding: clamp(1rem, 3vw, 2rem) var(--site-page-gutter, 1rem) clamp(6.5rem, 14vw, 8.5rem);
+  padding: var(--rad-top) var(--rad-gutter) var(--rad-bottom);
   margin-inline: auto;
+  /* Generous so PageLayout's own column widths (AnimatedMain, up to ~60rem for
+     `wide` pages) are never clipped; the per-page column sets the real reading
+     measure, this just centres it on the backdrop with proper gutters. */
   max-width: 72rem;
+}
+/* Vertical rhythm between a page's top-level blocks (header already owns its own
+   bottom margin; this spaces sibling sections/cards a page stacks after it). */
+.radial-shell:not([data-home]) [data-slot='page-content'] > * + * {
+  margin-top: var(--rad-5);
 }
 .radial-shell[data-home] .radial-shell__main {
   max-width: none;
@@ -628,15 +660,15 @@
 .radial-wheel__lead {
   width: min(92vw, 34rem);
   margin-inline: auto;
-  padding-top: clamp(0.75rem, 3vh, 1.5rem);
+  padding-top: var(--rad-4);
 }
 .radial-wheel__track {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(0.85rem, 2.5vw, 1.35rem);
+  gap: var(--rad-card-gap);
   width: 100%;
-  padding-top: clamp(1rem, 6vh, 3.5rem);
+  padding-top: var(--rad-5);
   /* Generous tail so the last card can settle at the focus line and clears the
      mobile bottom bar / home indicator. */
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(6rem, 26vh, 13rem));
@@ -687,8 +719,8 @@
 .rmhark {
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
-  padding: clamp(1rem, 4vw, 1.35rem);
+  gap: var(--rad-3);
+  padding: var(--rad-card-pad);
   border-radius: var(--site-radius, 22px);
   background: var(--site-surface);
   border: 1px solid var(--site-border);
@@ -704,7 +736,8 @@
 .rmhark__head {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: var(--rad-3);
+  margin-bottom: var(--rad-1);
 }
 .rmhark__who {
   display: flex;
@@ -899,7 +932,7 @@
    sits directly on the backdrop, matching the home. (The h1 already uses the
    display font — we only drop the card and enlarge a touch.) */
 .radial-shell .page-heading {
-  margin: 0 0 clamp(1.25rem, 4vw, 2rem);
+  margin: 0 0 var(--rad-6);
   padding: 0;
   border: 0;
   background: transparent;
@@ -908,6 +941,17 @@
 .radial-shell .page-heading h1 {
   font-size: clamp(2rem, 8vw, 3.4rem);
   letter-spacing: -0.04em;
+  line-height: 1.05;
+}
+/* Clean rhythm inside the flat header (the card padding is gone). */
+.radial-shell .page-heading [data-slot='page-description'] {
+  margin-top: var(--rad-3);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--site-text-muted);
+}
+.radial-shell .page-heading__content {
+  gap: var(--rad-4);
 }
 
 /* ── De-glass: flat monochrome surfaces everywhere ────────────────────────
