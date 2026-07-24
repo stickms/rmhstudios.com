@@ -1,29 +1,34 @@
-# Design Language — Radial Liquid Glass
+# Design Language — Radial Avant-Garde Glass
 
 > Audience: humans **and** coding agents. This is the reference for how the site
 > looks and feels, and how to build UI that is visually native to it. For the
 > step-by-step "build a page that fits" checklist, see
 > [`docs/page-consistency.md`](./page-consistency.md).
 
-The design language is **Radial Liquid Glass** — an Apple-inspired _Liquid
-Glass_ material draped over a **radial** information architecture. Two ideas,
-one language:
+The design language is **Radial Avant-Garde Glass** — a bold, experimental take
+on **Apple's Liquid Glass** material, draped over a **radial** information
+architecture. Two ideas, one language:
 
 - **Radial.** The site orbits a central **RMH** mark; content radiates from the
-  centre. The home feed is a vertically-scrolling **wheel** of cards that rake
-  onto a shallow cylinder as they cross the focus line; navigation **blooms**
-  out of a central hub as a pie/wedge dial; a gooey **metaball** cursor and a
-  soft parallax **ring backdrop** make the whole surface feel liquid and
-  continuous. Mobile-first, with a strict **high-contrast monochrome** palette.
-- **Liquid Glass.** The material, modelled after **Apple's Liquid Glass**:
-  physically-plausible layered translucent glass with **live optics** — a
-  specular rim glint that tracks the scene light, lens-model edge refraction
-  (with an optional chromatic **prism** on one flagship surface), a
-  depth-parallaxing aurora canvas, a pointer-tracked diffuse light, and
-  travelling liquid sheens. It is expressed as an **elevation system of explicit
-  CSS classes** (`.glass-fill` / `.glass-pane` / `.glass-chrome` /
-  `.glass-overlay` / `.glass-inset`, plus the modifiers in §5.1) placed _on_
-  components.
+  centre. The home feed is a vertically-scrolling **wheel** of cards (on the
+  document's own scroll) that rake onto a shallow cylinder as they cross the
+  focus line, led by an inline compose box; navigation lives in a fixed **RMH
+  hub** that, when tapped, first **glides the orb to the middle of the screen**
+  and then **blooms a pie/wedge dial** the orb radiates from. A gooey
+  **metaball** cursor and a soft parallax **ring backdrop** keep the whole
+  surface feeling liquid and continuous. Mobile-first, with a strict
+  **high-contrast monochrome** palette.
+- **Avant-garde glass.** The material is Apple's Liquid Glass used
+  _theatrically_, not literally: physically-plausible layered translucent glass
+  with **live optics** — a specular rim glint that tracks the scene light,
+  lens-model edge refraction (with an optional chromatic **prism** on one
+  flagship surface), a depth-parallaxing aurora canvas, a pointer-tracked
+  diffuse light, and travelling liquid sheens — deployed for signature radial
+  moments (the menu is an **expanding circular blur** growing from the centre,
+  not a drawn disc; the wedges are translucent frosted sectors over it). It is
+  expressed as an **elevation system of explicit CSS classes** (`.glass-fill` /
+  `.glass-pane` / `.glass-chrome` / `.glass-overlay` / `.glass-inset`, plus the
+  modifiers in §5.1) placed _on_ components.
 
 **Everything rests on one contract:** a single set of CSS custom properties
 (`--site-*`) that every theme re-defines. Components never hardcode colors,
@@ -41,7 +46,7 @@ without a single component change.
 > surfaces_ are the north star this language references** — the material system
 > documented below (§2, §5.1, §7) is real and lives in the codebase, and is what
 > the radial UI grows back into as the optics are re-enabled over the monochrome
-> shell. **Build new UI to the Radial Liquid Glass vision**; where the flat
+> shell. **Build new UI to the Radial Avant-Garde Glass vision**; where the flat
 > baseline is what ships today, it degrades cleanly to it.
 
 Specs: [radial UI](../components/radial/README.md) ·
@@ -54,7 +59,7 @@ Specs: [radial UI](../components/radial/README.md) ·
 
 Tailwind v4 is imported at the top of `app/globals.css`; an `@theme inline`
 block binds the `--site-*` variables to utility classes. The `:root` block is
-the **default theme** — the strict-monochrome Radial Liquid Glass baseline (a
+the **default theme** — the strict-monochrome Radial Avant-Garde Glass baseline (a
 light palette: white canvas, ink text and accent). There is no `.style-default`
 class; default is the absence of any `.style-*` class on `<html>`.
 
@@ -310,24 +315,33 @@ close-button clearance stay consistent.
 The `_site` layout route delegates to `components/feed/SiteShell.tsx`, which now
 renders the **radial shell** ([`components/radial/RadialShell.tsx`](../components/radial/RadialShell.tsx)):
 a fixed parallax **ring backdrop**, a slim sticky **utility top bar** (brand ·
-search · inbox · avatar), the central **RMH hub** (`RadialHub` — a fixed orb
-that blooms a pie/wedge navigation dial; **it owns nav, so there is no
-sidebar**), a site-wide gooey **metaball cursor** (desktop / fine-pointer), and
-the single `<main id="main-content">` landmark. This replaced the old
-floating-glass sidebar shell (inset rail, floating header capsules, aurora
-gutters). **Pages never add sidebars or a page-frame** (and `AnimatedMain`
-renders a `<div>` — the shell's `<main>` is the one landmark).
+search · inbox · avatar), the central **RMH hub** (`RadialHub`), a site-wide
+gooey **metaball cursor** (desktop / fine-pointer), and the single
+`<main id="main-content">` landmark. This replaced the old floating-glass
+sidebar shell (inset rail, floating header capsules, aurora gutters). **Pages
+never add sidebars or a page-frame** (and `AnimatedMain` renders a `<div>` — the
+shell's `<main>` is the one landmark).
+
+The hub is a phase state machine: tapping the fixed orb **glides it to the
+centre of the screen** (`centering`), then opens the menu (`open`) as an
+**expanding circular blur** grows from the centre and translucent pie/wedge
+sectors bloom around the orb — no drawn colour disc. The orb owns navigation, so
+**there is no sidebar**. Closing reverses it (the blur contracts, then the orb
+glides home).
 
 The home (`/`) is a full-bleed **radial feed**
-([`RadialFeed`](../components/radial/RadialFeed.tsx) → `RadialWheel`): a
-native-momentum-scroll wheel of cards raked onto a shallow cylinder. Every other
-`_site` route renders inside a centred content column (`.radial-shell__main`,
-`max-width: 72rem`) on the backdrop, and the radial shell **flattens its content
-to the monochrome baseline** — it demotes the glass classes to flat
-`--site-surface` cards (de-glass, §5.1) and strips PageLayout's header card — so
-pages read as clean flat monochrome. (Re-enabling the Liquid Glass optics over
-these radial surfaces is the referenced direction — see the top-of-file
-callout.)
+([`RadialFeed`](../components/radial/RadialFeed.tsx) → `RadialWheel`): a wheel of
+cards raked onto a shallow cylinder on the **document's own scroll** (no inner
+scroll region — that is what lets mobile Safari collapse its toolbars), led by an
+inline compose box, with a floating compose button that opens the new-rmhark
+modal. Every other `_site` route flows the same way — natural document scroll,
+**no pinned/sticky page chrome** — inside a centred content column
+(`.radial-shell__main`, `max-width: 72rem`) on the backdrop. The radial shell
+**flattens content to the monochrome baseline** — it demotes the glass classes
+to flat `--site-surface` cards (de-glass, §5.1), strips PageLayout's header card,
+and unpins sticky headers/tabs/search — so pages read as clean flat monochrome.
+(Re-enabling the Liquid Glass optics over these radial surfaces is the referenced
+direction — see the top-of-file callout.)
 
 Two page archetypes (see `docs/page-consistency.md` for full code):
 
@@ -357,11 +371,12 @@ no shell (no radial chrome, no de-glass — they own their own look).
 
 - **Radial motion (the shipped layer).** The radial UI is CSS/rAF-driven and
   framer-motion-free for the shell: the feed **wheel** rakes each card onto a
-  shallow cylinder on a rAF scroll pass with cached offsets (no layout thrash —
-  `RadialWheel`), the **hub** opens a CSS-only pie/wedge bloom, the **metaball**
-  cursor trails on one rAF tick (`MetaballCursor`), the **ring backdrop**
-  parallaxes to the pointer, and page headers/heroes rise in on mount
-  (`radial-page-rise`). All of it is `transform`/`opacity` only and gated off
+  shallow cylinder on a rAF window-scroll pass with cached offsets (no layout
+  thrash — `RadialWheel`), the **hub** glides the orb to centre then blooms the
+  wedges under an expanding `clip-path` **circular blur** (CSS-only phase
+  machine), the **metaball** cursor trails on one rAF tick (`MetaballCursor`),
+  the **ring backdrop** parallaxes to the pointer, and page headers/heroes rise
+  in on mount (`radial-page-rise`). All of it is `transform`/`opacity` only and gated off
   under reduced motion; optional scroll **haptics** (`navigator.vibrate`) tick
   as cards cross the focus line.
 - **framer-motion** is the animation library. Reach for the shared motion

@@ -51,7 +51,7 @@ app/                TanStack Start routes (file-based)
     api/            Server routes (~415 files): feed, auth, games, AI, og, rum, client-error, …
     <game>.tsx      Full-screen games/apps (altair, rmhbox, velum2099, slice-it, …)
     sitemap[.]xml.ts  Dynamic sitemap
-  globals.css       Theme tokens (base + curated themes + accent presets; radial-monochrome default — design language is Radial Liquid Glass), reduced-motion gate
+  globals.css       Theme tokens (base + curated themes + accent presets; radial-monochrome default — design language is Radial Avant-Garde Glass), reduced-motion gate
   router.tsx        Router config (intent preloading), routeTree.gen.ts (generated)
 components/          React components by feature (~860 files); ui/ holds shared primitives
 lib/                Utilities, schemas, server helpers (~950 files); seo.ts, schema.ts, rum.ts,

@@ -4,7 +4,7 @@
 > to [`docs/design-language.md`](./design-language.md) (tokens, themes,
 > primitives) and [`app/CLAUDE.md`](../app/CLAUDE.md) (routing mechanics).
 
-The site's design language is **Radial Liquid Glass** (see
+The site's design language is **Radial Avant-Garde Glass** (see
 [`design-language.md`](./design-language.md)): a radial shell — fixed ring
 backdrop, slim top bar, and a central **RMH hub** that blooms the navigation —
 wrapping content that ships as a flat high-contrast **monochrome** baseline
