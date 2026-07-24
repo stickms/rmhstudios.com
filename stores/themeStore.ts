@@ -10,8 +10,8 @@ import type { AppliedUserTheme, AppliedUserThemePreview } from '@/lib/themes/tok
 // The shared site ships one new social-first system in three accessibility
 // modes. Retired decorative themes self-heal to Daylight during hydration.
 export const SITE_STYLES = [
-  { id: 'default', label: 'Daylight', icon: '☀', group: 'RMH', bg: '#f3f5fb' },
-  { id: 'graphite', label: 'Midnight', icon: '◐', group: 'RMH', bg: '#0e1018' },
+  { id: 'default', label: 'Daylight', icon: '☀', group: 'RMH', bg: '#f5f5f7' },
+  { id: 'graphite', label: 'Midnight', icon: '◐', group: 'RMH', bg: '#000000' },
   { id: 'high-contrast', label: 'High contrast', icon: '◑', group: 'RMH', bg: '#000000' },
 ] as const;
 

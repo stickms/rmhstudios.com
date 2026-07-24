@@ -86,48 +86,48 @@
   color-scheme: light;
 
   /* Base colors — mapped to spatial design system */
-  --background: #faf9f5;
-  --foreground: #111111;
+  --background: #f5f5f7;
+  --foreground: #1d1d1f;
 
   /* ==================== SITE DESIGN SYSTEM ==================== */
-  /* Ultra Minimalist Masterpiece (IPO Edition) — Editorial & Architectural Minimalism.
-     High contrast serif (Playfair) and geometric sans (Inter) typography,
-     monochromatic palette (off-white, rich obsidian, slate, hairline warm borders),
-     curved organic shape arches, dot-matrix grid canvas, and smooth parallax depth. */
-  --site-bg: #faf9f5;
-  --site-bg-subtle: rgba(17, 17, 17, 0.04);
+  /* Monochrome — Apple-style editorial minimalism. Cool near-white ground,
+     obsidian ink, restrained San-Francisco system typography, hairline neutral
+     borders, one calm blue signal colour, feather-soft elevation, and smooth
+     parallax depth. Strict black/white/grey — the accent is the only hue. */
+  --site-bg: #f5f5f7;
+  --site-bg-subtle: rgba(0, 0, 0, 0.035);
   --site-surface: #ffffff;
-  --site-surface-hover: #f3f2ee;
-  --site-surface-active: #e8e7e1;
+  --site-surface-hover: #f5f5f7;
+  --site-surface-active: #ececef;
   --site-surface-opaque: #ffffff;
-  --site-border: rgba(17, 17, 17, 0.12);
-  --site-border-bright: rgba(17, 17, 17, 0.28);
-  --site-text: #111111;
-  --site-text-muted: #555555;
-  --site-text-dim: #888888;
-  --site-accent: #111111;
+  --site-border: rgba(0, 0, 0, 0.1);
+  --site-border-bright: rgba(0, 0, 0, 0.22);
+  --site-text: #1d1d1f;
+  --site-text-muted: #6e6e73;
+  --site-text-dim: #86868b;
+  --site-accent: #0071e3;
   --site-accent-fg: #ffffff;
-  --site-accent-hover: #2a2a2a;
-  --site-accent-dim: rgba(17, 17, 17, 0.08);
-  --site-success: #15803d;
-  --site-danger: #b91c1c;
+  --site-accent-hover: #0077ed;
+  --site-accent-dim: rgba(0, 113, 227, 0.1);
+  --site-success: #248a3d;
+  --site-danger: #d70015;
   --site-danger-fg: #ffffff;
-  --site-warning: #b45309;
+  --site-warning: #995400;
 
-  /* ── Ultra Minimalist Material Contract ── */
-  --site-glass-tint: rgba(255, 255, 255, 0.85);
-  --site-glass-tint-strong: rgba(255, 255, 255, 0.95);
+  /* ── Monochrome material contract — glass reads as clean, near-opaque frost ── */
+  --site-glass-tint: rgba(255, 255, 255, 0.72);
+  --site-glass-tint-strong: rgba(255, 255, 255, 0.86);
   --site-glass-ink: rgba(255, 255, 255, 0.9);
-  --site-glass-blur-pane: 20px;
+  --site-glass-blur-pane: 18px;
   --site-glass-blur-chrome: 20px;
-  --site-glass-blur-chrome-scrolled: 24px;
-  --site-glass-blur-overlay: 28px;
-  --site-glass-saturate: 160%;
-  --site-glass-rim: rgba(17, 17, 17, 0.14);
-  --site-glass-rim-soft: rgba(17, 17, 17, 0.06);
-  --site-glass-light: rgba(255, 255, 255, 0.6);
-  --site-glass-depth: 0 16px 40px -12px rgba(0, 0, 0, 0.08);
-  --site-glass-depth-sm: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
+  --site-glass-blur-chrome-scrolled: 30px;
+  --site-glass-blur-overlay: 30px;
+  --site-glass-saturate: 180%;
+  --site-glass-rim: rgba(0, 0, 0, 0.08);
+  --site-glass-rim-soft: rgba(0, 0, 0, 0.035);
+  --site-glass-light: rgba(255, 255, 255, 0.7);
+  --site-glass-depth: 0 12px 40px -12px rgba(0, 0, 0, 0.12);
+  --site-glass-depth-sm: 0 2px 10px -2px rgba(0, 0, 0, 0.06);
 
   --ease-glass: cubic-bezier(0.16, 1, 0.3, 1);
   --glass-bevel: 12px;
@@ -154,16 +154,21 @@
   --glass-user-tint: 1;
   --glass-blur-factor: var(--glass-user-blur, 1);
 
-  /* Elevation tokens — Ultra Minimalist depth layering */
-  --site-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 12px 32px -8px rgba(0, 0, 0, 0.06);
-  --site-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.02), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
-  --site-radius: 24px;
+  /* Elevation tokens — feather-soft Apple depth layering */
+  --site-shadow: 0 4px 30px -6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.05);
+  --site-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 6px 20px -8px rgba(0, 0, 0, 0.06);
+  --site-radius: 22px;
   --site-radius-sm: 14px;
   --site-control-radius: 9999px;
-  --site-font-display: var(--font-playfair), 'Playfair Display', Georgia, serif;
+  /* San-Francisco first — the single biggest "Apple" cue — with Inter as the
+     cross-platform fallback so Linux/Windows still read as the same neutral sans. */
+  --site-font-display:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Display', var(--font-inter), 'Inter Variable',
+    system-ui, sans-serif;
   --site-font-body:
-    var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
-  --site-font-mono: var(--font-jetbrains-mono), 'Cascadia Code', monospace;
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', var(--font-inter), 'Inter Variable',
+    system-ui, sans-serif;
+  --site-font-mono: var(--font-jetbrains-mono), 'SF Mono', 'Cascadia Code', monospace;
   --site-border-width: 1px;
   --site-card-transform: translateY(-4px);
   --site-transition-speed: 200ms;
@@ -171,7 +176,7 @@
   --site-heading-transform: none;
   --site-glow: none;
   --site-text-shadow: none;
-  --site-letter-spacing: -0.01em;
+  --site-letter-spacing: -0.022em;
 
   /* Layout rhythm — generous minimalist negative space & clean breathing room */
   --site-page-gutter: clamp(0.75rem, 1.5vw, 1.25rem);
@@ -188,15 +193,14 @@
   --site-mobile-content-end: clamp(2rem, 7vw, 3rem);
   --site-floating-edge: clamp(0.75rem, 3vw, 1.25rem);
 
-  /* Spatial Ambient Canvas — weightless atmospheric lighting pools */
+  /* Ambient Canvas — a barely-there monochrome wash. No colour: just a soft
+     vertical light so the fixed backdrop reads as clean paper with faint depth. */
   --site-canvas:
-    radial-gradient(120% 90% at 20% -10%, rgba(56, 189, 248, 0.18), transparent 60%),
-    radial-gradient(100% 80% at 85% 10%, rgba(99, 102, 241, 0.16), transparent 55%),
-    radial-gradient(110% 90% at 75% 95%, rgba(168, 85, 247, 0.12), transparent 60%),
-    linear-gradient(180deg, #090a0f 0%, #0c0e15 50%, #08090d 100%);
+    radial-gradient(120% 80% at 50% -10%, rgba(0, 0, 0, 0.025), transparent 60%),
+    linear-gradient(180deg, #f7f7f9 0%, #f2f2f4 55%, #eeeef1 100%);
 
   --site-glass-noise: none;
-  --site-map-filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9);
+  --site-map-filter: none;
 
   /* Legacy neon palette — kept for game-specific pages */
   --neon-pink: #ff00ff;
@@ -294,32 +298,36 @@
    palette while another theme is active. Keep in sync with the :root block. */
 .style-default {
   color-scheme: light;
-  --site-bg: #faf9f5;
-  --site-bg-subtle: rgba(17, 17, 17, 0.04);
+  --site-bg: #f5f5f7;
+  --site-bg-subtle: rgba(0, 0, 0, 0.035);
   --site-surface: #ffffff;
-  --site-surface-hover: #f3f2ee;
-  --site-surface-active: #e8e7e1;
+  --site-surface-hover: #f5f5f7;
+  --site-surface-active: #ececef;
   --site-surface-opaque: #ffffff;
-  --site-border: rgba(17, 17, 17, 0.12);
-  --site-border-bright: rgba(17, 17, 17, 0.28);
-  --site-text: #111111;
-  --site-text-muted: #555555;
-  --site-text-dim: #888888;
-  --site-accent: #111111;
+  --site-border: rgba(0, 0, 0, 0.1);
+  --site-border-bright: rgba(0, 0, 0, 0.22);
+  --site-text: #1d1d1f;
+  --site-text-muted: #6e6e73;
+  --site-text-dim: #86868b;
+  --site-accent: #0071e3;
   --site-accent-fg: #ffffff;
-  --site-accent-hover: #2a2a2a;
-  --site-accent-dim: rgba(17, 17, 17, 0.08);
-  --site-success: #15803d;
-  --site-danger: #b91c1c;
+  --site-accent-hover: #0077ed;
+  --site-accent-dim: rgba(0, 113, 227, 0.1);
+  --site-success: #248a3d;
+  --site-danger: #d70015;
   --site-danger-fg: #ffffff;
-  --site-warning: #b45309;
-  --site-radius: 24px;
+  --site-warning: #995400;
+  --site-glass-tint: rgba(255, 255, 255, 0.72);
+  --site-glass-tint-strong: rgba(255, 255, 255, 0.86);
+  --site-glass-rim: rgba(0, 0, 0, 0.08);
+  --site-glass-rim-soft: rgba(0, 0, 0, 0.035);
+  --site-radius: 22px;
   --site-radius-sm: 14px;
   --site-canvas:
-    radial-gradient(circle at 1px 1px, rgba(17, 17, 17, 0.07) 1px, transparent 0),
-    linear-gradient(180deg, #faf9f5 0%, #f4f3ed 100%);
-  --site-aurora-far-1: rgba(17, 17, 17, 0.02);
-  --site-aurora-far-2: rgba(17, 17, 17, 0.03);
+    radial-gradient(120% 80% at 50% -10%, rgba(0, 0, 0, 0.025), transparent 60%),
+    linear-gradient(180deg, #f7f7f9 0%, #f2f2f4 55%, #eeeef1 100%);
+  --site-aurora-far-1: rgba(0, 0, 0, 0.015);
+  --site-aurora-far-2: rgba(0, 0, 0, 0.02);
 }
 
 /* Glass Light — daylight canvas: near-white base with soft pastel sky radials;
@@ -422,48 +430,52 @@
    Same token contract as the base three; each is a self-contained palette so a
    theme block can never silently drift. Kept tasteful/minimal on purpose. */
 
-/* Graphite Glass — monochrome smoke over near-black; neutral gray tint, silver
-   rims, desaturated (glass saturate 120%). Easy on the eyes for long sessions. */
+/* Midnight — Apple-style true-black monochrome. OLED black ground, near-white
+   ink, graphite elevated surfaces, hairline light borders, one calm blue signal.
+   The dark twin of the default: strict greyscale, the accent is the only hue. */
 .style-graphite {
   color-scheme: dark;
-  --site-bg: #17171a;
+  --site-bg: #000000;
   --site-bg-subtle: rgba(255, 255, 255, 0.05);
-  --site-surface: rgba(255, 255, 255, 0.07);
-  --site-surface-hover: rgba(255, 255, 255, 0.12);
-  --site-surface-active: rgba(255, 255, 255, 0.17);
-  --site-surface-opaque: #2a2a2e;
+  --site-surface: rgba(28, 28, 30, 0.72);
+  --site-surface-hover: rgba(44, 44, 46, 0.82);
+  --site-surface-active: rgba(58, 58, 60, 0.9);
+  --site-surface-opaque: #1c1c1e;
   --site-border: rgba(255, 255, 255, 0.12);
-  --site-border-bright: rgba(255, 255, 255, 0.22);
-  --site-text: #f3f3f5;
-  --site-text-muted: rgba(236, 236, 240, 0.78);
-  --site-text-dim: rgba(236, 236, 240, 0.5);
-  --site-accent: #b6a0ff;
-  --site-accent-fg: #17111f;
-  --site-accent-hover: #c7b6ff;
-  --site-accent-dim: rgba(182, 160, 255, 0.16);
+  --site-border-bright: rgba(255, 255, 255, 0.26);
+  --site-text: #f5f5f7;
+  --site-text-muted: #a1a1a6;
+  --site-text-dim: #6e6e73;
+  --site-accent: #2997ff;
+  --site-accent-fg: #ffffff;
+  --site-accent-hover: #47a5ff;
+  --site-accent-dim: rgba(41, 151, 255, 0.18);
   --site-success: #30d158;
-  --site-danger: #ff6961;
-  --site-danger-fg: #1a0a0c;
-  --site-warning: #ffd60a;
-  --site-glass-tint: rgba(255, 255, 255, 0.07);
-  --site-glass-tint-strong: rgba(255, 255, 255, 0.12);
-  --site-glass-rim: rgba(255, 255, 255, 0.22);
-  --site-glass-rim-soft: rgba(255, 255, 255, 0.08);
+  --site-danger: #ff453a;
+  --site-danger-fg: #ffffff;
+  --site-warning: #ff9f0a;
+  --site-glass-tint: rgba(28, 28, 30, 0.62);
+  --site-glass-tint-strong: rgba(28, 28, 30, 0.82);
+  --site-glass-ink: rgba(0, 0, 0, 0.62);
+  --site-glass-rim: rgba(255, 255, 255, 0.14);
+  --site-glass-rim-soft: rgba(255, 255, 255, 0.06);
   --site-glass-light: rgba(255, 255, 255, 0.1);
-  --site-glass-depth: 0 16px 44px rgba(0, 0, 0, 0.44);
-  --site-glass-depth-sm: 0 2px 10px rgba(0, 0, 0, 0.26);
-  --site-glass-saturate: 120%;
-  --site-radius: 16px;
-  --site-radius-sm: 10px;
+  --site-glass-depth: 0 16px 48px rgba(0, 0, 0, 0.6);
+  --site-glass-depth-sm: 0 2px 12px rgba(0, 0, 0, 0.44);
+  --site-glass-saturate: 180%;
+  --site-radius: 22px;
+  --site-radius-sm: 14px;
+  --site-shadow: 0 8px 40px -6px rgba(0, 0, 0, 0.7), 0 1px 2px rgba(0, 0, 0, 0.6);
+  --site-shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.5);
   --site-canvas:
-    radial-gradient(110% 85% at 12% -8%, rgba(255, 255, 255, 0.08), transparent 60%),
-    radial-gradient(95% 80% at 92% 6%, rgba(200, 205, 215, 0.06), transparent 60%),
-    radial-gradient(120% 95% at 84% 104%, rgba(120, 125, 140, 0.1), transparent 64%),
-    linear-gradient(180deg, #17171a 0%, #202024 50%, #131316 100%);
-  --site-aurora-far-1: rgba(255, 255, 255, 0.04);
-  --site-aurora-far-2: rgba(120, 125, 140, 0.05);
-  --background: #17171a;
-  --foreground: #f3f3f5;
+    radial-gradient(120% 80% at 50% -10%, rgba(255, 255, 255, 0.035), transparent 60%),
+    linear-gradient(180deg, #000000 0%, #08080a 60%, #000000 100%);
+  --site-aurora-far-1: rgba(255, 255, 255, 0.02);
+  --site-aurora-far-2: rgba(255, 255, 255, 0.015);
+  /* Dark theme: invert the bright OSM map tiles so maps read on black. */
+  --site-map-filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.92);
+  --background: #000000;
+  --foreground: #f5f5f7;
 }
 
 /* Sepia Glass — warm parchment gradients, warm-white frost, amber accent,
@@ -4217,4 +4229,232 @@ body::after {
     transform: none;
     transition: none;
   }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MONOCHROME / APPLE MOTION UTILITIES  (UI rewrite)
+   Reusable, token-driven flourishes for the new minimalist shell, homepage,
+   and top pages. Everything here is progressive-enhancement: the base state is
+   the FINISHED, visible state, so unsupported engines and reduced-motion users
+   simply see the content with no animation — nothing ever hides permanently.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Balanced/pretty wrapping for Apple-style headlines and lead paragraphs. */
+.text-balance {
+  text-wrap: balance;
+}
+.text-pretty {
+  text-wrap: pretty;
+}
+
+/* A big, tight, San-Francisco display headline — the hero voice. Fluid size,
+   negative tracking, and balanced wrapping, straight off the token contract. */
+.display-hero {
+  font-family: var(--site-font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.03;
+  text-wrap: balance;
+  font-size: clamp(2.5rem, 7vw, 5.5rem);
+}
+.display-title {
+  font-family: var(--site-font-display);
+  font-weight: 700;
+  letter-spacing: -0.028em;
+  line-height: 1.08;
+  text-wrap: balance;
+  font-size: clamp(1.75rem, 4.5vw, 3rem);
+}
+
+/* Feather-soft hover lift for cards/tiles — GPU-only transform + shadow. */
+.hover-lift {
+  transition:
+    transform var(--site-transition-speed, 200ms) cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow var(--site-transition-speed, 200ms) cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+@media (hover: hover) {
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--site-shadow);
+  }
+}
+
+/* ── Scroll-driven reveal (native, zero-JS) ──────────────────────────────────
+   Elements tagged `.u-reveal` fade + rise as they scroll into view, driven by
+   the CSS `view()` timeline. The base rule leaves them fully visible, so any
+   engine without scroll-driven animations shows the finished content. */
+@keyframes u-reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@supports (animation-timeline: view()) {
+  @media not (prefers-reduced-motion: reduce) {
+    html:not(.reduce-motion) .u-reveal {
+      animation: u-reveal-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 46%;
+    }
+    /* Optional per-item lift for staggered grids: parent sets nothing, each
+       child just enters on its own geometry — a natural cascade. */
+    html:not(.reduce-motion) .u-reveal-soft {
+      animation: u-reveal-in linear both;
+      animation-timeline: view();
+      animation-range: entry 2% cover 12%;
+    }
+  }
+}
+
+/* ── Parallax layers (native, zero-JS) ───────────────────────────────────────
+   A decorative element tagged `.u-parallax` drifts against the page scroll via
+   the `scroll()` timeline. Depth is set per-element with `--u-parallax` (px of
+   travel across the full scroll). Purely cosmetic; hidden work for the GPU. */
+@keyframes u-parallax-drift {
+  from {
+    transform: translateY(calc(var(--u-parallax, 60px) * -1));
+  }
+  to {
+    transform: translateY(var(--u-parallax, 60px));
+  }
+}
+@supports (animation-timeline: scroll()) {
+  @media not (prefers-reduced-motion: reduce) {
+    html:not(.reduce-motion) .u-parallax {
+      animation: u-parallax-drift linear both;
+      animation-timeline: scroll(root block);
+      will-change: transform;
+    }
+  }
+}
+
+/* Element-anchored parallax: drifts as its OWN box travels through the nearest
+   scrollport, so it works no matter which ancestor scrolls (window on desktop,
+   the inner feed scroller on phones) — no JS, no scroller wiring. */
+@keyframes u-parallax-view {
+  from {
+    transform: translateY(calc(var(--u-parallax, 40px) * -1));
+  }
+  to {
+    transform: translateY(var(--u-parallax, 40px));
+  }
+}
+@supports (animation-timeline: view()) {
+  @media not (prefers-reduced-motion: reduce) {
+    html:not(.reduce-motion) .u-parallax-hero {
+      animation: u-parallax-view linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+      will-change: transform;
+    }
+  }
+}
+
+/* Reduced motion / account flag: freeze every utility above at its rest state. */
+@media (prefers-reduced-motion: reduce) {
+  .u-reveal,
+  .u-reveal-soft,
+  .u-parallax,
+  .hover-lift {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}
+html.reduce-motion .u-reveal,
+html.reduce-motion .u-reveal-soft,
+html.reduce-motion .u-parallax {
+  animation: none !important;
+  transform: none !important;
+  opacity: 1 !important;
+}
+
+/* ── AppleHero (components/shared/AppleHero.tsx) ─────────────────────────────
+   A reusable marketing/index hero: big SF display type, drifting monochrome
+   auras for parallax depth, strictly greyscale with the accent reserved for
+   actions. */
+.apple-hero {
+  position: relative;
+  overflow: clip;
+  isolation: isolate;
+  padding-block: clamp(2.5rem, 8vw, 5.5rem);
+  padding-inline: clamp(1rem, 4vw, 2rem);
+}
+.apple-hero--compact {
+  padding-block: clamp(1.75rem, 5vw, 3rem);
+}
+.apple-hero__inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  max-width: 52rem;
+}
+.apple-hero--center .apple-hero__inner {
+  align-items: center;
+  margin-inline: auto;
+  text-align: center;
+}
+.apple-hero__eyebrow {
+  color: var(--site-text-dim);
+  font-size: 0.72rem;
+  font-weight: 620;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.apple-hero__title {
+  color: var(--site-text);
+}
+.apple-hero__sub {
+  max-width: 40rem;
+  color: var(--site-text-muted);
+  font-size: clamp(1rem, 2.2vw, 1.35rem);
+  line-height: 1.5;
+  font-weight: 400;
+}
+.apple-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.6rem;
+}
+.apple-hero--center .apple-hero__actions {
+  justify-content: center;
+}
+.apple-hero__aura {
+  position: absolute;
+  z-index: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(46px);
+}
+.apple-hero__aura--a {
+  top: -6rem;
+  right: -4rem;
+  width: 24rem;
+  height: 24rem;
+  --u-parallax: 30px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--site-text) 7%, transparent),
+    transparent 70%
+  );
+}
+.apple-hero__aura--b {
+  bottom: -8rem;
+  left: -6rem;
+  width: 22rem;
+  height: 22rem;
+  --u-parallax: 72px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--site-accent) 14%, transparent),
+    transparent 70%
+  );
 }

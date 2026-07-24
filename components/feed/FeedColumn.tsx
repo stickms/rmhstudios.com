@@ -156,19 +156,31 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
     <PullToRefresh onRefresh={refreshFeed}>
       <div className="feed-column flex flex-col">
         {!search && (
-          <section className="feed-heading" aria-labelledby="feed-title">
-            <div>
-              <span className="feed-heading__eyebrow">
-                {t('community-feed-label', { defaultValue: 'Community feed' })}
+          <section className="feed-hero" aria-labelledby="feed-title">
+            {/* Decorative monochrome aura — drifts against scroll via the native
+                view() timeline (scroller-agnostic, reduced-motion-safe). */}
+            <span className="feed-hero__aura feed-hero__aura--a u-parallax-hero" aria-hidden />
+            <span className="feed-hero__aura feed-hero__aura--b u-parallax-hero" aria-hidden />
+            <div className="feed-hero__inner">
+              <div className="feed-hero__copy">
+                <span className="feed-hero__eyebrow">
+                  {t('community-feed-label', { defaultValue: 'Community feed' })}
+                </span>
+                <h1 id="feed-title" className="feed-hero__title">
+                  {t('feed-heading', { defaultValue: 'What’s happening at RMH' })}
+                </h1>
+                <p className="feed-hero__sub">
+                  {t('feed-subheading', {
+                    defaultValue:
+                      'Posts, drops, and moments from across the platform — in real time.',
+                  })}
+                </p>
+              </div>
+              <span className="feed-hero__live">
+                <span aria-hidden />
+                {t('live-now', { defaultValue: 'Live' })}
               </span>
-              <h1 id="feed-title">
-                {t('feed-heading', { defaultValue: 'What’s happening at RMH' })}
-              </h1>
             </div>
-            <span className="feed-heading__live">
-              <span aria-hidden />
-              {t('live-now', { defaultValue: 'Live' })}
-            </span>
           </section>
         )}
 

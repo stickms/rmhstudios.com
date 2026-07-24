@@ -44,11 +44,11 @@
   z-index: 45;
   top: 0;
   width: 100%;
-  border-bottom: 1px solid var(--site-border);
-  background: color-mix(in srgb, var(--site-bg) 92%, transparent);
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--site-text) 3%, transparent);
-  backdrop-filter: blur(18px) saturate(130%);
-  -webkit-backdrop-filter: blur(18px) saturate(130%);
+  border-bottom: 1px solid color-mix(in srgb, var(--site-border) 70%, transparent);
+  background: color-mix(in srgb, var(--site-bg) 72%, transparent);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--site-text) 2%, transparent);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
 }
 
 .site-nav__bar,
@@ -96,11 +96,13 @@
   height: 2rem;
   flex: 0 0 auto;
   place-items: center;
-  border-radius: 0.7rem;
-  background: var(--site-accent);
-  color: var(--site-accent-fg);
+  border-radius: 0.65rem;
+  /* Monochrome mark — an inverted chip (ink in light, paper in dark), never a
+     coloured badge. Keeps the wordmark strictly black/white. */
+  background: var(--site-text);
+  color: var(--site-bg);
   font-size: 0.9rem;
-  font-weight: 850;
+  font-weight: 800;
   letter-spacing: -0.05em;
 }
 
@@ -136,6 +138,10 @@
   justify-content: center;
   border-radius: var(--site-control-radius);
   color: var(--site-text-muted);
+  transition:
+    color 200ms var(--ease-out, ease),
+    background-color 200ms var(--ease-out, ease),
+    transform var(--site-press-duration, 160ms) var(--ease-out, ease);
 }
 
 .site-nav__utility svg {
@@ -182,21 +188,27 @@
   padding-inline: 0.85rem;
   border-radius: 0.75rem;
   color: var(--site-text-muted);
-  font-size: 0.76rem;
-  font-weight: 690;
+  font-size: 0.78rem;
+  font-weight: 560;
+  letter-spacing: -0.01em;
   white-space: nowrap;
+  transition:
+    color 200ms var(--ease-out, ease),
+    background-color 200ms var(--ease-out, ease);
 }
 
+/* Active tab stays strictly monochrome — strong ink text with one hairline
+   accent underline as the single restrained hint of colour. */
 .site-nav__tab[data-active] {
-  background: var(--site-accent-dim);
-  color: var(--site-accent);
+  color: var(--site-text);
+  font-weight: 640;
 }
 
 .site-nav__tab[data-active]::after {
   content: '';
   position: absolute;
   right: 0.85rem;
-  bottom: -0.46rem;
+  bottom: -0.42rem;
   left: 0.85rem;
   height: 2px;
   border-radius: 999px;
@@ -319,10 +331,11 @@
 
 .page-heading h1 {
   font-family: var(--site-font-display);
-  font-size: clamp(1.8rem, 8vw, 3.25rem);
-  font-weight: 760;
-  line-height: 1;
-  letter-spacing: -0.05em;
+  font-size: clamp(1.7rem, 7vw, 3rem);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
 }
 
 .page-heading [data-slot='page-description'] {
@@ -339,51 +352,119 @@
   gap: 0.75rem;
 }
 
-.feed-heading {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.85rem 1rem 0.3rem;
+/* Homepage hero — an Apple-style editorial header: big SF display type, a lead
+   line, a live pulse, and two drifting monochrome auras for parallax depth. */
+.feed-hero {
+  position: relative;
+  overflow: clip;
+  margin: 0.25rem 0.75rem 0.35rem;
+  padding: 1.75rem 1.35rem 1.5rem;
+  border-radius: var(--site-radius);
+  isolation: isolate;
 }
 
-.feed-heading__eyebrow {
-  color: var(--site-accent);
-  font-size: 0.65rem;
-  font-weight: 800;
-  letter-spacing: 0.11em;
+.feed-hero__aura {
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(28px);
+}
+
+.feed-hero__aura--a {
+  top: -3rem;
+  right: -2rem;
+  width: 13rem;
+  height: 13rem;
+  --u-parallax: 26px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--site-text) 8%, transparent),
+    transparent 70%
+  );
+}
+
+.feed-hero__aura--b {
+  bottom: -4rem;
+  left: -3rem;
+  width: 11rem;
+  height: 11rem;
+  --u-parallax: 64px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--site-accent) 12%, transparent),
+    transparent 70%
+  );
+}
+
+.feed-hero__inner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.feed-hero__eyebrow {
+  display: inline-block;
+  color: var(--site-text-dim);
+  font-size: 0.66rem;
+  font-weight: 620;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-.feed-heading h1 {
-  margin-top: 0.25rem;
+.feed-hero__title {
+  margin-top: 0.55rem;
   font-family: var(--site-font-display);
-  font-size: clamp(1.75rem, 8vw, 2.8rem);
-  font-weight: 780;
-  line-height: 1;
-  letter-spacing: -0.05em;
+  font-size: clamp(2rem, 8.5vw, 3.1rem);
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: -0.038em;
+  text-wrap: balance;
 }
 
-.feed-heading__live {
+.feed-hero__sub {
+  max-width: 34rem;
+  margin-top: 0.7rem;
+  color: var(--site-text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.feed-hero__live {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.45rem 0.65rem;
+  padding: 0.4rem 0.7rem;
   border: 1px solid var(--site-border);
   border-radius: 999px;
-  background: var(--site-surface);
+  background: color-mix(in srgb, var(--site-surface) 80%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: var(--site-text-muted);
-  font-size: 0.65rem;
-  font-weight: 750;
+  font-size: 0.66rem;
+  font-weight: 600;
 }
 
-.feed-heading__live > span {
+.feed-hero__live > span {
   width: 0.45rem;
   height: 0.45rem;
   border-radius: 50%;
   background: var(--site-success);
-  box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--site-success) 14%, transparent);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--site-success) 45%, transparent);
+  animation: feed-live-pulse 2.4s ease-out infinite;
+}
+
+@keyframes feed-live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--site-success) 45%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 0.4rem color-mix(in srgb, var(--site-success) 0%, transparent);
+  }
 }
 
 .feed-search {
@@ -639,8 +720,12 @@
   padding-inline: 0.75rem;
   border-radius: 0.85rem;
   color: var(--site-text-muted);
-  font-size: 0.86rem;
-  font-weight: 650;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  transition:
+    color 180ms var(--ease-out, ease),
+    background-color 180ms var(--ease-out, ease);
 }
 
 .drawer-nav__link svg {
