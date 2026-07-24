@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { BadgeCheck, Heart, MessageCircle, Repeat2 } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -33,7 +34,7 @@ function hrefFor(item: FeedItem): string {
  * of the feed wheel. Rmharks show author + content; platform announcements show
  * their headline. Kept deliberately light so the wheel stays fluid mid-spin.
  */
-export function RmharkCard({ item }: { item: FeedItem }) {
+export const RmharkCard = memo(function RmharkCard({ item }: { item: FeedItem }) {
   const isRmhark = item.type === 'rmhark';
   const href = hrefFor(item);
   const external = href.startsWith('http');
@@ -97,4 +98,4 @@ export function RmharkCard({ item }: { item: FeedItem }) {
       {inner}
     </Link>
   );
-}
+});

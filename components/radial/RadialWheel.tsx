@@ -14,7 +14,7 @@ interface RadialWheelProps {
   items: RadialWheelItem[];
   /** The persistent hub rendered at the pivot — the "RMH" mark. */
   center?: ReactNode;
-  /** Degrees of arc between neighbouring slots. Default 26. */
+  /** Degrees of arc between neighbouring slots. Default 34. */
   step?: number;
   /** Fires when the focused (front) slot settles on a new index. */
   onActiveChange?: (index: number) => void;
@@ -42,7 +42,8 @@ export function RadialWheel({
   children,
 }: RadialWheelProps) {
   const reduced = useReducedMotion();
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const slotsRef = useRef<HTMLDivElement[]>([]);
   const count = items.length;
 
   // Visible half-window: cards beyond this arc are parked (opacity 0, inert).
@@ -53,7 +54,9 @@ export function RadialWheel({
       const phi = rel * step * DEG;
       const c = Math.cos(phi);
       const s = Math.sin(phi);
-      const visible = Math.abs(rel) <= halfWindow && c > 0.02;
+      // Hide cards more than ~78° around the arc so only ~5 ever paint; keeps the
+      // stack clean and cheap.
+      const visible = Math.abs(rel) <= halfWindow && c > 0.2;
 
       if (!visible) {
         el.style.opacity = '0';
@@ -63,13 +66,20 @@ export function RadialWheel({
         return;
       }
 
-      const radius = 148; // vertical travel radius (px), scaled by CSS on small screens
-      const y = s * radius;
-      const z = (c - 1) * radius;
-      const rotX = -rel * step * 0.62;
-      const scale = 0.62 + 0.38 * c;
-      const opacity = Math.max(0, c) ** 1.15;
+      // Separate vertical-travel and depth radii. The travel radius is large
+      // relative to a card so neighbours clear the focused card instead of piling
+      // on top of it; the depth radius pushes them firmly behind it (paint order
+      // in a preserve-3d context is decided by translateZ, not z-index).
+      const travel = 232;
+      const depth = 340;
+      const y = s * travel;
+      const z = (c - 1) * depth;
+      const rotX = -rel * step * 0.5;
+      const scale = 0.5 + 0.5 * c;
       const focused = Math.abs(rel) < 0.5;
+      // Focused card is fully opaque and occludes its neighbours; the rest fade
+      // off quickly so the stack never looks muddy.
+      const opacity = focused ? 1 : Math.max(0, c) ** 1.7;
 
       el.style.visibility = 'visible';
       el.style.transform = `translate3d(-50%, calc(-50% + ${y.toFixed(2)}px), ${z.toFixed(2)}px) rotateX(${rotX.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
@@ -77,19 +87,25 @@ export function RadialWheel({
       el.style.zIndex = String(200 + Math.round(c * 100));
       el.style.pointerEvents = focused ? 'auto' : 'none';
       el.setAttribute('aria-hidden', focused ? 'false' : 'true');
-      el.style.filter = focused ? 'none' : `saturate(0.9) brightness(${(0.9 + 0.1 * c).toFixed(2)})`;
     },
     [step, halfWindow],
   );
 
+  // Resolve slot nodes from the stage in DOM order rather than per-item refs, so
+  // pagination appends and live-SSE re-renders never churn a ref (which would
+  // drop a frame's transform). The cache refreshes only when the count changes.
   const onRender = useCallback(
     (pos: number) => {
-      for (let i = 0; i < itemRefs.current.length; i++) {
-        const el = itemRefs.current[i];
-        if (el) place(el, i - pos);
+      const stage = stageRef.current;
+      if (!stage) return;
+      let slots = slotsRef.current;
+      if (slots.length !== count) {
+        slots = Array.from(stage.querySelectorAll<HTMLDivElement>('.radial-wheel__slot'));
+        slotsRef.current = slots;
       }
+      for (let i = 0; i < slots.length; i++) place(slots[i], i - pos);
     },
-    [place],
+    [count, place],
   );
 
   const { surfaceRef } = useRadialSpin({
@@ -110,18 +126,10 @@ export function RadialWheel({
       aria-label={ariaLabel}
       tabIndex={0}
     >
-      <div className="radial-wheel__stage">
+      <div className="radial-wheel__stage" ref={stageRef}>
         {center ? <div className="radial-wheel__hub">{center}</div> : null}
-        {items.map((item, i) => (
-          <div
-            key={item.id}
-            role="option"
-            aria-selected={false}
-            ref={(el) => {
-              itemRefs.current[i] = el;
-            }}
-            className="radial-wheel__slot"
-          >
+        {items.map((item) => (
+          <div key={item.id} role="option" aria-selected={false} className="radial-wheel__slot">
             {item.node}
           </div>
         ))}

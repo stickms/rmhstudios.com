@@ -548,6 +548,7 @@
 
 /* ── The RMH core disc ────────────────────────────────────────────────── */
 .radial-core {
+  position: relative;
   display: grid;
   place-items: center;
   gap: 0.15rem;
@@ -557,6 +558,20 @@
   background: var(--site-accent);
   color: var(--site-accent-fg);
   box-shadow: 0 14px 40px -12px rgba(0, 0, 0, 0.5);
+}
+/* A quiet ring pulse around the core while the next page lazily loads. */
+.radial-core[data-loading]::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 999px;
+  border: 2px solid var(--site-accent);
+  opacity: 0.4;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .radial-core[data-loading]::after {
+    animation: radial-pulse 1.6s ease-out infinite;
+  }
 }
 .radial-core__mark {
   font-weight: 800;
