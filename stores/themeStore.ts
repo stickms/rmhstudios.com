@@ -7,17 +7,12 @@ import type { AppliedUserTheme, AppliedUserThemePreview } from '@/lib/themes/tok
 // derive `THEME_BG` from here — adding a theme no longer means editing a
 // hand-copied color map in two other files.
 //
-// Built-in styles are deliberately restrained variations of the spatial
-// minimal system. The ids remain stable because they are persisted, while the
-// labels and palettes now describe the redesigned material.
+// The rewrite intentionally ships one neutral system in three accessibility
+// modes. Retired decorative themes self-heal to Paper during hydration.
 export const SITE_STYLES = [
-  { id: 'default', label: 'Paper', icon: '○', group: 'Base', bg: '#f2f2ef' },
-  { id: 'light', label: 'White', icon: '□', group: 'Base', bg: '#fafaf8' },
-  { id: 'high-contrast', label: 'High Contrast', icon: '◐', group: 'Base', bg: '#000' },
-  { id: 'graphite', label: 'Graphite', icon: '●', group: 'Curated', bg: '#151515' },
-  { id: 'sepia', label: 'Warm Paper', icon: '◌', group: 'Curated', bg: '#eee9df' },
-  { id: 'nocturne', label: 'Night', icon: '■', group: 'Curated', bg: '#101010' },
-  { id: 'ultra', label: 'Gallery', icon: '◇', group: 'Base', bg: '#0b0b0b' },
+  { id: 'default', label: 'Paper', icon: '○', group: 'Spatial', bg: '#f4f4f1' },
+  { id: 'graphite', label: 'Ink', icon: '●', group: 'Spatial', bg: '#111111' },
+  { id: 'high-contrast', label: 'Contrast', icon: '◐', group: 'Spatial', bg: '#000000' },
 ] as const;
 
 /**

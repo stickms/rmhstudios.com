@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, Suspense, lazy } from 'react';
-import { Search, X, BadgeCheck, ShieldCheck } from 'lucide-react';
+import { ArrowUpRight, BadgeCheck, Search, ShieldCheck, X } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { FeedTabs } from './FeedTabs';
 import { ComposeBoxLazy } from './ComposeBoxLazy';
@@ -10,7 +10,6 @@ import { PullToRefresh } from './PullToRefresh';
 import { FeedAnnouncements } from './FeedAnnouncements';
 import { OnboardingChecklist } from './OnboardingChecklist';
 import { JumpBackIn } from './JumpBackIn';
-import { MobileMenuButton } from './MobileMenuButton';
 import { useFeedStore } from '@/stores/feedStore';
 import { useFeedSSE } from '@/hooks/useFeedSSE';
 import { useSession } from '@/components/Providers';
@@ -157,79 +156,73 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
     <PullToRefresh onRefresh={refreshFeed}>
       <div className="feed-column flex flex-col">
         {!search && (
-          <section
-            className="spatial-feed-intro mx-3 mt-3 overflow-hidden"
-            aria-labelledby="feed-title"
-          >
-            <div aria-hidden className="spatial-feed-intro__field">
-              <span className="spatial-feed-intro__orb" />
-              <span className="spatial-feed-intro__grid" />
+          <section className="spatial-home-hero" aria-labelledby="feed-title">
+            <div className="spatial-home-hero__meta">
+              <span>{t('home-studio-label', { defaultValue: 'Independent digital studio' })}</span>
+              <span aria-hidden>Rochester / NY</span>
             </div>
-            <div className="spatial-feed-intro__copy">
-              <h1
-                id="feed-title"
-                className="font-(family-name:--site-font-display) text-[clamp(2.35rem,8vw,4.5rem)] font-medium leading-[0.94] tracking-[-0.055em] text-site-text"
-              >
-                {t('feed-hero-title', { defaultValue: 'Make. Play. Share.' })}
+            <div className="spatial-home-hero__copy">
+              <h1 id="feed-title">
+                {t('feed-hero-title-rewrite', {
+                  defaultValue: 'Make what the internet is missing.',
+                })}
               </h1>
+              <p>
+                {t('feed-hero-description-rewrite', {
+                  defaultValue:
+                    'Original games, creative tools, music, learning, and community—composed as one considered space.',
+                })}
+              </p>
+              <div className="spatial-home-hero__actions">
+                <Link to="/create">
+                  {t('start-creating', { defaultValue: 'Start creating' })}
+                  <ArrowUpRight aria-hidden />
+                </Link>
+                <Link to="/arcade">
+                  {t('explore-arcade', { defaultValue: 'Explore the arcade' })}
+                </Link>
+              </div>
+            </div>
+            <div className="spatial-home-hero__object" aria-hidden>
+              <span className="spatial-home-hero__orb" />
+              <span className="spatial-home-hero__mesh" />
+              <small>RMH / 26</small>
             </div>
           </section>
         )}
 
-        {/* Search stays reachable while the editorial introduction scrolls away. */}
-        <header data-slot="feed-header" className="site-sticky-chrome spatial-feed-search">
-          {/* Mobile chrome row: drawer button + centered RMH branding. Desktop has
-              the sidebar, so this row is mobile-only; the spacer balances the 44px
-              menu button so the wordmark stays centered. */}
-          <div className="flex items-center justify-between px-4 pt-3 md:hidden">
-            <MobileMenuButton />
-            <span className="font-(family-name:--site-font-display) text-lg font-bold text-site-text">
-              RMH
-            </span>
-            <span className="w-11" aria-hidden />
-          </div>
-
-          {/* Search bar (the header's sticky behavior stays here). */}
-          <div className="px-3 pb-3 pt-2 md:px-4 md:py-3">
-            <label htmlFor="feed-search" className="sr-only">
-              {t('search-placeholder', { defaultValue: 'Search posts and people' })}
-            </label>
-            <div className="relative rounded-[var(--site-control-radius)] border border-site-border bg-site-surface">
-              <Search
-                className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-dim"
-                aria-hidden
-              />
-              <input
-                id="feed-search"
-                ref={searchRef}
-                type="text"
-                value={searchInput}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                placeholder={t('search-placeholder', { defaultValue: 'Search...' })}
-                enterKeyHint="search"
-                className="w-full rounded-[var(--site-control-radius)] bg-transparent py-3 pl-10 pr-11 text-base text-site-text outline-none placeholder:text-site-text-dim focus:ring-2 focus:ring-site-accent/15 sm:text-sm"
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') clearSearch();
-                }}
-              />
-              {searchInput && (
-                <button
-                  type="button"
-                  onClick={clearSearch}
-                  aria-label={t('clear-search', { defaultValue: 'Clear search' })}
-                  className="absolute right-1 top-1/2 inline-flex min-h-9 min-w-9 -translate-y-1/2 items-center justify-center rounded-full text-site-text-dim transition-colors hover:bg-site-surface-hover hover:text-site-text"
-                >
-                  <X className="h-4 w-4" aria-hidden />
-                </button>
-              )}
-            </div>
-          </div>
+        <header data-slot="feed-header" className="spatial-feed-search">
+          <label htmlFor="feed-search" className="sr-only">
+            {t('search-placeholder', { defaultValue: 'Search posts and people' })}
+          </label>
+          <Search aria-hidden />
+          <input
+            id="feed-search"
+            ref={searchRef}
+            type="text"
+            value={searchInput}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder={t('search-placeholder', { defaultValue: 'Search posts and people' })}
+            enterKeyHint="search"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') clearSearch();
+            }}
+          />
+          {searchInput && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              aria-label={t('clear-search', { defaultValue: 'Clear search' })}
+            >
+              <X aria-hidden />
+            </button>
+          )}
         </header>
 
         {/* Tab strips — standalone glass sheets BELOW the header capsule (§5.45),
             separated by the standard gutter. State wiring (mode + useFeedStore
             filter) is unchanged. */}
-        <div className="my-4 px-2 md:px-3">
+        <div>
           <FeedTabs mode={mode} onModeChange={handleModeChange} />
         </div>
 

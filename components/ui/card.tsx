@@ -18,9 +18,9 @@ function Card({
     <div
       data-slot="card"
       className={cn(
-        'flex flex-col gap-5 rounded-site border border-site-border bg-site-surface py-5 text-site-text shadow-site-sm transition-[box-shadow,border-color,transform,background-color] duration-200 sm:gap-6 sm:py-6',
-        pane && 'shadow-site',
-        interactive && 'hover:-translate-y-0.5 hover:border-site-border-bright hover:shadow-site',
+        'flex flex-col gap-5 rounded-site border border-site-border bg-site-surface py-5 text-site-text transition-[border-color,transform,background-color] duration-200 sm:gap-6 sm:py-6',
+        pane && 'bg-site-surface',
+        interactive && 'hover:-translate-y-0.5 hover:border-site-border-bright',
         className,
       )}
       {...props}

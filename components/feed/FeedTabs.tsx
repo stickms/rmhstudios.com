@@ -1,9 +1,8 @@
 'use client';
 
-import { useFeedStore } from '@/stores/feedStore';
-import type { FeedFilter } from '@/lib/feed-types';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { useTranslation } from 'react-i18next';
+import type { FeedFilter } from '@/lib/feed-types';
+import { useFeedStore } from '@/stores/feedStore';
 
 interface FeedTabsProps {
   mode: 'feed' | 'friends';
@@ -12,57 +11,64 @@ interface FeedTabsProps {
 
 export function FeedTabs({ mode, onModeChange }: FeedTabsProps) {
   const { t } = useTranslation('feed');
-  const { filter, setFilter } = useFeedStore();
-  const modeTabs: { id: 'feed' | 'friends'; label: string }[] = [
-    { id: 'feed', label: t('feed-for-you', { defaultValue: 'For You' }) },
+  const filter = useFeedStore((state) => state.filter);
+  const setFilter = useFeedStore((state) => state.setFilter);
+
+  const timelines = [
+    { id: 'feed', label: t('feed-for-you', { defaultValue: 'For you' }) },
     { id: 'friends', label: t('feed-following', { defaultValue: 'Following' }) },
-  ];
-  const contentTabs: { id: FeedFilter; label: string }[] = [
+  ] as const;
+  const filters: { id: FeedFilter; label: string }[] = [
     { id: 'all', label: t('feed-filter-all', { defaultValue: 'All' }) },
     { id: 'rmhark', label: t('feed-filter-rmharks', { defaultValue: 'RMHarks' }) },
     { id: 'game', label: t('feed-filter-games', { defaultValue: 'Games' }) },
     { id: 'app', label: t('feed-filter-apps', { defaultValue: 'Apps' }) },
-    { id: 'blog', label: t('feed-filter-blog', { defaultValue: 'Blog' }) },
+    { id: 'blog', label: t('feed-filter-blog', { defaultValue: 'Journal' }) },
   ];
 
   return (
-    <section
-      className="rounded-site border border-site-border bg-site-surface p-3 shadow-site-sm"
-      aria-labelledby="feed-view-heading"
-    >
-      {/* The hierarchy is explicit instead of presenting two unexplained rows of
-          pills: the first row chooses the timeline; the second refines content. */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0 px-1">
-          <h2 id="feed-view-heading" className="text-sm font-semibold text-site-text">
-            {t('feed-view-heading', { defaultValue: 'Your timeline' })}
+    <section className="spatial-feed-index" aria-labelledby="feed-view-heading">
+      <div className="spatial-feed-index__head">
+        <div>
+          <span>{t('feed-index-label', { defaultValue: 'Community index' })}</span>
+          <h2 id="feed-view-heading">
+            {t('feed-view-heading-rewrite', { defaultValue: 'What people are making' })}
           </h2>
-          <p className="text-xs text-site-text-dim">
-            {t('feed-view-description', { defaultValue: 'Choose whose updates you want to see.' })}
-          </p>
         </div>
-        <LiquidTabs
-          tabs={modeTabs}
-          value={mode}
-          onChange={(id) => onModeChange(id as 'feed' | 'friends')}
-          sheet={false}
-          aria-label={t('feed-timeline-label', { defaultValue: 'Timeline' })}
-        />
+        <div
+          className="spatial-feed-index__timeline"
+          aria-label={t('feed-view-heading-rewrite', { defaultValue: 'What people are making' })}
+        >
+          {timelines.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              aria-pressed={mode === tab.id}
+              data-active={mode === tab.id || undefined}
+              onClick={() => onModeChange(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {mode === 'feed' && (
-        <div className="mt-2 flex min-w-0 flex-col gap-1.5 border-t border-site-border pt-2 sm:flex-row sm:items-center">
-          <span className="shrink-0 px-1 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
-            {t('feed-show-label', { defaultValue: 'Show' })}
-          </span>
-          <LiquidTabs
-            tabs={contentTabs}
-            value={filter}
-            onChange={(id) => setFilter(id as FeedFilter)}
-            sheet={false}
-            scroll
-            aria-label={t('feed-content-filter-label', { defaultValue: 'Content type' })}
-          />
+        <div
+          className="spatial-feed-index__filters"
+          aria-label={t('feed-content-filter-label', { defaultValue: 'Content type' })}
+        >
+          {filters.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              aria-pressed={filter === tab.id}
+              data-active={filter === tab.id || undefined}
+              onClick={() => setFilter(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       )}
     </section>

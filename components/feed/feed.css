@@ -1,225 +1,942 @@
-/* ─────────────────────────────────────────────────────────────────────────────
-   feed.css — app-shell chrome for the signed-in app (sidebar, feed, profile).
-   The signed-in shell now inherits the site design tokens directly (no local
-   --site-* override), so it follows the active theme (Dark / Light /
-   High Contrast). This file only carries structural chrome that can't live in
-   Tailwind utilities: the body-font re-resolution + smoothing and the Playfair
-   wordmark.
-   ───────────────────────────────────────────────────────────────────────────── */
+/* Shared spatial shell. The old permanent sidebar grid is intentionally gone. */
 
 .vibe-app {
-  /* Re-resolve the font here (not just via the variable): the <body> computes
-     its font-family with the theme's value and children inherit that, so the
-     override only takes effect when applied directly on this subtree root. */
+  min-height: 100dvh;
   font-family: var(--site-font-body);
+  color: var(--site-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* The feed's primary sticky contains both the mobile brand row and search well,
-   so it is taller than the standard 64px page-header capsule on phones. Child
-   stickies (new-post affordance) inherit the real clearance instead of a magic
-   `top-24` that used to slide underneath the mobile search surface. */
-.feed-column {
-  --site-sticky-primary-height: 6.5rem;
-}
-
-@media (min-width: 768px) {
-  .feed-column {
-    --site-sticky-primary-height: 3.75rem;
-  }
-}
-
-/* ── Responsive site shell ──────────────────────────────────────────────────
-   The shell is a centred flex row: [left nav rail] [reading column] [right
-   context rail]. Both rails read the shared --site-rail-width token (80px icon
-   rail on tablets → 252px labelled nav at lg → 276px at 2xl) so they are always
-   the same size, and the reading column keeps its readable max-width between
-   them. `justify-content: center` centres the whole group on screen. */
 .site-shell {
-  display: flex;
-  min-height: 100dvh;
+  position: relative;
+  isolation: isolate;
   width: 100%;
-  flex-direction: column;
+  overflow-x: clip;
 }
 
-.site-shell__rail-slot {
-  display: none;
-}
-
-@media (min-width: 768px) {
-  .site-shell {
-    /* Shared rail width — the left nav and the right context rail consume this
-       SAME token so the two flanks are always identical in size (bumped up per
-       breakpoint below). The reading column sits between them. */
-    --site-rail-width: 80px;
-    max-width: 1680px;
-    margin-inline: auto;
-    flex-direction: row;
-    /* Centre the sidebar / content / sidebar group as one unit so the reading
-       column is optically centred on screen instead of glued to the left. */
-    justify-content: center;
-    gap: var(--site-shell-gap);
-    padding-inline: var(--site-page-gutter);
-  }
-
-  .site-shell__rail-slot {
-    position: relative;
-    display: block;
-    width: var(--site-rail-width);
-    flex: 0 0 var(--site-rail-width);
-  }
-
-  .site-shell__rail {
-    position: fixed;
-    top: 0;
-    z-index: 30;
-    height: 100dvh;
-    width: var(--site-rail-width);
-    /* Menus and notification popovers are allowed to leave the rail. The nav
-       itself owns its bounded scrollport, so clipping this ancestor only cuts
-       off legitimate floating UI. */
-    overflow: visible;
-  }
-
-  .site-shell__rail-glass {
-    display: flex;
-    height: calc(100% - var(--site-sticky-edge) - var(--site-sticky-edge));
-    margin: var(--site-sticky-edge);
-    flex-direction: column;
-    min-height: 0;
-    overflow: visible;
-    border-radius: var(--site-radius);
-  }
-}
-
-@media (min-width: 1024px) {
-  .site-shell {
-    --site-rail-width: 252px;
-  }
-
-  .site-shell__rail-glass {
-    height: calc(100% - var(--site-sticky-edge) - var(--site-sticky-edge));
-    margin: var(--site-sticky-edge);
-  }
-}
-
-@media (min-width: 1280px) {
-  .site-shell {
-    padding-inline: var(--site-section-gap);
-  }
-}
-
-@media (min-width: 1536px) {
-  .site-shell {
-    --site-rail-width: 276px;
-  }
-
-  .site-shell__rail-glass {
-    height: calc(100% - var(--site-sticky-edge) - var(--site-sticky-edge));
-    margin: var(--site-sticky-edge);
-  }
-}
-
-/* The nav rail, reading column and context rail form one centred group. The
-   left and right rails share --site-rail-width, so the reading column is
-   optically centred on screen at every breakpoint that has room for both flanks. */
 .site-shell__main {
-  display: block;
-  width: 100%;
+  display: flex;
+  width: min(100%, 1344px);
   min-width: 0;
+  margin-inline: auto;
+  padding: clamp(0.75rem, 1.8vw, 1.5rem);
+  padding-top: calc(var(--spatial-nav-height, 4.5rem) + clamp(1rem, 2vw, 1.75rem));
+  gap: clamp(1rem, 2vw, 2rem);
+  align-items: flex-start;
+  outline: none;
 }
 
 [data-slot='site-main-column'] {
-  min-inline-size: 0;
+  min-width: 0;
   flex-grow: 0;
 }
 
 [data-slot='context-rail'] {
   position: relative;
   align-self: flex-start;
-}
-
-@media (min-width: 768px) {
-  .site-shell__main {
-    display: flex;
-    /* Size to the reading column + context rail (not the whole remaining track)
-       so the shell's `justify-content: center` can centre the group as a unit.
-       `width: auto` is required so flex-basis resolves to the content size rather
-       than inheriting the base `width: 100%` (which would refill the whole row).
-       It still shrinks below its ideal width on smaller viewports. */
-    width: auto;
-    flex: 0 1 auto;
-    align-items: flex-start;
-    justify-content: center;
-    gap: var(--site-shell-gap);
-    overflow: visible;
-    min-width: 0;
-  }
-
-  .site-shell__main
-    > :not(
-      [data-slot='site-main-column'],
-      [data-slot='context-rail'],
-      [data-slot='context-rail-spacer']
-    ) {
-    width: 100%;
-    min-width: 0;
-    flex: 1 1 auto;
-  }
-}
-
-/* Logo wordmark — Playfair Display serif, matching the membership page. */
-.site-logo {
-  font-family: var(--font-playfair), Georgia, serif;
-  letter-spacing: -0.045em;
-}
-
-/* Spatial-minimal shell: the navigation becomes a quiet architectural plane,
-   while content and context rails sit in generous paper gutters. */
-.site-shell {
-  position: relative;
-  isolation: isolate;
-}
-
-@media (min-width: 768px) {
-  .site-shell {
-    max-width: 1680px;
-    align-items: flex-start;
-    padding-block: var(--site-sticky-edge);
-  }
-
-  /* Rail sizing is driven entirely by the shared --site-rail-width token set on
-     .site-shell per breakpoint (80 → 252 → 276), so the left nav and the right
-     context rail can never drift apart. */
-  .site-shell__rail {
-    top: 0;
-  }
-
-  .site-shell__rail-glass {
-    height: calc(100% - var(--site-sticky-edge) - var(--site-sticky-edge));
-    margin: var(--site-sticky-edge) 0;
-    border-radius: var(--site-radius);
-    background: var(--site-surface);
-    box-shadow: var(--site-shadow-sm);
-  }
-}
-
-[data-slot='site-main-column'] {
-  border-radius: var(--site-radius);
-}
-
-/* The context rail mirrors the left nav exactly — it is sized from the shared
-   --site-rail-width token (set inline by ContextRail) so the two flanks are
-   symmetric and the reading column stays centred between them. */
-[data-slot='context-rail'] {
   padding-bottom: var(--site-page-bottom-space);
 }
 
 .feed-column {
-  gap: var(--site-section-gap);
+  gap: clamp(0.9rem, 1.5vw, 1.25rem);
 }
 
-.feed-column > :not(.spatial-feed-intro, [data-slot='feed-header']) {
+.spatial-masthead {
   position: relative;
+  min-height: clamp(15rem, 30vw, 22rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
+  padding: clamp(1.25rem, 3vw, 2.5rem);
+  overflow: hidden;
+  border: 1px solid var(--site-border);
+  border-radius: 1.35rem;
+  background: var(--site-surface);
+}
+
+.spatial-masthead::after {
+  content: '';
+  position: absolute;
+  top: -8rem;
+  right: -7rem;
+  width: 19rem;
+  aspect-ratio: 1;
+  border-radius: 43% 57% 62% 38%;
+  background: var(--site-text);
+  opacity: 0.035;
+  transform: translate3d(
+      calc(var(--spatial-parallax-x, 0) * 0.5),
+      calc(var(--spatial-parallax-y, 0) * 0.5),
+      0
+    )
+    rotate(14deg);
+}
+
+.spatial-masthead__meta,
+.spatial-masthead__heading,
+.spatial-masthead__back {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+}
+
+.spatial-masthead__meta {
+  justify-content: space-between;
+  color: var(--site-text-dim);
+  font-family: var(--site-font-mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.spatial-masthead__back {
+  gap: 0.4rem;
+  color: var(--site-text-muted);
+}
+
+.spatial-masthead__back svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.spatial-masthead__breadcrumbs {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  margin-bottom: 0.8rem;
+}
+
+.spatial-masthead__heading {
+  justify-content: space-between;
+  gap: 1.5rem;
+  align-items: flex-end;
+}
+
+.spatial-masthead h1 {
+  max-width: 12ch;
+  font-family: var(--site-font-display);
+  font-size: clamp(2.8rem, 7vw, 5.8rem);
+  font-weight: 500;
+  line-height: 0.9;
+  letter-spacing: -0.065em;
+}
+
+.spatial-masthead [data-slot='page-description'] {
+  max-width: 36rem;
+  margin-top: 1.25rem;
+  color: var(--site-text-muted);
+  font-size: clamp(0.9rem, 1.5vw, 1.05rem);
+  line-height: 1.6;
+}
+
+.spatial-home-hero {
+  position: relative;
+  min-height: clamp(30rem, 68vh, 42rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(1.35rem, 3vw, 2.75rem);
+  overflow: hidden;
+  border: 1px solid var(--site-border);
+  border-radius: 1.4rem;
+  background: var(--site-surface);
+  isolation: isolate;
+}
+
+.spatial-home-hero__meta {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  justify-content: space-between;
+  color: var(--site-text-dim);
+  font-family: var(--site-font-mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.spatial-home-hero__copy {
+  position: relative;
+  z-index: 3;
+  max-width: 34rem;
+}
+
+.spatial-home-hero h1 {
+  max-width: 9.5ch;
+  font-family: var(--site-font-display);
+  font-size: clamp(3.6rem, 9vw, 6.8rem);
+  font-weight: 500;
+  line-height: 0.86;
+  letter-spacing: -0.075em;
+}
+
+.spatial-home-hero__copy > p {
+  max-width: 31rem;
+  margin-top: clamp(1.4rem, 3vw, 2.3rem);
+  color: var(--site-text-muted);
+  font-size: clamp(0.92rem, 1.5vw, 1.05rem);
+  line-height: 1.65;
+}
+
+.spatial-home-hero__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 1.6rem;
+}
+
+.spatial-home-hero__actions a {
+  display: inline-flex;
+  min-height: 2.85rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding-inline: 1rem;
+  border: 1px solid var(--site-border);
+  border-radius: 0.78rem;
+  color: var(--site-text);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.spatial-home-hero__actions a:first-child {
+  border-color: var(--site-accent);
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+}
+
+.spatial-home-hero__actions svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.spatial-home-hero__object {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  right: 0;
+  width: 62%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.spatial-home-hero__orb {
+  position: absolute;
+  width: min(40rem, 72vw);
+  aspect-ratio: 1;
+  top: -18%;
+  right: -38%;
+  border-radius: 42% 58% 63% 37% / 47% 39% 61% 53%;
+  background: var(--site-text);
+  transform: translate3d(
+      calc(var(--spatial-parallax-x, 0) * 0.95),
+      calc(var(--spatial-parallax-y, 0) * 0.95 + var(--spatial-scroll-y, 0px) * 0.035),
+      0
+    )
+    rotate(11deg);
+  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.spatial-home-hero__mesh {
+  position: absolute;
+  top: 9%;
+  right: 2%;
+  width: min(19rem, 38vw);
+  aspect-ratio: 1;
+  background-image: radial-gradient(circle, var(--site-accent-fg) 1px, transparent 1.2px);
+  background-size: 11px 11px;
+  mask-image: radial-gradient(circle, black 18%, transparent 70%);
+  opacity: 0.7;
+  transform: translate3d(
+    calc(var(--spatial-parallax-x, 0) * -0.4),
+    calc(var(--spatial-parallax-y, 0) * -0.4 + var(--spatial-scroll-y, 0px) * -0.02),
+    0
+  );
+  transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.spatial-home-hero__object small {
+  position: absolute;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  color: var(--site-accent-fg);
+  font-family: var(--site-font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.16em;
+}
+
+.spatial-feed-search {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  min-height: 3.5rem;
+  padding-inline: 1rem;
+  border: 1px solid var(--site-border);
+  border-radius: 1rem;
+  background: var(--site-surface);
+}
+
+.spatial-feed-search > svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--site-text-dim);
+}
+
+.spatial-feed-search input {
+  min-width: 0;
+  width: 100%;
+  height: 3.4rem;
+  padding-inline: 0.75rem;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--site-text);
+  font-size: 0.84rem;
+}
+
+.spatial-feed-search input::placeholder {
+  color: var(--site-text-dim);
+}
+
+.spatial-feed-search button {
+  display: inline-flex;
+  width: 2.35rem;
+  height: 2.35rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.65rem;
+  color: var(--site-text-dim);
+  background: var(--site-bg-subtle);
+}
+
+.spatial-feed-search button svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.spatial-feed-index {
+  padding: 1rem;
+  border: 1px solid var(--site-border);
+  border-radius: 1rem;
+  background: var(--site-surface);
+}
+
+.spatial-feed-index__head,
+.spatial-feed-index__timeline,
+.spatial-feed-index__filters {
+  display: flex;
+  align-items: center;
+}
+
+.spatial-feed-index__head {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.spatial-feed-index__head > div:first-child > span {
+  color: var(--site-text-dim);
+  font-family: var(--site-font-mono);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.spatial-feed-index h2 {
+  margin-top: 0.2rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.spatial-feed-index__timeline,
+.spatial-feed-index__filters {
+  gap: 0.2rem;
+}
+
+.spatial-feed-index button {
+  min-height: 2.3rem;
+  padding-inline: 0.75rem;
+  border-radius: 0.65rem;
+  color: var(--site-text-dim);
+  font-size: 0.7rem;
+  font-weight: 680;
+}
+
+.spatial-feed-index button:hover,
+.spatial-feed-index button[data-active] {
+  color: var(--site-text);
+  background: var(--site-bg-subtle);
+}
+
+.spatial-feed-index__filters {
+  margin-top: 0.9rem;
+  padding-top: 0.85rem;
+  overflow-x: auto;
+  border-top: 1px solid var(--site-border);
+}
+
+.spatial-whats-new {
+  grid-template-columns: minmax(0, 1fr);
+  border-radius: 1.35rem;
+}
+
+.spatial-whats-new__intro {
+  position: relative;
+  min-height: 35rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(1.5rem, 4vw, 3.25rem);
+  overflow: hidden;
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+}
+
+.spatial-whats-new__meta,
+.spatial-whats-new__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.spatial-whats-new__meta {
+  position: relative;
+  z-index: 2;
+  font-family: var(--site-font-mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.62;
+}
+
+.spatial-whats-new__title {
+  position: relative;
+  z-index: 2;
+  max-width: 7ch;
+  font-family: var(--site-font-display);
+  font-size: clamp(3.5rem, 7vw, 6rem);
+  font-weight: 500;
+  line-height: 0.86;
+  letter-spacing: -0.07em;
+}
+
+.spatial-whats-new__description {
+  position: relative;
+  z-index: 2;
+  max-width: 26rem;
+  margin-top: 1.5rem;
+  color: color-mix(in srgb, var(--site-accent-fg) 66%, transparent);
+  line-height: 1.6;
+}
+
+.spatial-whats-new__art,
+.spatial-whats-new__art::before,
+.spatial-whats-new__art span {
+  position: absolute;
+}
+
+.spatial-whats-new__art {
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.spatial-whats-new__art::before {
+  content: '';
+  width: 24rem;
+  aspect-ratio: 1;
+  top: -8rem;
+  right: -12rem;
+  border: 1px solid color-mix(in srgb, var(--site-accent-fg) 28%, transparent);
+  border-radius: 50%;
+}
+
+.spatial-whats-new__art span {
+  width: 12rem;
+  aspect-ratio: 1;
+  top: 4rem;
+  right: -1rem;
+  background-image: radial-gradient(circle, var(--site-accent-fg) 1px, transparent 1.2px);
+  background-size: 10px 10px;
+  mask-image: radial-gradient(circle, black, transparent 72%);
+  opacity: 0.35;
+}
+
+.spatial-whats-new__changes {
+  align-self: stretch;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 2.25rem;
+}
+
+.spatial-whats-new__changes article {
+  display: grid;
+  grid-template-columns: 2.25rem 1fr;
+  gap: 1rem;
+  padding: 1.4rem;
+  border-right: 1px solid var(--site-border);
+}
+
+.spatial-whats-new__changes article:last-child {
+  border-right: 0;
+}
+
+.spatial-whats-new__changes article > span {
+  color: var(--site-text-dim);
+  font-family: var(--site-font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+}
+
+.spatial-whats-new__changes h3 {
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.spatial-whats-new__changes p {
+  margin-top: 0.5rem;
+  color: var(--site-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.spatial-whats-new__footer {
+  padding: 0 2.25rem 2.25rem;
+  color: var(--site-text-dim);
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+/* One global navigation plane: narrow, quiet, and content-first. */
+.spatial-nav-wrap {
+  position: fixed;
+  z-index: 45;
+  top: max(0.75rem, env(safe-area-inset-top));
+  left: 50%;
+  width: min(calc(100% - 1.5rem), 1312px);
+  translate: -50% 0;
+}
+
+.spatial-nav {
+  --nav-ink: color-mix(in srgb, var(--site-surface) 94%, transparent);
+  display: grid;
+  grid-template-columns: minmax(9rem, 1fr) auto minmax(9rem, 1fr);
+  align-items: center;
+  min-height: var(--spatial-nav-height, 4.5rem);
+  padding: 0.55rem 0.65rem 0.55rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--site-text) 12%, transparent);
+  border-radius: 1.15rem;
+  background: var(--nav-ink);
+  box-shadow: var(--site-shadow);
+  backdrop-filter: blur(18px) saturate(120%);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+}
+
+.spatial-nav__brand,
+.spatial-nav__account,
+.spatial-nav__links,
+.spatial-nav__wordmark,
+.spatial-nav__link,
+.spatial-nav__profile {
+  display: flex;
+  align-items: center;
+}
+
+.spatial-nav__brand {
+  min-width: 0;
+}
+
+.spatial-nav__menu {
+  margin-right: 0.25rem;
+}
+
+.spatial-nav__wordmark {
+  width: fit-content;
+  gap: 0.45rem;
+  color: var(--site-text);
+  letter-spacing: -0.035em;
+}
+
+.spatial-nav__wordmark span:first-child {
+  font-size: 0.88rem;
+  font-weight: 780;
+}
+
+.spatial-nav__wordmark span:last-child {
+  color: var(--site-text-dim);
+  font-size: 0.74rem;
+  font-weight: 580;
+}
+
+.spatial-nav__links {
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+.spatial-nav__link {
+  position: relative;
+  gap: 0.45rem;
+  min-height: 2.7rem;
+  padding-inline: 0.9rem;
+  border-radius: 0.8rem;
+  color: var(--site-text-muted);
+  font-size: 0.78rem;
+  font-weight: 620;
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+.spatial-nav__link svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  stroke-width: 1.8;
+}
+
+.spatial-nav__link:hover,
+.spatial-nav__link[data-active] {
+  color: var(--site-text);
+  background: color-mix(in srgb, var(--site-text) 7%, transparent);
+}
+
+.spatial-nav__link:active {
+  transform: scale(0.97);
+}
+
+.spatial-nav__account {
+  justify-content: flex-end;
+  gap: 0.8rem;
+}
+
+.spatial-nav__edition {
+  color: var(--site-text-dim);
+  font-family: var(--site-font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+}
+
+.spatial-nav__profile {
+  min-height: 2.7rem;
+  min-width: 2.7rem;
+  justify-content: center;
+  border-radius: 0.8rem;
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  padding-inline: 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.spatial-nav__profile:has(img) {
+  padding: 0.25rem;
+}
+
+/* Mobile drawer: a simple opaque index, not a second material system. */
+#mobile-site-drawer {
+  border-right: 1px solid var(--site-border);
+  border-radius: 0;
+  background: var(--site-surface);
+  box-shadow: var(--site-shadow);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.drawer-nav {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  padding: 1.1rem 1rem calc(1.25rem + env(safe-area-inset-bottom));
+}
+
+.drawer-nav__head,
+.drawer-nav__brand,
+.drawer-nav__link,
+.drawer-nav__identity,
+.drawer-nav__utility {
+  display: flex;
+  align-items: center;
+}
+
+.drawer-nav__head {
+  justify-content: space-between;
+}
+
+.drawer-nav__brand {
+  gap: 0.45rem;
+  letter-spacing: -0.04em;
+}
+
+.drawer-nav__brand span {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.drawer-nav__brand small {
+  color: var(--site-text-dim);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.drawer-nav__eyebrow,
+.drawer-nav__group > p {
+  margin: 2rem 0 0.65rem;
+  color: var(--site-text-dim);
+  font-family: var(--site-font-mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.drawer-nav__list {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.drawer-nav__group {
+  border-top: 1px solid var(--site-border);
+  margin-top: 0.75rem;
+  padding-top: 0.1rem;
+}
+
+.drawer-nav__link {
+  min-height: 3rem;
+  gap: 0.8rem;
+  padding: 0 0.7rem;
+  border-radius: 0.75rem;
+  color: var(--site-text-muted);
+  font-size: 0.86rem;
+  font-weight: 620;
+}
+
+.drawer-nav__link svg {
+  width: 1rem;
+  height: 1rem;
+  stroke-width: 1.75;
+}
+
+.drawer-nav__link:hover,
+.drawer-nav__link--active {
+  color: var(--site-text);
+  background: var(--site-bg-subtle);
+}
+
+.drawer-nav__footer {
+  flex-shrink: 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--site-border);
+}
+
+.drawer-nav__identity {
+  gap: 0.7rem;
+  min-width: 0;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.drawer-nav__identity span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawer-nav__utility {
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.drawer-nav__utility a,
+.drawer-nav__utility button {
+  display: inline-flex;
+  width: 2.65rem;
+  height: 2.65rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.7rem;
+  color: var(--site-text-muted);
+  background: var(--site-bg-subtle);
+}
+
+.drawer-nav__utility svg,
+.drawer-nav__signin svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.drawer-nav__signin {
+  display: flex;
+  min-height: 2.9rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  border-radius: 0.75rem;
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.drawer-nav__loading {
+  height: 2.9rem;
+  border-radius: 0.75rem;
+  background: var(--site-bg-subtle);
+}
+
+@media (max-width: 767px) {
+  .spatial-nav-wrap {
+    top: max(0.55rem, env(safe-area-inset-top));
+    width: calc(100% - 1rem);
+  }
+
+  .spatial-nav {
+    grid-template-columns: 1fr auto;
+    min-height: 4rem;
+    padding: 0.4rem 0.5rem 0.4rem 0.7rem;
+    border-radius: 1rem;
+  }
+
+  .spatial-nav__links,
+  .spatial-nav__edition {
+    display: none;
+  }
+
+  .spatial-nav__wordmark span:last-child {
+    display: none;
+  }
+
+  .spatial-nav__profile {
+    min-height: 2.55rem;
+    min-width: 2.55rem;
+  }
+
+  .site-shell__main {
+    display: block;
+    padding: 0.5rem;
+    padding-top: calc(var(--spatial-nav-height, 4.5rem) + 0.75rem);
+  }
+
+  .spatial-masthead {
+    min-height: 13rem;
+    border-radius: 1rem;
+  }
+
+  .spatial-masthead__heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .spatial-masthead h1 {
+    font-size: clamp(2.5rem, 14vw, 4rem);
+  }
+
+  .spatial-home-hero {
+    min-height: 37rem;
+    padding: 1.25rem;
+    border-radius: 1rem;
+  }
+
+  .spatial-home-hero h1 {
+    font-size: clamp(3.25rem, 16vw, 5rem);
+  }
+
+  .spatial-home-hero__copy {
+    max-width: 100%;
+  }
+
+  .spatial-home-hero__object {
+    width: 100%;
+    height: 54%;
+  }
+
+  .spatial-home-hero__orb {
+    width: 26rem;
+    top: -42%;
+    right: -42%;
+  }
+
+  .spatial-home-hero__mesh {
+    width: 12rem;
+    top: 4%;
+    right: -2%;
+  }
+
+  .spatial-home-hero__actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .spatial-whats-new {
+    display: block;
+  }
+
+  .spatial-whats-new__intro {
+    min-height: 24rem;
+  }
+
+  .spatial-whats-new__title {
+    font-size: clamp(3.2rem, 16vw, 4.8rem);
+  }
+
+  .spatial-whats-new__changes {
+    grid-template-columns: 1fr;
+    padding: 1rem 1.25rem;
+  }
+
+  .spatial-whats-new__changes article {
+    padding: 1.25rem 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--site-border);
+  }
+
+  .spatial-whats-new__changes article:last-child {
+    border-bottom: 0;
+  }
+
+  .spatial-whats-new__footer {
+    gap: 1rem;
+    padding: 0 1.25rem 1.25rem;
+  }
+
+  .spatial-whats-new__footer > span {
+    display: none;
+  }
+
+  .spatial-feed-index__head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .spatial-feed-index__timeline {
+    width: 100%;
+  }
+
+  .spatial-feed-index__timeline button {
+    flex: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spatial-nav__link {
+    transition: none;
+  }
+
+  .spatial-home-hero__orb,
+  .spatial-home-hero__mesh,
+  .spatial-masthead::after {
+    transform: none;
+    transition: none;
+  }
 }
