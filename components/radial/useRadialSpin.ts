@@ -62,6 +62,7 @@ export function useRadialSpin(options: RadialSpinOptions): RadialSpinHandle {
   const rafRef = useRef<number | null>(null);
   const runningRef = useRef(false);
   const activeRef = useRef(-1);
+  const lastTimeRef = useRef(0);
 
   // Keep the latest callbacks/config in refs so the rAF loop and event listeners
   // never close over stale values (and never need re-subscribing).
@@ -108,52 +109,67 @@ export function useRadialSpin(options: RadialSpinOptions): RadialSpinHandle {
 
   const stop = useCallback(() => {
     runningRef.current = false;
+    lastTimeRef.current = 0; // so a fresh spin doesn't inherit a huge dt gap
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     }
   }, []);
 
-  const frame = useCallback(() => {
-    if (!draggingRef.current) {
-      if (targetRef.current !== null) {
-        const diff = targetRef.current - posRef.current;
-        if (Math.abs(diff) < EPS) {
-          posRef.current = targetRef.current;
-          targetRef.current = null;
-          velRef.current = 0;
+  // Time-based integration: everything is scaled by `f`, the frame's duration in
+  // 60fps-steps (1 at 60Hz, 0.5 at 120Hz, 0.33 at 144Hz). This makes the inertia,
+  // friction, and settle behave IDENTICALLY at any refresh rate — without it the
+  // glide decays twice as fast on a 120Hz display and feels sluggish/short.
+  const frame = useCallback(
+    (now: number) => {
+      const last = lastTimeRef.current || now;
+      lastTimeRef.current = now;
+      // Clamp so a tab that was backgrounded (huge dt) can't teleport the wheel.
+      const f = Math.min(3, Math.max(0.0001, (now - last) / (1000 / 60)));
+      const friction = Math.pow(FRICTION, f);
+      const settle = 1 - Math.pow(1 - SETTLE, f);
+
+      if (!draggingRef.current) {
+        if (targetRef.current !== null) {
+          const diff = targetRef.current - posRef.current;
+          if (Math.abs(diff) < EPS) {
+            posRef.current = targetRef.current;
+            targetRef.current = null;
+            velRef.current = 0;
+          } else {
+            posRef.current += diff * settle;
+          }
         } else {
-          posRef.current += diff * SETTLE;
-        }
-      } else {
-        posRef.current += velRef.current;
-        velRef.current *= FRICTION;
-        if (Math.abs(velRef.current) < EPS) {
-          velRef.current = 0;
-          if (snapRef.current) {
-            const t = Math.round(posRef.current);
-            const d = t - posRef.current;
-            posRef.current += Math.abs(d) < EPS ? d : d * SETTLE;
+          posRef.current += velRef.current * f;
+          velRef.current *= friction;
+          if (Math.abs(velRef.current) < EPS) {
+            velRef.current = 0;
+            if (snapRef.current) {
+              const t = Math.round(posRef.current);
+              const d = t - posRef.current;
+              posRef.current += Math.abs(d) < EPS ? d : d * settle;
+            }
           }
         }
       }
-    }
 
-    onRenderRef.current(posRef.current);
-    emitActive(posRef.current);
+      onRenderRef.current(posRef.current);
+      emitActive(posRef.current);
 
-    const settled =
-      !draggingRef.current &&
-      targetRef.current === null &&
-      velRef.current === 0 &&
-      (!snapRef.current || Math.abs(posRef.current - Math.round(posRef.current)) < EPS);
+      const settled =
+        !draggingRef.current &&
+        targetRef.current === null &&
+        velRef.current === 0 &&
+        (!snapRef.current || Math.abs(posRef.current - Math.round(posRef.current)) < EPS);
 
-    if (settled) {
-      stop();
-    } else {
-      rafRef.current = requestAnimationFrame(frame);
-    }
-  }, [emitActive, stop]);
+      if (settled) {
+        stop();
+      } else {
+        rafRef.current = requestAnimationFrame(frame);
+      }
+    },
+    [emitActive, stop],
+  );
 
   const ensureLoop = useCallback(() => {
     if (runningRef.current) return;
@@ -214,6 +230,7 @@ export function useRadialSpin(options: RadialSpinOptions): RadialSpinHandle {
     let startPos = 0;
     let startCoord = 0;
     let lastMove = 0;
+    let lastMoveTime = 0;
     let pointerId: number | null = null;
 
     const coordOf = (e: PointerEvent) => (axis === 'y' ? e.clientY : e.clientX);
@@ -227,6 +244,7 @@ export function useRadialSpin(options: RadialSpinOptions): RadialSpinHandle {
       startPos = posRef.current;
       startCoord = coordOf(e);
       lastMove = 0;
+      lastMoveTime = e.timeStamp;
       el.setPointerCapture?.(e.pointerId);
       ensureLoop();
     };
@@ -236,7 +254,13 @@ export function useRadialSpin(options: RadialSpinOptions): RadialSpinHandle {
       // Dragging "against" the axis (up / left) spins the wheel forward.
       const travel = startCoord - coordOf(e);
       const next = startPos + travel / unit();
-      lastMove = next - posRef.current;
+      const delta = next - posRef.current;
+      // Normalise the fling velocity to slots-per-60fps-frame using the real time
+      // between move events, so the throw is the same weight whether the pointer
+      // samples at 60Hz or 240Hz. Clamped so a micro dt can't launch the wheel.
+      const dt = e.timeStamp - lastMoveTime;
+      lastMove = dt > 0 ? Math.max(-6, Math.min(6, (delta * (1000 / 60)) / dt)) : delta;
+      lastMoveTime = e.timeStamp;
       posRef.current = next;
     };
 
