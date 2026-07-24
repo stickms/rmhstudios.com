@@ -74,7 +74,7 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  const activate = onActivate ?? (() => {});
 
  return (
- <div className="px-4 py-3 border-b border-site-border">
+ <div className="social-composer px-4 py-3">
  <div className="flex gap-3">
  {/* Avatar — matches ComposeBox's resting avatar exactly */}
  <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-site-text font-bold text-sm ring-2 ring-site-bg shrink-0 overflow-hidden">

@@ -222,15 +222,13 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  <div
  ref={cardRef}
  {...(item.pending || item.deletedAt ? {} : reactionTrigger)}
- // Floating glass card (§8.3): .bg-site-surface border border-site-border rounded-2xl shadow-xs gives the border/radius/tint;
- // .glass-interactive adds the hover tint-raise, springy press, hover glint
- // ring and pointer light (data-glass-light marks it for useGlassLight).
- // Cards stay L1 — NEVER add .bg-site-surface border border-site-border rounded-2xl shadow-xs/blur to a repeated list item (§9).
+ // The repeated timeline card inherits its surface, border, press, and hover
+ // behavior from the social-post primitive in feed.css.
  data-glass-light=""
- className={`relative bg-site-surface border border-site-border rounded-2xl shadow-xs rounded-2xl border border-site-border bg-site-surface p-4 transition-all duration-300 hover:border-site-text/30 shadow-sm ${
+ className={`social-post relative p-4 ${
  item.pending
  ?'opacity-60 pointer-events-none select-none'
- :'glass-interactive cursor-pointer'
+ :'cursor-pointer'
  }`}
  onClick={item.pending ? undefined : handleCardClick}
  onMouseEnter={item.pending ? undefined : warmDetail}

@@ -7,18 +7,18 @@ import type { AppliedUserTheme, AppliedUserThemePreview } from '@/lib/themes/tok
 // derive `THEME_BG` from here — adding a theme no longer means editing a
 // hand-copied color map in two other files.
 //
-// The rewrite intentionally ships one neutral system in three accessibility
-// modes. Retired decorative themes self-heal to Paper during hydration.
+// The shared site ships one new social-first system in three accessibility
+// modes. Retired decorative themes self-heal to Daylight during hydration.
 export const SITE_STYLES = [
-  { id: 'default', label: 'Paper', icon: '○', group: 'Spatial', bg: '#f4f4f1' },
-  { id: 'graphite', label: 'Ink', icon: '●', group: 'Spatial', bg: '#111111' },
-  { id: 'high-contrast', label: 'Contrast', icon: '◐', group: 'Spatial', bg: '#000000' },
+  { id: 'default', label: 'Daylight', icon: '☀', group: 'RMH', bg: '#f3f5fb' },
+  { id: 'graphite', label: 'Midnight', icon: '◐', group: 'RMH', bg: '#0e1018' },
+  { id: 'high-contrast', label: 'High contrast', icon: '◑', group: 'RMH', bg: '#000000' },
 ] as const;
 
 /**
  * Theme applied when the visitor has no stored/saved preference. Must stay in
  * sync with the fallback in app/routes/__root.tsx's inline themeScript and the
- * self-heal rewrite in components/Providers.tsx. Paper (`default`, the bare
+ * self-heal rewrite in components/Providers.tsx. Daylight (`default`, the bare
  * :root) is the site default.
  */
 export const DEFAULT_STYLE: SiteStyle = 'default';

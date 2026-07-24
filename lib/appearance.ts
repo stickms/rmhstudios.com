@@ -27,16 +27,16 @@ export interface AccentPreset {
 }
 
 /**
- * The accent palette is intentionally monochrome. Each foreground is chosen for
- * legible contrast on its value. `null` means "use the theme's own accent".
+ * Social-first accent palette. Each foreground is chosen for legible contrast
+ * on its value. `null` means "use the theme's own accent".
  */
 export const ACCENT_PRESETS = [
-  { id: 'ink', label: 'Ink', value: '#0b0b0b', fg: '#ffffff' },
-  { id: 'graphite', label: 'Graphite', value: '#343432', fg: '#ffffff' },
-  { id: 'slate', label: 'Slate', value: '#62625e', fg: '#ffffff' },
-  { id: 'stone', label: 'Stone', value: '#a7a69f', fg: '#111111' },
-  { id: 'paper', label: 'Paper', value: '#e8e8e3', fg: '#111111' },
-  { id: 'white', label: 'White', value: '#ffffff', fg: '#111111' },
+  { id: 'indigo', label: 'Indigo', value: '#5759d9', fg: '#ffffff' },
+  { id: 'violet', label: 'Violet', value: '#7657d6', fg: '#ffffff' },
+  { id: 'ocean', label: 'Ocean', value: '#087ca7', fg: '#ffffff' },
+  { id: 'forest', label: 'Forest', value: '#147a50', fg: '#ffffff' },
+  { id: 'ember', label: 'Ember', value: '#c6533f', fg: '#ffffff' },
+  { id: 'ink', label: 'Ink', value: '#151624', fg: '#ffffff' },
 ] as const satisfies readonly AccentPreset[];
 
 export type AccentId = (typeof ACCENT_PRESETS)[number]['id'];

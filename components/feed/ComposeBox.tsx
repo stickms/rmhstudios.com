@@ -463,7 +463,7 @@ export function ComposeBox({
  // gutter (mx-3), separated from the first post by the feed gap; one L2 per
  // page is in budget. focus-within lifts the pane's hairline while writing,
  // then settles back — an activation cue, not a layout change.
- <div className="bg-site-surface border border-site-border rounded-2xl shadow-xs rounded-site mx-3 px-4 py-3 transition-colors duration-200 focus-within:bg-site-surface/20 focus-within:border-site-text/40">
+ <div className="social-composer px-4 py-3">
  {pendingDraft && !content && (
  <div className="mb-3 flex items-center gap-2 rounded-site border border-site-border bg-site-bg-subtle px-3 py-2">
  <History className="h-4 w-4 shrink-0 text-site-accent"aria-hidden />

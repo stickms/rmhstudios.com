@@ -7,30 +7,9 @@ import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 
-const STORAGE_KEY = 'rmh-whatsnew-seen-spatial-rewrite-v1';
+const STORAGE_KEY = 'rmh-whatsnew-seen-social-rewrite-v1';
 const WELCOME_KEY = 'rmh-welcome-seen-v1';
 let presentedInThisRuntime = false;
-
-const CHANGES = [
-  {
-    number: '01',
-    key: 'spatial-rewrite-navigation',
-    title: 'One navigation plane',
-    copy: 'The permanent sidebar is gone. Every space now begins with the same quiet global index.',
-  },
-  {
-    number: '02',
-    key: 'spatial-rewrite-palette',
-    title: 'Paper, ink, and space',
-    copy: 'Color steps back so original work, conversations, and tools can carry the page.',
-  },
-  {
-    number: '03',
-    key: 'spatial-rewrite-motion',
-    title: 'Depth without noise',
-    copy: 'Subtle pointer and scroll parallax create orientation while reduced-motion preferences stay respected.',
-  },
-] as const;
 
 function readStorage(key: string) {
   try {
@@ -44,6 +23,37 @@ export function WhatsNewModal() {
   const { t } = useTranslation('feed');
   const { data: session, isPending } = useSession();
   const [open, setOpen] = useState(false);
+  const changes = [
+    {
+      number: '01',
+      key: 'social-rewrite-feed',
+      title: t('social-rewrite-feed-title', { defaultValue: 'The feed comes first' }),
+      copy: t('social-rewrite-feed-copy', {
+        defaultValue:
+          'Posts, projects, games, and conversations now meet in one immediate community timeline.',
+      }),
+    },
+    {
+      number: '02',
+      key: 'social-rewrite-navigation',
+      title: t('social-rewrite-navigation-title', {
+        defaultValue: 'Every section is one tap away',
+      }),
+      copy: t('social-rewrite-navigation-copy', {
+        defaultValue:
+          'Persistent tabs and a thumb-friendly mobile dock keep the whole platform within reach.',
+      }),
+    },
+    {
+      number: '03',
+      key: 'social-rewrite-theme',
+      title: t('social-rewrite-theme-title', { defaultValue: 'A new visual system' }),
+      copy: t('social-rewrite-theme-copy', {
+        defaultValue:
+          'Daylight, Midnight, and High Contrast share crisp surfaces, stronger type, and purposeful motion.',
+      }),
+    },
+  ] as const;
 
   useEffect(() => {
     if (isPending) return;
@@ -74,14 +84,14 @@ export function WhatsNewModal() {
           </div>
           <div>
             <DialogTitle className="spatial-whats-new__title">
-              {t('whatsnew-title-spatial-rewrite', {
-                defaultValue: 'RMH, reconsidered.',
+              {t('whatsnew-title-social-rewrite', {
+                defaultValue: 'RMH is social now.',
               })}
             </DialogTitle>
             <DialogDescription className="spatial-whats-new__description">
-              {t('whatsnew-subtitle-spatial-rewrite', {
+              {t('whatsnew-subtitle-social-rewrite', {
                 defaultValue:
-                  'A complete interface rewrite designed to make a very large world feel effortless.',
+                  'A mobile-first interface built around people, projects, and the things worth sharing.',
               })}
             </DialogDescription>
           </div>
@@ -91,19 +101,19 @@ export function WhatsNewModal() {
         </div>
 
         <div className="spatial-whats-new__changes grid grid-cols-1 sm:grid-cols-3">
-          {CHANGES.map((change) => (
+          {changes.map((change) => (
             <article key={change.key}>
               <span>{change.number}</span>
               <div>
-                <h3>{t(`${change.key}-title`, { defaultValue: change.title })}</h3>
-                <p>{t(`${change.key}-copy`, { defaultValue: change.copy })}</p>
+                <h3>{change.title}</h3>
+                <p>{change.copy}</p>
               </div>
             </article>
           ))}
         </div>
 
         <div className="spatial-whats-new__footer">
-          <span>{t('designed-for-focus', { defaultValue: 'Designed for focus.' })}</span>
+          <span>{t('designed-for-community', { defaultValue: 'Designed for community.' })}</span>
           <Button className="w-full sm:ml-auto sm:w-auto" onClick={() => setOpen(false)}>
             {t('enter-new-rmh', { defaultValue: 'Enter the new RMH' })}
             <ArrowUpRight aria-hidden />

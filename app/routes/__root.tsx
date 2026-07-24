@@ -27,6 +27,7 @@ import { APP_THEME_BG, THEME_BG, DEFAULT_STYLE } from '@/stores/themeStore';
 import { ACCENT_MAP } from '@/lib/appearance';
 import { GLASS_LEVEL_VARS, GLASS_LEVEL_KEY } from '@/lib/appearance/prefs';
 import appCss from '@/app/globals.css?url';
+import themeCss from '@/app/theme.css?url';
 import { resolveLocale, parseLocaleCookie } from '@/lib/i18n/resolve';
 import { dirFor, DEFAULT_LOCALE, LOCALES, RTL_LOCALES, type Locale } from '@/lib/i18n/config';
 import { localeCoreResources, preloadLocale } from '@/lib/i18n/resources.server';
@@ -206,25 +207,28 @@ export const Route = createRootRoute({
       meta: [
         { charSet: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-        { title: 'RMH Studios — Make. Play. Share.' },
+        { title: 'RMH Studios — The community for making, playing, and sharing.' },
         {
           name: 'description',
           content:
-            'One considered space for original games, creative tools, music, learning, and community.',
+            'A social-first home for original games, creative tools, music, learning, and the people making them.',
         },
         { property: 'og:site_name', content: 'RMH Studios' },
-        { property: 'og:title', content: 'RMH Studios — Make. Play. Share.' },
+        {
+          property: 'og:title',
+          content: 'RMH Studios — The community for making, playing, and sharing.',
+        },
         {
           property: 'og:description',
           content:
-            'One considered space for original games, creative tools, music, learning, and community.',
+            'A social-first home for original games, creative tools, music, learning, and the people making them.',
         },
         { property: 'og:type', content: 'website' },
-        { property: 'og:image', content: 'https://rmhstudios.com/og-spatial.png' },
+        { property: 'og:image', content: 'https://rmhstudios.com/og.png' },
         { property: 'og:image:width', content: '1536' },
         { property: 'og:image:height', content: '1024' },
         { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:image', content: 'https://rmhstudios.com/og-spatial.png' },
+        { name: 'twitter:image', content: 'https://rmhstudios.com/og.png' },
       ],
       links: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
@@ -232,6 +236,7 @@ export const Route = createRootRoute({
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
         { rel: 'stylesheet', href: appCss },
+        { rel: 'stylesheet', href: themeCss },
       ],
       scripts: [
         { children: platformScript },

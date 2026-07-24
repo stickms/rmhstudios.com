@@ -16,8 +16,8 @@ type DrawerUser = {
 };
 
 /**
- * Mobile navigation index for the spatial shell. Desktop navigation lives in
- * SpatialTopNav; this drawer is deliberately flat, native, and easy to scan.
+ * Expanded navigation index for the social shell. Primary navigation remains
+ * visible in SiteNavigation; this drawer exposes the platform's deeper routes.
  */
 export function LeftSidebar() {
   const { t } = useTranslation('feed');
