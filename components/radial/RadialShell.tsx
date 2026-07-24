@@ -9,6 +9,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { BackToTop } from '@/components/ui/back-to-top';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { RadialHub } from './RadialHub';
+import { MetaballCursor } from './MetaballCursor';
 
 /**
  * Fixed monochrome backdrop: concentric hairline rings centred on the viewport
@@ -80,7 +81,11 @@ function RadialTopBar() {
 
   return (
     <header className="radial-topbar">
-      <Link to="/" className="radial-topbar__brand" aria-label={t('nav-home', { defaultValue: 'RMH Studios home' })}>
+      <Link
+        to="/"
+        className="radial-topbar__brand"
+        aria-label={t('nav-home', { defaultValue: 'RMH Studios home' })}
+      >
         <span className="radial-topbar__mark" aria-hidden>
           RMH
         </span>
@@ -112,7 +117,11 @@ function RadialTopBar() {
             >
               <Bell aria-hidden />
             </Link>
-            <Link to={profileHref as string} className="radial-topbar__avatar" aria-label={t('profile', { defaultValue: 'Profile' })}>
+            <Link
+              to={profileHref as string}
+              className="radial-topbar__avatar"
+              aria-label={t('profile', { defaultValue: 'Profile' })}
+            >
               <UserAvatar
                 src={resolved?.image || session.user.image}
                 alt={resolved?.name || session.user.name || 'You'}
@@ -159,6 +168,8 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
 
       {overlays}
       <BackToTop />
+      {/* Site-wide gooey cursor — the flowy layer over every page (desktop only). */}
+      <MetaballCursor />
     </div>
   );
 }

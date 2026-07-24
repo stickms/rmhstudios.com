@@ -10,7 +10,15 @@ import { type InitialFeed } from '@/components/feed/FeedColumn';
 import { RadialWheel, type RadialWheelItem } from './RadialWheel';
 import { RmharkCard } from './RmharkCard';
 
-function WheelCore({ active, total, loading }: { active: number; total: number; loading: boolean }) {
+function WheelCore({
+  active,
+  total,
+  loading,
+}: {
+  active: number;
+  total: number;
+  loading: boolean;
+}) {
   return (
     <div className="radial-core" data-loading={loading || undefined} aria-hidden>
       <span className="radial-core__mark">RMH</span>
@@ -102,14 +110,18 @@ function FeedWheel({ initial }: { initial: InitialFeed }) {
   }
 
   return (
+    // No central disc behind the cards — it showed through at rest and got in the
+    // way. Identity lives in the top bar + hub; the live position moves to the hint.
     <RadialWheel
       items={wheelItems}
-      center={<WheelCore active={active} total={wheelItems.length} loading={loading} />}
       onActiveChange={onActiveChange}
       ariaLabel={t('feed', { defaultValue: 'Feed' })}
     >
       <p className="radial-feed__hint" aria-hidden>
-        {t('spin-hint', { defaultValue: 'Scroll · drag · ↑↓ to spin' })}
+        <span className="radial-feed__count">
+          {Math.min(active + 1, wheelItems.length)} / {wheelItems.length}
+          {loading ? ' …' : ''}
+        </span>
       </p>
     </RadialWheel>
   );
