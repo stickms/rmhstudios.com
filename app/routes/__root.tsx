@@ -220,11 +220,11 @@ export const Route = createRootRoute({
             'One considered space for original games, creative tools, music, learning, and community.',
         },
         { property: 'og:type', content: 'website' },
-        { property: 'og:image', content: 'https://rmhstudios.com/og.webp' },
+        { property: 'og:image', content: 'https://rmhstudios.com/og-spatial.png' },
         { property: 'og:image:width', content: '1536' },
         { property: 'og:image:height', content: '1024' },
         { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:image', content: 'https://rmhstudios.com/og.webp' },
+        { name: 'twitter:image', content: 'https://rmhstudios.com/og-spatial.png' },
       ],
       links: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },

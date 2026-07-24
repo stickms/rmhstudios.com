@@ -6,7 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--site-control-radius)] border border-transparent text-sm font-semibold tracking-[-0.015em] transition-[transform,color,background-color,border-color,box-shadow,opacity] duration-200 ease-out active:translate-y-px disabled:pointer-events-none disabled:opacity-45 disabled:active:translate-y-0 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 outline-none focus-visible:ring-site-accent/35 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-site-bg aria-invalid:ring-site-danger/30 aria-invalid:border-site-danger",
+  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--site-control-radius)] border border-transparent text-[0.78rem] font-semibold tracking-[-0.01em] transition-[transform,color,background-color,border-color,opacity] duration-180 ease-out active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45 disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 outline-none focus-visible:ring-site-accent/35 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-site-bg aria-invalid:ring-site-danger/30 aria-invalid:border-site-danger",
   {
     variants: {
       variant: {
@@ -15,7 +15,7 @@ const buttonVariants = cva(
           'bg-site-danger text-site-danger-fg hover:opacity-85 focus-visible:ring-site-danger/40',
         danger:
           'bg-site-danger text-site-danger-fg hover:opacity-85 focus-visible:ring-site-danger/40',
-        outline: 'border-site-border bg-transparent text-site-text hover:border-site-text',
+        outline: 'border-site-border bg-transparent text-site-text hover:border-site-border-bright',
         secondary: 'border-site-border bg-site-surface text-site-text hover:bg-site-surface-hover',
         ghost: 'text-site-text hover:bg-site-surface-hover',
         link: 'text-site-accent underline-offset-4 hover:underline',

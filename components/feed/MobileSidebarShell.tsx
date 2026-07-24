@@ -444,7 +444,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
  aria-label={t('open-menu', { defaultValue:'Navigation menu'})}
  inert={!isOpen}
  >
- <LeftSidebar expanded />
+ <LeftSidebar />
  </aside>
 
  {/* iOS 26 Safari samples fixed elements near both viewport edges to tint

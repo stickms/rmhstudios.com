@@ -736,14 +736,7 @@ export function Providers({
                 </ConfirmProvider>
               </ResolvedUserCtx.Provider>
               <Toaster
-                theme={
-                  style === 'graphite' ||
-                  style === 'nocturne' ||
-                  style === 'ultra' ||
-                  style === 'high-contrast'
-                    ? 'dark'
-                    : 'light'
-                }
+                theme={style === 'graphite' || style === 'high-contrast' ? 'dark' : 'light'}
                 position="bottom-left"
                 toastOptions={{
                   style: {

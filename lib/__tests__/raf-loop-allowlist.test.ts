@@ -68,6 +68,7 @@ const ALLOW = new Set<string>([
   'components/rmh-capital/shared.tsx',
   'components/rmh-pmc/ContactPage.tsx',
   'components/rmh-pmc/shared.tsx',
+  'components/rmhcalculator/ScientificCalculator.tsx',
   'components/rmhcoins/PlinkoGame.tsx',
   'components/rmhtech/RmhtechLanding.tsx',
   'components/signal-forge/SignalForgeGame.tsx',
