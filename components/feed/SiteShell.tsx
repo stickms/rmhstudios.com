@@ -1,11 +1,9 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
-import { BackToTop } from '@/components/ui/back-to-top';
-import { MobileSidebarShell } from './MobileSidebarShell';
+import { RadialShell } from '@/components/radial/RadialShell';
 import { ShellLayoutContext } from './shell-context';
-import { MobileDock, SiteNavigation } from './SiteNavigation';
+import '@/components/radial/radial.css';
 
 interface SiteShellProps {
   children: ReactNode;
@@ -13,31 +11,18 @@ interface SiteShellProps {
   overlays?: ReactNode;
 }
 
-/** Mobile-first application frame shared by every standard route. */
+/**
+ * Mobile-first application frame shared by every standard route.
+ *
+ * The chrome is the RMH radial UI: a fixed monochrome backdrop, a slim utility
+ * top bar, and the central RMH hub that blooms navigation outward on demand.
+ * The public API (`children` + `overlays`) is unchanged, so `_site.tsx` and the
+ * router's shell-aware pending fallback keep working untouched.
+ */
 export function SiteShell({ children, overlays }: SiteShellProps) {
-  const { t } = useTranslation('common');
-
   return (
     <ShellLayoutContext.Provider value>
-      <div className="vibe-app site-shell">
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-[var(--site-control-radius)] focus:bg-site-accent focus:px-4 focus:py-2 focus:text-xs focus:font-semibold focus:uppercase focus:text-site-accent-fg"
-        >
-          {t('skipToContent', { defaultValue: 'Skip to content' })}
-        </a>
-
-        <MobileSidebarShell>
-          <SiteNavigation />
-          <main id="main-content" tabIndex={-1} className="site-shell__main page-root">
-            {children}
-          </main>
-          <MobileDock />
-        </MobileSidebarShell>
-
-        {overlays}
-        <BackToTop />
-      </div>
+      <RadialShell overlays={overlays}>{children}</RadialShell>
     </ShellLayoutContext.Provider>
   );
 }
