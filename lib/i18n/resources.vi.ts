@@ -5,8 +5,11 @@ import viAdmin from "@/locales/vi/admin.json";
 import viBuilds from "@/locales/vi/builds.json";
 import viCAdmin from "@/locales/vi/c-admin.json";
 import viCAltair from "@/locales/vi/c-altair.json";
+import viCAwards from "@/locales/vi/c-awards.json";
 import viCBlog from "@/locales/vi/c-blog.json";
 import viCBuilds from "@/locales/vi/c-builds.json";
+import viCCircle from "@/locales/vi/c-circle.json";
+import viCCreator from "@/locales/vi/c-creator.json";
 import viCCursedLogic from "@/locales/vi/c-cursed-logic.json";
 import viCDailyPuzzles from "@/locales/vi/c-daily-puzzles.json";
 import viCDoctrine from "@/locales/vi/c-doctrine.json";
@@ -14,19 +17,25 @@ import viCDreamRift from "@/locales/vi/c-dream-rift.json";
 import viCEconomy from "@/locales/vi/c-economy.json";
 import viCForestExplorer from "@/locales/vi/c-forest-explorer.json";
 import viCGame from "@/locales/vi/c-game.json";
+import viCHistory from "@/locales/vi/c-history.json";
 import viCHouseAlwaysWins from "@/locales/vi/c-house-always-wins.json";
 import viCKowloonKnockout from "@/locales/vi/c-kowloon-knockout.json";
 import viCLaundrySort from "@/locales/vi/c-laundry-sort.json";
+import viCLayout from "@/locales/vi/c-layout.json";
 import viCLibrary from "@/locales/vi/c-library.json";
 import viCLightsOut from "@/locales/vi/c-lights-out.json";
+import viCLists from "@/locales/vi/c-lists.json";
 import viCLockdown from "@/locales/vi/c-lockdown.json";
 import viCModeration from "@/locales/vi/c-moderation.json";
 import viCNeonDriftway from "@/locales/vi/c-neon-driftway.json";
 import viCNews from "@/locales/vi/c-news.json";
+import viCPredictions from "@/locales/vi/c-predictions.json";
+import viCProfileModules from "@/locales/vi/c-profile-modules.json";
 import viCRideshare from "@/locales/vi/c-rideshare.json";
 import viCRmhCapital from "@/locales/vi/c-rmh-capital.json";
 import viCRmhPmc from "@/locales/vi/c-rmh-pmc.json";
 import viCRmhbox from "@/locales/vi/c-rmhbox.json";
+import viCRmhcalculator from "@/locales/vi/c-rmhcalculator.json";
 import viCRmhcode from "@/locales/vi/c-rmhcode.json";
 import viCRmhcoins from "@/locales/vi/c-rmhcoins.json";
 import viCRmhmusic from "@/locales/vi/c-rmhmusic.json";
@@ -36,17 +45,23 @@ import viCRmhtube from "@/locales/vi/c-rmhtube.json";
 import viCRmhtype from "@/locales/vi/c-rmhtype.json";
 import viCRmhvibe from "@/locales/vi/c-rmhvibe.json";
 import viCRoadmap from "@/locales/vi/c-roadmap.json";
+import viCSaves from "@/locales/vi/c-saves.json";
 import viCSignalForge from "@/locales/vi/c-signal-forge.json";
+import viCStatus from "@/locales/vi/c-status.json";
 import viCStudio from "@/locales/vi/c-studio.json";
 import viCSynapseStorm from "@/locales/vi/c-synapse-storm.json";
 import viCTempleOfJoy from "@/locales/vi/c-temple-of-joy.json";
+import viCTournaments from "@/locales/vi/c-tournaments.json";
 import viCUi from "@/locales/vi/c-ui.json";
 import viCUserBuilds from "@/locales/vi/c-user-builds.json";
 import viCVega from "@/locales/vi/c-vega.json";
 import viCVersecraft from "@/locales/vi/c-versecraft.json";
 import viCVoidBreaker from "@/locales/vi/c-void-breaker.json";
+import viCWager from "@/locales/vi/c-wager.json";
+import viCWishlist from "@/locales/vi/c-wishlist.json";
 import viCommon from "@/locales/vi/common.json";
 import viFeed from "@/locales/vi/feed.json";
+import viGamesHub from "@/locales/vi/games-hub.json";
 import viGroups from "@/locales/vi/groups.json";
 import viLibrary from "@/locales/vi/library.json";
 import viNav from "@/locales/vi/nav.json";
@@ -61,8 +76,13 @@ import viRSliceIt from "@/locales/vi/r-slice-it.json";
 import viRStrategies from "@/locales/vi/r-strategies.json";
 import viRStudio from "@/locales/vi/r-studio.json";
 import viRideshare from "@/locales/vi/rideshare.json";
+import viSearch from "@/locales/vi/search.json";
+import viSettingsAppearance from "@/locales/vi/settings-appearance.json";
+import viSettingsContent from "@/locales/vi/settings-content.json";
+import viSettingsNotifications from "@/locales/vi/settings-notifications.json";
 import viShared from "@/locales/vi/shared.json";
 import viSite from "@/locales/vi/site.json";
+import viThemeStudio from "@/locales/vi/theme-studio.json";
 import viUserBuilds from "@/locales/vi/user-builds.json";
 import viV from "@/locales/vi/v.json";
 
@@ -71,8 +91,11 @@ const viResources = {
   "builds": viBuilds,
   "c-admin": viCAdmin,
   "c-altair": viCAltair,
+  "c-awards": viCAwards,
   "c-blog": viCBlog,
   "c-builds": viCBuilds,
+  "c-circle": viCCircle,
+  "c-creator": viCCreator,
   "c-cursed-logic": viCCursedLogic,
   "c-daily-puzzles": viCDailyPuzzles,
   "c-doctrine": viCDoctrine,
@@ -80,19 +103,25 @@ const viResources = {
   "c-economy": viCEconomy,
   "c-forest-explorer": viCForestExplorer,
   "c-game": viCGame,
+  "c-history": viCHistory,
   "c-house-always-wins": viCHouseAlwaysWins,
   "c-kowloon-knockout": viCKowloonKnockout,
   "c-laundry-sort": viCLaundrySort,
+  "c-layout": viCLayout,
   "c-library": viCLibrary,
   "c-lights-out": viCLightsOut,
+  "c-lists": viCLists,
   "c-lockdown": viCLockdown,
   "c-moderation": viCModeration,
   "c-neon-driftway": viCNeonDriftway,
   "c-news": viCNews,
+  "c-predictions": viCPredictions,
+  "c-profile-modules": viCProfileModules,
   "c-rideshare": viCRideshare,
   "c-rmh-capital": viCRmhCapital,
   "c-rmh-pmc": viCRmhPmc,
   "c-rmhbox": viCRmhbox,
+  "c-rmhcalculator": viCRmhcalculator,
   "c-rmhcode": viCRmhcode,
   "c-rmhcoins": viCRmhcoins,
   "c-rmhmusic": viCRmhmusic,
@@ -102,17 +131,23 @@ const viResources = {
   "c-rmhtype": viCRmhtype,
   "c-rmhvibe": viCRmhvibe,
   "c-roadmap": viCRoadmap,
+  "c-saves": viCSaves,
   "c-signal-forge": viCSignalForge,
+  "c-status": viCStatus,
   "c-studio": viCStudio,
   "c-synapse-storm": viCSynapseStorm,
   "c-temple-of-joy": viCTempleOfJoy,
+  "c-tournaments": viCTournaments,
   "c-ui": viCUi,
   "c-user-builds": viCUserBuilds,
   "c-vega": viCVega,
   "c-versecraft": viCVersecraft,
   "c-void-breaker": viCVoidBreaker,
+  "c-wager": viCWager,
+  "c-wishlist": viCWishlist,
   "common": viCommon,
   "feed": viFeed,
+  "games-hub": viGamesHub,
   "groups": viGroups,
   "library": viLibrary,
   "nav": viNav,
@@ -127,8 +162,13 @@ const viResources = {
   "r-strategies": viRStrategies,
   "r-studio": viRStudio,
   "rideshare": viRideshare,
+  "search": viSearch,
+  "settings-appearance": viSettingsAppearance,
+  "settings-content": viSettingsContent,
+  "settings-notifications": viSettingsNotifications,
   "shared": viShared,
   "site": viSite,
+  "theme-studio": viThemeStudio,
   "user-builds": viUserBuilds,
   "v": viV,
 } as const;
