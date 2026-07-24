@@ -19,7 +19,12 @@
    accent surface in the shell (orb, wedges, buttons, core, …). */
 @supports (color: oklch(from red l c h)) {
   .radial-shell {
-    --site-accent-fg: oklch(from var(--site-accent) clamp(0, (0.62 - l) * 100, 1) 0 0);
+    /* Threshold 0.70 (not 0.5) deliberately biases toward WHITE ink: on the
+       B&W design white reads cleaner on all but the very lightest accents, so
+       only genuinely pale accents (l > 0.70 — e.g. bright yellow) flip to
+       black. The `* 100` keeps it a hard step → always pure white OR pure
+       black, never a muddy mid-grey. */
+    --site-accent-fg: oklch(from var(--site-accent) clamp(0, (0.7 - l) * 100, 1) 0 0);
   }
 }
 
@@ -258,7 +263,11 @@
   color: inherit;
 }
 .radial-hub__logo path {
-  stroke-width: 3.4;
+  /* Hairline line-art: the mark is a very dense spirograph rendered tiny (~44px
+     in the orb), so any weight bleeds the overlapping curves into a solid muddy
+     blob. Kept very fine (this scales DOWN with the geometry, so on-screen it's
+     a sub-pixel filigree) → a delicate white mark, not a heavy black disc. */
+  stroke-width: 0.8;
   stroke-dasharray: 1;
   stroke-dashoffset: 0;
 }
@@ -346,6 +355,12 @@
 .radial-hub__wedge-wrap {
   position: absolute;
   inset: 0;
+  /* Each wrapper fills the whole dial square (only its child <a> is clipped to a
+     slice), so a wrapper with hit-testing on would blanket the disc and steal
+     every click for whichever wedge sits last in the DOM. Make the wrappers
+     click-transparent; the clipped anchors below re-enable it, so each slice
+     only catches clicks inside its own pie sector. */
+  pointer-events: none;
 }
 .radial-hub__overlay.is-open .radial-hub__wedge-wrap {
   animation: radial-wedge-in 0.4s ease both;
@@ -360,9 +375,11 @@
   position: absolute;
   inset: 0;
   display: block;
-  /* The inline clip-path carves this element down to one pie slice — and the clip
-     bounds both paint AND hit-testing, so the wedges tile the disc with no gaps
-     for a click to slip through to the feed behind. */
+  /* Re-enable hit-testing that the wrapper switched off. The inline clip-path
+     carves this element down to one pie slice — and the clip bounds both paint
+     AND hit-testing, so each wedge only catches clicks inside its own sector and
+     the sectors tile the disc with no gaps for a click to slip through. */
+  pointer-events: auto;
   background: var(--site-surface);
   color: var(--site-text);
   text-decoration: none;
@@ -832,5 +849,72 @@
   .rmhark,
   .radial-feed__compose {
     transition-duration: 0.001ms;
+  }
+}
+
+/* ==========================================================================
+   Radial content pages
+   Every non-home _site route renders its own layout inside .radial-shell__main.
+   The shell chrome + monochrome tokens already reach them, but their bodies
+   still carry the OLD idioms — PageLayout's card-style header and the "liquid
+   glass" panels the bespoke pages (library, creator studio, …) are built on.
+   These scoped rules finish the job: strip that chrome back to the flat,
+   monochrome, backdrop-floating radial language so the whole site reads as one.
+   ========================================================================== */
+
+/* ── Shared PageLayout header (used by ~53 routes) ─────────────────────────
+   feed.css renders .page-heading as a bordered, shadowed surface card; on the
+   ring backdrop that reads as leftover chrome. Flatten it to clean type that
+   sits directly on the backdrop, matching the home. (The h1 already uses the
+   display font — we only drop the card and enlarge a touch.) */
+.radial-shell .page-heading {
+  margin: 0 0 clamp(1.25rem, 4vw, 2rem);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.radial-shell .page-heading h1 {
+  font-size: clamp(2rem, 8vw, 3.4rem);
+  letter-spacing: -0.04em;
+}
+
+/* ── De-glass: flat monochrome surfaces everywhere ────────────────────────
+   The radial language is flat, so demote every "liquid glass" panel to a solid
+   --site-surface card with a real border and no blur/optics — the exact
+   treatment the high-contrast theme already uses (globals.css). This carries
+   the flat radial look onto every content page still built on the glass
+   primitives (library, creator studio, explore, market, …) in a single pass. */
+.radial-shell
+  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-chrome--aside, .glass-overlay, .glass-inset) {
+  background: var(--site-surface) !important;
+  border-color: var(--site-border) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+/* Kill the remaining glass optics (edge lens, pointer hotspot, ambient sheen). */
+.radial-shell .glass-chrome--aside::before,
+.radial-shell .glass-refract::before,
+.radial-shell .glass-interactive::after {
+  display: none;
+}
+.radial-shell .glass-liquid {
+  background-image: none;
+  animation: none;
+}
+
+/* ── Soft radial entrance for page headers / heroes ───────────────────────
+   A gentle rise as each page's title mounts — a fresh element on every client
+   nav, so it re-runs — carrying the home's flowy feel to every page. The
+   no-preference gate turns it off under reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .radial-shell:not([data-home]) :is(.page-heading, .lib-hero, .cstudio-head) {
+    animation: radial-page-rise 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)) both;
+  }
+}
+@keyframes radial-page-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
   }
 }
