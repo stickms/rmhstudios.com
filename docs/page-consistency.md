@@ -4,19 +4,24 @@
 > to [`docs/design-language.md`](./design-language.md) (tokens, themes,
 > primitives) and [`app/CLAUDE.md`](../app/CLAUDE.md) (routing mechanics).
 
-Pages on rmhstudios.com look consistent because they share four things: the
-`_site` shell, the `PageLayout` column system, the `--site-*` token contract,
-and the same route-level conventions (head/SEO, i18n, auth, loading and error
-states). This guide is the recipe.
+The site's design language is **Radial Liquid Glass** (see
+[`design-language.md`](./design-language.md)): a radial shell — fixed ring
+backdrop, slim top bar, and a central **RMH hub** that blooms the navigation —
+wrapping content that ships as a flat high-contrast **monochrome** baseline
+today and references Apple-style Liquid Glass optics as its direction. Pages look
+consistent because they share four things: the `_site` **radial shell**, the
+`PageLayout` column system, the `--site-*` token contract, and the same
+route-level conventions (head/SEO, i18n, auth, loading and error states). This
+guide is the recipe.
 
 ---
 
 ## 1. Decide the page type first
 
-| Type                                                                            | Where the file goes                 | Gets                                                      |
-| ------------------------------------------------------------------------------- | ----------------------------------- | --------------------------------------------------------- |
-| Standard site page (feed, wallet, settings, admin, …)                           | `app/routes/_site/<name>.tsx`       | Left sidebar, mobile nav, skip link, page-enter animation |
-| Full-screen experience (game, `/login`, legal, marketing arm, Discord activity) | `app/routes/<name>.tsx` (top level) | Nothing — you own the whole viewport                      |
+| Type                                                                            | Where the file goes                 | Gets                                                                             |
+| ------------------------------------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------- |
+| Standard site page (feed, wallet, settings, admin, …)                           | `app/routes/_site/<name>.tsx`       | Radial shell (ring backdrop, top bar, central hub nav), skip link, page entrance |
+| Full-screen experience (game, `/login`, legal, marketing arm, Discord activity) | `app/routes/<name>.tsx` (top level) | Nothing — you own the whole viewport                                             |
 
 This split is deliberate. Games, `login`, `secret/*`, the legal pages
 (`terms`, `privacy`, `cookies`, `copyright`, `security`) and `discord/*` are
@@ -47,15 +52,14 @@ function ExamplePage() {
 }
 ```
 
-`PageLayout` (`components/feed/PageLayout.tsx`) supplies the **floating
-header capsule** (`.glass-chrome sticky top-2 mx-2 rounded-site md:top-3
-md:mx-3` — it condenses on scroll via a sentinel + `data-scrolled`, which
-raises blur and rim glint), the h1 in the theme display font, mobile menu
-button, optional back arrow (`backTo`/`backLabel`), optional right sidebar,
-and the width-constrained **transparent** center column (v2 floating shell:
-no `border-r` app-frame edge — content floats as glass panes over the aurora,
-with responsive gutters supplied by `SiteShell`). The center
-column carries `pb-dock` to clear the floating mobile dock.
+`PageLayout` (`components/feed/PageLayout.tsx`) supplies a **flat, transparent
+big-type header** — its h1 in the theme display font, sitting directly on the
+radial ring backdrop (the radial content layer strips the old bordered header
+capsule) — plus an optional back arrow (`backTo`/`backLabel`), optional
+breadcrumbs, an optional right widget rail, and the width-constrained center
+column. There is **no `border-r` app-frame edge** and no in-page sidebar — the
+radial hub owns navigation. The center column carries `pb-dock` to clear the
+mobile safe area.
 
 Props: `title`, `children`, `rightSidebar?`, `headerRight?`,
 `wide?`, `backTo?`, `backLabel?`.
@@ -139,12 +143,15 @@ Work through this for every new or edited page:
       `.site-sticky-chrome`; editor-internal sticky bars use
       `.site-sticky-contained`. Never pin two stickies to the same `top` — they
       overlap and hide each other while scrolled.
-- [ ] v2 optics come free — don't re-add them: panes/overlays/chrome get the
-      specular rim glint automatically; interactive fills glint on hover. Only
-      opt in to the rationed extras where a page's spec says so:
-      `.glass-refract` + `data-glass-lens` (≤2/page, hero/chrome only),
-      `.glass-refract--prism` (≤1/page), `.glass-liquid` ambient sheen
-      (≤3/page, signature surfaces), `.glass-sheen-hover` (primary CTAs).
+- [ ] Liquid Glass optics are the **referenced** material: inside the radial
+      shell today they are **flattened** (glass panes render as flat
+      `--site-surface` cards — no blur, no rim glint), so don't rely on the glint
+      or lens for legibility. Where the optics are enabled on a surface they come
+      free (panes/overlays/chrome glint; fills glint on hover) — only opt into
+      the rationed extras when a page's spec says so: `.glass-refract` +
+      `data-glass-lens` (≤2/page, hero/chrome only), `.glass-refract--prism`
+      (≤1/page), `.glass-liquid` ambient sheen (≤3/page), `.glass-sheen-hover`
+      (primary CTAs).
 
 ### States
 
@@ -200,7 +207,7 @@ Work through this for every new or edited page:
       skip link (`_site.tsx`, the first focus stop) under `.style-high-contrast`
       specifically: the ring vs. surface must clear WCAG 1.4.11 (≥3:1).
 - [ ] Check `.style-light` (Glass Light) and `.style-high-contrast` (glass off),
-      plus reduced-transparency, not just default Glass Dark.
+      plus reduced-transparency, not just the default monochrome baseline.
 - [ ] Mobile: bottom padding clears the floating dock
       (`pb-[calc(env(safe-area-inset-bottom,0px)+92px)] md:pb-0` on the column —
       PageLayout does this); tap targets comfortable at 480px (`xs` breakpoint).
@@ -254,10 +261,11 @@ These are the mistakes that make a page feel "off" — reviewers will flag them:
    items (blur cost) or on an ancestor of a `position:fixed` element (containing
    block) — see design-language.md §5.1.
 8. Adding `react-icons`, new font imports, or one-off animation systems.
-9. Re-adding the old app-frame edges: `border-r border-site-border` on page
-   columns, full-bleed `sticky top-0 border-b` headers, or flush `divide-y`
-   post lists — the v2 floating shell replaced all three (floating header
-   capsule, aurora gutters, spaced `.glass-fill` cards).
+9. Re-adding app-frame edges: `border-r border-site-border` on page columns,
+   full-bleed `sticky top-0 border-b` headers, or a re-implemented sidebar — the
+   radial shell owns the chrome (ring backdrop, top bar, central hub nav), and
+   PageLayout's header is a flat big-type block floating on the backdrop, not a
+   bordered capsule.
 10. Hand-rolling a `layoutId` tab capsule instead of `LiquidTabs`, or stacking
     `.glass-refract` onto a `.glass-chrome--aside` element (its `::before` is the
     blur carrier, so the lens band has nowhere to live — see design-language.md
