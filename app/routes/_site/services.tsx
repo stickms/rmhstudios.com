@@ -172,7 +172,10 @@ function ServicesPage() {
 
               <ul className="mt-5 grid gap-2.5 sm:grid-cols-2">
                 {active.features.map(([key, dflt]) => (
-                  <li key={key} className="flex items-start gap-2 text-sm text-site-text">
+                  <li
+                    key={key}
+                    className="u-reveal-soft flex items-start gap-2 text-sm text-site-text"
+                  >
                     <Check className="mt-0.5 size-4 shrink-0 text-site-accent" aria-hidden />
                     <span>{t(key, { defaultValue: dflt })}</span>
                   </li>
