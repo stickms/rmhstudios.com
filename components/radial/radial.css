@@ -19,7 +19,12 @@
    accent surface in the shell (orb, wedges, buttons, core, …). */
 @supports (color: oklch(from red l c h)) {
   .radial-shell {
-    --site-accent-fg: oklch(from var(--site-accent) clamp(0, (0.62 - l) * 100, 1) 0 0);
+    /* Threshold 0.70 (not 0.5) deliberately biases toward WHITE ink: on the
+       B&W design white reads cleaner on all but the very lightest accents, so
+       only genuinely pale accents (l > 0.70 — e.g. bright yellow) flip to
+       black. The `* 100` keeps it a hard step → always pure white OR pure
+       black, never a muddy mid-grey. */
+    --site-accent-fg: oklch(from var(--site-accent) clamp(0, (0.7 - l) * 100, 1) 0 0);
   }
 }
 
@@ -258,7 +263,10 @@
   color: inherit;
 }
 .radial-hub__logo path {
-  stroke-width: 3.4;
+  /* Thin line-art: the mark is a very dense spirograph, so a heavy stroke bleeds
+     the curves into a solid muddy blob. A fine stroke keeps it crisp white
+     line-art on the accent orb (and stays sharp on retina phones). */
+  stroke-width: 1.5;
   stroke-dasharray: 1;
   stroke-dashoffset: 0;
 }
@@ -346,6 +354,12 @@
 .radial-hub__wedge-wrap {
   position: absolute;
   inset: 0;
+  /* Each wrapper fills the whole dial square (only its child <a> is clipped to a
+     slice), so a wrapper with hit-testing on would blanket the disc and steal
+     every click for whichever wedge sits last in the DOM. Make the wrappers
+     click-transparent; the clipped anchors below re-enable it, so each slice
+     only catches clicks inside its own pie sector. */
+  pointer-events: none;
 }
 .radial-hub__overlay.is-open .radial-hub__wedge-wrap {
   animation: radial-wedge-in 0.4s ease both;
@@ -360,9 +374,11 @@
   position: absolute;
   inset: 0;
   display: block;
-  /* The inline clip-path carves this element down to one pie slice — and the clip
-     bounds both paint AND hit-testing, so the wedges tile the disc with no gaps
-     for a click to slip through to the feed behind. */
+  /* Re-enable hit-testing that the wrapper switched off. The inline clip-path
+     carves this element down to one pie slice — and the clip bounds both paint
+     AND hit-testing, so each wedge only catches clicks inside its own sector and
+     the sectors tile the disc with no gaps for a click to slip through. */
+  pointer-events: auto;
   background: var(--site-surface);
   color: var(--site-text);
   text-decoration: none;
