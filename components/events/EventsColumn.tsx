@@ -108,7 +108,6 @@ export function EventsColumn({ embedded = false }: { embedded?: boolean }) {
         icon={CalendarDays}
         title={t('events-heading', { defaultValue: 'Events' })}
         sticky={!embedded}
-        showMenuButton={!embedded}
         actions={
           signedIn && (
             <Button size="sm" variant="accent" onClick={() => setComposerOpen(true)}>

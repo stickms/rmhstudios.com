@@ -24,7 +24,6 @@ import {
   Layers,
   LayoutGrid,
   ListMusic,
-  Menu,
   Newspaper,
   Search,
   Upload,
@@ -32,7 +31,6 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
-import { useMobileSidebar } from '@/components/feed/MobileSidebarShell';
 import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
 import { type LibraryBook } from '@/lib/library/library';
 import { listAllBooks } from '@/lib/library/library.server';
@@ -197,7 +195,6 @@ function useLibraryOrbit() {
 
 function Library() {
   const { t } = useTranslation('library');
-  const { open: openSidebar } = useMobileSidebar();
   const {
     books: initialBooks,
     posts: blogPosts,
@@ -449,16 +446,6 @@ function Library() {
               the page's single sticky control group. */}
             <div className="lib-topbar">
               <header className="lib-head glass-chrome glass-bevel-sm">
-                <span className="md:hidden">
-                  <button
-                    type="button"
-                    onClick={openSidebar}
-                    aria-label={t('open-menu', { defaultValue: 'Open menu' })}
-                    className="vibe-toolbar__icon"
-                  >
-                    <Menu size={18} />
-                  </button>
-                </span>
                 <div className="lib-head__brand">
                   <MobileBrandPrefix />
                   <BookOpen size={17} aria-hidden="true" />

@@ -22,7 +22,6 @@ import { auth } from '@/lib/auth';
 import { getUserTier, type Tier } from '@/lib/entitlements';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { ContextRail } from "@/components/feed/ContextRail";
-import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { ShopColumn } from '@/components/feed/ShopColumn';
 import { MarketColumn } from '@/components/market/MarketColumn';
@@ -97,13 +96,12 @@ function Store() {
       <AnimatedMain
         className="relative isolate min-h-screen w-full min-w-0 pb-dock"
       >
-        <MobileTopBar title={t('store-title', { defaultValue: 'Store' })} />
 
         {/* §15.1: a proper floating "Store" page-title capsule (PageLayout-style)
             on desktop — the store previously had no title above the tabs. It is
             NON-sticky on purpose: the Shop/Market panels each own a sticky section
             header (ColumnHeader top-2), so a sticky page title here would stack on
-            top of them (§15.5 one-sticky-group rule). Mobile keeps MobileTopBar. */}
+            top of them (§15.5 one-sticky-group rule). */}
         <div className="mx-2 mt-2 hidden rounded-site glass-chrome px-4 py-3 shadow-site-sm md:mx-3 md:mt-3 md:block">
           <h1 className="font-(family-name:--site-font-display) text-2xl font-semibold tracking-[-0.022em] text-site-text">
             {t('store-title', { defaultValue: 'Store' })}

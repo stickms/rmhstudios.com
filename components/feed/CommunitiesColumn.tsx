@@ -133,7 +133,6 @@ export function CommunitiesColumn({
  icon={Users}
  title={t('communities-heading', { defaultValue:'Communities'})}
  sticky={!embedded}
- showMenuButton={!embedded}
  actions={
  session && (
  <Button size="sm"variant="accent"onClick={() => setCreateOpen(true)}>

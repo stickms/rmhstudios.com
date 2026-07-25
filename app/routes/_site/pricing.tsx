@@ -13,7 +13,6 @@ import { auth } from '@/lib/auth';
 import { getUserTier, type Tier } from '@/lib/entitlements';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { ContextRail } from '@/components/feed/ContextRail';
-import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { AppleHero } from '@/components/shared/AppleHero';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
@@ -51,8 +50,6 @@ function Pricing() {
         className="relative isolate min-h-screen w-full min-w-0 pb-dock"
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
-        {/* Mobile: hamburger + brand (this page leads with an editorial hero) */}
-        <MobileTopBar title={t('membership-title', { defaultValue: 'Membership' })} />
         <AppleHero
           eyebrow={t('membership-eyebrow', { defaultValue: 'RMH Studios Membership' })}
           title={t('membership-hero-title', { defaultValue: 'Everything you love. Elevated.' })}

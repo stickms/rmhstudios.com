@@ -39,3 +39,28 @@ in `app/globals.css`).
 - Mobile-first: base CSS targets phones; `@media (min-width: …)` layers on
   space. Nothing may leave the viewport — verify the hub bloom and wheel on a
   320px-wide screen when changing geometry.
+
+## Mobile contracts (easy to break — check these when changing the chrome)
+
+- **Safe area.** Every bottom-anchored fixed element here (the orb, the hub's
+  foot pill, the feed's compose FAB) adds `env(safe-area-inset-bottom)` itself.
+  The site sets `viewport-fit=cover`, and the body's safe-area padding does
+  **not** apply to `position: fixed` — so anything that skips the inset lands in
+  the iOS home-indicator gesture strip and gets hard to tap.
+- **The floating-bottom stack.** The orb carries `data-floating="hub"` and is the
+  BOTTOM member of the mobile stack defined in `app/globals.css` §5.5x A.1; the
+  cookie bar, mini-player and back-to-top all lift above it. Its footprint comes
+  from `--site-hub-orb-size` / `--site-hub-orb-inset` (declared in `globals.css`
+  precisely so the stack's reserve and the orb geometry can't drift apart) —
+  change the orb's size or inset **there**, not here. Any new fixed
+  bottom-anchored control must join the stack rather than pick its own `bottom`.
+- **No document scroll-lock.** The hub blocks background scroll with
+  `touch-action: none` on its overlay plus a `wheel` guard — never
+  `body { overflow: hidden }` or the `position: fixed` body technique. Both clip
+  the document to the visual viewport, which on iOS leaves a stray band of bare
+  page background behind Safari's floating bottom bar (on-device finding,
+  recorded in `components/feed/MobileSidebarShell.tsx`).
+- **Translucency needs a blur behind it.** The top bar drops `backdrop-filter` on
+  phones for paint cost, so it is fully opaque there — a partly-transparent bar
+  with no blur just ghosts the feed scrolling underneath it. Frosted glass
+  returns with the blur at ≥768px.

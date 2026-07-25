@@ -1,7 +1,5 @@
 'use client';
 
-import { MobileMenuButton } from './MobileMenuButton';
-
 /**
  * Mobile-only "RMH |" brand prefix shown before a page's title. Place it inside
  * the flex container that holds the title text so the divider lines up. Hidden
@@ -21,21 +19,11 @@ export function MobileBrandPrefix() {
   );
 }
 
-/**
- * Mobile-only top bar (hamburger + "RMH | title") for editorial/hero pages that
- * don't otherwise have a header row to host the menu button (e.g. Pages,
- * Membership). Entirely hidden on desktop, which uses the fixed left sidebar.
+/*
+ * `MobileTopBar` used to live here: a mobile-only "hamburger + RMH | title" card
+ * for editorial/hero pages that had no header row of their own to host the menu
+ * button. The radial redesign removed the push drawer it opened, which left the
+ * card doing nothing but stacking a second, redundant title above each page's
+ * own hero — so it is gone. Those pages now lead straight with their hero, and
+ * the shell's top bar carries the RMH mark on every route.
  */
-export function MobileTopBar({ title }: { title: string }) {
-  return (
-    <div className="rounded-site border border-site-border bg-site-surface shadow-xs md:hidden">
-      <div className="flex min-w-0 items-center gap-2 px-3 py-3 sm:px-4">
-        <MobileMenuButton />
-        <h1 className="flex min-w-0 items-center gap-2 font-(family-name:--site-font-display) text-2xl font-semibold tracking-[-0.022em] text-site-text">
-          <MobileBrandPrefix />
-          <span className="min-w-0 truncate">{title}</span>
-        </h1>
-      </div>
-    </div>
-  );
-}

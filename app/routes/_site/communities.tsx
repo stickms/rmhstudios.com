@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import { Users, CalendarDays, Radio } from 'lucide-react';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { ContextRail } from "@/components/feed/ContextRail";
-import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { CommunitiesColumn } from '@/components/feed/CommunitiesColumn';
@@ -66,8 +65,7 @@ function CommunitiesShell({ children }: { children: React.ReactNode }) {
  * the owner flagged). It sits BELOW the page title, on its own floating pill,
  * exactly like /store. `?tab=` mirroring + the aria-controls tabpanel wiring
  * (idBase="communities" → `communities-tab-*` / `communities-panel-*`) are
- * byte-identical to the old markup; the mobile drawer button moved to the
- * MobileTopBar (its canonical home) so each embedded column stays header-less.
+ * byte-identical to the old markup; each embedded column stays header-less.
  */
 function CommunitiesTabs({ active }: { active: CommunitiesTab }) {
   const { t } = useTranslation('site');
@@ -96,9 +94,8 @@ function CommunitiesTabs({ active }: { active: CommunitiesTab }) {
 
   return (
     <>
-      <MobileTopBar title={t('communities-title', { defaultValue: 'Communities' })} />
-      {/* §5.45: floating "Communities" page-title capsule on desktop (mobile uses
-          MobileTopBar), then the tab sheet below it. */}
+      {/* §5.45: floating "Communities" page-title capsule on desktop, then the
+          tab sheet below it. On mobile the tab sheet is the page's own chrome. */}
       <div className="mx-2 mt-2 hidden rounded-site glass-chrome px-4 py-3 shadow-site-sm md:mx-3 md:mt-3 md:block">
         <h1 className="font-(family-name:--site-font-display) text-2xl font-semibold tracking-[-0.022em] text-site-text">
           {t('communities-title', { defaultValue: 'Communities' })}
@@ -142,7 +139,7 @@ function CommunitiesPage() {
       )}
       {tab === 'spaces' && (
         <div role="tabpanel" id="communities-panel-spaces" aria-labelledby="communities-tab-spaces">
-          <SpacesColumn embedded />
+          <SpacesColumn />
         </div>
       )}
     </CommunitiesShell>

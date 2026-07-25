@@ -193,6 +193,13 @@
   --site-page-bottom-space: clamp(2rem, 5vw, 3.5rem);
   --site-mobile-content-end: clamp(2rem, 7vw, 3rem);
   --site-floating-edge: clamp(0.75rem, 3vw, 1.25rem);
+  /* Radial hub orb geometry. Lives here (not in radial.css) because the mobile
+     floating-bottom stack in §5.5x A.1 has to reserve exactly the orb's
+     footprint — sharing the tokens is what keeps the reserve and the orb from
+     drifting apart. The inset is the gap ABOVE the safe area; every consumer
+     adds env(safe-area-inset-bottom) itself. */
+  --site-hub-orb-size: clamp(3.75rem, 15vw, 4.5rem);
+  --site-hub-orb-inset: clamp(1rem, 4vw, 1.75rem);
 
   /* Ambient Canvas — pure paper with a single soft radial breath centred on the
      RMH mark, so the fixed backdrop reads as clean white with faint depth that
@@ -1875,19 +1882,33 @@ html.readable-font body {
       bottom: calc(var(--safe-bottom) + var(--site-floating-edge));
     }
 
-    /* §5.5x A.1 — mobile floating-bottom stack. The cookie bar, mini-player and
-       back-to-top button can all be visible at once; without coordination the
-       mini-player and back-to-top both sat at bottom-above-dock and overlapped,
-       and either could collide with the cookie card. Each element declares
-       data-floating; when a LOWER-priority member is present (:has on the .vibe-app
-       shell that hosts all three), the ones above it are lifted clear by that
-       member's reserved height. Absent members contribute 0, so a lone element
-       keeps its natural bottom-above-dock position (no regression). Heights are
-       generous constants (CSS can't read a sibling's measured height) covering the
-       tallest state — the narrow flex-col cookie card, the mini-player bar. */
+    /* §5.5x A.1 — mobile floating-bottom stack. The radial hub orb, the feed's
+       compose button, the cookie bar, the mini-player and the back-to-top button
+       can all be visible at once; without coordination they pile up on the same
+       bottom edge. Each element declares data-floating; when a LOWER member is
+       present (:has on the .vibe-app shell that hosts them all), the ones above
+       it are lifted clear by that member's reserved height. Absent members
+       contribute 0, so a lone element keeps its natural bottom-above-dock
+       position (no regression). Heights are generous constants (CSS can't read a
+       sibling's measured height) covering the tallest state — the narrow flex-col
+       cookie card, the mini-player bar.
+
+       The hub orb is the BOTTOM of the stack: it is the site's only navigation
+       control on mobile, it is fixed bottom-centre on every _site page, and the
+       feed's compose FAB shares its row (bottom-right, and shorter than the orb,
+       so the orb's reserve covers both). Its lift is derived from the orb's own
+       geometry tokens rather than a magic number, so the two can never drift
+       apart; --site-floating-edge is subtracted because members already include
+       it, and the trailing gap keeps a visible margin above the orb. */
     .vibe-app {
+      --float-lift-hub: 0px;
       --float-lift-cookie: 0px;
       --float-lift-miniplayer: 0px;
+    }
+    .vibe-app:has([data-floating='hub']) {
+      --float-lift-hub: calc(
+        var(--site-hub-orb-size) + var(--site-hub-orb-inset) - var(--site-floating-edge) + 0.75rem
+      );
     }
     .vibe-app:has([data-floating='cookie']) {
       --float-lift-cookie: 156px;
@@ -1895,17 +1916,26 @@ html.readable-font body {
     .vibe-app:has([data-floating='miniplayer']) {
       --float-lift-miniplayer: 68px;
     }
-    /* Mini-player rides above the cookie bar. */
-    .vibe-app:has([data-floating='cookie']) [data-floating='miniplayer'] {
-      bottom: calc(var(--safe-bottom) + var(--site-floating-edge) + var(--float-lift-cookie));
+    /* Cookie bar rides above the hub orb. */
+    .vibe-app:has([data-floating='hub']) [data-floating='cookie'] {
+      bottom: calc(var(--safe-bottom) + var(--site-floating-edge) + var(--float-lift-hub));
     }
-    /* Back-to-top rides above whichever of the two are present (both vars add;
+    /* Mini-player rides above the hub orb and the cookie bar. */
+    .vibe-app:has([data-floating='hub']) [data-floating='miniplayer'],
+    .vibe-app:has([data-floating='cookie']) [data-floating='miniplayer'] {
+      bottom: calc(
+        var(--safe-bottom) + var(--site-floating-edge) + var(--float-lift-hub) +
+          var(--float-lift-cookie)
+      );
+    }
+    /* Back-to-top rides above whichever of the three are present (the vars add;
        an absent one is 0). */
+    .vibe-app:has([data-floating='hub']) [data-floating='backtotop'],
     .vibe-app:has([data-floating='cookie']) [data-floating='backtotop'],
     .vibe-app:has([data-floating='miniplayer']) [data-floating='backtotop'] {
       bottom: calc(
-        var(--safe-bottom) + var(--site-floating-edge) + var(--float-lift-cookie) +
-          var(--float-lift-miniplayer)
+        var(--safe-bottom) + var(--site-floating-edge) + var(--float-lift-hub) +
+          var(--float-lift-cookie) + var(--float-lift-miniplayer)
       );
     }
   }

@@ -9,7 +9,6 @@ import { TipDialog } from'@/components/economy/TipDialog';
 import { GiftSubDialog } from'@/components/economy/GiftSubDialog';
 import { useNavigate } from'@tanstack/react-router';
 import { Button } from'@/components/ui/button';
-import { MobileMenuButton } from'./MobileMenuButton';
 import { authClient } from'@/lib/auth-client';
 import { useResolvedUser } from'@/components/Providers';
 import { VirtualPostList } from'./VirtualPostList';
@@ -470,7 +469,6 @@ export function ProfileColumn({
  {/* Compact identity chrome stays visible while the full glass hero scrolls away. */}
  <div className="bg-site-surface border border-site-border rounded-2xl shadow-xs site-sticky-chrome">
  <div className="flex items-center gap-3 px-4 py-3">
- <MobileMenuButton />
  <div className="min-w-0 flex-1">
  <div className="flex min-w-0 items-center gap-1.5">
  <h1 className="truncate font-(family-name:--site-font-display) text-lg font-bold text-site-text">

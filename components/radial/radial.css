@@ -142,10 +142,13 @@
   height: 3.5rem;
   /* Line the bar's edges up with the content gutter below it. */
   padding: 0 var(--rad-gutter);
-  /* Mobile-first: a near-opaque bar with NO backdrop-filter. backdrop-filter
-     blur is a heavy per-frame GPU cost on phones (slow paint / janky scroll);
-     the frosted look is added back only on ≥768px screens below. */
-  background: color-mix(in srgb, var(--site-bg) 92%, transparent);
+  /* Mobile-first: an OPAQUE bar with NO backdrop-filter. backdrop-filter blur is
+     a heavy per-frame GPU cost on phones (slow paint / janky scroll); the frosted
+     look is added back only on ≥768px screens below. Opaque rather than 92%,
+     because without a blur behind it that last 8% buys no frosted effect — it
+     just ghosts the feed cards scrolling underneath through the bar, smearing
+     them across the RMH wordmark. Translucency needs the blur to read as glass. */
+  background: var(--site-bg);
   border-bottom: 1px solid var(--site-border);
 }
 .radial-topbar__brand {
@@ -262,14 +265,22 @@
 .radial-hub__orb {
   position: fixed;
   left: 50%;
-  --orb-bottom: clamp(1rem, 4vw, 1.75rem);
+  /* The orb is the site's only navigation control on mobile, so it MUST clear
+     the home-indicator / browser bottom bar — with viewport-fit=cover a fixed
+     bottom-anchored element is not covered by the body's safe-area padding, so
+     the inset has to be added here. Without it the orb sits inside the home
+     indicator's gesture strip (unreliable to tap) and hangs visibly lower than
+     the compose FAB beside it, which has always been safe-area-aware.
+     Size/inset come from globals.css so the floating-bottom stack (§5.5x A.1)
+     can reserve exactly this footprint. */
+  --orb-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--site-hub-orb-inset));
   bottom: var(--orb-bottom);
   z-index: 80;
   transform: translateX(-50%);
   display: grid;
   place-items: center;
-  width: clamp(3.75rem, 15vw, 4.5rem);
-  height: clamp(3.75rem, 15vw, 4.5rem);
+  width: var(--site-hub-orb-size);
+  height: var(--site-hub-orb-size);
   border-radius: 999px;
   border: none;
   cursor: pointer;
@@ -378,6 +389,18 @@
   appearance: none;
   background: transparent;
   cursor: default;
+}
+/* Background scroll is blocked by the OVERLAY, not by a CSS scroll-lock on the
+   document. Both overflow:hidden and the position:fixed body technique clip the
+   document to the visual viewport, which on iOS leaves the bare page background
+   showing behind Safari's floating bottom bar as a stray band — the reason the
+   drawer this hub replaced deliberately avoided them (see the note in
+   MobileSidebarShell.tsx). touch-action:none makes the covered page unpannable
+   while the menu is up, so the document keeps flowing behind the browser chrome
+   exactly as it does when the menu is closed. Taps are unaffected. */
+.radial-hub[data-phase='open'] .radial-hub__overlay,
+.radial-hub[data-phase='closing'] .radial-hub__overlay {
+  touch-action: none;
 }
 /* The expanding circular blur — the menu's "surface". A frosted disc grows from
    the centre (where the orb now sits) out to the viewport corners; only a
@@ -509,7 +532,9 @@
 .radial-hub__foot {
   position: absolute;
   left: 50%;
-  bottom: clamp(1rem, 4vw, 2rem);
+  /* Same safe-area reasoning as the orb: this pill carries identity, settings,
+     sign-out and close, so it cannot sit under the home indicator. */
+  bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(1rem, 4vw, 2rem));
   z-index: 2;
   /* Fades + rises in with the rest, and back out on close — one motion. */
   opacity: 0;
