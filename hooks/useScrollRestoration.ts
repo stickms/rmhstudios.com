@@ -51,10 +51,12 @@ type Scroller = { el: HTMLElement; win: boolean };
 
 // The element that actually scrolls right now. In practice this is ALWAYS the
 // window today: nothing sets `data-scroll-root` any more (every _site page
-// scrolls the document on mobile and desktop alike — see the comment in
-// MobileSidebarShell). The probe is kept because it's the documented opt-in for
-// a page that needs an inner scroller, and PullToRefresh/BackToTop look for the
-// same attribute; it just never matches at the moment.
+// scrolls the document on mobile and desktop alike — which is deliberate, since
+// iOS Safari only collapses its floating bottom bar when the DOCUMENT scrolls,
+// never an inner overflow container). The probe is kept because it's the
+// documented opt-in for a page that needs an inner scroller, and
+// PullToRefresh/BackToTop look for the same attribute; it just never matches at
+// the moment.
 function getScroller(): Scroller {
   const mobile = document.querySelector<HTMLElement>('[data-scroll-root]');
   // `md:hidden` makes the container display:none on desktop → offsetParent null.

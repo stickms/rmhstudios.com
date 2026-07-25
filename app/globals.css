@@ -1776,26 +1776,18 @@ html.readable-font body {
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
 
-  /* Overhang for the mobile drawer's glass so it reaches the PHYSICAL screen
-     bottom. No CSS viewport unit can express that region: 100dvh stops at the
-     visual viewport (above Safari's bar) and even 100lvh stops at the bar's
-     MINIMIZED pill — measured on an iPhone 17 Pro / iOS 26 simulator, lvh left
-     a 248px-tall (device px) strip where feed content showed through behind the
-     translucent bar. The page itself fills that strip because document flow
-     isn't capped at 100lvh; a position:fixed drawer can't, hence this bleed.
-     Purely decorative overhang — it renders off-screen and never creates scroll,
-     so it is intentionally generous rather than exact. Any element using it must
-     add the same amount to its own bottom padding to keep content on-screen.
-
-     Sizing: the strip to cover is Safari's minimized bar + home indicator, which
-     is roughly constant per device class (~83 CSS px measured on the iPhone 17
-     Pro) rather than proportional to screen height — so 240px is ~3x headroom for
-     any taller screen or a future chrome that grows. The 25vh clamp is the reason
-     this isn't a bare constant: the drawer also renders below the md breakpoint on
-     SHORT viewports (landscape phones, ~375px tall), where a flat 240px of footer
-     padding would collapse the nav's flex-1 scroll region to nothing. On a normal
-     portrait phone (~874px CSS) the clamp is inactive and this resolves to 240px. */
-  --drawer-bleed: min(240px, 25vh);
+  /* On-device note kept for whoever next builds a position:fixed surface that has
+     to reach the PHYSICAL screen bottom on iOS. No CSS viewport unit expresses
+     that region: 100dvh stops at the visual viewport (above Safari's bar) and even
+     100lvh stops at the bar's MINIMIZED pill — measured on an iPhone 17 Pro /
+     iOS 26 simulator, lvh left a 248px-tall (device px) strip where content showed
+     through behind the translucent bar. The document itself fills that strip
+     because page flow isn't capped at 100lvh; a fixed element can't, and needs a
+     decorative overhang (~83 CSS px covers Safari's minimized bar + home indicator
+     on that device class) plus matching bottom padding to keep its own content
+     on-screen. The `--drawer-bleed` token that encoded this was removed with the
+     mobile drawer — the radial shell has no fixed full-height surface, so nothing
+     needs it today. */
 }
 
 @layer utilities {
@@ -1965,9 +1957,9 @@ html.readable-font body {
      wraps and hides the scrollbar. The visible glass sheet around the viewport
      provides the containment edge; masking the content itself made the first and
      last labels look permanently cut off even when the strip was not scrollable.
-     A partially visible next item remains the natural overflow cue. The
-     drawer gesture yields to it automatically (MobileSidebarShell.canScrollX keys
-     off overflow-x:auto + scrollWidth>clientWidth). */
+     A partially visible next item remains the natural overflow cue. Nothing
+     competes for the horizontal swipe any more — the page-wide drawer gesture
+     that used to have to yield to this went away with the mobile push-drawer. */
   .tab-sheet-scroll {
     overflow-x: auto;
     overscroll-behavior-x: contain;

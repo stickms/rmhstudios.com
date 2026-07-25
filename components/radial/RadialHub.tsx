@@ -130,9 +130,11 @@ export function RadialHub() {
   //
   // Deliberately NOT a CSS scroll-lock on the document. Both `overflow: hidden`
   // and the position:fixed body technique clip the document to the visual
-  // viewport, which on iOS leaves the bare page background showing behind
-  // Safari's floating bottom bar as a stray band — the reason the mobile drawer
-  // this hub replaced avoided them (see the note in MobileSidebarShell.tsx).
+  // viewport, which on iOS clips away the content that normally scrolls under
+  // Safari's floating bottom bar and leaves the bare page background showing
+  // there as a stray coloured band. That was established on-device for the
+  // mobile push-drawer this hub replaced, and is why that drawer blocked
+  // background scroll from its scrim instead — the same approach used here.
   // Touch panning is blocked by `touch-action: none` on the overlay (radial.css);
   // wheel is blocked here, since touch-action doesn't cover pointer devices.
   useEffect(() => {
