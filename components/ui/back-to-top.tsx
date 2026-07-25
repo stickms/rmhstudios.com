@@ -13,10 +13,12 @@ import { DURATION, EASE } from '@/lib/motion';
  * Floating "back to top" button. Appears once the page is scrolled past
  * `threshold`, and jumps the active scroller to the top on click.
  *
- * Handles both scroll containers the app uses: the window on desktop and the
- * `[data-scroll-root]` element (MobileSidebarShell) on mobile — the same
- * targets `useScrollRestoration` tracks. Mounted once in the `_site` shell, so
- * every standard page gets it without opting in.
+ * Scrolls the window, unless a page has opted into an inner scroller by marking
+ * it `[data-scroll-root]` — the same opt-in `useScrollRestoration` honours. No
+ * page sets that today (every `_site` page scrolls the document on mobile and
+ * desktop alike), so this resolves to the window; the probe is kept because the
+ * attribute remains the documented escape hatch. Mounted once in the `_site`
+ * shell, so every standard page gets it without opting in.
  */
 export function BackToTop({ threshold = 600 }: { threshold?: number }) {
  const { t } = useTranslation('c-ui');

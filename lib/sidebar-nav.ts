@@ -1,7 +1,8 @@
 /**
- * Canonical top-level sidebar navigation (client-safe). Single source of truth
- * for both the rendered rail (`components/feed/LeftSidebar`) and the reorder
- * editor (`components/site/SidebarEditMode`), so the two never drift.
+ * Canonical top-level site navigation (client-safe). Single source of truth for
+ * both the rendered nav (`components/radial/RadialHub`, which carves one wedge
+ * per destination) and the reorder editor (`components/site/SidebarEditMode`),
+ * so the two never drift. Named "sidebar" for the left rail this predates.
  *
  * Each item has a stable `id`: leaves use their href (`/library`), groups use
  * `group:<name>` (`group:services`). The user's saved order + hidden set (see

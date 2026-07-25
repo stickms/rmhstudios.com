@@ -57,9 +57,11 @@ in `app/globals.css`).
 - **No document scroll-lock.** The hub blocks background scroll with
   `touch-action: none` on its overlay plus a `wheel` guard — never
   `body { overflow: hidden }` or the `position: fixed` body technique. Both clip
-  the document to the visual viewport, which on iOS leaves a stray band of bare
-  page background behind Safari's floating bottom bar (on-device finding,
-  recorded in `components/feed/MobileSidebarShell.tsx`).
+  the document to the visual viewport, which on iOS clips away the content that
+  normally scrolls under Safari's floating bottom bar and leaves a stray band of
+  bare page background there. This was an on-device finding from the mobile
+  push-drawer the hub replaced, which blocked background scroll from its scrim
+  for the same reason; the drawer is gone, so the note lives here now.
 - **Translucency needs a blur behind it.** The top bar drops `backdrop-filter` on
   phones for paint cost, so it is fully opaque there — a partly-transparent bar
   with no blur just ghosts the feed scrolling underneath it. Frosted glass

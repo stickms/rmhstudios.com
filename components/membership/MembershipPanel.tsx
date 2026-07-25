@@ -25,8 +25,8 @@ const RANK: Record<Tier, number> = { free: 0, starter: 1, pro: 2, enterprise: 3 
 
 // Nearest scrollable ancestor of an element (the element that actually scrolls
 // when its content overflows). Used so the "jump to shop" button can target the
-// right scroller — on mobile the page lives inside a custom `overflow-y-auto`
-// container (MobileSidebarShell), not the document.
+// right scroller whether the page scrolls the document (the case everywhere
+// today) or sits inside a custom `overflow-y-auto` container.
 function getScrollParent(node: HTMLElement): HTMLElement | null {
   let el = node.parentElement;
   while (el) {

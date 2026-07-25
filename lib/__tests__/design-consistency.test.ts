@@ -69,12 +69,12 @@ const TABLIST_ALLOW = new Set([
 
 /**
  * Rule 3 allowlist — files permitted to host an inline tab/nav-capsule `layoutId`
- * (the flowing glass capsule, §5.47):
- *  - the renderer itself, and
- *  - the left sidebar's active nav capsule (`LeftSidebar.tsx`), a sanctioned
- *    §5.47 flowing capsule that is a vertical NAV rail, not a tab strip.
+ * (the flowing glass capsule, §5.47): just the renderer itself.
+ *
+ * `LeftSidebar.tsx` used to be listed here for its active nav capsule; it was
+ * deleted with the mobile push-drawer it belonged to, so the exemption is gone.
  */
-const LAYOUTID_ALLOW = new Set([RENDERER, join('components', 'feed', 'LeftSidebar.tsx')]);
+const LAYOUTID_ALLOW = new Set([RENDERER]);
 
 /** Recursively collect production `.tsx` sources (skip generated + test files). */
 function collectTsx(dir: string, out: string[] = []): string[] {

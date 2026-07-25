@@ -392,12 +392,14 @@
 }
 /* Background scroll is blocked by the OVERLAY, not by a CSS scroll-lock on the
    document. Both overflow:hidden and the position:fixed body technique clip the
-   document to the visual viewport, which on iOS leaves the bare page background
-   showing behind Safari's floating bottom bar as a stray band — the reason the
-   drawer this hub replaced deliberately avoided them (see the note in
-   MobileSidebarShell.tsx). touch-action:none makes the covered page unpannable
-   while the menu is up, so the document keeps flowing behind the browser chrome
-   exactly as it does when the menu is closed. Taps are unaffected. */
+   document to the visual viewport, which on iOS clips away the content that
+   normally scrolls under Safari's floating bottom bar and leaves the bare page
+   background showing there as a stray coloured band — established on-device for
+   the mobile push-drawer this hub replaced, which blocked background scroll from
+   its scrim for exactly this reason. touch-action:none makes the covered page
+   unpannable while the menu is up, so the document keeps flowing behind the
+   browser chrome exactly as it does when the menu is closed. Taps are
+   unaffected. */
 .radial-hub[data-phase='open'] .radial-hub__overlay,
 .radial-hub[data-phase='closing'] .radial-hub__overlay {
   touch-action: none;
