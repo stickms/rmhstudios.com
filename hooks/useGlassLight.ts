@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import { initGlassLens } from '@/lib/glass-lens';
 
 /**
  * The scene light (v2 §4.1–§4.4). One document-level, rAF-throttled
@@ -22,18 +21,21 @@ import { initGlassLens } from '@/lib/glass-lens';
  * static under reduced motion (OS preference OR the `html.reduce-motion` account
  * toggle) — the global light stops tracking and the sun default stands; the
  * per-element hotspot (a hover affordance, not motion) is unchanged. This effect
- * also owns `initGlassLens()` (§3.3): the lens generator is pointer-independent,
- * so it runs before the fine-pointer gate (touch devices still refract).
+ * used to own `initGlassLens()` (§3.3) as well; the displacement lens is parked
+ * (see the note in the effect body and in app/globals.css), so it does not.
  * Mounted once in `components/Providers.tsx`.
  */
 export function useGlassLight(): void {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Lens refraction filters (Chromium-only; self-gates on support / perf-lite
-    // / reduced-transparency). Pointer-independent — set up before the pointer
-    // gate so touch devices still get refraction.
-    const disposeLens = initGlassLens();
+    // The per-element displacement lens is PARKED (see the §3.3–§3.6 note in
+    // app/globals.css): no CSS rule consumes `--glass-lens` right now, because
+    // current Chromium paints the displacement map into the bevel instead of
+    // bending the backdrop through it. Minting per-element filters nobody reads
+    // would be pure DOM churn, so the generator stays imported but uncalled —
+    // restore `initGlassLens()` here when the CSS upgrades come back.
+    const disposeLens = () => {};
 
     const root = document.documentElement;
     const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;

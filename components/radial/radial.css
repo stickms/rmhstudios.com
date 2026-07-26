@@ -34,22 +34,16 @@
   --rad-card-pad: clamp(1.15rem, 4.5vw, 1.6rem);
   --rad-card-gap: clamp(0.9rem, 3vw, 1.4rem);
 }
-/* Text on the accent auto-contrasts against the accent itself: pure white on
-   dark accents, pure black on light — computed from the accent's OWN OKLCH
-   lightness, so it stays readable for ANY accent the user picks (not just the
-   presets). Gated behind @supports so browsers without relative-colour syntax
-   fall back to the theme's own --site-accent-fg untouched. Cascades to every
-   accent surface in the shell (orb, wedges, buttons, core, …). */
-@supports (color: oklch(from red l c h)) {
-  .radial-shell {
-    /* Threshold 0.70 (not 0.5) deliberately biases toward WHITE ink: on the
-       B&W design white reads cleaner on all but the very lightest accents, so
-       only genuinely pale accents (l > 0.70 — e.g. bright yellow) flip to
-       black. The `* 100` keeps it a hard step → always pure white OR pure
-       black, never a muddy mid-grey. */
-    --site-accent-fg: oklch(from var(--site-accent) clamp(0, (0.7 - l) * 100, 1) 0 0);
-  }
-}
+/* Text on the accent comes from --site-accent-fg, which is always authored
+   next to the accent it sits on: each theme declares the pair, every accent
+   preset ships an explicit readable `fg` (lib/appearance.ts), and a custom
+   accent is run through ensureReadableAccent() (lib/appearance/contrast.ts),
+   which verifies WCAG AA and darkens/lightens the accent until it passes.
+   The shell used to re-derive the foreground in CSS from the accent's own OKLCH
+   lightness via relative colour syntax; engines disagree on whether `l` resolves
+   to a 0–1 number or a 0–100 one, so the arithmetic collapsed to lightness 0 and
+   painted BLACK ink on every accent — invisible on the default ink accent. The
+   JS path is contrast-checked, so there is nothing left for CSS to second-guess. */
 
 .radial-skip {
   position: fixed;
@@ -78,7 +72,12 @@
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  background: var(--site-canvas);
+  /* Transparent on purpose: the aurora canvas (--site-canvas) is painted by the
+     document's own fixed layers (body::before / ::after in globals.css) so it
+     drifts and parallaxes, and so every backdrop-filter on the page samples the
+     SAME scene. Repeating the canvas here would paint a static copy on top of
+     the living one. The rings below are this layer's only content. */
+  background: transparent;
 }
 .radial-backdrop__rings {
   position: absolute;
@@ -549,8 +548,16 @@
   gap: var(--rad-2);
   padding: 0.4rem 0.5rem;
   border-radius: 999px;
-  background: var(--site-surface);
-  border: 1px solid var(--site-border);
+  /* A single floating capsule over the hub's expanding blur — L4 material:
+     it frosts what passes under it instead of hiding it. */
+  background: color-mix(in srgb, var(--site-bg) calc(62% * var(--glass-user-tint, 1)), transparent);
+  -webkit-backdrop-filter: blur(
+      calc(var(--site-glass-blur-overlay, 30px) * var(--glass-blur-factor, 1))
+    )
+    saturate(var(--site-glass-saturate, 180%));
+  backdrop-filter: blur(calc(var(--site-glass-blur-overlay, 30px) * var(--glass-blur-factor, 1)))
+    saturate(var(--site-glass-saturate, 180%));
+  border: var(--site-border-width, 1px) solid var(--site-border);
   box-shadow: var(--site-shadow);
   max-width: calc(100vw - 2rem);
 }
@@ -764,8 +771,11 @@
   gap: var(--rad-3);
   padding: var(--rad-card-pad);
   border-radius: var(--site-radius, 22px);
-  background: var(--site-surface);
-  border: 1px solid var(--site-border);
+  /* L1 material (see globals.css §glass): the feed is the most-repeated surface
+     on the site, so it takes the cheap tier — tint + rim, no backdrop blur —
+     and lets the ring backdrop read through. */
+  background: var(--site-glass-tint, var(--site-surface));
+  border: var(--site-border-width, 1px) solid var(--site-border);
   box-shadow: var(--site-shadow);
   transition:
     transform 0.2s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
@@ -996,29 +1006,17 @@
   gap: var(--rad-4);
 }
 
-/* ── De-glass: flat monochrome surfaces everywhere ────────────────────────
-   The radial language is flat, so demote every "liquid glass" panel to a solid
-   --site-surface card with a real border and no blur/optics — the exact
-   treatment the high-contrast theme already uses (globals.css). This carries
-   the flat radial look onto every content page still built on the glass
-   primitives (library, creator studio, explore, market, …) in a single pass. */
-.radial-shell
-  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-chrome--aside, .glass-overlay, .glass-inset) {
-  background: var(--site-surface) !important;
-  border-color: var(--site-border) !important;
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-}
-/* Kill the remaining glass optics (edge lens, pointer hotspot, ambient sheen). */
-.radial-shell .glass-chrome--aside::before,
-.radial-shell .glass-refract::before,
-.radial-shell .glass-interactive::after {
-  display: none;
-}
-.radial-shell .glass-liquid {
-  background-image: none;
-  animation: none;
-}
+/* ── Glass surfaces inside the radial shell ───────────────────────────────
+   The radial shell used to DEMOTE every glass panel to a flat --site-surface
+   card (no tint, no blur, no optics). It no longer does: the Liquid Glass
+   material is the site's material, and the ring backdrop + aurora canvas are
+   exactly the living scene the panes are meant to sample. So the glass classes
+   render at full strength here — the elevation tiers, the rim glint, the lens
+   band, the pointer light — and every degradation (high-contrast,
+   reduce-transparency, perf-lite, iOS safety tier) still owns the fallback in
+   globals.css. Nothing is overridden per-shell any more — the content layer
+   (.radial-shell__main, z-index 1) already sits above the fixed ring backdrop,
+   so every pane inside it samples the backdrop instead of hiding it. */
 
 /* ── Soft radial entrance for page headers / heroes ───────────────────────
    A gentle rise as each page's title mounts — a fresh element on every client

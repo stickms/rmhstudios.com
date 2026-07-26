@@ -2,7 +2,16 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
-/** Shared spatial-minimal content surface. */
+/**
+ * The shared content surface, rendered in the Liquid Glass material.
+ *
+ * Default is the L1 `.glass-fill` tier (tint + rim, no backdrop blur) because
+ * cards are the most repeated surface on the site; `pane` promotes a singular
+ * panel to L2 `.glass-pane` (blur + noise), and `interactive` adds the hover
+ * tint-raise, press flex and pointer-tracked specular. The classes carry the
+ * material — themes and the degradation tiers (high-contrast, reduced
+ * transparency, perf-lite) restyle them centrally in `app/globals.css`.
+ */
 function Card({
   className,
   pane = false,
@@ -17,10 +26,11 @@ function Card({
   return (
     <div
       data-slot="card"
+      data-glass-light={interactive ? '' : undefined}
       className={cn(
-        'flex flex-col gap-5 rounded-site border border-site-border bg-site-surface py-5 text-site-text transition-[border-color,transform,background-color] duration-200 sm:gap-6 sm:py-6',
-        pane && 'bg-site-surface',
-        interactive && 'hover:-translate-y-0.5 hover:border-site-border-bright',
+        'flex flex-col gap-5 py-5 text-site-text sm:gap-6 sm:py-6',
+        pane ? 'glass-pane' : 'glass-fill',
+        interactive && 'glass-interactive',
         className,
       )}
       {...props}
