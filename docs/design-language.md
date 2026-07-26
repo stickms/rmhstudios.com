@@ -36,18 +36,23 @@ radii, fonts, or shadows — they consume the contract through Tailwind utilitie
 so any theme (and any accent preset layered on top) restyles the entire site
 without a single component change.
 
-> **Implemented vs. referenced — read this first.** The **radial** layer (shell,
-> hub, wheel feed, metaball cursor) ships today in
-> [`components/radial/`](../components/radial/README.md), and the current
-> **default renders it as a flattened, strict black-&-white baseline**: the
-> radial shell demotes the glass classes to opaque flat `--site-surface` cards
-> (the same flatten `high-contrast` uses), so content pages read as clean
-> monochrome, not frosted glass. The full **Liquid Glass optics _on the radial
-> surfaces_ are the north star this language references** — the material system
-> documented below (§2, §5.1, §7) is real and lives in the codebase, and is what
-> the radial UI grows back into as the optics are re-enabled over the monochrome
-> shell. **Build new UI to the Radial Avant-Garde Glass vision**; where the flat
-> baseline is what ships today, it degrades cleanly to it.
+> **What ships today — read this first.** Both layers are live. The **radial**
+> layer (shell, hub, wheel feed, metaball cursor) ships in
+> [`components/radial/`](../components/radial/README.md), and the **Liquid Glass
+> material is rendered on top of it**: the radial shell no longer demotes the
+> glass classes to flat cards, the aurora canvas paints and drifts behind
+> everything, and surfaces are translucent by token (`--site-surface` is a tint,
+> not paper) so both the `.glass-*` tiers and the many pages that simply paint
+> `bg-site-surface` sample the same scene. The elevation tiers, rim glint,
+> pointer light, frosted edge bevel and liquid sheen are all on.
+>
+> One optic is **parked**: the SVG displacement lens (`url(#glass-lens)`, §5.1
+> `.glass-refract`) — current Chromium composites the displacement map into the
+> bevel instead of bending the backdrop through it, so refract surfaces keep the
+> frosted edge band (and the prism keeps its static chromatic rim) without the
+> bend. The filters and `lib/glass-lens.ts` still ship; re-enabling is restoring
+> the `@supports` upgrades in `app/globals.css` plus the `initGlassLens()` call
+> in `hooks/useGlassLight.ts`. Everything else in §2, §5.1 and §7 is live.
 
 Specs: [radial UI](../components/radial/README.md) ·
 [v1 glass material](./plans/2026-07-14-liquid-glass-ui-redesign.md) ·
@@ -112,17 +117,20 @@ each in `app/globals.css`. Visitors with no saved preference get `DEFAULT_STYLE`
 (`default`), and persisted-but-unknown prefs self-heal in `Providers.tsx`.
 
 The **default** (`default` = the bare `:root`, no class) is the **Radial Liquid
-Glass baseline**: strict high-contrast **monochrome** — white canvas, ink text,
-an ink accent, hairline black borders — the palette the radial shell renders
-**flat** (see the "implemented vs. referenced" callout above). The other themes
-remain **tints of the Liquid Glass material** over their own `--site-canvas`
-aurora, and are the live reference for the optics the radial surfaces grow back
-into. (The old `liquid-glass` theme id is retired — it _became_ the shell.)
+Glass baseline**: strict **monochrome** — a white aurora canvas, ink text, an ink
+accent, hairline black borders — rendered as glass, not paper: its surfaces are
+translucent white tints over the drifting canvas. Every other theme is the same
+material in its own palette over its own `--site-canvas` aurora. (The old
+`liquid-glass` theme id is retired — it _became_ the shell.)
 
-| Group   | Themes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Base    | `default` (**Radial Monochrome** — the site default: strict high-contrast black-&-white, ink accent, flat surfaces; the radial shell's flattened baseline that de-glasses content pages), `light` (**Glass Light** — daylight canvas, brighter white frost, dark ink), `high-contrast` (WCAG AAA, **no glass**: opaque black/white, yellow accent, 2px borders), `ultra` (**Ultra** — near-black spectral canvas, precision geometry, ice-cyan signal color, fast motion and restrained violet energy) |
-| Curated | `graphite` (Graphite Glass — monochrome smoke, desaturated), `sepia` (Sepia Glass — warm parchment, amber accent), `nocturne` (Nocturne Glass — deep-navy nightscape, sky-blue aurora)                                                                                                                                                                                                                                                                                                                 |
+Note that `SITE_STYLES` currently ships three of these — `default`, `graphite`
+and `high-contrast`; the other palettes below stay in `globals.css` as complete,
+ready token sets (and as the reference every user theme derives from).
+
+| Group   | Themes                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Base    | `default` (**Radial Monochrome** — the site default: strict black-&-white, ink accent, translucent white frost over a white aurora), `light` (**Glass Light** — daylight canvas, brighter white frost, dark ink), `high-contrast` (WCAG AAA, **no glass**: opaque black/white, yellow accent, 2px borders), `ultra` (**Ultra** — near-black spectral canvas, precision geometry, ice-cyan signal color, fast motion and restrained violet energy) |
+| Curated | `graphite` (Graphite Glass — monochrome smoke, desaturated), `sepia` (Sepia Glass — warm parchment, amber accent), `nocturne` (Nocturne Glass — deep-navy nightscape, sky-blue aurora)                                                                                                                                                                                                                                                            |
 
 The glass primitives live in `components/ui/liquid-glass.tsx` (`GlassPane` and
 `GlassFilter` — the v2 lens-filter host mounted globally in `__root.tsx`) with a
@@ -337,11 +345,10 @@ inline compose box, with a floating compose button that opens the new-rmhark
 modal. Every other `_site` route flows the same way — natural document scroll,
 **no pinned/sticky page chrome** — inside a centred content column
 (`.radial-shell__main`, `max-width: 72rem`) on the backdrop. The radial shell
-**flattens content to the monochrome baseline** — it demotes the glass classes
-to flat `--site-surface` cards (de-glass, §5.1), strips PageLayout's header card,
-and unpins sticky headers/tabs/search — so pages read as clean flat monochrome.
-(Re-enabling the Liquid Glass optics over these radial surfaces is the referenced
-direction — see the top-of-file callout.)
+keeps its **layout** opinions on content pages — it strips PageLayout's header
+card down to flat big type and unpins sticky headers/tabs/search so every page
+flows like the feed — but it no longer touches the **material**: the glass classes
+render at full strength inside the shell, over the ring backdrop and the aurora.
 
 Two page archetypes (see `docs/page-consistency.md` for full code):
 
@@ -363,7 +370,8 @@ _inside_ container cards, not between page-level sections.
 
 Full-screen experiences (games, `/login`, legal pages, Discord activities) live
 at the **top level** of `app/routes/` — outside `_site/` — and deliberately get
-no shell (no radial chrome, no de-glass — they own their own look).
+no shell (no radial chrome — they own their own look; the aurora canvas is
+gated off there too, via `html.app-route`).
 
 ---
 

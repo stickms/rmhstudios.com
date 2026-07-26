@@ -12,6 +12,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { isDiscordActivity } from '@/lib/discord-sdk';
 import { Providers, THEME_EXCLUDED_ROUTES } from '@/components/Providers';
+import { GlassFilter } from '@/components/ui/liquid-glass';
 import { TwemojiProvider } from '@/components/ui/TwemojiProvider';
 import { NavigationProgress } from '@/components/ui/NavigationProgress';
 import { BackNavAnimation } from '@/components/ui/BackNavAnimation';
@@ -27,7 +28,6 @@ import { APP_THEME_BG, THEME_BG, DEFAULT_STYLE } from '@/stores/themeStore';
 import { ACCENT_MAP } from '@/lib/appearance';
 import { GLASS_LEVEL_VARS, GLASS_LEVEL_KEY } from '@/lib/appearance/prefs';
 import appCss from '@/app/globals.css?url';
-import themeCss from '@/app/theme.css?url';
 import { resolveLocale, parseLocaleCookie } from '@/lib/i18n/resolve';
 import { dirFor, DEFAULT_LOCALE, LOCALES, RTL_LOCALES, type Locale } from '@/lib/i18n/config';
 import { localeCoreResources, preloadLocale } from '@/lib/i18n/resources.server';
@@ -236,7 +236,6 @@ export const Route = createRootRoute({
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
         { rel: 'stylesheet', href: appCss },
-        { rel: 'stylesheet', href: themeCss },
       ],
       scripts: [
         { children: platformScript },
@@ -278,6 +277,10 @@ function RootDocument({ children }: { children: ReactNode }) {
       <body className="font-body antialiased" suppressHydrationWarning>
         <script dangerouslySetInnerHTML={{ __html: bodyThemeScript }} />
         {children}
+        {/* The Liquid Glass lens filters (#glass-lens / -press / -prism, plus the
+            #glass-goo metaball filter). One hidden SVG host for the whole
+            document — every `.glass-refract` surface samples it by url(). */}
+        <GlassFilter />
         <Scripts />
       </body>
     </html>

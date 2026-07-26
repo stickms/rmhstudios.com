@@ -38,6 +38,8 @@ import {
   applyGlassLevel,
 } from '@/lib/appearance/prefs';
 import { useSpatialParallax } from '@/hooks/useSpatialParallax';
+import { useGlassLight } from '@/hooks/useGlassLight';
+import { useLiquidBackground } from '@/hooks/useLiquidBackground';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { useLocaleStore, writeLocaleCookie } from '@/stores/localeStore';
 import { applyHtmlLangDir } from '@/lib/i18n/dom';
@@ -240,6 +242,15 @@ export function Providers({
   // A single rAF-throttled listener gives the monochrome spatial backdrop its
   // restrained depth response. It automatically stands down for reduced motion.
   useSpatialParallax();
+
+  // The Liquid Glass optics runtime, two single-listener hooks (each rAF-throttled
+  // and self-gating on reduced motion / perf tier):
+  //  - useGlassLight: the scene light every rim glint answers, the per-element
+  //    pointer hotspot, and the per-element lens filters (lib/glass-lens).
+  //  - useLiquidBackground: the aurora canvas' parallax follow (pointer on
+  //    desktop, opt-in device tilt on touch).
+  useGlassLight();
+  useLiquidBackground();
 
   // Sync the locale store to the SSR-resolved locale and reconcile <html lang/dir>
   // so a user whose locale was resolved via Accept-Language (no cookie yet) gets
@@ -739,8 +750,19 @@ export function Providers({
                 theme={style === 'graphite' || style === 'high-contrast' ? 'dark' : 'light'}
                 position="bottom-left"
                 toastOptions={{
+                  // Toasts are L4 floating UI and get the matching material
+                  // inline. It is written out here rather than by adding
+                  // `.glass-overlay` because that class also sets position,
+                  // max sizes and overflow — all of which sonner owns for its
+                  // own stacking. A plain translucent --site-surface with no
+                  // blur would let the page ghost through the message.
                   style: {
-                    background: 'var(--site-surface)',
+                    background:
+                      'color-mix(in srgb, var(--site-surface-opaque, var(--site-surface)) 82%, transparent)',
+                    backdropFilter:
+                      'blur(calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1))) saturate(var(--site-glass-saturate))',
+                    WebkitBackdropFilter:
+                      'blur(calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1))) saturate(var(--site-glass-saturate))',
                     border: '1px solid var(--site-border)',
                     borderRadius: 'var(--site-radius-sm)',
                     boxShadow: 'var(--site-shadow)',

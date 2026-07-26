@@ -143,15 +143,17 @@ Work through this for every new or edited page:
       `.site-sticky-chrome`; editor-internal sticky bars use
       `.site-sticky-contained`. Never pin two stickies to the same `top` — they
       overlap and hide each other while scrolled.
-- [ ] Liquid Glass optics are the **referenced** material: inside the radial
-      shell today they are **flattened** (glass panes render as flat
-      `--site-surface` cards — no blur, no rim glint), so don't rely on the glint
-      or lens for legibility. Where the optics are enabled on a surface they come
-      free (panes/overlays/chrome glint; fills glint on hover) — only opt into
-      the rationed extras when a page's spec says so: `.glass-refract` +
-      `data-glass-lens` (≤2/page, hero/chrome only), `.glass-refract--prism`
-      (≤1/page), `.glass-liquid` ambient sheen (≤3/page), `.glass-sheen-hover`
-      (primary CTAs).
+- [ ] Liquid Glass optics are **live**, inside the radial shell included: the
+      tier you pick paints real material (tint, blur where the tier has it, rim
+      glint on panes/overlays/chrome, hover glint on fills) and every degradation
+      is central, so never branch per-component. Never rely on an optic for
+      **legibility** — text has to hold on `--site-surface-opaque` too, because
+      high-contrast, reduced transparency and perf-lite all collapse to it. Opt
+      into the rationed extras only when a page's spec says so: `.glass-refract`
+      (≤2/page, hero/chrome only — a frosted edge bevel today; the displacement
+      lens is parked, see design-language.md), `.glass-refract--prism` (≤1/page,
+      static chromatic rim), `.glass-liquid` ambient sheen (≤3/page),
+      `.glass-sheen-hover` (primary CTAs).
 
 ### States
 
