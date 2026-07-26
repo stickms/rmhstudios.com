@@ -563,8 +563,12 @@
   clip-path: circle(150vmax at 50% 50%);
 }
 /* ── Wedge (pie) navigation dial ──────────────────────────────────────── */
-/* Now just a transparent geometry frame centred on the viewport over the blur;
-   the orb caps its centre as the core. Thin gaps between wedges reveal the blur. */
+/* The dial is also the DIVIDER BED: the sectors tile it with thin angular gaps,
+   so this background is what shows through them as the hairlines between
+   wedges. Without it the gaps just reveal the (light, blurred) page and the dial
+   dissolves into the background — on a white page the whole menu read as a faint
+   smudge with no edges at all. The rim ring + drop shadow give the disc a
+   boundary against the page for the same reason. */
 .radial-hub__dial {
   position: relative;
   z-index: 2;
@@ -572,6 +576,10 @@
   height: var(--dial);
   --dial: min(86vw, 70vh, 460px);
   border-radius: 50%;
+  background: var(--site-border-bright);
+  box-shadow:
+    0 0 0 1px var(--site-border),
+    0 24px 70px -24px rgba(0, 0, 0, 0.45);
   /* Blooms in / collapses out via TRANSITION (not a one-shot keyframe), so it
      animates both ways and stays in sync with the blur + orb. */
   opacity: 0;
@@ -639,13 +647,25 @@
   transform: scale(1);
   transition-delay: calc(var(--i) * 20ms);
 }
-/* Art sector: the visible resting fill — translucent frosted glass so the
-   blurred backdrop reads through it (avant-garde glass). */
+/* Art sector: the visible resting fill.
+   `--site-surface` is itself a TRANSLUCENT tint (the Liquid Glass material), so
+   the old `color-mix(surface 60%, transparent)` was a tint of a tint — over a
+   light page it resolved to very nearly nothing and the sectors disappeared.
+   Build the fill on `--site-surface-opaque` (the solid companion the material
+   already ships for exactly these "translucency won't do" cases) and keep only a
+   little transparency, so the sector still samples the blurred backdrop but
+   always reads as a distinct surface.
+
+   The few percent of `--site-text` mixed in is what separates the dial from the
+   PAGE: on the default theme both the page and the solid surface are white, so
+   without it the sectors would still be white-on-white and only the rim would
+   show. Mixing toward the ink adapts automatically — a touch darker than a light
+   page, a touch lighter than a dark one. */
 .radial-hub__wedge-art {
   position: absolute;
   inset: 0;
   display: block;
-  background: color-mix(in srgb, var(--site-surface) 60%, transparent);
+  background: color-mix(in srgb, var(--site-surface-opaque) 94%, var(--site-text) 6%);
 }
 .radial-hub__wedge-art.is-active {
   background: var(--site-accent);
