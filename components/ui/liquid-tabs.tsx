@@ -232,6 +232,12 @@ export function LiquidTabs({
   // Icon + label + count/badge, each above the capsule at z-1. In `iconOnly` mode
   // a tab that has an icon hides its label visually but keeps it as the
   // `sr-only` accessible name (the button/link also gets a `title` tooltip).
+  //
+  // The label also carries `liquid-tabs__label`, which globals.css uses to hide
+  // labels on PHONES for any tab that has an icon (`data-has-icon` on the
+  // control) — that is what keeps crowded strips from needing a horizontal
+  // scroll on small screens. It hides them with the sr-only technique, so the
+  // accessible name survives either way.
   const content = (tab: LiquidTab) => {
     const Icon = tab.icon;
     const hideLabel = iconOnly && Boolean(Icon);
@@ -246,7 +252,9 @@ export function LiquidTabs({
             aria-hidden
           />
         )}
-        <span className={cn('relative z-1', hideLabel && 'sr-only')}>{tab.label}</span>
+        <span className={cn('liquid-tabs__label relative z-1', hideLabel && 'sr-only')}>
+          {tab.label}
+        </span>
         {typeof tab.count === 'number' && (
           <span className="relative z-1 text-xs opacity-70 tabular-nums">{tab.count}</span>
         )}
@@ -271,14 +279,18 @@ export function LiquidTabs({
       // `relative` wrapper — the capsule sits behind the link (a link can't host
       // the layoutId element AND be the focus/aria target cleanly).
       return (
-        <div key={tab.id} className={cn('relative shrink-0', fullWidth && 'flex-1')}>
+        <div
+          key={tab.id}
+          data-has-icon={tab.icon ? '' : undefined}
+          className={cn('relative shrink-0', fullWidth && 'flex-1')}
+        >
           {capsule(active)}
           {renderTab!(tab, {
             active,
             id: tabId(tab.id),
             'aria-current': active ? 'page' : undefined,
             className: itemClass(active),
-            title: iconOnly && tab.icon ? tab.label : undefined,
+            title: tab.icon ? tab.label : undefined,
             children: content(tab),
           })}
         </div>
@@ -296,7 +308,10 @@ export function LiquidTabs({
         disabled={tab.disabled}
         tabIndex={active ? 0 : -1}
         onClick={() => onChange?.(tab.id)}
-        title={iconOnly && tab.icon ? tab.label : undefined}
+        // A tooltip whenever the label can be hidden — by `iconOnly`, or by the
+        // phone breakpoint that hides labels on any icon-bearing tab.
+        title={tab.icon ? tab.label : undefined}
+        data-has-icon={tab.icon ? '' : undefined}
         className={itemClass(active)}
       >
         {capsule(active)}

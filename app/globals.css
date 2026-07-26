@@ -4407,3 +4407,42 @@ html.reduce-motion .u-parallax {
     transform: rotate(calc(var(--i) * 120deg + 180deg)) translateX(125%) scale(1);
   }
 }
+
+/* ==========================================================================
+   Compact tab strips on phones
+   A strip with 5–6 labelled tabs overflows a 360px screen, and the fallback was
+   a horizontal scroll — content hidden off-screen behind a gesture people often
+   don't discover. On phones we instead:
+     1. hide the LABEL of any tab that carries an icon (the icon plus the tab's
+        `title`/accessible name still identify it), and
+     2. let the strip WRAP rather than scroll, so nothing is ever parked
+        off-screen horizontally.
+   Labels are hidden with the sr-only technique, never `display:none`, so the
+   accessible name — the only name these controls have — survives.
+   ========================================================================== */
+@media (max-width: 639px) {
+  [data-slot='liquid-tabs'] [data-has-icon] .liquid-tabs__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border-width: 0;
+  }
+  /* Wrap instead of scroll. The sheet keeps its own padding; rows breathe via
+     row-gap so a wrapped second row doesn't collide with the first. */
+  [data-slot='liquid-tabs'].tab-sheet-scroll,
+  [data-slot='liquid-tabs'] {
+    overflow-x: visible;
+    flex-wrap: wrap;
+    row-gap: 0.25rem;
+  }
+  /* Tabs may now shrink to fit a row instead of forcing an overflow. */
+  [data-slot='liquid-tabs'] > * {
+    flex-shrink: 1;
+    min-width: 0;
+  }
+}
