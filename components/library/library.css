@@ -3269,3 +3269,29 @@ html.reduce-motion .lib-playground [data-library-orbit] {
 .style-high-contrast .lib--glass-playground .lib-section-shell {
   border-color: var(--site-border);
 }
+
+/* ─── Phone density: two volumes per row ─────────────────────────────────────
+   The shelves reserve a column per book from the DESKTOP cover size (238px for
+   the catalog, 168px for the plain shelf), but a cover's art is capped at 150px
+   (`.lib-book__cover { width: min(100%, 150px) }`) — so on a ~345px phone each
+   column wasted most of its width and only one book fit per row. Narrowing the
+   track to just over the cover width fits two per row without touching the cover
+   itself, and `--cover-h` comes down with it so a half-width tile keeps a
+   book-like proportion (the shelf ledges key off the same variable, so they stay
+   aligned). Desktop is untouched. */
+@media (max-width: 639px) {
+  .lib__shelf {
+    --col: 150px;
+    --cover-h: 196px;
+    --cap-h: 56px;
+    column-gap: 12px;
+    row-gap: 28px;
+    padding-inline: 0;
+  }
+  .lib__shelf--catalog,
+  .lib--glass-playground .lib__shelf--catalog {
+    --cover-h: 240px;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 156px), 1fr));
+    gap: 20px 12px;
+  }
+}
