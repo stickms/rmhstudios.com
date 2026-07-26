@@ -180,6 +180,20 @@ export function RadialHub() {
 
   return (
     <div className="radial-hub" data-phase={phase}>
+      {/* Metaball aura — a decorative layer BEHIND the orb holding a disc the
+          orb's size plus a few orbiting blobs, all under the goo filter so they
+          stretch and fuse into one wobbling liquid mass around it. It is its own
+          layer (not a pseudo-element on the orb) because filtering the orb would
+          also chew the RMH mark's hairline strokes. It tracks the orb's docked /
+          centred position from the same tokens, and carries no `data-floating`
+          so it never joins the mobile floating-bottom stack. */}
+      <div className="radial-hub__aura" aria-hidden>
+        <span className="radial-hub__aura-core" />
+        {[0, 1, 2].map((i) => (
+          <span key={i} className="radial-hub__aura-blob" style={{ ['--i' as string]: i }} />
+        ))}
+      </div>
+
       <button
         type="button"
         className="radial-hub__orb"
@@ -218,20 +232,18 @@ export function RadialHub() {
           role="menu"
           aria-label={t('section-navigation', { defaultValue: 'Browse RMH Studios' })}
         >
+          {/* Shapes only — this layer carries the goo filter, so the clipped
+              sectors swell and fuse into one liquid dial. Anything with text in
+              it would come out chewed by the filter's alpha ramp, which is why
+              the icons + labels ride in the sibling glyph layer below. Each
+              sector is still the real link (aria-label carries its name), so
+              hit-testing and semantics are unchanged. */}
           <ul className="radial-hub__wedges">
             {wedges.map((w, i) => {
-              const Icon = w.icon as LucideIcon;
               const active = isActive(pathname, w.href);
               const label = t(w.tKey, { defaultValue: w.label });
               const wrapStyle = { '--i': i } as CSSProperties;
               const cls = 'radial-hub__wedge' + (active ? ' is-active' : '');
-              const innerStyle = { left: `${w.cx}%`, top: `${w.cy}%` } as CSSProperties;
-              const inner = (
-                <span className="radial-hub__wedge-inner" style={innerStyle}>
-                  <Icon aria-hidden />
-                  <span className="radial-hub__wedge-label">{label}</span>
-                </span>
-              );
               return (
                 <li key={w.id} className="radial-hub__wedge-wrap" style={wrapStyle} role="none">
                   {w.external ? (
@@ -244,9 +256,7 @@ export function RadialHub() {
                       tabIndex={tab}
                       aria-current={active ? 'page' : undefined}
                       aria-label={label}
-                    >
-                      {inner}
-                    </a>
+                    />
                   ) : (
                     <Link
                       to={w.href}
@@ -257,14 +267,34 @@ export function RadialHub() {
                       tabIndex={tab}
                       aria-current={active ? 'page' : undefined}
                       aria-label={label}
-                    >
-                      {inner}
-                    </Link>
+                    />
                   )}
                 </li>
               );
             })}
           </ul>
+
+          {/* Crisp glyph layer: rides above the fused sectors, unfiltered and
+              click-through, so icons and labels stay razor sharp. */}
+          <div className="radial-hub__glyphs" aria-hidden>
+            {wedges.map((w, i) => {
+              const Icon = w.icon as LucideIcon;
+              const active = isActive(pathname, w.href);
+              const style = { left: `${w.cx}%`, top: `${w.cy}%`, '--i': i } as CSSProperties;
+              return (
+                <span
+                  key={w.id}
+                  className={'radial-hub__glyph' + (active ? ' is-active' : '')}
+                  style={style}
+                >
+                  <Icon aria-hidden />
+                  <span className="radial-hub__wedge-label">
+                    {t(w.tKey, { defaultValue: w.label })}
+                  </span>
+                </span>
+              );
+            })}
+          </div>
         </div>
 
         <div className="radial-hub__foot">

@@ -10,6 +10,7 @@ import { BackToTop } from '@/components/ui/back-to-top';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { RadialHub } from './RadialHub';
 import { MetaballCursor } from './MetaballCursor';
+import { LiquidGoo } from './LiquidGoo';
 
 /**
  * Fixed monochrome backdrop: concentric hairline rings centred on the viewport
@@ -65,6 +66,15 @@ function RadialBackdrop() {
       <div className="radial-backdrop__rings" ref={ringsRef}>
         {[0, 1, 2, 3, 4, 5].map((i) => (
           <span key={i} className="radial-backdrop__ring" style={{ ['--i' as string]: i }} />
+        ))}
+      </div>
+      {/* Metaball field: a few slow-drifting blobs under a wide goo filter, so
+          they swell together and pull apart like lava — the liquid substrate the
+          glass surfaces float over. Shapes only (no text), and CSS keeps the
+          whole layer off phones / reduced-motion for paint cost. */}
+      <div className="radial-backdrop__field">
+        {[0, 1, 2, 3].map((i) => (
+          <span key={i} className="radial-backdrop__blob" style={{ ['--i' as string]: i }} />
         ))}
       </div>
     </div>
@@ -156,6 +166,9 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
       <a href="#main-content" className="radial-skip">
         {t('skipToContent', { defaultValue: 'Skip to content' })}
       </a>
+
+      {/* The metaball filter bank every liquid surface references from CSS. */}
+      <LiquidGoo />
 
       <RadialBackdrop />
       <RadialTopBar />

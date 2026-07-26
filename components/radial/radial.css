@@ -119,6 +119,64 @@
     animation-delay: calc(var(--i) * -1.6s);
   }
 }
+/* ── Metaball blob field ──────────────────────────────────────────────────
+   A few huge, very faint blobs drifting behind everything under a WIDE goo
+   filter, so they stretch toward each other, fuse, and pull apart again — the
+   lava-lamp substrate the glass surfaces float on. Hidden entirely on phones and
+   under reduced motion (a full-screen SVG filter animating forever is exactly
+   the continuous GPU cost the backdrop rules already avoid there). */
+.radial-backdrop__field {
+  display: none;
+  position: absolute;
+  inset: -10%;
+  z-index: -1;
+}
+.radial-backdrop__blob {
+  position: absolute;
+  width: clamp(18rem, 34vw, 32rem);
+  height: clamp(18rem, 34vw, 32rem);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--site-text) 7%, transparent);
+  will-change: transform;
+}
+.radial-backdrop__blob:nth-child(1) {
+  left: 6%;
+  top: 12%;
+}
+.radial-backdrop__blob:nth-child(2) {
+  right: 8%;
+  top: 4%;
+}
+.radial-backdrop__blob:nth-child(3) {
+  left: 22%;
+  bottom: 2%;
+}
+.radial-backdrop__blob:nth-child(4) {
+  right: 16%;
+  bottom: 10%;
+}
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .radial-backdrop__field {
+    display: block;
+    filter: url(#rmh-liquid-lg);
+  }
+  .radial-backdrop__blob {
+    animation: radial-blob-drift 26s ease-in-out infinite alternate;
+    animation-delay: calc(var(--i) * -6s);
+  }
+}
+@keyframes radial-blob-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(6vw, -4vh, 0) scale(1.18);
+  }
+  100% {
+    transform: translate3d(-5vw, 5vh, 0) scale(0.9);
+  }
+}
+
 @keyframes radial-breathe {
   0%,
   100% {
@@ -318,6 +376,74 @@
   outline: 3px solid var(--site-text);
   outline-offset: 3px;
 }
+
+/* ── Orb metaball aura ───────────────────────────────────────────────────
+   Shapes only, sitting one layer under the orb and tracking its position, so the
+   goo filter fuses the core disc with its orbiting blobs into a single liquid
+   body that bulges and necks as they swing. Purely decorative: hidden on phones
+   and under reduced motion, and never hit-testable. */
+.radial-hub__aura {
+  display: none;
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--site-hub-orb-inset));
+  z-index: 79;
+  width: var(--site-hub-orb-size);
+  height: var(--site-hub-orb-size);
+  transform: translateX(-50%);
+  pointer-events: none;
+  /* Match the orb's motion exactly so the aura rides with it to centre. */
+  transition: transform 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+}
+.radial-hub[data-phase='open'] .radial-hub__aura {
+  z-index: 94;
+  transform: translate(
+    -50%,
+    calc(env(safe-area-inset-bottom, 0px) + var(--site-hub-orb-inset) + 50% - 50dvh)
+  );
+}
+.radial-hub[data-phase='closing'] .radial-hub__aura {
+  z-index: 94;
+}
+.radial-hub__aura-core,
+.radial-hub__aura-blob {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--site-accent);
+}
+.radial-hub__aura-core {
+  inset: 0;
+}
+.radial-hub__aura-blob {
+  left: 50%;
+  top: 50%;
+  width: 42%;
+  height: 42%;
+  margin: -21% 0 0 -21%;
+  opacity: 0.85;
+}
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .radial-hub__aura {
+    display: block;
+    filter: url(#rmh-liquid);
+  }
+  .radial-hub__aura-blob {
+    animation: radial-aura-orbit 7s ease-in-out infinite;
+    animation-delay: calc(var(--i) * -2.33s);
+  }
+}
+/* Each blob swings out and back on its own phase; the goo pulls a stretched neck
+   between blob and core, which is what sells the liquid feel. */
+@keyframes radial-aura-orbit {
+  0%,
+  100% {
+    transform: rotate(0deg) translateX(52%) scale(0.9);
+  }
+  50% {
+    transform: rotate(180deg) translateX(76%) scale(1.1);
+  }
+}
+
 /* The RMH mark (radial spirograph SVG) drawn in the orb's accent-contrast ink. */
 .radial-hub__logo {
   display: block;
@@ -449,6 +575,16 @@
   margin: 0;
   padding: 0;
 }
+/* METABALL DIAL — the sectors are shapes only (the glyph layer sits above), so
+   the goo filter can blur-then-threshold them into ONE liquid disc: the thin
+   dividers become gooey necks, the sharp centre point and rim corners round off,
+   and each sector bulges as it grows in. Filter cost is real, so it is desktop +
+   no-reduced-motion only; everywhere else the sectors just render crisply. */
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .radial-hub__wedges {
+    filter: url(#rmh-liquid);
+  }
+}
 .radial-hub__wedge-wrap {
   position: absolute;
   inset: 0;
@@ -501,7 +637,16 @@
 .radial-hub__wedge:focus-visible {
   outline: none;
 }
-.radial-hub__wedge-inner {
+/* Crisp glyph layer — rides ABOVE the goo-filtered sectors and is never itself
+   filtered, so icons and labels stay razor sharp while the dial behind them
+   flows. Click-through, so the clipped sector links underneath keep every tap. */
+.radial-hub__glyphs {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.radial-hub__glyph {
   position: absolute;
   transform: translate(-50%, -50%);
   display: grid;
@@ -510,10 +655,37 @@
   width: max-content;
   max-width: 5.5rem;
   text-align: center;
-  /* Clicks fall through the label to the clipped wedge link underneath. */
-  pointer-events: none;
+  /* Auto-contrast without coupling to each sector's state: `difference` against
+     pure white paints the exact inverse of whatever is underneath, so a glyph
+     reads correctly over a resting sector AND over an accent-filled hover/active
+     one — no per-index selector needed now that the glyphs are their own layer.
+     Same device the metaball cursor already uses. */
+  color: #fff;
+  mix-blend-mode: difference;
+  /* Fades in with its own sector (same per-wedge stagger as the bloom). */
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
-.radial-hub__wedge-inner svg {
+.radial-hub[data-phase='open'] .radial-hub__glyph {
+  opacity: 1;
+  transition-delay: calc(var(--i) * 20ms + 60ms);
+}
+/* Blending is a legibility device, not decoration — drop it where the platform
+   or theme demands literal colours. */
+@media (forced-colors: active) {
+  .radial-hub__glyph {
+    mix-blend-mode: normal;
+    color: var(--site-text);
+  }
+}
+.style-high-contrast .radial-hub__glyph {
+  mix-blend-mode: normal;
+  color: var(--site-text);
+}
+.style-high-contrast .radial-hub__glyph.is-active {
+  color: var(--site-accent-fg);
+}
+.radial-hub__glyph svg {
   width: 1.3rem;
   height: 1.3rem;
 }
@@ -962,6 +1134,8 @@
   .radial-hub__wedge-wrap,
   .radial-hub__wedge,
   .radial-hub__foot,
+  .radial-hub__glyph,
+  .radial-hub__aura,
   .rmhark,
   .radial-feed__compose {
     transition-duration: 0.001ms;
