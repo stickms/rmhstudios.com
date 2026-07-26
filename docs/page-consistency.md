@@ -102,6 +102,14 @@ Work through this for every new or edited page:
 
 - [ ] Colors/borders/text only via `site-*` utilities; radii via
       `rounded-site`/`rounded-site-sm`; shadows via `shadow-site`.
+- [ ] **Ink tracks its surface.** On a filled surface, use that surface's paired
+      foreground — `bg-site-accent` → `text-site-accent-fg`, `bg-site-danger` →
+      `text-site-danger-fg`. `globals.css` supplies these by default (zero
+      specificity), so a background-only element is already correct; what you
+      must not do is hardcode `text-white`/`text-black` on a themed surface —
+      it survives today's accent and breaks against a user's. Translucent tints
+      (`bg-site-accent/15` + `text-site-accent`) are a separate, correct pattern
+      and are untouched.
 - [ ] Surfaces via `Card` (L1 `.glass-fill` by default; `pane` for L2,
       `interactive` for the pointer light) or the glass elevation classes
       (design-language.md §5.1) — repeated rows/tiles use `.glass-fill` (no

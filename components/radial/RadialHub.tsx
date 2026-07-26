@@ -232,18 +232,46 @@ export function RadialHub() {
           role="menu"
           aria-label={t('section-navigation', { defaultValue: 'Browse RMH Studios' })}
         >
-          {/* Shapes only — this layer carries the goo filter, so the clipped
-              sectors swell and fuse into one liquid dial. Anything with text in
-              it would come out chewed by the filter's alpha ramp, which is why
-              the icons + labels ride in the sibling glyph layer below. Each
-              sector is still the real link (aria-label carries its name), so
-              hit-testing and semantics are unchanged. */}
-          <ul className="radial-hub__wedges">
+          {/* ART LAYER — decorative sector fills, shapes only, and the only
+              thing the goo filter touches: the clipped sectors swell and fuse
+              into one liquid dial. Nothing readable lives here (the filter's
+              alpha ramp would chew glyph antialiasing), and it never takes a
+              pointer event. */}
+          <ul className="radial-hub__wedges radial-hub__wedges--art" aria-hidden>
             {wedges.map((w, i) => {
+              const active = isActive(pathname, w.href);
+              const wrapStyle = { '--i': i } as CSSProperties;
+              return (
+                <li key={w.id} className="radial-hub__wedge-wrap" style={wrapStyle}>
+                  <span
+                    className={'radial-hub__wedge-art' + (active ? ' is-active' : '')}
+                    style={{ clipPath: w.clip }}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* HIT LAYER — the real links, unfiltered, with their icon + label
+              inside them. Keeping the glyph inside its own sector is what makes
+              the colour correct by construction: it inherits the sector's
+              `color`, which is the theme's ink on the resting (transparent)
+              sector and the accent's contrast ink once the sector fills on
+              hover/focus/active. No blend modes, no cross-layer state. */}
+          <ul className="radial-hub__wedges radial-hub__wedges--hit">
+            {wedges.map((w, i) => {
+              const Icon = w.icon as LucideIcon;
               const active = isActive(pathname, w.href);
               const label = t(w.tKey, { defaultValue: w.label });
               const wrapStyle = { '--i': i } as CSSProperties;
               const cls = 'radial-hub__wedge' + (active ? ' is-active' : '');
+              const innerStyle = { left: `${w.cx}%`, top: `${w.cy}%` } as CSSProperties;
+              const inner = (
+                <span className="radial-hub__wedge-inner" style={innerStyle}>
+                  <Icon aria-hidden />
+                  <span className="radial-hub__wedge-label">{label}</span>
+                </span>
+              );
               return (
                 <li key={w.id} className="radial-hub__wedge-wrap" style={wrapStyle} role="none">
                   {w.external ? (
@@ -256,7 +284,9 @@ export function RadialHub() {
                       tabIndex={tab}
                       aria-current={active ? 'page' : undefined}
                       aria-label={label}
-                    />
+                    >
+                      {inner}
+                    </a>
                   ) : (
                     <Link
                       to={w.href}
@@ -267,34 +297,14 @@ export function RadialHub() {
                       tabIndex={tab}
                       aria-current={active ? 'page' : undefined}
                       aria-label={label}
-                    />
+                    >
+                      {inner}
+                    </Link>
                   )}
                 </li>
               );
             })}
           </ul>
-
-          {/* Crisp glyph layer: rides above the fused sectors, unfiltered and
-              click-through, so icons and labels stay razor sharp. */}
-          <div className="radial-hub__glyphs" aria-hidden>
-            {wedges.map((w, i) => {
-              const Icon = w.icon as LucideIcon;
-              const active = isActive(pathname, w.href);
-              const style = { left: `${w.cx}%`, top: `${w.cy}%`, '--i': i } as CSSProperties;
-              return (
-                <span
-                  key={w.id}
-                  className={'radial-hub__glyph' + (active ? ' is-active' : '')}
-                  style={style}
-                >
-                  <Icon aria-hidden />
-                  <span className="radial-hub__wedge-label">
-                    {t(w.tKey, { defaultValue: w.label })}
-                  </span>
-                </span>
-              );
-            })}
-          </div>
         </div>
 
         <div className="radial-hub__foot">

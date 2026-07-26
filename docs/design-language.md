@@ -101,6 +101,37 @@ class):
 
 Extra breakpoint: `xs` = 480px (defined in the `@theme inline` block).
 
+### Foreground pairing — ink must track its surface
+
+A filled surface is only readable if the ink on it comes from **that surface's
+paired foreground token**, not from the page's ambient `--site-text`:
+
+| Surface                                     | Ink                   |
+| ------------------------------------------- | --------------------- |
+| `bg-site-accent` (and `-hover`)             | `text-site-accent-fg` |
+| `bg-site-danger`                            | `text-site-danger-fg` |
+| `[data-contrast='inverse']`/`.site-inverse` | `--site-inverse-text` |
+
+Forgetting the pair is the classic way to ship invisible UI: inheriting
+`--site-text` onto a dark accent gives near-black on near-black, and onto a light
+accent (bright yellow) gives white on white. `globals.css` now supplies each
+pairing **by default** through zero-specificity `:where()` rules, so an element
+that only sets a background still gets correct ink — and anything that states its
+own colour still wins. Since lucide icons paint with `currentColor`, this covers
+icons and text together.
+
+Two things the safety net can't do for you:
+
+- **Don't hardcode `text-white`/`text-black` on a themed surface.** It looks fine
+  against today's accent and breaks against a user's. Name the paired token
+  instead — that's what makes it track every theme and accent preset.
+- **Translucent tints are a different case.** `bg-site-accent/15` with
+  `text-site-accent` is correct and deliberate; the safety net only targets the
+  solid fills, so tinted chips are untouched.
+
+`--site-accent-fg` is contrast-checked at runtime by `ensureReadableAccent()`
+(`lib/appearance/contrast.ts`), so a custom accent can't ship an unreadable pair.
+
 A legacy shadcn token set (`--card`, `--primary`, `--muted`, `--border`,
 `--ring`, `--radius`, `--chart-*`, `--sidebar*`) also exists for a few
 shadcn-derived pieces. **Prefer `--site-*` for all new site UI.** A separate

@@ -459,26 +459,13 @@
   width: 74%;
   height: 74%;
   overflow: visible;
-  /* AUTO-CONTRAST. The mark used to inherit `--site-accent-fg`, which is only
-     correct while it sits on the accent — but the orb is translucent glass now
-     and glides across the page, so the ground under the mark is whatever the
-     page happens to be. `difference` against pure white paints the exact inverse
-     of whatever is actually behind, so the logo can never come out white-on-white
-     (or black-on-black) in any theme, accent, or position. Same device the hub
-     glyphs and the metaball cursor use. */
-  color: #fff;
-  mix-blend-mode: difference;
-}
-/* Blending is a legibility device — drop it where the platform or theme demands
-   literal colours, falling back to the contrast-checked accent ink. */
-@media (forced-colors: active) {
-  .radial-hub__logo {
-    mix-blend-mode: normal;
-    color: var(--site-accent-fg);
-  }
-}
-.style-high-contrast .radial-hub__logo {
-  mix-blend-mode: normal;
+  /* The mark sits on the orb's own solid accent fill, so the correct ink is
+     simply the accent's paired foreground — a token every theme and preset
+     authors and `ensureReadableAccent()` contrast-checks, which makes this
+     deterministic in a way a blend mode is not. (An earlier revision used
+     `mix-blend-mode: difference` here; blending only composites against the
+     backdrop inside the element's OWN stacking context, which is exactly how the
+     hub glyphs ended up white-on-white.) */
   color: var(--site-accent-fg);
 }
 .radial-hub__logo path {
@@ -576,8 +563,12 @@
   clip-path: circle(150vmax at 50% 50%);
 }
 /* ── Wedge (pie) navigation dial ──────────────────────────────────────── */
-/* Now just a transparent geometry frame centred on the viewport over the blur;
-   the orb caps its centre as the core. Thin gaps between wedges reveal the blur. */
+/* The dial is also the DIVIDER BED: the sectors tile it with thin angular gaps,
+   so this background is what shows through them as the hairlines between
+   wedges. Without it the gaps just reveal the (light, blurred) page and the dial
+   dissolves into the background — on a white page the whole menu read as a faint
+   smudge with no edges at all. The rim ring + drop shadow give the disc a
+   boundary against the page for the same reason. */
 .radial-hub__dial {
   position: relative;
   z-index: 2;
@@ -585,6 +576,10 @@
   height: var(--dial);
   --dial: min(86vw, 70vh, 460px);
   border-radius: 50%;
+  background: var(--site-border-bright);
+  box-shadow:
+    0 0 0 1px var(--site-border),
+    0 24px 70px -24px rgba(0, 0, 0, 0.45);
   /* Blooms in / collapses out via TRANSITION (not a one-shot keyframe), so it
      animates both ways and stays in sync with the blur + orb. */
   opacity: 0;
@@ -604,13 +599,26 @@
   margin: 0;
   padding: 0;
 }
-/* METABALL DIAL — the sectors are shapes only (the glyph layer sits above), so
-   the goo filter can blur-then-threshold them into ONE liquid disc: the thin
-   dividers become gooey necks, the sharp centre point and rim corners round off,
-   and each sector bulges as it grows in. Filter cost is real, so it is desktop +
-   no-reduced-motion only; everywhere else the sectors just render crisply. */
+/* The dial is TWO stacked layers of the same geometry:
+     --art  decorative sector fills; the only thing the goo filter touches.
+     --hit  the real links, unfiltered, each holding its own icon + label.
+   Splitting them is what keeps the glyphs crisp (the filter's alpha ramp chews
+   antialiasing) while still letting each glyph live INSIDE its sector, so it
+   simply inherits that sector's `color` and is correct by construction in every
+   theme — no blend modes, no cross-layer state tracking. */
+.radial-hub__wedges--art {
+  pointer-events: none;
+}
+.radial-hub__wedges--hit {
+  z-index: 1;
+}
+/* METABALL DIAL — blur-then-threshold melts the art sectors into ONE liquid
+   disc: the thin dividers become gooey necks, the sharp centre point and rim
+   corners round off, and each sector bulges as it grows in. Filter cost is real,
+   so it is desktop + no-reduced-motion only; elsewhere the sectors render
+   crisply. */
 @media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
-  .radial-hub__wedges {
+  .radial-hub__wedges--art {
     filter: url(#rmh-liquid);
   }
 }
@@ -639,6 +647,29 @@
   transform: scale(1);
   transition-delay: calc(var(--i) * 20ms);
 }
+/* Art sector: the visible resting fill.
+   `--site-surface` is itself a TRANSLUCENT tint (the Liquid Glass material), so
+   the old `color-mix(surface 60%, transparent)` was a tint of a tint — over a
+   light page it resolved to very nearly nothing and the sectors disappeared.
+   Build the fill on `--site-surface-opaque` (the solid companion the material
+   already ships for exactly these "translucency won't do" cases) and keep only a
+   little transparency, so the sector still samples the blurred backdrop but
+   always reads as a distinct surface.
+
+   The few percent of `--site-text` mixed in is what separates the dial from the
+   PAGE: on the default theme both the page and the solid surface are white, so
+   without it the sectors would still be white-on-white and only the rim would
+   show. Mixing toward the ink adapts automatically — a touch darker than a light
+   page, a touch lighter than a dark one. */
+.radial-hub__wedge-art {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: color-mix(in srgb, var(--site-surface-opaque) 94%, var(--site-text) 6%);
+}
+.radial-hub__wedge-art.is-active {
+  background: var(--site-accent);
+}
 .radial-hub__wedge {
   position: absolute;
   inset: 0;
@@ -648,9 +679,12 @@
      AND hit-testing, so each wedge only catches clicks inside its own sector and
      the sectors tile the disc with no gaps for a click to slip through. */
   pointer-events: auto;
-  /* Translucent frosted glass so the blurred backdrop reads through each sector
-     (avant-garde glass); hover/active fill solid accent. */
-  background: color-mix(in srgb, var(--site-surface) 60%, transparent);
+  /* Transparent at rest: the art layer beneath supplies the fill. What matters
+     here is `color` — the glyph inside inherits it, so the icon + label are the
+     theme's ink on the resting sector and flip to the accent's contrast ink the
+     moment the sector fills below. Both tokens are contrast-checked against the
+     surface they sit on, so this can never land white-on-white. */
+  background: transparent;
   color: var(--site-text);
   text-decoration: none;
   transition:
@@ -666,16 +700,10 @@
 .radial-hub__wedge:focus-visible {
   outline: none;
 }
-/* Crisp glyph layer — rides ABOVE the goo-filtered sectors and is never itself
-   filtered, so icons and labels stay razor sharp while the dial behind them
-   flows. Click-through, so the clipped sector links underneath keep every tap. */
-.radial-hub__glyphs {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-}
-.radial-hub__glyph {
+/* The glyph rides inside its own sector on the unfiltered hit layer, so it stays
+   razor sharp while the art behind it flows — and inherits the sector's `color`,
+   which is what makes the contrast correct in every theme and state. */
+.radial-hub__wedge-inner {
   position: absolute;
   transform: translate(-50%, -50%);
   display: grid;
@@ -684,37 +712,11 @@
   width: max-content;
   max-width: 5.5rem;
   text-align: center;
-  /* Auto-contrast without coupling to each sector's state: `difference` against
-     pure white paints the exact inverse of whatever is underneath, so a glyph
-     reads correctly over a resting sector AND over an accent-filled hover/active
-     one — no per-index selector needed now that the glyphs are their own layer.
-     Same device the metaball cursor already uses. */
-  color: #fff;
-  mix-blend-mode: difference;
-  /* Fades in with its own sector (same per-wedge stagger as the bloom). */
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  color: inherit;
+  /* Clicks fall through the glyph to the clipped sector link underneath. */
+  pointer-events: none;
 }
-.radial-hub[data-phase='open'] .radial-hub__glyph {
-  opacity: 1;
-  transition-delay: calc(var(--i) * 20ms + 60ms);
-}
-/* Blending is a legibility device, not decoration — drop it where the platform
-   or theme demands literal colours. */
-@media (forced-colors: active) {
-  .radial-hub__glyph {
-    mix-blend-mode: normal;
-    color: var(--site-text);
-  }
-}
-.style-high-contrast .radial-hub__glyph {
-  mix-blend-mode: normal;
-  color: var(--site-text);
-}
-.style-high-contrast .radial-hub__glyph.is-active {
-  color: var(--site-accent-fg);
-}
-.radial-hub__glyph svg {
+.radial-hub__wedge-inner svg {
   width: 1.3rem;
   height: 1.3rem;
 }
@@ -1178,7 +1180,6 @@
   .radial-hub__wedge-wrap,
   .radial-hub__wedge,
   .radial-hub__foot,
-  .radial-hub__glyph,
   .radial-hub__aura,
   .rmhark,
   .radial-feed__compose {
