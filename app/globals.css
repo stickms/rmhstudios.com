@@ -3441,6 +3441,39 @@ html.nav-restoring .feed-card-cv {
   background-repeat: no-repeat;
   animation: shimmer 1.25s ease-in-out infinite;
 }
+/* The sweep reads as light travelling through liquid glass: a soft elliptical
+   highlight rather than a hard band, so skeletons match the radial language the
+   loading mark and the hub speak. Applies to both skeleton modes. */
+[data-slot='skeleton'] {
+  overflow: hidden;
+  position: relative;
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-slot='skeleton']::after {
+    content: '';
+    position: absolute;
+    inset: -40%;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at 50% 50%,
+      color-mix(in oklab, var(--site-text) 12%, transparent),
+      transparent 62%
+    );
+    animation: liquid-skeleton-drift 2.6s ease-in-out infinite;
+    pointer-events: none;
+  }
+}
+@keyframes liquid-skeleton-drift {
+  0%,
+  100% {
+    transform: translateX(-32%) scale(0.85);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateX(32%) scale(1.15);
+    opacity: 0.9;
+  }
+}
 /* A travelling sweep is more distracting than the pulse we preserve elsewhere,
  * so under reduced motion drop it back to a static themed surface. */
 @media (prefers-reduced-motion: reduce) {
@@ -4300,4 +4333,116 @@ html.reduce-motion .u-parallax {
     color-mix(in srgb, var(--site-accent) 14%, transparent),
     transparent 70%
   );
+}
+
+/* ==========================================================================
+   The radial loading mark (.rad-loader)
+   Rendered by components/radial/RadialLoader.tsx and, through it, by the shared
+   <Spinner> primitive — so every loading state on the site speaks the radial
+   language. It lives HERE rather than in radial.css because it is used outside
+   the `_site` shell too (games, /login, legal pages), which never load that
+   stylesheet. radial.css layers the goo filter on top where it is available.
+   Colour is `currentColor` throughout, so it inherits its context.
+   ========================================================================== */
+.rad-loader {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+  color: inherit;
+}
+.rad-loader__core,
+.rad-loader__blob {
+  position: absolute;
+  border-radius: 50%;
+  background: currentColor;
+}
+/* The core pulses at the centre — the RMH orb in miniature. */
+.rad-loader__core {
+  left: 50%;
+  top: 50%;
+  width: 34%;
+  height: 34%;
+  margin: -17% 0 0 -17%;
+}
+/* Three blobs orbit it on evenly-spaced phases, the way the hub's wedges bloom
+   around the orb. Each is positioned at the centre and thrown outward by its
+   own rotation, so one keyframe drives all three. */
+.rad-loader__blob {
+  left: 50%;
+  top: 50%;
+  width: 26%;
+  height: 26%;
+  margin: -13% 0 0 -13%;
+  transform: rotate(calc(var(--i) * 120deg)) translateX(115%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .rad-loader__core {
+    animation: rad-loader-pulse 1.4s ease-in-out infinite;
+  }
+  .rad-loader__blob {
+    animation: rad-loader-orbit 1.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    animation-delay: calc(var(--i) * -0.466s);
+  }
+}
+@keyframes rad-loader-pulse {
+  0%,
+  100% {
+    transform: scale(0.82);
+    opacity: 0.75;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+}
+/* Out and back on each cycle: at the inner extreme the blob overlaps the core,
+   which is where the shell's goo filter fuses them into one liquid body. */
+@keyframes rad-loader-orbit {
+  0%,
+  100% {
+    transform: rotate(calc(var(--i) * 120deg)) translateX(38%) scale(0.7);
+  }
+  50% {
+    transform: rotate(calc(var(--i) * 120deg + 180deg)) translateX(125%) scale(1);
+  }
+}
+
+/* ==========================================================================
+   Compact tab strips on phones
+   A strip with 5–6 labelled tabs overflows a 360px screen, and the fallback was
+   a horizontal scroll — content hidden off-screen behind a gesture people often
+   don't discover. On phones we instead:
+     1. hide the LABEL of any tab that carries an icon (the icon plus the tab's
+        `title`/accessible name still identify it), and
+     2. let the strip WRAP rather than scroll, so nothing is ever parked
+        off-screen horizontally.
+   Labels are hidden with the sr-only technique, never `display:none`, so the
+   accessible name — the only name these controls have — survives.
+   ========================================================================== */
+@media (max-width: 639px) {
+  [data-slot='liquid-tabs'] [data-has-icon] .liquid-tabs__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border-width: 0;
+  }
+  /* Wrap instead of scroll. The sheet keeps its own padding; rows breathe via
+     row-gap so a wrapped second row doesn't collide with the first. */
+  [data-slot='liquid-tabs'].tab-sheet-scroll,
+  [data-slot='liquid-tabs'] {
+    overflow-x: visible;
+    flex-wrap: wrap;
+    row-gap: 0.25rem;
+  }
+  /* Tabs may now shrink to fit a row instead of forcing an overflow. */
+  [data-slot='liquid-tabs'] > * {
+    flex-shrink: 1;
+    min-width: 0;
+  }
 }

@@ -37,12 +37,13 @@ The Liquid Glass material itself is central (`app/globals.css` — the elevation
 classes render at full strength inside this shell). What lives here is the
 **metaball** layer that makes the radial chrome behave like a body of liquid:
 
-| Where               | What fuses                                                                    |
-| ------------------- | ----------------------------------------------------------------------------- |
-| Hub dial            | The clip-path sectors melt into one liquid disc; dividers become gooey necks. |
-| Orb aura            | Orbiting blobs stretch and neck in and out of the orb's disc.                 |
-| Backdrop blob field | Huge faint blobs drift, swell together and pull apart behind everything.      |
-| Cursor              | The pointer's blobs fuse into one trailing drop (`MetaballCursor`).           |
+| Where               | What fuses                                                                       |
+| ------------------- | -------------------------------------------------------------------------------- |
+| Hub dial            | The clip-path sectors melt into one liquid disc; dividers become gooey necks.    |
+| Orb aura            | Orbiting blobs stretch and neck in and out of the orb's disc.                    |
+| Backdrop blob field | Huge faint blobs drift, swell together and pull apart behind everything.         |
+| Cursor              | The pointer's blobs fuse into one trailing drop (`MetaballCursor`).              |
+| Loading mark        | Orbiting blobs melt into a pulsing core (`ui/radial-loader.tsx`, via `Spinner`). |
 
 Three rules keep it safe — break them and you get chewed text or broken layout:
 

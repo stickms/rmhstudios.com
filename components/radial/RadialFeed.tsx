@@ -8,6 +8,7 @@ import { useFeedStore } from '@/stores/feedStore';
 import { useFeedSSE } from '@/hooks/useFeedSSE';
 import { type InitialFeed } from '@/components/feed/FeedColumn';
 import { ComposeBoxLazy } from '@/components/feed/ComposeBoxLazy';
+import { RadialLoader } from '@/components/ui/radial-loader';
 import { RadialWheel, type RadialWheelItem } from './RadialWheel';
 import { RmharkCard } from './RmharkCard';
 
@@ -115,12 +116,11 @@ function FeedGlyph() {
   );
 }
 
+/** First-load state: the site's liquid loading mark, centred in the feed area. */
 function FeedWheelSkeleton() {
   return (
-    <div className="radial-feed__skeleton" aria-hidden>
-      <div className="radial-core">
-        <span className="radial-core__mark">RMH</span>
-      </div>
+    <div className="radial-feed__skeleton">
+      <RadialLoader size={72} label="Loading feed" />
     </div>
   );
 }

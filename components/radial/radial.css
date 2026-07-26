@@ -23,16 +23,20 @@
   --rad-6: 2rem;
   --rad-7: 2.75rem;
   --rad-8: 4rem;
-  /* Page gutter (side padding) + generous top/bottom breathing room. */
-  --rad-gutter: clamp(1.15rem, 5vw, 2.25rem);
-  --rad-top: clamp(1.5rem, 4vw, 2.75rem);
+  /* Page gutter (side padding) + top/bottom breathing room. The mobile end of
+     each clamp is deliberately tight: on a phone every rem of chrome is a rem of
+     content pushed below the fold, so phones get a compact frame and the
+     generous one scales in with the viewport. */
+  --rad-gutter: clamp(0.75rem, 4vw, 2.25rem);
+  --rad-top: clamp(0.85rem, 3vw, 2.75rem);
   --rad-bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(7rem, 16vw, 9rem));
   /* Comfortable reading measure for content + the feed column. */
   --rad-col: 40rem;
   --rad-col-wide: 52rem;
-  /* Card interior padding + the gap between stacked cards. */
-  --rad-card-pad: clamp(1.15rem, 4.5vw, 1.6rem);
-  --rad-card-gap: clamp(0.9rem, 3vw, 1.4rem);
+  /* Card interior padding + the gap between stacked cards — same reasoning as
+     the gutters: compact on phones, roomy once there is space to spend. */
+  --rad-card-pad: clamp(0.9rem, 3.5vw, 1.6rem);
+  --rad-card-gap: clamp(0.6rem, 2.5vw, 1.4rem);
 }
 /* Text on the accent comes from --site-accent-fg, which is always authored
    next to the accent it sits on: each theme declares the pair, every accent
@@ -300,7 +304,12 @@
 /* Vertical rhythm between a page's top-level blocks (header already owns its own
    bottom margin; this spaces sibling sections/cards a page stacks after it). */
 .radial-shell:not([data-home]) [data-slot='page-content'] > * + * {
-  margin-top: var(--rad-5);
+  margin-top: var(--rad-3);
+}
+@media (min-width: 768px) {
+  .radial-shell:not([data-home]) [data-slot='page-content'] > * + * {
+    margin-top: var(--rad-5);
+  }
 }
 .radial-shell[data-home] .radial-shell__main {
   max-width: none;
@@ -450,7 +459,27 @@
   width: 74%;
   height: 74%;
   overflow: visible;
-  color: inherit;
+  /* AUTO-CONTRAST. The mark used to inherit `--site-accent-fg`, which is only
+     correct while it sits on the accent — but the orb is translucent glass now
+     and glides across the page, so the ground under the mark is whatever the
+     page happens to be. `difference` against pure white paints the exact inverse
+     of whatever is actually behind, so the logo can never come out white-on-white
+     (or black-on-black) in any theme, accent, or position. Same device the hub
+     glyphs and the metaball cursor use. */
+  color: #fff;
+  mix-blend-mode: difference;
+}
+/* Blending is a legibility device — drop it where the platform or theme demands
+   literal colours, falling back to the contrast-checked accent ink. */
+@media (forced-colors: active) {
+  .radial-hub__logo {
+    mix-blend-mode: normal;
+    color: var(--site-accent-fg);
+  }
+}
+.style-high-contrast .radial-hub__logo {
+  mix-blend-mode: normal;
+  color: var(--site-accent-fg);
 }
 .radial-hub__logo path {
   /* Hairline line-art: the mark is a very dense spirograph rendered tiny (~44px
@@ -1045,12 +1074,16 @@
   flex: 1;
   display: grid;
   place-items: center;
+  /* The loading mark carries the motion itself (see .rad-loader), so the
+     skeleton is just the centring frame. */
+  color: var(--site-text);
 }
-.radial-feed__skeleton .radial-core {
-  opacity: 0.5;
+.radial-feed__skeleton .rad-loader {
+  opacity: 0.65;
 }
+/* The error/empty state still shows the RMH disc, which breathes gently. */
 @media (prefers-reduced-motion: no-preference) {
-  .radial-feed__skeleton .radial-core {
+  .radial-feed__empty .radial-core {
     animation: radial-pulse-soft 1.6s ease-in-out infinite;
   }
 }
@@ -1118,10 +1151,21 @@
   will-change: transform;
 }
 
+/* ── The loading mark, fused ──────────────────────────────────────────────
+   `.rad-loader` is defined in globals.css (it is used outside this shell too).
+   Inside the shell the goo filter is available, so the orbiting blobs melt into
+   the pulsing core with stretched liquid necks — the same material as the hub
+   dial. Same cost gate as every other goo layer. */
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .radial-shell .rad-loader {
+    filter: url(#rmh-liquid-sm);
+  }
+}
+
 /* ── Reduced motion: kill all continuous / decorative animation ───────── */
 @media (prefers-reduced-motion: reduce) {
   .radial-backdrop__ring,
-  .radial-feed__skeleton .radial-core {
+  .radial-feed__empty .radial-core {
     animation: none !important;
   }
   /* The hub open/close is now transition-driven — collapse every layer's
@@ -1158,23 +1202,43 @@
    sits directly on the backdrop, matching the home. (The h1 already uses the
    display font — we only drop the card and enlarge a touch.) */
 .radial-shell .page-heading {
-  margin: 0 0 var(--rad-6);
+  margin: 0 0 var(--rad-4);
   padding: 0;
   border: 0;
   background: transparent;
   box-shadow: none;
 }
+/* Mobile-first sizing. A 2rem floor plus a 2rem margin spent most of a phone's
+   first screen on the title alone — the page's actual content started below the
+   fold. The type still scales up to a display-size headline on wide screens;
+   phones get a compact one so real content is visible immediately. */
 .radial-shell .page-heading h1 {
-  font-size: clamp(2rem, 8vw, 3.4rem);
-  letter-spacing: -0.04em;
-  line-height: 1.05;
+  font-size: clamp(1.4rem, 5.5vw, 3.4rem);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+@media (min-width: 768px) {
+  .radial-shell .page-heading {
+    margin-bottom: var(--rad-6);
+  }
+  .radial-shell .page-heading h1 {
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+  }
 }
 /* Clean rhythm inside the flat header (the card padding is gone). */
 .radial-shell .page-heading [data-slot='page-description'] {
-  margin-top: var(--rad-3);
-  font-size: 1rem;
-  line-height: 1.55;
+  margin-top: var(--rad-2);
+  font-size: 0.9rem;
+  line-height: 1.5;
   color: var(--site-text-muted);
+}
+@media (min-width: 768px) {
+  .radial-shell .page-heading [data-slot='page-description'] {
+    margin-top: var(--rad-3);
+    font-size: 1rem;
+    line-height: 1.55;
+  }
 }
 .radial-shell .page-heading__content {
   gap: var(--rad-4);
