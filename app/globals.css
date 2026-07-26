@@ -4446,3 +4446,35 @@ html.reduce-motion .u-parallax {
     min-width: 0;
   }
 }
+
+/* ==========================================================================
+   Foreground pairing — text and icons always track the surface they sit on
+   ------------------------------------------------------------------------
+   A filled surface only stays readable if the ink on it comes from that
+   surface's PAIRED foreground token. In practice that pairing was easy to
+   forget: an element would set `bg-site-accent` and inherit the ambient
+   `--site-text` instead, which is the theme's ink for the PAGE — so on a dark
+   accent you got near-black on near-black, and a light accent (bright yellow)
+   got white on white. ~74 call sites were relying on inheritance this way.
+
+   These rules supply the correct ink by default. They are wrapped in `:where()`
+   so they carry ZERO specificity: any element that states its own colour still
+   wins, and this only fills in where nothing was chosen. Because lucide icons
+   paint with `currentColor`, fixing `color` fixes icons and text together.
+
+   Only tokens with a real, per-theme foreground are listed — `--site-accent-fg`
+   is contrast-checked at runtime by `ensureReadableAccent()` (lib/appearance/
+   contrast.ts), and `--site-danger-fg` is authored per theme. Surfaces without a
+   paired token are left alone rather than guessed at.
+   ========================================================================== */
+:where(.bg-site-accent, .bg-site-accent-hover, .hover\:bg-site-accent:hover) {
+  color: var(--site-accent-fg);
+}
+:where(.bg-site-danger) {
+  color: var(--site-danger-fg);
+}
+/* The inverse surfaces carry a complete contract of their own, so pair those
+   too rather than letting them inherit the page's ink. */
+:where([data-contrast='inverse'], .site-inverse) {
+  color: var(--site-inverse-text);
+}

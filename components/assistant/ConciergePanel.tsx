@@ -160,7 +160,7 @@ export function ConciergePanel({ className }: { className?: string }) {
                   className={cn(
                     'max-w-[85%] rounded-site px-4 py-2.5 text-sm leading-relaxed',
                     m.role === 'user'
-                      ? 'bg-site-accent text-white'
+                      ? 'bg-site-accent text-site-accent-fg'
                       : 'bg-site-surface text-site-text border border-site-border',
                   )}
                 >
