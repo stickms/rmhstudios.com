@@ -450,7 +450,27 @@
   width: 74%;
   height: 74%;
   overflow: visible;
-  color: inherit;
+  /* AUTO-CONTRAST. The mark used to inherit `--site-accent-fg`, which is only
+     correct while it sits on the accent — but the orb is translucent glass now
+     and glides across the page, so the ground under the mark is whatever the
+     page happens to be. `difference` against pure white paints the exact inverse
+     of whatever is actually behind, so the logo can never come out white-on-white
+     (or black-on-black) in any theme, accent, or position. Same device the hub
+     glyphs and the metaball cursor use. */
+  color: #fff;
+  mix-blend-mode: difference;
+}
+/* Blending is a legibility device — drop it where the platform or theme demands
+   literal colours, falling back to the contrast-checked accent ink. */
+@media (forced-colors: active) {
+  .radial-hub__logo {
+    mix-blend-mode: normal;
+    color: var(--site-accent-fg);
+  }
+}
+.style-high-contrast .radial-hub__logo {
+  mix-blend-mode: normal;
+  color: var(--site-accent-fg);
 }
 .radial-hub__logo path {
   /* Hairline line-art: the mark is a very dense spirograph rendered tiny (~44px
@@ -1045,12 +1065,16 @@
   flex: 1;
   display: grid;
   place-items: center;
+  /* The loading mark carries the motion itself (see .rad-loader), so the
+     skeleton is just the centring frame. */
+  color: var(--site-text);
 }
-.radial-feed__skeleton .radial-core {
-  opacity: 0.5;
+.radial-feed__skeleton .rad-loader {
+  opacity: 0.65;
 }
+/* The error/empty state still shows the RMH disc, which breathes gently. */
 @media (prefers-reduced-motion: no-preference) {
-  .radial-feed__skeleton .radial-core {
+  .radial-feed__empty .radial-core {
     animation: radial-pulse-soft 1.6s ease-in-out infinite;
   }
 }
@@ -1118,10 +1142,21 @@
   will-change: transform;
 }
 
+/* ── The loading mark, fused ──────────────────────────────────────────────
+   `.rad-loader` is defined in globals.css (it is used outside this shell too).
+   Inside the shell the goo filter is available, so the orbiting blobs melt into
+   the pulsing core with stretched liquid necks — the same material as the hub
+   dial. Same cost gate as every other goo layer. */
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .radial-shell .rad-loader {
+    filter: url(#rmh-liquid-sm);
+  }
+}
+
 /* ── Reduced motion: kill all continuous / decorative animation ───────── */
 @media (prefers-reduced-motion: reduce) {
   .radial-backdrop__ring,
-  .radial-feed__skeleton .radial-core {
+  .radial-feed__empty .radial-core {
     animation: none !important;
   }
   /* The hub open/close is now transition-driven — collapse every layer's
