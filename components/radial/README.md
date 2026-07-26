@@ -14,7 +14,8 @@ in `app/globals.css`).
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `RadialWheel.tsx`    | The feed as a gently-curved column on the **document's own scroll** (no inner scroll region — so mobile Safari collapses its toolbars). Cards flow at natural heights (variable, never overlapping) and a rAF window-scroll pass rakes each onto a shallow cylinder from cached offsets (no layout thrash). Optional non-raked `lead` slot (the compose box). Reduced-motion → plain list. Fires `onEndReached` for lazy loading.                                                                                             |
 | `RadialHub.tsx`      | The persistent navigator, a **phase state machine** (closed → centering → open → closing). Tapping the fixed RMH orb **glides it to the centre of the screen**, then opens the menu as an **expanding circular blur** with translucent clip-path pie/wedge sectors blooming around the orb (no drawn colour disc, no click-through gaps). CSS-only; consumes `lib/sidebar-nav`, honours auth/admin gating.                                                                                                                    |
-| `MetaballCursor.tsx` | Site-wide gooey cursor (SVG goo filter + `mix-blend-mode: difference`) that trails and swells over interactive elements. Desktop / fine-pointer only, off under reduced-motion.                                                                                                                                                                                                                                                                                                                                               |
+| `LiquidGoo.tsx`      | The **metaball filter bank** — one hidden `<svg><defs>` mounted in the shell holding three goo filters (`#rmh-liquid-sm` / `#rmh-liquid` / `#rmh-liquid-lg`) that CSS references to fuse clusters of shapes. Blur → steep alpha ramp, so near shapes merge with a smooth neck and a lone shape just rounds off. Used by the hub dial, the orb aura and the backdrop blob field.                                                                                                                                               |
+| `MetaballCursor.tsx` | Site-wide gooey cursor (its own `#rmh-goo` filter + `mix-blend-mode: difference`) that trails and swells over interactive elements. Desktop / fine-pointer only, off under reduced-motion.                                                                                                                                                                                                                                                                                                                                    |
 | `RadialShell.tsx`    | The application frame for every standard (`_site`) route: fixed parallax ring backdrop, slim utility top bar, `<main>`, the hub, and the metaball cursor. The backdrop layer paints **only** the rings — the aurora canvas comes from the document's own fixed layers (`body::before/::after`), so it drifts and parallaxes and is the one scene every `backdrop-filter` on the page samples.                                                                                                                                 |
 | `RadialFeed.tsx`     | The home feed — drives `RadialWheel` off the shared `feedStore` (streamed first page, live SSE, lazy pagination). Leads with an inline `ComposeBoxLazy` (the first rmhark follows it); a floating compose button opens the full `ComposeModal`.                                                                                                                                                                                                                                                                               |
 | `RmharkCard.tsx`     | The compact monochrome feed unit (rmhark or platform announcement).                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -29,6 +30,35 @@ in `app/globals.css`).
 - `app/routes/_site/index.tsx` (`/`) renders `RadialFeed`.
 - The old shell nav (`SiteNavigation`/`MobileDock`) and `FeedLayout` were
   removed — the radial hub and feed replace them.
+
+## Metaballs (the liquid layer)
+
+The Liquid Glass material itself is central (`app/globals.css` — the elevation
+classes render at full strength inside this shell). What lives here is the
+**metaball** layer that makes the radial chrome behave like a body of liquid:
+
+| Where               | What fuses                                                                    |
+| ------------------- | ----------------------------------------------------------------------------- |
+| Hub dial            | The clip-path sectors melt into one liquid disc; dividers become gooey necks. |
+| Orb aura            | Orbiting blobs stretch and neck in and out of the orb's disc.                 |
+| Backdrop blob field | Huge faint blobs drift, swell together and pull apart behind everything.      |
+| Cursor              | The pointer's blobs fuse into one trailing drop (`MetaballCursor`).           |
+
+Three rules keep it safe — break them and you get chewed text or broken layout:
+
+1. **A goo group contains shapes only.** The alpha ramp destroys glyph
+   antialiasing, so icons/labels ride in a sibling layer _above_ the filter.
+   That is why the hub's sectors and `radial-hub__glyphs` are separate elements,
+   and why those glyphs auto-contrast with `mix-blend-mode: difference` (white
+   over the filtered dial = the exact inverse of whatever sector is beneath)
+   instead of reacting to each sector's own hover/active state.
+2. **Never filter an ancestor of fixed chrome.** `filter` creates a containing
+   block for `position: fixed` descendants and a new stacking context — hence the
+   orb's aura is its own fixed layer rather than a pseudo-element on the orb, and
+   nothing filters `.radial-shell`.
+3. **Gate the cost.** An always-on SVG filter is continuous GPU work, so every
+   goo layer is `@media (min-width: 768px) and (prefers-reduced-motion: no-preference)`
+   — the same budget the ring backdrop already respects on phones.
 
 ## Design rules (same as the rest of the app)
 
