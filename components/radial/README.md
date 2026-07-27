@@ -13,7 +13,7 @@ in `app/globals.css`).
 | File                 | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `RadialWheel.tsx`    | The feed as a gently-curved column on the **document's own scroll** (no inner scroll region — so mobile Safari collapses its toolbars). Cards flow at natural heights (variable, never overlapping) and a rAF window-scroll pass rakes each onto a shallow cylinder from cached offsets (no layout thrash). Optional non-raked `lead` slot (the compose box). Reduced-motion → plain list. Fires `onEndReached` for lazy loading.                                                                                                       |
-| `RadialHub.tsx`      | The persistent navigator, a **phase state machine** (closed → centering → open → closing). Tapping the fixed RMH orb **glides it to the centre of the screen**, then opens the menu as an **expanding circular blur** with translucent clip-path sectors blooming around it. The dial is **double-decked** — two concentric rings of annulus sectors around a hole the orb sits in — because sixteen destinations on one ring gave slivers too narrow to label or hit. CSS-only; consumes `lib/sidebar-nav`, honours auth/admin gating. |
+| `RadialHub.tsx`      | The persistent navigator, a **phase state machine** (closed → centering → open → closing). Tapping the fixed RMH orb **glides it to the centre of the screen**, then opens the menu as an **expanding circular blur** with translucent clip-path sectors blooming around it. The dial is **double-decked** — two concentric rings of annulus sectors around a hole the orb sits in — because sixteen destinations on one ring gave slivers too narrow to label or hit. The two decks **spin into alignment from opposite directions** as it opens, and a hairline is drawn at every band boundary so the levels are separated by a border rather than by a gap. CSS-only; consumes `lib/sidebar-nav`, honours auth/admin gating. |
 | `LiquidGoo.tsx`      | The **metaball filter bank** — one hidden `<svg><defs>` mounted in the shell holding three goo filters (`#rmh-liquid-sm` / `#rmh-liquid` / `#rmh-liquid-lg`) that CSS references to fuse clusters of shapes. Blur → steep alpha ramp, so near shapes merge with a smooth neck and a lone shape just rounds off. Used by the hub dial, the orb aura and the backdrop blob field.                                                                                                                                                         |
 | `MetaballCursor.tsx` | The pointer metaball: a gooey drop under the mouse on desktop and under the finger on touch. CSS goo (`blur() contrast()`) rather than an SVG filter, delta-time easing so it behaves identically at 60Hz and 240Hz, and a bounded filter region. Hides the native cursor while it is driving one, narrows to a caret over text fields, and blows up macOS-style when you shake to find it. Portals to `<body>`.                                                                                                                        |
 | `RadialShell.tsx`    | The application frame for every standard (`_site`) route: fixed parallax ring backdrop, slim utility top bar, the **three-track frame** (nav rail · `<main>` · live rail), the hub, and the pointer metaball. The backdrop layer paints **only** the rings — the aurora canvas comes from the document's own fixed layers (`body::before/::after`), so it drifts and parallaxes and is the one scene every `backdrop-filter` on the page samples.                                                                                       |
@@ -145,6 +145,24 @@ Three rules keep it safe — break them and you get chewed text or broken layout
   while it is actually being touched.
 - **Off entirely** under reduced-motion, forced-colors, reduced-transparency,
   and on devices reporting < 4 GB of memory.
+
+## The dial (RadialHub)
+
+Two rules that are easy to break when touching its geometry or motion:
+
+- **One source of truth for the radii.** `RINGS` in `RadialHub.tsx` defines the
+  bands; the drawn boundary hairlines and the mask that carves the centre hole
+  are both derived from the radii the component actually used, and handed to CSS
+  inline. Do not re-type those numbers in `radial.css` — a hairline sitting where
+  the bands are not is invisible until someone opens the menu.
+- **The decks spin, so the bed shows.** Opening counter-rotates the two rings
+  into alignment (inner anticlockwise, outer clockwise), which uncovers large
+  wedges of the dial's own background mid-animation. That background must stay a
+  light plate: it used to be `--site-border-bright`, pure black in the default
+  theme, which the sectors covered at every frame while they only scaled — once
+  they rotate, the whole dial flashes black on open. The spin is deliberately
+  un-staggered (every wedge in a ring shares one delay) so a ring turns as a
+  body; the per-wedge stagger stays on opacity alone.
 
 ## Design rules (same as the rest of the app)
 
