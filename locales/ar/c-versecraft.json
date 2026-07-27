@@ -46,7 +46,7 @@
   "select-words-prompt_one": "اختر {{count}} كلمة لتأليف قصيدتك",
   "select-words-prompt_other": "اختر {{count}} كلمة لتأليف قصيدتك",
   "settings": "الإعدادات",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "سجّل الدخول لحفظ قصصك في السحابة وتشغيلها من أي مكان.",
   "sign-in-to-save": "تسجيل الدخول لحفظ تقدمك في السحابة",
   "skip": "تخطي",
   "slot-auto": "أوتو",

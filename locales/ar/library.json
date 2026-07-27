@@ -80,7 +80,7 @@
   "result-count_one": "{{count}} things to explore",
   "result-count_other": "{{count}} things to explore",
   "search-label": "ابحث في المكتبة",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "ابحث عن الكتب، الألبومات، قوائم التشغيل، والقراءات…",
   "search-your-books": "ابحث في كتبك…",
   "section-albums": "الألبومات",
   "section-blog": "Blog",
@@ -93,6 +93,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "أضف كتابًا",
+  "upload-label": "رفع ملف PDF"
 }
