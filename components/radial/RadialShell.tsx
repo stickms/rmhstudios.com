@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
 import { Bell, MessageCircle, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -8,9 +8,15 @@ import { useResolvedUser, useSession } from '@/components/Providers';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { BackToTop } from '@/components/ui/back-to-top';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useUnreadCount } from '@/lib/useUnreadCount';
+import { useNotificationCount } from '@/lib/useNotificationCount';
 import { RadialHub } from './RadialHub';
 import { MetaballCursor } from './MetaballCursor';
 import { LiquidGoo } from './LiquidGoo';
+import { RadialNavRail } from './RadialNavRail';
+import { RadialLiveRail } from './RadialLiveRail';
+import { RailSlotContext } from './rail-slot';
+import { MessagesPanel, NotificationsPanel, ProfilePanel, SearchPanel } from './TopBarPanels';
 
 /**
  * Fixed monochrome backdrop: concentric hairline rings centred on the viewport
@@ -32,24 +38,29 @@ function RadialBackdrop() {
     let curX = 0;
     let curY = 0;
     let raf = 0;
-    let running = false;
+    let last = 0;
 
-    const tick = () => {
-      curX += (targetX - curX) * 0.08;
-      curY += (targetY - curY) * 0.08;
+    const tick = (now: number) => {
+      // Delta-time smoothing, so the parallax settles at the same rate on a
+      // 60Hz and a 144Hz display instead of snapping on fast panels.
+      const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000));
+      last = now;
+      const k = 1 - Math.exp(-5 * dt);
+      curX += (targetX - curX) * k;
+      curY += (targetY - curY) * k;
       el.style.transform = `translate3d(${curX.toFixed(2)}px, ${curY.toFixed(2)}px, 0)`;
       if (Math.abs(targetX - curX) > 0.1 || Math.abs(targetY - curY) > 0.1) {
         raf = requestAnimationFrame(tick);
       } else {
-        running = false;
+        raf = 0;
       }
     };
 
     const onMove = (e: PointerEvent) => {
       targetX = (e.clientX / window.innerWidth - 0.5) * -28;
       targetY = (e.clientY / window.innerHeight - 0.5) * -28;
-      if (!running) {
-        running = true;
+      if (!raf) {
+        last = performance.now();
         raf = requestAnimationFrame(tick);
       }
     };
@@ -57,7 +68,7 @@ function RadialBackdrop() {
     window.addEventListener('pointermove', onMove, { passive: true });
     return () => {
       window.removeEventListener('pointermove', onMove);
-      cancelAnimationFrame(raf);
+      if (raf) cancelAnimationFrame(raf);
     };
   }, [reduced]);
 
@@ -81,20 +92,46 @@ function RadialBackdrop() {
   );
 }
 
-/** Slim, quiet utility bar. Identity + search + inbox; the radial hub owns nav. */
+type QuickPanelId = 'search' | 'notifications' | 'messages' | 'profile';
+
+/**
+ * Slim, quiet utility bar. Identity + search + inbox; the radial hub owns nav.
+ *
+ * Every control here opens a **preview panel** before it opens a page: search
+ * drops a live result list, the bell shows the latest notifications, the inbox
+ * shows recent threads, the avatar opens a compact account menu. Each panel has
+ * a footer link through to the full route, so nothing is hidden behind the
+ * preview — it just saves a navigation for the common case.
+ */
 function RadialTopBar() {
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
   const { resolved } = useResolvedUser();
-  const user = session?.user as { id: string; handle?: string | null } | undefined;
-  const profileHref = user ? `/u/${user.handle || user.id}` : '/login';
+  const { pathname } = useLocation();
+  const signedIn = Boolean(session);
+
+  const [panel, setPanel] = useState<QuickPanelId | null>(null);
+  const searchRef = useRef<HTMLButtonElement | null>(null);
+  const messagesRef = useRef<HTMLButtonElement | null>(null);
+  const bellRef = useRef<HTMLButtonElement | null>(null);
+  const avatarRef = useRef<HTMLButtonElement | null>(null);
+
+  const unread = useUnreadCount(signedIn);
+  const { count: notifications } = useNotificationCount(signedIn);
+
+  // A panel is scoped to the page it was opened on; a client navigation (from
+  // one of its own links, or the back button) always dismisses it.
+  useEffect(() => setPanel(null), [pathname]);
+
+  const toggle = (id: QuickPanelId) => setPanel((p) => (p === id ? null : id));
+  const close = () => setPanel(null);
 
   return (
     <header className="radial-topbar">
       <Link
         to="/"
         className="radial-topbar__brand"
-        aria-label={t('nav-home', { defaultValue: 'RMH Studios home' })}
+        aria-label={t('home-aria-label', { defaultValue: 'RMH Studios home' })}
       >
         <span className="radial-topbar__mark" aria-hidden>
           RMH
@@ -103,33 +140,60 @@ function RadialTopBar() {
       </Link>
 
       <div className="radial-topbar__actions">
-        <Link
-          to="/search"
-          search={{ q: '', tab: 'top' }}
+        <button
+          type="button"
+          ref={searchRef}
           className="radial-topbar__btn"
-          aria-label={t('nav-explore', { defaultValue: 'Search' })}
+          onClick={() => toggle('search')}
+          aria-haspopup="dialog"
+          aria-expanded={panel === 'search'}
+          aria-label={t('search', { defaultValue: 'Search' })}
         >
           <Search aria-hidden />
-        </Link>
+        </button>
+        <SearchPanel open={panel === 'search'} onClose={close} anchorRef={searchRef} />
+
         {session ? (
           <>
-            <Link
-              to="/messages"
+            <button
+              type="button"
+              ref={messagesRef}
               className="radial-topbar__btn max-sm:hidden"
+              onClick={() => toggle('messages')}
+              aria-haspopup="dialog"
+              aria-expanded={panel === 'messages'}
               aria-label={t('messages', { defaultValue: 'Messages' })}
             >
               <MessageCircle aria-hidden />
-            </Link>
-            <Link
-              to="/notifications"
+              {unread > 0 && <span className="radial-topbar__dot" aria-hidden />}
+            </button>
+            <MessagesPanel open={panel === 'messages'} onClose={close} anchorRef={messagesRef} />
+
+            <button
+              type="button"
+              ref={bellRef}
               className="radial-topbar__btn"
+              onClick={() => toggle('notifications')}
+              aria-haspopup="dialog"
+              aria-expanded={panel === 'notifications'}
               aria-label={t('notifications', { defaultValue: 'Notifications' })}
             >
               <Bell aria-hidden />
-            </Link>
-            <Link
-              to={profileHref as string}
+              {notifications > 0 && <span className="radial-topbar__dot" aria-hidden />}
+            </button>
+            <NotificationsPanel
+              open={panel === 'notifications'}
+              onClose={close}
+              anchorRef={bellRef}
+            />
+
+            <button
+              type="button"
+              ref={avatarRef}
               className="radial-topbar__avatar"
+              onClick={() => toggle('profile')}
+              aria-haspopup="dialog"
+              aria-expanded={panel === 'profile'}
               aria-label={t('profile', { defaultValue: 'Profile' })}
             >
               <UserAvatar
@@ -138,7 +202,8 @@ function RadialTopBar() {
                 size={32}
                 fallbackName={resolved?.name || session.user.name}
               />
-            </Link>
+            </button>
+            <ProfilePanel open={panel === 'profile'} onClose={close} anchorRef={avatarRef} />
           </>
         ) : (
           <Link to="/login" search={{ callbackURL: undefined }} className="radial-topbar__signin">
@@ -155,11 +220,34 @@ interface RadialShellProps {
   overlays?: ReactNode;
 }
 
-/** The radial application frame shared by every standard (`_site`) route. */
+/**
+ * The radial application frame shared by every standard (`_site`) route.
+ *
+ * ## The frame
+ *
+ * Mobile is one column, exactly as before. Wide screens get a three-track CSS
+ * **grid** — nav rail · content · live rail — sized in explicit tracks so the
+ * flanks can never overlap the middle: a grid item is laid out inside its track
+ * by construction, and each track is `minmax(0, …)` so overflowing content
+ * shrinks its own column instead of pushing a neighbour. Rails appear only at
+ * the width that actually affords them (`display: none` below it, which also
+ * removes them from the grid, so the track count and the visible columns always
+ * agree).
+ *
+ * The frame is capped (`--rad-frame-max`) rather than edge-to-edge: "use the
+ * whole window" means filling it with *content*, not stretching one reading
+ * column to 3000px.
+ */
 export function RadialShell({ children, overlays }: RadialShellProps) {
   const { t } = useTranslation('common');
   const { pathname } = useLocation();
   const isHome = pathname === '/';
+  const [railSlot, setRailSlot] = useState<HTMLElement | null>(null);
+  const railSlotRef = useRef<HTMLDivElement | null>(null);
+
+  // Publish the rail's page slot once it exists, so `PageLayout` can portal a
+  // route's `rightSidebar` into it (see components/radial/rail-slot.tsx).
+  useEffect(() => setRailSlot(railSlotRef.current), []);
 
   return (
     <div className="vibe-app site-shell radial-shell" data-home={isHome || undefined}>
@@ -173,15 +261,27 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
       <RadialBackdrop />
       <RadialTopBar />
 
-      <main id="main-content" tabIndex={-1} className="radial-shell__main page-root">
-        {children}
-      </main>
+      <RailSlotContext.Provider value={railSlot}>
+        <div className="radial-frame">
+          <RadialNavRail />
+
+          <main id="main-content" tabIndex={-1} className="radial-shell__main page-root">
+            {children}
+          </main>
+
+          <RadialLiveRail>
+            <div ref={railSlotRef} className="rad-rail__page-slot" />
+          </RadialLiveRail>
+        </div>
+      </RailSlotContext.Provider>
 
       <RadialHub />
 
       {overlays}
       <BackToTop />
-      {/* Site-wide gooey cursor — the flowy layer over every page (desktop only). */}
+      {/* The pointer metaball — the flowy layer over every page. It portals to
+          <body> (see MetaballCursor) so its `difference` blend has the opaque
+          page as its backdrop rather than this shell's isolated group. */}
       <MetaballCursor />
     </div>
   );

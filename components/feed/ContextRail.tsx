@@ -1,45 +1,44 @@
+'use client';
+
 import type { ReactNode } from 'react';
-import { RIGHT_SIDEBAR_RIGHT_PADDING, RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
+import { createPortal } from 'react-dom';
+import { useRailSlot } from '@/components/radial/rail-slot';
 import { cn } from '@/lib/utils';
 
 interface ContextRailProps {
   children?: ReactNode;
-  /** Preserve the rail's width when it has no content, keeping narrow pages centered. */
+  /**
+   * @deprecated The shell's frame is a CSS grid with explicit tracks, so an
+   * empty rail no longer needs a spacer to keep the content column centred.
+   * Kept so existing callers type-check unchanged.
+   */
   reserve?: boolean;
-  /** Wide content pages need only a small trailing breathing gutter. */
+  /** @deprecated See {@link ContextRailProps.reserve}. */
   compactReserve?: boolean;
   className?: string;
 }
 
-/** Desktop-only contextual column shared by the feed and standard pages. */
-export function ContextRail({
-  children,
-  reserve = false,
-  compactReserve = false,
-  className,
-}: ContextRailProps) {
-  if (children) {
-    return (
-      <aside
-        data-slot="context-rail"
-        className={cn('hidden shrink-0 self-start xl:block', className)}
-        style={{ width: RIGHT_SIDEBAR_WIDTH }}
-      >
-        {children}
-      </aside>
-    );
-  }
+/**
+ * A page's contribution to the shell's desktop live rail.
+ *
+ * Historically this rendered an `<aside>` next to the content column — but its
+ * parent was never a flex/grid row, so it stacked *below* the page instead, and
+ * its width came from `--site-rail-width`, a token nothing declared. Both are
+ * fixed now: the rail is owned by `RadialShell` (one grid track, one width), and
+ * a page's content is **portalled** into the slot at the top of it.
+ *
+ * Renders nothing when there is no rail — during SSR, and below the breakpoint
+ * where the rail exists at all — so a page must never depend on it for anything
+ * load-bearing. Content, not chrome.
+ */
+export function ContextRail({ children, className }: ContextRailProps) {
+  const slot = useRailSlot();
+  if (!children || !slot) return null;
 
-  if (!reserve) return null;
-
-  return (
-    <div
-      aria-hidden="true"
-      data-slot="context-rail-spacer"
-      className="hidden shrink-0 xl:block"
-      style={{
-        width: compactReserve ? RIGHT_SIDEBAR_RIGHT_PADDING : RIGHT_SIDEBAR_WIDTH,
-      }}
-    />
+  return createPortal(
+    <div data-slot="context-rail" className={cn('rad-rail__page-content', className)}>
+      {children}
+    </div>,
+    slot,
   );
 }

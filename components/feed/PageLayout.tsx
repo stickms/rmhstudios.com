@@ -5,7 +5,7 @@ import { Link } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Breadcrumbs, type BreadcrumbItem } from '@/components/ui/breadcrumbs';
-import { DEFAULT_WIDTH, WIDE_NO_RIGHT_SIDEBAR_WIDTH, WIDE_WIDTH } from '@/lib/layout-width';
+import { DEFAULT_WIDTH, WIDE_WIDTH } from '@/lib/layout-width';
 import { AnimatedMain } from './AnimatedMain';
 import { ContextRail } from './ContextRail';
 
@@ -13,6 +13,10 @@ interface PageLayoutProps {
   title: string;
   description?: string;
   children: React.ReactNode;
+  /**
+   * Page-specific content for the shell's live rail. Portalled into the rail on
+   * wide screens and dropped entirely on narrow ones — supplementary only.
+   */
   rightSidebar?: React.ReactNode;
   headerRight?: React.ReactNode;
   wide?: boolean;
@@ -35,16 +39,14 @@ export function PageLayout({
 }: PageLayoutProps) {
   const { t } = useTranslation('feed');
   const descriptionId = useId();
-  const hasRightSidebar = Boolean(rightSidebar);
-  const targetWidth = wide
-    ? hasRightSidebar
-      ? WIDE_WIDTH
-      : WIDE_NO_RIGHT_SIDEBAR_WIDTH
-    : DEFAULT_WIDTH;
+  // The shell's frame owns the rail track now, so a page's own width no longer
+  // depends on whether it supplies rail content — `wide` alone decides whether
+  // the column takes its reading measure or the whole content track.
+  const targetWidth = wide ? WIDE_WIDTH : DEFAULT_WIDTH;
 
   return (
     <>
-      <AnimatedMain className="w-full min-w-0 pb-dock" targetWidth={targetWidth}>
+      <AnimatedMain className="w-full min-w-0 pb-dock" targetWidth={targetWidth} wide={wide}>
         <header
           data-slot="page-header"
           className="page-heading"
@@ -89,9 +91,7 @@ export function PageLayout({
         </div>
       </AnimatedMain>
 
-      <ContextRail reserve={!hasRightSidebar} compactReserve={Boolean(wide)}>
-        {rightSidebar}
-      </ContextRail>
+      <ContextRail>{rightSidebar}</ContextRail>
     </>
   );
 }

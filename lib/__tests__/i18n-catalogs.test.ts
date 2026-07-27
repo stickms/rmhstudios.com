@@ -97,6 +97,32 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'profile-cosmetics-title',
     'profile-cosmetics-unequip-label',
     'profile-cosmetics-unequipped-toast',
+    // Desktop shell revamp: the top bar's quick panels, the nav / live rails and
+    // the home deck's second feed. Runtime falls back to English until the
+    // translate pipeline fills the other locale catalogs.
+    'compose',
+    'discover',
+    'explore-more',
+    'feed',
+    'feed-empty-surface',
+    'feed-games',
+    'feed-news',
+    'home-aria-label',
+    'messages-empty',
+    'messages-see-all',
+    'more-feeds',
+    'nav-wallet',
+    'notifications-empty',
+    'notifications-see-all',
+    'online-now-count',
+    'panel-failed',
+    'search',
+    'search-failed',
+    'search-hint',
+    'search-no-matches',
+    'search-see-all',
+    'search-sign-in',
+    'view-full-profile',
     // Liquid-glass profile redesign strings; runtime falls back to English until
     // the translation pipeline fills the other locale catalogs.
     'add-profile-bio',
