@@ -296,10 +296,13 @@
   min-height: calc(100dvh - 3.5rem);
   padding: var(--rad-top) var(--rad-gutter) var(--rad-bottom);
   margin-inline: auto;
-  /* Generous so PageLayout's own column widths (AnimatedMain, up to ~60rem for
-     `wide` pages) are never clipped; the per-page column sets the real reading
-     measure, this just centres it on the backdrop with proper gutters. */
-  max-width: 72rem;
+  /* Wide enough for a full content-plus-rail row on desktop (reading column +
+     the live context rail + gutters) without the reading measure itself ever
+     growing unreadably wide — the per-page column (AnimatedMain) still sets the
+     real text measure; this just gives the composite room to breathe and centres
+     it on the backdrop. Reclaims the empty side gutters big screens used to
+     waste while keeping generous margins. */
+  max-width: 80rem;
 }
 /* Vertical rhythm between a page's top-level blocks (header already owns its own
    bottom margin; this spaces sibling sections/cards a page stacks after it). */
@@ -1139,10 +1142,14 @@
   opacity: 0;
   /* The goo filter fuses the blobs; difference blend keeps the cursor legible on
      any ground and in either theme. The filter region is just this box (small),
-     so the per-frame blur stays cheap. */
+     so the per-frame blur stays cheap. Promote the box to its own compositor
+     layer up front — the JS writes a fresh translate every frame, so hinting the
+     transform channel keeps the goo drop off the main-thread paint path (this is
+     the difference between a smooth trail and the jank on a fast display). */
   filter: url(#rmh-goo);
   mix-blend-mode: difference;
   transition: opacity 0.3s ease;
+  will-change: transform, opacity;
 }
 .metaball__blob {
   position: absolute;
@@ -1295,4 +1302,284 @@
   position: static !important;
   inset-block-start: auto !important;
   top: auto !important;
+}
+
+/* ==========================================================================
+   Desktop wide layout — reclaim the screen on big displays
+   The radial UI is mobile-first: on a phone every page is one centred column
+   and nothing here changes that (all of the following is gated ≥1280px, the xl
+   breakpoint the context rail already switches on). On desktop we use the width
+   the old layout wasted as empty gutter — a content page grows a live context
+   rail beside its reading column, and the home wheel is flanked by live rails —
+   with proper margins so nothing runs edge-to-edge.
+   ========================================================================== */
+
+/* ── Content page: reading column + context rail ──────────────────────────
+   PageLayout wraps its column and rail in this row. It is a centred flex row at
+   every width; below xl the rail is `display:none`, so the row collapses to the
+   single centred reading column (mobile is untouched). `align-items: stretch`
+   gives the rail full row height so its sticky aside can travel the whole page. */
+.radial-page {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
+}
+@media (min-width: 1280px) {
+  .radial-page {
+    gap: var(--rad-6);
+  }
+  /* Beat ContextRail's own `self-start` so the rail stretches (sticky travel). */
+  .radial-page > .radial-page__rail {
+    align-self: stretch;
+  }
+}
+
+/* ── The shared live context rail (SiteAside) ─────────────────────────────
+   Sticks just under the top bar and scrolls internally when it out-runs the
+   viewport, so the useful chrome stays put while a long page scrolls. Only the
+   INNER aside sticks — the context-rail slot itself is de-stuck above (radial
+   philosophy: page chrome flows), which is exactly what leaves this element free
+   to pin without fighting the slot. */
+.site-aside,
+.feed-aside {
+  display: grid;
+  gap: var(--rad-4);
+  align-content: start;
+}
+@media (min-width: 1280px) {
+  .site-aside,
+  .feed-aside {
+    position: sticky;
+    top: calc(4rem + var(--rad-3));
+    max-height: calc(100dvh - 4rem - var(--rad-4));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: var(--rad-4);
+    scrollbar-width: thin;
+  }
+}
+.site-aside__explore {
+  padding: var(--rad-4);
+}
+.site-aside__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: var(--rad-3);
+  font-family: var(--site-font-display, inherit);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--site-text);
+}
+.site-aside__title svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--site-accent);
+}
+.site-aside__links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+.site-aside__link {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.55rem 0.6rem;
+  margin-inline: -0.3rem;
+  border-radius: var(--site-radius-sm, 12px);
+  color: var(--site-text);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+}
+.site-aside__link svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  color: var(--site-text-muted);
+  transition: color 0.18s ease;
+}
+.site-aside__link:hover {
+  background: var(--site-surface-hover);
+  transform: translateX(2px);
+}
+.site-aside__link:hover svg {
+  color: var(--site-accent);
+}
+.site-aside__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.3rem;
+  font-size: 0.78rem;
+  color: var(--site-text-dim);
+}
+.site-aside__foot a {
+  color: var(--site-text-dim);
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+.site-aside__foot a:hover {
+  color: var(--site-text);
+}
+
+/* ── The home feed's live rail (FeedAside — trending / active voices) ──── */
+.feed-aside__card {
+  padding: var(--rad-4);
+}
+.feed-aside__trends,
+.feed-aside__voices {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+.feed-aside__trend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.6rem;
+  margin-inline: -0.3rem;
+  border-radius: var(--site-radius-sm, 12px);
+  text-decoration: none;
+  transition:
+    background-color 0.18s ease,
+    transform 0.18s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+}
+.feed-aside__trend:hover {
+  background: var(--site-surface-hover);
+  transform: translateX(2px);
+}
+.feed-aside__trend-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 0;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--site-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.feed-aside__trend-tag svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  color: var(--site-accent);
+  flex: none;
+}
+.feed-aside__trend-count {
+  flex: none;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--site-text-dim);
+}
+.feed-aside__voice {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.6rem;
+  margin-inline: -0.3rem;
+  border-radius: var(--site-radius-sm, 12px);
+  text-decoration: none;
+  transition:
+    background-color 0.18s ease,
+    transform 0.18s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+}
+.feed-aside__voice:hover {
+  background: var(--site-surface-hover);
+  transform: translateX(2px);
+}
+.feed-aside__voice-who {
+  display: grid;
+  min-width: 0;
+}
+.feed-aside__voice-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--site-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.feed-aside__voice-count {
+  font-size: 0.72rem;
+  color: var(--site-text-dim);
+}
+
+/* ── Home feed: flank the wheel with live rails on desktop ─────────────────
+   Progressive: <1280 the wheel is the full-bleed centred column it always was
+   (mobile untouched). 1280–1535 adds the live feed rail on the right. ≥1536 adds
+   the shared discovery rail on the left too — a three-region cockpit that fills a
+   wide screen while the wheel keeps its viewport-centred rake. Default grid
+   `align-items: stretch` gives the flanks full height so their sticky asides
+   travel. */
+.radial-feed__spread {
+  display: block;
+  width: 100%;
+}
+.radial-feed__flank {
+  display: none;
+}
+@media (min-width: 1280px) {
+  .radial-feed__spread {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--site-rail-width);
+    gap: var(--rad-6);
+    width: 100%;
+    max-width: 84rem;
+    margin-inline: auto;
+    padding-inline: var(--rad-gutter);
+  }
+  .radial-feed__center {
+    grid-column: 1;
+    min-width: 0;
+  }
+  .radial-feed__flank--right {
+    display: block;
+    grid-column: 2;
+  }
+  /* Cards fill the (capped) centre column instead of the viewport measure, so a
+     flanked wheel never overflows its column nor looks lost in it. */
+  .radial-feed__center .radial-wheel__slot,
+  .radial-feed__center .radial-wheel__lead {
+    width: min(100%, 40rem);
+  }
+}
+@media (min-width: 1536px) {
+  .radial-feed__spread {
+    grid-template-columns: var(--site-rail-width) minmax(0, 1fr) var(--site-rail-width);
+    max-width: 96rem;
+  }
+  .radial-feed__flank--left {
+    display: block;
+    grid-column: 1;
+  }
+  .radial-feed__center {
+    grid-column: 2;
+  }
+  .radial-feed__flank--right {
+    grid-column: 3;
+  }
+}
+
+/* Reduced motion: the aside/link nudges are decorative — drop them. */
+@media (prefers-reduced-motion: reduce) {
+  .site-aside__link,
+  .feed-aside__trend,
+  .feed-aside__voice {
+    transition-duration: 0.001ms;
+  }
 }

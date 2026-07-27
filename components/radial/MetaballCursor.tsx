@@ -3,24 +3,43 @@
 import { useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
-// Blob diameters (px). The lead blob tracks the pointer; the trailing ones lag,
-// so the goo filter fuses them into a liquid shape that stretches when you move
-// fast and settles to a single dot when you stop.
+// Blob diameters (px) and their "chase rate" — how fast each blob catches the
+// pointer, expressed in **inverse seconds** so the motion is frame-rate
+// independent (see the delta-time smoothing in `tick`). The lead blob is quick;
+// the trailing ones lag, so the goo filter fuses them into a liquid shape that
+// stretches when you move fast and settles to a single dot when you stop.
 const BLOBS = [
-  { d: 40, ease: 0.4 },
-  { d: 30, ease: 0.24 },
-  { d: 22, ease: 0.15 },
+  { d: 40, rate: 30 },
+  { d: 30, rate: 16.5 },
+  { d: 22, rate: 9.75 },
 ];
+const SWELL_RATE = 7.7; // how fast the swell (over interactive elements) eases
 const BOX = 340; // filter region size — kept small so the per-frame goo blur is cheap
 const HALF = BOX / 2;
+// A finger is far larger than a mouse pointer, so the touch blob rides a size
+// bump — otherwise the goo drop would vanish under the thumb.
+const TOUCH_SCALE = 1.55;
+// Cap the per-frame delta so a background tab (or a long GC pause) can't teleport
+// the blobs on the first frame back — smoothing over a huge dt looks like a jump.
+const MAX_DT = 1 / 30;
 
 /**
- * A gooey "metaball" cursor. A handful of blobs ride under an SVG goo filter and
- * `mix-blend-mode: difference`, so the cursor reads as a liquid blob that merges
- * with itself as it moves and inverts whatever is beneath it (legible on any
- * ground, in either theme). Interactive elements (`a`, `button`, …) swell it —
- * it "morphs with" the UI. Desktop-only (fine pointer), off under reduced-motion,
- * and pointer-events:none so it never intercepts input.
+ * A gooey "metaball" pointer. A handful of blobs ride under an SVG goo filter and
+ * `mix-blend-mode: difference`, so it reads as a liquid blob that merges with
+ * itself as it moves and inverts whatever is beneath it (legible on any ground,
+ * in either theme). Interactive elements (`a`, `button`, …) swell it — it
+ * "morphs with" the UI.
+ *
+ * Works with **both** pointer kinds. On a mouse it trails the cursor and hides
+ * when the pointer leaves the window. On touch it blooms under the thumb on
+ * press, follows the drag, and fades on release — so phones get the same liquid
+ * layer following the finger. Off under reduced-motion; `pointer-events:none`
+ * throughout so it never intercepts input.
+ *
+ * The chase is integrated with **delta-time exponential smoothing** rather than a
+ * fixed per-frame factor, so the trail feels identical at 60Hz, 120Hz and 144Hz
+ * (a fixed factor over-chases on high-refresh displays and stutters on a dropped
+ * frame — the old "laggy on a fast PC" feel).
  */
 export function MetaballCursor() {
   const reduced = useReducedMotion();
@@ -28,10 +47,11 @@ export function MetaballCursor() {
   const boxRef = useRef<HTMLDivElement | null>(null);
   const blobRefs = useRef<HTMLSpanElement[]>([]);
 
-  // Only light up for a real mouse, and never under reduced-motion.
+  // Mount for any pointer (mouse or touch); it stays invisible until the first
+  // real input, so there is no idle cost. Never under reduced-motion.
   useEffect(() => {
     if (reduced) return;
-    if (typeof window === 'undefined' || !window.matchMedia?.('(pointer: fine)').matches) return;
+    if (typeof window === 'undefined') return;
     setActive(true);
   }, [reduced]);
 
@@ -46,21 +66,30 @@ export function MetaballCursor() {
     const pos = BLOBS.map(() => ({ x: cx, y: cy }));
     let swell = 0; // eased 0→1 over interactive elements
     let swellTarget = 0;
+    let sizeK = 1; // 1 for a mouse, TOUCH_SCALE while a finger drives it
     let raf = 0;
     let running = false;
     let visible = false;
+    let lastT = 0;
 
-    const tick = () => {
+    const tick = (now: number) => {
+      // Delta-time smoothing: `1 - e^(-rate·dt)` is the fraction of the remaining
+      // gap to close this frame. Because it is derived from elapsed time, the
+      // blob covers the same ground per second no matter the refresh rate.
+      const dt = lastT === 0 ? 1 / 60 : Math.min((now - lastT) / 1000, MAX_DT);
+      lastT = now;
+
       box.style.transform = `translate3d(${(cx - HALF).toFixed(1)}px, ${(cy - HALF).toFixed(1)}px, 0)`;
-      swell += (swellTarget - swell) * 0.12;
+      swell += (swellTarget - swell) * (1 - Math.exp(-SWELL_RATE * dt));
       let moving = false;
       for (let i = 0; i < blobs.length; i++) {
-        const { d, ease } = BLOBS[i];
+        const { d, rate } = BLOBS[i];
         const p = pos[i];
-        p.x += (cx - p.x) * ease;
-        p.y += (cy - p.y) * ease;
+        const k = 1 - Math.exp(-rate * dt);
+        p.x += (cx - p.x) * k;
+        p.y += (cy - p.y) * k;
         const r = d / 2;
-        const scale = 1 + swell * 0.9;
+        const scale = (1 + swell * 0.9) * sizeK;
         // Blob position is relative to the box (which is centred on the pointer).
         const ox = HALF + (p.x - cx) - r;
         const oy = HALF + (p.y - cy) - r;
@@ -77,18 +106,45 @@ export function MetaballCursor() {
     const ensure = () => {
       if (!running) {
         running = true;
+        lastT = 0;
         raf = requestAnimationFrame(tick);
       }
     };
-
-    const onMove = (e: PointerEvent) => {
-      cx = e.clientX;
-      cy = e.clientY;
+    const show = () => {
       if (!visible) {
         visible = true;
         box.style.opacity = '1';
       }
+    };
+    const hide = () => {
+      visible = false;
+      box.style.opacity = '0';
+    };
+
+    const onMove = (e: PointerEvent) => {
+      // On touch, `pointermove` only fires while a finger is down — exactly the
+      // "follow the thumb" gesture. On a mouse it fires on hover.
+      cx = e.clientX;
+      cy = e.clientY;
+      sizeK = e.pointerType === 'mouse' ? 1 : TOUCH_SCALE;
+      show();
       ensure();
+    };
+    const onDown = (e: PointerEvent) => {
+      if (e.pointerType === 'mouse') return; // mouse handled by hover/move
+      // Bloom instantly at the touch point instead of racing in from the last spot.
+      cx = e.clientX;
+      cy = e.clientY;
+      sizeK = TOUCH_SCALE;
+      for (const p of pos) {
+        p.x = cx;
+        p.y = cy;
+      }
+      show();
+      ensure();
+    };
+    const onUp = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse') hide();
     };
     const onOver = (e: PointerEvent) => {
       const t = e.target as Element | null;
@@ -99,19 +155,22 @@ export function MetaballCursor() {
         : 0;
       ensure();
     };
-    const onLeave = () => {
-      visible = false;
-      box.style.opacity = '0';
-    };
+    const onWindowLeave = () => hide();
 
     window.addEventListener('pointermove', onMove, { passive: true });
+    window.addEventListener('pointerdown', onDown, { passive: true });
+    window.addEventListener('pointerup', onUp, { passive: true });
+    window.addEventListener('pointercancel', onUp, { passive: true });
     window.addEventListener('pointerover', onOver, { passive: true });
-    document.addEventListener('pointerleave', onLeave);
+    document.addEventListener('pointerleave', onWindowLeave);
 
     return () => {
       window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
       window.removeEventListener('pointerover', onOver);
-      document.removeEventListener('pointerleave', onLeave);
+      document.removeEventListener('pointerleave', onWindowLeave);
       cancelAnimationFrame(raf);
     };
   }, [active]);

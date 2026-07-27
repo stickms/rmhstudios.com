@@ -33,10 +33,18 @@ function RadialBackdrop() {
     let curY = 0;
     let raf = 0;
     let running = false;
+    let lastT = 0;
 
-    const tick = () => {
-      curX += (targetX - curX) * 0.08;
-      curY += (targetY - curY) * 0.08;
+    const tick = (now: number) => {
+      // Delta-time exponential smoothing (`1 - e^(-rate·dt)`) so the parallax
+      // drifts at the same speed on 60Hz, 120Hz and 144Hz displays instead of
+      // over-chasing on fast panels — the same frame-rate independence the
+      // metaball cursor uses.
+      const dt = lastT === 0 ? 1 / 60 : Math.min((now - lastT) / 1000, 1 / 30);
+      lastT = now;
+      const k = 1 - Math.exp(-5 * dt);
+      curX += (targetX - curX) * k;
+      curY += (targetY - curY) * k;
       el.style.transform = `translate3d(${curX.toFixed(2)}px, ${curY.toFixed(2)}px, 0)`;
       if (Math.abs(targetX - curX) > 0.1 || Math.abs(targetY - curY) > 0.1) {
         raf = requestAnimationFrame(tick);
@@ -50,6 +58,7 @@ function RadialBackdrop() {
       targetY = (e.clientY / window.innerHeight - 0.5) * -28;
       if (!running) {
         running = true;
+        lastT = 0;
         raf = requestAnimationFrame(tick);
       }
     };
@@ -181,7 +190,8 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
 
       {overlays}
       <BackToTop />
-      {/* Site-wide gooey cursor — the flowy layer over every page (desktop only). */}
+      {/* Site-wide gooey metaball — trails the mouse on desktop and blooms under
+          the thumb on touch, so the flowy liquid layer is on every device. */}
       <MetaballCursor />
     </div>
   );

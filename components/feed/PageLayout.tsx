@@ -8,6 +8,7 @@ import { Breadcrumbs, type BreadcrumbItem } from '@/components/ui/breadcrumbs';
 import { DEFAULT_WIDTH, WIDE_NO_RIGHT_SIDEBAR_WIDTH, WIDE_WIDTH } from '@/lib/layout-width';
 import { AnimatedMain } from './AnimatedMain';
 import { ContextRail } from './ContextRail';
+import { SiteAside } from './SiteAside';
 
 interface PageLayoutProps {
   title: string;
@@ -19,6 +20,15 @@ interface PageLayoutProps {
   backTo?: string;
   backLabel?: string;
   breadcrumbs?: BreadcrumbItem[];
+  /**
+   * Desktop context rail. When a page passes no `rightSidebar`, a standard
+   * (non-`wide`) page gets the shared live `SiteAside` on wide screens so the
+   * reclaimed space becomes useful chrome instead of empty gutter. `wide` pages
+   * default to no rail (they were sized to absorb it for full-width grids —
+   * `WIDE_NO_RIGHT_SIDEBAR_WIDTH`). Force it either way with `aside`. Mobile is
+   * unaffected — the rail is `display:none` there.
+   */
+  aside?: boolean;
 }
 
 /** Compact, mobile-first title block shared by standard routes. */
@@ -32,10 +42,15 @@ export function PageLayout({
   backTo,
   backLabel,
   breadcrumbs,
+  aside,
 }: PageLayoutProps) {
   const { t } = useTranslation('feed');
   const descriptionId = useId();
-  const hasRightSidebar = Boolean(rightSidebar);
+  // A page shows a rail if it supplied one, or if it takes the default one.
+  // Default: on for standard reading pages, off for `wide` grid pages (which
+  // were designed to absorb the rail's footprint) — `aside` overrides either way.
+  const railContent = rightSidebar ?? ((aside ?? !wide) ? <SiteAside /> : null);
+  const hasRightSidebar = Boolean(railContent);
   const targetWidth = wide
     ? hasRightSidebar
       ? WIDE_WIDTH
@@ -43,8 +58,8 @@ export function PageLayout({
     : DEFAULT_WIDTH;
 
   return (
-    <>
-      <AnimatedMain className="w-full min-w-0 pb-dock" targetWidth={targetWidth}>
+    <div className="radial-page">
+      <AnimatedMain className="radial-page__main w-full min-w-0 pb-dock" targetWidth={targetWidth}>
         <header
           data-slot="page-header"
           className="page-heading"
@@ -89,9 +104,11 @@ export function PageLayout({
         </div>
       </AnimatedMain>
 
-      <ContextRail reserve={!hasRightSidebar} compactReserve={Boolean(wide)}>
-        {rightSidebar}
-      </ContextRail>
-    </>
+      {railContent ? (
+        <ContextRail className="radial-page__rail">{railContent}</ContextRail>
+      ) : (
+        <ContextRail reserve compactReserve={Boolean(wide)} />
+      )}
+    </div>
   );
 }

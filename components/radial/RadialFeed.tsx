@@ -1,6 +1,15 @@
 'use client';
 
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { Await } from '@tanstack/react-router';
 import { PenLine } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -9,8 +18,10 @@ import { useFeedSSE } from '@/hooks/useFeedSSE';
 import { type InitialFeed } from '@/components/feed/FeedColumn';
 import { ComposeBoxLazy } from '@/components/feed/ComposeBoxLazy';
 import { RadialLoader } from '@/components/ui/radial-loader';
+import { SiteAside } from '@/components/feed/SiteAside';
 import { RadialWheel, type RadialWheelItem } from './RadialWheel';
 import { RmharkCard } from './RmharkCard';
+import { FeedAside } from './FeedAside';
 
 // The full composer is a heavy chunk (GIF picker, AI buttons, mention/emoji
 // autocomplete) — defer it out of the feed route's initial bundle; it only
@@ -87,24 +98,57 @@ function FeedWheel({ initial }: { initial: InitialFeed }) {
     if (initialized && !loading) {
       // Empty timeline: lead with the compose box so posting is the first move.
       return (
-        <RadialWheel
-          items={[]}
-          lead={composeLead}
-          ariaLabel={t('feed', { defaultValue: 'Feed' })}
-        />
+        <FeedSpread>
+          <RadialWheel
+            items={[]}
+            lead={composeLead}
+            ariaLabel={t('feed', { defaultValue: 'Feed' })}
+          />
+        </FeedSpread>
       );
     }
     return <FeedWheelSkeleton />;
   }
 
   return (
-    <RadialWheel
-      items={wheelItems}
-      lead={composeLead}
-      onEndReached={onEndReached}
-      haptics
-      ariaLabel={t('feed', { defaultValue: 'Feed' })}
-    />
+    <FeedSpread>
+      <RadialWheel
+        items={wheelItems}
+        lead={composeLead}
+        onEndReached={onEndReached}
+        haptics
+        ariaLabel={t('feed', { defaultValue: 'Feed' })}
+      />
+    </FeedSpread>
+  );
+}
+
+/**
+ * Desktop-only flanks for the home wheel. The wheel keeps the centre column and
+ * its viewport-centred rake untouched; on wide screens it gains a live feed rail
+ * (trending tags + active voices, right) and — on very wide screens — the shared
+ * discovery rail (left). Below xl every flank is `display:none`, so a phone sees
+ * exactly the full-bleed wheel it always did (and the rails' widgets self-gate on
+ * desktop, so nothing here fetches on mobile).
+ */
+function FeedSpread({ children }: { children: ReactNode }) {
+  const { t } = useTranslation('feed');
+  return (
+    <div className="radial-feed__spread">
+      <aside
+        className="radial-feed__flank radial-feed__flank--left"
+        aria-label={t('discover', { defaultValue: 'Discover' })}
+      >
+        <SiteAside />
+      </aside>
+      <div className="radial-feed__center">{children}</div>
+      <aside
+        className="radial-feed__flank radial-feed__flank--right"
+        aria-label={t('live-feed-rail', { defaultValue: 'Live from the feed' })}
+      >
+        <FeedAside />
+      </aside>
+    </div>
   );
 }
 

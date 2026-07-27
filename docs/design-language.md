@@ -355,7 +355,7 @@ The `_site` layout route delegates to `components/feed/SiteShell.tsx`, which now
 renders the **radial shell** ([`components/radial/RadialShell.tsx`](../components/radial/RadialShell.tsx)):
 a fixed parallax **ring backdrop**, a slim sticky **utility top bar** (brand ·
 search · inbox · avatar), the central **RMH hub** (`RadialHub`), a site-wide
-gooey **metaball cursor** (desktop / fine-pointer), and the single
+gooey **metaball cursor** (mouse on desktop, thumb-following on touch), and the single
 `<main id="main-content">` landmark. This replaced the old floating-glass
 sidebar shell (inset rail, floating header capsules, aurora gutters). **Pages
 never add sidebars or a page-frame** (and `AnimatedMain` renders a `<div>` — the
@@ -373,9 +373,14 @@ The home (`/`) is a full-bleed **radial feed**
 cards raked onto a shallow cylinder on the **document's own scroll** (no inner
 scroll region — that is what lets mobile Safari collapse its toolbars), led by an
 inline compose box, with a floating compose button that opens the new-rmhark
-modal. Every other `_site` route flows the same way — natural document scroll,
-**no pinned/sticky page chrome** — inside a centred content column
-(`.radial-shell__main`, `max-width: 72rem`) on the backdrop. The radial shell
+modal. On wide screens the wheel is flanked by live rails (trending tags + active
+voices on the right, the shared discovery rail on the left at ≥1536px) that fill
+the reclaimed gutter while the wheel keeps its viewport-centred rake; below the
+`xl` breakpoint every flank is `display:none`, so a phone sees exactly the
+full-bleed wheel. Every other `_site` route flows the same way — natural document
+scroll, **no pinned/sticky page chrome** — inside a centred content column
+(`.radial-shell__main`, `max-width: 80rem`) on the backdrop, which on desktop
+pairs the reading column with a live context rail (`SiteAside`). The radial shell
 keeps its **layout** opinions on content pages — it strips PageLayout's header
 card down to flat big type and unpins sticky headers/tabs/search so every page
 flows like the feed — but it no longer touches the **material**: the glass classes
@@ -384,11 +389,14 @@ render at full strength inside the shell, over the ring backdrop and the aurora.
 Two page archetypes (see `docs/page-consistency.md` for full code):
 
 1. **Standard content page** — wrap in `components/feed/PageLayout.tsx`:
-   `PageLayout({ title, children, rightSidebar?, headerRight?, wide?, backTo?, backLabel?, breadcrumbs? })`.
+   `PageLayout({ title, children, rightSidebar?, headerRight?, wide?, backTo?, backLabel?, breadcrumbs?, aside? })`.
    In the radial shell its `.page-heading` renders as a **flat, transparent
    big-type header** floating directly on the ring backdrop (the radial content
    layer strips the old bordered header capsule), followed by the content column
-   and an optional right widget rail.
+   and a right context rail. Standard pages get the shared live `SiteAside` in
+   that rail by default on desktop (trending shortcuts, the daily loop, friends
+   online); `wide` grid pages opt out automatically, and any page can force it
+   with `aside` or replace it with its own `rightSidebar`.
 2. **Feed-column / bespoke page** — use `AnimatedMain` directly with a target
    width from `lib/layout-width.ts`, or (home) the radial wheel.
 
@@ -413,7 +421,8 @@ gated off there too, via `html.app-route`).
   shallow cylinder on a rAF window-scroll pass with cached offsets (no layout
   thrash — `RadialWheel`), the **hub** glides the orb to centre then blooms the
   wedges under an expanding `clip-path` **circular blur** (CSS-only phase
-  machine), the **metaball** cursor trails on one rAF tick (`MetaballCursor`),
+  machine), the **metaball** cursor trails on one rAF tick with frame-rate-independent
+  smoothing and follows the thumb on touch (`MetaballCursor`),
   the **ring backdrop** parallaxes to the pointer, and page headers/heroes rise
   in on mount (`radial-page-rise`). All of it is `transform`/`opacity` only and gated off
   under reduced motion; optional scroll **haptics** (`navigator.vibrate`) tick
