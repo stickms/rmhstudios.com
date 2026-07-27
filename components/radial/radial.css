@@ -1862,17 +1862,20 @@
 }
 
 /* ── Pointer metaball (mouse cursor + touch drop) ─────────────────────────
-   Rendered into <body> by MetaballCursor (portal), so it is NOT inside the
-   shell's isolated stacking context — `difference` needs the page itself as its
-   backdrop to stay legible.
+   Rendered into <body> by MetaballCursor (portal), so it sits outside the
+   shell's isolated stacking context and its z-index reads against the page.
 
-   The goo is CSS, not SVG: `blur() contrast()` is a GPU shader, where
-   `filter: url(#goo)` makes Chromium re-run a filter graph on the main thread
-   every time the region moves (that was the desktop stutter). The plate is #000
-   because black is the identity of `mix-blend-mode: difference` — |Cb − 0| = Cb —
-   so the box and the soft halo the blur spills past its edges composite to
-   exactly the backdrop and leave no visible rectangle, while the white blobs
-   invert whatever is under them (legible on any ground, in either theme). */
+   The element paints a SHAPE AND NOTHING ELSE. `#rmh-pointer-goo` fuses the
+   blobs by ramping the alpha channel, so everything outside the silhouette is
+   transparent — there is no plate, and therefore no rectangle that a compositing
+   quirk can reveal. (The cheaper CSS goo — an opaque plate + `blur() contrast()`
+   cancelled by `mix-blend-mode: difference` — only stays invisible while the
+   compositor blends against the true page backdrop; when the layer gets its own
+   render surface the plate shows up as a bright box trailing the pointer.)
+
+   Legibility comes from the shape rather than from inverting the backdrop: the
+   ink fill plus a halo in the background colour, both contrast-paired tokens, so
+   it reads on the page and on an accent-filled control in every theme. */
 .metaball {
   position: fixed;
   top: 0;
@@ -1880,22 +1883,32 @@
   z-index: var(--z-cursor);
   pointer-events: none;
   opacity: 0;
-  background: #000;
-  /* Blur radius is tuned against the smallest blob (7px): any wider and the
-     resting dot falls under the contrast threshold and disappears. */
-  filter: blur(5px) contrast(20);
-  mix-blend-mode: difference;
+  /* Two passes of the same tight shadow build a solid rim rather than a smudge.
+     Chained after the goo, so the halo traces the FUSED outline, not each blob.
+     The rim is what carries the drop over a surface its ink matches — on the
+     default theme the accent IS the ink, so on the compose button the halo is
+     the entire mark. Sized to read as a ring at a glance, not a hairline. */
+  filter: url(#rmh-pointer-goo) drop-shadow(0 0 2px var(--site-bg))
+    drop-shadow(0 0 2px var(--site-bg));
   transition: opacity 0.25s ease;
-  /* Bounded work: the box can never be asked to lay out or paint anything
-     outside its own fixed size (the JS clamps every blob inside it too). */
-  contain: strict;
+  /* Bounded work: the box can never be asked to lay out anything outside its own
+     fixed size (the JS clamps every blob inside it too). Not `paint`/`strict` —
+     paint containment would clip the halo the filter draws past the border box. */
+  contain: layout size;
+}
+.metaball-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 .metaball__blob {
   position: absolute;
   top: 0;
   left: 0;
   border-radius: 50%;
-  background: #fff;
+  background: var(--site-text);
   /* `will-change` is toggled by the rAF loop — a parked cursor holds no layer. */
 }
 

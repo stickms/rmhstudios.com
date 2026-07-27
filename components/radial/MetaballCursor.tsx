@@ -8,28 +8,48 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
  * The pointer metaball — a gooey liquid drop that rides under the pointer on
  * desktop and under the finger on touch.
  *
- * Three things make it cheap enough to run on every page:
+ * ## Why it paints a shape and nothing else
  *
- * 1. **CSS goo, not an SVG filter.** `filter: blur() contrast()` is a plain GPU
- *    shader; `filter: url(#goo)` is an SVG filter graph, which Chromium
- *    re-evaluates on the main thread every time the filtered region moves. The
- *    box's own background is `#000`, which is the identity element of
- *    `mix-blend-mode: difference` — so the black plate (and the soft black halo
- *    the blur spills past the box) composites to *exactly* the backdrop, while
- *    the white blobs invert it. No visible box, no second layer.
- * 2. **A small, bounded filter region.** Filter + blend cost scales with area,
- *    so the box is fixed at {@link BOX}px and every blob offset is clamped
- *    inside it — the tail can stretch but can never escape (or grow) the region.
- * 3. **Frame-rate independent easing.** Each spring converges at a fixed rate
- *    *per second* (`1 - e^(-λ·dt)`), not per frame. On a 144Hz screen the drop
- *    follows exactly the same curve it does at 60Hz instead of snapping to the
- *    pointer, and a dropped frame doesn't produce a visible jump.
+ * The obvious cheap goo is a CSS one: an opaque plate behind white blobs, then
+ * `filter: blur() contrast()` to threshold them into a fused silhouette. It
+ * needs `mix-blend-mode: difference` to hide the plate — black being the
+ * identity element of `difference` — and that is the trap. The trick only holds
+ * while the compositor blends against the *true* page backdrop; the moment the
+ * layer gets its own render surface (which GPU compositing decides, not us) the
+ * plate stops cancelling and the whole box shows up as a bright rectangle
+ * following the pointer. It is not reproducible under software rasterisation,
+ * which makes it exactly the kind of bug you cannot test your way out of.
  *
- * It is rendered into `document.body` (not the shell) on purpose: `.radial-shell`
- * sets `isolation: isolate`, and a `difference` blend inside an isolated group
- * composites against the group's own (transparent) backdrop rather than the page,
- * which paints the drop white-on-white over any un-surfaced area. Body is opaque
- * (`background: var(--site-bg)`), so blending there is always legible.
+ * So there is no plate and no blend mode. An SVG **alpha ramp** does the fusing
+ * — blur, then a steep contrast curve on the alpha channel alone — which emits
+ * the fused silhouette and *transparency everywhere else*. There is no box to
+ * reveal, on any compositing path.
+ *
+ * Legibility then has to come from the shape itself rather than from inverting
+ * the backdrop: the drop is filled with the theme's ink and carries a halo in
+ * the theme's background colour (two `drop-shadow`s in the same filter chain).
+ * Those two tokens are contrast-paired by definition, so the drop reads on the
+ * page *and* on an accent-filled control, in every theme.
+ *
+ * Dropping the blend is also a straight win: blending forces the compositor to
+ * read back the backdrop under a moving layer every single frame.
+ *
+ * ## What keeps it cheap
+ *
+ * - **A small, bounded filter region.** Cost scales with area, so the box is
+ *   fixed at {@link BOX}px and every blob offset is clamped inside it — the tail
+ *   can stretch but can never escape (or grow) the region being filtered.
+ * - **It stops.** The loop runs only while a spring is still converging, and
+ *   drops its `will-change` at rest, so a parked pointer costs nothing and the
+ *   filter is not re-evaluated.
+ * - **Frame-rate independent easing.** Each spring converges at a fixed rate
+ *   *per second* (`1 - e^(-λ·dt)`), not per frame. On a 144Hz screen the drop
+ *   follows exactly the same curve it does at 60Hz instead of snapping to the
+ *   pointer, and a dropped frame doesn't produce a visible jump.
+ *
+ * It renders into `document.body` so it sits outside `.radial-shell`'s isolated
+ * stacking context and its z-index can be reasoned about against the page rather
+ * than against the shell's internal layers.
  *
  * Behaviours: swells over interactive elements, narrows into a caret over text
  * fields (which is why hiding the native cursor stays usable), and — like macOS —
@@ -37,10 +57,12 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
  */
 
 /** Filter-region size (px). Also the hard bound on how far the tail can lag. */
-const BOX = 260;
+const BOX = 220;
 const HALF = BOX / 2;
 /** Room reserved inside the box for the goo blur's spill, so nothing clips. */
 const BLUR_PAD = 20;
+/** Id of this component's own goo filter (it does not share the shell's bank). */
+const GOO_ID = 'rmh-pointer-goo';
 
 /**
  * Blob diameters (px) and their convergence rate λ (per second). The lead blob
@@ -346,18 +368,44 @@ export function MetaballCursor() {
   if (!enabled || !mounted) return null;
 
   return createPortal(
-    <div className="metaball" ref={boxRef} aria-hidden style={{ width: BOX, height: BOX }}>
-      {BLOBS.map((b, i) => (
-        <span
-          key={i}
-          className="metaball__blob"
-          ref={(el) => {
-            if (el) blobRefs.current[i] = el;
-          }}
-          style={{ width: b.d, height: b.d }}
-        />
-      ))}
-    </div>,
+    <>
+      {/* The goo: blur, then a steep ramp on the ALPHA channel only, so nearby
+          blobs fuse with a smooth neck and everything outside the silhouette
+          stays fully transparent. Deliberately not `feBlend`-ed back over
+          SourceGraphic — compositing the sharp originals on top would put hard
+          blob edges inside the fused shape. */}
+      <svg className="metaball-defs" width="0" height="0" aria-hidden focusable="false">
+        <defs>
+          <filter
+            id={GOO_ID}
+            x="-20%"
+            y="-20%"
+            width="140%"
+            height="140%"
+            colorInterpolationFilters="sRGB"
+          >
+            <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
+            <feColorMatrix
+              in="blur"
+              mode="matrix"
+              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
+            />
+          </filter>
+        </defs>
+      </svg>
+      <div className="metaball" ref={boxRef} aria-hidden style={{ width: BOX, height: BOX }}>
+        {BLOBS.map((b, i) => (
+          <span
+            key={i}
+            className="metaball__blob"
+            ref={(el) => {
+              if (el) blobRefs.current[i] = el;
+            }}
+            style={{ width: b.d, height: b.d }}
+          />
+        ))}
+      </div>
+    </>,
     document.body,
   );
 }

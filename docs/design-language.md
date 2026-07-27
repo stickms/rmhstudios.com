@@ -441,7 +441,8 @@ gated off there too, via `html.app-route`).
   wedges under an expanding `clip-path` **circular blur** (CSS-only phase
   machine), the **pointer metaball** trails on one rAF tick with delta-time
   easing so it is identical at 60Hz and 240Hz (`MetaballCursor` — mouse and
-  touch; it also replaces the native cursor while a mouse drives it),
+  touch; an SVG alpha ramp fuses it into a shape with no plate and no blend
+  mode, and it replaces the native cursor while a mouse drives it),
   the **ring backdrop** parallaxes to the pointer, and page headers/heroes rise
   in on mount (`radial-page-rise`). All of it is `transform`/`opacity` only and gated off
   under reduced motion; optional scroll **haptics** (`navigator.vibrate`) tick
