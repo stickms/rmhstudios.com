@@ -354,28 +354,49 @@ close-button clearance stay consistent.
 The `_site` layout route delegates to `components/feed/SiteShell.tsx`, which now
 renders the **radial shell** ([`components/radial/RadialShell.tsx`](../components/radial/RadialShell.tsx)):
 a fixed parallax **ring backdrop**, a slim sticky **utility top bar** (brand ·
-search · inbox · avatar), the central **RMH hub** (`RadialHub`), a site-wide
-gooey **metaball cursor** (desktop / fine-pointer), and the single
-`<main id="main-content">` landmark. This replaced the old floating-glass
-sidebar shell (inset rail, floating header capsules, aurora gutters). **Pages
-never add sidebars or a page-frame** (and `AnimatedMain` renders a `<div>` — the
+search · inbox · avatar), the **frame**, the central **RMH hub** (`RadialHub`),
+and a site-wide gooey **pointer metaball** (mouse _and_ touch). The single
+`<main id="main-content">` landmark lives inside the frame; **pages never add
+their own sidebars or page-frame** (and `AnimatedMain` renders a `<div>` — the
 shell's `<main>` is the one landmark).
+
+**The frame is responsive by track count.** Mobile is one column. From 1120px
+the shell adds a persistent **navigation rail**, and from 1440px a **live rail**
+(who's online, the daily loop, friends online, trending, who to follow, plus
+whatever a page portals in through `PageLayout`'s `rightSidebar`). They are grid
+tracks, not overlays, so they cannot ride over the content, and each is
+`display: none` below the width that affords it. The frame itself is capped
+(`--rad-frame-max`, 96rem → 116rem at 1800px): filling the window means filling
+it with content, not stretching one reading column across a 34-inch display. See
+[`components/radial/README.md`](../components/radial/README.md) for the width
+table and the overlap-bound rules.
 
 The hub is a phase state machine: tapping the fixed orb **glides it to the
 centre of the screen** (`centering`), then opens the menu (`open`) as an
-**expanding circular blur** grows from the centre and translucent pie/wedge
-sectors bloom around the orb — no drawn colour disc. The orb owns navigation, so
-**there is no sidebar**. Closing reverses it (the blur contracts, then the orb
-glides home).
+**expanding circular blur** grows from the centre and translucent sectors bloom
+around the orb — no drawn colour disc. The dial is **double-decked**: two
+concentric rings of annulus sectors around a hole the orb settles into, because
+sixteen destinations on a single ring gave slivers too narrow to label or hit.
+Closing reverses it (the blur contracts, then the orb glides home). The hub
+remains the navigator on mobile and the fast full-screen switcher on desktop,
+where the nav rail shows the same map without a click.
 
-The home (`/`) is a full-bleed **radial feed**
+**Every top-bar control previews before it navigates.** Search drops a live
+result list, the bell the latest notifications, the inbox recent threads, the
+avatar a compact account menu — each with a footer link through to the full
+page, so nothing is hidden behind the preview
+([`QuickPanel`](../components/radial/QuickPanel.tsx) owns anchoring, the viewport
+clamp, dismissal and focus).
+
+The home (`/`) is a **radial feed**
 ([`RadialFeed`](../components/radial/RadialFeed.tsx) → `RadialWheel`): a wheel of
 cards raked onto a shallow cylinder on the **document's own scroll** (no inner
 scroll region — that is what lets mobile Safari collapse its toolbars), led by an
 inline compose box, with a floating compose button that opens the new-rmhark
-modal. Every other `_site` route flows the same way — natural document scroll,
-**no pinned/sticky page chrome** — inside a centred content column
-(`.radial-shell__main`, `max-width: 72rem`) on the backdrop. The radial shell
+modal. From 1280px it becomes a **deck** — the wheel keeps the primary column and
+an independent second feed (Following · News · Games) runs beside it. Every other
+`_site` route flows the same way — natural document scroll, **no pinned/sticky
+page chrome** — inside the frame's content track on the backdrop. The radial shell
 keeps its **layout** opinions on content pages — it strips PageLayout's header
 card down to flat big type and unpins sticky headers/tabs/search so every page
 flows like the feed — but it no longer touches the **material**: the glass classes
@@ -387,13 +408,18 @@ Two page archetypes (see `docs/page-consistency.md` for full code):
    `PageLayout({ title, children, rightSidebar?, headerRight?, wide?, backTo?, backLabel?, breadcrumbs? })`.
    In the radial shell its `.page-heading` renders as a **flat, transparent
    big-type header** floating directly on the ring backdrop (the radial content
-   layer strips the old bordered header capsule), followed by the content column
-   and an optional right widget rail.
+   layer strips the old bordered header capsule), followed by the content column.
+   `rightSidebar` is **portalled into the shell's live rail** on wide screens and
+   dropped on narrow ones, so it is supplementary content, never load-bearing.
 2. **Feed-column / bespoke page** — use `AnimatedMain` directly with a target
    width from `lib/layout-width.ts`, or (home) the radial wheel.
 
 Column widths come from `lib/layout-width.ts`: `DEFAULT_WIDTH = 648`,
-`WIDE_WIDTH = 800`, `WIDE_NO_RIGHT_SIDEBAR_WIDTH = 952`. Inner content is
+`WIDE_WIDTH = 800`, `WIDE_NO_RIGHT_SIDEBAR_WIDTH = 952`. Those are the page's
+_preference_, published as `--main-target`; on a wide screen the shell grants the
+column a larger floor (`--rad-measure`) so a desktop window is not held to a
+2019-era constant, and `min(100%, …)` keeps either from overflowing its track.
+`wide` pages take the whole content track. Inner content is
 usually `px-4 pt-4 pb-12 max-w-2xl mx-auto`; the column always carries
 `pb-dock` and **no `border-r`** — there is no app-frame edge. Repeated content
 floats as spaced cards (`space-y-3 px-3`); hairline `divide-y` rhythm lives
@@ -413,7 +439,9 @@ gated off there too, via `html.app-route`).
   shallow cylinder on a rAF window-scroll pass with cached offsets (no layout
   thrash — `RadialWheel`), the **hub** glides the orb to centre then blooms the
   wedges under an expanding `clip-path` **circular blur** (CSS-only phase
-  machine), the **metaball** cursor trails on one rAF tick (`MetaballCursor`),
+  machine), the **pointer metaball** trails on one rAF tick with delta-time
+  easing so it is identical at 60Hz and 240Hz (`MetaballCursor` — mouse and
+  touch; it also replaces the native cursor while a mouse drives it),
   the **ring backdrop** parallaxes to the pointer, and page headers/heroes rise
   in on mount (`radial-page-rise`). All of it is `transform`/`opacity` only and gated off
   under reduced motion; optional scroll **haptics** (`navigator.vibrate`) tick

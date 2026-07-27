@@ -205,6 +205,44 @@
      adds env(safe-area-inset-bottom) itself. */
   --site-hub-orb-size: clamp(3.75rem, 15vw, 4.5rem);
   --site-hub-orb-inset: clamp(1rem, 4vw, 1.75rem);
+  /* Vertical space every scrolling column must leave under its last item so the
+     content can be read past the floating bottom chrome (the orb is the tallest
+     member). Derived from the orb's own geometry — see §5.5x A.1 — so a change
+     to the orb can never leave content stranded behind it. */
+  --site-floating-reserve: calc(
+    env(safe-area-inset-bottom, 0px) + var(--site-hub-orb-size) + var(--site-hub-orb-inset) + 2rem
+  );
+
+  /* ── §5.6 Shell stacking scale ────────────────────────────────────────────
+     One ordered set of layers for the application chrome, so a new fixed element
+     picks a NAME rather than inventing a number that happens to work today.
+     Everything here paints inside `.radial-shell`, which sets `isolation:
+     isolate` — that caps the whole scale below any positioned body-level sibling
+     (dialogs, sheets and the toaster all portal out to `<body>` at z-50+), which
+     is what keeps a modal above the chrome no matter what these say.
+     `--z-cursor` is the exception: the pointer metaball portals to <body> too and
+     must sit above literally everything, because it replaces the OS cursor. */
+  --z-backdrop: 0;
+  --z-content: 1;
+  --z-rail: 2;
+  --z-topbar: 60;
+  --z-hub-aura: 79;
+  --z-floating: 80;
+  --z-hub-overlay: 90;
+  --z-hub-aura-open: 94;
+  --z-hub-orb-open: 95;
+  /* Body-level, not shell-level: the top bar's quick panels portal out of the
+     shell (the bar's `backdrop-filter` would otherwise be their containing
+     block). 40 sits above `.radial-shell` — which participates at z-auto — and
+     below the z-50 dialogs/sheets, so a modal still covers a popover. */
+  --z-quickpanel: 40;
+  --z-skip: 200;
+  --z-cursor: 2147483000;
+
+  /* Width of the shell's desktop rails. `--site-rail-width` is the historical
+     name the layout constants in lib/layout-width.ts reference; it was never
+     actually declared, so every consumer silently fell back to `auto`. */
+  --site-rail-width: 17rem;
 
   /* Ambient Canvas — pure paper with a single soft radial breath centred on the
      RMH mark, so the fixed backdrop reads as clean white with faint depth that

@@ -1,0 +1,174 @@
+'use client';
+
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+  type RefObject,
+} from 'react';
+import { createPortal } from 'react-dom';
+import { ArrowRight } from 'lucide-react';
+import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
+
+// useLayoutEffect warns during SSR; panels only ever open from a client
+// interaction, so the visual result is identical either way.
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
+interface QuickPanelProps {
+  open: boolean;
+  onClose: () => void;
+  /** Accessible name for the panel (the trigger's label). */
+  title: string;
+  /** The top-bar control the panel hangs from — it aligns to its trailing edge. */
+  anchorRef: RefObject<HTMLElement | null>;
+  /**
+   * The "and now the real thing" footer — every panel is a *preview*, so each one
+   * renders a `<Link className="rad-panel__more">` through to its full page.
+   * Passed in rather than derived from an href so each caller keeps its own
+   * typed route + search params.
+   */
+  more?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}
+
+/**
+ * The shared shell for the top bar's quick panels.
+ *
+ * Every top-bar control opens a small, cheap preview first — search results,
+ * the latest notifications, recent conversations, the profile menu — with a
+ * footer link through to the full page. That keeps the common case (a glance)
+ * off the router entirely, and the uncommon case one click away.
+ *
+ * Bounds are not left to chance: the panel is anchored to its trigger, capped to
+ * a fraction of the viewport, and then run through `useMenuViewportFit`, which
+ * measures the rendered box and clamps/translates it back inside the visual
+ * viewport (safe-area aware) — the same guard the composer and sidebar menus
+ * use. On narrow screens the CSS drops the anchor entirely and it spans the
+ * gutters as a drawer.
+ *
+ * It **portals to `<body>`**. Rendering it where the trigger lives would put it
+ * inside `.radial-topbar`, and the top bar carries a `backdrop-filter` at ≥768px
+ * — which makes it a containing block for `position: fixed` descendants, so the
+ * panel would be positioned against the bar rather than the viewport. At body
+ * level `--z-quickpanel` also lands cleanly above the shell and below dialogs.
+ * Leaving the trigger's DOM subtree costs the natural tab order, so focus is
+ * moved in on open and handed back to the trigger on close.
+ */
+export function QuickPanel({
+  open,
+  onClose,
+  title,
+  anchorRef,
+  more,
+  children,
+  className,
+}: QuickPanelProps) {
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const [anchor, setAnchor] = useState({ top: 56, right: 12 });
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  // Position under the trigger. The top bar is sticky at the top of the page, so
+  // its rect is scroll-invariant — only a resize can move it.
+  useIsoLayoutEffect(() => {
+    if (!open) return;
+    const measure = () => {
+      const rect = anchorRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setAnchor({
+        top: Math.round(rect.bottom + 8),
+        right: Math.max(8, Math.round(window.innerWidth - rect.right)),
+      });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [open, anchorRef]);
+
+  useMenuViewportFit(open, panelRef, [anchor.top, anchor.right]);
+
+  // Escape closes; an outside press closes. `pointerdown` (not click) so the
+  // panel dismisses before the press lands on whatever is underneath.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    const onDown = (e: PointerEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (panelRef.current?.contains(target)) return;
+      if (anchorRef.current?.contains(target)) return;
+      onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    // Capture phase: a panel must close even if something below stops propagation.
+    document.addEventListener('pointerdown', onDown, true);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onDown, true);
+    };
+  }, [open, onClose, anchorRef]);
+
+  // Move focus into the panel on open and hand it back to the trigger on close —
+  // the panel lives at the end of <body>, so without this a keyboard user would
+  // be dropped at the bottom of the document when it dismisses.
+  useEffect(() => {
+    if (!open) return;
+    const trigger = anchorRef.current;
+    // Captured now: by cleanup time React may already have detached the node,
+    // and the check below has to run against the panel this effect opened.
+    const panel = panelRef.current;
+    const raf = requestAnimationFrame(() => {
+      const el = panelRef.current;
+      if (!el) return;
+      (el.querySelector<HTMLElement>('input, a[href], button') ?? el).focus();
+    });
+    return () => {
+      cancelAnimationFrame(raf);
+      // Only reclaim focus if it is still inside the panel we are unmounting;
+      // a click that navigated away must not be yanked back to the top bar.
+      if (panel?.contains(document.activeElement)) trigger?.focus?.();
+    };
+  }, [open, anchorRef]);
+
+  if (!open || !mounted) return null;
+
+  return createPortal(
+    <div
+      ref={panelRef}
+      className={['rad-panel', 'glass-overlay', className].filter(Boolean).join(' ')}
+      role="dialog"
+      aria-label={title}
+      tabIndex={-1}
+      style={
+        {
+          '--panel-top': `${anchor.top}px`,
+          '--panel-right': `${anchor.right}px`,
+        } as CSSProperties
+      }
+    >
+      <div className="rad-panel__body">{children}</div>
+      {more}
+    </div>,
+    document.body,
+  );
+}
+
+/** The footer arrow every panel puts before its "see the full page" label. */
+export function QuickPanelMoreIcon() {
+  return <ArrowRight aria-hidden />;
+}
+
+/** Uniform empty/loading line inside a quick panel. */
+export function QuickPanelNote({ children }: { children: ReactNode }) {
+  return <p className="rad-panel__note">{children}</p>;
+}

@@ -28,6 +28,17 @@ import { join } from 'node:path';
  *                                       when compilation completes or context is lost.
  *   - hooks/useGlassLight.ts, hooks/useLiquidBackground.ts, lib/glass-lens.ts —
  *                                       rAF used as a per-event THROTTLE (one-shot).
+ *   - components/radial/MetaballCursor.tsx — the pointer drop's loop runs only
+ *                                       while a spring is still converging; it
+ *                                       stops itself at rest (and drops its
+ *                                       will-change) and cancels on unmount.
+ *   - components/radial/RadialShell.tsx — backdrop pointer-parallax lerp; stops
+ *                                       when it settles, cancels on unmount.
+ *   - components/radial/RadialWheel.tsx — rAF used as a SCROLL THROTTLE (one
+ *                                       frame per scroll burst); cancels on unmount.
+ *   - components/radial/RadialHub.tsx, components/radial/QuickPanel.tsx —
+ *                                       one-shot rAF to move focus after the
+ *                                       menu/panel opens; cancelled in cleanup.
  *   - hooks/useParallax.ts            — pointer lerp stops once it settles at target.
  *   - hooks/useSpatialParallax.ts     — pointer-event throttle; cancels on unmount.
  *   - hooks/useScrollRestoration.ts, hooks/useCardSheen.ts, hooks/useCelebration.ts,
@@ -70,6 +81,11 @@ const ALLOW = new Set<string>([
   'components/rmh-pmc/shared.tsx',
   'components/rmhcalculator/ScientificCalculator.tsx',
   'components/rmhcoins/PlinkoGame.tsx',
+  'components/radial/MetaballCursor.tsx',
+  'components/radial/QuickPanel.tsx',
+  'components/radial/RadialHub.tsx',
+  'components/radial/RadialShell.tsx',
+  'components/radial/RadialWheel.tsx',
   'components/rmhtech/RmhtechLanding.tsx',
   'components/signal-forge/SignalForgeGame.tsx',
   'components/site/LanguageSwitcher.tsx',

@@ -10,6 +10,7 @@ import { type InitialFeed } from '@/components/feed/FeedColumn';
 import { ComposeBoxLazy } from '@/components/feed/ComposeBoxLazy';
 import { RadialLoader } from '@/components/ui/radial-loader';
 import { RadialWheel, type RadialWheelItem } from './RadialWheel';
+import { RadialSideFeed } from './RadialSideFeed';
 import { RmharkCard } from './RmharkCard';
 
 // The full composer is a heavy chunk (GIF picker, AI buttons, mention/emoji
@@ -130,6 +131,12 @@ function FeedWheelSkeleton() {
  * scroll (mobile-Safari-friendly), led by an inline compose box. The first page
  * streams in from the route loader; more pages load as you reach the end. A
  * floating compose button opens the full new-rmhark modal.
+ *
+ * On a wide screen home becomes a **deck**: the wheel keeps the primary column
+ * and a second, independent feed (Following · News · Games) runs beside it. The
+ * deck is a two-track grid, so the secondary column can never ride over the
+ * wheel; below the deck breakpoint the second track simply isn't rendered and
+ * home is the single mobile column it has always been.
  */
 export function RadialFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed> | null }) {
   const { t } = useTranslation('feed');
@@ -138,13 +145,18 @@ export function RadialFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed>
 
   return (
     <section className="radial-feed" aria-label={t('feed', { defaultValue: 'Feed' })}>
-      {initialFeed ? (
-        <Suspense fallback={<FeedWheelSkeleton />}>
-          <Await promise={initialFeed}>{(data) => <FeedWheel initial={data} />}</Await>
-        </Suspense>
-      ) : (
-        <FeedWheelSkeleton />
-      )}
+      <div className="radial-feed__deck">
+        <div className="radial-feed__primary">
+          {initialFeed ? (
+            <Suspense fallback={<FeedWheelSkeleton />}>
+              <Await promise={initialFeed}>{(data) => <FeedWheel initial={data} />}</Await>
+            </Suspense>
+          ) : (
+            <FeedWheelSkeleton />
+          )}
+        </div>
+        <RadialSideFeed />
+      </div>
 
       <button
         type="button"

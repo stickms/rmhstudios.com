@@ -56,10 +56,14 @@ function ExamplePage() {
 big-type header** — its h1 in the theme display font, sitting directly on the
 radial ring backdrop (the radial content layer strips the old bordered header
 capsule) — plus an optional back arrow (`backTo`/`backLabel`), optional
-breadcrumbs, an optional right widget rail, and the width-constrained center
-column. There is **no `border-r` app-frame edge** and no in-page sidebar — the
-radial hub owns navigation. The center column carries `pb-dock` to clear the
-mobile safe area.
+breadcrumbs, and the width-constrained center column. There is **no `border-r`
+app-frame edge** and no in-page sidebar — the shell owns navigation (the radial
+hub everywhere, plus a persistent nav rail ≥1120px). The center column carries
+`pb-dock` to clear the mobile safe area.
+
+`rightSidebar` is **not** an in-page column: it is portalled into the shell's
+live rail, which exists only ≥1440px. Treat it as supplementary — anything
+load-bearing belongs in `children`.
 
 Props: `title`, `children`, `rightSidebar?`, `headerRight?`,
 `wide?`, `backTo?`, `backLabel?`.
@@ -70,20 +74,23 @@ Pages that render a raw column (achievements, bookmarks) skip `PageLayout` and
 use `AnimatedMain` directly:
 
 ```tsx
-import { AnimatedMain } from "@/components/feed/AnimatedMain";
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from "@/lib/layout-width";
+import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 
-<AnimatedMain
-  className="w-full min-w-0 pb-dock"
-  targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
->
+<AnimatedMain className="w-full min-w-0 pb-dock" targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}>
   {/* column content */}
-</AnimatedMain>
-<div className="hidden xl:block w-4 shrink-0" />
+</AnimatedMain>;
 ```
 
+(No trailing spacer div is needed any more — the shell's frame is a grid and
+owns the rail track.)
+
 Widths come from `lib/layout-width.ts`: `DEFAULT_WIDTH` 648, `WIDE_WIDTH` 800,
-`WIDE_NO_RIGHT_SIDEBAR_WIDTH` 952. Don't invent new column widths.
+`WIDE_NO_RIGHT_SIDEBAR_WIDTH` 952. Don't invent new column widths — they are the
+page's _preference_ (`--main-target`), and the shell raises the floor on wide
+screens (`--rad-measure`) so the column uses the window it is given. Pass
+`wide` (or `wide` on `PageLayout`) when the page should take the whole content
+track instead.
 
 ---
 

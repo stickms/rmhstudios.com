@@ -17,14 +17,46 @@ type HubUser = { id: string; handle?: string | null; isAdmin?: boolean };
 type Phase = 'closed' | 'open' | 'closing';
 
 interface Wedge extends NavLeaf {
-  /** clip-path polygon (in % of the square dial) that carves this pie slice. */
+  /** clip-path polygon (in % of the square dial) that carves this ring sector. */
   clip: string;
+  /** The same sector, bled outward, for the goo-filtered decorative layer. */
+  clipArt: string;
   /** Centroid of the visible annulus, in % — where the icon + label sit. */
   cx: number;
   cy: number;
+  /** 0 = inner ring, 1 = outer ring. Drives the label budget and the stagger. */
+  ring: 0 | 1;
+  /** Bloom order across both rings (inner first), for the open stagger. */
+  order: number;
 }
 
 const DEG = Math.PI / 180;
+
+/**
+ * Ring geometry, as a percentage of the dial's width (the dial is a square, so
+ * its radius is 50%). The hole in the middle clears the orb, which glides to the
+ * exact centre when the menu opens.
+ *
+ *   0 ──── 19 ──────────── 34.4 ─ 35.6 ─────────── 50
+ *    hole       inner ring    gap     outer ring    rim
+ */
+const RINGS = [
+  { r0: 19, r1: 34.4 },
+  { r0: 35.6, r1: 50 },
+] as const;
+/** With few enough destinations one ring is clearer than two. */
+const SINGLE_RING = { r0: 19, r1: 50 } as const;
+/**
+ * The art layer is drawn slightly larger than the hit layer. The goo filter
+ * blurs-then-thresholds each sector, which erodes a couple of pixels off every
+ * edge; without the bleed that erosion exposes the divider bed as a solid dark
+ * ring around each band instead of the hairline it is meant to be. Hit testing
+ * still uses the exact geometry, so the bleed can't steal a neighbour's clicks.
+ */
+const ART_BLEED = 1.1;
+const SINGLE_RING_MAX = 6;
+/** Cap on the inner ring — it has the shorter circumference of the two. */
+const INNER_MAX = 6;
 // One synchronous motion: the orb, the circular blur, the wedges and the foot all
 // animate together over this long. It also gates how long the overlay stays
 // mounted while closing so the whole thing animates OUT before it hides.
@@ -33,15 +65,24 @@ const MOTION_MS = 500;
 const isActive = (pathname: string, href: string) =>
   href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
 
-/** A pie-slice polygon from the dial centre out to its edge, over [a0,a1] degrees. */
-function slicePolygon(a0: number, a1: number): string {
-  const pts = ['50% 50%'];
-  const steps = 8;
+/**
+ * An annulus sector — the ring-segment polygon that carves one destination out
+ * of a ring: out along the outer arc over [a0,a1], then back along the inner one.
+ * Coordinates are percentages of the dial's box, which is what `clip-path`
+ * resolves against (and, because a clip bounds hit-testing too, is also exactly
+ * the region that catches this destination's clicks).
+ */
+function ringSector(a0: number, a1: number, r0: number, r1: number): string {
+  const pts: string[] = [];
+  const steps = 10;
+  const at = (k: number) => (a0 + ((a1 - a0) * k) / steps) * DEG;
   for (let k = 0; k <= steps; k++) {
-    const t = (a0 + ((a1 - a0) * k) / steps) * DEG;
-    const x = 50 + 50 * Math.cos(t);
-    const y = 50 + 50 * Math.sin(t);
-    pts.push(`${x.toFixed(2)}% ${y.toFixed(2)}%`);
+    const t = at(k);
+    pts.push(`${(50 + r1 * Math.cos(t)).toFixed(2)}% ${(50 + r1 * Math.sin(t)).toFixed(2)}%`);
+  }
+  for (let k = steps; k >= 0; k--) {
+    const t = at(k);
+    pts.push(`${(50 + r0 * Math.cos(t)).toFixed(2)}% ${(50 + r0 * Math.sin(t)).toFixed(2)}%`);
   }
   return `polygon(${pts.join(', ')})`;
 }
@@ -82,25 +123,58 @@ export function RadialHub() {
     });
   }, [session, user?.isAdmin]);
 
-  // Carve the disc into one wedge per destination, starting at the top and going
-  // clockwise, with a thin gap between wedges and the icon + label in the middle
-  // of each wedge's visible annulus.
+  // Carve the dial into one sector per destination, starting at the top and
+  // going clockwise, with a thin gap between sectors and the icon + label at the
+  // centroid of each sector's visible band.
+  //
+  // Sixteen destinations on ONE ring gave slivers too narrow to label or to hit
+  // reliably, so the dial is double-decked: the primary destinations take the
+  // inner ring and the rest take the outer one, which — being the longer arc —
+  // comfortably holds the tail. Each ring is divided independently, so neither
+  // one's crowding is inherited from the other. Below SINGLE_RING_MAX the split
+  // is pointless and a single wide ring reads better.
   const wedges = useMemo<Wedge[]>(() => {
-    const n = Math.max(1, leaves.length);
-    const seg = 360 / n;
-    const gap = Math.min(1.4, seg * 0.06);
-    return leaves.map((leaf, i) => {
-      const a0 = -90 + i * seg + gap / 2;
-      const a1 = -90 + (i + 1) * seg - gap / 2;
-      const am = ((a0 + a1) / 2) * DEG;
-      const rm = 36; // centroid radius (% of dial) — between the core and the rim
-      return {
-        ...leaf,
-        clip: slicePolygon(a0, a1),
-        cx: 50 + rm * Math.cos(am),
-        cy: 50 + rm * Math.sin(am),
-      };
-    });
+    if (leaves.length === 0) return [];
+
+    const groups: Array<{ items: NavLeaf[]; band: { r0: number; r1: number }; ring: 0 | 1 }> =
+      leaves.length <= SINGLE_RING_MAX
+        ? [{ items: leaves, band: SINGLE_RING, ring: 0 }]
+        : (() => {
+            const innerCount = Math.min(INNER_MAX, Math.ceil(leaves.length / 2));
+            return [
+              { items: leaves.slice(0, innerCount), band: RINGS[0], ring: 0 as const },
+              { items: leaves.slice(innerCount), band: RINGS[1], ring: 1 as const },
+            ];
+          })();
+
+    const out: Wedge[] = [];
+    let order = 0;
+    for (const { items, band, ring } of groups) {
+      const n = Math.max(1, items.length);
+      const seg = 360 / n;
+      const gap = Math.min(1.4, seg * 0.06);
+      const rm = (band.r0 + band.r1) / 2;
+      for (let i = 0; i < items.length; i++) {
+        const a0 = -90 + i * seg + gap / 2;
+        const a1 = -90 + (i + 1) * seg - gap / 2;
+        const am = ((a0 + a1) / 2) * DEG;
+        out.push({
+          ...items[i],
+          clip: ringSector(a0, a1, band.r0, band.r1),
+          clipArt: ringSector(
+            a0 - gap / 4,
+            a1 + gap / 4,
+            Math.max(0, band.r0 - ART_BLEED),
+            Math.min(50, band.r1 + ART_BLEED),
+          ),
+          cx: 50 + rm * Math.cos(am),
+          cy: 50 + rm * Math.sin(am),
+          ring,
+          order: order++,
+        });
+      }
+    }
+    return out;
   }, [leaves]);
 
   const clearTimer = () => {
@@ -238,14 +312,14 @@ export function RadialHub() {
               alpha ramp would chew glyph antialiasing), and it never takes a
               pointer event. */}
           <ul className="radial-hub__wedges radial-hub__wedges--art" aria-hidden>
-            {wedges.map((w, i) => {
+            {wedges.map((w) => {
               const active = isActive(pathname, w.href);
-              const wrapStyle = { '--i': i } as CSSProperties;
+              const wrapStyle = { '--i': w.order } as CSSProperties;
               return (
                 <li key={w.id} className="radial-hub__wedge-wrap" style={wrapStyle}>
                   <span
                     className={'radial-hub__wedge-art' + (active ? ' is-active' : '')}
-                    style={{ clipPath: w.clip }}
+                    style={{ clipPath: w.clipArt }}
                   />
                 </li>
               );
@@ -259,15 +333,15 @@ export function RadialHub() {
               sector and the accent's contrast ink once the sector fills on
               hover/focus/active. No blend modes, no cross-layer state. */}
           <ul className="radial-hub__wedges radial-hub__wedges--hit">
-            {wedges.map((w, i) => {
+            {wedges.map((w) => {
               const Icon = w.icon as LucideIcon;
               const active = isActive(pathname, w.href);
               const label = t(w.tKey, { defaultValue: w.label });
-              const wrapStyle = { '--i': i } as CSSProperties;
+              const wrapStyle = { '--i': w.order } as CSSProperties;
               const cls = 'radial-hub__wedge' + (active ? ' is-active' : '');
               const innerStyle = { left: `${w.cx}%`, top: `${w.cy}%` } as CSSProperties;
               const inner = (
-                <span className="radial-hub__wedge-inner" style={innerStyle}>
+                <span className="radial-hub__wedge-inner" data-ring={w.ring} style={innerStyle}>
                   <Icon aria-hidden />
                   <span className="radial-hub__wedge-label">{label}</span>
                 </span>

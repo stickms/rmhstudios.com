@@ -29,7 +29,10 @@
      generous one scales in with the viewport. */
   --rad-gutter: clamp(0.75rem, 4vw, 2.25rem);
   --rad-top: clamp(0.85rem, 3vw, 2.75rem);
-  --rad-bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(7rem, 16vw, 9rem));
+  /* Bottom reserve for the floating chrome. Derived from the orb's own geometry
+     tokens (globals.css) rather than a guessed clamp, so growing the orb can
+     never start hiding the end of a page behind it. */
+  --rad-bottom: calc(var(--site-floating-reserve) + 2rem);
   /* Comfortable reading measure for content + the feed column. */
   --rad-col: 40rem;
   --rad-col-wide: 52rem;
@@ -37,6 +40,40 @@
      the gutters: compact on phones, roomy once there is space to spend. */
   --rad-card-pad: clamp(0.9rem, 3.5vw, 1.6rem);
   --rad-card-gap: clamp(0.6rem, 2.5vw, 1.4rem);
+
+  /* ── The desktop frame ──────────────────────────────────────────────────
+     Mobile is one column and none of this applies (both rails are display:none,
+     so the grid has a single track). The widths below are the whole desktop
+     layout contract:
+
+       --rad-frame-max   how much of a very wide window the app may occupy. A
+                         cap, not 100%: "use the window" means filling it with
+                         content, not stretching one reading column across a
+                         34-inch display.
+       --rad-rail-nav    left navigation rail track.
+       --rad-rail-live   right live/informational rail track.
+       --rad-measure     the MINIMUM the content column is allowed to grow to on
+                         a wide screen. A page that asks for more (targetWidth)
+                         keeps its own number; nothing exceeds the track. */
+  --rad-frame-max: 100%;
+  --rad-frame-gap: clamp(1rem, 2vw, 2rem);
+  --rad-rail-nav: 0px;
+  --rad-rail-live: 0px;
+  --rad-measure: 0px;
+  /* Single source of truth for the top bar's height — every sticky offset and
+     every `100dvh - bar` minimum reads it, so the bar can't grow out of sync
+     with the space reserved under it. */
+  --rad-topbar-h: 3.5rem;
+  /* Height of the bottom-right floating corner (back-to-top stacked over the
+     compose button). Every full-height desktop panel stops this far short of the
+     viewport bottom, so a floating control can never land on top of one. */
+  --rad-corner-reserve: 6.5rem;
+  /* Reserved footprint of the compose FAB, used to lift the back-to-top button
+     clear of it on desktop (on mobile the §5.5x A.1 stack already does this). */
+  --rad-compose-lift: 3.5rem;
+  /* Where every sticky shell panel (both rails, the home deck) pins to. Shared
+     so their heights can be derived from it — see .rad-rail. */
+  --rad-rail-top: calc(var(--rad-topbar-h) + var(--rad-3));
 }
 /* Text on the accent comes from --site-accent-fg, which is always authored
    next to the accent it sits on: each theme declares the pair, every accent
@@ -53,7 +90,7 @@
   position: fixed;
   left: 1rem;
   top: 1rem;
-  z-index: 200;
+  z-index: var(--z-skip);
   transform: translateY(-160%);
   border-radius: 999px;
   background: var(--site-accent);
@@ -73,7 +110,7 @@
 .radial-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: var(--z-backdrop);
   pointer-events: none;
   overflow: hidden;
   /* Transparent on purpose: the aurora canvas (--site-canvas) is painted by the
@@ -195,12 +232,12 @@
 .radial-topbar {
   position: sticky;
   top: 0;
-  z-index: 60;
+  z-index: var(--z-topbar);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--rad-3);
-  height: 3.5rem;
+  height: var(--rad-topbar-h);
   /* Line the bar's edges up with the content gutter below it. */
   padding: 0 var(--rad-gutter);
   /* Mobile-first: an OPAQUE bar with NO backdrop-filter. backdrop-filter blur is
@@ -243,15 +280,33 @@
   gap: 0.35rem;
 }
 .radial-topbar__btn {
+  position: relative;
   display: inline-grid;
   place-items: center;
   width: 2.5rem;
   height: 2.5rem;
+  border: none;
+  background: transparent;
   border-radius: 999px;
   color: var(--site-text);
+  cursor: pointer;
   transition:
     transform 0.18s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
     background-color 0.18s ease;
+}
+.radial-topbar__btn[aria-expanded='true'] {
+  background: var(--site-surface-active, var(--site-surface-hover));
+}
+/* Unread marker — a dot rather than a count, so the bar's rhythm never shifts. */
+.radial-topbar__dot {
+  position: absolute;
+  top: 0.42rem;
+  right: 0.42rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--site-accent);
+  box-shadow: 0 0 0 2px var(--site-bg);
 }
 .radial-topbar__btn:hover {
   background: var(--site-surface-hover);
@@ -264,11 +319,16 @@
 .radial-topbar__avatar {
   display: inline-grid;
   place-items: center;
+  border: none;
+  padding: 0;
+  background: transparent;
   border-radius: 999px;
+  cursor: pointer;
   outline: 2px solid transparent;
   transition: outline-color 0.18s ease;
 }
-.radial-topbar__avatar:hover {
+.radial-topbar__avatar:hover,
+.radial-topbar__avatar[aria-expanded='true'] {
   outline-color: var(--site-border-bright);
 }
 .radial-topbar__signin {
@@ -289,18 +349,49 @@
   transform: translateY(-1px);
 }
 
-/* ── Main content region ──────────────────────────────────────────────── */
+/* ── The frame: rail · content · rail ─────────────────────────────────────
+   One CSS grid with EXPLICIT tracks. That is the structural reason a rail can
+   never sit on top of the content: a grid item is laid out inside its own track
+   by construction, and every track is `minmax(0, …)` so an overlong child
+   shrinks its own column instead of pushing a neighbour out of the frame.
+
+   Track count and visible rails can never disagree, because a hidden rail is
+   `display: none` — it leaves the grid entirely — and the matching
+   `grid-template-columns` is declared in the same media query that reveals it. */
+.radial-frame {
+  position: relative;
+  z-index: var(--z-content);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rad-frame-gap);
+  align-items: start;
+  width: 100%;
+  max-width: var(--rad-frame-max);
+  margin-inline: auto;
+  padding-inline: var(--rad-gutter);
+}
+
 .radial-shell__main {
   position: relative;
-  z-index: 1;
-  min-height: calc(100dvh - 3.5rem);
-  padding: var(--rad-top) var(--rad-gutter) var(--rad-bottom);
-  margin-inline: auto;
-  /* Generous so PageLayout's own column widths (AnimatedMain, up to ~60rem for
-     `wide` pages) are never clipped; the per-page column sets the real reading
-     measure, this just centres it on the backdrop with proper gutters. */
-  max-width: 72rem;
+  min-width: 0;
+  min-height: calc(100dvh - var(--rad-topbar-h, 3.5rem));
+  padding-block: var(--rad-top) var(--rad-bottom);
 }
+
+/* The page's reading column. `--main-target` is the page's own preference
+   (AnimatedMain); `--rad-measure` is the floor the shell grants it once there is
+   room; `min(100%, …)` is the hard bound that keeps either from overflowing the
+   track it lives in. `wide` pages skip the measure and take the whole track. */
+[data-slot='site-main-column'] {
+  width: 100%;
+  min-width: 0;
+  max-width: min(100%, max(var(--main-target, 40.5rem), var(--rad-measure)));
+  margin-inline: auto;
+}
+[data-slot='site-main-column'][data-wide] {
+  max-width: 100%;
+}
+
 /* Vertical rhythm between a page's top-level blocks (header already owns its own
    bottom margin; this spaces sibling sections/cards a page stacks after it). */
 .radial-shell:not([data-home]) [data-slot='page-content'] > * + * {
@@ -311,14 +402,299 @@
     margin-top: var(--rad-5);
   }
 }
+/* Home leads with the feed itself, so it needs no title block above the fold —
+   only the frame's gutters. The wheel owns its own top/bottom breathing room. */
 .radial-shell[data-home] .radial-shell__main {
-  max-width: none;
-  /* Home fills the viewport (minus the top bar) with no padding, so the feed
-     can centre the prism in the whole area rather than being pushed down by a
-     header or up by bottom padding. */
-  padding: 0;
+  padding-block: 0;
   display: flex;
   flex-direction: column;
+}
+
+/* ── Desktop rails ────────────────────────────────────────────────────────
+   Hidden by default (mobile-first): they cost nothing on a phone because they
+   are never rendered into the layout at all. Each is sticky under the top bar
+   and owns its own scroll, so a rail taller than the viewport scrolls INSIDE
+   itself rather than stretching the frame or running under the hub orb.
+
+   These are shell chrome, which is why they stay pinned while the "de-stick
+   content pages" rules at the bottom of this file unpin everything a *page*
+   renders. A rail that scrolls away is just a header. */
+.rad-rail {
+  display: none;
+  /* Flex column, not a plain block: `.rad-rail__scroll` has to be bounded by
+     this element's max-height, and a percentage max-height on the child would
+     resolve against an AUTO-height parent — i.e. to `none`. The child then grows
+     to its content, never scrolls internally, and spills past the rail into the
+     document (which is exactly what dragged the sticky rail under the top bar).
+     `flex: 1; min-height: 0` on the child is what actually binds it. */
+  flex-direction: column;
+  position: sticky;
+  top: var(--rad-rail-top);
+  z-index: var(--z-rail);
+  min-width: 0;
+  /* Bounded by construction, and the arithmetic matters: a sticky box is also
+     constrained by the BOTTOM of its containing block, so if it is taller than
+     the gap between its own sticky offset and the viewport floor, scrolling to
+     the end of the page pushes it back UP — under the top bar. Subtracting the
+     sticky offset itself (not just the bar) is what makes that impossible: the
+     rail always fits between where it sticks and the bottom of the screen, and
+     the frame is a grid, so the frame is never shorter than the rail. */
+  max-height: calc(100dvh - var(--rad-rail-top) - var(--rad-4));
+}
+.rad-rail__scroll {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rad-3);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding-block: var(--rad-3) var(--rad-6);
+  /* No horizontal scrollbar can appear: children are constrained, not clipped. */
+  overflow-x: hidden;
+}
+/* The live rail shares the right edge with the floating corner controls, so its
+   scrollable content stops short of them — the rail box is transparent, only its
+   cards would visually collide. */
+.rad-rail--live .rad-rail__scroll {
+  padding-block-end: var(--rad-corner-reserve);
+}
+.rad-rail__page-slot:empty {
+  display: none;
+}
+
+@media (min-width: 1120px) {
+  .radial-shell {
+    --rad-frame-max: min(100%, 96rem);
+    --rad-rail-nav: 15rem;
+    --rad-measure: 44rem;
+  }
+  .radial-frame {
+    grid-template-columns: var(--rad-rail-nav) minmax(0, 1fr);
+    /* A sticky box is bounded by the bottom of its containing block. On a page
+       whose main column is shorter than the rail, the frame's height would equal
+       the rail's, leaving it no room to stick — and the first pixel of scroll
+       would drag it up under the top bar. One screenful of guaranteed height is
+       what gives it that room. */
+    min-height: calc(100dvh - var(--rad-topbar-h));
+  }
+  .rad-rail--nav {
+    display: flex;
+  }
+}
+@media (min-width: 1440px) {
+  .radial-shell {
+    --rad-rail-nav: 16.5rem;
+    --rad-rail-live: 20rem;
+    --rad-measure: 50rem;
+  }
+  .radial-frame {
+    grid-template-columns: var(--rad-rail-nav) minmax(0, 1fr) var(--rad-rail-live);
+  }
+  .rad-rail--live {
+    display: flex;
+  }
+}
+@media (min-width: 1800px) {
+  .radial-shell {
+    --rad-frame-max: min(100%, 116rem);
+    --rad-rail-nav: 18rem;
+    --rad-rail-live: 23rem;
+    --rad-measure: 58rem;
+  }
+}
+
+/* ── Navigation rail ──────────────────────────────────────────────────── */
+.rad-rail__item {
+  display: flex;
+  align-items: center;
+  gap: var(--rad-3);
+  min-width: 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: 999px;
+  color: var(--site-text);
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 600;
+  transition:
+    background-color 0.18s ease,
+    transform 0.18s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+}
+.rad-rail__item:hover {
+  background: var(--site-surface-hover);
+  transform: translateX(2px);
+}
+.rad-rail__item.is-active {
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+}
+.rad-rail__item svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: none;
+}
+.rad-rail__label {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rad-rail__badge {
+  flex: none;
+  min-width: 1.35rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.rad-rail__item.is-active .rad-rail__badge {
+  background: var(--site-accent-fg);
+  color: var(--site-accent);
+}
+.rad-rail__group {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--rad-2);
+}
+.rad-rail__group-title {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--site-text-dim, var(--site-text-muted));
+}
+
+/* ── Live rail ────────────────────────────────────────────────────────── */
+.rad-live__pulse {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 999px;
+  border: var(--site-border-width, 1px) solid var(--site-border);
+  background: var(--site-glass-tint, var(--site-surface));
+  font-size: 0.82rem;
+  color: var(--site-text-muted);
+}
+.rad-live__dot {
+  position: relative;
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: none;
+  border-radius: 999px;
+  background: var(--site-success);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .rad-live__dot::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: inherit;
+    animation: radial-pulse-soft 1.8s ease-in-out infinite;
+  }
+}
+.rad-live__card {
+  padding: var(--rad-4);
+  border-radius: var(--site-radius, 22px);
+  border: var(--site-border-width, 1px) solid var(--site-border);
+  background: var(--site-glass-tint, var(--site-surface));
+  box-shadow: var(--site-shadow-sm, none);
+}
+.rad-live__card h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: var(--rad-3);
+  font-family: var(--site-font-display, inherit);
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--site-text);
+}
+.rad-live__card h2 svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  color: var(--site-accent);
+}
+.rad-live__card ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.rad-live__row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  margin-inline: -0.4rem;
+  padding: 0.4rem;
+  border-radius: var(--site-radius-sm, 12px);
+  color: var(--site-text);
+  text-decoration: none;
+  transition: background-color 0.18s ease;
+}
+.rad-live__row:hover {
+  background: var(--site-surface-hover);
+}
+.rad-live__row-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+.rad-live__row-main strong,
+.rad-live__row-main small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rad-live__row-main small {
+  font-weight: 500;
+  font-size: 0.75rem;
+  color: var(--site-text-muted);
+}
+.rad-live__row > small {
+  flex: none;
+  font-size: 0.74rem;
+  color: var(--site-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.rad-live__explore {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--site-border-bright);
+  color: var(--site-text);
+  text-decoration: none;
+  font-size: 0.84rem;
+  font-weight: 700;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease;
+}
+.rad-live__explore:hover {
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+}
+.rad-live__explore svg {
+  width: 1rem;
+  height: 1rem;
 }
 
 /* Grouping wrapper — generates no box (children are fixed), it just carries the
@@ -341,7 +717,7 @@
      can reserve exactly this footprint. */
   --orb-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--site-hub-orb-inset));
   bottom: var(--orb-bottom);
-  z-index: 80;
+  z-index: var(--z-floating);
   transform: translateX(-50%);
   display: grid;
   place-items: center;
@@ -372,7 +748,7 @@
 /* Stay above the overlay for the whole open AND close motion. */
 .radial-hub[data-phase='open'] .radial-hub__orb,
 .radial-hub[data-phase='closing'] .radial-hub__orb {
-  z-index: 95;
+  z-index: var(--z-hub-orb-open);
 }
 /* Centre only while OPEN — it becomes the hub the wedges radiate from. On
    'closing' the base (docked) transform takes over, so the orb glides home in
@@ -396,7 +772,7 @@
   position: fixed;
   left: 50%;
   bottom: calc(env(safe-area-inset-bottom, 0px) + var(--site-hub-orb-inset));
-  z-index: 79;
+  z-index: var(--z-hub-aura);
   width: var(--site-hub-orb-size);
   height: var(--site-hub-orb-size);
   transform: translateX(-50%);
@@ -405,14 +781,14 @@
   transition: transform 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
 }
 .radial-hub[data-phase='open'] .radial-hub__aura {
-  z-index: 94;
+  z-index: var(--z-hub-aura-open);
   transform: translate(
     -50%,
     calc(env(safe-area-inset-bottom, 0px) + var(--site-hub-orb-inset) + 50% - 50dvh)
   );
 }
 .radial-hub[data-phase='closing'] .radial-hub__aura {
-  z-index: 94;
+  z-index: var(--z-hub-aura-open);
 }
 .radial-hub__aura-core,
 .radial-hub__aura-blob {
@@ -507,7 +883,7 @@
 .radial-hub__overlay {
   position: fixed;
   inset: 0;
-  z-index: 90;
+  z-index: var(--z-hub-overlay);
   display: grid;
   place-items: center;
   visibility: hidden;
@@ -575,8 +951,26 @@
   width: var(--dial);
   height: var(--dial);
   --dial: min(86vw, 70vh, 460px);
+  /* The hole the ring sectors are cut around, as a fraction of the dial's RADIUS
+     (`closest-side` makes the gradient radius exactly half the square's width, so
+     38% of it is 19% of the dial — the RINGS[0].r0 in RadialHub.tsx). The orb
+     glides into it, so it must stay wider than --site-hub-orb-size / 2. */
+  --dial-hole: 38%;
   border-radius: 50%;
   background: var(--site-border-bright);
+  /* Carve the centre out of the divider bed, so the double-decked dial reads as
+     two rings around the orb instead of a bullseye with a solid grey core. The
+     mask applies to the sectors too, but they are already annuli — no change. */
+  -webkit-mask: radial-gradient(
+    circle closest-side at 50% 50%,
+    transparent 0 var(--dial-hole),
+    #000 var(--dial-hole)
+  );
+  mask: radial-gradient(
+    circle closest-side at 50% 50%,
+    transparent 0 var(--dial-hole),
+    #000 var(--dial-hole)
+  );
   box-shadow:
     0 0 0 1px var(--site-border),
     0 24px 70px -24px rgba(0, 0, 0, 0.45);
@@ -710,7 +1104,6 @@
   justify-items: center;
   gap: 0.3rem;
   width: max-content;
-  max-width: 5.5rem;
   text-align: center;
   color: inherit;
   /* Clicks fall through the glyph to the clipped sector link underneath. */
@@ -720,17 +1113,36 @@
   width: 1.3rem;
   height: 1.3rem;
 }
+/* Per-ring label budget: the inner ring has the shorter arc, so its labels get
+   less room and clamp to a single line; the outer ring can afford two. */
+.radial-hub__wedge-inner[data-ring='0'] {
+  max-width: 4rem;
+}
+.radial-hub__wedge-inner[data-ring='1'] {
+  max-width: 6.25rem;
+}
+/* Mobile-first: icon-only sectors so the destinations never crowd on a phone;
+   labels return ≥480px, where the dial is wide enough to carry them. */
 .radial-hub__wedge-label {
   display: none;
   font-size: 0.68rem;
   font-weight: 600;
   line-height: 1.1;
   color: inherit;
+  /* Bounded: a long destination name can never spill across its neighbours. */
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
-/* Mobile-first: icon-only wedges so 14 destinations never crowd; labels ≥480px. */
 @media (min-width: 480px) {
   .radial-hub__wedge-label {
-    display: block;
+    display: -webkit-box;
+  }
+  .radial-hub__wedge-inner[data-ring='0'] .radial-hub__wedge-label {
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
   }
 }
 .radial-hub__foot {
@@ -829,16 +1241,29 @@
    behind the bottom bar. The wheel then rakes cards around the viewport centre. */
 .radial-feed {
   position: relative;
-  min-height: calc(100dvh - 3.5rem);
+  min-height: calc(100dvh - var(--rad-topbar-h));
+}
+/* The home deck. One column on phones; a second, independent feed joins it once
+   the content track is wide enough to hold both without squeezing the wheel.
+   Grid tracks again — the side feed cannot overlap the wheel, and `minmax(0,…)`
+   means a long post shrinks its own column rather than the other one. */
+.radial-feed__deck {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rad-frame-gap);
+  align-items: start;
+  width: 100%;
+}
+.radial-feed__primary {
+  min-width: 0;
 }
 .radial-feed__empty,
 .radial-feed__skeleton {
   display: grid;
   place-items: center;
   gap: 1rem;
-  min-height: calc(100dvh - 3.5rem);
-  padding: 2rem clamp(1rem, 4vw, 2rem)
-    calc(env(safe-area-inset-bottom, 0px) + clamp(5rem, 16vh, 8rem));
+  min-height: calc(100dvh - var(--rad-topbar-h));
+  padding: 2rem clamp(1rem, 4vw, 2rem) var(--site-floating-reserve);
   text-align: center;
   color: var(--site-text-muted);
 }
@@ -848,7 +1273,7 @@
   position: fixed;
   right: clamp(0.9rem, 4vw, 1.5rem);
   bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(1rem, 4vw, 1.75rem));
-  z-index: 80;
+  z-index: var(--z-floating);
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
@@ -910,7 +1335,8 @@
 }
 /* The leading, non-raked slot: the inline compose box that heads the feed. */
 .radial-wheel__lead {
-  width: min(92vw, 34rem);
+  width: 100%;
+  max-width: 34rem;
   margin-inline: auto;
   padding-top: var(--rad-4);
 }
@@ -920,13 +1346,19 @@
   align-items: center;
   gap: var(--rad-card-gap);
   width: 100%;
+  min-width: 0;
   padding-top: var(--rad-5);
   /* Generous tail so the last card can settle at the focus line and clears the
-     mobile bottom bar / home indicator. */
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(6rem, 26vh, 13rem));
+     mobile bottom bar / home indicator (`--site-floating-reserve` is the orb's
+     own footprint, so the two can never drift apart). */
+  padding-bottom: calc(var(--site-floating-reserve) + 4rem);
 }
 .radial-wheel__slot {
-  width: min(92vw, 34rem);
+  /* Width follows the column it lives in — never the viewport. A `92vw` slot
+     ignored the rails entirely and pushed the feed under them on desktop. */
+  width: 100%;
+  max-width: 34rem;
+  min-width: 0;
   transform-origin: center center;
   backface-visibility: hidden;
   /* `will-change` is toggled by the scroll pass onto only the cards in the focus
@@ -1103,12 +1535,12 @@
 
 /* ── Desktop refinements ──────────────────────────────────────────────── */
 @media (min-width: 768px) {
+  .radial-shell {
+    --rad-topbar-h: 4rem;
+  }
   .radial-wheel__slot,
   .radial-wheel__lead {
-    width: min(72vw, 38rem);
-  }
-  .radial-topbar {
-    height: 4rem;
+    max-width: 38rem;
   }
   /* Frosted chrome is only worth its GPU cost on desktop — restore it here. */
   .radial-topbar {
@@ -1116,33 +1548,347 @@
     backdrop-filter: saturate(140%) blur(16px);
     -webkit-backdrop-filter: saturate(140%) blur(16px);
   }
-  .radial-shell[data-home] .radial-shell__main,
-  .radial-feed {
-    min-height: calc(100dvh - 4rem);
-  }
 }
 
-/* ── Metaball cursor (desktop, fine pointer) ──────────────────────────── */
-.metaball-defs {
-  position: absolute;
-  width: 0;
-  height: 0;
+/* The second home feed appears only where the content track can hold it beside
+   a full-width wheel. Below this the aside is not rendered into the grid at all,
+   so home is exactly the single mobile column it has always been. */
+.rad-deck {
+  display: none;
+  min-width: 0;
+  position: sticky;
+  top: var(--rad-rail-top);
+  /* Stops short of the floating corner: this panel HAS a background, so unlike
+     the rail it would visibly sit under the compose / back-to-top buttons. Same
+     sticky-arithmetic rule as .rad-rail — subtract the offset, not just the bar. */
+  max-height: calc(100dvh - var(--rad-rail-top) - var(--rad-corner-reserve));
   overflow: hidden;
-  pointer-events: none;
+  padding: var(--rad-4);
+  border-radius: var(--site-radius, 22px);
+  border: var(--site-border-width, 1px) solid var(--site-border);
+  background: var(--site-glass-tint, var(--site-surface));
 }
+@media (min-width: 1280px) {
+  .radial-feed__deck {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
+  }
+  .rad-deck {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rad-3);
+  }
+  /* With a second column beside it the wheel no longer needs to be centred in
+     an over-wide track — let it use the width it is given. */
+  .radial-wheel__slot,
+  .radial-wheel__lead {
+    max-width: 42rem;
+  }
+}
+/* …except in the band where the live rail has just appeared and the window is
+   not yet wide enough for four columns. The live rail is site-wide and the deck
+   is home-only, so the deck yields; it returns at 1600px. Keep this in sync with
+   DECK_QUERY in RadialSideFeed.tsx, which gates the fetch on the same range. */
+@media (min-width: 1440px) and (max-width: 1599.98px) {
+  .radial-feed__deck {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rad-deck {
+    display: none;
+  }
+}
+/* The strip itself is <LiquidTabs> (§16.2 — one tab-strip grammar site-wide);
+   all this does is stop it from growing when the deck's list scrolls. */
+.rad-deck__tabs {
+  flex: none;
+}
+.rad-deck__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.rad-deck__note {
+  padding: var(--rad-4) 0;
+  font-size: 0.82rem;
+  color: var(--site-text-muted);
+  text-align: center;
+}
+.rad-deck__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  min-width: 0;
+  margin-inline: -0.4rem;
+  padding: 0.5rem 0.4rem;
+  border-radius: var(--site-radius-sm, 12px);
+  color: var(--site-text);
+  text-decoration: none;
+  transition: background-color 0.18s ease;
+}
+.rad-deck__row:hover {
+  background: var(--site-surface-hover);
+}
+.rad-deck__glyph {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.rad-deck__row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  flex: 1;
+}
+.rad-deck__row-main strong {
+  font-size: 0.82rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rad-deck__row-main small {
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: var(--site-text-muted);
+  /* Bounded: a long post can never stretch the row past two lines. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+/* ── Top bar quick panels ─────────────────────────────────────────────────
+   Anchored under their trigger, capped against the viewport in CSS *and* then
+   clamped by useMenuViewportFit at runtime (belt and braces: the CSS bound holds
+   before the measurement lands, the JS one handles safe areas and the mobile
+   URL bar). Below 560px the anchor is dropped and the panel spans the gutters —
+   a drawer, which is the right shape for a thumb. */
+.rad-panel {
+  position: fixed;
+  top: var(--panel-top, 4rem);
+  right: var(--panel-right, 0.75rem);
+  z-index: var(--z-quickpanel);
+  display: flex;
+  flex-direction: column;
+  width: min(24rem, calc(100vw - 1.5rem));
+  max-height: min(
+    32rem,
+    calc(100dvh - var(--panel-top, 4rem) - env(safe-area-inset-bottom, 0px) - 1rem)
+  );
+  padding: var(--rad-3);
+  border-radius: var(--site-radius, 22px);
+  border: var(--site-border-width, 1px) solid var(--site-border);
+  box-shadow: var(--site-shadow);
+  overflow: hidden;
+  /* `.glass-overlay` supplies the blur, the glint and the viewport caps; its 62%
+     tint is calibrated for dialogs that sit over a scrim. These panels sit
+     directly over live content with no scrim, so a high-contrast button or
+     headline underneath still reads through. Take the same material at a
+     stronger tint — this is a menu, and its own rows have to win. */
+  background-color: color-mix(in srgb, var(--site-bg) 88%, transparent);
+}
+@media (max-width: 559.98px) {
+  .rad-panel {
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto;
+  }
+}
+.rad-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rad-2);
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.rad-panel__title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0 0.4rem;
+  font-family: var(--site-font-display, inherit);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--site-text);
+}
+.rad-panel__title svg {
+  width: 1rem;
+  height: 1rem;
+}
+.rad-panel__search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--site-border);
+  background: var(--site-surface);
+}
+.rad-panel__search svg {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  color: var(--site-text-muted);
+}
+.rad-panel__search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--site-text);
+  font-size: 0.9rem;
+  outline: none;
+}
+.rad-panel__group {
+  display: flex;
+  flex-direction: column;
+}
+.rad-panel__group h3 {
+  padding: 0.35rem 0.4rem 0.15rem;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--site-text-muted);
+}
+.rad-panel__links {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--rad-2);
+  padding-top: var(--rad-2);
+  border-top: 1px solid var(--site-border);
+}
+.rad-panel__row,
+.rad-panel__identity {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  min-width: 0;
+  padding: 0.5rem 0.4rem;
+  border: none;
+  border-radius: var(--site-radius-sm, 12px);
+  background: transparent;
+  color: var(--site-text);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.18s ease;
+}
+.rad-panel__row:hover,
+.rad-panel__identity:hover {
+  background: var(--site-surface-hover);
+}
+.rad-panel__row > svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: none;
+  color: var(--site-text-muted);
+}
+.rad-panel__row.is-unread {
+  background: color-mix(in srgb, var(--site-accent) 12%, transparent);
+}
+.rad-panel__row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+  flex: 1;
+}
+.rad-panel__row-main strong {
+  font-size: 0.85rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rad-panel__row-main small {
+  font-size: 0.76rem;
+  color: var(--site-text-muted);
+  /* Two lines, hard stop — a long message can never grow the panel. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.rad-panel__row time {
+  flex: none;
+  font-size: 0.72rem;
+  color: var(--site-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.rad-panel__note {
+  padding: var(--rad-4) 0.4rem;
+  font-size: 0.84rem;
+  color: var(--site-text-muted);
+  text-align: center;
+}
+.rad-panel__more {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex: none;
+  margin-top: var(--rad-2);
+  padding: 0.6rem 0.75rem;
+  border-radius: 999px;
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.rad-panel__more svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* ── Pointer metaball (mouse cursor + touch drop) ─────────────────────────
+   Rendered into <body> by MetaballCursor (portal), so it is NOT inside the
+   shell's isolated stacking context — `difference` needs the page itself as its
+   backdrop to stay legible.
+
+   The goo is CSS, not SVG: `blur() contrast()` is a GPU shader, where
+   `filter: url(#goo)` makes Chromium re-run a filter graph on the main thread
+   every time the region moves (that was the desktop stutter). The plate is #000
+   because black is the identity of `mix-blend-mode: difference` — |Cb − 0| = Cb —
+   so the box and the soft halo the blur spills past its edges composite to
+   exactly the backdrop and leave no visible rectangle, while the white blobs
+   invert whatever is under them (legible on any ground, in either theme). */
 .metaball {
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 120;
+  z-index: var(--z-cursor);
   pointer-events: none;
   opacity: 0;
-  /* The goo filter fuses the blobs; difference blend keeps the cursor legible on
-     any ground and in either theme. The filter region is just this box (small),
-     so the per-frame blur stays cheap. */
-  filter: url(#rmh-goo);
+  background: #000;
+  /* Blur radius is tuned against the smallest blob (7px): any wider and the
+     resting dot falls under the contrast threshold and disappears. */
+  filter: blur(5px) contrast(20);
   mix-blend-mode: difference;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.25s ease;
+  /* Bounded work: the box can never be asked to lay out or paint anything
+     outside its own fixed size (the JS clamps every blob inside it too). */
+  contain: strict;
 }
 .metaball__blob {
   position: absolute;
@@ -1150,7 +1896,23 @@
   left: 0;
   border-radius: 50%;
   background: #fff;
-  will-change: transform;
+  /* `will-change` is toggled by the rAF loop — a parked cursor holds no layer. */
+}
+
+/* While the drop is driving a real mouse it IS the cursor, so the native arrow
+   is hidden — two pointers on screen read as a bug. The attribute is set by
+   MetaballCursor only in mouse mode and is always removed on unmount, so the
+   page can never be left without a pointer.
+
+   `cursor` inherits, but the many elements that declare their own
+   (`cursor: pointer`, `text`, `grab`) would each re-assert it, so the rule has
+   to reach descendants. `:where()` keeps the whole selector at the specificity
+   of the attribute alone, and the `:not()` inside it is the escape hatch:
+   anything that needs the real cursor (a canvas game, a drag handle, a colour
+   picker) marks itself `data-native-cursor` and keeps it, subtree included. */
+:root[data-metaball-cursor='on']
+  :where(body, body *:not([data-native-cursor], [data-native-cursor] *)) {
+  cursor: none !important;
 }
 
 /* ── The loading mark, fused ──────────────────────────────────────────────
@@ -1295,4 +2057,87 @@
   position: static !important;
   inset-block-start: auto !important;
   top: auto !important;
+}
+
+/* ==========================================================================
+   Overlap safety bounds
+   The layout above is built so overlap is structurally impossible where it can
+   be (grid tracks for the frame and the deck, `minmax(0, …)` on every track,
+   `min-width: 0` on every flex child). What remains is the FIXED chrome, which
+   by definition sits outside the flow and can only be kept apart by arithmetic.
+   Every rule below is one such guarantee, each derived from a token rather than
+   a measured number, so moving a control moves its clearance with it.
+   ========================================================================== */
+
+/* A.1 — The bottom-right corner holds two floating controls on a feed page: the
+   compose button and back-to-top. On mobile the §5.5x A.1 stack in globals.css
+   already separates them; that stack stops at 768px, so above it they landed on
+   each other. Lift back-to-top by the compose button's reserved height, and only
+   on the pages that actually render one. */
+@media (min-width: 768px) {
+  .radial-shell:has(.radial-feed__compose) [data-floating='backtotop'] {
+    bottom: calc(1.5rem + var(--rad-compose-lift));
+  }
+}
+
+/* A.2 — The compose FAB (bottom-right) and the hub orb (bottom-centre) share a
+   row. They cannot meet at any real viewport width, but bound it anyway: the FAB
+   may never grow past the gap between the screen edge and the orb's half-width. */
+.radial-feed__compose {
+  max-width: calc(50vw - var(--site-hub-orb-size) / 2 - 1rem);
+  overflow: hidden;
+}
+.radial-feed__compose-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A.3 — The top bar is a two-item flex row whose right half grows with the
+   number of signed-in controls. Without this the brand is the one that gives
+   way, and on a narrow phone the wordmark slid under the buttons. */
+.radial-topbar__brand {
+  min-width: 0;
+  overflow: hidden;
+}
+.radial-topbar__mark {
+  white-space: nowrap;
+}
+.radial-topbar__actions {
+  flex: none;
+}
+
+/* A.4 — Unbroken strings (URLs, long handles, CJK-free hashes) are the classic
+   way a card overflows its column and slides under a neighbour. Break them. */
+.rmhark__content,
+.rmhark__title,
+.rad-panel__row-main,
+.rad-deck__row-main,
+.rad-live__row-main {
+  overflow-wrap: anywhere;
+}
+
+/* A.5 — Last-resort containment: nothing inside the shell may create a
+   horizontal scroll on the document. `clip` (not `hidden`) so it does not turn
+   the shell into a scroll container, which would break `position: sticky` for
+   the top bar and both rails. */
+.radial-shell {
+  overflow-x: clip;
+}
+
+/* A.6 — Reduced motion: the panels and rails are chrome, not decoration, so they
+   stay — only their transitions collapse. */
+@media (prefers-reduced-motion: reduce) {
+  .rad-rail__item,
+  .rad-live__row,
+  .rad-deck__row,
+  .rad-deck__tab,
+  .rad-panel__row,
+  .rad-panel__identity {
+    transition-duration: 0.001ms;
+  }
+  .rad-live__dot::after {
+    animation: none;
+  }
 }
