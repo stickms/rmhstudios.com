@@ -49,7 +49,8 @@ export const Route = createFileRoute('/_site/rmhladder/')({
   head: () => ({
     meta: buildMeta({
       title: 'RMH Ladder | Verified Early-Career Jobs',
-      description: 'Browse verified internships, new-grad programs, and early-career roles from official company sources.',
+      description:
+        'Browse verified internships, new-grad programs, and early-career roles from official company sources.',
       path: '/rmhladder',
     }),
     links: [buildCanonical('/rmhladder')],
@@ -64,7 +65,11 @@ function lastRunLine(lastRun: Record<string, unknown> | null): string {
   return `LAST RUN · ${ago} · ${lastRun.discoveredCount ?? 0} FOUND · ${lastRun.errorCount ?? 0} ERRORS`;
 }
 
-function QuickList({ title, rows, renderMeta }: {
+function QuickList({
+  title,
+  rows,
+  renderMeta,
+}: {
   title: string;
   rows: JobRow[];
   renderMeta: (row: JobRow) => React.ReactNode;
@@ -135,8 +140,12 @@ function OverviewPage() {
           rows={expiringRows}
           renderMeta={(row) => (
             <span className="rl-quicklist__meta rl-mono rl-expiring">
-              ⚑ {row.applicationDeadline
-                ? new Date(row.applicationDeadline as Date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+              ⚑{' '}
+              {row.applicationDeadline
+                ? new Date(row.applicationDeadline as Date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                  })
                 : '—'}
             </span>
           )}
