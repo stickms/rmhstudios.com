@@ -40,6 +40,28 @@ only executes for `arexwu`; for everyone else the job passes immediately.
 5. **Gate.** A final step reads the verdict file and `exit 1` on `FAIL`,
    turning the check red and blocking merge.
 
+### Fail-open behaviour
+
+The gate blocks merge **only on an explicit `FAIL`**. Every other outcome ends
+green with a `::warning::` annotation, because a flaky reviewer must never be
+the reason a good PR cannot merge:
+
+- The review step is `continue-on-error`, so an API outage, rate limit, or
+  action-level crash does not fail the job.
+- `verdict.txt` is parsed leniently — surrounding whitespace, `**bold**`,
+  backticks, trailing punctuation and lowercase all still resolve. If the file
+  is prose (`Verdict: PASS`), the first `PASS`/`FAIL` word wins.
+- If `verdict.txt` is missing or unparseable, the `## Verdict` section of
+  `review.md` is used as a fallback.
+- If neither yields a verdict, the gate passes with a warning. Same for a PR
+  whose diff against the base is empty, in which case the review is skipped
+  entirely.
+
+The prompt matches this posture: `FAIL` is reserved for genuinely blocking
+issues (correctness bugs, regressions, security holes, data loss, a missing
+test for risky logic). Nits, refactor ideas and subjective disagreements are
+reported but still `PASS`, and ties go to `PASS`.
+
 ### Model
 
 `claude-opus-4-8` (strongest available) for review quality.

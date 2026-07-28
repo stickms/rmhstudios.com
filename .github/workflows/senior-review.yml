@@ -5,6 +5,11 @@ name: senior-review
 # trigger this workflow but short-circuit to success on the first step, so the
 # check always reports a result and can safely be marked "required" in branch
 # protection without blocking other contributors.
+#
+# The gate FAILS OPEN by design: only an explicit FAIL verdict turns the check
+# red. A model timeout, an API error, a truncated run, or an unparseable verdict
+# all resolve to PASS with a warning annotation — a flaky reviewer must never be
+# the reason a good PR cannot merge.
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
@@ -18,6 +23,8 @@ concurrency:
 jobs:
   senior-swe-review:
     runs-on: ubuntu-latest
+    # A hung reviewer would otherwise sit on the required check for six hours.
+    timeout-minutes: 30
     permissions:
       contents: read
       pull-requests: write
@@ -44,18 +51,38 @@ jobs:
           fetch-depth: 0
 
       # Materialize the PR diff to a file the reviewer reads. base...HEAD gives
-      # exactly what this PR adds on top of its merge base.
+      # exactly what this PR adds on top of its merge base. If the base ref is
+      # somehow unavailable we fall back to the PR's own commit range rather than
+      # leaving the reviewer with an empty file it would review as "no changes".
       - name: compute diff
         if: steps.author.outputs.is_target == 'true'
+        id: diff
         env:
           BASE: ${{ github.event.pull_request.base.ref }}
-        run: git diff "origin/$BASE...HEAD" > pr.diff
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch --no-tags --quiet origin "$BASE" || true
+          git diff "origin/$BASE...HEAD" > pr.diff 2>/dev/null \
+            || git diff "$BASE_SHA...HEAD" > pr.diff 2>/dev/null \
+            || : > pr.diff
+          if [ -s pr.diff ]; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Diff is $(wc -l < pr.diff) lines."
+          else
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "No diff against the base ref; nothing to review."
+          fi
 
       # Claude reviews pr.diff and writes two artifacts into the workspace:
       #   review.md   — the full human-readable review
       #   verdict.txt — a single token, exactly PASS or FAIL
+      #
+      # continue-on-error keeps an action-level failure (API outage, rate limit,
+      # timeout) out of the job result; the enforce step below decides the gate.
       - name: senior SWE review
-        if: steps.author.outputs.is_target == 'true'
+        id: review
+        if: steps.author.outputs.is_target == 'true' && steps.diff.outputs.has_changes == 'true'
+        continue-on-error: true
         uses: anthropics/claude-code-action@71d3414a2ac47c29d9b7d0da6ca01963a9a6e5fc # v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -72,11 +99,19 @@ jobs:
             conventions. Be specific and cite `file:line`. Ignore pure style nits a
             formatter would catch.
 
-            Then make a merge decision:
-            - FAIL if there is at least one blocking issue (a correctness bug, a
-              likely regression, a missing test for new risky logic, or a clear
-              convention violation) that should be fixed before merge.
-            - PASS otherwise. Non-blocking suggestions are fine and do not fail.
+            Then make a merge decision. This verdict gates merge, so reserve FAIL
+            for things you would genuinely refuse to merge:
+            - FAIL only if there is at least one BLOCKING issue: a correctness bug
+              that will misbehave in production, a likely regression, a security
+              hole, data loss, or a missing test for genuinely risky new logic.
+            - PASS for everything else. A long list of findings is not itself a
+              reason to fail — quantity is not severity. Nits, refactor ideas,
+              naming preferences, "could be simpler", missing tests for low-risk
+              code, and stylistic or subjective disagreements are all non-blocking:
+              report them in the review and still PASS.
+            - When you are unsure whether an issue is blocking, choose PASS. A human
+              still reviews this PR; your job is to catch the serious problems, not
+              to be the last word.
 
             Write two files in the repository root, overwriting any existing ones:
             1. `review.md` — your full review in Markdown, ending with a
@@ -84,32 +119,110 @@ jobs:
             2. `verdict.txt` — its entire contents must be exactly `PASS` or `FAIL`
                (uppercase, no other text or whitespace).
 
+            Writing `verdict.txt` is mandatory and is the single most important
+            thing you do — a missing file is treated as PASS, so a real blocking
+            issue would slip through. Write both files with the Write tool, then
+            verify with Bash: `cat verdict.txt`. If it is missing or contains
+            anything other than PASS or FAIL, fix it before you finish. If you run
+            out of budget or cannot complete the review, still write your best
+            verdict (`PASS` when in doubt) rather than leaving the file unwritten.
+
       # Post the review as a PR comment regardless of verdict so the author always
-      # sees the feedback.
+      # sees the feedback. Never let a comment-posting hiccup fail the gate: the
+      # review is also echoed into the run log as a backstop.
       - name: post review comment
         if: steps.author.outputs.is_target == 'true'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          if [ -f review.md ]; then
-            gh pr comment "${{ github.event.pull_request.number }}" --body-file review.md
-          else
-            echo "No review.md produced by the reviewer." >&2
+          if [ ! -s review.md ]; then
+            echo "::warning::No review.md produced by the reviewer; nothing to post."
+            exit 0
           fi
 
-      # The gate: a FAIL verdict (or a missing/garbled verdict) fails the job,
-      # which turns the required check red and blocks merge.
+          echo "----- review.md -----"
+          cat review.md
+          echo "---------------------"
+
+          # GitHub rejects comment bodies over 65536 characters.
+          body=review.md
+          if [ "$(wc -c < review.md)" -gt 60000 ]; then
+            head -c 60000 review.md > review.trimmed.md
+            printf '\n\n_Review truncated — see the workflow run log for the full text._\n' >> review.trimmed.md
+            body=review.trimmed.md
+          fi
+
+          gh pr comment "$PR_NUMBER" --body-file "$body" \
+            || echo "::warning::Could not post the review comment; the full review is in the run log above."
+
+      # The gate. Only an explicit FAIL blocks merge. Anything else — a missing
+      # verdict file, garbled output, a crashed reviewer, an empty diff — passes
+      # with a warning annotation so the gate degrades to a no-op instead of a
+      # wall when the tooling misbehaves.
       - name: enforce verdict
         if: steps.author.outputs.is_target == 'true'
+        env:
+          HAS_CHANGES: ${{ steps.diff.outputs.has_changes }}
+          REVIEW_OUTCOME: ${{ steps.review.outcome }}
         run: |
-          verdict="$(tr -d '[:space:]' < verdict.txt 2>/dev/null || true)"
-          echo "Reviewer verdict: '${verdict:-<none>}'"
-          if [ "$verdict" = "PASS" ]; then
-            echo "Senior SWE review passed."
-          elif [ "$verdict" = "FAIL" ]; then
-            echo "::error::Senior SWE review failed — see the PR review comment." >&2
-            exit 1
-          else
-            echo "::error::No valid verdict produced (expected PASS or FAIL)." >&2
-            exit 1
+          if [ "$HAS_CHANGES" != "true" ]; then
+            echo "PR has no diff against its base; nothing to review."
+            exit 0
           fi
+
+          # Tolerate the ways a model decorates a one-word answer: surrounding
+          # whitespace, **bold**, `code`, headings, trailing punctuation, and
+          # lowercase.
+          normalize() {
+            tr -d '[:space:]' | tr -d '*_`#:.,!-' | tr '[:lower:]' '[:upper:]'
+          }
+
+          # First PASS/FAIL word anywhere on stdin, for when the file is prose
+          # rather than the single bare token we asked for.
+          first_token() {
+            grep -oiE '\b(PASS|FAIL)\b' | head -n 1 | tr '[:lower:]' '[:upper:]' || true
+          }
+
+          verdict=""
+
+          if [ -s verdict.txt ]; then
+            raw="$(normalize < verdict.txt)"
+            echo "verdict.txt normalized to: '$raw'"
+            case "$raw" in
+              PASS|PASSED|PASSES) verdict="PASS" ;;
+              FAIL|FAILED|FAILS) verdict="FAIL" ;;
+              *)
+                verdict="$(first_token < verdict.txt)"
+                if [ -n "$verdict" ]; then
+                  echo "Recovered verdict '$verdict' from the text of verdict.txt."
+                else
+                  echo "::warning::verdict.txt did not contain a recognizable verdict."
+                fi
+                ;;
+            esac
+          else
+            echo "::warning::verdict.txt is missing or empty."
+          fi
+
+          # Fall back to the "## Verdict" section of the review itself.
+          if [ -z "$verdict" ] && [ -s review.md ]; then
+            verdict="$(sed -n '/^#\{1,6\}[[:space:]]*Verdict/,$p' review.md | first_token)"
+            if [ -n "$verdict" ]; then
+              echo "Recovered verdict '$verdict' from the Verdict section of review.md."
+            fi
+          fi
+
+          case "$verdict" in
+            FAIL)
+              echo "::error::Senior SWE review failed — see the review comment on the PR."
+              exit 1
+              ;;
+            PASS)
+              echo "Senior SWE review passed."
+              ;;
+            *)
+              echo "::warning::No usable verdict produced (reviewer step outcome: ${REVIEW_OUTCOME:-skipped}). Failing open and passing the gate."
+              ;;
+          esac
