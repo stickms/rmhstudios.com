@@ -11,6 +11,7 @@ import type { ElementType, ReactNode } from 'react';
 import { m as motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useRevealWatchdog } from './useRevealWatchdog';
 import { STAGGER, fadeRise } from './motionTokens';
 
 export interface RevealGroupProps {
@@ -55,6 +56,7 @@ export function RevealGroup({
   children,
 }: RevealGroupProps) {
   const reduced = useReducedMotion();
+  const forced = useRevealWatchdog();
   const container: Variants = {
     hidden: {},
     visible: {
@@ -66,9 +68,14 @@ export function RevealGroup({
 
   return (
     <MotionTag
+      // See Reveal: data-reveal feeds the noscript rule, `animate` is the
+      // fail-open path when the IntersectionObserver never fires (which left
+      // /pricing's whole plan grid at opacity 0).
+      data-reveal=""
       className={className}
       variants={container}
       initial={reduced ? false : 'hidden'}
+      animate={forced ? 'visible' : undefined}
       whileInView="visible"
       viewport={{ once: true, margin: '-10% 0px' }}
     >

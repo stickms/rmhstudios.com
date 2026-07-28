@@ -889,9 +889,16 @@
 
 .rl-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  /* Explicit 2-up then 4-up. `auto-fit, minmax(160px, 1fr)` fitted three
+     columns at tablet width and orphaned the fourth stat on its own row. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
   margin-bottom: 24px;
+}
+@media (min-width: 768px) {
+  .rl-stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .rl-stat {

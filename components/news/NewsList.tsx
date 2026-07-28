@@ -4,8 +4,10 @@ import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { Search, X } from 'lucide-react';
+import { Newspaper, Search, X } from 'lucide-react';
 import { Pagination } from '@/components/ui/pagination';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Select } from '@/components/ui/select';
 import { Reveal } from '@/components/motion';
 import { NewsCard } from './NewsCard';
@@ -180,7 +182,8 @@ export function NewsList({
 
       {/* Filter Controls - collapsible */}
       {filtersOpen && (
-        <div className="mb-4 space-y-3 border-b border-(--site-border) pb-4">
+        /* id is the target of the header's Filters button's aria-controls. */
+        <div id="news-filters" className="mb-4 space-y-3 border-b border-(--site-border) pb-4">
           {/* Category Tabs */}
           <NewsCategoryTabs
             activeCategory={selectedCategory}
@@ -204,7 +207,7 @@ export function NewsList({
               {searchInput && (
                 <button
                   onClick={() => setSearchInput('')}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-(--site-text-dim) hover:text-(--site-text) transition-colors"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-(--site-text-muted) hover:text-(--site-text) transition-colors"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -246,7 +249,7 @@ export function NewsList({
 
       {/* Active filter indicator when collapsed */}
       {!filtersOpen && hasActiveFilters && (
-        <div className="mb-3 flex items-center gap-2 text-xs text-(--site-text-dim)">
+        <div className="mb-3 flex items-center gap-2 text-xs text-(--site-text-muted)">
           <span className="font-mono">
             {t('results-count', {
               count: filteredArticles.length,
@@ -279,14 +282,36 @@ export function NewsList({
           ))}
         </AnimatePresence>
 
+        {/* Canonical EmptyState, and it tells the truth about why the
+                    grid is empty. It used to blame "your filters" and offer
+                    "Clear All Filters" to readers who had set none —
+                    `hasActiveFilters` was already computed right above. */}
         {filteredArticles.length === 0 && (
-          <div className="col-span-full text-center py-20 text-(--site-text-dim)">
-            <p className="text-lg">
-              {t('no-articles', { defaultValue: 'No articles found matching your filters.' })}
-            </p>
-            <button onClick={clearAllFilters} className="mt-4 text-(--site-accent) hover:underline">
-              {t('clear-all-filters', { defaultValue: 'Clear All Filters' })}
-            </button>
+          <div className="col-span-full">
+            <EmptyState
+              icon={Newspaper}
+              title={
+                hasActiveFilters
+                  ? t('no-articles', { defaultValue: 'No articles match your filters.' })
+                  : t('no-articles-yet', { defaultValue: 'No articles yet' })
+              }
+              description={
+                hasActiveFilters
+                  ? t('no-articles-hint', {
+                      defaultValue: 'Try a broader search or a different category.',
+                    })
+                  : t('no-articles-yet-hint', {
+                      defaultValue: 'New writing from the studio will appear here.',
+                    })
+              }
+              action={
+                hasActiveFilters ? (
+                  <Button variant="outline" onClick={clearAllFilters}>
+                    {t('clear-all-filters', { defaultValue: 'Clear all filters' })}
+                  </Button>
+                ) : undefined
+              }
+            />
           </div>
         )}
       </div>

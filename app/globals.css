@@ -520,7 +520,13 @@
   --site-text-muted: #a1a1a6;
   --site-text-dim: #86868b;
   --site-accent: #2997ff;
-  --site-accent-fg: #ffffff;
+  /* Near-black, not white: #ffffff on this blue is ~3.0:1, which failed on
+     every accent-filled control in the theme — the active nav pill, the Post
+     button, the compose FAB, the density selector. Dark ink takes it to 6.2:1
+     while keeping the accent bright enough to read as text on the black ground
+     (6.96:1) and on elevated surfaces (5.64:1). Darkening the accent instead
+     would have fixed the fills by breaking accent-as-text. */
+  --site-accent-fg: #001227;
   --site-accent-hover: #47a5ff;
   --site-accent-dim: rgba(41, 151, 255, 0.18);
   --site-success: #30d158;
@@ -4471,19 +4477,54 @@ html.reduce-motion .u-parallax {
 }
 
 /* ==========================================================================
-   Compact tab strips on phones
-   A strip with 5–6 labelled tabs overflows a 360px screen, and the fallback was
-   a horizontal scroll — content hidden off-screen behind a gesture people often
-   don't discover. On phones we instead:
-     1. hide the LABEL of any tab that carries an icon (the icon plus the tab's
-        `title`/accessible name still identify it), and
-     2. let the strip WRAP rather than scroll, so nothing is ever parked
-        off-screen horizontally.
-   Labels are hidden with the sr-only technique, never `display:none`, so the
-   accessible name — the only name these controls have — survives.
+   LiquidTabs — active ink, and the 44px floor
+   ------------------------------------------------------------------------
+   The active tab's label is only allowed to take `--site-accent-fg` when the
+   accent capsule is actually painted behind it. The capsule is a sibling
+   element (framer-motion owns its layout projection), so the two can come
+   apart: on high-contrast the strip rendered with accent-fg (black) labels and
+   no capsule, measuring 1.0:1 — a tab strip with no visible tabs. Keying the
+   flip on the capsule's presence means the failure mode is "no highlight",
+   not "no text".
    ========================================================================== */
-@media (max-width: 639px) {
-  [data-slot='liquid-tabs'] [data-has-icon] .liquid-tabs__label {
+[data-slot='liquid-tabs'] [data-tab-active='true']:has([data-tab-capsule]),
+/* Link mode puts the capsule beside the control rather than inside it, so the
+   ink has to reach one level down. */
+[data-slot='liquid-tabs']
+  [data-tab-active='true']:has([data-tab-capsule])
+  > :where(a, button) {
+  color: var(--site-accent-fg);
+}
+
+/* §5.5x B — the strip is primary navigation on several routes, and its pills
+   were 36–38px on touch. Grow the hit area on coarse pointers only; fine
+   pointers keep the compact strip. */
+@media (pointer: coarse) {
+  [data-slot='liquid-tabs'] :is(button, a) {
+    min-height: var(--site-touch-target);
+  }
+}
+
+/* ==========================================================================
+   Compact tab strips on small screens
+   ------------------------------------------------------------------------
+   This used to hide the LABEL of every icon-bearing tab below 640px, on the
+   theory that the icon plus the accessible name were enough. They are not: it
+   left six near-interchangeable glyphs as the entirety of a page's navigation
+   (radio-waves = "Spaces", storefront vs bag on /market), and on /leaderboard
+   the page's name existed only inside a tab strip's aria-label — so no word
+   identifying the page appeared anywhere on a phone. Recognition, not recall.
+
+   Labels stay. Strips that don't fit scroll in the canonical `tab-sheet-scroll`
+   track (§5.5x A.4), whose partially visible next pill is the overflow cue.
+   `iconOnly` callers keep a glyph strip on phones only — see below.
+   ========================================================================== */
+@media (max-width: 767.98px) {
+  /* The one remaining label-hiding case: a caller that explicitly asked for a
+     compact strip. Even then the labels return at md, where there is room —
+     /library's six-way media switcher was abstract glyphs at EVERY width.
+     sr-only technique, never display:none, so the accessible name survives. */
+  [data-slot='liquid-tabs'] .liquid-tabs__label--compact {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -4494,16 +4535,15 @@ html.reduce-motion .u-parallax {
     white-space: nowrap;
     border-width: 0;
   }
-  /* Wrap instead of scroll. The sheet keeps its own padding; rows breathe via
-     row-gap so a wrapped second row doesn't collide with the first. */
-  [data-slot='liquid-tabs'].tab-sheet-scroll,
-  [data-slot='liquid-tabs'] {
-    overflow-x: visible;
+
+  /* A strip that did not opt into the scroll track still must not push the page
+     sideways, so it wraps (as everything used to). Strips that passed `scroll`
+     keep their single row and scroll it. */
+  [data-slot='liquid-tabs']:not(.tab-sheet-scroll) {
     flex-wrap: wrap;
     row-gap: 0.25rem;
   }
-  /* Tabs may now shrink to fit a row instead of forcing an overflow. */
-  [data-slot='liquid-tabs'] > * {
+  [data-slot='liquid-tabs']:not(.tab-sheet-scroll) > * {
     flex-shrink: 1;
     min-width: 0;
   }

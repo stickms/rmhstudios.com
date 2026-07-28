@@ -125,7 +125,7 @@ export function CommunitiesColumn({
   };
 
   const inputCls =
-    'w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none';
+    'w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none';
 
   return (
     <div className="min-h-screen">
@@ -144,7 +144,7 @@ export function CommunitiesColumn({
 
       <div className="border-b border-site-border p-3">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-dim" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-muted" />
           <input
             type="search"
             value={query}
@@ -159,11 +159,33 @@ export function CommunitiesColumn({
       {loading && items.length === 0 ? (
         <CommunityListSkeleton />
       ) : items.length === 0 ? (
+        /* Icon, title, description and — crucially — the action. The copy said
+ "create the first one!" without offering any way to do it; the button
+ that does lives in the header, off the top of a scrolled column. */
         <EmptyState
-          description={
+          icon={Users}
+          title={
             query.trim()
               ? t('no-communities-found', { defaultValue: 'No communities match your search.' })
-              : t('no-communities', { defaultValue: 'No communities yet — create the first one!' })
+              : t('no-communities-title', { defaultValue: 'No communities yet' })
+          }
+          description={
+            query.trim()
+              ? t('no-communities-found-hint', {
+                  defaultValue: 'Try a different name, or start one of your own.',
+                })
+              : t('no-communities-hint', {
+                  defaultValue:
+                    'Communities are spaces for a shared interest. Start the first one.',
+                })
+          }
+          action={
+            session ? (
+              <Button variant="accent" onClick={() => setCreateOpen(true)}>
+                <Plus className="h-4 w-4" aria-hidden />{' '}
+                {t('create-community-title', { defaultValue: 'Create a community' })}
+              </Button>
+            ) : undefined
           }
         />
       ) : (

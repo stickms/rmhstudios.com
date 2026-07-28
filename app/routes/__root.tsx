@@ -273,6 +273,16 @@ function RootDocument({ children }: { children: ReactNode }) {
     <html lang={locale} dir={dirFor(locale)} suppressHydrationWarning>
       <head>
         <HeadContent />
+        {/* Scroll-triggered reveals start at opacity 0 and are brought in by an
+            IntersectionObserver. With no JS there is no observer, so whole
+            sections would simply never appear (the audit found /pricing's plan
+            grid and all of /rmh-capital's body in exactly that state). Reveal
+            is an enhancement; without scripting the content is just there.
+            The scripted equivalent — observer armed but never fired — is
+            handled by the deadline in components/motion/useRevealWatchdog. */}
+        <noscript>
+          <style>{`[data-reveal],.reveal{opacity:1!important;transform:none!important;filter:none!important}`}</style>
+        </noscript>
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
         <script dangerouslySetInnerHTML={{ __html: bodyThemeScript }} />

@@ -70,8 +70,24 @@ export function useReveal(key: string) {
       });
     });
 
+    // Fail-open. Below-the-fold nodes wait on the observer, which never fires
+    // in anything that doesn't scroll — print, full-page capture, an embedded
+    // viewport — and the page is then a hero and a footer around thousands of
+    // pixels of nothing. After a deadline (or on print) everything is shown;
+    // a normal scroll always wins the race, so the animation is untouched.
+    const revealAll = () => {
+      document
+        .querySelectorAll<HTMLElement>('.rmhc-root .reveal:not(.in)')
+        .forEach((n) => n.classList.add('in'));
+      io?.disconnect();
+    };
+    const deadline = setTimeout(revealAll, 1500);
+    window.addEventListener('beforeprint', revealAll);
+
     return () => {
       cancelAnimationFrame(raf);
+      clearTimeout(deadline);
+      window.removeEventListener('beforeprint', revealAll);
       io?.disconnect();
     };
   }, [key]);

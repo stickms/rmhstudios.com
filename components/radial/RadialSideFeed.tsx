@@ -21,6 +21,8 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { useSession } from '@/components/Providers';
@@ -149,11 +151,30 @@ export function RadialSideFeed() {
         aria-labelledby={`${TAB_ID_BASE}-${surfaces.length}-tab-${active}`}
       >
         {items === null ? (
-          <p className="rad-deck__note">{t('loading', { defaultValue: 'Loading…' })}</p>
+          // Skeleton rows matching the deck's own geometry, not a bare
+          // "Loading…" string. On wide screens this panel could sit on that
+          // string indefinitely when the fetch failed — no skeleton, no error,
+          // no retry — so the rail simply looked broken.
+          <div className="rad-deck__skeletons" aria-busy="true" aria-live="polite">
+            <span className="sr-only">{t('loading', { defaultValue: 'Loading…' })}</span>
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="rad-deck__row rad-deck__row--skeleton" aria-hidden>
+                <Skeleton className="h-[26px] w-[26px] shrink-0 rounded-full" />
+                <span className="rad-deck__row-main flex flex-col gap-1.5">
+                  <Skeleton className="h-3 w-2/5" />
+                  <Skeleton className="h-3 w-4/5" />
+                </span>
+              </div>
+            ))}
+          </div>
         ) : items.length === 0 ? (
-          <p className="rad-deck__note">
-            {t('feed-empty-surface', { defaultValue: 'Nothing here yet.' })}
-          </p>
+          <EmptyState
+            className="px-2 py-6"
+            title={t('feed-empty-surface-title', { defaultValue: 'Nothing here yet' })}
+            description={t('feed-empty-surface', {
+              defaultValue: 'New posts on this surface will show up here.',
+            })}
+          />
         ) : (
           items.map((item) => (
             <Link key={item.id} to={hrefFor(item)} className="rad-deck__row">

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SlidersHorizontal } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { Button } from '@/components/ui/button';
 import { NewsList } from '@/components/news/NewsList';
 import type { NewsArticle } from '@/lib/news';
 
@@ -34,26 +35,26 @@ export function NewsPageContent({ articles, featured, rightSidebar }: NewsPageCo
       wide
       rightSidebar={rightSidebar}
       headerRight={
-        <button
+        // The page's only control was a 36×36 borderless glyph floating
+        // ~900px from the title at d1920 — no label, no button chrome,
+        // under the 44px floor. It is a labelled ghost Button now.
+        <Button
           id="news-filter-toggle"
+          variant={filtersOpen ? 'secondary' : 'ghost'}
           onClick={() => setFiltersOpen(!filtersOpen)}
           aria-pressed={filtersOpen}
-          aria-label={t('toggle-filters', { defaultValue: 'Toggle filters' })}
-          className={`p-2 rounded-site-sm active:scale-95 transition-[transform,color,background-color] duration-150 ${
-            filtersOpen
-              ? 'text-site-accent bg-site-accent-dim'
-              : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
-          }`}
-          title={t('toggle-filters', { defaultValue: 'Toggle filters' })}
+          aria-expanded={filtersOpen}
+          aria-controls="news-filters"
         >
-          <SlidersHorizontal className="w-5 h-5" />
-        </button>
+          <SlidersHorizontal className="h-4 w-4" aria-hidden />
+          {t('filters', { defaultValue: 'Filters' })}
+        </Button>
       }
     >
       <Suspense
         fallback={
-          <div className="px-4 py-8 text-center text-site-text-dim">
-            {t('loading', { defaultValue: 'Loading...' })}
+          <div className="px-4 py-8 text-center text-site-text-muted">
+            {t('loading', { defaultValue: 'Loading…' })}
           </div>
         }
       >

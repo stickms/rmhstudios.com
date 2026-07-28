@@ -9,6 +9,7 @@ import { useFeedSSE } from '@/hooks/useFeedSSE';
 import { type InitialFeed } from '@/components/feed/FeedColumn';
 import { ComposeBoxLazy } from '@/components/feed/ComposeBoxLazy';
 import { RadialLoader } from '@/components/ui/radial-loader';
+import { Skeleton } from '@/components/ui/skeleton';
 import { RadialWheel, type RadialWheelItem } from './RadialWheel';
 import { RadialSideFeed } from './RadialSideFeed';
 import { RmharkCard } from './RmharkCard';
@@ -117,11 +118,40 @@ function FeedGlyph() {
   );
 }
 
-/** First-load state: the site's liquid loading mark, centred in the feed area. */
+/**
+ * First-load state.
+ *
+ * This used to be the liquid loading mark alone, centred in an otherwise blank
+ * column: no composer, no card shapes, nothing to say what was coming. Two
+ * consequences, both measured — swapping the whole viewport for the real feed
+ * shifted layout by 0.13–0.21 CLS on phones, and frozen mid-morph the goo mark
+ * reads as an ink-blot glitch rather than progress.
+ *
+ * Card skeletons matching `.rmhark`'s geometry keep the column's shape from the
+ * first frame, so the real cards land in place. The loading mark stays as the
+ * motion cue, above them.
+ */
 function FeedWheelSkeleton() {
+  const { t } = useTranslation('feed');
   return (
-    <div className="radial-feed__skeleton">
-      <RadialLoader size={72} label="Loading feed" />
+    <div className="radial-feed__skeleton" aria-busy="true" aria-live="polite">
+      <RadialLoader size={56} label={t('loading-feed', { defaultValue: 'Loading feed' })} />
+      <div className="radial-feed__skeleton-cards" aria-hidden>
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="rmhark rmhark--skeleton">
+            <div className="rmhark__head">
+              <Skeleton className="h-[38px] w-[38px] shrink-0 rounded-full" />
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <Skeleton className="h-3.5 w-1/3" />
+                <Skeleton className="h-3 w-1/4" />
+              </div>
+            </div>
+            <Skeleton className="h-3.5 w-full" />
+            <Skeleton className="h-3.5 w-11/12" />
+            <Skeleton className="h-3.5 w-2/3" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

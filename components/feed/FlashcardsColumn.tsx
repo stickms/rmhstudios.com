@@ -6,6 +6,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { Loader2, BookOpen, Plus, Sparkles, X, Globe, Lock, Layers } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Reveal } from '@/components/motion';
 import { LIFT_CARD } from '@/components/feed/motionHelpers';
 import { ColumnHeader } from './ColumnHeader';
@@ -167,7 +168,7 @@ export function FlashcardsColumn({
             </h2>
             <button
               onClick={() => setShowForm(false)}
-              className="text-site-text-dim hover:text-site-text"
+              className="text-site-text-muted hover:text-site-text"
               aria-label={t('close', { defaultValue: 'Close' })}
             >
               <X className="h-4 w-4" />
@@ -240,20 +241,33 @@ export function FlashcardsColumn({
       <div className="space-y-6 p-4">
         {mine.length > 0 && (
           <Reveal as="section">
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-muted">
               {t('your-decks', { defaultValue: 'Your decks' })}
             </h2>
             <div className="space-y-2">{mine.map((d) => DeckCard(d))}</div>
           </Reveal>
         )}
         <Reveal as="section">
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-muted">
             {t('public-decks', { defaultValue: 'Public decks' })}
           </h2>
           {popular.length === 0 ? (
-            <p className="py-10 text-center text-sm text-site-text-muted">
-              {t('no-public-decks', { defaultValue: 'No public decks yet.' })}
-            </p>
+            /* Canonical EmptyState with a way forward, rather than a bare <p>. */
+            <EmptyState
+              icon={Layers}
+              title={t('no-public-decks', { defaultValue: 'No public decks yet' })}
+              description={t('no-public-decks-hint', {
+                defaultValue: 'Decks shared by the community will show up here.',
+              })}
+              action={
+                signedIn ? (
+                  <Button variant="accent" className="gap-1" onClick={() => setShowForm(true)}>
+                    <Plus className="h-4 w-4" aria-hidden />{' '}
+                    {t('new-deck', { defaultValue: 'New deck' })}
+                  </Button>
+                ) : undefined
+              }
+            />
           ) : (
             <div className="space-y-2">{popular.map((d) => DeckCard(d, true))}</div>
           )}

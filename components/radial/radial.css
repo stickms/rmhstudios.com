@@ -1596,14 +1596,30 @@
 }
 .radial-feed__skeleton {
   flex: 1;
-  display: grid;
-  place-items: center;
-  /* The loading mark carries the motion itself (see .rad-loader), so the
-     skeleton is just the centring frame. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* The loading mark carries the motion itself (see .rad-loader); the card
+     skeletons below it hold the column's shape so the real cards don't shift
+     the page in when they arrive. */
   color: var(--site-text);
 }
 .radial-feed__skeleton .rad-loader {
   opacity: 0.65;
+}
+.radial-feed__skeleton-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rad-card-gap);
+  width: 100%;
+  /* Matches .radial-wheel__lead / __track, so the skeleton column is exactly
+     as wide as the feed that replaces it. */
+  max-width: 34rem;
+  margin-top: 1.25rem;
+}
+/* Same material and geometry as a real card, minus the hover affordances. */
+.rmhark--skeleton {
+  pointer-events: none;
 }
 /* The error/empty state still shows the RMH disc, which breathes gently. */
 @media (prefers-reduced-motion: no-preference) {
@@ -2244,4 +2260,15 @@
   .rad-live__dot::after {
     animation: none;
   }
+}
+
+/* Deck loading skeletons — same geometry as `.rad-deck__row`, so the panel does
+   not resize when the real rows arrive (the deck used to swap a bare
+   "Loading…" line for a full list, which jumped the rail). */
+.rad-deck__skeletons {
+  display: flex;
+  flex-direction: column;
+}
+.rad-deck__row--skeleton {
+  pointer-events: none;
 }

@@ -24,6 +24,7 @@
 import type { ElementType, ReactNode } from 'react';
 import { m as motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useRevealWatchdog } from './useRevealWatchdog';
 import { DUR_BASE, EASE_OUT_EXPO } from './motionTokens';
 
 export interface RevealProps {
@@ -54,12 +55,19 @@ export function Reveal({
   children,
 }: RevealProps) {
   const reduced = useReducedMotion();
+  const forced = useRevealWatchdog();
   const MotionTag = motion[as as keyof typeof motion] as typeof motion.div;
 
   return (
     <MotionTag
+      // data-reveal is the hook the noscript rule in __root.tsx keys on, so a
+      // JS-less render never sees an opacity-0 section.
+      data-reveal=""
       className={className}
       initial={reduced ? false : { opacity: 0, y }}
+      // The watchdog is the fail-open path: if the IntersectionObserver never
+      // fires, `animate` brings the section in anyway. See useRevealWatchdog.
+      animate={forced ? { opacity: 1, y: 0 } : undefined}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-10% 0px' }}
       transition={reduced ? { duration: 0 } : { duration, delay, ease: EASE_OUT_EXPO }}
