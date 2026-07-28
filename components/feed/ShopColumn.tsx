@@ -237,7 +237,7 @@ export function ShopColumn({
                 <div className="flex items-center gap-2">
                   <p className="truncate text-sm font-semibold text-site-text">{item.name}</p>
                   <span
-                    className="text-[10px] font-bold uppercase"
+                    className="text-[11px] font-bold uppercase"
                     style={{ color: RARITY_COLORS[item.rarity] }}
                   >
                     {item.rarity}
@@ -245,7 +245,7 @@ export function ShopColumn({
                 </div>
                 <p className="truncate text-xs text-site-text-muted">{item.description}</p>
                 {item.requiresTier && (
-                  <p className="text-[10px] uppercase text-site-accent">
+                  <p className="text-[11px] uppercase text-site-accent">
                     {t('requires-tier-plan', {
                       tier: item.requiresTier,
                       defaultValue: '{{tier}} plan',
@@ -255,7 +255,7 @@ export function ShopColumn({
               </div>
               <div className="shrink-0">
                 {!signedIn ? (
-                  <span className="inline-flex items-center gap-1 text-xs text-site-text-dim">
+                  <span className="inline-flex items-center gap-1 text-xs text-site-text-muted">
                     <CoinIcon className="h-3.5 w-3.5" /> {item.price}
                   </span>
                 ) : item.owned ? (
@@ -275,12 +275,19 @@ export function ShopColumn({
                   </Button>
                 ) : (
                   <Button
-                    size="sm"
                     variant="accent-outline"
                     disabled={busy === item.id}
                     onClick={() => buy(item)}
+                    // The visible label is just a price ("R 100"), so nothing —
+                    // visually or in the accessible name — said this button
+                    // BUYS anything. The price stays; the verb is stated.
+                    aria-label={t('buy-item-aria', {
+                      defaultValue: 'Buy {{name}} for {{price}} coins',
+                      name: item.name,
+                      price: item.price,
+                    })}
                   >
-                    <CoinIcon className="h-4 w-4" /> {item.price}
+                    <CoinIcon className="h-4 w-4" aria-hidden /> {item.price}
                   </Button>
                 )}
               </div>

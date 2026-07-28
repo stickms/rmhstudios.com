@@ -54,7 +54,7 @@ export function FriendsOnlineWidget() {
  if (!session?.user || !friends || friends.length === 0) return null;
 
  return (
- <section className="rounded-site border border-site-border bg-site-surface p-4">
+ <section className="rad-live__card">
  <h2 className="mb-3 flex items-center gap-2 font-(family-name:--site-font-display) text-lg font-bold text-site-text">
  <Users className="h-5 w-5 text-site-accent"aria-hidden />
  {t('friends-online', { defaultValue:'Friends online'})}

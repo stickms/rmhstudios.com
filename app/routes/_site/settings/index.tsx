@@ -145,7 +145,7 @@ function SettingsPage() {
           <ThemeGallery />
 
           <div className="mt-5 border-t border-site-border pt-4">
-            <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-site-text-dim">
+            <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-site-text-muted">
               {t('settings-accent-title', { defaultValue: 'Accent color' })}
             </h3>
             <p className="mb-3 text-xs text-site-text-muted">

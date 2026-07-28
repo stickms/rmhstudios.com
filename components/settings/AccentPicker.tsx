@@ -19,52 +19,76 @@ export function AccentPicker() {
   const accent = useThemeStore((s) => s.accent);
   const setAccent = useThemeStore((s) => s.setAccent);
 
-  return (
-    <div
-      role="radiogroup"
-      aria-label={t('settings-accent-aria', { defaultValue: 'Accent color' })}
-      className="flex flex-wrap gap-2.5"
-    >
-      {/* Theme default — clears any accent override. */}
-      <button
-        type="button"
-        role="radio"
-        aria-checked={accent === null}
-        onClick={() => setAccent(null)}
-        title={t('settings-accent-default', { defaultValue: 'Theme default' })}
-        className={cn(
-          'flex h-9 w-9 items-center justify-center rounded-full border-2 bg-site-surface transition-all',
-          accent === null
-            ? 'border-site-accent ring-2 ring-site-accent'
-            : 'border-site-border hover:border-site-text/40'
-        )}
-      >
-        {/* A dot in the live theme accent hints "use the theme's own color". */}
-        <span aria-hidden className="h-4 w-4 rounded-full bg-site-accent" />
-        <span className="sr-only">{t('settings-accent-default', { defaultValue: 'Theme default' })}</span>
-      </button>
+  const defaultLabel = t('settings-accent-default', { defaultValue: 'Theme default' });
+  const selectedLabel =
+    ACCENT_PRESETS.find((p) => p.id === accent)?.label ?? (accent === null ? defaultLabel : null);
 
-      {ACCENT_PRESETS.map((preset) => {
-        const active = accent === preset.id;
-        return (
-          <button
-            key={preset.id}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            onClick={() => setAccent(preset.id)}
-            title={preset.label}
-            className={cn(
-              'flex h-9 w-9 items-center justify-center rounded-full border-2 transition-all',
-              active ? 'border-site-text ring-2 ring-site-text/40' : 'border-site-border hover:scale-110'
-            )}
-            style={{ background: preset.value }}
-          >
-            {active && <Check className="h-4 w-4" aria-hidden style={{ color: preset.fg }} />}
-            <span className="sr-only">{preset.label}</span>
-          </button>
-        );
-      })}
+  return (
+    <div className="flex flex-col gap-2">
+      <div
+        role="radiogroup"
+        aria-label={t('settings-accent-aria', { defaultValue: 'Accent color' })}
+        className="flex flex-wrap gap-2.5"
+      >
+        {/* Theme default — clears any accent override. */}
+        <button
+          type="button"
+          role="radio"
+          aria-checked={accent === null}
+          onClick={() => setAccent(null)}
+          title={defaultLabel}
+          className={cn(
+            'flex h-11 w-11 items-center justify-center rounded-full border-2 border-dashed bg-site-surface transition-all',
+            accent === null
+              ? 'border-site-accent ring-2 ring-site-accent'
+              : 'border-site-border hover:border-site-text/40',
+          )}
+        >
+          {/* A dot in the live theme accent hints "use the theme's own color".
+            The DASHED border is what tells it apart from a preset: on the
+            default theme the theme accent is near-black, so this swatch and
+            the "Ink" preset were the same two circles. */}
+          <span aria-hidden className="h-4 w-4 rounded-full bg-site-accent" />
+          <span className="sr-only">{defaultLabel}</span>
+        </button>
+
+        {ACCENT_PRESETS.map((preset) => {
+          const active = accent === preset.id;
+          return (
+            <button
+              key={preset.id}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => setAccent(preset.id)}
+              title={preset.label}
+              className={cn(
+                'flex h-11 w-11 items-center justify-center rounded-full border-2 transition-all',
+                active
+                  ? 'border-site-text ring-2 ring-site-text/40'
+                  : 'border-site-border hover:scale-110',
+              )}
+              style={{ background: preset.value }}
+            >
+              {active && <Check className="h-5 w-5" aria-hidden style={{ color: preset.fg }} />}
+              <span className="sr-only">{preset.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* The swatches' only differentiator was colour — the names existed
+          purely as sr-only text, so a colour-blind reader had nothing to go
+          on. Naming the current choice in words fixes that for the state that
+          matters most. */}
+      {selectedLabel ? (
+        <p className="text-xs text-site-text-muted">
+          {t('settings-accent-selected', {
+            defaultValue: 'Selected: {{name}}',
+            name: selectedLabel,
+          })}
+        </p>
+      ) : null}
     </div>
   );
 }

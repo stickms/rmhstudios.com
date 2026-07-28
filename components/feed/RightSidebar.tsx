@@ -215,73 +215,77 @@ export function RightSidebar({
         </Link>
       </section>
 
-      {/* User Builds */}
-      <section className="glass-fill p-4">
-        <h2 className="font-(family-name:--site-font-display) font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-3">
-          <Hammer className="w-5 h-5 text-site-accent" />
-          {t('user-builds', { defaultValue: 'User Builds' })}
-        </h2>
-        <div className="space-y-2.5">
-          {userBuilds.map((build) => (
-            <Link
-              key={build.id}
-              to={`/builds/${build.slug}` as string}
-              className="-mx-2 px-2 flex items-center gap-2.5 rounded-site-sm py-1.5 hover:bg-site-surface-hover transition-colors group"
-            >
-              <div className="relative w-10 h-10 rounded-site-sm overflow-hidden bg-site-bg shrink-0 border border-site-border">
-                {build.thumbnailUrl ? (
-                  <OptimizedImage
-                    src={build.thumbnailUrl}
-                    alt={build.title}
-                    width={40}
-                    height={40}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-linear-to-br from-site-accent/30 to-site-surface" />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors line-clamp-2">
-                  {build.title}
-                </p>
-                {build.creator && (
-                  <p className="text-xs text-site-text-dim truncate mt-0.5">
-                    {t('build-by', {
-                      creator:
-                        build.creator.name ||
-                        build.creator.username ||
-                        t('unknown', { defaultValue: 'Unknown' }),
-                      defaultValue: 'by {{creator}}',
-                    })}
-                  </p>
-                )}
-                <div className="flex items-center gap-2 text-[11px] text-site-text-dim mt-0.5">
-                  <span className="inline-flex items-center gap-1">
-                    <Heart className="w-3 h-3" />
-                    {build.likeCount}
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <MessageCircle className="w-3 h-3" />
-                    {build.commentCount}
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Eye className="w-3 h-3" />
-                    {build.viewCount}
-                  </span>
+      {/* User Builds — hidden at zero. The card used to render its heading and
+          a "Show more" link around an empty list, advertising a section with
+          nothing in it. */}
+      {userBuilds.length > 0 && (
+        <section className="glass-fill p-4">
+          <h2 className="font-(family-name:--site-font-display) font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-3">
+            <Hammer className="w-5 h-5 text-site-accent" />
+            {t('user-builds', { defaultValue: 'User Builds' })}
+          </h2>
+          <div className="space-y-2.5">
+            {userBuilds.map((build) => (
+              <Link
+                key={build.id}
+                to={`/builds/${build.slug}` as string}
+                className="-mx-2 px-2 flex items-center gap-2.5 rounded-site-sm py-1.5 hover:bg-site-surface-hover transition-colors group"
+              >
+                <div className="relative w-10 h-10 rounded-site-sm overflow-hidden bg-site-bg shrink-0 border border-site-border">
+                  {build.thumbnailUrl ? (
+                    <OptimizedImage
+                      src={build.thumbnailUrl}
+                      alt={build.title}
+                      width={40}
+                      height={40}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-linear-to-br from-site-accent/30 to-site-surface" />
+                  )}
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-        <Link
-          to="/user-builds"
-          aria-label={t('show-more-user-builds', { defaultValue: 'Show more community builds' })}
-          className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors"
-        >
-          {t('show-more', { defaultValue: 'Show more' })}
-        </Link>
-      </section>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors line-clamp-2">
+                    {build.title}
+                  </p>
+                  {build.creator && (
+                    <p className="text-xs text-site-text-dim truncate mt-0.5">
+                      {t('build-by', {
+                        creator:
+                          build.creator.name ||
+                          build.creator.username ||
+                          t('unknown', { defaultValue: 'Unknown' }),
+                        defaultValue: 'by {{creator}}',
+                      })}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2 text-[11px] text-site-text-dim mt-0.5">
+                    <span className="inline-flex items-center gap-1">
+                      <Heart className="w-3 h-3" />
+                      {build.likeCount}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <MessageCircle className="w-3 h-3" />
+                      {build.commentCount}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Eye className="w-3 h-3" />
+                      {build.viewCount}
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+          <Link
+            to="/user-builds"
+            aria-label={t('show-more-user-builds', { defaultValue: 'Show more community builds' })}
+            className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors"
+          >
+            {t('show-more', { defaultValue: 'Show more' })}
+          </Link>
+        </section>
+      )}
 
       {/* Recommended Users */}
       <section className="glass-fill p-4">
