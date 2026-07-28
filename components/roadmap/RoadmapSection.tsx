@@ -881,7 +881,7 @@ function EraSection({ section }: { section: YearSection }) {
           >
             {section.year}
           </span>
-          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-site-text-dim">
+          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-site-text-muted">
             {section.tagline}
           </span>
         </div>
@@ -940,7 +940,7 @@ export function RoadmapSection() {
 
         <Reveal
           as="p"
-          className="mt-14 text-center font-mono text-xs text-site-text-dim"
+          className="mt-14 text-center font-mono text-xs text-site-text-muted"
         >
           {t("update-note", { defaultValue: "We'll update this as we ship." })}
         </Reveal>

@@ -13,7 +13,10 @@
   --gold-bright:#E3C277;
   --ivory:#F4F1E9;
   --gray:#97A0B0;
-  --gray-dim:#5E6878;
+  /* Was #5E6878 — 3.4-3.5:1 on the page's ground, at 12-12.5px, carrying the
+     securities disclaimer and the Disclosures link. #8A94A6 clears AA (6.3:1)
+     without changing the palette's character. */
+  --gray-dim:#8A94A6;
   --line:rgba(200,162,74,0.18);
   --line-soft:rgba(244,241,233,0.08);
   --serif:'Spectral',Georgia,serif;
@@ -90,8 +93,10 @@
   .rmhc-root .nav-toggle{display:flex}
 }
 @media(max-width:560px){
-  .rmhc-root .backlink-label{display:none}
-  .rmhc-root .backlink{padding-right:16px}
+  /* The label stays. Hiding it left a bare 29×20 "←" as the only escape hatch
+     back to RMH Studios, indistinguishable from browser-back — and under the
+     44px floor besides. */
+  .rmhc-root .backlink{min-height:2.75rem;padding-right:16px;font-size:11px;letter-spacing:0.1em}
   .rmhc-root .topnav-left{gap:16px}
 }
 
@@ -117,7 +122,7 @@
 .rmhc-root .hero .lede{max-width:50ch}
 .rmhc-root .hero-actions{margin-top:40px;display:flex;flex-wrap:wrap;gap:16px}
 @media(max-width:760px){
-  .rmhc-root .hero-arc{right:-30%;opacity:.5}
+  .rmhc-root .hero-arc{right:-46%;opacity:.32}
 }
 
 /* markets ticker */

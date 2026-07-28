@@ -53,7 +53,12 @@ export function ColumnHeader({
   return (
     <header
       className={cn(
-        'flex items-center gap-2 px-4 py-3',
+        // `flex-wrap`: with two labelled actions the title was the only
+        // shrinkable item in the row, so at 390px it truncated to "Flash…"
+        // while its actions kept full width. Wrapping lets the heading keep its
+        // line and pushes the actions to a second row when the space runs out —
+        // better than either an unreadable title or unlabelled glyph buttons.
+        'flex flex-wrap items-center gap-2 px-4 py-3',
         // Sticky column headers float as L3 bg-site-surface border border-site-border rounded-2xl shadow-xs capsules inset from the
         // column edges (§8.2); embedded (sticky={false}) headers stay inline with
         // a hairline divider. The optics-ring glint comes free from .bg-site-surface border border-site-border rounded-2xl shadow-xs.

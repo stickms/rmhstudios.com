@@ -50,6 +50,7 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   'c-ui': ['move-down', 'move-up'],
   feed: [
     // 2026-07-28 UI audit fixes; see the note below.
+    'read-more',
     'buy-item-aria',
     'comment-count_one',
     'comment-count_other',

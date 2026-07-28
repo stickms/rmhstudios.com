@@ -1622,6 +1622,21 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/* "Read more" cue on a clamped body (RmharkCard measures; short posts get
+   none). Not a control — the whole card is the link — so it is styled as an
+   affordance rather than given its own hit area. */
+.rmhark__more {
+  align-self: flex-start;
+  margin-top: -0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--site-accent);
+}
+.rmhark__link:hover .rmhark__more {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .rmhark__kicker {
   font-size: 0.6875rem;
   font-weight: 700;
@@ -1760,14 +1775,24 @@
 }
 /* …except in the band where the live rail has just appeared and the window is
    not yet wide enough for four columns. The live rail is site-wide and the deck
-   is home-only, so the deck yields; it returns at 1600px. Keep this in sync with
-   DECK_QUERY in RadialSideFeed.tsx, which gates the fetch on the same range. */
+   is home-only, so the deck yields its COLUMN — but it used to yield its
+   existence: `display: none` from 1440 to 1599 meant the News/Games deck was
+   present at 1280, gone on a 1440 or 1536 laptop, and back at 1600. A module
+   that blinks out across the two most common laptop widths reads as a bug, and
+   its content is simply unreachable there. So in this band it stacks UNDER the
+   wheel instead, at a bounded height. Keep in sync with DECK_QUERY in
+   RadialSideFeed.tsx, which gates the fetch on the same range. */
 @media (min-width: 1440px) and (max-width: 1599.98px) {
   .radial-feed__deck {
     grid-template-columns: minmax(0, 1fr);
   }
   .rad-deck {
-    display: none;
+    /* A row of the same grid rather than a second column. */
+    max-width: 42rem;
+    margin-inline: auto;
+    max-height: 28rem;
+    /* Clears the floating bottom chrome, like every other scrolling column. */
+    margin-bottom: var(--site-floating-reserve);
   }
 }
 /* The strip itself is <LiquidTabs> (§16.2 — one tab-strip grammar site-wide);

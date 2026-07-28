@@ -1,6 +1,6 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { BadgeCheck, Heart, MessageCircle, Repeat2 } from 'lucide-react';
@@ -48,6 +48,8 @@ function hrefFor(item: FeedItem): string {
  */
 export const RmharkCard = memo(function RmharkCard({ item }: { item: FeedItem }) {
   const { t } = useTranslation('feed');
+  const contentRef = useRef<HTMLParagraphElement | null>(null);
+  const [clamped, setClamped] = useState(false);
   const isRmhark = item.type === 'rmhark';
   const rawKicker = item.category || item.type;
   const kicker = t(`kicker.${rawKicker}`, { defaultValue: humanizeKicker(rawKicker) });
@@ -79,7 +81,17 @@ export const RmharkCard = memo(function RmharkCard({ item }: { item: FeedItem })
           </span>
         </div>
       </div>
-      <p className="rmhark__content">{item.content}</p>
+      <p ref={contentRef} className="rmhark__content">
+        {item.content}
+      </p>
+      {/* The body hard-clamps at five lines, so a long post ended mid-word with
+          nothing to say more existed — the card links to the thread, but only
+          the whole card does, and nothing marked it as truncated. Measured, not
+          guessed, so short posts get no cue. It is a span, not a link: the card
+          is already one, and nesting interactive elements is invalid. */}
+      {clamped ? (
+        <span className="rmhark__more">{t('read-more', { defaultValue: 'Read more' })}</span>
+      ) : null}
     </>
   ) : (
     <>
@@ -110,6 +122,17 @@ export const RmharkCard = memo(function RmharkCard({ item }: { item: FeedItem })
       </span>
     </div>
   ) : null;
+
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    const measure = () => setClamped(el.scrollHeight - el.clientHeight > 1);
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [item.content]);
 
   const inner = (
     <article className="rmhark">

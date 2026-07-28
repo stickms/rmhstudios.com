@@ -157,14 +157,20 @@ function AnimatedStage({
   // back OUT over the rest of the pinned scene instead of holding.
   const glowScale = useTransform(progress, [0, 1], [1.22, 1]);
   const glowOpacity = useTransform(progress, [0, 1], [0.35, 0.9]);
-  const eyebrowOpacity = useTransform(progress, [0, 0.3, 1], [0, 1, 1]);
+  // Eyebrow and subtitle are VISIBLE at progress 0 — they only settle in
+  // position as you scrub. Fading them in from zero meant the first fold of a
+  // pinned page was the headline and nothing else: /roadmap opened on the words
+  // "The road ahead." with no eyebrow, no subtitle and (before the cue was
+  // moved clear of the floating chrome) no indication that fifteen eras
+  // followed below.
+  const eyebrowOpacity = useTransform(progress, [0, 0.3, 1], [0.75, 1, 1]);
   const eyebrowY = useTransform(progress, [0, 0.3, 1], [14, 0, 0]);
   // Title stays fully visible from the first frame (the pinned screen is never
   // blank); it only settles in scale/position as you scrub.
   const titleScale = useTransform(progress, [0, 1], [1.06, 1]);
   const titleY = useTransform(progress, [0, 1], [26, 0]);
-  const subOpacity = useTransform(progress, [0.2, 0.58, 1], [0, 1, 1]);
-  const subY = useTransform(progress, [0.2, 0.58, 1], [26, 0, 0]);
+  const subOpacity = useTransform(progress, [0, 0.58, 1], [0.6, 1, 1]);
+  const subY = useTransform(progress, [0, 0.58, 1], [26, 0, 0]);
   const actOpacity = useTransform(progress, [0.42, 0.78, 1], [0, 1, 1]);
   const actY = useTransform(progress, [0.42, 0.78, 1], [22, 0, 0]);
   const cueOpacity = useTransform(progress, [0, 0.08, 0.72, 0.9, 1], [0, 1, 1, 0, 0]);
