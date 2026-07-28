@@ -938,26 +938,36 @@
 .radial-hub[data-phase='open'] .radial-hub__blur {
   clip-path: circle(150vmax at 50% 50%);
 }
-/* ── Wedge (pie) navigation dial ──────────────────────────────────────── */
+/* ── Wedge (ring) navigation dial ──────────────────────────────────────── */
 /* The dial is also the DIVIDER BED: the sectors tile it with thin angular gaps,
    so this background is what shows through them as the hairlines between
-   wedges. Without it the gaps just reveal the (light, blurred) page and the dial
-   dissolves into the background — on a white page the whole menu read as a faint
-   smudge with no edges at all. The rim ring + drop shadow give the disc a
-   boundary against the page for the same reason. */
+   wedges, and it stops the disc dissolving into a light page.
+
+   It is a light plate, NOT `--site-border-bright` (which is pure black in the
+   default theme). That was fine while the sectors only scaled — they covered the
+   bed at every frame — but they now SPIN in from opposite angles, which uncovers
+   large wedges of bed mid-animation and made the whole dial flash black on open.
+   The level borders below draw the structure that the black bed used to imply,
+   so the plate only has to be a shade darker than the sectors that sit on it. */
 .radial-hub__dial {
   position: relative;
   z-index: 2;
   width: var(--dial);
   height: var(--dial);
   --dial: min(86vw, 70vh, 460px);
-  /* The hole the ring sectors are cut around, as a fraction of the dial's RADIUS
-     (`closest-side` makes the gradient radius exactly half the square's width, so
-     38% of it is 19% of the dial — the RINGS[0].r0 in RadialHub.tsx). The orb
-     glides into it, so it must stay wider than --site-hub-orb-size / 2. */
+  /* The hole the ring sectors are cut around. Supplied inline by RadialHub from
+     the innermost band's own radius, so it cannot drift from the geometry; the
+     fallback here is only for a dial rendered without it. It is a fraction of
+     the dial's RADIUS (`closest-side` makes the gradient radius exactly half the
+     square's width), which is why the component doubles the value. The orb
+     glides into this hole, so it must stay wider than --site-hub-orb-size / 2. */
   --dial-hole: 38%;
+  /* The drawn boundary between levels. Firm enough to read as structure at a
+     glance — this is the line that tells you the dial has two decks. */
+  --dial-level-w: 2px;
+  --dial-level-c: color-mix(in srgb, var(--site-text) 55%, transparent);
   border-radius: 50%;
-  background: var(--site-border-bright);
+  background: color-mix(in srgb, var(--site-surface-opaque) 86%, var(--site-text) 14%);
   /* Carve the centre out of the divider bed, so the double-decked dial reads as
      two rings around the orb instead of a bullseye with a solid grey core. The
      mask applies to the sectors too, but they are already annuli — no change. */
@@ -1026,20 +1036,68 @@
      only catches clicks inside its own pie sector. */
   pointer-events: none;
 }
-/* Wedges bloom out from the centre and collapse back on TRANSITIONS (both ways),
-   with a light per-wedge stagger on open. On close they fade together (no delay)
-   as the blur contracts — one synchronous motion. */
+/* Wedges bloom out from the centre and collapse back on TRANSITIONS (both ways).
+   The two decks arrive by SPINNING into alignment from opposite directions —
+   inner anticlockwise, outer clockwise — which is what makes the dial read as
+   two independent rings rather than one disc with a line through it. Closing
+   reverses it, because this is a transition and not a one-shot keyframe.
+
+   Each wrapper is `inset: 0` over the whole dial, so its transform origin is
+   already the dial's centre and a rotation carries the clipped sector around it.
+   The spin is deliberately NOT staggered: every wedge of a ring shares one
+   delay, so the ring turns as a body. The per-wedge stagger stays on `opacity`
+   alone (hence the split delays), and only on open — on close they fade together
+   as the blur contracts, one synchronous motion. */
 .radial-hub__wedge-wrap {
   opacity: 0;
-  transform: scale(0.9);
+  transform: scale(0.9) rotate(var(--ring-spin, 0deg));
   transition:
-    opacity 0.34s ease,
-    transform 0.4s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+    opacity 0.34s ease var(--fade-delay, 0ms),
+    transform 0.55s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)) 0ms;
+}
+.radial-hub__wedge-wrap[data-ring='0'] {
+  --ring-spin: -55deg;
+}
+.radial-hub__wedge-wrap[data-ring='1'] {
+  --ring-spin: 55deg;
 }
 .radial-hub[data-phase='open'] .radial-hub__wedge-wrap {
   opacity: 1;
-  transform: scale(1);
-  transition-delay: calc(var(--i) * 20ms);
+  transform: scale(1) rotate(0deg);
+  --fade-delay: calc(var(--i) * 20ms);
+}
+
+/* ── Level borders ────────────────────────────────────────────────────────
+   One hairline circle per band boundary (radii supplied by RadialHub from the
+   same geometry that carves the sectors). They are what separates the decks:
+   the gap alone reads as a missing fill, a drawn edge reads as structure. */
+.radial-hub__levels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.radial-hub__level {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  /* `--r` is a fraction of the dial's WIDTH, so the diameter is twice it. The
+     extra border-width straddles the line ON the boundary instead of just
+     inside it, which matters for the innermost one: the dial's mask clears
+     everything within the hole, and a border drawn wholly inside that radius
+     would be masked away. */
+  width: calc(var(--r) * 2 + var(--dial-level-w));
+  height: calc(var(--r) * 2 + var(--dial-level-w));
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: var(--dial-level-w) solid var(--dial-level-c);
+  /* Spins in with the decks so the borders never look pasted over the motion. */
+  opacity: 0;
+  transition:
+    opacity 0.34s ease,
+    transform 0.55s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+}
+.radial-hub[data-phase='open'] .radial-hub__level {
+  opacity: 1;
 }
 /* Art sector: the visible resting fill.
    `--site-surface` is itself a TRANSLUCENT tint (the Liquid Glass material), so
@@ -1116,7 +1174,7 @@
 /* Per-ring label budget: the inner ring has the shorter arc, so its labels get
    less room and clamp to a single line; the outer ring can afford two. */
 .radial-hub__wedge-inner[data-ring='0'] {
-  max-width: 4rem;
+  max-width: 4.6rem;
 }
 .radial-hub__wedge-inner[data-ring='1'] {
   max-width: 6.25rem;
@@ -1140,10 +1198,9 @@
   .radial-hub__wedge-label {
     display: -webkit-box;
   }
-  .radial-hub__wedge-inner[data-ring='0'] .radial-hub__wedge-label {
-    -webkit-line-clamp: 1;
-    line-clamp: 1;
-  }
+  /* The inner band is deep enough for two lines (icon + label ≈ 50px in a ~69px
+     band at the largest dial), so the shorter arc costs width, not lines — a
+     one-line clamp turned "Communities" into "Communi…". */
 }
 .radial-hub__foot {
   position: absolute;
@@ -1862,17 +1919,20 @@
 }
 
 /* ── Pointer metaball (mouse cursor + touch drop) ─────────────────────────
-   Rendered into <body> by MetaballCursor (portal), so it is NOT inside the
-   shell's isolated stacking context — `difference` needs the page itself as its
-   backdrop to stay legible.
+   Rendered into <body> by MetaballCursor (portal), so it sits outside the
+   shell's isolated stacking context and its z-index reads against the page.
 
-   The goo is CSS, not SVG: `blur() contrast()` is a GPU shader, where
-   `filter: url(#goo)` makes Chromium re-run a filter graph on the main thread
-   every time the region moves (that was the desktop stutter). The plate is #000
-   because black is the identity of `mix-blend-mode: difference` — |Cb − 0| = Cb —
-   so the box and the soft halo the blur spills past its edges composite to
-   exactly the backdrop and leave no visible rectangle, while the white blobs
-   invert whatever is under them (legible on any ground, in either theme). */
+   The element paints a SHAPE AND NOTHING ELSE. `#rmh-pointer-goo` fuses the
+   blobs by ramping the alpha channel, so everything outside the silhouette is
+   transparent — there is no plate, and therefore no rectangle that a compositing
+   quirk can reveal. (The cheaper CSS goo — an opaque plate + `blur() contrast()`
+   cancelled by `mix-blend-mode: difference` — only stays invisible while the
+   compositor blends against the true page backdrop; when the layer gets its own
+   render surface the plate shows up as a bright box trailing the pointer.)
+
+   Legibility comes from the shape rather than from inverting the backdrop: the
+   ink fill plus a halo in the background colour, both contrast-paired tokens, so
+   it reads on the page and on an accent-filled control in every theme. */
 .metaball {
   position: fixed;
   top: 0;
@@ -1880,22 +1940,32 @@
   z-index: var(--z-cursor);
   pointer-events: none;
   opacity: 0;
-  background: #000;
-  /* Blur radius is tuned against the smallest blob (7px): any wider and the
-     resting dot falls under the contrast threshold and disappears. */
-  filter: blur(5px) contrast(20);
-  mix-blend-mode: difference;
+  /* Two passes of the same tight shadow build a solid rim rather than a smudge.
+     Chained after the goo, so the halo traces the FUSED outline, not each blob.
+     The rim is what carries the drop over a surface its ink matches — on the
+     default theme the accent IS the ink, so on the compose button the halo is
+     the entire mark. Sized to read as a ring at a glance, not a hairline. */
+  filter: url(#rmh-pointer-goo) drop-shadow(0 0 2px var(--site-bg))
+    drop-shadow(0 0 2px var(--site-bg));
   transition: opacity 0.25s ease;
-  /* Bounded work: the box can never be asked to lay out or paint anything
-     outside its own fixed size (the JS clamps every blob inside it too). */
-  contain: strict;
+  /* Bounded work: the box can never be asked to lay out anything outside its own
+     fixed size (the JS clamps every blob inside it too). Not `paint`/`strict` —
+     paint containment would clip the halo the filter draws past the border box. */
+  contain: layout size;
+}
+.metaball-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 .metaball__blob {
   position: absolute;
   top: 0;
   left: 0;
   border-radius: 50%;
-  background: #fff;
+  background: var(--site-text);
   /* `will-change` is toggled by the rAF loop — a parked cursor holds no layer. */
 }
 
@@ -1940,6 +2010,7 @@
   .radial-hub__blur,
   .radial-hub__dial,
   .radial-hub__wedge-wrap,
+  .radial-hub__level,
   .radial-hub__wedge,
   .radial-hub__foot,
   .radial-hub__aura,

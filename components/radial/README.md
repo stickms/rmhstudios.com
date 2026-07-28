@@ -13,7 +13,7 @@ in `app/globals.css`).
 | File                 | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `RadialWheel.tsx`    | The feed as a gently-curved column on the **document's own scroll** (no inner scroll region — so mobile Safari collapses its toolbars). Cards flow at natural heights (variable, never overlapping) and a rAF window-scroll pass rakes each onto a shallow cylinder from cached offsets (no layout thrash). Optional non-raked `lead` slot (the compose box). Reduced-motion → plain list. Fires `onEndReached` for lazy loading.                                                                                                       |
-| `RadialHub.tsx`      | The persistent navigator, a **phase state machine** (closed → centering → open → closing). Tapping the fixed RMH orb **glides it to the centre of the screen**, then opens the menu as an **expanding circular blur** with translucent clip-path sectors blooming around it. The dial is **double-decked** — two concentric rings of annulus sectors around a hole the orb sits in — because sixteen destinations on one ring gave slivers too narrow to label or hit. CSS-only; consumes `lib/sidebar-nav`, honours auth/admin gating. |
+| `RadialHub.tsx`      | The persistent navigator, a **phase state machine** (closed → centering → open → closing). Tapping the fixed RMH orb **glides it to the centre of the screen**, then opens the menu as an **expanding circular blur** with translucent clip-path sectors blooming around it. The dial is **double-decked** — two concentric rings of annulus sectors around a hole the orb sits in — because sixteen destinations on one ring gave slivers too narrow to label or hit. The two decks **spin into alignment from opposite directions** as it opens, and a hairline is drawn at every band boundary so the levels are separated by a border rather than by a gap. CSS-only; consumes `lib/sidebar-nav`, honours auth/admin gating. |
 | `LiquidGoo.tsx`      | The **metaball filter bank** — one hidden `<svg><defs>` mounted in the shell holding three goo filters (`#rmh-liquid-sm` / `#rmh-liquid` / `#rmh-liquid-lg`) that CSS references to fuse clusters of shapes. Blur → steep alpha ramp, so near shapes merge with a smooth neck and a lone shape just rounds off. Used by the hub dial, the orb aura and the backdrop blob field.                                                                                                                                                         |
 | `MetaballCursor.tsx` | The pointer metaball: a gooey drop under the mouse on desktop and under the finger on touch. CSS goo (`blur() contrast()`) rather than an SVG filter, delta-time easing so it behaves identically at 60Hz and 240Hz, and a bounded filter region. Hides the native cursor while it is driving one, narrows to a caret over text fields, and blows up macOS-style when you shake to find it. Portals to `<body>`.                                                                                                                        |
 | `RadialShell.tsx`    | The application frame for every standard (`_site`) route: fixed parallax ring backdrop, slim utility top bar, the **three-track frame** (nav rail · `<main>` · live rail), the hub, and the pointer metaball. The backdrop layer paints **only** the rings — the aurora canvas comes from the document's own fixed layers (`body::before/::after`), so it drifts and parallaxes and is the one scene every `backdrop-filter` on the page samples.                                                                                       |
@@ -99,14 +99,19 @@ Three rules keep it safe — break them and you get chewed text or broken layout
    _decorative_ goo layer is
    `@media (min-width: 768px) and (prefers-reduced-motion: no-preference)` — the
    same budget the ring backdrop already respects on phones.
-4. **The pointer drop does not use an SVG filter at all.** `filter: url(#goo)`
-   makes Chromium re-evaluate a filter graph on the main thread every time the
-   filtered region moves, which is what made the cursor stutter on desktop. It
-   uses `filter: blur() contrast()` — a plain GPU shader — over a `#000` plate,
-   because black is the identity element of `mix-blend-mode: difference`
-   (`|Cb − 0| = Cb`), so the plate and the halo the blur spills past it
-   composite to exactly the backdrop and leave no visible box. That is also why
-   it can afford to run on touch.
+4. **The pointer drop paints a shape and nothing else.** The tempting cheap goo
+   is a CSS one — an opaque plate behind white blobs, `blur() contrast()` to
+   threshold them, and `mix-blend-mode: difference` to cancel the plate (black
+   being difference's identity element). Do not use it. It only stays invisible
+   while the compositor blends against the true page backdrop; once the layer
+   gets its own render surface — a GPU-compositing decision, not ours — the
+   plate stops cancelling and the whole box appears as a bright rectangle
+   trailing the pointer. It does not reproduce under software rasterisation, so
+   it is not a bug you can test your way out of. The drop therefore uses an SVG
+   **alpha ramp** (blur, then a steep curve on alpha alone), which emits the
+   fused silhouette and transparency everywhere else — there is no box to
+   reveal, on any path — and no blend mode at all, which also spares the
+   per-frame backdrop readback that blending forces.
 
 ### Pointer metaball contract
 
@@ -119,6 +124,14 @@ Three rules keep it safe — break them and you get chewed text or broken layout
   clamped inside it, so the tail can stretch but can never enlarge (or escape)
   the region being blurred and blended. `will-change` is toggled by the loop —
   a parked pointer holds no compositor layer.
+- **Legibility is built into the shape, not borrowed from the backdrop.**
+  Without a blend mode there is no inversion to rely on, so the drop is filled
+  with `--site-text` and carries a halo in `--site-bg` (two `drop-shadow`s
+  chained after the goo, so the rim traces the fused outline rather than each
+  blob). Those tokens are contrast-paired by definition, so it reads on the page
+  in every theme — and on a control whose fill matches the ink (on the default
+  theme the accent IS the ink, so over the compose button the halo is the whole
+  mark) it reads as a ring.
 - **It replaces the OS cursor.** While a real mouse is driving it, the native
   arrow is hidden (`[data-metaball-cursor]` in `radial.css`) — two pointers on
   screen read as a bug. Anything that needs the real cursor opts out with
@@ -132,6 +145,24 @@ Three rules keep it safe — break them and you get chewed text or broken layout
   while it is actually being touched.
 - **Off entirely** under reduced-motion, forced-colors, reduced-transparency,
   and on devices reporting < 4 GB of memory.
+
+## The dial (RadialHub)
+
+Two rules that are easy to break when touching its geometry or motion:
+
+- **One source of truth for the radii.** `RINGS` in `RadialHub.tsx` defines the
+  bands; the drawn boundary hairlines and the mask that carves the centre hole
+  are both derived from the radii the component actually used, and handed to CSS
+  inline. Do not re-type those numbers in `radial.css` — a hairline sitting where
+  the bands are not is invisible until someone opens the menu.
+- **The decks spin, so the bed shows.** Opening counter-rotates the two rings
+  into alignment (inner anticlockwise, outer clockwise), which uncovers large
+  wedges of the dial's own background mid-animation. That background must stay a
+  light plate: it used to be `--site-border-bright`, pure black in the default
+  theme, which the sectors covered at every frame while they only scaled — once
+  they rotate, the whole dial flashes black on open. The spin is deliberately
+  un-staggered (every wedge in a ring shares one delay) so a ring turns as a
+  body; the per-wedge stagger stays on opacity alone.
 
 ## Design rules (same as the rest of the app)
 

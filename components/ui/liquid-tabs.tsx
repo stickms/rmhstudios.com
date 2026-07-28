@@ -36,7 +36,7 @@
  *    element that is both sticky and overflow-x drops horizontal touch scroll).
  */
 
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { m as motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -156,6 +156,31 @@ export function LiquidTabs({
   const link = Boolean(renderTab);
   const activeTabId = tabId(value);
 
+  // §5.45 — centre a strip that does not fill its sheet. The pills are
+  // `shrink-0` and a `scroll` sheet is full-width, so a two- or three-tab strip
+  // bunched against the left edge with as much as 261px of dead space beside it,
+  // which reads as a broken container rather than a control.
+  //
+  // Whether centring is safe depends on the strip, so it is MEASURED rather than
+  // assumed. Centring a horizontally-overflowing scroll container pushes half of
+  // the overflow off the leading edge where it can never be scrolled back — the
+  // first tab becomes unreachable. (`justify-content: safe center` is meant to
+  // cover exactly this and does not do so reliably; a wrapping strip needs plain
+  // centring anyway, and auto margins only reach the first and last items, which
+  // on a wrapped strip sit on different lines.) So: centre only while the
+  // content actually fits — true for a strip with slack AND for a wrapping one,
+  // false the moment a single line overflows.
+  const [fits, setFits] = useState(true);
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const measure = () => setFits(el.scrollWidth <= el.clientWidth + 1);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [tabs.length]);
+
   // Route-backed tabs can mount with an active item outside the visible part of
   // a narrow strip. Bring only that item into the nearest horizontal viewport;
   // `block: nearest` prevents this from unexpectedly repositioning the page.
@@ -269,6 +294,8 @@ export function LiquidTabs({
     'relative flex items-center gap-1',
     // Scroll overflows inside the sheet; otherwise size to content (or full width).
     scroll ? 'tab-sheet-scroll w-full min-w-0' : fullWidth ? 'w-full' : 'inline-flex',
+    // See the `fits` measurement above — never centre an overflowing strip.
+    fits && !fullWidth && 'justify-center',
     !sheet && className,
   );
 

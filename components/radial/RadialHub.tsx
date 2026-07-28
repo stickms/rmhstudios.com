@@ -37,23 +37,29 @@ const DEG = Math.PI / 180;
  * its radius is 50%). The hole in the middle clears the orb, which glides to the
  * exact centre when the menu opens.
  *
- *   0 ──── 19 ──────────── 34.4 ─ 35.6 ─────────── 50
- *    hole       inner ring    gap     outer ring    rim
+ *   0 ──── 19 ─────────────── 34 ── 36 ─────────────── 50
+ *    hole        inner ring     gap      outer ring     rim
+ *
+ * The gap between the decks is deliberately wide enough to read as a track, not
+ * a seam — `RadialHub` also renders a hairline at every boundary below, so the
+ * two levels are separated by a drawn border rather than by absence of fill.
  */
 const RINGS = [
-  { r0: 19, r1: 34.4 },
-  { r0: 35.6, r1: 50 },
+  { r0: 19, r1: 34 },
+  { r0: 36, r1: 50 },
 ] as const;
 /** With few enough destinations one ring is clearer than two. */
 const SINGLE_RING = { r0: 19, r1: 50 } as const;
 /**
- * The art layer is drawn slightly larger than the hit layer. The goo filter
- * blurs-then-thresholds each sector, which erodes a couple of pixels off every
- * edge; without the bleed that erosion exposes the divider bed as a solid dark
- * ring around each band instead of the hairline it is meant to be. Hit testing
- * still uses the exact geometry, so the bleed can't steal a neighbour's clicks.
+ * The art layer is drawn slightly wider ANGULARLY than the hit layer. The goo
+ * filter blurs-then-thresholds each sector, which erodes a couple of pixels off
+ * every edge; without the bleed that erosion turns the thin angular dividers
+ * inside a ring into wide gaps. It is deliberately NOT applied radially: the
+ * boundaries between levels are meant to be pronounced, so the erosion there is
+ * welcome and the drawn hairlines sit on top of it. Hit testing always uses the
+ * exact geometry, so the bleed can't steal a neighbour's clicks.
  */
-const ART_BLEED = 1.1;
+const ART_BLEED_DEG = 0.25;
 const SINGLE_RING_MAX = 6;
 /** Cap on the inner ring — it has the shorter circumference of the two. */
 const INNER_MAX = 6;
@@ -133,8 +139,13 @@ export function RadialHub() {
   // comfortably holds the tail. Each ring is divided independently, so neither
   // one's crowding is inherited from the other. Below SINGLE_RING_MAX the split
   // is pointless and a single wide ring reads better.
-  const wedges = useMemo<Wedge[]>(() => {
-    if (leaves.length === 0) return [];
+  //
+  // It also returns the BOUNDARY RADII it used. The drawn borders between levels
+  // and the mask that carves the centre hole are derived from the same numbers
+  // as the sectors themselves, so a change to the geometry can never leave the
+  // hairlines sitting somewhere the bands are not.
+  const { wedges, bounds } = useMemo<{ wedges: Wedge[]; bounds: number[] }>(() => {
+    if (leaves.length === 0) return { wedges: [], bounds: [] };
 
     const groups: Array<{ items: NavLeaf[]; band: { r0: number; r1: number }; ring: 0 | 1 }> =
       leaves.length <= SINGLE_RING_MAX
@@ -161,12 +172,7 @@ export function RadialHub() {
         out.push({
           ...items[i],
           clip: ringSector(a0, a1, band.r0, band.r1),
-          clipArt: ringSector(
-            a0 - gap / 4,
-            a1 + gap / 4,
-            Math.max(0, band.r0 - ART_BLEED),
-            Math.min(50, band.r1 + ART_BLEED),
-          ),
+          clipArt: ringSector(a0 - gap * ART_BLEED_DEG, a1 + gap * ART_BLEED_DEG, band.r0, band.r1),
           cx: 50 + rm * Math.cos(am),
           cy: 50 + rm * Math.sin(am),
           ring,
@@ -174,7 +180,10 @@ export function RadialHub() {
         });
       }
     }
-    return out;
+    const bounds = [...new Set(groups.flatMap(({ band }) => [band.r0, band.r1]))].sort(
+      (a, b) => a - b,
+    );
+    return { wedges: out, bounds };
   }, [leaves]);
 
   const clearTimer = () => {
@@ -305,6 +314,16 @@ export function RadialHub() {
           className="radial-hub__dial"
           role="menu"
           aria-label={t('section-navigation', { defaultValue: 'Browse RMH Studios' })}
+          // The mask that carves the centre hole reads the innermost band's own
+          // radius (doubled: a radial-gradient stop is a fraction of the RADIUS,
+          // and these radii are fractions of the WIDTH).
+          // Pulled in by the border width so the innermost hairline, which
+          // straddles this radius, is not half-eaten by the mask.
+          style={
+            {
+              '--dial-hole': `calc(${(bounds[0] ?? 19) * 2}% - var(--dial-level-w))`,
+            } as CSSProperties
+          }
         >
           {/* ART LAYER — decorative sector fills, shapes only, and the only
               thing the goo filter touches: the clipped sectors swell and fuse
@@ -316,7 +335,12 @@ export function RadialHub() {
               const active = isActive(pathname, w.href);
               const wrapStyle = { '--i': w.order } as CSSProperties;
               return (
-                <li key={w.id} className="radial-hub__wedge-wrap" style={wrapStyle}>
+                <li
+                  key={w.id}
+                  className="radial-hub__wedge-wrap"
+                  data-ring={w.ring}
+                  style={wrapStyle}
+                >
                   <span
                     className={'radial-hub__wedge-art' + (active ? ' is-active' : '')}
                     style={{ clipPath: w.clipArt }}
@@ -325,6 +349,23 @@ export function RadialHub() {
               );
             })}
           </ul>
+
+          {/* LEVEL BORDERS — a hairline at every band boundary, so the decks are
+              separated by a drawn edge instead of by a gap in the fill. Real
+              circles rather than radial-gradient stops: a bordered element
+              antialiases cleanly at any dial size, hard gradient stops do not.
+              Painted between the two layers — above the goo, which would chew
+              them, and below the links, which must keep every pixel of their
+              own sector (these are `pointer-events: none` regardless). */}
+          <span className="radial-hub__levels" aria-hidden>
+            {bounds.map((r) => (
+              <span
+                key={r}
+                className="radial-hub__level"
+                style={{ '--r': `${r}%` } as CSSProperties}
+              />
+            ))}
+          </span>
 
           {/* HIT LAYER — the real links, unfiltered, with their icon + label
               inside them. Keeping the glyph inside its own sector is what makes
@@ -347,7 +388,13 @@ export function RadialHub() {
                 </span>
               );
               return (
-                <li key={w.id} className="radial-hub__wedge-wrap" style={wrapStyle} role="none">
+                <li
+                  key={w.id}
+                  className="radial-hub__wedge-wrap"
+                  data-ring={w.ring}
+                  style={wrapStyle}
+                  role="none"
+                >
                   {w.external ? (
                     <a
                       href={w.href}
