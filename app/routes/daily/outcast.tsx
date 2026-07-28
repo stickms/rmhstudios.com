@@ -8,7 +8,7 @@ const OutcastGame = lazy(() => import('@/components/daily-puzzles/OutcastGame').
 function OutcastPage() {
     return (
         <GameErrorBoundary gameName="Outcast">
-            <Suspense fallback={<GameLoadingFallback />}>
+            <Suspense fallback={<GameLoadingFallback background="#efeae0" foreground="#1b1a17" />}>
                 <OutcastGame />
             </Suspense>
         </GameErrorBoundary>

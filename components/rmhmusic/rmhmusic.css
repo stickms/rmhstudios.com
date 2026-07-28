@@ -1,0 +1,58 @@
+/**
+ * RMH Music — Dedicated Theme Stylesheet
+ *
+ * /rmhmusic is a THEME_EXCLUDED_ROUTE (see components/Providers.tsx): the site
+ * theme class is never applied there, so `--site-*` resolves to the *light*
+ * base palette while the app paints a black visualizer behind it — which is
+ * how the landing hero ended up black-on-black.
+ *
+ * So the app owns its palette, the way rmhtype/rmhtube do. New markup in this
+ * app should read `--rmhmusic-*`. The `--site-*` aliases at the bottom exist so
+ * the panels/player components that already consume site tokens resolve
+ * against this dark palette instead of the light base one — they are a
+ * compatibility shim, not a pattern to extend.
+ */
+
+.rmhmusic-theme {
+  --rmhmusic-bg: #0b0b0b;
+  --rmhmusic-surface: #17171a;
+  --rmhmusic-surface-hover: #202024;
+  --rmhmusic-surface-active: #2a2a2f;
+  --rmhmusic-border: #2c2c31;
+  --rmhmusic-border-bright: #3d3d44;
+  --rmhmusic-text: #f2f2f5;
+  --rmhmusic-text-muted: #a8a8b3;
+  --rmhmusic-text-dim: #7c7c88;
+  --rmhmusic-accent: #a78bfa;
+  --rmhmusic-accent-hover: #8b6df0;
+  --rmhmusic-accent-dim: rgba(167, 139, 250, 0.15);
+  /* Near-black ink on the light violet accent (≈9:1) — white would be 2.4:1. */
+  --rmhmusic-accent-fg: #16101f;
+  --rmhmusic-success: #34d399;
+  --rmhmusic-danger: #f87171;
+  --rmhmusic-warning: #fbbf24;
+  --rmhmusic-radius: 12px;
+  /* Typefaces are palette-independent, so the site families are safe here. */
+  --rmhmusic-font-display: var(--site-font-display);
+
+  color: var(--rmhmusic-text);
+
+  /* ── Compatibility aliases (see header) ── */
+  --site-bg: var(--rmhmusic-bg);
+  --site-surface: var(--rmhmusic-surface);
+  --site-surface-opaque: var(--rmhmusic-surface);
+  --site-surface-hover: var(--rmhmusic-surface-hover);
+  --site-surface-active: var(--rmhmusic-surface-active);
+  --site-border: var(--rmhmusic-border);
+  --site-border-bright: var(--rmhmusic-border-bright);
+  --site-text: var(--rmhmusic-text);
+  --site-text-muted: var(--rmhmusic-text-muted);
+  --site-text-dim: var(--rmhmusic-text-dim);
+  --site-accent: var(--rmhmusic-accent);
+  --site-accent-hover: var(--rmhmusic-accent-hover);
+  --site-accent-dim: var(--rmhmusic-accent-dim);
+  --site-accent-fg: var(--rmhmusic-accent-fg);
+  --site-success: var(--rmhmusic-success);
+  --site-danger: var(--rmhmusic-danger);
+  --site-warning: var(--rmhmusic-warning);
+}

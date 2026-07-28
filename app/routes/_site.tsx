@@ -6,7 +6,7 @@
  * so they render full-screen without any sidebar.
  */
 
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { RouteErrorFallback } from '@/components/errors/RouteErrorFallback';
 import { NotFound } from '@/components/errors/NotFound';
@@ -46,10 +46,28 @@ const MiniPlayer = lazy(() =>
 
 export const Route = createFileRoute('/_site')({
   component: SiteLayout,
-  // Keep the sidebar shell around errors/404s that occur on site routes.
-  errorComponent: RouteErrorFallback,
-  notFoundComponent: NotFound,
+  // Keep the shell around errors/404s that occur on site routes. A route's
+  // errorComponent renders INSTEAD of its component, so naming the bare
+  // fallbacks here replaced SiteLayout too — a thrown route (the profile page,
+  // when its SSR module resolution failed) rendered a full-viewport "Something
+  // went wrong" card with no nav, no orb and no way back except the card's own
+  // links. Wrapping them in the shell keeps the page recoverable in place.
+  errorComponent: (props) => (
+    <SiteShellFrame>
+      <RouteErrorFallback {...props} />
+    </SiteShellFrame>
+  ),
+  notFoundComponent: () => (
+    <SiteShellFrame>
+      <NotFound />
+    </SiteShellFrame>
+  ),
 });
+
+/** The `_site` chrome without the overlay stack — see the errorComponent note. */
+function SiteShellFrame({ children }: { children: ReactNode }) {
+  return <SiteShell>{children}</SiteShell>;
+}
 
 function SiteLayout() {
   return (

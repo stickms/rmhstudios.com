@@ -15,7 +15,11 @@ const buttonVariants = cva(
           'bg-site-danger text-site-danger-fg hover:opacity-85 focus-visible:ring-site-danger/40',
         danger:
           'bg-site-danger text-site-danger-fg hover:opacity-85 focus-visible:ring-site-danger/40',
-        outline: 'border-site-border bg-transparent text-site-text hover:border-site-border-bright',
+        // Hover was border-brighten-only, which on a transparent fill is close
+        // to imperceptible — the outline button reads as inert until clicked.
+        // A surface tint gives it the same feedback every other variant has.
+        outline:
+          'border-site-border bg-transparent text-site-text hover:border-site-border-bright hover:bg-site-surface-hover',
         secondary: 'border-site-border bg-site-surface text-site-text hover:bg-site-surface-hover',
         ghost: 'text-site-text hover:bg-site-surface-hover',
         link: 'text-site-accent underline-offset-4 hover:underline',

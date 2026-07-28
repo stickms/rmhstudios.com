@@ -55,7 +55,7 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
               />
             ) : null}
             <div
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-(--rmhbox-accent) text-sm font-bold text-white"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-(--rmhbox-accent) text-sm font-bold text-(--rmhbox-accent-fg)"
               style={player.avatarUrl ? { display: 'none' } : undefined}
             >
               {player.userName.charAt(0).toUpperCase()}

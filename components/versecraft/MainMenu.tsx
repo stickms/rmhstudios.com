@@ -97,7 +97,18 @@ export function MainMenu() {
         {/* Title */}
         <motion.div className="text-center mb-7" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }}>
           <div className="text-[11px] tracking-[0.6em] uppercase mb-3" style={{ color: '#c4a35a', opacity: 0.7 }}>✦ poetry · romance · fate ✦</div>
-          <h1 className="text-6xl md:text-8xl font-bold tracking-wide" style={{ fontFamily: 'var(--font-cinzel, serif)', color: '#e8e0d0', textShadow: '0 0 50px rgba(196,163,90,0.35)' }}>
+          {/* Fluid size, and no tracking below sm: at a fixed 60px with wide
+              tracking the wordmark exceeded a 390px screen and the
+              overflow-hidden wrapper cropped both ends ("ERSECRAF"). */}
+          <h1
+            className="font-bold tracking-normal sm:tracking-wide"
+            style={{
+              fontFamily: 'var(--font-cinzel, serif)',
+              color: '#e8e0d0',
+              fontSize: 'clamp(2.2rem, 12vw, 6rem)',
+              textShadow: '0 0 50px rgba(196,163,90,0.35)',
+            }}
+          >
             VERSECRAFT
           </h1>
           <div className="h-6 mt-3 relative w-full max-w-md mx-auto">
@@ -185,7 +196,7 @@ export function MainMenu() {
             {t('sign-in-hint', { defaultValue: 'Sign in to save your stories to the cloud and replay them anywhere.' })}
           </p>
         )}
-        <p className="mt-5 text-[11px] tracking-widest" style={{ color: '#4f4a44' }}>RMH STUDIOS</p>
+        <p className="mt-5 text-[11px] tracking-widest" style={{ color: '#8d857b' }}>RMH STUDIOS</p>
       </div>
     </div>
   );

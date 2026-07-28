@@ -78,7 +78,7 @@ function LobbyBrowser({ connectionStatus, onCreateLobby, onJoinLobby }: LobbyBro
                 <button
                     onClick={onCreateLobby}
                     disabled={connectionStatus !== 'connected'}
-                    className="w-full py-2.5 rounded-lg font-semibold text-white text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhbox-accent) hover:bg-(--rmhbox-accent-hover)"
+                    className="w-full py-2.5 rounded-lg font-semibold text-(--rmhbox-accent-fg) text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhbox-accent) hover:bg-(--rmhbox-accent-hover)"
                 >
                     {t("create-lobby", { defaultValue: "Create Lobby" })}
                 </button>
@@ -103,7 +103,7 @@ function LobbyBrowser({ connectionStatus, onCreateLobby, onJoinLobby }: LobbyBro
                     <button
                         type="submit"
                         disabled={connectionStatus !== 'connected' || joinCode.trim().length !== 6}
-                        className="px-4 py-2 rounded-lg font-semibold text-white text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhbox-accent) hover:bg-(--rmhbox-accent-hover)"
+                        className="px-4 py-2 rounded-lg font-semibold text-(--rmhbox-accent-fg) text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhbox-accent) hover:bg-(--rmhbox-accent-hover)"
                     >
                         {t("join", { defaultValue: "Join" })}
                     </button>
@@ -448,7 +448,7 @@ export function RMHboxDiscordActivity({ discord }: Props) {
 
                                 <button
                                     onClick={() => useRMHboxStore.getState().leaveLobby()}
-                                    className="px-8 py-3 rounded-lg font-semibold bg-(--rmhbox-accent) text-white hover:bg-(--rmhbox-accent-hover) transition-colors"
+                                    className="px-8 py-3 rounded-lg font-semibold bg-(--rmhbox-accent) text-(--rmhbox-accent-fg) hover:bg-(--rmhbox-accent-hover) transition-colors"
                                 >
                                     {t("back-to-lobby-browser", { defaultValue: "Back to Lobby Browser" })}
                                 </button>

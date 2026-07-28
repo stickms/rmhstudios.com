@@ -96,7 +96,7 @@
   background: var(--site-accent);
   color: var(--site-accent-fg);
   padding: 0.6rem 1.1rem;
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -265,7 +265,7 @@
   /* Mobile-first: just "RMH". The "Studios" wordmark returns on wider screens. */
   display: none;
   color: var(--site-text-muted);
-  font-size: 0.68rem;
+  font-size: 0.6875rem;
   letter-spacing: 0.24em;
   text-transform: uppercase;
 }
@@ -316,6 +316,21 @@
   width: 1.2rem;
   height: 1.2rem;
 }
+/* Session-unknown placeholder: the avatar's exact footprint, so the bar keeps
+   its rhythm and nothing shifts when the real control lands. */
+.radial-topbar__avatar-placeholder {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: var(--site-surface-hover);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .radial-topbar__avatar-placeholder {
+    animation: radial-pulse-soft 1.6s ease-in-out infinite;
+  }
+}
+
 .radial-topbar__avatar {
   display: inline-grid;
   place-items: center;
@@ -564,11 +579,11 @@
 }
 .rad-rail__group-title {
   padding: 0.35rem 0.75rem;
-  font-size: 0.64rem;
+  font-size: 0.6875rem;
   font-weight: 800;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--site-text-dim, var(--site-text-muted));
+  color: var(--site-text-muted);
 }
 
 /* ── Live rail ────────────────────────────────────────────────────────── */
@@ -738,6 +753,39 @@
     transform 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
     box-shadow 0.28s ease;
 }
+/* Legibility scrim under the docked orb. The orb is fixed bottom-centre over
+   scrolling content, so feed text, counters and card meta pass directly beneath
+   it. Columns reserve --site-floating-reserve at their END, but nothing can stop
+   text from travelling through the orb's band mid-scroll — so fade the page
+   ground in behind it, radially, and the type dissolves into the surface instead
+   of colliding with the disc. Decorative, never hit-testable, and it retracts
+   the moment the dial opens (the overlay owns the screen then). */
+.radial-hub__scrim {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  z-index: calc(var(--z-floating) - 2);
+  width: min(24rem, 92vw);
+  /* The orb's own band plus its inset, plus room for the fade to resolve. */
+  height: calc(
+    env(safe-area-inset-bottom, 0px) + var(--site-hub-orb-size) + var(--site-hub-orb-inset) * 2
+  );
+  transform: translateX(-50%);
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.28s ease;
+  background: radial-gradient(
+    60% 78% at 50% 100%,
+    var(--site-bg) 0%,
+    color-mix(in srgb, var(--site-bg) 72%, transparent) 42%,
+    transparent 78%
+  );
+}
+.radial-hub[data-phase='open'] .radial-hub__scrim,
+.radial-hub[data-phase='closing'] .radial-hub__scrim {
+  opacity: 0;
+}
+
 /* Hover/press lift only while docked (closed) — never fight the glide-to-centre. */
 .radial-hub[data-phase='closed'] .radial-hub__orb:hover {
   transform: translateX(-50%) translateY(-3px) scale(1.04);
@@ -1173,30 +1221,65 @@
 }
 /* Per-ring label budget: the inner ring has the shorter arc, so its labels get
    less room and clamp to a single line; the outer ring can afford two. */
+/* Narrower than the band is deep, on purpose. These boxes are centred on the
+   sector's centroid, so width spills ANGULARLY — past the sector's clip-path,
+   which cuts it ("Adaptive Intelligence" lost its tail, "Predictions"
+   overflowed the disc). Height spills radially, into the band, where there is
+   room. So: keep the boxes narrow and let long names take another line. */
 .radial-hub__wedge-inner[data-ring='0'] {
-  max-width: 4.6rem;
+  max-width: 4.1rem;
 }
 .radial-hub__wedge-inner[data-ring='1'] {
-  max-width: 6.25rem;
+  max-width: 5.4rem;
 }
 /* Mobile-first: icon-only sectors so the destinations never crowd on a phone;
    labels return ≥480px, where the dial is wide enough to carry them. */
 .radial-hub__wedge-label {
   display: none;
-  font-size: 0.68rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   line-height: 1.1;
   color: inherit;
   /* Bounded: a long destination name can never spill across its neighbours. */
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   overflow-wrap: anywhere;
+  hyphens: auto;
+  text-align: center;
 }
+/* Centre caption — the label for the wedge under the pointer/focus, sitting in
+   the dial's hole. It exists ONLY where the per-wedge labels don't: below
+   480px the dial is sixteen unlabelled glyphs, which is recall, not
+   recognition, for the site's entire navigation. The hole is the one place on
+   a 320px dial with room for a word. */
+.radial-hub__caption {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  max-width: 8rem;
+  padding-top: 2.6rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  color: var(--site-text);
+  text-wrap: balance;
+  pointer-events: none;
+}
+
 @media (min-width: 480px) {
   .radial-hub__wedge-label {
     display: -webkit-box;
+  }
+  /* Each wedge carries its own name from here up, so the caption would be a
+     duplicate. */
+  .radial-hub__caption {
+    display: none;
   }
   /* The inner band is deep enough for two lines (icon + label ≈ 50px in a ~69px
      band at the largest dial), so the shorter arc costs width, not lines — a
@@ -1248,6 +1331,22 @@
   font-size: 0.82rem;
   font-weight: 600;
   max-width: 40vw;
+  /* The pill is the only flexible item in the foot row, and it has to be able
+     to shrink: a flex item's default `min-width: auto` is its CONTENT, so a
+     long display name kept the pill at full width and pushed its avatar disc
+     on top of the settings gear beside it. `min-width: 0` lets it give way,
+     and the name (not the avatar) is what ellipses. */
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.radial-hub__identity > :first-child {
+  flex: none;
+}
+
+.radial-hub__identity > span {
+  min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -1258,8 +1357,10 @@
 .radial-hub__foot-btn {
   display: inline-grid;
   place-items: center;
-  width: 2.4rem;
-  height: 2.4rem;
+  /* Never squeezed by the identity pill beside it. */
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 999px;
   border: none;
   background: transparent;
@@ -1521,8 +1622,23 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/* "Read more" cue on a clamped body (RmharkCard measures; short posts get
+   none). Not a control — the whole card is the link — so it is styled as an
+   affordance rather than given its own hit area. */
+.rmhark__more {
+  align-self: flex-start;
+  margin-top: -0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--site-accent);
+}
+.rmhark__link:hover .rmhark__more {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .rmhark__kicker {
-  font-size: 0.68rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -1563,14 +1679,30 @@
 }
 .radial-feed__skeleton {
   flex: 1;
-  display: grid;
-  place-items: center;
-  /* The loading mark carries the motion itself (see .rad-loader), so the
-     skeleton is just the centring frame. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* The loading mark carries the motion itself (see .rad-loader); the card
+     skeletons below it hold the column's shape so the real cards don't shift
+     the page in when they arrive. */
   color: var(--site-text);
 }
 .radial-feed__skeleton .rad-loader {
   opacity: 0.65;
+}
+.radial-feed__skeleton-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rad-card-gap);
+  width: 100%;
+  /* Matches .radial-wheel__lead / __track, so the skeleton column is exactly
+     as wide as the feed that replaces it. */
+  max-width: 34rem;
+  margin-top: 1.25rem;
+}
+/* Same material and geometry as a real card, minus the hover affordances. */
+.rmhark--skeleton {
+  pointer-events: none;
 }
 /* The error/empty state still shows the RMH disc, which breathes gently. */
 @media (prefers-reduced-motion: no-preference) {
@@ -1643,14 +1775,24 @@
 }
 /* …except in the band where the live rail has just appeared and the window is
    not yet wide enough for four columns. The live rail is site-wide and the deck
-   is home-only, so the deck yields; it returns at 1600px. Keep this in sync with
-   DECK_QUERY in RadialSideFeed.tsx, which gates the fetch on the same range. */
+   is home-only, so the deck yields its COLUMN — but it used to yield its
+   existence: `display: none` from 1440 to 1599 meant the News/Games deck was
+   present at 1280, gone on a 1440 or 1536 laptop, and back at 1600. A module
+   that blinks out across the two most common laptop widths reads as a bug, and
+   its content is simply unreachable there. So in this band it stacks UNDER the
+   wheel instead, at a bounded height. Keep in sync with DECK_QUERY in
+   RadialSideFeed.tsx, which gates the fetch on the same range. */
 @media (min-width: 1440px) and (max-width: 1599.98px) {
   .radial-feed__deck {
     grid-template-columns: minmax(0, 1fr);
   }
   .rad-deck {
-    display: none;
+    /* A row of the same grid rather than a second column. */
+    max-width: 42rem;
+    margin-inline: auto;
+    max-height: 28rem;
+    /* Clears the floating bottom chrome, like every other scrolling column. */
+    margin-bottom: var(--site-floating-reserve);
   }
 }
 /* The strip itself is <LiquidTabs> (§16.2 — one tab-strip grammar site-wide);
@@ -1818,7 +1960,7 @@
 }
 .rad-panel__group h3 {
   padding: 0.35rem 0.4rem 0.15rem;
-  font-size: 0.64rem;
+  font-size: 0.6875rem;
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -1966,6 +2108,11 @@
   left: 0;
   border-radius: 50%;
   background: var(--site-text);
+  /* Thins as the drop swells over an interactive element. An opaque blob at
+     its largest size sat squarely on the label it was pointing at; at ~0.45
+     the text underneath reads through while the halo (chained on the parent's
+     filter) keeps the mark itself legible on any surface. */
+  opacity: calc(1 - var(--metaball-swell, 0) * 0.55);
   /* `will-change` is toggled by the rAF loop — a parked cursor holds no layer. */
 }
 
@@ -2210,5 +2357,59 @@
   }
   .rad-live__dot::after {
     animation: none;
+  }
+}
+
+/* Deck loading skeletons — same geometry as `.rad-deck__row`, so the panel does
+   not resize when the real rows arrive (the deck used to swap a bare
+   "Loading…" line for a full list, which jumped the rail). */
+.rad-deck__skeletons {
+  display: flex;
+  flex-direction: column;
+}
+.rad-deck__row--skeleton {
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   §5.5x B — 44px hit areas on coarse pointers
+   ------------------------------------------------------------------------
+   The shared chrome sat under the WCAG 2.5.8 / HIG floor on touch: the topbar's
+   buttons were 40×40, its brand 47×25, "Sign in" 75×36, and the live rail's
+   trending rows 33px tall. The design language already promises "44px targets
+   restored for coarse pointers" (§15.4); this closes the gap.
+
+   The hit area grows, the VISUALS do not: a centred, transparent ::after
+   overlay extends what the finger can land on without changing a single
+   painted pixel, so the chrome's rhythm and density are untouched. Fine
+   pointers keep the precise, compact controls.
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (pointer: coarse) {
+  .radial-topbar__btn,
+  .radial-topbar__signin,
+  .radial-topbar__brand,
+  .rad-live__row,
+  .rad-deck__row {
+    position: relative;
+  }
+  .radial-topbar__btn::after,
+  .radial-topbar__signin::after,
+  .radial-topbar__brand::after,
+  .rad-live__row::after,
+  .rad-deck__row::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    width: 100%;
+    height: 100%;
+    min-width: var(--site-touch-target);
+    min-height: var(--site-touch-target);
+  }
+  /* The rail/deck rows are full-width already, so they only need the height. */
+  .rad-live__row::after,
+  .rad-deck__row::after {
+    min-width: 0;
   }
 }

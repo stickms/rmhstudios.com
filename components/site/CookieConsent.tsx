@@ -40,6 +40,32 @@ export function setCookieConsent(choice: CookieConsentChoice): void {
   }
 }
 
+/**
+ * Whether the visitor has made a cookie choice yet.
+ *
+ * First-run surfaces use this to sequence themselves behind the consent bar.
+ * A brand-new visitor used to get three stacked interruptions at once — the
+ * language modal, the What's New announcement, and consent — with the legally
+ * required consent bar painted BEHIND the two promotional overlays, because all
+ * three mounted independently with no ordering between them.
+ */
+export function useCookieConsentAnswered(): boolean {
+  const [answered, setAnswered] = useState(() => getCookieConsent() !== null);
+
+  useEffect(() => {
+    const sync = () => setAnswered(getCookieConsent() !== null);
+    sync();
+    window.addEventListener('rmh:cookie-consent', sync);
+    window.addEventListener('rmh:cookie-consent-reset', sync);
+    return () => {
+      window.removeEventListener('rmh:cookie-consent', sync);
+      window.removeEventListener('rmh:cookie-consent-reset', sync);
+    };
+  }, []);
+
+  return answered;
+}
+
 export function CookieConsent() {
   const { t } = useTranslation('common');
   // Start hidden; decide on the client after mount to avoid an SSR/hydration
@@ -67,7 +93,7 @@ export function CookieConsent() {
       // §5.5x A.1: bottom-most member of the mobile floating stack — its presence
       // lifts the mini-player / back-to-top clear of it (globals.css :has() rules).
       data-floating="cookie"
-      className="glass-chrome bottom-above-dock fixed inset-x-3 z-40 mx-auto max-w-2xl rounded-site p-4 shadow-site md:bottom-4"
+      className="glass-chrome bottom-above-dock fixed inset-x-3 z-40 mx-auto max-w-2xl rounded-site p-4 shadow-site"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Cookie className="hidden h-5 w-5 shrink-0 text-site-accent sm:block" aria-hidden />
@@ -87,10 +113,10 @@ export function CookieConsent() {
           </a>
         </p>
         <div className="flex shrink-0 gap-2">
-          <Button variant="outline" size="sm" onClick={() => choose('essential')}>
+          <Button variant="outline" onClick={() => choose('essential')}>
             {t('cookie-consent-essential', { defaultValue: 'Essential only' })}
           </Button>
-          <Button size="sm" onClick={() => choose('all')}>
+          <Button onClick={() => choose('all')}>
             {t('cookie-consent-accept', { defaultValue: 'Accept all' })}
           </Button>
         </div>

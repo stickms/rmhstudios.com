@@ -149,7 +149,7 @@ export default function InviteLinkModal({ roomId, onClose }: InviteLinkModalProp
 
         <button
           onClick={handleCreateInvite}
-          className="w-full mt-5 py-2.5 rounded-lg font-semibold text-white transition-colors bg-(--rmhtube-accent) hover:bg-(--rmhtube-accent-hover)"
+          className="w-full mt-5 py-2.5 rounded-lg font-semibold text-(--rmhtube-accent-fg) transition-colors bg-(--rmhtube-accent) hover:bg-(--rmhtube-accent-hover)"
         >
           {t("create-invite-link", { defaultValue: "Create Invite Link" })}
         </button>

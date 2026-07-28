@@ -600,7 +600,7 @@ export default function ChatPanel() {
         <button
           type="submit"
           disabled={!message.trim()}
-          className="shrink-0 rounded-lg px-3 py-2 transition-colors disabled:opacity-50 bg-(--rmhtube-accent) text-white hover:bg-(--rmhtube-accent-hover)"
+          className="shrink-0 rounded-lg px-3 py-2 transition-colors disabled:opacity-50 bg-(--rmhtube-accent) text-(--rmhtube-accent-fg) hover:bg-(--rmhtube-accent-hover)"
         >
           <Send className="h-4 w-4" />
         </button>

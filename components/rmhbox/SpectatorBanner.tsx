@@ -102,7 +102,7 @@ export default function SpectatorBanner({
       {canJoin && (
         <button
           onClick={onRequestPromotion}
-          className="rounded-lg bg-(--rmhbox-accent) px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-(--rmhbox-accent-hover) pointer-events-auto"
+          className="rounded-lg bg-(--rmhbox-accent) px-3 py-1 text-xs font-semibold text-(--rmhbox-accent-fg) transition-colors hover:bg-(--rmhbox-accent-hover) pointer-events-auto"
         >
           {t("join-as-player", { defaultValue: "Join as Player" })}
         </button>

@@ -27,6 +27,12 @@ const EDGE_SCALE = 0.12;
 const EDGE_Z = 64; // px pushed back at the edges
 const FADE_START = 0.62; // |t| where cards begin to dim
 const VISIBLE = 2.2; // |t| beyond which a card is off the focus band (flat, no layer)
+/**
+ * Floor on a raked card's opacity. The fade used to bottom out around 0.18,
+ * which is not "de-emphasised", it is unreadable — and any capture taken while
+ * a card sat there (a programmatic scroll, a print) kept it as a ghost.
+ */
+const MIN_OPACITY = 0.4;
 
 /**
  * The feed as a gently curved column on the **document's own scroll** — no inner
@@ -102,7 +108,10 @@ export function RadialWheel({
       const clamped = Math.min(at, 1);
       const scale = 1 - clamped * EDGE_SCALE;
       const tz = -Math.min(at, 1.5) * EDGE_Z;
-      const op = 1 - Math.min(1, Math.max(0, at - FADE_START) / (VISIBLE - FADE_START)) * 0.82;
+      const op = Math.max(
+        MIN_OPACITY,
+        1 - Math.min(1, Math.max(0, at - FADE_START) / (VISIBLE - FADE_START)) * 0.82,
+      );
       // Per-card perspective() (rather than perspective on a container) keeps the
       // projection self-contained across browsers.
       el.style.transform = `perspective(1500px) translateZ(${tz.toFixed(1)}px) rotateX(${rot.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
@@ -155,11 +164,25 @@ export function RadialWheel({
       buildCache();
       apply();
     };
+    // Printing renders the page as it stands, so whatever rake was last applied
+    // is baked into the output — cards frozen mid-transform, tilted and faded.
+    // Flatten everything before the print snapshot and restore after.
+    const flatten = () => {
+      for (const el of slotsRef.current) {
+        el.style.transform = '';
+        el.style.opacity = '1';
+        el.style.willChange = 'auto';
+      }
+    };
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onResize);
+    window.addEventListener('beforeprint', flatten);
+    window.addEventListener('afterprint', apply);
     return () => {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onResize);
+      window.removeEventListener('beforeprint', flatten);
+      window.removeEventListener('afterprint', apply);
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     };
   }, [onScroll, buildCache, apply]);

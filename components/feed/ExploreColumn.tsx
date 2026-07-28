@@ -103,21 +103,27 @@ export function ExploreColumn({
  <Sparkles className="h-4 w-4 text-site-text"/>{''}
  {t('ask-the-feed', { defaultValue:'Ask the feed'})}
  </label>
- <div className="flex gap-2">
+ {/* `min-w-0` on the input and `shrink-0` on the button: a flex child's
+ default min-width is its CONTENT, so this ~250px placeholder forced the
+ row wider than the card and pushed the Ask button off the card at 390px
+ and off the viewport entirely at 320px. An ancestor clipped it, so the
+ overflow never showed up in a scrollWidth check either. Below 360px the
+ two stack, where a full-width button is the better shape anyway. */}
+ <div className="flex flex-col gap-2 min-[360px]:flex-row">
  <input
  id="ask-feed"
  value={question}
  onChange={(e) => setQuestion(e.target.value)}
  onKeyDown={(e) => e.key ==='Enter'&& ask()}
  placeholder={t('ask-placeholder', { defaultValue:"What's everyone talking about?"})}
- className="flex-1 rounded-full border border-site-border bg-site-bg px-4 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-text focus:outline-none"
+ className="w-full min-w-0 flex-1 rounded-full border border-site-border bg-site-bg px-4 py-2 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-text focus:outline-none"
  />
  <Button
  variant="accent"
  onClick={ask}
  loading={asking}
  disabled={question.trim().length < 3}
- className="rounded-full px-5"
+ className="shrink-0 rounded-full px-5"
  >
  {t('ask-button', { defaultValue:'Ask'})}
  </Button>
@@ -138,7 +144,7 @@ export function ExploreColumn({
  {/* Trending tags */}
  {data && data.trendingTags.length > 0 && (
  <RevealItem as="section"className="border-b border-site-border p-4">
- <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-muted">
  <TrendingUp className="h-3.5 w-3.5"/> {t('trending', { defaultValue:'Trending'})}
  </h2>
  <div className="flex flex-wrap gap-2">
@@ -146,11 +152,11 @@ export function ExploreColumn({
  <Link
  key={t.tag}
  to={`/tag/${t.tag}`as string}
- className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1 text-sm text-site-text transition-colors duration-200 hover:border-site-accent/50"
+ className="inline-flex min-h-11 items-center gap-1 rounded-full border border-site-border bg-site-surface px-3.5 py-1 text-sm text-site-text transition-colors duration-200 hover:border-site-accent/50"
  >
  <Hash className="h-3 w-3 text-site-accent"/>
  {t.tag}
- <span className="text-xs text-site-text-dim">{t.count}</span>
+ <span className="text-xs text-site-text-muted">{t.count}</span>
  </Link>
  ))}
  </div>
@@ -160,7 +166,7 @@ export function ExploreColumn({
  {/* Who to follow */}
  {data && data.suggestedUsers.length > 0 && (
  <RevealItem as="section"className="border-b border-site-border p-4">
- <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-muted">
  {t('who-to-follow', { defaultValue:'Who to follow'})}
  </h2>
  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -196,7 +202,7 @@ export function ExploreColumn({
  {/* Top supported creators */}
  {tipLeaders.length > 0 && (
  <RevealItem as="section"className="border-b border-site-border p-4">
- <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-muted">
  <Coins className="h-3.5 w-3.5 text-site-warning"/>{''}
  {t('top-supported-this-week', { defaultValue:'Top supported this week'})}
  </h2>
@@ -232,7 +238,7 @@ export function ExploreColumn({
  block reveals once as a unit (no per-card reveal). */}
  {data && data.hotPosts.length > 0 && (
  <RevealItem as="section">
- <h2 className="px-4 pt-4 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="px-4 pt-4 text-xs font-semibold uppercase tracking-wide text-site-text-muted">
  {t('hot-this-week', { defaultValue:'Hot this week'})}
  </h2>
  {/* Short teaser list nested in animated sections — a memoized row +

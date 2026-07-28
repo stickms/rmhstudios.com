@@ -35,14 +35,38 @@
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
-  text-decoration: none;
   color: inherit;
-  border-radius: var(--site-radius, 0.75rem);
   padding: 0.25rem 0.35rem;
-  transition: opacity 0.15s ease;
 }
-.rmhcalc__brand:hover {
-  opacity: 0.85;
+
+.rmhcalc__header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Labelled exit, matching the suite's back-control pattern. min-height keeps
+   the target at the 44px floor on coarse pointers (audit AUD-408). */
+.rmhcalc__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  padding: 0 0.85rem;
+  border-radius: var(--site-radius, 0.75rem);
+  border: 1px solid var(--site-border);
+  background: var(--site-surface);
+  color: var(--site-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+.rmhcalc__back:hover {
+  background: var(--site-surface-hover);
+  color: var(--site-text);
 }
 
 .rmhcalc__brand-icon {

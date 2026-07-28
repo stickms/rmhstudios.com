@@ -15,6 +15,7 @@ import { Link } from '@tanstack/react-router';
 import { ImageCropModal } from '@/components/feed/ImageCropModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { CookieConsent } from '@/components/site/CookieConsent';
 import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/login')({
@@ -191,8 +192,27 @@ function LoginPage() {
 
   const handleCredentialsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPending('email');
     setError(null);
+
+    // The form is noValidate, so validate here and surface the failure through
+    // the page's own error region instead of the browser's native bubble.
+    const trimmedEmail = email.trim();
+    if (isSignUp && !displayName.trim()) {
+      setError(t('validation-display-name', { defaultValue: 'Enter a display name.' }));
+      return;
+    }
+    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setError(t('validation-email', { defaultValue: 'Enter a valid email address.' }));
+      return;
+    }
+    if (password.length < 8) {
+      setError(
+        t('validation-password', { defaultValue: 'Password must be at least 8 characters.' }),
+      );
+      return;
+    }
+
+    setPending('email');
 
     try {
       if (isSignUp) {
@@ -277,7 +297,7 @@ function LoginPage() {
     'pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-site-text-dim z-10';
 
   const emailForm = (
-    <form onSubmit={handleCredentialsSubmit} className="space-y-3">
+    <form onSubmit={handleCredentialsSubmit} noValidate className="space-y-3">
       {isSignUp && (
         <div className="space-y-3">
           <div className="flex flex-col items-center gap-1.5">
@@ -306,7 +326,7 @@ function LoginPage() {
               className="hidden"
               onChange={handleAvatarSelect}
             />
-            <p className="text-xs text-site-text-dim">
+            <p className="text-xs text-site-text-muted">
               {t('optional-profile-picture', { defaultValue: 'Optional profile picture' })}
             </p>
           </div>
@@ -334,6 +354,8 @@ function LoginPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? 'login-error' : undefined}
           // "webauthn" lets the browser offer saved passkeys in the autofill
           // dropdown (conditional UI, wired above).
           autoComplete={isSignUp ? 'email' : 'username webauthn'}
@@ -350,6 +372,8 @@ function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
           required
           minLength={8}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? 'login-error' : undefined}
           autoComplete={isSignUp ? 'new-password' : 'current-password'}
           className="h-12 pl-11 pr-4"
         />
@@ -357,7 +381,9 @@ function LoginPage() {
 
       {error && (
         <div
+          id="login-error"
           role="alert"
+          aria-live="polite"
           className="rounded-site-sm border border-site-danger/40 bg-site-danger/10 px-3 py-2 text-center text-xs text-site-danger"
         >
           {error}
@@ -383,7 +409,9 @@ function LoginPage() {
     // Phones get one calm, edge-to-edge auth surface; larger screens retain the
     // floating flagship card over the aurora. The card owns mobile safe areas so
     // long sign-up content can scroll naturally without clipped controls.
-    <div className="flex min-h-dvh flex-col items-center justify-center sm:px-4 sm:py-8">
+    // <main> because /login renders outside the _site shell, which is where the
+    // site's landmark and skip link live; a deep-linked visit had neither.
+    <main className="flex min-h-dvh flex-col items-center justify-center sm:px-4 sm:py-8">
       {/* Flagship: a singular L2 pane with hero edge-refraction + prism rim
           (1 of ≤2/page). data-glass-lens opts it into the per-element lens
           filter; .glass-liquid adds the ambient sheen (1 of ≤3/page). */}
@@ -396,7 +424,7 @@ function LoginPage() {
           <div className="glass-inset mb-3 flex size-12 items-center justify-center rounded-2xl">
             <span className="font-serif text-lg font-bold tracking-tight text-site-text">R</span>
           </div>
-          <p className="font-mono text-[0.68rem] uppercase tracking-[0.2em] text-site-text-dim">
+          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-site-text-muted">
             RMH Studios
           </p>
           <h1 className="mt-1.5 font-(family-name:--site-font-display) text-2xl font-bold tracking-tight text-site-text">
@@ -456,7 +484,7 @@ function LoginPage() {
 
           <div className="flex items-center gap-3 py-1">
             <div className="h-px flex-1 bg-site-border" />
-            <span className="text-[0.68rem] uppercase tracking-[0.14em] text-site-text-dim">
+            <span className="text-[0.6875rem] uppercase tracking-[0.14em] text-site-text-muted">
               {t('or-with-email', { defaultValue: 'or with email' })}
             </span>
             <div className="h-px flex-1 bg-site-border" />
@@ -484,13 +512,22 @@ function LoginPage() {
               type="button"
               onClick={switchMode}
               className={cn(
-                'text-sm text-site-text-dim transition-colors hover:text-site-text',
+                'inline-flex min-h-11 items-center justify-center gap-1.5 px-3 text-sm text-site-text-muted transition-colors hover:text-site-text',
                 busy && 'pointer-events-none opacity-60',
               )}
             >
-              {isSignUp
-                ? t('already-have-account', { defaultValue: 'Already have an account? Sign in' })
-                : t('no-account', { defaultValue: "Don't have an account? Sign up" })}
+              {/* Two spans, not one sentence: nothing used to mark which part
+                  of "Don't have an account? Sign up" was the control. */}
+              <span>
+                {isSignUp
+                  ? t('already-have-account-prompt', { defaultValue: 'Already have an account?' })
+                  : t('no-account-prompt', { defaultValue: "Don't have an account?" })}
+              </span>
+              <span className="font-semibold text-site-accent underline underline-offset-4">
+                {isSignUp
+                  ? t('sign-in-action', { defaultValue: 'Sign in' })
+                  : t('sign-up-action', { defaultValue: 'Sign up' })}
+              </span>
             </button>
           </div>
         </div>
@@ -498,7 +535,7 @@ function LoginPage() {
             participates in the same spacing and never creates a second viewport. */}
         <Link
           to="/"
-          className="mt-5 inline-flex items-center justify-center gap-1.5 text-sm text-site-text-dim transition-colors hover:text-site-text"
+          className="mt-5 inline-flex min-h-11 items-center justify-center gap-1.5 text-sm text-site-text-muted transition-colors hover:text-site-text"
         >
           <ArrowLeft className="size-4" aria-hidden />
           {t('back-to-home', { defaultValue: 'Back to home' })}
@@ -512,6 +549,11 @@ function LoginPage() {
           onCancel={handleCropCancel}
         />
       )}
-    </div>
+
+      {/* Consent is mounted by the _site shell, which this route renders
+          outside of — so a visitor who deep-links to /login (the most common
+          first-touch after an OAuth bounce) got no consent prompt at all. */}
+      <CookieConsent />
+    </main>
   );
 }

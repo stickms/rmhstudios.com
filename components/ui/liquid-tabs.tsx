@@ -233,10 +233,17 @@ export function LiquidTabs({
     cn(
       'relative inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[var(--site-control-radius)] font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-40',
       pad,
-      // Tighter, more square padding for an icon-only strip.
-      iconOnly && (size === 'sm' ? 'px-2.5' : 'px-3'),
+      // Tighter, more square padding while the strip is glyph-only; it relaxes
+      // at md, where the labels come back (see globals.css).
+      iconOnly && (size === 'sm' ? 'px-2.5 md:px-3' : 'px-3 md:px-4'),
       fullWidth && 'flex-1',
-      active ? 'text-site-accent-fg' : 'text-site-text-muted hover:text-site-text',
+      // NOT `text-site-accent-fg` here. That ink is only correct ON the accent
+      // capsule, and the capsule is a separate element — when it failed to
+      // render (observed on high-contrast, where accent-fg is black on a black
+      // strip) the active label measured 1.0:1 and the strip read as empty.
+      // The base colour is legible on the strip in both modes; globals.css
+      // flips it to accent-fg only when the capsule is actually present.
+      active ? 'text-site-text' : 'text-site-text-muted hover:text-site-text',
     );
 
   // The active capsule — identical material in both modes. Outer element owns the
@@ -247,6 +254,8 @@ export function LiquidTabs({
       <motion.span
         layoutId={layoutId}
         aria-hidden
+        // The hook globals.css uses to decide whether accent-fg ink is safe.
+        data-tab-capsule=""
         className="absolute inset-0"
         transition={reduced ? { duration: 0 } : SPRING.snappy}
       >
@@ -265,19 +274,26 @@ export function LiquidTabs({
   // accessible name survives either way.
   const content = (tab: LiquidTab) => {
     const Icon = tab.icon;
-    const hideLabel = iconOnly && Boolean(Icon);
+    const compactLabel = iconOnly && Boolean(Icon);
     return (
       <>
         {Icon && (
           <Icon
             className={cn(
               'relative z-1 shrink-0',
-              iconOnly ? 'h-[1.15rem] w-[1.15rem]' : 'h-4 w-4',
+              iconOnly ? 'h-[1.15rem] w-[1.15rem] md:h-4 md:w-4' : 'h-4 w-4',
             )}
             aria-hidden
           />
         )}
-        <span className={cn('liquid-tabs__label relative z-1', hideLabel && 'sr-only')}>
+        <span
+          className={cn(
+            'liquid-tabs__label relative z-1',
+            // Not `sr-only` outright: globals.css applies the sr-only technique
+            // below md and lets the label render from md up.
+            compactLabel && 'liquid-tabs__label--compact',
+          )}
+        >
           {tab.label}
         </span>
         {typeof tab.count === 'number' && (
@@ -309,6 +325,7 @@ export function LiquidTabs({
         <div
           key={tab.id}
           data-has-icon={tab.icon ? '' : undefined}
+          data-tab-active={active ? 'true' : 'false'}
           className={cn('relative shrink-0', fullWidth && 'flex-1')}
         >
           {capsule(active)}
@@ -339,6 +356,7 @@ export function LiquidTabs({
         // phone breakpoint that hides labels on any icon-bearing tab.
         title={tab.icon ? tab.label : undefined}
         data-has-icon={tab.icon ? '' : undefined}
+        data-tab-active={active ? 'true' : 'false'}
         className={itemClass(active)}
       >
         {capsule(active)}

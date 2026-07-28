@@ -111,10 +111,21 @@ export function RadialHub() {
   const user = session?.user as HubUser | undefined;
 
   const [phase, setPhase] = useState<Phase>('closed');
+  /**
+   * Name of the wedge the pointer/focus is on. Below 480px the dial is
+   * icon-only — sixteen unlabelled glyphs as the site's whole navigation — and
+   * there is genuinely no room for sixteen labels on a 320px dial. So the label
+   * moves to the one place that has room: the hole in the middle. CSS shows it
+   * only where the per-wedge labels are hidden.
+   */
+  const [hoveredLabel, setHoveredLabel] = useState<string | null>(null);
   const dialRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const menuVisible = phase === 'open' || phase === 'closing';
+  useEffect(() => {
+    if (phase === 'closed') setHoveredLabel(null);
+  }, [phase]);
 
   const leaves = useMemo<NavLeaf[]>(() => {
     const out: NavLeaf[] = [];
@@ -270,6 +281,11 @@ export function RadialHub() {
           also chew the RMH mark's hairline strokes. It tracks the orb's docked /
           centred position from the same tokens, and carries no `data-floating`
           so it never joins the mobile floating-bottom stack. */}
+      {/* Legibility scrim — fades the page ground in behind the docked orb so
+          content scrolling through its band dissolves instead of colliding
+          with it (see radial.css). Paints under the aura and the orb. */}
+      <div className="radial-hub__scrim" aria-hidden />
+
       <div className="radial-hub__aura" aria-hidden>
         <span className="radial-hub__aura-core" />
         {[0, 1, 2].map((i) => (
@@ -367,6 +383,12 @@ export function RadialHub() {
             ))}
           </span>
 
+          {/* CENTRE CAPTION — names the wedge under the pointer/focus. Only
+              painted where the per-wedge labels are not (see radial.css). */}
+          <span className="radial-hub__caption" aria-hidden>
+            {hoveredLabel}
+          </span>
+
           {/* HIT LAYER — the real links, unfiltered, with their icon + label
               inside them. Keeping the glyph inside its own sector is what makes
               the colour correct by construction: it inherits the sector's
@@ -380,6 +402,12 @@ export function RadialHub() {
               const label = t(w.tKey, { defaultValue: w.label });
               const wrapStyle = { '--i': w.order } as CSSProperties;
               const cls = 'radial-hub__wedge' + (active ? ' is-active' : '');
+              const naming = {
+                onPointerEnter: () => setHoveredLabel(label),
+                onPointerLeave: () => setHoveredLabel((cur) => (cur === label ? null : cur)),
+                onFocus: () => setHoveredLabel(label),
+                onBlur: () => setHoveredLabel((cur) => (cur === label ? null : cur)),
+              };
               const innerStyle = { left: `${w.cx}%`, top: `${w.cy}%` } as CSSProperties;
               const inner = (
                 <span className="radial-hub__wedge-inner" data-ring={w.ring} style={innerStyle}>
@@ -405,6 +433,7 @@ export function RadialHub() {
                       tabIndex={tab}
                       aria-current={active ? 'page' : undefined}
                       aria-label={label}
+                      {...naming}
                     >
                       {inner}
                     </a>
@@ -418,6 +447,7 @@ export function RadialHub() {
                       tabIndex={tab}
                       aria-current={active ? 'page' : undefined}
                       aria-label={label}
+                      {...naming}
                     >
                       {inner}
                     </Link>

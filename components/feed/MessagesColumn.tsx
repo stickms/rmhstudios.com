@@ -10,6 +10,7 @@ import { Link, useNavigate } from'@tanstack/react-router';
 import { MobileBrandPrefix } from'./MobileHeader';
 import { useSession } from'@/components/Providers';
 import { Button } from'@/components/ui/button';
+import { EmptyState } from'@/components/ui/empty-state';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from'@/components/ui/dialog';
 import { subscribeMessageStream } from'@/lib/useUnreadCount';
 import { toast } from'sonner';
@@ -293,7 +294,7 @@ export function MessagesColumn({
  value={query}
  onChange={(e) => setQuery(e.target.value)}
  placeholder={t('search-messages-placeholder', {
- defaultValue:'Search people or messages…',
+ defaultValue:'Search people or chats…',
  })}
  aria-label={t('search-messages', { defaultValue:'Search messages'})}
  className="w-full rounded-full border border-site-border bg-site-surface py-2 pl-9 pr-9 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
@@ -312,7 +313,7 @@ export function MessagesColumn({
  <button
  type="button"
  onClick={() => setNewChatOpen(true)}
- className="flex shrink-0 items-center justify-center rounded-full bg-site-accent p-2 text-site-bg transition-opacity hover:opacity-90"
+ className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-site-accent text-site-accent-fg transition-opacity hover:opacity-90"
  title={t('new-chat-title', { defaultValue:'Start a new chat'})}
  aria-label={t('new-chat', { defaultValue:'New chat'})}
  >
@@ -322,7 +323,7 @@ export function MessagesColumn({
  type="button"
  onClick={markAllAsRead}
  disabled={!hasUnread || markingAll}
- className="flex shrink-0 items-center justify-center rounded-full p-2 text-site-accent transition-colors hover:bg-site-accent-dim disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+ className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-site-accent transition-colors hover:bg-site-accent-dim disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
  title={t('mark-all-as-read-title', { defaultValue:'Mark all conversations as read'})}
  aria-label={t('mark-all-as-read', { defaultValue:'Mark all as read'})}
  >
@@ -368,17 +369,22 @@ export function MessagesColumn({
  <Spinner size={32} />
  </div>
  ) : conversations.length === 0 ? (
- <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
- <MessageCircle className="w-12 h-12 text-site-text-dim mb-4"/>
- <p className="text-lg font-medium text-site-text mb-1">
- {t('no-messages-yet', { defaultValue:'No messages yet'})}
- </p>
- <p className="text-sm text-site-text-muted">
- {t('no-messages-hint', {
- defaultValue:'Start a new chat or message someone from their profile page.',
+ /* The copy told the reader to start a chat but embedded no way to do
+ it — the button that does is a 32px glyph up in the header, off the
+ top of a scrolled column. EmptyState takes an action; use it. */
+ <EmptyState
+ icon={MessageCircle}
+ title={t('no-messages-yet', { defaultValue:'No messages yet'})}
+ description={t('no-messages-hint', {
+ defaultValue:'Start a new chat, or message someone from their profile page.',
  })}
- </p>
- </div>
+ action={
+ <Button onClick={() => setNewChatOpen(true)}>
+ <Plus className="h-4 w-4"aria-hidden />
+ {t('new-chat', { defaultValue:'New chat'})}
+ </Button>
+ }
+ />
  ) : (
  <Reveal>
  {/* Density page (§8.4): rows stay dense inside one floating bg-site-surface border border-site-border rounded-2xl shadow-xs

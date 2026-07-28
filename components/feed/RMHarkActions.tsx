@@ -110,7 +110,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  onClick={handleCommentClick}
  title={t('comment', { defaultValue:'Comment'})}
  aria-label={t('comment', { defaultValue:'Comment'})}
- className="flex items-center gap-1.5 px-2 py-1 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent-dim/50 transition-[color,background-color,transform] duration-150 group active:scale-95"
+ className="flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-2.5 py-1 rounded-full text-site-text-muted hover:text-site-accent hover:bg-site-accent-dim/50 transition-[color,background-color,transform] duration-150 group active:scale-95"
  >
  <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform"aria-hidden />
  <AnimatedCount
@@ -130,10 +130,10 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  e.stopPropagation();
  setRepostMenu((v) => !v);
  }}
- className={`flex items-center gap-1.5 px-2 py-1 rounded-full transition-[color,background-color,transform] duration-150 group active:scale-95 ${
+ className={`flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-2.5 py-1 rounded-full transition-[color,background-color,transform] duration-150 group active:scale-95 ${
  item.reposted
  ?'text-site-success'
- :'text-site-text-dim hover:text-site-success hover:bg-site-success/10'
+ :'text-site-text-muted hover:text-site-success hover:bg-site-success/10'
  }`}
  title="reRMHark"
  aria-label="reRMHark"
@@ -189,10 +189,10 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  {/* Like */}
  <button
  onClick={toggleLike}
- className={`flex items-center gap-1.5 px-2 py-1 rounded-full transition-[color,background-color,transform] duration-150 group active:scale-95 ${
+ className={`flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-2.5 py-1 rounded-full transition-[color,background-color,transform] duration-150 group active:scale-95 ${
  item.liked
  ?'text-site-danger'
- :'text-site-text-dim hover:text-site-danger hover:bg-site-danger/10'
+ :'text-site-text-muted hover:text-site-danger hover:bg-site-danger/10'
  }`}
  title={t('like', { defaultValue:'Like'})}
  aria-label={t('like', { defaultValue:'Like'})}

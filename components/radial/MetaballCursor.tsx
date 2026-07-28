@@ -80,8 +80,17 @@ const BLOBS = [
 /** Fingers are bigger than pointers — the touch drop scales up to match. */
 const TOUCH_MUL = 1.7;
 
-/** How much the drop grows over an interactive element / while shaking. */
-const SWELL_GAIN = 0.85;
+/**
+ * How much the drop grows over an interactive element / while shaking.
+ *
+ * The swell used to be 0.85, taking the 16px lead blob to ~30px — the drop was
+ * at its LARGEST precisely when it was sitting on a control's label ("Play now"
+ * read as "▷ ●now"). 0.375 caps the swollen lead at ~22px, which still reads as
+ * a deliberate response without covering the thing it is pointing at. The fill
+ * also thins as it swells (see --metaball-swell in radial.css), so what remains
+ * over a label is closer to a rim than a blot.
+ */
+const SWELL_GAIN = 0.375;
 const SHAKE_GAIN = 2.4;
 
 const HOVER_SELECTOR =
@@ -178,6 +187,8 @@ export function MetaballCursor() {
       shake += (shakeTarget - shake) * ease(shakeTarget > shake ? 16 : 5);
 
       box.style.transform = `translate3d(${(cx - HALF).toFixed(1)}px, ${(cy - HALF).toFixed(1)}px, 0)`;
+      // Drives the fill's thinning while swollen — see .metaball__blob.
+      box.style.setProperty('--metaball-swell', swell.toFixed(3));
 
       const mul = mode === 'touch' ? TOUCH_MUL : 1;
       const grow = (1 + swell * SWELL_GAIN + shake * SHAKE_GAIN) * (1 - press * 0.18) * mul;

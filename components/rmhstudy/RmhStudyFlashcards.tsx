@@ -32,7 +32,7 @@ const GRADES: { grade: number; label: string; cls: string }[] = [
   { grade: 0, label: 'Again', cls: 'bg-(--rmhstudy-danger-dim) text-(--rmhstudy-danger)' },
   { grade: 1, label: 'Hard', cls: 'bg-(--rmhstudy-surface-hover) text-(--rmhstudy-text)' },
   { grade: 2, label: 'Good', cls: 'bg-(--rmhstudy-surface-hover) text-(--rmhstudy-text)' },
-  { grade: 3, label: 'Easy', cls: 'bg-(--rmhstudy-accent) text-white' },
+  { grade: 3, label: 'Easy', cls: 'bg-(--rmhstudy-accent) text-(--rmhstudy-accent-fg)' },
 ];
 
 export default function RmhStudyFlashcards() {
@@ -172,7 +172,7 @@ export default function RmhStudyFlashcards() {
               </button>
               <button
                 onClick={exitReview}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-(--rmhstudy-accent) hover:bg-(--rmhstudy-accent-hover)"
+                className="px-4 py-2 rounded-lg text-sm font-medium text-(--rmhstudy-accent-fg) bg-(--rmhstudy-accent) hover:bg-(--rmhstudy-accent-hover)"
               >
                 {t("back-to-decks", { defaultValue: "Back to decks" })}
               </button>

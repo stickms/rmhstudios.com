@@ -96,7 +96,7 @@ export default function MinigameLeaderboardModal({
               onClick={() => setActivePeriod(period)}
               className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
                 activePeriod === period
-                  ? 'bg-(--rmhbox-accent) text-white'
+                  ? 'bg-(--rmhbox-accent) text-(--rmhbox-accent-fg)'
                   : 'bg-(--rmhbox-surface-hover) text-(--rmhbox-text-muted) hover:text-(--rmhbox-text)'
               }`}
             >

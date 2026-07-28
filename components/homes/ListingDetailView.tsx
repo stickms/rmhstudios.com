@@ -164,11 +164,11 @@ export function ListingDetailView({ id }: { id: string }) {
         <div className="mx-auto max-w-md px-4 py-20 text-center text-site-text-dim">
           <Home className="mx-auto mb-3 h-10 w-10 text-site-text-muted" />
           <p className="mb-4">This listing is no longer available.</p>
-          <Link to="/homes">
-            <Button variant="outline">
+          <Button asChild variant="outline">
+            <Link to="/homes">
               <ArrowLeft className="h-4 w-4" /> Back to browse
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </PageLayout>
     );
@@ -202,11 +202,11 @@ export function ListingDetailView({ id }: { id: string }) {
               <option value="REMOVED">Hidden</option>
             </Select>
             <div className="ml-auto flex items-center gap-2">
-              <Link to="/homes/submit" search={{ edit: listing.id }}>
-                <Button variant="outline" size="sm">
+              <Button asChild variant="outline" size="sm">
+                <Link to="/homes/submit" search={{ edit: listing.id }}>
                   <Pencil className="h-4 w-4" /> Edit
-                </Button>
-              </Link>
+                </Link>
+              </Button>
               <Button variant="outline" size="sm" onClick={remove} className="text-site-danger">
                 <Trash2 className="h-4 w-4" /> Delete
               </Button>

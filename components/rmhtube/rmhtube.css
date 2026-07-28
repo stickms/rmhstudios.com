@@ -19,6 +19,10 @@
   --rmhtube-text-muted: #9a9ba4;
   --rmhtube-text-dim: #6a6b74;
   --rmhtube-accent: #d96e6e;
+  /* Ink paired to the accent fill above. White on these light accents measured
+     2.15-3.28:1 — the one button that matters on each app's landing page (the
+     audit's AUD-405). Never hardcode `text-white` on an accent fill; use this. */
+  --rmhtube-accent-fg: #1c0808;
   --rmhtube-accent-hover: #c85b5b;
   --rmhtube-accent-dim: rgba(217, 110, 110, 0.12);
   --rmhtube-success: #7bc88a;
@@ -52,6 +56,7 @@
   --rmhtube-text-muted: #6a6b74;
   --rmhtube-text-dim: #9a9ba4;
   --rmhtube-accent: #b54f4f;
+  --rmhtube-accent-fg: #ffffff;
   --rmhtube-accent-hover: #a04040;
   --rmhtube-accent-dim: rgba(181, 79, 79, 0.08);
   --rmhtube-success: #5aad6a;
@@ -193,6 +198,7 @@
   --rmhtube-text-muted: #cccccc;
   --rmhtube-text-dim: #999999;
   --rmhtube-accent: #ff6b6b;
+  --rmhtube-accent-fg: #1c0808;
   --rmhtube-accent-hover: #ff4f4f;
   --rmhtube-accent-dim: rgba(255, 107, 107, 0.2);
   --rmhtube-success: #4cff7c;

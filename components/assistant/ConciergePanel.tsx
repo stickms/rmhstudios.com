@@ -205,7 +205,7 @@ export function ConciergePanel({ className }: { className?: string }) {
                 type="button"
                 disabled={loading}
                 onClick={() => void ask(t(s.key, { defaultValue: s.text }))}
-                className="rounded-full border border-site-border bg-site-surface px-3 py-1.5 text-xs text-site-text-muted transition-colors hover:border-site-accent/50 hover:text-site-text disabled:opacity-50"
+                className="inline-flex min-h-11 items-center rounded-full border border-site-border bg-site-surface px-3.5 py-1.5 text-xs text-site-text-muted transition-colors hover:border-site-accent/50 hover:text-site-text disabled:opacity-50"
               >
                 {t(s.key, { defaultValue: s.text })}
               </button>
@@ -234,7 +234,7 @@ export function ConciergePanel({ className }: { className?: string }) {
               {loading ? <Spinner className="size-4" /> : <Send className="size-4" aria-hidden />}
             </Button>
           </form>
-          <p className="mt-2 text-center text-[11px] text-site-text-dim">
+          <p className="mt-2 text-center text-[11px] text-site-text-muted">
             {t('concierge-disclaimer', {
               defaultValue:
                 'The concierge answers questions about RMH Studios. It can be wrong — verify anything important.',

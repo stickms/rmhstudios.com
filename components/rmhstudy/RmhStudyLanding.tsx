@@ -16,7 +16,7 @@ import type { PublicStudyRoomInfo } from '@/lib/rmhstudy/types';
 import { useRouter } from '@tanstack/react-router';
 
 export default function RmhStudyLanding() {
-  const { t } = useTranslation("c-rmhstudy");
+  const { t } = useTranslation('c-rmhstudy');
   const router = useRouter();
   const connectionStatus = useRmhStudyStore((s) => s.connectionStatus);
   const [joinCode, setJoinCode] = useState('');
@@ -54,7 +54,12 @@ export default function RmhStudyLanding() {
 
         emit(C2S.ROOM_BROWSE, {});
       } catch (err) {
-        if (mounted) toast.error(err instanceof Error ? err.message : t("connection-failed", { defaultValue: "Connection failed" }));
+        if (mounted)
+          toast.error(
+            err instanceof Error
+              ? err.message
+              : t('connection-failed', { defaultValue: 'Connection failed' }),
+          );
       }
     }
 
@@ -98,7 +103,7 @@ export default function RmhStudyLanding() {
   const handleJoinRoom = useCallback(() => {
     const code = joinCode.trim().toUpperCase();
     if (code.length !== 6) {
-      toast.warning(t("room-code-length", { defaultValue: "Room code must be 6 characters" }));
+      toast.warning(t('room-code-length', { defaultValue: 'Room code must be 6 characters' }));
       return;
     }
     emit(C2S.ROOM_JOIN, { roomCode: code });
@@ -108,9 +113,11 @@ export default function RmhStudyLanding() {
     <div className="flex h-screen flex-col">
       <RmhStudyHeader backLabel="Builds" backHref="/builds" />
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-8" style={{ scrollbarGutter: 'stable both-edges' }}>
+      <div
+        className="flex-1 overflow-y-auto p-4 md:p-8"
+        style={{ scrollbarGutter: 'stable both-edges' }}
+      >
         <div className="max-w-4xl mx-auto space-y-8">
-
           {/* Hero */}
           <div className="text-center py-8">
             <div className="inline-flex items-center gap-2 mb-4">
@@ -118,7 +125,10 @@ export default function RmhStudyLanding() {
               <h2 className="text-3xl font-bold">RMH Study</h2>
             </div>
             <p className="text-(--rmhstudy-text-muted) max-w-md mx-auto">
-              {t("hero-subtitle", { defaultValue: "Study together with synced Pomodoro timers. Create a room, invite friends, and stay focused." })}
+              {t('hero-subtitle', {
+                defaultValue:
+                  'Study together with synced Pomodoro timers. Create a room, invite friends, and stay focused.',
+              })}
             </p>
           </div>
 
@@ -131,9 +141,14 @@ export default function RmhStudyLanding() {
               <Layers className="h-6 w-6 text-(--rmhstudy-accent)" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold flex items-center gap-2">{t("flashcards", { defaultValue: "Flashcards" })}</h3>
+              <h3 className="font-semibold flex items-center gap-2">
+                {t('flashcards', { defaultValue: 'Flashcards' })}
+              </h3>
               <p className="text-sm text-(--rmhstudy-text-muted)">
-                {t("flashcards-subtitle", { defaultValue: "Drill solo with flashcard decks and an AI tutor — spaced repetition, your pace." })}
+                {t('flashcards-subtitle', {
+                  defaultValue:
+                    'Drill solo with flashcard decks and an AI tutor — spaced repetition, your pace.',
+                })}
               </p>
             </div>
             <ArrowRight className="h-5 w-5 shrink-0 text-(--rmhstudy-text-muted) transition-transform group-hover:translate-x-1" />
@@ -144,15 +159,22 @@ export default function RmhStudyLanding() {
             <div className="rounded-xl border border-(--rmhstudy-border) bg-(--rmhstudy-surface) p-6">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                 <Clock className="h-5 w-5 text-(--rmhstudy-accent)" />
-                {t("create-study-room", { defaultValue: "Create Study Room" })}
+                {t('create-study-room', { defaultValue: 'Create Study Room' })}
               </h2>
 
               <div className="space-y-3 mb-4">
                 <div>
-                  <label className="block text-xs font-medium mb-1 text-(--rmhstudy-text-muted)">
-                    {t("work-duration", { defaultValue: "Work Duration: {{minutes}} min", minutes: workMinutes })}
+                  <label
+                    htmlFor="study-work-duration"
+                    className="block text-xs font-medium mb-1 text-(--rmhstudy-text-muted)"
+                  >
+                    {t('work-duration', {
+                      defaultValue: 'Work Duration: {{minutes}} min',
+                      minutes: workMinutes,
+                    })}
                   </label>
                   <input
+                    id="study-work-duration"
                     type="range"
                     min={5}
                     max={120}
@@ -165,10 +187,17 @@ export default function RmhStudyLanding() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium mb-1 text-(--rmhstudy-text-muted)">
-                      {t("short-break", { defaultValue: "Short Break: {{minutes}} min", minutes: shortBreakMinutes })}
+                    <label
+                      htmlFor="study-short-break"
+                      className="block text-xs font-medium mb-1 text-(--rmhstudy-text-muted)"
+                    >
+                      {t('short-break', {
+                        defaultValue: 'Short Break: {{minutes}} min',
+                        minutes: shortBreakMinutes,
+                      })}
                     </label>
                     <input
+                      id="study-short-break"
                       type="range"
                       min={1}
                       max={30}
@@ -178,10 +207,17 @@ export default function RmhStudyLanding() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium mb-1 text-(--rmhstudy-text-muted)">
-                      {t("long-break", { defaultValue: "Long Break: {{minutes}} min", minutes: longBreakMinutes })}
+                    <label
+                      htmlFor="study-long-break"
+                      className="block text-xs font-medium mb-1 text-(--rmhstudy-text-muted)"
+                    >
+                      {t('long-break', {
+                        defaultValue: 'Long Break: {{minutes}} min',
+                        minutes: longBreakMinutes,
+                      })}
                     </label>
                     <input
+                      id="study-long-break"
                       type="range"
                       min={5}
                       max={60}
@@ -194,10 +230,17 @@ export default function RmhStudyLanding() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium mb-1 text-(--rmhstudy-text-muted)">
-                    {t("sessions-before-long-break", { defaultValue: "Sessions before long break: {{sessions}}", sessions })}
+                  <label
+                    htmlFor="study-sessions"
+                    className="block text-xs font-medium mb-1 text-(--rmhstudy-text-muted)"
+                  >
+                    {t('sessions-before-long-break', {
+                      defaultValue: 'Sessions before long break: {{sessions}}',
+                      sessions,
+                    })}
                   </label>
                   <input
+                    id="study-sessions"
                     type="range"
                     min={2}
                     max={8}
@@ -211,9 +254,9 @@ export default function RmhStudyLanding() {
               <button
                 onClick={handleCreateRoom}
                 disabled={connectionStatus !== 'connected'}
-                className="w-full py-3 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhstudy-accent) hover:bg-(--rmhstudy-accent-hover)"
+                className="w-full py-3 rounded-lg font-semibold text-(--rmhstudy-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhstudy-accent) hover:bg-(--rmhstudy-accent-hover)"
               >
-                {t("create-room", { defaultValue: "Create Room" })}
+                {t('create-room', { defaultValue: 'Create Room' })}
               </button>
             </div>
 
@@ -221,12 +264,20 @@ export default function RmhStudyLanding() {
             <div className="rounded-xl border border-(--rmhstudy-border) bg-(--rmhstudy-surface) p-6">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                 <Users className="h-5 w-5 text-(--rmhstudy-accent)" />
-                {t("join-study-room", { defaultValue: "Join Study Room" })}
+                {t('join-study-room', { defaultValue: 'Join Study Room' })}
               </h2>
               <p className="text-sm mb-4 text-(--rmhstudy-text-muted)">
-                {t("join-description", { defaultValue: "Enter a 6-character room code to join a friend's study session." })}
+                {t('join-description', {
+                  defaultValue: "Enter a 6-character room code to join a friend's study session.",
+                })}
               </p>
-              <form onSubmit={(e) => { e.preventDefault(); handleJoinRoom(); }} className="flex gap-2">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleJoinRoom();
+                }}
+                className="flex gap-2"
+              >
                 <input
                   type="text"
                   maxLength={6}
@@ -238,20 +289,28 @@ export default function RmhStudyLanding() {
                 <button
                   type="submit"
                   disabled={connectionStatus !== 'connected' || joinCode.trim().length !== 6}
-                  className="px-6 py-3 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhstudy-accent) hover:bg-(--rmhstudy-accent-hover)"
+                  className="px-6 py-3 rounded-lg font-semibold text-(--rmhstudy-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhstudy-accent) hover:bg-(--rmhstudy-accent-hover)"
                 >
-                  {t("join", { defaultValue: "Join" })}
+                  {t('join', { defaultValue: 'Join' })}
                 </button>
               </form>
 
               <div className="mt-6 p-4 rounded-lg bg-(--rmhstudy-bg) border border-(--rmhstudy-border)">
-                <h3 className="text-sm font-semibold mb-2">{t("how-it-works", { defaultValue: "How it works" })}</h3>
+                <h3 className="text-sm font-semibold mb-2">
+                  {t('how-it-works', { defaultValue: 'How it works' })}
+                </h3>
                 <ul className="text-xs space-y-1 text-(--rmhstudy-text-muted)">
-                  <li>{t("how-step-1", { defaultValue: "1. Create or join a study room" })}</li>
-                  <li>{t("how-step-2", { defaultValue: "2. The host starts the Pomodoro timer" })}</li>
-                  <li>{t("how-step-3", { defaultValue: "3. Everyone studies during focus periods" })}</li>
-                  <li>{t("how-step-4", { defaultValue: "4. Take synced breaks together" })}</li>
-                  <li>{t("how-step-5", { defaultValue: "5. Track your focus time and streaks" })}</li>
+                  <li>{t('how-step-1', { defaultValue: '1. Create or join a study room' })}</li>
+                  <li>
+                    {t('how-step-2', { defaultValue: '2. The host starts the Pomodoro timer' })}
+                  </li>
+                  <li>
+                    {t('how-step-3', { defaultValue: '3. Everyone studies during focus periods' })}
+                  </li>
+                  <li>{t('how-step-4', { defaultValue: '4. Take synced breaks together' })}</li>
+                  <li>
+                    {t('how-step-5', { defaultValue: '5. Track your focus time and streaks' })}
+                  </li>
                 </ul>
               </div>
             </div>
@@ -262,19 +321,19 @@ export default function RmhStudyLanding() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Globe className="h-5 w-5 text-(--rmhstudy-accent)" />
-                {t("public-study-rooms", { defaultValue: "Public Study Rooms" })}
+                {t('public-study-rooms', { defaultValue: 'Public Study Rooms' })}
               </h2>
               <button
                 onClick={() => emit(C2S.ROOM_BROWSE, {})}
                 className="p-1.5 rounded-lg text-(--rmhstudy-text-muted) hover:text-(--rmhstudy-text) hover:bg-(--rmhstudy-surface-hover) transition-colors"
-                title={t("refresh", { defaultValue: "Refresh" })}
+                title={t('refresh', { defaultValue: 'Refresh' })}
               >
                 <RefreshCw className="h-4 w-4" />
               </button>
             </div>
             {publicRooms.length === 0 ? (
               <p className="text-sm text-(--rmhstudy-text-muted) text-center py-4">
-                {t("no-public-rooms", { defaultValue: "No public rooms available. Create one!" })}
+                {t('no-public-rooms', { defaultValue: 'No public rooms available. Create one!' })}
               </p>
             ) : (
               <div className="space-y-2">
@@ -285,13 +344,22 @@ export default function RmhStudyLanding() {
                     className="w-full flex items-center justify-between p-3 rounded-lg bg-(--rmhstudy-bg) border border-(--rmhstudy-border) hover:border-(--rmhstudy-accent) transition-colors text-left"
                   >
                     <div>
-                      <div className="font-medium text-sm">{t("hosts-room", { defaultValue: "{{host}}'s room", host: r.hostUserName })}</div>
+                      <div className="font-medium text-sm">
+                        {t('hosts-room', { defaultValue: "{{host}}'s room", host: r.hostUserName })}
+                      </div>
                       <div className="text-xs text-(--rmhstudy-text-muted) mt-0.5">
-                        {t("min-focus", { defaultValue: "{{minutes}} min focus", minutes: Math.round(r.workDurationMs / 60_000) })}
+                        {t('min-focus', {
+                          defaultValue: '{{minutes}} min focus',
+                          minutes: Math.round(r.workDurationMs / 60_000),
+                        })}
                         {' · '}
-                        {r.timerPhase === 'idle' ? t("phase-waiting", { defaultValue: "Waiting" }) :
-                         r.timerPhase === 'working' ? t("phase-focusing", { defaultValue: "Focusing" }) :
-                         r.timerPhase === 'short_break' ? t("phase-short-break", { defaultValue: "Short break" }) : t("phase-long-break", { defaultValue: "Long break" })}
+                        {r.timerPhase === 'idle'
+                          ? t('phase-waiting', { defaultValue: 'Waiting' })
+                          : r.timerPhase === 'working'
+                            ? t('phase-focusing', { defaultValue: 'Focusing' })
+                            : r.timerPhase === 'short_break'
+                              ? t('phase-short-break', { defaultValue: 'Short break' })
+                              : t('phase-long-break', { defaultValue: 'Long break' })}
                       </div>
                     </div>
                     <div className="text-xs font-mono text-(--rmhstudy-text-muted)">
@@ -302,7 +370,6 @@ export default function RmhStudyLanding() {
               </div>
             )}
           </div>
-
         </div>
       </div>
     </div>

@@ -22,12 +22,50 @@ function load(locale: string, ns: string): Record<string, string> {
 // orphan key a locale has that English does not — still fails the suite. Shrink
 // this map (ideally to {}) the moment the translate pipeline is run.
 const KNOWN_UNTRANSLATED: Record<string, string[]> = {
+  // ── 2026-07-28 UI audit fixes ──────────────────────────────────────────
+  // New English strings from the audit remediation (empty states, a11y labels,
+  // validation copy, the RMHLadder overview's first pass through t()). Runtime
+  // falls back to English per key until `pnpm i18n:translate && pnpm
+  // i18n:resources` has been run and the catalogs committed.
+  'settings-appearance': ['browse-themes', 'custom-accent-none', 'theme', 'theme-desc'],
+  pages: [
+    'already-have-account-prompt',
+    'no-account-prompt',
+    'sign-in-action',
+    'sign-up-action',
+    'validation-display-name',
+    'validation-email',
+    'validation-password',
+  ],
+  library: ['no-books-hint', 'no-books-title', 'no-results-hint'],
+  'games-hub': ['no-guides-hint', 'no-reviews-hint'],
+  'c-rmhmusic': ['back-to-builds'],
+  'c-rmhcalculator': ['back-to-builds'],
+  'c-news': ['filters', 'no-articles-hint', 'no-articles-yet', 'no-articles-yet-hint'],
+  'c-lights-out': ['cell-label', 'hint-described'],
   // SortableList reorder controls (commit 443451a, the §15 groundwork
   // primitives) landed in en/c-ui.json but weren't machine-translated. Runtime
   // falls back to English per key. Remove once `pnpm i18n:translate &&
   // pnpm i18n:resources` has been run and the catalogs committed.
   'c-ui': ['move-down', 'move-up'],
   feed: [
+    // 2026-07-28 UI audit fixes; see the note below.
+    'read-more',
+    'buy-item-aria',
+    'comment-count_one',
+    'comment-count_other',
+    'feed-empty-surface-title',
+    'kicker.GAME_ANNOUNCEMENT',
+    'like-count_one',
+    'like-count_other',
+    'loading-feed',
+    'no-communities-found-hint',
+    'no-communities-hint',
+    'no-communities-title',
+    'no-public-decks-hint',
+    'repost-count_one',
+    'repost-count_other',
+    'settings-accent-selected',
     // Spatial-minimal redesign and 2026 interface rewrite. Runtime falls back to English until the
     // translation pipeline fills every locale catalog.
     'designed-for-focus',
@@ -178,6 +216,23 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'settings-premium-themes-or',
   ],
   site: [
+    // 2026-07-28 UI audit fixes; see the note below.
+    'get-started-free',
+    'ladder-awaiting-first-run',
+    'ladder-expiring-soon',
+    'ladder-last-run',
+    'ladder-no-expiring',
+    'ladder-no-expiring-hint',
+    'ladder-no-matches',
+    'ladder-no-matches-hint',
+    'ladder-open-review-queue',
+    'ladder-stat-expiring',
+    'ladder-stat-new',
+    'ladder-stat-review',
+    'ladder-stat-saved',
+    'ladder-stat-verified',
+    'ladder-top-matches',
+    'ladder-top-opportunities',
     // Public spatial design-system story. Runtime falls back to English until
     // the translation pipeline fills every locale catalog.
     'built-for-everyone',

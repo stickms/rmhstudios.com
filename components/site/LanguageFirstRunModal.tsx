@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { useCookieConsentAnswered } from '@/components/site/CookieConsent';
 import { useTranslation } from 'react-i18next';
 import { Globe, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -23,15 +24,21 @@ export function LanguageFirstRunModal() {
   const { t } = useTranslation('nav');
   const locale = useLocaleStore((s) => s.locale);
   const setLocale = useLocaleStore((s) => s.setLocale);
+  const consentAnswered = useCookieConsentAnswered();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    // Consent first (audit AUD-010): this used to mount alongside the cookie
+    // bar and the What's New announcement, so a brand-new visitor had three
+    // stacked interruptions to clear before reading anything — with the
+    // consent bar painted behind the other two.
+    if (!consentAnswered) return;
     try {
       if (!localStorage.getItem(STORAGE_KEY)) setOpen(true);
     } catch {
       // ignore (private mode / storage disabled)
     }
-  }, []);
+  }, [consentAnswered]);
 
   const finish = (chosen?: Locale) => {
     if (chosen && chosen !== locale) setLocale(chosen);
@@ -58,15 +65,22 @@ export function LanguageFirstRunModal() {
           {t('lang-firstrun-title', { defaultValue: 'Choose your language' })}
         </DialogTitle>
         <p className="mx-auto mt-2 max-w-sm text-center text-sm text-site-text-muted">
+          {/* Interpolated from LOCALES, not written by hand — the copy claimed
+              32 languages while the app ships 16. */}
           {t('lang-firstrun-body', {
-            defaultValue: 'RMH Studios is available in 32 languages. You can change this any time in Settings.',
+            defaultValue:
+              'RMH Studios is available in {{count}} languages. You can change this any time in Settings.',
+            count: LOCALES.length,
           })}
         </p>
 
+        {/* The scroller shows ~12 of the 16 options with no indication the rest
+            exist; the mask fades the last visible row so the list reads as
+            continuing. `mask-image` degrades to no mask where unsupported. */}
         <div
           role="listbox"
           aria-label={t('language', { defaultValue: 'Language' })}
-          className="mt-5 grid max-h-64 grid-cols-2 gap-1 overflow-y-auto overscroll-contain p-1.5 sm:grid-cols-3"
+          className="mt-5 grid max-h-64 grid-cols-2 gap-1 overflow-y-auto overscroll-contain p-1.5 [mask-image:linear-gradient(to_bottom,#000_calc(100%-2rem),transparent)] sm:grid-cols-3"
         >
           {LOCALES.map((l) => {
             const active = l === locale;

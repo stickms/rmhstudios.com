@@ -113,7 +113,7 @@ export default function OnboardingTour() {
 
           <button
             onClick={handleNext}
-            className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-md transition-colors bg-(--rmhtube-accent) text-white hover:bg-(--rmhtube-accent-hover)"
+            className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-md transition-colors bg-(--rmhtube-accent) text-(--rmhtube-accent-fg) hover:bg-(--rmhtube-accent-hover)"
           >
             {step < TOUR_STEPS.length - 1 ? (
               <>

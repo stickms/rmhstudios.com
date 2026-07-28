@@ -8,7 +8,7 @@ const ImpostorGame = lazy(() => import('@/components/daily-puzzles/ImpostorGame'
 function ImpostorPage() {
     return (
         <GameErrorBoundary gameName="Impostor">
-            <Suspense fallback={<GameLoadingFallback />}>
+            <Suspense fallback={<GameLoadingFallback background="#efeae0" foreground="#1b1a17" />}>
                 <ImpostorGame />
             </Suspense>
         </GameErrorBoundary>

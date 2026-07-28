@@ -23,7 +23,12 @@ function HelpPage() {
   return (
     <>
       <AnimatedMain className="w-full min-w-0">
-        <div className="flex flex-col h-screen">
+        {/* h-screen with no bottom clearance parked the concierge's input and
+            its suggestion chips permanently under the hub orb (and, on a first
+            visit, under the cookie bar too). Reserve the floating chrome's own
+            band — the same token the feed column uses — so the composer always
+            clears it. */}
+        <div className="flex flex-col" style={{ height: 'calc(100dvh - var(--site-floating-reserve))' }}>
           {/* Sticky header — matches the full-height chat layout used elsewhere. */}
           <div className="glass-chrome site-sticky-chrome h-18 shrink-0">
             <div className="h-full flex items-center gap-3 px-4 py-3">

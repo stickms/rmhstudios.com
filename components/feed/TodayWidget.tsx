@@ -123,7 +123,7 @@ export function TodayWidget() {
  };
 
  return (
- <section className="rounded-site border border-site-border bg-site-surface p-4">
+ <section className="rad-live__card">
  <div className="mb-3 flex items-center justify-between">
  <h2 className="flex items-center gap-2 font-(family-name:--site-font-display) text-lg font-bold text-site-text">
  <Flame className="h-5 w-5 text-site-accent"aria-hidden />

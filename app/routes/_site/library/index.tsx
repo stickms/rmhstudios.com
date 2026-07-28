@@ -31,6 +31,8 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
 import { type LibraryBook } from '@/lib/library/library';
 import { listAllBooks } from '@/lib/library/library.server';
@@ -569,6 +571,11 @@ function Library() {
               control surface, no competing sticky offsets. */}
               <LiquidTabs
                 className="lib-nav"
+                // Glyphs below md only — LiquidTabs restores the labels at md,
+                // where the strip has room (it used to be abstract glyphs at
+                // every width). `scroll` below already puts the overflow in the
+                // canonical tab-sheet track rather than orphan-wrapping the
+                // sixth tab onto its own row.
                 iconOnly
                 tabs={
                   [
@@ -677,9 +684,34 @@ function Library() {
 
             {shows('books') &&
               (filtered.length === 0 ? (
-                <p className="vibe-hint lib__empty">
-                  {t('no-results', { defaultValue: 'No books match that search.' })}
-                </p>
+                // Canonical EmptyState, and state-aware copy: the bare
+                // "No books match that search." line claimed a search was
+                // responsible even when the field was untouched. (The music
+                // section on this same page already used EmptyState.)
+                <EmptyState
+                  icon={BookOpen}
+                  title={
+                    query
+                      ? t('no-results', { defaultValue: 'No books match that search.' })
+                      : t('no-books-title', { defaultValue: 'No books here yet' })
+                  }
+                  description={
+                    query
+                      ? t('no-results-hint', {
+                          defaultValue: 'Try a different title, author, or subject.',
+                        })
+                      : t('no-books-hint', {
+                          defaultValue: 'Books added to the library will show up here.',
+                        })
+                  }
+                  action={
+                    query ? (
+                      <Button variant="outline" onClick={() => setQuery('')}>
+                        {t('clear-search', { defaultValue: 'Clear search' })}
+                      </Button>
+                    ) : undefined
+                  }
+                />
               ) : (
                 <>
                   <Section

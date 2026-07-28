@@ -170,6 +170,12 @@ interface ProvidersProps {
    */
   initialUser?: CachedSessionUser | null;
   /**
+   * Whether the server actually resolved the session. `false` means the lookup
+   * failed or timed out — the session is UNKNOWN, not absent — so the shell
+   * must render its pending state rather than the signed-out one.
+   */
+  sessionResolved?: boolean;
+  /**
    * Locale resolved server-side (from the rmh-lang cookie or Accept-Language
    * header). Passed to AppI18nProvider so all useTranslation() calls in the
    * tree render in the correct language from the first paint.
@@ -209,6 +215,7 @@ export const THEME_EXCLUDED_ROUTES = [
 export function Providers({
   children,
   initialUser = null,
+  sessionResolved = true,
   locale = 'en',
   i18nResources = null,
 }: ProvidersProps) {
@@ -312,8 +319,15 @@ export function Providers({
         data: { user: cachedUser, session: null },
       } as unknown as SessionCtxValue;
     }
+    // Server couldn't resolve the session and we have no cached user: the
+    // answer is UNKNOWN. Report pending (not signed out) until the client
+    // session lands, so the shell shows a neutral placeholder instead of
+    // telling a signed-in visitor to sign in.
+    if (!sessionResolved && session.isPending && !cachedUser) {
+      return { ...session, isPending: true, data: null } as unknown as SessionCtxValue;
+    }
     return session;
-  }, [session, cachedUser]);
+  }, [session, cachedUser, sessionResolved]);
 
   // Resolved user display data (custom image/name). Seed from the SSR-resolved
   // user so the current user's own avatar/name paint immediately from the loader
@@ -608,7 +622,9 @@ export function Providers({
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(next),
-      }).catch(() => {});
+      }).catch((err) => {
+        console.error('Appearance save failed:', err);
+      });
     },
     [],
   );
@@ -624,7 +640,19 @@ export function Providers({
     if (!idleReady) return;
     let cancelled = false;
     fetch('/api/preferences/appearance', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => {
+        // A failed GET is not "no saved preferences" — it means the account's
+        // appearance is unknown. Swallowing it silently is how a 500 on every
+        // signed-in page load (a missing column, see the appearance migration)
+        // went unnoticed while cross-device settings quietly stopped syncing.
+        if (!r.ok) {
+          if (r.status !== 401) {
+            console.error(`Appearance sync failed: ${r.status} ${r.statusText}`);
+          }
+          return null;
+        }
+        return r.json();
+      })
       .then(
         (
           remote: {

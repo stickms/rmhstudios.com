@@ -301,8 +301,10 @@
 
 .page-heading__meta {
   min-height: 1.5rem;
-  color: var(--site-text-dim);
-  font-size: 0.68rem;
+  /* AUD-001/002: 10.9px micro-caps on the decorative token, on every
+     PageLayout page — and the back link inside it was a 57×16px target. */
+  color: var(--site-text-muted);
+  font-size: 0.6875rem;
   font-weight: 750;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -311,6 +313,17 @@
 .page-heading__back {
   gap: 0.4rem;
   color: var(--site-text-muted);
+  /* Padding-based hit area: the box grows, the baseline doesn't move (the row
+     centres its items), so the header's rhythm is unchanged. */
+  min-height: var(--site-touch-target);
+  margin-inline-start: -0.5rem;
+  padding-inline: 0.5rem;
+  border-radius: var(--site-radius-sm, 10px);
+}
+
+.page-heading__back:hover {
+  color: var(--site-text);
+  background: var(--site-surface-hover);
 }
 
 .page-heading__back svg {
@@ -669,11 +682,15 @@
 }
 
 .spatial-whats-new__meta {
-  font-size: 0.65rem;
+  /* 11px floor for micro-caps (§AUD-002); 0.65rem was 10.4px. */
+  font-size: 0.6875rem;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  opacity: 0.72;
+  opacity: 0.85;
+  /* Clear the Dialog primitive's absolutely-positioned close button, which
+     lands in this same top-right corner and was overlapping the date. */
+  padding-right: 3rem;
 }
 
 .spatial-whats-new__title {
@@ -709,6 +726,9 @@
 
 .spatial-whats-new__changes {
   padding: 0.5rem 1.25rem;
+  /* Wider than the column padding, so the outer frame still reads as the
+     larger gutter (it was the other way round). */
+  column-gap: 2rem;
 }
 
 .spatial-whats-new__changes article {
@@ -722,7 +742,7 @@
 
 .spatial-whats-new__changes article > span {
   color: var(--site-accent);
-  font-size: 0.68rem;
+  font-size: 0.6875rem;
   font-weight: 800;
 }
 
@@ -740,10 +760,24 @@
 }
 
 .spatial-whats-new__footer {
+  /* Stacked below sm: as a space-between row the caption was crushed into a
+     three-line sliver beside a w-full button that drew over it and bled past
+     the card's rounded corner. */
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
   padding: 0 1.25rem 1.25rem;
-  color: var(--site-text-dim);
-  font-size: 0.7rem;
+  color: var(--site-text-muted);
+  font-size: 0.75rem;
   font-weight: 650;
+}
+
+@media (min-width: 640px) {
+  .spatial-whats-new__footer {
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+  }
 }
 
 @media (min-width: 768px) {

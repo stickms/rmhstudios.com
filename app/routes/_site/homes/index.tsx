@@ -171,7 +171,18 @@ function HomesBrowsePage() {
       onHover={setActiveId}
       onFavoriteChange={onFavoriteChange}
       emptyTitle="No listings here yet"
-      emptyDescription="Be the first to post a home in this area — tap “Post a listing”."
+      // The copy used to say to tap "Post a listing" — a header button whose
+      // label is `hidden sm:inline`, so on a phone the reader was told to find
+      // a word that isn't on screen. Put the action in the empty state instead.
+      emptyDescription="Be the first to post a home in this area."
+      emptyAction={
+        <Button asChild>
+          <Link to={session ? '/homes/submit' : '/login'} search={session ? undefined : { callbackURL: '/homes/submit' }}>
+            <Plus className="h-4 w-4" aria-hidden />
+            Post a listing
+          </Link>
+        </Button>
+      }
     />
   );
 
@@ -181,32 +192,32 @@ function HomesBrowsePage() {
       wide
       headerRight={
         <div className="flex items-center gap-1.5">
-          <Link to="/homes/watches">
-            <Button variant="ghost" size="sm">
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/homes/watches">
               <Bell className="h-4 w-4" />
               <span className="hidden sm:inline">Alerts</span>
-            </Button>
-          </Link>
-          <Link to="/homes/saved">
-            <Button variant="ghost" size="sm">
+            </Link>
+          </Button>
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/homes/saved">
               <Bookmark className="h-4 w-4" />
               <span className="hidden sm:inline">Saved</span>
-            </Button>
-          </Link>
+            </Link>
+          </Button>
           {session ? (
-            <Link to="/homes/submit">
-              <Button size="sm">
+            <Button asChild size="sm">
+              <Link to="/homes/submit">
                 <Plus className="h-4 w-4" />
                 <span className="hidden sm:inline">Post a listing</span>
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           ) : (
-            <Link to="/login" search={{ callbackURL: '/homes/submit' }}>
-              <Button size="sm">
+            <Button asChild size="sm">
+              <Link to="/login" search={{ callbackURL: '/homes/submit' }}>
                 <Plus className="h-4 w-4" />
                 <span className="hidden sm:inline">Post a listing</span>
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           )}
         </div>
       }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
 
 import { cn } from '@/lib/utils';
@@ -133,13 +134,13 @@ export function AppearancePanel() {
           defaultValue: 'Pick any color — it is auto-adjusted to stay readable.',
         })}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <input
             type="color"
             value={HEX_RE.test(hexDraft) ? hexDraft : '#0b0b0b'}
             onChange={(e) => applyCustomAccent(e.target.value)}
             aria-label={t('custom-accent', { defaultValue: 'Custom accent' })}
-            className="h-10 w-14 cursor-pointer rounded-site-sm border border-site-border bg-transparent"
+            className="h-11 w-14 cursor-pointer rounded-site-sm border border-site-border bg-transparent"
           />
           <Input
             value={hexDraft}
@@ -151,11 +152,22 @@ export function AppearancePanel() {
             aria-label={t('accent-hex', { defaultValue: 'Accent hex' })}
           />
           {store.customAccent ? (
-            <Button type="button" variant="ghost" size="sm" onClick={clearCustomAccent}>
-              {t('clear', { defaultValue: 'Clear' })}
+            <Button type="button" variant="ghost" onClick={clearCustomAccent}>
+              {t('clear', { defaultValue: 'Reset to theme' })}
             </Button>
           ) : null}
         </div>
+        {/* The field always shows *a* hex, including the placeholder it starts
+            with, so "no custom accent" looked identical to "custom accent set
+            to #0b0b0b" — and on graphite everything on screen was rendering
+            the theme's blue while this said near-black. Say which it is. */}
+        {!store.customAccent ? (
+          <p className="mt-2 text-xs text-site-text-muted">
+            {t('custom-accent-none', {
+              defaultValue: 'No custom accent — using the theme’s own color.',
+            })}
+          </p>
+        ) : null}
       </Section>
 
       {/* Comfort toggles */}
@@ -180,10 +192,35 @@ export function AppearancePanel() {
             orientation behind a permission prompt (iOS). Self-contained consent. */}
         <TiltEffectsRow />
       </Section>
+
+      {/* The theme gallery lives on the settings index, so the page named
+          "Appearance" contained no way to change the theme. Point at it. */}
+      <Section
+        title={t('theme', { defaultValue: 'Theme' })}
+        description={t('theme-desc', {
+          defaultValue: 'Daylight, Midnight, High Contrast and the curated themes.',
+        })}
+      >
+        <Button asChild variant="outline">
+          <Link to="/settings" hash="appearance">
+            {t('browse-themes', { defaultValue: 'Browse themes' })}
+          </Link>
+        </Button>
+      </Section>
     </div>
   );
 }
 
+/**
+ * One settings section.
+ *
+ * `glass-pane` because this page had dropped the settings hub's card system:
+ * its sections sat bare on the aurora with no container edge, and `max-w-xl`
+ * because without one the ToggleRows were `justify-between` across the full
+ * column — at 1920px a switch ended up ~880px from the label it belongs to,
+ * with nothing tying the two together. Same reason the segmented buttons were
+ * stretching to ~445px each.
+ */
 function Section({
   title,
   description,
@@ -194,14 +231,14 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section>
+    <section className="glass-pane rounded-site p-5">
       <h3 className="text-sm font-semibold text-site-text">{title}</h3>
       {description ? (
         <p className="mb-3 text-sm text-site-text-muted">{description}</p>
       ) : (
         <div className="mb-3" />
       )}
-      {children}
+      <div className="max-w-xl">{children}</div>
     </section>
   );
 }

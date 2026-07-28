@@ -238,7 +238,7 @@
   right: 6px;
   bottom: 6px;
   z-index: 2;
-  font-size: 0.56rem;
+  font-size: 0.6875rem;
   letter-spacing: 0.02em;
   color: rgba(245, 245, 247, 0.95);
   background: rgba(0, 0, 0, 0.55);
@@ -270,7 +270,7 @@
 
 .lib-book__mark {
   margin-top: auto;
-  font-size: 0.55rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.16em;
   /* On the always-dark cover, keep the imprint light on every theme. */
@@ -2130,9 +2130,9 @@
   border-inline-start: 1px solid var(--site-glass-rim-soft, rgba(255, 255, 255, 0.08));
 }
 .lib-stats dt {
-  color: var(--site-text-dim, #65656c);
+  color: var(--site-text-muted, #565656);
   font-family: var(--site-font-mono, ui-monospace, monospace);
-  font-size: 0.62rem;
+  font-size: 0.6875rem;
   font-weight: 650;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -2305,8 +2305,8 @@
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 10px;
-  color: var(--site-text-dim, #73737b);
-  font-size: 0.62rem;
+  color: var(--site-text-muted, #565656);
+  font-size: 0.6875rem;
   font-weight: 650;
   letter-spacing: 0.065em;
   text-transform: uppercase;
@@ -2343,7 +2343,7 @@
 .lib-volume .lib-book__by {
   margin-top: auto;
   padding-top: 10px;
-  color: var(--site-text-dim, #73737b);
+  color: var(--site-text-muted, #565656);
 }
 
 /* Reader chrome — the 3D curl stays central, with stronger navigation and context. */
@@ -2384,7 +2384,7 @@
 }
 .lib-reader__eyebrow {
   color: var(--site-text-dim);
-  font-size: 0.56rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.11em;
   text-transform: uppercase;
@@ -2549,7 +2549,7 @@
 .lib-reader__details-kicker {
   margin: 0 0 8px;
   color: var(--site-text-dim);
-  font-size: 0.61rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.11em;
   text-transform: uppercase;
@@ -2586,8 +2586,8 @@
   background: var(--site-surface);
 }
 .lib-reader__details-meta dt {
-  color: var(--site-text-dim);
-  font-size: 0.58rem;
+  color: var(--site-text-muted);
+  font-size: 0.6875rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -2605,7 +2605,7 @@
 .lib-reader__details-toc h3 {
   margin: 0 0 8px;
   color: var(--site-text-dim);
-  font-size: 0.62rem;
+  font-size: 0.6875rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -2878,7 +2878,9 @@
 
 .lib--glass-playground .lib-stats dt {
   color: var(--site-text-muted);
-  font-size: 0.58rem;
+  /* 11px floor for micro-caps (§AUD-002). This was 0.58rem — 9.3px, the
+     smallest type on the site. */
+  font-size: 0.6875rem;
 }
 
 .lib--glass-playground .lib-stats dd {
@@ -3046,7 +3048,7 @@
   margin: 0 2px 10px;
   color: var(--site-text-dim);
   font-family: var(--site-font-mono);
-  font-size: 0.64rem;
+  font-size: 0.6875rem;
 }
 
 /* Universal media bubbles. JS supplies the two rotation variables by delegated

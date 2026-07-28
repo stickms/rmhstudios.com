@@ -11,7 +11,7 @@ const SpectrumGame = lazy(() =>
 function SpectrumPage() {
   return (
     <GameErrorBoundary gameName="Spectrum">
-      <Suspense fallback={<GameLoadingFallback />}>
+      <Suspense fallback={<GameLoadingFallback background="#efeae0" foreground="#1b1a17" />}>
         <SpectrumGame />
       </Suspense>
     </GameErrorBoundary>
