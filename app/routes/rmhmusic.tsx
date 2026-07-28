@@ -22,7 +22,10 @@ export const Route = createFileRoute('/rmhmusic')({
   head: () => ({
     meta: [
       { title: 'RMH Music | rmhstudios' },
-      { name: 'description', content: 'Listen to Spotify with friends. Create rooms, share music, vibe together.' },
+      {
+        name: 'description',
+        content: 'Listen to Spotify with friends. Create rooms, share music, vibe together.',
+      },
     ],
   }),
   component: () => <Outlet />,

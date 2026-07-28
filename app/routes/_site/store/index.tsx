@@ -21,7 +21,7 @@ import { ShoppingBag, Store as StoreIcon } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { getUserTier, type Tier } from '@/lib/entitlements';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from "@/components/feed/ContextRail";
+import { ContextRail } from '@/components/feed/ContextRail';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { ShopColumn } from '@/components/feed/ShopColumn';
 import { MarketColumn } from '@/components/market/MarketColumn';
@@ -93,10 +93,7 @@ function Store() {
 
   return (
     <>
-      <AnimatedMain
-        className="relative isolate min-h-screen w-full min-w-0 pb-dock"
-      >
-
+      <AnimatedMain className="relative isolate min-h-screen w-full min-w-0 pb-dock">
         {/* §15.1: a proper floating "Store" page-title capsule (PageLayout-style)
             on desktop — the store previously had no title above the tabs. It is
             NON-sticky on purpose: the Shop/Market panels each own a sticky section

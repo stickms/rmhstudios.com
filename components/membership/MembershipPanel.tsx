@@ -46,7 +46,9 @@ function scrollToAnchor(id: string) {
   const scroller = getScrollParent(target);
   if (scroller) {
     const top =
-      target.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+      target.getBoundingClientRect().top -
+      scroller.getBoundingClientRect().top +
+      scroller.scrollTop;
     scroller.scrollTo({ top, behavior: 'smooth' });
   } else {
     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -89,7 +91,12 @@ const PLANS: Plan[] = [
     price: '$100',
     period: '/mo',
     tagline: 'For power users who want the badge.',
-    features: ['Everything in Starter', 'Verified profile badge', 'Early access to new tools', 'Dedicated support'],
+    features: [
+      'Everything in Starter',
+      'Verified profile badge',
+      'Early access to new tools',
+      'Dedicated support',
+    ],
     cta: 'subscribe',
     featured: true,
   },
@@ -99,7 +106,12 @@ const PLANS: Plan[] = [
     price: 'Custom',
     period: '',
     tagline: 'Pro, scaled to your whole company.',
-    features: ['Everything in Pro', 'Seats for your team', 'Custom contract & invoicing', 'SLA & onboarding'],
+    features: [
+      'Everything in Pro',
+      'Seats for your team',
+      'Custom contract & invoicing',
+      'SLA & onboarding',
+    ],
     cta: 'contact',
   },
 ];
@@ -178,7 +190,9 @@ export function MembershipPanel({
           <>
             {t('hero-heading-line1', { defaultValue: 'Choose your' })}
             <br />
-            <span className="text-site-accent">{t('hero-heading-line2', { defaultValue: 'altitude.' })}</span>
+            <span className="text-site-accent">
+              {t('hero-heading-line2', { defaultValue: 'altitude.' })}
+            </span>
           </>
         }
         subtitle={t('hero-subheading', {
@@ -195,7 +209,11 @@ export function MembershipPanel({
                 disabled={busy === 'portal'}
                 className="inline-flex items-center gap-2 rounded-full border border-site-border bg-site-surface px-5 py-2.5 text-sm font-semibold text-site-text transition-colors hover:bg-site-surface-hover disabled:opacity-50"
               >
-                {busy === 'portal' ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUpRight className="h-4 w-4" />}
+                {busy === 'portal' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ArrowUpRight className="h-4 w-4" />
+                )}
                 {t('manage-billing', { defaultValue: 'Manage billing' })}
               </button>
             )}
@@ -228,10 +246,18 @@ export function MembershipPanel({
           >
             <span>
               {status === 'success'
-                ? t('status-success', { defaultValue: 'Welcome aboard — your membership is being activated.' })
-                : t('status-cancelled', { defaultValue: 'Checkout cancelled. No charge was made.' })}
+                ? t('status-success', {
+                    defaultValue: 'Welcome aboard — your membership is being activated.',
+                  })
+                : t('status-cancelled', {
+                    defaultValue: 'Checkout cancelled. No charge was made.',
+                  })}
             </span>
-            <button type="button" onClick={() => setStatus(null)} className="shrink-0 opacity-60 hover:opacity-100">
+            <button
+              type="button"
+              onClick={() => setStatus(null)}
+              className="shrink-0 opacity-60 hover:opacity-100"
+            >
               <X className="h-4 w-4" />
             </button>
           </Reveal>
@@ -258,100 +284,115 @@ export function MembershipPanel({
                       : ''
                   }`}
                 >
-                {plan.featured && (
-                  <span className="pricing-ribbon">{t('most-popular', { defaultValue: 'Most popular' })}</span>
-                )}
-                {isCurrent && (
-                  <span className="absolute right-5 top-6 rounded-full border border-site-accent/40 bg-site-accent-dim px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-widest text-site-accent">
-                    {t('current-badge', { defaultValue: 'Current' })}
-                  </span>
-                )}
-
-                <h2
-                  className="pricing-display text-2xl text-site-text"
-                  style={plan.featured ? { color: 'var(--site-warning)' } : undefined}
-                >
-                  {plan.name}
-                </h2>
-                <p className="mt-1 min-h-10 text-sm leading-snug text-site-text-muted">{plan.tagline}</p>
-
-                <div className="mt-5 flex items-baseline gap-1">
-                  <span className="pricing-price text-4xl text-site-text">{plan.price}</span>
-                  {plan.period && (
-                    <span className="font-mono text-xs text-site-text-dim">{plan.period}</span>
+                  {plan.featured && (
+                    <span className="pricing-ribbon">
+                      {t('most-popular', { defaultValue: 'Most popular' })}
+                    </span>
                   )}
-                </div>
+                  {isCurrent && (
+                    <span className="absolute right-5 top-6 rounded-full border border-site-accent/40 bg-site-accent-dim px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-widest text-site-accent">
+                      {t('current-badge', { defaultValue: 'Current' })}
+                    </span>
+                  )}
 
-                <div className="my-6 h-px w-full bg-gradient-to-r from-site-border to-transparent" />
+                  <h2
+                    className="pricing-display text-2xl text-site-text"
+                    style={plan.featured ? { color: 'var(--site-warning)' } : undefined}
+                  >
+                    {plan.name}
+                  </h2>
+                  <p className="mt-1 min-h-10 text-sm leading-snug text-site-text-muted">
+                    {plan.tagline}
+                  </p>
 
-                <ul className="flex flex-1 flex-col gap-3">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-sm text-site-text">
-                      <span
-                        className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
+                  <div className="mt-5 flex items-baseline gap-1">
+                    <span className="pricing-price text-4xl text-site-text">{plan.price}</span>
+                    {plan.period && (
+                      <span className="font-mono text-xs text-site-text-dim">{plan.period}</span>
+                    )}
+                  </div>
+
+                  <div className="my-6 h-px w-full bg-gradient-to-r from-site-border to-transparent" />
+
+                  <ul className="flex flex-1 flex-col gap-3">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-start gap-2.5 text-sm text-site-text">
+                        <span
+                          className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
+                          style={{
+                            backgroundColor: plan.featured
+                              ? 'color-mix(in srgb, var(--site-warning) 20%, transparent)'
+                              : 'var(--site-accent-dim)',
+                          }}
+                        >
+                          <Check
+                            className="h-2.5 w-2.5"
+                            style={{
+                              color: plan.featured ? 'var(--site-warning)' : 'var(--site-accent)',
+                            }}
+                          />
+                        </span>
+                        <span className="leading-snug">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="mt-7">
+                    {plan.cta === 'current' && (
+                      <div className="flex h-11 items-center justify-center rounded-full border border-dashed border-site-border text-sm font-medium text-site-text-dim">
+                        {isCurrent
+                          ? t('your-current-plan', { defaultValue: 'Your current plan' })
+                          : owned
+                            ? t('included', { defaultValue: 'Included' })
+                            : t('free-forever', { defaultValue: 'Free forever' })}
+                      </div>
+                    )}
+
+                    {plan.cta === 'subscribe' && (
+                      <button
+                        type="button"
+                        onClick={() => subscribe(plan.tier as 'starter' | 'pro')}
+                        disabled={isCurrent || owned || busy === plan.tier}
+                        className="pricing-btn flex h-11 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50"
                         style={{
-                          backgroundColor: plan.featured
-                            ? 'color-mix(in srgb, var(--site-warning) 20%, transparent)'
-                            : 'var(--site-accent-dim)',
+                          background: plan.featured ? 'var(--site-warning)' : 'var(--site-accent)',
+                          // Dark ink on the gold (warning) tiers; the theme's own
+                          // accent foreground on accent buttons so the label stays
+                          // legible on every theme (e.g. high-contrast/nocturne
+                          // where accent-fg is dark, not white).
+                          color:
+                            plan.featured || plan.tier === 'starter'
+                              ? '#1a1505'
+                              : 'var(--site-accent-fg)',
                         }}
                       >
-                        <Check
-                          className="h-2.5 w-2.5"
-                          style={{ color: plan.featured ? 'var(--site-warning)' : 'var(--site-accent)' }}
-                        />
-                      </span>
-                      <span className="leading-snug">{f}</span>
-                    </li>
-                  ))}
-                </ul>
+                        {busy === plan.tier ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : isCurrent ? (
+                          t('current-plan', { defaultValue: 'Current plan' })
+                        ) : owned ? (
+                          t('included', { defaultValue: 'Included' })
+                        ) : (
+                          <>
+                            {RANK[currentTier] < RANK[plan.tier] && currentTier !== 'free'
+                              ? t('upgrade', { defaultValue: 'Upgrade' })
+                              : t('subscribe', { defaultValue: 'Subscribe' })}
+                            <ArrowUpRight className="h-4 w-4" />
+                          </>
+                        )}
+                      </button>
+                    )}
 
-                <div className="mt-7">
-                  {plan.cta === 'current' && (
-                    <div className="flex h-11 items-center justify-center rounded-full border border-dashed border-site-border text-sm font-medium text-site-text-dim">
-                      {isCurrent ? t('your-current-plan', { defaultValue: 'Your current plan' }) : owned ? t('included', { defaultValue: 'Included' }) : t('free-forever', { defaultValue: 'Free forever' })}
-                    </div>
-                  )}
-
-                  {plan.cta === 'subscribe' && (
-                    <button
-                      type="button"
-                      onClick={() => subscribe(plan.tier as 'starter' | 'pro')}
-                      disabled={isCurrent || owned || busy === plan.tier}
-                      className="pricing-btn flex h-11 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50"
-                      style={{
-                        background: plan.featured ? 'var(--site-warning)' : 'var(--site-accent)',
-                        // Dark ink on the gold (warning) tiers; the theme's own
-                        // accent foreground on accent buttons so the label stays
-                        // legible on every theme (e.g. high-contrast/nocturne
-                        // where accent-fg is dark, not white).
-                        color: plan.featured || plan.tier === 'starter' ? '#1a1505' : 'var(--site-accent-fg)',
-                      }}
-                    >
-                      {busy === plan.tier ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : isCurrent ? (
-                        t('current-plan', { defaultValue: 'Current plan' })
-                      ) : owned ? (
-                        t('included', { defaultValue: 'Included' })
-                      ) : (
-                        <>
-                          {RANK[currentTier] < RANK[plan.tier] && currentTier !== 'free' ? t('upgrade', { defaultValue: 'Upgrade' }) : t('subscribe', { defaultValue: 'Subscribe' })}
-                          <ArrowUpRight className="h-4 w-4" />
-                        </>
-                      )}
-                    </button>
-                  )}
-
-                  {plan.cta === 'contact' && (
-                    <a
-                      href="mailto:team@rmhstudios.com?subject=Enterprise%20plan"
-                      className="flex h-11 w-full items-center justify-center gap-2 rounded-full border border-site-border-bright text-sm font-bold text-site-text transition-colors hover:bg-site-surface-hover"
-                    >
-                      {t('contact-team', { defaultValue: 'Contact team' })}
-                      <ArrowUpRight className="h-4 w-4" />
-                    </a>
-                  )}
-                </div>
+                    {plan.cta === 'contact' && (
+                      <a
+                        href="mailto:team@rmhstudios.com?subject=Enterprise%20plan"
+                        className="flex h-11 w-full items-center justify-center gap-2 rounded-full border border-site-border-bright text-sm font-bold text-site-text transition-colors hover:bg-site-surface-hover"
+                      >
+                        {t('contact-team', { defaultValue: 'Contact team' })}
+                        <ArrowUpRight className="h-4 w-4" />
+                      </a>
+                    )}
+                  </div>
                 </article>
               </RevealItem>
             );
@@ -359,11 +400,10 @@ export function MembershipPanel({
         </RevealGroup>
 
         {/* ── Footnote ───────────────────────────────────────── */}
-        <Reveal
-          as="p"
-          className="mt-12 text-center font-mono text-xs text-site-text-dim"
-        >
-          {t('billing-footnote', { defaultValue: 'Billed monthly · cancel anytime · secure checkout by Stripe' })}
+        <Reveal as="p" className="mt-12 text-center font-mono text-xs text-site-text-dim">
+          {t('billing-footnote', {
+            defaultValue: 'Billed monthly · cancel anytime · secure checkout by Stripe',
+          })}
         </Reveal>
       </div>
     </section>

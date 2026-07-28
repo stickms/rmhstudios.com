@@ -63,7 +63,11 @@ export function RmhCalculatorApp() {
   return (
     <div className="rmhcalc">
       <header className="rmhcalc__header">
-        <Link to="/" className="rmhcalc__brand" aria-label={t('home', { defaultValue: 'RMH Studios home' })}>
+        <Link
+          to="/"
+          className="rmhcalc__brand"
+          aria-label={t('home', { defaultValue: 'RMH Studios home' })}
+        >
           <span className="rmhcalc__brand-icon" aria-hidden="true">
             <FunctionSquare size={20} />
           </span>
