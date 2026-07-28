@@ -5,8 +5,11 @@ import urAdmin from "@/locales/ur/admin.json";
 import urBuilds from "@/locales/ur/builds.json";
 import urCAdmin from "@/locales/ur/c-admin.json";
 import urCAltair from "@/locales/ur/c-altair.json";
+import urCAwards from "@/locales/ur/c-awards.json";
 import urCBlog from "@/locales/ur/c-blog.json";
 import urCBuilds from "@/locales/ur/c-builds.json";
+import urCCircle from "@/locales/ur/c-circle.json";
+import urCCreator from "@/locales/ur/c-creator.json";
 import urCCursedLogic from "@/locales/ur/c-cursed-logic.json";
 import urCDailyPuzzles from "@/locales/ur/c-daily-puzzles.json";
 import urCDoctrine from "@/locales/ur/c-doctrine.json";
@@ -14,19 +17,25 @@ import urCDreamRift from "@/locales/ur/c-dream-rift.json";
 import urCEconomy from "@/locales/ur/c-economy.json";
 import urCForestExplorer from "@/locales/ur/c-forest-explorer.json";
 import urCGame from "@/locales/ur/c-game.json";
+import urCHistory from "@/locales/ur/c-history.json";
 import urCHouseAlwaysWins from "@/locales/ur/c-house-always-wins.json";
 import urCKowloonKnockout from "@/locales/ur/c-kowloon-knockout.json";
 import urCLaundrySort from "@/locales/ur/c-laundry-sort.json";
+import urCLayout from "@/locales/ur/c-layout.json";
 import urCLibrary from "@/locales/ur/c-library.json";
 import urCLightsOut from "@/locales/ur/c-lights-out.json";
+import urCLists from "@/locales/ur/c-lists.json";
 import urCLockdown from "@/locales/ur/c-lockdown.json";
 import urCModeration from "@/locales/ur/c-moderation.json";
 import urCNeonDriftway from "@/locales/ur/c-neon-driftway.json";
 import urCNews from "@/locales/ur/c-news.json";
+import urCPredictions from "@/locales/ur/c-predictions.json";
+import urCProfileModules from "@/locales/ur/c-profile-modules.json";
 import urCRideshare from "@/locales/ur/c-rideshare.json";
 import urCRmhCapital from "@/locales/ur/c-rmh-capital.json";
 import urCRmhPmc from "@/locales/ur/c-rmh-pmc.json";
 import urCRmhbox from "@/locales/ur/c-rmhbox.json";
+import urCRmhcalculator from "@/locales/ur/c-rmhcalculator.json";
 import urCRmhcode from "@/locales/ur/c-rmhcode.json";
 import urCRmhcoins from "@/locales/ur/c-rmhcoins.json";
 import urCRmhmusic from "@/locales/ur/c-rmhmusic.json";
@@ -36,17 +45,23 @@ import urCRmhtube from "@/locales/ur/c-rmhtube.json";
 import urCRmhtype from "@/locales/ur/c-rmhtype.json";
 import urCRmhvibe from "@/locales/ur/c-rmhvibe.json";
 import urCRoadmap from "@/locales/ur/c-roadmap.json";
+import urCSaves from "@/locales/ur/c-saves.json";
 import urCSignalForge from "@/locales/ur/c-signal-forge.json";
+import urCStatus from "@/locales/ur/c-status.json";
 import urCStudio from "@/locales/ur/c-studio.json";
 import urCSynapseStorm from "@/locales/ur/c-synapse-storm.json";
 import urCTempleOfJoy from "@/locales/ur/c-temple-of-joy.json";
+import urCTournaments from "@/locales/ur/c-tournaments.json";
 import urCUi from "@/locales/ur/c-ui.json";
 import urCUserBuilds from "@/locales/ur/c-user-builds.json";
 import urCVega from "@/locales/ur/c-vega.json";
 import urCVersecraft from "@/locales/ur/c-versecraft.json";
 import urCVoidBreaker from "@/locales/ur/c-void-breaker.json";
+import urCWager from "@/locales/ur/c-wager.json";
+import urCWishlist from "@/locales/ur/c-wishlist.json";
 import urCommon from "@/locales/ur/common.json";
 import urFeed from "@/locales/ur/feed.json";
+import urGamesHub from "@/locales/ur/games-hub.json";
 import urGroups from "@/locales/ur/groups.json";
 import urLibrary from "@/locales/ur/library.json";
 import urNav from "@/locales/ur/nav.json";
@@ -61,8 +76,13 @@ import urRSliceIt from "@/locales/ur/r-slice-it.json";
 import urRStrategies from "@/locales/ur/r-strategies.json";
 import urRStudio from "@/locales/ur/r-studio.json";
 import urRideshare from "@/locales/ur/rideshare.json";
+import urSearch from "@/locales/ur/search.json";
+import urSettingsAppearance from "@/locales/ur/settings-appearance.json";
+import urSettingsContent from "@/locales/ur/settings-content.json";
+import urSettingsNotifications from "@/locales/ur/settings-notifications.json";
 import urShared from "@/locales/ur/shared.json";
 import urSite from "@/locales/ur/site.json";
+import urThemeStudio from "@/locales/ur/theme-studio.json";
 import urUserBuilds from "@/locales/ur/user-builds.json";
 import urV from "@/locales/ur/v.json";
 
@@ -71,8 +91,11 @@ const urResources = {
   "builds": urBuilds,
   "c-admin": urCAdmin,
   "c-altair": urCAltair,
+  "c-awards": urCAwards,
   "c-blog": urCBlog,
   "c-builds": urCBuilds,
+  "c-circle": urCCircle,
+  "c-creator": urCCreator,
   "c-cursed-logic": urCCursedLogic,
   "c-daily-puzzles": urCDailyPuzzles,
   "c-doctrine": urCDoctrine,
@@ -80,19 +103,25 @@ const urResources = {
   "c-economy": urCEconomy,
   "c-forest-explorer": urCForestExplorer,
   "c-game": urCGame,
+  "c-history": urCHistory,
   "c-house-always-wins": urCHouseAlwaysWins,
   "c-kowloon-knockout": urCKowloonKnockout,
   "c-laundry-sort": urCLaundrySort,
+  "c-layout": urCLayout,
   "c-library": urCLibrary,
   "c-lights-out": urCLightsOut,
+  "c-lists": urCLists,
   "c-lockdown": urCLockdown,
   "c-moderation": urCModeration,
   "c-neon-driftway": urCNeonDriftway,
   "c-news": urCNews,
+  "c-predictions": urCPredictions,
+  "c-profile-modules": urCProfileModules,
   "c-rideshare": urCRideshare,
   "c-rmh-capital": urCRmhCapital,
   "c-rmh-pmc": urCRmhPmc,
   "c-rmhbox": urCRmhbox,
+  "c-rmhcalculator": urCRmhcalculator,
   "c-rmhcode": urCRmhcode,
   "c-rmhcoins": urCRmhcoins,
   "c-rmhmusic": urCRmhmusic,
@@ -102,17 +131,23 @@ const urResources = {
   "c-rmhtype": urCRmhtype,
   "c-rmhvibe": urCRmhvibe,
   "c-roadmap": urCRoadmap,
+  "c-saves": urCSaves,
   "c-signal-forge": urCSignalForge,
+  "c-status": urCStatus,
   "c-studio": urCStudio,
   "c-synapse-storm": urCSynapseStorm,
   "c-temple-of-joy": urCTempleOfJoy,
+  "c-tournaments": urCTournaments,
   "c-ui": urCUi,
   "c-user-builds": urCUserBuilds,
   "c-vega": urCVega,
   "c-versecraft": urCVersecraft,
   "c-void-breaker": urCVoidBreaker,
+  "c-wager": urCWager,
+  "c-wishlist": urCWishlist,
   "common": urCommon,
   "feed": urFeed,
+  "games-hub": urGamesHub,
   "groups": urGroups,
   "library": urLibrary,
   "nav": urNav,
@@ -127,8 +162,13 @@ const urResources = {
   "r-strategies": urRStrategies,
   "r-studio": urRStudio,
   "rideshare": urRideshare,
+  "search": urSearch,
+  "settings-appearance": urSettingsAppearance,
+  "settings-content": urSettingsContent,
+  "settings-notifications": urSettingsNotifications,
   "shared": urShared,
   "site": urSite,
+  "theme-studio": urThemeStudio,
   "user-builds": urUserBuilds,
   "v": urV,
 } as const;

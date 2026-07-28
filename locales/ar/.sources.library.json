@@ -1,10 +1,13 @@
 {
   "library-heading": "Library",
+  "no-books-hint": "Books added to the library will show up here.",
+  "no-books-title": "No books here yet",
   "no-results": "No books match that search.",
+  "no-results-hint": "Try a different title, author, or subject.",
   "open-book": "Open {{title}}",
   "open-menu": "Open menu",
   "search-label": "Search the library",
-  "search-placeholder": "Search the library...",
-  "upload-button": "Upload",
-  "upload-label": "Upload a book"
+  "search-placeholder": "Search books, albums, playlists, and reads…",
+  "upload-button": "Add a book",
+  "upload-label": "Upload a PDF"
 }

@@ -62,10 +62,13 @@
   "new-collection": "新建合集",
   "no-albums-admin": "No albums yet.",
   "no-albums-match": "No albums match that search.",
+  "no-books-hint": "添加到图书馆的书籍将在此处显示。",
+  "no-books-title": "暂无书籍",
   "no-books-to-add": "没有可添加的书籍。请先上传一些。",
   "no-collections": "还没有合集——创建一个以将书籍归入系列。",
   "no-collections-match": "No collections match that search.",
   "no-results": "没有找到匹配的书籍。",
+  "no-results-hint": "尝试搜索不同的标题、作者或主题。",
   "open-album": "打开 {{title}}",
   "open-book": "打开{{title}}",
   "open-collection": "Open {{title}}",
@@ -80,7 +83,7 @@
   "result-count_one": "{{count}} things to explore",
   "result-count_other": "{{count}} things to explore",
   "search-label": "搜索图书馆",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "搜索书籍、专辑、播放列表和读物…",
   "search-your-books": "搜索你的书籍…",
   "section-albums": "相册",
   "section-blog": "Blog",
@@ -93,6 +96,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "添加书籍",
+  "upload-label": "上传PDF"
 }
