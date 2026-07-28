@@ -8,7 +8,7 @@ const AlibiGame = lazy(() => import('@/components/daily-puzzles/AlibiGame').then
 function AlibiPage() {
     return (
         <GameErrorBoundary gameName="Alibi">
-            <Suspense fallback={<GameLoadingFallback />}>
+            <Suspense fallback={<GameLoadingFallback background="#efeae0" foreground="#1b1a17" />}>
                 <AlibiGame />
             </Suspense>
         </GameErrorBoundary>

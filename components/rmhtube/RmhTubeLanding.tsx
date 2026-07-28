@@ -176,7 +176,7 @@ export default function RmhTubeLanding() {
               <button
                 onClick={handleCreateRoom}
                 disabled={connectionStatus !== 'connected'}
-                className="w-full py-3 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhtube-accent) hover:bg-(--rmhtube-accent-hover)"
+                className="w-full py-3 rounded-lg font-semibold text-(--rmhtube-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhtube-accent) hover:bg-(--rmhtube-accent-hover)"
               >
                 {t("create-room", { defaultValue: "Create Room" })}
               </button>
@@ -202,7 +202,7 @@ export default function RmhTubeLanding() {
                 <button
                   type="submit"
                   disabled={connectionStatus !== 'connected' || joinCode.trim().length !== 6}
-                  className="px-6 py-3 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhtube-accent) hover:bg-(--rmhtube-accent-hover)"
+                  className="px-6 py-3 rounded-lg font-semibold text-(--rmhtube-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhtube-accent) hover:bg-(--rmhtube-accent-hover)"
                 >
                   {t("join", { defaultValue: "Join" })}
                 </button>

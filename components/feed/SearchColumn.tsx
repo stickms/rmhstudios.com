@@ -208,6 +208,9 @@ export function SearchColumn({
  (§5.45), never inside the sticky block. bg/blur/glint clip to
  rounded-site on their own. */}
  <div className="site-sticky-chrome bg-site-surface border border-site-border rounded-2xl shadow-xs">
+ {/* The search field IS this page's chrome, so there was no heading of any
+ kind — the route had no h1 at any viewport. */}
+ <h1 className="sr-only">{t('search-title', { defaultValue:'Search'})}</h1>
  <ColumnHeader sticky={false} className="border-b-0">
  <div className="flex items-center gap-2 rounded-full border border-site-border bg-site-surface px-4 py-2">
  <Search className="h-4 w-4 text-site-text-muted"/>
@@ -222,7 +225,7 @@ export function SearchColumn({
  placeholder={t('search-placeholder', {
  defaultValue:'Search people, posts, builds…',
  })}
- className="w-full bg-transparent text-sm text-site-text placeholder:text-site-text-dim focus:outline-none"
+ className="w-full bg-transparent text-sm text-site-text placeholder:text-site-text-muted focus:outline-none"
  />
  {loading && <Spinner size={16} className="text-site-text-muted"/>}
  </div>

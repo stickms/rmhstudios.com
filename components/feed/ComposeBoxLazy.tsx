@@ -1,6 +1,8 @@
 'use client';
 
 import { Suspense, lazy, useEffect, useState } from'react';
+import { Link } from'@tanstack/react-router';
+import { Button } from'@/components/ui/button';
 import { useTranslation } from'react-i18next';
 import { useSession, useResolvedUser } from'@/components/Providers';
 import { buildOptimizedUrl } from'@/components/ui/OptimizedImage';
@@ -66,18 +68,37 @@ export function ComposeBoxLazy(props: ComposeBoxLazyProps) {
  */
 function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  const { t } = useTranslation('feed');
- const { data: session } = useSession();
+ const { data: session, isPending } = useSession();
  const { resolved } = useResolvedUser();
 
  const image = resolved?.image || session?.user?.image || null;
  const name = resolved?.name || session?.user?.name || null;
  const activate = onActivate ?? (() => {});
 
+ // Signed-out visitors used to see a working-looking composer — "What's on your
+ // mind?" over a fabricated "U" avatar — which then visibly morphed into the
+ // sign-in card once the real composer's chunk mounted. Show the honest
+ // affordance from the first frame, matching ComposeBox's own signed-out branch.
+ // `isPending` guards the moment before the session resolves, so a signed-in
+ // visitor never flashes a sign-in prompt either.
+ if (!session && !isPending) {
+ return (
+ <div className="bg-site-surface border border-site-border rounded-2xl shadow-xs rounded-site mx-3 px-4 py-6 text-center">
+ <p className="text-sm text-site-text-muted mb-2">
+ {t('sign-in-prompt', { defaultValue:'Sign in to post RMHarks'})}
+ </p>
+ <Link to="/login"search={{ callbackURL: undefined }}>
+ <Button variant="accent">{t('sign-in', { defaultValue:'Sign In'})}</Button>
+ </Link>
+ </div>
+ );
+ }
+
  return (
  <div className="social-composer px-4 py-3">
  <div className="flex gap-3">
  {/* Avatar — matches ComposeBox's resting avatar exactly */}
- <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-site-text font-bold text-sm ring-2 ring-site-bg shrink-0 overflow-hidden">
+ <div className="w-10 h-10 rounded-full bg-site-surface-hover ring-1 ring-site-border flex items-center justify-center text-site-text font-bold text-sm shrink-0 overflow-hidden">
  {image ? (
  // Optimized at ~2x the 40px display size (avoids the raw CDN original).
  <img
@@ -101,14 +122,14 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  type="button"
  onClick={activate}
  onFocus={activate}
- className="w-full min-h-[4.5rem] text-left text-base text-site-text-dim cursor-text py-1"
+ className="w-full min-h-[4.5rem] text-left text-base text-site-text-muted cursor-text py-1"
  >
  {t('compose-placeholder', { defaultValue:"What's on your mind?"})}
  </button>
  {/* Faint toolbar row so the placeholder's height tracks the real one. */}
  <div className="mt-1 flex items-center gap-2"aria-hidden>
  {[0, 1, 2, 3].map((i) => (
- <span key={i} className="h-8 w-8 rounded-full bg-site-surface"/>
+ <span key={i} className="h-8 w-8 rounded-full bg-site-surface-hover"/>
  ))}
  </div>
  </div>

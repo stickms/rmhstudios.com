@@ -51,9 +51,9 @@ function HomesManagePage() {
       <PageLayout title="My listings" backTo="/homes" wide>
         <div className="mx-auto max-w-md px-4 py-20 text-center text-site-text-dim">
           <p className="mb-4">Sign in to manage your listings.</p>
-          <Link to="/login" search={{ callbackURL: '/homes/manage' }}>
-            <Button>Sign in</Button>
-          </Link>
+          <Button asChild>
+            <Link to="/login" search={{ callbackURL: '/homes/manage' }}>Sign in</Link>
+          </Button>
         </div>
       </PageLayout>
     );
@@ -67,18 +67,18 @@ function HomesManagePage() {
       wide
       headerRight={
         <div className="flex items-center gap-1.5">
-          <Link to="/homes/watches">
-            <Button variant="ghost" size="sm">
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/homes/watches">
               <Bell className="h-4 w-4" />
               <span className="hidden sm:inline">Alerts</span>
-            </Button>
-          </Link>
-          <Link to="/homes/submit">
-            <Button size="sm">
+            </Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link to="/homes/submit">
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">New listing</span>
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       }
     >

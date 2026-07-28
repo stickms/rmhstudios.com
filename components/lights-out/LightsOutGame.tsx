@@ -381,8 +381,21 @@ export function LightsOutGame() {
                                         type="button"
                                         onClick={() => handleCellClick(r, c)}
                                         disabled={solved || !active}
+                                        // The grid was 25 nameless buttons whose only
+                                        // state was a colour — unplayable without
+                                        // sight, and the hint was a cyan ring with no
+                                        // non-colour equivalent. Each cell now names
+                                        // itself, reports its on/off state, and says
+                                        // when it is the hinted one.
+                                        aria-label={t('cell-label', {
+                                            defaultValue: 'Light row {{row}}, column {{col}}',
+                                            row: r + 1,
+                                            col: c + 1,
+                                        })}
+                                        aria-pressed={on}
+                                        aria-describedby={isHinted ? 'lights-out-hint' : undefined}
                                         className={`
-                                            rounded-xl transition-all duration-150 min-h-0
+                                            relative rounded-xl transition-all duration-150 min-h-0
                                             ${on
                                                 ? 'bg-amber-400 text-amber-950 shadow-lg shadow-amber-400/30'
                                                 : 'bg-site-bg-subtle border border-site-border'}
@@ -390,12 +403,29 @@ export function LightsOutGame() {
                                             ${!solved && active && 'hover:opacity-90 active:scale-95 cursor-pointer'}
                                             ${(solved || !active) && 'cursor-default'}
                                         `}
-                                    />
+                                    >
+                                        {/* A shape, not just a ring: the hint has to
+                                            survive both colour-blindness and a
+                                            greyscale display. */}
+                                        {isHinted ? (
+                                            <span
+                                                aria-hidden
+                                                className="pointer-events-none absolute inset-0 flex items-center justify-center text-cyan-300"
+                                            >
+                                                <Sparkles className="h-1/3 w-1/3" />
+                                            </span>
+                                        ) : null}
+                                    </button>
                                 );
                             })
                         )}
                     </div>
                 )}
+                {/* Referenced by the hinted cell's aria-describedby, so the hint
+                    is announced rather than existing only as a cyan ring. */}
+                <p id="lights-out-hint" className="sr-only">
+                    {t('hint-described', { defaultValue: 'Suggested next move.' })}
+                </p>
             </div>
 
             {/* Actions */}

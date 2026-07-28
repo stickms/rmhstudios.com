@@ -99,7 +99,7 @@ export default function ChatOverlay({ messages, onSend }: ChatOverlayProps) {
             />
             <button
               type="submit"
-              className="rounded-lg bg-(--rmhbox-accent) p-2 text-white transition-colors hover:bg-(--rmhbox-accent-hover)"
+              className="rounded-lg bg-(--rmhbox-accent) p-2 text-(--rmhbox-accent-fg) transition-colors hover:bg-(--rmhbox-accent-hover)"
               aria-label={t("send-message", { defaultValue: "Send message" })}
             >
               <Send className="h-4 w-4" />

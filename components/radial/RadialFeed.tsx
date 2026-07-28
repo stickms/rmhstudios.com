@@ -175,6 +175,9 @@ export function RadialFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed>
 
   return (
     <section className="radial-feed" aria-label={t('feed', { defaultValue: 'Feed' })}>
+      {/* The home page's heading outline used to start at a 10px rail caption
+          (an h2), because nothing on the feed is a visible page title. */}
+      <h1 className="sr-only">{t('feed', { defaultValue: 'Feed' })}</h1>
       <div className="radial-feed__deck">
         <div className="radial-feed__primary">
           {initialFeed ? (

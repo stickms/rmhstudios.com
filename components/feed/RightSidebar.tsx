@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -18,10 +18,6 @@ import {
 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { useClipboard } from '@/hooks/useClipboard';
-import { useIsDesktop } from '@/hooks/useIsDesktop';
-import { useIdleReady } from '@/hooks/useIdleReady';
-import { TodayWidget } from '@/components/feed/TodayWidget';
-import { FriendsOnlineWidget } from '@/components/feed/FriendsOnlineWidget';
 
 interface SidebarOfficialBuild {
   id: string;
@@ -68,48 +64,6 @@ interface RightSidebarProps {
   userBuilds: SidebarBuild[];
   recommendedUsers: SidebarUser[];
   blogPosts: SidebarPost[];
-}
-
-/** Live "N people online" pill. Polls the cached count once a minute. */
-function OnlineNowPill() {
-  const { t } = useTranslation('feed');
-  const isDesktop = useIsDesktop();
-  const idle = useIdleReady();
-  const [count, setCount] = useState<number | null>(null);
-
-  // Desktop-only + idle-deferred: this pill sits in the `hidden xl:block`
-  // sidebar, so mobile clients skip the fetch/poll entirely.
-  useEffect(() => {
-    if (!isDesktop || !idle) return;
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await fetch('/api/presence/online-count');
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!cancelled) setCount(data.count ?? null);
-      } catch {
-        // decorative — ignore
-      }
-    };
-    load();
-    const interval = setInterval(load, 60_000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [isDesktop, idle]);
-
-  if (!count) return null;
-  return (
-    <div className="flex items-center gap-2 rounded-full border border-site-border bg-site-glass-tint px-3 py-1.5 text-sm text-site-text-muted shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]">
-      <span className="relative flex h-2 w-2" aria-hidden>
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-site-success opacity-60 motion-reduce:animate-none" />
-        <span className="relative inline-flex h-2 w-2 rounded-full bg-site-success" />
-      </span>
-      {t('online-now-count', { count, defaultValue: '{{count}} people online now' })}
-    </div>
-  );
 }
 
 /** "Invite friends" card — copies the caller's referral link. */
@@ -173,13 +127,13 @@ export function RightSidebar({
     // Floating widget stack in normal document flow: the rail scrolls with the
     // page instead of pinning itself to the viewport. space-y-3 opens aurora
     // gutters between the glass-fill cards.
+    // NOTE: no TodayWidget / FriendsOnlineWidget / online pill here. Every
+    // caller portals this into the shell's live rail (via ContextRail), and
+    // RadialLiveRail already mounts those three above the page slot — so
+    // including them here rendered each one TWICE in a single rail (the audit
+    // caught the daily-quests card duplicated on /search). The shell owns the
+    // ambient widgets; this component owns the page-contributed ones.
     <div className="space-y-3 p-4">
-      <OnlineNowPill />
-
-      <TodayWidget />
-
-      <FriendsOnlineWidget />
-
       <InviteFriendsCard />
 
       {/* Official Builds */}

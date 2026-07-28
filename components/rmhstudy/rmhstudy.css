@@ -18,6 +18,10 @@
   --rmhstudy-text-muted: #b0a490;
   --rmhstudy-text-dim: #7a6e5a;
   --rmhstudy-accent: #f59e0b;
+  /* Ink paired to the accent fill above. White on these light accents measured
+     2.15-3.28:1 — the one button that matters on each app's landing page (the
+     audit's AUD-405). Never hardcode `text-white` on an accent fill; use this. */
+  --rmhstudy-accent-fg: #1a1205;
   --rmhstudy-accent-hover: #d97706;
   --rmhstudy-accent-dim: rgba(245, 158, 11, 0.12);
   --rmhstudy-success: #34d399;
@@ -54,6 +58,7 @@
   --rmhstudy-text-muted: #6a5a3a;
   --rmhstudy-text-dim: #9a8a6a;
   --rmhstudy-accent: #d97706;
+  --rmhstudy-accent-fg: #1a1205;
   --rmhstudy-accent-hover: #b45309;
   --rmhstudy-accent-dim: rgba(217, 119, 6, 0.08);
   --rmhstudy-success: #059669;

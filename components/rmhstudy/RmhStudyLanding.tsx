@@ -164,13 +164,17 @@ export default function RmhStudyLanding() {
 
               <div className="space-y-3 mb-4">
                 <div>
-                  <label className="block text-xs font-medium mb-1 text-(--rmhstudy-text-muted)">
+                  <label
+                    htmlFor="study-work-duration"
+                    className="block text-xs font-medium mb-1 text-(--rmhstudy-text-muted)"
+                  >
                     {t('work-duration', {
                       defaultValue: 'Work Duration: {{minutes}} min',
                       minutes: workMinutes,
                     })}
                   </label>
                   <input
+                    id="study-work-duration"
                     type="range"
                     min={5}
                     max={120}
@@ -183,13 +187,17 @@ export default function RmhStudyLanding() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium mb-1 text-(--rmhstudy-text-muted)">
+                    <label
+                      htmlFor="study-short-break"
+                      className="block text-xs font-medium mb-1 text-(--rmhstudy-text-muted)"
+                    >
                       {t('short-break', {
                         defaultValue: 'Short Break: {{minutes}} min',
                         minutes: shortBreakMinutes,
                       })}
                     </label>
                     <input
+                      id="study-short-break"
                       type="range"
                       min={1}
                       max={30}
@@ -199,13 +207,17 @@ export default function RmhStudyLanding() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium mb-1 text-(--rmhstudy-text-muted)">
+                    <label
+                      htmlFor="study-long-break"
+                      className="block text-xs font-medium mb-1 text-(--rmhstudy-text-muted)"
+                    >
                       {t('long-break', {
                         defaultValue: 'Long Break: {{minutes}} min',
                         minutes: longBreakMinutes,
                       })}
                     </label>
                     <input
+                      id="study-long-break"
                       type="range"
                       min={5}
                       max={60}
@@ -218,13 +230,17 @@ export default function RmhStudyLanding() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium mb-1 text-(--rmhstudy-text-muted)">
+                  <label
+                    htmlFor="study-sessions"
+                    className="block text-xs font-medium mb-1 text-(--rmhstudy-text-muted)"
+                  >
                     {t('sessions-before-long-break', {
                       defaultValue: 'Sessions before long break: {{sessions}}',
                       sessions,
                     })}
                   </label>
                   <input
+                    id="study-sessions"
                     type="range"
                     min={2}
                     max={8}
@@ -238,7 +254,7 @@ export default function RmhStudyLanding() {
               <button
                 onClick={handleCreateRoom}
                 disabled={connectionStatus !== 'connected'}
-                className="w-full py-3 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhstudy-accent) hover:bg-(--rmhstudy-accent-hover)"
+                className="w-full py-3 rounded-lg font-semibold text-(--rmhstudy-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhstudy-accent) hover:bg-(--rmhstudy-accent-hover)"
               >
                 {t('create-room', { defaultValue: 'Create Room' })}
               </button>
@@ -273,7 +289,7 @@ export default function RmhStudyLanding() {
                 <button
                   type="submit"
                   disabled={connectionStatus !== 'connected' || joinCode.trim().length !== 6}
-                  className="px-6 py-3 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhstudy-accent) hover:bg-(--rmhstudy-accent-hover)"
+                  className="px-6 py-3 rounded-lg font-semibold text-(--rmhstudy-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhstudy-accent) hover:bg-(--rmhstudy-accent-hover)"
                 >
                   {t('join', { defaultValue: 'Join' })}
                 </button>

@@ -108,7 +108,7 @@ export default function MediaQueue() {
           {canAdd && (
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors bg-(--rmhtube-accent) text-white hover:bg-(--rmhtube-accent-hover)"
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors bg-(--rmhtube-accent) text-(--rmhtube-accent-fg) hover:bg-(--rmhtube-accent-hover)"
             >
               <Plus className="h-3 w-3" />
               {t("add", { defaultValue: "Add" })}

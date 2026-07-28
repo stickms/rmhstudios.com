@@ -21,8 +21,12 @@ export function RouteErrorFallback({ error, reset, info }: RouteErrorFallbackPro
  reportClientError(error, { source:'route-error', componentStack: info?.componentStack });
  }, [error, info]);
 
- const message =
+ // Raw error text is a developer artefact — the profile route's boundary was
+ // observed leaking a bundler module-resolution message to visitors. It is
+ // still reported to the error endpoint on mount either way.
+ const rawMessage =
  error instanceof Error ? error.message : typeof error ==='string'? error :'';
+ const message = import.meta.env.DEV ? rawMessage :'';
 
  return (
  <div
@@ -40,7 +44,7 @@ export function RouteErrorFallback({ error, reset, info }: RouteErrorFallbackPro
  An unexpected error stopped this page from loading. You can try again, or head back home.
  </p>
  {message ? (
- <p className="bg-site-surface border border-site-border rounded-2xl shadow-xs mt-3 break-words px-3 py-2 text-left font-mono text-xs text-site-text-dim">
+ <p className="bg-site-surface border border-site-border rounded-2xl shadow-xs mt-3 break-words px-3 py-2 text-left font-mono text-xs text-site-text-muted">
  {message.slice(0, 300)}
  </p>
  ) : null}

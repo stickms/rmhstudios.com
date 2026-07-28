@@ -19,11 +19,11 @@ function DeveloperHome() {
       title="Developer API"
       wide
       headerRight={
-        <Link to="/developer/docs/$page" params={{ page: 'overview' }}>
-          <Button variant="ghost" size="sm" className="gap-1">
+        <Button asChild variant="ghost" size="sm" className="gap-1">
+          <Link to="/developer/docs/$page" params={{ page: 'overview' }}>
             <BookOpen className="h-4 w-4" /> Docs
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       }
     >
       <div className="space-y-6 px-4 pb-[var(--site-page-bottom-space)]">
@@ -57,9 +57,11 @@ function DeveloperHome() {
         ) : !session ? (
           <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
             <p className="font-medium text-site-text">Sign in to manage developer keys</p>
-            <Link to="/login" search={{ callbackURL: '/developer' }}>
-              <Button variant="accent">Sign in</Button>
-            </Link>
+            <Button asChild variant="accent">
+              <Link to="/login" search={{ callbackURL: '/developer' }}>
+                Sign in
+              </Link>
+            </Button>
           </div>
         ) : (
           <KeysManager />

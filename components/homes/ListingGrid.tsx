@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { m as motion } from 'framer-motion';
 import { Home, SearchX } from 'lucide-react';
 import type { Listing } from '@/lib/homes/types';
@@ -17,6 +18,9 @@ interface ListingGridProps {
   showStatus?: boolean;
   emptyTitle?: string;
   emptyDescription?: string;
+  /** Rendered inside the empty state. Prefer this over telling the reader to
+   *  find a control elsewhere on the page — see the homes index. */
+  emptyAction?: ReactNode;
 }
 
 function CardSkeleton() {
@@ -42,6 +46,7 @@ export function ListingGrid({
   showStatus,
   emptyTitle,
   emptyDescription,
+  emptyAction,
 }: ListingGridProps) {
   if (loading) {
     return (
@@ -72,6 +77,7 @@ export function ListingGrid({
           emptyDescription ??
           'No homes matched your filters. Try widening your radius or clearing some filters.'
         }
+        action={emptyAction}
       />
     );
   }

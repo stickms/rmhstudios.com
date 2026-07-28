@@ -223,7 +223,7 @@ export default function RmhStudyRoom() {
             {timer.phase === 'idle' && (
               <button
                 onClick={() => emit(C2S.TIMER_START, { roomCode })}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-white transition-colors bg-(--rmhstudy-accent) hover:bg-(--rmhstudy-accent-hover)"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-(--rmhstudy-accent-fg) transition-colors bg-(--rmhstudy-accent) hover:bg-(--rmhstudy-accent-hover)"
               >
                 <Play className="h-4 w-4" />
                 {t('start', { defaultValue: 'Start' })}
@@ -241,7 +241,7 @@ export default function RmhStudyRoom() {
             {timer.isPaused && (
               <button
                 onClick={() => emit(C2S.TIMER_RESUME, { roomCode })}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-white transition-colors bg-(--rmhstudy-accent) hover:bg-(--rmhstudy-accent-hover)"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-(--rmhstudy-accent-fg) transition-colors bg-(--rmhstudy-accent) hover:bg-(--rmhstudy-accent-hover)"
               >
                 <Play className="h-4 w-4" />
                 {t('resume', { defaultValue: 'Resume' })}
@@ -281,7 +281,7 @@ export default function RmhStudyRoom() {
             placeholder={t('add-task-placeholder', { defaultValue: 'Add a task...' })}
             className="flex-1 px-3 py-2 rounded-lg text-sm border border-(--rmhstudy-border) bg-(--rmhstudy-bg) text-(--rmhstudy-text) placeholder:text-(--rmhstudy-text-dim) outline-none focus:ring-1 focus:ring-(--rmhstudy-accent)"
           />
-          <button type="submit" className="p-2 rounded-lg bg-(--rmhstudy-accent) text-white hover:bg-(--rmhstudy-accent-hover)">
+          <button type="submit" className="p-2 rounded-lg bg-(--rmhstudy-accent) text-(--rmhstudy-accent-fg) hover:bg-(--rmhstudy-accent-hover)">
             <Plus className="h-4 w-4" />
           </button>
         </form>
@@ -426,7 +426,7 @@ export default function RmhStudyRoom() {
                   onClick={() => setDesktopView(v)}
                   className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-medium transition-colors ${
                     desktopView === v
-                      ? 'bg-(--rmhstudy-accent) text-white'
+                      ? 'bg-(--rmhstudy-accent) text-(--rmhstudy-accent-fg)'
                       : 'text-(--rmhstudy-text-muted) hover:text-(--rmhstudy-text)'
                   }`}
                 >
@@ -522,7 +522,7 @@ export default function RmhStudyRoom() {
             <MessageCircle className="h-4 w-4" />
             {t('tab-chat', { defaultValue: 'Chat' })}
             {unreadChat > 0 && (
-              <span className="absolute top-1.5 right-1/4 h-4 min-w-4 px-1 flex items-center justify-center rounded-full bg-(--rmhstudy-accent) text-white text-[10px] font-bold">
+              <span className="absolute top-1.5 right-1/4 h-4 min-w-4 px-1 flex items-center justify-center rounded-full bg-(--rmhstudy-accent) text-(--rmhstudy-accent-fg) text-[10px] font-bold">
                 {unreadChat > 9 ? '9+' : unreadChat}
               </span>
             )}
@@ -569,7 +569,7 @@ export default function RmhStudyRoom() {
                         onClick={() => handleUpdateSetting('workDurationMs', m * 60000)}
                         className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                           Math.round(room.settings.workDurationMs / 60000) === m
-                            ? 'bg-(--rmhstudy-accent) text-white'
+                            ? 'bg-(--rmhstudy-accent) text-(--rmhstudy-accent-fg)'
                             : 'bg-(--rmhstudy-bg) text-(--rmhstudy-text-muted) hover:bg-(--rmhstudy-surface-hover)'
                         }`}
                       >
@@ -598,7 +598,7 @@ export default function RmhStudyRoom() {
                         onClick={() => handleUpdateSetting('shortBreakMs', m * 60000)}
                         className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                           Math.round(room.settings.shortBreakMs / 60000) === m
-                            ? 'bg-(--rmhstudy-accent) text-white'
+                            ? 'bg-(--rmhstudy-accent) text-(--rmhstudy-accent-fg)'
                             : 'bg-(--rmhstudy-bg) text-(--rmhstudy-text-muted) hover:bg-(--rmhstudy-surface-hover)'
                         }`}
                       >
@@ -627,7 +627,7 @@ export default function RmhStudyRoom() {
                         onClick={() => handleUpdateSetting('longBreakMs', m * 60000)}
                         className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                           Math.round(room.settings.longBreakMs / 60000) === m
-                            ? 'bg-(--rmhstudy-accent) text-white'
+                            ? 'bg-(--rmhstudy-accent) text-(--rmhstudy-accent-fg)'
                             : 'bg-(--rmhstudy-bg) text-(--rmhstudy-text-muted) hover:bg-(--rmhstudy-surface-hover)'
                         }`}
                       >

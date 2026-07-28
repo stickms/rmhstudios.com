@@ -678,13 +678,15 @@ function PuzzleCard({
       <h3 className="relative mt-3 text-lg font-bold text-site-text">{title}</h3>
       <p className="relative mt-1 flex-1 text-sm text-site-text-muted">{description}</p>
 
-      <span
-        className="relative mt-4 inline-flex items-center gap-1.5 text-sm font-semibold"
-        style={{ color: mode.accent }}
-      >
+      {/* The LABEL takes the card's ink; the accent is carried by the arrow.
+          Painting the label itself in the raw per-mode accent put it at
+          1.79-3.78:1 on the white card — the yellow mode's "Play →" nearly
+          vanished. Decoration can be brand-coloured; the words cannot. */}
+      <span className="relative mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-site-text">
         {done ? ctaView : ctaPlay}
         <ArrowRight
           className="h-4 w-4 transition-transform group-hover:translate-x-1"
+          style={{ color: mode.accent }}
           aria-hidden
         />
       </span>

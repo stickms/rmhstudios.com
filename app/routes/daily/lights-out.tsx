@@ -8,7 +8,7 @@ const LightsOutGame = lazy(() => import('@/components/lights-out/LightsOutGame')
 function LightsOutPage() {
     return (
         <GameErrorBoundary gameName="Lights Out">
-            <Suspense fallback={<GameLoadingFallback />}>
+            <Suspense fallback={<GameLoadingFallback background="#efeae0" foreground="#1b1a17" />}>
                 <LightsOutGame />
             </Suspense>
         </GameErrorBoundary>

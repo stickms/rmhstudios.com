@@ -2108,6 +2108,13 @@ html.readable-font body {
      its visual size. An invisible centred ::after expands the tap target; fine
      pointers keep the precise 16px thumb and the ability to click the track. */
   @media (pointer: coarse) {
+    /* Native range inputs (the full-screen apps use these rather than the Radix
+       slider) get the height from the control itself — a 16px thumb in a 4px
+       track is a hard thing to grab on a phone. */
+    input[type='range'] {
+      min-height: var(--site-touch-target);
+    }
+
     [data-slot='slider-thumb'] {
       position: relative;
     }

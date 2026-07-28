@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { ThumbsUp, BookOpen, Play } from 'lucide-react';
+import { ThumbsUp, BookOpen, MessageSquare, Play } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
@@ -89,22 +89,30 @@ export function GameHub({ data }: { data: GameHubData }) {
   return (
     <div className="px-4 pt-4 pb-12 space-y-6">
       {/* Header */}
-      <Card pane className="flex flex-row items-center gap-4 p-4">
-        {data.image ? (
-          <img src={data.image} alt="" className="h-20 w-20 shrink-0 rounded-site object-cover" />
-        ) : null}
-        <div className="min-w-0 flex-1">
-          <h1 className="font-(family-name:--site-font-display) text-lg font-bold text-site-text">
-            {data.title}
-          </h1>
-          <div className="mt-1 flex items-center gap-2">
-            <StarRating value={Math.round(agg.average)} size={16} label={t('rating', { defaultValue: 'Rating' })} />
-            <span className="text-sm text-site-text-muted">
-              {agg.average ? `${agg.average} · ${agg.count}` : t('no-ratings', { defaultValue: 'No ratings yet' })}
-            </span>
+      {/* Stacks below sm. As a single non-wrapping row — 80px thumb + a
+          `min-w-0 flex-1` text column + the Play button — the text column was
+          squeezed to about one character wide at 390px, so "No ratings yet"
+          rendered one letter per line and the card grew to ~280px tall. */}
+      <Card pane className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
+        <div className="flex min-w-0 items-center gap-4">
+          {data.image ? (
+            <img src={data.image} alt="" className="h-20 w-20 shrink-0 rounded-site object-cover" />
+          ) : null}
+          <div className="min-w-0 flex-1">
+            {/* h2: the route's PageLayout already renders the game's title as
+                the page h1, 130px above this one. */}
+            <h2 className="font-(family-name:--site-font-display) text-lg font-bold text-site-text">
+              {data.title}
+            </h2>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <StarRating value={Math.round(agg.average)} size={16} label={t('rating', { defaultValue: 'Rating' })} />
+              <span className="whitespace-nowrap text-sm text-site-text-muted">
+                {agg.average ? `${agg.average} · ${agg.count}` : t('no-ratings', { defaultValue: 'No ratings yet' })}
+              </span>
+            </div>
           </div>
         </div>
-        <Button asChild variant="accent">
+        <Button asChild variant="accent" className="shrink-0 sm:ml-auto">
           <a href={data.playHref}>
             <Play className="h-4 w-4" aria-hidden />
             {t('play', { defaultValue: 'Play' })}
@@ -140,7 +148,13 @@ export function GameHub({ data }: { data: GameHubData }) {
           {t('reviews', { defaultValue: 'Reviews' })}
         </h2>
         {reviews.length === 0 ? (
-          <EmptyState title={t('no-reviews', { defaultValue: 'No reviews yet' })} />
+          <EmptyState
+            icon={MessageSquare}
+            title={t('no-reviews', { defaultValue: 'No reviews yet' })}
+            description={t('no-reviews-hint', {
+              defaultValue: 'Be the first to say what you thought of it.',
+            })}
+          />
         ) : (
           <ul className="space-y-2">
             {reviews.map((r) => (
@@ -183,7 +197,13 @@ export function GameHub({ data }: { data: GameHubData }) {
           ) : null}
         </div>
         {data.guides.length === 0 ? (
-          <EmptyState icon={BookOpen} title={t('no-guides', { defaultValue: 'No guides yet' })} />
+          <EmptyState
+            icon={BookOpen}
+            title={t('no-guides', { defaultValue: 'No guides yet' })}
+            description={t('no-guides-hint', {
+              defaultValue: 'Guides written by players will appear here.',
+            })}
+          />
         ) : (
           <ul className="space-y-2">
             {data.guides.map((g) => (

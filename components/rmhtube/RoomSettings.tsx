@@ -154,7 +154,7 @@ function SettingsModal({
 
         <button
           onClick={handleSave}
-          className="w-full mt-2 py-2.5 rounded-lg font-semibold text-white transition-colors bg-(--rmhtube-accent) hover:bg-(--rmhtube-accent-hover)"
+          className="w-full mt-2 py-2.5 rounded-lg font-semibold text-(--rmhtube-accent-fg) transition-colors bg-(--rmhtube-accent) hover:bg-(--rmhtube-accent-hover)"
         >
           {t("save", { defaultValue: "Save" })}
         </button>

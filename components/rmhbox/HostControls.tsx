@@ -79,7 +79,7 @@ export default function HostControls({
         <button
           onClick={() => setShowGamePicker(true)}
           disabled={!isWaiting}
-          className="flex items-center gap-2 rounded-lg bg-(--rmhbox-accent) px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-(--rmhbox-accent-hover) disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 rounded-lg bg-(--rmhbox-accent) px-4 py-2 text-sm font-semibold text-(--rmhbox-accent-fg) transition-colors hover:bg-(--rmhbox-accent-hover) disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Gamepad2 className="h-4 w-4" /> {t("pick-game", { defaultValue: "Pick Game" })}
         </button>

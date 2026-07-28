@@ -122,7 +122,7 @@ export default function ReadyButton({
           ? 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted) opacity-50 cursor-not-allowed'
           : isReady
             ? 'bg-(--rmhbox-success) text-black hover:brightness-110'
-            : 'bg-(--rmhbox-accent) text-white hover:bg-(--rmhbox-accent-hover)'
+            : 'bg-(--rmhbox-accent) text-(--rmhbox-accent-fg) hover:bg-(--rmhbox-accent-hover)'
       }`}
     >
       {/* Pulse ring when not ready but game is picked */}

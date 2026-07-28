@@ -105,7 +105,7 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
           <button
             type="submit"
             disabled={!url.trim()}
-            className="w-full py-2.5 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhtube-accent) hover:bg-(--rmhtube-accent-hover)"
+            className="w-full py-2.5 rounded-lg font-semibold text-(--rmhtube-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhtube-accent) hover:bg-(--rmhtube-accent-hover)"
           >
             {t("add-to-queue", { defaultValue: "Add to Queue" })}
           </button>

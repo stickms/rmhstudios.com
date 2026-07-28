@@ -83,11 +83,11 @@ export function WatchManager() {
         title="No alerts yet"
         description="Run a search on Browse and tap “Watch” to get notified when a new matching listing is posted."
         action={
-          <Link to="/homes">
-            <Button variant="outline" size="sm">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/homes">
               <Search className="h-4 w-4" /> Browse listings
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         }
       />
     );

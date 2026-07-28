@@ -149,7 +149,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
       {/* Play/Pause — visible to all */}
       <button
         onClick={handlePlayPause}
-        className="shrink-0 rounded-full p-2 transition-colors bg-(--rmhtube-accent) text-white hover:bg-(--rmhtube-accent-hover)"
+        className="shrink-0 rounded-full p-2 transition-colors bg-(--rmhtube-accent) text-(--rmhtube-accent-fg) hover:bg-(--rmhtube-accent-hover)"
       >
         {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
       </button>

@@ -138,11 +138,9 @@ export function KeysManager() {
           The developer API needs an active Starter plan or higher. Your access is checked on every
           request, so it stays in sync with your subscription.
         </p>
-        <Link to="/pricing" className="mt-3 inline-block">
-          <Button variant="accent" size="sm">
-            View plans
-          </Button>
-        </Link>
+        <Button asChild variant="accent" size="sm" className="mt-3">
+          <Link to="/pricing">View plans</Link>
+        </Button>
       </section>
     );
   }

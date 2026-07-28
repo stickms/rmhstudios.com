@@ -127,7 +127,7 @@ export function ArcadeHub({
     <div>
       {/* Desktop header row (on mobile the page's tab strip is the chrome). */}
       {!hideHeader && (
-        <div className="hidden md:flex items-center gap-2 border-b border-site-border px-5 py-4">
+        <div className="flex items-center gap-2 border-b border-site-border px-5 py-4 max-md:sr-only max-md:border-b-0">
           <Gamepad2 className="h-5 w-5 text-site-accent" aria-hidden />
           <h1 className="font-(family-name:--site-font-display) text-2xl font-semibold tracking-[-0.022em] text-site-text">
             {t('arcade-title', { defaultValue: 'Arcade Pass' })}
@@ -145,7 +145,7 @@ export function ArcadeHub({
             <div>
               <p className="text-2xl font-bold leading-none text-site-text">
                 {streak.current}
-                <span className="ml-1.5 text-sm font-medium text-site-text-dim">
+                <span className="ml-1.5 text-sm font-medium text-site-text-muted">
                   {t('arcade-day-streak', { defaultValue: 'day streak' })}
                 </span>
               </p>
@@ -210,9 +210,9 @@ function ChallengeCard({
   const claimable = challenge.completed && !challenge.claimed;
 
   return (
-    <div className="flex items-stretch gap-3 rounded-site border border-site-border bg-site-surface p-3">
+    <div className="flex flex-col items-stretch gap-3 rounded-site border border-site-border bg-site-surface p-3 sm:flex-row">
       {/* Game art */}
-      <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-site-sm bg-site-bg">
+      <div className="relative h-20 w-full shrink-0 overflow-hidden rounded-site-sm bg-site-bg sm:w-28">
         {game?.imagePath ? (
           <OptimizedImage
             src={game.imagePath}
@@ -232,14 +232,14 @@ function ChallengeCard({
       {/* Details */}
       <div className="flex min-w-0 flex-1 flex-col">
         <p className="text-sm font-semibold text-site-text">{challenge.title}</p>
-        {game && <p className="mt-0.5 text-xs text-site-text-dim">{game.title}</p>}
+        {game && <p className="mt-0.5 text-xs text-site-text-muted">{game.title}</p>}
 
         <div className="mt-auto pt-2">
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-site-bg">
             <div className="h-full rounded-full bg-site-accent" style={{ width: `${pct}%` }} />
           </div>
-          <div className="mt-1 flex items-center gap-2 text-[11px] text-site-text-dim">
-            <span className="tabular-nums">
+          <div className="mt-1 flex items-center gap-2 text-[11px] text-site-text-muted">
+            <span className="whitespace-nowrap tabular-nums">
               {challenge.progress} / {challenge.target}
             </span>
             <span aria-hidden>·</span>
@@ -256,20 +256,20 @@ function ChallengeCard({
       </div>
 
       {/* Action */}
-      <div className="flex shrink-0 flex-col items-end justify-center gap-2">
+      <div className="flex shrink-0 flex-col items-stretch justify-center gap-2 sm:items-end">
         {challenge.claimed ? (
-          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-site-text-dim">
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-site-text-muted">
             <Check className="h-3.5 w-3.5" aria-hidden />{' '}
             {t('arcade-claimed-label', { defaultValue: 'Claimed' })}
           </span>
         ) : claimable ? (
-          <Button size="sm" variant="accent" loading={busy} onClick={onClaim} className="gap-1">
+          <Button variant="accent" loading={busy} onClick={onClaim} className="w-full gap-1 sm:w-auto">
             {!busy && <Gift className="h-3.5 w-3.5" aria-hidden />}
             {t('arcade-claim', { defaultValue: 'Claim' })}
           </Button>
         ) : game ? (
           <Link to={game.href}>
-            <Button size="sm" variant="outline" className="gap-1">
+            <Button variant="outline" className="w-full gap-1 sm:w-auto">
               <Play className="h-3.5 w-3.5" aria-hidden />
               {t('arcade-play-now', { defaultValue: 'Play now' })}
             </Button>

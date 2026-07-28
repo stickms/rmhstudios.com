@@ -8,7 +8,7 @@ const ChainlinkGame = lazy(() => import('@/components/daily-puzzles/ChainlinkGam
 function ChainlinkPage() {
     return (
         <GameErrorBoundary gameName="Chainlink">
-            <Suspense fallback={<GameLoadingFallback />}>
+            <Suspense fallback={<GameLoadingFallback background="#efeae0" foreground="#1b1a17" />}>
                 <ChainlinkGame />
             </Suspense>
         </GameErrorBoundary>

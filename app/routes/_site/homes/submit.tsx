@@ -57,9 +57,9 @@ function HomesSubmitPage() {
       <PageLayout title={title} backTo="/homes" wide>
         <div className="mx-auto max-w-md px-4 py-20 text-center text-site-text-dim">
           <p className="mb-4">Sign in to post a home on RMHHomes.</p>
-          <Link to="/login" search={{ callbackURL: '/homes/submit' }}>
-            <Button>Sign in</Button>
-          </Link>
+          <Button asChild>
+            <Link to="/login" search={{ callbackURL: '/homes/submit' }}>Sign in</Link>
+          </Button>
         </div>
       </PageLayout>
     );

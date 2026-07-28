@@ -111,7 +111,7 @@ export default function GameSettingsPhase() {
       {isHost && (
         <button
           onClick={handleConfirm}
-          className="flex items-center gap-2 rounded-lg bg-(--rmhbox-accent) px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-(--rmhbox-accent-hover)"
+          className="flex items-center gap-2 rounded-lg bg-(--rmhbox-accent) px-6 py-3 text-sm font-bold text-(--rmhbox-accent-fg) transition-colors hover:bg-(--rmhbox-accent-hover)"
         >
           <Play className="h-4 w-4" />
           {t("confirm-and-start", { defaultValue: "Confirm & Start" })}
