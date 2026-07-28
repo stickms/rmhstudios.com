@@ -110,7 +110,30 @@ export function TwemojiProvider({ children, className, tag: Tag = 'span' }: Twem
  });
  observer.observe(el, { childList: true, subtree: true, characterData: true });
 
- return () => observer.disconnect();
+ // Restore the native glyph when a Twemoji asset fails to load.
+ //
+ // twemoji replaces the character with an <img> pointing at a CDN and sets
+ // `alt` to the ORIGINAL emoji — so a failed request silently deletes content
+ // from a post: the audit found a seeded emoji post rendering a ~180px blank
+ // run and an orphaned em-dash at every viewport. Ad-blockers, restrictive
+ // CSP and offline all produce the same result in the wild. Swapping the
+ // broken <img> back to its alt text costs nothing and cannot lose a
+ // character.
+ //
+ // Capture phase because `error` on an <img> does not bubble.
+ const onAssetError = (event: Event) => {
+ const target = event.target as HTMLElement | null;
+ if (!target || target.tagName !== 'IMG' || !target.classList.contains('emoji')) return;
+ const glyph = (target as HTMLImageElement).alt;
+ if (!glyph) return;
+ target.replaceWith(document.createTextNode(glyph));
+ };
+ el.addEventListener('error', onAssetError, true);
+
+ return () => {
+ observer.disconnect();
+ el.removeEventListener('error', onAssetError, true);
+ };
  }, [parse]);
 
  const style = Tag === 'span' ? ({ display: 'contents' } as const) : undefined;

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useCookieConsentAnswered } from '@/components/site/CookieConsent';
 import { ArrowUpRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
@@ -9,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 
 const STORAGE_KEY = 'rmh-whatsnew-seen-social-rewrite-v1';
 const WELCOME_KEY = 'rmh-welcome-seen-v1';
+const LANG_KEY = 'rmh-lang-picked-v1';
 let presentedInThisRuntime = false;
 
 function readStorage(key: string) {
@@ -22,6 +24,7 @@ function readStorage(key: string) {
 export function WhatsNewModal() {
   const { t } = useTranslation('feed');
   const { data: session, isPending } = useSession();
+  const consentAnswered = useCookieConsentAnswered();
   const [open, setOpen] = useState(false);
   const changes = [
     {
@@ -57,6 +60,15 @@ export function WhatsNewModal() {
 
   useEffect(() => {
     if (isPending) return;
+    // Consent first (audit AUD-010). This announcement used to mount at the
+    // same time as the cookie bar and the language modal, painting over the
+    // one surface the visitor is legally required to be able to read.
+    if (!consentAnswered) return;
+    // …and the language picker before this. Read once, on mount: a visitor who
+    // has already chosen a language sees the announcement on this visit, and a
+    // brand-new one sees it on the next — which is the deferral the audit asked
+    // for. Either way it never shares the screen with the other two.
+    if (!readStorage(LANG_KEY)) return;
     const unseen = !readStorage(STORAGE_KEY);
     const canIntroduce = !session || Boolean(readStorage(WELCOME_KEY));
     if (presentedInThisRuntime || !unseen || !canIntroduce) return;
@@ -72,7 +84,7 @@ export function WhatsNewModal() {
     }, 700);
 
     return () => window.clearTimeout(timer);
-  }, [isPending, session]);
+  }, [isPending, session, consentAnswered]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

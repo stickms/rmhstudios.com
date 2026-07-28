@@ -669,11 +669,15 @@
 }
 
 .spatial-whats-new__meta {
-  font-size: 0.65rem;
+  /* 11px floor for micro-caps (§AUD-002); 0.65rem was 10.4px. */
+  font-size: 0.6875rem;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  opacity: 0.72;
+  opacity: 0.85;
+  /* Clear the Dialog primitive's absolutely-positioned close button, which
+     lands in this same top-right corner and was overlapping the date. */
+  padding-right: 3rem;
 }
 
 .spatial-whats-new__title {
@@ -709,6 +713,9 @@
 
 .spatial-whats-new__changes {
   padding: 0.5rem 1.25rem;
+  /* Wider than the column padding, so the outer frame still reads as the
+     larger gutter (it was the other way round). */
+  column-gap: 2rem;
 }
 
 .spatial-whats-new__changes article {
@@ -722,7 +729,7 @@
 
 .spatial-whats-new__changes article > span {
   color: var(--site-accent);
-  font-size: 0.68rem;
+  font-size: 0.6875rem;
   font-weight: 800;
 }
 
@@ -740,10 +747,24 @@
 }
 
 .spatial-whats-new__footer {
+  /* Stacked below sm: as a space-between row the caption was crushed into a
+     three-line sliver beside a w-full button that drew over it and bled past
+     the card's rounded corner. */
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
   padding: 0 1.25rem 1.25rem;
-  color: var(--site-text-dim);
-  font-size: 0.7rem;
+  color: var(--site-text-muted);
+  font-size: 0.75rem;
   font-weight: 650;
+}
+
+@media (min-width: 640px) {
+  .spatial-whats-new__footer {
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+  }
 }
 
 @media (min-width: 768px) {

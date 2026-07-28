@@ -316,6 +316,21 @@
   width: 1.2rem;
   height: 1.2rem;
 }
+/* Session-unknown placeholder: the avatar's exact footprint, so the bar keeps
+   its rhythm and nothing shifts when the real control lands. */
+.radial-topbar__avatar-placeholder {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: var(--site-surface-hover);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .radial-topbar__avatar-placeholder {
+    animation: radial-pulse-soft 1.6s ease-in-out infinite;
+  }
+}
+
 .radial-topbar__avatar {
   display: inline-grid;
   place-items: center;

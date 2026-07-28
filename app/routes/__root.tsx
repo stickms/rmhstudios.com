@@ -86,19 +86,28 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
     // and getSidebarData instead of each re-querying Better Auth + entitlements.
     const session = await getRequestSession();
     const u = session?.user;
-    if (!u) return null;
+    // `resolved: true` = we asked and got an answer, whatever it was.
+    if (!u) return { user: null, resolved: true };
     return {
-      id: u.id,
-      name: u.name ?? null,
-      email: u.email ?? null,
-      image: u.image ?? null,
-      handle: (u as { handle?: string | null }).handle ?? null,
-      username: (u as { username?: string | null }).username ?? null,
-      isAdmin: (u as { isAdmin?: boolean }).isAdmin ?? false,
-      isVerified: (u as { isVerified?: boolean }).isVerified ?? false,
+      user: {
+        id: u.id,
+        name: u.name ?? null,
+        email: u.email ?? null,
+        image: u.image ?? null,
+        handle: (u as { handle?: string | null }).handle ?? null,
+        username: (u as { username?: string | null }).username ?? null,
+        isAdmin: (u as { isAdmin?: boolean }).isAdmin ?? false,
+        isVerified: (u as { isVerified?: boolean }).isVerified ?? false,
+      },
+      resolved: true,
     };
   } catch {
-    return null;
+    // A FAILED lookup is not "signed out". Collapsing the two is what let a
+    // valid session render the signed-out shell — sign-in pill, "Sign in to
+    // post RMHarks" — under load, which invites a duplicate login and reads as
+    // having been logged out. The shell renders a neutral pending state for
+    // `resolved: false` instead, and the client session backfills the truth.
+    return { user: null, resolved: false };
   }
 });
 
@@ -181,10 +190,18 @@ export const Route = createRootRoute({
     // local locale chunk (no DB) and MUST finish before the synchronous SSR
     // render reads the bundle, or hydration mismatches — see getInitialI18n.
     const [user, i18n] = await Promise.all([
-      withTimeout(getInitialUser(), SESSION_LOADER_TIMEOUT_MS, null),
+      withTimeout(getInitialUser(), SESSION_LOADER_TIMEOUT_MS, {
+        user: null,
+        resolved: false,
+      }),
       getInitialI18n(),
     ]);
-    return { user, locale: i18n.locale, i18nResources: i18n.resources };
+    return {
+      user: user.user,
+      sessionResolved: user.resolved,
+      locale: i18n.locale,
+      i18nResources: i18n.resources,
+    };
   },
   head: (ctx) => {
     const discord = ctx.matches?.some((m) => m.fullPath?.startsWith('/discord'));
@@ -300,7 +317,7 @@ function RootDocument({ children }: { children: ReactNode }) {
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
-  const { user: initialUser, locale, i18nResources } = Route.useLoaderData();
+  const { user: initialUser, sessionResolved, locale, i18nResources } = Route.useLoaderData();
 
   // Restore the exact feed position on back/forward (and cover the mobile scroll
   // container, which the router's window-only restoration doesn't track).
@@ -331,6 +348,7 @@ function RootComponent() {
   return (
     <Providers
       initialUser={initialUser}
+      sessionResolved={sessionResolved}
       locale={(locale ?? 'en') as Locale}
       i18nResources={i18nResources}
     >

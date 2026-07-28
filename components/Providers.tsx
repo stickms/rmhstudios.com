@@ -170,6 +170,12 @@ interface ProvidersProps {
    */
   initialUser?: CachedSessionUser | null;
   /**
+   * Whether the server actually resolved the session. `false` means the lookup
+   * failed or timed out — the session is UNKNOWN, not absent — so the shell
+   * must render its pending state rather than the signed-out one.
+   */
+  sessionResolved?: boolean;
+  /**
    * Locale resolved server-side (from the rmh-lang cookie or Accept-Language
    * header). Passed to AppI18nProvider so all useTranslation() calls in the
    * tree render in the correct language from the first paint.
@@ -209,6 +215,7 @@ export const THEME_EXCLUDED_ROUTES = [
 export function Providers({
   children,
   initialUser = null,
+  sessionResolved = true,
   locale = 'en',
   i18nResources = null,
 }: ProvidersProps) {
@@ -312,8 +319,15 @@ export function Providers({
         data: { user: cachedUser, session: null },
       } as unknown as SessionCtxValue;
     }
+    // Server couldn't resolve the session and we have no cached user: the
+    // answer is UNKNOWN. Report pending (not signed out) until the client
+    // session lands, so the shell shows a neutral placeholder instead of
+    // telling a signed-in visitor to sign in.
+    if (!sessionResolved && session.isPending && !cachedUser) {
+      return { ...session, isPending: true, data: null } as unknown as SessionCtxValue;
+    }
     return session;
-  }, [session, cachedUser]);
+  }, [session, cachedUser, sessionResolved]);
 
   // Resolved user display data (custom image/name). Seed from the SSR-resolved
   // user so the current user's own avatar/name paint immediately from the loader

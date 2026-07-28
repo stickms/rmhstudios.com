@@ -40,6 +40,32 @@ export function setCookieConsent(choice: CookieConsentChoice): void {
   }
 }
 
+/**
+ * Whether the visitor has made a cookie choice yet.
+ *
+ * First-run surfaces use this to sequence themselves behind the consent bar.
+ * A brand-new visitor used to get three stacked interruptions at once — the
+ * language modal, the What's New announcement, and consent — with the legally
+ * required consent bar painted BEHIND the two promotional overlays, because all
+ * three mounted independently with no ordering between them.
+ */
+export function useCookieConsentAnswered(): boolean {
+  const [answered, setAnswered] = useState(() => getCookieConsent() !== null);
+
+  useEffect(() => {
+    const sync = () => setAnswered(getCookieConsent() !== null);
+    sync();
+    window.addEventListener('rmh:cookie-consent', sync);
+    window.addEventListener('rmh:cookie-consent-reset', sync);
+    return () => {
+      window.removeEventListener('rmh:cookie-consent', sync);
+      window.removeEventListener('rmh:cookie-consent-reset', sync);
+    };
+  }, []);
+
+  return answered;
+}
+
 export function CookieConsent() {
   const { t } = useTranslation('common');
   // Start hidden; decide on the client after mount to avoid an SSR/hydration

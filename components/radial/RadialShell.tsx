@@ -105,7 +105,7 @@ type QuickPanelId = 'search' | 'notifications' | 'messages' | 'profile';
  */
 function RadialTopBar() {
   const { t } = useTranslation('feed');
-  const { data: session } = useSession();
+  const { data: session, isPending: sessionUnknown } = useSession();
   const { resolved } = useResolvedUser();
   const { pathname } = useLocation();
   const signedIn = Boolean(session);
@@ -205,6 +205,17 @@ function RadialTopBar() {
             </button>
             <ProfilePanel open={panel === 'profile'} onClose={close} anchorRef={avatarRef} />
           </>
+        ) : sessionUnknown ? (
+          // The session is UNKNOWN, not absent — the server lookup failed or
+          // timed out (see __root's getInitialUser / Providers). Showing "Sign
+          // in" here told signed-in visitors they were logged out and invited a
+          // duplicate login; a neutral placeholder waits for the client session
+          // to settle, which it does a moment later.
+          <span
+            className="radial-topbar__avatar-placeholder"
+            aria-label={t('loading', { defaultValue: 'Loading…' })}
+            role="status"
+          />
         ) : (
           <Link to="/login" search={{ callbackURL: undefined }} className="radial-topbar__signin">
             {t('sign-in', { defaultValue: 'Sign in' })}
