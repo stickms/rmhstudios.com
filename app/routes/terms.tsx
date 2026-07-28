@@ -1,8 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useTranslation } from 'react-i18next';
 import { LegalLayout } from '@/components/lockdown/LegalLayout';
 
 export const Route = createFileRoute('/terms')({
+  head: () => ({
+    meta: buildMeta({
+      title: 'Terms of Use | RMH Studios',
+      description:
+        'The Terms of Use governing your access to RMH Studios websites, products and services.',
+      path: '/terms',
+    }),
+    links: [buildCanonical('/terms')],
+  }),
   component: TermsPage,
 });
 
@@ -16,7 +26,7 @@ function TermsPage() {
       updatedDate={t('terms-updated-date', { defaultValue: 'June 11, 2025' })}
     >
       {/* Document under glass: the whole article body sits on one wide pane. */}
-      <div className="glass-pane rounded-site px-6 py-8 sm:px-10 sm:py-10">
+      <div className="legal-content__pane">
         <h2>{t('terms-h-acceptance', { defaultValue: '1. Acceptance of Terms' })}</h2>
         <p>
           {t('terms-p-acceptance', {

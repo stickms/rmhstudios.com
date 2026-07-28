@@ -696,7 +696,7 @@
   gap: 6px;
   background: none;
   border: none;
-  color: #6e6e73;
+  color: #a1a1a6;
   font: inherit;
   font-size: 0.82rem;
   font-weight: 500;
@@ -707,7 +707,7 @@
 }
 
 .legal-nav__back:hover {
-  color: #a1a1a6;
+  color: #f5f5f7;
 }
 
 .legal-nav__sep {
@@ -728,11 +728,11 @@
 }
 
 .legal-content__eyebrow {
-  font-size: 0.68rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #6e6e73;
+  color: #86868b;
   margin: 0 0 16px;
 }
 
@@ -747,8 +747,26 @@
 
 .legal-content__date {
   font-size: 0.8rem;
-  color: #515154;
+  color: #8e8e93;
   margin: 0 0 52px;
+}
+
+/* The document pane. This page is a committed dark surface (`.legal-page`
+   paints #000 and hard-codes its ink), so it cannot borrow `glass-pane` —
+   that is built from the *site theme* tokens and resolved to a near-white
+   sheet on the default light theme, putting #f5f5f7 headings and #a1a1a6
+   body copy on a ~#b3b3b3 pane (≈1.2–1.6:1) for the whole document. */
+.legal-content__pane {
+  background: rgba(255, 255, 255, 0.045);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 32px 24px;
+}
+
+@media (min-width: 640px) {
+  .legal-content__pane {
+    padding: 40px;
+  }
 }
 
 .legal-content__body h2 {
@@ -803,13 +821,18 @@
 .legal-footer__link {
   font-size: 0.76rem;
   font-weight: 500;
-  color: #515154;
+  color: #8e8e93;
   text-decoration: none;
   transition: color 180ms ease;
+  /* 44px hit area on the footer's link row (audit AUD-004) without moving
+     the baseline: padding grows the box, the flex row stays centred. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
 }
 
 .legal-footer__link:hover {
-  color: #86868b;
+  color: #f5f5f7;
 }
 
 /* ─── Keyframes ─────────────────────────────────────────────────────────────  */

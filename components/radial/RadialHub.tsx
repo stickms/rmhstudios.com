@@ -270,6 +270,11 @@ export function RadialHub() {
           also chew the RMH mark's hairline strokes. It tracks the orb's docked /
           centred position from the same tokens, and carries no `data-floating`
           so it never joins the mobile floating-bottom stack. */}
+      {/* Legibility scrim — fades the page ground in behind the docked orb so
+          content scrolling through its band dissolves instead of colliding
+          with it (see radial.css). Paints under the aura and the orb. */}
+      <div className="radial-hub__scrim" aria-hidden />
+
       <div className="radial-hub__aura" aria-hidden>
         <span className="radial-hub__aura-core" />
         {[0, 1, 2].map((i) => (

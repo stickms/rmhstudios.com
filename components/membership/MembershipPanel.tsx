@@ -120,14 +120,20 @@ export function MembershipPanel({
   currentTier,
   returnPath = '/pricing',
   coinShopAnchorId,
+  headingLevel = 'h1',
 }: {
-  currentTier: Tier;
+  /** `null` = signed out. Distinct from 'free', which is a real membership. */
+  currentTier: Tier | null;
   returnPath?: string;
   /** When set, shows a ghost button beside the heading that smooth-scrolls to
    *  the element with this id (the coins shop further down the /store page). */
   coinShopAnchorId?: string;
+  /** Pass 'h2' when the embedding page already renders its own h1 (/store). */
+  headingLevel?: 'h1' | 'h2';
 }) {
   const { t } = useTranslation('site');
+  const signedOut = currentTier === null;
+  const tier: Tier = currentTier ?? 'free';
   const [busy, setBusy] = useState<string | null>(null);
   const [status, setStatus] = useState<'success' | 'cancelled' | null>(null);
 
@@ -185,11 +191,11 @@ export function MembershipPanel({
 
       {/* ── Signature pinned hero ────────────────────────────── */}
       <PinnedHero
+        as={headingLevel}
         eyebrow={t('membership-title', { defaultValue: 'Membership' })}
         title={
           <>
-            {t('hero-heading-line1', { defaultValue: 'Choose your' })}
-            <br />
+            {t('hero-heading-line1', { defaultValue: 'Choose your' })} <br />
             <span className="text-site-accent">
               {t('hero-heading-line2', { defaultValue: 'altitude.' })}
             </span>
@@ -202,7 +208,7 @@ export function MembershipPanel({
         scrollCue={t('scroll-to-compare', { defaultValue: 'Compare tiers' })}
         actions={
           <>
-            {currentTier !== 'free' && (
+            {!signedOut && tier !== 'free' && (
               <button
                 type="button"
                 onClick={manageBilling}
@@ -264,10 +270,10 @@ export function MembershipPanel({
         )}
 
         {/* ── Plan grid ──────────────────────────────────────── */}
-        <RevealGroup className="grid items-stretch gap-5 lg:grid-cols-4">
+        <RevealGroup className="grid items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-4">
           {PLANS.map((plan) => {
-            const isCurrent = currentTier === plan.tier;
-            const owned = RANK[currentTier] > RANK[plan.tier];
+            const isCurrent = !signedOut && tier === plan.tier;
+            const owned = !signedOut && RANK[tier] > RANK[plan.tier];
             return (
               <RevealItem key={plan.tier} className="flex">
                 {/* Card is a plain <article> so its CSS hover/featured transforms
@@ -290,7 +296,7 @@ export function MembershipPanel({
                     </span>
                   )}
                   {isCurrent && (
-                    <span className="absolute right-5 top-6 rounded-full border border-site-accent/40 bg-site-accent-dim px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-widest text-site-accent">
+                    <span className="absolute right-5 top-6 rounded-full border border-site-accent/40 bg-site-accent-dim px-2.5 py-0.5 font-mono text-[11px] uppercase tracking-widest text-site-accent">
                       {t('current-badge', { defaultValue: 'Current' })}
                     </span>
                   )}
@@ -308,7 +314,7 @@ export function MembershipPanel({
                   <div className="mt-5 flex items-baseline gap-1">
                     <span className="pricing-price text-4xl text-site-text">{plan.price}</span>
                     {plan.period && (
-                      <span className="font-mono text-xs text-site-text-dim">{plan.period}</span>
+                      <span className="font-mono text-xs text-site-text-muted">{plan.period}</span>
                     )}
                   </div>
 
@@ -338,15 +344,28 @@ export function MembershipPanel({
                   </ul>
 
                   <div className="mt-7">
-                    {plan.cta === 'current' && (
-                      <div className="flex h-11 items-center justify-center rounded-full border border-dashed border-site-border text-sm font-medium text-site-text-dim">
-                        {isCurrent
-                          ? t('your-current-plan', { defaultValue: 'Your current plan' })
-                          : owned
-                            ? t('included', { defaultValue: 'Included' })
-                            : t('free-forever', { defaultValue: 'Free forever' })}
-                      </div>
-                    )}
+                    {plan.cta === 'current' &&
+                      (signedOut ? (
+                        <a
+                          href="/login"
+                          className="pricing-btn flex h-11 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-all"
+                          style={{
+                            background: 'var(--site-accent)',
+                            color: 'var(--site-accent-fg)',
+                          }}
+                        >
+                          {t('get-started-free', { defaultValue: 'Get started — free' })}
+                          <ArrowUpRight className="h-4 w-4" />
+                        </a>
+                      ) : (
+                        <div className="flex h-11 items-center justify-center rounded-full border border-dashed border-site-border text-sm font-medium text-site-text-muted">
+                          {isCurrent
+                            ? t('your-current-plan', { defaultValue: 'Your current plan' })
+                            : owned
+                              ? t('included', { defaultValue: 'Included' })
+                              : t('free-forever', { defaultValue: 'Free forever' })}
+                        </div>
+                      ))}
 
                     {plan.cta === 'subscribe' && (
                       <button
@@ -356,14 +375,12 @@ export function MembershipPanel({
                         className="pricing-btn flex h-11 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50"
                         style={{
                           background: plan.featured ? 'var(--site-warning)' : 'var(--site-accent)',
-                          // Dark ink on the gold (warning) tiers; the theme's own
-                          // accent foreground on accent buttons so the label stays
-                          // legible on every theme (e.g. high-contrast/nocturne
-                          // where accent-fg is dark, not white).
-                          color:
-                            plan.featured || plan.tier === 'starter'
-                              ? '#1a1505'
-                              : 'var(--site-accent-fg)',
+                          // Ink tracks its surface: each fill's own paired
+                          // foreground token. Starter used to be special-cased to
+                          // dark ink while painting --site-accent, which on the
+                          // default theme (accent #000) rendered the site's main
+                          // purchase CTA black-on-black.
+                          color: plan.featured ? 'var(--site-warning-fg)' : 'var(--site-accent-fg)',
                         }}
                       >
                         {busy === plan.tier ? (
@@ -374,7 +391,7 @@ export function MembershipPanel({
                           t('included', { defaultValue: 'Included' })
                         ) : (
                           <>
-                            {RANK[currentTier] < RANK[plan.tier] && currentTier !== 'free'
+                            {RANK[tier] < RANK[plan.tier] && tier !== 'free'
                               ? t('upgrade', { defaultValue: 'Upgrade' })
                               : t('subscribe', { defaultValue: 'Subscribe' })}
                             <ArrowUpRight className="h-4 w-4" />
@@ -400,7 +417,7 @@ export function MembershipPanel({
         </RevealGroup>
 
         {/* ── Footnote ───────────────────────────────────────── */}
-        <Reveal as="p" className="mt-12 text-center font-mono text-xs text-site-text-dim">
+        <Reveal as="p" className="mt-12 text-center font-mono text-xs text-site-text-muted">
           {t('billing-footnote', {
             defaultValue: 'Billed monthly · cancel anytime · secure checkout by Stripe',
           })}
@@ -441,9 +458,9 @@ function PricingStyles() {
       .pricing-ribbon {
         position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%);
         border-radius: 9999px; padding: 4px 14px;
-        font-family: var(--font-jetbrains-mono); font-size: 10px; font-weight: 600;
+        font-family: var(--font-jetbrains-mono); font-size: 11px; font-weight: 600;
         text-transform: uppercase; letter-spacing: 0.18em; white-space: nowrap;
-        color: #1a1505; background: var(--site-warning);
+        color: var(--site-warning-fg); background: var(--site-warning);
         box-shadow: 0 6px 20px -6px color-mix(in srgb, var(--site-warning) 60%, transparent);
       }
 

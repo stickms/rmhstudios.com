@@ -63,22 +63,27 @@ export function RmhCalculatorApp() {
   return (
     <div className="rmhcalc">
       <header className="rmhcalc__header">
-        <Link
-          to="/"
-          className="rmhcalc__brand"
-          aria-label={t('home', { defaultValue: 'RMH Studios home' })}
-        >
+        {/* The brand used to be the only way out — a link with no visible
+            "back" affordance, pointing somewhere different from every other
+            app. It is a lockup again; the exit is the labelled control. */}
+        <div className="rmhcalc__brand">
           <span className="rmhcalc__brand-icon" aria-hidden="true">
             <FunctionSquare size={20} />
           </span>
           <span className="rmhcalc__brand-text">
-            <span className="rmhcalc__brand-name">RMHCalculator</span>
+            <h1 className="rmhcalc__brand-name">RMHCalculator</h1>
             <span className="rmhcalc__brand-sub">
               {t('tagline', { defaultValue: 'Powered by DeepSeek' })}
             </span>
           </span>
-        </Link>
-        <ModelToggle value={model} onChange={changeModel} />
+        </div>
+        <div className="rmhcalc__header-actions">
+          <ModelToggle value={model} onChange={changeModel} />
+          <Link to="/builds" className="rmhcalc__back">
+            <span aria-hidden="true">&larr;</span>
+            {t('back-to-builds', { defaultValue: 'Builds' })}
+          </Link>
+        </div>
       </header>
 
       <div className="rmhcalc__tabs">

@@ -37,6 +37,12 @@ export interface PinnedHeroProps {
   scrollCue?: string;
   /** Viewport-heights the pinned scene scrolls through. */
   screens?: number;
+  /**
+   * Heading level for the display title. Defaults to h1; pass 'h2' on routes
+   * that already render their own h1 (PageLayout titles, ColumnHeaders) so the
+   * page keeps exactly one — see docs/page-consistency.md.
+   */
+  as?: 'h1' | 'h2';
 }
 
 /** Shared presentational frame. `styles`carries per-slot motion/plain styles. */
@@ -48,6 +54,7 @@ function HeroFrame({
   actions,
   scrollCue,
   minH,
+  as,
 }: {
   styles: {
     glow: MotionStyle;
@@ -63,7 +70,9 @@ function HeroFrame({
   actions?: ReactNode;
   scrollCue?: string;
   minH: string;
+  as?: 'h1' | 'h2';
 }) {
+  const Heading = as === 'h2' ? motion.h2 : motion.h1;
   return (
     <div
       className={`relative flex ${minH} flex-col items-center justify-center overflow-hidden px-5 py-16 text-center sm:px-8`}
@@ -90,12 +99,12 @@ function HeroFrame({
         {eyebrow}
       </motion.p>
 
-      <motion.h1
+      <Heading
         className="mt-5 max-w-4xl text-5xl font-semibold leading-[1.05] tracking-[-0.022em] text-site-text sm:text-6xl lg:text-7xl"
         style={{ ...styles.title, fontFamily: 'var(--site-font-display)' }}
       >
         {title}
-      </motion.h1>
+      </Heading>
 
       <motion.p
         className="mt-7 max-w-xl text-base leading-relaxed text-site-text-muted sm:text-lg"
@@ -116,10 +125,13 @@ function HeroFrame({
       {scrollCue && (
         <motion.div
           aria-hidden
-          className="absolute inset-x-0 bottom-8 flex flex-col items-center gap-1.5 text-site-text-dim"
-          style={styles.cue}
+          /* bottom offset clears the floating bottom chrome (hub orb + cookie
+ bar); at bottom-8 the cue rendered inside the orb's footprint and was
+ never visible on any _site route. */
+          className="absolute inset-x-0 flex flex-col items-center gap-1.5 text-site-text-muted"
+          style={{ ...styles.cue, bottom: 'var(--site-floating-reserve)' }}
         >
-          <span className="font-mono text-[10px] uppercase tracking-[0.24em]">{scrollCue}</span>
+          <span className="font-mono text-[11px] uppercase tracking-[0.24em]">{scrollCue}</span>
           <motion.span
             animate={{ y: [0, 5, 0] }}
             transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
@@ -182,18 +194,20 @@ const STATIC_STYLES = {
   cue: { opacity: 0 },
 };
 
-export function PinnedHero({ screens = 2.6, scrollCue, ...content }: PinnedHeroProps) {
+export function PinnedHero({ screens = 2.6, scrollCue, as, ...content }: PinnedHeroProps) {
   return (
     <>
       {/* md+: pinned, scrubbing scene (window-driven). */}
       <div className="hidden md:block">
         <ScrollScene screens={screens}>
-          {(progress) => <AnimatedStage progress={progress} scrollCue={scrollCue} {...content} />}
+          {(progress) => (
+            <AnimatedStage progress={progress} scrollCue={scrollCue} as={as} {...content} />
+          )}
         </ScrollScene>
       </div>
       {/* Small viewports: composed static hero, no pin (nested scroll root). */}
       <div className="md:hidden">
-        <HeroFrame {...content} styles={STATIC_STYLES} minH="min-h-[72svh]" />
+        <HeroFrame {...content} as={as} styles={STATIC_STYLES} minH="min-h-[72svh]" />
       </div>
     </>
   );

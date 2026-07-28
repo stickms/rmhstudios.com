@@ -608,7 +608,9 @@ export function Providers({
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(next),
-      }).catch(() => {});
+      }).catch((err) => {
+        console.error('Appearance save failed:', err);
+      });
     },
     [],
   );
@@ -624,7 +626,19 @@ export function Providers({
     if (!idleReady) return;
     let cancelled = false;
     fetch('/api/preferences/appearance', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => {
+        // A failed GET is not "no saved preferences" — it means the account's
+        // appearance is unknown. Swallowing it silently is how a 500 on every
+        // signed-in page load (a missing column, see the appearance migration)
+        // went unnoticed while cross-device settings quietly stopped syncing.
+        if (!r.ok) {
+          if (r.status !== 401) {
+            console.error(`Appearance sync failed: ${r.status} ${r.statusText}`);
+          }
+          return null;
+        }
+        return r.json();
+      })
       .then(
         (
           remote: {

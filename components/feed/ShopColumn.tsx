@@ -170,6 +170,10 @@ export function ShopColumn({
     <div className="min-h-screen">
       {showHero && (
         <PinnedHero
+          /* 1.2 screens, not the 2.6 default: at 2.6 the catalog started three
+ viewport-heights below the fold and no product was visible on the
+ first screen at any size. */
+          screens={1.2}
           eyebrow={t('shop-eyebrow', { defaultValue: 'Cosmetics & flair' })}
           title={t('shop-title', { defaultValue: 'Shop' })}
           subtitle={t('shop-hero-sub', {
@@ -181,6 +185,9 @@ export function ShopColumn({
       )}
       <ColumnHeader
         icon={ShoppingBag}
+        // Never the page h1: with the hero (on /shop) the hero is; without it
+        // (embedded in /store) the route's own title capsule is.
+        headingLevel="h2"
         title={t('shop-title', { defaultValue: 'Shop' })}
         actions={
           signedIn && (

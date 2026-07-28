@@ -110,7 +110,7 @@
   --site-border-bright: #000000;
   --site-text: #000000;
   --site-text-muted: #565656;
-  --site-text-dim: #8a8a8a;
+  --site-text-dim: #767676;
   --site-accent: #000000;
   --site-accent-fg: #ffffff;
   --site-accent-hover: #1a1a1a;
@@ -119,6 +119,7 @@
   --site-danger: #c40016;
   --site-danger-fg: #ffffff;
   --site-warning: #7a4a00;
+  --site-warning-fg: #ffffff;
 
   /* ── Monochrome material contract — glass reads as clean, near-opaque frost ── */
   --site-glass-tint: rgba(255, 255, 255, 0.72);
@@ -371,7 +372,7 @@
   --site-border-bright: #000000;
   --site-text: #000000;
   --site-text-muted: #565656;
-  --site-text-dim: #8a8a8a;
+  --site-text-dim: #767676;
   --site-accent: #000000;
   --site-accent-fg: #ffffff;
   --site-accent-hover: #1a1a1a;
@@ -380,6 +381,7 @@
   --site-danger: #c40016;
   --site-danger-fg: #ffffff;
   --site-warning: #7a4a00;
+  --site-warning-fg: #ffffff;
   --site-glass-tint: rgba(255, 255, 255, 0.78);
   --site-glass-tint-strong: rgba(255, 255, 255, 0.9);
   --site-glass-rim: rgba(0, 0, 0, 0.12);
@@ -413,7 +415,7 @@
   --site-border-bright: rgba(18, 30, 66, 0.2);
   --site-text: #17203a;
   --site-text-muted: rgba(38, 50, 82, 0.74);
-  --site-text-dim: rgba(38, 50, 82, 0.52);
+  --site-text-dim: rgba(38, 50, 82, 0.68);
   --site-accent: #6a4fd0;
   --site-accent-fg: #ffffff;
   --site-accent-hover: #7a61da;
@@ -422,6 +424,7 @@
   --site-danger: #d70015;
   --site-danger-fg: #ffffff;
   --site-warning: #a8730a;
+  --site-warning-fg: #100b00;
   /* Light glass: brighter frost, white rims, cool low-alpha depth. */
   --site-glass-tint: rgba(255, 255, 255, 0.55);
   --site-glass-tint-strong: rgba(255, 255, 255, 0.72);
@@ -473,6 +476,7 @@
   --site-danger: #ff8080;
   --site-danger-fg: #000000;
   --site-warning: #ffd54a;
+  --site-warning-fg: #000000;
   /* No glass: flat, opaque, hard-edged. The .glass-* classes are neutralised
      to opaque surfaces by a global rule (§10); these tokens just make sure any
      stray reference resolves to something sane rather than inheriting glass. */
@@ -514,7 +518,7 @@
   --site-border-bright: rgba(255, 255, 255, 0.26);
   --site-text: #f5f5f7;
   --site-text-muted: #a1a1a6;
-  --site-text-dim: #6e6e73;
+  --site-text-dim: #86868b;
   --site-accent: #2997ff;
   --site-accent-fg: #ffffff;
   --site-accent-hover: #47a5ff;
@@ -523,6 +527,7 @@
   --site-danger: #ff453a;
   --site-danger-fg: #ffffff;
   --site-warning: #ff9f0a;
+  --site-warning-fg: #100b00;
   --site-glass-tint: rgba(28, 28, 30, 0.62);
   --site-glass-tint-strong: rgba(28, 28, 30, 0.82);
   --site-glass-ink: rgba(0, 0, 0, 0.62);
@@ -561,7 +566,7 @@
   --site-border-bright: rgba(90, 62, 32, 0.3);
   --site-text: #3a2e1e;
   --site-text-muted: rgba(70, 54, 34, 0.74);
-  --site-text-dim: rgba(70, 54, 34, 0.52);
+  --site-text-dim: rgba(70, 54, 34, 0.72);
   --site-accent: #a2592e;
   --site-accent-fg: #fff;
   --site-accent-hover: #8e4c26;
@@ -570,6 +575,7 @@
   --site-danger: #b23a2f;
   --site-danger-fg: #ffffff;
   --site-warning: #a8730a;
+  --site-warning-fg: #100b00;
   --site-glass-tint: rgba(255, 250, 238, 0.6);
   --site-glass-tint-strong: rgba(255, 250, 238, 0.78);
   --site-glass-ink: rgba(240, 232, 214, 0.6);
@@ -610,7 +616,7 @@
   --site-border-bright: rgba(180, 205, 255, 0.26);
   --site-text: #eaeef7;
   --site-text-muted: rgba(202, 216, 245, 0.8);
-  --site-text-dim: rgba(202, 216, 245, 0.52);
+  --site-text-dim: rgba(202, 216, 245, 0.62);
   --site-accent: #5e9dff;
   --site-accent-fg: #001227;
   --site-accent-hover: #7db0ff;
@@ -619,6 +625,7 @@
   --site-danger: #ff6961;
   --site-danger-fg: #1a0a0c;
   --site-warning: #ffd60a;
+  --site-warning-fg: #100b00;
   --site-glass-tint: rgba(150, 185, 255, 0.09);
   --site-glass-tint-strong: rgba(150, 185, 255, 0.15);
   --site-glass-rim: rgba(200, 220, 255, 0.28);
@@ -656,7 +663,7 @@
   --site-border-bright: rgba(182, 239, 255, 0.36);
   --site-text: #f5f9ff;
   --site-text-muted: rgba(222, 235, 248, 0.8);
-  --site-text-dim: rgba(207, 224, 242, 0.56);
+  --site-text-dim: rgba(207, 224, 242, 0.66);
   --site-accent: #76f7ff;
   --site-accent-fg: #031214;
   --site-accent-hover: #a1fbff;
@@ -665,6 +672,7 @@
   --site-danger: #ff668f;
   --site-danger-fg: #210711;
   --site-warning: #ffd166;
+  --site-warning-fg: #100b00;
 
   /* Clearer, colder material with a narrow high-energy edge. */
   --site-glass-tint: rgba(169, 224, 255, 0.065);
@@ -897,8 +905,12 @@ html.liquid-gl.app-route #liquid-layer {
 /* Page canvas show-through: elements that use bg-site-bg as the page ground let
    the aurora read through (cheap — no blur). Full-screen fixed takeovers (admin
    MDX editor) and the mobile drawer's sliding panel stay opaque. High-contrast
-   keeps #000 (canvas is `none` there, so the mix reads as solid black anyway). */
-html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active]) {
+   keeps #000 (canvas is `none` there, so the mix reads as solid black anyway).
+   App/game routes are excluded for the same reason their surfaces are (see the
+   html.app-route block below): the aurora is off there, so a translucent ground
+   just greys out over the app's own dark backdrop instead of sampling a shared
+   scene — light-theme apps composited to ≈#8a8a8a and lost all their contrast. */
+html:not(.style-high-contrast):not(.app-route) .bg-site-bg:not(.fixed):not([data-drawer-active]) {
   background-color: color-mix(in srgb, var(--site-bg) 52%, transparent);
 }
 
@@ -1805,6 +1817,10 @@ html.readable-font body {
      white for themes that predate the token; every built-in theme sets it. */
   --color-site-danger-fg: var(--site-danger-fg, #fff);
   --color-site-warning: var(--site-warning);
+  /* Ink that tracks the --site-warning fill, same contract as -danger-fg above.
+     Themes whose warning is a dark brown take white; the bright golds take
+     near-black. Never hardcode ink on a warning fill. */
+  --color-site-warning-fg: var(--site-warning-fg, #fff);
 
   /* Glass material tokens → bg-site-glass-tint, ring-site-glass-rim-soft, … */
   --color-site-glass-tint: var(--site-glass-tint);
@@ -2008,69 +2024,77 @@ html.readable-font body {
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
   }
 
-  /* Fixed floating UI shares one safe, visually consistent viewport edge.
-     Desktop keeps its own md:bottom-* class, so this stops below md. */
-  @media (max-width: 767.98px) {
-    .bottom-above-dock {
-      bottom: calc(var(--safe-bottom) + var(--site-floating-edge));
-    }
+  /* Fixed floating UI shares one safe, visually consistent viewport edge. */
+  .bottom-above-dock {
+    bottom: calc(var(--safe-bottom) + var(--site-floating-edge));
+  }
 
-    /* §5.5x A.1 — mobile floating-bottom stack. The radial hub orb, the feed's
-       compose button, the cookie bar, the mini-player and the back-to-top button
-       can all be visible at once; without coordination they pile up on the same
-       bottom edge. Each element declares data-floating; when a LOWER member is
-       present (:has on the .vibe-app shell that hosts them all), the ones above
-       it are lifted clear by that member's reserved height. Absent members
-       contribute 0, so a lone element keeps its natural bottom-above-dock
-       position (no regression). Heights are generous constants (CSS can't read a
-       sibling's measured height) covering the tallest state — the narrow flex-col
-       cookie card, the mini-player bar.
+  /* §5.5x A.1 — floating-bottom stack. The radial hub orb, the feed's compose
+     button, the cookie bar, the mini-player and the back-to-top button
+     can all be visible at once; without coordination they pile up on the same
+     bottom edge. Each element declares data-floating; when a LOWER member is
+     present (:has on the .vibe-app shell that hosts them all), the ones above
+     it are lifted clear by that member's reserved height. Absent members
+     contribute 0, so a lone element keeps its natural bottom-above-dock
+     position (no regression). Heights are generous constants (CSS can't read a
+     sibling's measured height) covering the tallest state — the narrow flex-col
+     cookie card, the mini-player bar.
 
-       The hub orb is the BOTTOM of the stack: it is the site's only navigation
-       control on mobile, it is fixed bottom-centre on every _site page, and the
-       feed's compose FAB shares its row (bottom-right, and shorter than the orb,
-       so the orb's reserve covers both). Its lift is derived from the orb's own
-       geometry tokens rather than a magic number, so the two can never drift
-       apart; --site-floating-edge is subtracted because members already include
-       it, and the trailing gap keeps a visible margin above the orb. */
-    .vibe-app {
-      --float-lift-hub: 0px;
-      --float-lift-cookie: 0px;
-      --float-lift-miniplayer: 0px;
-    }
-    .vibe-app:has([data-floating='hub']) {
-      --float-lift-hub: calc(
-        var(--site-hub-orb-size) + var(--site-hub-orb-inset) - var(--site-floating-edge) + 0.75rem
-      );
-    }
-    .vibe-app:has([data-floating='cookie']) {
-      --float-lift-cookie: 156px;
-    }
-    .vibe-app:has([data-floating='miniplayer']) {
-      --float-lift-miniplayer: 68px;
-    }
-    /* Cookie bar rides above the hub orb. */
-    .vibe-app:has([data-floating='hub']) [data-floating='cookie'] {
-      bottom: calc(var(--safe-bottom) + var(--site-floating-edge) + var(--float-lift-hub));
-    }
-    /* Mini-player rides above the hub orb and the cookie bar. */
-    .vibe-app:has([data-floating='hub']) [data-floating='miniplayer'],
-    .vibe-app:has([data-floating='cookie']) [data-floating='miniplayer'] {
-      bottom: calc(
-        var(--safe-bottom) + var(--site-floating-edge) + var(--float-lift-hub) +
-          var(--float-lift-cookie)
-      );
-    }
-    /* Back-to-top rides above whichever of the three are present (the vars add;
-       an absent one is 0). */
-    .vibe-app:has([data-floating='hub']) [data-floating='backtotop'],
-    .vibe-app:has([data-floating='cookie']) [data-floating='backtotop'],
-    .vibe-app:has([data-floating='miniplayer']) [data-floating='backtotop'] {
-      bottom: calc(
-        var(--safe-bottom) + var(--site-floating-edge) + var(--float-lift-hub) +
-          var(--float-lift-cookie) + var(--float-lift-miniplayer)
-      );
-    }
+     The hub orb is the BOTTOM of the stack: it is the site's only navigation
+     control on mobile, it is fixed bottom-centre on every _site page, and the
+     feed's compose FAB shares its row (bottom-right, and shorter than the orb,
+     so the orb's reserve covers both). Its lift is derived from the orb's own
+     geometry tokens rather than a magic number, so the two can never drift
+     apart; --site-floating-edge is subtracted because members already include
+     it, and the trailing gap keeps a visible margin above the orb.
+
+     This used to be gated to `max-width: 767.98px` on the theory that desktop
+     members carried their own `md:bottom-*`. That holds for the bottom-RIGHT
+     lane (mini-player, back-to-top — coordinated against the compose FAB by
+     radial.css §A.1 at md+), but not for the cookie bar: it is a centred
+     max-w-2xl card, so it shares the orb's bottom-CENTRE lane at every width
+     and the orb sat on its copy and its "Learn more" link on every _site page
+     ≥768px. So the stack is width-independent now and the cookie bar dropped
+     its `md:bottom-4`; the right-lane members keep theirs (a `utilities`-layer
+     class outranks these `components`-layer rules), which leaves their desktop
+     placement exactly as it was. */
+  .vibe-app {
+    --float-lift-hub: 0px;
+    --float-lift-cookie: 0px;
+    --float-lift-miniplayer: 0px;
+  }
+  .vibe-app:has([data-floating='hub']) {
+    --float-lift-hub: calc(
+      var(--site-hub-orb-size) + var(--site-hub-orb-inset) - var(--site-floating-edge) + 0.75rem
+    );
+  }
+  .vibe-app:has([data-floating='cookie']) {
+    --float-lift-cookie: 156px;
+  }
+  .vibe-app:has([data-floating='miniplayer']) {
+    --float-lift-miniplayer: 68px;
+  }
+  /* Cookie bar rides above the hub orb. */
+  .vibe-app:has([data-floating='hub']) [data-floating='cookie'] {
+    bottom: calc(var(--safe-bottom) + var(--site-floating-edge) + var(--float-lift-hub));
+  }
+  /* Mini-player rides above the hub orb and the cookie bar. */
+  .vibe-app:has([data-floating='hub']) [data-floating='miniplayer'],
+  .vibe-app:has([data-floating='cookie']) [data-floating='miniplayer'] {
+    bottom: calc(
+      var(--safe-bottom) + var(--site-floating-edge) + var(--float-lift-hub) +
+        var(--float-lift-cookie)
+    );
+  }
+  /* Back-to-top rides above whichever of the three are present (the vars add;
+     an absent one is 0). */
+  .vibe-app:has([data-floating='hub']) [data-floating='backtotop'],
+  .vibe-app:has([data-floating='cookie']) [data-floating='backtotop'],
+  .vibe-app:has([data-floating='miniplayer']) [data-floating='backtotop'] {
+    bottom: calc(
+      var(--safe-bottom) + var(--site-floating-edge) + var(--float-lift-hub) +
+        var(--float-lift-cookie) + var(--float-lift-miniplayer)
+    );
   }
 
   /* §5.5x B — touch target: the 16px slider thumb (clarity slider + every other

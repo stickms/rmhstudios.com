@@ -21,6 +21,13 @@ type ColumnHeaderProps = {
    * embedded as a tab inside another page, where a second sticky bar would stack.
    */
   sticky?: boolean;
+  /**
+   * Heading level for `title`. Default 'h1'. Pass 'h2' when the column is
+   * embedded in a page that already renders its own h1 — several routes stack a
+   * desktop-only title capsule above a column and shipped two h1s at md+ (and
+   * one at smaller widths), so the outline changed with the viewport.
+   */
+  headingLevel?: 'h1' | 'h2';
   className?: string;
 };
 
@@ -39,8 +46,10 @@ export function ColumnHeader({
   actions,
   children,
   sticky = true,
+  headingLevel = 'h1',
   className,
 }: ColumnHeaderProps) {
+  const Heading = headingLevel;
   return (
     <header
       className={cn(
@@ -59,9 +68,9 @@ export function ColumnHeader({
  (a tag name, a creator's display name) that would otherwise push the
  actions off the row instead of ellipsing. */}
       {title && (
-        <h1 className="min-w-0 truncate font-serif text-xl font-bold tracking-tight text-site-text sm:text-2xl">
+        <Heading className="min-w-0 truncate font-serif text-xl font-bold tracking-tight text-site-text sm:text-2xl">
           {title}
-        </h1>
+        </Heading>
       )}
       {children && <div className="min-w-0 flex-1">{children}</div>}
       {actions && <div className="ml-auto flex shrink-0 items-center gap-1.5">{actions}</div>}

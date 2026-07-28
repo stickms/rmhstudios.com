@@ -1,8 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useTranslation } from 'react-i18next';
 import { LegalLayout } from '@/components/lockdown/LegalLayout';
 
 export const Route = createFileRoute('/cookies')({
+  head: () => ({
+    meta: buildMeta({
+      title: 'Cookie Policy | RMH Studios',
+      description:
+        'The cookies and similar technologies RMH Studios uses, what each is for, and how to control them.',
+      path: '/cookies',
+    }),
+    links: [buildCanonical('/cookies')],
+  }),
   component: CookiesPage,
 });
 
@@ -15,7 +25,7 @@ function CookiesPage() {
       updatedDate="June 11, 2025"
     >
       {/* Document under glass: the whole article body sits on one wide pane. */}
-      <div className="glass-pane rounded-site px-6 py-8 sm:px-10 sm:py-10">
+      <div className="legal-content__pane">
         <h2>{t('cookie-what-heading', { defaultValue: '1. What Are Cookies' })}</h2>
         <p>
           {t('cookie-what-body', {

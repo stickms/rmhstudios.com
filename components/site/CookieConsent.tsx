@@ -67,7 +67,7 @@ export function CookieConsent() {
       // §5.5x A.1: bottom-most member of the mobile floating stack — its presence
       // lifts the mini-player / back-to-top clear of it (globals.css :has() rules).
       data-floating="cookie"
-      className="glass-chrome bottom-above-dock fixed inset-x-3 z-40 mx-auto max-w-2xl rounded-site p-4 shadow-site md:bottom-4"
+      className="glass-chrome bottom-above-dock fixed inset-x-3 z-40 mx-auto max-w-2xl rounded-site p-4 shadow-site"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Cookie className="hidden h-5 w-5 shrink-0 text-site-accent sm:block" aria-hidden />
@@ -87,10 +87,10 @@ export function CookieConsent() {
           </a>
         </p>
         <div className="flex shrink-0 gap-2">
-          <Button variant="outline" size="sm" onClick={() => choose('essential')}>
+          <Button variant="outline" onClick={() => choose('essential')}>
             {t('cookie-consent-essential', { defaultValue: 'Essential only' })}
           </Button>
-          <Button size="sm" onClick={() => choose('all')}>
+          <Button onClick={() => choose('all')}>
             {t('cookie-consent-accept', { defaultValue: 'Accept all' })}
           </Button>
         </div>

@@ -1,8 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useTranslation } from 'react-i18next';
 import { LegalLayout } from '@/components/lockdown/LegalLayout';
 
 export const Route = createFileRoute('/copyright')({
+  head: () => ({
+    meta: buildMeta({
+      title: 'Copyright | RMH Studios',
+      description:
+        'Copyright, DMCA takedown and counter-notice procedures for content on RMH Studios.',
+      path: '/copyright',
+    }),
+    links: [buildCanonical('/copyright')],
+  }),
   component: CopyrightPage,
 });
 
@@ -16,7 +26,7 @@ function CopyrightPage() {
       updatedDate={t('copyright-updated-date', { defaultValue: 'June 11, 2025' })}
     >
       {/* Document under glass: the whole article body sits on one wide pane. */}
-      <div className="glass-pane rounded-site px-6 py-8 sm:px-10 sm:py-10">
+      <div className="legal-content__pane">
         <h2>{t('copyright-ownership-heading', { defaultValue: 'Ownership' })}</h2>
         <p>
           {t('copyright-ownership-body', {
