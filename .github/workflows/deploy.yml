@@ -103,7 +103,7 @@ jobs:
     env:
       NODE_OPTIONS: --max-old-space-size=8192
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
 
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
@@ -173,7 +173,7 @@ jobs:
       commit_author: ${{ steps.commit.outputs.author }}
       discord_msg_id: ${{ steps.discord_out.outputs.id }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
 
       - name: Resolve commit info (for Discord pipeline embed)
         id: commit
@@ -363,7 +363,7 @@ jobs:
       # is self-contained) instead of the full tree. This job sits on the deploy's
       # critical path (it fires the VPS webhook), so trimming its checkout from the
       # whole repo to one dir shaves several seconds off time-to-webhook.
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           sparse-checkout: .github/scripts
 
