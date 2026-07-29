@@ -227,7 +227,19 @@ export function LiquidTabs({
     requestAnimationFrame(() => document.getElementById(tabId(nextId))?.focus());
   };
 
-  const pad = size === 'sm' ? 'min-h-9 px-3 py-1 text-xs' : 'min-h-10 px-4 py-1.5 text-sm';
+  // Padding drives the pill's size; min-height is only a touch-target floor.
+  //
+  // These used to be px-4 py-1.5 — 16px of horizontal inset against 6px of
+  // vertical, a 2.7:1 ratio, with the height coming from min-h rather than from
+  // the padding, so the label read as pinned to the top and bottom edges of its
+  // own capsule. A capsule does want slightly more horizontal room (its rounded
+  // ends eat into the corners), but the ratio belongs nearer 1.4:1, which is
+  // where Apple's segmented controls sit. Same resulting heights, evenly
+  // distributed, and `pointer-coarse:min-h-11` keeps the 44px touch floor.
+  const pad =
+    size === 'sm'
+      ? 'min-h-9 pointer-coarse:min-h-11 px-3 py-2 text-xs'
+      : 'min-h-10 pointer-coarse:min-h-11 px-3.5 py-2.5 text-sm';
 
   const itemClass = (active: boolean) =>
     cn(

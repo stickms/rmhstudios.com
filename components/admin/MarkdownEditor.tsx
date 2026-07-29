@@ -24,7 +24,9 @@ const editorTheme = EditorView.theme(
     '&': { color: 'var(--site-text)', backgroundColor: 'transparent', height: '100%' },
     '.cm-scroller': {
       overflow: 'auto',
-      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
+      // Was a hand-rolled mono stack; the site already ships one (audit: keep
+      // every font on the token contract so a theme change reaches everything).
+      fontFamily: 'var(--site-font-mono)',
       fontSize: '13px',
       lineHeight: '1.65',
     },
