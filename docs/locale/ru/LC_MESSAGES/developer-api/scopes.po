@@ -39,7 +39,7 @@ msgid ""
 "`manage:webhooks`. `read` scopes are non-mutating; `write` and `manage` "
 "change state."
 msgstr ""
-"Области доступа имеют вид `<действие>:<ресурс>` — `read:profile`, "
+"Области доступа имеют вид `<action>:<resource>` — `read:profile`, "
 "`write:posts`, `manage:webhooks`. Области `read` не изменяют состояние; "
 "`write` и `manage` изменяют его."
 

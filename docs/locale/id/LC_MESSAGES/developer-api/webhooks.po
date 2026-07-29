@@ -21,7 +21,7 @@ msgstr ""
 
 #: ../../developer-api/webhooks.md:1 e0880625f9864d8cba2fe7f24e3585a7
 msgid "Webhooks"
-msgstr ""
+msgstr "Webhook"
 
 #: ../../developer-api/webhooks.md:3 7dac7122704d4d4d89ddf615e051bf37
 msgid ""
@@ -29,6 +29,9 @@ msgid ""
 "happen on your account. Manage subscriptions with the `manage:webhooks` "
 "scope via `/api/v1/webhooks`."
 msgstr ""
+"Berlangganan sebuah URL untuk menerima pengiriman peristiwa yang "
+"ditandatangani HMAC saat sesuatu terjadi pada akun Anda. Kelola langganan"
+" dengan cakupan `manage:webhooks` melalui `/api/v1/webhooks`."
 
 #: ../../developer-api/webhooks.md:5 93d29d4b89e444dab2e373714bba2ed4
 #, python-brace-format
@@ -42,86 +45,94 @@ msgid ""
 "# → 201 { \"id\": \"wh_…\", \"secret\": \"whsec_…\", ... }   (secret "
 "shown once)\n"
 msgstr ""
+"curl -X POST https://rmhstudios.com/api/v1/webhooks \\\n"
+"  -H \"Authorization: Bearer $RMH_KEY\" -H \"Content-Type: "
+"application/json\" \\\n"
+"  -d "
+"'{\"url\":\"https://example.com/hook\",\"events\":[\"post.created\",\"follow.created\"]}'"
+"\n"
+"# → 201 { \"id\": \"wh_…\", \"secret\": \"whsec_…\", ... }   (secret "
+"shown once)\n"
 
 #: ../../developer-api/webhooks.md:12 4daac14c4137463db5941853e5453d44
 msgid "Subscribe to `[\"*\"]` to receive every event."
-msgstr ""
+msgstr "Berlangganan `[\"*\"]` untuk menerima setiap peristiwa."
 
 #: ../../developer-api/webhooks.md:14 df7d631280654c3cba85425157942058
 msgid "Events"
-msgstr ""
+msgstr "Peristiwa"
 
 #: ../../developer-api/webhooks.md d6eacb96c7b44d61b434a7de38f0de77
 msgid "Event"
-msgstr ""
+msgstr "Peristiwa"
 
 #: ../../developer-api/webhooks.md b4045ab1b42d4a708674e69006825918
 msgid "Fires when"
-msgstr ""
+msgstr "Terpicu saat"
 
 #: ../../developer-api/webhooks.md 77cc0d2ada2244139401a6ae8be08552
 msgid "`post.created`"
-msgstr ""
+msgstr "`post.created`"
 
 #: ../../developer-api/webhooks.md 56a57adbd877410f9c836d4d01c5b404
 msgid "You created a post (via the API or in-app)."
-msgstr ""
+msgstr "Anda membuat sebuah postingan (via API atau di dalam aplikasi)."
 
 #: ../../developer-api/webhooks.md f4d02bdd40b6456bacf9491361b819f5
 msgid "`post.deleted`"
-msgstr ""
+msgstr "`post.deleted`"
 
 #: ../../developer-api/webhooks.md db4450c70e7649d5aed10a2136de72e3
 msgid "One of your posts was deleted."
-msgstr ""
+msgstr "Salah satu postingan Anda dihapus."
 
 #: ../../developer-api/webhooks.md f53183ef55a747069455736fed348fbb
 msgid "`follow.created`"
-msgstr ""
+msgstr "`follow.created`"
 
 #: ../../developer-api/webhooks.md 6172ace10c6c4b20bbe5fd8fe495269b
 msgid "You followed another user."
-msgstr ""
+msgstr "Anda mengikuti pengguna lain."
 
 #: ../../developer-api/webhooks.md e3aa17096fa34de4bcb8fb5368726441
 msgid "`follow.deleted`"
-msgstr ""
+msgstr "`follow.deleted`"
 
 #: ../../developer-api/webhooks.md 161a2f71d54246a7976c4e59ebe82590
 msgid "You unfollowed a user."
-msgstr ""
+msgstr "Anda berhenti mengikuti pengguna."
 
 #: ../../developer-api/webhooks.md 9d512e1f88904138b619a43d0e892b5d
 msgid "`like.created`"
-msgstr ""
+msgstr "`like.created`"
 
 #: ../../developer-api/webhooks.md cc78655b350f427d8848420d22d84f1b
 msgid "You liked a post."
-msgstr ""
+msgstr "Anda menyukai sebuah postingan."
 
 #: ../../developer-api/webhooks.md 0f4797898f6c472bb9715404fb64d2e9
 msgid "`comment.created`"
-msgstr ""
+msgstr "`comment.created`"
 
 #: ../../developer-api/webhooks.md 1fcbd07ad9294140b65df74786ce0ef6
 msgid "You commented on a post."
-msgstr ""
+msgstr "Anda mengomentari sebuah postingan."
 
 #: ../../developer-api/webhooks.md 5d2ef5ad79c44574b9396720e4697c6d
 msgid "`bookmark.created`"
-msgstr ""
+msgstr "`bookmark.created`"
 
 #: ../../developer-api/webhooks.md 6ef50fe6356a4c5b861baa084334f8dd
 msgid "You bookmarked a post."
-msgstr ""
+msgstr "Anda menyimpan markah pada sebuah postingan."
 
 #: ../../developer-api/webhooks.md:30 e83c581246404fc28c47ea60277a961e
 msgid "Delivery"
-msgstr ""
+msgstr "Pengiriman"
 
 #: ../../developer-api/webhooks.md:32 d6ffcc1db61740f9a647460d282b1731
 msgid "Each event is delivered as a `POST` with a JSON body:"
-msgstr ""
+msgstr "Setiap peristiwa dikirim sebagai `POST` dengan isi JSON:"
 
 #: ../../developer-api/webhooks.md:34 98296b7b13c3427eb8c8b9d43ca4b420
 #, python-brace-format
