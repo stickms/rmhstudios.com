@@ -4,14 +4,13 @@
 # package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: rmhstudios.com 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-29 21:28+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
 "Language: hi\n"
 "Language-Team: hi <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -22,33 +21,35 @@ msgstr ""
 
 #: ../../developer-api/authentication.md:1 e12a505c87544ba6acf262fb618d84ba
 msgid "Authentication"
-msgstr ""
+msgstr "ऑथेंटिकेशन"
 
 #: ../../developer-api/authentication.md:3 c6f3f308872f4cedb189d9d08929e31b
 msgid "Every request must include an API key. Two equivalent options:"
-msgstr ""
+msgstr "हर रिक्वेस्ट में एक API key शामिल होनी चाहिए। दो समान विकल्प:"
 
 #: ../../developer-api/authentication.md:5 a01d23b6d31f4cb2afb5d2ae66f973c3
 msgid "Authorization: Bearer rmh_live_xxxxxxxxxxxxxxxxxxxxxxxx\n"
-msgstr ""
+msgstr "Authorization: Bearer rmh_live_xxxxxxxxxxxxxxxxxxxxxxxx\n"
 
 #: ../../developer-api/authentication.md:9 4e305c76a65f4f2da31154bbd655da80
 msgid "X-API-Key: rmh_live_xxxxxxxxxxxxxxxxxxxxxxxx\n"
-msgstr ""
+msgstr "X-API-Key: rmh_live_xxxxxxxxxxxxxxxxxxxxxxxx\n"
 
 #: ../../developer-api/authentication.md:13 84d169f55f7f42949dcbf9504429061b
 msgid ""
 "API keys authenticate as **your user account**. Writes are scoped to your"
 " own account; you cannot act on behalf of others."
 msgstr ""
+"API keys **आपके यूज़र अकाउंट** के रूप में ऑथेंटिकेट होती हैं। राइट्स आपके"
+" अपने अकाउंट तक सीमित हैं; आप दूसरों की ओर से कार्य नहीं कर सकते।"
 
 #: ../../developer-api/authentication.md:15 99ba9717dc7d4a29b1df5d1aa529d1ad
 msgid "Key security"
-msgstr ""
+msgstr "Key सुरक्षा"
 
 #: ../../developer-api/authentication.md:17 ca334af8bd9b4787a6c1d2e445d140c4
 msgid "Keys are random 256-bit secrets formatted `rmh_live_<base62>`."
-msgstr ""
+msgstr "Keys `rmh_live_<base62>` फ़ॉर्मैट वाले रैंडम 256-बिट सीक्रेट्स होती हैं।"
 
 #: ../../developer-api/authentication.md:18 77e66086b00946718c324e2c394eb8ff
 msgid ""
@@ -56,12 +57,19 @@ msgid ""
 "**once** at creation and can never be retrieved again. The dashboard "
 "shows a non-secret 4-character suffix so you can tell keys apart."
 msgstr ""
+"सर्वर **सिर्फ़ एक SHA-256 हैश** स्टोर करता है — प्लेनटेक्स्ट बनाते समय "
+"**केवल एक बार** दिखाया जाता है और उसे दोबारा कभी हासिल नहीं किया जा "
+"सकता। डैशबोर्ड एक नॉन-सीक्रेट 4-कैरेक्टर सफ़िक्स दिखाता है ताकि आप keys "
+"में फ़र्क़ कर सकें।"
 
 #: ../../developer-api/authentication.md:19 9b3f2c7592754040bfdc5fb377572339
 msgid ""
 "Treat a key like a password. Keep it server-side; never embed it in a "
 "public client, repo, or browser bundle you don't control."
 msgstr ""
+"एक key को पासवर्ड की तरह समझें। इसे सर्वर-साइड पर रखें; इसे कभी भी किसी "
+"सार्वजनिक क्लाइंट, रिपॉज़िटरी, या ऐसे ब्राउज़र बंडल में एम्बेड न करें जिस "
+"पर आपका नियंत्रण नहीं है।"
 
 #: ../../developer-api/authentication.md:20 0b5c72946b6a42b79c051b9d4eb5075d
 msgid ""
@@ -69,12 +77,18 @@ msgid ""
 "[Scopes](./scopes.md). Grant the least privilege a given integration "
 "needs."
 msgstr ""
+"**Scopes:** हर key में विस्तृत परमिशन होती हैं — देखें "
+"[Scopes](./scopes.md)। किसी दिए गए इंटीग्रेशन को जितनी न्यूनतम अनुमति "
+"चाहिए, उतनी ही दें।"
 
 #: ../../developer-api/authentication.md:21 83e71af87c8c45c7aab18842b57216ca
 msgid ""
 "**Expiry:** a key may be created with an expiry date; expired keys are "
 "rejected exactly like revoked ones."
 msgstr ""
+"**Expiry:** एक key को एक्सपायरी तारीख़ के साथ बनाया जा सकता है; एक्सपायर "
+"हो चुकी keys को ठीक उसी तरह अस्वीकार किया जाता है जैसे रिवोक की गई keys "
+"को।"
 
 #: ../../developer-api/authentication.md:22 7d3ae1e8321d43da8a772c38019aed4a
 msgid ""
@@ -83,6 +97,9 @@ msgid ""
 "while keeping the same key record — the old secret stops working "
 "immediately."
 msgstr ""
+"**Rotation:** उसी key रिकॉर्ड को बनाए रखते हुए एक नया सीक्रेट जारी करने "
+"के लिए [`/developer`](https://rmhstudios.com/developer) से एक key को "
+"रोटेट करें — पुराना सीक्रेट तुरंत काम करना बंद कर देता है।"
 
 #: ../../developer-api/authentication.md:23 78395ac83f8f47889835b923146d7ff3
 msgid ""
@@ -90,16 +107,21 @@ msgid ""
 "[`/developer`](https://rmhstudios.com/developer); it takes effect at "
 "once."
 msgstr ""
+"**Revocation:** [`/developer`](https://rmhstudios.com/developer) से किसी"
+" भी समय एक key को रिवोक करें; यह तुरंत प्रभावी हो जाता है।"
 
 #: ../../developer-api/authentication.md:24 7ab7a291c56f499ab98def9e98293371
 msgid ""
 "If a subscription lapses or the account is suspended, all of that "
 "account's keys stop working until the subscription is restored."
 msgstr ""
+"अगर कोई सब्सक्रिप्शन समाप्त हो जाती है या अकाउंट सस्पेंड कर दिया जाता है,"
+" तो उस अकाउंट की सभी keys तब तक काम करना बंद कर देती हैं जब तक "
+"सब्सक्रिप्शन बहाल नहीं हो जाती।"
 
 #: ../../developer-api/authentication.md:26 35a3b220b7ea49fc97780f676f932738
 msgid "CORS and browser clients"
-msgstr ""
+msgstr "CORS और ब्राउज़र क्लाइंट्स"
 
 #: ../../developer-api/authentication.md:29 9cacb0074db14c5bb04a7853c96d59e2
 msgid ""
@@ -109,4 +131,8 @@ msgid ""
 " JavaScript is readable by anyone who loads the page. Keep keys on a "
 "server you control."
 msgstr ""
-
+"क्रॉस-ऑरिजिन रिक्वेस्ट्स की अनुमति है, और ऑथेंटिकेशन कुकीज़ के बजाय बियरर "
+"key से होता है — इसलिए API एक CSRF सरफ़ेस नहीं है। इसका यह मतलब *नहीं* है"
+" कि किसी सार्वजनिक ब्राउज़र बंडल में key भेजी जाए: क्लाइंट-साइड "
+"JavaScript में मौजूद कुछ भी उस पेज को लोड करने वाले किसी भी व्यक्ति द्वारा "
+"पढ़ा जा सकता है। keys को ऐसे सर्वर पर रखें जिस पर आपका नियंत्रण है।"

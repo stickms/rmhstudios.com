@@ -4,14 +4,13 @@
 # package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: rmhstudios.com 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-29 21:28+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
 "Language: ru\n"
 "Language-Team: ru <LL@li.org>\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
@@ -23,7 +22,7 @@ msgstr ""
 
 #: ../../developer-api/pagination.md:1 fbba2ae065f044e59f3e3478865cb32e
 msgid "Pagination"
-msgstr ""
+msgstr "Пагинация"
 
 #: ../../developer-api/pagination.md:3 5f7e67ee4bee43729224b7b6d69b3f63
 msgid ""
@@ -31,10 +30,14 @@ msgid ""
 "unlike offset paging, a row inserted while you iterate can't shift items "
 "onto a page you already read."
 msgstr ""
+"Конечные точки списков используют **постраничную навигацию по ключу "
+"(keyset)** для стабильной и эффективной пагинации — в отличие от "
+"пагинации по смещению, строка, вставленная во время перебора, не "
+"может сдвинуть элементы на страницу, которую вы уже прочитали."
 
 #: ../../developer-api/pagination.md:5 e69abbe515fc469ead547ef212947594
 msgid "Pass `?limit=` (1–50, default 20) to size a page."
-msgstr ""
+msgstr "Передайте `?limit=` (1–50, по умолчанию 20), чтобы задать размер страницы."
 
 #: ../../developer-api/pagination.md:6 ee384dc76e714ca7a2d6ea6f6e760855
 #, python-brace-format
@@ -42,14 +45,18 @@ msgid ""
 "Each response is `{ \"data\": [...], \"nextCursor\": \"<opaque>\" | null "
 "}`."
 msgstr ""
+"Каждый ответ имеет вид `{ \"data\": [...], \"nextCursor\": \"<opaque>\" | "
+"null }`."
 
 #: ../../developer-api/pagination.md:7 2691830ab48c4cc8b414fde634dd6532
 msgid "To fetch the next page, pass the returned `nextCursor` as `?cursor=`."
 msgstr ""
+"Чтобы получить следующую страницу, передайте возвращённый `nextCursor` "
+"как `?cursor=`."
 
 #: ../../developer-api/pagination.md:8 ceff1879e8da4286995f484f63b3a192
 msgid "`nextCursor` is `null` on the last page."
-msgstr ""
+msgstr "На последней странице `nextCursor` равен `null`."
 
 #: ../../developer-api/pagination.md:10 5f9b500f28374d6cb059bd6f4d4b2a8e
 msgid ""
@@ -63,6 +70,15 @@ msgid ""
 " \\\n"
 "  -H \"Authorization: Bearer $RMH_KEY\"\n"
 msgstr ""
+"# First page\n"
+"curl \"https://rmhstudios.com/api/v1/feed?limit=20\" -H \"Authorization: "
+"Bearer $RMH_KEY\"\n"
+"\n"
+"# Next page\n"
+"curl "
+"\"https://rmhstudios.com/api/v1/feed?limit=20&cursor=2026-06-20T09:59:00.000Z\""
+" \\\n"
+"  -H \"Authorization: Bearer $RMH_KEY\"\n"
 
 #: ../../developer-api/pagination.md:19 313bda275dc74ea38e00431c85c1b477
 msgid ""
@@ -70,10 +86,14 @@ msgid ""
 "that is an implementation detail and may change. Store it and send it "
 "back verbatim; don't construct one."
 msgstr ""
+"Считайте курсор непрозрачным значением — сейчас он выглядит как "
+"временная метка, но это деталь реализации, которая может измениться. "
+"Сохраняйте его и отправляйте обратно дословно; не конструируйте его "
+"самостоятельно."
 
 #: ../../developer-api/pagination.md:21 12e071d8855848f782b8c87ee505aa9b
 msgid "Iterating a full list"
-msgstr ""
+msgstr "Перебор полного списка"
 
 #: ../../developer-api/pagination.md:23 155e192833f24011a8d79e0ee06ea67b
 msgid ""
@@ -93,10 +113,26 @@ msgid ""
 "  } while (cursor);\n"
 "}\n"
 msgstr ""
+"async function* pages(path, key) {\n"
+"  let cursor = null;\n"
+"  do {\n"
+"    const url = new URL(`https://rmhstudios.com${path}`);\n"
+"    url.searchParams.set('limit', '50');\n"
+"    if (cursor) url.searchParams.set('cursor', cursor);\n"
+"    const res = await fetch(url, { headers: { Authorization: `Bearer "
+"${key}` } });\n"
+"    if (!res.ok) throw new Error(`${res.status} ${(await "
+"res.json()).error?.code}`);\n"
+"    const body = await res.json();\n"
+"    yield* body.data;\n"
+"    cursor = body.nextCursor;\n"
+"  } while (cursor);\n"
+"}\n"
 
 #: ../../developer-api/pagination.md:39 95c15fa6f67143d49d1761a0e73da063
 msgid ""
 "Stop on `nextCursor === null` — not on an empty `data` array, which is "
 "not a guaranteed terminator."
 msgstr ""
-
+"Останавливайтесь при `nextCursor === null` — а не при пустом массиве "
+"`data`, который не является гарантированным признаком конца."

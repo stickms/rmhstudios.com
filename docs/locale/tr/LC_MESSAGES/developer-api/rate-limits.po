@@ -4,14 +4,13 @@
 # package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: rmhstudios.com 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-29 21:28+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
 "Language: tr\n"
 "Language-Team: tr <LL@li.org>\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
@@ -22,83 +21,88 @@ msgstr ""
 
 #: ../../developer-api/rate-limits.md:1 f8a25bb87ca94aec818d9ddc5b0b100b
 msgid "Rate limits"
-msgstr ""
+msgstr "Hız sınırları"
 
 #: ../../developer-api/rate-limits.md:3 c0e245c104b54395ac9aa706ffbbdc63
 msgid "Limits are enforced **per key**, per minute:"
-msgstr ""
+msgstr "Sınırlar **anahtar başına**, dakika başına uygulanır:"
 
 #: ../../developer-api/rate-limits.md fe342ef176f04d93ab4222b1fb1724a9
 msgid "Tier"
-msgstr ""
+msgstr "Katman"
 
 #: ../../developer-api/rate-limits.md c46d3f3537724417bc79737586f5338f
 msgid "Requests / minute"
-msgstr ""
+msgstr "İstek / dakika"
 
 #: ../../developer-api/rate-limits.md 7aba0555ccd44a439bad37fa23b7d5d7
 msgid "Starter"
-msgstr ""
+msgstr "Starter"
 
 #: ../../developer-api/rate-limits.md 24c045192ce0491dbf800f6bb0c8d195
 msgid "120"
-msgstr ""
+msgstr "120"
 
 #: ../../developer-api/rate-limits.md 9d9925928afa43c68f1ca7a3b4ecfe2b
 msgid "Pro / higher"
-msgstr ""
+msgstr "Pro / üstü"
 
 #: ../../developer-api/rate-limits.md 498e2e208aff42fea741aadb2bcb490d
 msgid "600"
-msgstr ""
+msgstr "600"
 
 #: ../../developer-api/rate-limits.md:10 23805b2f0f0f4ae595d0d24d61d3dca1
 msgid ""
 "Image uploads have a tighter dedicated budget (15/min) and a tier-scaled "
 "daily quota on top of the per-minute limit."
 msgstr ""
+"Görsel yüklemelerinin, dakika başına sınırın üzerinde daha dar özel bir "
+"bütçesi (15/dk) ve katmana göre ölçeklenen günlük bir kotası vardır."
 
 #: ../../developer-api/rate-limits.md:12 8be4d41e6e2149299385260ddb713180
 msgid "Headers"
-msgstr ""
+msgstr "Başlıklar"
 
 #: ../../developer-api/rate-limits.md:14 0df107e65d7f4aa783b5f75c32657cfa
 msgid ""
 "**Every** response carries rate-limit headers — not just `429`s — so a "
 "client can pace itself without waiting to be rejected:"
 msgstr ""
+"**Her** yanıt hız sınırı başlıkları taşır — yalnızca `429`lar değil — "
+"böylece bir istemci reddedilmeyi beklemeden kendi hızını "
+"ayarlayabilir:"
 
 #: ../../developer-api/rate-limits.md 6f87a4ebece64fbaafd6d3dcd8552799
 msgid "Header"
-msgstr ""
+msgstr "Başlık"
 
 #: ../../developer-api/rate-limits.md 5959436a025942eea4f2a0b1cc1c2717
 msgid "Meaning"
-msgstr ""
+msgstr "Anlamı"
 
 #: ../../developer-api/rate-limits.md a9f0899e49fd4f879b373b06ee91cff2
 msgid "`X-RateLimit-Limit`"
-msgstr ""
+msgstr "`X-RateLimit-Limit`"
 
 #: ../../developer-api/rate-limits.md acd39c80cfce4ed88e7bfc6fa12cbfa6
 msgid "Your per-minute ceiling."
-msgstr ""
+msgstr "Dakika başına üst sınırınız."
 
 #: ../../developer-api/rate-limits.md ff4583b776504ba08a87bf69993cc1b2
 msgid "`X-RateLimit-Remaining`"
-msgstr ""
+msgstr "`X-RateLimit-Remaining`"
 
 #: ../../developer-api/rate-limits.md 063247e9891c4f438efbc469ee4d8fed
 msgid "Requests left in the current window."
-msgstr ""
+msgstr "Mevcut pencerede kalan istek sayısı."
 
 #: ../../developer-api/rate-limits.md 19195f7e16d347b9a90101644a1011a1
 msgid "`X-RateLimit-Reset`"
-msgstr ""
+msgstr "`X-RateLimit-Reset`"
 
 #: ../../developer-api/rate-limits.md 71b19346265048f78d14d06617975c44
 msgid "Unix time (seconds) when the window resets."
-msgstr ""
+msgstr "Pencerenin sıfırlandığı Unix zamanı (saniye)."
 
 #: ../../developer-api/rate-limits.md:22 845a9f57ca284889ad7ec33cecb4f0ef
 msgid ""
@@ -106,10 +110,16 @@ msgid ""
 " and retry after that delay rather than retrying immediately — a tight "
 "retry loop burns the next window too."
 msgstr ""
+"Bir `429 Too Many Requests` yanıtı ayrıca `Retry-After` (saniye) de "
+"içerir. Hemen yeniden denemek yerine geri çekilin ve bu gecikmeden "
+"sonra yeniden deneyin — sıkı bir yeniden deneme döngüsü bir sonraki "
+"pencereyi de tüketir."
 
 #: ../../developer-api/rate-limits.md:25 a504b16e15e84a59a53da04c2ba71585
 msgid ""
 "Reading `X-RateLimit-Remaining` and slowing down as it approaches zero "
 "keeps a batch job under the limit without ever taking a `429`."
 msgstr ""
+"`X-RateLimit-Remaining` değerini okumak ve sıfıra yaklaştıkça "
+"yavaşlamak, bir toplu işi hiç `429` almadan sınırın altında tutar."
 

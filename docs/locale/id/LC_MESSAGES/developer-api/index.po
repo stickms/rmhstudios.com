@@ -97,91 +97,112 @@ msgid ""
 "curl https://rmhstudios.com/api/v1/me \\\n"
 "  -H \"Authorization: Bearer $RMH_KEY\"\n"
 msgstr ""
+"# 1. Create a key at https://rmhstudios.com/developer and copy it (shown "
+"once).\n"
+"export RMH_KEY=rmh_live_xxxxxxxxxxxxxxxxxxxxxxxx\n"
+"\n"
+"# 2. Call the API.\n"
+"curl https://rmhstudios.com/api/v1/me \\\n"
+"  -H \"Authorization: Bearer $RMH_KEY\"\n"
 
 #: ../../developer-api/index.md:24 2826e06f8b4944d2b0ffeae1116579dd
 msgid ""
 "Every response includes an `X-Request-Id` header — include it when "
 "contacting support."
 msgstr ""
+"Setiap respons menyertakan header `X-Request-Id` — sertakan header ini "
+"saat menghubungi dukungan."
 
 #: ../../developer-api/index.md:26 a6210f101f4d408ea681b9935b0673cf
 msgid "Guides"
-msgstr ""
+msgstr "Panduan"
 
 #: ../../developer-api/index.md:32 29c28c7f357a489896434f1815a36527
 msgid "Authentication"
-msgstr ""
+msgstr "Autentikasi"
 
 #: ../../developer-api/index.md:36 681558fc953547388ec1dfbe6573937b
 msgid "Sending your key, and how keys are stored, scoped, rotated and revoked."
 msgstr ""
+"Mengirim kunci Anda, dan bagaimana kunci disimpan, diberi cakupan, "
+"dirotasi, dan dicabut."
 
 #: ../../developer-api/index.md:39 ed67a833c7844a8bb1601e100c2a71b3
 msgid "Scopes"
-msgstr ""
+msgstr "Cakupan"
 
 #: ../../developer-api/index.md:43 e075923119244287b72a605144a40dae
 msgid ""
 "The permission catalog, and how an endpoint decides whether your key "
 "qualifies."
 msgstr ""
+"Katalog izin, dan bagaimana sebuah endpoint memutuskan apakah kunci Anda "
+"memenuhi syarat."
 
 #: ../../developer-api/index.md:46 2fd8dc906c7b4ea18291f4db7fc03b1f
 msgid "Rate limits"
-msgstr ""
+msgstr "Batas laju"
 
 #: ../../developer-api/index.md:50 ac436bf467404950815628fc63aac7aa
 msgid ""
 "Per-key budgets by tier, the headers on every response, and how to back "
 "off."
 msgstr ""
+"Anggaran per kunci berdasarkan tier, header pada setiap respons, dan cara"
+" memperlambat permintaan."
 
 #: ../../developer-api/index.md:53 b196cc9c5e7341a8bf6f59f1491f32be
 msgid "Errors"
-msgstr ""
+msgstr "Kesalahan"
 
 #: ../../developer-api/index.md:57 8fbfc751d84f4707b9816728e5eba21f
 msgid "The `type`/`code` taxonomy, the error envelope, and every code we return."
 msgstr ""
+"Taksonomi `type`/`code`, struktur pembungkus kesalahan, dan setiap kode "
+"yang kami kembalikan."
 
 #: ../../developer-api/index.md:60 5e5dbd2a602e4b6eab9ade52e64042a9
 msgid "Pagination"
-msgstr ""
+msgstr "Paginasi"
 
 #: ../../developer-api/index.md:64 d8ab6d80ee8a432ab78885f5a6be01a7
 #, python-brace-format
 msgid "Keyset paging: `limit`, `cursor`, and the `{ data, nextCursor }` envelope."
 msgstr ""
+"Paginasi keyset: `limit`, `cursor`, dan struktur pembungkus `{ data, "
+"nextCursor }`."
 
 #: ../../developer-api/index.md:67 0dadf842123449568f66a6097fb535e9
 msgid "Idempotency"
-msgstr ""
+msgstr "Idempotensi"
 
 #: ../../developer-api/index.md:71 9609414e79304055aef96ed86100c0a9
 msgid "Making writes safe to retry with the `Idempotency-Key` header."
-msgstr ""
+msgstr "Membuat penulisan aman untuk dicoba ulang dengan header `Idempotency-Key`."
 
 #: ../../developer-api/index.md:74 3f1979243af34273b365a19ee02613cf
 msgid "Webhooks"
-msgstr ""
+msgstr "Webhook"
 
 #: ../../developer-api/index.md:78 0a3f5b2c7ffe4e19a2f5bbc8ed8a408c
 msgid "Subscribing to events, delivery semantics, and verifying HMAC signatures."
 msgstr ""
+"Berlangganan peristiwa, semantik pengiriman, dan memverifikasi tanda "
+"tangan HMAC."
 
 #: ../../developer-api/index.md:81 7b438a0bb2f5484c81f9f921ae7c836f
 msgid "Endpoint reference"
-msgstr ""
+msgstr "Referensi endpoint"
 
 #: ../../developer-api/index.md:85 7fe6296b0c5e41e0ab684ece1a0df7fd
 msgid "Every endpoint, grouped, with parameters and worked examples."
-msgstr ""
+msgstr "Setiap endpoint, dikelompokkan, dengan parameter dan contoh penerapan."
 
 #: ../../developer-api/index.md:88 f5de91f489124f76b001b03098ec70d8
 msgid "Changelog"
-msgstr ""
+msgstr "Changelog"
 
 #: ../../developer-api/index.md:92 872c4c3c0e4a46f88f352a185d66011c
 msgid "What changed in each version of the API."
-msgstr ""
+msgstr "Apa yang berubah pada setiap versi API."
 

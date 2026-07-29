@@ -4,14 +4,13 @@
 # package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: rmhstudios.com 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-29 21:28+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
 "Language: hi\n"
 "Language-Team: hi <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -22,13 +21,15 @@ msgstr ""
 
 #: ../../site-reference/index.md:1 2952356a2f744080a9bd46c5dcb62df5
 msgid "Site reference"
-msgstr ""
+msgstr "साइट रेफरेंस"
 
 #: ../../site-reference/index.md:3 e639470df54a40698ed3d0edc8de73df
 msgid ""
 "What the platform actually consists of, area by area — and, in the "
 "generated inventories, every single route it serves."
 msgstr ""
+"प्लेटफ़ॉर्म वास्तव में किन-किन चीज़ों से मिलकर बना है, क्षेत्र दर क्षेत्र"
+" — और, जनरेट की गई इन्वेंटरी में, वह हर एक रूट जिसे यह सर्व करता है।"
 
 #: ../../site-reference/index.md:5 8a859cebd8bd4646b8c26f7cf7a8e1b5
 msgid ""
@@ -39,10 +40,16 @@ msgid ""
 "inventory matters — it is otherwise very easy for a page to exist that "
 "nothing documents."
 msgstr ""
+"RMH Studios एक ऐसा वेब प्लेटफ़ॉर्म है जिसका दायरा असामान्य रूप से बड़ा "
+"है: एक सोशल फ़ीड, लगभग 18 ब्राउज़र गेम्स (कई रीयल-टाइम मल्टीप्लेयर या "
+"3D), एक दर्जन पूर्ण एप्लिकेशन, एक ब्लॉग/न्यूज़/लाइब्रेरी स्टैक, Stripe "
+"मेंबरशिप के साथ एक कॉइन इकॉनमी, और एक स्कोप्ड सार्वजनिक API। यही "
+"विस्तार है जिस वजह से इन्वेंटरी मायने रखती है — वरना ऐसा पेज बन जाना बहुत "
+"आसान है जिसे कोई दस्तावेज़ नहीं करता।"
 
 #: ../../site-reference/index.md:7 b6a3d601e0434999b0634efe9690f2e4
 msgid "How this section is organised"
-msgstr ""
+msgstr "यह सेक्शन कैसे व्यवस्थित है"
 
 #: ../../site-reference/index.md:9 f42dfa345ff74dfda1c6e3cb9fb12504
 msgid ""
@@ -50,6 +57,9 @@ msgid ""
 "which routes belong to it, and which modules implement it — the kind of "
 "thing that only makes sense written by a person."
 msgstr ""
+"**एरिया गाइड्स** हाथ से लिखी गई हैं। ये बताती हैं कि कोई क्षेत्र किसलिए "
+"है, कौन-से रूट इससे संबंधित हैं, और कौन-से मॉड्यूल इसे लागू करते हैं — "
+"ऐसी चीज़ जो किसी व्यक्ति द्वारा लिखी जाने पर ही सही मायने रखती है।"
 
 #: ../../site-reference/index.md:11 6c76fa864eea49f29c0fb2c57a98a564
 msgid ""
@@ -58,100 +68,120 @@ msgid ""
 "construction: if a route exists, it is listed. `pnpm docs:site --check` "
 "fails when they drift, so they cannot quietly go stale."
 msgstr ""
+"**इन्वेंटरी** `pnpm docs:site` द्वारा, सीधे `app/routes/` और प्रोडक्ट "
+"कैटलॉग से जनरेट की जाती हैं। ये अपनी बनावट से ही संपूर्ण होती हैं: अगर "
+"कोई रूट मौजूद है, तो वह सूचीबद्ध है। `pnpm docs:site --check` तब फेल "
+"होता है जब ये ड्रिफ्ट करती हैं, इसलिए ये चुपचाप पुरानी नहीं हो सकतीं।"
 
 #: ../../site-reference/index.md:17 fecc5f76f1cb43b4997c8854d7b5331e
 msgid "Social"
-msgstr ""
+msgstr "सोशल"
 
 #: ../../site-reference/index.md:21 6037085ce16c41c783f3600b5d627ed3
 msgid "The RMHarks feed, profiles, messaging, communities, groups and presence."
-msgstr ""
+msgstr "RMHarks फ़ीड, प्रोफ़ाइल, मैसेजिंग, कम्युनिटी, ग्रुप्स और प्रेज़ेंस।"
 
 #: ../../site-reference/index.md:24 14caed7702d24d938326770e364edf15
 msgid "Economy & progression"
-msgstr ""
+msgstr "इकॉनमी और प्रोग्रेशन"
 
 #: ../../site-reference/index.md:28 46153619df394a26b4214e9f1152599f
 msgid ""
 "Coins, the shop and market, staking, quests, XP, battle pass, memberships"
 " and competitive play."
 msgstr ""
+"कॉइन्स, शॉप और मार्केट, स्टेकिंग, क्वेस्ट, XP, बैटल पास, मेंबरशिप और "
+"प्रतिस्पर्धी गेमप्ले।"
 
 #: ../../site-reference/index.md:31 add7c599251c44e5958f47dcfefba29d
 msgid "Content"
-msgstr ""
+msgstr "कंटेंट"
 
 #: ../../site-reference/index.md:35 c61353d4ad5344769c2bc97d26437ad0
 msgid "Blog, news, the document library, builds, and the creator surfaces."
-msgstr ""
+msgstr "ब्लॉग, न्यूज़, डॉक्यूमेंट लाइब्रेरी, बिल्ड्स, और क्रिएटर सरफेसेज़।"
 
 #: ../../site-reference/index.md:38 e1d9cc5093bc43f1a709a5af60c02859
 msgid "Games & apps"
-msgstr ""
+msgstr "गेम्स और ऐप्स"
 
 #: ../../site-reference/index.md:42 65247575eba1438eb22af70bc22d355d
 msgid ""
 "How a game or app is wired into the site, plus leaderboards, saves and "
 "replays."
 msgstr ""
+"कोई गेम या ऐप साइट में किस तरह जोड़ा जाता है, साथ ही लीडरबोर्ड, सेव्स और "
+"रिप्ले।"
 
 #: ../../site-reference/index.md:45 f0b7018e40ae4b3d8564d079ec09a17a
 msgid "Page routes"
-msgstr ""
+msgstr "पेज रूट्स"
 
 #: ../../site-reference/index.md:49 3400e96d5bc040c58f382d466bbb444d
 msgid ""
 "**Generated.** Every page URL, its title, its access level and its source"
 " file."
 msgstr ""
+"**जनरेट किया गया।** हर पेज URL, उसका शीर्षक, उसका एक्सेस स्तर और उसकी "
+"सोर्स फ़ाइल।"
 
 #: ../../site-reference/index.md:52 086e18521c5f4ec6880caa39b1326728
 msgid "API routes"
-msgstr ""
+msgstr "API रूट्स"
 
 #: ../../site-reference/index.md:56 b39689a33d184668ac8ede60c3743c84
 msgid ""
 "**Generated.** Every server route in the app tier, with the HTTP methods "
 "it handles."
 msgstr ""
+"**जनरेट किया गया।** ऐप टियर में हर सर्वर रूट, उन HTTP मेथड्स के साथ जिन्हें "
+"वह हैंडल करता है।"
 
 #: ../../site-reference/index.md:59 c38ec66475a546598a18479725cc7b0e
 msgid "Game catalog"
-msgstr ""
+msgstr "गेम कैटलॉग"
 
 #: ../../site-reference/index.md:63 146eff2c55934117868a1bb18a819b48
 msgid ""
 "**Generated** from `lib/games.ts` — every game, including the unlisted "
 "ones."
 msgstr ""
+"`lib/games.ts` से **जनरेट किया गया** — हर गेम, उन गेम्स सहित जो सूचीबद्ध "
+"नहीं हैं।"
 
 #: ../../site-reference/index.md:66 faadb7edc7e94663a23f391cbe79d120
 msgid "App catalog"
-msgstr ""
+msgstr "ऐप कैटलॉग"
 
 #: ../../site-reference/index.md:70 5ce6b4beda0a46379245eba05aff2b7e
 msgid "**Generated** from `lib/apps.ts` — every application."
-msgstr ""
+msgstr "`lib/apps.ts` से **जनरेट किया गया** — हर एप्लिकेशन।"
 
 #: ../../site-reference/index.md:74 a2b62a4523c441398b2bcfe524a3c08d
 msgid "Two shells, and why it matters"
-msgstr ""
+msgstr "दो शेल्स, और यह क्यों मायने रखता है"
 
 #: ../../site-reference/index.md:76 c40b783c675e418bae778c7e47cfe8c4
 msgid ""
 "Where a route file lives decides how the page is framed, and this trips "
 "people up more than anything else in the routing layer:"
 msgstr ""
+"कोई रूट फ़ाइल कहाँ रहती है, यह तय करता है कि पेज किस तरह फ़्रेम किया जाता "
+"है, और यही चीज़ रूटिंग लेयर में और किसी भी चीज़ से ज़्यादा लोगों को उलझन "
+"में डालती है:"
 
 #: ../../site-reference/index.md:78 5f5ab0e1c4844b208b4c72c535031d4c
 msgid ""
 "Files under `app/routes/_site/` render inside the **site shell** — the "
 "radial nav hub, sidebar, context rail, skip link and `<main>` landmark."
 msgstr ""
+"`app/routes/_site/` के अंतर्गत फ़ाइलें **साइट शेल** के भीतर रेंडर होती "
+"हैं — रेडियल नैव हब, साइडबार, कॉन्टेक्स्ट रेल, स्किप लिंक और `<main>` "
+"लैंडमार्क।"
 
 #: ../../site-reference/index.md:79 d7aff5b1c1ff44009f4349b8d1a04f38
 msgid "Top-level files render **full-screen**, with no shell at all."
-msgstr ""
+msgstr "टॉप-लेवल फ़ाइलें **फ़ुल-स्क्रीन** रेंडर होती हैं, बिना किसी शेल के।"
 
 #: ../../site-reference/index.md:81 9f114c76a5c74be285ac1d900a0b0684
 msgid ""
@@ -161,16 +191,23 @@ msgid ""
 "apps have their own chrome tier in `components/shared/` (`AppShell`, "
 "`AppHeader`, the `--app-*` token contract)."
 msgstr ""
+"गेम्स, `/login`, `secret/*` गेम्स, `discord/*` और लीगल पेज *जानबूझकर* "
+"टॉप-लेवल पर हैं। किसी एक को \"इसे कंसिस्टेंट बनाने\" के लिए `_site/` के "
+"अंतर्गत ले जाने से एक फ़ुल-स्क्रीन गेम साइडबार में लिपट जाएगा। फ़ुल-"
+"स्क्रीन ऐप्स का अपना क्रोम टियर `components/shared/` में है (`AppShell`, "
+"`AppHeader`, `--app-*` टोकन कॉन्ट्रैक्ट)।"
 
 #: ../../site-reference/index.md:83 71a7694925034a3f8f8f9e66ce569647
 msgid ""
 "The generated [page inventory](./pages.md) splits its tables along "
 "exactly this line, so you can see which pages are in which world."
 msgstr ""
+"जनरेट की गई [पेज इन्वेंटरी](./pages.md) अपनी टेबल को ठीक इसी रेखा पर "
+"विभाजित करती है, ताकि आप देख सकें कि कौन-से पेज किस दुनिया में हैं।"
 
 #: ../../site-reference/index.md:85 36235fa7bce142db867cab43b5a09962
 msgid "The trust rule"
-msgstr ""
+msgstr "भरोसे का नियम"
 
 #: ../../site-reference/index.md:87 bbc1e81c6d4d451b8c3eb5ed876ad3df
 msgid ""
@@ -178,4 +215,6 @@ msgid ""
 "from. Where a hand-written guide and the code disagree, the code wins — "
 "and the guide is a bug. Report it or fix it; don't work around it."
 msgstr ""
-
+"ये पेज साइट का वर्णन उस कमिट के अनुसार करते हैं जिससे इन्हें जनरेट किया "
+"गया था। जहाँ हाथ से लिखी गई गाइड और कोड असहमत हों, वहाँ कोड जीतता है — और "
+"गाइड एक बग है। इसे रिपोर्ट करें या ठीक करें; इसके इर्द-गिर्द काम न चलाएँ।"
