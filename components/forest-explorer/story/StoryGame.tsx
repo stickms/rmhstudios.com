@@ -7,6 +7,8 @@ import { useStoryStore } from '@/lib/forest-explorer/store';
 import { actMaps } from '@/lib/forest-explorer/actMaps';
 import { hasSave } from '@/lib/forest-explorer/saveSystem';
 import { authClient } from '@/lib/auth-client';
+import { useRenderQuality } from '@/lib/render/useRenderQuality';
+import AdaptiveQuality from '@/components/render/AdaptiveQuality';
 import { StoryScene } from './StoryScene';
 import { StoryHUD } from './StoryHUD';
 import { InteractionPrompt } from './InteractionPrompt';
@@ -39,6 +41,11 @@ export function StoryGame() {
     const storyFlags = useStoryStore(s => s.storyFlags);
     const showPuzzleOverlay = useStoryStore(s => s.showPuzzleOverlay);
     const journalOpen = useStoryStore(s => s.journalOpen);
+
+    const { quality, dpr, downscale } = useRenderQuality();
+    // The scene only needs live frames when the player is actually in it —
+    // every other state draws a full-screen overlay on top of it.
+    const sceneActive = locked && !showMenu && !paused && !showPuzzleOverlay && !journalOpen;
     const treesShiftCount = useStoryStore(s => s.treesShiftCount);
 
     const [hasSaveData, setHasSaveData] = useState(false);
@@ -171,10 +178,16 @@ export function StoryGame() {
     return (
         <div className="w-full h-full relative select-none" style={{ touchAction: 'none' }}>
             <Canvas
-                shadows
-                gl={{ antialias: true }}
+                shadows={quality.shadows}
+                dpr={dpr}
+                gl={{ antialias: quality.antialias, powerPreference: 'high-performance' }}
                 camera={{ fov: 75, near: 0.1, far: 600 }}
+                // Menus, pause, puzzles and the journal all sit over a blurred
+                // scene. 'demand' keeps that last frame on screen without
+                // re-rendering the whole forest behind it every vsync.
+                frameloop={sceneActive ? 'always' : 'demand'}
             >
+                <AdaptiveQuality onDownscale={downscale} />
                 <StoryScene
                     onLock={() => setLocked(true)}
                     onUnlock={() => setLocked(false)}
