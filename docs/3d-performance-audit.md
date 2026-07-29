@@ -4,6 +4,10 @@ Measured 2026-07-29 against the dev server (`pnpm exec vite dev`, port 7005) wit
 an instrumented headless Chromium. Covers every route that opens a WebGL/WebGPU
 context.
 
+> **Status: the findings below have been acted on.** See §8 for what shipped and
+> the measured result. The diagnosis in §1–§6 is kept as written so the numbers
+> that motivated each change stay on record.
+
 ## How the numbers were produced
 
 `WebGL2RenderingContext.prototype.drawElements` / `drawArrays` /
@@ -399,6 +403,96 @@ drop in drei's `<AdaptiveDpr pixelated />` + `<PerformanceMonitor>`, which
 | 11 | FBX → compressed glTF; don't block the swap on `dance` | `public/kowloon/fighter/*`, `render/fighter/clips.ts` | 1 day | 7.9 MB → <1 MB; kills the 3.5s arena-entry stall |
 
 Items 1, 6, and 7 are near-free and could land as a single small PR.
+
+## 8. What shipped, and what it measured
+
+All figures from the same harness, viewport and software rasteriser as the
+baseline above, so they are comparable to each other. **fps remains
+relative-only** — the capture machine has no GPU. Draw calls and triangles are
+hardware-independent.
+
+| | forest-explorer | cookgame |
+| --- | ---: | ---: |
+| draws/frame | 94 → **181** | 432 → **118** |
+| triangles/frame | 181,757 → **50,832** | 10,120 → **7,314** |
+| fps | 3.3 → **7.7** | 6.1 → **11.8** |
+| worst long task | 418 ms → **147 ms** | 236 ms → **106 ms** |
+
+forest-explorer's draw count deliberately went *up*: it was triangle-bound at
+94 draws, and chunking trades draw calls for frustum culling. cookgame went the
+other way, which is what a draw-call-bound scene needs.
+
+Shipped:
+
+1. **`lib/render/`** — the tier system from §6, lifted out of
+   kowloon-knockout and made game-agnostic: `probe.ts` (GPU probe against a
+   throwaway canvas, so a tier is known *before* `<Canvas>` mounts),
+   `tier.ts` (tier → dpr/antialias/shadows/shadowMapSize/densityScale),
+   `governor.ts`, `useRenderQuality` (React) and `runtime.ts` (imperative
+   renderers). `components/render/AdaptiveQuality` runs the governor in-Canvas.
+   Mobile caps at `medium`; reduced-motion maps to `low`.
+2. **DPR clamps** on the three Canvases that had none (§1.1, §2.4).
+3. **`frameloop='demand'`** in forest whenever an overlay is up (§1.4).
+   cookgame is deliberately excluded — `WorldTicker` drives world time from
+   `useFrame`.
+4. **`components/render/StaticMerge`** (§2.1) — merges static descendant meshes
+   per material × shadow flags. Applied across all of TownScene, so a palette
+   colour is one draw for the whole district. Originals are hidden, not
+   detached, which keeps R3F's tree and Rapier's derived colliders intact.
+5. **Reveal state as a `Set`** with boolean selectors, and no write when
+   membership is unchanged (§1.5). Removed the ~25 `new Color()` JSX props and
+   the per-frame vector allocations in both controllers (§1.6).
+6. **Chunked tree instances** with `computeBoundingSphere()`, restoring frustum
+   culling (§1.2), plus `disposeTreeInstancedMeshes()` for a real leak.
+7. **`ShadowFollowSun`** — tight, player-following, texel-snapped shadow
+   frustum at the tier's map size, replacing the 200–240-unit frustums (§1.3).
+8. **velum2099**: half-resolution bloom and tier-capped DPR (§5).
+9. **kowloon-knockout**: the skeletal swap now awaits the rig plus idle/walk
+   (~2.8 MB) instead of all eleven clips (~7.9 MB); the rest stream in (§4.1).
+
+### Pre-existing bug found while verifying (not introduced, not fixed here)
+
+`SkeletalFighter` throws `TypeError: Cannot set properties of undefined
+(setting '_cacheIndex')` from `AnimationAction.play()` inside `useFrame`, once
+per fighter, on entering the arena. Reproduced identically on the commit before
+any of this work, so it is not a regression from the clip streaming.
+
+Cause: the disposal effect (`SkeletalFighter.tsx`, keyed `[mixer, model]`) calls
+`mixer.uncacheRoot(model)` and disposes accessory geometry, but the `useMemo`
+that *creates* the mixer and model has different dependencies and does not
+re-run on a remount. React StrictMode's dev-only mount → cleanup → mount cycle
+therefore hands the remounted component a mixer whose internal bindings have
+already been torn down, and the first `play()` crashes.
+
+Production React does not double-invoke effects, and a real unmount discards the
+memo too, so this should be development-only. Fixing it properly means moving
+mixer/model ownership out of `useMemo` so creation and disposal share one
+lifecycle — a restructure of that component, deliberately left out of a
+performance pass.
+
+Verified with the tier forced to `high` (the software rasteriser otherwise
+detects `low`, which uses the procedural StickFighter and never loads the rig).
+That run also confirms the streaming works as intended — `ybot.fbx`, then
+`idle`/`walk`, then the remaining nine clips ~16 s later:
+
+```
+ 31715ms  ybot.fbx
+ 46461ms  idle.fbx      <- swap happens here
+ 46461ms  walk.fbx
+ 63120ms  jab.fbx ... dance.fbx   (deferred)
+```
+
+Not done — deliberately:
+
+- **FBX → compressed glTF** for the fighter assets. This is the real fix for
+  §4.1's 7.9 MB and the 3.5 s main-thread parse; clip streaming only reduces
+  what blocks the swap. It needs an asset pipeline change, not a code change.
+- **Aggressive `castShadow` pruning** in cookgame (§2.2). Merging already
+  collapses the shadow pass into a handful of merged casters, so the remaining
+  win is small and the call is a visual judgement.
+- **forest Story Mode, void-breaker, velum2099 and rmh-farming-sim** were not
+  re-measured end-to-end — the harness can't drive their menus (§4, §5). Their
+  changes are shared code exercised by the routes that were measured.
 
 ## Reproducing
 
