@@ -73,6 +73,7 @@ version = release
 extensions = [
     "myst_parser",
     "sphinx_copybutton",
+    "sphinx_design",
 ]
 
 source_suffix = {
@@ -107,6 +108,36 @@ exclude_patterns = [
     "go-migration/build/**",
 ]
 
+"""Translations.
+
+The site ships in 16 locales (``lib/i18n/config.ts`` is the authoritative list);
+the docs use the same set. Catalogs live in ``docs/locale/<lang>/LC_MESSAGES/``
+as one ``.po`` per document — ``gettext_compact = False`` — so a page can be
+translated without touching any other page, and an untranslated string simply
+falls back to English.
+
+Workflow (see docs/translations.md):
+
+    pnpm docs:i18n          # extract messages, then update every .po
+    pnpm docs:i18n:build ja # build one language locally
+
+Read the Docs serves each language as its own project, linked as translations
+of the English one, so a per-language build sets ``language`` on the command
+line rather than here.
+"""
+
+# English is authoritative. A per-language build overrides this on the command
+# line (`-D language=ja`), which is what Read the Docs does for a translation
+# project — so this file stays identical across all 16 of them.
+language = "en"
+
+locale_dirs = ["locale/"]
+gettext_compact = False
+# Stable message ids across extractions keep diffs reviewable — without this,
+# editing one paragraph renumbers its neighbours and every .po churns.
+gettext_uuid = True
+gettext_additional_targets = ["literal-block"]
+
 suppress_warnings = [
     # The docs link to files outside docs/ (CLAUDE.md, app/, deploy/, …).
     # Those targets are real in the repo but not part of the Sphinx source
@@ -122,8 +153,42 @@ suppress_warnings = [
 
 html_theme = "furo"
 html_title = f"rmhstudios.com docs ({release})"
+html_favicon = "_static/favicon.svg"
+html_static_path = ["_static"]
+html_css_files = ["custom.css"]
+
+# The site's design language is monochrome-first — near-black on white, near-white
+# on black, generously rounded, SF Pro/Inter with JetBrains Mono for code (see
+# docs/design-language.md). Mirror it here so the docs read as part of the same
+# product rather than as stock Sphinx. Everything else is in _static/custom.css.
 html_theme_options = {
     "source_repository": "https://github.com/stickms/rmhstudios.com/",
     "source_branch": "main",
     "source_directory": "docs/",
+    "light_css_variables": {
+        "color-brand-primary": "#000000",
+        "color-brand-content": "#000000",
+        "color-brand-visited": "#565656",
+        "color-background-primary": "#ffffff",
+        "color-background-secondary": "#fafafa",
+        "color-foreground-primary": "#000000",
+        "color-foreground-secondary": "#565656",
+        "color-foreground-muted": "#767676",
+        "color-background-border": "rgba(0, 0, 0, 0.16)",
+        "color-api-background": "#fafafa",
+        "font-stack": "-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif",
+        "font-stack--monospace": "'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace",
+    },
+    "dark_css_variables": {
+        "color-brand-primary": "#ffffff",
+        "color-brand-content": "#ffffff",
+        "color-brand-visited": "#a8a8a8",
+        "color-background-primary": "#000000",
+        "color-background-secondary": "#0a0a0a",
+        "color-foreground-primary": "#ffffff",
+        "color-foreground-secondary": "#a8a8a8",
+        "color-foreground-muted": "#8a8a8a",
+        "color-background-border": "rgba(255, 255, 255, 0.18)",
+        "color-api-background": "#0a0a0a",
+    },
 }

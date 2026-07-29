@@ -1,0 +1,264 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, RMH Studios
+# This file is distributed under the same license as the rmhstudios.com
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: rmhstudios.com 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-29 21:28+0000\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
+"Language: fr\n"
+"Language-Team: fr <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../developer-api/errors.md:1 aa23c4a50d3d4260ae58b657b228fb17
+msgid "Errors"
+msgstr "Erreurs"
+
+#: ../../developer-api/errors.md:3 8489d347c05141f2ab802596017cc1f2
+msgid "Non-2xx responses use a stable envelope:"
+msgstr "Les réponses non-2xx utilisent une enveloppe stable :"
+
+#: ../../developer-api/errors.md:5 045231a256da404399795fbc8a98b0aa
+#, python-brace-format
+msgid ""
+"{\n"
+"  \"error\": {\n"
+"    \"type\": \"authorization_error\",\n"
+"    \"code\": \"insufficient_scope\",\n"
+"    \"message\": \"This endpoint requires the \\\"write:posts\\\" scope, "
+"which this key does not have.\",\n"
+"    \"request_id\": \"req_…\"\n"
+"  }\n"
+"}\n"
+msgstr ""
+"{\n"
+"  \"error\": {\n"
+"    \"type\": \"authorization_error\",\n"
+"    \"code\": \"insufficient_scope\",\n"
+"    \"message\": \"This endpoint requires the \\\"write:posts\\\" scope, "
+"which this key does not have.\",\n"
+"    \"request_id\": \"req_…\"\n"
+"  }\n"
+"}\n"
+
+#: ../../developer-api/errors.md:16 bcd28b8346c7462488856d010a8fdb43
+msgid "`code` is the precise, machine-stable reason — branch on this."
+msgstr ""
+"`code` est la raison précise et stable, exploitable par une machine — "
+"basez votre logique dessus."
+
+#: ../../developer-api/errors.md:17 df51718c6498407783e9df7599a14b07
+msgid ""
+"`type` is the broad category, for clients that only need to know *what "
+"kind* of thing went wrong."
+msgstr ""
+"`type` est la catégorie générale, pour les clients qui ont seulement "
+"besoin de savoir *quel genre* de problème s'est produit."
+
+#: ../../developer-api/errors.md:18 d2adee8930bc4b5697f73a6cd0992a41
+msgid "`message` is human-readable and may change; don't parse it."
+msgstr "`message` est lisible par un humain et peut changer ; ne le parsez pas."
+
+#: ../../developer-api/errors.md:19 2786d747fa624042aa8e6cf9ba7a5599
+msgid ""
+"`request_id` echoes the `X-Request-Id` header. Quote it when contacting "
+"support."
+msgstr ""
+"`request_id` reprend l'en-tête `X-Request-Id`. Indiquez-le lorsque vous "
+"contactez le support."
+
+#: ../../developer-api/errors.md:21 d5404429406445b4b31bc8baba89252a
+msgid "Codes"
+msgstr "Codes"
+
+#: ../../developer-api/errors.md 4ac293ce1a8c4ac4832dd528e16ec69c
+msgid "`code`"
+msgstr "`code`"
+
+#: ../../developer-api/errors.md a40273f8e747469997ffb05345ab7d6e
+msgid "`type`"
+msgstr "`type`"
+
+#: ../../developer-api/errors.md 7540f22d954b4943a72f5042502554f3
+msgid "HTTP status"
+msgstr "Statut HTTP"
+
+#: ../../developer-api/errors.md 0e4f1f9f8a764d42bdb16948760f8407
+msgid "`account_suspended`"
+msgstr "`account_suspended`"
+
+#: ../../developer-api/errors.md 695e8620ce0a4c78964a79780615468a
+#: 88540ad8d97c4d6faffb6273b2bab52a bb7effff56284e95a9b40f281d837e83
+#: cc513218ddd84772a4552aeee53bfe44 cec1eeca164e4e34b9aa440460ae6c20
+msgid "`authorization_error`"
+msgstr "`authorization_error`"
+
+#: ../../developer-api/errors.md 3bce0bee3cf849f5b7e0e79af7c9b408
+#: 4d1868f8931b4b9988cf55491c0af79c 8a8ffc300b6d4e78b491c37b74c807f4
+#: c110b2a94af24ae4980e32afed4ffc4e dd237032f85b4cfcb545d27ae918cf11
+msgid "`403`"
+msgstr "`403`"
+
+#: ../../developer-api/errors.md 9a5a72a3e61a4b4a90ff18ef952f3884
+msgid "`conflict`"
+msgstr "`conflict`"
+
+#: ../../developer-api/errors.md a445d02b03394b3890636c75dd7ec0e4
+#: ca08d528fa9648a180e33cda02fbef52
+msgid "`conflict_error`"
+msgstr "`conflict_error`"
+
+#: ../../developer-api/errors.md 22212d14329d4140b8f4b9967f396590
+#: 5c3516d93b6043a19102f8680edad4ee
+msgid "`409`"
+msgstr "`409`"
+
+#: ../../developer-api/errors.md ea2cb7d525604874bfb47c1532766683
+msgid "`feature_not_available`"
+msgstr "`feature_not_available`"
+
+#: ../../developer-api/errors.md 1d88b870dc5c40e5ac72019590f978c9
+msgid "`forbidden`"
+msgstr "`forbidden`"
+
+#: ../../developer-api/errors.md 6073f4442f604e67844e41ab10e48a0a
+msgid "`idempotency_conflict`"
+msgstr "`idempotency_conflict`"
+
+#: ../../developer-api/errors.md 62a271f633ca4b029450dce3742246bd
+msgid "`insufficient_scope`"
+msgstr "`insufficient_scope`"
+
+#: ../../developer-api/errors.md 50a0099f1c01409887e19e43b80b6755
+msgid "`internal_error`"
+msgstr "`internal_error`"
+
+#: ../../developer-api/errors.md 7ff0abea486a4a51b3b6aa54a8160e94
+msgid "`api_error`"
+msgstr "`api_error`"
+
+#: ../../developer-api/errors.md fe09e478e23b43f0833e1ef2a83e77f9
+msgid "`500`"
+msgstr "`500`"
+
+#: ../../developer-api/errors.md 3828a311bf5841909f6951e343428388
+msgid "`invalid_key`"
+msgstr "`invalid_key`"
+
+#: ../../developer-api/errors.md 8009002b9e6e41f18a62b5dc848b31de
+#: f861fbac05c04baabc984f884444b9a0 fd78a5f1f0454ef4b824daf7457ef69b
+msgid "`authentication_error`"
+msgstr "`authentication_error`"
+
+#: ../../developer-api/errors.md 56c6dc295d464fb69a0ce14160892800
+#: 5f9339c3573e4b05912d3c0cc1e49379 7d63a277b93b4170bd9f4414f1539af6
+msgid "`401`"
+msgstr "`401`"
+
+#: ../../developer-api/errors.md 46af019f7b52447db49536ff91cdd583
+msgid "`invalid_media`"
+msgstr "`invalid_media`"
+
+#: ../../developer-api/errors.md 0404d88774cf4442b2ad143b9448ad52
+#: a6e0e8411cce49a5b631b9d44b22a811 b435dd4577e14daa8eeed4dfa1379670
+#: bf4f796f24a046459fef04d25d4e3635 dd0e29cd289f4a3e96ad22f241b8a329
+msgid "`invalid_request_error`"
+msgstr "`invalid_request_error`"
+
+#: ../../developer-api/errors.md 9bba809c777c417bb84b95ccd5966f82
+#: abe6ef81c5154ca79d17d3a35ecdb099
+msgid "`400`"
+msgstr "`400`"
+
+#: ../../developer-api/errors.md db26d1d9e2f5488fbd67fc23f00d3cf2
+msgid "`invalid_request`"
+msgstr "`invalid_request`"
+
+#: ../../developer-api/errors.md cef2e0d053cf4be1beba758908fa57c8
+msgid "`key_expired`"
+msgstr "`key_expired`"
+
+#: ../../developer-api/errors.md b4fbdede0598449f9dc79051160cc479
+msgid "`method_not_allowed`"
+msgstr "`method_not_allowed`"
+
+#: ../../developer-api/errors.md eb4bbb3915574c5f9cbdf17e93893699
+msgid "`405`"
+msgstr "`405`"
+
+#: ../../developer-api/errors.md 30042fa38109423f8c4bd0f28ece36d1
+msgid "`missing_key`"
+msgstr "`missing_key`"
+
+#: ../../developer-api/errors.md 9ed2ebc2b5b74d85b4cdb6264cf115c4
+msgid "`not_found`"
+msgstr "`not_found`"
+
+#: ../../developer-api/errors.md b30fc84b79974145b9ae1c71aa48c9b5
+msgid "`not_found_error`"
+msgstr "`not_found_error`"
+
+#: ../../developer-api/errors.md a8d0453c5b914969a5467c5bb56da2ea
+msgid "`404`"
+msgstr "`404`"
+
+#: ../../developer-api/errors.md 4c936a63cc6e408daa4fe8a76e633ec8
+msgid "`payload_too_large`"
+msgstr "`payload_too_large`"
+
+#: ../../developer-api/errors.md 8392b1c4b3ca47b698b7d8f17d4fed8a
+msgid "`413`"
+msgstr "`413`"
+
+#: ../../developer-api/errors.md 27df440d1e244d3e9f3c27ba64c67c77
+msgid "`quota_exceeded`"
+msgstr "`quota_exceeded`"
+
+#: ../../developer-api/errors.md 8217a81d025243e49451ab5629e74605
+#: ca0b061ad80e4d89998fa52ec779ec2c
+msgid "`rate_limit_error`"
+msgstr "`rate_limit_error`"
+
+#: ../../developer-api/errors.md 5acb86e9146c4d5887140ffea02abfe9
+#: fc374ce3b1774d0bb0862abb43b9d89d
+msgid "`429`"
+msgstr "`429`"
+
+#: ../../developer-api/errors.md f052a777d5fd409d8362e7f5d5dafb73
+msgid "`rate_limited`"
+msgstr "`rate_limited`"
+
+#: ../../developer-api/errors.md f93cefcb984a49939e5464da3d705233
+msgid "`subscription_required`"
+msgstr "`subscription_required`"
+
+#: ../../developer-api/errors.md 6d28ef99b3ea4d68a23a595553011fef
+msgid "`unprocessable`"
+msgstr "`unprocessable`"
+
+#: ../../developer-api/errors.md 42cd816e969e4ee2bf1985f1299e0bb5
+msgid "`422`"
+msgstr "`422`"
+
+#: ../../developer-api/errors.md:49 e1552efe6a224b3f9c3c8f29839e8949
+msgid ""
+"An unrecognised code always maps to `api_error` / `500`, so a client that"
+" handles the categories above degrades safely if we add a code."
+msgstr ""
+"Un code non reconnu correspond toujours à `api_error` / `500`, de sorte "
+"qu'un client qui gère les catégories ci-dessus se dégrade en toute "
+"sécurité si nous ajoutons un nouveau code."
+
+#: ../../developer-api/errors.md:52 691e16608ff747a1a995aee7320bf065
+msgid "Generated from `lib/api/errors.ts` by `pnpm docs:api`."
+msgstr "Généré à partir de `lib/api/errors.ts` par `pnpm docs:api`."
+

@@ -17,6 +17,10 @@ python -m sphinx -b html docs docs/_build/html
 New Markdown files are picked up by the globbed toctrees in `index.md`
 automatically; a file needs an `# H1` to get a nav entry.
 
+The site is published in the same 16 languages as the product — see
+[`translations.md`](./translations.md) for the pipeline, the translated-page
+subset, and the Read the Docs per-language project setup.
+
 **Trust order for conflicts:** code > `docker-compose.yml`/`deploy.sh` >
 root `CLAUDE.md` / directory `CLAUDE.md`s > the reference docs below > dated
 design docs/plans (historical snapshots — they describe intent at the time of
@@ -26,13 +30,14 @@ writing, not necessarily the current code).
 
 | Doc                                              | Contents                                                                                                                                                                                                                                        |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`site-reference/`](./site-reference/)           | **What the site consists of** — hand-written area guides (social, economy, content, games/apps) plus generated inventories of every page route, API route, game and app (`pnpm docs:site`)                                                       |
 | [`codebase-overview.md`](./codebase-overview.md) | Canonical code-layout overview: stack, repo layout, conventions, where to look first                                                                                                                                                            |
 | [`architecture.md`](./architecture.md)           | Runtime topology + deploy pipeline: what runs where in production, images, CI, ports, auth across tiers                                                                                                                                         |
 | [`testing.md`](./testing.md)                     | Test suites (Vitest main + epic, Go Bazel), how to run them, and which CI workflows gate them                                                                                                                                                   |
 | [`performance-slo.md`](./performance-slo.md)     | Performance guardrails: bundle budgets, synthetic probes, RUM SLO bands, and rollback trigger policy                                                                                                                                            |
 | [`design-language.md`](./design-language.md)     | The visual system — **Radial Avant-Garde Glass** (the radial shell/hub/wheel-feed architecture + the Apple-style Liquid Glass material it references): `--site-*` token contract, themes + accent presets, primitives, typography, motion, a11y |
 | [`page-consistency.md`](./page-consistency.md)   | Checklist + recipes for building pages that look native                                                                                                                                                                                         |
-| [`developer-api.md`](./developer-api.md)         | Scoped public developer API summary (canonical spec is in-app at `/developer/docs`)                                                                                                                                                             |
+| [`developer-api/`](./developer-api/)             | **The** developer API documentation — guides plus a generated endpoint reference (`pnpm docs:api`). Replaces the removed in-app `/developer/docs` wiki; `internals.md` is the contributor view                                                  |
 | [`albums-storage.md`](./albums-storage.md)       | Albums storage architecture (DB + R2/S3)                                                                                                                                                                                                        |
 | [`coins.md`](./coins.md)                         | Coin economy design (implementation plan, largely shipped)                                                                                                                                                                                      |
 
@@ -77,10 +82,8 @@ writing, not necessarily the current code).
 
 These predate the Next.js → TanStack Start migration and/or the Go cutover:
 
-- `void-breaker/specs.md` — claims "Next.js + TypeScript + Node.js"
-- `temple-of-joy/game-design.md` — claims "Web (Next.js, browser-first)"
-- `../specs/vega.md` (repo-root `specs/`) — targets a "Next.js environment"
-- `rmhtube/features.md` — 2025 roadmap for a now-shipped app
+- `rmhtube/features.md` — 2025 roadmap for a now-shipped app (its stack line is
+  now correct, but it still describes intent rather than the shipped feature set)
 - Older design docs in `rmhbox/`, `plans/`, `misc/`, and the textbook chapters
   mention Next.js in historical context — the routes/stack described there
   map to `app/routes/` + TanStack Start today
@@ -90,3 +93,8 @@ These predate the Next.js → TanStack Start migration and/or the Go cutover:
   the current 3-service-in-prod reality)
 - Anything claiming production runs PM2 — production is Docker Compose with a
   blue/green web hotswap (see `architecture.md`)
+
+Fixed in the 2026-07-29 audit: the stack lines in `void-breaker/specs.md`,
+`temple-of-joy/game-design.md` and `rmhtube/features.md` now name TanStack
+Start. The repo-root `specs/` directory this file used to point at no longer
+exists — the reference was removed rather than repaired.

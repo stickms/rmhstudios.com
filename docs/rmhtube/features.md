@@ -20,7 +20,7 @@ RMHTube is a fully functional watch-together platform with the following capabil
 - **Responsive UI** — desktop 2-column grid, mobile tabbed layout, dark/light themes, custom CSS variables
 - **Infrastructure** — Socket.io WebSocket server, Zustand state management, Prisma/PostgreSQL persistence, Zod validation, per-event rate limiting, Better Auth integration
 
-**Tech stack**: Next.js 16 · React 19 · Socket.io 4.8 · Zustand 5 · Prisma 7 · PostgreSQL · TypeScript · Tailwind CSS 4
+**Tech stack**: TanStack Start · React 19 · Socket.io 4.8 · Zustand 5 · Prisma 7 · PostgreSQL · TypeScript · Tailwind CSS 4
 
 ---
 
@@ -650,7 +650,7 @@ S2C: (uses existing rmhtube:queue:updated)
 - Import up to 50 videos at once (respect existing 100-item queue limit)
 - Progress indicator during import: "Adding 12/50 videos..."
 - Server-side: batch insert with position calculation
-- API key stored server-side (env var), proxied through a Next.js API route
+- API key stored server-side (env var), proxied through a TanStack Start API route
 - Rate limit: 5 playlist imports per hour per user
 
 **Complexity**: Medium
@@ -886,7 +886,7 @@ interface SearchResult {
 **Implementation Notes**:
 - Add a "Search" tab alongside the existing URL input in AddMediaModal
 - Use YouTube Data API v3 `search.list` + `videos.list` (for duration)
-- Proxy through Next.js API route (API key stays server-side)
+- Proxy through a TanStack Start API route (API key stays server-side)
 - Display results as a scrollable grid: thumbnail, title, channel, duration
 - Click result → adds to queue (same flow as URL submission)
 - Debounced search (300ms) to minimize API calls

@@ -1,0 +1,135 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, RMH Studios
+# This file is distributed under the same license as the rmhstudios.com
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: rmhstudios.com 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-29 21:28+0000\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
+"Language: it\n"
+"Language-Team: it <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../developer-api/pagination.md:1 fbba2ae065f044e59f3e3478865cb32e
+msgid "Pagination"
+msgstr "Paginazione"
+
+#: ../../developer-api/pagination.md:3 5f7e67ee4bee43729224b7b6d69b3f63
+msgid ""
+"List endpoints are **keyset-paginated** for stable, efficient paging — "
+"unlike offset paging, a row inserted while you iterate can't shift items "
+"onto a page you already read."
+msgstr ""
+"Gli endpoint di elenco usano **paginazione a keyset** per una "
+"paginazione stabile ed efficiente — a differenza della paginazione a "
+"offset, una riga inserita mentre stai iterando non può spostare "
+"elementi su una pagina che hai già letto."
+
+#: ../../developer-api/pagination.md:5 e69abbe515fc469ead547ef212947594
+msgid "Pass `?limit=` (1–50, default 20) to size a page."
+msgstr "Passa `?limit=` (1–50, predefinito 20) per dimensionare una pagina."
+
+#: ../../developer-api/pagination.md:6 ee384dc76e714ca7a2d6ea6f6e760855
+#, python-brace-format
+msgid ""
+"Each response is `{ \"data\": [...], \"nextCursor\": \"<opaque>\" | null "
+"}`."
+msgstr ""
+"Ogni risposta è `{ \"data\": [...], \"nextCursor\": \"<opaque>\" | null "
+"}`."
+
+#: ../../developer-api/pagination.md:7 2691830ab48c4cc8b414fde634dd6532
+msgid "To fetch the next page, pass the returned `nextCursor` as `?cursor=`."
+msgstr "Per recuperare la pagina successiva, passa il `nextCursor` restituito come `?cursor=`."
+
+#: ../../developer-api/pagination.md:8 ceff1879e8da4286995f484f63b3a192
+msgid "`nextCursor` is `null` on the last page."
+msgstr "`nextCursor` è `null` sull'ultima pagina."
+
+#: ../../developer-api/pagination.md:10 5f9b500f28374d6cb059bd6f4d4b2a8e
+msgid ""
+"# First page\n"
+"curl \"https://rmhstudios.com/api/v1/feed?limit=20\" -H \"Authorization: "
+"Bearer $RMH_KEY\"\n"
+"\n"
+"# Next page\n"
+"curl "
+"\"https://rmhstudios.com/api/v1/feed?limit=20&cursor=2026-06-20T09:59:00.000Z\""
+" \\\n"
+"  -H \"Authorization: Bearer $RMH_KEY\"\n"
+msgstr ""
+"# First page\n"
+"curl \"https://rmhstudios.com/api/v1/feed?limit=20\" -H \"Authorization: "
+"Bearer $RMH_KEY\"\n"
+"\n"
+"# Next page\n"
+"curl "
+"\"https://rmhstudios.com/api/v1/feed?limit=20&cursor=2026-06-20T09:59:00.000Z\""
+" \\\n"
+"  -H \"Authorization: Bearer $RMH_KEY\"\n"
+
+#: ../../developer-api/pagination.md:19 313bda275dc74ea38e00431c85c1b477
+msgid ""
+"Treat the cursor as opaque — it currently looks like a timestamp, but "
+"that is an implementation detail and may change. Store it and send it "
+"back verbatim; don't construct one."
+msgstr ""
+"Tratta il cursore come opaco — attualmente assomiglia a un timestamp, "
+"ma è un dettaglio implementativo e può cambiare. Memorizzalo e "
+"reinvialo esattamente com'è; non costruirne uno tu stesso."
+
+#: ../../developer-api/pagination.md:21 12e071d8855848f782b8c87ee505aa9b
+msgid "Iterating a full list"
+msgstr "Iterare un elenco completo"
+
+#: ../../developer-api/pagination.md:23 155e192833f24011a8d79e0ee06ea67b
+msgid ""
+"async function* pages(path, key) {\n"
+"  let cursor = null;\n"
+"  do {\n"
+"    const url = new URL(`https://rmhstudios.com${path}`);\n"
+"    url.searchParams.set('limit', '50');\n"
+"    if (cursor) url.searchParams.set('cursor', cursor);\n"
+"    const res = await fetch(url, { headers: { Authorization: `Bearer "
+"${key}` } });\n"
+"    if (!res.ok) throw new Error(`${res.status} ${(await "
+"res.json()).error?.code}`);\n"
+"    const body = await res.json();\n"
+"    yield* body.data;\n"
+"    cursor = body.nextCursor;\n"
+"  } while (cursor);\n"
+"}\n"
+msgstr ""
+"async function* pages(path, key) {\n"
+"  let cursor = null;\n"
+"  do {\n"
+"    const url = new URL(`https://rmhstudios.com${path}`);\n"
+"    url.searchParams.set('limit', '50');\n"
+"    if (cursor) url.searchParams.set('cursor', cursor);\n"
+"    const res = await fetch(url, { headers: { Authorization: `Bearer "
+"${key}` } });\n"
+"    if (!res.ok) throw new Error(`${res.status} ${(await "
+"res.json()).error?.code}`);\n"
+"    const body = await res.json();\n"
+"    yield* body.data;\n"
+"    cursor = body.nextCursor;\n"
+"  } while (cursor);\n"
+"}\n"
+
+#: ../../developer-api/pagination.md:39 95c15fa6f67143d49d1761a0e73da063
+msgid ""
+"Stop on `nextCursor === null` — not on an empty `data` array, which is "
+"not a guaranteed terminator."
+msgstr ""
+"Fermati quando `nextCursor === null` — non su un array `data` vuoto, "
+"che non è un terminatore garantito."
+

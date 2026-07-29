@@ -1,6 +1,6 @@
 # Void Breaker — Exhaustive Implementation Specs (Claude Agent)
 
-> Tech stack: Next.js + TypeScript + Node.js, Tailwind CSS v4, Framer Motion.
+> Tech stack: TanStack Start + TypeScript + Node.js, Tailwind CSS v4, Framer Motion.
 > Backend: PostgreSQL via Prisma, Better Auth (RMH Auth + Discord), Socket.io + Yjs, esbuild for standalone servers.
 > This document is designed to be **implementation-ready**. Do not rewrite the engine; extend/refactor surgically.
 
@@ -68,7 +68,7 @@ Naming conventions:
 - If sprite sheets: `*_sheet.png` + `*.json` atlas metadata
 
 ## 4. 2D Sprite Rendering Pipeline (Canvas/WebGL/DOM)
-This section assumes the game renders via HTML Canvas in Next.js (common for this style). If currently DOM-based, adapt accordingly.
+This section assumes the game renders via HTML Canvas. If currently DOM-based, adapt accordingly.
 
 ### 4.1 SpriteLoader Utility
 Create `src/game/rendering/SpriteLoader.ts` with:
@@ -200,7 +200,7 @@ Fields (suggested):
 - storyFlags: { ... }
 
 ### 8.4 Backend API
-Implement Next.js route handlers (App Router) or pages/api depending on repo:
+Implement TanStack Start API routes under `app/routes/api/` (`.ts` files exporting `server.handlers`):
 - POST /api/game/save -> upsert GameSave for current user
 - GET /api/game/save -> returns latest save (slot 0) if exists
 - DELETE /api/game/save -> clear save

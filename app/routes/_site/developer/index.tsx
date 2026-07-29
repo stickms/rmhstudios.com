@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Terminal, BookOpen } from 'lucide-react';
+import { Terminal, BookOpen, ExternalLink } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { KeysManager } from '@/components/developer/KeysManager';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { DEVELOPER_DOCS_URL } from '@/lib/docs-site';
 
 export const Route = createFileRoute('/_site/developer/')({
   head: () => ({ meta: [{ title: 'Developer API | RMH Studios' }] }),
@@ -20,9 +21,11 @@ function DeveloperHome() {
       wide
       headerRight={
         <Button asChild variant="ghost" size="sm" className="gap-1">
-          <Link to="/developer/docs/$page" params={{ page: 'overview' }}>
+          <a href={DEVELOPER_DOCS_URL} target="_blank" rel="noreferrer">
             <BookOpen className="h-4 w-4" /> Docs
-          </Link>
+            <ExternalLink className="h-3 w-3" aria-hidden />
+            <span className="sr-only">(opens in a new tab)</span>
+          </a>
         </Button>
       }
     >
@@ -34,13 +37,14 @@ function DeveloperHome() {
               Build on RMH Studios programmatically. The REST API is available to{' '}
               <strong className="text-site-text">Starter subscribers and above</strong>. Create a
               scoped key below, then read the{' '}
-              <Link
-                to="/developer/docs/$page"
-                params={{ page: 'overview' }}
+              <a
+                href={DEVELOPER_DOCS_URL}
+                target="_blank"
+                rel="noreferrer"
                 className="text-site-accent hover:underline"
               >
                 documentation
-              </Link>{' '}
+              </a>{' '}
               or point your codegen at the{' '}
               <a href="/api/v1/openapi.json" className="text-site-accent hover:underline">
                 OpenAPI spec

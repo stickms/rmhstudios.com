@@ -21,6 +21,10 @@ Stripe), Socket.io Node hubs, Go microservices built with Bazel, i18next
 
 ## Start here
 
+- {doc}`site-reference/index` — what the platform consists of, area by area,
+  plus a generated inventory of every route, game and app.
+- {doc}`developer-api/index` — the public REST API: guides and a generated
+  endpoint reference.
 - {doc}`codebase-overview` — canonical code-layout overview: stack, repo
   layout, conventions, and where to look first.
 - {doc}`architecture` — runtime topology and the deploy pipeline: what runs
@@ -46,15 +50,17 @@ Anything claiming Next.js or PM2 is out of date.
 :hidden:
 
 README
+site-reference/index
+developer-api/index
 codebase-overview
 architecture
 testing
 performance-slo
 design-language
 page-consistency
-developer-api
 albums-storage
 coins
+translations
 ```
 
 ```{toctree}

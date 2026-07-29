@@ -198,7 +198,6 @@ import { Route as SiteBuildsIndexRouteImport } from './routes/_site/builds/index
 import { Route as SiteCSlugRouteImport } from './routes/_site/c.$slug'
 import { Route as SiteCreateIndexRouteImport } from './routes/_site/create/index'
 import { Route as SiteDeveloperIndexRouteImport } from './routes/_site/developer/index'
-import { Route as SiteDeveloperDocsRouteRouteImport } from './routes/_site/developer/docs/route'
 import { Route as SiteGamesGameIdRouteImport } from './routes/_site/games/$gameId'
 import { Route as SiteGroupsIndexRouteImport } from './routes/_site/groups/index'
 import { Route as SiteGroupsIdRouteImport } from './routes/_site/groups/$id'
@@ -498,8 +497,6 @@ import { Route as SiteAdminAlbumsIndexRouteImport } from './routes/_site/admin/a
 import { Route as SiteAdminAlbumsIdRouteImport } from './routes/_site/admin/albums/$id'
 import { Route as SiteAdminBlogIndexRouteImport } from './routes/_site/admin/blog/index'
 import { Route as SiteAdminBlogNewRouteImport } from './routes/_site/admin/blog/new'
-import { Route as SiteDeveloperDocsIndexRouteImport } from './routes/_site/developer/docs/index'
-import { Route as SiteDeveloperDocsPageRouteImport } from './routes/_site/developer/docs/$page'
 import { Route as SiteHomesListingIdRouteImport } from './routes/_site/homes/listing.$id'
 import { Route as SiteRmhladderJobsJobIdRouteImport } from './routes/_site/rmhladder/jobs/$jobId'
 import { Route as SiteUUseridIndexRouteImport } from './routes/_site/u/$userid/index'
@@ -1666,11 +1663,6 @@ const SiteCreateIndexRoute = SiteCreateIndexRouteImport.update({
 const SiteDeveloperIndexRoute = SiteDeveloperIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => SiteDeveloperRouteRoute,
-} as any)
-const SiteDeveloperDocsRouteRoute = SiteDeveloperDocsRouteRouteImport.update({
-  id: '/docs',
-  path: '/docs',
   getParentRoute: () => SiteDeveloperRouteRoute,
 } as any)
 const SiteGamesGameIdRoute = SiteGamesGameIdRouteImport.update({
@@ -3192,16 +3184,6 @@ const SiteAdminBlogNewRoute = SiteAdminBlogNewRouteImport.update({
   path: '/blog/new',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
-const SiteDeveloperDocsIndexRoute = SiteDeveloperDocsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SiteDeveloperDocsRouteRoute,
-} as any)
-const SiteDeveloperDocsPageRoute = SiteDeveloperDocsPageRouteImport.update({
-  id: '/$page',
-  path: '/$page',
-  getParentRoute: () => SiteDeveloperDocsRouteRoute,
-} as any)
 const SiteHomesListingIdRoute = SiteHomesListingIdRouteImport.update({
   id: '/homes/listing/$id',
   path: '/homes/listing/$id',
@@ -4546,7 +4528,6 @@ export interface FileRoutesByFullPath {
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
-  '/developer/docs': typeof SiteDeveloperDocsRouteRouteWithChildren
   '/admin/analytics': typeof SiteAdminAnalyticsRoute
   '/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/admin/audit': typeof SiteAdminAuditRoute
@@ -4862,7 +4843,6 @@ export interface FileRoutesByFullPath {
   '/strategies/safehouse/': typeof StrategiesSafehouseIndexRoute
   '/admin/albums/$id': typeof SiteAdminAlbumsIdRoute
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
-  '/developer/docs/$page': typeof SiteDeveloperDocsPageRoute
   '/homes/listing/$id': typeof SiteHomesListingIdRoute
   '/rmhladder/jobs/$jobId': typeof SiteRmhladderJobsJobIdRoute
   '/api/admin/albums/$id': typeof ApiAdminAlbumsIdRouteWithChildren
@@ -5008,7 +4988,6 @@ export interface FileRoutesByFullPath {
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/admin/albums/': typeof SiteAdminAlbumsIndexRoute
   '/admin/blog/': typeof SiteAdminBlogIndexRoute
-  '/developer/docs/': typeof SiteDeveloperDocsIndexRoute
   '/u/$userid/': typeof SiteUUseridIndexRoute
   '/api/admin/albums/': typeof ApiAdminAlbumsIndexRoute
   '/api/admin/library/': typeof ApiAdminLibraryIndexRoute
@@ -5549,7 +5528,6 @@ export interface FileRoutesByTo {
   '/strategies/safehouse': typeof StrategiesSafehouseIndexRoute
   '/admin/albums/$id': typeof SiteAdminAlbumsIdRoute
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
-  '/developer/docs/$page': typeof SiteDeveloperDocsPageRoute
   '/homes/listing/$id': typeof SiteHomesListingIdRoute
   '/rmhladder/jobs/$jobId': typeof SiteRmhladderJobsJobIdRoute
   '/api/admin/albums/$id': typeof ApiAdminAlbumsIdRouteWithChildren
@@ -5695,7 +5673,6 @@ export interface FileRoutesByTo {
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/admin/albums': typeof SiteAdminAlbumsIndexRoute
   '/admin/blog': typeof SiteAdminBlogIndexRoute
-  '/developer/docs': typeof SiteDeveloperDocsIndexRoute
   '/u/$userid': typeof SiteUUseridIndexRoute
   '/api/admin/albums': typeof ApiAdminAlbumsIndexRoute
   '/api/admin/library': typeof ApiAdminLibraryIndexRoute
@@ -5947,7 +5924,6 @@ export interface FileRoutesById {
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
-  '/_site/developer/docs': typeof SiteDeveloperDocsRouteRouteWithChildren
   '/_site/admin/analytics': typeof SiteAdminAnalyticsRoute
   '/_site/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/_site/admin/audit': typeof SiteAdminAuditRoute
@@ -6263,7 +6239,6 @@ export interface FileRoutesById {
   '/strategies/safehouse/': typeof StrategiesSafehouseIndexRoute
   '/_site/admin/albums/$id': typeof SiteAdminAlbumsIdRoute
   '/_site/admin/blog/new': typeof SiteAdminBlogNewRoute
-  '/_site/developer/docs/$page': typeof SiteDeveloperDocsPageRoute
   '/_site/homes/listing/$id': typeof SiteHomesListingIdRoute
   '/_site/rmhladder/jobs/$jobId': typeof SiteRmhladderJobsJobIdRoute
   '/api/admin/albums/$id': typeof ApiAdminAlbumsIdRouteWithChildren
@@ -6409,7 +6384,6 @@ export interface FileRoutesById {
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/_site/admin/albums/': typeof SiteAdminAlbumsIndexRoute
   '/_site/admin/blog/': typeof SiteAdminBlogIndexRoute
-  '/_site/developer/docs/': typeof SiteDeveloperDocsIndexRoute
   '/_site/u/$userid/': typeof SiteUUseridIndexRoute
   '/api/admin/albums/': typeof ApiAdminAlbumsIndexRoute
   '/api/admin/library/': typeof ApiAdminLibraryIndexRoute
@@ -6661,7 +6635,6 @@ export interface FileRouteTypes {
     | '/studio/'
     | '/temple-of-joy/'
     | '/versecraft/'
-    | '/developer/docs'
     | '/admin/analytics'
     | '/admin/announcements'
     | '/admin/audit'
@@ -6977,7 +6950,6 @@ export interface FileRouteTypes {
     | '/strategies/safehouse/'
     | '/admin/albums/$id'
     | '/admin/blog/new'
-    | '/developer/docs/$page'
     | '/homes/listing/$id'
     | '/rmhladder/jobs/$jobId'
     | '/api/admin/albums/$id'
@@ -7123,7 +7095,6 @@ export interface FileRouteTypes {
     | '/rmhbox/minigames/$minigameId/history'
     | '/admin/albums/'
     | '/admin/blog/'
-    | '/developer/docs/'
     | '/u/$userid/'
     | '/api/admin/albums/'
     | '/api/admin/library/'
@@ -7664,7 +7635,6 @@ export interface FileRouteTypes {
     | '/strategies/safehouse'
     | '/admin/albums/$id'
     | '/admin/blog/new'
-    | '/developer/docs/$page'
     | '/homes/listing/$id'
     | '/rmhladder/jobs/$jobId'
     | '/api/admin/albums/$id'
@@ -7810,7 +7780,6 @@ export interface FileRouteTypes {
     | '/rmhbox/minigames/$minigameId/history'
     | '/admin/albums'
     | '/admin/blog'
-    | '/developer/docs'
     | '/u/$userid'
     | '/api/admin/albums'
     | '/api/admin/library'
@@ -8061,7 +8030,6 @@ export interface FileRouteTypes {
     | '/studio/'
     | '/temple-of-joy/'
     | '/versecraft/'
-    | '/_site/developer/docs'
     | '/_site/admin/analytics'
     | '/_site/admin/announcements'
     | '/_site/admin/audit'
@@ -8377,7 +8345,6 @@ export interface FileRouteTypes {
     | '/strategies/safehouse/'
     | '/_site/admin/albums/$id'
     | '/_site/admin/blog/new'
-    | '/_site/developer/docs/$page'
     | '/_site/homes/listing/$id'
     | '/_site/rmhladder/jobs/$jobId'
     | '/api/admin/albums/$id'
@@ -8523,7 +8490,6 @@ export interface FileRouteTypes {
     | '/rmhbox/minigames/$minigameId/history'
     | '/_site/admin/albums/'
     | '/_site/admin/blog/'
-    | '/_site/developer/docs/'
     | '/_site/u/$userid/'
     | '/api/admin/albums/'
     | '/api/admin/library/'
@@ -10325,13 +10291,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/developer/'
       preLoaderRoute: typeof SiteDeveloperIndexRouteImport
-      parentRoute: typeof SiteDeveloperRouteRoute
-    }
-    '/_site/developer/docs': {
-      id: '/_site/developer/docs'
-      path: '/docs'
-      fullPath: '/developer/docs'
-      preLoaderRoute: typeof SiteDeveloperDocsRouteRouteImport
       parentRoute: typeof SiteDeveloperRouteRoute
     }
     '/_site/games/$gameId': {
@@ -12427,20 +12386,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminBlogNewRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
-    '/_site/developer/docs/': {
-      id: '/_site/developer/docs/'
-      path: '/'
-      fullPath: '/developer/docs/'
-      preLoaderRoute: typeof SiteDeveloperDocsIndexRouteImport
-      parentRoute: typeof SiteDeveloperDocsRouteRoute
-    }
-    '/_site/developer/docs/$page': {
-      id: '/_site/developer/docs/$page'
-      path: '/$page'
-      fullPath: '/developer/docs/$page'
-      preLoaderRoute: typeof SiteDeveloperDocsPageRouteImport
-      parentRoute: typeof SiteDeveloperDocsRouteRoute
-    }
     '/_site/homes/listing/$id': {
       id: '/_site/homes/listing/$id'
       path: '/homes/listing/$id'
@@ -14030,29 +13975,11 @@ const SiteAdminRouteRouteWithChildren = SiteAdminRouteRoute._addFileChildren(
   SiteAdminRouteRouteChildren,
 )
 
-interface SiteDeveloperDocsRouteRouteChildren {
-  SiteDeveloperDocsPageRoute: typeof SiteDeveloperDocsPageRoute
-  SiteDeveloperDocsIndexRoute: typeof SiteDeveloperDocsIndexRoute
-}
-
-const SiteDeveloperDocsRouteRouteChildren: SiteDeveloperDocsRouteRouteChildren =
-  {
-    SiteDeveloperDocsPageRoute: SiteDeveloperDocsPageRoute,
-    SiteDeveloperDocsIndexRoute: SiteDeveloperDocsIndexRoute,
-  }
-
-const SiteDeveloperDocsRouteRouteWithChildren =
-  SiteDeveloperDocsRouteRoute._addFileChildren(
-    SiteDeveloperDocsRouteRouteChildren,
-  )
-
 interface SiteDeveloperRouteRouteChildren {
-  SiteDeveloperDocsRouteRoute: typeof SiteDeveloperDocsRouteRouteWithChildren
   SiteDeveloperIndexRoute: typeof SiteDeveloperIndexRoute
 }
 
 const SiteDeveloperRouteRouteChildren: SiteDeveloperRouteRouteChildren = {
-  SiteDeveloperDocsRouteRoute: SiteDeveloperDocsRouteRouteWithChildren,
   SiteDeveloperIndexRoute: SiteDeveloperIndexRoute,
 }
 

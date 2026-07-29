@@ -1,0 +1,190 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, RMH Studios
+# This file is distributed under the same license as the rmhstudios.com
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: rmhstudios.com 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-29 21:28+0000\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
+"Language: zh\n"
+"Language-Team: zh <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../developer-api/index.md:1 1acc01eb4c0447f09c77661e34d1f05c
+msgid "Developer API"
+msgstr "开发者 API"
+
+#: ../../developer-api/index.md:3 5b94acfc4d96430b86ffd97f44c471f5
+msgid ""
+"Build on RMH Studios programmatically — read your account and the public "
+"feed, post on your own behalf, manage social actions, browse builds, "
+"blog, news and leaderboards, and subscribe to real-time webhooks."
+msgstr ""
+"以编程方式在 RMH Studios "
+"之上进行开发——读取你的账户和公开动态流、以自己的身份发帖、管理社交操作、浏览创作成果（builds）、博客、新闻和排行榜，并订阅实时 "
+"Webhook。"
+
+#: ../../developer-api/index.md 4a0bba38876b4d2483d7d9e0f6ee8f17
+msgid "**Base URL**"
+msgstr "**基础 URL**"
+
+#: ../../developer-api/index.md 2e7493f4431f4d48b22025e688770606
+msgid "`https://rmhstudios.com`"
+msgstr "`https://rmhstudios.com`"
+
+#: ../../developer-api/index.md 552a0ce14d3e4e0098c3b4e0102901d3
+msgid "**Version**"
+msgstr "**版本**"
+
+#: ../../developer-api/index.md 8a554f9228f84923822722f065ce1aed
+msgid "`v1` — breaking changes ship under a new version prefix"
+msgstr "`v1` —— 破坏性变更会以新的版本前缀发布"
+
+#: ../../developer-api/index.md 287b928c2fc54403b145a8dc43f4cc30
+msgid "**Format**"
+msgstr "**格式**"
+
+#: ../../developer-api/index.md 78ee94fee76d49eca1e3a6bbce430c71
+msgid "JSON request/response bodies, UTF-8. Writes accept `application/json`"
+msgstr "JSON 请求/响应体，UTF-8 编码。写操作接受 `application/json`"
+
+#: ../../developer-api/index.md 242f58044bd94ffb937410ccfdd8e0d4
+msgid "**Availability**"
+msgstr "**可用性**"
+
+#: ../../developer-api/index.md 11763acd984243eca64802ac8d1051c5
+msgid ""
+"An active **Starter** subscription or higher. Entitlement is re-checked "
+"on **every** request, so access tracks your subscription in real time"
+msgstr "需要有效的 **Starter** 及以上订阅。权限会在**每一次**请求时重新校验，因此访问权限会实时随订阅状态变化"
+
+#: ../../developer-api/index.md 0c7d054621e14889a23b0443d5d27843
+msgid "**OpenAPI**"
+msgstr "**OpenAPI**"
+
+#: ../../developer-api/index.md 14a1de92cc9f400d81db4732a6e33f7f
+msgid ""
+"[`/api/v1/openapi.json`](https://rmhstudios.com/api/v1/openapi.json) — "
+"point your codegen at it"
+msgstr ""
+"[`/api/v1/openapi.json`](https://rmhstudios.com/api/v1/openapi.json) —— "
+"将你的代码生成工具指向它"
+
+#: ../../developer-api/index.md:13 28cdc4abef4447dc977303979742b674
+msgid "Quickstart"
+msgstr "快速开始"
+
+#: ../../developer-api/index.md:15 3082c323bd2f466389226c352df72a2a
+msgid ""
+"# 1. Create a key at https://rmhstudios.com/developer and copy it (shown "
+"once).\n"
+"export RMH_KEY=rmh_live_xxxxxxxxxxxxxxxxxxxxxxxx\n"
+"\n"
+"# 2. Call the API.\n"
+"curl https://rmhstudios.com/api/v1/me \\\n"
+"  -H \"Authorization: Bearer $RMH_KEY\"\n"
+msgstr ""
+"# 1. Create a key at https://rmhstudios.com/developer and copy it (shown "
+"once).\n"
+"export RMH_KEY=rmh_live_xxxxxxxxxxxxxxxxxxxxxxxx\n"
+"\n"
+"# 2. Call the API.\n"
+"curl https://rmhstudios.com/api/v1/me \\\n"
+"  -H \"Authorization: Bearer $RMH_KEY\"\n"
+
+#: ../../developer-api/index.md:24 2826e06f8b4944d2b0ffeae1116579dd
+msgid ""
+"Every response includes an `X-Request-Id` header — include it when "
+"contacting support."
+msgstr "每个响应都包含一个 `X-Request-Id` 头——联系支持时请提供它。"
+
+#: ../../developer-api/index.md:26 a6210f101f4d408ea681b9935b0673cf
+msgid "Guides"
+msgstr "指南"
+
+#: ../../developer-api/index.md:32 29c28c7f357a489896434f1815a36527
+msgid "Authentication"
+msgstr "身份验证"
+
+#: ../../developer-api/index.md:36 681558fc953547388ec1dfbe6573937b
+msgid "Sending your key, and how keys are stored, scoped, rotated and revoked."
+msgstr "如何发送你的密钥，以及密钥的存储、作用域、轮换与吊销方式。"
+
+#: ../../developer-api/index.md:39 ed67a833c7844a8bb1601e100c2a71b3
+msgid "Scopes"
+msgstr "作用域"
+
+#: ../../developer-api/index.md:43 e075923119244287b72a605144a40dae
+msgid ""
+"The permission catalog, and how an endpoint decides whether your key "
+"qualifies."
+msgstr "权限目录，以及端点如何判断你的密钥是否符合要求。"
+
+#: ../../developer-api/index.md:46 2fd8dc906c7b4ea18291f4db7fc03b1f
+msgid "Rate limits"
+msgstr "速率限制"
+
+#: ../../developer-api/index.md:50 ac436bf467404950815628fc63aac7aa
+msgid ""
+"Per-key budgets by tier, the headers on every response, and how to back "
+"off."
+msgstr "按订阅层级划分的每密钥限额、每个响应携带的请求头，以及如何退避重试。"
+
+#: ../../developer-api/index.md:53 b196cc9c5e7341a8bf6f59f1491f32be
+msgid "Errors"
+msgstr "错误"
+
+#: ../../developer-api/index.md:57 8fbfc751d84f4707b9816728e5eba21f
+msgid "The `type`/`code` taxonomy, the error envelope, and every code we return."
+msgstr "`type`/`code` 分类体系、错误信封结构，以及我们返回的所有错误代码。"
+
+#: ../../developer-api/index.md:60 5e5dbd2a602e4b6eab9ade52e64042a9
+msgid "Pagination"
+msgstr "分页"
+
+#: ../../developer-api/index.md:64 d8ab6d80ee8a432ab78885f5a6be01a7
+#, python-brace-format
+msgid "Keyset paging: `limit`, `cursor`, and the `{ data, nextCursor }` envelope."
+msgstr "游标分页（keyset paging）：`limit`、`cursor`，以及 `{ data, nextCursor }` 信封结构。"
+
+#: ../../developer-api/index.md:67 0dadf842123449568f66a6097fb535e9
+msgid "Idempotency"
+msgstr "幂等性"
+
+#: ../../developer-api/index.md:71 9609414e79304055aef96ed86100c0a9
+msgid "Making writes safe to retry with the `Idempotency-Key` header."
+msgstr "通过 `Idempotency-Key` 头让写操作可以安全重试。"
+
+#: ../../developer-api/index.md:74 3f1979243af34273b365a19ee02613cf
+msgid "Webhooks"
+msgstr "Webhook"
+
+#: ../../developer-api/index.md:78 0a3f5b2c7ffe4e19a2f5bbc8ed8a408c
+msgid "Subscribing to events, delivery semantics, and verifying HMAC signatures."
+msgstr "订阅事件、投递语义，以及验证 HMAC 签名。"
+
+#: ../../developer-api/index.md:81 7b438a0bb2f5484c81f9f921ae7c836f
+msgid "Endpoint reference"
+msgstr "端点参考"
+
+#: ../../developer-api/index.md:85 7fe6296b0c5e41e0ab684ece1a0df7fd
+msgid "Every endpoint, grouped, with parameters and worked examples."
+msgstr "按分组列出的每个端点，附带参数与完整示例。"
+
+#: ../../developer-api/index.md:88 f5de91f489124f76b001b03098ec70d8
+msgid "Changelog"
+msgstr "更新日志"
+
+#: ../../developer-api/index.md:92 872c4c3c0e4a46f88f352a185d66011c
+msgid "What changed in each version of the API."
+msgstr "API 每个版本的变更内容。"
+
