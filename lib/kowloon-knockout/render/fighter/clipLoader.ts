@@ -1,5 +1,5 @@
 import type { AnimationClip } from 'three';
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { stripRootMotionXZ } from './rootMotion';
 import { CLIPS, FIGHTER_ASSET_DIR, type ClipKey } from './clips';
 
@@ -13,9 +13,9 @@ import { CLIPS, FIGHTER_ASSET_DIR, type ClipKey } from './clips';
  */
 const cache = new Map<ClipKey, Promise<AnimationClip | null>>();
 
-let loader: FBXLoader | null = null;
-function getLoader(): FBXLoader {
-    loader ??= new FBXLoader();
+let loader: GLTFLoader | null = null;
+function getLoader(): GLTFLoader {
+    loader ??= new GLTFLoader();
     return loader;
 }
 
@@ -26,8 +26,8 @@ export function loadFighterClip(key: ClipKey): Promise<AnimationClip | null> {
 
     const promise = getLoader()
         .loadAsync(`${FIGHTER_ASSET_DIR}/${CLIPS[key].file}`)
-        .then((group) => {
-            const clip = group.animations[0] ?? null;
+        .then((gltf) => {
+            const clip = gltf.animations[0] ?? null;
             if (clip) stripRootMotionXZ(clip);
             return clip;
         })

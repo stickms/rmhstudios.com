@@ -3,7 +3,7 @@
 import { useRef, useEffect, useLayoutEffect, type MutableRefObject } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { RenderFighter } from '@/lib/kowloon-knockout/net/session';
 import { CLIPS, ESSENTIAL_CLIP_KEYS, DEFERRED_CLIP_KEYS, FIGHTER_ASSET_DIR, RIG_FILE, type ClipKey } from '@/lib/kowloon-knockout/render/fighter/clips';
@@ -59,12 +59,12 @@ interface FighterInstance {
  * cleanup must be undoable by its own setup, so both live here.
  */
 function createFighterInstance(
-    rig: THREE.Group,
-    essentialClips: THREE.Group[],
+    rig: GLTF,
+    essentialClips: GLTF[],
     colorHex: string,
     accentHex: string,
 ): FighterInstance {
-    const model = cloneSkeleton(rig) as THREE.Group;
+    const model = cloneSkeleton(rig.scene) as THREE.Group;
     autoScaleToHeight(model, TARGET_HEIGHT);
 
     // Identity: tint every skinned-mesh material (cloned so seats differ).
@@ -136,15 +136,15 @@ function dampAngle(current: number, target: number, t: number): number {
 }
 
 export default function SkeletalFighter({ seat, framesRef, showNameplate = true }: { seat: number; framesRef: FramesRef; showNameplate?: boolean }) {
-    // Shared, cached loads via FBXLoader. useLoader suspends; a missing file
+    // Shared, cached loads via GLTFLoader. useLoader suspends; a missing file
     // throws → the Fighter dispatcher's ErrorBoundary falls back to StickFighter.
     //
     // Only the rig and the two clips needed to look correct standing still are
-    // awaited here (~2.8 MB instead of ~7.9 MB). The rest stream in via
-    // loadFighterClip below, so the swap off StickFighter no longer waits on,
-    // among others, a 1.2 MB dance emote the sim never requests.
-    const rig = useLoader(FBXLoader, RIG_URL);                     // skinned Group
-    const clipScenes = useLoader(FBXLoader, ESSENTIAL_CLIP_URLS);  // Group[], one per essential clip
+    // awaited here. The rest stream in via loadFighterClip below, so the swap
+    // off StickFighter no longer waits on, among others, the dance emote the
+    // sim never requests.
+    const rig = useLoader(GLTFLoader, RIG_URL) as unknown as GLTF;
+    const clipScenes = useLoader(GLTFLoader, ESSENTIAL_CLIP_URLS) as unknown as GLTF[];
 
     const initial = framesRef.current.find((f) => f.seat === seat);
     const colorHex = initial?.color ?? '#cccccc';
