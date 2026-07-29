@@ -69,6 +69,51 @@ export const SPRING = {
   snappy: { type: 'spring', stiffness: 620, damping: 38, mass: 0.62 },
 } as const satisfies Record<string, Transition>;
 
+/**
+ * ── Apple spring physics ────────────────────────────────────────────────────
+ *
+ * SwiftUI describes a spring by **perceptual duration** (how long the motion
+ * reads as taking) and **bounce** (0 = critically damped, no overshoot; higher
+ * = springier), rather than by raw stiffness. That parameterisation is why iOS
+ * motion feels consistent across wildly different travel distances: the same
+ * spring settles in the same perceived time whether it moves 4px or 400px.
+ *
+ * framer-motion speaks the same language via `duration` + `bounce` on a spring
+ * transition, so these are the real SwiftUI presets rather than an imitation of
+ * their look with tweens. Reach for these on anything the user *acts on* —
+ * presses, drags, sheet dismissals, morphing containers — because a spring is
+ * interruptible: grab a moving element mid-flight and it retargets from its
+ * current velocity instead of snapping or fighting you. A tween cannot do that,
+ * and the difference is most of what makes native UI feel "fluid".
+ *
+ * Tweens (DURATION/EASE above) remain correct for non-interactive state changes
+ * — cross-fades, colour shifts, reveals — where there is no gesture to inherit
+ * velocity from.
+ */
+export const APPLE_SPRING = {
+  /** SwiftUI `.smooth` — no bounce. Default for most UI state changes. */
+  smooth: { type: 'spring', duration: 0.4, bounce: 0 },
+  /** SwiftUI `.snappy` — a touch of overshoot. Controls, toggles, selections. */
+  snappy: { type: 'spring', duration: 0.4, bounce: 0.15 },
+  /** SwiftUI `.bouncy` — playful. Reactions, badges, celebratory pops. */
+  bouncy: { type: 'spring', duration: 0.5, bounce: 0.3 },
+  /** Sheet/detent presentation: longer travel, fully settled, no wobble. */
+  sheet: { type: 'spring', duration: 0.55, bounce: 0.06 },
+  /** Press-down. Deliberately quicker than the release, as UIKit does it. */
+  press: { type: 'spring', duration: 0.22, bounce: 0 },
+} as const satisfies Record<string, Transition>;
+
+/**
+ * Press feedback, Apple-style: a small scale-down that springs back on release.
+ * The scale is subtle on purpose — the point is that the surface acknowledges
+ * the finger, not that it visibly shrinks.
+ */
+export const pressable = {
+  whileTap: { scale: 0.97 },
+  whileHover: { scale: 1.01 },
+  transition: APPLE_SPRING.press,
+} as const;
+
 /** The default tweened transition — smooth, quick, used by the variants below. */
 export const transition: Transition = { duration: DURATION.base, ease: EASE.standard };
 
