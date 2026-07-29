@@ -22,7 +22,7 @@ msgstr ""
 
 #: ../../developer-api/pagination.md:1 fbba2ae065f044e59f3e3478865cb32e
 msgid "Pagination"
-msgstr ""
+msgstr "ترقيم الصفحات"
 
 #: ../../developer-api/pagination.md:3 5f7e67ee4bee43729224b7b6d69b3f63
 msgid ""
@@ -30,10 +30,13 @@ msgid ""
 "unlike offset paging, a row inserted while you iterate can't shift items "
 "onto a page you already read."
 msgstr ""
+"نقاط نهاية القوائم مُرقَّمة **بمجموعة المفاتيح (keyset)** لترقيم صفحات "
+"مستقر وفعّال — بخلاف الترقيم بالإزاحة (offset)، لا يمكن لصف يُدرج أثناء "
+"تكرارك أن يزيح عناصر إلى صفحة قرأتها بالفعل."
 
 #: ../../developer-api/pagination.md:5 e69abbe515fc469ead547ef212947594
 msgid "Pass `?limit=` (1–50, default 20) to size a page."
-msgstr ""
+msgstr "مرِّر `?limit=` (من 1 إلى 50، الافتراضي 20) لتحديد حجم الصفحة."
 
 #: ../../developer-api/pagination.md:6 ee384dc76e714ca7a2d6ea6f6e760855
 #, python-brace-format
@@ -41,14 +44,15 @@ msgid ""
 "Each response is `{ \"data\": [...], \"nextCursor\": \"<opaque>\" | null "
 "}`."
 msgstr ""
+"كل استجابة هي `{ \"data\": [...], \"nextCursor\": \"<opaque>\" | null }`."
 
 #: ../../developer-api/pagination.md:7 2691830ab48c4cc8b414fde634dd6532
 msgid "To fetch the next page, pass the returned `nextCursor` as `?cursor=`."
-msgstr ""
+msgstr "لجلب الصفحة التالية، مرِّر قيمة `nextCursor` المُعادة كـ `?cursor=`."
 
 #: ../../developer-api/pagination.md:8 ceff1879e8da4286995f484f63b3a192
 msgid "`nextCursor` is `null` on the last page."
-msgstr ""
+msgstr "تكون `nextCursor` تساوي `null` في الصفحة الأخيرة."
 
 #: ../../developer-api/pagination.md:10 5f9b500f28374d6cb059bd6f4d4b2a8e
 msgid ""
@@ -62,6 +66,15 @@ msgid ""
 " \\\n"
 "  -H \"Authorization: Bearer $RMH_KEY\"\n"
 msgstr ""
+"# First page\n"
+"curl \"https://rmhstudios.com/api/v1/feed?limit=20\" -H \"Authorization: "
+"Bearer $RMH_KEY\"\n"
+"\n"
+"# Next page\n"
+"curl "
+"\"https://rmhstudios.com/api/v1/feed?limit=20&cursor=2026-06-20T09:59:00.000Z\""
+" \\\n"
+"  -H \"Authorization: Bearer $RMH_KEY\"\n"
 
 #: ../../developer-api/pagination.md:19 313bda275dc74ea38e00431c85c1b477
 msgid ""
@@ -69,10 +82,13 @@ msgid ""
 "that is an implementation detail and may change. Store it and send it "
 "back verbatim; don't construct one."
 msgstr ""
+"عامِل المؤشر (cursor) بوصفه قيمة معتمة — فهو يشبه حاليًا طابعًا زمنيًا، "
+"لكن ذلك تفصيل تنفيذي قد يتغير. خزّنه وأعد إرساله كما هو حرفيًا؛ ولا تُنشئ "
+"واحدًا بنفسك."
 
 #: ../../developer-api/pagination.md:21 12e071d8855848f782b8c87ee505aa9b
 msgid "Iterating a full list"
-msgstr ""
+msgstr "التكرار عبر قائمة كاملة"
 
 #: ../../developer-api/pagination.md:23 155e192833f24011a8d79e0ee06ea67b
 msgid ""
@@ -92,10 +108,27 @@ msgid ""
 "  } while (cursor);\n"
 "}\n"
 msgstr ""
+"async function* pages(path, key) {\n"
+"  let cursor = null;\n"
+"  do {\n"
+"    const url = new URL(`https://rmhstudios.com${path}`);\n"
+"    url.searchParams.set('limit', '50');\n"
+"    if (cursor) url.searchParams.set('cursor', cursor);\n"
+"    const res = await fetch(url, { headers: { Authorization: `Bearer "
+"${key}` } });\n"
+"    if (!res.ok) throw new Error(`${res.status} ${(await "
+"res.json()).error?.code}`);\n"
+"    const body = await res.json();\n"
+"    yield* body.data;\n"
+"    cursor = body.nextCursor;\n"
+"  } while (cursor);\n"
+"}\n"
 
 #: ../../developer-api/pagination.md:39 95c15fa6f67143d49d1761a0e73da063
 msgid ""
 "Stop on `nextCursor === null` — not on an empty `data` array, which is "
 "not a guaranteed terminator."
 msgstr ""
+"توقّف عند `nextCursor === null` — وليس عند مصفوفة `data` فارغة، فهي ليست "
+"مُنهيًا مضمونًا."
 

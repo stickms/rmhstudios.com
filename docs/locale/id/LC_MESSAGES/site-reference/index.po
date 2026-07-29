@@ -162,23 +162,29 @@ msgstr "**Dihasilkan otomatis** dari `lib/apps.ts` — setiap aplikasi."
 
 #: ../../site-reference/index.md:74 a2b62a4523c441398b2bcfe524a3c08d
 msgid "Two shells, and why it matters"
-msgstr ""
+msgstr "Dua shell, dan mengapa itu penting"
 
 #: ../../site-reference/index.md:76 c40b783c675e418bae778c7e47cfe8c4
 msgid ""
 "Where a route file lives decides how the page is framed, and this trips "
 "people up more than anything else in the routing layer:"
 msgstr ""
+"Lokasi berkas rute menentukan bagaimana halaman dibingkai, dan hal ini "
+"lebih sering membingungkan orang dibanding hal lain mana pun pada lapisan"
+" routing:"
 
 #: ../../site-reference/index.md:78 5f5ab0e1c4844b208b4c72c535031d4c
 msgid ""
 "Files under `app/routes/_site/` render inside the **site shell** — the "
 "radial nav hub, sidebar, context rail, skip link and `<main>` landmark."
 msgstr ""
+"Berkas di bawah `app/routes/_site/` dirender di dalam **shell situs** — "
+"hub navigasi radial, sidebar, context rail, skip link, dan landmark "
+"`<main>`."
 
 #: ../../site-reference/index.md:79 d7aff5b1c1ff44009f4349b8d1a04f38
 msgid "Top-level files render **full-screen**, with no shell at all."
-msgstr ""
+msgstr "Berkas tingkat atas dirender **layar penuh**, tanpa shell sama sekali."
 
 #: ../../site-reference/index.md:81 9f114c76a5c74be285ac1d900a0b0684
 msgid ""
@@ -188,16 +194,24 @@ msgid ""
 "apps have their own chrome tier in `components/shared/` (`AppShell`, "
 "`AppHeader`, the `--app-*` token contract)."
 msgstr ""
+"Game, `/login`, game `secret/*`, `discord/*`, dan halaman legal memang "
+"*sengaja* diletakkan di tingkat atas. Memindahkan salah satunya ke bawah "
+"`_site/` demi \"konsistensi\" akan membungkus game layar penuh dalam "
+"sebuah sidebar. Aplikasi layar penuh memiliki tier chrome sendiri di "
+"`components/shared/` (`AppShell`, `AppHeader`, kontrak token `--app-*`)."
 
 #: ../../site-reference/index.md:83 71a7694925034a3f8f8f9e66ce569647
 msgid ""
 "The generated [page inventory](./pages.md) splits its tables along "
 "exactly this line, so you can see which pages are in which world."
 msgstr ""
+"[Inventaris halaman](./pages.md) yang dihasilkan otomatis membagi "
+"tabelnya persis mengikuti garis ini, sehingga Anda bisa melihat halaman "
+"mana berada di dunia yang mana."
 
 #: ../../site-reference/index.md:85 36235fa7bce142db867cab43b5a09962
 msgid "The trust rule"
-msgstr ""
+msgstr "Aturan kepercayaan"
 
 #: ../../site-reference/index.md:87 bbc1e81c6d4d451b8c3eb5ed876ad3df
 msgid ""
@@ -205,4 +219,8 @@ msgid ""
 "from. Where a hand-written guide and the code disagree, the code wins — "
 "and the guide is a bug. Report it or fix it; don't work around it."
 msgstr ""
+"Halaman-halaman ini menggambarkan situs sebagaimana adanya pada commit "
+"tempat halaman tersebut dihasilkan. Jika panduan yang ditulis manual dan "
+"kode tidak sinkron, kode yang menang — dan panduan tersebut adalah bug. "
+"Laporkan atau perbaiki; jangan mengakalinya."
 

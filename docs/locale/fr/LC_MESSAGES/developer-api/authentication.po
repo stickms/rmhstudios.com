@@ -4,14 +4,13 @@
 # package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: rmhstudios.com 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-29 21:28+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
 "Language: fr\n"
 "Language-Team: fr <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
@@ -22,33 +21,38 @@ msgstr ""
 
 #: ../../developer-api/authentication.md:1 e12a505c87544ba6acf262fb618d84ba
 msgid "Authentication"
-msgstr ""
+msgstr "Authentification"
 
 #: ../../developer-api/authentication.md:3 c6f3f308872f4cedb189d9d08929e31b
 msgid "Every request must include an API key. Two equivalent options:"
-msgstr ""
+msgstr "Chaque requête doit inclure une clé API. Deux options équivalentes :"
 
 #: ../../developer-api/authentication.md:5 a01d23b6d31f4cb2afb5d2ae66f973c3
 msgid "Authorization: Bearer rmh_live_xxxxxxxxxxxxxxxxxxxxxxxx\n"
-msgstr ""
+msgstr "Authorization: Bearer rmh_live_xxxxxxxxxxxxxxxxxxxxxxxx\n"
 
 #: ../../developer-api/authentication.md:9 4e305c76a65f4f2da31154bbd655da80
 msgid "X-API-Key: rmh_live_xxxxxxxxxxxxxxxxxxxxxxxx\n"
-msgstr ""
+msgstr "X-API-Key: rmh_live_xxxxxxxxxxxxxxxxxxxxxxxx\n"
 
 #: ../../developer-api/authentication.md:13 84d169f55f7f42949dcbf9504429061b
 msgid ""
 "API keys authenticate as **your user account**. Writes are scoped to your"
 " own account; you cannot act on behalf of others."
 msgstr ""
+"Les clés API s'authentifient en tant que **votre compte utilisateur**. "
+"Les écritures sont limitées à votre propre compte ; vous ne pouvez pas "
+"agir au nom d'autrui."
 
 #: ../../developer-api/authentication.md:15 99ba9717dc7d4a29b1df5d1aa529d1ad
 msgid "Key security"
-msgstr ""
+msgstr "Sécurité des clés"
 
 #: ../../developer-api/authentication.md:17 ca334af8bd9b4787a6c1d2e445d140c4
 msgid "Keys are random 256-bit secrets formatted `rmh_live_<base62>`."
 msgstr ""
+"Les clés sont des secrets aléatoires de 256 bits, au format "
+"`rmh_live_<base62>`."
 
 #: ../../developer-api/authentication.md:18 77e66086b00946718c324e2c394eb8ff
 msgid ""
@@ -56,12 +60,19 @@ msgid ""
 "**once** at creation and can never be retrieved again. The dashboard "
 "shows a non-secret 4-character suffix so you can tell keys apart."
 msgstr ""
+"Le serveur ne stocke **qu'un hachage SHA-256** — le texte en clair n'est "
+"affiché **qu'une seule fois** à la création et ne peut plus jamais être "
+"récupéré. Le tableau de bord affiche un suffixe non secret de 4 "
+"caractères pour vous permettre de distinguer vos clés."
 
 #: ../../developer-api/authentication.md:19 9b3f2c7592754040bfdc5fb377572339
 msgid ""
 "Treat a key like a password. Keep it server-side; never embed it in a "
 "public client, repo, or browser bundle you don't control."
 msgstr ""
+"Traitez une clé comme un mot de passe. Conservez-la côté serveur ; ne "
+"l'intégrez jamais dans un client public, un dépôt, ou un bundle "
+"navigateur que vous ne contrôlez pas."
 
 #: ../../developer-api/authentication.md:20 0b5c72946b6a42b79c051b9d4eb5075d
 msgid ""
@@ -69,12 +80,17 @@ msgid ""
 "[Scopes](./scopes.md). Grant the least privilege a given integration "
 "needs."
 msgstr ""
+"**Scopes :** chaque clé porte des permissions granulaires — voir "
+"[Scopes](./scopes.md). Accordez le moindre privilège dont une intégration"
+" donnée a besoin."
 
 #: ../../developer-api/authentication.md:21 83e71af87c8c45c7aab18842b57216ca
 msgid ""
 "**Expiry:** a key may be created with an expiry date; expired keys are "
 "rejected exactly like revoked ones."
 msgstr ""
+"**Expiration :** une clé peut être créée avec une date d'expiration ; les"
+" clés expirées sont rejetées exactement comme les clés révoquées."
 
 #: ../../developer-api/authentication.md:22 7d3ae1e8321d43da8a772c38019aed4a
 msgid ""
@@ -83,6 +99,10 @@ msgid ""
 "while keeping the same key record — the old secret stops working "
 "immediately."
 msgstr ""
+"**Rotation :** faites tourner une clé depuis "
+"[`/developer`](https://rmhstudios.com/developer) pour émettre un nouveau "
+"secret tout en conservant le même enregistrement de clé — l'ancien secret"
+" cesse de fonctionner immédiatement."
 
 #: ../../developer-api/authentication.md:23 78395ac83f8f47889835b923146d7ff3
 msgid ""
@@ -90,16 +110,21 @@ msgid ""
 "[`/developer`](https://rmhstudios.com/developer); it takes effect at "
 "once."
 msgstr ""
+"**Révocation :** révoquez une clé à tout moment depuis "
+"[`/developer`](https://rmhstudios.com/developer) ; l'effet est immédiat."
 
 #: ../../developer-api/authentication.md:24 7ab7a291c56f499ab98def9e98293371
 msgid ""
 "If a subscription lapses or the account is suspended, all of that "
 "account's keys stop working until the subscription is restored."
 msgstr ""
+"Si un abonnement expire ou si le compte est suspendu, toutes les clés de "
+"ce compte cessent de fonctionner jusqu'à ce que l'abonnement soit "
+"rétabli."
 
 #: ../../developer-api/authentication.md:26 35a3b220b7ea49fc97780f676f932738
 msgid "CORS and browser clients"
-msgstr ""
+msgstr "CORS et clients navigateur"
 
 #: ../../developer-api/authentication.md:29 9cacb0074db14c5bb04a7853c96d59e2
 msgid ""
@@ -109,4 +134,10 @@ msgid ""
 " JavaScript is readable by anyone who loads the page. Keep keys on a "
 "server you control."
 msgstr ""
+"Les requêtes cross-origin sont autorisées, et l'authentification se fait "
+"par clé porteur (bearer) plutôt que par cookies — l'API n'est donc pas "
+"exposée au CSRF. Ce n'est *pas* pour autant une autorisation à expédier "
+"une clé dans un bundle navigateur public : tout ce qui se trouve dans du "
+"JavaScript côté client est lisible par quiconque charge la page. Gardez "
+"les clés sur un serveur que vous contrôlez."
 

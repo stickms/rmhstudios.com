@@ -4,14 +4,13 @@
 # package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: rmhstudios.com 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-29 21:28+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
 "Language: de\n"
 "Language-Team: de <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -22,7 +21,7 @@ msgstr ""
 
 #: ../../developer-api/idempotency.md:1 6f4b3edd91254134b847b71b23c62f27
 msgid "Idempotency"
-msgstr ""
+msgstr "Idempotenz"
 
 #: ../../developer-api/idempotency.md:3 5db6dc5652ce40318ccea1810c750afa
 msgid ""
@@ -30,6 +29,10 @@ msgid ""
 "Key`** header so a retry — after a network blip or timeout — never "
 "applies the action twice."
 msgstr ""
+"Schreibende Anfragen (`POST`, `PATCH`, `DELETE`) akzeptieren einen "
+"**`Idempotency-Key`**-Header, sodass eine Wiederholung — nach einer "
+"kurzen Netzwerkstörung oder einem Timeout — die Aktion niemals zweimal "
+"ausführt."
 
 #: ../../developer-api/idempotency.md:5 bd6859a73e33462c976fb4d9218a716f
 #, python-brace-format
@@ -40,32 +43,44 @@ msgid ""
 "  -H \"Idempotency-Key: 5f3a9c2e-1b7d-4e2a-9c8b-2f1a0d6e4b3c\" \\\n"
 "  -d '{\"content\":\"Posted exactly once\"}'\n"
 msgstr ""
+"curl -X POST https://rmhstudios.com/api/v1/posts \\\n"
+"  -H \"Authorization: Bearer $RMH_KEY\" \\\n"
+"  -H \"Content-Type: application/json\" \\\n"
+"  -H \"Idempotency-Key: 5f3a9c2e-1b7d-4e2a-9c8b-2f1a0d6e4b3c\" \\\n"
+"  -d '{\"content\":\"Posted exactly once\"}'\n"
 
 #: ../../developer-api/idempotency.md:13 09697d2109544b598276879f075f44ad
 msgid "Semantics"
-msgstr ""
+msgstr "Semantik"
 
 #: ../../developer-api/idempotency.md:15 f264c62e811841a2a12d9d68eecf9c55
 msgid ""
 "The **first** request for a given key is processed and its response "
 "stored."
 msgstr ""
+"Die **erste** Anfrage für einen gegebenen Schlüssel wird verarbeitet und "
+"ihre Antwort gespeichert."
 
 #: ../../developer-api/idempotency.md:16 587f06e903974796a9edd5bd191261d5
 msgid ""
 "A **retry with the same key and body** replays the stored response and "
 "adds `Idempotency-Replayed: true`. No second action occurs."
 msgstr ""
+"Eine **Wiederholung mit demselben Schlüssel und Body** spielt die "
+"gespeicherte Antwort erneut ab und fügt `Idempotency-Replayed: true` "
+"hinzu. Es findet keine zweite Aktion statt."
 
 #: ../../developer-api/idempotency.md:17 7d2448dba21d471ba663038ce0d3529c
 msgid ""
 "Reusing a key with a **different body** returns `409 "
 "idempotency_conflict`."
 msgstr ""
+"Die Wiederverwendung eines Schlüssels mit einem **anderen Body** liefert "
+"`409 idempotency_conflict` zurück."
 
 #: ../../developer-api/idempotency.md:18 52ce52844cf44c0d915909c48b5fb4ac
 msgid "Stored responses expire after ~24 hours."
-msgstr ""
+msgstr "Gespeicherte Antworten laufen nach ~24 Stunden ab."
 
 #: ../../developer-api/idempotency.md:20 d815047308ff470c8afd0a0d51a9d195
 msgid ""
@@ -73,10 +88,13 @@ msgid ""
 "HTTP attempt. The point is that all attempts at *one* logical write share"
 " a key."
 msgstr ""
+"Generiere einen eindeutigen Schlüssel (z. B. eine UUID v4) pro logischer "
+"Operation — nicht pro HTTP-Versuch. Der Sinn ist, dass sich alle "
+"Versuche *eines* logischen Schreibvorgangs einen Schlüssel teilen."
 
 #: ../../developer-api/idempotency.md:22 ed0000951b414a35b67783128c2e608b
 msgid "Which endpoints honour it"
-msgstr ""
+msgstr "Welche Endpunkte ihn berücksichtigen"
 
 #: ../../developer-api/idempotency.md:25 62dad61c33a247cfb50c1675cd0ccbb3
 msgid ""
@@ -84,4 +102,8 @@ msgid ""
 "[endpoint reference](./endpoints/index.md). Sending the header to an "
 "endpoint that doesn't support it is harmless — it's ignored."
 msgstr ""
+"Endpunkte, die Idempotenz unterstützen, sind in der "
+"[Endpunktreferenz](./endpoints/index.md) als **Idempotent** markiert. "
+"Das Senden des Headers an einen Endpunkt, der ihn nicht unterstützt, "
+"ist unbedenklich — er wird ignoriert."
 

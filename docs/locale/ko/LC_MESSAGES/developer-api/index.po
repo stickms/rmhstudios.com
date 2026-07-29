@@ -4,14 +4,13 @@
 # package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: rmhstudios.com 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-29 21:28+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
 "Language: ko\n"
 "Language-Team: ko <LL@li.org>\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
@@ -22,62 +21,62 @@ msgstr ""
 
 #: ../../developer-api/index.md:1 1acc01eb4c0447f09c77661e34d1f05c
 msgid "Developer API"
-msgstr ""
+msgstr "개발자 API"
 
 #: ../../developer-api/index.md:3 5b94acfc4d96430b86ffd97f44c471f5
 msgid ""
 "Build on RMH Studios programmatically — read your account and the public "
 "feed, post on your own behalf, manage social actions, browse builds, "
 "blog, news and leaderboards, and subscribe to real-time webhooks."
-msgstr ""
+msgstr "RMH Studios를 프로그래밍 방식으로 활용해 보세요 — 계정과 공개 피드를 읽고, 본인 명의로 게시물을 작성하고, 소셜 동작을 관리하고, 빌드·블로그·뉴스·리더보드를 조회하고, 실시간 웹훅을 구독할 수 있습니다."
 
 #: ../../developer-api/index.md 4a0bba38876b4d2483d7d9e0f6ee8f17
 msgid "**Base URL**"
-msgstr ""
+msgstr "**기본 URL**"
 
 #: ../../developer-api/index.md 2e7493f4431f4d48b22025e688770606
 msgid "`https://rmhstudios.com`"
-msgstr ""
+msgstr "`https://rmhstudios.com`"
 
 #: ../../developer-api/index.md 552a0ce14d3e4e0098c3b4e0102901d3
 msgid "**Version**"
-msgstr ""
+msgstr "**버전**"
 
 #: ../../developer-api/index.md 8a554f9228f84923822722f065ce1aed
 msgid "`v1` — breaking changes ship under a new version prefix"
-msgstr ""
+msgstr "`v1` — 호환성이 깨지는 변경 사항은 새로운 버전 접두사로 배포됩니다"
 
 #: ../../developer-api/index.md 287b928c2fc54403b145a8dc43f4cc30
 msgid "**Format**"
-msgstr ""
+msgstr "**형식**"
 
 #: ../../developer-api/index.md 78ee94fee76d49eca1e3a6bbce430c71
 msgid "JSON request/response bodies, UTF-8. Writes accept `application/json`"
-msgstr ""
+msgstr "JSON 요청/응답 본문, UTF-8. 쓰기 작업은 `application/json`을 허용합니다"
 
 #: ../../developer-api/index.md 242f58044bd94ffb937410ccfdd8e0d4
 msgid "**Availability**"
-msgstr ""
+msgstr "**이용 조건**"
 
 #: ../../developer-api/index.md 11763acd984243eca64802ac8d1051c5
 msgid ""
 "An active **Starter** subscription or higher. Entitlement is re-checked "
 "on **every** request, so access tracks your subscription in real time"
-msgstr ""
+msgstr "활성화된 **Starter** 이상의 구독. 자격은 **모든** 요청마다 다시 확인되므로 접근 권한은 구독 상태를 실시간으로 반영합니다"
 
 #: ../../developer-api/index.md 0c7d054621e14889a23b0443d5d27843
 msgid "**OpenAPI**"
-msgstr ""
+msgstr "**OpenAPI**"
 
 #: ../../developer-api/index.md 14a1de92cc9f400d81db4732a6e33f7f
 msgid ""
 "[`/api/v1/openapi.json`](https://rmhstudios.com/api/v1/openapi.json) — "
 "point your codegen at it"
-msgstr ""
+msgstr "[`/api/v1/openapi.json`](https://rmhstudios.com/api/v1/openapi.json) — 코드 생성기가 이 주소를 가리키도록 설정하세요"
 
 #: ../../developer-api/index.md:13 28cdc4abef4447dc977303979742b674
 msgid "Quickstart"
-msgstr ""
+msgstr "빠른 시작"
 
 #: ../../developer-api/index.md:15 3082c323bd2f466389226c352df72a2a
 msgid ""
@@ -89,91 +88,98 @@ msgid ""
 "curl https://rmhstudios.com/api/v1/me \\\n"
 "  -H \"Authorization: Bearer $RMH_KEY\"\n"
 msgstr ""
+"# 1. Create a key at https://rmhstudios.com/developer and copy it (shown "
+"once).\n"
+"export RMH_KEY=rmh_live_xxxxxxxxxxxxxxxxxxxxxxxx\n"
+"\n"
+"# 2. Call the API.\n"
+"curl https://rmhstudios.com/api/v1/me \\\n"
+"  -H \"Authorization: Bearer $RMH_KEY\"\n"
 
 #: ../../developer-api/index.md:24 2826e06f8b4944d2b0ffeae1116579dd
 msgid ""
 "Every response includes an `X-Request-Id` header — include it when "
 "contacting support."
-msgstr ""
+msgstr "모든 응답에는 `X-Request-Id` 헤더가 포함됩니다 — 지원팀에 문의할 때 이 값을 함께 제공하세요."
 
 #: ../../developer-api/index.md:26 a6210f101f4d408ea681b9935b0673cf
 msgid "Guides"
-msgstr ""
+msgstr "가이드"
 
 #: ../../developer-api/index.md:32 29c28c7f357a489896434f1815a36527
 msgid "Authentication"
-msgstr ""
+msgstr "인증"
 
 #: ../../developer-api/index.md:36 681558fc953547388ec1dfbe6573937b
 msgid "Sending your key, and how keys are stored, scoped, rotated and revoked."
-msgstr ""
+msgstr "키를 전송하는 방법과 키가 저장, 스코프 지정, 회전, 폐기되는 방식."
 
 #: ../../developer-api/index.md:39 ed67a833c7844a8bb1601e100c2a71b3
 msgid "Scopes"
-msgstr ""
+msgstr "스코프"
 
 #: ../../developer-api/index.md:43 e075923119244287b72a605144a40dae
 msgid ""
 "The permission catalog, and how an endpoint decides whether your key "
 "qualifies."
-msgstr ""
+msgstr "권한 카탈로그와 엔드포인트가 사용 중인 키의 자격을 판단하는 방식."
 
 #: ../../developer-api/index.md:46 2fd8dc906c7b4ea18291f4db7fc03b1f
 msgid "Rate limits"
-msgstr ""
+msgstr "요청 제한"
 
 #: ../../developer-api/index.md:50 ac436bf467404950815628fc63aac7aa
 msgid ""
 "Per-key budgets by tier, the headers on every response, and how to back "
 "off."
-msgstr ""
+msgstr "티어별 키당 한도, 모든 응답에 포함되는 헤더, 그리고 백오프 방법."
 
 #: ../../developer-api/index.md:53 b196cc9c5e7341a8bf6f59f1491f32be
 msgid "Errors"
-msgstr ""
+msgstr "오류"
 
 #: ../../developer-api/index.md:57 8fbfc751d84f4707b9816728e5eba21f
 msgid "The `type`/`code` taxonomy, the error envelope, and every code we return."
-msgstr ""
+msgstr "`type`/`code` 분류 체계, 오류 응답 봉투(envelope), 그리고 반환되는 모든 코드."
 
 #: ../../developer-api/index.md:60 5e5dbd2a602e4b6eab9ade52e64042a9
 msgid "Pagination"
-msgstr ""
+msgstr "페이지네이션"
 
 #: ../../developer-api/index.md:64 d8ab6d80ee8a432ab78885f5a6be01a7
 #, python-brace-format
 msgid "Keyset paging: `limit`, `cursor`, and the `{ data, nextCursor }` envelope."
-msgstr ""
+msgstr "키셋 페이징: `limit`, `cursor`, 그리고 `{ data, nextCursor }` 봉투(envelope)."
 
 #: ../../developer-api/index.md:67 0dadf842123449568f66a6097fb535e9
 msgid "Idempotency"
-msgstr ""
+msgstr "멱등성"
 
 #: ../../developer-api/index.md:71 9609414e79304055aef96ed86100c0a9
 msgid "Making writes safe to retry with the `Idempotency-Key` header."
-msgstr ""
+msgstr "`Idempotency-Key` 헤더를 사용해 쓰기 요청을 안전하게 재시도할 수 있도록 합니다."
 
 #: ../../developer-api/index.md:74 3f1979243af34273b365a19ee02613cf
 msgid "Webhooks"
-msgstr ""
+msgstr "웹훅"
 
 #: ../../developer-api/index.md:78 0a3f5b2c7ffe4e19a2f5bbc8ed8a408c
 msgid "Subscribing to events, delivery semantics, and verifying HMAC signatures."
-msgstr ""
+msgstr "이벤트 구독, 전달 방식(semantics), 그리고 HMAC 서명 검증."
 
 #: ../../developer-api/index.md:81 7b438a0bb2f5484c81f9f921ae7c836f
 msgid "Endpoint reference"
-msgstr ""
+msgstr "엔드포인트 레퍼런스"
 
 #: ../../developer-api/index.md:85 7fe6296b0c5e41e0ab684ece1a0df7fd
 msgid "Every endpoint, grouped, with parameters and worked examples."
-msgstr ""
+msgstr "그룹별로 정리된 모든 엔드포인트와 파라미터, 실제 예제."
 
 #: ../../developer-api/index.md:88 f5de91f489124f76b001b03098ec70d8
 msgid "Changelog"
-msgstr ""
+msgstr "변경 이력"
 
 #: ../../developer-api/index.md:92 872c4c3c0e4a46f88f352a185d66011c
 msgid "What changed in each version of the API."
-msgstr ""
+msgstr "API 각 버전에서 변경된 내용."
 

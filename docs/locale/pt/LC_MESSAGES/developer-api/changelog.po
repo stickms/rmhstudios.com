@@ -4,14 +4,13 @@
 # package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: rmhstudios.com 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-29 21:28+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
 "Language: pt\n"
 "Language-Team: pt <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -22,33 +21,37 @@ msgstr ""
 
 #: ../../developer-api/changelog.md:1 95b63df92fc04f5fbe4e142a4377bb5f
 msgid "Changelog"
-msgstr ""
+msgstr "Changelog"
 
 #: ../../developer-api/changelog.md:3 62fd238c6d1c413b80155a048e8b337a
 msgid "v1.2 — 2026-06"
-msgstr ""
+msgstr "v1.2 — 2026-06"
 
 #: ../../developer-api/changelog.md:5 db2ef47aab9c4cc1bfa3f6dff9fc55a1
 msgid "Major overhaul:"
-msgstr ""
+msgstr "Grande reformulação:"
 
 #: ../../developer-api/changelog.md:7 3533b45601454340ae498dd66a12bfaa
 msgid "Scoped + expiring API keys, key rotation, and a 4-char display suffix."
 msgstr ""
+"Chaves de API com escopo e expiração, rotação de chaves e um sufixo de "
+"exibição de 4 caracteres."
 
 #: ../../developer-api/changelog.md:8 c6d434ce41a04c5ea5277da55df34bf6
 msgid ""
 "Standardized errors with `type` + `request_id`; `X-RateLimit-*` headers "
 "on every response."
 msgstr ""
+"Erros padronizados com `type` + `request_id`; cabeçalhos `X-RateLimit-*` "
+"em cada resposta."
 
 #: ../../developer-api/changelog.md:9 c59dd8105d8842d48fac41e213857a7f
 msgid "`Idempotency-Key` support on all writes."
-msgstr ""
+msgstr "Suporte a `Idempotency-Key` em todas as escritas."
 
 #: ../../developer-api/changelog.md:10 5228a7ad17924137a9e2ec86fbcc10f3
 msgid "Outbound webhooks with HMAC-signed delivery + retries."
-msgstr ""
+msgstr "Webhooks de saída com entrega assinada por HMAC + retentativas."
 
 #: ../../developer-api/changelog.md:11 464b4c61ba6942a48ecf50406c5e7c66
 msgid ""
@@ -57,24 +60,27 @@ msgid ""
 "followers/following/notifications/bookmarks, builds, blog, news, and game"
 " leaderboards."
 msgstr ""
+"Novos endpoints: leitura/exclusão de post único, curtir/descurtir, "
+"comentários, favoritos, perfis públicos de usuários + grafo social, seus"
+" seguidores/seguidos/notificações/favoritos, builds, blog, notícias e "
+"rankings de jogos."
 
 #: ../../developer-api/changelog.md:12 d61bfc798aa441a490d4ed62e072a48e
 msgid "Machine-readable OpenAPI 3.1 at `/api/v1/openapi.json`."
-msgstr ""
+msgstr "OpenAPI 3.1 legível por máquina em `/api/v1/openapi.json`."
 
 #: ../../developer-api/changelog.md:14 308b735f0da64615a3e95d0853daf4ed
 msgid "v1.1 — 2026-06"
-msgstr ""
+msgstr "v1.1 — 2026-06"
 
 #: ../../developer-api/changelog.md:16 173951ce244540f483cd1b74b4b4fd32
 msgid "Image upload: `POST /api/v1/images`; `media_ids` on `POST /api/v1/posts`."
-msgstr ""
+msgstr "Envio de imagens: `POST /api/v1/images`; `media_ids` em `POST /api/v1/posts`."
 
 #: ../../developer-api/changelog.md:18 4e4b94cb02ef42a5897dff0e72e95205
 msgid "v1 — 2026-06"
-msgstr ""
+msgstr "v1 — 2026-06"
 
 #: ../../developer-api/changelog.md:20 f9013299147d4bc0a7b0788dd66027ac
 msgid "Initial release: `me`, `posts` (list + create), `feed`."
-msgstr ""
-
+msgstr "Lançamento inicial: `me`, `posts` (listar + criar), `feed`."

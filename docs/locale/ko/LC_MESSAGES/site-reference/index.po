@@ -4,14 +4,13 @@
 # package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: rmhstudios.com 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-29 21:28+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
 "Language: ko\n"
 "Language-Team: ko <LL@li.org>\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
@@ -22,13 +21,13 @@ msgstr ""
 
 #: ../../site-reference/index.md:1 2952356a2f744080a9bd46c5dcb62df5
 msgid "Site reference"
-msgstr ""
+msgstr "사이트 레퍼런스"
 
 #: ../../site-reference/index.md:3 e639470df54a40698ed3d0edc8de73df
 msgid ""
 "What the platform actually consists of, area by area — and, in the "
 "generated inventories, every single route it serves."
-msgstr ""
+msgstr "플랫폼이 영역별로 실제로 무엇으로 구성되어 있는지, 그리고 생성된 인벤토리를 통해 제공되는 모든 라우트를 다룹니다."
 
 #: ../../site-reference/index.md:5 8a859cebd8bd4646b8c26f7cf7a8e1b5
 msgid ""
@@ -38,18 +37,18 @@ msgid ""
 "memberships, and a scoped public API. That breadth is exactly why an "
 "inventory matters — it is otherwise very easy for a page to exist that "
 "nothing documents."
-msgstr ""
+msgstr "RMH Studios는 이례적으로 넓은 범위를 가진 하나의 웹 플랫폼입니다: 소셜 피드, 약 18개의 브라우저 게임(다수는 실시간 멀티플레이어 또는 3D), 십여 개의 풀 애플리케이션, 블로그/뉴스/라이브러리 스택, Stripe 멤버십을 사용하는 코인 경제, 그리고 스코프 기반 공개 API. 바로 이 넓은 범위 때문에 인벤토리가 중요합니다 — 그렇지 않으면 어떤 문서에도 기록되지 않은 페이지가 존재하기 매우 쉽습니다."
 
 #: ../../site-reference/index.md:7 b6a3d601e0434999b0634efe9690f2e4
 msgid "How this section is organised"
-msgstr ""
+msgstr "이 섹션의 구성 방식"
 
 #: ../../site-reference/index.md:9 f42dfa345ff74dfda1c6e3cb9fb12504
 msgid ""
 "The **area guides** are hand-written. They explain what an area is for, "
 "which routes belong to it, and which modules implement it — the kind of "
 "thing that only makes sense written by a person."
-msgstr ""
+msgstr "**영역 가이드**는 사람이 직접 작성한 것입니다. 각 영역이 무엇을 위한 것인지, 어떤 라우트가 속하는지, 어떤 모듈이 이를 구현하는지를 설명합니다 — 사람이 직접 작성해야 의미가 있는 종류의 내용입니다."
 
 #: ../../site-reference/index.md:11 6c76fa864eea49f29c0fb2c57a98a564
 msgid ""
@@ -57,101 +56,101 @@ msgid ""
 "`app/routes/` and the product catalogs. They are exhaustive by "
 "construction: if a route exists, it is listed. `pnpm docs:site --check` "
 "fails when they drift, so they cannot quietly go stale."
-msgstr ""
+msgstr "**인벤토리**는 `pnpm docs:site`가 `app/routes/`와 제품 카탈로그로부터 직접 생성합니다. 구조상 빠짐없이 완전하며, 라우트가 존재하면 반드시 목록에 포함됩니다. `pnpm docs:site --check`는 목록이 실제와 어긋나면 실패하므로 조용히 오래된 상태로 남을 수 없습니다."
 
 #: ../../site-reference/index.md:17 fecc5f76f1cb43b4997c8854d7b5331e
 msgid "Social"
-msgstr ""
+msgstr "소셜"
 
 #: ../../site-reference/index.md:21 6037085ce16c41c783f3600b5d627ed3
 msgid "The RMHarks feed, profiles, messaging, communities, groups and presence."
-msgstr ""
+msgstr "RMHarks 피드, 프로필, 메시지, 커뮤니티, 그룹, 접속 상태(presence)."
 
 #: ../../site-reference/index.md:24 14caed7702d24d938326770e364edf15
 msgid "Economy & progression"
-msgstr ""
+msgstr "경제 및 진행 시스템"
 
 #: ../../site-reference/index.md:28 46153619df394a26b4214e9f1152599f
 msgid ""
 "Coins, the shop and market, staking, quests, XP, battle pass, memberships"
 " and competitive play."
-msgstr ""
+msgstr "코인, 상점 및 마켓, 스테이킹, 퀘스트, XP, 배틀패스, 멤버십, 경쟁전."
 
 #: ../../site-reference/index.md:31 add7c599251c44e5958f47dcfefba29d
 msgid "Content"
-msgstr ""
+msgstr "콘텐츠"
 
 #: ../../site-reference/index.md:35 c61353d4ad5344769c2bc97d26437ad0
 msgid "Blog, news, the document library, builds, and the creator surfaces."
-msgstr ""
+msgstr "블로그, 뉴스, 문서 라이브러리, 빌드, 크리에이터 관련 기능."
 
 #: ../../site-reference/index.md:38 e1d9cc5093bc43f1a709a5af60c02859
 msgid "Games & apps"
-msgstr ""
+msgstr "게임 및 앱"
 
 #: ../../site-reference/index.md:42 65247575eba1438eb22af70bc22d355d
 msgid ""
 "How a game or app is wired into the site, plus leaderboards, saves and "
 "replays."
-msgstr ""
+msgstr "게임이나 앱이 사이트에 어떻게 연결되는지, 그리고 리더보드, 저장, 리플레이."
 
 #: ../../site-reference/index.md:45 f0b7018e40ae4b3d8564d079ec09a17a
 msgid "Page routes"
-msgstr ""
+msgstr "페이지 라우트"
 
 #: ../../site-reference/index.md:49 3400e96d5bc040c58f382d466bbb444d
 msgid ""
 "**Generated.** Every page URL, its title, its access level and its source"
 " file."
-msgstr ""
+msgstr "**생성됨.** 모든 페이지 URL과 제목, 접근 수준, 소스 파일."
 
 #: ../../site-reference/index.md:52 086e18521c5f4ec6880caa39b1326728
 msgid "API routes"
-msgstr ""
+msgstr "API 라우트"
 
 #: ../../site-reference/index.md:56 b39689a33d184668ac8ede60c3743c84
 msgid ""
 "**Generated.** Every server route in the app tier, with the HTTP methods "
 "it handles."
-msgstr ""
+msgstr "**생성됨.** 앱 계층의 모든 서버 라우트와 그것이 처리하는 HTTP 메서드."
 
 #: ../../site-reference/index.md:59 c38ec66475a546598a18479725cc7b0e
 msgid "Game catalog"
-msgstr ""
+msgstr "게임 카탈로그"
 
 #: ../../site-reference/index.md:63 146eff2c55934117868a1bb18a819b48
 msgid ""
 "**Generated** from `lib/games.ts` — every game, including the unlisted "
 "ones."
-msgstr ""
+msgstr "`lib/games.ts`로부터 **생성됨** — 목록에 없는 게임을 포함한 모든 게임."
 
 #: ../../site-reference/index.md:66 faadb7edc7e94663a23f391cbe79d120
 msgid "App catalog"
-msgstr ""
+msgstr "앱 카탈로그"
 
 #: ../../site-reference/index.md:70 5ce6b4beda0a46379245eba05aff2b7e
 msgid "**Generated** from `lib/apps.ts` — every application."
-msgstr ""
+msgstr "`lib/apps.ts`로부터 **생성됨** — 모든 애플리케이션."
 
 #: ../../site-reference/index.md:74 a2b62a4523c441398b2bcfe524a3c08d
 msgid "Two shells, and why it matters"
-msgstr ""
+msgstr "두 가지 셸, 그리고 이것이 중요한 이유"
 
 #: ../../site-reference/index.md:76 c40b783c675e418bae778c7e47cfe8c4
 msgid ""
 "Where a route file lives decides how the page is framed, and this trips "
 "people up more than anything else in the routing layer:"
-msgstr ""
+msgstr "라우트 파일이 어디에 위치하는지에 따라 페이지가 어떻게 감싸지는지가 결정되며, 라우팅 계층에서 이 부분이 가장 많은 혼란을 일으킵니다:"
 
 #: ../../site-reference/index.md:78 5f5ab0e1c4844b208b4c72c535031d4c
 msgid ""
 "Files under `app/routes/_site/` render inside the **site shell** — the "
 "radial nav hub, sidebar, context rail, skip link and `<main>` landmark."
-msgstr ""
+msgstr "`app/routes/_site/` 아래의 파일은 **사이트 셸** 안에서 렌더링됩니다 — 원형(radial) 내비게이션 허브, 사이드바, 컨텍스트 레일, 스킵 링크, `<main>` 랜드마크로 구성됩니다."
 
 #: ../../site-reference/index.md:79 d7aff5b1c1ff44009f4349b8d1a04f38
 msgid "Top-level files render **full-screen**, with no shell at all."
-msgstr ""
+msgstr "최상위 파일은 셸 없이 **전체 화면**으로 렌더링됩니다."
 
 #: ../../site-reference/index.md:81 9f114c76a5c74be285ac1d900a0b0684
 msgid ""
@@ -160,22 +159,22 @@ msgid ""
 "consistent\" would wrap a full-screen game in a sidebar. The full-screen "
 "apps have their own chrome tier in `components/shared/` (`AppShell`, "
 "`AppHeader`, the `--app-*` token contract)."
-msgstr ""
+msgstr "게임, `/login`, `secret/*` 게임, `discord/*`, 법적 고지 페이지는 *의도적으로* 최상위에 위치합니다. \"일관성을 맞춘다\"는 이유로 이를 `_site/` 아래로 옮기면 전체 화면 게임이 사이드바에 감싸이게 됩니다. 전체 화면 앱들은 `components/shared/`(`AppShell`, `AppHeader`, `--app-*` 토큰 계약)에 자체적인 크롬(chrome) 계층을 가지고 있습니다."
 
 #: ../../site-reference/index.md:83 71a7694925034a3f8f8f9e66ce569647
 msgid ""
 "The generated [page inventory](./pages.md) splits its tables along "
 "exactly this line, so you can see which pages are in which world."
-msgstr ""
+msgstr "생성된 [페이지 인벤토리](./pages.md)는 정확히 이 기준으로 표를 나누기 때문에, 어떤 페이지가 어느 쪽에 속하는지 확인할 수 있습니다."
 
 #: ../../site-reference/index.md:85 36235fa7bce142db867cab43b5a09962
 msgid "The trust rule"
-msgstr ""
+msgstr "신뢰 규칙"
 
 #: ../../site-reference/index.md:87 bbc1e81c6d4d451b8c3eb5ed876ad3df
 msgid ""
 "These pages describe the site as it is at the commit they were generated "
 "from. Where a hand-written guide and the code disagree, the code wins — "
 "and the guide is a bug. Report it or fix it; don't work around it."
-msgstr ""
+msgstr "이 페이지들은 생성 시점의 커밋을 기준으로 사이트를 설명합니다. 사람이 작성한 가이드와 코드가 서로 다르다면 코드가 우선하며, 가이드 쪽이 버그입니다. 이를 우회하지 말고 보고하거나 직접 수정하세요."
 

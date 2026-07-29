@@ -91,3 +91,6 @@ MODULE.bazel.lock
 
 # Sphinx / Read the Docs local builds
 /docs/_build/
+
+# Compiled gettext catalogs — built from the .po files by Sphinx
+docs/locale/**/*.mo
