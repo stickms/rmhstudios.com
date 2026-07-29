@@ -4,14 +4,13 @@
 # package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: rmhstudios.com 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-29 21:28+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
 "Language: de\n"
 "Language-Team: de <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -22,7 +21,7 @@ msgstr ""
 
 #: ../../developer-api/index.md:1 1acc01eb4c0447f09c77661e34d1f05c
 msgid "Developer API"
-msgstr ""
+msgstr "Entwickler-API"
 
 #: ../../developer-api/index.md:3 5b94acfc4d96430b86ffd97f44c471f5
 msgid ""
@@ -30,54 +29,65 @@ msgid ""
 "feed, post on your own behalf, manage social actions, browse builds, "
 "blog, news and leaderboards, and subscribe to real-time webhooks."
 msgstr ""
+"Entwickle programmatisch auf RMH Studios auf — lies deinen Account und "
+"den öffentlichen Feed, poste in deinem eigenen Namen, verwalte soziale "
+"Aktionen, durchstöbere Builds, Blog, News und Bestenlisten, und "
+"abonniere Echtzeit-Webhooks."
 
 #: ../../developer-api/index.md 4a0bba38876b4d2483d7d9e0f6ee8f17
 msgid "**Base URL**"
-msgstr ""
+msgstr "**Basis-URL**"
 
 #: ../../developer-api/index.md 2e7493f4431f4d48b22025e688770606
 msgid "`https://rmhstudios.com`"
-msgstr ""
+msgstr "`https://rmhstudios.com`"
 
 #: ../../developer-api/index.md 552a0ce14d3e4e0098c3b4e0102901d3
 msgid "**Version**"
-msgstr ""
+msgstr "**Version**"
 
 #: ../../developer-api/index.md 8a554f9228f84923822722f065ce1aed
 msgid "`v1` — breaking changes ship under a new version prefix"
-msgstr ""
+msgstr "`v1` — breaking Changes erscheinen unter einem neuen Versionspräfix"
 
 #: ../../developer-api/index.md 287b928c2fc54403b145a8dc43f4cc30
 msgid "**Format**"
-msgstr ""
+msgstr "**Format**"
 
 #: ../../developer-api/index.md 78ee94fee76d49eca1e3a6bbce430c71
 msgid "JSON request/response bodies, UTF-8. Writes accept `application/json`"
 msgstr ""
+"JSON-Anfrage-/Antwort-Bodies, UTF-8. Schreibende Zugriffe akzeptieren "
+"`application/json`"
 
 #: ../../developer-api/index.md 242f58044bd94ffb937410ccfdd8e0d4
 msgid "**Availability**"
-msgstr ""
+msgstr "**Verfügbarkeit**"
 
 #: ../../developer-api/index.md 11763acd984243eca64802ac8d1051c5
 msgid ""
 "An active **Starter** subscription or higher. Entitlement is re-checked "
 "on **every** request, so access tracks your subscription in real time"
 msgstr ""
+"Ein aktives **Starter**-Abonnement oder höher. Die Berechtigung wird bei "
+"**jeder** Anfrage neu geprüft, sodass der Zugriff in Echtzeit deinem "
+"Abonnement folgt"
 
 #: ../../developer-api/index.md 0c7d054621e14889a23b0443d5d27843
 msgid "**OpenAPI**"
-msgstr ""
+msgstr "**OpenAPI**"
 
 #: ../../developer-api/index.md 14a1de92cc9f400d81db4732a6e33f7f
 msgid ""
 "[`/api/v1/openapi.json`](https://rmhstudios.com/api/v1/openapi.json) — "
 "point your codegen at it"
 msgstr ""
+"[`/api/v1/openapi.json`](https://rmhstudios.com/api/v1/openapi.json) — "
+"richte deinen Codegenerator darauf aus"
 
 #: ../../developer-api/index.md:13 28cdc4abef4447dc977303979742b674
 msgid "Quickstart"
-msgstr ""
+msgstr "Schnellstart"
 
 #: ../../developer-api/index.md:15 3082c323bd2f466389226c352df72a2a
 msgid ""
@@ -89,91 +99,115 @@ msgid ""
 "curl https://rmhstudios.com/api/v1/me \\\n"
 "  -H \"Authorization: Bearer $RMH_KEY\"\n"
 msgstr ""
+"# 1. Create a key at https://rmhstudios.com/developer and copy it (shown "
+"once).\n"
+"export RMH_KEY=rmh_live_xxxxxxxxxxxxxxxxxxxxxxxx\n"
+"\n"
+"# 2. Call the API.\n"
+"curl https://rmhstudios.com/api/v1/me \\\n"
+"  -H \"Authorization: Bearer $RMH_KEY\"\n"
 
 #: ../../developer-api/index.md:24 2826e06f8b4944d2b0ffeae1116579dd
 msgid ""
 "Every response includes an `X-Request-Id` header — include it when "
 "contacting support."
 msgstr ""
+"Jede Antwort enthält einen `X-Request-Id`-Header — gib ihn an, wenn du "
+"den Support kontaktierst."
 
 #: ../../developer-api/index.md:26 a6210f101f4d408ea681b9935b0673cf
 msgid "Guides"
-msgstr ""
+msgstr "Anleitungen"
 
 #: ../../developer-api/index.md:32 29c28c7f357a489896434f1815a36527
 msgid "Authentication"
-msgstr ""
+msgstr "Authentifizierung"
 
 #: ../../developer-api/index.md:36 681558fc953547388ec1dfbe6573937b
 msgid "Sending your key, and how keys are stored, scoped, rotated and revoked."
 msgstr ""
+"Das Senden deines Schlüssels, und wie Schlüssel gespeichert, mit Scopes "
+"versehen, rotiert und widerrufen werden."
 
 #: ../../developer-api/index.md:39 ed67a833c7844a8bb1601e100c2a71b3
 msgid "Scopes"
-msgstr ""
+msgstr "Scopes"
 
 #: ../../developer-api/index.md:43 e075923119244287b72a605144a40dae
 msgid ""
 "The permission catalog, and how an endpoint decides whether your key "
 "qualifies."
 msgstr ""
+"Der Berechtigungskatalog, und wie ein Endpunkt entscheidet, ob dein "
+"Schlüssel dafür qualifiziert ist."
 
 #: ../../developer-api/index.md:46 2fd8dc906c7b4ea18291f4db7fc03b1f
 msgid "Rate limits"
-msgstr ""
+msgstr "Rate Limits"
 
 #: ../../developer-api/index.md:50 ac436bf467404950815628fc63aac7aa
 msgid ""
 "Per-key budgets by tier, the headers on every response, and how to back "
 "off."
 msgstr ""
+"Budgets pro Schlüssel nach Tarif, die Header auf jeder Antwort, und wie "
+"man die Anfragerate drosselt."
 
 #: ../../developer-api/index.md:53 b196cc9c5e7341a8bf6f59f1491f32be
 msgid "Errors"
-msgstr ""
+msgstr "Fehler"
 
 #: ../../developer-api/index.md:57 8fbfc751d84f4707b9816728e5eba21f
 msgid "The `type`/`code` taxonomy, the error envelope, and every code we return."
 msgstr ""
+"Die `type`-/`code`-Taxonomie, die Fehlerhülle, und jeder Code, den wir "
+"zurückgeben."
 
 #: ../../developer-api/index.md:60 5e5dbd2a602e4b6eab9ade52e64042a9
 msgid "Pagination"
-msgstr ""
+msgstr "Paginierung"
 
 #: ../../developer-api/index.md:64 d8ab6d80ee8a432ab78885f5a6be01a7
 #, python-brace-format
 msgid "Keyset paging: `limit`, `cursor`, and the `{ data, nextCursor }` envelope."
 msgstr ""
+"Keyset-Paginierung: `limit`, `cursor`, und die `{ data, nextCursor }`-"
+"Hülle."
 
 #: ../../developer-api/index.md:67 0dadf842123449568f66a6097fb535e9
 msgid "Idempotency"
-msgstr ""
+msgstr "Idempotenz"
 
 #: ../../developer-api/index.md:71 9609414e79304055aef96ed86100c0a9
 msgid "Making writes safe to retry with the `Idempotency-Key` header."
 msgstr ""
+"Wie man schreibende Zugriffe mit dem `Idempotency-Key`-Header sicher "
+"wiederholbar macht."
 
 #: ../../developer-api/index.md:74 3f1979243af34273b365a19ee02613cf
 msgid "Webhooks"
-msgstr ""
+msgstr "Webhooks"
 
 #: ../../developer-api/index.md:78 0a3f5b2c7ffe4e19a2f5bbc8ed8a408c
 msgid "Subscribing to events, delivery semantics, and verifying HMAC signatures."
 msgstr ""
+"Das Abonnieren von Events, Zustellsemantik, und das Verifizieren von "
+"HMAC-Signaturen."
 
 #: ../../developer-api/index.md:81 7b438a0bb2f5484c81f9f921ae7c836f
 msgid "Endpoint reference"
-msgstr ""
+msgstr "Endpunktreferenz"
 
 #: ../../developer-api/index.md:85 7fe6296b0c5e41e0ab684ece1a0df7fd
 msgid "Every endpoint, grouped, with parameters and worked examples."
 msgstr ""
+"Jeder Endpunkt, gruppiert, mit Parametern und durchgerechneten Beispielen."
 
 #: ../../developer-api/index.md:88 f5de91f489124f76b001b03098ec70d8
 msgid "Changelog"
-msgstr ""
+msgstr "Changelog"
 
 #: ../../developer-api/index.md:92 872c4c3c0e4a46f88f352a185d66011c
 msgid "What changed in each version of the API."
-msgstr ""
+msgstr "Was sich in jeder Version der API geändert hat."
 
