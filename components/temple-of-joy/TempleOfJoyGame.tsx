@@ -1,77 +1,99 @@
+/**
+ * Temple of Joy — the game shell.
+ *
+ * Owns the things that are true for the whole session: loading the save,
+ * running the tick loop, wiring audio, and saving on the way out. The
+ * interface itself is the four components below it.
+ */
 'use client';
-import { Suspense, lazy, useEffect, useRef } from 'react';
+
+import { useEffect, useRef } from 'react';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
-import { saveDataToState, computeOfflineProgress, useAutoSave, saveToServer } from '@/lib/temple-of-joy/persistence';
+import {
+  saveDataToState,
+  computeOfflineProgress,
+  useAutoSave,
+  saveToServer,
+} from '@/lib/temple-of-joy/persistence';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
 import type { SaveData } from '@/lib/temple-of-joy/types';
+import { useTempleValue } from './hooks';
+import { TempleHud } from './TempleHud';
+import { TempleSanctum } from './TempleSanctum';
+import { TempleTabs } from './TempleTabs';
+import { TempleCodex } from './codex/TempleCodex';
+import { TempleDialogs } from './TempleDialogs';
 
-// The Three.js world is heavy; load it lazily so the rest of the game shell
-// (and the loading fallback) can paint immediately.
-const TempleScene = lazy(() =>
-  import('@/components/temple-of-joy/three/TempleScene').then((m) => ({ default: m.TempleScene })),
-);
+/** Below this, an absence isn't worth a "welcome back". */
+const OFFLINE_REPORT_THRESHOLD_S = 30;
 
 export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveData | null }) {
-  const theme = useTempleStore(s => s.theme);
+  const theme = useTempleValue((s) => s.theme);
+  const rootRef = useRef<HTMLDivElement>(null);
 
-  // ── Initialization ────────────────────────────────────────────────────────
+  // ── Load ────────────────────────────────────────────────────────────────
   useEffect(() => {
-    const raw = initialSaveData ?? null;
-    const baseState = useTempleStore.getState();
-    if (raw) {
-      const merged = saveDataToState(raw, baseState);
-      const mergedState = { ...baseState, ...merged, lastClickTime: Date.now(), pageOpenTime: Date.now(), lastTickTime: Date.now() };
-      const offline = computeOfflineProgress(mergedState, Date.now());
+    const base = useTempleStore.getState();
+    const now = Date.now();
+
+    if (initialSaveData) {
+      const merged = {
+        ...base,
+        ...saveDataToState(initialSaveData, base),
+        lastClickTime: now,
+        pageOpenTime: now,
+        lastTickTime: now,
+      };
+      const offline = computeOfflineProgress(merged, now);
+
       useTempleStore.setState({
-        ...mergedState,
+        ...merged,
         offlineHappinessOnLoad: offline.happiness,
         offlineSecondsOnLoad: offline.seconds,
-        happiness: mergedState.happiness + offline.happiness,
-        lifetimeHappiness: mergedState.lifetimeHappiness + offline.happiness,
-        runHappiness: mergedState.runHappiness + offline.happiness,
+        happiness: merged.happiness + offline.happiness,
+        lifetimeHappiness: merged.lifetimeHappiness + offline.happiness,
+        runHappiness: merged.runHappiness + offline.happiness,
         pilgrimageActive: offline.pilgrimageActive,
         pilgrimageTimer: offline.pilgrimageTimer,
         pilgrimageCooldown: offline.pilgrimageCooldown,
         totalPilgrimages: offline.totalPilgrimages,
-        showOfflineModal: offline.seconds > 30,
+        showOfflineModal: offline.seconds > OFFLINE_REPORT_THRESHOLD_S,
       });
     } else {
-      useTempleStore.setState(s => ({
+      useTempleStore.setState((s) => ({
         ...s,
-        lastClickTime: Date.now(),
-        pageOpenTime: Date.now(),
-        lastTickTime: Date.now(),
+        lastClickTime: now,
+        pageOpenTime: now,
+        lastTickTime: now,
       }));
     }
-    // Signal that initialization is complete
+
     useTempleStore.getState().auditAchievements();
     useTempleStore.setState({ gameInitialized: true });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // run once on mount only
-
-  // ── RAF Tick Loop ─────────────────────────────────────────────────────────
-  const rafRef = useRef<number>(0);
-
-  useEffect(() => {
-    function tick() {
-      useTempleStore.getState().tick();
-      rafRef.current = requestAnimationFrame(tick);
-    }
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
+    // Load runs once, against the save this component was handed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Event detection ───────────────────────────────────────────────────────
-  const pendingEvent = useTempleStore(s => s.pendingEvent);
+  // ── Tick ────────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (pendingEvent != null) {
-      useTempleStore.getState().setShowEventModal(true);
-    }
+    let frame = 0;
+    const tick = () => {
+      useTempleStore.getState().tick();
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  // ── Events surface as a dialog ──────────────────────────────────────────
+  const pendingEvent = useTempleValue((s) => s.pendingEvent);
+  useEffect(() => {
+    if (pendingEvent != null) useTempleStore.getState().setShowEventModal(true);
   }, [pendingEvent]);
 
-  // ── Auto-save ─────────────────────────────────────────────────────────────
   useAutoSave();
-  // ── Audio: init and subscribe to store settings ────────────────────────
+
+  // ── Audio ───────────────────────────────────────────────────────────────
   useEffect(() => {
     templeAudio.init();
     const { soundEnabled, musicVolume, sfxVolume } = useTempleStore.getState();
@@ -79,86 +101,92 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
     templeAudio.setSfxVolume(sfxVolume);
     templeAudio.setEnabled(soundEnabled);
 
-    // Subscribe to sound setting changes
-    const unsub1 = useTempleStore.subscribe(
-      (s) => s.soundEnabled,
-      (enabled) => templeAudio.setEnabled(enabled),
-    );
-    const unsub2 = useTempleStore.subscribe(
-      (s) => s.musicVolume,
-      (vol) => templeAudio.setMusicVolume(vol),
-    );
-    const unsub3 = useTempleStore.subscribe(
-      (s) => s.sfxVolume,
-      (vol) => templeAudio.setSfxVolume(vol),
-    );
+    const unsubscribers = [
+      useTempleStore.subscribe(
+        (s) => s.soundEnabled,
+        (enabled) => templeAudio.setEnabled(enabled),
+      ),
+      useTempleStore.subscribe(
+        (s) => s.musicVolume,
+        (volume) => templeAudio.setMusicVolume(volume),
+      ),
+      useTempleStore.subscribe(
+        (s) => s.sfxVolume,
+        (volume) => templeAudio.setSfxVolume(volume),
+      ),
+    ];
 
-    return () => { unsub1(); unsub2(); unsub3(); };
+    return () => unsubscribers.forEach((off) => off());
   }, []);
 
-  // ── Audio: unlock autoplay on first user interaction ───────────────────
+  // Browsers refuse to start audio until the user has interacted with the page.
   useEffect(() => {
-    const handleFirstInteraction = () => {
-      templeAudio.markInteracted();
-      document.removeEventListener('click', handleFirstInteraction);
-      document.removeEventListener('keydown', handleFirstInteraction);
-    };
-    document.addEventListener('click', handleFirstInteraction);
-    document.addEventListener('keydown', handleFirstInteraction);
+    const unlock = () => templeAudio.markInteracted();
+    // `once` handles the removal; `pointerdown` covers mouse, touch and pen in
+    // one listener.
+    document.addEventListener('pointerdown', unlock, { once: true });
+    document.addEventListener('keydown', unlock, { once: true });
     return () => {
-      document.removeEventListener('click', handleFirstInteraction);
-      document.removeEventListener('keydown', handleFirstInteraction);
+      document.removeEventListener('pointerdown', unlock);
+      document.removeEventListener('keydown', unlock);
     };
-  }, []);
-  // ── Delegated click SFX: play click sound for ALL button clicks in the game ──
-  const gameContainerRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const container = gameContainerRef.current;
-    if (!container) return;
-    const handler = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('button') && !(target.closest('button') as HTMLButtonElement).disabled) {
-        templeAudio.playClick();
-      }
-    };
-    container.addEventListener('click', handler);
-    return () => container.removeEventListener('click', handler);
   }, []);
 
-  // ── beforeunload: confirm exit + auto-save ────────────────────────────────
+  // ── A click anywhere in the temple should sound like one ────────────────
   useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // Fire auto-save in the background (best-effort)
+    const root = rootRef.current;
+    if (!root) return;
+    const onClick = (event: MouseEvent) => {
+      const button = (event.target as HTMLElement).closest('button');
+      // The sanctum plays its own note on pointerdown; this would double it.
+      if (!button || button.disabled || button.classList.contains('toj-temple')) return;
+      templeAudio.playClick();
+    };
+    root.addEventListener('click', onClick);
+    return () => root.removeEventListener('click', onClick);
+  }, []);
+
+  // ── Save on the way out ─────────────────────────────────────────────────
+  //
+  // Deliberately no `beforeunload` confirmation. The old one fired the
+  // browser's native "Leave site?" dialog on every navigation — unstyled,
+  // untranslatable, and pointless for a game that autosaves continuously. It
+  // also blocks bfcache, so returning re-downloaded and re-initialised
+  // everything.
+  //
+  // `pagehide` and a hidden `visibilitychange` are the two events that
+  // actually fire when a tab closes on mobile Safari, where `beforeunload`
+  // frequently does not.
+  useEffect(() => {
+    const flush = () => {
       saveToServer(useTempleStore.getState()).catch(() => {});
-      // Show browser confirmation dialog
-      e.preventDefault();
-      e.returnValue = ''; // Modern browsers ignore custom messages
     };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('pagehide', flush);
+      document.removeEventListener('visibilitychange', onVisibility);
+      flush();
+    };
   }, []);
 
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div
-      ref={gameContainerRef}
-      data-theme={theme}
-      className="relative h-screen w-screen overflow-hidden font-sans"
-      style={{
-        background: theme === 'dark' ? '#0d0904' : '#ece0c8',
-        color: 'var(--temple-text)',
-      }}
-    >
-      {/* 3D temple world — fills the screen. All persistent chrome (HUD, tabs,
-          controls, back button) now lives inside it as real 3D meshes. */}
-      <div className="absolute inset-0">
-        <Suspense fallback={null}>
-          <TempleScene />
-        </Suspense>
+    // `data-no-twemoji` keeps the site-wide observer out of a tree React
+    // re-renders constantly; emoji here go through `<Glyph>` instead.
+    <div ref={rootRef} className="toj" data-theme={theme} data-no-twemoji>
+      <div className="toj-frame">
+        <TempleHud />
+        <div className="toj-body">
+          <TempleSanctum />
+          <TempleTabs />
+          <TempleCodex />
+        </div>
       </div>
-
-      {/* All UI — HUD, tabs, controls, panels and modals — now lives inside the
-          3D scene (Chrome3D / Modals3D in the Hud layer). Nothing else here. */}
+      <TempleDialogs />
     </div>
   );
 }

@@ -93,6 +93,9 @@ const ALLOW = new Set<string>([
   'components/studio/mixer/VUMeter.tsx',
   'components/synapse-storm/PuzzleCard.tsx',
   'components/temple-of-joy/TempleOfJoyGame.tsx',
+  // The headline joy/rate readouts write textContent on a frame loop
+  // rather than re-rendering their subtree 60 times a second.
+  'components/temple-of-joy/ui.tsx',
   'components/ui/AnimatedCount.tsx',
   'components/ui/TwemojiProvider.tsx',
   'components/ui/back-to-top.tsx',
