@@ -1,82 +1,15 @@
 /**
- * RmhStudyHeader — Shared header across all RmhStudy pages.
+ * RmhStudyHeader — RMHStudy's bar. Layout and behaviour are the shared
+ * `AppHeader`; this only supplies the name and the live connection status.
  */
 'use client';
 
-import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Circle } from 'lucide-react';
-import { useTranslation } from "react-i18next";
+import AppHeader, { type AppHeaderProps } from '@/components/shared/AppHeader';
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';
 
-interface RmhStudyHeaderProps {
-  backLabel: string;
-  backHref?: string;
-  onBack?: () => void;
-  roomCode?: string;
-  onCopyCode?: () => void;
-  leftActions?: React.ReactNode;
-}
+type Props = Omit<AppHeaderProps, 'title' | 'status'>;
 
-export default function RmhStudyHeader({
-  backLabel,
-  backHref,
-  onBack,
-  roomCode,
-  onCopyCode,
-  leftActions,
-}: RmhStudyHeaderProps) {
-  const { t } = useTranslation("c-rmhstudy");
-  const connectionStatus = useRmhStudyStore((s) => s.connectionStatus);
-
-  const statusColor =
-    connectionStatus === 'connected'
-      ? 'text-(--app-success)'
-      : connectionStatus === 'connecting'
-        ? 'text-(--app-warning)'
-        : 'text-(--app-danger)';
-
-  return (
-    <header className="relative flex h-16 shrink-0 items-center border-b border-(--app-border) px-4">
-      <div className="flex items-center gap-2 z-10">
-        {backHref ? (
-          <Link
-            to={backHref}
-            onClick={onBack}
-            className="flex items-center gap-1.5 text-sm font-medium transition-colors text-(--app-text-muted) hover:text-(--app-text)"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {backLabel}
-          </Link>
-        ) : (
-          <button
-            onClick={onBack}
-            className="flex items-center gap-1.5 text-sm font-medium transition-colors text-(--app-text-muted) hover:text-(--app-text)"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {backLabel}
-          </button>
-        )}
-        {leftActions}
-      </div>
-
-      <div className="absolute inset-x-0 flex justify-center pointer-events-none">
-        <h1 className="text-lg font-bold tracking-tight" style={{ fontFamily: 'var(--app-font-display)' }}>
-          RMH Study
-        </h1>
-      </div>
-
-      <div className="ml-auto flex items-center gap-3 z-10">
-        {roomCode && (
-          <button
-            onClick={onCopyCode}
-            className="flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-sm font-bold tracking-widest transition-colors bg-(--app-surface) text-(--app-text) hover:bg-(--app-surface-hover)"
-            title={t("copy-room-code", { defaultValue: "Copy room code" })}
-          >
-            {roomCode}
-          </button>
-        )}
-        <Circle className={`h-3 w-3 fill-current ${statusColor}`} />
-      </div>
-    </header>
-  );
+export default function RmhStudyHeader(props: Props) {
+  const status = useRmhStudyStore((s) => s.connectionStatus);
+  return <AppHeader {...props} title="RMH Study" status={status} />;
 }

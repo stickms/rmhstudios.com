@@ -1,8 +1,10 @@
 {
   "chat-placeholder": "Obrolan...",
+  "connected": "Connected",
   "connecting": "Connecting…",
   "connection-lost": "Connection lost",
   "continue-without-them": "Continue without them",
+  "copy-room-code": "Copy room code",
   "dismiss": "Dismiss",
   "failed-to-load-media": "Gagal memuat media",
   "game-crashed": "Permainan mogok",
@@ -10,6 +12,7 @@
   "game-paused": "Game paused",
   "loading": "Memuat…",
   "no-messages-yet": "Belum ada pesan",
+  "not-connected": "Not connected",
   "notifications": "Notifications",
   "react": "Reaksi",
   "reconnecting": "Reconnecting…",

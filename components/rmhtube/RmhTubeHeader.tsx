@@ -1,89 +1,18 @@
 /**
- * RmhTubeHeader — Shared header across all RmhTube pages.
+ * RmhTubeHeader — RMHTube's bar. Layout and behaviour are the shared
+ * `AppHeader`; this only supplies the name and the live connection status.
  *
- * Adapts content based on context:
- * - Landing: "← Games" back link, "RmhTube" title, connection status
- * - Room: "← Leave" back link, "RmhTube" title, room code + connection status
+ * The hairline is drawn by the room/landing pages themselves, so the bar
+ * doesn't draw its own.
  */
 'use client';
 
-import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Circle } from 'lucide-react';
-import { useTranslation } from "react-i18next";
+import AppHeader, { type AppHeaderProps } from '@/components/shared/AppHeader';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 
-interface RmhTubeHeaderProps {
-  backLabel: string;
-  backHref?: string;
-  onBack?: () => void;
-  roomCode?: string;
-  onCopyCode?: () => void;
-}
+type Props = Omit<AppHeaderProps, 'title' | 'status'>;
 
-export default function RmhTubeHeader({
-  backLabel,
-  backHref,
-  onBack,
-  roomCode,
-  onCopyCode,
-}: RmhTubeHeaderProps) {
-  const { t } = useTranslation("c-rmhtube");
-  const connectionStatus = useRmhTubeStore((s) => s.connectionStatus);
-
-  const statusColor =
-    connectionStatus === 'connected'
-      ? 'text-(--app-success)'
-      : connectionStatus === 'connecting'
-        ? 'text-(--app-warning)'
-        : 'text-(--app-danger)';
-
-  return (
-    <header className="relative flex h-16 shrink-0 items-center px-4">
-      {/* Left: Back link */}
-      <div className="flex items-center gap-2 z-10">
-        {backHref ? (
-          <Link
-            to={backHref}
-            onClick={onBack}
-            className="flex items-center gap-1.5 text-sm font-medium transition-colors text-(--app-text-muted) hover:text-(--app-text)"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {backLabel}
-          </Link>
-        ) : (
-          <button
-            onClick={onBack}
-            className="flex items-center gap-1.5 text-sm font-medium transition-colors text-(--app-text-muted) hover:text-(--app-text)"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {backLabel}
-          </button>
-        )}
-      </div>
-
-      {/* Center: Title (absolutely centered) */}
-      <div className="absolute inset-x-0 flex justify-center pointer-events-none">
-        <h1
-          className="text-lg font-bold tracking-tight"
-          style={{ fontFamily: 'var(--app-font-display)' }}
-        >
-          RmhTube
-        </h1>
-      </div>
-
-      {/* Right: Room code + Connection status */}
-      <div className="ml-auto flex items-center gap-3 z-10">
-        {roomCode && (
-          <button
-            onClick={onCopyCode}
-            className="flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-sm font-bold tracking-widest transition-colors bg-(--app-surface) text-(--app-text) hover:bg-(--app-surface-hover)"
-            title={t("copy-room-code", { defaultValue: "Copy room code" })}
-          >
-            {roomCode}
-          </button>
-        )}
-        <Circle className={`h-3 w-3 fill-current ${statusColor}`} />
-      </div>
-    </header>
-  );
+export default function RmhTubeHeader(props: Props) {
+  const status = useRmhTubeStore((s) => s.connectionStatus);
+  return <AppHeader bordered={false} {...props} title="RmhTube" status={status} />;
 }

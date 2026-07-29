@@ -1,8 +1,10 @@
 {
   "chat-placeholder": "चैट...",
+  "connected": "Connected",
   "connecting": "Connecting…",
   "connection-lost": "Connection lost",
   "continue-without-them": "Continue without them",
+  "copy-room-code": "Copy room code",
   "dismiss": "Dismiss",
   "failed-to-load-media": "मीडिया लोड करने में विफल",
   "game-crashed": "गेम क्रैश हो गया",
@@ -10,6 +12,7 @@
   "game-paused": "Game paused",
   "loading": "लोड हो रहा है…",
   "no-messages-yet": "अभी तक कोई संदेश नहीं",
+  "not-connected": "Not connected",
   "notifications": "Notifications",
   "react": "रिएक्ट करें",
   "reconnecting": "Reconnecting…",

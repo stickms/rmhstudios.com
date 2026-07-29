@@ -1,8 +1,10 @@
 {
   "chat-placeholder": "دردشة...",
+  "connected": "Connected",
   "connecting": "Connecting…",
   "connection-lost": "Connection lost",
   "continue-without-them": "Continue without them",
+  "copy-room-code": "Copy room code",
   "dismiss": "Dismiss",
   "failed-to-load-media": "فشل في تحميل الوسائط",
   "game-crashed": "تعطلت اللعبة",
@@ -10,6 +12,7 @@
   "game-paused": "Game paused",
   "loading": "جارٍ التحميل…",
   "no-messages-yet": "لا توجد رسائل بعد.",
+  "not-connected": "Not connected",
   "notifications": "Notifications",
   "react": "تفاعل",
   "reconnecting": "Reconnecting…",

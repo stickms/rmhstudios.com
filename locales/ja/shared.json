@@ -1,8 +1,10 @@
 {
   "chat-placeholder": "チャット…",
+  "connected": "Connected",
   "connecting": "Connecting…",
   "connection-lost": "Connection lost",
   "continue-without-them": "Continue without them",
+  "copy-room-code": "Copy room code",
   "dismiss": "Dismiss",
   "failed-to-load-media": "メディアの読み込みに失敗しました",
   "game-crashed": "ゲームがクラッシュしました",
@@ -10,6 +12,7 @@
   "game-paused": "Game paused",
   "loading": "読み込み中…",
   "no-messages-yet": "まだメッセージがありません",
+  "not-connected": "Not connected",
   "notifications": "Notifications",
   "react": "リアクション",
   "reconnecting": "Reconnecting…",

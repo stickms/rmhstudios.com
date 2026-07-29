@@ -1,8 +1,10 @@
 {
   "chat-placeholder": "Sohbet...",
+  "connected": "Connected",
   "connecting": "Connecting…",
   "connection-lost": "Connection lost",
   "continue-without-them": "Continue without them",
+  "copy-room-code": "Copy room code",
   "dismiss": "Dismiss",
   "failed-to-load-media": "Medya yüklenemedi",
   "game-crashed": "Oyun çöktü",
@@ -10,6 +12,7 @@
   "game-paused": "Game paused",
   "loading": "Yükleniyor…",
   "no-messages-yet": "Henüz mesaj yok",
+  "not-connected": "Not connected",
   "notifications": "Notifications",
   "react": "Tepki ver",
   "reconnecting": "Reconnecting…",

@@ -1,8 +1,10 @@
 {
   "chat-placeholder": "Chatten...",
+  "connected": "Connected",
   "connecting": "Connecting…",
   "connection-lost": "Connection lost",
   "continue-without-them": "Continue without them",
+  "copy-room-code": "Copy room code",
   "dismiss": "Dismiss",
   "failed-to-load-media": "Medien konnten nicht geladen werden",
   "game-crashed": "Spiel abgestürzt",
@@ -10,6 +12,7 @@
   "game-paused": "Game paused",
   "loading": "Wird geladen…",
   "no-messages-yet": "Noch keine Nachrichten",
+  "not-connected": "Not connected",
   "notifications": "Notifications",
   "react": "Reagieren",
   "reconnecting": "Reconnecting…",

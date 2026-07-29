@@ -1,8 +1,10 @@
 {
   "chat-placeholder": "채팅...",
+  "connected": "Connected",
   "connecting": "Connecting…",
   "connection-lost": "Connection lost",
   "continue-without-them": "Continue without them",
+  "copy-room-code": "Copy room code",
   "dismiss": "Dismiss",
   "failed-to-load-media": "미디어를 불러오지 못했습니다",
   "game-crashed": "게임이 충돌했습니다",
@@ -10,6 +12,7 @@
   "game-paused": "Game paused",
   "loading": "불러오는 중…",
   "no-messages-yet": "아직 메시지가 없습니다",
+  "not-connected": "Not connected",
   "notifications": "Notifications",
   "react": "반응",
   "reconnecting": "Reconnecting…",

@@ -1,79 +1,15 @@
 /**
- * RmhTypeHeader — Shared header across all RmhType pages.
+ * RmhTypeHeader — RMHType's bar. Layout and behaviour are the shared
+ * `AppHeader`; this only supplies the name and the live connection status.
  */
 'use client';
 
-import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Circle } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import AppHeader, { type AppHeaderProps } from '@/components/shared/AppHeader';
 import { useRmhTypeStore } from '@/lib/rmhtype/store';
 
-interface RmhTypeHeaderProps {
-  backLabel: string;
-  backHref?: string;
-  onBack?: () => void;
-  roomCode?: string;
-  onCopyCode?: () => void;
-}
+type Props = Omit<AppHeaderProps, 'title' | 'status'>;
 
-export default function RmhTypeHeader({
-  backLabel,
-  backHref,
-  onBack,
-  roomCode,
-  onCopyCode,
-}: RmhTypeHeaderProps) {
-  const { t } = useTranslation("c-rmhtype");
-  const connectionStatus = useRmhTypeStore((s) => s.connectionStatus);
-
-  const statusColor =
-    connectionStatus === 'connected'
-      ? 'text-(--app-success)'
-      : connectionStatus === 'connecting'
-        ? 'text-(--app-warning)'
-        : 'text-(--app-danger)';
-
-  return (
-    <header className="relative flex h-16 shrink-0 items-center border-b border-(--app-border) px-4">
-      <div className="flex items-center gap-2 z-10">
-        {backHref ? (
-          <Link
-            to={backHref}
-            onClick={onBack}
-            className="flex items-center gap-1.5 text-sm font-medium transition-colors text-(--app-text-muted) hover:text-(--app-text)"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {backLabel}
-          </Link>
-        ) : (
-          <button
-            onClick={onBack}
-            className="flex items-center gap-1.5 text-sm font-medium transition-colors text-(--app-text-muted) hover:text-(--app-text)"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {backLabel}
-          </button>
-        )}
-      </div>
-
-      <div className="absolute inset-x-0 flex justify-center pointer-events-none">
-        <h1 className="text-lg font-bold tracking-tight" style={{ fontFamily: 'var(--app-font-display)' }}>
-          RMH Type
-        </h1>
-      </div>
-
-      <div className="ml-auto flex items-center gap-3 z-10">
-        {roomCode && (
-          <button
-            onClick={onCopyCode}
-            className="flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-sm font-bold tracking-widest transition-colors bg-(--app-surface) text-(--app-text) hover:bg-(--app-surface-hover)"
-            title={t("copy-room-code", { defaultValue: "Copy room code" })}
-          >
-            {roomCode}
-          </button>
-        )}
-        <Circle className={`h-3 w-3 fill-current ${statusColor}`} />
-      </div>
-    </header>
-  );
+export default function RmhTypeHeader(props: Props) {
+  const status = useRmhTypeStore((s) => s.connectionStatus);
+  return <AppHeader {...props} title="RMH Type" status={status} />;
 }

@@ -1,8 +1,10 @@
 {
   "chat-placeholder": "Чат...",
+  "connected": "Connected",
   "connecting": "Connecting…",
   "connection-lost": "Connection lost",
   "continue-without-them": "Continue without them",
+  "copy-room-code": "Copy room code",
   "dismiss": "Dismiss",
   "failed-to-load-media": "Не удалось загрузить медиа",
   "game-crashed": "Игра вылетела",
@@ -10,6 +12,7 @@
   "game-paused": "Game paused",
   "loading": "Загрузка…",
   "no-messages-yet": "Пока нет сообщений",
+  "not-connected": "Not connected",
   "notifications": "Notifications",
   "react": "Реакция",
   "reconnecting": "Reconnecting…",

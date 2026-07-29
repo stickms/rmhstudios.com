@@ -1,8 +1,10 @@
 {
   "chat-placeholder": "聊天……",
+  "connected": "Connected",
   "connecting": "Connecting…",
   "connection-lost": "Connection lost",
   "continue-without-them": "Continue without them",
+  "copy-room-code": "Copy room code",
   "dismiss": "Dismiss",
   "failed-to-load-media": "加载媒体失败",
   "game-crashed": "游戏崩溃了",
@@ -10,6 +12,7 @@
   "game-paused": "Game paused",
   "loading": "加载中…",
   "no-messages-yet": "暂无消息",
+  "not-connected": "Not connected",
   "notifications": "Notifications",
   "react": "React",
   "reconnecting": "Reconnecting…",

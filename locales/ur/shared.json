@@ -1,8 +1,10 @@
 {
   "chat-placeholder": "چیٹ...",
+  "connected": "Connected",
   "connecting": "Connecting…",
   "connection-lost": "Connection lost",
   "continue-without-them": "Continue without them",
+  "copy-room-code": "Copy room code",
   "dismiss": "Dismiss",
   "failed-to-load-media": "میڈیا لوڈ کرنے میں ناکام",
   "game-crashed": "گیم کریش ہو گیا",
@@ -10,6 +12,7 @@
   "game-paused": "Game paused",
   "loading": "لوڈ ہو رہا ہے…",
   "no-messages-yet": "ابھی کوئی پیغام نہیں",
+  "not-connected": "Not connected",
   "notifications": "Notifications",
   "react": "React",
   "reconnecting": "Reconnecting…",
