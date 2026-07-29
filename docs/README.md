@@ -30,13 +30,14 @@ writing, not necessarily the current code).
 
 | Doc                                              | Contents                                                                                                                                                                                                                                        |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`site-reference/`](./site-reference/)           | **What the site consists of** — hand-written area guides (social, economy, content, games/apps) plus generated inventories of every page route, API route, game and app (`pnpm docs:site`)                                                       |
+| [`site-reference/`](./site-reference/)           | **What the site consists of** — hand-written area guides (social, economy, content, games/apps) plus generated inventories of every page route, API route, game and app (`pnpm docs:site`)                                                      |
 | [`codebase-overview.md`](./codebase-overview.md) | Canonical code-layout overview: stack, repo layout, conventions, where to look first                                                                                                                                                            |
 | [`architecture.md`](./architecture.md)           | Runtime topology + deploy pipeline: what runs where in production, images, CI, ports, auth across tiers                                                                                                                                         |
 | [`testing.md`](./testing.md)                     | Test suites (Vitest main + epic, Go Bazel), how to run them, and which CI workflows gate them                                                                                                                                                   |
 | [`performance-slo.md`](./performance-slo.md)     | Performance guardrails: bundle budgets, synthetic probes, RUM SLO bands, and rollback trigger policy                                                                                                                                            |
 | [`design-language.md`](./design-language.md)     | The visual system — **Radial Avant-Garde Glass** (the radial shell/hub/wheel-feed architecture + the Apple-style Liquid Glass material it references): `--site-*` token contract, themes + accent presets, primitives, typography, motion, a11y |
 | [`page-consistency.md`](./page-consistency.md)   | Checklist + recipes for building pages that look native                                                                                                                                                                                         |
+| [`people.md`](./people.md)                       | **RMH Capital leadership (canon)** — the firm's executive committee and six business heads, their titles and remits, plus the rules for writing them                                                                                            |
 | [`developer-api/`](./developer-api/)             | **The** developer API documentation — guides plus a generated endpoint reference (`pnpm docs:api`). Replaces the removed in-app `/developer/docs` wiki; `internals.md` is the contributor view                                                  |
 | [`albums-storage.md`](./albums-storage.md)       | Albums storage architecture (DB + R2/S3)                                                                                                                                                                                                        |
 | [`coins.md`](./coins.md)                         | Coin economy design (implementation plan, largely shipped)                                                                                                                                                                                      |
@@ -82,6 +83,8 @@ writing, not necessarily the current code).
 
 These predate the Next.js → TanStack Start migration and/or the Go cutover:
 
+- Any reference to a repo-root `specs/` directory — it was deleted; the legacy
+  AI-agent game specs it held (`vega.md` and friends) are gone with it
 - `rmhtube/features.md` — 2025 roadmap for a now-shipped app (its stack line is
   now correct, but it still describes intent rather than the shipped feature set)
 - Older design docs in `rmhbox/`, `plans/`, `misc/`, and the textbook chapters

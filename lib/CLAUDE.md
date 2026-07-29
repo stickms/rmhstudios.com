@@ -107,11 +107,11 @@ don't remove that plugin.
 
 ## Database (Prisma)
 
-- `prisma/schema.prisma`: 234 models, 5600+ lines. IDs are
-  `String @id @default(cuid())`; models `@@map` to snake_case tables; ~61
+- `prisma/schema.prisma`: 252 models, ~6000 lines. IDs are
+  `String @id @default(cuid())`; models `@@map` to snake_case tables; 66
   enums. Model families: auth/user, social feed (RMHark*), per-game
   player/match tables, economy (CoinTransaction, inventory, quests),
-  media/library, Stripe subscriptions, moderation, Ladder*, Doctrine*,
+  media/library, Stripe subscriptions, moderation, Ladder*, Doctrine\*,
   rideshare/homes, messaging.
 - **New-table PK policy (rewrite R0-T7):** existing tables keep their `cuid()`
   PKs (the keyset `(createdAt desc, id desc)` indexes make them scannable). For
@@ -124,7 +124,11 @@ don't remove that plugin.
 
 ## i18n pipeline
 
-- 16 locales, 66 namespaces (`lib/i18n/config.ts`); RTL: `ar`, `ur`.
+- 16 locales, 67 namespaces (`lib/i18n/config.ts`); RTL: `ar`, `ur`.
+  `LOCALES` and `NAMESPACES` there are the registry: `locales/` on disk carries
+  more directories and more `en/*.json` files than are registered, and anything
+  unregistered is **never loaded** (the UI silently serves `defaultValue`s).
+  Adding a namespace file means adding it to `NAMESPACES` in the same commit.
 - **Only `en` is statically bundled**; other locales are code-split chunks in
   the auto-generated `lib/i18n/resources.<locale>.ts` files. SSR lazily loads
   only the _active_ locale on demand via `resources.server.ts`

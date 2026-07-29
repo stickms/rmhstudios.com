@@ -58,6 +58,7 @@ testing
 performance-slo
 design-language
 page-consistency
+people
 albums-storage
 coins
 translations
