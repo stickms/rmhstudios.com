@@ -4,6 +4,9 @@ import { saveGame, loadGame, createNewSave, dbSave, dbLoad } from './saveSystem'
 import { getPuzzleById, getPuzzlesByAct, isPuzzleLocked } from './puzzleDefinitions';
 import { getEntryById } from '@/components/forest-explorer/story/journal/journalData';
 
+/** Shared empty reveal set — a stable identity so resets don't churn subscribers. */
+const EMPTY_REVEALED: ReadonlySet<string> = new Set<string>();
+
 // ─── Narration beats (letterboxed story text) ───────────────────────────────
 
 const ACT_INTRO_NARRATION: Record<ActId, string[]> = {
@@ -45,7 +48,8 @@ interface StoryState {
 
     // Interaction
     nearbyInteractable: string | null;
-    flashlightRevealedIds: string[];
+    /** Membership set — see `setFlashlightRevealed` for why this is not an array. */
+    flashlightRevealedIds: ReadonlySet<string>;
 
     // Player
     playerPosition: [number, number, number];
@@ -80,7 +84,7 @@ interface StoryState {
     discoverEntry: (entryId: string) => void;
     toggleJournal: () => void;
     setNearbyInteractable: (id: string | null) => void;
-    setFlashlightRevealed: (ids: string[]) => void;
+    setFlashlightRevealed: (ids: ReadonlySet<string>) => void;
     visitLandmark: (landmarkId: string, label?: string) => void;
     setPlayerPosition: (pos: [number, number, number]) => void;
     setPlayerRotation: (rot: [number, number]) => void;
@@ -132,7 +136,7 @@ export const useStoryStore = create<StoryState>((set, get) => ({
     discoveredEntries: [],
     journalOpen: false,
     nearbyInteractable: null,
-    flashlightRevealedIds: [],
+    flashlightRevealedIds: EMPTY_REVEALED,
     playerPosition: [0, 1.7, 0],
     playerRotation: [0, 0],
     flashlightOn: true,
@@ -205,7 +209,7 @@ export const useStoryStore = create<StoryState>((set, get) => ({
             discoveredEntries: [],
             journalOpen: false,
             nearbyInteractable: null,
-            flashlightRevealedIds: [],
+            flashlightRevealedIds: EMPTY_REVEALED,
             playerPosition: [0, 1.7, 0],
             playerRotation: [0, 0],
             flashlightOn: true,
@@ -358,7 +362,30 @@ export const useStoryStore = create<StoryState>((set, get) => ({
 
     setNearbyInteractable: (id) => set({ nearbyInteractable: id }),
 
-    setFlashlightRevealed: (ids) => set({ flashlightRevealedIds: ids }),
+    /**
+     * Publish the set of currently-revealed interactables.
+     *
+     * Called from InteractionSystem's frame loop (~20x/second). It used to take
+     * a freshly-allocated array, which meant every subscriber re-ran — and any
+     * selector returning the collection itself re-rendered — on every single
+     * call, whether or not anything had actually been revealed. That churn was
+     * the main source of forest-explorer's main-thread stalls
+     * (docs/3d-performance-audit.md §1.5).
+     *
+     * Now: a Set, so subscribers can select a cheap boolean via `.has()`, and
+     * the write is skipped entirely when membership is unchanged.
+     */
+    setFlashlightRevealed: (ids) => {
+        const current = get().flashlightRevealedIds;
+        if (current.size === ids.size) {
+            let same = true;
+            for (const id of ids) {
+                if (!current.has(id)) { same = false; break; }
+            }
+            if (same) return;
+        }
+        set({ flashlightRevealedIds: ids });
+    },
 
     visitLandmark: (landmarkId: string, label?: string) => {
         const state = get();
@@ -388,7 +415,7 @@ export const useStoryStore = create<StoryState>((set, get) => ({
             activePuzzleId: null,
             showPuzzleOverlay: false,
             nearbyInteractable: null,
-            flashlightRevealedIds: [],
+            flashlightRevealedIds: EMPTY_REVEALED,
             playerPosition: [0, 1.7, 0],
             playerRotation: [0, 0],
             narrationLines: ACT_INTRO_NARRATION[act] ?? null,

@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Color, type Mesh, type MeshStandardMaterial } from 'three';
+import { type Mesh, type MeshStandardMaterial } from 'three';
 import { useLandmarkState } from './useLandmarkState';
 
 interface EchoChamberProps {
@@ -77,7 +77,7 @@ export function EchoChamber({ position, scale = 1, id }: EchoChamberProps) {
                                 color="#221f18"
                                 transparent
                                 opacity={0.9}
-                                emissive={new Color('#ffaa66')}
+                                emissive="#ffaa66"
                                 emissiveIntensity={0.03}
                             />
                         </mesh>
@@ -96,7 +96,7 @@ export function EchoChamber({ position, scale = 1, id }: EchoChamberProps) {
                     color="#6a5a8a"
                     transparent
                     opacity={0.8}
-                    emissive={new Color('#aa88ff')}
+                    emissive="#aa88ff"
                     emissiveIntensity={0.08}
                     roughness={0.15}
                 />

@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Color, type Mesh, type MeshStandardMaterial } from 'three';
+import { type Mesh, type MeshStandardMaterial } from 'three';
 import { useLandmarkState } from './useLandmarkState';
 
 interface AncientStoneProps {
@@ -59,7 +59,7 @@ export function AncientStone({ position, scale = 1, id }: AncientStoneProps) {
                     color="#4466aa"
                     transparent
                     opacity={0.3}
-                    emissive={new Color('#6688ff')}
+                    emissive="#6688ff"
                     emissiveIntensity={0}
                 />
             </mesh>

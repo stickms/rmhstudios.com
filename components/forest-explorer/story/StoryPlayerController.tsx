@@ -9,6 +9,9 @@ import { getActMap } from '@/lib/forest-explorer/actMaps';
 import { GROUND_Y, GRAVITY, JUMP_VEL } from '../shared/constants';
 import type { ActMapConfig } from '@/lib/forest-explorer/types';
 
+/** World up — shared constant so the per-frame cross product allocates nothing. */
+const UP = new Vector3(0, 1, 0);
+
 // ─── Tree collider generation (mirrors act scene RNG) ──────────────────────
 
 function buildTreeColliders(config: ActMapConfig, seedOffset: number = 0) {
@@ -78,6 +81,16 @@ function distToSegment(px: number, pz: number, ax: number, az: number, bx: numbe
 export function StoryPlayer() {
     const { camera } = useThree();
     const keys = useRef<Record<string, boolean>>({});
+    // Scratch vectors reused across frames. These were five fresh allocations
+    // per frame (~300/second) before being hoisted — pure GC pressure, since
+    // none of them outlive the tick.
+    const scratch = useMemo(() => ({
+        input: new Vector2(),
+        camForward: new Vector3(),
+        camRight: new Vector3(),
+        move: new Vector3(),
+        euler: new Euler(),
+    }), []);
     const localVel = useRef(new Vector2(0, 0));
     const verticalVel = useRef(0);
     const isGrounded = useRef(true);
@@ -169,7 +182,7 @@ export function StoryPlayer() {
         if (showPuzzleOverlay || journalOpen) return;
 
         const k = keys.current;
-        const input = new Vector2(0, 0);
+        const input = scratch.input.set(0, 0);
         if (k['KeyW'] || k['ArrowUp'])    input.y += 1;
         if (k['KeyS'] || k['ArrowDown'])  input.y -= 1;
         if (k['KeyA'] || k['ArrowLeft'])  input.x -= 1;
@@ -179,15 +192,14 @@ export function StoryPlayer() {
         if (input.lengthSq() > 0) input.normalize().multiplyScalar(speed);
         localVel.current.lerp(input, 0.15);
 
-        const camForward = new Vector3();
+        const camForward = scratch.camForward;
         camera.getWorldDirection(camForward);
         camForward.y = 0;
         camForward.normalize();
 
-        const camRight = new Vector3();
-        camRight.crossVectors(camForward, new Vector3(0, 1, 0));
+        const camRight = scratch.camRight.crossVectors(camForward, UP);
 
-        const move = new Vector3();
+        const move = scratch.move.set(0, 0, 0);
         move.addScaledVector(camForward, localVel.current.y * delta);
         move.addScaledVector(camRight, localVel.current.x * delta);
 
@@ -235,7 +247,7 @@ export function StoryPlayer() {
             setPlayerPosition([camera.position.x, camera.position.y, camera.position.z]);
         }
         if (posFrameCount.current % 6 === 0) {
-            const euler = new Euler().setFromQuaternion(camera.quaternion);
+            const euler = scratch.euler.setFromQuaternion(camera.quaternion);
             setPlayerRotation([euler.x, euler.y]);
         }
     });

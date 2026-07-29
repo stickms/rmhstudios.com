@@ -2,7 +2,7 @@
 
 import { useRef, useMemo, useEffect, useCallback } from 'react';
 import { Stars } from '@react-three/drei';
-import { Color, type Group } from 'three';
+import { type Group } from 'three';
 import type { TreeData } from '../../shared/types';
 import { buildTreeInstancedMeshes } from '../../shared/buildTreeInstancedMeshes';
 import { Ground } from '../../shared/Ground';
@@ -194,7 +194,7 @@ export function ActOneScene() {
                             <sphereGeometry args={[0.035, 6, 6]} />
                             <meshStandardMaterial
                                 color="#44ddff"
-                                emissive={new Color('#44ddff')}
+                                emissive="#44ddff"
                                 emissiveIntensity={0.9}
                             />
                         </mesh>
@@ -217,7 +217,7 @@ export function ActOneScene() {
                                 <boxGeometry args={[len, 0.015, 0.015]} />
                                 <meshStandardMaterial
                                     color="#44ddff"
-                                    emissive={new Color('#44ddff')}
+                                    emissive="#44ddff"
                                     emissiveIntensity={0.6}
                                 />
                             </mesh>
@@ -249,7 +249,7 @@ export function ActOneScene() {
                         <coneGeometry args={[0.22, 0.26, 8]} />
                         <meshStandardMaterial
                             color="#44ffaa"
-                            emissive={new Color('#22ff88')}
+                            emissive="#22ff88"
                             emissiveIntensity={0.8}
                             transparent
                             opacity={0.85}

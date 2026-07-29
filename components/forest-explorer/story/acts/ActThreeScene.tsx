@@ -310,7 +310,7 @@ function HeartwoodTree({ position, scale = 1, solved }: { position: [number, num
                 <cylinderGeometry args={[1.0, 1.2, 3, 8]} />
                 <meshStandardMaterial
                     color={solved ? '#114422' : '#1a0a20'}
-                    emissive={new Color(solved ? '#22ff66' : '#440066')}
+                    emissive={solved ? '#22ff66' : '#440066'}
                     emissiveIntensity={solved ? 0.5 : 0.15}
                 />
             </mesh>
@@ -370,7 +370,7 @@ function CorruptionZones({ positions, intensity }: { positions: [number, number]
                         <cylinderGeometry args={[0.05, 0.15, 1.6, 4]} />
                         <meshStandardMaterial
                             color="#6622aa"
-                            emissive={new Color('#8833cc')}
+                            emissive="#8833cc"
                             emissiveIntensity={intensity * 0.6}
                             transparent
                             opacity={intensity * 0.7}
@@ -380,7 +380,7 @@ function CorruptionZones({ positions, intensity }: { positions: [number, number]
                         <cylinderGeometry args={[0.03, 0.1, 1.0, 4]} />
                         <meshStandardMaterial
                             color="#5511aa"
-                            emissive={new Color('#7722bb')}
+                            emissive="#7722bb"
                             emissiveIntensity={intensity * 0.5}
                             transparent
                             opacity={intensity * 0.6}

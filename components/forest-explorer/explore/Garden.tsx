@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Color, Vector3, type Group, type PointLight } from 'three';
+import { Vector3, type Group, type PointLight } from 'three';
 import { useGardenStore } from '@/lib/forest-explorer/gardenStore';
 import {
     type GardenPlant, SPECIES_COLORS, stageOf, growthProgress,
@@ -114,7 +114,7 @@ function Flower({ plant, now, night }: { plant: GardenPlant; now: number; night:
                         <sphereGeometry args={[0.03, 6, 5]} />
                         <meshStandardMaterial
                             color="#d4ff70"
-                            emissive={new Color('#d4ff70')}
+                            emissive="#d4ff70"
                             emissiveIntensity={0.7}
                             transparent
                             opacity={0.85}
@@ -162,7 +162,7 @@ function Flower({ plant, now, night }: { plant: GardenPlant; now: number; night:
                                     <coneGeometry args={[0.05, 0.14, 5]} />
                                     <meshStandardMaterial
                                         color={colors.petal}
-                                        emissive={new Color(colors.glow)}
+                                        emissive={colors.glow}
                                         emissiveIntensity={glow ? 0.55 : 0.06}
                                     />
                                 </mesh>
@@ -173,7 +173,7 @@ function Flower({ plant, now, night }: { plant: GardenPlant; now: number; night:
                             <sphereGeometry args={[0.055, 7, 6]} />
                             <meshStandardMaterial
                                 color={colors.heart}
-                                emissive={new Color(colors.glow)}
+                                emissive={colors.glow}
                                 emissiveIntensity={glow ? 0.4 : 0.03}
                             />
                         </mesh>

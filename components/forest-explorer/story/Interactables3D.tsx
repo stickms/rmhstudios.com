@@ -2,7 +2,7 @@
 
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Color, type Group, type Mesh, type PointLight, type MeshStandardMaterial } from 'three';
+import { type Group, type Mesh, type PointLight, type MeshStandardMaterial } from 'three';
 import { useStoryStore } from '@/lib/forest-explorer/store';
 import { getInteractablesByAct } from '@/lib/forest-explorer/interactables';
 import { isPuzzleLocked } from '@/lib/forest-explorer/puzzleDefinitions';
@@ -38,7 +38,7 @@ export function Interactables3D() {
 function RunePedestal({ item }: { item: InteractableDefinition }) {
     const sigilRef = useRef<Mesh>(null);
     const lightRef = useRef<PointLight>(null);
-    const revealed = useStoryStore(s => s.flashlightRevealedIds.includes(item.id));
+    const revealed = useStoryStore(s => s.flashlightRevealedIds.has(item.id));
     const solved = useStoryStore(s => item.puzzleId ? s.puzzleStates[item.puzzleId]?.status === 'solved' : false);
     const locked = useStoryStore(s => item.puzzleId ? isPuzzleLocked(item.puzzleId, s.puzzleStates) : false);
 
@@ -80,7 +80,7 @@ function RunePedestal({ item }: { item: InteractableDefinition }) {
                     color={color}
                     transparent
                     opacity={0.25}
-                    emissive={new Color(color)}
+                    emissive={color}
                     emissiveIntensity={0.08}
                 />
             </mesh>
@@ -95,7 +95,7 @@ function JournalPage({ item }: { item: InteractableDefinition }) {
     const groupRef = useRef<Group>(null);
     const pageRef = useRef<Mesh>(null);
     const sparkRef = useRef<Mesh>(null);
-    const revealed = useStoryStore(s => s.flashlightRevealedIds.includes(item.id));
+    const revealed = useStoryStore(s => s.flashlightRevealedIds.has(item.id));
     const discovered = useStoryStore(s =>
         item.journalEntryId ? s.discoveredEntries.includes(item.journalEntryId) : false);
 
@@ -131,7 +131,7 @@ function JournalPage({ item }: { item: InteractableDefinition }) {
                         color="#e8dcb8"
                         transparent
                         opacity={0.3}
-                        emissive={new Color('#ffedaa')}
+                        emissive="#ffedaa"
                         emissiveIntensity={0.15}
                     />
                 </mesh>
@@ -143,7 +143,7 @@ function JournalPage({ item }: { item: InteractableDefinition }) {
                     color="#d4ff70"
                     transparent
                     opacity={0.8}
-                    emissive={new Color('#d4ff70')}
+                    emissive="#d4ff70"
                     emissiveIntensity={0.9}
                 />
             </mesh>
