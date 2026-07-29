@@ -1,6 +1,5 @@
 {
   "all": "전체",
-  "article-count_one": "기사 {{count}}개",
   "article-count_other": "기사 {{count}}개",
   "categories-label": "News categories",
   "clear": "지우기",
@@ -18,7 +17,6 @@
   "prev-featured-article": "이전 추천 기사",
   "read-original-article-on": "{{publisher}}에서 원본 기사 읽기",
   "read-our-take": "Read article",
-  "results-count_one": "결과 {{count}}개",
   "results-count_other": "결과 {{count}}개",
   "search-placeholder": "기사 검색...",
   "sort-label": "정렬:",

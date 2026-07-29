@@ -1,6 +1,5 @@
 {
   "all": "所有",
-  "article-count_one": "{{count}} 篇文章",
   "article-count_other": "{{count}} 篇文章",
   "categories-label": "News categories",
   "clear": "清楚",
@@ -18,7 +17,6 @@
   "prev-featured-article": "上一期精选文章",
   "read-original-article-on": "阅读{{publisher}}的原始文章",
   "read-our-take": "Read article",
-  "results-count_one": "{{count}} 个结果",
   "results-count_other": "{{count}} 个结果",
   "search-placeholder": "搜索文章...",
   "sort-label": "排序：",

@@ -8,7 +8,6 @@
   "edit": "Chỉnh sửa",
   "edit-build": "Chỉnh sửa bản dựng",
   "error-loading-build": "Lỗi khi tải bản dựng",
-  "like-count_one": "{{count}} lượt thích",
   "like-count_other": "{{count}} lượt thích",
   "manage-subtitle": "Quản lý các bản dựng đã xuất bản và bản nháp của bạn",
   "my-builds": "Bản dựng của tôi",
@@ -24,6 +23,5 @@
   "submit-a-build": "Gửi một bản dựng",
   "update-build-details": "Cập nhật chi tiết bản dựng của bạn bên dưới.",
   "view": "Xem",
-  "view-count_one": "{{count}} lượt xem",
   "view-count_other": "{{count}} lượt xem"
 }

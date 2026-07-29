@@ -27,7 +27,6 @@
   "pagination-next": "次へ",
   "pagination-previous": "前へ",
   "pagination-range": "{{from}}～{{to}} / {{total}}",
-  "player-count_one": "{{count}} プレイヤー",
   "player-count_other": "{{count}} プレイヤー",
   "player-range": "{{minPlayers}}～{{maxPlayers}} プレイヤー",
   "pts": "pts",

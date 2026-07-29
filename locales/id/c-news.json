@@ -1,6 +1,5 @@
 {
   "all": "Semua",
-  "article-count_one": "{{count}} artikel",
   "article-count_other": "{{count}} artikel",
   "categories-label": "News categories",
   "clear": "Hapus",
@@ -18,7 +17,6 @@
   "prev-featured-article": "Artikel unggulan sebelumnya",
   "read-original-article-on": "Baca artikel asli di {{publisher}}",
   "read-our-take": "Read article",
-  "results-count_one": "{{count}} hasil",
   "results-count_other": "{{count}} hasil",
   "search-placeholder": "Cari artikel...",
   "sort-label": "Urutkan:",

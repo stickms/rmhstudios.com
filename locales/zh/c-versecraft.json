@@ -43,7 +43,6 @@
   "save-game": "保存游戏",
   "saved-to-slot": "已保存至槽位 {{slotId}}",
   "select-poem-prompt": "选择一首诗查看详情。",
-  "select-words-prompt_one": "选择{{count}}个词来创作你的诗",
   "select-words-prompt_other": "选择{{count}}个词来创作你的诗",
   "settings": "设置",
   "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",

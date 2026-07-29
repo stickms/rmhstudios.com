@@ -10,6 +10,68 @@ function load(locale: string, ns: string): Record<string, string> {
   return JSON.parse(readFileSync(pathFor(locale, ns), 'utf8'));
 }
 
+// ─── Plural-aware key comparison ────────────────────────────────────────────
+//
+// i18next suffixes plural keys with a CLDR plural category (`count_one`,
+// `count_other`, …), and *which* categories exist is a property of the
+// language, not of the string. English has two (one, other); Chinese and
+// Japanese have one (other); Russian and Polish have four; Arabic has six.
+//
+// So a raw key-set comparison against English is wrong in both directions: ru
+// legitimately carries `_few`/`_many` that English lacks, and zh legitimately
+// lacks the `_one` that English has. Comparing coverage on the *base* key and
+// checking the categories separately (below) tests what actually matters.
+
+const PLURAL_CATEGORIES = ['zero', 'one', 'two', 'few', 'many', 'other'] as const;
+
+function splitPlural(key: string): { base: string; category: string } | null {
+  const i = key.lastIndexOf('_');
+  if (i <= 0) return null;
+  const category = key.slice(i + 1);
+  return (PLURAL_CATEGORIES as readonly string[]).includes(category)
+    ? { base: key.slice(0, i), category }
+    : null;
+}
+
+/** Base keys English declares as plural groups — the authority for what counts
+ *  as a plural suffix, so a non-plural key merely ending in `_one` is safe. */
+function pluralBases(englishKeys: string[]): Set<string> {
+  const bases = new Set<string>();
+  for (const k of englishKeys) {
+    const p = splitPlural(k);
+    if (p) bases.add(p.base);
+  }
+  return bases;
+}
+
+/** Collapse plural variants to their base key; leave everything else alone. */
+function collapsePlurals(keys: string[], bases: Set<string>): Set<string> {
+  const out = new Set<string>();
+  for (const k of keys) {
+    const p = splitPlural(k);
+    out.add(p && bases.has(p.base) ? p.base : k);
+  }
+  return out;
+}
+
+/** The plural categories a language actually requires, per CLDR. */
+function requiredCategories(locale: string): string[] {
+  return [...new Intl.PluralRules(locale).resolvedOptions().pluralCategories].sort();
+}
+
+// Plural groups the translate pipeline emitted with English's shape (one/other)
+// instead of the target language's categories. i18next selects the missing
+// category, misses, and falls back to English — so e.g. a Russian player sees
+// "2 continue" mid-sentence. Verified against i18next 26 with fallbackLng 'en'.
+//
+// Not filled in by hand here: picking the right Russian or Arabic plural stem is
+// a translator's job, not a mechanical one, and duplicating the `_other` string
+// into `_few` would replace a visible gap with a silently wrong one. Remove
+// entries as `pnpm i18n:translate && pnpm i18n:resources` regenerates them.
+const KNOWN_PARTIAL_PLURALS: Record<string, string[]> = {
+  'c-dream-rift': ['continues-count'],
+};
+
 // Keys that exist in the English source but are not yet machine-translated into
 // the other locales. Production fills these at build time via the DeepSeek i18n
 // pipeline (Dockerfile `vite-builder` stage), and the runtime falls back to
@@ -299,20 +361,42 @@ describe('catalog integrity', () => {
   // back to English per key, so they are skipped here.
   for (const ns of NAMESPACES) {
     const enKeys = Object.keys(load('en', ns));
-    const enSet = new Set(enKeys);
-    const tolerated = new Set(KNOWN_UNTRANSLATED[ns] ?? []);
+    const bases = pluralBases(enKeys);
+    const enSet = collapsePlurals(enKeys, bases);
+    const tolerated = collapsePlurals(KNOWN_UNTRANSLATED[ns] ?? [], bases);
     for (const locale of LOCALES) {
       if (locale === 'en') continue;
       if (!existsSync(pathFor(locale, ns))) continue;
+
       it(`${locale}/${ns} covers the English key set (no orphans, no unexpected gaps)`, () => {
-        const localeSet = new Set(Object.keys(load(locale, ns)));
+        const localeSet = collapsePlurals(Object.keys(load(locale, ns)), bases);
         // Orphans: keys the locale has that English does not — always a bug.
         const orphans = [...localeSet].filter((k) => !enSet.has(k)).sort();
         expect(orphans).toEqual([]);
         // Missing: English keys the locale lacks, excluding the tolerated
         // (not-yet-translated) allowlist for this namespace.
-        const missing = enKeys.filter((k) => !localeSet.has(k) && !tolerated.has(k)).sort();
+        const missing = [...enSet].filter((k) => !localeSet.has(k) && !tolerated.has(k)).sort();
         expect(missing).toEqual([]);
+      });
+
+      // The check the collapsed comparison above gives up: every plural group a
+      // locale has translated must carry exactly the categories its language
+      // requires — no more (dead keys i18next can never select) and no fewer
+      // (the count falls back to English mid-sentence).
+      it(`${locale}/${ns} uses the CLDR plural categories for its language`, () => {
+        const required = requiredCategories(locale);
+        const partial = new Set(KNOWN_PARTIAL_PLURALS[ns] ?? []);
+        const byBase = new Map<string, string[]>();
+        for (const key of Object.keys(load(locale, ns))) {
+          const p = splitPlural(key);
+          if (!p || !bases.has(p.base)) continue;
+          byBase.set(p.base, [...(byBase.get(p.base) ?? []), p.category]);
+        }
+        const wrong = [...byBase.entries()]
+          .filter(([base]) => !tolerated.has(base) && !partial.has(base))
+          .map(([base, cats]) => ({ base, got: [...cats].sort() }))
+          .filter(({ got }) => got.join(',') !== required.join(','));
+        expect(wrong).toEqual([]);
       });
     }
   }
