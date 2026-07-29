@@ -171,3 +171,14 @@ history if a rollback ever needs it.
 6. `tsconfig.server.json` includes more than gets bundled — esbuild's 6
    entrypoints (socket-server, rmhbox, rmhtube, ladder-worker, homes-worker,
    jobs) are the truth.
+7. **Server code imports `lib/` RELATIVELY, never through `@/`.** Neither
+   tsconfig sets a `baseUrl`, so esbuild ignores the `paths` map and treats
+   `@/lib/x` as a bare package name — `--packages=external` then emits a
+   literal `require("@/lib/x")` that throws at runtime if the line ever runs.
+   Relative specifiers are the ones actually bundled.
+8. **A new `lib/` import needs a matching `COPY` in the Dockerfile.** The
+   `server-builder` stage copies a curated subset of `lib/` so unrelated edits
+   don't bust its layer cache, which means `pnpm build` (whole working tree)
+   can pass while the image build fails with "Could not resolve".
+   `lib/__tests__/server-bundle-copies.test.ts` walks the real import graph
+   and catches this in `web-ci`, before it reaches main.
