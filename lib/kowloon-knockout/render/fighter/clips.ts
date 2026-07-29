@@ -21,6 +21,24 @@ export const CLIP_KEYS: ClipKey[] = [
     'idle', 'walk', 'jab', 'cross', 'hook', 'uppercut', 'block', 'hit', 'stunned', 'ko', 'dance',
 ];
 
+/**
+ * Clips that must be present before the skeletal fighter can replace the
+ * procedural StickFighter.
+ *
+ * The rig plus all eleven clips is ~7.9 MB of uncompressed FBX, and awaiting
+ * the whole set meant a 1.2 MB dance emote — which `resolveClip` never even
+ * returns — delayed the upgrade for every player
+ * (docs/3d-performance-audit.md §4.1). A fighter that can idle and walk looks
+ * correct immediately; the rest stream in behind it, and until each arrives the
+ * animation code simply holds the current clip.
+ */
+export const ESSENTIAL_CLIP_KEYS: ClipKey[] = ['idle', 'walk'];
+
+/** Everything else — fetched after the swap, in this order. */
+export const DEFERRED_CLIP_KEYS: ClipKey[] = CLIP_KEYS.filter(
+    (k) => !ESSENTIAL_CLIP_KEYS.includes(k),
+);
+
 export const CLIPS: Record<ClipKey, ClipDef> = {
     idle:     { file: 'idle.fbx',     loop: true,  fade: 0.2 },
     walk:     { file: 'walk.fbx',     loop: true,  fade: 0.15 },

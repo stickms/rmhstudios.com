@@ -12,6 +12,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 import { ProceduralTextures } from '../textures/ProceduralTextures';
+import { detectRuntimeQuality } from '@/lib/render/runtime';
 
 /* ── Retro shader ── */
 const RetroShader = {
@@ -175,6 +176,10 @@ let _activePalette = PALETTES[0];
 function randomNeon() { return _activePalette.neons[Math.floor(Math.random() * _activePalette.neons.length)]; }
 
 /* ── Grid constants ── */
+/** Bloom render-target scale. Bloom is low-frequency, so half res is visually
+ *  near-identical and roughly a quarter of the fill cost. */
+const BLOOM_SCALE = 0.5;
+
 const CHUNK_SIZE = 60;          // world units per chunk
 const ROAD_WIDTH = 28;          // width of a road
 const VIEW_RADIUS = 5;          // generate chunks in a 5-chunk radius
@@ -219,6 +224,7 @@ export class CyberpunkScene {
         this.signs = [];
         this.trafficVehicles = [];  // oncoming traffic objects
         this.rainDrops = null;
+        this._quality = null;   // resolved in _initRenderer once the canvas exists
         this._paletteIndex = 0;
         this._paletteTimer = 0;
         this._palettePool = ALL_PALETTES; // indices to cycle through
@@ -283,7 +289,11 @@ export class CyberpunkScene {
             logarithmicDepthBuffer: true,
         });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        // Was a hard-coded min(dpr, 2). At DPR 2 with a full-resolution bloom
+        // chain this is the most expensive combination in the game; the shared
+        // tier system caps it by measured GPU class and never exceeds native.
+        this._quality = detectRuntimeQuality();
+        this.renderer.setPixelRatio(this._quality.pixelRatio);
         this.renderer.toneMapping = ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 2.8;
         this.renderer.shadowMap.enabled = false;
@@ -1977,7 +1987,20 @@ export class CyberpunkScene {
     _initPostProcessing() {
         this.composer = new EffectComposer(this.renderer);
         this.composer.addPass(new RenderPass(this.scene, this.camera));
-        this.composer.addPass(new UnrealBloomPass(new Vector2(window.innerWidth, window.innerHeight), 0.8, 0.4, 0.85));
+
+        // Bloom runs at half resolution. It's a multi-pass mip chain and the
+        // single most expensive thing in the frame at native res; the effect is
+        // low-frequency, so upsampling from half is visually near-identical.
+        // EffectComposer calls setSize on every pass during a resize, which
+        // would otherwise restore full resolution — hence the wrapper.
+        const bloom = new UnrealBloomPass(
+            new Vector2(window.innerWidth * BLOOM_SCALE, window.innerHeight * BLOOM_SCALE),
+            0.8, 0.4, 0.85,
+        );
+        const bloomSetSize = bloom.setSize.bind(bloom);
+        bloom.setSize = (w: number, h: number) =>
+            bloomSetSize(Math.max(1, Math.round(w * BLOOM_SCALE)), Math.max(1, Math.round(h * BLOOM_SCALE)));
+        this.composer.addPass(bloom);
 
         // FXAA instead of SMAA (cheaper)
         this._fxaaPass = new ShaderPass(FXAAShader);
