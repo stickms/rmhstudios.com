@@ -67,7 +67,7 @@ export default function RhymeTimeScoreboard({
 
   return (
     <motion.div
-      className="mx-auto flex w-full max-w-xl flex-col gap-6 p-6 text-(--rmhbox-text)"
+      className="mx-auto flex w-full max-w-xl flex-col gap-6 p-6 text-(--app-text)"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -78,14 +78,14 @@ export default function RhymeTimeScoreboard({
           {isGameOver ? t("final-scores", { defaultValue: "Final Scores" }) : t("scoreboard", { defaultValue: "Scoreboard" })}
         </h2>
         {!isGameOver && (
-          <p className="mt-1 text-sm text-(--rmhbox-text-muted)">
+          <p className="mt-1 text-sm text-(--app-text-muted)">
             {t("after-round", { defaultValue: "After round {{round}} of {{total}}", round: currentRound, total: totalRounds })}
           </p>
         )}
       </motion.div>
 
       {/* Standings list */}
-      <div className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4">
+      <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-4">
         <ul className="space-y-2">
           {sorted.map((player, idx) => {
             const isMvp = player.userId === mvpId;
@@ -97,20 +97,20 @@ export default function RhymeTimeScoreboard({
                 variants={rowVariants}
                 className={`flex gap-3 items-center justify-between rounded-lg px-3 py-2 text-sm ${
                   isMvp
-                    ? 'bg-(--rmhbox-warning)/10 ring-1 ring-(--rmhbox-warning)/30'
+                    ? 'bg-(--app-warning)/10 ring-1 ring-(--app-warning)/30'
                     : isSelf
-                      ? 'bg-(--rmhbox-accent)/10 ring-1 ring-(--rmhbox-accent)/30'
+                      ? 'bg-(--app-accent)/10 ring-1 ring-(--app-accent)/30'
                       : ''
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="w-6 text-right font-mono font-bold text-(--rmhbox-text-muted)">
+                  <span className="w-6 text-right font-mono font-bold text-(--app-text-muted)">
                     {idx + 1}
                   </span>
-                  {isMvp && <Trophy className="h-4 w-4 text-(--rmhbox-warning)" />}
+                  {isMvp && <Trophy className="h-4 w-4 text-(--app-warning)" />}
                   <span className="font-semibold">{player.userName}</span>
                   {isMvp && (
-                    <span className="rounded-full bg-(--rmhbox-warning)/20 px-2 py-0.5 text-[10px] font-medium text-(--rmhbox-warning) border border-(--rmhbox-warning)/30">
+                    <span className="rounded-full bg-(--app-warning)/20 px-2 py-0.5 text-[10px] font-medium text-(--app-warning) border border-(--app-warning)/30">
                       {t("mvp", { defaultValue: "MVP" })}
                     </span>
                   )}
@@ -121,12 +121,12 @@ export default function RhymeTimeScoreboard({
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.4 + idx * 0.1, duration: 0.3 }}
-                      className="flex items-center gap-0.5 text-xs font-medium text-(--rmhbox-success)"
+                      className="flex items-center gap-0.5 text-xs font-medium text-(--app-success)"
                     >
                       <ArrowUp className="h-3 w-3" />+{player.delta}
                     </motion.span>
                   )}
-                  <span className="font-mono font-bold text-(--rmhbox-accent)">
+                  <span className="font-mono font-bold text-(--app-accent)">
                     {player.totalScore}
                   </span>
                 </div>
@@ -140,7 +140,7 @@ export default function RhymeTimeScoreboard({
       {!isGameOver && (
         <motion.p
           variants={rowVariants}
-          className="text-center text-sm text-(--rmhbox-text-muted)"
+          className="text-center text-sm text-(--app-text-muted)"
         >
           {t("next-up-round", { defaultValue: "Next up: Round {{round}} of {{total}}", round: currentRound + 1, total: totalRounds })}
         </motion.p>
@@ -150,9 +150,9 @@ export default function RhymeTimeScoreboard({
       {isGameOver && awards.length > 0 && (
         <motion.div
           variants={rowVariants}
-          className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4"
+          className="rounded-xl border border-(--app-border) bg-(--app-surface) p-4"
         >
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--app-text-muted)">
             <AwardIcon className="h-4 w-4" /> {t("awards", { defaultValue: "Awards" })}
           </h3>
           <ul className="space-y-3">
@@ -161,9 +161,9 @@ export default function RhymeTimeScoreboard({
                 <LucideAwardIcon name={award.icon} className="h-5 w-5" />
                 <div>
                   <span className="font-semibold">{award.title}</span>
-                  <span className="mx-1 text-(--rmhbox-text-muted)">—</span>
-                  <span className="text-sm text-(--rmhbox-accent)">{award.recipient}</span>
-                  <p className="text-xs text-(--rmhbox-text-muted)">{award.description}</p>
+                  <span className="mx-1 text-(--app-text-muted)">—</span>
+                  <span className="text-sm text-(--app-accent)">{award.recipient}</span>
+                  <p className="text-xs text-(--app-text-muted)">{award.description}</p>
                 </div>
               </li>
             ))}

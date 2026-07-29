@@ -70,6 +70,7 @@
   color: #f5f5f7;
   cursor: pointer;
   transition: background 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
 .av__btn:hover {
@@ -101,6 +102,7 @@
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(20, 20, 22, 0.92);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
 }
 .av__menu-item {
@@ -201,6 +203,7 @@
   color: #f5f5f7;
   cursor: pointer;
   transition: background 0.15s ease, transform 0.15s ease;
+  -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }
 .av__nav:hover {
@@ -226,6 +229,7 @@
   border: 1px solid rgba(255, 255, 255, 0.14);
   font-size: 13px;
   font-weight: 500;
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
 

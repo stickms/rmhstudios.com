@@ -1,5 +1,7 @@
 // @ts-nocheck
 /* ═══════════════════════════════════════════
+import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
+
    NEURODRIVE — Main Entry Point
    Orchestrates terminal → simulation →
    data collection flow
@@ -774,7 +776,9 @@ export class App {
     }
 
     _playSeatbeltChime() {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        resumeAudioContext();
         this._chimeCtx = ctx;
         const now = ctx.currentTime;
         const playTone = (freq, t) => {
@@ -793,7 +797,8 @@ export class App {
         };
         playTone(523.25, now + 0.1); // C5
         playTone(659.25, now + 0.35); // E5
-        setTimeout(() => ctx.close().catch(() => {}), 1500);
+        // The oscillators stop themselves; the context is shared and must not
+        // be closed (closing is permanent and would mute the whole page).
     }
 
     _openConsole() {
@@ -879,7 +884,8 @@ export class App {
         // Stop audio
         if (this._radio) { this._radio.dispose(); this._radio = null; }
         if (this._engine) { this._engine.dispose(); this._engine = null; }
-        if (this._chimeCtx) { this._chimeCtx.close().catch(() => {}); this._chimeCtx = null; }
+        // Shared context — drop the reference, don't close it.
+        this._chimeCtx = null;
 
         // Disconnect live stream
         if (this._liveClient) { this._liveClient.disconnect(); }

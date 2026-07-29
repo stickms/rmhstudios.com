@@ -1,133 +1,101 @@
 /**
- * RMH Type — Socket.io Client Wrapper
+ * RMH Type — realtime client.
  *
- * Connects to the shared socket server (port 7001).
+ * Connection lifecycle, reconnect tuning, credential refresh and the wake
+ * signals all live in `lib/shared/realtime/client`; this file is only the
+ * RMHType event map.
  */
 
 'use client';
 
-import { io, Socket } from 'socket.io-client';
-import { ensureTrailingSlash } from '@/lib/url';
+import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';
+import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
+import type { PeerWaitState } from '@/lib/shared/realtime/types';
 import { useRmhTypeStore } from './store';
 import { S2C } from './events';
 import { toast } from './toast-store';
 import type { ChatMessage, PlayerProgress, RoundResults, FinalResults, SoloResult } from './types';
 
-// ─── Module-Level Socket Reference ──────────────────────────────
+let client: RealtimeClient | null = null;
+/** The room to (re)join on every successful connect. */
+let pendingRoomCode: string | null = null;
 
-let socket: Socket | null = null;
+const store = () => useRmhTypeStore.getState();
 
-// ─── Connection ─────────────────────────────────────────────────
+// ─── Connection ─────────────────────────────────────────────────────────────
 
 export async function connectToRmhType(roomCode?: string): Promise<Socket> {
-  if (socket?.connected) {
-    // Already connected — join room immediately if requested
-    if (roomCode) socket.emit('rmhtype:room:join', { roomCode });
-    return socket;
+  if (roomCode) pendingRoomCode = roomCode;
+
+  if (client) {
+    // An existing client already re-joins on connect, so a second call only
+    // needs to nudge a stalled one and (if we're live) join right now.
+    if (client.socket.connected && roomCode) {
+      client.emit('rmhtype:room:join', { roomCode });
+    } else {
+      client.reconnectNow();
+    }
+    return client.socket;
   }
 
-  if (socket) {
-    socket.removeAllListeners();
-    socket.disconnect();
-    socket = null;
-  }
-
-  const store = useRmhTypeStore.getState();
-  store.setConnectionStatus('connecting');
-
+  // Fail fast rather than opening a socket that will be rejected: the store
+  // shows `error`, and the caller gets a rejection it can route to a login.
   const session = await authClient.getSession();
-  const token = session?.data?.session?.token;
-  if (!token) {
-    store.setConnectionStatus('error');
+  if (!session?.data?.session?.token) {
+    store().setConnectionStatus('error');
     throw new Error('Not authenticated');
   }
 
-  const serverUrl = ensureTrailingSlash(import.meta.env.VITE_SOCKET_URL);
-
-  socket = io(serverUrl, {
+  client = createRealtimeClient({
+    name: 'RmhType',
+    url: import.meta.env.VITE_SOCKET_URL,
     path: '/socket/',
-    auth: (cb) => {
-      authClient
-        .getSession()
-        .then((s) => cb({ token: s?.data?.session?.token ?? token }))
-        .catch(() => cb({ token }));
+    auth: async () => {
+      const current = await authClient.getSession();
+      return { token: current?.data?.session?.token };
     },
-    reconnection: true,
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 10000,
-    timeout: 10000,
+    onStatus: (status) => {
+      store().setConnectionStatus(status);
+      // A drop means the room's view of us is stale; clear the pause banner so
+      // it can't outlive the connection that would have cleared it.
+      if (status === 'disconnected' || status === 'error') store().setPeersWaiting(null);
+    },
+    onConnect: (socket) => {
+      // The server keyed us by socket id and that id just changed, so a
+      // reconnect has to re-announce the room or we sit in a lobby of one.
+      const code = store().room?.roomCode ?? pendingRoomCode;
+      if (code) socket.emit('rmhtype:room:join', { roomCode: code });
+    },
+    bind: registerHandlers,
   });
 
-  // ─── Connection lifecycle ───────────────────────────────────
-  // Track a pending room code for join-on-connect
-  let pendingRoomCode: string | null = roomCode ?? null;
+  return client.socket;
+}
 
-  socket.on('connect', () => {
-    const store = useRmhTypeStore.getState();
-    store.setConnectionStatus('connected');
+function registerHandlers(socket: Socket) {
+  // ─── Room ─────────────────────────────────────────────────────────────
+  socket.on(S2C.ROOM_STATE, (state) => store().setRoom(state));
+  socket.on(S2C.ROOM_CHAT, (msg: ChatMessage) => store().addChatMessage(msg));
 
-    // Re-join room on reconnect (socket ID changed, server lost our mapping)
-    const code = store.room?.roomCode || pendingRoomCode;
-    if (code) {
-      socket!.emit('rmhtype:room:join', { roomCode: code });
-      pendingRoomCode = null;
-    }
-  });
+  socket.on(S2C.PEERS_WAITING, (waiting: PeerWaitState | null) =>
+    store().setPeersWaiting(waiting?.peers?.length ? waiting : null),
+  );
 
-  socket.on('disconnect', (reason) => {
-    if (reason === 'io server disconnect' || reason === 'io client disconnect') {
-      useRmhTypeStore.getState().setConnectionStatus('disconnected');
-    } else {
-      useRmhTypeStore.getState().setConnectionStatus('connecting');
-    }
-  });
-
-  socket.on('connect_error', (err) => {
-    if (err.message?.includes('auth') || err.message?.includes('token')) {
-      useRmhTypeStore.getState().setConnectionStatus('error');
-    }
-  });
-
-  // Reconnect when returning from background (phone sleep, tab switch)
-  const handleVisibility = () => {
-    if (document.visibilityState === 'visible' && socket && !socket.connected) {
-      socket.connect();
-    }
-  };
-  document.addEventListener('visibilitychange', handleVisibility);
-
-  // ─── Room state ───────────────────────────────────────────────
-  socket.on(S2C.ROOM_STATE, (state) => {
-    useRmhTypeStore.getState().setRoom(state);
-  });
-
-  // ─── Chat ─────────────────────────────────────────────────────
-  socket.on(S2C.ROOM_CHAT, (msg: ChatMessage) => {
-    useRmhTypeStore.getState().addChatMessage(msg);
-  });
-
-  // ─── Game events ──────────────────────────────────────────────
-  socket.on(S2C.GAME_COUNTDOWN, (data: { seconds: number }) => {
-    useRmhTypeStore.getState().setCountdown(data.seconds);
-  });
+  // ─── Race ─────────────────────────────────────────────────────────────
+  socket.on(S2C.GAME_COUNTDOWN, (data: { seconds: number }) => store().setCountdown(data.seconds));
 
   socket.on(
     S2C.GAME_PASSAGE,
-    (data: { passageId: string; text: string; round: number; totalRounds: number }) => {
-      useRmhTypeStore
-        .getState()
-        .setPassage(data.passageId, data.text, data.round, data.totalRounds);
-    },
+    (data: { passageId: string; text: string; round: number; totalRounds: number }) =>
+      store().setPassage(data.passageId, data.text, data.round, data.totalRounds),
   );
 
-  // The server now batches every player's progress into ONE array per tick
-  // (perf audit §7 — was one emit per player, O(players^2) messages). Iterate
-  // and apply each entry.
+  // One array per tick rather than one emit per player (perf audit §7 — the
+  // old shape was O(players²) messages).
   socket.on(S2C.GAME_PROGRESS, (data: PlayerProgress[]) => {
-    const store = useRmhTypeStore.getState();
-    for (const p of data) store.updateProgress(p);
+    const s = store();
+    for (const progress of data) s.updateProgress(progress);
   });
 
   socket.on(
@@ -139,72 +107,68 @@ export async function connectToRmhType(roomCode?: string): Promise<Socket> {
       accuracy: number;
       timeMs: number;
       rank: number;
-    }) => {
-      useRmhTypeStore.getState().markPlayerFinished(data);
-    },
+    }) => store().markPlayerFinished(data),
   );
 
-  socket.on(S2C.GAME_ROUND_RESULTS, (data: RoundResults) => {
-    useRmhTypeStore.getState().setRoundResults(data);
-  });
+  socket.on(S2C.GAME_ROUND_RESULTS, (data: RoundResults) => store().setRoundResults(data));
+  socket.on(S2C.GAME_FINAL_RESULTS, (data: FinalResults) => store().setFinalResults(data));
 
-  socket.on(S2C.GAME_FINAL_RESULTS, (data: FinalResults) => {
-    useRmhTypeStore.getState().setFinalResults(data);
-  });
-
-  // ─── Solo events ──────────────────────────────────────────────
-  socket.on(S2C.SOLO_COUNTDOWN, (data: { seconds: number }) => {
-    useRmhTypeStore.getState().setSoloCountdown(data.seconds);
-  });
+  // ─── Solo ─────────────────────────────────────────────────────────────
+  socket.on(S2C.SOLO_COUNTDOWN, (data: { seconds: number }) =>
+    store().setSoloCountdown(data.seconds),
+  );
 
   socket.on(S2C.SOLO_STARTED, (data: { passage: string; passageId: string }) => {
-    useRmhTypeStore.getState().setSoloCountdown(null);
-    useRmhTypeStore.getState().setSoloPassage(data.passageId, data.passage);
+    const s = store();
+    s.setSoloCountdown(null);
+    s.setSoloPassage(data.passageId, data.passage);
   });
 
-  socket.on(S2C.SOLO_RESULT, (data: SoloResult) => {
-    useRmhTypeStore.getState().setSoloResult(data);
-  });
+  socket.on(S2C.SOLO_RESULT, (data: SoloResult) => store().setSoloResult(data));
 
-  // ─── Kicked ──────────────────────────────────────────────────
+  // ─── Removal / errors ─────────────────────────────────────────────────
   socket.on(S2C.ROOM_KICKED, () => {
-    useRmhTypeStore.getState().leaveRoom();
+    pendingRoomCode = null;
+    store().leaveRoom();
     toast.warning('You have been kicked from the room.');
   });
 
-  // ─── Errors ───────────────────────────────────────────────────
   socket.on(S2C.ERROR, (error: { message?: string }) => {
     const message = error?.message ?? 'An error occurred.';
     console.error(`[RmhType] Server error: ${message}`);
     toast.error(message);
   });
-
-  return socket;
 }
 
-// ─── Socket Access ───────────────────────────────────────────────
+// ─── Access ─────────────────────────────────────────────────────────────────
 
 export function getSocket(): Socket | null {
-  return socket;
+  return client?.socket ?? null;
 }
 
-// ─── Disconnect ──────────────────────────────────────────────────
+/** Force an immediate reconnection attempt — wired to the retry affordance. */
+export function reconnectNow(): void {
+  client?.reconnectNow();
+}
 
 export function disconnectFromRmhType(): void {
-  if (socket) {
-    socket.disconnect();
-    socket = null;
-  }
-  useRmhTypeStore.getState().reset();
+  pendingRoomCode = null;
+  client?.destroy();
+  client = null;
+  store().reset();
 }
 
-// ─── Emit Helper ─────────────────────────────────────────────────
-
-export function emit(event: string, data?: unknown): boolean {
-  if (!socket?.connected) {
-    console.warn(`[RmhType] Cannot emit "${event}" — not connected`);
+/**
+ * Send an event.
+ *
+ * `queue` holds it across a blip; use it for intents that keep their meaning a
+ * few seconds later (chat, ready, settings) and not for keystroke progress,
+ * which the next tick supersedes anyway.
+ */
+export function emit(event: string, data?: unknown, options?: { queue?: boolean }): boolean {
+  if (!client) {
+    console.warn(`[RmhType] Cannot emit "${event}" — no connection`);
     return false;
   }
-  socket.emit(event, data);
-  return true;
+  return client.emit(event, data, options);
 }

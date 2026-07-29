@@ -15,7 +15,7 @@ interface EmojiPickerButtonProps {
   /**
    * Replaces the default `text-site-text-dim hover:text-site-accent` color classes on the
    * trigger button. Use this for panels themed with static Tailwind arbitrary-value classes
-   * (e.g. `text-(--rmhtube-text-dim) hover:text-(--rmhtube-accent)`).
+   * (e.g. `text-(--app-text-dim) hover:text-(--app-accent)`).
    */
   buttonClassName?: string;
   /**

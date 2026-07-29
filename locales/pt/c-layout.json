@@ -14,6 +14,6 @@
   "remove-widget": "Remove {{name}}",
   "reset": "Reset to default",
   "sidebar": "Sidebar",
-  "sidebar-desc": "Pin destinations to the main rail or hide them. Hidden items stay reachable under “More” and search.",
+  "sidebar-desc": "Drag the tabs into the order you want, or hide the ones you don’t use. Hidden tabs stay reachable from search and their link.",
   "your-widgets": "Your widgets"
 }

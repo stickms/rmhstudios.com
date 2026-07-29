@@ -292,7 +292,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
   }, [players, playerId]);
 
   return (
-    <div className="flex w-full max-w-4xl flex-col gap-4 text-(--rmhbox-text)">
+    <div className="flex w-full max-w-4xl flex-col gap-4 text-(--app-text)">
       {/* Error toast */}
       <AnimatePresence>
         {errorMsg && (
@@ -335,16 +335,16 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
             className="flex flex-col gap-3"
           >
             {/* Target reminder + timer */}
-            <div className="flex items-center justify-between rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) px-4 py-2">
+            <div className="flex items-center justify-between rounded-lg border border-(--app-border) bg-(--app-surface) px-4 py-2">
               <div className="flex flex-col gap-0.5 text-sm">
                 <div className="flex items-center gap-2">
-                  <span className="text-(--rmhbox-text-muted)">{t("target-label", { defaultValue: "Target:" })}</span>
-                  <span className="font-bold text-(--rmhbox-accent)">
+                  <span className="text-(--app-text-muted)">{t("target-label", { defaultValue: "Target:" })}</span>
+                  <span className="font-bold text-(--app-accent)">
                     {targetArticle?.title}
                   </span>
                 </div>
                 {targetArticle?.description && (
-                  <span className="text-xs text-(--rmhbox-text-muted) italic">
+                  <span className="text-xs text-(--app-text-muted) italic">
                     {targetArticle.description}
                   </span>
                 )}
@@ -352,8 +352,8 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
               <div
                 className={`shrink-0 rounded-lg px-3 py-1 text-sm font-medium ${
                   timeRemaining <= 15
-                    ? 'bg-(--rmhbox-danger-dim) text-(--rmhbox-danger) animate-pulse'
-                    : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted)'
+                    ? 'bg-(--app-danger-dim) text-(--app-danger) animate-pulse'
+                    : 'bg-(--app-surface) text-(--app-text-muted)'
                 }`}
               >
                 {timeRemaining}s
@@ -362,11 +362,11 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
 
             {/* Finished banner */}
             {hasFinished && (
-              <div className="rounded-lg bg-(--rmhbox-success-dim) border border-(--rmhbox-success)/40 px-4 py-3 text-center">
-                <span className="text-lg font-bold text-(--rmhbox-success)">
+              <div className="rounded-lg bg-(--app-success-dim) border border-(--app-success)/40 px-4 py-3 text-center">
+                <span className="text-lg font-bold text-(--app-success)">
                   <Flag className="h-5 w-5 inline" /> {t("finished-rank", { defaultValue: "Finished! Rank #{{rank}}", rank: finishRank })}
                 </span>
-                <p className="text-sm text-(--rmhbox-success)/70">
+                <p className="text-sm text-(--app-success)/70">
                   {t("finished-clicks", { defaultValue: "{{clicks}} clicks • Viewing target article", clicks: clickCount })}
                 </p>
               </div>
@@ -392,8 +392,8 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
 
             {/* Other players progress */}
             {Object.keys(otherPlayers).length > 0 && (
-              <div className="flex flex-col gap-1.5 rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) p-3">
-                <span className="text-xs font-medium uppercase tracking-wider text-(--rmhbox-text-muted)">
+              <div className="flex flex-col gap-1.5 rounded-lg border border-(--app-border) bg-(--app-surface) p-3">
+                <span className="text-xs font-medium uppercase tracking-wider text-(--app-text-muted)">
                   {t("other-players", { defaultValue: "Other Players" })}
                 </span>
                 {Object.values(otherPlayers).map((p) => (

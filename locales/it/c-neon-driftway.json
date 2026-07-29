@@ -28,6 +28,7 @@
   "play": "Gioca",
   "play-again": "Gioca Ancora",
   "players-count_one": "Giocatori ({{count}}/6)",
+  "players-count_many": "Players ({{count}}/6)",
   "players-count_other": "Giocatori ({{count}}/6)",
   "race-over": "GARA FINITA",
   "race-starting-in": "La gara inizia tra",

@@ -84,7 +84,7 @@ export default function LobbyView() {
 
   if (!lobby) {
     return (
-      <div className="flex items-center justify-center p-8 text-(--rmhbox-text-muted)">
+      <div className="flex items-center justify-center p-8 text-(--app-text-muted)">
         {t('connecting-to-lobby', { defaultValue: 'Connecting to lobby…' })}
       </div>
     );
@@ -108,7 +108,7 @@ export default function LobbyView() {
       {/* Main layout — two-column on desktop, single column on mobile */}
       <div className="mt-4 flex flex-col gap-4 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[1fr_300px]">
         {/* Left column — player list + ready + host controls in a styled card */}
-        <div className="flex flex-col rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) lg:min-h-0">
+        <div className="flex flex-col rounded-xl border border-(--app-border) bg-(--app-surface) lg:min-h-0">
           {/* Player list — full height on mobile, scrollable on desktop */}
           <div className="p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
             <PlayerList
@@ -122,7 +122,7 @@ export default function LobbyView() {
           </div>
 
           {/* Ready button + host controls — fixed at bottom */}
-          <div className="shrink-0 space-y-3 border-t border-(--rmhbox-border) p-4">
+          <div className="shrink-0 space-y-3 border-t border-(--app-border) p-4">
             <div className="flex justify-center">
               <ReadyButton
                 isReady={me?.isReady ?? false}
@@ -150,7 +150,7 @@ export default function LobbyView() {
               <div className="flex justify-center">
                 <button
                   onClick={() => setShowViewSettings(true)}
-                  className="flex items-center gap-2 rounded-lg bg-(--rmhbox-surface-hover) px-4 py-2 text-sm font-semibold text-(--rmhbox-text) transition-colors hover:brightness-110"
+                  className="flex items-center gap-2 rounded-lg bg-(--app-surface-hover) px-4 py-2 text-sm font-semibold text-(--app-text) transition-colors hover:brightness-110"
                 >
                   <SlidersHorizontal className="h-4 w-4" /> {t('view-game-settings', { defaultValue: 'View Game Settings' })}
                 </button>

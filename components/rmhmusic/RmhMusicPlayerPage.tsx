@@ -63,7 +63,7 @@ export default function PlayerPage() {
   }, [room?.roomId, room?.hostUserId, room?.myUserId, play, pause, resume, seek]);
 
   return (
-    <div className="relative min-h-screen" style={{ background: 'var(--site-bg)' }}>
+    <div className="app-ground relative" style={{ background: 'var(--site-bg)' }}>
       <Suspense fallback={null}><Visualizer /></Suspense>
 
       {/* Floating album art */}

@@ -1,161 +1,143 @@
 /**
- * RmhTube — Socket.io Client Wrapper
+ * RMHTube — realtime client.
  *
- * Manages the WebSocket connection to the standalone RmhTube server.
- * Handles authentication, reconnection, and event routing to the store.
+ * Connection lifecycle, reconnect tuning, credential refresh and the wake
+ * signals live in `lib/shared/realtime/client`; this file is the RMHTube event
+ * map, its clock sync, and the room re-join a reconnect needs.
  */
 
 'use client';
 
-import { io, Socket } from 'socket.io-client';
-import { ensureTrailingSlash } from '@/lib/url';
+import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';
+import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
+import type { PeerWaitState } from '@/lib/shared/realtime/types';
 import { useRmhTubeStore } from './store';
 import { C2S, S2C } from './events';
 import { toast } from './toast-store';
 import { getServerNow, recordPong, beginClockSyncBurst, resetClock } from './clock';
 import { CLOCK_SYNC_SAMPLES, CLOCK_SYNC_INTERVAL_MS } from './constants';
 
-// ─── Module-Level Socket Reference ──────────────────────────────
-
-let socket: Socket | null = null;
+let client: RealtimeClient | null = null;
 let clockSyncTimer: ReturnType<typeof setInterval> | null = null;
+/** Per-user typing timers, so a fresh keystroke restarts one rather than stacking. */
+const typingTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+const store = () => useRmhTubeStore.getState();
+
+/** How long a typing indicator survives without another signal. */
+const TYPING_TTL_MS = 3000;
 
 /**
- * Fire a burst of clock-sync pings. The lowest-RTT pong wins (see clock.ts).
- * Called on connect, periodically, and whenever the tab regains visibility.
+ * Fire a burst of clock-sync pings. The lowest-RTT pong wins (see clock.ts) —
+ * watch-party sync is only as good as the client↔server offset behind it.
  */
 export function syncClock(): void {
+  const socket = client?.socket;
   if (!socket?.connected) return;
   beginClockSyncBurst();
   for (let i = 0; i < CLOCK_SYNC_SAMPLES; i++) {
     setTimeout(() => {
-      if (socket?.connected) socket.emit(C2S.SYNC_PING, { clientTime: Date.now() });
+      if (client?.socket.connected) client.socket.emit(C2S.SYNC_PING, { clientTime: Date.now() });
     }, i * 120);
   }
 }
 
-// ─── Connection ─────────────────────────────────────────────────
+function stopClockSync() {
+  if (clockSyncTimer) {
+    clearInterval(clockSyncTimer);
+    clockSyncTimer = null;
+  }
+}
+
+// ─── Connection ─────────────────────────────────────────────────────────────
 
 export async function connectToRmhTube(): Promise<Socket> {
-  if (socket?.connected) return socket;
-
-  // Tear down stale socket
-  if (socket) {
-    socket.removeAllListeners();
-    socket.disconnect();
-    socket = null;
+  if (client) {
+    client.reconnectNow();
+    return client.socket;
   }
 
-  const store = useRmhTubeStore.getState();
-  store.setConnectionStatus('connecting');
-
   const session = await authClient.getSession();
-  const token = session?.data?.session?.token;
-  if (!token) {
-    store.setConnectionStatus('error');
+  if (!session?.data?.session?.token) {
+    store().setConnectionStatus('error');
     throw new Error('Not authenticated');
   }
 
-  const serverUrl = ensureTrailingSlash(import.meta.env.VITE_RMHTUBE_SOCKET_URL);
-
-  socket = io(serverUrl, {
+  client = createRealtimeClient({
+    name: 'RmhTube',
+    url: import.meta.env.VITE_RMHTUBE_SOCKET_URL,
     path: '/rmhtube-ws/',
-    auth: (cb) => {
-      authClient
-        .getSession()
-        .then((s) => cb({ token: s?.data?.session?.token ?? token }))
-        .catch(() => cb({ token }));
+    auth: async () => {
+      const current = await authClient.getSession();
+      return { token: current?.data?.session?.token };
     },
-    reconnection: true,
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 10000,
-    timeout: 10000,
+    onStatus: (status) => {
+      store().setConnectionStatus(status);
+      if (status !== 'connected') {
+        stopClockSync();
+        // A stale offset is worse than none: it would seek everyone to a
+        // position derived from a drift measured before the gap.
+        if (status === 'disconnected' || status === 'error') {
+          resetClock();
+          store().setPeersWaiting(null);
+        }
+      }
+    },
+    onConnect: (socket, { isReconnect }) => {
+      // The server keys membership by socket id, and reconnecting minted a new
+      // one — without this the room plays on while we watch a frozen frame.
+      const roomId = store().room?.roomId;
+      if (isReconnect && roomId) socket.emit(C2S.ROOM_JOIN, { roomId });
+
+      // Re-measure before trusting any timeline: the network that just came
+      // back is not the one we calibrated against.
+      resetClock();
+      syncClock();
+      stopClockSync();
+      clockSyncTimer = setInterval(syncClock, CLOCK_SYNC_INTERVAL_MS);
+    },
+    bind: registerHandlers,
   });
 
-  // ─── Connection lifecycle ───────────────────────────────────
-  socket.on('connect', () => {
-    useRmhTubeStore.getState().setConnectionStatus('connected');
-    // Establish the client↔server clock offset right away, then keep it fresh.
-    syncClock();
-    if (clockSyncTimer) clearInterval(clockSyncTimer);
-    clockSyncTimer = setInterval(syncClock, CLOCK_SYNC_INTERVAL_MS);
-  });
+  return client.socket;
+}
 
-  socket.on('disconnect', (reason) => {
-    if (clockSyncTimer) { clearInterval(clockSyncTimer); clockSyncTimer = null; }
-    if (reason === 'io server disconnect' || reason === 'io client disconnect') {
-      useRmhTubeStore.getState().setConnectionStatus('disconnected');
-    } else {
-      useRmhTubeStore.getState().setConnectionStatus('connecting');
-    }
-  });
+function registerHandlers(socket: Socket) {
+  // ─── Clock (NTP-lite) ─────────────────────────────────────────────────
+  socket.on(S2C.SYNC_PONG, (data: { clientTime: number; serverTime: number }) =>
+    recordPong(data.clientTime, data.serverTime),
+  );
 
-  // ─── Clock sync (NTP-lite) ──────────────────────────────────
-  socket.on(S2C.SYNC_PONG, (data: { clientTime: number; serverTime: number }) => {
-    recordPong(data.clientTime, data.serverTime);
-  });
+  // ─── Room state ───────────────────────────────────────────────────────
+  socket.on(S2C.ROOM_STATE_SNAPSHOT, (fullState) => store().applyFullSync(fullState));
+  socket.on(S2C.ROOM_ACTION, (action) => store().applyAction(action));
 
-  socket.on('connect_error', (err) => {
-    if (err.message?.includes('auth') || err.message?.includes('token') || err.message?.includes('unauthorized')) {
-      useRmhTubeStore.getState().setConnectionStatus('error');
-    }
-  });
+  socket.on(S2C.PEERS_WAITING, (waiting: PeerWaitState | null) =>
+    store().setPeersWaiting(waiting?.peers?.length ? waiting : null),
+  );
 
-  // ─── State synchronization ──────────────────────────────────
+  // ─── Video sync ───────────────────────────────────────────────────────
+  socket.on(S2C.SYNC_STATE, (videoState) => store().updateVideoState(videoState));
 
-  socket.on(S2C.ROOM_STATE_SNAPSHOT, (fullState) => {
-    useRmhTubeStore.getState().applyFullSync(fullState);
-  });
+  /** Patch the live video state, stamped on the shared clock. */
+  const patchVideo = (patch: Record<string, unknown>) => {
+    const room = store().room;
+    if (!room) return;
+    store().updateVideoState({ ...room.videoState, ...patch, updatedAt: getServerNow() });
+  };
 
-  socket.on(S2C.ROOM_ACTION, (action) => {
-    useRmhTubeStore.getState().applyAction(action);
-  });
-
-  // ─── Video sync ─────────────────────────────────────────────
-
-  socket.on(S2C.SYNC_STATE, (videoState) => {
-    useRmhTubeStore.getState().updateVideoState(videoState);
-  });
-
-  socket.on(S2C.SYNC_PLAY, () => {
-    const room = useRmhTubeStore.getState().room;
-    if (room) {
-      useRmhTubeStore.getState().updateVideoState({
-        ...room.videoState,
-        playing: true,
-        updatedAt: getServerNow(),
-      });
-    }
-  });
-
-  socket.on(S2C.SYNC_PAUSE, () => {
-    const room = useRmhTubeStore.getState().room;
-    if (room) {
-      useRmhTubeStore.getState().updateVideoState({
-        ...room.videoState,
-        playing: false,
-        updatedAt: getServerNow(),
-      });
-    }
-  });
-
-  socket.on(S2C.SYNC_SEEK, (data: { time: number }) => {
-    const room = useRmhTubeStore.getState().room;
-    if (room) {
-      useRmhTubeStore.getState().updateVideoState({
-        ...room.videoState,
-        currentTime: data.time,
-        updatedAt: getServerNow(),
-      });
-    }
-  });
+  socket.on(S2C.SYNC_PLAY, () => patchVideo({ playing: true }));
+  socket.on(S2C.SYNC_PAUSE, () => patchVideo({ playing: false }));
+  socket.on(S2C.SYNC_SEEK, (data: { time: number }) => patchVideo({ currentTime: data.time }));
+  socket.on(S2C.SYNC_SPEED_CHANGED, (data: { speed: number }) =>
+    patchVideo({ playbackRate: data.speed }),
+  );
 
   socket.on(S2C.SYNC_MEDIA_CHANGED, () => {
-    // Media change comes as a room action — the full sync handles it
-    // But we also reset video state immediately
-    useRmhTubeStore.getState().updateVideoState({
+    // The queue advance arrives as a room action; this just stops the outgoing
+    // item playing on over the incoming one.
+    store().updateVideoState({
       playing: false,
       currentTime: 0,
       playbackRate: 1,
@@ -163,64 +145,48 @@ export async function connectToRmhTube(): Promise<Socket> {
     });
   });
 
-  // ─── Phase 2: Synced Playback Speed ─────────────────────────
+  // ─── Chat ─────────────────────────────────────────────────────────────
+  socket.on(S2C.CHAT_TYPING_INDICATOR, (data: { userId: string; userName: string }) => {
+    const room = store().room;
+    if (!room) return;
 
-  socket.on(S2C.SYNC_SPEED_CHANGED, (data: { speed: number }) => {
-    const room = useRmhTubeStore.getState().room;
-    if (room) {
-      useRmhTubeStore.getState().updateVideoState({
-        ...room.videoState,
-        playbackRate: data.speed,
-        updatedAt: getServerNow(),
+    if (!room.typingUsers.includes(data.userId)) {
+      useRmhTubeStore.setState({
+        room: { ...room, typingUsers: [...room.typingUsers, data.userId] },
       });
     }
-  });
 
-  // ─── Phase 1: Typing Indicators ─────────────────────────────
-
-  socket.on(S2C.CHAT_TYPING_INDICATOR, (data: { userId: string; userName: string }) => {
-    const room = useRmhTubeStore.getState().room;
-    if (!room) return;
-    // Add to typing users (if not already present)
-    const typingUsers = room.typingUsers.includes(data.userId)
-      ? room.typingUsers
-      : [...room.typingUsers, data.userId];
-    useRmhTubeStore.setState({
-      room: { ...room, typingUsers },
-    });
-    // Auto-clear after 3 seconds
-    setTimeout(() => {
-      const currentRoom = useRmhTubeStore.getState().room;
-      if (currentRoom) {
+    // Restart this user's expiry. Previously every signal queued its own
+    // timeout, so the first one to fire cleared an indicator that later
+    // keystrokes had refreshed — the dots flickered while someone typed.
+    clearTimeout(typingTimers.get(data.userId));
+    typingTimers.set(
+      data.userId,
+      setTimeout(() => {
+        typingTimers.delete(data.userId);
+        const current = store().room;
+        if (!current) return;
         useRmhTubeStore.setState({
           room: {
-            ...currentRoom,
-            typingUsers: currentRoom.typingUsers.filter((id) => id !== data.userId),
+            ...current,
+            typingUsers: current.typingUsers.filter((id) => id !== data.userId),
           },
         });
-      }
-    }, 3000);
+      }, TYPING_TTL_MS),
+    );
   });
 
-  // ─── Phase 4: Invite Links ──────────────────────────────────
-
-  socket.on(S2C.ROOM_INVITE_CREATED, (data: { code: string; expiresAt: number; maxUses: number }) => {
-    toast.success(`Invite created: ${data.code}`);
-  });
-
-  // ─── Queue ──────────────────────────────────────────────────
+  // ─── Queue / invites ──────────────────────────────────────────────────
+  socket.on(S2C.ROOM_INVITE_CREATED, (data: { code: string; expiresAt: number; maxUses: number }) =>
+    toast.success(`Invite created: ${data.code}`),
+  );
 
   socket.on(S2C.QUEUE_UPDATED, (data: { queue: import('./types').ClientQueueItem[] }) => {
-    const room = useRmhTubeStore.getState().room;
-    if (room) {
-      useRmhTubeStore.setState({
-        room: { ...room, queue: data.queue },
-      });
-    }
+    const room = store().room;
+    if (room) useRmhTubeStore.setState({ room: { ...room, queue: data.queue } });
   });
 
-  // ─── Errors ─────────────────────────────────────────────────
-
+  // ─── Removal / errors ─────────────────────────────────────────────────
   socket.on(S2C.ERROR, (error: { code?: string; message?: string; roomId?: string }) => {
     const code = error?.code ?? 'UNKNOWN';
     const message = error?.message ?? 'An unknown error occurred.';
@@ -228,55 +194,52 @@ export async function connectToRmhTube(): Promise<Socket> {
     toast.error(message);
 
     if (code === 'ROOM_NOT_FOUND' && error.roomId) {
-      useRmhTubeStore.getState().removeRoomFromHistory(error.roomId);
+      store().removeRoomFromHistory(error.roomId);
     }
   });
 
   socket.on(S2C.NOT_IN_ROOM, () => {
-    const store = useRmhTubeStore.getState();
-    if (store.room) {
+    if (store().room) {
       console.warn('[RmhTube] Server reports NOT_IN_ROOM — clearing stale state');
-      store.leaveRoom();
+      store().leaveRoom();
     }
   });
 
   socket.on(S2C.ROOM_KICKED, () => {
     toast.warning('You were kicked from the room.');
-    useRmhTubeStore.getState().leaveRoom();
+    store().leaveRoom();
   });
 
   socket.on(S2C.ROOM_DISBANDED, () => {
     toast.info('The room was closed.');
-    useRmhTubeStore.getState().leaveRoom();
+    store().leaveRoom();
   });
-
-  return socket;
 }
 
-// ─── Socket Access ───────────────────────────────────────────────
+// ─── Access ─────────────────────────────────────────────────────────────────
 
 export function getSocket(): Socket | null {
-  return socket;
+  return client?.socket ?? null;
 }
 
-// ─── Disconnect ──────────────────────────────────────────────────
+export function reconnectNow(): void {
+  client?.reconnectNow();
+}
 
 export function disconnectFromRmhTube(): void {
-  if (clockSyncTimer) { clearInterval(clockSyncTimer); clockSyncTimer = null; }
+  stopClockSync();
+  for (const timer of typingTimers.values()) clearTimeout(timer);
+  typingTimers.clear();
   resetClock();
-  if (socket) {
-    socket.disconnect();
-    socket = null;
-  }
-  useRmhTubeStore.getState().reset();
+  client?.destroy();
+  client = null;
+  store().reset();
 }
 
-// ─── Emit Helper ─────────────────────────────────────────────────
-
-export function emit(event: string, data?: unknown): void {
-  if (!socket?.connected) {
-    console.warn(`[RmhTube] Cannot emit "${event}" — not connected`);
-    return;
+export function emit(event: string, data?: unknown, options?: { queue?: boolean }): boolean {
+  if (!client) {
+    console.warn(`[RmhTube] Cannot emit "${event}" — no connection`);
+    return false;
   }
-  socket.emit(event, data);
+  return client.emit(event, data, options);
 }

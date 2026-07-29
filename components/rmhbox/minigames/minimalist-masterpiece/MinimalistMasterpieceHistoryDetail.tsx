@@ -64,7 +64,7 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
   return (
     <div className="space-y-6">
       {/* Summary header */}
-      <div className="text-sm text-(--rmhbox-text-muted)">
+      <div className="text-sm text-(--app-text-muted)">
         {t("rounds-played", { count: totalRounds, defaultValue: "{{count}} round played", defaultValue_other: "{{count}} rounds played" })}
       </div>
 
@@ -78,17 +78,17 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
         const drawings = (roundEnd?.payload.drawings as LoggedDrawing[]) ?? [];
 
         return (
-          <div key={roundNum} className="rounded-lg border border-(--rmhbox-border) p-4 space-y-3">
+          <div key={roundNum} className="rounded-lg border border-(--app-border) p-4 space-y-3">
             {/* Round header */}
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-(--rmhbox-text)">{t("round-number", { round: roundNum, defaultValue: "Round {{round}}" })}</span>
-              <span className="text-xs text-(--rmhbox-text-muted)">
+              <span className="text-sm font-semibold text-(--app-text)">{t("round-number", { round: roundNum, defaultValue: "Round {{round}}" })}</span>
+              <span className="text-xs text-(--app-text-muted)">
                 {t("drawings-count", { count: drawings.length, defaultValue: "{{count}} drawing", defaultValue_other: "{{count}} drawings" })}
               </span>
             </div>
 
             {/* Prompt */}
-            <div className="text-sm text-(--rmhbox-accent)">&quot;{promptText}&quot;</div>
+            <div className="text-sm text-(--app-accent)">&quot;{promptText}&quot;</div>
 
             {/* Reconstructed drawing images */}
             {drawings.length > 0 && (
@@ -111,15 +111,15 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
             {/* Rankings with market values and auction winners */}
             {rankings.length > 0 && (
               <div className="space-y-1">
-                <h5 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase tracking-wide">{t("market-values", { defaultValue: "Market Values" })}</h5>
+                <h5 className="text-xs font-semibold text-(--app-text-muted) uppercase tracking-wide">{t("market-values", { defaultValue: "Market Values" })}</h5>
                 {rankings.map((r, j) => {
                   const artist = players.find((p) => p.userId === r.artistUserId);
                   return (
-                    <div key={j} className="flex items-center justify-between rounded-md bg-(--rmhbox-surface) px-3 py-1.5 text-sm">
+                    <div key={j} className="flex items-center justify-between rounded-md bg-(--app-surface) px-3 py-1.5 text-sm">
                       <div className="flex flex-col">
-                        <span className="text-(--rmhbox-text)">#{r.rank} {artist?.userName ?? r.artistUserName ?? 'Unknown'}</span>
+                        <span className="text-(--app-text)">#{r.rank} {artist?.userName ?? r.artistUserName ?? 'Unknown'}</span>
                         {r.winnerName && (
-                          <span className="text-xs text-(--rmhbox-text-muted)">
+                          <span className="text-xs text-(--app-text-muted)">
                             {t("won-by", { name: r.winnerName, paid: r.winnerPaid, defaultValue: "Won by {{name}} for {{paid}} coins" })}
                             {(r.overbidPenalty ?? 0) > 0 && (
                               <span className="text-red-500 ml-1">{t("overbid-penalty", { penalty: r.overbidPenalty, defaultValue: "(penalty: -{{penalty}})" })}</span>
@@ -127,7 +127,7 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
                           </span>
                         )}
                       </div>
-                      <span className="font-medium text-(--rmhbox-accent)">{t("market-value-coins", { value: r.marketValue, defaultValue: "{{value}} coins" })}</span>
+                      <span className="font-medium text-(--app-accent)">{t("market-value-coins", { value: r.marketValue, defaultValue: "{{value}} coins" })}</span>
                     </div>
                   );
                 })}
@@ -137,19 +137,19 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
             {/* Score breakdown for this round */}
             {scoreBreakdowns.length > 0 && (
               <div className="space-y-1">
-                <h5 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase tracking-wide">{t("round-scores", { defaultValue: "Round Scores" })}</h5>
+                <h5 className="text-xs font-semibold text-(--app-text-muted) uppercase tracking-wide">{t("round-scores", { defaultValue: "Round Scores" })}</h5>
                 {scoreBreakdowns.map((sb, j) => {
                   const player = players.find((p) => p.userId === sb.userId);
                   return (
-                    <div key={j} className="flex items-center justify-between rounded-md bg-(--rmhbox-surface) px-3 py-1 text-xs">
-                      <span className="text-(--rmhbox-text)">{player?.userName ?? sb.userName ?? 'Unknown'}</span>
-                      <div className="flex gap-3 text-(--rmhbox-text-muted)">
+                    <div key={j} className="flex items-center justify-between rounded-md bg-(--app-surface) px-3 py-1 text-xs">
+                      <span className="text-(--app-text)">{player?.userName ?? sb.userName ?? 'Unknown'}</span>
+                      <div className="flex gap-3 text-(--app-text-muted)">
                         <span>{t("painted-value", { value: sb.paintedValue, defaultValue: "Painted: {{value}}" })}</span>
                         <span>{t("owned-value", { value: sb.ownedValue, defaultValue: "Owned: {{value}}" })}</span>
                         {sb.overbidPenalty > 0 && (
                           <span className="text-red-500">{t("score-penalty", { value: sb.overbidPenalty, defaultValue: "Penalty: -{{value}}" })}</span>
                         )}
-                        <span className="font-medium text-(--rmhbox-accent)">{t("total-score", { value: sb.totalScore, defaultValue: "Total: {{value}}" })}</span>
+                        <span className="font-medium text-(--app-accent)">{t("total-score", { value: sb.totalScore, defaultValue: "Total: {{value}}" })}</span>
                       </div>
                     </div>
                   );
@@ -163,16 +163,16 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
       {/* Cumulative scores */}
       {cumulativeScores && Object.keys(cumulativeScores).length > 0 && totalRounds > 1 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-semibold text-(--rmhbox-text)">{t("cumulative-scores", { defaultValue: "Cumulative Scores" })}</h4>
+          <h4 className="text-sm font-semibold text-(--app-text)">{t("cumulative-scores", { defaultValue: "Cumulative Scores" })}</h4>
           <div className="space-y-1">
             {Object.entries(cumulativeScores)
               .sort(([, a], [, b]) => b - a)
               .map(([userId, score], i) => {
                 const player = players.find((p) => p.userId === userId);
                 return (
-                  <div key={userId} className="flex items-center justify-between rounded-md bg-(--rmhbox-surface) px-3 py-1.5 text-sm">
-                    <span className="text-(--rmhbox-text)">#{i + 1} {player?.userName ?? 'Unknown'}</span>
-                    <span className="font-medium text-(--rmhbox-accent)">{t("score-pts", { score, defaultValue: "{{score}} pts" })}</span>
+                  <div key={userId} className="flex items-center justify-between rounded-md bg-(--app-surface) px-3 py-1.5 text-sm">
+                    <span className="text-(--app-text)">#{i + 1} {player?.userName ?? 'Unknown'}</span>
+                    <span className="font-medium text-(--app-accent)">{t("score-pts", { score, defaultValue: "{{score}} pts" })}</span>
                   </div>
                 );
               })}

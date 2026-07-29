@@ -112,10 +112,10 @@ function createStub(name: string): ComponentType<MinigameProps> {
   const Stub = () => {
     const { t } = useTranslation("c-rmhbox");
     return (
-    <div className="flex flex-col items-center justify-center gap-2 p-8 text-center text-(--rmhbox-text)">
-      <Gamepad2 className="h-10 w-10 text-(--rmhbox-text-muted)" />
+    <div className="flex flex-col items-center justify-center gap-2 p-8 text-center text-(--app-text)">
+      <Gamepad2 className="h-10 w-10 text-(--app-text-muted)" />
       <h3 className="text-xl font-bold">{name}</h3>
-      <p className="text-sm text-(--rmhbox-text-muted)">{t("minigame-coming-soon", { defaultValue: "Minigame coming soon…" })}</p>
+      <p className="text-sm text-(--app-text-muted)">{t("minigame-coming-soon", { defaultValue: "Minigame coming soon…" })}</p>
     </div>
     );
   };
@@ -151,7 +151,7 @@ const MINIGAME_COMPONENTS: Record<string, React.LazyExoticComponent<ComponentTyp
 function LoadingFallback() {
   const { t } = useTranslation("c-rmhbox");
   return (
-    <div className="flex items-center justify-center gap-2 p-8 text-(--rmhbox-text-muted)">
+    <div className="flex items-center justify-center gap-2 p-8 text-(--app-text-muted)">
       <Loader2 className="h-6 w-6 animate-spin" />
       <span>{t("loading-minigame", { defaultValue: "Loading minigame…" })}</span>
     </div>
@@ -163,9 +163,9 @@ function UnknownMinigame({ id }: { id: string }) {
   const { t } = useTranslation("c-rmhbox");
   return (
     <div className="flex flex-col items-center justify-center gap-2 p-8 text-center">
-      <HelpCircle className="h-10 w-10 text-(--rmhbox-danger)" />
-      <h3 className="text-lg font-bold text-(--rmhbox-danger)">{t("unknown-minigame", { defaultValue: "Unknown Minigame" })}</h3>
-      <p className="text-sm text-(--rmhbox-text-muted)">
+      <HelpCircle className="h-10 w-10 text-(--app-danger)" />
+      <h3 className="text-lg font-bold text-(--app-danger)">{t("unknown-minigame", { defaultValue: "Unknown Minigame" })}</h3>
+      <p className="text-sm text-(--app-text-muted)">
         {t("no-component-found", { defaultValue: "No component found for \"{{id}}\"", id })}
       </p>
     </div>

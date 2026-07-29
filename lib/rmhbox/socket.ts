@@ -1,10 +1,9 @@
 /**
- * RMHbox — Socket.io Client Wrapper
+ * RMHbox — realtime client.
  *
- * Manages the WebSocket connection to the standalone RMHbox server.
- * Handles authentication, reconnection with exponential backoff,
- * connection state management, and global event routing to the
- * Zustand store.
+ * Connection lifecycle, reconnect tuning, credential refresh and the wake
+ * signals live in `lib/shared/realtime/client`; this file is the RMHbox event
+ * map and its two credential paths.
  *
  * Reference: docs/rmhbox/design-spec/core.md §19
  * Implementation: docs/rmhbox/implementation/phase-4.md §5
@@ -12,213 +11,163 @@
 
 'use client';
 
-import { io, Socket } from 'socket.io-client';
-import { ensureTrailingSlash } from '@/lib/url';
+import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';
+import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
+import type { PeerWaitState } from '@/lib/shared/realtime/types';
 import { useRMHboxStore } from './store';
 import { S2C } from './events';
 import { toast } from './toast-store';
 
-// ─── Module-Level Socket Reference ──────────────────────────────
+let client: RealtimeClient | null = null;
 
-let socket: Socket | null = null;
+const store = () => useRMHboxStore.getState();
 
-// ─── Connection ─────────────────────────────────────────────────
+export interface DiscordContext {
+  channelId: string | null;
+  guildId: string | null;
+}
 
 /**
- * Connect to the RMHbox WebSocket server.
+ * Connect to the RMHbox server.
  *
- * Pass a `discordToken` (OAuth2 access token from the Discord Embedded App SDK)
- * to authenticate via Discord Activity without requiring a site login.
- * If the Discord account is linked to a site account, that account's identity
- * is used automatically on the server. Without a discordToken, falls back to
- * the Better Auth session token for users already logged in to the site.
+ * Two credential paths. A `discordToken` (OAuth2 access token from the Discord
+ * Embedded App SDK) authenticates an Activity player with no site login — if
+ * the Discord account is linked, the server resolves the site identity itself.
+ * Otherwise the Better Auth session token is used, re-read per attempt so a
+ * reconnect after a refresh carries the current one.
  *
- * If an existing socket is alive but disconnected, it is torn down first
- * to prevent orphaned listeners from overwriting the connection status.
+ * `discordContext` (voice channel + guild) lets the server put everyone in the
+ * same voice chat into the same lobby.
  *
- * Pass `discordContext` (voice channel + guild from the Discord SDK) to enable
- * auto-connecting everyone in the same voice chat to the same lobby.
- *
- * @returns The connected Socket instance
- * @throws If no auth credential is available
+ * @throws If no credential is available.
  */
 export async function connectToRMHbox(
   discordToken?: string,
-  discordContext?: { channelId: string | null; guildId: string | null },
+  discordContext?: DiscordContext,
 ): Promise<Socket> {
-  // If already connected, return existing socket
-  if (socket?.connected) return socket;
-
-  // ── Tear down stale socket before creating a new one ────────
-  // Without this, the old socket's reconnect/disconnect handlers
-  // can overwrite the new socket's connection status.
-  if (socket) {
-    socket.removeAllListeners();
-    socket.disconnect();
-    socket = null;
+  if (client) {
+    client.reconnectNow();
+    return client.socket;
   }
 
-  const store = useRMHboxStore.getState();
-  store.setConnectionStatus('connecting');
-
-  // Resolve credentials: Discord token takes priority over session token
-  let fallbackToken: string | undefined;
   if (!discordToken) {
     const session = await authClient.getSession();
-    fallbackToken = session?.data?.session?.token;
-    if (!fallbackToken) {
-      store.setConnectionStatus('error');
+    if (!session?.data?.session?.token) {
+      store().setConnectionStatus('error');
       throw new Error('Not authenticated');
     }
   }
 
-  // @ts-ignore — import.meta.env is Vite-only; this file is never executed server-side
-  const serverUrl = ensureTrailingSlash(import.meta.env.VITE_RMHBOX_SOCKET_URL);
-
-  socket = io(serverUrl, {
+  client = createRealtimeClient({
+    name: 'RMHbox',
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore — import.meta.env is Vite-only; this module never runs server-side
+    url: import.meta.env.VITE_RMHBOX_SOCKET_URL,
     path: '/rmhbox-ws/',
-    auth: (cb) => {
+    auth: async () => {
       if (discordToken) {
-        // Discord Activity: token is stable for the session lifetime.
-        // Include voice-channel context so the server can auto-connect
-        // everyone in the same voice chat to the same lobby.
-        cb({
+        // Stable for the Activity's lifetime, so no refresh to do.
+        return {
           discordToken,
           channelId: discordContext?.channelId ?? undefined,
           guildId: discordContext?.guildId ?? undefined,
-        });
-      } else {
-        // Site login: refresh the session token on every reconnection attempt
-        authClient
-          .getSession()
-          .then((s) => cb({ token: s?.data?.session?.token ?? fallbackToken }))
-          .catch(() => cb({ token: fallbackToken }));
+        };
       }
+      const session = await authClient.getSession();
+      return { token: session?.data?.session?.token };
     },
-    reconnection: true,
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 10000,
-    timeout: 10000,
+    onStatus: (status) => {
+      store().setConnectionStatus(status);
+      if (status === 'disconnected' || status === 'error') store().setPeersWaiting(null);
+    },
+    bind: registerHandlers,
   });
 
-  // ─── Connection lifecycle listeners ─────────────────────────
-  socket.on('connect', () => {
-    useRMHboxStore.getState().setConnectionStatus('connected');
-  });
+  return client.socket;
+}
 
-  socket.on('disconnect', (reason) => {
-    // If server forced the disconnect, set error; otherwise we're reconnecting
-    if (reason === 'io server disconnect' || reason === 'io client disconnect') {
-      useRMHboxStore.getState().setConnectionStatus('disconnected');
-    } else {
-      useRMHboxStore.getState().setConnectionStatus('connecting');
-    }
-  });
+function registerHandlers(socket: Socket) {
+  // ─── State sync ───────────────────────────────────────────────────────
+  // The server re-associates a returning socket with its lobby slot by userId
+  // (see server/rmhbox/reconnection.ts) and pushes a snapshot, so there is no
+  // client-side re-join to do here.
+  socket.on(S2C.LOBBY_STATE_SNAPSHOT, (fullState) => store().applyFullSync(fullState));
+  socket.on(S2C.GAME_ACTION, (action) => store().applyAction(action));
+  socket.on(S2C.GAME_STATE_SNAPSHOT, (gameState) => store().setGameState(gameState));
 
-  socket.on('connect_error', (err) => {
-    // Auth-related failures won't resolve by retrying with the same session.
-    if (err.message?.includes('auth') || err.message?.includes('token') || err.message?.includes('unauthorized')) {
-      useRMHboxStore.getState().setConnectionStatus('error');
-    }
-  });
+  socket.on(S2C.SPECTATOR_TARGET_STATE, (targetInfo: import('./types').SpectatorTargetInfo) =>
+    store().setSpectatorTarget(targetInfo),
+  );
 
-  // ─── State synchronization listeners ────────────────────────
+  socket.on(S2C.PEERS_WAITING, (waiting: PeerWaitState | null) =>
+    store().setPeersWaiting(waiting?.peers?.length ? waiting : null),
+  );
 
-  socket.on(S2C.LOBBY_STATE_SNAPSHOT, (fullState) => {
-    useRMHboxStore.getState().applyFullSync(fullState);
-  });
-
-  socket.on(S2C.GAME_ACTION, (action) => {
-    useRMHboxStore.getState().applyAction(action);
-  });
-
-  socket.on(S2C.GAME_STATE_SNAPSHOT, (gameState) => {
-    useRMHboxStore.getState().setGameState(gameState);
-  });
-
-  socket.on(S2C.SPECTATOR_TARGET_STATE, (targetInfo: import('./types').SpectatorTargetInfo) => {
-    useRMHboxStore.getState().setSpectatorTarget(targetInfo);
-  });
-
+  // ─── Errors ───────────────────────────────────────────────────────────
   socket.on(S2C.ERROR, (error: { code?: string; message?: string }) => {
     const code = error?.code ?? 'UNKNOWN';
     const message = error?.message ?? 'An unknown error occurred.';
     console.error(`[RMHbox] Server error [${code}]: ${message}`);
-    // NO_VOICE_CHANNEL is an expected, silent outcome of voice-channel auto-join
-    // (user opened the Activity without a voice channel) — don't toast it.
+    // Opening the Activity outside a voice channel is an expected outcome of
+    // voice auto-join, not something to interrupt the player about.
     if (code === 'NO_VOICE_CHANNEL') return;
     toast.error(message);
   });
 
-  // If the server tells us we're not in a lobby, clear stale local state
   socket.on(S2C.NOT_IN_LOBBY, () => {
-    const store = useRMHboxStore.getState();
-    if (store.lobby) {
+    if (store().lobby) {
       console.warn('[RMHbox] Server reports NOT_IN_LOBBY — clearing stale lobby state');
-      store.leaveLobby();
+      store().leaveLobby();
     }
   });
 
-  // ─── Game Settings listeners (§12A) ───────────────────────────
+  // ─── Game settings (§12A) ─────────────────────────────────────────────
+  socket.on(
+    S2C.GAME_SETTINGS_OPENED,
+    (data: {
+      minigameId: string;
+      displayName: string;
+      schema: import('./types').GameSettingsSchema;
+      currentValues: import('./types').GameSettingValues;
+      mode: 'direct' | 'post-vote';
+    }) =>
+      store().setGameSettingsState({
+        minigameId: data.minigameId,
+        displayName: data.displayName,
+        schema: data.schema,
+        currentValues: data.currentValues,
+        mode: data.mode === 'post-vote' ? 'post-vote' : 'lobby',
+      }),
+  );
 
-  socket.on(S2C.GAME_SETTINGS_OPENED, (data: {
-    minigameId: string;
-    displayName: string;
-    schema: import('./types').GameSettingsSchema;
-    currentValues: import('./types').GameSettingValues;
-    mode: 'direct' | 'post-vote';
-  }) => {
-    useRMHboxStore.getState().setGameSettingsState({
-      minigameId: data.minigameId,
-      displayName: data.displayName,
-      schema: data.schema,
-      currentValues: data.currentValues,
-      mode: data.mode === 'post-vote' ? 'post-vote' : 'lobby',
-    });
-  });
-
-  socket.on(S2C.GAME_SETTINGS_UPDATED, (data: {
-    currentValues: import('./types').GameSettingValues;
-  }) => {
-    useRMHboxStore.getState().updateGameSettingsValues(data.currentValues);
-  });
-
-  return socket;
+  socket.on(
+    S2C.GAME_SETTINGS_UPDATED,
+    (data: { currentValues: import('./types').GameSettingValues }) =>
+      store().updateGameSettingsValues(data.currentValues),
+  );
 }
 
-// ─── Socket Access ──────────────────────────────────────────────
+// ─── Access ─────────────────────────────────────────────────────────────────
 
-/**
- * Get the current socket instance (may be null if not connected).
- */
 export function getSocket(): Socket | null {
-  return socket;
+  return client?.socket ?? null;
 }
 
-// ─── Disconnect ─────────────────────────────────────────────────
+export function reconnectNow(): void {
+  client?.reconnectNow();
+}
 
-/**
- * Disconnect from the RMHbox server and reset all state.
- */
 export function disconnectFromRMHbox(): void {
-  if (socket) {
-    socket.disconnect();
-    socket = null;
-  }
-  useRMHboxStore.getState().reset();
+  client?.destroy();
+  client = null;
+  store().reset();
 }
 
-// ─── Emit Helper ────────────────────────────────────────────────
-
-/**
- * Emit an event to the server with null-safety check.
- */
-export function emit(event: string, data?: unknown): void {
-  if (!socket?.connected) {
-    console.warn(`[RMHbox] Cannot emit "${event}" — not connected`);
-    return;
+export function emit(event: string, data?: unknown, options?: { queue?: boolean }): boolean {
+  if (!client) {
+    console.warn(`[RMHbox] Cannot emit "${event}" — no connection`);
+    return false;
   }
-  socket.emit(event, data);
+  return client.emit(event, data, options);
 }

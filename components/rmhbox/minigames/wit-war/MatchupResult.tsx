@@ -52,9 +52,9 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
         </motion.div>
       )}
 
-      <div className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4 text-center">
-        <div className="text-xs font-medium text-(--rmhbox-text-muted) mb-1">{t("the-prompt", { defaultValue: "The prompt:" })}</div>
-        <div className="text-lg font-bold text-(--rmhbox-text)">{promptText}</div>
+      <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-4 text-center">
+        <div className="text-xs font-medium text-(--app-text-muted) mb-1">{t("the-prompt", { defaultValue: "The prompt:" })}</div>
+        <div className="text-lg font-bold text-(--app-text)">{promptText}</div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -66,16 +66,16 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
           className={`rounded-xl border-2 p-4 ${
             winnerIsA && !isDraw
               ? 'border-green-500/60 bg-green-500/10'
-              : 'border-(--rmhbox-border) bg-(--rmhbox-surface)'
+              : 'border-(--app-border) bg-(--app-surface)'
           }`}
         >
           {winnerIsA && !isDraw && (
             <Trophy className="h-4 w-4 text-green-400 mb-1" />
           )}
-          <div className="text-sm font-medium text-(--rmhbox-text) mb-2">
+          <div className="text-sm font-medium text-(--app-text) mb-2">
             {answerA}
           </div>
-          <div className="text-xs font-semibold text-(--rmhbox-text-muted)">
+          <div className="text-xs font-semibold text-(--app-text-muted)">
             — {playerAName ?? t("player-a", { defaultValue: "Player A" })}
           </div>
         </motion.div>
@@ -88,16 +88,16 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
           className={`rounded-xl border-2 p-4 ${
             !winnerIsA && !isDraw
               ? 'border-green-500/60 bg-green-500/10'
-              : 'border-(--rmhbox-border) bg-(--rmhbox-surface)'
+              : 'border-(--app-border) bg-(--app-surface)'
           }`}
         >
           {!winnerIsA && !isDraw && (
             <Trophy className="h-4 w-4 text-green-400 mb-1" />
           )}
-          <div className="text-sm font-medium text-(--rmhbox-text) mb-2">
+          <div className="text-sm font-medium text-(--app-text) mb-2">
             {answerB}
           </div>
-          <div className="text-xs font-semibold text-(--rmhbox-text-muted)">
+          <div className="text-xs font-semibold text-(--app-text-muted)">
             — {playerBName ?? t("player-b", { defaultValue: "Player B" })}
           </div>
         </motion.div>
@@ -111,31 +111,31 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
         className="w-full"
       >
         <div className="flex justify-between text-sm font-bold mb-1">
-          <span className={winnerIsA ? 'text-green-400' : 'text-(--rmhbox-text-muted)'}>
+          <span className={winnerIsA ? 'text-green-400' : 'text-(--app-text-muted)'}>
             {votePercentA}%
           </span>
-          <span className={!winnerIsA && !isDraw ? 'text-green-400' : 'text-(--rmhbox-text-muted)'}>
+          <span className={!winnerIsA && !isDraw ? 'text-green-400' : 'text-(--app-text-muted)'}>
             {votePercentB}%
           </span>
         </div>
-        <div className="flex h-3 rounded-full overflow-hidden bg-(--rmhbox-border)">
+        <div className="flex h-3 rounded-full overflow-hidden bg-(--app-border)">
           <motion.div
             initial={{ width: '50%' }}
             animate={{ width: `${votePercentA}%` }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
-            className={`h-full ${winnerIsA ? 'bg-green-500' : 'bg-(--rmhbox-text-muted)/30'}`}
+            className={`h-full ${winnerIsA ? 'bg-green-500' : 'bg-(--app-text-muted)/30'}`}
           />
           <motion.div
             initial={{ width: '50%' }}
             animate={{ width: `${votePercentB}%` }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
-            className={`h-full ${!winnerIsA && !isDraw ? 'bg-green-500' : 'bg-(--rmhbox-text-muted)/30'}`}
+            className={`h-full ${!winnerIsA && !isDraw ? 'bg-green-500' : 'bg-(--app-text-muted)/30'}`}
           />
         </div>
       </motion.div>
 
       {isDraw && (
-        <div className="text-center text-sm font-medium text-(--rmhbox-text-muted)">
+        <div className="text-center text-sm font-medium text-(--app-text-muted)">
           {t("its-a-tie", { defaultValue: "It's a tie!" })}
         </div>
       )}

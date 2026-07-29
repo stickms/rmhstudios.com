@@ -64,7 +64,7 @@ function renderContent(
         return (
           <span
             key={i}
-            className="font-bold text-(--rmhtube-accent)"
+            className="font-bold text-(--app-accent)"
           >
             {part}
           </span>
@@ -288,29 +288,29 @@ export default function ChatPanel() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-3 py-2 border-b border-(--rmhtube-border)">
-        <h3 className="text-sm font-semibold text-(--rmhtube-text-muted)">{t("chat", { defaultValue: "Chat" })}</h3>
+      <div className="px-3 py-2 border-b border-(--app-border)">
+        <h3 className="text-sm font-semibold text-(--app-text-muted)">{t("chat", { defaultValue: "Chat" })}</h3>
       </div>
 
       {/* Pinned Message Banner */}
       {room.pinnedMessage && (
-        <div className="flex items-start gap-2 px-3 py-2 border-b border-(--rmhtube-border) bg-(--rmhtube-surface)">
-          <Pin className="h-3.5 w-3.5 shrink-0 mt-0.5 text-(--rmhtube-accent)" />
+        <div className="flex items-start gap-2 px-3 py-2 border-b border-(--app-border) bg-(--app-surface)">
+          <Pin className="h-3.5 w-3.5 shrink-0 mt-0.5 text-(--app-accent)" />
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-(--rmhtube-accent)">
+            <p className="text-xs font-semibold text-(--app-accent)">
               {t("pinned-by", { defaultValue: "Pinned by {{userName}}", userName: room.pinnedMessage.userName })}
             </p>
-            <p className="text-xs text-(--rmhtube-text) truncate">
+            <p className="text-xs text-(--app-text) truncate">
               {room.pinnedMessage.content}
             </p>
           </div>
           {isHost && (
             <button
               onClick={() => handlePin(room.pinnedMessage!.id, false)}
-              className="shrink-0 p-0.5 rounded hover:bg-(--rmhtube-border) transition-colors"
+              className="shrink-0 p-0.5 rounded hover:bg-(--app-border) transition-colors"
               title={t("unpin-message", { defaultValue: "Unpin message" })}
             >
-              <X className="h-3.5 w-3.5 text-(--rmhtube-text-muted)" />
+              <X className="h-3.5 w-3.5 text-(--app-text-muted)" />
             </button>
           )}
         </div>
@@ -319,7 +319,7 @@ export default function ChatPanel() {
       {/* Messages */}
       <div ref={containerRef} className="flex-1 overflow-y-auto px-1.5 py-3 space-y-1.5">
         {entries.length === 0 ? (
-          <p className="text-xs text-center py-4 text-(--rmhtube-text-dim)">
+          <p className="text-xs text-center py-4 text-(--app-text-dim)">
             {t("no-messages-yet", { defaultValue: "No messages yet" })}
           </p>
         ) : (
@@ -332,7 +332,7 @@ export default function ChatPanel() {
                   key={entry.id}
                   className="text-center py-1"
                 >
-                  <span className="text-xs italic text-(--rmhtube-text-dim)">
+                  <span className="text-xs italic text-(--app-text-dim)">
                     {entry.content}
                     {settings.showTimestamps && (
                       <span className="ml-2 opacity-60">
@@ -352,7 +352,7 @@ export default function ChatPanel() {
             return (
               <div
                 key={msg.id}
-                className="group relative rounded-md px-2 py-1 transition-colors hover:bg-(--rmhtube-surface)"
+                className="group relative rounded-md px-2 py-1 transition-colors hover:bg-(--app-surface)"
                 onMouseEnter={() => setHoveredMessageId(msg.id)}
                 onMouseLeave={() => {
                   setHoveredMessageId(null);
@@ -363,8 +363,8 @@ export default function ChatPanel() {
                 {/* Reply context */}
                 {msg.replyToId && msg.replyToUserName && (
                   <div className="flex items-center gap-1 mb-0.5 pl-3">
-                    <Reply className="h-3 w-3 text-(--rmhtube-text-dim) rotate-180" />
-                    <span className="text-[11px] text-(--rmhtube-text-dim) truncate max-w-50">
+                    <Reply className="h-3 w-3 text-(--app-text-dim) rotate-180" />
+                    <span className="text-[11px] text-(--app-text-dim) truncate max-w-50">
                       <span className="font-semibold">{msg.replyToUserName}</span>
                       {': '}
                       {msg.replyToContent}
@@ -376,15 +376,15 @@ export default function ChatPanel() {
                 <div className="flex items-baseline gap-1.5 text-sm">
                   {/* Pin icon */}
                   {isPinned && (
-                    <Pin className="h-3 w-3 shrink-0 text-(--rmhtube-accent) self-center" />
+                    <Pin className="h-3 w-3 shrink-0 text-(--app-accent) self-center" />
                   )}
 
                   {/* Author name */}
                   <span
                     className={`font-semibold shrink-0 ${
                       msg.userId === room.hostUserId
-                        ? 'text-(--rmhtube-accent)'
-                        : 'text-(--rmhtube-info)'
+                        ? 'text-(--app-accent)'
+                        : 'text-(--app-info)'
                     }`}
                   >
                     {msg.userName}
@@ -394,7 +394,7 @@ export default function ChatPanel() {
                   {(() => {
                     const stripped = stripEmbedUrls(msg.content);
                     return stripped ? (
-                      <span className="text-(--rmhtube-text) wrap-break-word min-w-0">
+                      <span className="text-(--app-text) wrap-break-word min-w-0">
                         {renderContent(stripped, msg.mentions, room.members)}
                       </span>
                     ) : null;
@@ -407,7 +407,7 @@ export default function ChatPanel() {
                         // Seek to the shared timestamp
                         emit(C2S.SYNC_SEEK, { time: msg.timestamp });
                       }}
-                      className="shrink-0 text-xs font-mono font-semibold text-(--rmhtube-accent) hover:underline"
+                      className="shrink-0 text-xs font-mono font-semibold text-(--app-accent) hover:underline"
                       title={t("jump-to", { defaultValue: "Jump to {{time}}", time: formatDuration(msg.timestamp) })}
                     >
                       {formatDuration(msg.timestamp)}
@@ -416,7 +416,7 @@ export default function ChatPanel() {
 
                   {/* Message timestamp */}
                   {settings.showTimestamps && (
-                    <span className="shrink-0 text-[11px] text-(--rmhtube-text-dim) ml-auto">
+                    <span className="shrink-0 text-[11px] text-(--app-text-dim) ml-auto">
                       {formatRelativeTime(msg.createdAt)}
                     </span>
                   )}
@@ -436,8 +436,8 @@ export default function ChatPanel() {
                           onClick={() => handleReaction(msg.id, emoji)}
                           className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs border transition-colors ${
                             hasReacted
-                              ? 'border-(--rmhtube-accent) bg-(--rmhtube-accent)/10 text-(--rmhtube-accent)'
-                              : 'border-(--rmhtube-border) bg-(--rmhtube-surface) text-(--rmhtube-text-muted) hover:border-(--rmhtube-text-muted)'
+                              ? 'border-(--app-accent) bg-(--app-accent)/10 text-(--app-accent)'
+                              : 'border-(--app-border) bg-(--app-surface) text-(--app-text-muted) hover:border-(--app-text-muted)'
                           }`}
                         >
                           <span>{emoji}</span>
@@ -450,17 +450,17 @@ export default function ChatPanel() {
 
                 {/* Hover action buttons (reply + reaction picker) */}
                 {hoveredMessageId === msg.id && (
-                  <div className="absolute -top-2 right-1 flex items-center gap-0.5 rounded-md border border-(--rmhtube-border) bg-(--rmhtube-bg) shadow-sm z-10">
+                  <div className="absolute -top-2 right-1 flex items-center gap-0.5 rounded-md border border-(--app-border) bg-(--app-bg) shadow-sm z-10">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setReplyTo(msg);
                         inputRef.current?.focus();
                       }}
-                      className="p-1 rounded hover:bg-(--rmhtube-surface) transition-colors"
+                      className="p-1 rounded hover:bg-(--app-surface) transition-colors"
                       title={t("reply", { defaultValue: "Reply" })}
                     >
-                      <Reply className="h-3.5 w-3.5 text-(--rmhtube-text-muted)" />
+                      <Reply className="h-3.5 w-3.5 text-(--app-text-muted)" />
                     </button>
                     <button
                       onClick={(e) => {
@@ -469,10 +469,10 @@ export default function ChatPanel() {
                           reactionPickerMessageId === msg.id ? null : msg.id,
                         );
                       }}
-                      className="p-1 rounded hover:bg-(--rmhtube-surface) transition-colors"
+                      className="p-1 rounded hover:bg-(--app-surface) transition-colors"
                       title={t("react", { defaultValue: "React" })}
                     >
-                      <SmilePlus className="h-3.5 w-3.5 text-(--rmhtube-text-muted)" />
+                      <SmilePlus className="h-3.5 w-3.5 text-(--app-text-muted)" />
                     </button>
                   </div>
                 )}
@@ -480,14 +480,14 @@ export default function ChatPanel() {
                 {/* Reaction emoji picker */}
                 {reactionPickerMessageId === msg.id && (
                   <div
-                    className="absolute -top-8 right-1 flex items-center gap-0.5 rounded-lg border border-(--rmhtube-border) bg-(--rmhtube-bg) shadow-lg px-1 py-0.5 z-20"
+                    className="absolute -top-8 right-1 flex items-center gap-0.5 rounded-lg border border-(--app-border) bg-(--app-bg) shadow-lg px-1 py-0.5 z-20"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {CHAT_REACTION_EMOJIS.map((emoji) => (
                       <button
                         key={emoji}
                         onClick={() => handleReaction(msg.id, emoji)}
-                        className="p-1 rounded hover:bg-(--rmhtube-surface) transition-colors text-sm"
+                        className="p-1 rounded hover:bg-(--app-surface) transition-colors text-sm"
                         title={emoji}
                       >
                         {emoji}
@@ -504,8 +504,8 @@ export default function ChatPanel() {
 
       {/* Typing indicator */}
       {typingText && (
-        <div className="px-3 py-1 border-t border-(--rmhtube-border)">
-          <p className="text-xs italic text-(--rmhtube-text-dim) animate-pulse">
+        <div className="px-3 py-1 border-t border-(--app-border)">
+          <p className="text-xs italic text-(--app-text-dim) animate-pulse">
             {typingText}
           </p>
         </div>
@@ -513,21 +513,21 @@ export default function ChatPanel() {
 
       {/* Reply preview */}
       {replyTo && (
-        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-(--rmhtube-border) bg-(--rmhtube-surface)">
-          <Reply className="h-3.5 w-3.5 shrink-0 text-(--rmhtube-accent) rotate-180" />
+        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-(--app-border) bg-(--app-surface)">
+          <Reply className="h-3.5 w-3.5 shrink-0 text-(--app-accent) rotate-180" />
           <div className="flex-1 min-w-0">
-            <span className="text-xs font-semibold text-(--rmhtube-accent)">
+            <span className="text-xs font-semibold text-(--app-accent)">
               {replyTo.userName}
             </span>
-            <p className="text-xs text-(--rmhtube-text-muted) truncate">
+            <p className="text-xs text-(--app-text-muted) truncate">
               {replyTo.content}
             </p>
           </div>
           <button
             onClick={() => setReplyTo(null)}
-            className="shrink-0 p-0.5 rounded hover:bg-(--rmhtube-border) transition-colors"
+            className="shrink-0 p-0.5 rounded hover:bg-(--app-border) transition-colors"
           >
-            <X className="h-3.5 w-3.5 text-(--rmhtube-text-muted)" />
+            <X className="h-3.5 w-3.5 text-(--app-text-muted)" />
           </button>
         </div>
       )}
@@ -536,16 +536,16 @@ export default function ChatPanel() {
       {showMentionDropdown && filteredMembers.length > 0 && (
         <div
           ref={mentionDropdownRef}
-          className="mx-3 mb-1 rounded-lg border border-(--rmhtube-border) bg-(--rmhtube-bg) shadow-lg overflow-hidden max-h-32 overflow-y-auto"
+          className="mx-3 mb-1 rounded-lg border border-(--app-border) bg-(--app-bg) shadow-lg overflow-hidden max-h-32 overflow-y-auto"
         >
           {filteredMembers.map((member) => (
             <button
               key={member.userId}
               onClick={() => insertMention(member.userName)}
-              className="flex items-center gap-2 w-full px-3 py-1.5 text-left text-sm hover:bg-(--rmhtube-surface) transition-colors"
+              className="flex items-center gap-2 w-full px-3 py-1.5 text-left text-sm hover:bg-(--app-surface) transition-colors"
             >
-              <AtSign className="h-3.5 w-3.5 text-(--rmhtube-text-dim)" />
-              <span className="text-(--rmhtube-text)">{member.userName}</span>
+              <AtSign className="h-3.5 w-3.5 text-(--app-text-dim)" />
+              <span className="text-(--app-text)">{member.userName}</span>
             </button>
           ))}
         </div>
@@ -568,7 +568,7 @@ export default function ChatPanel() {
       {/* Input */}
       <form
         onSubmit={handleSend}
-        className="flex gap-2 px-1.5 py-3 border-t border-(--rmhtube-border)"
+        className="flex gap-2 px-1.5 py-3 border-t border-(--app-border)"
       >
         <div className="relative flex-1 min-w-0">
           <input
@@ -579,7 +579,7 @@ export default function ChatPanel() {
             onKeyDown={(e) => shortcodes.onKeyDown(e)}
             maxLength={CHAT_MAX_LENGTH}
             placeholder={replyTo ? t("reply-to-placeholder", { defaultValue: "Reply to {{userName}}...", userName: replyTo.userName }) : t("type-a-message", { defaultValue: "Type a message..." })}
-            className="w-full px-3 py-2 rounded-lg text-sm border border-(--rmhtube-border) bg-(--rmhtube-bg) text-(--rmhtube-text) placeholder:text-(--rmhtube-text-dim) outline-none focus:ring-1 focus:ring-(--rmhtube-accent)"
+            className="w-full px-3 py-2 rounded-lg text-sm border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
           />
           {shortcodes.menu}
         </div>
@@ -587,7 +587,7 @@ export default function ChatPanel() {
           type="button"
           onClick={() => setShowGifPicker((v) => !v)}
           aria-label={t("add-gif-aria", { defaultValue: "Add a GIF" })}
-          className="shrink-0 rounded-lg px-2 py-2 text-(--rmhtube-text-dim) hover:text-(--rmhtube-accent) transition-colors"
+          className="shrink-0 rounded-lg px-2 py-2 text-(--app-text-dim) hover:text-(--app-accent) transition-colors"
         >
           <ImageIcon className="h-4 w-4" />
         </button>
@@ -595,12 +595,12 @@ export default function ChatPanel() {
           direction="up"
           onSelect={insertEmoji}
           className="flex shrink-0 items-center"
-          buttonClassName="text-(--rmhtube-text-dim) hover:text-(--rmhtube-accent)"
+          buttonClassName="text-(--app-text-dim) hover:text-(--app-accent)"
         />
         <button
           type="submit"
           disabled={!message.trim()}
-          className="shrink-0 rounded-lg px-3 py-2 transition-colors disabled:opacity-50 bg-(--rmhtube-accent) text-(--rmhtube-accent-fg) hover:bg-(--rmhtube-accent-hover)"
+          className="shrink-0 rounded-lg px-3 py-2 transition-colors disabled:opacity-50 bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
         >
           <Send className="h-4 w-4" />
         </button>
@@ -609,14 +609,14 @@ export default function ChatPanel() {
       {/* Context menu (pin/unpin) — for host/mod */}
       {contextMenuMessage && contextMenuPos && (
         <div
-          className="fixed z-50 rounded-lg border border-(--rmhtube-border) bg-(--rmhtube-bg) shadow-xl overflow-hidden py-1 min-w-35"
+          className="fixed z-50 rounded-lg border border-(--app-border) bg-(--app-bg) shadow-xl overflow-hidden py-1 min-w-35"
           style={{ left: contextMenuPos.x, top: contextMenuPos.y }}
           onClick={(e) => e.stopPropagation()}
         >
           {room.pinnedMessage?.id === contextMenuMessage.id ? (
             <button
               onClick={() => handlePin(contextMenuMessage.id, false)}
-              className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-(--rmhtube-text) hover:bg-(--rmhtube-surface) transition-colors"
+              className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-(--app-text) hover:bg-(--app-surface) transition-colors"
             >
               <Pin className="h-3.5 w-3.5" />
               {t("unpin-message-action", { defaultValue: "Unpin Message" })}
@@ -624,7 +624,7 @@ export default function ChatPanel() {
           ) : (
             <button
               onClick={() => handlePin(contextMenuMessage.id, true)}
-              className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-(--rmhtube-text) hover:bg-(--rmhtube-surface) transition-colors"
+              className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-(--app-text) hover:bg-(--app-surface) transition-colors"
             >
               <Pin className="h-3.5 w-3.5" />
               {t("pin-message-action", { defaultValue: "Pin Message" })}
@@ -637,7 +637,7 @@ export default function ChatPanel() {
               setContextMenuPos(null);
               inputRef.current?.focus();
             }}
-            className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-(--rmhtube-text) hover:bg-(--rmhtube-surface) transition-colors"
+            className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-(--app-text) hover:bg-(--app-surface) transition-colors"
           >
             <Reply className="h-3.5 w-3.5" />
             {t("reply", { defaultValue: "Reply" })}

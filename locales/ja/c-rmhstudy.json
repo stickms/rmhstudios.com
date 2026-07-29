@@ -19,7 +19,6 @@
   "card-count_other": "{{count}}枚のカード",
   "connecting": "接続中...",
   "connection-failed": "接続に失敗しました",
-  "copy-room-code": "ルームコードをコピー",
   "could-not-load-cards": "カードを読み込めませんでした",
   "create-room": "ルームを作成",
   "create-study-room": "学習ルームを作成",

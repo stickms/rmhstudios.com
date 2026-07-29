@@ -67,11 +67,11 @@ export default function MediaQueue() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-(--rmhtube-border)">
-        <h3 className="text-sm font-semibold text-(--rmhtube-text-muted)">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-(--app-border)">
+        <h3 className="text-sm font-semibold text-(--app-text-muted)">
           {t("queue-count", { defaultValue: "Queue ({{count}})", count: room.queue.length })}
           {totalDuration > 0 && (
-            <span className="font-normal text-(--rmhtube-text-dim)">
+            <span className="font-normal text-(--app-text-dim)">
               {' · '}{formatTotalDuration(totalDuration)}
             </span>
           )}
@@ -84,8 +84,8 @@ export default function MediaQueue() {
               onClick={handleLoopToggle}
               className={`p-1 rounded-md transition-colors ${
                 room.settings.loopQueue
-                  ? 'text-(--rmhtube-accent) bg-(--rmhtube-accent-dim)'
-                  : 'text-(--rmhtube-text-dim) hover:text-(--rmhtube-text-muted) hover:bg-(--rmhtube-surface-hover)'
+                  ? 'text-(--app-accent) bg-(--app-accent-dim)'
+                  : 'text-(--app-text-dim) hover:text-(--app-text-muted) hover:bg-(--app-surface-hover)'
               }`}
               title={room.settings.loopQueue ? t("loop-queue-on", { defaultValue: "Loop queue: ON" }) : t("loop-queue-off", { defaultValue: "Loop queue: OFF" })}
             >
@@ -97,7 +97,7 @@ export default function MediaQueue() {
           {isHost && (
             <button
               onClick={handleShuffle}
-              className="p-1 rounded-md transition-colors text-(--rmhtube-text-dim) hover:text-(--rmhtube-text-muted) hover:bg-(--rmhtube-surface-hover)"
+              className="p-1 rounded-md transition-colors text-(--app-text-dim) hover:text-(--app-text-muted) hover:bg-(--app-surface-hover)"
               title={t("shuffle-queue", { defaultValue: "Shuffle queue" })}
             >
               <Shuffle className="h-3.5 w-3.5" />
@@ -108,7 +108,7 @@ export default function MediaQueue() {
           {canAdd && (
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors bg-(--rmhtube-accent) text-(--rmhtube-accent-fg) hover:bg-(--rmhtube-accent-hover)"
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
             >
               <Plus className="h-3 w-3" />
               {t("add", { defaultValue: "Add" })}
@@ -120,7 +120,7 @@ export default function MediaQueue() {
       {/* Queue Items */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {room.queue.length === 0 ? (
-          <p className="text-sm text-center py-8 text-(--rmhtube-text-dim)">
+          <p className="text-sm text-center py-8 text-(--app-text-dim)">
             {t("queue-empty", { defaultValue: "Queue is empty" })}
           </p>
         ) : (
@@ -156,10 +156,10 @@ export default function MediaQueue() {
 
       {/* History Section (Phase 3.9) */}
       {room.playedItems && room.playedItems.length > 0 && (
-        <div className="border-t border-(--rmhtube-border)">
+        <div className="border-t border-(--app-border)">
           <button
             onClick={() => setShowHistory((prev) => !prev)}
-            className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-(--rmhtube-text-dim) hover:text-(--rmhtube-text-muted) transition-colors"
+            className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-(--app-text-dim) hover:text-(--app-text-muted) transition-colors"
           >
             <span className="flex items-center gap-1.5">
               <History className="h-3.5 w-3.5" />
@@ -178,21 +178,21 @@ export default function MediaQueue() {
                 <button
                   key={item.id}
                   onClick={() => handleReAddFromHistory(item.url, item.title)}
-                  className="flex items-start gap-2 w-full p-2 rounded-lg text-left transition-colors bg-(--rmhtube-bg) hover:bg-(--rmhtube-surface-hover) group"
+                  className="flex items-start gap-2 w-full p-2 rounded-lg text-left transition-colors bg-(--app-bg) hover:bg-(--app-surface-hover) group"
                   title={t("re-add-to-queue", { defaultValue: "Click to re-add to queue" })}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm truncate text-(--rmhtube-text) group-hover:text-(--rmhtube-accent)">
+                    <p className="text-sm truncate text-(--app-text) group-hover:text-(--app-accent)">
                       {item.title}
                     </p>
-                    <p className="text-xs text-(--rmhtube-text-dim)">
+                    <p className="text-xs text-(--app-text-dim)">
                       {item.addedByName}
                       {item.addedAt && (
                         <> · {new Date(item.addedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</>
                       )}
                     </p>
                   </div>
-                  <Plus className="h-3.5 w-3.5 shrink-0 mt-0.5 text-(--rmhtube-text-dim) opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Plus className="h-3.5 w-3.5 shrink-0 mt-0.5 text-(--app-text-dim) opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
               ))}
             </div>

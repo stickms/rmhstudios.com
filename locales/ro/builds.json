@@ -1,0 +1,23 @@
+{
+  "badge-app": "App",
+  "badge-game": "Game",
+  "build-details": "Build details",
+  "empty-curated": "No builds match that search.",
+  "empty-user-no-builds": "No user builds yet — be the first to submit one.",
+  "empty-user-search": "No user builds match that search.",
+  "loading": "Loading…",
+  "open": "Open",
+  "search-builds-label": "Search builds",
+  "search-builds-placeholder": "Search builds...",
+  "search-user-builds-placeholder": "Search user builds...",
+  "sort-featured": "Featured",
+  "sort-label": "Sort",
+  "sort-most-liked": "Most liked",
+  "sort-most-viewed": "Most viewed",
+  "sort-name-az": "Name (A–Z)",
+  "sort-recent": "Recent",
+  "submit": "Submit",
+  "views-count_one": "{{count}} views",
+  "views-count_few": "{{count}} views",
+  "views-count_other": "{{count}} views"
+}

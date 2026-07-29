@@ -24,7 +24,7 @@ export default function RoomSettings() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="rounded-md p-2 transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
+        className="rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
         title={t("room-settings", { defaultValue: "Room Settings" })}
       >
         <Settings className="h-5 w-5" />
@@ -105,10 +105,10 @@ function SettingsModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-xl border border-(--rmhtube-border) bg-(--rmhtube-surface) p-6 shadow-xl">
+      <div className="relative w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-xl border border-(--app-border) bg-(--app-surface) p-6 shadow-xl">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">{t("room-settings", { defaultValue: "Room Settings" })}</h3>
-          <button onClick={onClose} className="rounded p-1 text-(--rmhtube-text-muted) hover:text-(--rmhtube-text)">
+          <button onClick={onClose} className="rounded p-1 text-(--app-text-muted) hover:text-(--app-text)">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -138,7 +138,7 @@ function SettingsModal({
           <ToggleOption label={t("custom-reactions", { defaultValue: "Custom Reactions" })} description={t("custom-reactions-desc", { defaultValue: "Set custom emoji reactions for this room" })} value={enableCustomReactions} onChange={setEnableCustomReactions} />
           {enableCustomReactions && (
             <div className="pl-1">
-              <label className="block text-xs font-medium text-(--rmhtube-text-muted) mb-1">
+              <label className="block text-xs font-medium text-(--app-text-muted) mb-1">
                 {t("comma-separated-emojis", { defaultValue: "Comma-separated emojis" })}
               </label>
               <input
@@ -146,7 +146,7 @@ function SettingsModal({
                 value={customReactionsInput}
                 onChange={(e) => setCustomReactionsInput(e.target.value)}
                 placeholder={t("emojis-placeholder", { defaultValue: "e.g. fire, heart, laughing" })}
-                className="w-full rounded-lg border border-(--rmhtube-border) bg-(--rmhtube-bg) px-3 py-2 text-sm text-(--rmhtube-text) placeholder:text-(--rmhtube-text-dim) focus:outline-none focus:ring-1 focus:ring-(--rmhtube-accent)"
+                className="w-full rounded-lg border border-(--app-border) bg-(--app-bg) px-3 py-2 text-sm text-(--app-text) placeholder:text-(--app-text-dim) focus:outline-none focus:ring-1 focus:ring-(--app-accent)"
               />
             </div>
           )}
@@ -154,7 +154,7 @@ function SettingsModal({
 
         <button
           onClick={handleSave}
-          className="w-full mt-2 py-2.5 rounded-lg font-semibold text-(--rmhtube-accent-fg) transition-colors bg-(--rmhtube-accent) hover:bg-(--rmhtube-accent-hover)"
+          className="w-full mt-2 py-2.5 rounded-lg font-semibold text-(--app-accent-fg) transition-colors bg-(--app-accent) hover:bg-(--app-accent-hover)"
         >
           {t("save", { defaultValue: "Save" })}
         </button>
@@ -165,7 +165,7 @@ function SettingsModal({
 
 function SectionHeader({ title }: { title: string }) {
   return (
-    <h4 className="text-xs font-semibold uppercase tracking-wider text-(--rmhtube-text-muted) mb-3">
+    <h4 className="text-xs font-semibold uppercase tracking-wider text-(--app-text-muted) mb-3">
       {title}
     </h4>
   );
@@ -185,13 +185,13 @@ function ToggleOption({
   return (
     <div className="flex items-center justify-between">
       <div>
-        <p className="text-sm font-medium text-(--rmhtube-text)">{label}</p>
-        <p className="text-xs text-(--rmhtube-text-dim)">{description}</p>
+        <p className="text-sm font-medium text-(--app-text)">{label}</p>
+        <p className="text-xs text-(--app-text-dim)">{description}</p>
       </div>
       <button
         onClick={() => onChange(!value)}
         className={`relative w-10 h-6 rounded-full transition-colors ${
-          value ? 'bg-(--rmhtube-accent)' : 'bg-(--rmhtube-border)'
+          value ? 'bg-(--app-accent)' : 'bg-(--app-border)'
         }`}
       >
         <span

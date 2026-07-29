@@ -28,9 +28,9 @@ export default function EmojiSentence({ emojis, maxEmojis, onRemove, readOnly = 
   return (
     <div className="flex flex-col items-center gap-2 w-full">
       {/* Constant-width container: 6 × 3rem cells + 5 × 0.25rem gaps + 2 × 0.75rem padding = ~21.25rem */}
-      <div className="flex flex-wrap items-center gap-1 min-h-14 p-3 rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) w-86">
+      <div className="flex flex-wrap items-center gap-1 min-h-14 p-3 rounded-xl bg-(--app-surface) border border-(--app-border) w-86">
         {safeEmojis.length === 0 ? (
-          <span className="text-(--rmhbox-text-muted) text-sm italic mx-auto">
+          <span className="text-(--app-text-muted) text-sm italic mx-auto">
             {readOnly ? 'Waiting for emojis…' : 'Tap emojis below to build your clue'}
           </span>
         ) : (
@@ -42,7 +42,7 @@ export default function EmojiSentence({ emojis, maxEmojis, onRemove, readOnly = 
                 disabled={readOnly}
                 onClick={() => !readOnly && onRemove?.(i)}
                 className={`p-1 rounded transition-transform ${
-                  readOnly ? 'cursor-default' : 'hover:scale-110 hover:bg-(--rmhbox-border) cursor-pointer'
+                  readOnly ? 'cursor-default' : 'hover:scale-110 hover:bg-(--app-border) cursor-pointer'
                 }`}
                 style={{ width: '3rem', height: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 title={readOnly ? undefined : 'Click to remove'}
@@ -63,7 +63,7 @@ export default function EmojiSentence({ emojis, maxEmojis, onRemove, readOnly = 
           })
         )}
       </div>
-      <span className="text-xs text-(--rmhbox-text-muted)">
+      <span className="text-xs text-(--app-text-muted)">
         {safeEmojis.length}/{maxEmojis} emojis
       </span>
     </div>

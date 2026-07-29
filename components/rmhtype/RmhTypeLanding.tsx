@@ -36,16 +36,16 @@ const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard'];
 function LeaderboardTable({ entries, loading }: { entries: LeaderboardEntry[]; loading: boolean }) {
   const { t } = useTranslation("c-rmhtype");
   if (loading) {
-    return <p className="text-sm text-(--rmhtype-text-muted) text-center py-4">{t("loading", { defaultValue: "Loading..." })}</p>;
+    return <p className="text-sm text-(--app-text-muted) text-center py-4">{t("loading", { defaultValue: "Loading..." })}</p>;
   }
   if (entries.length === 0) {
-    return <p className="text-sm text-(--rmhtype-text-muted) text-center py-4">{t("no-scores-yet", { defaultValue: "No scores yet. Be the first!" })}</p>;
+    return <p className="text-sm text-(--app-text-muted) text-center py-4">{t("no-scores-yet", { defaultValue: "No scores yet. Be the first!" })}</p>;
   }
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-(--rmhtype-text-muted) border-b border-(--rmhtype-border)">
+          <tr className="text-(--app-text-muted) border-b border-(--app-border)">
             <th className="text-left py-2 pr-3 font-medium">{t("col-rank", { defaultValue: "#" })}</th>
             <th className="text-left py-2 pr-3 font-medium">{t("col-player", { defaultValue: "Player" })}</th>
             <th className="text-right py-2 pr-3 font-medium">{t("col-score", { defaultValue: "Score" })}</th>
@@ -56,28 +56,28 @@ function LeaderboardTable({ entries, loading }: { entries: LeaderboardEntry[]; l
         </thead>
         <tbody>
           {entries.map((entry) => (
-            <tr key={entry.userId} className="border-b border-(--rmhtype-border)/50 last:border-b-0">
-              <td className="py-2.5 pr-3 font-mono text-(--rmhtype-text-muted)">
+            <tr key={entry.userId} className="border-b border-(--app-border)/50 last:border-b-0">
+              <td className="py-2.5 pr-3 font-mono text-(--app-text-muted)">
                 {entry.rank <= 3 ? ['🥇', '🥈', '🥉'][entry.rank - 1] : entry.rank}
               </td>
               <td className="py-2.5 pr-3 flex items-center gap-2">
                 {entry.avatarUrl ? (
                   <img src={entry.avatarUrl} alt="" className="h-5 w-5 rounded-full" />
                 ) : (
-                  <div className="h-5 w-5 rounded-full bg-(--rmhtype-accent)/20" />
+                  <div className="h-5 w-5 rounded-full bg-(--app-accent)/20" />
                 )}
                 <span className="truncate max-w-35">{entry.userName}</span>
               </td>
-              <td className="py-2.5 pr-3 text-right font-mono font-semibold text-(--rmhtype-accent)">
+              <td className="py-2.5 pr-3 text-right font-mono font-semibold text-(--app-accent)">
                 {entry.leaderboardScore.toFixed(1)}
               </td>
-              <td className="py-2.5 pr-3 text-right font-mono text-(--rmhtype-text-muted)">
+              <td className="py-2.5 pr-3 text-right font-mono text-(--app-text-muted)">
                 {entry.bestWpm.toFixed(1)}
               </td>
-              <td className="py-2.5 pr-3 text-right font-mono text-(--rmhtype-text-muted)">
+              <td className="py-2.5 pr-3 text-right font-mono text-(--app-text-muted)">
                 {entry.bestWpmAccuracy.toFixed(1)}%
               </td>
-              <td className="py-2.5 text-right font-mono text-(--rmhtype-text-muted)">
+              <td className="py-2.5 text-right font-mono text-(--app-text-muted)">
                 {entry.totalGamesPlayed}
               </td>
             </tr>
@@ -155,7 +155,7 @@ export default function RmhTypeLanding() {
   }, []);
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="app-viewport">
       <RmhTypeHeader backLabel="Builds" backHref="/builds" />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8" style={{ scrollbarGutter: 'stable both-edges' }}>
@@ -164,31 +164,31 @@ export default function RmhTypeLanding() {
           {/* Mode Selection */}
           <div className="text-center py-8">
             <div className="inline-flex items-center gap-2 mb-4">
-              <Keyboard className="h-8 w-8 text-(--rmhtype-accent)" />
+              <Keyboard className="h-8 w-8 text-(--app-accent)" />
               <h2 className="text-3xl font-bold">RMH Type</h2>
             </div>
-            <p className="text-(--rmhtype-text-muted) max-w-md mx-auto">
+            <p className="text-(--app-text-muted) max-w-md mx-auto">
               {t("hero-subtitle", { defaultValue: "Test your typing speed solo or race against friends in real-time." })}
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
             <Link to="/rmhtype/solo"
-              className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-8 text-left transition-all hover:border-(--rmhtype-accent) hover:bg-(--rmhtype-surface-hover)"
+              className="rounded-xl border border-(--app-border) bg-(--app-surface) p-8 text-left transition-all hover:border-(--app-accent) hover:bg-(--app-surface-hover)"
             >
-              <User className="h-8 w-8 mb-4 text-(--rmhtype-accent)" />
+              <User className="h-8 w-8 mb-4 text-(--app-accent)" />
               <h3 className="text-xl font-semibold mb-2">{t("solo-title", { defaultValue: "Solo Practice" })}</h3>
-              <p className="text-sm text-(--rmhtype-text-muted)">
+              <p className="text-sm text-(--app-text-muted)">
                 {t("solo-desc", { defaultValue: "Practice typing at your own pace. Track your WPM and accuracy, and compete on the leaderboard." })}
               </p>
             </Link>
 
             <Link to="/rmhtype/multiplayer"
-              className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-8 text-left transition-all hover:border-(--rmhtype-accent) hover:bg-(--rmhtype-surface-hover)"
+              className="rounded-xl border border-(--app-border) bg-(--app-surface) p-8 text-left transition-all hover:border-(--app-accent) hover:bg-(--app-surface-hover)"
             >
-              <Users className="h-8 w-8 mb-4 text-(--rmhtype-accent)" />
+              <Users className="h-8 w-8 mb-4 text-(--app-accent)" />
               <h3 className="text-xl font-semibold mb-2">{t("multiplayer-title", { defaultValue: "Multiplayer Race" })}</h3>
-              <p className="text-sm text-(--rmhtype-text-muted)">
+              <p className="text-sm text-(--app-text-muted)">
                 {t("multiplayer-desc", { defaultValue: "Create a room or join a friend. Race on the same passage and see who types fastest." })}
               </p>
             </Link>
@@ -197,13 +197,13 @@ export default function RmhTypeLanding() {
           {/* Leaderboards — all 3 difficulties */}
           <div className="space-y-6">
             <div className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-(--rmhtype-accent)" />
+              <Trophy className="h-5 w-5 text-(--app-accent)" />
               <h3 className="text-lg font-semibold">{t("leaderboards-title", { defaultValue: "Leaderboards" })}</h3>
-              <span className="text-xs text-(--rmhtype-text-muted) ml-auto">{t("leaderboards-ranked-by", { defaultValue: "Ranked by WPM × Accuracy" })}</span>
+              <span className="text-xs text-(--app-text-muted) ml-auto">{t("leaderboards-ranked-by", { defaultValue: "Ranked by WPM × Accuracy" })}</span>
             </div>
 
             {DIFFICULTIES.map((d) => (
-              <div key={d} className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-5">
+              <div key={d} className="rounded-xl border border-(--app-border) bg-(--app-surface) p-5">
                 <h4 className="text-sm font-semibold capitalize mb-3 flex items-center gap-2">
                   <span className={`inline-block w-2 h-2 rounded-full ${
                     d === 'easy' ? 'bg-green-400' : d === 'medium' ? 'bg-yellow-400' : 'bg-red-400'

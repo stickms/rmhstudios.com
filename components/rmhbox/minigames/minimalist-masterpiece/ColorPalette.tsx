@@ -46,15 +46,15 @@ export default function ColorPalette({ colors, selectedColor, onSelect, swatchSi
 
   return (
     <div className="flex items-center gap-2 flex-wrap justify-center">
-      {label && <span className="text-xs text-(--rmhbox-text-muted)">{label}</span>}
+      {label && <span className="text-xs text-(--app-text-muted)">{label}</span>}
       {colors.map((color) => (
         <button
           key={color}
           onClick={() => { onSelect(color); setShowPicker(false); }}
           className={`${swatchSize} rounded-full border-2 transition-transform ${
             selectedColor === color && !showPicker
-              ? 'border-(--rmhbox-accent) scale-110 ring-2 ring-(--rmhbox-accent)/40'
-              : 'border-(--rmhbox-border) hover:scale-105'
+              ? 'border-(--app-accent) scale-110 ring-2 ring-(--app-accent)/40'
+              : 'border-(--app-border) hover:scale-105'
           }`}
           style={{ backgroundColor: color }}
           aria-label={t("select-color", { defaultValue: "Select color {{color}}", color })}
@@ -65,8 +65,8 @@ export default function ColorPalette({ colors, selectedColor, onSelect, swatchSi
         <button
           className={`${swatchSize} rounded-full border-2 transition-transform flex items-center justify-center ${
             pickerSelected
-              ? 'border-(--rmhbox-accent) scale-110 ring-2 ring-(--rmhbox-accent)/40'
-              : 'border-(--rmhbox-border) hover:scale-105'
+              ? 'border-(--app-accent) scale-110 ring-2 ring-(--app-accent)/40'
+              : 'border-(--app-border) hover:scale-105'
           }`}
           style={{ backgroundColor: selectedColor }}
           onClick={() => setShowPicker((v) => !v)}
@@ -76,7 +76,7 @@ export default function ColorPalette({ colors, selectedColor, onSelect, swatchSi
           <Pipette size={14} className="text-white drop-shadow-[0_0_2px_rgba(0,0,0,0.8)]" />
         </button>
         {showPicker && (
-          <div className="absolute z-50 top-10 left-1/2 -translate-x-1/2 p-2 rounded-lg bg-(--rmhbox-surface) border border-(--rmhbox-border) shadow-lg">
+          <div className="absolute z-50 top-10 left-1/2 -translate-x-1/2 p-2 rounded-lg bg-(--app-surface) border border-(--app-border) shadow-lg">
             <HexColorPicker color={selectedColor} onChange={onSelect} />
           </div>
         )}

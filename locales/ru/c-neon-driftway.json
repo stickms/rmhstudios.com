@@ -28,6 +28,8 @@
   "play": "Играть",
   "play-again": "Играть снова",
   "players-count_one": "Игроки ({{count}}/6)",
+  "players-count_few": "Players ({{count}}/6)",
+  "players-count_many": "Players ({{count}}/6)",
   "players-count_other": "Игроки ({{count}}/6)",
   "race-over": "ГОНКА ЗАВЕРШЕНА",
   "race-starting-in": "Гонка начнется через",

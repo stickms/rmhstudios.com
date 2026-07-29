@@ -1,12 +1,25 @@
 {
   "chat-placeholder": "Trò chuyện...",
+  "connected": "Connected",
+  "connecting": "Connecting…",
+  "connection-lost": "Connection lost",
+  "continue-without-them": "Continue without them",
+  "copy-room-code": "Copy room code",
+  "dismiss": "Dismiss",
   "failed-to-load-media": "Không tải được phương tiện",
   "game-crashed": "Trò chơi gặp sự cố",
   "game-crashed-named": "{{gameName}} gặp sự cố",
+  "game-paused": "Game paused",
   "loading": "Đang tải…",
   "no-messages-yet": "Chưa có tin nhắn nào",
+  "not-connected": "Not connected",
+  "notifications": "Notifications",
   "react": "Phản ứng",
+  "reconnecting": "Reconnecting…",
+  "resuming-in": "Continuing without them in {{seconds}}s",
+  "resuming-now": "Continuing…",
   "return-home": "Về trang chủ",
   "try-again": "Thử lại",
-  "unexpected-error": "Đã xảy ra lỗi không mong muốn."
+  "unexpected-error": "Đã xảy ra lỗi không mong muốn.",
+  "waiting-for-peer": "Waiting for {{name}} to reconnect…"
 }

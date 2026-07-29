@@ -76,7 +76,7 @@ export default function AnswerReveal({
               className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
                 isCorrect
                   ? 'border-green-500/50 bg-green-500/10 text-green-400'
-                  : 'border-(--rmhbox-border) bg-(--rmhbox-bg) text-(--rmhbox-text-muted)'
+                  : 'border-(--app-border) bg-(--app-bg) text-(--app-text-muted)'
               }`}
             >
               <span className="font-bold">{LABELS[i]}.</span>
@@ -89,7 +89,7 @@ export default function AnswerReveal({
 
       {/* Player results */}
       <div className="space-y-2">
-        <h4 className="text-xs font-semibold uppercase text-(--rmhbox-text-muted)">{t("results", { defaultValue: "Results" })}</h4>
+        <h4 className="text-xs font-semibold uppercase text-(--app-text-muted)">{t("results", { defaultValue: "Results" })}</h4>
         {sorted.map((pr, i) => {
           const isMe = pr.userId === myPlayerId;
           return (
@@ -100,8 +100,8 @@ export default function AnswerReveal({
               transition={{ delay: i * 0.08, duration: 0.25 }}
               className={`flex flex-col gap-1 rounded-lg border px-3 py-2 ${
                 isMe
-                  ? 'border-(--rmhbox-accent)/50 bg-(--rmhbox-accent)/10'
-                  : 'border-(--rmhbox-border) bg-(--rmhbox-bg)'
+                  ? 'border-(--app-accent)/50 bg-(--app-accent)/10'
+                  : 'border-(--app-border) bg-(--app-bg)'
               }`}
             >
               <div className="flex items-center gap-2 justify-between">
@@ -112,12 +112,12 @@ export default function AnswerReveal({
                   ) : pr.passed ? (
                     <SkipForward className="h-4 w-4 text-yellow-400" />
                   ) : pr.timedOut ? (
-                    <Clock className="h-4 w-4 text-(--rmhbox-text-muted)" />
+                    <Clock className="h-4 w-4 text-(--app-text-muted)" />
                   ) : (
                     <X className="h-4 w-4 text-red-400" />
                   )}
 
-                  <span className={`text-sm font-medium ${isMe ? 'text-(--rmhbox-accent)' : 'text-(--rmhbox-text)'}`}>
+                  <span className={`text-sm font-medium ${isMe ? 'text-(--app-accent)' : 'text-(--app-text)'}`}>
                     {pr.userName}
                   </span>
 
@@ -133,7 +133,7 @@ export default function AnswerReveal({
                     <span className="text-[10px] text-yellow-400">{t("passed", { defaultValue: "Passed" })}</span>
                   )}
                   {pr.timedOut && (
-                    <span className="text-[10px] text-(--rmhbox-text-muted)">{t("timed-out", { defaultValue: "Timed out" })}</span>
+                    <span className="text-[10px] text-(--app-text-muted)">{t("timed-out", { defaultValue: "Timed out" })}</span>
                   )}
                 </div>
 
@@ -147,7 +147,7 @@ export default function AnswerReveal({
                       ? 'text-green-400'
                       : pr.scoreChange < 0
                         ? 'text-red-400'
-                        : 'text-(--rmhbox-text-muted)'
+                        : 'text-(--app-text-muted)'
                   }`}
                 >
                   {pr.scoreChange > 0 ? '+' : ''}
@@ -157,7 +157,7 @@ export default function AnswerReveal({
 
               {/* New total score */}
               {pr.newTotalScore != null && (
-                <div className="flex items-center justify-end pl-6 text-[11px] text-(--rmhbox-text-muted)">
+                <div className="flex items-center justify-end pl-6 text-[11px] text-(--app-text-muted)">
                   <span className="tabular-nums font-medium">
                     {t("total-score", { defaultValue: "Total: {{score}}", score: pr.newTotalScore })}
                   </span>

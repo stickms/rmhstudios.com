@@ -19,7 +19,6 @@
   "card-count_other": "카드 {{count}}개",
   "connecting": "연결 중...",
   "connection-failed": "연결 실패",
-  "copy-room-code": "방 코드 복사",
   "could-not-load-cards": "카드를 불러올 수 없습니다",
   "create-room": "방 만들기",
   "create-study-room": "스터디 룸 만들기",

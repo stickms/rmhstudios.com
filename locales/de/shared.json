@@ -1,12 +1,25 @@
 {
   "chat-placeholder": "Chatten...",
+  "connected": "Connected",
+  "connecting": "Connecting…",
+  "connection-lost": "Connection lost",
+  "continue-without-them": "Continue without them",
+  "copy-room-code": "Copy room code",
+  "dismiss": "Dismiss",
   "failed-to-load-media": "Medien konnten nicht geladen werden",
   "game-crashed": "Spiel abgestürzt",
   "game-crashed-named": "{{gameName}} abgestürzt",
+  "game-paused": "Game paused",
   "loading": "Wird geladen…",
   "no-messages-yet": "Noch keine Nachrichten",
+  "not-connected": "Not connected",
+  "notifications": "Notifications",
   "react": "Reagieren",
+  "reconnecting": "Reconnecting…",
+  "resuming-in": "Continuing without them in {{seconds}}s",
+  "resuming-now": "Continuing…",
   "return-home": "Zur Startseite",
   "try-again": "Erneut versuchen",
-  "unexpected-error": "Ein unerwarteter Fehler ist aufgetreten."
+  "unexpected-error": "Ein unerwarteter Fehler ist aufgetreten.",
+  "waiting-for-peer": "Waiting for {{name}} to reconnect…"
 }

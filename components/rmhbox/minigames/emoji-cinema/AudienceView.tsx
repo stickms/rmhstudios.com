@@ -71,10 +71,10 @@ export default function AudienceView({
   return (
     <div className="flex flex-col items-center gap-3 p-4 w-full max-w-md mx-auto">
       <div className="flex items-center justify-between w-full">
-        <span className="text-xs text-(--rmhbox-text-muted)">
-          {t("round-producer", { defaultValue: "Round {{round}} • Producer: ", round: roundNumber })}<span className="font-semibold text-(--rmhbox-text)">{producerName}</span>
+        <span className="text-xs text-(--app-text-muted)">
+          {t("round-producer", { defaultValue: "Round {{round}} • Producer: ", round: roundNumber })}<span className="font-semibold text-(--app-text)">{producerName}</span>
         </span>
-        <span className="text-sm font-mono text-(--rmhbox-text-muted)">{timeRemaining}s</span>
+        <span className="text-sm font-mono text-(--app-text-muted)">{timeRemaining}s</span>
       </div>
 
       <EmojiSentence emojis={emojis} maxEmojis={maxEmojis} readOnly />

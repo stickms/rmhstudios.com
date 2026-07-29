@@ -1,0 +1,11 @@
+{
+  "add-tag": "Add a hashtag",
+  "demoted": "Demoted accounts",
+  "demoted-desc": "Accounts you asked to see less of.",
+  "error": "Something went wrong",
+  "followed-tags": "Followed hashtags",
+  "followed-tags-desc": "Topics you want to see more of.",
+  "muted-tags": "Muted hashtags",
+  "muted-tags-desc": "Posts with these tags are hidden from your feed.",
+  "none": "None"
+}

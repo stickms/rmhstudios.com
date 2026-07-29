@@ -59,12 +59,17 @@ const RENDERER = join('components', 'ui', 'liquid-tabs.tsx');
  *    deliberately-separate blueprint/industrial design system (monospace, brass
  *    hairlines — see rmhladder.css), not the liquid-glass site grammar; forcing
  *    it onto glass pills would make it INCONSISTENT with the rest of that app.
+ *  - Temple of Joy's codex rail: the temple is a full-screen game outside the
+ *    site shell with its own candlelit palette (temple-of-joy.css) and a
+ *    glyph-over-label rail, not text pills. A glass capsule in the middle of it
+ *    would read as a piece of a different product.
  * New tablists get NO entry here — they must use LiquidTabs.
  */
 const TABLIST_ALLOW = new Set([
   RENDERER,
   join('components', 'library', 'AlbumViewer.tsx'),
   join('app', 'routes', '_site', 'rmhladder', 'review.tsx'),
+  join('components', 'temple-of-joy', 'TempleTabs.tsx'),
 ]);
 
 /**
@@ -180,7 +185,11 @@ function scanAll(): {
     let m: RegExpExecArray | null;
     while ((m = ariaSelected.exec(src))) {
       const tag = enclosingTag(src, m.index);
-      const marker = borderBottom.test(tag) ? 'border-b' : underlineUtil.test(tag) ? 'underline' : null;
+      const marker = borderBottom.test(tag)
+        ? 'border-b'
+        : underlineUtil.test(tag)
+          ? 'underline'
+          : null;
       if (marker) {
         underline.push({
           file,

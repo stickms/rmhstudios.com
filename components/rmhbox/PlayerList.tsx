@@ -37,7 +37,7 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
         return (
           <li
             key={player.userId}
-            className="flex items-center gap-3 rounded-lg bg-(--rmhbox-bg) border border-(--rmhbox-border) px-4 py-3 transition-colors hover:bg-(--rmhbox-surface-hover)"
+            className="flex items-center gap-3 rounded-lg bg-(--app-bg) border border-(--app-border) px-4 py-3 transition-colors hover:bg-(--app-surface-hover)"
           >
             {/* Avatar */}
             {player.avatarUrl ? (
@@ -55,7 +55,7 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
               />
             ) : null}
             <div
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-(--rmhbox-accent) text-sm font-bold text-(--rmhbox-accent-fg)"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-(--app-accent) text-sm font-bold text-(--app-accent-fg)"
               style={player.avatarUrl ? { display: 'none' } : undefined}
             >
               {player.userName.charAt(0).toUpperCase()}
@@ -63,17 +63,17 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
 
             {/* Name + host crown */}
             <div className="flex min-w-0 flex-1 items-center gap-2">
-              <span className="truncate font-medium text-(--rmhbox-text)">
+              <span className="truncate font-medium text-(--app-text)">
                 {player.userName}
               </span>
               {isPlayerHost && (
-                <Crown className="h-4 w-4 shrink-0 text-(--rmhbox-warning)" aria-label={t("host", { defaultValue: "Host" })} />
+                <Crown className="h-4 w-4 shrink-0 text-(--app-warning)" aria-label={t("host", { defaultValue: "Host" })} />
               )}
             </div>
 
             {/* Score */}
             {player.score > 0 && (
-              <span className="shrink-0 rounded-full bg-(--rmhbox-accent)/15 px-2 py-0.5 text-xs font-bold tabular-nums text-(--rmhbox-accent)">
+              <span className="shrink-0 rounded-full bg-(--app-accent)/15 px-2 py-0.5 text-xs font-bold tabular-nums text-(--app-accent)">
                 {player.score.toLocaleString()}
               </span>
             )}
@@ -84,7 +84,7 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
                 {!isPlayerHost && onTransferHost && (
                   <button
                     onClick={() => onTransferHost(player.userId)}
-                    className="rounded p-1.5 text-(--rmhbox-warning) transition-colors hover:bg-(--rmhbox-warning-dim)"
+                    className="rounded p-1.5 text-(--app-warning) transition-colors hover:bg-(--app-warning-dim)"
                     title={t("transfer-host", { defaultValue: "Transfer host" })}
                   >
                     <ArrowRightLeft className="h-3.5 w-3.5" />
@@ -93,7 +93,7 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
                 {onKick && (
                   <button
                     onClick={() => onKick(player.userId)}
-                    className="rounded p-1.5 text-(--rmhbox-danger) transition-colors hover:bg-(--rmhbox-danger-dim)"
+                    className="rounded p-1.5 text-(--app-danger) transition-colors hover:bg-(--app-danger-dim)"
                     title={t("kick-player", { defaultValue: "Kick player" })}
                   >
                     <UserMinus className="h-3.5 w-3.5" style={{ transform: 'scaleX(-1)' }} />
@@ -104,17 +104,17 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
 
             {/* Connection indicator */}
             {player.isConnected ? (
-              <Wifi className="h-4 w-4 text-(--rmhbox-success)" aria-label={t("connected", { defaultValue: "Connected" })} />
+              <Wifi className="h-4 w-4 text-(--app-success)" aria-label={t("connected", { defaultValue: "Connected" })} />
             ) : (
-              <WifiOff className="h-4 w-4 text-(--rmhbox-danger)" aria-label={t("disconnected", { defaultValue: "Disconnected" })} />
+              <WifiOff className="h-4 w-4 text-(--app-danger)" aria-label={t("disconnected", { defaultValue: "Disconnected" })} />
             )}
 
             {/* Ready status */}
             <span
               className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                 player.isReady
-                  ? 'bg-(--rmhbox-success)/20 text-(--rmhbox-success)'
-                  : 'bg-(--rmhbox-text-muted)/20 text-(--rmhbox-text-muted)'
+                  ? 'bg-(--app-success)/20 text-(--app-success)'
+                  : 'bg-(--app-text-muted)/20 text-(--app-text-muted)'
               }`}
             >
               {player.isReady ? t("ready", { defaultValue: "Ready" }) : t("not-ready", { defaultValue: "Not Ready" })}

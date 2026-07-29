@@ -421,7 +421,7 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
           transition={{ duration: 0.2 }}
           className="flex items-center justify-center p-8"
         >
-          <p className="text-sm text-(--rmhbox-text-muted)">{t("next-question", { defaultValue: "Next question…" })}</p>
+          <p className="text-sm text-(--app-text-muted)">{t("next-question", { defaultValue: "Next question…" })}</p>
         </motion.div>
       )}
 
@@ -434,7 +434,7 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
           transition={{ duration: 0.3 }}
           className="flex items-center justify-center p-8"
         >
-          <p className="text-sm text-(--rmhbox-text-muted)">{t("game-over-calculating", { defaultValue: "Game over — calculating results…" })}</p>
+          <p className="text-sm text-(--app-text-muted)">{t("game-over-calculating", { defaultValue: "Game over — calculating results…" })}</p>
         </motion.div>
       )}
     </AnimatePresence>

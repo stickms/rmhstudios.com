@@ -62,11 +62,11 @@ export default function WitWarHistoryDetail({
   return (
     <div className="space-y-4" data-testid="wit-war-history-detail">
       {gameLog.initialState && (
-        <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3">
-          <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase mb-1">
+        <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-3">
+          <h4 className="text-xs font-semibold text-(--app-text-muted) uppercase mb-1">
             {t("game-settings", { defaultValue: "Game Settings" })}
           </h4>
-          <div className="flex flex-wrap gap-3 text-xs text-(--rmhbox-text-muted)">
+          <div className="flex flex-wrap gap-3 text-xs text-(--app-text-muted)">
             <span>{t("rounds-count", { defaultValue: "Rounds: {{count}}", count: totalRounds })}</span>
             <span>{t("players-count", { defaultValue: "Players: {{count}}", count: String(gameLog.initialState.playerCount ?? players.length) })}</span>
           </div>
@@ -74,8 +74,8 @@ export default function WitWarHistoryDetail({
       )}
 
       {rounds.map((roundMatchups, roundIdx) => (
-        <div key={roundIdx} className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3 space-y-3">
-          <h4 className="text-sm font-bold text-(--rmhbox-text)">{t("round-number", { defaultValue: "Round {{number}}", number: roundIdx + 1 })}</h4>
+        <div key={roundIdx} className="rounded-lg border border-(--app-border) bg-(--app-bg) p-3 space-y-3">
+          <h4 className="text-sm font-bold text-(--app-text)">{t("round-number", { defaultValue: "Round {{number}}", number: roundIdx + 1 })}</h4>
 
           {roundMatchups.map((m, mIdx) => {
             const isMyMatchup =
@@ -86,24 +86,24 @@ export default function WitWarHistoryDetail({
                 key={mIdx}
                 className={`rounded-md border p-2 text-sm ${
                   isMyMatchup
-                    ? 'border-(--rmhbox-accent)/30 bg-(--rmhbox-accent)/5'
-                    : 'border-(--rmhbox-border)'
+                    ? 'border-(--app-accent)/30 bg-(--app-accent)/5'
+                    : 'border-(--app-border)'
                 }`}
               >
-                <div className="text-xs text-(--rmhbox-text-muted) mb-1">
+                <div className="text-xs text-(--app-text-muted) mb-1">
                   {m.payload.prompt}
                 </div>
                 <div className="flex items-start justify-between gap-2">
-                  <div className={`flex-1 ${m.payload.winnerId === m.payload.playerA ? 'font-semibold text-green-400' : 'text-(--rmhbox-text)'}`}>
+                  <div className={`flex-1 ${m.payload.winnerId === m.payload.playerA ? 'font-semibold text-green-400' : 'text-(--app-text)'}`}>
                     &ldquo;{m.payload.answerA}&rdquo;
-                    <span className="text-xs text-(--rmhbox-text-muted) ml-1">
+                    <span className="text-xs text-(--app-text-muted) ml-1">
                       — {getPlayerName(m.payload.playerA ?? '')} ({m.payload.votePercentA}%)
                     </span>
                   </div>
-                  <span className="text-(--rmhbox-text-muted) text-xs mt-1">{t("vs", { defaultValue: "vs" })}</span>
-                  <div className={`flex-1 text-right ${m.payload.winnerId === m.payload.playerB ? 'font-semibold text-green-400' : 'text-(--rmhbox-text)'}`}>
+                  <span className="text-(--app-text-muted) text-xs mt-1">{t("vs", { defaultValue: "vs" })}</span>
+                  <div className={`flex-1 text-right ${m.payload.winnerId === m.payload.playerB ? 'font-semibold text-green-400' : 'text-(--app-text)'}`}>
                     &ldquo;{m.payload.answerB}&rdquo;
-                    <span className="text-xs text-(--rmhbox-text-muted) ml-1">
+                    <span className="text-xs text-(--app-text-muted) ml-1">
                       — {getPlayerName(m.payload.playerB ?? '')} ({m.payload.votePercentB}%)
                     </span>
                   </div>
@@ -118,14 +118,14 @@ export default function WitWarHistoryDetail({
           })}
 
           {roundMatchups.length === 0 && (
-            <p className="text-xs text-(--rmhbox-text-muted)">{t("no-matchup-data", { defaultValue: "No matchup data available." })}</p>
+            <p className="text-xs text-(--app-text-muted)">{t("no-matchup-data", { defaultValue: "No matchup data available." })}</p>
           )}
         </div>
       ))}
 
       {/* Final scores */}
-      <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
-        <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-2">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
+      <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4">
+        <h4 className="text-sm font-semibold text-(--app-text-muted) mb-2">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
         <div className="space-y-1">
           {players
             .sort((a, b) => a.rank - b.rank)
@@ -133,7 +133,7 @@ export default function WitWarHistoryDetail({
               <div
                 key={p.userId}
                 className={`flex justify-between text-sm ${
-                  p.userId === currentUserId ? 'text-(--rmhbox-accent) font-semibold' : 'text-(--rmhbox-text)'
+                  p.userId === currentUserId ? 'text-(--app-accent) font-semibold' : 'text-(--app-text)'
                 }`}
               >
                 <span>

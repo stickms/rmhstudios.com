@@ -1,12 +1,25 @@
 {
   "chat-placeholder": "Discuter...",
+  "connected": "Connected",
+  "connecting": "Connecting…",
+  "connection-lost": "Connection lost",
+  "continue-without-them": "Continue without them",
+  "copy-room-code": "Copy room code",
+  "dismiss": "Dismiss",
   "failed-to-load-media": "Échec du chargement du média",
   "game-crashed": "Le jeu a planté",
   "game-crashed-named": "{{gameName}} a planté",
+  "game-paused": "Game paused",
   "loading": "Chargement…",
   "no-messages-yet": "Aucun message pour l'instant",
+  "not-connected": "Not connected",
+  "notifications": "Notifications",
   "react": "Réagir",
+  "reconnecting": "Reconnecting…",
+  "resuming-in": "Continuing without them in {{seconds}}s",
+  "resuming-now": "Continuing…",
   "return-home": "Retour à l'accueil",
   "try-again": "Réessayer",
-  "unexpected-error": "Une erreur inattendue s'est produite."
+  "unexpected-error": "Une erreur inattendue s'est produite.",
+  "waiting-for-peer": "Waiting for {{name}} to reconnect…"
 }

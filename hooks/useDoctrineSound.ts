@@ -3,18 +3,23 @@
  * Plays sounds on user interactions. Uses the Web Audio API.
  */
 
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { useDoctrineStore } from '@/stores/doctrineStore';
+import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
 
 export function useDoctrineSound() {
   const sahurActive = useDoctrineStore(s => s.sahurActive);
-  const audioContext = useRef<AudioContext | null>(null);
 
+  /**
+   * The page's shared context, or null where Web Audio isn't available. Each
+   * effect below is already wrapped in a try/catch that swallows the failure,
+   * so a null here means silence, not a crash.
+   */
   const getContext = useCallback(() => {
-    if (!audioContext.current) {
-      audioContext.current = new AudioContext();
-    }
-    return audioContext.current;
+    const ctx = getAudioContext();
+    resumeAudioContext();
+    if (!ctx) throw new Error('Web Audio unavailable');
+    return ctx;
   }, []);
 
   const playTung = useCallback(() => {

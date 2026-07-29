@@ -64,9 +64,7 @@ export function extractMediaEmbeds(content: string): MediaEmbedInfo[] {
       // Giphy share URL: giphy.com/gifs/[optional-slug-]ID
       if (host === 'giphy.com' && parsed.pathname.startsWith('/gifs/')) {
         const pathParts = parsed.pathname.split('/').pop() ?? '';
-        const gifId = pathParts.includes('-')
-          ? pathParts.split('-').pop()
-          : pathParts;
+        const gifId = pathParts.includes('-') ? pathParts.split('-').pop() : pathParts;
         if (gifId) {
           embeds.push({
             originalUrl: url,
@@ -164,9 +162,7 @@ function useTenorResolve(url: string | null): { src: string | null; loading: boo
 function EmbedItem({ embed, themePrefix }: { embed: MediaEmbedInfo; themePrefix: string }) {
   const { t } = useTranslation('shared');
   const [error, setError] = useState(false);
-  const tenor = useTenorResolve(
-    embed.type === 'tenor-pending' ? embed.originalUrl : null,
-  );
+  const tenor = useTenorResolve(embed.type === 'tenor-pending' ? embed.originalUrl : null);
 
   const src = embed.type === 'tenor-pending' ? tenor.src : embed.directUrl;
 
@@ -209,7 +205,11 @@ function EmbedItem({ embed, themePrefix }: { embed: MediaEmbedInfo; themePrefix:
         loading="lazy"
         onError={() => setError(true)}
         className="rounded-site-sm max-h-48 max-w-full object-contain"
-        style={{ borderWidth: 1, borderStyle: 'solid', borderColor: `var(--${themePrefix}-border)` }}
+        style={{
+          borderWidth: 1,
+          borderStyle: 'solid',
+          borderColor: `var(--${themePrefix}-border)`,
+        }}
       />
     </a>
   );

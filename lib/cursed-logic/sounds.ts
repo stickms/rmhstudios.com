@@ -1,9 +1,17 @@
-let audioContext: AudioContext | null = null;
+import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
 
+/**
+ * The page's shared AudioContext, or null where Web Audio isn't available —
+ * every effect below already handles null, so the game is silent rather than
+ * broken. A bare `new AudioContext()` here used to throw and take the game's
+ * init path down with it.
+ */
 function getContext(): AudioContext | null {
-  if (typeof window === 'undefined') return null;
-  if (!audioContext) audioContext = new AudioContext();
-  return audioContext;
+  const ctx = getAudioContext();
+  // Engines start contexts suspended until a gesture, and iOS re-suspends on
+  // backgrounding, so this is worth re-checking rather than doing once.
+  resumeAudioContext();
+  return ctx;
 }
 
 function now() {

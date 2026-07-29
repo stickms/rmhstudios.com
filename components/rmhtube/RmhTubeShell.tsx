@@ -1,20 +1,27 @@
 /**
- * RmhTubeShell — Client-side wrapper for the RmhTube theme system.
+ * RmhTubeShell — RMHTube's root wrapper. Palette only; the rest is `AppShell`.
  *
- * Wraps children with the themed container and toast notifications.
+ * RMHTube is the one app that offers a high-contrast appearance; `AppShell`
+ * resolves it from the same persisted `theme` value.
  */
 'use client';
 
+import AppShell from '@/components/shared/AppShell';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
-import ToastContainer from '@/components/rmhtube/ToastContainer';
+import { reconnectNow } from '@/lib/rmhtube/socket';
 
 export default function RmhTubeShell({ children }: { children: React.ReactNode }) {
-  const theme = useRmhTubeStore((s) => s.settings.theme) ?? 'dark';
+  const theme = useRmhTubeStore((s) => s.settings.theme);
+  const status = useRmhTubeStore((s) => s.connectionStatus);
+  const peersWaiting = useRmhTubeStore((s) => s.peersWaiting);
 
   return (
-    <div className={`rmhtube-theme ${theme === 'light' ? 'rmhtube-light' : theme === 'high-contrast' ? 'rmhtube-high-contrast' : ''}`}>
-      <ToastContainer />
+    <AppShell
+      appClassName="rmhtube-theme"
+      theme={theme}
+      realtime={{ status, peersWaiting, onRetry: reconnectNow }}
+    >
       {children}
-    </div>
+    </AppShell>
   );
 }

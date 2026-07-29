@@ -18,5 +18,6 @@
   "sort-recent": "Récents",
   "submit": "Soumettre",
   "views-count_one": "{{count}} views",
+  "views-count_many": "{{count}} views",
   "views-count_other": "{{count}} views"
 }

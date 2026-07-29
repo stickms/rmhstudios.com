@@ -31,11 +31,11 @@ export default function ScoreRibbon({
 }: ScoreRibbonProps) {
   const { t } = useTranslation("c-rmhbox");
   return (
-    <div className="flex w-full items-center justify-between rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) px-4 py-2">
+    <div className="flex w-full items-center justify-between rounded-lg border border-(--app-border) bg-(--app-bg) px-4 py-2">
       {/* Score */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-(--rmhbox-text-muted)">{t("score", { defaultValue: "Score" })}</span>
-        <span className="text-lg font-bold tabular-nums text-(--rmhbox-text)">{score}</span>
+        <span className="text-sm text-(--app-text-muted)">{t("score", { defaultValue: "Score" })}</span>
+        <span className="text-lg font-bold tabular-nums text-(--app-text)">{score}</span>
         <AnimatePresence>
           {scoreChange != null && scoreChange !== 0 && (
             <motion.span
@@ -55,14 +55,14 @@ export default function ScoreRibbon({
       </div>
 
       {/* Players answered */}
-      <div className="flex items-center gap-1 text-xs text-(--rmhbox-text-muted)">
+      <div className="flex items-center gap-1 text-xs text-(--app-text-muted)">
         <Users className="h-3.5 w-3.5" />
         <span>{playersAnswered}/{totalPlayers}</span>
       </div>
 
       {/* Timer */}
       <span className={`text-sm font-bold tabular-nums ${
-        timeRemaining <= 5 ? 'text-red-400' : 'text-(--rmhbox-text-muted)'
+        timeRemaining <= 5 ? 'text-red-400' : 'text-(--app-text-muted)'
       }`}>
         {timeRemaining}s
       </span>
@@ -72,7 +72,7 @@ export default function ScoreRibbon({
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={onPass}
-          className="flex items-center gap-1 rounded-md border border-(--rmhbox-border) bg-(--rmhbox-surface-hover) px-3 py-1.5 text-xs font-medium text-(--rmhbox-text-muted) transition-colors hover:text-(--rmhbox-text)"
+          className="flex items-center gap-1 rounded-md border border-(--app-border) bg-(--app-surface-hover) px-3 py-1.5 text-xs font-medium text-(--app-text-muted) transition-colors hover:text-(--app-text)"
         >
           <SkipForward className="h-3.5 w-3.5" />
           {t("pass", { defaultValue: "Pass" })}

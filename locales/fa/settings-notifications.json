@@ -1,0 +1,21 @@
+{
+  "categories": "Categories",
+  "category-economy": "Tips, awards & sales",
+  "category-events": "Events & live",
+  "category-follows": "Follows",
+  "category-replies": "Replies & mentions",
+  "category-social": "Likes & reposts",
+  "category-system": "System",
+  "channel-email": "Email",
+  "channel-inapp": "In-app",
+  "channel-push": "Push",
+  "email-note": "Email off by default for this category.",
+  "error": "Something went wrong",
+  "from": "From",
+  "off": "Off",
+  "quiet-desc": "Push notifications are held during these hours.",
+  "quiet-end": "Quiet hours end",
+  "quiet-hours": "Quiet hours",
+  "quiet-start": "Quiet hours start",
+  "to": "To"
+}

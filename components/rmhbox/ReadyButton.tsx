@@ -75,16 +75,16 @@ export default function ReadyButton({
           disabled={!hasGamePicked}
           className={`relative flex flex-col items-center rounded-xl px-8 py-3 font-bold transition-all duration-200 ${
             !hasGamePicked
-              ? 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted) opacity-50 cursor-not-allowed'
+              ? 'bg-(--app-surface) text-(--app-text-muted) opacity-50 cursor-not-allowed'
               : canStart
-                ? 'bg-(--rmhbox-success) text-black hover:brightness-110'
+                ? 'bg-(--app-success) text-black hover:brightness-110'
                 : forceStartPrimed
-                  ? 'bg-(--rmhbox-warning) text-black hover:brightness-110'
-                  : 'bg-(--rmhbox-success) text-black opacity-40'
+                  ? 'bg-(--app-warning) text-black hover:brightness-110'
+                  : 'bg-(--app-success) text-black opacity-40'
           }`}
         >
           {canStart && (
-            <span className="pointer-events-none absolute inset-0 animate-ping rounded-xl bg-(--rmhbox-success) opacity-30" />
+            <span className="pointer-events-none absolute inset-0 animate-ping rounded-xl bg-(--app-success) opacity-30" />
           )}
           <span className="relative z-10 flex items-center gap-2 text-lg">
             <Play className="h-5 w-5" />
@@ -95,12 +95,12 @@ export default function ReadyButton({
           )}
         </button>
         {!hasGamePicked && (
-          <span className="text-center text-xs text-(--rmhbox-text-muted)">
+          <span className="text-center text-xs text-(--app-text-muted)">
             {t("pick-a-game-first", { defaultValue: "Pick a game first" })}
           </span>
         )}
         {hasGamePicked && !canStart && (
-          <span className="text-center text-xs text-(--rmhbox-text-muted)">
+          <span className="text-center text-xs text-(--app-text-muted)">
             {forceStartPrimed
               ? t("force-start-prompt", { defaultValue: "Not all players are ready. Press again to force start." })
               : t("waiting-for-players", { defaultValue: "Waiting for all players to ready up…" })}
@@ -119,15 +119,15 @@ export default function ReadyButton({
       disabled={disabled}
       className={`relative flex flex-col items-center rounded-xl px-8 py-3 font-bold transition-all duration-200 ${
         disabled
-          ? 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted) opacity-50 cursor-not-allowed'
+          ? 'bg-(--app-surface) text-(--app-text-muted) opacity-50 cursor-not-allowed'
           : isReady
-            ? 'bg-(--rmhbox-success) text-black hover:brightness-110'
-            : 'bg-(--rmhbox-accent) text-(--rmhbox-accent-fg) hover:bg-(--rmhbox-accent-hover)'
+            ? 'bg-(--app-success) text-black hover:brightness-110'
+            : 'bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)'
       }`}
     >
       {/* Pulse ring when not ready but game is picked */}
       {!isReady && !disabled && (
-        <span className="pointer-events-none absolute inset-0 animate-ping rounded-xl bg-(--rmhbox-accent) opacity-30" />
+        <span className="pointer-events-none absolute inset-0 animate-ping rounded-xl bg-(--app-accent) opacity-30" />
       )}
       <span className="relative z-10 text-lg">{isReady ? t("ready", { defaultValue: "✓ Ready!" }) : t("ready-up", { defaultValue: "Ready Up" })}</span>
       {selectedGameName ? (

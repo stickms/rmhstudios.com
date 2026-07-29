@@ -90,19 +90,19 @@ export default function GuessInput({ onSubmit, disabled, maxGuesses, guessesUsed
             onFocus={() => setShowSuggestions(true)}
             onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
             disabled={disabled}
-            className="w-full px-3 py-2 rounded-lg bg-(--rmhbox-surface) text-(--rmhbox-text) border border-(--rmhbox-border) outline-none disabled:opacity-50"
+            className="w-full px-3 py-2 rounded-lg bg-(--app-surface) text-(--app-text) border border-(--app-border) outline-none disabled:opacity-50"
           />
           {/* Suggestions dropdown */}
           {showSuggestions && suggestions.length > 0 && !disabled && (
             <div
               ref={suggestionsRef}
-              className="absolute top-full left-0 right-0 z-20 mt-1 rounded-lg bg-(--rmhbox-surface) border border-(--rmhbox-border) shadow-lg overflow-hidden max-h-48 overflow-y-auto"
+              className="absolute top-full left-0 right-0 z-20 mt-1 rounded-lg bg-(--app-surface) border border-(--app-border) shadow-lg overflow-hidden max-h-48 overflow-y-auto"
             >
               {suggestions.map((title) => (
                 <button
                   key={title}
                   onClick={() => handleSelectSuggestion(title)}
-                  className="w-full text-left px-3 py-2 text-sm text-(--rmhbox-text) hover:bg-(--rmhbox-surface-hover) transition-colors"
+                  className="w-full text-left px-3 py-2 text-sm text-(--app-text) hover:bg-(--app-surface-hover) transition-colors"
                 >
                   {title}
                 </button>
@@ -113,12 +113,12 @@ export default function GuessInput({ onSubmit, disabled, maxGuesses, guessesUsed
         <button
           onClick={handleSubmit}
           disabled={disabled || !value.trim()}
-          className="px-4 py-2 rounded-lg bg-(--rmhbox-accent) text-white font-semibold disabled:opacity-50"
+          className="px-4 py-2 rounded-lg bg-(--app-accent) text-white font-semibold disabled:opacity-50"
         >
           {t("guess", { defaultValue: "Guess" })}
         </button>
       </div>
-      <span className="text-xs text-(--rmhbox-text-muted)">
+      <span className="text-xs text-(--app-text-muted)">
         {t("guesses-remaining", { count: remaining, defaultValue: "{{count}} guess remaining", defaultValue_other: "{{count}} guesses remaining" })}
       </span>
     </div>

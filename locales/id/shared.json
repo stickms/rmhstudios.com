@@ -1,12 +1,25 @@
 {
   "chat-placeholder": "Obrolan...",
+  "connected": "Connected",
+  "connecting": "Connecting…",
+  "connection-lost": "Connection lost",
+  "continue-without-them": "Continue without them",
+  "copy-room-code": "Copy room code",
+  "dismiss": "Dismiss",
   "failed-to-load-media": "Gagal memuat media",
   "game-crashed": "Permainan mogok",
   "game-crashed-named": "{{gameName}} mogok",
+  "game-paused": "Game paused",
   "loading": "Memuat…",
   "no-messages-yet": "Belum ada pesan",
+  "not-connected": "Not connected",
+  "notifications": "Notifications",
   "react": "Reaksi",
+  "reconnecting": "Reconnecting…",
+  "resuming-in": "Continuing without them in {{seconds}}s",
+  "resuming-now": "Continuing…",
   "return-home": "Kembali ke Beranda",
   "try-again": "Coba Lagi",
-  "unexpected-error": "Terjadi kesalahan yang tidak terduga."
+  "unexpected-error": "Terjadi kesalahan yang tidak terduga.",
+  "waiting-for-peer": "Waiting for {{name}} to reconnect…"
 }

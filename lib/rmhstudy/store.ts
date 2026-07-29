@@ -2,6 +2,7 @@
  * RMH Study — Client-Side Zustand Store
  */
 
+import type { RealtimeStatus, PeerWaitState } from '@/lib/shared/realtime/types';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type {
@@ -37,7 +38,9 @@ const DEFAULT_SETTINGS: RmhStudyUserSettings = {
 // ─── Store Interface ─────────────────────────────────────────────
 
 export interface RmhStudyStore {
-  connectionStatus: 'disconnected' | 'connecting' | 'connected' | 'error';
+  connectionStatus: RealtimeStatus;
+  /** Peers the room is paused on, or null when nobody is being waited for. */
+  peersWaiting: PeerWaitState | null;
   room: ClientRoomState | null;
   settings: RmhStudyUserSettings;
   tasks: Task[];
@@ -45,6 +48,7 @@ export interface RmhStudyStore {
 
   // Actions
   setConnectionStatus: (status: RmhStudyStore['connectionStatus']) => void;
+  setPeersWaiting: (waiting: PeerWaitState | null) => void;
   setRoom: (room: ClientRoomState | null) => void;
   updateMembers: (members: RoomMember[]) => void;
   addChatMessage: (msg: ChatMessage) => void;
@@ -82,13 +86,15 @@ const DEFAULT_TIMER: TimerState = {
 export const useRmhStudyStore = create<RmhStudyStore>()(
   persist(
     (set, get) => ({
-      connectionStatus: 'disconnected',
+      connectionStatus: 'idle',
+      peersWaiting: null,
       room: null,
       settings: { ...DEFAULT_SETTINGS },
       tasks: [],
       lastPhaseComplete: null,
 
       setConnectionStatus: (status) => set({ connectionStatus: status }),
+      setPeersWaiting: (waiting) => set({ peersWaiting: waiting }),
 
       setRoom: (room) => {
         const prev = get().room;
@@ -176,6 +182,7 @@ export const useRmhStudyStore = create<RmhStudyStore>()(
 
       reset: () => set({
         connectionStatus: 'disconnected',
+        peersWaiting: null,
         room: null,
         tasks: [],
         lastPhaseComplete: null,

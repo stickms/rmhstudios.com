@@ -1,0 +1,23 @@
+{
+  "cancel": "Cancel",
+  "custom-amount": "Custom amount",
+  "duration": "Duration",
+  "gift-a-membership": "Gift a membership",
+  "gift-desc": "Give this user a membership with coins.",
+  "gift-desc-named": "Give {{name}} a membership with coins.",
+  "gift-error": "Could not gift membership",
+  "gift-for": "Gift for",
+  "gift-sign-in": "Please sign in to gift a membership.",
+  "gift-success": "Gifted {{months}} month{{s}} of {{tier}}!",
+  "gift-success-named": "Gifted {{months}} month{{s}} of {{tier}} to {{name}}!",
+  "note-placeholder": "Add a note (optional)",
+  "sending": "Sending…",
+  "tier": "Tier",
+  "tip-amount-group-label": "Tip amount",
+  "tip-btn": "Tip",
+  "tip-dialog-description": "Send coins{{recipient}} to show some appreciation.",
+  "tip-dialog-title": "Send a tip",
+  "tip-error": "Could not send tip",
+  "tip-sign-in": "Please sign in to tip.",
+  "tip-success": "Tipped {{amount}} coins{{recipient}}!"
+}

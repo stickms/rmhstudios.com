@@ -1,5 +1,6 @@
 {
-  "lang-firstrun-body": "RMH Studios 32 dilde kullanılabilir. Bunu istediğiniz zaman Ayarlar'dan değiştirebilirsiniz.",
+  "lang-firstrun-body_one": "RMH Studios is available in {{count}} languages. You can change this any time in Settings.",
+  "lang-firstrun-body_other": "RMH Studios is available in {{count}} languages. You can change this any time in Settings.",
   "lang-firstrun-continue": "{{lang}} dilinde devam et",
   "lang-firstrun-title": "Dilinizi seçin",
   "language": "Dil"

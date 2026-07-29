@@ -55,7 +55,7 @@ export default function PointPotDisplay({ potValue, maxValue }: PointPotDisplayP
           {potValue}
         </motion.span>
       </AnimatePresence>
-      <span className="text-xs text-(--rmhbox-text-muted)">{t("pts", { defaultValue: "pts" })}</span>
+      <span className="text-xs text-(--app-text-muted)">{t("pts", { defaultValue: "pts" })}</span>
     </motion.div>
   );
 }

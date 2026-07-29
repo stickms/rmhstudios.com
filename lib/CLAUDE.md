@@ -75,6 +75,14 @@ bundle only**. SSR/server builds get the real module.
   `personas/`, `rideshare/`, `homes/`, `predictions/`). Realtime client
   sockets live at `lib/<app>/socket.ts` with event names in
   `lib/<app>/events.ts` (see `server/CLAUDE.md`).
+- **`shared/`:** the cross-app tier. `realtime/client.ts` is the socket.io
+  factory every app's `socket.ts` builds on (fast reconnect, wake signals,
+  per-attempt auth, an opt-in outbox); `realtime/types.ts` holds the
+  `RealtimeStatus` contract and the 15s `PEER_GRACE_MS` that the server's
+  `PresenceGrace` reads too. `platform.ts` wraps the browser APIs that aren't
+  everywhere (Web Audio — **always** go through `getAudioContext()`, never
+  `new AudioContext()` — plus haptics, idle callbacks, wake lock, fullscreen,
+  WebGL detection). `app-toast.ts` is the toast store for the full-screen apps.
 - **Moderation/admin:** `moderation.server.ts`, `admin-audit.server.ts`,
   `admin-review.server.ts`, `security-reports.ts`.
 - **Webhooks (outbound developer API):** `webhooks/` (emit, events,

@@ -58,7 +58,7 @@ export default function WikiRaceResults({
       {/* Header */}
       <div className="text-center">
         <h3 className="text-xl font-bold flex items-center justify-center gap-1.5"><Flag className="h-5 w-5" /> {t("race-results", { defaultValue: "Race Results" })}</h3>
-        <div className="mt-2 flex items-center justify-center gap-3 text-sm text-(--rmhbox-text-muted)">
+        <div className="mt-2 flex items-center justify-center gap-3 text-sm text-(--app-text-muted)">
           <span className="flex items-center gap-1">
             <MapPin size={12} className="text-green-400" /> {startTitle}
           </span>
@@ -83,31 +83,31 @@ export default function WikiRaceResults({
               transition={{ delay: idx * 0.12 }}
               className={`rounded-xl border p-4 ${
                 isMe
-                  ? 'border-(--rmhbox-accent)/50 bg-(--rmhbox-accent)/5'
-                  : 'border-(--rmhbox-border) bg-(--rmhbox-surface)'
+                  ? 'border-(--app-accent)/50 bg-(--app-accent)/5'
+                  : 'border-(--app-border) bg-(--app-surface)'
               }`}
             >
               {/* Player header */}
               <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-(--rmhbox-surface) text-xs font-bold">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-(--app-surface) text-xs font-bold">
                     {idx + 1}
                   </span>
                   {isWinner && <Trophy size={14} className="text-yellow-400" />}
                   <span className="font-semibold">
                     {player.userName}
                     {isMe && (
-                      <span className="ml-1 text-xs text-(--rmhbox-accent)">{t("you-label", { defaultValue: "(you)" })}</span>
+                      <span className="ml-1 text-xs text-(--app-accent)">{t("you-label", { defaultValue: "(you)" })}</span>
                     )}
                   </span>
                 </div>
-                <span className="text-lg font-bold text-(--rmhbox-accent)">
+                <span className="text-lg font-bold text-(--app-accent)">
                   {player.score}
                 </span>
               </div>
 
               {/* Stats row */}
-              <div className="mb-2 flex items-center gap-4 text-xs text-(--rmhbox-text-muted)">
+              <div className="mb-2 flex items-center gap-4 text-xs text-(--app-text-muted)">
                 <span>
                   {t("click-count", { count: player.clickCount, defaultValue: "{{count}} click", defaultValue_plural: "{{count}} clicks" })}
                 </span>
@@ -133,7 +133,7 @@ export default function WikiRaceResults({
                   return (
                     <span key={`${pi}-${title}`} className="flex items-center gap-1">
                       {pi > 0 && (
-                        <span className="text-(--rmhbox-text-muted)/40">→</span>
+                        <span className="text-(--app-text-muted)/40">→</span>
                       )}
                       <span
                         className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
@@ -143,7 +143,7 @@ export default function WikiRaceResults({
                               ? 'bg-blue-500/20 text-blue-400'
                               : isLast && !isTargetArticle
                                 ? 'bg-red-500/20 text-red-400'
-                                : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted)'
+                                : 'bg-(--app-surface) text-(--app-text-muted)'
                         }`}
                       >
                         {title.length > 20 ? `${title.slice(0, 17)}…` : title}

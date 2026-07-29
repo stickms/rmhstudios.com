@@ -404,10 +404,10 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
   if (!url) {
     return (
-      <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-(--rmhtube-surface) flex items-center justify-center">
+      <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-(--app-surface) flex items-center justify-center">
         <div className="text-center">
-          <p className="text-lg font-medium text-(--rmhtube-text-muted)">{t("no-video-playing", { defaultValue: "No video playing" })}</p>
-          <p className="text-sm text-(--rmhtube-text-dim) mt-1">
+          <p className="text-lg font-medium text-(--app-text-muted)">{t("no-video-playing", { defaultValue: "No video playing" })}</p>
+          <p className="text-sm text-(--app-text-dim) mt-1">
             {isHost ? t("add-video-to-queue", { defaultValue: "Add a video to the queue to get started" }) : t("waiting-for-host-video", { defaultValue: "Waiting for the host to play a video" })}
           </p>
         </div>
@@ -451,7 +451,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           onClick={handleResyncTap}
           className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-black/60 text-white backdrop-blur-sm"
         >
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-(--rmhtube-accent)">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-(--app-accent)">
             <svg className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
           </span>
           <span className="text-sm font-medium">{t("paused-tap-to-resync", { defaultValue: "Paused — tap to resync" })}</span>

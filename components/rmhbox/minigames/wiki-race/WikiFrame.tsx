@@ -87,12 +87,12 @@ export default function WikiFrame({
   }, [currentTitle]);
 
   return (
-    <div className="relative rounded-xl border border-(--rmhbox-border) bg-white/5 overflow-hidden">
+    <div className="relative rounded-xl border border-(--app-border) bg-white/5 overflow-hidden">
       {/* Title bar */}
-      <div className="flex items-center justify-between border-b border-(--rmhbox-border) bg-(--rmhbox-surface) px-4 py-2">
+      <div className="flex items-center justify-between border-b border-(--app-border) bg-(--app-surface) px-4 py-2">
         <h3 className="text-sm font-bold truncate">{currentTitle || t("loading", { defaultValue: "Loading…" })}</h3>
         {isLoading && (
-          <Loader2 size={14} className="animate-spin text-(--rmhbox-accent)" />
+          <Loader2 size={14} className="animate-spin text-(--app-accent)" />
         )}
       </div>
 
@@ -103,7 +103,7 @@ export default function WikiFrame({
             animate={{ rotate: 360 }}
             transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
           >
-            <Loader2 size={24} className="text-(--rmhbox-accent)" />
+            <Loader2 size={24} className="text-(--app-accent)" />
           </motion.div>
         </div>
       )}
@@ -122,7 +122,7 @@ export default function WikiFrame({
             className={`wiki-frame ${disabled ? 'wiki-frame-disabled' : ''}`}
             inert
             dangerouslySetInnerHTML={{ __html: html }}
-            style={{ color: 'var(--rmhbox-text)' }}
+            style={{ color: 'var(--app-text)' }}
           />
         </div>
       )}
@@ -158,7 +158,7 @@ export default function WikiFrame({
           margin-top: 1em;
           margin-bottom: 0.5em;
           padding-bottom: 0.25em;
-          border-bottom: 1px solid var(--rmhbox-border);
+          border-bottom: 1px solid var(--app-border);
         }
         .wiki-frame h3 {
           font-size: 1.1rem;
@@ -188,13 +188,13 @@ export default function WikiFrame({
         }
         .wiki-frame th,
         .wiki-frame td {
-          border: 1px solid var(--rmhbox-border);
+          border: 1px solid var(--app-border);
           padding: 0.35em 0.65em;
           text-align: left;
           vertical-align: top;
         }
         .wiki-frame th {
-          background-color: var(--rmhbox-surface);
+          background-color: var(--app-surface);
           font-weight: 600;
         }
         .wiki-frame tr:nth-child(even) td {
@@ -212,7 +212,7 @@ export default function WikiFrame({
         }
         .wiki-frame figcaption {
           font-size: 0.75rem;
-          color: var(--rmhbox-text-muted);
+          color: var(--app-text-muted);
           margin-top: 0.25em;
         }
         .wiki-frame img {

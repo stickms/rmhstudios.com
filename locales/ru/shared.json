@@ -1,12 +1,25 @@
 {
   "chat-placeholder": "Чат...",
+  "connected": "Connected",
+  "connecting": "Connecting…",
+  "connection-lost": "Connection lost",
+  "continue-without-them": "Continue without them",
+  "copy-room-code": "Copy room code",
+  "dismiss": "Dismiss",
   "failed-to-load-media": "Не удалось загрузить медиа",
   "game-crashed": "Игра вылетела",
   "game-crashed-named": "{{gameName}} вылетела",
+  "game-paused": "Game paused",
   "loading": "Загрузка…",
   "no-messages-yet": "Пока нет сообщений",
+  "not-connected": "Not connected",
+  "notifications": "Notifications",
   "react": "Реакция",
+  "reconnecting": "Reconnecting…",
+  "resuming-in": "Continuing without them in {{seconds}}s",
+  "resuming-now": "Continuing…",
   "return-home": "На главную",
   "try-again": "Попробовать снова",
-  "unexpected-error": "Произошла непредвиденная ошибка."
+  "unexpected-error": "Произошла непредвиденная ошибка.",
+  "waiting-for-peer": "Waiting for {{name}} to reconnect…"
 }

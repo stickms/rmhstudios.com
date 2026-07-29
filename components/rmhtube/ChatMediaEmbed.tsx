@@ -176,12 +176,12 @@ function EmbedItem({ embed }: { embed: MediaEmbedInfo }) {
   if (!src || error) {
     if (embed.type === 'tenor-pending' && tenor.loading) {
       return (
-        <div className="mt-1 w-48 h-32 rounded-lg bg-(--rmhtube-surface) animate-pulse" />
+        <div className="mt-1 w-48 h-32 rounded-lg bg-(--app-surface) animate-pulse" />
       );
     }
     if (error) {
       return (
-        <div className="mt-1 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-(--rmhtube-surface) text-(--rmhtube-text-dim) text-xs">
+        <div className="mt-1 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-(--app-surface) text-(--app-text-dim) text-xs">
           <ImageOff className="h-3.5 w-3.5" />
           {t("failed-to-load-media", { defaultValue: "Failed to load media" })}
         </div>
@@ -202,7 +202,7 @@ function EmbedItem({ embed }: { embed: MediaEmbedInfo }) {
         alt=""
         loading="lazy"
         onError={() => setError(true)}
-        className="rounded-lg max-h-48 max-w-full object-contain border border-(--rmhtube-border)"
+        className="rounded-lg max-h-48 max-w-full object-contain border border-(--app-border)"
       />
     </a>
   );

@@ -1,18 +1,24 @@
 /**
- * RmhStudyShell — Client-side wrapper for the RmhStudy theme system.
+ * RmhStudyShell — RMHStudy's root wrapper. Palette only; the rest is `AppShell`.
  */
 'use client';
 
+import AppShell from '@/components/shared/AppShell';
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';
-import ToastContainer from '@/components/rmhstudy/ToastContainer';
+import { reconnectNow } from '@/lib/rmhstudy/socket';
 
 export default function RmhStudyShell({ children }: { children: React.ReactNode }) {
-  const theme = useRmhStudyStore((s) => s.settings.theme) ?? 'dark';
+  const theme = useRmhStudyStore((s) => s.settings.theme);
+  const status = useRmhStudyStore((s) => s.connectionStatus);
+  const peersWaiting = useRmhStudyStore((s) => s.peersWaiting);
 
   return (
-    <div className={`rmhstudy-theme ${theme === 'light' ? 'rmhstudy-light' : ''}`}>
-      <ToastContainer />
+    <AppShell
+      appClassName="rmhstudy-theme"
+      theme={theme}
+      realtime={{ status, peersWaiting, onRetry: reconnectNow }}
+    >
       {children}
-    </div>
+    </AppShell>
   );
 }

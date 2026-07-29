@@ -36,15 +36,15 @@ export default function QuestionCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, type: 'spring' }}
-      className="w-full rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-bg) p-5"
+      className="w-full rounded-xl border border-(--app-border) bg-(--app-bg) p-5"
     >
       {/* Header: question number + badges */}
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase tracking-wider">
+        <span className="text-xs font-semibold text-(--app-text-muted) uppercase tracking-wider">
           Q{questionIndex + 1}/{totalQuestions}
         </span>
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-(--rmhbox-surface-hover) px-2 py-0.5 text-xs text-(--rmhbox-text-muted)">
+          <span className="rounded-full bg-(--app-surface-hover) px-2 py-0.5 text-xs text-(--app-text-muted)">
             {category}
           </span>
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${DIFFICULTY_STYLES[difficulty] ?? DEFAULT_DIFFICULTY_STYLE}`}>
@@ -58,7 +58,7 @@ export default function QuestionCard({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.3 }}
-        className="text-lg font-semibold leading-relaxed text-(--rmhbox-text)"
+        className="text-lg font-semibold leading-relaxed text-(--app-text)"
       >
         {question}
       </motion.p>

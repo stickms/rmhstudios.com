@@ -1,6 +1,6 @@
 {
   "back": "Back to tournaments",
-  "bracket": "Bracket",
+  "bracket": "Tournament bracket",
   "bracket-pending": "The bracket appears here once the host starts.",
   "bye": "bye",
   "cancel": "Cancel",
@@ -12,6 +12,7 @@
   "create-failed": "Could not create tournament",
   "create-title": "Host a tournament",
   "created": "Tournament created!",
+  "description": "Join open brackets, follow live matches, or host your own competition.",
   "done": "Done",
   "empty": "No tournaments here yet. Host one and set the prize!",
   "entrants": "Entrants",
@@ -31,6 +32,7 @@
   "not-found": "This tournament no longer exists.",
   "players": "Players",
   "players-count_one": "{{count}} players",
+  "players-count_many": "{{count}} players",
   "players-count_other": "{{count}} players",
   "prize": "{{n}} prize",
   "prize-pool": "Prize pool",

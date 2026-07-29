@@ -14,18 +14,18 @@ export default function StrokeCounter({ current, max }: StrokeCounterProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <div className="w-24 h-2 rounded-full bg-(--rmhbox-border) overflow-hidden">
+      <div className="w-24 h-2 rounded-full bg-(--app-border) overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-200"
           style={{
             width: `${pct}%`,
-            backgroundColor: remaining <= 1 ? 'var(--rmhbox-danger)' : 'var(--rmhbox-accent)',
+            backgroundColor: remaining <= 1 ? 'var(--app-danger)' : 'var(--app-accent)',
           }}
         />
       </div>
       <span
         className={`text-sm font-mono ${
-          remaining <= 1 ? 'text-(--rmhbox-danger)' : 'text-(--rmhbox-text-muted)'
+          remaining <= 1 ? 'text-(--app-danger)' : 'text-(--app-text-muted)'
         }`}
       >
         {current}/{max}

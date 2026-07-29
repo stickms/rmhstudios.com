@@ -44,9 +44,9 @@ export default function CategoryCrashHistoryDetail({
     <div className="space-y-4" data-testid="category-crash-history-detail">
       {/* Game Settings */}
       {gameLog.initialState && (
-        <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3">
-          <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase mb-1">{t("game-settings", { defaultValue: "Game Settings" })}</h4>
-          <div className="flex flex-wrap gap-3 text-xs text-(--rmhbox-text-muted)">
+        <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-3">
+          <h4 className="text-xs font-semibold text-(--app-text-muted) uppercase mb-1">{t("game-settings", { defaultValue: "Game Settings" })}</h4>
+          <div className="flex flex-wrap gap-3 text-xs text-(--app-text-muted)">
             <span>{t("rounds-count", { defaultValue: "Rounds: {{count}}", count: (gameLog.initialState.rounds as number) ?? roundStarts.length })}</span>
             {gameLog.initialState.categoriesPerRound != null && (
               <span>{t("categories-per-round", { defaultValue: "Categories per Round: {{count}}", count: String(gameLog.initialState.categoriesPerRound) })}</span>
@@ -116,14 +116,14 @@ export default function CategoryCrashHistoryDetail({
         return (
           <div
             key={roundNum}
-            className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4"
+            className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4"
           >
             {/* Round header */}
             <div className="flex items-center gap-3 mb-3">
-              <h4 className="text-sm font-semibold text-(--rmhbox-text-muted)">
+              <h4 className="text-sm font-semibold text-(--app-text-muted)">
                 {t("round-number", { defaultValue: "Round {{num}}", num: roundNum })}
               </h4>
-              <span className="text-2xl font-bold text-(--rmhbox-accent)">{letter}</span>
+              <span className="text-2xl font-bold text-(--app-accent)">{letter}</span>
             </div>
 
             {/* Category × Player matrix */}
@@ -131,13 +131,13 @@ export default function CategoryCrashHistoryDetail({
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="text-left text-(--rmhbox-text-muted)">
+                    <tr className="text-left text-(--app-text-muted)">
                       <th className="pb-1 pr-2 font-medium">{t("category", { defaultValue: "Category" })}</th>
                       {players.map((p) => (
                         <th
                           key={p.userId}
                           className={`pb-1 px-2 font-medium ${
-                            p.userId === currentUserId ? 'text-(--rmhbox-accent)' : ''
+                            p.userId === currentUserId ? 'text-(--app-accent)' : ''
                           }`}
                         >
                           {p.userName}
@@ -147,8 +147,8 @@ export default function CategoryCrashHistoryDetail({
                   </thead>
                   <tbody>
                     {categories.map((cat) => (
-                      <tr key={cat} className="border-t border-(--rmhbox-border)">
-                        <td className="py-1 pr-2 font-medium text-(--rmhbox-text)">{cat}</td>
+                      <tr key={cat} className="border-t border-(--app-border)">
+                        <td className="py-1 pr-2 font-medium text-(--app-text)">{cat}</td>
                         {players.map((p) => {
                           const playerAnswer = roundAnswers.find(
                             (a) => a.payload.userId === p.userId,
@@ -163,10 +163,10 @@ export default function CategoryCrashHistoryDetail({
                               key={p.userId}
                               className={`py-1 px-2 ${
                                 isCrashed
-                                  ? 'line-through text-(--rmhbox-danger)'
+                                  ? 'line-through text-(--app-danger)'
                                   : isSafe
-                                    ? 'text-(--rmhbox-success)'
-                                    : 'text-(--rmhbox-text-muted)'
+                                    ? 'text-(--app-success)'
+                                    : 'text-(--app-text-muted)'
                               }`}
                             >
                               {answer}
@@ -183,17 +183,17 @@ export default function CategoryCrashHistoryDetail({
 
             {/* Crash details */}
             {crashDetails.length > 0 && (
-              <div className="mt-3 pt-2 border-t border-(--rmhbox-border)">
-                <span className="text-xs font-medium text-(--rmhbox-text-muted) uppercase">{t("crashes", { defaultValue: "Crashes" })}</span>
+              <div className="mt-3 pt-2 border-t border-(--app-border)">
+                <span className="text-xs font-medium text-(--app-text-muted) uppercase">{t("crashes", { defaultValue: "Crashes" })}</span>
                 <div className="space-y-0.5 mt-1">
                   {crashDetails.map((c, i) => (
-                    <div key={i} className="text-xs text-(--rmhbox-text-muted)">
-                      <span className="text-(--rmhbox-danger)">💥</span>{' '}
-                      <span className={c.crasher === currentUserId ? 'text-(--rmhbox-accent) font-semibold' : ''}>
+                    <div key={i} className="text-xs text-(--app-text-muted)">
+                      <span className="text-(--app-danger)">💥</span>{' '}
+                      <span className={c.crasher === currentUserId ? 'text-(--app-accent) font-semibold' : ''}>
                         {getPlayerName(c.crasher)}
                       </span>
                       {' '}{t("crashed", { defaultValue: "crashed" })}{' '}
-                      <span className={c.target === currentUserId ? 'text-(--rmhbox-accent) font-semibold' : ''}>
+                      <span className={c.target === currentUserId ? 'text-(--app-accent) font-semibold' : ''}>
                         {getPlayerName(c.target)}
                       </span>
                       {c.crashedAnswer && <>{t("crashed-answer-possessive", { defaultValue: "'s \"{{answer}}\"", answer: c.crashedAnswer })}</>}
@@ -206,8 +206,8 @@ export default function CategoryCrashHistoryDetail({
 
             {/* Per-round scores */}
             {roundScores.length > 0 && (
-              <div className="mt-3 pt-2 border-t border-(--rmhbox-border)">
-                <span className="text-xs font-medium text-(--rmhbox-text-muted) uppercase">{t("round-scores", { defaultValue: "Round Scores" })}</span>
+              <div className="mt-3 pt-2 border-t border-(--app-border)">
+                <span className="text-xs font-medium text-(--app-text-muted) uppercase">{t("round-scores", { defaultValue: "Round Scores" })}</span>
                 <div className="flex flex-wrap gap-3 mt-1">
                   {roundScores
                     .sort((a, b) => b.points - a.points)
@@ -216,7 +216,7 @@ export default function CategoryCrashHistoryDetail({
                       return (
                         <span
                           key={s.userId}
-                          className={`text-xs ${isMe ? 'text-(--rmhbox-accent) font-semibold' : 'text-(--rmhbox-text-muted)'}`}
+                          className={`text-xs ${isMe ? 'text-(--app-accent) font-semibold' : 'text-(--app-text-muted)'}`}
                         >
                           {getPlayerName(s.userId)}: +{s.points}
                           {s.validAnswers != null && s.crashedAnswers != null && (
@@ -235,8 +235,8 @@ export default function CategoryCrashHistoryDetail({
       })}
 
       {/* Final scores */}
-      <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
-        <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-2">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
+      <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4">
+        <h4 className="text-sm font-semibold text-(--app-text-muted) mb-2">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
         <div className="space-y-1">
           {players
             .sort((a, b) => a.rank - b.rank)
@@ -244,7 +244,7 @@ export default function CategoryCrashHistoryDetail({
               <div
                 key={p.userId}
                 className={`flex justify-between text-sm ${
-                  p.userId === currentUserId ? 'text-(--rmhbox-accent) font-semibold' : 'text-(--rmhbox-text)'
+                  p.userId === currentUserId ? 'text-(--app-accent) font-semibold' : 'text-(--app-text)'
                 }`}
               >
                 <span>

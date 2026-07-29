@@ -91,7 +91,7 @@ describe('Event Constants (§3.2)', () => {
 
   it('should define all server-to-client events with rmhbox: prefix', () => {
     const s2cEvents = Object.values(S2C);
-    expect(s2cEvents).toHaveLength(23);
+    expect(s2cEvents).toHaveLength(24);
     for (const event of s2cEvents) {
       expect(event).toMatch(/^rmhbox:/);
     }

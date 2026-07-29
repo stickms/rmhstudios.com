@@ -1,5 +1,7 @@
 // @ts-nocheck
 /* ═══════════════════════════════════════════
+import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
+
    NEURODRIVE — Lo-Fi / Jazz Radio
    Procedural Web Audio API synthesizer
    Cycle: OFF → lo-fi → jazz → OFF
@@ -221,10 +223,11 @@ export class LofiRadio {
        ═══════════════════════════════════════ */
 
     _ensureCtx() {
-        if (!this.ctx) {
-            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (this.ctx.state === 'suspended') this.ctx.resume();
+        // The page's shared context. The radio, the engine and the chime each
+        // used to mint their own — three of a per-document budget of six, on
+        // top of whatever the rest of the site had already opened.
+        if (!this.ctx) this.ctx = getAudioContext();
+        resumeAudioContext();
     }
 
     _buildGraph() {
@@ -566,9 +569,10 @@ export class LofiRadio {
     dispose() {
         this._mode = 'off';
         this._stop();
-        if (this.ctx && this.ctx.state !== 'closed') {
-            this.ctx.close().catch(() => {});
-        }
+        // Never close the context: it is the page's shared one, and closing it
+        // is irreversible — every other sound on the site would go silent for
+        // the rest of the session. Stopping the sources above already frees
+        // the graph.
         this.ctx = null;
     }
 }

@@ -62,15 +62,15 @@ export default function InviteLinkModal({ roomId, onClose }: InviteLinkModalProp
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative w-full max-w-sm max-h-[85dvh] overflow-y-auto rounded-xl border border-(--rmhtube-border) bg-(--rmhtube-surface) p-6 shadow-xl">
+      <div className="relative w-full max-w-sm max-h-[85dvh] overflow-y-auto rounded-xl border border-(--app-border) bg-(--app-surface) p-6 shadow-xl">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Link2 className="h-5 w-5 text-(--rmhtube-accent)" />
-            <h3 className="text-lg font-semibold text-(--rmhtube-text)">{t("invite-to-room", { defaultValue: "Invite to Room" })}</h3>
+            <Link2 className="h-5 w-5 text-(--app-accent)" />
+            <h3 className="text-lg font-semibold text-(--app-text)">{t("invite-to-room", { defaultValue: "Invite to Room" })}</h3>
           </div>
           <button
             onClick={onClose}
-            className="rounded p-1 text-(--rmhtube-text-muted) hover:text-(--rmhtube-text)"
+            className="rounded p-1 text-(--app-text-muted) hover:text-(--app-text)"
           >
             <X className="h-5 w-5" />
           </button>
@@ -78,7 +78,7 @@ export default function InviteLinkModal({ roomId, onClose }: InviteLinkModalProp
 
         {/* Quick share link */}
         <div className="mb-5">
-          <label className="block text-xs font-medium mb-1.5 text-(--rmhtube-text-dim)">
+          <label className="block text-xs font-medium mb-1.5 text-(--app-text-dim)">
             {t("room-link", { defaultValue: "Room Link" })}
           </label>
           <div className="flex items-center gap-2">
@@ -86,15 +86,15 @@ export default function InviteLinkModal({ roomId, onClose }: InviteLinkModalProp
               type="text"
               readOnly
               value={shareUrl}
-              className="flex-1 min-w-0 px-3 py-2 rounded-lg text-xs font-mono border border-(--rmhtube-border) bg-(--rmhtube-bg) text-(--rmhtube-text-muted) outline-none"
+              className="flex-1 min-w-0 px-3 py-2 rounded-lg text-xs font-mono border border-(--app-border) bg-(--app-bg) text-(--app-text-muted) outline-none"
             />
             <button
               onClick={handleCopyLink}
-              className="shrink-0 rounded-lg px-3 py-2 transition-colors bg-(--rmhtube-surface-hover) text-(--rmhtube-text-muted) hover:text-(--rmhtube-text)"
+              className="shrink-0 rounded-lg px-3 py-2 transition-colors bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-text)"
               title={t("copy-link", { defaultValue: "Copy link" })}
             >
               {copied ? (
-                <Check className="h-4 w-4 text-(--rmhtube-success)" />
+                <Check className="h-4 w-4 text-(--app-success)" />
               ) : (
                 <Copy className="h-4 w-4" />
               )}
@@ -105,7 +105,7 @@ export default function InviteLinkModal({ roomId, onClose }: InviteLinkModalProp
         {/* Invite link settings */}
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium mb-1.5 text-(--rmhtube-text-dim)">
+            <label className="block text-xs font-medium mb-1.5 text-(--app-text-dim)">
               {t("expires-after", { defaultValue: "Expires After" })}
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -115,8 +115,8 @@ export default function InviteLinkModal({ roomId, onClose }: InviteLinkModalProp
                   onClick={() => setExpiry(opt.value)}
                   className={`text-xs px-2.5 py-1 rounded-md transition-colors border ${
                     expiry === opt.value
-                      ? 'border-(--rmhtube-accent) bg-(--rmhtube-accent-dim) text-(--rmhtube-accent)'
-                      : 'border-(--rmhtube-border) text-(--rmhtube-text-muted) hover:border-(--rmhtube-border-bright)'
+                      ? 'border-(--app-accent) bg-(--app-accent-dim) text-(--app-accent)'
+                      : 'border-(--app-border) text-(--app-text-muted) hover:border-(--app-border-bright)'
                   }`}
                 >
                   {t(opt.labelKey, { defaultValue: opt.defaultLabel })}
@@ -126,7 +126,7 @@ export default function InviteLinkModal({ roomId, onClose }: InviteLinkModalProp
           </div>
 
           <div>
-            <label className="block text-xs font-medium mb-1.5 text-(--rmhtube-text-dim)">
+            <label className="block text-xs font-medium mb-1.5 text-(--app-text-dim)">
               {t("max-uses", { defaultValue: "Max Uses" })}
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -136,8 +136,8 @@ export default function InviteLinkModal({ roomId, onClose }: InviteLinkModalProp
                   onClick={() => setMaxUses(opt.value)}
                   className={`text-xs px-2.5 py-1 rounded-md transition-colors border ${
                     maxUses === opt.value
-                      ? 'border-(--rmhtube-accent) bg-(--rmhtube-accent-dim) text-(--rmhtube-accent)'
-                      : 'border-(--rmhtube-border) text-(--rmhtube-text-muted) hover:border-(--rmhtube-border-bright)'
+                      ? 'border-(--app-accent) bg-(--app-accent-dim) text-(--app-accent)'
+                      : 'border-(--app-border) text-(--app-text-muted) hover:border-(--app-border-bright)'
                   }`}
                 >
                   {t(opt.labelKey, { defaultValue: opt.defaultLabel })}
@@ -149,7 +149,7 @@ export default function InviteLinkModal({ roomId, onClose }: InviteLinkModalProp
 
         <button
           onClick={handleCreateInvite}
-          className="w-full mt-5 py-2.5 rounded-lg font-semibold text-(--rmhtube-accent-fg) transition-colors bg-(--rmhtube-accent) hover:bg-(--rmhtube-accent-hover)"
+          className="w-full mt-5 py-2.5 rounded-lg font-semibold text-(--app-accent-fg) transition-colors bg-(--app-accent) hover:bg-(--app-accent-hover)"
         >
           {t("create-invite-link", { defaultValue: "Create Invite Link" })}
         </button>

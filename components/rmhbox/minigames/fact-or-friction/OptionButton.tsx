@@ -23,15 +23,15 @@ const LABELS = ['A', 'B', 'C', 'D'];
 
 const STATE_STYLES: Record<OptionState, string> = {
   default:
-    'border-(--rmhbox-border) bg-(--rmhbox-surface-hover) text-(--rmhbox-text) hover:border-(--rmhbox-accent) hover:bg-(--rmhbox-accent)/10 cursor-pointer',
+    'border-(--app-border) bg-(--app-surface-hover) text-(--app-text) hover:border-(--app-accent) hover:bg-(--app-accent)/10 cursor-pointer',
   selected:
-    'border-(--rmhbox-accent) bg-(--rmhbox-accent)/20 text-(--rmhbox-accent) ring-2 ring-(--rmhbox-accent)/40',
+    'border-(--app-accent) bg-(--app-accent)/20 text-(--app-accent) ring-2 ring-(--app-accent)/40',
   correct:
     'border-green-500 bg-green-500/20 text-green-400',
   incorrect:
     'border-red-500 bg-red-500/20 text-red-400',
   disabled:
-    'border-(--rmhbox-border) bg-(--rmhbox-bg) text-(--rmhbox-text-muted) opacity-60 cursor-not-allowed',
+    'border-(--app-border) bg-(--app-bg) text-(--app-text-muted) opacity-60 cursor-not-allowed',
 };
 
 export default function OptionButton({
@@ -64,7 +64,7 @@ export default function OptionButton({
         <motion.span
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="shrink-0 rounded-full bg-(--rmhbox-accent)/30 px-2 py-0.5 text-xs font-semibold text-(--rmhbox-accent)"
+          className="shrink-0 rounded-full bg-(--app-accent)/30 px-2 py-0.5 text-xs font-semibold text-(--app-accent)"
         >
           {lockedPotValue} pts
         </motion.span>

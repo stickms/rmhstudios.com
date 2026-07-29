@@ -489,14 +489,14 @@ export default function UndercoverEditorGame({
     <div className="flex w-full flex-col items-center gap-4">
       {/* Spectator indicator */}
       {isSpectator && (
-        <div className="rounded-lg bg-(--rmhbox-rare-dim) border border-(--rmhbox-rare)/30 px-3 py-1.5 text-xs font-medium text-(--rmhbox-rare)">
+        <div className="rounded-lg bg-(--app-rare-dim) border border-(--app-rare)/30 px-3 py-1.5 text-xs font-medium text-(--app-rare)">
           👁 {t("spectating", { defaultValue: "Spectating" })}
         </div>
       )}
 
       {/* Error toast */}
       {errorMessage && (
-        <div className="rounded-lg bg-(--rmhbox-danger-dim) border border-(--rmhbox-danger)/30 px-3 py-1.5 text-xs text-(--rmhbox-danger)">
+        <div className="rounded-lg bg-(--app-danger-dim) border border-(--app-danger)/30 px-3 py-1.5 text-xs text-(--app-danger)">
           {errorMessage}
         </div>
       )}
@@ -512,7 +512,7 @@ export default function UndercoverEditorGame({
             transition={{ duration: 0.3 }}
             className="flex items-center justify-center p-8"
           >
-            <p className="text-sm text-(--rmhbox-text-muted)">
+            <p className="text-sm text-(--app-text-muted)">
               {t("ue-setting-up-stories", { defaultValue: "Setting up the stories…" })}
             </p>
           </motion.div>
@@ -530,10 +530,10 @@ export default function UndercoverEditorGame({
           >
             {/* Round indicator */}
             <div className="text-center">
-              <p className="text-xs font-medium text-(--rmhbox-text-muted) uppercase tracking-wider">
+              <p className="text-xs font-medium text-(--app-text-muted) uppercase tracking-wider">
                 {t("ue-write-step", { defaultValue: "Step {{currentStep}} / {{totalSteps}} · Writing Round {{writeRound}}", currentStep, totalSteps, writeRound })}
               </p>
-              <p className="text-sm text-(--rmhbox-text-muted)">
+              <p className="text-sm text-(--app-text-muted)">
                 {t("ue-players-submitted", { defaultValue: "{{submittedCount}}/{{totalPlayers}} players submitted", submittedCount, totalPlayers })}
               </p>
             </div>
@@ -544,12 +544,12 @@ export default function UndercoverEditorGame({
                 {/* Write input or submitted indicator */}
                 {mySubmission ? (
                   <div className="flex items-center gap-2">
-                    <p className="flex-1 rounded-lg bg-(--rmhbox-success-dim) border border-(--rmhbox-success)/30 px-3 py-2 text-sm text-(--rmhbox-success)">
+                    <p className="flex-1 rounded-lg bg-(--app-success-dim) border border-(--app-success)/30 px-3 py-2 text-sm text-(--app-success)">
                       ✓ {mySubmission}
                     </p>
                     <button
                       onClick={handleUnsubmitSentence}
-                      className="rounded-lg bg-(--rmhbox-surface) border border-(--rmhbox-border) px-3 py-2 text-xs text-(--rmhbox-text-muted) hover:bg-(--rmhbox-border) transition-colors"
+                      className="rounded-lg bg-(--app-surface) border border-(--app-border) px-3 py-2 text-xs text-(--app-text-muted) hover:bg-(--app-border) transition-colors"
                     >
                       {t("edit", { defaultValue: "Edit" })}
                     </button>
@@ -568,11 +568,11 @@ export default function UndercoverEditorGame({
                 )}
               </div>
             ) : isSpectator ? (
-              <p className="text-xs text-(--rmhbox-text-muted) italic text-center">
+              <p className="text-xs text-(--app-text-muted) italic text-center">
                 {t("ue-watching-players-write", { defaultValue: "Watching players write…" })}
               </p>
             ) : (
-              <p className="text-xs text-(--rmhbox-text-muted) italic text-center">
+              <p className="text-xs text-(--app-text-muted) italic text-center">
                 {t("ue-waiting-for-assignment", { defaultValue: "Waiting for assignment…" })}
               </p>
             )}
@@ -590,7 +590,7 @@ export default function UndercoverEditorGame({
             className="flex w-full flex-col items-center gap-4"
           >
             <div className="text-center">
-              <p className="text-xs font-medium text-(--rmhbox-text-muted) uppercase tracking-wider">
+              <p className="text-xs font-medium text-(--app-text-muted) uppercase tracking-wider">
                 {t("ue-edit-step", { defaultValue: "Step {{currentStep}} / {{totalSteps}} · Editing", currentStep, totalSteps })}
               </p>
             </div>
@@ -604,14 +604,14 @@ export default function UndercoverEditorGame({
               />
             ) : editDone ? (
               <div className="flex flex-col items-center gap-3 p-8">
-                <p className="text-lg font-bold text-(--rmhbox-success)">✓ {t("ue-edit-complete", { defaultValue: "Edit Complete" })}</p>
-                <p className="text-sm text-(--rmhbox-text-muted)">
+                <p className="text-lg font-bold text-(--app-success)">✓ {t("ue-edit-complete", { defaultValue: "Edit Complete" })}</p>
+                <p className="text-sm text-(--app-text-muted)">
                   {t("ue-waiting-for-editors", { defaultValue: "Waiting for other editors…" })}
                 </p>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3 p-8">
-                <p className="text-sm text-(--rmhbox-text-muted) italic">
+                <p className="text-sm text-(--app-text-muted) italic">
                   {isSpectator ? t("ue-watching-editors-work", { defaultValue: "Watching editors work…" }) : t("ue-editors-reviewing", { defaultValue: "Editors are reviewing the stories…" })}
                 </p>
               </div>
@@ -630,7 +630,7 @@ export default function UndercoverEditorGame({
             className="flex w-full flex-col items-center gap-4"
           >
             <div className="text-center">
-              <p className="text-xs font-medium text-(--rmhbox-text-muted) uppercase tracking-wider">
+              <p className="text-xs font-medium text-(--app-text-muted) uppercase tracking-wider">
                 {t("ue-reading-stories", { defaultValue: "Reading Stories · {{current}} / {{total}}", current: readingStoryIndex + 1, total: readingStories.length })}
               </p>
             </div>
@@ -638,24 +638,24 @@ export default function UndercoverEditorGame({
             {currentReadingStory && (
               <div className="w-full max-w-lg flex flex-col gap-3">
                 {/* Slim "Story so far" panel — shows story number, prompt as sentence, revealed sentences */}
-                <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) p-3">
-                  <p className="mb-2 text-[10px] uppercase tracking-wider text-(--rmhbox-text-muted)">
+                <div className="rounded-lg border border-(--app-border) bg-(--app-surface) p-3">
+                  <p className="mb-2 text-[10px] uppercase tracking-wider text-(--app-text-muted)">
                     {t("ue-story-number", { defaultValue: "Story {{number}}", number: readingStoryIndex + 1 })}
                   </p>
                   <div className="space-y-1.5">
                     {/* Prompt shown as first sentence */}
-                    <p className="text-sm leading-relaxed text-(--rmhbox-text)">
+                    <p className="text-sm leading-relaxed text-(--app-text)">
                       <span className="opacity-50 text-xs">(prompt)</span> {currentReadingStory.prompt}
                     </p>
                     {revealedSentences.map((s, i) => (
-                      <p key={i} className="text-sm leading-relaxed text-(--rmhbox-text)">
+                      <p key={i} className="text-sm leading-relaxed text-(--app-text)">
                         <span className="opacity-50 text-xs">({s.authorName})</span> {s.text}
                       </p>
                     ))}
                   </div>
 
                   {revealedSentences.length === 0 && (
-                    <p className="mt-2 text-xs text-(--rmhbox-text-muted) italic text-center">
+                    <p className="mt-2 text-xs text-(--app-text-muted) italic text-center">
                       {t("ue-press-next-sentence", { defaultValue: "Press \"Next Sentence\" to begin reading…" })}
                     </p>
                   )}
@@ -667,7 +667,7 @@ export default function UndercoverEditorGame({
                     {readingSentenceIndex < currentReadingStory.sentenceCount ? (
                       <button
                         onClick={handleNextSentence}
-                        className="flex items-center gap-1.5 rounded-lg bg-(--rmhbox-accent) px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+                        className="flex items-center gap-1.5 rounded-lg bg-(--app-accent) px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
                       >
                         {t("ue-next-sentence", { defaultValue: "Next Sentence" })}
                         <ChevronRight className="h-4 w-4" />
@@ -675,7 +675,7 @@ export default function UndercoverEditorGame({
                     ) : (
                       <button
                         onClick={handleNextStory}
-                        className="flex items-center gap-1.5 rounded-lg bg-(--rmhbox-accent) px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+                        className="flex items-center gap-1.5 rounded-lg bg-(--app-accent) px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
                       >
                         {readingStoryIndex + 1 < readingStories.length ? t("ue-next-story", { defaultValue: "Next Story" }) : t("ue-start-matching", { defaultValue: "Start Matching" })}
                         <ChevronRight className="h-4 w-4" />
@@ -685,13 +685,13 @@ export default function UndercoverEditorGame({
                 )}
 
                 {!isHost && (
-                  <p className="text-xs text-(--rmhbox-text-muted) italic text-center">
+                  <p className="text-xs text-(--app-text-muted) italic text-center">
                     {t("ue-host-controlling-pace", { defaultValue: "The host is controlling the reading pace…" })}
                   </p>
                 )}
 
                 {/* Sentence progress indicator */}
-                <p className="text-xs text-(--rmhbox-text-muted) text-center">
+                <p className="text-xs text-(--app-text-muted) text-center">
                   {t("ue-sentences-revealed", { defaultValue: "{{revealed}} / {{total}} sentences revealed", revealed: readingSentenceIndex, total: currentReadingStory.sentenceCount })}
                 </p>
               </div>
@@ -731,11 +731,11 @@ export default function UndercoverEditorGame({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="mx-auto flex w-full max-w-2xl flex-col items-center gap-6 text-(--rmhbox-text)"
+            className="mx-auto flex w-full max-w-2xl flex-col items-center gap-6 text-(--app-text)"
           >
             <div className="flex flex-col items-center gap-1">
               <h2 className="text-lg font-bold">{t("ue-truth-revealed", { defaultValue: "The Truth Revealed" })}</h2>
-              <p className="text-xs text-(--rmhbox-text-muted)">
+              <p className="text-xs text-(--app-text-muted)">
                 {t("ue-full-stories-edits-highlighted", { defaultValue: "Full stories with edits highlighted" })}
               </p>
             </div>
@@ -754,7 +754,7 @@ export default function UndercoverEditorGame({
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: revealIdx * 0.08, duration: 0.35 }}
-                    className="flex flex-col gap-3 rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4"
+                    className="flex flex-col gap-3 rounded-xl border border-(--app-border) bg-(--app-surface) p-4"
                   >
                     {/* Story header with match result badge */}
                     <div className="flex items-center justify-between">
@@ -762,8 +762,8 @@ export default function UndercoverEditorGame({
                       {myGuess && (
                         <span className={`text-xs px-2 py-0.5 rounded-full ${
                           myGuess.correct
-                            ? 'bg-(--rmhbox-success-dim) text-(--rmhbox-success)'
-                            : 'bg-(--rmhbox-danger-dim) text-(--rmhbox-danger)'
+                            ? 'bg-(--app-success-dim) text-(--app-success)'
+                            : 'bg-(--app-danger-dim) text-(--app-danger)'
                         }`}>
                           {myGuess.correct ? `✓ ${t("correct", { defaultValue: "Correct" })}` : `✗ ${t("wrong", { defaultValue: "Wrong" })}`}
                         </span>
@@ -771,15 +771,15 @@ export default function UndercoverEditorGame({
                     </div>
 
                     {/* Editor reveal */}
-                    <p className="text-sm text-(--rmhbox-text-muted)">
+                    <p className="text-sm text-(--app-text-muted)">
                       {t("ue-edited-by", { defaultValue: "Edited by:" })}{' '}
-                      <span className="font-bold text-(--rmhbox-accent)">{reveal.editorName}</span>
+                      <span className="font-bold text-(--app-accent)">{reveal.editorName}</span>
                     </p>
 
                     {/* Full story with in-situ edit highlighting */}
-                    <div className="flex flex-col gap-1 rounded-lg bg-(--rmhbox-surface)/60 p-3 text-sm leading-relaxed">
+                    <div className="flex flex-col gap-1 rounded-lg bg-(--app-surface)/60 p-3 text-sm leading-relaxed">
                       {/* Prompt as first sentence */}
-                      <span className="text-(--rmhbox-text)">
+                      <span className="text-(--app-text)">
                         <span className="opacity-50 text-xs">(prompt)</span> {reveal.prompt}
                       </span>
 
@@ -809,10 +809,10 @@ export default function UndercoverEditorGame({
                                 return (
                                   <span key={wi}>
                                     {wi > 0 && ' '}
-                                    <span className="inline-flex items-center gap-0.5 rounded bg-(--rmhbox-rare-dim) px-1 py-0.5 text-[inherit]">
-                                      <span className="line-through text-(--rmhbox-danger)">{edit.originalWord}</span>
-                                      <span className="text-(--rmhbox-text-muted) text-[0.75em]">→</span>
-                                      <span className="text-(--rmhbox-success) font-medium">{edit.newWord}</span>
+                                    <span className="inline-flex items-center gap-0.5 rounded bg-(--app-rare-dim) px-1 py-0.5 text-[inherit]">
+                                      <span className="line-through text-(--app-danger)">{edit.originalWord}</span>
+                                      <span className="text-(--app-text-muted) text-[0.75em]">→</span>
+                                      <span className="text-(--app-success) font-medium">{edit.newWord}</span>
                                     </span>
                                   </span>
                                 );
@@ -836,17 +836,17 @@ export default function UndercoverEditorGame({
             {/* Score summary */}
             {scores.length > 0 && (
               <div className="w-full max-w-sm">
-                <h3 className="text-sm font-bold text-(--rmhbox-text) mb-2 text-center">{t("scores", { defaultValue: "Scores" })}</h3>
+                <h3 className="text-sm font-bold text-(--app-text) mb-2 text-center">{t("scores", { defaultValue: "Scores" })}</h3>
                 <div className="flex flex-col gap-1">
                   {[...scores].sort((a, b) => b.score - a.score).map((s) => (
                     <div
                       key={s.userId}
-                      className="flex items-center justify-between rounded-lg bg-(--rmhbox-surface) px-3 py-1.5 text-sm"
+                      className="flex items-center justify-between rounded-lg bg-(--app-surface) px-3 py-1.5 text-sm"
                     >
-                      <span className={`${s.userId === playerId ? 'font-bold text-(--rmhbox-accent)' : 'text-(--rmhbox-text)'}`}>
+                      <span className={`${s.userId === playerId ? 'font-bold text-(--app-accent)' : 'text-(--app-text)'}`}>
                         {s.userName}
                       </span>
-                      <span className="font-mono text-(--rmhbox-text-muted)">{s.score}</span>
+                      <span className="font-mono text-(--app-text-muted)">{s.score}</span>
                     </div>
                   ))}
                 </div>
@@ -864,7 +864,7 @@ export default function UndercoverEditorGame({
             transition={{ duration: 0.3 }}
             className="flex items-center justify-center p-8"
           >
-            <p className="text-sm text-(--rmhbox-text-muted)">
+            <p className="text-sm text-(--app-text-muted)">
               {t("ue-game-over-calculating", { defaultValue: "Game over — calculating results…" })}
             </p>
           </motion.div>

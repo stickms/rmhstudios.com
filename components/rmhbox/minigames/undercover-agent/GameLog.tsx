@@ -56,9 +56,9 @@ export default function GameLog({ redTeam, blueTeam, logEntries }: GameLogProps)
   }, [logEntries.length]);
 
   return (
-    <div className="flex flex-col rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) overflow-hidden">
+    <div className="flex flex-col rounded-xl border border-(--app-border) bg-(--app-surface) overflow-hidden">
       {/* Score header */}
-      <div className="flex items-stretch border-b border-(--rmhbox-border)">
+      <div className="flex items-stretch border-b border-(--app-border)">
         {/* Red score */}
         <div className="flex-1 flex flex-col items-center justify-center py-2 px-3 bg-red-500/10">
           <span className="text-[10px] font-bold uppercase tracking-wider text-red-400">{t("team-red", { defaultValue: "Red" })}</span>
@@ -67,7 +67,7 @@ export default function GameLog({ redTeam, blueTeam, logEntries }: GameLogProps)
           </span>
         </div>
         {/* Divider */}
-        <div className="w-px bg-(--rmhbox-border)" />
+        <div className="w-px bg-(--app-border)" />
         {/* Blue score */}
         <div className="flex-1 flex flex-col items-center justify-center py-2 px-3 bg-blue-500/10">
           <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400">{t("team-blue", { defaultValue: "Blue" })}</span>
@@ -78,14 +78,14 @@ export default function GameLog({ redTeam, blueTeam, logEntries }: GameLogProps)
       </div>
 
       {/* Log title */}
-      <div className="px-3 py-1.5 border-b border-(--rmhbox-border)">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-(--rmhbox-text-muted)">{t("game-log", { defaultValue: "Game Log" })}</span>
+      <div className="px-3 py-1.5 border-b border-(--app-border)">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-(--app-text-muted)">{t("game-log", { defaultValue: "Game Log" })}</span>
       </div>
 
       {/* Scrollable log entries */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto max-h-48 lg:max-h-64 px-2 py-1.5 space-y-1">
         {logEntries.length === 0 ? (
-          <p className="text-center text-[10px] text-(--rmhbox-text-muted) italic py-4">
+          <p className="text-center text-[10px] text-(--app-text-muted) italic py-4">
             {t("no-actions-yet", { defaultValue: "No actions yet" })}
           </p>
         ) : (
@@ -99,7 +99,7 @@ export default function GameLog({ redTeam, blueTeam, logEntries }: GameLogProps)
                 className="flex items-start gap-1.5 text-[11px] leading-tight py-0.5"
               >
                 <Icon className={`h-3 w-3 shrink-0 mt-0.5 ${teamColor}`} />
-                <span className="text-(--rmhbox-text)">{entry.text}</span>
+                <span className="text-(--app-text)">{entry.text}</span>
               </div>
             );
           })

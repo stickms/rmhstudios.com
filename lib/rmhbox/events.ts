@@ -67,5 +67,6 @@ export const S2C = {
   LEADERBOARD_DATA:       'rmhbox:leaderboard:data',
   SPECTATOR_TARGET_STATE: 'rmhbox:spectator:target_state',
   NOT_IN_LOBBY:           'rmhbox:lobby:not_in_lobby',
+  PEERS_WAITING:      'rmhbox:peers:waiting',
   ERROR:                  'rmhbox:error',
 } as const;

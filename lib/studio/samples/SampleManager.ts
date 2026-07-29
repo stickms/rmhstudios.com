@@ -1,3 +1,4 @@
+import { getAudioContext } from '@/lib/shared/platform';
 import { saveSample, loadSample, listSamples, deleteSample } from '../project-store';
 import type { SampleMeta } from '../types';
 
@@ -81,7 +82,12 @@ export class SampleManager {
   }
 
   private async decodeBuffer(buffer: ArrayBuffer): Promise<AudioBuffer> {
-    const ctx = this.audioContext || new AudioContext();
+    // Falls back to the page's shared context rather than minting a new one:
+    // browsers cap AudioContexts per document (Chromium's limit is six), and a
+    // studio session that decodes into a fresh one each time hits the ceiling,
+    // after which every construction throws.
+    const ctx = this.audioContext ?? getAudioContext();
+    if (!ctx) throw new Error('Web Audio is unavailable on this device');
     return ctx.decodeAudioData(buffer.slice(0));
   }
 }

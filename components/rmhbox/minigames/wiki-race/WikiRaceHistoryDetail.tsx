@@ -172,13 +172,13 @@ export default function WikiRaceHistoryDetail({
     <div className="space-y-4" data-testid="wiki-race-history-detail">
       {/* Game-level header */}
       {isMultiRound && (
-        <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3">
+        <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase">
+            <h4 className="text-xs font-semibold text-(--app-text-muted) uppercase">
               {t("wiki-race-n-rounds", { defaultValue: "Wiki-Race — {{count}} Rounds", count: totalRounds })}
             </h4>
             {timeLimit && (
-              <span className="text-xs text-(--rmhbox-text-muted)">
+              <span className="text-xs text-(--app-text-muted)">
                 {t("time-limit-per-round", { defaultValue: "{{seconds}}s per round", seconds: timeLimit })}
               </span>
             )}
@@ -199,8 +199,8 @@ export default function WikiRaceHistoryDetail({
       ))}
 
       {/* Final scores */}
-      <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
-        <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-2">
+      <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4">
+        <h4 className="text-sm font-semibold text-(--app-text-muted) mb-2">
           {isMultiRound ? t("cumulative-scores", { defaultValue: "Cumulative Scores" }) : t("final-scores", { defaultValue: "Final Scores" })}
         </h4>
         <div className="space-y-1">
@@ -211,8 +211,8 @@ export default function WikiRaceHistoryDetail({
                 key={p.userId}
                 className={`flex justify-between text-sm ${
                   p.userId === currentUserId
-                    ? 'text-(--rmhbox-accent) font-semibold'
-                    : 'text-(--rmhbox-text)'
+                    ? 'text-(--app-accent) font-semibold'
+                    : 'text-(--app-text)'
                 }`}
               >
                 <span>
@@ -274,9 +274,9 @@ function RoundSection({
   return (
     <div className="space-y-3">
       {/* Race Info / Round header */}
-      <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
+      <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4">
         <div className="flex items-center justify-between mb-2">
-          <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase">
+          <h4 className="text-xs font-semibold text-(--app-text-muted) uppercase">
             {showRoundHeader ? t("round-n", { defaultValue: "Round {{round}}", round: round.round }) : t("race-details", { defaultValue: "Race Details" })}
           </h4>
           <div className="flex items-center gap-2">
@@ -292,24 +292,24 @@ function RoundSection({
           </div>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <span className="font-medium text-(--rmhbox-text)">
+          <span className="font-medium text-(--app-text)">
             {round.startArticle}
           </span>
-          <span className="text-(--rmhbox-text-muted)">→</span>
-          <span className="font-bold text-(--rmhbox-accent)">
+          <span className="text-(--app-text-muted)">→</span>
+          <span className="font-bold text-(--app-accent)">
             {round.targetArticle}
           </span>
         </div>
         {!showRoundHeader && timeLimit && (
-          <div className="text-xs text-(--rmhbox-text-muted) mt-1">
+          <div className="text-xs text-(--app-text-muted) mt-1">
             {t("time-limit-seconds", { defaultValue: "Time limit: {{seconds}}s", seconds: timeLimit })}
           </div>
         )}
       </div>
 
       {/* Player paths for this round */}
-      <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
-        <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-3">
+      <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4">
+        <h4 className="text-sm font-semibold text-(--app-text-muted) mb-3">
           {t("player-paths", { defaultValue: "Player Paths" })}
         </h4>
         <div className="space-y-3">
@@ -327,15 +327,15 @@ function RoundSection({
             return (
               <div
                 key={p.userId}
-                className={`rounded border border-(--rmhbox-border) p-3 ${
-                  isMe ? 'border-(--rmhbox-accent)/30 bg-(--rmhbox-accent)/5' : ''
+                className={`rounded border border-(--app-border) p-3 ${
+                  isMe ? 'border-(--app-accent)/30 bg-(--app-accent)/5' : ''
                 }`}
               >
                 {/* Player header */}
                 <div className="flex items-center justify-between mb-2">
                   <span
                     className={`text-sm font-semibold ${
-                      isMe ? 'text-(--rmhbox-accent)' : 'text-(--rmhbox-text)'
+                      isMe ? 'text-(--app-accent)' : 'text-(--app-text)'
                     }`}
                   >
                     {finish && (
@@ -364,17 +364,17 @@ function RoundSection({
                         {t("timeout-clicks", { defaultValue: "✗ Timeout — {{clicks}} clicks", clicks: path.length - 1 })}
                       </span>
                     ) : (
-                      <span className="text-(--rmhbox-text-muted)">
+                      <span className="text-(--app-text-muted)">
                         {t("in-progress", { defaultValue: "In progress" })}
                       </span>
                     )}
                     {backs > 0 && (
-                      <span className="text-(--rmhbox-text-muted)">
+                      <span className="text-(--app-text-muted)">
                         {t("n-back", { defaultValue: "({{count}} back)", count: backs })}
                       </span>
                     )}
                     {roundScores?.[p.userId] != null && (
-                      <span className="text-(--rmhbox-text-muted) font-mono">
+                      <span className="text-(--app-text-muted) font-mono">
                         +{roundScores[p.userId]}
                       </span>
                     )}
@@ -382,11 +382,11 @@ function RoundSection({
                 </div>
 
                 {/* Breadcrumb trail */}
-                <div className="flex flex-wrap items-center gap-0.5 text-xs text-(--rmhbox-text-muted)">
+                <div className="flex flex-wrap items-center gap-0.5 text-xs text-(--app-text-muted)">
                   {path.map((article, ai) => (
                     <span key={ai} className="flex items-center">
                       {ai > 0 && (
-                        <span className="mx-0.5 text-(--rmhbox-text-muted)/50">
+                        <span className="mx-0.5 text-(--app-text-muted)/50">
                           →
                         </span>
                       )}
@@ -395,7 +395,7 @@ function RoundSection({
                           article === round.targetArticle
                             ? 'text-green-400 font-semibold'
                             : article === round.startArticle
-                              ? 'text-(--rmhbox-text) font-medium'
+                              ? 'text-(--app-text) font-medium'
                               : ''
                         }
                       >
@@ -412,12 +412,12 @@ function RoundSection({
 
       {/* Round End Summary */}
       {round.endAction && (
-        <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3">
-          <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase mb-1">
+        <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-3">
+          <h4 className="text-xs font-semibold text-(--app-text-muted) uppercase mb-1">
             {showRoundHeader ? t("round-n-end", { defaultValue: "Round {{round}} End", round: round.round }) : t("game-end", { defaultValue: "Game End" })}
           </h4>
-          <div className="text-xs text-(--rmhbox-text-muted)">
-            <span className="text-(--rmhbox-text)">
+          <div className="text-xs text-(--app-text-muted)">
+            <span className="text-(--app-text)">
               {(round.endAction.payload.reason as string)?.replace(/_/g, ' ') ??
                 t("game-over", { defaultValue: "Game over" })}
             </span>
