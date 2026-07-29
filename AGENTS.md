@@ -15,11 +15,14 @@
   them from the client bundle. Never import them from client code.
 - **Design language:** all colors/radii/shadows/fonts via `--site-*` Tailwind
   utilities (`bg-site-surface`, `rounded-site`, …); use `components/ui/`
-  primitives and `components/feed/PageLayout.tsx`. The theme system depends on this.
-  Reference: `docs/design-language.md` + checklist in
-  `docs/page-consistency.md`.
+  primitives and `components/feed/PageLayout.tsx`. Full-screen apps use the
+  parallel `--app-*` contract (`components/shared/app-theme.css` + `AppShell`).
+  The theme system depends on this. Read `docs/design-language.md` §0 before a
+  UI commit; checklist in `docs/page-consistency.md`. Part of it is CI-enforced
+  (`lib/__tests__/design-consistency.test.ts`).
 - **i18n:** every user-facing string through `t("key", { defaultValue })`,
-  then `pnpm i18n:extract`.
+  then `pnpm i18n:extract`. A new namespace JSON must also be registered in
+  `NAMESPACES` (`lib/i18n/config.ts`) or it is never loaded.
 - **API routes:** session via `auth.api.getSession({ headers })` → rate limit
   via `lib/rate-limit` → zod validation → `Response.json`. Details in
   `app/CLAUDE.md`.
@@ -41,6 +44,7 @@
 | Runtime topology & deploy pipeline | [`docs/architecture.md`](./docs/architecture.md)         |
 | Design language (themes, tokens)   | [`docs/design-language.md`](./docs/design-language.md)   |
 | New-page consistency checklist     | [`docs/page-consistency.md`](./docs/page-consistency.md) |
+| Named in-universe cast (canon)     | [`docs/cast.md`](./docs/cast.md)                         |
 | Docs index (incl. stale-doc flags) | [`docs/README.md`](./docs/README.md)                     |
 | Contribution rules                 | [`CONTRIBUTING.md`](./CONTRIBUTING.md)                   |
 

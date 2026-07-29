@@ -232,14 +232,27 @@ Work through this for every new or edited page:
 ### Before pushing
 
 - [ ] `pnpm exec tsc --noEmit` and `pnpm lint` introduce no _new_ warnings.
+- [ ] `pnpm exec vitest run` — the suite carries the UI consistency gate
+      (`lib/__tests__/design-consistency.test.ts`, design-language.md §13),
+      which fails on hand-rolled tab strips and active-underline markers.
 - [ ] Dev server run once so `app/routeTree.gen.ts` regenerates (never edit it
       by hand).
+- [ ] Walk design-language.md §0 (definition of done) once more against the
+      finished diff.
 
 ---
 
 ## 4. Full-screen games/apps
 
-Games own their viewport but still share:
+**Apps** (RMHbox, RMHType, RMHStudy, RMHTube, RMHMusic) are not freeform: they
+share the `--app-*` token contract and chrome in `components/shared/`
+(`app-theme.css`, `AppShell`, `AppHeader`, `AppToaster` + `lib/shared/app-toast`,
+`ConnectionStatus`). A new app writes **a palette class and nothing else** —
+mount `AppShell` with it, use `AppHeader` for the app bar. See
+[`design-language.md`](./design-language.md) §12; writing a sixth shell, header
+or toast store is the exact drift that tier exists to prevent.
+
+**Games** own their viewport and their look, but still share:
 
 - `components/shared/GameLoadingFallback.tsx` and
   `components/shared/GameErrorBoundary.tsx` (strings in the `shared`

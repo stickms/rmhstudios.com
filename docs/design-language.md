@@ -60,6 +60,55 @@ Specs: [radial UI](../components/radial/README.md) ·
 
 ---
 
+## 0. Definition of done for a UI commit
+
+Read this before touching pixels; it is the short version of everything below,
+and the thing to re-read at the end of the change. A UI commit is done when all
+nine hold. (`docs/page-consistency.md` §3 is the same contract expanded into a
+per-page checklist with code.)
+
+1. **Nothing is hardcoded.** Every color, radius, shadow, font and duration
+   comes from a token utility (`--site-*` on the site; `--app-*` inside a
+   full-screen app, §12) — no hex, no `rounded-lg`, no bespoke
+   `transition: 200ms ease`. A theme the author never opened must still look
+   deliberate. (§1, §12)
+2. **Ink tracks its surface.** Filled surfaces take their paired foreground
+   (`bg-site-accent` → `text-site-accent-fg`). Never `text-white`/`text-black`
+   on a themed surface. (§1)
+3. **It reuses a primitive.** If `components/ui/` has it — button, badge,
+   dialog, tabs, empty state, skeleton, spinner, tooltip, copy button, confirm
+   — the commit uses it rather than a local copy. A second copy of something
+   shared is the single most common defect in this repo's UI history, and the
+   reason §5.2 and §12 exist at all. (§5)
+4. **One tab-strip grammar.** Tab strips are `<LiquidTabs>`. No hand-rolled
+   `role="tablist"`, no `layoutId` capsule of your own, no active-state
+   underline. This one is **CI-enforced** — see §13. (§7)
+5. **Motion comes from the token set.** `lib/motion.ts` (`DURATION`, `EASE`,
+   `SPRING`, `APPLE_SPRING`, `transition`, and the named variants) rather than
+   ad-hoc numbers, so a global re-tune stays a one-line change. (§7)
+6. **It degrades centrally, not per component.** High-contrast, reduced
+   transparency, reduced motion, `perf-lite` and `forced-colors` are handled by
+   the token layer and the glass classes. A component that branches on them by
+   hand is a bug. Legibility must never depend on an optic: text has to hold on
+   `--site-surface-opaque`. (§5.1, §7, §9)
+7. **Every string is translated** through `t("key", { defaultValue })`, with
+   `pnpm i18n:extract` run and the namespace registered in
+   `lib/i18n/config.ts`. (§10)
+8. **The keyboard and screen-reader path works.** Icon-only controls are named,
+   decorative icons are `aria-hidden`, focus stays visible and undoubled. (§8,
+   §9)
+9. **It was actually looked at** in `default`, `.style-light` and
+   `.style-high-contrast`, at a phone width and a desktop width, and once with
+   reduced motion on. Three themes × two widths is the floor; the audit matrix
+   in `docs/ui-audit-2026-07-28.md` §1 is the extended version.
+
+**When the system does not have what you need**, extend the system — add the
+token, add the variant, add the primitive — and say so in the commit message.
+Do not solve it locally with a magic number; that is how five apps ended up
+with five focus rings.
+
+---
+
 ## 1. The token contract (`app/globals.css`)
 
 Tailwind v4 is imported at the top of `app/globals.css`; an `@theme inline`
@@ -261,6 +310,19 @@ role, not by looks — the tier decides blur cost (see the redesign doc §6 budg
 | `.glass-inset`                      | —               | Recessed wells: inputs, search fields.                                                              |
 | `.glass-scrim`                      | —               | Dialog/drawer backdrops.                                                                            |
 
+Modifiers layer **on top of** a tier class. Each carries a per-page budget —
+they are signature moments, not defaults:
+
+| Modifier                                     | Budget      | What it adds                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| -------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.glass-interactive` + `data-glass-light=""` | unlimited   | Hover tint-raise, springy press flex (`--ease-glass`), pointer-tracked diffuse highlight (`::after`), and — on `.glass-fill` — the hover-only specular rim glint.                                                                                                                                                                                                                                                                 |
+| `.glass-refract` + `data-glass-lens`         | **≤2/page** | Lens-model edge refraction (v2): the backdrop bends through a displacement height field at the pane edge. Hero/chrome only, never in scroll containers. `data-glass-lens` opts into per-element filter sizing (`lib/glass-lens.ts`; Chromium bends the backdrop, Gecko/WebKit displace a mirrored aurora copy — §3.6). Pressing deepens the bend (`:active`, ×1.6, §3.7). Not compatible with `.glass-chrome--aside` (see below). |
+| `.glass-refract--prism`                      | **≤1/page** | True chromatic dispersion (R/G/B displaced at different magnitudes) + fringe. Sanctioned users: login card, command palette, `/store` featured tier, design lab.                                                                                                                                                                                                                                                                  |
+| `.glass-liquid` (or `<GlassPane liquid>`)    | **≤3/page** | Ambient travelling sheen (light over wet glass), painted as a background layer (v2) so it **composes freely** with `.glass-refract` and `.glass-interactive`. Signature surfaces only, never on list items.                                                                                                                                                                                                                       |
+| `.glass-sheen-hover`                         | unlimited   | One-shot sheen sweep on hover — primary CTAs (`Button` `default`/`accent` have it built in).                                                                                                                                                                                                                                                                                                                                      |
+| `.glass-bevel-sm`                            | unlimited   | Narrow 6px optics ring for small capsules — the `LiquidTabs` sheet pill (§5.45), plus discs like BackToTop.                                                                                                                                                                                                                                                                                                                       |
+| `.glass-opaque`                              | —           | Escape hatch for full-screen fixed takeovers that must hide the page.                                                                                                                                                                                                                                                                                                                                                             |
+
 Sticky glass uses the shared layout contract rather than local `top-*` values:
 
 - `.site-sticky-chrome` is the primary floating header for a column. It owns
@@ -274,13 +336,6 @@ Sticky glass uses the shared layout contract rather than local `top-*` values:
 
 Related controls should still be merged into a single sticky surface. Use the
 secondary level only when the two surfaces mount independently.
-| `.glass-interactive` + `data-glass-light=""` | modifier | Hover tint-raise, springy press flex (`--ease-glass`), pointer-tracked diffuse highlight (`::after`), and — on `.glass-fill` — the hover-only specular rim glint. |
-| `.glass-refract` + `data-glass-lens` | modifier | Lens-model edge refraction (v2): the backdrop bends through a displacement height field at the pane edge. Hero/chrome only, **≤2 per page**, never in scroll containers. `data-glass-lens` opts into per-element filter sizing (`lib/glass-lens.ts`; Chromium bends the backdrop, Gecko/WebKit displace a mirrored aurora copy — §3.6). Pressing deepens the bend (`:active`, ×1.6, §3.7). Not compatible with `.glass-chrome--aside` (its `::before` is the blur carrier, so the lens band has nowhere to live). |
-| `.glass-refract--prism` | modifier | True chromatic dispersion (R/G/B displaced at different magnitudes) + fringe. **≤1 per page**; sanctioned users: login card, command palette, `/store` featured tier, design lab. |
-| `.glass-liquid` (or `<GlassPane liquid>`) | modifier | Ambient travelling sheen (light over wet glass), painted as a background layer (v2) so it **composes freely** with `.glass-refract` and `.glass-interactive`. Signature surfaces only, **≤3 per page**, never on list items. |
-| `.glass-sheen-hover` | modifier | One-shot sheen sweep on hover — primary CTAs (`Button` `default`/`accent` have it built in). Unlimited. |
-| `.glass-bevel-sm` | modifier | Narrow 6px optics ring for small capsules — the `LiquidTabs` sheet pill (§5.45), plus discs like BackToTop. |
-| `.glass-opaque` | — | Escape hatch for full-screen fixed takeovers that must hide the page. |
 
 **The rim glint comes free** (v2, §4.35): `.glass-pane`/`.glass-overlay`/`.glass-chrome`
 (and the `--aside` variant) paint an always-on specular as a **border-box
@@ -449,13 +504,39 @@ gated off there too, via `html.app-route`).
   as cards cross the focus line.
 - **framer-motion** is the animation library. Reach for the shared motion
   system in **`lib/motion.ts`** rather than hand-typing durations/easings:
-  it exports the timing tokens (`DURATION`, `EASE`, `SPRING`, `transition`)
-  and ready-made variants (`fade`, `fadeRise`, `fadeDown`, `scaleIn`, `popIn`,
-  `overlay`, `modalContent`, `staggerContainer`/`staggerItem`). Keeping enters,
-  exits, and lists on these tokens is what makes motion feel like one system
-  — smooth and quick (nothing here is slower than 0.3s). Inline props are still
-  fine for one-offs, but prefer `transition` / a named variant so a global
-  re-tune stays a one-line change.
+  it exports the timing tokens (`DURATION`, `EASE`, `SPRING`, `APPLE_SPRING`,
+  `pressable`, `transition`) and ready-made variants (`fade`, `fadeRise`,
+  `fadeDown`, `scaleIn`, `popIn`, `overlay`, `modalContent`,
+  `staggerContainer`/`staggerItem`). Keeping enters, exits, and lists on these
+  tokens is what makes motion feel like one system — smooth and quick (nothing
+  here is slower than 0.3s). Inline props are still fine for one-offs, but
+  prefer `transition` / a named variant so a global re-tune stays a one-line
+  change.
+- **Tween or spring — the rule.** Tweens (`DURATION`/`EASE`) are for state
+  changes with no gesture behind them: cross-fades, colour shifts, reveals.
+  **`APPLE_SPRING`** is for anything the user _acts on_ — presses, drags, sheet
+  dismissals, morphing containers — because a spring is interruptible: grab a
+  moving element mid-flight and it retargets from its current velocity instead
+  of snapping. It is parameterised the way SwiftUI does it, by perceptual
+  `duration` + `bounce` rather than stiffness, which is why the same preset
+  settles in the same perceived time whether it travels 4px or 400px. Presets:
+  `smooth` (no bounce, the default), `snappy` (controls/toggles), `bouncy`
+  (reactions, celebratory pops), `sheet` (presentation), `press`. Spread
+  **`pressable`** onto a tappable surface for the standard press
+  acknowledgement rather than re-deriving a scale.
+- **iOS large title:** `components/ui/large-title.tsx` is the collapsing
+  title/nav-bar pair. Scroll position maps _continuously_ onto
+  scale/opacity/translation and onto the bar's scroll-edge material, so the
+  title tracks the finger 1:1 and reverses mid-gesture instead of popping
+  between two states at a CSS threshold. Transform/opacity only — the collapse
+  costs no layout. Reduced motion collapses it to a static title with a
+  permanent bar.
+- **Depth from pointer/tilt:** `hooks/usePointerParallax.ts` returns
+  spring-smoothed MotionValues at three fixed depths (0 = glued to the surface,
+  1 = furthest back), fed by pointer position on fine-pointer hardware and by
+  `deviceorientation` on touch. Compose two or three depths in one card — a
+  single sliding layer is just movement; layers moving at different rates read
+  as depth. No React render runs per frame.
 - `<MotionConfig reducedMotion="user">` wraps the app (`Providers.tsx`), so
   framer-motion automatically respects OS reduced-motion.
 - CSS motion: `.page-root > *` runs the `page-enter` animation (0.16s fade +
@@ -551,9 +632,10 @@ Global (in `globals.css`):
 - Patterns to copy: skip link in `_site.tsx` (`sr-only focus:not-sr-only` →
   `#main-content`), `role="status"` + label on loaders, `aria-hidden` on
   decorative icons, `aria-label` on icon-only links/buttons.
-- RTL locales (`ar`, `ur`, `fa`) are first-class: `<html dir>` is set
-  pre-paint; use logical spacing where possible and `.rtl-flip` on directional
-  icons.
+- RTL locales are first-class: `<html dir>` is set pre-paint from
+  `RTL_LOCALES` in `lib/i18n/config.ts` (today `ar` and `ur` — read the
+  constant, don't hardcode a locale test). Use logical spacing where possible
+  and `.rtl-flip` on directional icons.
 - `high-contrast` is an explicit theme choice (there is no
   `@media (prefers-contrast)` hook) — test new UI against `.style-high-contrast`
   and `.style-light`, not just the default dark theme.
@@ -613,3 +695,82 @@ lazy locale chunks).
   hand-rolled dialogs.
 - Put a full-screen experience under `_site/`, or a standard page outside it.
 - Bypass Twemoji for emoji or `jsonLdScript()` for JSON-LD.
+- Re-implement something `components/shared/` already provides for full-screen
+  apps (shell, header, toaster, connection status) — see §12.
+
+---
+
+## 12. The full-screen app tier (`--app-*`)
+
+The site's `--site-*` contract stops at the `_site` shell. Full-screen apps
+(**RMHbox, RMHType, RMHStudy, RMHTube, RMHMusic**) live at the top level of
+`app/routes/`, are excluded from the theme system (`THEME_EXCLUDED_ROUTES`), and
+have their own parallel contract — which is deliberately the **same shape**, so
+what you know from §1 transfers.
+
+`components/shared/app-theme.css` owns it: an `--app-*` token set
+(`--app-bg`/`-subtle`, `--app-surface`/`-hover`/`-active`, `--app-border`(`-bright`),
+`--app-text`/`-muted`/`-dim`, `--app-accent`/`-fg`/`-hover`/`-dim`,
+`--app-success`/`-danger`/`-warning`/`-info`/`-rare`, `--app-font-*`,
+`--app-radius`/`-sm`/`-lg`, `--app-shadow`/`-sm`,
+`--app-duration-fast`/`-duration`/`-slow` + `--app-ease`, density and
+`--app-safe-*` inset tokens) **plus every behaviour built on it** — scrollbars,
+focus rings, `::placeholder`, Gecko's focus/validation quirks, tap-highlight and
+double-tap-zoom suppression, the iOS sub-16px input-zoom floor, `dvh` heights,
+and deliberate degradation for `backdrop-filter`,
+`prefers-reduced-transparency`, `forced-colors` and print.
+
+**An app ships only its palette.** Each app's CSS is a class
+(`rmhbox-theme`, …) that redefines the `--app-*` values — RMHbox's is ~30 lines.
+Components read `--app-*` directly; there is no per-app alias layer.
+
+The shared pieces, all in `components/shared/`:
+
+| Piece                                      | What it owns                                                                                                                                                                                                     |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AppShell`                                 | Root wrapper: palette class + appearance modifier (`dark`/`light`/`high-contrast`, unknown values falling back to dark rather than stranding the app), `color-scheme` hint, density, toaster, connection chrome. |
+| `AppHeader`                                | The app bar as a three-column grid — genuinely centred title that truncates instead of overlapping, steps aside below 640px, back label collapsing to its arrow below 480px with an `sr-only` name.              |
+| `AppToaster` + `lib/shared/app-toast`      | One toast store and container for every app; timers are tracked, so a hand-dismissed toast doesn't leave a second one running and a route change cancels rather than leaks.                                      |
+| `ConnectionStatus`                         | Reconnect banner + peer-wait overlay, so every socket-backed app reports an outage the same way, in the same place, with `reconnecting` distinguished from `connecting`.                                         |
+| `GameLoadingFallback`, `GameErrorBoundary` | Loading/error surfaces for game routes (strings in the `shared` namespace).                                                                                                                                      |
+
+**The rule:** a new full-screen app writes a palette class and mounts
+`AppShell`/`AppHeader`. Adding a sixth copy of the shell, the header, the toast
+store or the connection banner is the defect this tier was created to end — a
+fix to any of it previously had to be made five times, and in practice never
+was. Games with a bespoke visual identity (Temple of Joy, Slice It, Neon
+Driftway) keep their own scoped variable groups in `globals.css`; they are
+exempt from the palette, not from the shared behaviour.
+
+---
+
+## 13. What is enforced automatically
+
+Most of this document is convention. A slice of it is executable, and runs in
+the normal suite (`pnpm exec vitest run`, gated by `web-ci.yml`):
+
+- **`lib/__tests__/design-consistency.test.ts` — one tab-strip grammar.** A
+  static source scan over `components/` + `app/routes/` that fails on:
+  (1) `role="tablist"` outside `components/ui/liquid-tabs.tsx` and its
+  documented allowlist; (2) an `aria-selected` element that also carries a
+  `border-b`/`underline` marker; (3) an inline tab-capsule `layoutId` outside
+  the sanctioned renderer; (4) the conditional accent-underline bar shape
+  (`absolute` + `bottom-0` + hairline height + `bg-site-accent`). The
+  allowlists are short and each entry is justified in the file — **new tab
+  strips get no entry**. The test also asserts it scanned >200 files, so a
+  broken walker can't make the rules vacuously pass.
+  Its own docstring records the one rule it _can't_ automate: a role-less
+  switcher that marks its active slot some other way (an accent pill, a
+  segmented control, a `flex-1` button row with an active tint) still belongs
+  on `LiquidTabs`. Reviewers catch those by eye.
+- **`lib/__tests__/appearance-contrast.test.ts`** — `ensureReadableAccent()`
+  keeps a custom accent from shipping an unreadable `--site-accent-fg` pair.
+- **`lib/__tests__/i18n-catalogs.test.ts` / `i18n-config.test.ts`** — catalog
+  and namespace-registry integrity for §10.
+- **`lib/__tests__/raf-loop-allowlist.test.ts`** — keeps rAF loops (the §7
+  radial motion layer) to the sanctioned owners instead of one per feature.
+- **`pnpm lint`** — `eslint-plugin-jsx-a11y` at "warn"; the bar is no _new_
+  warnings versus the base branch.
+
+A green suite means you did not regress the enforced rules. It does not mean
+the change looks right — §0.9 is still a human looking at three themes.

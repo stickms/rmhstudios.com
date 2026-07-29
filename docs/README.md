@@ -20,6 +20,7 @@ writing, not necessarily the current code).
 | [`performance-slo.md`](./performance-slo.md)     | Performance guardrails: bundle budgets, synthetic probes, RUM SLO bands, and rollback trigger policy                                                                                                                                            |
 | [`design-language.md`](./design-language.md)     | The visual system — **Radial Avant-Garde Glass** (the radial shell/hub/wheel-feed architecture + the Apple-style Liquid Glass material it references): `--site-*` token contract, themes + accent presets, primitives, typography, motion, a11y |
 | [`page-consistency.md`](./page-consistency.md)   | Checklist + recipes for building pages that look native                                                                                                                                                                                         |
+| [`cast.md`](./cast.md)                           | **Canon roster** — every named character/persona on the platform, with their title and where they are defined. Read before inventing an in-world name                                                                                           |
 | [`developer-api.md`](./developer-api.md)         | Scoped public developer API summary (canonical spec is in-app at `/developer/docs`)                                                                                                                                                             |
 | [`albums-storage.md`](./albums-storage.md)       | Albums storage architecture (DB + R2/S3)                                                                                                                                                                                                        |
 | [`coins.md`](./coins.md)                         | Coin economy design (implementation plan, largely shipped)                                                                                                                                                                                      |
@@ -67,7 +68,8 @@ These predate the Next.js → TanStack Start migration and/or the Go cutover:
 
 - `void-breaker/specs.md` — claims "Next.js + TypeScript + Node.js"
 - `temple-of-joy/game-design.md` — claims "Web (Next.js, browser-first)"
-- `../specs/vega.md` (repo-root `specs/`) — targets a "Next.js environment"
+- Any reference to a repo-root `specs/` directory — it was deleted; the legacy
+  AI-agent game specs it held (`vega.md` and friends) are gone with it
 - `rmhtube/features.md` — 2025 roadmap for a now-shipped app
 - Older design docs in `rmhbox/`, `plans/`, `misc/`, and the textbook chapters
   mention Next.js in historical context — the routes/stack described there
