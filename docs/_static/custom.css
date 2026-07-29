@@ -1,0 +1,225 @@
+/*
+ * rmhstudios.com documentation theme.
+ *
+ * Layers the site's design language (docs/design-language.md — "Radial
+ * Avant-Garde Glass") onto Furo: monochrome palette, generous radii, tight
+ * display letter-spacing, quiet borders instead of heavy chrome. The palette
+ * itself is set from conf.py via Furo's light/dark CSS variables; this file
+ * handles shape, rhythm and the components Furo doesn't style.
+ */
+
+:root {
+  --rmh-radius: 22px;
+  --rmh-radius-sm: 14px;
+  --rmh-radius-xs: 10px;
+  --rmh-letter-spacing: -0.022em;
+  --rmh-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 6px 20px -8px rgba(0, 0, 0, 0.06);
+  --rmh-hairline: var(--color-background-border);
+}
+
+body[data-theme='dark'] {
+  --rmh-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 6px 20px -8px rgba(0, 0, 0, 0.7);
+}
+
+@media (prefers-color-scheme: dark) {
+  body:not([data-theme='light']) {
+    --rmh-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 6px 20px -8px rgba(0, 0, 0, 0.7);
+  }
+}
+
+/* ── Typography ──────────────────────────────────────────────────────────── */
+
+h1,
+h2,
+h3,
+h4 {
+  letter-spacing: var(--rmh-letter-spacing);
+  font-weight: 700;
+}
+
+h1 {
+  font-size: 2.35rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 0.75rem;
+}
+
+/* Furo underlines section headings by default; a hairline reads quieter and
+   matches the site's section rhythm. */
+h2 {
+  font-size: 1.5rem;
+  margin-top: 2.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rmh-hairline);
+}
+
+article h2:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 2rem;
+}
+
+h3 {
+  font-size: 1.15rem;
+  margin-top: 2rem;
+}
+
+article {
+  line-height: 1.7;
+}
+
+/* The lede: first paragraph after the page title carries the summary. */
+article > h1 + p {
+  font-size: 1.08rem;
+  color: var(--color-foreground-secondary);
+}
+
+/* ── Code ────────────────────────────────────────────────────────────────── */
+
+code.literal {
+  border-radius: 6px;
+  border: 1px solid var(--rmh-hairline);
+  padding: 0.1em 0.35em;
+  font-size: 0.86em;
+}
+
+div.highlight,
+pre {
+  border-radius: var(--rmh-radius-sm);
+}
+
+div.highlight {
+  border: 1px solid var(--rmh-hairline);
+  box-shadow: var(--rmh-shadow);
+}
+
+/* ── Tables ──────────────────────────────────────────────────────────────── */
+
+/* The API reference is table-heavy: scopes, error codes, params, event names.
+   Make them read as clean data rather than as boxed grids. */
+table.docutils {
+  border-radius: var(--rmh-radius-sm);
+  border: 1px solid var(--rmh-hairline);
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  box-shadow: var(--rmh-shadow);
+  width: 100%;
+}
+
+table.docutils th,
+table.docutils td {
+  border: 0;
+  border-bottom: 1px solid var(--rmh-hairline);
+  padding: 0.6rem 0.85rem;
+  vertical-align: top;
+}
+
+table.docutils thead th {
+  background: var(--color-background-secondary);
+  font-weight: 650;
+  letter-spacing: var(--rmh-letter-spacing);
+  text-align: left;
+}
+
+table.docutils tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+table.docutils tbody tr:hover {
+  background: var(--color-background-secondary);
+}
+
+/* Wide reference tables must scroll inside themselves, never the page. */
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--rmh-radius-sm);
+}
+
+/* ── Admonitions ─────────────────────────────────────────────────────────── */
+
+.admonition,
+div.admonition {
+  border-radius: var(--rmh-radius-sm);
+  box-shadow: var(--rmh-shadow);
+  border-left-width: 3px;
+}
+
+/* ── sphinx-design cards (landing pages) ─────────────────────────────────── */
+
+.sd-card {
+  border-radius: var(--rmh-radius) !important;
+  border: 1px solid var(--rmh-hairline) !important;
+  background: var(--color-background-primary) !important;
+  box-shadow: var(--rmh-shadow);
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.sd-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05), 0 16px 32px -12px rgba(0, 0, 0, 0.14);
+}
+
+.sd-card-title {
+  font-weight: 700;
+  letter-spacing: var(--rmh-letter-spacing);
+}
+
+.sd-card-body {
+  color: var(--color-foreground-secondary);
+}
+
+/* Card grids inherit the site's card-lift affordance; honour reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .sd-card,
+  .sd-card:hover {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* ── Sidebar & chrome ────────────────────────────────────────────────────── */
+
+.sidebar-drawer {
+  border-right: 1px solid var(--rmh-hairline);
+}
+
+.sidebar-tree .reference {
+  border-radius: var(--rmh-radius-xs);
+}
+
+.sidebar-tree .current-page > .reference {
+  font-weight: 650;
+}
+
+.sidebar-search-container input.sidebar-search {
+  border-radius: 9999px;
+  border: 1px solid var(--rmh-hairline);
+  padding-left: 2.25rem;
+}
+
+.toc-tree a.reference {
+  border-radius: var(--rmh-radius-xs);
+}
+
+/* Section captions in the nav: small, quiet, uppercase — same as the site's
+   sidebar group labels. */
+.sidebar-tree .caption-text {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-foreground-muted);
+}
+
+/* ── HTTP method badges in the endpoint reference ────────────────────────── */
+
+/* The generated endpoint pages title each endpoint with `GET /api/v1/...`.
+   Tint the verb so the reference scans quickly. */
+article h3 > code.literal {
+  font-size: 0.95em;
+  padding: 0.15em 0.5em;
+  border-radius: 8px;
+}

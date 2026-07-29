@@ -73,6 +73,7 @@ version = release
 extensions = [
     "myst_parser",
     "sphinx_copybutton",
+    "sphinx_design",
 ]
 
 source_suffix = {
@@ -122,8 +123,42 @@ suppress_warnings = [
 
 html_theme = "furo"
 html_title = f"rmhstudios.com docs ({release})"
+html_favicon = "_static/favicon.svg"
+html_static_path = ["_static"]
+html_css_files = ["custom.css"]
+
+# The site's design language is monochrome-first — near-black on white, near-white
+# on black, generously rounded, SF Pro/Inter with JetBrains Mono for code (see
+# docs/design-language.md). Mirror it here so the docs read as part of the same
+# product rather than as stock Sphinx. Everything else is in _static/custom.css.
 html_theme_options = {
     "source_repository": "https://github.com/stickms/rmhstudios.com/",
     "source_branch": "main",
     "source_directory": "docs/",
+    "light_css_variables": {
+        "color-brand-primary": "#000000",
+        "color-brand-content": "#000000",
+        "color-brand-visited": "#565656",
+        "color-background-primary": "#ffffff",
+        "color-background-secondary": "#fafafa",
+        "color-foreground-primary": "#000000",
+        "color-foreground-secondary": "#565656",
+        "color-foreground-muted": "#767676",
+        "color-background-border": "rgba(0, 0, 0, 0.16)",
+        "color-api-background": "#fafafa",
+        "font-stack": "-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif",
+        "font-stack--monospace": "'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace",
+    },
+    "dark_css_variables": {
+        "color-brand-primary": "#ffffff",
+        "color-brand-content": "#ffffff",
+        "color-brand-visited": "#a8a8a8",
+        "color-background-primary": "#000000",
+        "color-background-secondary": "#0a0a0a",
+        "color-foreground-primary": "#ffffff",
+        "color-foreground-secondary": "#a8a8a8",
+        "color-foreground-muted": "#8a8a8a",
+        "color-background-border": "rgba(255, 255, 255, 0.18)",
+        "color-api-background": "#0a0a0a",
+    },
 }

@@ -9,6 +9,7 @@ import { Select } from '@/components/ui/select';
 import { CopyButton } from '@/components/ui/copy-button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { SCOPES, DEFAULT_SCOPES, scopesByGroup } from '@/lib/api/scopes';
+import { DEVELOPER_DOCS_URL } from '@/lib/docs-site';
 
 interface ApiKey {
   id: string;
@@ -327,13 +328,14 @@ export function KeysManager() {
       <p className="mt-4 flex items-center gap-1 text-xs text-site-text-dim">
         <BookOpen className="h-3.5 w-3.5" />
         New here? Read the{' '}
-        <Link
-          to="/developer/docs/$page"
-          params={{ page: 'overview' }}
+        <a
+          href={DEVELOPER_DOCS_URL}
+          target="_blank"
+          rel="noreferrer"
           className="text-site-accent hover:underline"
         >
           API documentation
-        </Link>
+        </a>
         .
       </p>
     </section>
