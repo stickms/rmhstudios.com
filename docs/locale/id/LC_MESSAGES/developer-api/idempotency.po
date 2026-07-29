@@ -1,0 +1,87 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, RMH Studios
+# This file is distributed under the same license as the rmhstudios.com
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: rmhstudios.com 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-29 21:28+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: id\n"
+"Language-Team: id <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../developer-api/idempotency.md:1 6f4b3edd91254134b847b71b23c62f27
+msgid "Idempotency"
+msgstr ""
+
+#: ../../developer-api/idempotency.md:3 5db6dc5652ce40318ccea1810c750afa
+msgid ""
+"Write requests (`POST`, `PATCH`, `DELETE`) accept an **`Idempotency-"
+"Key`** header so a retry — after a network blip or timeout — never "
+"applies the action twice."
+msgstr ""
+
+#: ../../developer-api/idempotency.md:5 bd6859a73e33462c976fb4d9218a716f
+#, python-brace-format
+msgid ""
+"curl -X POST https://rmhstudios.com/api/v1/posts \\\n"
+"  -H \"Authorization: Bearer $RMH_KEY\" \\\n"
+"  -H \"Content-Type: application/json\" \\\n"
+"  -H \"Idempotency-Key: 5f3a9c2e-1b7d-4e2a-9c8b-2f1a0d6e4b3c\" \\\n"
+"  -d '{\"content\":\"Posted exactly once\"}'\n"
+msgstr ""
+
+#: ../../developer-api/idempotency.md:13 09697d2109544b598276879f075f44ad
+msgid "Semantics"
+msgstr ""
+
+#: ../../developer-api/idempotency.md:15 f264c62e811841a2a12d9d68eecf9c55
+msgid ""
+"The **first** request for a given key is processed and its response "
+"stored."
+msgstr ""
+
+#: ../../developer-api/idempotency.md:16 587f06e903974796a9edd5bd191261d5
+msgid ""
+"A **retry with the same key and body** replays the stored response and "
+"adds `Idempotency-Replayed: true`. No second action occurs."
+msgstr ""
+
+#: ../../developer-api/idempotency.md:17 7d2448dba21d471ba663038ce0d3529c
+msgid ""
+"Reusing a key with a **different body** returns `409 "
+"idempotency_conflict`."
+msgstr ""
+
+#: ../../developer-api/idempotency.md:18 52ce52844cf44c0d915909c48b5fb4ac
+msgid "Stored responses expire after ~24 hours."
+msgstr ""
+
+#: ../../developer-api/idempotency.md:20 d815047308ff470c8afd0a0d51a9d195
+msgid ""
+"Generate a unique key (e.g. a UUID v4) per logical operation — not per "
+"HTTP attempt. The point is that all attempts at *one* logical write share"
+" a key."
+msgstr ""
+
+#: ../../developer-api/idempotency.md:22 ed0000951b414a35b67783128c2e608b
+msgid "Which endpoints honour it"
+msgstr ""
+
+#: ../../developer-api/idempotency.md:25 62dad61c33a247cfb50c1675cd0ccbb3
+msgid ""
+"Endpoints that support idempotency are marked **Idempotent** in the "
+"[endpoint reference](./endpoints/index.md). Sending the header to an "
+"endpoint that doesn't support it is harmless — it's ignored."
+msgstr ""
+

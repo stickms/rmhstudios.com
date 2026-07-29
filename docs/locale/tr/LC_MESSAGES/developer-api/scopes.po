@@ -1,0 +1,274 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, RMH Studios
+# This file is distributed under the same license as the rmhstudios.com
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: rmhstudios.com 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-29 21:28+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: tr\n"
+"Language-Team: tr <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../developer-api/scopes.md:1 93c5c44f2d8540a5a4d461f6dbbbdc63
+msgid "Scopes"
+msgstr ""
+
+#: ../../developer-api/scopes.md:3 90e8dac0b1614e3c91ca6a692347e8a9
+msgid ""
+"Each API key carries granular scopes; an endpoint accepts a key only if "
+"its scopes satisfy the endpoint's requirement."
+msgstr ""
+
+#: ../../developer-api/scopes.md:5 e2ee49bf6db547558192776a4d6544cf
+msgid ""
+"Scopes are `<action>:<resource>` — `read:profile`, `write:posts`, "
+"`manage:webhooks`. `read` scopes are non-mutating; `write` and `manage` "
+"change state."
+msgstr ""
+
+#: ../../developer-api/scopes.md:7 8d9af5244869482fbec8789f32830a1b
+msgid "Three wildcards are accepted and stored literally on the key:"
+msgstr ""
+
+#: ../../developer-api/scopes.md 0602e84c9af34b6b9e7a5f9607d7c8ed
+msgid "Wildcard"
+msgstr ""
+
+#: ../../developer-api/scopes.md 0c20c1f45ecb4cdab6c31af1b8be391c
+#: af2cfcfa2b6b45b08b93398a0b8be723
+msgid "Grants"
+msgstr ""
+
+#: ../../developer-api/scopes.md 2690d01c63334f10b795ac69783b9cb6
+msgid "`*`"
+msgstr ""
+
+#: ../../developer-api/scopes.md 641dc427e09f414d95c2779d56f0b175
+msgid "Everything."
+msgstr ""
+
+#: ../../developer-api/scopes.md d5f467706d944218b79436d711b2306b
+msgid "`read:*`"
+msgstr ""
+
+#: ../../developer-api/scopes.md c81600c798b0483cb6dbfb6a92fcb72f
+msgid "Every read scope."
+msgstr ""
+
+#: ../../developer-api/scopes.md 12c8b970840c4e5eb403b97d48c50796
+msgid "`write:*`"
+msgstr ""
+
+#: ../../developer-api/scopes.md a062a673df8d4da9a20f03cf3b64a780
+msgid "Every write scope (likewise `manage:*`)."
+msgstr ""
+
+#: ../../developer-api/scopes.md:15 16d65a2b5ff64822850b5d3a89f4f4dd
+msgid ""
+"Grant the least privilege an integration needs. A key that only reads the"
+" public feed should carry `read:feed` and nothing else — if it leaks, "
+"that is the whole blast radius."
+msgstr ""
+
+#: ../../developer-api/scopes.md:17 0dafd726904b412a865a576545018af6
+msgid ""
+"A request whose key lacks the required scope fails with `403 "
+"insufficient_scope`; the message names the scope that was missing."
+msgstr ""
+
+#: ../../developer-api/scopes.md:19 f766d06e0ecf414fa2b6968d33c69a75
+msgid "Catalog"
+msgstr ""
+
+#: ../../developer-api/scopes.md 34a1fd8401624c57a669a519efab862f
+msgid "Scope"
+msgstr ""
+
+#: ../../developer-api/scopes.md cccf4026d4024aaa81827464f4ff0a09
+msgid "Group"
+msgstr ""
+
+#: ../../developer-api/scopes.md ed4e26b6a15e4ce0a0bd044b65201106
+msgid "`read:profile`"
+msgstr ""
+
+#: ../../developer-api/scopes.md 270ceb44e98d41cba18bca8a3a492198
+#: 6886309ff98148cfb52f7481243bb732 76b2b4df029b4509b7cb360940e0c8cb
+#: a9446c48e0d345578da5b8295d9e00ef
+msgid "Account"
+msgstr ""
+
+#: ../../developer-api/scopes.md 7ef1cdb750b3434fa1503b802fb466f8
+msgid "Read your account summary, tier, and stats."
+msgstr ""
+
+#: ../../developer-api/scopes.md 23221ab407cc4198b9f444a050a2d61b
+msgid "`read:posts`"
+msgstr ""
+
+#: ../../developer-api/scopes.md 4a3687c268314617aeaf879899ba8af9
+#: dd8badc0e6a048418f58838a1498d963
+msgid "Posts"
+msgstr ""
+
+#: ../../developer-api/scopes.md 6c8947cd957a4f1f9f1d67f141eb81d7
+msgid "Read your own posts."
+msgstr ""
+
+#: ../../developer-api/scopes.md c858a9d5b0a34bbdbf3d1f642b7204ce
+msgid "`write:posts`"
+msgstr ""
+
+#: ../../developer-api/scopes.md ac0c9446372d4f93b1756aa84bdc8d8e
+msgid "Create and delete posts on your account."
+msgstr ""
+
+#: ../../developer-api/scopes.md 5d5410a8f8374ca0aa89494558204ebd
+msgid "`read:feed`"
+msgstr ""
+
+#: ../../developer-api/scopes.md 532a40980d8a436fa91bba6cf8f02528
+msgid "Feed"
+msgstr ""
+
+#: ../../developer-api/scopes.md a2113fd89f814b4eaebd2593240f8c1d
+msgid "Read the public global feed."
+msgstr ""
+
+#: ../../developer-api/scopes.md 5753afa10f1c41f8af3b3b5282c56779
+msgid "`read:users`"
+msgstr ""
+
+#: ../../developer-api/scopes.md 1b1034342c34411692924d8b4466f4b6
+#: 655e8df4ae28404c86bd3ac68c4fcad0
+msgid "Users"
+msgstr ""
+
+#: ../../developer-api/scopes.md 6d1f93d5bc7948f285e3e0232bb16cae
+msgid "Read public user profiles and the social graph."
+msgstr ""
+
+#: ../../developer-api/scopes.md 4658394e8b184f488fbdcc8c6ac4f1c3
+msgid "`write:follows`"
+msgstr ""
+
+#: ../../developer-api/scopes.md 5855bb3802974759a78b3047e2c5a803
+msgid "Follow and unfollow other users."
+msgstr ""
+
+#: ../../developer-api/scopes.md 13ac8db635a0423dad80d8f4219c2942
+msgid "`write:likes`"
+msgstr ""
+
+#: ../../developer-api/scopes.md 0e5fae80f9e64696b22398ebea6c28a1
+#: 4b0f9182188c432685f08bf80e9074ad
+msgid "Engagement"
+msgstr ""
+
+#: ../../developer-api/scopes.md 05e24243b0f94954b5ac94911cde1b04
+msgid "Like and unlike posts."
+msgstr ""
+
+#: ../../developer-api/scopes.md 64bde761b3434fce8be966ee70336b41
+msgid "`write:comments`"
+msgstr ""
+
+#: ../../developer-api/scopes.md fbe9e1eacd96492c9e67f20305549db8
+msgid "Comment on posts."
+msgstr ""
+
+#: ../../developer-api/scopes.md c65a34a2d9c44ce095009e05b724fa80
+msgid "`read:notifications`"
+msgstr ""
+
+#: ../../developer-api/scopes.md 947052d30314424593fd48f80a41310f
+msgid "Read your notifications."
+msgstr ""
+
+#: ../../developer-api/scopes.md 5159b686c7a842adb748443e43c706d6
+msgid "`read:bookmarks`"
+msgstr ""
+
+#: ../../developer-api/scopes.md 22906e05dbad4ca9a3b72cbf45457670
+msgid "Read your bookmarks."
+msgstr ""
+
+#: ../../developer-api/scopes.md 091f31602756492a947e38854f1dd4fa
+msgid "`write:bookmarks`"
+msgstr ""
+
+#: ../../developer-api/scopes.md 6e02acbbf8d4463b87e7f4eb3d537f0f
+msgid "Add and remove bookmarks."
+msgstr ""
+
+#: ../../developer-api/scopes.md 0cc6d9f02d8742d1af7b6aa9c80b8eb2
+msgid "`write:media`"
+msgstr ""
+
+#: ../../developer-api/scopes.md bc393414ce354318bd5e23a3206c7d61
+msgid "Media"
+msgstr ""
+
+#: ../../developer-api/scopes.md 7adb9c7c8bf24ff1831144f0d1442c9f
+msgid "Upload images for use in posts."
+msgstr ""
+
+#: ../../developer-api/scopes.md 778d2c940b9c481d8bfb3e5addc70731
+msgid "`read:builds`"
+msgstr ""
+
+#: ../../developer-api/scopes.md c4314e8c304a4fe3946455a4833cb1d3
+#: c897e55d7df044e483f234e79c516592 f69a614665d240d385411a0e7325ff11
+msgid "Content"
+msgstr ""
+
+#: ../../developer-api/scopes.md 7e6e5203a67b456d86fecb44b611510a
+msgid "Read the public builds marketplace."
+msgstr ""
+
+#: ../../developer-api/scopes.md 78a61d9cbfad478f86a96028cbae17eb
+msgid "`read:content`"
+msgstr ""
+
+#: ../../developer-api/scopes.md 10014041c3ac46d19ea86861e3c9afef
+msgid "Read blog posts and news articles."
+msgstr ""
+
+#: ../../developer-api/scopes.md b4ba36fb0e114dee9c4eb987a7fc34d7
+msgid "`read:leaderboards`"
+msgstr ""
+
+#: ../../developer-api/scopes.md be898283dcb94431accd476b8fd1a605
+msgid "Read public game leaderboards."
+msgstr ""
+
+#: ../../developer-api/scopes.md 25d10d13bb2f4c558dae615a1dd5cd64
+msgid "`manage:webhooks`"
+msgstr ""
+
+#: ../../developer-api/scopes.md 3a9d2bbcbca44442adfd455269bab1e8
+msgid "Webhooks"
+msgstr ""
+
+#: ../../developer-api/scopes.md 16696b3c3be5413384cd2ea202efd9a5
+msgid "Create and manage webhook subscriptions."
+msgstr ""
+
+#: ../../developer-api/scopes.md:45 b82932fc722640c68151a214b07833da
+msgid ""
+"This table is generated from `lib/api/scopes.ts` by `pnpm docs:api` — the"
+" same module the API and the key-creation UI read. If a scope exists in "
+"the product it is in this table."
+msgstr ""
+

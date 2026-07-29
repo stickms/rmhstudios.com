@@ -9,7 +9,7 @@
 
 **Title:** Temple of Joy  
 **Genre:** Idle / Incremental Clicker  
-**Platform:** Web (Next.js, browser-first)  
+**Platform:** Web (TanStack Start, browser-first)  
 **Estimated Base Content:** 200+ hours  
 **Aesthetic:** Minimalist religious — tan parchment / dark walnut, serif typography, ceremonial iconography. Full dark/light mode.  
 **Tagline:** *Happiness is a practice. This is the temple.*
@@ -605,7 +605,7 @@ The prestige system resets most progress, meaning the 200+ hours does not requir
 ## 18. Tech Stack & Implementation
 
 ### Frontend
-- **Framework**: Next.js (App Router) — page at `/temple-of-joy`
+- **Framework**: TanStack Start — full-screen route at `/temple-of-joy`
 - **State**: Zustand store for all game state
 - **Styling**: Tailwind CSS with CSS variables for light/dark mode tokens
 - **Animations**: Framer Motion for building/upgrade unlock animations; CSS keyframes for click burst

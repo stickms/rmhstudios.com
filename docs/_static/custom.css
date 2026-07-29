@@ -142,7 +142,7 @@ table.docutils tbody tr:hover {
 div.admonition {
   border-radius: var(--rmh-radius-sm);
   box-shadow: var(--rmh-shadow);
-  border-left-width: 3px;
+  border-inline-start-width: 3px;
 }
 
 /* ── sphinx-design cards (landing pages) ─────────────────────────────────── */
@@ -182,8 +182,11 @@ div.admonition {
 
 /* ── Sidebar & chrome ────────────────────────────────────────────────────── */
 
+/* Logical properties, not `border-right`/`padding-left` — `ar` and `ur` build
+   RTL (RTL_LOCALES in lib/i18n/config.ts), and physical sides put the sidebar
+   rule and the search icon on the wrong edge there. */
 .sidebar-drawer {
-  border-right: 1px solid var(--rmh-hairline);
+  border-inline-end: 1px solid var(--rmh-hairline);
 }
 
 .sidebar-tree .reference {
@@ -197,7 +200,7 @@ div.admonition {
 .sidebar-search-container input.sidebar-search {
   border-radius: 9999px;
   border: 1px solid var(--rmh-hairline);
-  padding-left: 2.25rem;
+  padding-inline-start: 2.25rem;
 }
 
 .toc-tree a.reference {

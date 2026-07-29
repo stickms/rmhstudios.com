@@ -38,6 +38,8 @@
     "library:metadata": "pnpm exec tsx scripts/generate-library-metadata.ts",
     "docs:api": "pnpm exec tsx scripts/generate-api-docs.ts",
     "docs:api:check": "pnpm exec tsx scripts/generate-api-docs.ts --check",
+    "docs:site": "pnpm exec tsx scripts/generate-site-reference.ts",
+    "docs:site:check": "pnpm exec tsx scripts/generate-site-reference.ts --check",
     "albums:migrate": "pnpm exec tsx scripts/migrate-albums-to-storage.ts",
     "audit": "pnpm audit --audit-level=moderate",
     "epic:test": "node_modules/.bin/vitest run --config vitest.epic.config.ts",

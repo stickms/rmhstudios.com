@@ -108,6 +108,36 @@ exclude_patterns = [
     "go-migration/build/**",
 ]
 
+"""Translations.
+
+The site ships in 16 locales (``lib/i18n/config.ts`` is the authoritative list);
+the docs use the same set. Catalogs live in ``docs/locale/<lang>/LC_MESSAGES/``
+as one ``.po`` per document — ``gettext_compact = False`` — so a page can be
+translated without touching any other page, and an untranslated string simply
+falls back to English.
+
+Workflow (see docs/translations.md):
+
+    pnpm docs:i18n          # extract messages, then update every .po
+    pnpm docs:i18n:build ja # build one language locally
+
+Read the Docs serves each language as its own project, linked as translations
+of the English one, so a per-language build sets ``language`` on the command
+line rather than here.
+"""
+
+# English is authoritative. A per-language build overrides this on the command
+# line (`-D language=ja`), which is what Read the Docs does for a translation
+# project — so this file stays identical across all 16 of them.
+language = "en"
+
+locale_dirs = ["locale/"]
+gettext_compact = False
+# Stable message ids across extractions keep diffs reviewable — without this,
+# editing one paragraph renumbers its neighbours and every .po churns.
+gettext_uuid = True
+gettext_additional_targets = ["literal-block"]
+
 suppress_warnings = [
     # The docs link to files outside docs/ (CLAUDE.md, app/, deploy/, …).
     # Those targets are real in the repo but not part of the Sphinx source

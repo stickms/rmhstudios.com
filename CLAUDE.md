@@ -41,7 +41,6 @@ locales, RTL for ar/ur).
 | `docs/`        | Reference docs, design docs, plans, runbooks.                                                                                                                                                                                                                                                       | [`docs/README.md`](docs/README.md)               |
 | `testing/`     | Vitest tests (RMHBox phases).                                                                                                                                                                                                                                                                       | `lib/CLAUDE.md` §Testing                         |
 | `cli/`         | `rmhcode` CLI (wraps Claude Code; publishes User Builds).                                                                                                                                                                                                                                           | —                                                |
-| `specs/`       | Legacy AI-agent game specs (some stale — see docs/README.md).                                                                                                                                                                                                                                       | —                                                |
 
 ## Commands
 

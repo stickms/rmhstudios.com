@@ -86,6 +86,14 @@ jobs:
         run: |
           mkdir -p .cache/eslint
           pnpm exec eslint --cache --cache-location .cache/eslint/eslintcache --cache-strategy content
+      # The developer-API reference and the site inventory under docs/ are
+      # generated from lib/api/registry.ts, lib/games.ts, lib/apps.ts and the
+      # route tree. Regenerating and diffing is the only way a registry change
+      # can't ship with a stale published reference.
+      - name: Docs freshness
+        run: |
+          pnpm run docs:api:check
+          pnpm run docs:site:check
       # Advisory (warn, don't block): a red test surfaces in the step summary and
       # turns this step's own annotation red, but no longer fails the `check` job
       # — typecheck + lint above remain hard gates. Keep real regressions honest
