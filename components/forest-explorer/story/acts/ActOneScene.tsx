@@ -2,9 +2,10 @@
 
 import { useRef, useMemo, useEffect, useCallback } from 'react';
 import { Stars } from '@react-three/drei';
-import { Color, type Group } from 'three';
+import { type Group } from 'three';
 import type { TreeData } from '../../shared/types';
-import { buildTreeInstancedMeshes } from '../../shared/buildTreeInstancedMeshes';
+import { buildTreeInstancedMeshes, disposeTreeInstancedMeshes } from '../../shared/buildTreeInstancedMeshes';
+import ShadowFollowSun from '../../shared/ShadowFollowSun';
 import { Ground } from '../../shared/Ground';
 import { Fireflies } from '../../shared/Fireflies';
 import { Mist } from '../../shared/Mist';
@@ -98,7 +99,10 @@ export function ActOneScene() {
         const group = groupRef.current;
         if (!group) return;
         treeMeshes.forEach(m => group.add(m));
-        return () => { treeMeshes.forEach(m => group.remove(m)); };
+        return () => {
+            treeMeshes.forEach(m => group.remove(m));
+            disposeTreeInstancedMeshes(treeMeshes);
+        };
     }, [treeMeshes]);
 
     // Ground cover stays off the paths
@@ -113,18 +117,7 @@ export function ActOneScene() {
             <color attach="background" args={['#050914']} />
             <fog attach="fog" args={['#060d1a', 15, 80]} />
             <ambientLight intensity={0.06} color="#1a2a50" />
-            <directionalLight
-                position={[-60, 90, -40]}
-                intensity={0.18}
-                color="#8aa8d0"
-                castShadow
-                shadow-mapSize={[1024, 1024] as unknown as number}
-                shadow-camera-far={200}
-                shadow-camera-left={-100}
-                shadow-camera-right={100}
-                shadow-camera-top={100}
-                shadow-camera-bottom={-100}
-            />
+            <ShadowFollowSun offset={[-60, 90, -40]} intensity={0.18} color="#8aa8d0" />
             <directionalLight position={[-50, 25, -50]} intensity={0.03} color="#040810" />
 
             <Stars radius={280} depth={50} count={2000} factor={6} fade speed={0.5} />
@@ -194,7 +187,7 @@ export function ActOneScene() {
                             <sphereGeometry args={[0.035, 6, 6]} />
                             <meshStandardMaterial
                                 color="#44ddff"
-                                emissive={new Color('#44ddff')}
+                                emissive="#44ddff"
                                 emissiveIntensity={0.9}
                             />
                         </mesh>
@@ -217,7 +210,7 @@ export function ActOneScene() {
                                 <boxGeometry args={[len, 0.015, 0.015]} />
                                 <meshStandardMaterial
                                     color="#44ddff"
-                                    emissive={new Color('#44ddff')}
+                                    emissive="#44ddff"
                                     emissiveIntensity={0.6}
                                 />
                             </mesh>
@@ -249,7 +242,7 @@ export function ActOneScene() {
                         <coneGeometry args={[0.22, 0.26, 8]} />
                         <meshStandardMaterial
                             color="#44ffaa"
-                            emissive={new Color('#22ff88')}
+                            emissive="#22ff88"
                             emissiveIntensity={0.8}
                             transparent
                             opacity={0.85}

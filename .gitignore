@@ -88,3 +88,9 @@ MODULE.bazel.lock
 # deploy.sh content-addressed build-skip hashes (host-local)
 .deploy/
 .prisma-engines/
+
+# Sphinx / Read the Docs local builds
+/docs/_build/
+
+# Compiled gettext catalogs — built from the .po files by Sphinx
+docs/locale/**/*.mo

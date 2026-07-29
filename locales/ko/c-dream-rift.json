@@ -4,7 +4,6 @@
   "clear": "클리어",
   "continue": "계속",
   "continues": "계속",
-  "continues-count_one": "{{count}}회 계속",
   "continues-count_other": "{{count}}회 계속",
   "continues-remaining": "남은 계속 횟수:",
   "controls-action": "C — 폭탄   A — 대시   Shift — 집중",

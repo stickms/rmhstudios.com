@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Color, DoubleSide, type Mesh, type MeshStandardMaterial } from 'three';
+import { DoubleSide, type Mesh, type MeshStandardMaterial } from 'three';
 import { useStoryStore } from '@/lib/forest-explorer/store';
 
 interface GatewayArchProps {
@@ -52,7 +52,7 @@ export function GatewayArch({ position, scale = 1, id }: GatewayArchProps) {
                 <dodecahedronGeometry args={[0.4, 0]} />
                 <meshStandardMaterial
                     color="#8a7a6a"
-                    emissive={new Color(isOpen ? '#ffaa44' : '#333333')}
+                    emissive={isOpen ? '#ffaa44' : '#333333'}
                     emissiveIntensity={isOpen ? 0.8 : 0.1}
                 />
             </mesh>
@@ -63,7 +63,7 @@ export function GatewayArch({ position, scale = 1, id }: GatewayArchProps) {
                     color="#88aaff"
                     transparent
                     opacity={0}
-                    emissive={new Color('#4466dd')}
+                    emissive="#4466dd"
                     emissiveIntensity={0}
                     side={DoubleSide}
                 />

@@ -1,6 +1,5 @@
 {
   "all": "Tất cả",
-  "article-count_one": "{{count}} bài viết",
   "article-count_other": "{{count}} bài viết",
   "categories-label": "News categories",
   "clear": "Xóa",
@@ -18,7 +17,6 @@
   "prev-featured-article": "Bài viết nổi bật trước đó",
   "read-original-article-on": "Đọc bài viết gốc trên {{publisher}}",
   "read-our-take": "Read article",
-  "results-count_one": "{{count}} kết quả",
   "results-count_other": "{{count}} kết quả",
   "search-placeholder": "Tìm kiếm bài viết...",
   "sort-label": "Sắp xếp:",

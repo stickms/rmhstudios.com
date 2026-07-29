@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo, useRef, useEffect, type MutableRefObject } from 'react';
+import { useRef, useEffect, useLayoutEffect, type MutableRefObject } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { RenderFighter } from '@/lib/kowloon-knockout/net/session';
-import { CLIPS, CLIP_KEYS, FIGHTER_ASSET_DIR, RIG_FILE, type ClipKey } from '@/lib/kowloon-knockout/render/fighter/clips';
+import { CLIPS, ESSENTIAL_CLIP_KEYS, DEFERRED_CLIP_KEYS, FIGHTER_ASSET_DIR, RIG_FILE, type ClipKey } from '@/lib/kowloon-knockout/render/fighter/clips';
+import { loadFighterClip } from '@/lib/kowloon-knockout/render/fighter/clipLoader';
 import { resolveClip } from '@/lib/kowloon-knockout/render/fighter/stateMachine';
 import { stripRootMotionXZ } from '@/lib/kowloon-knockout/render/fighter/rootMotion';
 import { autoScaleToHeight, findBone } from '@/lib/kowloon-knockout/render/fighter/fighterRig';
@@ -21,7 +22,110 @@ const HIPS_BONES = ['mixamorigHips', 'mixamorig:Hips'];
 const FLASH = new THREE.Color('#ff2244');
 
 const RIG_URL = `${FIGHTER_ASSET_DIR}/${RIG_FILE}`;
-const CLIP_URLS = CLIP_KEYS.map((k) => `${FIGHTER_ASSET_DIR}/${CLIPS[k].file}`);
+const ESSENTIAL_CLIP_URLS = ESSENTIAL_CLIP_KEYS.map((k) => `${FIGHTER_ASSET_DIR}/${CLIPS[k].file}`);
+
+/** Build a mixer action with this clip's loop semantics. */
+function configureAction(
+    mixer: THREE.AnimationMixer,
+    clip: THREE.AnimationClip,
+    key: ClipKey,
+): THREE.AnimationAction {
+    const action = mixer.clipAction(clip);
+    if (!CLIPS[key].loop) {
+        action.setLoop(THREE.LoopOnce, 1);
+        action.clampWhenFinished = true;
+    }
+    return action;
+}
+
+interface FighterInstance {
+    model: THREE.Group;
+    mixer: THREE.AnimationMixer;
+    actions: Partial<Record<ClipKey, THREE.AnimationAction>>;
+    bodyMats: THREE.MeshStandardMaterial[];
+    dispose: () => void;
+}
+
+/**
+ * Build one seat's renderable fighter: a skeleton clone, tinted materials,
+ * bone-parented accessories, and a mixer with the essential clips bound.
+ *
+ * Creation and disposal are deliberately paired in one object owned by a single
+ * effect. They used to be split — resources built in `useMemo`, torn down in an
+ * effect cleanup with different dependencies — which meant React could run the
+ * cleanup and then re-run the effect against the *same* memoised mixer, whose
+ * bindings `uncacheRoot` had already destroyed. The first `play()` after that
+ * threw `Cannot set properties of undefined (setting '_cacheIndex')`. Any
+ * cleanup must be undoable by its own setup, so both live here.
+ */
+function createFighterInstance(
+    rig: GLTF,
+    essentialClips: GLTF[],
+    colorHex: string,
+    accentHex: string,
+): FighterInstance {
+    const model = cloneSkeleton(rig.scene) as THREE.Group;
+    autoScaleToHeight(model, TARGET_HEIGHT);
+
+    // Identity: tint every skinned-mesh material (cloned so seats differ).
+    const baseColor = new THREE.Color(colorHex);
+    const bodyMats: THREE.MeshStandardMaterial[] = [];
+    model.traverse((o) => {
+        const sm = o as THREE.SkinnedMesh;
+        if (sm.isSkinnedMesh) {
+            const mat = (sm.material as THREE.MeshStandardMaterial).clone();
+            mat.color.copy(baseColor);
+            sm.material = mat;
+            bodyMats.push(mat);
+        }
+    });
+
+    // Procedural accessories parented to bones (skip if bone missing).
+    const head = findBone(model, HEAD_BONES);
+    if (head) {
+        const band = new THREE.Mesh(
+            new THREE.TorusGeometry(0.12, 0.03, 6, 12),
+            new THREE.MeshStandardMaterial({ color: accentHex }),
+        );
+        band.rotation.x = Math.PI / 2;
+        head.add(band);
+    }
+    const hips = findBone(model, HIPS_BONES);
+    if (hips) {
+        const belt = new THREE.Mesh(
+            new THREE.TorusGeometry(0.16, 0.04, 6, 12),
+            new THREE.MeshStandardMaterial({ color: accentHex }),
+        );
+        belt.rotation.x = Math.PI / 2;
+        hips.add(belt);
+    }
+
+    const mixer = new THREE.AnimationMixer(model);
+    const actions: Partial<Record<ClipKey, THREE.AnimationAction>> = {};
+    ESSENTIAL_CLIP_KEYS.forEach((key, i) => {
+        const clip = essentialClips[i]?.animations[0];
+        if (!clip) return;
+        stripRootMotionXZ(clip);
+        actions[key] = configureAction(mixer, clip, key);
+    });
+
+    const dispose = () => {
+        mixer.stopAllAction();
+        mixer.uncacheRoot(model);
+        model.traverse((o) => {
+            const m = o as THREE.Mesh;
+            if (!m.isMesh) return;
+            // Skinned-mesh geometry is SHARED across seats by SkeletonUtils.clone — do
+            // not dispose it. Accessory (non-skinned) geometry is created per seat.
+            if (!(m as THREE.SkinnedMesh).isSkinnedMesh) m.geometry?.dispose?.();
+            const mat = m.material as THREE.Material | THREE.Material[] | undefined;
+            if (Array.isArray(mat)) mat.forEach((x) => x?.dispose?.());
+            else mat?.dispose?.();
+        });
+    };
+
+    return { model, mixer, actions, bodyMats, dispose };
+}
 
 /** Shortest-path angle damp (shared convention with StickFighter). */
 function dampAngle(current: number, target: number, t: number): number {
@@ -32,10 +136,15 @@ function dampAngle(current: number, target: number, t: number): number {
 }
 
 export default function SkeletalFighter({ seat, framesRef, showNameplate = true }: { seat: number; framesRef: FramesRef; showNameplate?: boolean }) {
-    // Shared, cached loads via FBXLoader. useLoader suspends; a missing file
+    // Shared, cached loads via GLTFLoader. useLoader suspends; a missing file
     // throws → the Fighter dispatcher's ErrorBoundary falls back to StickFighter.
-    const rig = useLoader(FBXLoader, RIG_URL);           // skinned Group
-    const clipScenes = useLoader(FBXLoader, CLIP_URLS);  // Group[], one per CLIP_URLS entry
+    //
+    // Only the rig and the two clips needed to look correct standing still are
+    // awaited here. The rest stream in via loadFighterClip below, so the swap
+    // off StickFighter no longer waits on, among others, the dance emote the
+    // sim never requests.
+    const rig = useLoader(GLTFLoader, RIG_URL) as unknown as GLTF;
+    const clipScenes = useLoader(GLTFLoader, ESSENTIAL_CLIP_URLS) as unknown as GLTF[];
 
     const initial = framesRef.current.find((f) => f.seat === seat);
     const colorHex = initial?.color ?? '#cccccc';
@@ -45,84 +154,44 @@ export default function SkeletalFighter({ seat, framesRef, showNameplate = true 
 
     const root = useRef<THREE.Group>(null);
     const shadow = useRef<THREE.Mesh>(null);
-
-    // Per-seat clone of the rig + its own mixer + actions, built once.
-    const { model, mixer, actions, bodyMats } = useMemo(() => {
-        const model = cloneSkeleton(rig) as THREE.Group;
-        autoScaleToHeight(model, TARGET_HEIGHT);
-
-        // Identity: tint every skinned-mesh material (cloned so seats differ).
-        const baseColor = new THREE.Color(colorHex);
-        const bodyMats: THREE.MeshStandardMaterial[] = [];
-        model.traverse((o) => {
-            const sm = o as THREE.SkinnedMesh;
-            if (sm.isSkinnedMesh) {
-                const mat = (sm.material as THREE.MeshStandardMaterial).clone();
-                mat.color.copy(baseColor);
-                sm.material = mat;
-                bodyMats.push(mat);
-            }
-        });
-
-        // Procedural accessories parented to bones (skip if bone missing).
-        const head = findBone(model, HEAD_BONES);
-        if (head) {
-            const band = new THREE.Mesh(
-                new THREE.TorusGeometry(0.12, 0.03, 6, 12),
-                new THREE.MeshStandardMaterial({ color: accentHex }),
-            );
-            band.rotation.x = Math.PI / 2;
-            head.add(band);
-        }
-        const hips = findBone(model, HIPS_BONES);
-        if (hips) {
-            const belt = new THREE.Mesh(
-                new THREE.TorusGeometry(0.16, 0.04, 6, 12),
-                new THREE.MeshStandardMaterial({ color: accentHex }),
-            );
-            belt.rotation.x = Math.PI / 2;
-            hips.add(belt);
-        }
-
-        // Mixer + one action per clip, with root motion stripped.
-        const mixer = new THREE.AnimationMixer(model);
-        const actions = {} as Record<ClipKey, THREE.AnimationAction>;
-        CLIP_KEYS.forEach((key, i) => {
-            const clip = clipScenes[i].animations[0];
-            if (!clip) return;
-            stripRootMotionXZ(clip);
-            const action = mixer.clipAction(clip);
-            if (!CLIPS[key].loop) {
-                action.setLoop(THREE.LoopOnce, 1);
-                action.clampWhenFinished = true;
-            }
-            actions[key] = action;
-        });
-        return { model, mixer, actions, bodyMats };
-    }, [rig, clipScenes, colorHex, accentHex]);
-
+    /** Empty group the model is attached to imperatively — see the effect below. */
+    const modelHost = useRef<THREE.Group>(null);
+    const instance = useRef<FighterInstance | null>(null);
     const currentClip = useRef<ClipKey | null>(null);
 
-    // Dispose GPU resources when mixer/model rebuild or on unmount.
-    // Also resets currentClip so the rebuilt mixer's actions restart correctly
-    // instead of being skipped because currentClip still equals the old key.
-    useEffect(() => {
+    // Single owner of the fighter's GPU resources: this effect builds them,
+    // attaches the model, streams the deferred clips in, and tears all of it
+    // down again. Because setup fully reverses cleanup, a remount rebuilds
+    // rather than reusing a mixer whose bindings were already destroyed.
+    //
+    // useLayoutEffect, not useEffect: the model is attached before paint, so
+    // there is no frame where the fighter is missing.
+    useLayoutEffect(() => {
+        // Captured up front: by cleanup time the ref may already point elsewhere.
+        const host = modelHost.current;
+        const inst = createFighterInstance(rig, clipScenes, colorHex, accentHex);
+        instance.current = inst;
         currentClip.current = null;
-        return () => {
-            mixer.stopAllAction();
-            mixer.uncacheRoot(model);
-            model.traverse((o) => {
-                const m = o as THREE.Mesh;
-                if (!m.isMesh) return;
-                // Skinned-mesh geometry is SHARED across seats by SkeletonUtils.clone — do
-                // not dispose it. Accessory (non-skinned) geometry is created per seat.
-                if (!(m as THREE.SkinnedMesh).isSkinnedMesh) m.geometry?.dispose?.();
-                const mat = m.material as THREE.Material | THREE.Material[] | undefined;
-                if (Array.isArray(mat)) mat.forEach((x) => x?.dispose?.());
-                else mat?.dispose?.();
+        host?.add(inst.model);
+
+        // Non-essential clips arrive behind the swap and register with this
+        // instance's mixer. useFrame skips a clip whose action is missing, so an
+        // un-arrived move simply holds the current pose.
+        let cancelled = false;
+        for (const key of DEFERRED_CLIP_KEYS) {
+            loadFighterClip(key).then((clip) => {
+                if (cancelled || !clip || inst.actions[key]) return;
+                inst.actions[key] = configureAction(inst.mixer, clip, key);
             });
+        }
+
+        return () => {
+            cancelled = true;
+            host?.remove(inst.model);
+            inst.dispose();
+            if (instance.current === inst) instance.current = null;
         };
-    }, [mixer, model]);
+    }, [rig, clipScenes, colorHex, accentHex]);
 
     // Local-only dance emote: pressing G toggles dancing. Applied only to the
     // local fighter and only while idle (any real action overrides it). Purely
@@ -142,7 +211,9 @@ export default function SkeletalFighter({ seat, framesRef, showNameplate = true 
     useFrame((state, deltaRaw) => {
         const rf = framesRef.current.find((f) => f.seat === seat);
         const r = root.current;
-        if (!rf || !r) return;
+        const inst = instance.current;
+        if (!rf || !r || !inst) return;
+        const { mixer, actions, bodyMats } = inst;
         const delta = Math.min(0.05, deltaRaw);
 
         // Position + facing (damped), reusing StickFighter's conventions.
@@ -193,9 +264,7 @@ export default function SkeletalFighter({ seat, framesRef, showNameplate = true 
     return (
         <group ref={root}>
             <FighterTrappings showNameplate={showNameplate} plateColor={plateColor} plateLabel={plateLabel} shadowRef={shadow} />
-            <group rotation={[0, MODEL_YAW_OFFSET, 0]}>
-                <primitive object={model} />
-            </group>
+            <group ref={modelHost} rotation={[0, MODEL_YAW_OFFSET, 0]} />
         </group>
     );
 }

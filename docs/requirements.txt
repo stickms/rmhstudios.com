@@ -1,0 +1,9 @@
+# Documentation build dependencies (Sphinx + MyST Markdown).
+# Pinned for reproducible Read the Docs builds:
+# https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
+sphinx==8.2.3
+myst-parser==4.0.1
+furo==2025.7.19
+sphinx-copybutton==0.5.2
+sphinx-design==0.6.1
+linkify-it-py==2.0.3

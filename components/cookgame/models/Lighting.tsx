@@ -3,6 +3,7 @@
 import { Sky } from '@react-three/drei';
 import { useCookgameStore } from '@/lib/cookgame/store';
 import { phaseOfDay, sunDirection, type DayPhase } from '@/lib/cookgame/timeOfDay';
+import { useRenderQuality } from '@/lib/render/useRenderQuality';
 import { PALETTE } from './palette';
 
 const SUN_DIST = 22; // matches the shadow camera extent
@@ -23,6 +24,7 @@ export default function Lighting() {
   // Quantize to whole seconds to cap re-renders at ~1 Hz (sun moves ~1°/s).
   const clockSec = useCookgameStore((s) => Math.floor(s.clock / 1000));
   const clock = clockSec * 1000;
+  const { quality } = useRenderQuality();
 
   const phase = phaseOfDay(clock);
   const look = PHASE_LOOK[phase];
@@ -47,9 +49,9 @@ export default function Lighting() {
         position={sun}
         intensity={look.key}
         color={look.keyColor}
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        castShadow={quality.shadows}
+        shadow-mapSize-width={quality.shadowMapSize}
+        shadow-mapSize-height={quality.shadowMapSize}
         shadow-camera-left={-22}
         shadow-camera-right={22}
         shadow-camera-top={22}

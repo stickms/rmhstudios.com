@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStoryStore } from '@/lib/forest-explorer/store';
 
@@ -18,10 +18,13 @@ export function StoryNarration() {
 
     const [lineIdx, setLineIdx] = useState(0);
     const [visible, setVisible] = useState(false);
+    /** Mirrors lineIdx so `advance` can decide without a state updater. */
+    const idxRef = useRef(0);
 
     // Reset when a new narration arrives
     useEffect(() => {
         if (lines && lines.length > 0) {
+            idxRef.current = 0;
             setLineIdx(0);
             const raf = requestAnimationFrame(() => setVisible(true));
             return () => cancelAnimationFrame(raf);
@@ -29,39 +32,46 @@ export function StoryNarration() {
         setVisible(false);
     }, [lines]);
 
+    /**
+     * Step to the next line, or dismiss on the last one.
+     *
+     * The dismissal deliberately happens OUTSIDE a setState updater. It used to
+     * live inside `setLineIdx(prev => { ... dismissNarration() ... })`, and React
+     * runs updater functions during the render phase — so writing to the Zustand
+     * store from in there triggered "Cannot update a component (StoryNarration)
+     * while rendering a different component". Reading the current index from a
+     * ref keeps the decision in the event handler where it belongs.
+     */
+    const advance = useCallback(() => {
+        if (!lines) return;
+        const next = idxRef.current + 1;
+        if (next >= lines.length) {
+            dismissNarration();
+            return;
+        }
+        idxRef.current = next;
+        setLineIdx(next);
+    }, [lines, dismissNarration]);
+
     // Advance on E / Enter (space is jump, click is pointer-lock)
     useEffect(() => {
         if (!lines || showPuzzleOverlay || journalOpen) return;
         const fn = (e: KeyboardEvent) => {
             if (e.code !== 'KeyE' && e.code !== 'Enter') return;
             e.stopPropagation();
-            setLineIdx(prev => {
-                if (prev + 1 >= lines.length) {
-                    dismissNarration();
-                    return prev;
-                }
-                return prev + 1;
-            });
+            advance();
         };
         // Capture phase so the interact handler doesn't also fire
         window.addEventListener('keydown', fn, true);
         return () => window.removeEventListener('keydown', fn, true);
-    }, [lines, showPuzzleOverlay, journalOpen, dismissNarration]);
+    }, [lines, showPuzzleOverlay, journalOpen, advance]);
 
     // Auto-dismiss safety: each line lingers at most 9 seconds
     useEffect(() => {
         if (!lines) return;
-        const timer = setTimeout(() => {
-            setLineIdx(prev => {
-                if (prev + 1 >= lines.length) {
-                    dismissNarration();
-                    return prev;
-                }
-                return prev + 1;
-            });
-        }, 9000);
+        const timer = setTimeout(advance, 9000);
         return () => clearTimeout(timer);
-    }, [lines, lineIdx, dismissNarration]);
+    }, [lines, lineIdx, advance]);
 
     if (!lines || lines.length === 0 || showPuzzleOverlay || journalOpen) return null;
 

@@ -8,7 +8,6 @@
   "edit": "편집",
   "edit-build": "빌드 편집",
   "error-loading-build": "빌드 불러오기 오류",
-  "like-count_one": "좋아요 {{count}}개",
   "like-count_other": "좋아요 {{count}}개",
   "manage-subtitle": "게시된 빌드와 초안 빌드를 관리하세요",
   "my-builds": "내 빌드",
@@ -24,6 +23,5 @@
   "submit-a-build": "빌드 제출",
   "update-build-details": "아래에서 빌드 세부 정보를 업데이트하세요.",
   "view": "보기",
-  "view-count_one": "조회수 {{count}}회",
   "view-count_other": "조회수 {{count}}회"
 }

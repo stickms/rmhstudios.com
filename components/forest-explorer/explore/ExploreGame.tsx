@@ -7,6 +7,8 @@ import type { TimeOfDay } from '../shared/types';
 import { useForestAudio } from '../audio/useForestAudio';
 import { useGardenStore } from '@/lib/forest-explorer/gardenStore';
 import { stageOf } from '@/lib/forest-explorer/garden';
+import { useRenderQuality } from '@/lib/render/useRenderQuality';
+import AdaptiveQuality from '@/components/render/AdaptiveQuality';
 import { ExploreScene } from './ExploreScene';
 
 export function ExploreGame() {
@@ -17,6 +19,7 @@ export function ExploreGame() {
 
     const { t } = useTranslation("c-forest-explorer");
     const { muted, toggleMute, volume, setVolume } = useForestAudio(mode, locked);
+    const { quality, dpr, downscale } = useRenderQuality();
 
     const gardenToast = useGardenStore(s => s.toast);
     const plants = useGardenStore(s => s.plants);
@@ -42,10 +45,16 @@ export function ExploreGame() {
     return (
         <div className="w-full h-full relative select-none" style={{ touchAction: 'none' }}>
             <Canvas
-                shadows
-                gl={{ antialias: true }}
+                shadows={quality.shadows}
+                dpr={dpr}
+                gl={{ antialias: quality.antialias, powerPreference: 'high-performance' }}
                 camera={{ fov: 75, near: 0.1, far: 600 }}
+                // Pointer unlocked = intro card or pause overlay is up. 'demand'
+                // keeps the last frame on screen (so the blurred backdrop still
+                // shows a forest) without paying for it 60x a second.
+                frameloop={locked ? 'always' : 'demand'}
             >
+                <AdaptiveQuality onDownscale={downscale} />
                 <ExploreScene
                     onLock={() => setLocked(true)}
                     onUnlock={() => setLocked(false)}

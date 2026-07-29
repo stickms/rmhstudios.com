@@ -1,3 +1,5 @@
+# RMHBox — original prompts reference
+
 I want to add a real-time multiplayer party game / minigame "game" called "RMHbox" (a play on Jackbox Games) to the website, utilizing the websocket server and server-side logic for authoritative state. This game will be put on the "/rmhbox" route of the website. Use "/rmhbox/" where applicable for file organization relevant to this game. The file structure should mimic the other games, as detailed in docs/codebase-overview.md.
 
 The game should be gated behind the usual auth gate, and it should implement a public/private lobby system with host controls. The host should be able to select a minigame to play, or put it up to a vote. 

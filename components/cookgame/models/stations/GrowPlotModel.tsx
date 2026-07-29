@@ -1,5 +1,6 @@
 "use client";
 import type { GrowStage } from '@/lib/cookgame/types';
+import StaticMerge from '@/components/render/StaticMerge';
 import { PALETTE, matteMaterialProps } from '../palette';
 
 interface Props {
@@ -100,6 +101,10 @@ function PlantMesh({ stage }: { stage: GrowStage }) {
 // GrowPlotModel — PURE VIEW. Reads nothing from the store.
 export function GrowPlotModel({ stage, position = [0, 0, 0] }: Props) {
   return (
+    // Batched per plot rather than with the rest of the town: the plant swaps
+    // geometry as the crop grows, so this rebuilds on `stage` instead of being
+    // baked once. TownScene marks the wrapper noMerge for the same reason.
+    <StaticMerge deps={[stage]}>
     <group position={position}>
       {/* planter box walls (wood) — base at y=0, top at y=0.55 */}
       <mesh castShadow receiveShadow position={[0, 0.275, 0]}>
@@ -114,5 +119,6 @@ export function GrowPlotModel({ stage, position = [0, 0, 0] }: Props) {
       {/* plant submesh — switches by stage */}
       <PlantMesh stage={stage} />
     </group>
+    </StaticMerge>
   );
 }

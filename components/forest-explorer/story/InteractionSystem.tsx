@@ -29,6 +29,9 @@ export function InteractionSystem() {
 
     // Reusable flat direction vector for flashlight cone checks
     const flatDir = useMemo(() => new Vector3(), []);
+    // Reused per interactable — this ran once per item per pass, ~40 allocations
+    // every third frame before being hoisted.
+    const toObj = useMemo(() => new Vector3(), []);
 
     useFrame(() => {
         frameCount.current++;
@@ -41,7 +44,9 @@ export function InteractionSystem() {
         // Flatten camera direction to XZ plane so vertical tilt doesn't break reveal
         flatDir.set(dir.x, 0, dir.z).normalize();
 
-        const revealedIds: string[] = [];
+        // A Set, not an array: subscribers test membership, and the O(n) scan
+        // this loop used to do per interactable made the pass O(n^2).
+        const revealedIds = new Set<string>();
         let closest: { id: string; dist: number } | null = null;
         let closestPortal: { id: string; dist: number } | null = null;
 
@@ -62,24 +67,23 @@ export function InteractionSystem() {
             // Reveal check per method
             if (inter.revealMethod === 'flashlight_only' && !isPuzzleSolved) {
                 if (flashlightOn && dist < 40) {
-                    const toObj = new Vector3(dx, 0, dz).normalize();
-                    const angle = flatDir.angleTo(toObj);
+                    const angle = flatDir.angleTo(toObj.set(dx, 0, dz).normalize());
                     if (angle < 0.4) { // ~23 degrees — matches visual spotlight cone
-                        revealedIds.push(inter.id);
+                        revealedIds.add(inter.id);
                     }
                 }
             } else if (inter.revealMethod === 'proximity' && !isPuzzleSolved) {
                 // Proximity secrets fade in as the player draws near
                 if (dist < 14) {
-                    revealedIds.push(inter.id);
+                    revealedIds.add(inter.id);
                 }
             } else {
                 // Always-visible items are always "revealed"
-                revealedIds.push(inter.id);
+                revealedIds.add(inter.id);
             }
 
             // Proximity check — skip solved puzzles, track portals separately for priority
-            if (dist < inter.interactionRadius && revealedIds.includes(inter.id) && !isPuzzleSolved) {
+            if (dist < inter.interactionRadius && revealedIds.has(inter.id) && !isPuzzleSolved) {
                 if (inter.type === 'portal') {
                     if (!closestPortal || dist < closestPortal.dist) {
                         closestPortal = { id: inter.id, dist };

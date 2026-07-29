@@ -1,7 +1,6 @@
 {
   "access-required": "Memerlukan Akses {{tierName}}",
   "active": "Aktif",
-  "attempt-count_one": "{{count}} percobaan",
   "attempt-count_other": "{{count}} percobaan",
   "attempts": "percobaan",
   "best-streak": "terbaik: {{longestStreak}}",

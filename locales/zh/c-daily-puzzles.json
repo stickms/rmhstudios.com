@@ -45,7 +45,6 @@
   "filter-todo": "To do",
   "find-contradiction": "找出矛盾之处",
   "five-facts-tagline": "五个事实。两个是谎言。找出冒牌货。",
-  "found-liar_one": "你在{{count}}次猜测中找到了说谎者{{suffix}}。",
   "found-liar_other": "你在{{count}}次猜测中找到了说谎者{{suffix}}。",
   "fun-fact": "冷知识",
   "gave-up-message": "你放弃了今天的谜题。",

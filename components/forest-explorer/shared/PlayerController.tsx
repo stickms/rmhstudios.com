@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Vector2, Vector3 } from 'three';
 import {
@@ -15,9 +15,19 @@ import {
     JUMP_VEL,
 } from './constants';
 
+/** World up — shared constant so the per-frame cross product allocates nothing. */
+const UP = new Vector3(0, 1, 0);
+
 export function Player() {
     const { camera } = useThree();
     const keys       = useRef<Record<string, boolean>>({});
+    // Scratch vectors reused across frames — see StoryPlayerController.
+    const scratch = useMemo(() => ({
+        input: new Vector2(),
+        camForward: new Vector3(),
+        camRight: new Vector3(),
+        move: new Vector3(),
+    }), []);
     const localVel   = useRef(new Vector2(0, 0));
     const verticalVel = useRef(0);
     const isGrounded  = useRef(true);
@@ -46,7 +56,7 @@ export function Player() {
     useFrame((_, delta) => {
         const k = keys.current;
 
-        const input = new Vector2(0, 0);
+        const input = scratch.input.set(0, 0);
         if (k['KeyW'] || k['ArrowUp'])    input.y += 1;
         if (k['KeyS'] || k['ArrowDown'])  input.y -= 1;
         if (k['KeyA'] || k['ArrowLeft'])  input.x -= 1;
@@ -56,15 +66,14 @@ export function Player() {
         if (input.lengthSq() > 0) input.normalize().multiplyScalar(speed);
         localVel.current.lerp(input, 0.15);
 
-        const camForward = new Vector3();
+        const camForward = scratch.camForward;
         camera.getWorldDirection(camForward);
         camForward.y = 0;
         camForward.normalize();
 
-        const camRight = new Vector3();
-        camRight.crossVectors(camForward, new Vector3(0, 1, 0));
+        const camRight = scratch.camRight.crossVectors(camForward, UP);
 
-        const move = new Vector3();
+        const move = scratch.move.set(0, 0, 0);
         move.addScaledVector(camForward, localVel.current.y * delta);
         move.addScaledVector(camRight,   localVel.current.x * delta);
 

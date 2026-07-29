@@ -39,7 +39,7 @@ locales, RTL for `ar`/`ur`). Node ≥24.18, pnpm workspace.
 | `public/`      | Static assets, `robots.txt`, `manifest.webmanifest`.                                                                                                                  | —                                                |
 | `scripts/`     | Seeding, i18n pipeline, OG/icon generation, ladder pipeline, news pipeline, epic build.                                                                               | `docs/README.md`                                 |
 | `deploy/`      | Apache vhosts, blue/green hotswap, DB backups, Terraform (DNS), runbooks.                                                                                             | [`docs/architecture.md`](docs/architecture.md)   |
-| `docs/`        | Reference docs, design docs, plans, runbooks.                                                                                                                         | [`docs/README.md`](docs/README.md)               |
+| `docs/`        | Reference docs, design docs, plans, runbooks — also **published** as a Sphinx/MyST Read the Docs site in 16 languages.                                                | [`docs/README.md`](docs/README.md)               |
 | `testing/`     | Vitest tests (RMHBox phases). Most other suites are colocated under `lib/`.                                                                                           | `lib/CLAUDE.md` §Testing                         |
 | `cli/`         | `rmhcode` CLI (wraps Claude Code; publishes User Builds).                                                                                                             | —                                                |
 

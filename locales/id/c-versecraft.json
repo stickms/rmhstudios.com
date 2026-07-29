@@ -43,7 +43,6 @@
   "save-game": "Simpan Permainan",
   "saved-to-slot": "Tersimpan ke slot {{slotId}}",
   "select-poem-prompt": "Pilih puisi untuk melihat detailnya.",
-  "select-words-prompt_one": "Pilih {{count}} kata untuk menyusun puisi Anda",
   "select-words-prompt_other": "Pilih {{count}} kata untuk menyusun puisi Anda",
   "settings": "Pengaturan",
   "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",

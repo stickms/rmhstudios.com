@@ -1,0 +1,84 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, RMH Studios
+# This file is distributed under the same license as the rmhstudios.com
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: rmhstudios.com 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-29 21:28+0000\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
+"Language: ur\n"
+"Language-Team: ur <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../developer-api/changelog.md:1 95b63df92fc04f5fbe4e142a4377bb5f
+msgid "Changelog"
+msgstr "چینج لاگ"
+
+#: ../../developer-api/changelog.md:3 62fd238c6d1c413b80155a048e8b337a
+msgid "v1.2 — 2026-06"
+msgstr "v1.2 — 2026-06"
+
+#: ../../developer-api/changelog.md:5 db2ef47aab9c4cc1bfa3f6dff9fc55a1
+msgid "Major overhaul:"
+msgstr "بڑی تبدیلی:"
+
+#: ../../developer-api/changelog.md:7 3533b45601454340ae498dd66a12bfaa
+msgid "Scoped + expiring API keys, key rotation, and a 4-char display suffix."
+msgstr "اسکوپڈ + میعاد رکھنے والی API کیز، کی روٹیشن، اور ایک 4 حروف کا ڈسپلے سفکس۔"
+
+#: ../../developer-api/changelog.md:8 c6d434ce41a04c5ea5277da55df34bf6
+msgid ""
+"Standardized errors with `type` + `request_id`; `X-RateLimit-*` headers "
+"on every response."
+msgstr ""
+"`type` + `request_id` کے ساتھ معیاری ایررز؛ ہر رسپانس پر `X-RateLimit-*` "
+"ہیڈرز۔"
+
+#: ../../developer-api/changelog.md:9 c59dd8105d8842d48fac41e213857a7f
+msgid "`Idempotency-Key` support on all writes."
+msgstr "تمام رائٹس پر `Idempotency-Key` سپورٹ۔"
+
+#: ../../developer-api/changelog.md:10 5228a7ad17924137a9e2ec86fbcc10f3
+msgid "Outbound webhooks with HMAC-signed delivery + retries."
+msgstr "HMAC دستخط شدہ ڈیلیوری + ریٹرائیز کے ساتھ آؤٹ باؤنڈ ویب ہکس۔"
+
+#: ../../developer-api/changelog.md:11 464b4c61ba6942a48ecf50406c5e7c66
+msgid ""
+"New endpoints: single post read/delete, like/unlike, comments, bookmarks,"
+" public user profiles + social graph, your "
+"followers/following/notifications/bookmarks, builds, blog, news, and game"
+" leaderboards."
+msgstr ""
+"نئے اینڈ پوائنٹس: سنگل پوسٹ ریڈ/ڈیلیٹ، لائک/ان لائک، کمنٹس، بک مارکس، پبلک "
+"یوزر پروفائلز + سوشل گراف، آپ کے فالورز/فالوئنگ/نوٹیفیکیشنز/بک مارکس، بلڈز، "
+"بلاگ، نیوز، اور گیم لیڈر بورڈز۔"
+
+#: ../../developer-api/changelog.md:12 d61bfc798aa441a490d4ed62e072a48e
+msgid "Machine-readable OpenAPI 3.1 at `/api/v1/openapi.json`."
+msgstr "`/api/v1/openapi.json` پر مشین کے پڑھنے کے قابل OpenAPI 3.1۔"
+
+#: ../../developer-api/changelog.md:14 308b735f0da64615a3e95d0853daf4ed
+msgid "v1.1 — 2026-06"
+msgstr "v1.1 — 2026-06"
+
+#: ../../developer-api/changelog.md:16 173951ce244540f483cd1b74b4b4fd32
+msgid "Image upload: `POST /api/v1/images`; `media_ids` on `POST /api/v1/posts`."
+msgstr "امیج اپ لوڈ: `POST /api/v1/images`؛ `POST /api/v1/posts` پر `media_ids`۔"
+
+#: ../../developer-api/changelog.md:18 4e4b94cb02ef42a5897dff0e72e95205
+msgid "v1 — 2026-06"
+msgstr "v1 — 2026-06"
+
+#: ../../developer-api/changelog.md:20 f9013299147d4bc0a7b0788dd66027ac
+msgid "Initial release: `me`, `posts` (list + create), `feed`."
+msgstr "ابتدائی ریلیز: `me`، `posts` (فہرست + تخلیق)، `feed`۔"
+

@@ -1,0 +1,106 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, RMH Studios
+# This file is distributed under the same license as the rmhstudios.com
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: rmhstudios.com 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-29 21:28+0000\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
+"Language: ur\n"
+"Language-Team: ur <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../developer-api/idempotency.md:1 6f4b3edd91254134b847b71b23c62f27
+msgid "Idempotency"
+msgstr "آئیڈمپوٹینسی"
+
+#: ../../developer-api/idempotency.md:3 5db6dc5652ce40318ccea1810c750afa
+msgid ""
+"Write requests (`POST`, `PATCH`, `DELETE`) accept an **`Idempotency-"
+"Key`** header so a retry — after a network blip or timeout — never "
+"applies the action twice."
+msgstr ""
+"رائٹ ریکویسٹس (`POST`، `PATCH`، `DELETE`) ایک **`Idempotency-Key`** ہیڈر "
+"قبول کرتی ہیں تاکہ کوئی ریٹرائی — نیٹ ورک میں خلل یا ٹائم آؤٹ کے بعد — کبھی "
+"بھی کارروائی کو دو بار نافذ نہ کرے۔"
+
+#: ../../developer-api/idempotency.md:5 bd6859a73e33462c976fb4d9218a716f
+#, python-brace-format
+msgid ""
+"curl -X POST https://rmhstudios.com/api/v1/posts \\\n"
+"  -H \"Authorization: Bearer $RMH_KEY\" \\\n"
+"  -H \"Content-Type: application/json\" \\\n"
+"  -H \"Idempotency-Key: 5f3a9c2e-1b7d-4e2a-9c8b-2f1a0d6e4b3c\" \\\n"
+"  -d '{\"content\":\"Posted exactly once\"}'\n"
+msgstr ""
+"curl -X POST https://rmhstudios.com/api/v1/posts \\\n  -H \"Authorization: "
+"Bearer $RMH_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -H "
+"\"Idempotency-Key: 5f3a9c2e-1b7d-4e2a-9c8b-2f1a0d6e4b3c\" \\\n  -d "
+"'{\"content\":\"Posted exactly once\"}'\n"
+
+#: ../../developer-api/idempotency.md:13 09697d2109544b598276879f075f44ad
+msgid "Semantics"
+msgstr "سیمینٹکس"
+
+#: ../../developer-api/idempotency.md:15 f264c62e811841a2a12d9d68eecf9c55
+msgid ""
+"The **first** request for a given key is processed and its response "
+"stored."
+msgstr ""
+"کسی مخصوص کی کے لیے **پہلی** ریکویسٹ پراسیس کی جاتی ہے اور اس کا رسپانس "
+"محفوظ کر لیا جاتا ہے۔"
+
+#: ../../developer-api/idempotency.md:16 587f06e903974796a9edd5bd191261d5
+msgid ""
+"A **retry with the same key and body** replays the stored response and "
+"adds `Idempotency-Replayed: true`. No second action occurs."
+msgstr ""
+"**اسی کی اور باڈی کے ساتھ ریٹرائی** محفوظ شدہ رسپانس کو دوبارہ چلاتی ہے اور "
+"`Idempotency-Replayed: true` شامل کرتی ہے۔ کوئی دوسری کارروائی نہیں ہوتی۔"
+
+#: ../../developer-api/idempotency.md:17 7d2448dba21d471ba663038ce0d3529c
+msgid ""
+"Reusing a key with a **different body** returns `409 "
+"idempotency_conflict`."
+msgstr ""
+"کسی کی کو **مختلف باڈی** کے ساتھ دوبارہ استعمال کرنے پر `409 "
+"idempotency_conflict` واپس ملتا ہے۔"
+
+#: ../../developer-api/idempotency.md:18 52ce52844cf44c0d915909c48b5fb4ac
+msgid "Stored responses expire after ~24 hours."
+msgstr "محفوظ شدہ رسپانسز تقریباً 24 گھنٹوں کے بعد میعاد ختم ہو جاتے ہیں۔"
+
+#: ../../developer-api/idempotency.md:20 d815047308ff470c8afd0a0d51a9d195
+msgid ""
+"Generate a unique key (e.g. a UUID v4) per logical operation — not per "
+"HTTP attempt. The point is that all attempts at *one* logical write share"
+" a key."
+msgstr ""
+"ہر منطقی آپریشن کے لیے ایک منفرد کی بنائیں (مثلاً ایک UUID v4) — فی HTTP "
+"کوشش نہیں۔ نکتہ یہ ہے کہ *ایک* منطقی رائٹ کی تمام کوششیں ایک ہی کی کا اشتراک "
+"کرتی ہیں۔"
+
+#: ../../developer-api/idempotency.md:22 ed0000951b414a35b67783128c2e608b
+msgid "Which endpoints honour it"
+msgstr "کون سے اینڈ پوائنٹس اس کا احترام کرتے ہیں"
+
+#: ../../developer-api/idempotency.md:25 62dad61c33a247cfb50c1675cd0ccbb3
+msgid ""
+"Endpoints that support idempotency are marked **Idempotent** in the "
+"[endpoint reference](./endpoints/index.md). Sending the header to an "
+"endpoint that doesn't support it is harmless — it's ignored."
+msgstr ""
+"وہ اینڈ پوائنٹس جو آئیڈمپوٹینسی سپورٹ کرتے ہیں انہیں [اینڈ پوائنٹ "
+"ریفرنس](./endpoints/index.md) میں **Idempotent** کے طور پر نشان زد کیا گیا "
+"ہے۔ ایسے اینڈ پوائنٹ کو یہ ہیڈر بھیجنا جو اسے سپورٹ نہیں کرتا بے ضرر ہے — "
+"اسے نظر انداز کر دیا جاتا ہے۔"
+

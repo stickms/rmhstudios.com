@@ -1,7 +1,6 @@
 {
   "activate-root-paths": "Kích hoạt các đường dẫn gốc để kết nối nguồn với đích ({{active}}/{{max}} cạnh)",
   "activate-seal": "Kích hoạt Ấn",
-  "attempts-count_one": "Số lần thử: {{count}}",
   "attempts-count_other": "Số lần thử: {{count}}",
   "beam-hits-target": "Chùm tia trúng mục tiêu!",
   "beam-misses-prisms": "Missing a prism...",
@@ -29,9 +28,7 @@
   "forest-explorer-subtitle": "Dạo bước trong khu rừng cổ thụ yên bình",
   "forest-explorer-title": "Nhà Thám Hiểm Rừng",
   "forest-remembers": "Khu rừng ghi nhớ!",
-  "garden-chip_one": "",
   "garden-chip_other": "{{count}} planted · {{blooms}} blooming",
-  "garden-status_one": "",
   "garden-status_other": "🌼 Your garden: {{count}} plants, {{blooms}} blooming — they grow even while you're away",
   "glyph-instructions-v2": "Drag fragments onto the faint glyph and right-click to rotate until the engraved ring joins ({{placed}}/{{total}})",
   "hint": "gợi ý",

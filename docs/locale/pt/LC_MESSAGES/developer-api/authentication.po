@@ -1,0 +1,140 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, RMH Studios
+# This file is distributed under the same license as the rmhstudios.com
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: rmhstudios.com 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-29 21:28+0000\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
+"Language: pt\n"
+"Language-Team: pt <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../developer-api/authentication.md:1 e12a505c87544ba6acf262fb618d84ba
+msgid "Authentication"
+msgstr "Autenticação"
+
+#: ../../developer-api/authentication.md:3 c6f3f308872f4cedb189d9d08929e31b
+msgid "Every request must include an API key. Two equivalent options:"
+msgstr "Toda requisição deve incluir uma chave de API. Duas opções equivalentes:"
+
+#: ../../developer-api/authentication.md:5 a01d23b6d31f4cb2afb5d2ae66f973c3
+msgid "Authorization: Bearer rmh_live_xxxxxxxxxxxxxxxxxxxxxxxx\n"
+msgstr "Authorization: Bearer rmh_live_xxxxxxxxxxxxxxxxxxxxxxxx\n"
+
+#: ../../developer-api/authentication.md:9 4e305c76a65f4f2da31154bbd655da80
+msgid "X-API-Key: rmh_live_xxxxxxxxxxxxxxxxxxxxxxxx\n"
+msgstr "X-API-Key: rmh_live_xxxxxxxxxxxxxxxxxxxxxxxx\n"
+
+#: ../../developer-api/authentication.md:13 84d169f55f7f42949dcbf9504429061b
+msgid ""
+"API keys authenticate as **your user account**. Writes are scoped to your"
+" own account; you cannot act on behalf of others."
+msgstr ""
+"Chaves de API autenticam como **sua conta de usuário**. Escritas são "
+"delimitadas à sua própria conta; você não pode agir em nome de outras "
+"pessoas."
+
+#: ../../developer-api/authentication.md:15 99ba9717dc7d4a29b1df5d1aa529d1ad
+msgid "Key security"
+msgstr "Segurança da chave"
+
+#: ../../developer-api/authentication.md:17 ca334af8bd9b4787a6c1d2e445d140c4
+msgid "Keys are random 256-bit secrets formatted `rmh_live_<base62>`."
+msgstr "As chaves são segredos aleatórios de 256 bits no formato `rmh_live_<base62>`."
+
+#: ../../developer-api/authentication.md:18 77e66086b00946718c324e2c394eb8ff
+msgid ""
+"The server stores **only a SHA-256 hash** — the plaintext is shown "
+"**once** at creation and can never be retrieved again. The dashboard "
+"shows a non-secret 4-character suffix so you can tell keys apart."
+msgstr ""
+"O servidor armazena **apenas um hash SHA-256** — o texto simples é "
+"mostrado **uma vez** na criação e nunca mais pode ser recuperado. O "
+"painel exibe um sufixo não secreto de 4 caracteres para que você "
+"consiga diferenciar as chaves."
+
+#: ../../developer-api/authentication.md:19 9b3f2c7592754040bfdc5fb377572339
+msgid ""
+"Treat a key like a password. Keep it server-side; never embed it in a "
+"public client, repo, or browser bundle you don't control."
+msgstr ""
+"Trate uma chave como uma senha. Mantenha-a no lado do servidor; nunca a "
+"incorpore em um cliente público, repositório, ou bundle de navegador que "
+"você não controla."
+
+#: ../../developer-api/authentication.md:20 0b5c72946b6a42b79c051b9d4eb5075d
+msgid ""
+"**Scopes:** each key carries granular permissions — see "
+"[Scopes](./scopes.md). Grant the least privilege a given integration "
+"needs."
+msgstr ""
+"**Escopos:** cada chave carrega permissões granulares — veja "
+"[Escopos](./scopes.md). Conceda o mínimo privilégio que uma determinada "
+"integração precisa."
+
+#: ../../developer-api/authentication.md:21 83e71af87c8c45c7aab18842b57216ca
+msgid ""
+"**Expiry:** a key may be created with an expiry date; expired keys are "
+"rejected exactly like revoked ones."
+msgstr ""
+"**Expiração:** uma chave pode ser criada com uma data de expiração; "
+"chaves expiradas são rejeitadas exatamente como as revogadas."
+
+#: ../../developer-api/authentication.md:22 7d3ae1e8321d43da8a772c38019aed4a
+msgid ""
+"**Rotation:** rotate a key from "
+"[`/developer`](https://rmhstudios.com/developer) to issue a new secret "
+"while keeping the same key record — the old secret stops working "
+"immediately."
+msgstr ""
+"**Rotação:** rotacione uma chave em "
+"[`/developer`](https://rmhstudios.com/developer) para emitir um novo "
+"segredo mantendo o mesmo registro de chave — o segredo antigo para de "
+"funcionar imediatamente."
+
+#: ../../developer-api/authentication.md:23 78395ac83f8f47889835b923146d7ff3
+msgid ""
+"**Revocation:** revoke a key any time from "
+"[`/developer`](https://rmhstudios.com/developer); it takes effect at "
+"once."
+msgstr ""
+"**Revogação:** revogue uma chave a qualquer momento em "
+"[`/developer`](https://rmhstudios.com/developer); a ação entra em vigor "
+"imediatamente."
+
+#: ../../developer-api/authentication.md:24 7ab7a291c56f499ab98def9e98293371
+msgid ""
+"If a subscription lapses or the account is suspended, all of that "
+"account's keys stop working until the subscription is restored."
+msgstr ""
+"Se uma assinatura expirar ou a conta for suspensa, todas as chaves dessa "
+"conta deixam de funcionar até que a assinatura seja restaurada."
+
+#: ../../developer-api/authentication.md:26 35a3b220b7ea49fc97780f676f932738
+msgid "CORS and browser clients"
+msgstr "CORS e clientes de navegador"
+
+#: ../../developer-api/authentication.md:29 9cacb0074db14c5bb04a7853c96d59e2
+msgid ""
+"Cross-origin requests are permitted, and authentication is by bearer key "
+"rather than cookies — so the API is not a CSRF surface. That is *not* a "
+"licence to ship a key in a public browser bundle: anything in client-side"
+" JavaScript is readable by anyone who loads the page. Keep keys on a "
+"server you control."
+msgstr ""
+"Requisições cross-origin são permitidas, e a autenticação é feita por "
+"chave bearer em vez de cookies — portanto, a API não é uma superfície de "
+"CSRF. Isso *não* é uma licença para distribuir uma chave em um bundle de "
+"navegador público: qualquer coisa em JavaScript do lado do cliente pode "
+"ser lida por qualquer pessoa que carregar a página. Mantenha as chaves em"
+" um servidor que você controla."

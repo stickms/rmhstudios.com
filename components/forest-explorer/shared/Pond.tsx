@@ -2,7 +2,7 @@
 
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Shape, Color, type Mesh, type MeshStandardMaterial } from 'three';
+import { Shape, type Mesh, type MeshStandardMaterial } from 'three';
 
 export function Pond() {
     const waterRef = useRef<Mesh>(null);
@@ -64,7 +64,7 @@ export function Pond() {
                     metalness={0.15}
                     transparent
                     opacity={0.88}
-                    emissive={new Color('#0a2030')}
+                    emissive="#0a2030"
                     emissiveIntensity={0.04}
                 />
             </mesh>
