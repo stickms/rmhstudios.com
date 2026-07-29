@@ -144,50 +144,56 @@ msgid ""
 "  \"data\": { \"postId\": \"ck_…\" }\n"
 "}\n"
 msgstr ""
+"{\n"
+"  \"id\": \"<deliveryId>\",\n"
+"  \"event\": \"post.created\",\n"
+"  \"created\": \"2026-06-30T10:00:00.000Z\",\n"
+"  \"data\": { \"postId\": \"ck_…\" }\n"
+"}\n"
 
 #: ../../developer-api/webhooks.md:43 99696dc14bfc49379e6d6f73cbdc72ed
 msgid "and these headers:"
-msgstr ""
+msgstr "dan header berikut:"
 
 #: ../../developer-api/webhooks.md e8f4f08d3f634b1897f55066a24c4170
 msgid "Header"
-msgstr ""
+msgstr "Header"
 
 #: ../../developer-api/webhooks.md e6e016c5915c4fffb32ba12cc8ba56e1
 msgid "Meaning"
-msgstr ""
+msgstr "Makna"
 
 #: ../../developer-api/webhooks.md ab680eb948d847b38bd351027d024678
 msgid "`X-RMH-Event`"
-msgstr ""
+msgstr "`X-RMH-Event`"
 
 #: ../../developer-api/webhooks.md f41bbb2a7e494de997ba5f202a8ee1fa
 msgid "The event name."
-msgstr ""
+msgstr "Nama peristiwa."
 
 #: ../../developer-api/webhooks.md 469ca20d19e24f47970840f4de616679
 msgid "`X-RMH-Delivery`"
-msgstr ""
+msgstr "`X-RMH-Delivery`"
 
 #: ../../developer-api/webhooks.md 97e5480b394f4bfab7df756a8f9c2fc7
 msgid "Unique delivery id."
-msgstr ""
+msgstr "ID pengiriman yang unik."
 
 #: ../../developer-api/webhooks.md 939533bc04a74239941fdac05368b93c
 msgid "`X-RMH-Timestamp`"
-msgstr ""
+msgstr "`X-RMH-Timestamp`"
 
 #: ../../developer-api/webhooks.md d0a62677a4f34a4198400ab9510e0aef
 msgid "Unix seconds when the request was signed."
-msgstr ""
+msgstr "Detik Unix saat permintaan ditandatangani."
 
 #: ../../developer-api/webhooks.md e4adb8bd13384a838a3578eb00ed17f1
 msgid "`X-RMH-Signature`"
-msgstr ""
+msgstr "`X-RMH-Signature`"
 
 #: ../../developer-api/webhooks.md 3c2353ce947f4614be9693984676613b
 msgid "`t=<ts>,v1=<hmac>` — see below."
-msgstr ""
+msgstr "`t=<ts>,v1=<hmac>` — lihat di bawah."
 
 #: ../../developer-api/webhooks.md:52 cd29960e56624ba68793633c3f5604cb
 #, python-brace-format
@@ -196,16 +202,23 @@ msgid ""
 " (up to 6 attempts); an endpoint that keeps failing is auto-disabled. "
 "Inspect recent attempts with `GET /api/v1/webhooks/{id}`."
 msgstr ""
+"Sebuah pengiriman dianggap berhasil pada status `2xx` apa pun. Kegagalan "
+"dicoba ulang dengan exponential backoff (hingga 6 percobaan); sebuah "
+"endpoint yang terus gagal akan dinonaktifkan secara otomatis. Periksa "
+"percobaan terbaru dengan `GET /api/v1/webhooks/{id}`."
 
 #: ../../developer-api/webhooks.md:54 d19f5b428e16467abcb6bf4d466fe37a
 msgid ""
 "Deliveries are at-least-once: a timeout on our side after your handler "
 "committed will be retried. Use the `id` field to de-duplicate."
 msgstr ""
+"Pengiriman bersifat at-least-once: timeout di sisi kami setelah handler "
+"Anda melakukan commit akan dicoba ulang. Gunakan bidang `id` untuk "
+"menghilangkan duplikat."
 
 #: ../../developer-api/webhooks.md:56 89a0701681cd447f9cd9183b0282816a
 msgid "Verifying signatures"
-msgstr ""
+msgstr "Memverifikasi tanda tangan"
 
 #: ../../developer-api/webhooks.md:58 58878d26ea9d4a25b8906f991f121d15
 #, python-brace-format
@@ -213,6 +226,8 @@ msgid ""
 "The signature is `HMAC-SHA256` of `${timestamp}.${rawBody}` keyed by your"
 " endpoint `secret`, hex-encoded:"
 msgstr ""
+"Tanda tangan adalah `HMAC-SHA256` dari `${timestamp}.${rawBody}` dengan "
+"kunci `secret` endpoint Anda, dikodekan dalam bentuk heksadesimal:"
 
 #: ../../developer-api/webhooks.md:60 a9828edc9f8045719eade716bf890b1c
 msgid ""
@@ -231,6 +246,20 @@ msgid ""
 "  return a.length === b.length && timingSafeEqual(a, b);\n"
 "}\n"
 msgstr ""
+"import { createHmac, timingSafeEqual } from 'crypto';\n"
+"\n"
+"function verify(secret, header, rawBody, toleranceSec = 300) {\n"
+"  const parts = Object.fromEntries(header.split(',').map((kv) => "
+"kv.split('=')));\n"
+"  const t = Number(parts.t);\n"
+"  if (Math.abs(Date.now() / 1000 - t) > toleranceSec) return false; // "
+"replay guard\n"
+"  const expected = createHmac('sha256', "
+"secret).update(`${t}.${rawBody}`).digest('hex');\n"
+"  const a = Buffer.from(expected),\n"
+"    b = Buffer.from(parts.v1);\n"
+"  return a.length === b.length && timingSafeEqual(a, b);\n"
+"}\n"
 
 #: ../../developer-api/webhooks.md:75 019a4d9a884d4d11b548a06828bc3c09
 msgid ""
@@ -239,4 +268,8 @@ msgid ""
 "re-serialised parsed object, whose byte-for-byte output will differ and "
 "fail to match."
 msgstr ""
+"Verifikasi tanda tangan **dan** toleransi stempel waktu sebelum "
+"mempercayai sebuah payload, dan hitung HMAC atas isi permintaan "
+"**mentah** — bukan atas objek hasil parsing yang diserialisasi ulang, "
+"yang keluarannya byte demi byte akan berbeda dan gagal cocok."
 

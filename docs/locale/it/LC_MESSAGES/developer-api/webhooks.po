@@ -21,7 +21,7 @@ msgstr ""
 
 #: ../../developer-api/webhooks.md:1 e0880625f9864d8cba2fe7f24e3585a7
 msgid "Webhooks"
-msgstr ""
+msgstr "Webhook"
 
 #: ../../developer-api/webhooks.md:3 7dac7122704d4d4d89ddf615e051bf37
 msgid ""
@@ -29,6 +29,9 @@ msgid ""
 "happen on your account. Manage subscriptions with the `manage:webhooks` "
 "scope via `/api/v1/webhooks`."
 msgstr ""
+"Iscrivi un URL per ricevere consegne di eventi firmate con HMAC quando "
+"succede qualcosa sul tuo account. Gestisci le sottoscrizioni con "
+"l'ambito `manage:webhooks` tramite `/api/v1/webhooks`."
 
 #: ../../developer-api/webhooks.md:5 93d29d4b89e444dab2e373714bba2ed4
 #, python-brace-format
@@ -42,86 +45,94 @@ msgid ""
 "# → 201 { \"id\": \"wh_…\", \"secret\": \"whsec_…\", ... }   (secret "
 "shown once)\n"
 msgstr ""
+"curl -X POST https://rmhstudios.com/api/v1/webhooks \\\n"
+"  -H \"Authorization: Bearer $RMH_KEY\" -H \"Content-Type: "
+"application/json\" \\\n"
+"  -d "
+"'{\"url\":\"https://example.com/hook\",\"events\":[\"post.created\",\"follow.created\"]}'"
+"\n"
+"# → 201 { \"id\": \"wh_…\", \"secret\": \"whsec_…\", ... }   (secret "
+"shown once)\n"
 
 #: ../../developer-api/webhooks.md:12 4daac14c4137463db5941853e5453d44
 msgid "Subscribe to `[\"*\"]` to receive every event."
-msgstr ""
+msgstr "Iscriviti a `[\"*\"]` per ricevere ogni evento."
 
 #: ../../developer-api/webhooks.md:14 df7d631280654c3cba85425157942058
 msgid "Events"
-msgstr ""
+msgstr "Eventi"
 
 #: ../../developer-api/webhooks.md d6eacb96c7b44d61b434a7de38f0de77
 msgid "Event"
-msgstr ""
+msgstr "Evento"
 
 #: ../../developer-api/webhooks.md b4045ab1b42d4a708674e69006825918
 msgid "Fires when"
-msgstr ""
+msgstr "Si attiva quando"
 
 #: ../../developer-api/webhooks.md 77cc0d2ada2244139401a6ae8be08552
 msgid "`post.created`"
-msgstr ""
+msgstr "`post.created`"
 
 #: ../../developer-api/webhooks.md 56a57adbd877410f9c836d4d01c5b404
 msgid "You created a post (via the API or in-app)."
-msgstr ""
+msgstr "Hai creato un post (tramite l'API o nell'app)."
 
 #: ../../developer-api/webhooks.md f4d02bdd40b6456bacf9491361b819f5
 msgid "`post.deleted`"
-msgstr ""
+msgstr "`post.deleted`"
 
 #: ../../developer-api/webhooks.md db4450c70e7649d5aed10a2136de72e3
 msgid "One of your posts was deleted."
-msgstr ""
+msgstr "Uno dei tuoi post è stato eliminato."
 
 #: ../../developer-api/webhooks.md f53183ef55a747069455736fed348fbb
 msgid "`follow.created`"
-msgstr ""
+msgstr "`follow.created`"
 
 #: ../../developer-api/webhooks.md 6172ace10c6c4b20bbe5fd8fe495269b
 msgid "You followed another user."
-msgstr ""
+msgstr "Hai seguito un altro utente."
 
 #: ../../developer-api/webhooks.md e3aa17096fa34de4bcb8fb5368726441
 msgid "`follow.deleted`"
-msgstr ""
+msgstr "`follow.deleted`"
 
 #: ../../developer-api/webhooks.md 161a2f71d54246a7976c4e59ebe82590
 msgid "You unfollowed a user."
-msgstr ""
+msgstr "Hai smesso di seguire un utente."
 
 #: ../../developer-api/webhooks.md 9d512e1f88904138b619a43d0e892b5d
 msgid "`like.created`"
-msgstr ""
+msgstr "`like.created`"
 
 #: ../../developer-api/webhooks.md cc78655b350f427d8848420d22d84f1b
 msgid "You liked a post."
-msgstr ""
+msgstr "Hai messo \"mi piace\" a un post."
 
 #: ../../developer-api/webhooks.md 0f4797898f6c472bb9715404fb64d2e9
 msgid "`comment.created`"
-msgstr ""
+msgstr "`comment.created`"
 
 #: ../../developer-api/webhooks.md 1fcbd07ad9294140b65df74786ce0ef6
 msgid "You commented on a post."
-msgstr ""
+msgstr "Hai commentato un post."
 
 #: ../../developer-api/webhooks.md 5d2ef5ad79c44574b9396720e4697c6d
 msgid "`bookmark.created`"
-msgstr ""
+msgstr "`bookmark.created`"
 
 #: ../../developer-api/webhooks.md 6ef50fe6356a4c5b861baa084334f8dd
 msgid "You bookmarked a post."
-msgstr ""
+msgstr "Hai aggiunto un post ai segnalibri."
 
 #: ../../developer-api/webhooks.md:30 e83c581246404fc28c47ea60277a961e
 msgid "Delivery"
-msgstr ""
+msgstr "Consegna"
 
 #: ../../developer-api/webhooks.md:32 d6ffcc1db61740f9a647460d282b1731
 msgid "Each event is delivered as a `POST` with a JSON body:"
-msgstr ""
+msgstr "Ogni evento viene consegnato come `POST` con un corpo JSON:"
 
 #: ../../developer-api/webhooks.md:34 98296b7b13c3427eb8c8b9d43ca4b420
 #, python-brace-format
@@ -133,50 +144,56 @@ msgid ""
 "  \"data\": { \"postId\": \"ck_…\" }\n"
 "}\n"
 msgstr ""
+"{\n"
+"  \"id\": \"<deliveryId>\",\n"
+"  \"event\": \"post.created\",\n"
+"  \"created\": \"2026-06-30T10:00:00.000Z\",\n"
+"  \"data\": { \"postId\": \"ck_…\" }\n"
+"}\n"
 
 #: ../../developer-api/webhooks.md:43 99696dc14bfc49379e6d6f73cbdc72ed
 msgid "and these headers:"
-msgstr ""
+msgstr "e questi header:"
 
 #: ../../developer-api/webhooks.md e8f4f08d3f634b1897f55066a24c4170
 msgid "Header"
-msgstr ""
+msgstr "Header"
 
 #: ../../developer-api/webhooks.md e6e016c5915c4fffb32ba12cc8ba56e1
 msgid "Meaning"
-msgstr ""
+msgstr "Significato"
 
 #: ../../developer-api/webhooks.md ab680eb948d847b38bd351027d024678
 msgid "`X-RMH-Event`"
-msgstr ""
+msgstr "`X-RMH-Event`"
 
 #: ../../developer-api/webhooks.md f41bbb2a7e494de997ba5f202a8ee1fa
 msgid "The event name."
-msgstr ""
+msgstr "Il nome dell'evento."
 
 #: ../../developer-api/webhooks.md 469ca20d19e24f47970840f4de616679
 msgid "`X-RMH-Delivery`"
-msgstr ""
+msgstr "`X-RMH-Delivery`"
 
 #: ../../developer-api/webhooks.md 97e5480b394f4bfab7df756a8f9c2fc7
 msgid "Unique delivery id."
-msgstr ""
+msgstr "ID univoco della consegna."
 
 #: ../../developer-api/webhooks.md 939533bc04a74239941fdac05368b93c
 msgid "`X-RMH-Timestamp`"
-msgstr ""
+msgstr "`X-RMH-Timestamp`"
 
 #: ../../developer-api/webhooks.md d0a62677a4f34a4198400ab9510e0aef
 msgid "Unix seconds when the request was signed."
-msgstr ""
+msgstr "Secondi Unix in cui la richiesta è stata firmata."
 
 #: ../../developer-api/webhooks.md e4adb8bd13384a838a3578eb00ed17f1
 msgid "`X-RMH-Signature`"
-msgstr ""
+msgstr "`X-RMH-Signature`"
 
 #: ../../developer-api/webhooks.md 3c2353ce947f4614be9693984676613b
 msgid "`t=<ts>,v1=<hmac>` — see below."
-msgstr ""
+msgstr "`t=<ts>,v1=<hmac>` — vedi sotto."
 
 #: ../../developer-api/webhooks.md:52 cd29960e56624ba68793633c3f5604cb
 #, python-brace-format
@@ -185,16 +202,23 @@ msgid ""
 " (up to 6 attempts); an endpoint that keeps failing is auto-disabled. "
 "Inspect recent attempts with `GET /api/v1/webhooks/{id}`."
 msgstr ""
+"Una consegna ha successo con qualsiasi `2xx`. I fallimenti vengono "
+"riprovati con backoff esponenziale (fino a 6 tentativi); un endpoint "
+"che continua a fallire viene disabilitato automaticamente. Controlla i "
+"tentativi recenti con `GET /api/v1/webhooks/{id}`."
 
 #: ../../developer-api/webhooks.md:54 d19f5b428e16467abcb6bf4d466fe37a
 msgid ""
 "Deliveries are at-least-once: a timeout on our side after your handler "
 "committed will be retried. Use the `id` field to de-duplicate."
 msgstr ""
+"Le consegne sono at-least-once (almeno una volta): un timeout dal "
+"nostro lato dopo che il tuo handler ha completato l'operazione verrà "
+"riprovato. Usa il campo `id` per deduplicare."
 
 #: ../../developer-api/webhooks.md:56 89a0701681cd447f9cd9183b0282816a
 msgid "Verifying signatures"
-msgstr ""
+msgstr "Verificare le firme"
 
 #: ../../developer-api/webhooks.md:58 58878d26ea9d4a25b8906f991f121d15
 #, python-brace-format
@@ -202,6 +226,8 @@ msgid ""
 "The signature is `HMAC-SHA256` of `${timestamp}.${rawBody}` keyed by your"
 " endpoint `secret`, hex-encoded:"
 msgstr ""
+"La firma è `HMAC-SHA256` di `${timestamp}.${rawBody}` con chiave il "
+"`secret` del tuo endpoint, codificata in esadecimale:"
 
 #: ../../developer-api/webhooks.md:60 a9828edc9f8045719eade716bf890b1c
 msgid ""
@@ -220,6 +246,20 @@ msgid ""
 "  return a.length === b.length && timingSafeEqual(a, b);\n"
 "}\n"
 msgstr ""
+"import { createHmac, timingSafeEqual } from 'crypto';\n"
+"\n"
+"function verify(secret, header, rawBody, toleranceSec = 300) {\n"
+"  const parts = Object.fromEntries(header.split(',').map((kv) => "
+"kv.split('=')));\n"
+"  const t = Number(parts.t);\n"
+"  if (Math.abs(Date.now() / 1000 - t) > toleranceSec) return false; // "
+"replay guard\n"
+"  const expected = createHmac('sha256', "
+"secret).update(`${t}.${rawBody}`).digest('hex');\n"
+"  const a = Buffer.from(expected),\n"
+"    b = Buffer.from(parts.v1);\n"
+"  return a.length === b.length && timingSafeEqual(a, b);\n"
+"}\n"
 
 #: ../../developer-api/webhooks.md:75 019a4d9a884d4d11b548a06828bc3c09
 msgid ""
@@ -228,4 +268,8 @@ msgid ""
 "re-serialised parsed object, whose byte-for-byte output will differ and "
 "fail to match."
 msgstr ""
+"Verifica la firma **e** la tolleranza del timestamp prima di fidarti di"
+" un payload, e calcola l'HMAC sul corpo della richiesta **grezzo** — "
+"non su un oggetto analizzato e riserializzato, il cui output byte per "
+"byte sarà diverso e non corrisponderà."
 

@@ -4,14 +4,13 @@
 # package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: rmhstudios.com 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-29 21:28+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
 "Language: ja\n"
 "Language-Team: ja <LL@li.org>\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
@@ -22,33 +21,35 @@ msgstr ""
 
 #: ../../developer-api/changelog.md:1 95b63df92fc04f5fbe4e142a4377bb5f
 msgid "Changelog"
-msgstr ""
+msgstr "変更履歴"
 
 #: ../../developer-api/changelog.md:3 62fd238c6d1c413b80155a048e8b337a
 msgid "v1.2 — 2026-06"
-msgstr ""
+msgstr "v1.2 — 2026-06"
 
 #: ../../developer-api/changelog.md:5 db2ef47aab9c4cc1bfa3f6dff9fc55a1
 msgid "Major overhaul:"
-msgstr ""
+msgstr "大規模な刷新:"
 
 #: ../../developer-api/changelog.md:7 3533b45601454340ae498dd66a12bfaa
 msgid "Scoped + expiring API keys, key rotation, and a 4-char display suffix."
-msgstr ""
+msgstr "スコープ付きかつ有効期限付きのAPIキー、キーローテーション、4文字の表示用サフィックス。"
 
 #: ../../developer-api/changelog.md:8 c6d434ce41a04c5ea5277da55df34bf6
 msgid ""
 "Standardized errors with `type` + `request_id`; `X-RateLimit-*` headers "
 "on every response."
 msgstr ""
+"`type`と`request_id`による標準化されたエラー。すべてのレスポンスに"
+"付与される`X-RateLimit-*`ヘッダー。"
 
 #: ../../developer-api/changelog.md:9 c59dd8105d8842d48fac41e213857a7f
 msgid "`Idempotency-Key` support on all writes."
-msgstr ""
+msgstr "すべての書き込みに対する`Idempotency-Key`のサポート。"
 
 #: ../../developer-api/changelog.md:10 5228a7ad17924137a9e2ec86fbcc10f3
 msgid "Outbound webhooks with HMAC-signed delivery + retries."
-msgstr ""
+msgstr "HMAC署名付き配信と再試行に対応した送信Webhook。"
 
 #: ../../developer-api/changelog.md:11 464b4c61ba6942a48ecf50406c5e7c66
 msgid ""
@@ -57,24 +58,28 @@ msgid ""
 "followers/following/notifications/bookmarks, builds, blog, news, and game"
 " leaderboards."
 msgstr ""
+"新しいエンドポイント: 単一投稿の読み取り/削除、いいね/いいね解除、"
+"コメント、ブックマーク、公開ユーザープロフィールとソーシャルグラフ、"
+"自分のフォロワー/フォロー中/通知/ブックマーク、ビルド、ブログ、"
+"ニュース、ゲームのリーダーボード。"
 
 #: ../../developer-api/changelog.md:12 d61bfc798aa441a490d4ed62e072a48e
 msgid "Machine-readable OpenAPI 3.1 at `/api/v1/openapi.json`."
-msgstr ""
+msgstr "`/api/v1/openapi.json`でマシン可読なOpenAPI 3.1を提供。"
 
 #: ../../developer-api/changelog.md:14 308b735f0da64615a3e95d0853daf4ed
 msgid "v1.1 — 2026-06"
-msgstr ""
+msgstr "v1.1 — 2026-06"
 
 #: ../../developer-api/changelog.md:16 173951ce244540f483cd1b74b4b4fd32
 msgid "Image upload: `POST /api/v1/images`; `media_ids` on `POST /api/v1/posts`."
-msgstr ""
+msgstr "画像アップロード: `POST /api/v1/images`。`POST /api/v1/posts`での`media_ids`。"
 
 #: ../../developer-api/changelog.md:18 4e4b94cb02ef42a5897dff0e72e95205
 msgid "v1 — 2026-06"
-msgstr ""
+msgstr "v1 — 2026-06"
 
 #: ../../developer-api/changelog.md:20 f9013299147d4bc0a7b0788dd66027ac
 msgid "Initial release: `me`, `posts` (list + create), `feed`."
-msgstr ""
+msgstr "初回リリース: `me`、`posts`(一覧取得 + 作成)、`feed`。"
 

@@ -4,14 +4,13 @@
 # package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: rmhstudios.com 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-29 21:28+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
 "Language: fr\n"
 "Language-Team: fr <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
@@ -22,13 +21,15 @@ msgstr ""
 
 #: ../../site-reference/index.md:1 2952356a2f744080a9bd46c5dcb62df5
 msgid "Site reference"
-msgstr ""
+msgstr "Référence du site"
 
 #: ../../site-reference/index.md:3 e639470df54a40698ed3d0edc8de73df
 msgid ""
 "What the platform actually consists of, area by area — and, in the "
 "generated inventories, every single route it serves."
 msgstr ""
+"Ce dont se compose réellement la plateforme, domaine par domaine — et, "
+"dans les inventaires générés, chaque route qu'elle sert."
 
 #: ../../site-reference/index.md:5 8a859cebd8bd4646b8c26f7cf7a8e1b5
 msgid ""
@@ -39,10 +40,18 @@ msgid ""
 "inventory matters — it is otherwise very easy for a page to exist that "
 "nothing documents."
 msgstr ""
+"RMH Studios est une plateforme web unique dotée d'une surface "
+"inhabituellement large : un fil social, ~18 jeux dans le navigateur "
+"(plusieurs multijoueurs en temps réel ou 3D), une douzaine d'applications"
+" complètes, une pile blog/actualités/bibliothèque, une économie de pièces"
+" avec des abonnements Stripe, et une API publique à portée limitée "
+"(scopes). Cette ampleur est précisément la raison pour laquelle un "
+"inventaire est important — sinon, il est très facile qu'une page existe "
+"sans que rien ne la documente."
 
 #: ../../site-reference/index.md:7 b6a3d601e0434999b0634efe9690f2e4
 msgid "How this section is organised"
-msgstr ""
+msgstr "Comment cette section est organisée"
 
 #: ../../site-reference/index.md:9 f42dfa345ff74dfda1c6e3cb9fb12504
 msgid ""
@@ -50,6 +59,10 @@ msgid ""
 "which routes belong to it, and which modules implement it — the kind of "
 "thing that only makes sense written by a person."
 msgstr ""
+"Les **guides de domaine** sont rédigés à la main. Ils expliquent à quoi "
+"sert un domaine, quelles routes lui appartiennent, et quels modules "
+"l'implémentent — le genre de choses qui n'a de sens que rédigé par une "
+"personne."
 
 #: ../../site-reference/index.md:11 6c76fa864eea49f29c0fb2c57a98a564
 msgid ""
@@ -58,100 +71,127 @@ msgid ""
 "construction: if a route exists, it is listed. `pnpm docs:site --check` "
 "fails when they drift, so they cannot quietly go stale."
 msgstr ""
+"Les **inventaires** sont générés par `pnpm docs:site`, directement à "
+"partir de `app/routes/` et des catalogues de produits. Ils sont "
+"exhaustifs par construction : si une route existe, elle est listée. `pnpm"
+" docs:site --check` échoue en cas de dérive, ils ne peuvent donc pas "
+"devenir obsolètes en silence."
 
 #: ../../site-reference/index.md:17 fecc5f76f1cb43b4997c8854d7b5331e
 msgid "Social"
-msgstr ""
+msgstr "Social"
 
 #: ../../site-reference/index.md:21 6037085ce16c41c783f3600b5d627ed3
 msgid "The RMHarks feed, profiles, messaging, communities, groups and presence."
 msgstr ""
+"Le fil RMHarks, les profils, la messagerie, les communautés, les groupes "
+"et la présence."
 
 #: ../../site-reference/index.md:24 14caed7702d24d938326770e364edf15
 msgid "Economy & progression"
-msgstr ""
+msgstr "Économie et progression"
 
 #: ../../site-reference/index.md:28 46153619df394a26b4214e9f1152599f
 msgid ""
 "Coins, the shop and market, staking, quests, XP, battle pass, memberships"
 " and competitive play."
 msgstr ""
+"Les pièces, la boutique et le marché, le staking, les quêtes, l'XP, le "
+"battle pass, les abonnements et le jeu compétitif."
 
 #: ../../site-reference/index.md:31 add7c599251c44e5958f47dcfefba29d
 msgid "Content"
-msgstr ""
+msgstr "Contenu"
 
 #: ../../site-reference/index.md:35 c61353d4ad5344769c2bc97d26437ad0
 msgid "Blog, news, the document library, builds, and the creator surfaces."
 msgstr ""
+"Le blog, les actualités, la bibliothèque de documents, les builds, et les"
+" espaces créateurs."
 
 #: ../../site-reference/index.md:38 e1d9cc5093bc43f1a709a5af60c02859
 msgid "Games & apps"
-msgstr ""
+msgstr "Jeux et applications"
 
 #: ../../site-reference/index.md:42 65247575eba1438eb22af70bc22d355d
 msgid ""
 "How a game or app is wired into the site, plus leaderboards, saves and "
 "replays."
 msgstr ""
+"Comment un jeu ou une application s'intègre au site, ainsi que les "
+"classements, sauvegardes et replays."
 
 #: ../../site-reference/index.md:45 f0b7018e40ae4b3d8564d079ec09a17a
 msgid "Page routes"
-msgstr ""
+msgstr "Routes de pages"
 
 #: ../../site-reference/index.md:49 3400e96d5bc040c58f382d466bbb444d
 msgid ""
 "**Generated.** Every page URL, its title, its access level and its source"
 " file."
 msgstr ""
+"**Généré.** Chaque URL de page, son titre, son niveau d'accès et son "
+"fichier source."
 
 #: ../../site-reference/index.md:52 086e18521c5f4ec6880caa39b1326728
 msgid "API routes"
-msgstr ""
+msgstr "Routes de l'API"
 
 #: ../../site-reference/index.md:56 b39689a33d184668ac8ede60c3743c84
 msgid ""
 "**Generated.** Every server route in the app tier, with the HTTP methods "
 "it handles."
 msgstr ""
+"**Généré.** Chaque route serveur de la couche applicative, avec les "
+"méthodes HTTP qu'elle gère."
 
 #: ../../site-reference/index.md:59 c38ec66475a546598a18479725cc7b0e
 msgid "Game catalog"
-msgstr ""
+msgstr "Catalogue de jeux"
 
 #: ../../site-reference/index.md:63 146eff2c55934117868a1bb18a819b48
 msgid ""
 "**Generated** from `lib/games.ts` — every game, including the unlisted "
 "ones."
 msgstr ""
+"**Généré** à partir de `lib/games.ts` — chaque jeu, y compris ceux non "
+"répertoriés."
 
 #: ../../site-reference/index.md:66 faadb7edc7e94663a23f391cbe79d120
 msgid "App catalog"
-msgstr ""
+msgstr "Catalogue d'applications"
 
 #: ../../site-reference/index.md:70 5ce6b4beda0a46379245eba05aff2b7e
 msgid "**Generated** from `lib/apps.ts` — every application."
-msgstr ""
+msgstr "**Généré** à partir de `lib/apps.ts` — chaque application."
 
 #: ../../site-reference/index.md:74 a2b62a4523c441398b2bcfe524a3c08d
 msgid "Two shells, and why it matters"
-msgstr ""
+msgstr "Deux shells, et pourquoi c'est important"
 
 #: ../../site-reference/index.md:76 c40b783c675e418bae778c7e47cfe8c4
 msgid ""
 "Where a route file lives decides how the page is framed, and this trips "
 "people up more than anything else in the routing layer:"
 msgstr ""
+"L'emplacement d'un fichier de route détermine comment la page est "
+"encadrée, et c'est ce qui déroute le plus les gens dans la couche de "
+"routage :"
 
 #: ../../site-reference/index.md:78 5f5ab0e1c4844b208b4c72c535031d4c
 msgid ""
 "Files under `app/routes/_site/` render inside the **site shell** — the "
 "radial nav hub, sidebar, context rail, skip link and `<main>` landmark."
 msgstr ""
+"Les fichiers sous `app/routes/_site/` s'affichent à l'intérieur du "
+"**shell du site** — le hub de navigation radial, la barre latérale, le "
+"rail contextuel, le lien d'évitement et le repère `<main>`."
 
 #: ../../site-reference/index.md:79 d7aff5b1c1ff44009f4349b8d1a04f38
 msgid "Top-level files render **full-screen**, with no shell at all."
 msgstr ""
+"Les fichiers de premier niveau s'affichent en **plein écran**, sans aucun"
+" shell."
 
 #: ../../site-reference/index.md:81 9f114c76a5c74be285ac1d900a0b0684
 msgid ""
@@ -161,16 +201,25 @@ msgid ""
 "apps have their own chrome tier in `components/shared/` (`AppShell`, "
 "`AppHeader`, the `--app-*` token contract)."
 msgstr ""
+"Les jeux, `/login`, les jeux `secret/*`, `discord/*` et les pages légales"
+" sont de premier niveau *volontairement*. Déplacer l'un d'eux sous "
+"`_site/` pour « uniformiser » envelopperait un jeu plein écran dans une "
+"barre latérale. Les applications plein écran ont leur propre couche "
+"d'interface dans `components/shared/` (`AppShell`, `AppHeader`, le "
+"contrat de tokens `--app-*`)."
 
 #: ../../site-reference/index.md:83 71a7694925034a3f8f8f9e66ce569647
 msgid ""
 "The generated [page inventory](./pages.md) splits its tables along "
 "exactly this line, so you can see which pages are in which world."
 msgstr ""
+"L'[inventaire des pages](./pages.md) généré répartit ses tableaux "
+"exactement selon cette ligne, afin que vous puissiez voir quelles pages "
+"appartiennent à quel monde."
 
 #: ../../site-reference/index.md:85 36235fa7bce142db867cab43b5a09962
 msgid "The trust rule"
-msgstr ""
+msgstr "La règle de confiance"
 
 #: ../../site-reference/index.md:87 bbc1e81c6d4d451b8c3eb5ed876ad3df
 msgid ""
@@ -178,4 +227,8 @@ msgid ""
 "from. Where a hand-written guide and the code disagree, the code wins — "
 "and the guide is a bug. Report it or fix it; don't work around it."
 msgstr ""
+"Ces pages décrivent le site tel qu'il était au commit à partir duquel "
+"elles ont été générées. Lorsqu'un guide rédigé à la main et le code sont "
+"en désaccord, le code l'emporte — et le guide est un bug. Signalez-le ou "
+"corrigez-le ; ne le contournez pas."
 
