@@ -5,7 +5,8 @@ import { Stars, Sky } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { Color, type Group, type PointLight } from 'three';
 import type { TreeData } from '../../shared/types';
-import { buildTreeInstancedMeshes } from '../../shared/buildTreeInstancedMeshes';
+import { buildTreeInstancedMeshes, disposeTreeInstancedMeshes } from '../../shared/buildTreeInstancedMeshes';
+import ShadowFollowSun from '../../shared/ShadowFollowSun';
 import { Ground } from '../../shared/Ground';
 import { Fireflies } from '../../shared/Fireflies';
 import { Mist } from '../../shared/Mist';
@@ -135,7 +136,10 @@ export function ActThreeScene() {
         const group = groupRef.current;
         if (!group) return;
         treeMeshes.forEach(m => group.add(m));
-        return () => { treeMeshes.forEach(m => group.remove(m)); };
+        return () => {
+            treeMeshes.forEach(m => group.remove(m));
+            disposeTreeInstancedMeshes(treeMeshes);
+        };
     }, [treeMeshes]);
 
     // Ground cover stays off the paths
@@ -167,18 +171,7 @@ export function ActThreeScene() {
             <color attach="background" args={[bgColor]} />
             <fog attach="fog" args={[fogColor, 20, fogFar]} />
             <ambientLight intensity={ambientIntensity} color={dawnProgress > 0.5 ? '#e8a060' : '#2a1040'} />
-            <directionalLight
-                position={[80, 40, 60]}
-                intensity={dirIntensity}
-                color="#e8a060"
-                castShadow
-                shadow-mapSize={[1024, 1024] as unknown as number}
-                shadow-camera-far={250}
-                shadow-camera-left={-120}
-                shadow-camera-right={120}
-                shadow-camera-top={120}
-                shadow-camera-bottom={-120}
-            />
+            <ShadowFollowSun offset={[80, 40, 60]} intensity={dirIntensity} color="#e8a060" />
 
             {/* Secondary fill light from opposite side */}
             <directionalLight

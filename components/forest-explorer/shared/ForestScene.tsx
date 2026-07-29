@@ -4,7 +4,7 @@ import { useRef, useMemo, useEffect } from 'react';
 import type { Group } from 'three';
 import type { TreeData } from './types';
 import { SCENE_RNG, TREE_SCALE, distToRiver, RIVER_HALF_WIDTH } from './constants';
-import { buildTreeInstancedMeshes } from './buildTreeInstancedMeshes';
+import { buildTreeInstancedMeshes, disposeTreeInstancedMeshes } from './buildTreeInstancedMeshes';
 import { Rock } from './Rock';
 import { Mushroom } from './Mushroom';
 
@@ -63,7 +63,10 @@ export function ForestScene() {
         const group = groupRef.current;
         if (!group) return;
         treeMeshes.forEach(m => group.add(m));
-        return () => { treeMeshes.forEach(m => group.remove(m)); };
+        return () => {
+            treeMeshes.forEach(m => group.remove(m));
+            disposeTreeInstancedMeshes(treeMeshes);
+        };
     }, [treeMeshes]);
 
     return (
