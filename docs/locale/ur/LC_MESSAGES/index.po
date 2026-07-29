@@ -4,14 +4,13 @@
 # package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: rmhstudios.com 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-29 21:28+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
 "Language: ur\n"
 "Language-Team: ur <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -22,27 +21,27 @@ msgstr ""
 
 #: ../../index.md:47
 msgid "Reference"
-msgstr ""
+msgstr "ریفرنس"
 
 #: ../../index.md:65
 msgid "Operations"
-msgstr ""
+msgstr "آپریشنز"
 
 #: ../../index.md:78
 msgid "Audits"
-msgstr ""
+msgstr "آڈٹس"
 
 #: ../../index.md:92
 msgid "Plans & design snapshots"
-msgstr ""
+msgstr "منصوبے اور ڈیزائن سنیپ شاٹس"
 
 #: ../../index.md:105
 msgid "Apps & games"
-msgstr ""
+msgstr "ایپس اور گیمز"
 
 #: ../../index.md:1 c4fa284a68854784b06c751bb936ca1d
 msgid "rmhstudios.com"
-msgstr ""
+msgstr "rmhstudios.com"
 
 #: ../../index.md:3 2d5bdbfa4f6f42268542de887f4f85a2
 msgid ""
@@ -52,6 +51,12 @@ msgid ""
 " with Stripe memberships, and a scoped developer API — served by a React "
 "SSR tier with Node realtime hubs and a Go worker fleet behind it."
 msgstr ""
+"ایک واحد ویب پلیٹ فارم: ایک سوشل فیڈ (RMHarks)، تقریباً 20 براؤزر گیمز (جن "
+"میں کئی ملٹی پلیئر/3D شامل ہیں)، مکمل ایپس (RMHTube، RMHMusic، RMHType، "
+"RMHStudy، RMHCode، RMHLadder)، ایک بلاگ/نیوز/لائبریری نظام، Stripe میمبرشپس "
+"کے ساتھ ایک کوائن اکانومی، اور ایک محدود دائرہ کار کا حامل ڈویلپر API — جو "
+"ایک React SSR ٹیئر، Node ریئل ٹائم ہبز، اور ان کے پیچھے ایک Go ورکر فلیٹ کے "
+"ذریعے سرو کیا جاتا ہے۔"
 
 #: ../../index.md:9 30addd9572e643458b57e1f9cf5df03c
 msgid ""
@@ -59,10 +64,13 @@ msgid ""
 "Markdown files are the source of truth and are written for both humans "
 "and coding agents; nothing here is generated from code."
 msgstr ""
+"یہ سائٹ ریپوزٹری کے `docs/` ٹری کی رینڈر شدہ شکل ہے۔ Markdown فائلیں مستند "
+"ماخذ (source of truth) ہیں اور انہیں انسانوں اور کوڈنگ ایجنٹس دونوں کے لیے "
+"لکھا گیا ہے؛ یہاں کچھ بھی کوڈ سے تیار نہیں کیا گیا۔"
 
 #: ../../index.md:13 c21f80ba4a6b43f1a69e0fd4f6ac3c83
 msgid "Stack of record"
-msgstr ""
+msgstr "مستند اسٹیک"
 
 #: ../../index.md:15 3d1d083e7f084320ab149d9b5adc914b
 msgid ""
@@ -73,10 +81,16 @@ msgid ""
 "passkeys + Stripe), Socket.io Node hubs, Go microservices built with "
 "Bazel, i18next (16 locales, RTL for `ar`/`ur`)."
 msgstr ""
+"**TanStack Start + Vite 8 + React 19 + Nitro SSR.** یہ Next.js **نہیں** ہے — "
+"کچھ پرانی ڈیزائن دستاویزات اس کے برعکس کہتی ہیں اور انہیں ذیل میں باسی "
+"(stale) کے طور پر نشان زد کیا گیا ہے۔ TypeScript strict، Tailwind CSS v4، "
+"framer-motion، Zustand + React Query، PostgreSQL + Prisma 7، Better Auth "
+"(Discord/Google/GitHub + passkeys + Stripe)، Socket.io Node hubs، Bazel سے "
+"تیار کردہ Go مائیکروسروسز، i18next (16 لوکیلز، `ar`/`ur` کے لیے RTL)۔"
 
 #: ../../index.md:22 d89ddf195e2b4e349579dee35f88223a
 msgid "Start here"
-msgstr ""
+msgstr "یہاں سے شروع کریں"
 
 #: ../../index.md:24 4b0c87d0aa3f46b090d14298e40bb99f
 #, python-brace-format
@@ -84,6 +98,8 @@ msgid ""
 "{doc}`site-reference/index` — what the platform consists of, area by "
 "area, plus a generated inventory of every route, game and app."
 msgstr ""
+"{doc}`site-reference/index` — پلیٹ فارم کس چیز پر مشتمل ہے، ایریا بہ ایریا، "
+"نیز ہر روٹ، گیم اور ایپ کی ایک تیار کردہ انوینٹری۔"
 
 #: ../../index.md:26 bfcf4e6e39b249368063d755651dd805
 #, python-brace-format
@@ -91,6 +107,8 @@ msgid ""
 "{doc}`developer-api/index` — the public REST API: guides and a generated "
 "endpoint reference."
 msgstr ""
+"{doc}`developer-api/index` — پبلک REST API: گائیڈز اور ایک تیار کردہ اینڈ "
+"پوائنٹ ریفرنس۔"
 
 #: ../../index.md:28 443b6aa82673403e90e7f484159c2cc3
 #, python-brace-format
@@ -98,6 +116,8 @@ msgid ""
 "{doc}`codebase-overview` — canonical code-layout overview: stack, repo "
 "layout, conventions, and where to look first."
 msgstr ""
+"{doc}`codebase-overview` — کوڈ لے آؤٹ کا مستند جائزہ: اسٹیک، ریپو لے آؤٹ، "
+"کنونشنز، اور سب سے پہلے کہاں دیکھنا ہے۔"
 
 #: ../../index.md:30 02760732a983427ba5c7c830715293aa
 #, python-brace-format
@@ -105,6 +125,8 @@ msgid ""
 "{doc}`architecture` — runtime topology and the deploy pipeline: what runs"
 " where in production, images, CI, ports, auth across tiers."
 msgstr ""
+"{doc}`architecture` — رن ٹائم ٹوپولوجی اور ڈپلائے پائپ لائن: پروڈکشن میں کیا "
+"کہاں چلتا ہے، امیجز، CI، پورٹس، اور مختلف ٹیئرز میں تصدیقِ شناخت (auth)۔"
 
 #: ../../index.md:32 dc750e01738c4729b28ba6e7f77e5604
 #, python-brace-format
@@ -113,6 +135,9 @@ msgid ""
 "Glass**): the `--site-*` token contract, themes, primitives, motion, "
 "accessibility."
 msgstr ""
+"{doc}`design-language` — بصری نظام (**Radial Avant-Garde Glass**): "
+"`--site-*` ٹوکن کنٹریکٹ، تھیمز، پرائمیٹوز، موشن، اور رسائی پذیری "
+"(accessibility)۔"
 
 #: ../../index.md:34 5a975a7d5c2d4e219782a07426192ce9
 #, python-brace-format
@@ -120,6 +145,8 @@ msgid ""
 "{doc}`testing` — the test suites (Vitest main + epic, Go Bazel) and which"
 " CI workflows gate them."
 msgstr ""
+"{doc}`testing` — ٹیسٹ سویٹس (Vitest main + epic، Go Bazel) اور کون سے CI ورک "
+"فلوز انہیں گیٹ کرتے ہیں۔"
 
 #: ../../index.md:36 a746af2827ff44d19ffc73b066853bb8
 #, python-brace-format
@@ -127,10 +154,12 @@ msgid ""
 "{doc}`README` — the full annotated map of `docs/`, including freshness "
 "flags for every directory."
 msgstr ""
+"{doc}`README` — `docs/` کا مکمل تشریح شدہ نقشہ، جس میں ہر ڈائریکٹری کے لیے "
+"تازگی (freshness) کے فلیگز شامل ہیں۔"
 
 #: ../../index.md:39 a8d93fb8f6be4d0d8bb0a60c61154e5e
 msgid "Trust order for conflicting information"
-msgstr ""
+msgstr "متضاد معلومات کے لیے اعتماد کی ترتیب"
 
 #: ../../index.md:41 cff4b228f55148298403b9ffc2a3c086
 msgid ""
@@ -140,4 +169,9 @@ msgid ""
 " snapshots: they describe intent at the time of writing, not necessarily "
 "the current code. Anything claiming Next.js or PM2 is out of date."
 msgstr ""
+"Code > `docker-compose.yml` + `deploy.sh` (رن ٹائم حقیقت) > روٹ `CLAUDE.md` "
+"اور فی ڈائریکٹری `CLAUDE.md` فائلیں > ذیل کی حوالہ دستاویزات > تاریخ زدہ "
+"ڈیزائن دستاویزات اور منصوبے۔ یہ تاریخ زدہ دستاویزات تاریخی سنیپ شاٹس ہیں: یہ "
+"تحریر کے وقت کے ارادے کو بیان کرتی ہیں، لازمی نہیں کہ موجودہ کوڈ کو۔ Next.js "
+"یا PM2 کا کوئی بھی دعویٰ فرسودہ ہے۔"
 
