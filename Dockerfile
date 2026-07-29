@@ -115,6 +115,17 @@ COPY lib/quests/catalog.ts ./lib/quests/catalog.ts
 # constant/type modules, so copy the dirs so the bundle can resolve them.
 COPY lib/party ./lib/party/
 COPY lib/spaces ./lib/spaces/
+# The realtime status/grace contract, shared by BOTH sides of the wire: the
+# client's connection states and the 15s disconnect window that
+# server/shared/presence-grace.ts and server/rmhbox/config.ts both read, so a
+# room's countdown and the client's countdown can't disagree. Import-free
+# types + constants, so a single-file copy resolves.
+COPY lib/shared/realtime/types.ts ./lib/shared/realtime/types.ts
+# RMHType's event names. The socket-server handler imports them rather than
+# inlining the strings (the repo-wide rule — see server/CLAUDE.md), and the
+# module is a bare constant map, so copy just the file rather than the whole
+# browser-side lib/rmhtype dir.
+COPY lib/rmhtype/events.ts ./lib/rmhtype/events.ts
 # lights-out, doctrine, rmhvibe, rmhark-ai, media and storage were only imported
 # by the Node workers now running in the Go supervisor — no longer copied here so
 # changes to them don't bust this stage's cache.
