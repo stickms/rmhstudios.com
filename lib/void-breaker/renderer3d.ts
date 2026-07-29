@@ -41,6 +41,9 @@ const SHOCKWAVE_POOL = 24;
 const tmpObj = new THREE.Object3D();
 const tmpColor = new THREE.Color();
 
+/** Bloom render-target scale — see setupComposer(). */
+const BLOOM_SCALE = 0.5;
+
 /** A renderer interface both the 2D and 3D renderers satisfy. */
 export interface VBRenderer {
   getAimPoint(canvasX: number, canvasY: number, game: VoidBreakerEngine): { x: number; y: number };
@@ -492,12 +495,21 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     this.composer = new EffectComposer(this.renderer);
     this.composer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
+    // Bloom runs at half resolution. It is a multi-pass mip chain and the
+    // dominant fill cost in the frame — void-breaker measures only 43 draw
+    // calls, so its budget goes on fragments, not geometry. The effect is
+    // low-frequency, so upsampling from half is visually near-identical.
+    // EffectComposer calls setSize on every pass during a resize, which would
+    // otherwise restore full resolution — hence the wrapper.
     this.bloom = new UnrealBloomPass(
-      new THREE.Vector2(CANVAS_WIDTH, CANVAS_HEIGHT),
+      new THREE.Vector2(CANVAS_WIDTH * BLOOM_SCALE, CANVAS_HEIGHT * BLOOM_SCALE),
       0.9,  // strength
       0.6,  // radius
       0.2,  // threshold
     );
+    const bloomSetSize = this.bloom.setSize.bind(this.bloom);
+    this.bloom.setSize = (w: number, h: number) =>
+      bloomSetSize(Math.max(1, Math.round(w * BLOOM_SCALE)), Math.max(1, Math.round(h * BLOOM_SCALE)));
     this.composer.addPass(this.bloom);
 
     // Cinematic stack: chromatic aberration → vignette → film grain.

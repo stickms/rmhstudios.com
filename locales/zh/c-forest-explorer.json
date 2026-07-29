@@ -1,7 +1,6 @@
 {
   "activate-root-paths": "激活根路径以连接源和目标（{{active}}/{{max}} 条边）",
   "activate-seal": "激活封印",
-  "attempts-count_one": "尝试次数：{{count}}",
   "attempts-count_other": "尝试次数：{{count}}",
   "beam-hits-target": "光束命中目标！",
   "beam-misses-prisms": "Missing a prism...",
@@ -29,9 +28,7 @@
   "forest-explorer-subtitle": "漫步于宁静的古老森林 🌲",
   "forest-explorer-title": "森林探险家",
   "forest-remembers": "森林记得！",
-  "garden-chip_one": "",
   "garden-chip_other": "{{count}} planted · {{blooms}} blooming",
-  "garden-status_one": "",
   "garden-status_other": "🌼 Your garden: {{count}} plants, {{blooms}} blooming — they grow even while you're away",
   "glyph-instructions-v2": "Drag fragments onto the faint glyph and right-click to rotate until the engraved ring joins ({{placed}}/{{total}})",
   "hint": "提示",

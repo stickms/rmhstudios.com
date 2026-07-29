@@ -411,16 +411,29 @@ baseline above, so they are comparable to each other. **fps remains
 relative-only** — the capture machine has no GPU. Draw calls and triangles are
 hardware-independent.
 
-| | forest-explorer | cookgame |
-| --- | ---: | ---: |
-| draws/frame | 94 → **181** | 432 → **118** |
-| triangles/frame | 181,757 → **50,832** | 10,120 → **7,314** |
-| fps | 3.3 → **7.7** | 6.1 → **11.8** |
-| worst long task | 418 ms → **147 ms** | 236 ms → **106 ms** |
+| Route | draws/frame | triangles/frame | fps | worst long task |
+| --- | ---: | ---: | ---: | ---: |
+| forest-explorer — Free Explore | 94 → **181** | 181,757 → **50,832** | 3.3 → **7.7** | 418 → **147 ms** |
+| cookgame | 432 → **118** | 10,120 → **7,314** | 6.1 → **11.8** | 236 → **106 ms** |
+| forest-explorer — Story Mode¹ | 202 | 21,497 | 3.5 → **4.2** | 408 → **258 ms** |
+| void-breaker¹ | 43 | 30,081 | 3.2 → **4.4** | 435 → **265 ms** |
+
+¹ Never measured in the original audit — both are gated behind auth, and the
+harness was silently failing to sign in (Better Auth rejects unverified email,
+and the request was missing an `Origin` header). Their "before" figures are the
+first real measurement, taken after the harness was fixed; the fps delta is
+from the fixes in §8.
 
 forest-explorer's draw count deliberately went *up*: it was triangle-bound at
 94 draws, and chunking trades draw calls for frustum culling. cookgame went the
 other way, which is what a draw-call-bound scene needs.
+
+Story Mode and void-breaker are a third case: **fill/shader bound**, which the
+draw and triangle counts this audit leaned on cannot see. Story Mode pushes a
+quarter of Free Explore's triangles at half the frame rate — the cost is in
+point lights, not geometry. void-breaker draws 43 calls and was the slowest
+thing measured anywhere — the cost was a full-resolution bloom chain. Both
+fixes leave draws and triangles unchanged, which is exactly the tell.
 
 Shipped:
 
@@ -448,7 +461,35 @@ Shipped:
    frustum at the tier's map size, replacing the 200–240-unit frustums (§1.3).
 8. **velum2099**: half-resolution bloom and tier-capped DPR (§5).
 9. **kowloon-knockout**: the skeletal swap now awaits the rig plus idle/walk
-   (~2.8 MB) instead of all eleven clips (~7.9 MB); the rest stream in (§4.1).
+   instead of all eleven clips; the rest stream in (§4.1).
+10. **Fighter assets converted FBX → glTF** (§4.1) via
+    `scripts/convert-fighter-assets.mjs`, which drives a headless Chromium
+    because three's FBXLoader and GLTFExporter both want browser APIs. Two traps
+    worth knowing: clip files must export *animation only* (their skeleton is
+    redundant), and the rig must be **re-indexed first** — FBXLoader hands back
+    de-indexed geometry, so a naive export inflated it from 1.9 MB to 9.2 MB.
+    `8,014 KB → 4,386 KB` raw, `2,880 KB → 1,890 KB` gzipped, and rig vertices
+    `165,960 → 35,440`. `model/gltf-binary` added to the Apache DEFLATE list so
+    the gzipped figure is what actually ships.
+11. **Lantern light budget** (Story Mode) — nearest 2/4/6 by tier, replacing
+    per-lantern distance culling that left the light *count* unbounded. Every
+    visible point light adds a per-fragment term to every lit material and
+    changes `NUM_POINT_LIGHTS`, which is part of three's shader program cache
+    key — so an unbounded count churns shader permutations too.
+12. **void-breaker bloom at half resolution**, matching velum2099.
+13. **rmh-farming-sim rain moved to the vertex shader** — it was walking 400
+    points on the CPU and re-uploading the whole buffer every frame.
+
+Two correctness bugs found while verifying, both pre-existing, both fixed:
+
+- `SkeletalFighter` threw `_cacheIndex` from `AnimationAction.play()` because
+  resources were built in a `useMemo` and destroyed by an effect with different
+  dependencies — React could run the cleanup and then re-render against the
+  same torn-down mixer. Creation and disposal now share one lifecycle.
+- `StoryNarration` called `dismissNarration()` (a Zustand write) from inside a
+  `setLineIdx` updater. React runs updaters during the render phase, so every
+  narration dismissal logged "Cannot update a component while rendering a
+  different component".
 
 ### Pre-existing bug found while verifying (not introduced, not fixed here)
 
@@ -484,15 +525,20 @@ That run also confirms the streaming works as intended — `ybot.fbx`, then
 
 Not done — deliberately:
 
-- **FBX → compressed glTF** for the fighter assets. This is the real fix for
-  §4.1's 7.9 MB and the 3.5 s main-thread parse; clip streaming only reduces
-  what blocks the swap. It needs an asset pipeline change, not a code change.
 - **Aggressive `castShadow` pruning** in cookgame (§2.2). Merging already
   collapses the shadow pass into a handful of merged casters, so the remaining
   win is small and the call is a visual judgement.
-- **forest Story Mode, void-breaker, velum2099 and rmh-farming-sim** were not
-  re-measured end-to-end — the harness can't drive their menus (§4, §5). Their
-  changes are shared code exercised by the routes that were measured.
+- **velum2099 and rmh-farming-sim end-to-end measurement.** velum2099 boots into
+  a typed terminal menu the harness could not clear; rmh-farming-sim needs a
+  farm to join before it opens a context. Their changes (tier-capped DPR,
+  half-res bloom, GPU rain) are code-verified and typechecked but the frame
+  numbers are unmeasured — treat them as unproven.
+- **Draco / meshopt compression** on the glTF. Plain GLB already recovered the
+  size; Draco would go further but needs a decoder shipped to the client and a
+  build step, which is its own decision.
+- **`KNOWN_PARTIAL_PLURALS`** (`c-dream-rift/continues-count` in six locales)
+  needs a translator or a pipeline run, not a code change — filling `_few` with
+  the `_other` string would trade a visible gap for a silently wrong one.
 
 ## Reproducing
 

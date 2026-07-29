@@ -1,6 +1,5 @@
 {
   "all": "すべて",
-  "article-count_one": "{{count}} 記事",
   "article-count_other": "{{count}} 記事",
   "categories-label": "News categories",
   "clear": "クリア",
@@ -18,7 +17,6 @@
   "prev-featured-article": "前の特集記事",
   "read-original-article-on": "{{publisher}} で元の記事を読む",
   "read-our-take": "Read article",
-  "results-count_one": "{{count}} 件の結果",
   "results-count_other": "{{count}} 件の結果",
   "search-placeholder": "記事を検索...",
   "sort-label": "並び替え:",

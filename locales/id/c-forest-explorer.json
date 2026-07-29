@@ -1,7 +1,6 @@
 {
   "activate-root-paths": "Aktifkan jalur akar untuk menghubungkan sumber ke target ({{active}}/{{max}} tepi)",
   "activate-seal": "Aktifkan Segel",
-  "attempts-count_one": "Percobaan: {{count}}",
   "attempts-count_other": "Percobaan: {{count}}",
   "beam-hits-target": "Sinar mengenai target!",
   "beam-misses-prisms": "Missing a prism...",
@@ -29,9 +28,7 @@
   "forest-explorer-subtitle": "Jelajahi hutan kuno yang damai",
   "forest-explorer-title": "Penjelajah Hutan",
   "forest-remembers": "Hutan mengingat!",
-  "garden-chip_one": "",
   "garden-chip_other": "{{count}} planted · {{blooms}} blooming",
-  "garden-status_one": "",
   "garden-status_other": "🌼 Your garden: {{count}} plants, {{blooms}} blooming — they grow even while you're away",
   "glyph-instructions-v2": "Drag fragments onto the faint glyph and right-click to rotate until the engraved ring joins ({{placed}}/{{total}})",
   "hint": "petunjuk",

@@ -13,7 +13,6 @@
   "action-strike-desc": "— 造成伤害（基础1点，若你已准备则2点）。若对方格挡，仍会受到1点伤害。",
   "actions-heading": "行动",
   "active": "活跃",
-  "brace-btn_one": "支撑（{{count}}）",
   "brace-btn_other": "大括号 ({{count}})",
   "buy-cost": "购买（{{cost}} F）",
   "charge": "充电",

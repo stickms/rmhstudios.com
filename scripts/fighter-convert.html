@@ -1,0 +1,96 @@
+<!doctype html>
+<!--
+  Headless conversion harness for scripts/convert-fighter-assets.mjs.
+
+  three's FBXLoader and GLTFExporter both want browser APIs, so the conversion
+  runs in a real page rather than behind a pile of Node shims. Not part of the
+  app build — it is only ever loaded by that script's local static server.
+-->
+<html>
+  <head><meta charset="utf-8" /><title>fighter FBX → GLB</title></head>
+  <body>
+    <script type="importmap">
+      { "imports": { "three": "/node_modules/three/build/three.module.js" } }
+    </script>
+    <script type="module">
+      import * as THREE from 'three';
+      import { FBXLoader } from '/node_modules/three/examples/jsm/loaders/FBXLoader.js';
+      import { GLTFExporter } from '/node_modules/three/examples/jsm/exporters/GLTFExporter.js';
+      import { mergeVertices } from '/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js';
+
+      const loader = new FBXLoader();
+      const exporter = new GLTFExporter();
+
+      /**
+       * @param url           FBX to convert.
+       * @param animationOnly Strip geometry and keep only the animation track —
+       *                      used for the clip files, whose skeleton is
+       *                      redundant because the rig supplies it and
+       *                      SkeletonUtils retargets by bone name.
+       */
+      window.convertFbxToGlb = async (url, animationOnly) => {
+        try {
+          const group = await loader.loadAsync(url);
+
+          let bones = 0;
+          let meshes = 0;
+          group.traverse((o) => {
+            if (o.isBone) bones++;
+            if (o.isMesh || o.isSkinnedMesh) meshes++;
+          });
+          const clips = group.animations.map((a) => ({ name: a.name, duration: +a.duration.toFixed(3), tracks: a.tracks.length }));
+
+          // FBXLoader hands back de-indexed geometry — every triangle carries
+          // three unique vertices. FBX stores it compactly, glTF does not, so
+          // exporting as-is inflates the rig from 1.9 MB to 9.2 MB. Re-indexing
+          // restores the shared vertices and also lets the GPU's post-transform
+          // cache do its job at runtime.
+          let vertsBefore = 0;
+          let vertsAfter = 0;
+          if (!animationOnly) {
+            group.traverse((o) => {
+              const geo = o.geometry;
+              if (!geo || geo.index) return;
+              vertsBefore += geo.attributes.position.count;
+              const merged = mergeVertices(geo);
+              o.geometry = merged;
+              vertsAfter += merged.attributes.position.count;
+            });
+          }
+
+          let subject = group;
+          if (animationOnly) {
+            // Keep the bone hierarchy (animation tracks address bones by name)
+            // but drop every skinned mesh — that's where the bulk of the bytes
+            // are, and the rig already provides the geometry.
+            const dropped = [];
+            group.traverse((o) => { if (o.isMesh || o.isSkinnedMesh) dropped.push(o); });
+            for (const m of dropped) m.parent?.remove(m);
+            subject = group;
+          }
+
+          const glb = await exporter.parseAsync(subject, {
+            binary: true,
+            animations: group.animations,
+            onlyVisible: false,
+            // Mixamo rigs contain no morph targets; skipping the scan keeps the
+            // exporter from walking geometry it doesn't need to.
+            includeCustomExtensions: false,
+          });
+
+          const bytes = new Uint8Array(glb);
+          let binary = '';
+          const CHUNK = 0x8000;
+          for (let i = 0; i < bytes.length; i += CHUNK) {
+            binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+          }
+          return { b64: btoa(binary), clips, bones, meshes, vertsBefore, vertsAfter };
+        } catch (e) {
+          return { error: String(e?.stack || e).slice(0, 500) };
+        }
+      };
+
+      window.__ready = true;
+    </script>
+  </body>
+</html>

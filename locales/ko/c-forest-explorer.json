@@ -1,7 +1,6 @@
 {
   "activate-root-paths": "루트 경로를 활성화하여 소스와 타겟을 연결합니다 ({{active}}/{{max}} 간선)",
   "activate-seal": "봉인 활성화",
-  "attempts-count_one": "시도 횟수: {{count}}",
   "attempts-count_other": "시도 횟수: {{count}}",
   "beam-hits-target": "빔이 타겟에 명중했습니다!",
   "beam-misses-prisms": "Missing a prism...",
@@ -29,9 +28,7 @@
   "forest-explorer-subtitle": "평화로운 고대 숲을 거닐다",
   "forest-explorer-title": "숲 탐험가",
   "forest-remembers": "숲은 기억합니다!",
-  "garden-chip_one": "",
   "garden-chip_other": "{{count}} planted · {{blooms}} blooming",
-  "garden-status_one": "",
   "garden-status_other": "🌼 Your garden: {{count}} plants, {{blooms}} blooming — they grow even while you're away",
   "glyph-instructions-v2": "Drag fragments onto the faint glyph and right-click to rotate until the engraved ring joins ({{placed}}/{{total}})",
   "hint": "힌트",

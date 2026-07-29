@@ -43,6 +43,8 @@ function LocalController({ grid }: { grid: number }) {
     const pos = useRef({ x: grid / 2, z: grid / 2, dir: 0 });
     const sendAcc = useRef(0);
     const zoom = useRef(1.1);
+    /** Reused camera target — this was a fresh Vector3 every frame. */
+    const camTarget = useRef(new THREE.Vector3());
     const farmId = useRfsStore((s) => s.farm?.id);
 
     // recenter when switching farms
@@ -90,7 +92,7 @@ function LocalController({ grid }: { grid: number }) {
 
         // follow camera (fixed iso-ish offset, scaled by zoom)
         const z = zoom.current;
-        camera.position.lerp(new THREE.Vector3(px + 0 * z, 13 * z, pz + 11 * z), 0.12);
+        camera.position.lerp(camTarget.current.set(px + 0 * z, 13 * z, pz + 11 * z), 0.12);
         camera.lookAt(px, 0.5, pz);
 
         // throttled network position update
@@ -304,35 +306,58 @@ function RemotePlayers({ grid }: { grid: number }) {
 }
 
 // ── Rain ───────────────────────────────────────────────────────────
+const RAIN_COUNT = 400;
+const RAIN_HEIGHT = 12;
+const RAIN_SPEED = 14;
+
+/**
+ * Falling rain, animated on the GPU.
+ *
+ * This used to walk all 400 points on the CPU each frame and flag the position
+ * attribute dirty, which re-uploaded the whole buffer every vsync. The motion is
+ * a pure function of time, so a vertex-shader offset gives identical visuals
+ * with no per-frame CPU work and no buffer traffic.
+ */
 function Rain({ grid }: { grid: number }) {
-    const ref = useRef<THREE.Points>(null);
-    const count = 400;
     const geo = useMemo(() => {
         const g = new THREE.BufferGeometry();
-        const arr = new Float32Array(count * 3);
-        for (let i = 0; i < count; i++) {
+        const arr = new Float32Array(RAIN_COUNT * 3);
+        for (let i = 0; i < RAIN_COUNT; i++) {
             arr[i * 3] = (Math.random() - 0.5) * grid;
-            arr[i * 3 + 1] = Math.random() * 12;
+            arr[i * 3 + 1] = Math.random() * RAIN_HEIGHT;
             arr[i * 3 + 2] = (Math.random() - 0.5) * grid;
         }
         g.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+        // Static bounds: the shader wraps Y within [0, RAIN_HEIGHT], so the
+        // geometry's own bounds already describe every position it can take.
+        g.computeBoundingSphere();
         return g;
     }, [grid]);
-    useFrame((_, dt) => {
-        const pts = ref.current;
-        if (!pts) return;
-        const attr = pts.geometry.getAttribute('position') as THREE.BufferAttribute;
-        for (let i = 0; i < count; i++) {
-            let y = attr.getY(i) - dt * 14;
-            if (y < 0) y = 12;
-            attr.setY(i, y);
-        }
-        attr.needsUpdate = true;
-    });
+
+    const time = useRef({ value: 0 });
+    const material = useMemo(() => {
+        const m = new THREE.PointsMaterial({
+            color: '#9fc4e8', size: 0.08, transparent: true, opacity: 0.6,
+        });
+        m.onBeforeCompile = (shader) => {
+            shader.uniforms.uTime = time.current;
+            shader.vertexShader = `uniform float uTime;\n${shader.vertexShader}`.replace(
+                '#include <begin_vertex>',
+                `#include <begin_vertex>
+                 // GLSL mod() is always positive for a positive divisor, so this
+                 // wraps cleanly without a branch.
+                 transformed.y = mod(position.y - uTime * ${RAIN_SPEED.toFixed(1)}, ${RAIN_HEIGHT.toFixed(1)});`,
+            );
+        };
+        return m;
+    }, []);
+
+    useFrame((_, dt) => { time.current.value += dt; });
+
+    useEffect(() => () => { geo.dispose(); material.dispose(); }, [geo, material]);
+
     return (
-        <points ref={ref} geometry={geo}>
-            <pointsMaterial color="#9fc4e8" size={0.08} transparent opacity={0.6} />
-        </points>
+        <points geometry={geo} material={material} frustumCulled={false} />
     );
 }
 

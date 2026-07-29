@@ -1,7 +1,6 @@
 {
   "activate-root-paths": "ルートパスを有効化してソースとターゲットを接続（{{active}}/{{max}} エッジ）",
   "activate-seal": "シールを起動",
-  "attempts-count_one": "試行回数: {{count}}",
   "attempts-count_other": "試行回数: {{count}}",
   "beam-hits-target": "ビームがターゲットに命中！",
   "beam-misses-prisms": "Missing a prism...",
@@ -29,9 +28,7 @@
   "forest-explorer-subtitle": "平和な古の森を散策",
   "forest-explorer-title": "フォレストエクスプローラー",
   "forest-remembers": "森は記憶しています！",
-  "garden-chip_one": "",
   "garden-chip_other": "{{count}} planted · {{blooms}} blooming",
-  "garden-status_one": "",
   "garden-status_other": "🌼 Your garden: {{count}} plants, {{blooms}} blooming — they grow even while you're away",
   "glyph-instructions-v2": "Drag fragments onto the faint glyph and right-click to rotate until the engraved ring joins ({{placed}}/{{total}})",
   "hint": "ヒント",
