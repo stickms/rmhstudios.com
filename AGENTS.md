@@ -44,7 +44,7 @@
 | Runtime topology & deploy pipeline | [`docs/architecture.md`](./docs/architecture.md)         |
 | Design language (themes, tokens)   | [`docs/design-language.md`](./docs/design-language.md)   |
 | New-page consistency checklist     | [`docs/page-consistency.md`](./docs/page-consistency.md) |
-| Named in-universe cast (canon)     | [`docs/cast.md`](./docs/cast.md)                         |
+| RMH Capital leadership (canon)     | [`docs/people.md`](./docs/people.md)                     |
 | Docs index (incl. stale-doc flags) | [`docs/README.md`](./docs/README.md)                     |
 | Contribution rules                 | [`CONTRIBUTING.md`](./CONTRIBUTING.md)                   |
 
