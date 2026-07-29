@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Color, type Group, type Mesh, type MeshStandardMaterial } from 'three';
+import { type Group, type Mesh, type MeshStandardMaterial } from 'three';
 import { useLandmarkState } from './useLandmarkState';
 
 interface ShatteredMonumentProps {
@@ -69,7 +69,7 @@ export function ShatteredMonument({ position, scale = 1, id }: ShatteredMonument
                 <circleGeometry args={[0.42, 16]} />
                 <meshStandardMaterial
                     color="#2c2a24"
-                    emissive={new Color('#cc88ff')}
+                    emissive="#cc88ff"
                     emissiveIntensity={0.12}
                     side={2}
                 />

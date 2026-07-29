@@ -3,7 +3,7 @@
 import { useRef, useMemo, useEffect } from 'react';
 import type { Group } from 'three';
 import type { TreeData } from './types';
-import { buildTreeInstancedMeshes } from './buildTreeInstancedMeshes';
+import { buildTreeInstancedMeshes, disposeTreeInstancedMeshes } from './buildTreeInstancedMeshes';
 
 export function BoundaryWall() {
     const groupRef = useRef<Group>(null);
@@ -47,7 +47,10 @@ export function BoundaryWall() {
         const group = groupRef.current;
         if (!group) return;
         meshes.forEach(m => group.add(m));
-        return () => { meshes.forEach(m => group.remove(m)); };
+        return () => {
+            meshes.forEach(m => group.remove(m));
+            disposeTreeInstancedMeshes(meshes);
+        };
     }, [meshes]);
 
     return <group ref={groupRef} />;

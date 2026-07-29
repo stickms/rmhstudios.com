@@ -21,6 +21,8 @@ import { RecipeJournal } from './ui/RecipeJournal';
 import { MenuOverlay } from './ui/MenuOverlay';
 import { DistrictMap } from './ui/DistrictMap';
 import Lighting from './models/Lighting';
+import { useRenderQuality } from '@/lib/render/useRenderQuality';
+import AdaptiveQuality from '@/components/render/AdaptiveQuality';
 
 // Throttled district detector — reads playerPosition every 10 frames and calls setCurrentDistrict
 // only when the district changes, to avoid per-frame store writes.
@@ -54,6 +56,11 @@ function WorldTicker() {
 }
 
 export function CookGameGame() {
+  // NOTE: no `frameloop` gating here, unlike forest-explorer. WorldTicker drives
+  // the in-game clock (and passive income) from useFrame, so pausing the render
+  // loop while an overlay is open would also pause world time.
+  const { quality, dpr, downscale } = useRenderQuality();
+
   // Load saved game (or start fresh) once on mount.
   useEffect(() => {
     useCookgameStore.getState().loadOrNew();
@@ -135,7 +142,14 @@ export function CookGameGame() {
 
   return (
     <div className="relative w-full h-full">
-      <Canvas shadows camera={{ position: [0, 7, 17], fov: 55 }} className="w-full h-full">
+      <Canvas
+        shadows={quality.shadows}
+        dpr={dpr}
+        gl={{ antialias: quality.antialias, powerPreference: 'high-performance' }}
+        camera={{ position: [0, 7, 17], fov: 55 }}
+        className="w-full h-full"
+      >
+        <AdaptiveQuality onDownscale={downscale} />
         <Lighting />
         <Physics>
           <TownScene />

@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Color, type Mesh, type MeshStandardMaterial } from 'three';
+import { type Mesh, type MeshStandardMaterial } from 'three';
 import { useLandmarkState } from './useLandmarkState';
 
 interface CrystalClusterProps {
@@ -60,7 +60,7 @@ export function CrystalCluster({ position, scale = 1, id }: CrystalClusterProps)
                         color={c.color}
                         transparent
                         opacity={0.75}
-                        emissive={new Color(c.color)}
+                        emissive={c.color}
                         emissiveIntensity={0.05}
                         roughness={0.1}
                         metalness={0.3}

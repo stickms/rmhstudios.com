@@ -2,7 +2,7 @@
 
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Color, type Mesh, type MeshStandardMaterial, type PointLight } from 'three';
+import { type Mesh, type MeshStandardMaterial, type PointLight } from 'three';
 import { distToRiver, RIVER_HALF_WIDTH, TREE_COLLIDERS, PLAYER_POS } from './constants';
 
 function TikiTorch({ position, phase }: { position: [number, number, number]; phase: number }) {
@@ -63,7 +63,7 @@ function TikiTorch({ position, phase }: { position: [number, number, number]; ph
                 <coneGeometry args={[0.13, 0.22, 6]} />
                 <meshStandardMaterial
                     color="#ff6600"
-                    emissive={new Color('#ff4400')}
+                    emissive="#ff4400"
                     emissiveIntensity={1.2}
                 />
             </mesh>
@@ -71,7 +71,7 @@ function TikiTorch({ position, phase }: { position: [number, number, number]; ph
                 <coneGeometry args={[0.06, 0.32, 6]} />
                 <meshStandardMaterial
                     color="#ff2200"
-                    emissive={new Color('#ff0000')}
+                    emissive="#ff0000"
                     emissiveIntensity={2.0}
                 />
             </mesh>

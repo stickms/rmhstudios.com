@@ -2,7 +2,7 @@
 
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { BufferGeometry, Float32BufferAttribute, Color, DoubleSide, type Mesh, type MeshStandardMaterial } from 'three';
+import { BufferGeometry, Float32BufferAttribute, DoubleSide, type Mesh, type MeshStandardMaterial } from 'three';
 import {
     RIVER_CURVE,
     RIVER_HALF_WIDTH,
@@ -90,7 +90,7 @@ export function River() {
                     metalness={0.15}
                     transparent
                     opacity={0.88}
-                    emissive={new Color('#0a2030')}
+                    emissive="#0a2030"
                     emissiveIntensity={0.04}
                     side={DoubleSide}
                 />

@@ -1,5 +1,6 @@
 "use client";
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
+import StaticMerge from '@/components/render/StaticMerge';
 import { Building } from '../models/Building';
 import { PALETTE, matteMaterialProps } from '../models/palette';
 import { SupplierStallModel } from '../models/stations/SupplierStallModel';
@@ -49,7 +50,13 @@ export const SILAS_POSITION: [number, number, number] = [0, 0, -78];
 
 function PlotVisual({ index, position }: { index: number; position: [number, number, number] }) {
   const stage = useCookgameStore((s) => s.inventory.plots[index]?.stage ?? 'empty');
-  return <GrowPlotModel stage={stage} position={position} />;
+  // Opted out of the static batch: the model's geometry changes as the crop
+  // grows, so a baked merge would go stale. `noMerge` covers the whole subtree.
+  return (
+    <group userData={{ noMerge: true }}>
+      <GrowPlotModel stage={stage} position={position} />
+    </group>
+  );
 }
 
 // ─── Shared wall helper (Rapier fixed cuboid) ────────────────────────────────
@@ -86,7 +93,15 @@ function LampPost({ pos }: { pos: [number, number, number] }) {
 
 export function TownScene() {
   return (
-    <group>
+    // The whole town is static scenery authored as ~400 small primitives, each
+    // previously its own draw call (measured: 432 draws for 10,120 triangles).
+    // StaticMerge bakes them into one merged mesh per material, across models —
+    // so every sidingA surface in the district is a single draw, not one per
+    // wall. Anything that animates opts out with userData.noMerge (see
+    // PlotVisual). Rapier colliders are unaffected: originals are hidden, never
+    // detached or mutated.
+    <StaticMerge>
+      <group>
 
       {/* ═══════════════════════════════════════════════════════════════════════
           SUBURBS  x[-20,20]  z[-20,20]
@@ -412,6 +427,7 @@ export function TownScene() {
         </mesh>
       </DistrictScene>
 
-    </group>
+      </group>
+    </StaticMerge>
   );
 }

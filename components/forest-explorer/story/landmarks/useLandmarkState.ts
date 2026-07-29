@@ -15,17 +15,22 @@ import { interactables } from '@/lib/forest-explorer/interactables';
  * so this works for every landmark without string-matching heuristics.
  */
 export function useLandmarkState(landmarkId: string) {
-    const revealedIds = useStoryStore(s => s.flashlightRevealedIds);
-    const puzzleStates = useStoryStore(s => s.puzzleStates);
-
     const { puzzleId, interactableId } = useMemo(() => {
         const puzzle = puzzleDefinitions.find(p => p.landmarkId === landmarkId);
         const inter = puzzle ? interactables.find(i => i.puzzleId === puzzle.id) : undefined;
         return { puzzleId: puzzle?.id, interactableId: inter?.id };
     }, [landmarkId]);
 
-    const isSolved = puzzleId ? puzzleStates[puzzleId]?.status === 'solved' : false;
-    const isRevealed = interactableId ? revealedIds.includes(interactableId) : false;
+    // Select booleans, never the collections themselves. Selecting
+    // `flashlightRevealedIds` used to re-render every landmark ~20x/second,
+    // because the reveal loop published a new array identity on every pass —
+    // see docs/3d-performance-audit.md §1.5.
+    const isRevealed = useStoryStore(
+        s => (interactableId ? s.flashlightRevealedIds.has(interactableId) : false),
+    );
+    const isSolved = useStoryStore(
+        s => (puzzleId ? s.puzzleStates[puzzleId]?.status === 'solved' : false),
+    );
 
     return { isSolved, isRevealed, puzzleId };
 }

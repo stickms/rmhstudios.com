@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Color, type Mesh, type MeshStandardMaterial } from 'three';
+import { type Mesh, type MeshStandardMaterial } from 'three';
 import { useLandmarkState } from './useLandmarkState';
 
 interface ShadowWallProps {
@@ -77,25 +77,25 @@ export function ShadowWall({ position, scale = 1, id }: ShadowWallProps) {
                     {c.geo === 'deer' && (
                         <mesh ref={el => { carvingRefs.current[i] = el; }}>
                             <boxGeometry args={[0.7, 0.9, 0.06]} />
-                            <meshStandardMaterial color="#2a2822" emissive={new Color('#8866ff')} emissiveIntensity={0.05} />
+                            <meshStandardMaterial color="#2a2822" emissive="#8866ff" emissiveIntensity={0.05} />
                         </mesh>
                     )}
                     {c.geo === 'tree' && (
                         <mesh ref={el => { carvingRefs.current[i] = el; }}>
                             <coneGeometry args={[0.45, 1.0, 5]} />
-                            <meshStandardMaterial color="#2a2822" emissive={new Color('#8866ff')} emissiveIntensity={0.05} />
+                            <meshStandardMaterial color="#2a2822" emissive="#8866ff" emissiveIntensity={0.05} />
                         </mesh>
                     )}
                     {c.geo === 'moon' && (
                         <mesh ref={el => { carvingRefs.current[i] = el; }}>
                             <torusGeometry args={[0.32, 0.12, 6, 12]} />
-                            <meshStandardMaterial color="#2a2822" emissive={new Color('#8866ff')} emissiveIntensity={0.05} />
+                            <meshStandardMaterial color="#2a2822" emissive="#8866ff" emissiveIntensity={0.05} />
                         </mesh>
                     )}
                     {c.geo === 'river' && (
                         <mesh ref={el => { carvingRefs.current[i] = el; }} rotation={[0, 0, 0.5]}>
                             <boxGeometry args={[0.9, 0.18, 0.06]} />
-                            <meshStandardMaterial color="#2a2822" emissive={new Color('#8866ff')} emissiveIntensity={0.05} />
+                            <meshStandardMaterial color="#2a2822" emissive="#8866ff" emissiveIntensity={0.05} />
                         </mesh>
                     )}
                 </group>
@@ -114,7 +114,7 @@ export function ShadowWall({ position, scale = 1, id }: ShadowWallProps) {
                     </mesh>
                     <mesh ref={el => { flameRefs.current[i] = el; }} position={[0, 1.44, 0]}>
                         <coneGeometry args={[0.14, 0.4, 6]} />
-                        <meshStandardMaterial color="#ff7722" emissive={new Color('#ff5500')} emissiveIntensity={1.4} />
+                        <meshStandardMaterial color="#ff7722" emissive="#ff5500" emissiveIntensity={1.4} />
                     </mesh>
                     <pointLight position={[0, 1.5, 0]} color="#ff8840" intensity={0.9} distance={9} decay={2} />
                 </group>

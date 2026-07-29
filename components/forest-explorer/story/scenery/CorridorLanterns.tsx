@@ -2,7 +2,7 @@
 
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Color, type Mesh, type MeshStandardMaterial, type PointLight } from 'three';
+import { type Mesh, type MeshStandardMaterial, type PointLight } from 'three';
 import { useStoryStore } from '@/lib/forest-explorer/store';
 import type { CorridorSegment } from '@/lib/forest-explorer/types';
 
@@ -105,7 +105,7 @@ function Lantern({ position, phase, color }: { position: [number, number, number
                     <sphereGeometry args={[0.075, 8, 6]} />
                     <meshStandardMaterial
                         color={color}
-                        emissive={new Color(color)}
+                        emissive={color}
                         emissiveIntensity={1.1}
                     />
                 </mesh>

@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Color, type Mesh, type MeshStandardMaterial } from 'three';
+import { type Mesh, type MeshStandardMaterial } from 'three';
 import { useLandmarkState } from './useLandmarkState';
 
 interface ObservatoryProps {
@@ -104,7 +104,7 @@ export function Observatory({ position, scale = 1, id }: ObservatoryProps) {
                     <cylinderGeometry args={[0.15, 0.15, 0.06, 10]} />
                     <meshStandardMaterial
                         color="#aaccee"
-                        emissive={new Color('#ffcc88')}
+                        emissive="#ffcc88"
                         emissiveIntensity={0.1}
                         transparent
                         opacity={0.95}

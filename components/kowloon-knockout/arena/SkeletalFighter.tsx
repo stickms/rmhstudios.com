@@ -6,7 +6,8 @@ import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { RenderFighter } from '@/lib/kowloon-knockout/net/session';
-import { CLIPS, CLIP_KEYS, FIGHTER_ASSET_DIR, RIG_FILE, type ClipKey } from '@/lib/kowloon-knockout/render/fighter/clips';
+import { CLIPS, ESSENTIAL_CLIP_KEYS, DEFERRED_CLIP_KEYS, FIGHTER_ASSET_DIR, RIG_FILE, type ClipKey } from '@/lib/kowloon-knockout/render/fighter/clips';
+import { loadFighterClip } from '@/lib/kowloon-knockout/render/fighter/clipLoader';
 import { resolveClip } from '@/lib/kowloon-knockout/render/fighter/stateMachine';
 import { stripRootMotionXZ } from '@/lib/kowloon-knockout/render/fighter/rootMotion';
 import { autoScaleToHeight, findBone } from '@/lib/kowloon-knockout/render/fighter/fighterRig';
@@ -21,7 +22,21 @@ const HIPS_BONES = ['mixamorigHips', 'mixamorig:Hips'];
 const FLASH = new THREE.Color('#ff2244');
 
 const RIG_URL = `${FIGHTER_ASSET_DIR}/${RIG_FILE}`;
-const CLIP_URLS = CLIP_KEYS.map((k) => `${FIGHTER_ASSET_DIR}/${CLIPS[k].file}`);
+const ESSENTIAL_CLIP_URLS = ESSENTIAL_CLIP_KEYS.map((k) => `${FIGHTER_ASSET_DIR}/${CLIPS[k].file}`);
+
+/** Build a mixer action with this clip's loop semantics. */
+function configureAction(
+    mixer: THREE.AnimationMixer,
+    clip: THREE.AnimationClip,
+    key: ClipKey,
+): THREE.AnimationAction {
+    const action = mixer.clipAction(clip);
+    if (!CLIPS[key].loop) {
+        action.setLoop(THREE.LoopOnce, 1);
+        action.clampWhenFinished = true;
+    }
+    return action;
+}
 
 /** Shortest-path angle damp (shared convention with StickFighter). */
 function dampAngle(current: number, target: number, t: number): number {
@@ -34,8 +49,13 @@ function dampAngle(current: number, target: number, t: number): number {
 export default function SkeletalFighter({ seat, framesRef, showNameplate = true }: { seat: number; framesRef: FramesRef; showNameplate?: boolean }) {
     // Shared, cached loads via FBXLoader. useLoader suspends; a missing file
     // throws → the Fighter dispatcher's ErrorBoundary falls back to StickFighter.
-    const rig = useLoader(FBXLoader, RIG_URL);           // skinned Group
-    const clipScenes = useLoader(FBXLoader, CLIP_URLS);  // Group[], one per CLIP_URLS entry
+    //
+    // Only the rig and the two clips needed to look correct standing still are
+    // awaited here (~2.8 MB instead of ~7.9 MB). The rest stream in via
+    // loadFighterClip below, so the swap off StickFighter no longer waits on,
+    // among others, a 1.2 MB dance emote the sim never requests.
+    const rig = useLoader(FBXLoader, RIG_URL);                     // skinned Group
+    const clipScenes = useLoader(FBXLoader, ESSENTIAL_CLIP_URLS);  // Group[], one per essential clip
 
     const initial = framesRef.current.find((f) => f.seat === seat);
     const colorHex = initial?.color ?? '#cccccc';
@@ -87,19 +107,28 @@ export default function SkeletalFighter({ seat, framesRef, showNameplate = true 
         // Mixer + one action per clip, with root motion stripped.
         const mixer = new THREE.AnimationMixer(model);
         const actions = {} as Record<ClipKey, THREE.AnimationAction>;
-        CLIP_KEYS.forEach((key, i) => {
+        ESSENTIAL_CLIP_KEYS.forEach((key, i) => {
             const clip = clipScenes[i].animations[0];
             if (!clip) return;
             stripRootMotionXZ(clip);
-            const action = mixer.clipAction(clip);
-            if (!CLIPS[key].loop) {
-                action.setLoop(THREE.LoopOnce, 1);
-                action.clampWhenFinished = true;
-            }
-            actions[key] = action;
+            actions[key] = configureAction(mixer, clip, key);
         });
         return { model, mixer, actions, bodyMats };
     }, [rig, clipScenes, colorHex, accentHex]);
+
+    // Stream the non-essential clips in behind the swap, adding each to the
+    // live `actions` map as it lands. `useFrame` already skips a clip whose
+    // action is missing, so an un-arrived move simply holds the current pose.
+    useEffect(() => {
+        let cancelled = false;
+        for (const key of DEFERRED_CLIP_KEYS) {
+            loadFighterClip(key).then((clip) => {
+                if (cancelled || !clip || actions[key]) return;
+                actions[key] = configureAction(mixer, clip, key);
+            });
+        }
+        return () => { cancelled = true; };
+    }, [actions, mixer]);
 
     const currentClip = useRef<ClipKey | null>(null);
 
