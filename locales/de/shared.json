@@ -1,10 +1,12 @@
 {
   "chat-placeholder": "Chatten...",
+  "dismiss": "Dismiss",
   "failed-to-load-media": "Medien konnten nicht geladen werden",
   "game-crashed": "Spiel abgestürzt",
   "game-crashed-named": "{{gameName}} abgestürzt",
   "loading": "Wird geladen…",
   "no-messages-yet": "Noch keine Nachrichten",
+  "notifications": "Notifications",
   "react": "Reagieren",
   "return-home": "Zur Startseite",
   "try-again": "Erneut versuchen",

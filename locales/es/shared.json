@@ -1,10 +1,12 @@
 {
   "chat-placeholder": "Chat...",
+  "dismiss": "Dismiss",
   "failed-to-load-media": "No se pudo cargar el contenido multimedia",
   "game-crashed": "El juego se bloqueó",
   "game-crashed-named": "{{gameName}} se bloqueó",
   "loading": "Cargando…",
   "no-messages-yet": "Aún no hay mensajes",
+  "notifications": "Notifications",
   "react": "Reaccionar",
   "return-home": "Volver al inicio",
   "try-again": "Intentar de nuevo",

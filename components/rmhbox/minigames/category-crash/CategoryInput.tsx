@@ -124,18 +124,18 @@ export default function CategoryInput({
       {/* Header: letter + timer */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-(--rmhbox-accent) bg-(--rmhbox-accent)/10 text-2xl font-bold text-(--rmhbox-accent)">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-(--app-accent) bg-(--app-accent)/10 text-2xl font-bold text-(--app-accent)">
             {letter}
           </div>
-          <div className="text-sm text-(--rmhbox-text-muted)">
+          <div className="text-sm text-(--app-text-muted)">
             {t("answered-count", { defaultValue: "{{filled}}/{{total}} answered", filled: filledCount, total: categories.length })}
           </div>
         </div>
         <div
           className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium ${
             isUrgent
-              ? 'bg-(--rmhbox-danger-dim) text-(--rmhbox-danger) animate-pulse'
-              : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted)'
+              ? 'bg-(--app-danger-dim) text-(--app-danger) animate-pulse'
+              : 'bg-(--app-surface) text-(--app-text-muted)'
           }`}
         >
           <Clock size={14} />
@@ -159,16 +159,16 @@ export default function CategoryInput({
               className="flex flex-col gap-1"
             >
               <label className="flex items-center gap-2 text-sm font-medium">
-                <span className="text-(--rmhbox-text-muted)">{i + 1}.</span>
+                <span className="text-(--app-text-muted)">{i + 1}.</span>
                 {cat.name}
                 {cat.difficulty && (
                   <span
                     className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
                       cat.difficulty === 'hard'
-                        ? 'bg-(--rmhbox-danger-dim) text-(--rmhbox-danger)'
+                        ? 'bg-(--app-danger-dim) text-(--app-danger)'
                         : cat.difficulty === 'medium'
-                          ? 'bg-(--rmhbox-warning-dim) text-(--rmhbox-warning)'
-                          : 'bg-(--rmhbox-success-dim) text-(--rmhbox-success)'
+                          ? 'bg-(--app-warning-dim) text-(--app-warning)'
+                          : 'bg-(--app-success-dim) text-(--app-success)'
                     }`}
                   >
                     {cat.difficulty}
@@ -176,7 +176,7 @@ export default function CategoryInput({
                 )}
               </label>
               <div className="relative">
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-(--rmhbox-accent)/40">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-(--app-accent)/40">
                   {letter.toUpperCase()}
                 </span>
                 <input
@@ -189,14 +189,14 @@ export default function CategoryInput({
                   disabled={isLocked}
                   maxLength={50}
                   placeholder={`${letter.toUpperCase()}...`}
-                  className={`w-full rounded-lg border bg-(--rmhbox-surface) px-3 py-2 pl-9 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-(--rmhbox-accent)/50 disabled:opacity-50 ${
+                  className={`w-full rounded-lg border bg-(--app-surface) px-3 py-2 pl-9 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-(--app-accent)/50 disabled:opacity-50 ${
                     !startsCorrectly
-                      ? 'border-(--rmhbox-danger)/50 ring-1 ring-(--rmhbox-danger)/30'
-                      : 'border-(--rmhbox-border)'
+                      ? 'border-(--app-danger)/50 ring-1 ring-(--app-danger)/30'
+                      : 'border-(--app-border)'
                   }`}
                 />
                 {!startsCorrectly && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-(--rmhbox-danger)">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-(--app-danger)">
                     {t("must-start-with", { defaultValue: "Must start with {{letter}}", letter: letter.toUpperCase() })}
                   </span>
                 )}

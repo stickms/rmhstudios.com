@@ -33,11 +33,11 @@ export default function ProducerView({
   return (
     <div className="flex flex-col items-center gap-3 p-4 w-full max-w-md mx-auto">
       <div className="flex items-center justify-between w-full">
-        <span className="text-xs text-(--rmhbox-text-muted) uppercase tracking-wide">{t("your-movie", { defaultValue: "Your Movie" })}</span>
-        <span className="text-sm font-mono text-(--rmhbox-text-muted)">{timeRemaining}s</span>
+        <span className="text-xs text-(--app-text-muted) uppercase tracking-wide">{t("your-movie", { defaultValue: "Your Movie" })}</span>
+        <span className="text-sm font-mono text-(--app-text-muted)">{timeRemaining}s</span>
       </div>
 
-      <h2 className="text-xl font-bold text-(--rmhbox-accent) text-center">{movieTitle}</h2>
+      <h2 className="text-xl font-bold text-(--app-accent) text-center">{movieTitle}</h2>
 
       <div className="flex items-end gap-2 w-full">
         <div className="flex-1">
@@ -51,7 +51,7 @@ export default function ProducerView({
 
       <EmojiKeyboard onSelect={onAddEmoji} />
 
-      <div className="flex gap-4 text-xs text-(--rmhbox-text-muted)">
+      <div className="flex gap-4 text-xs text-(--app-text-muted)">
         <span>{t("guesses-count", { defaultValue: "Guesses: {{count}}", count: guessCount })}</span>
         <span>{t("correct-count", { defaultValue: "Correct: {{count}}", count: correctCount })}</span>
       </div>

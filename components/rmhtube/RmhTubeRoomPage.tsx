@@ -241,20 +241,20 @@ export default function RmhTubeRoomPage() {
 
   // Density class
   const densityClass = layoutDensity === 'compact'
-    ? 'rmhtube-compact'
+    ? 'app-compact'
     : layoutDensity === 'spacious'
-      ? 'rmhtube-spacious'
+      ? 'app-spacious'
       : '';
 
   // Loading state
   if (!room) {
     return (
       <div className={`flex h-screen flex-col ${densityClass}`}>
-        <div className="border-b border-(--rmhtube-border)">
+        <div className="border-b border-(--app-border)">
           <RmhTubeHeader backLabel={t("leave", { defaultValue: "Leave" })} onBack={handleLeave} roomCode={roomId} onCopyCode={handleCopyCode} />
         </div>
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-(--rmhtube-text-muted)">
+          <p className="text-(--app-text-muted)">
             {connectionStatus === 'connecting' ? t("connecting", { defaultValue: "Connecting..." }) : t("joining-room", { defaultValue: "Joining room..." })}
           </p>
         </div>
@@ -269,7 +269,7 @@ export default function RmhTubeRoomPage() {
   return (
     <div className={`flex h-screen flex-col ${densityClass} ${theaterMode ? 'rmhtube-theater-mode' : ''}`}>
       {/* Header */}
-      <div className="flex items-center border-b border-(--rmhtube-border)">
+      <div className="flex items-center border-b border-(--app-border)">
         <div className="flex-1">
           <RmhTubeHeader
             backLabel={t("leave", { defaultValue: "Leave" })}
@@ -282,7 +282,7 @@ export default function RmhTubeRoomPage() {
           {isHost && (
             <button
               onClick={() => setShowBanList(true)}
-              className="rounded-md p-2 transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
+              className="rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
               title={t("ban-list", { defaultValue: "Ban List" })}
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
@@ -291,7 +291,7 @@ export default function RmhTubeRoomPage() {
           {isHost && (
             <button
               onClick={() => setShowInviteModal(true)}
-              className="rounded-md p-2 transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
+              className="rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
               title={t("create-invite", { defaultValue: "Create Invite" })}
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
@@ -307,7 +307,7 @@ export default function RmhTubeRoomPage() {
           /* Desktop layout */
           <div className={`grid h-full ${theaterMode ? 'grid-cols-1' : 'grid-cols-[1fr_320px]'}`}>
             {/* Left column: Video + Controls + Queue */}
-            <div className={`flex flex-col min-h-0 overflow-hidden ${!theaterMode ? 'border-r border-(--rmhtube-border)' : ''}`}>
+            <div className={`flex flex-col min-h-0 overflow-hidden ${!theaterMode ? 'border-r border-(--app-border)' : ''}`}>
               {/* Video player */}
               <div className={`shrink-0 p-4 pb-2 *:max-h-full rmhtube-video-container ${theaterMode ? 'max-h-[85%]' : 'max-h-[70%]'}`}>
                 <VideoPlayer ref={videoPlayerRef} url={currentUrl} isHost={isHost} isLeader={isLeader} onEnded={handleVideoEnded} />
@@ -339,13 +339,13 @@ export default function RmhTubeRoomPage() {
             {/* Right column: Members + Chat + Reactions */}
             {!theaterMode ? (
               <div className="flex flex-col min-h-0 overflow-hidden">
-                <div className="shrink-0 max-h-60 overflow-hidden border-b border-(--rmhtube-border)">
+                <div className="shrink-0 max-h-60 overflow-hidden border-b border-(--app-border)">
                   <MemberList />
                 </div>
                 <div className="flex-1 min-h-0 overflow-hidden">
                   <ChatPanel />
                 </div>
-                <div className="shrink-0 border-t border-(--rmhtube-border) py-1">
+                <div className="shrink-0 border-t border-(--app-border) py-1">
                   <ReactionOverlay />
                 </div>
               </div>
@@ -354,19 +354,19 @@ export default function RmhTubeRoomPage() {
               <>
                 <button
                   onClick={() => setSidebarOpen((s) => !s)}
-                  className="fixed right-4 top-20 z-40 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors bg-(--rmhtube-surface) text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) border border-(--rmhtube-border)"
+                  className="fixed right-4 top-20 z-40 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors bg-(--app-surface) text-(--app-text-muted) hover:text-(--app-text) border border-(--app-border)"
                 >
                   {sidebarOpen ? t("hide-chat", { defaultValue: "Hide Chat" }) : t("show-chat", { defaultValue: "Show Chat" })}
                 </button>
                 <div className={`rmhtube-sidebar ${sidebarOpen ? 'rmhtube-sidebar-open' : ''}`}>
                   <div className="flex flex-col h-full">
-                    <div className="shrink-0 max-h-48 overflow-hidden border-b border-(--rmhtube-border)">
+                    <div className="shrink-0 max-h-48 overflow-hidden border-b border-(--app-border)">
                       <MemberList />
                     </div>
                     <div className="flex-1 min-h-0 overflow-hidden">
                       <ChatPanel />
                     </div>
-                    <div className="shrink-0 border-t border-(--rmhtube-border) py-1">
+                    <div className="shrink-0 border-t border-(--app-border) py-1">
                       <ReactionOverlay />
                     </div>
                   </div>
@@ -397,15 +397,15 @@ export default function RmhTubeRoomPage() {
             </div>
 
             {/* Tab navigation */}
-            <div className="shrink-0 flex border-b border-(--rmhtube-border)">
+            <div className="shrink-0 flex border-b border-(--app-border)">
               {(['queue', 'chat', 'members'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setMobileTab(tab)}
                   className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
                     mobileTab === tab
-                      ? 'text-(--rmhtube-accent) border-b-2 border-(--rmhtube-accent)'
-                      : 'text-(--rmhtube-text-muted)'
+                      ? 'text-(--app-accent) border-b-2 border-(--app-accent)'
+                      : 'text-(--app-text-muted)'
                   }`}
                 >
                   {tab === 'queue' ? t("queue-count", { defaultValue: "Queue ({{count}})", count: room.queue.length }) : tab === 'chat' ? t("chat", { defaultValue: "Chat" }) : t("members-count", { defaultValue: "Members ({{count}})", count: room.members.length })}

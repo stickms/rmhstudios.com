@@ -52,10 +52,10 @@ export default function GameSettingsPhase() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="text-xl mb-3 text-(--rmhbox-text)">{t("loading-settings", { defaultValue: "Loading settings…" })}</div>
+          <div className="text-xl mb-3 text-(--app-text)">{t("loading-settings", { defaultValue: "Loading settings…" })}</div>
           <div
             className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto"
-            style={{ borderColor: 'var(--rmhbox-accent)', borderTopColor: 'transparent' }}
+            style={{ borderColor: 'var(--app-accent)', borderTopColor: 'transparent' }}
           />
         </div>
       </div>
@@ -69,13 +69,13 @@ export default function GameSettingsPhase() {
       {/* Title */}
       <div className="text-center">
         <h1
-          className="text-3xl font-bold text-(--rmhbox-text)"
-          style={{ fontFamily: 'var(--rmhbox-font-display)' }}
+          className="text-3xl font-bold text-(--app-text)"
+          style={{ fontFamily: 'var(--app-font-display)' }}
         >
-          <Settings className="mr-2 inline h-7 w-7 text-(--rmhbox-accent)" />
+          <Settings className="mr-2 inline h-7 w-7 text-(--app-accent)" />
           {settingsState.displayName}
         </h1>
-        <p className="mt-2 text-sm text-(--rmhbox-text-muted)">
+        <p className="mt-2 text-sm text-(--app-text-muted)">
           {isHost
             ? t("host-adjust-settings", { defaultValue: "Adjust settings before the game starts." })
             : t("guest-host-configuring", { defaultValue: "The host is configuring game settings." })}
@@ -87,9 +87,9 @@ export default function GameSettingsPhase() {
         <div
           className="rounded-full px-4 py-1.5 text-sm font-bold"
           style={{
-            backgroundColor: remaining <= 5 ? 'var(--rmhbox-danger)' : 'var(--rmhbox-surface)',
-            color: remaining <= 5 ? '#fff' : 'var(--rmhbox-text)',
-            border: '1px solid var(--rmhbox-border)',
+            backgroundColor: remaining <= 5 ? 'var(--app-danger)' : 'var(--app-surface)',
+            color: remaining <= 5 ? '#fff' : 'var(--app-text)',
+            border: '1px solid var(--app-border)',
           }}
         >
           {t("starting-in", { remaining, defaultValue: "Starting in {{remaining}}s" })}
@@ -97,7 +97,7 @@ export default function GameSettingsPhase() {
       )}
 
       {/* Settings card */}
-      <div className="w-full rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4">
+      <div className="w-full rounded-xl border border-(--app-border) bg-(--app-surface) p-4">
         <GameSettingsForm
           schema={settingsState.schema}
           values={settingsState.currentValues}
@@ -111,7 +111,7 @@ export default function GameSettingsPhase() {
       {isHost && (
         <button
           onClick={handleConfirm}
-          className="flex items-center gap-2 rounded-lg bg-(--rmhbox-accent) px-6 py-3 text-sm font-bold text-(--rmhbox-accent-fg) transition-colors hover:bg-(--rmhbox-accent-hover)"
+          className="flex items-center gap-2 rounded-lg bg-(--app-accent) px-6 py-3 text-sm font-bold text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover)"
         >
           <Play className="h-4 w-4" />
           {t("confirm-and-start", { defaultValue: "Confirm & Start" })}

@@ -45,25 +45,25 @@ export default function ChatOverlay({ messages, onSend }: ChatOverlayProps) {
   );
 
   return (
-    <div className="flex flex-col rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) lg:min-h-0 lg:flex-1">
+    <div className="flex flex-col rounded-xl bg-(--app-surface) border border-(--app-border) lg:min-h-0 lg:flex-1">
       {/* Mobile toggle header */}
       <button
         onClick={() => setMinimized(!minimized)}
-        className={`flex items-center justify-between px-3 py-2 lg:hidden shrink-0 ${minimized ? '' : 'border-b border-(--rmhbox-border)'}`}
+        className={`flex items-center justify-between px-3 py-2 lg:hidden shrink-0 ${minimized ? '' : 'border-b border-(--app-border)'}`}
       >
-        <div className="flex items-center gap-2 text-sm font-semibold text-(--rmhbox-text)">
+        <div className="flex items-center gap-2 text-sm font-semibold text-(--app-text)">
           <MessageSquare className="h-4 w-4" />
           {t("chat", { defaultValue: "Chat" })}
           {minimized && messages.length > 0 && (
-            <span className="rounded-full bg-(--rmhbox-accent)/20 px-1.5 text-xs text-(--rmhbox-accent)">
+            <span className="rounded-full bg-(--app-accent)/20 px-1.5 text-xs text-(--app-accent)">
               {messages.length}
             </span>
           )}
         </div>
         {minimized ? (
-          <ChevronUp className="h-4 w-4 text-(--rmhbox-text-muted)" />
+          <ChevronUp className="h-4 w-4 text-(--app-text-muted)" />
         ) : (
-          <ChevronDown className="h-4 w-4 text-(--rmhbox-text-muted)" />
+          <ChevronDown className="h-4 w-4 text-(--app-text-muted)" />
         )}
       </button>
 
@@ -74,10 +74,10 @@ export default function ChatOverlay({ messages, onSend }: ChatOverlayProps) {
           {messages.map((msg) => (
             <div key={msg.id} className={msg.type === 'system' ? 'text-center' : ''}>
               {msg.type === 'system' ? (
-                <span className="text-xs italic text-(--rmhbox-text-muted)">{msg.content}</span>
+                <span className="text-xs italic text-(--app-text-muted)">{msg.content}</span>
               ) : (
-                <p className="text-sm text-(--rmhbox-text)">
-                  <span className="font-semibold text-(--rmhbox-accent)">{msg.userName}</span>{' '}
+                <p className="text-sm text-(--app-text)">
+                  <span className="font-semibold text-(--app-accent)">{msg.userName}</span>{' '}
                   {msg.content}
                 </p>
               )}
@@ -87,7 +87,7 @@ export default function ChatOverlay({ messages, onSend }: ChatOverlayProps) {
         </div>
 
         {/* Input */}
-        <form onSubmit={handleSubmit} className="border-t border-(--rmhbox-border) p-2">
+        <form onSubmit={handleSubmit} className="border-t border-(--app-border) p-2">
           <div className="flex gap-2">
             <input
               type="text"
@@ -95,18 +95,18 @@ export default function ChatOverlay({ messages, onSend }: ChatOverlayProps) {
               onChange={(e) => setInput(e.target.value)}
               placeholder={t("type-a-message", { defaultValue: "Type a message…" })}
               maxLength={200}
-              className="flex-1 rounded-lg bg-(--rmhbox-bg) px-3 py-1.5 text-sm text-(--rmhbox-text) placeholder:text-(--rmhbox-text-muted) outline-none focus:ring-1 focus:ring-(--rmhbox-accent)"
+              className="flex-1 rounded-lg bg-(--app-bg) px-3 py-1.5 text-sm text-(--app-text) placeholder:text-(--app-text-muted) outline-none focus:ring-1 focus:ring-(--app-accent)"
             />
             <button
               type="submit"
-              className="rounded-lg bg-(--rmhbox-accent) p-2 text-(--rmhbox-accent-fg) transition-colors hover:bg-(--rmhbox-accent-hover)"
+              className="rounded-lg bg-(--app-accent) p-2 text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover)"
               aria-label={t("send-message", { defaultValue: "Send message" })}
             >
               <Send className="h-4 w-4" />
             </button>
           </div>
           {input.length > 150 && (
-            <p className="mt-1 text-right text-xs text-(--rmhbox-text-muted)">
+            <p className="mt-1 text-right text-xs text-(--app-text-muted)">
               {input.length}/200
             </p>
           )}

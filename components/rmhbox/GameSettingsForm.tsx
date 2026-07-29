@@ -53,7 +53,7 @@ function BooleanSetting({
       disabled={!editable}
       onClick={() => onChange(!value)}
       className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
-        value ? 'bg-(--rmhbox-accent)' : 'bg-(--rmhbox-border)'
+        value ? 'bg-(--app-accent)' : 'bg-(--app-border)'
       } ${!editable ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
     >
       <span
@@ -120,7 +120,7 @@ function IntegerSetting({
         <button
           disabled={!editable || value <= min}
           onClick={() => onChange(Math.max(min, value - step))}
-          className="flex h-6 w-6 items-center justify-center rounded bg-(--rmhbox-bg) border border-(--rmhbox-border) text-(--rmhbox-text) disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition-colors"
+          className="flex h-6 w-6 items-center justify-center rounded bg-(--app-bg) border border-(--app-border) text-(--app-text) disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition-colors"
         >
           <Minus className="h-3 w-3" />
         </button>
@@ -135,12 +135,12 @@ function IntegerSetting({
             onChange={(e) => setDraft(e.target.value)}
             onBlur={commitEdit}
             onKeyDown={handleKeyDown}
-            className="w-12 rounded bg-(--rmhbox-bg) border border-(--rmhbox-accent) text-center text-sm font-semibold text-(--rmhbox-text) outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            className="w-12 rounded bg-(--app-bg) border border-(--app-accent) text-center text-sm font-semibold text-(--app-text) outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
         ) : (
           <span
             onClick={startEditing}
-            className={`min-w-[2ch] text-center text-sm font-semibold text-(--rmhbox-text) ${editable ? 'cursor-pointer hover:text-(--rmhbox-accent) transition-colors' : ''}`}
+            className={`min-w-[2ch] text-center text-sm font-semibold text-(--app-text) ${editable ? 'cursor-pointer hover:text-(--app-accent) transition-colors' : ''}`}
           >
             {value}
           </span>
@@ -148,7 +148,7 @@ function IntegerSetting({
         <button
           disabled={!editable || value >= max}
           onClick={() => onChange(Math.min(max, value + step))}
-          className="flex h-6 w-6 items-center justify-center rounded bg-(--rmhbox-bg) border border-(--rmhbox-border) text-(--rmhbox-text) disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition-colors"
+          className="flex h-6 w-6 items-center justify-center rounded bg-(--app-bg) border border-(--app-border) text-(--app-text) disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition-colors"
         >
           <Plus className="h-3 w-3" />
         </button>
@@ -167,7 +167,7 @@ function IntegerSetting({
         value={value}
         disabled={!editable}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="flex-1 accent-(--rmhbox-accent) disabled:opacity-60"
+        className="flex-1 accent-(--app-accent) disabled:opacity-60"
       />
       {editing ? (
         <input
@@ -180,12 +180,12 @@ function IntegerSetting({
           onChange={(e) => setDraft(e.target.value)}
           onBlur={commitEdit}
           onKeyDown={handleKeyDown}
-          className="w-14 rounded bg-(--rmhbox-bg) border border-(--rmhbox-accent) text-right text-sm font-semibold text-(--rmhbox-text) outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className="w-14 rounded bg-(--app-bg) border border-(--app-accent) text-right text-sm font-semibold text-(--app-text) outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
       ) : (
         <span
           onClick={startEditing}
-          className={`min-w-[2.5ch] text-right text-sm font-semibold text-(--rmhbox-text) ${editable ? 'cursor-pointer hover:text-(--rmhbox-accent) transition-colors' : ''}`}
+          className={`min-w-[2.5ch] text-right text-sm font-semibold text-(--app-text) ${editable ? 'cursor-pointer hover:text-(--app-accent) transition-colors' : ''}`}
         >
           {value}
         </span>
@@ -220,9 +220,9 @@ function FloatSetting({
         value={value}
         disabled={!editable}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="flex-1 accent-(--rmhbox-accent) disabled:opacity-60"
+        className="flex-1 accent-(--app-accent) disabled:opacity-60"
       />
-      <span className="min-w-[3ch] text-right text-sm font-semibold text-(--rmhbox-text)">
+      <span className="min-w-[3ch] text-right text-sm font-semibold text-(--app-text)">
         {value.toFixed(decimals)}
       </span>
     </div>
@@ -246,7 +246,7 @@ function SelectSetting({
       value={value}
       disabled={!editable}
       onChange={(e) => onChange(e.target.value)}
-      className="rounded bg-(--rmhbox-bg) px-2 py-1 text-sm text-(--rmhbox-text) border border-(--rmhbox-border) disabled:opacity-60 disabled:cursor-not-allowed"
+      className="rounded bg-(--app-bg) px-2 py-1 text-sm text-(--app-text) border border-(--app-border) disabled:opacity-60 disabled:cursor-not-allowed"
     >
       {options.map((opt) => (
         <option key={opt} value={opt}>
@@ -275,8 +275,8 @@ function SettingRow({
   return (
     <div className="flex items-center justify-between gap-4 py-2">
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-(--rmhbox-text)">{def.label}</div>
-        <div className="text-xs text-(--rmhbox-text-muted) leading-tight">{def.description}</div>
+        <div className="text-sm font-medium text-(--app-text)">{def.label}</div>
+        <div className="text-xs text-(--app-text-muted) leading-tight">{def.description}</div>
       </div>
       <div className="shrink-0">
         {def.type === 'boolean' && (
@@ -307,7 +307,7 @@ export default function GameSettingsForm({
 }: GameSettingsFormProps) {
   const { t } = useTranslation("c-rmhbox");
   return (
-    <div className="space-y-1 divide-y divide-(--rmhbox-border)">
+    <div className="space-y-1 divide-y divide-(--app-border)">
       {schema.map((def) => (
         <SettingRow
           key={def.key}
@@ -323,7 +323,7 @@ export default function GameSettingsForm({
         <div className="pt-3">
           <button
             onClick={onReset}
-            className="flex items-center gap-1.5 text-xs font-medium text-(--rmhbox-text-muted) hover:text-(--rmhbox-text) transition-colors"
+            className="flex items-center gap-1.5 text-xs font-medium text-(--app-text-muted) hover:text-(--app-text) transition-colors"
           >
             <RotateCcw className="h-3 w-3" />
             {t("reset-to-defaults", { defaultValue: "Reset to Defaults" })}

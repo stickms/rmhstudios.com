@@ -58,19 +58,19 @@ export default function LeaderboardPanel() {
   }, []);
 
   return (
-    <div className="rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) p-4">
-      <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
+    <div className="rounded-xl bg-(--app-surface) border border-(--app-border) p-4">
+      <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--app-text-muted)">
         <Trophy className="h-4 w-4" /> {t("leaderboard", { defaultValue: "Leaderboard" })}
       </h3>
 
       {loading ? (
-        <p className="text-sm text-(--rmhbox-text-muted)">{t("loading", { defaultValue: "Loading…" })}</p>
+        <p className="text-sm text-(--app-text-muted)">{t("loading", { defaultValue: "Loading…" })}</p>
       ) : entries.length === 0 ? (
-        <p className="text-sm text-(--rmhbox-text-muted)">{t("no-entries", { defaultValue: "No entries yet." })}</p>
+        <p className="text-sm text-(--app-text-muted)">{t("no-entries", { defaultValue: "No entries yet." })}</p>
       ) : (
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-(--rmhbox-text-muted)">
+            <tr className="text-left text-(--app-text-muted)">
               <th className="pb-2 pr-2 font-medium">#</th>
               <th className="pb-2 pr-2 font-medium">{t("player", { defaultValue: "Player" })}</th>
               <th className="pb-2 text-right font-medium">{t("score", { defaultValue: "Score" })}</th>
@@ -78,9 +78,9 @@ export default function LeaderboardPanel() {
           </thead>
           <tbody>
             {entries.map((entry) => (
-              <tr key={entry.userId} className="border-t border-(--rmhbox-border)">
-                <td className="py-1.5 pr-2 font-bold text-(--rmhbox-accent)">{entry.rank}</td>
-                <td className="py-1.5 pr-2 text-(--rmhbox-text)">
+              <tr key={entry.userId} className="border-t border-(--app-border)">
+                <td className="py-1.5 pr-2 font-bold text-(--app-accent)">{entry.rank}</td>
+                <td className="py-1.5 pr-2 text-(--app-text)">
                   <div className="flex items-center gap-2">
                     {entry.avatarUrl ? (
                       <img
@@ -97,7 +97,7 @@ export default function LeaderboardPanel() {
                       />
                     ) : null}
                     <div
-                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-(--rmhbox-accent) text-[10px] font-bold text-(--rmhbox-accent-fg)"
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-(--app-accent) text-[10px] font-bold text-(--app-accent-fg)"
                       style={entry.avatarUrl ? { display: 'none' } : undefined}
                     >
                       {entry.userName.charAt(0).toUpperCase()}
@@ -105,7 +105,7 @@ export default function LeaderboardPanel() {
                     <span className="truncate">{entry.userName}</span>
                   </div>
                 </td>
-                <td className="py-1.5 text-right font-mono text-(--rmhbox-text)">{entry.value}</td>
+                <td className="py-1.5 text-right font-mono text-(--app-text)">{entry.value}</td>
               </tr>
             ))}
           </tbody>

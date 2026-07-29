@@ -36,7 +36,7 @@ export default function EmojiCinemaHistoryDetail({ gameLog, players }: HistoryDe
 
   return (
     <div className="space-y-4">
-      <div className="text-sm text-(--rmhbox-text-muted)">
+      <div className="text-sm text-(--app-text-muted)">
         {t("rounds-played", { defaultValue: "{{count}} round played", defaultValue_other: "{{count}} rounds played", count: roundStarts.length })}
       </div>
 
@@ -69,17 +69,17 @@ export default function EmojiCinemaHistoryDetail({ gameLog, players }: HistoryDe
           : correctGuessersData.length;
 
         return (
-          <div key={roundNum} className="rounded-lg border border-(--rmhbox-border) p-3 space-y-2">
+          <div key={roundNum} className="rounded-lg border border-(--app-border) p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-(--rmhbox-text)">{t("round-label", { defaultValue: "Round {{num}}", num: roundNum })}</span>
-              <span className="text-xs text-(--rmhbox-text-muted)">
+              <span className="text-sm font-semibold text-(--app-text)">{t("round-label", { defaultValue: "Round {{num}}", num: roundNum })}</span>
+              <span className="text-xs text-(--app-text-muted)">
                 {t("producer-label", { defaultValue: "Producer: {{name}}", name: producer?.userName ?? t("unknown", { defaultValue: "Unknown" }) })}
               </span>
             </div>
 
             {/* Emoji sequence rendered as Twemoji images */}
             {noEmojis ? (
-              <div className="text-sm text-(--rmhbox-text-muted) italic">{t("round-skipped", { defaultValue: "Round skipped (no emojis placed)" })}</div>
+              <div className="text-sm text-(--app-text-muted) italic">{t("round-skipped", { defaultValue: "Round skipped (no emojis placed)" })}</div>
             ) : (
               <div className="flex gap-1 flex-wrap">
                 {emojiSeq.length > 0 ? emojiSeq.map((emoji, j) => {
@@ -89,12 +89,12 @@ export default function EmojiCinemaHistoryDetail({ gameLog, players }: HistoryDe
                   ) : (
                     <span key={j} className="text-xl">{emoji}</span>
                   );
-                }) : <span className="text-sm text-(--rmhbox-text-muted)">{t("no-emojis", { defaultValue: "(no emojis)" })}</span>}
+                }) : <span className="text-sm text-(--app-text-muted)">{t("no-emojis", { defaultValue: "(no emojis)" })}</span>}
               </div>
             )}
 
             {/* Movie title */}
-            <div className="text-sm text-(--rmhbox-accent)">🎬 {title}</div>
+            <div className="text-sm text-(--app-accent)">🎬 {title}</div>
 
             {/* Correct guessers */}
             {correctGuessersData.length > 0 ? (
@@ -111,12 +111,12 @@ export default function EmojiCinemaHistoryDetail({ gameLog, players }: HistoryDe
             ) : correctGuessCount > 0 ? (
               <div className="text-xs text-green-500">{t("correct-guesses", { defaultValue: "{{count}} correct guess", defaultValue_other: "{{count}} correct guesses", count: correctGuessCount })}</div>
             ) : !noEmojis ? (
-              <div className="text-xs text-(--rmhbox-text-muted)">{t("no-correct-guesses", { defaultValue: "No one guessed correctly" })}</div>
+              <div className="text-xs text-(--app-text-muted)">{t("no-correct-guesses", { defaultValue: "No one guessed correctly" })}</div>
             ) : null}
 
             {/* Round end reason */}
             {reason && reason !== 'timer' && reason !== 'no_emojis' && (
-              <div className="text-xs text-(--rmhbox-text-muted)">
+              <div className="text-xs text-(--app-text-muted)">
                 {t("round-ended-label", { defaultValue: "Ended:" })} {reason === 'all_correct' ? t("all-correct", { defaultValue: "Everyone guessed correctly!" }) : reason.replace(/_/g, ' ')}
               </div>
             )}
@@ -127,16 +127,16 @@ export default function EmojiCinemaHistoryDetail({ gameLog, players }: HistoryDe
       {/* Final scores */}
       {finalScores && Object.keys(finalScores).length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-semibold text-(--rmhbox-text)">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
+          <h4 className="text-sm font-semibold text-(--app-text)">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
           <div className="space-y-1">
             {Object.entries(finalScores)
               .sort(([, a], [, b]) => b - a)
               .map(([userId, score], i) => {
                 const player = players.find((p) => p.userId === userId);
                 return (
-                  <div key={userId} className="flex items-center justify-between rounded-md bg-(--rmhbox-surface) px-3 py-1.5 text-sm">
-                    <span className="text-(--rmhbox-text)">#{i + 1} {player?.userName ?? t("unknown", { defaultValue: "Unknown" })}</span>
-                    <span className="font-medium text-(--rmhbox-accent)">{t("score-pts", { defaultValue: "{{score}} pts", score })}</span>
+                  <div key={userId} className="flex items-center justify-between rounded-md bg-(--app-surface) px-3 py-1.5 text-sm">
+                    <span className="text-(--app-text)">#{i + 1} {player?.userName ?? t("unknown", { defaultValue: "Unknown" })}</span>
+                    <span className="font-medium text-(--app-accent)">{t("score-pts", { defaultValue: "{{score}} pts", score })}</span>
                   </div>
                 );
               })}

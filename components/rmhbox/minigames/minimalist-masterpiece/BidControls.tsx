@@ -25,18 +25,18 @@ export default function BidControls({ currentBid, currency, onBid, disabled }: B
   return (
     <div className="flex items-center gap-2">
       <button
-        className="w-8 h-8 rounded-full bg-(--rmhbox-border) text-(--rmhbox-text) font-bold disabled:opacity-40"
+        className="w-8 h-8 rounded-full bg-(--app-border) text-(--app-text) font-bold disabled:opacity-40"
         onClick={() => onBid(currentBid - INCREMENT)}
         disabled={!canDecrease}
         aria-label={t("decrease-bid", { defaultValue: "Decrease bid" })}
       >
         −
       </button>
-      <span className="w-16 text-center text-sm font-mono text-(--rmhbox-text)">
+      <span className="w-16 text-center text-sm font-mono text-(--app-text)">
         {currentBid}
       </span>
       <button
-        className="w-8 h-8 rounded-full bg-(--rmhbox-accent) text-white font-bold disabled:opacity-40"
+        className="w-8 h-8 rounded-full bg-(--app-accent) text-white font-bold disabled:opacity-40"
         onClick={() => onBid(currentBid + INCREMENT)}
         disabled={!canIncrease}
         aria-label={t("increase-bid", { defaultValue: "Increase bid" })}

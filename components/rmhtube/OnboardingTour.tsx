@@ -68,11 +68,11 @@ export default function OnboardingTour() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70" onClick={handleClose} />
-      <div className="relative w-full max-w-sm rounded-xl border border-(--rmhtube-border) bg-(--rmhtube-surface) p-6 shadow-xl">
+      <div className="relative w-full max-w-sm rounded-xl border border-(--app-border) bg-(--app-surface) p-6 shadow-xl">
         {/* Close */}
         <button
           onClick={handleClose}
-          className="absolute top-3 right-3 rounded p-1 text-(--rmhtube-text-dim) hover:text-(--rmhtube-text)"
+          className="absolute top-3 right-3 rounded p-1 text-(--app-text-dim) hover:text-(--app-text)"
         >
           <X className="h-4 w-4" />
         </button>
@@ -83,7 +83,7 @@ export default function OnboardingTour() {
             <div
               key={i}
               className={`h-1 flex-1 rounded-full transition-colors ${
-                i <= step ? 'bg-(--rmhtube-accent)' : 'bg-(--rmhtube-border)'
+                i <= step ? 'bg-(--app-accent)' : 'bg-(--app-border)'
               }`}
             />
           ))}
@@ -92,8 +92,8 @@ export default function OnboardingTour() {
         {/* Content */}
         <div className="text-center mb-6">
           <span className="text-4xl mb-3 block">{current.icon}</span>
-          <h3 className="text-lg font-semibold mb-2 text-(--rmhtube-text)">{current.title}</h3>
-          <p className="text-sm text-(--rmhtube-text-muted)">{current.description}</p>
+          <h3 className="text-lg font-semibold mb-2 text-(--app-text)">{current.title}</h3>
+          <p className="text-sm text-(--app-text-muted)">{current.description}</p>
         </div>
 
         {/* Navigation */}
@@ -101,19 +101,19 @@ export default function OnboardingTour() {
           <button
             onClick={handlePrev}
             disabled={step === 0}
-            className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-md transition-colors disabled:opacity-30 text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
+            className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-md transition-colors disabled:opacity-30 text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
             {t("back", { defaultValue: "Back" })}
           </button>
 
-          <span className="text-xs text-(--rmhtube-text-dim)">
+          <span className="text-xs text-(--app-text-dim)">
             {step + 1} / {TOUR_STEPS.length}
           </span>
 
           <button
             onClick={handleNext}
-            className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-md transition-colors bg-(--rmhtube-accent) text-(--rmhtube-accent-fg) hover:bg-(--rmhtube-accent-hover)"
+            className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-md transition-colors bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
           >
             {step < TOUR_STEPS.length - 1 ? (
               <>
@@ -133,7 +133,7 @@ export default function OnboardingTour() {
         {step < TOUR_STEPS.length - 1 && (
           <button
             onClick={handleClose}
-            className="w-full mt-3 text-xs text-center text-(--rmhtube-text-dim) hover:text-(--rmhtube-text-muted)"
+            className="w-full mt-3 text-xs text-center text-(--app-text-dim) hover:text-(--app-text-muted)"
           >
             {t("skip-tour", { defaultValue: "Skip tour" })}
           </button>

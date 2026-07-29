@@ -5,13 +5,21 @@
   "cookie-consent-learn": "Learn more",
   "cookie-consent-learn-aria": "Learn more about our cookie policy",
   "cookie-consent-text": "We use essential cookies to run the site and privacy-friendly analytics to improve it.",
+  "home-aria-label": "RMH Studios home",
+  "loading": "Loading…",
+  "messages": "Messages",
   "notFound.body": "The page you’re looking for doesn’t exist, moved, or never did. Let’s get you back on track.",
   "notFound.explore": "Explore",
   "notFound.home": "Go home",
   "notFound.search": "Search",
   "notFound.title": "Page not found",
+  "notifications": "Notifications",
   "offline-body": "RMH Studios needs a connection for this page. Check your network and try again.",
   "offline-retry": "Try again",
   "offline-title": "You're offline",
-  "skipToContent": "Zum Inhalt springen"
+  "profile": "Profile",
+  "search": "Search",
+  "sign-in": "Sign in",
+  "skipToContent": "Zum Inhalt springen",
+  "studio-wordmark": "Studios"
 }

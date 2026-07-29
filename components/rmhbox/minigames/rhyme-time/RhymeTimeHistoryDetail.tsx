@@ -89,9 +89,9 @@ export default function RhymeTimeHistoryDetail({
     <div className="space-y-4" data-testid="rhyme-time-history-detail">
       {/* Game Settings */}
       {gameLog.initialState && (
-        <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3">
-          <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase mb-1">{t("game-settings", { defaultValue: "Game Settings" })}</h4>
-          <div className="flex flex-wrap gap-3 text-xs text-(--rmhbox-text-muted)">
+        <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-3">
+          <h4 className="text-xs font-semibold text-(--app-text-muted) uppercase mb-1">{t("game-settings", { defaultValue: "Game Settings" })}</h4>
+          <div className="flex flex-wrap gap-3 text-xs text-(--app-text-muted)">
             <span>{t("rounds-count", { defaultValue: "Rounds: {{count}}", count: (gameLog.initialState.rounds as number) ?? roundStarts.length })}</span>
             {gameLog.initialState.secondsPerRound != null && (
               <span>{t("time-per-round", { defaultValue: "Time per Round: {{seconds}}s", seconds: String(gameLog.initialState.secondsPerRound) })}</span>
@@ -154,15 +154,15 @@ export default function RhymeTimeHistoryDetail({
         return (
           <div
             key={roundNum}
-            className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4"
+            className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4"
           >
             {/* Round header */}
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-semibold text-(--rmhbox-text-muted)">
+              <h4 className="text-sm font-semibold text-(--app-text-muted)">
                 {t("round-num", { defaultValue: "Round {{num}}", num: roundNum })}
               </h4>
               <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-(--rmhbox-accent)">
+                <span className="text-lg font-bold text-(--app-accent)">
                   &ldquo;{rootWord}&rdquo;
                 </span>
                 {difficulty != null && (
@@ -184,7 +184,7 @@ export default function RhymeTimeHistoryDetail({
               const tierColors: Record<string, string> = {
                 rare: 'text-yellow-500',
                 uncommon: 'text-blue-400',
-                common: 'text-(--rmhbox-text)',
+                common: 'text-(--app-text)',
                 invalid: 'text-red-400',
               };
               const tierLabels: Record<string, string> = {
@@ -210,8 +210,8 @@ export default function RhymeTimeHistoryDetail({
                           key={dw.word}
                           className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${
                             isMe
-                              ? 'bg-(--rmhbox-accent)/20 text-(--rmhbox-accent) font-semibold'
-                              : 'bg-(--rmhbox-surface-hover) text-(--rmhbox-text-muted)'
+                              ? 'bg-(--app-accent)/20 text-(--app-accent) font-semibold'
+                              : 'bg-(--app-surface-hover) text-(--app-text-muted)'
                           } ${tier === 'invalid' ? 'line-through' : ''}`}
                         >
                           {dw.word}
@@ -237,8 +237,8 @@ export default function RhymeTimeHistoryDetail({
 
             {/* Per-player round scores */}
             {Object.keys(playerScores).length > 0 && (
-              <div className="mt-3 pt-2 border-t border-(--rmhbox-border)">
-                <span className="text-xs font-medium text-(--rmhbox-text-muted) uppercase">{t("round-scores", { defaultValue: "Round Scores" })}</span>
+              <div className="mt-3 pt-2 border-t border-(--app-border)">
+                <span className="text-xs font-medium text-(--app-text-muted) uppercase">{t("round-scores", { defaultValue: "Round Scores" })}</span>
                 <div className="flex flex-wrap gap-3 mt-1">
                   {Object.entries(playerScores)
                     .sort(([, a], [, b]) => b - a)
@@ -248,7 +248,7 @@ export default function RhymeTimeHistoryDetail({
                       return (
                         <span
                           key={userId}
-                          className={`text-xs ${isMe ? 'text-(--rmhbox-accent) font-semibold' : 'text-(--rmhbox-text-muted)'}`}
+                          className={`text-xs ${isMe ? 'text-(--app-accent) font-semibold' : 'text-(--app-text-muted)'}`}
                         >
                           {name}: {score > 0 ? '+' : ''}{score}
                         </span>
@@ -260,9 +260,9 @@ export default function RhymeTimeHistoryDetail({
 
             {/* Round winner */}
             {roundWinner && (
-              <div className="mt-2 text-xs text-(--rmhbox-text-muted)">
+              <div className="mt-2 text-xs text-(--app-text-muted)">
                 {t("round-winner", { defaultValue: "🏆 Round winner:" })}{' '}
-                <span className="font-semibold text-(--rmhbox-accent)">
+                <span className="font-semibold text-(--app-accent)">
                   {players.find((p) => p.userId === roundWinner)?.userName ?? roundWinner}
                 </span>
               </div>
@@ -272,8 +272,8 @@ export default function RhymeTimeHistoryDetail({
       })}
 
       {/* Final scores */}
-      <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
-        <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-2">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
+      <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4">
+        <h4 className="text-sm font-semibold text-(--app-text-muted) mb-2">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
         <div className="space-y-1">
           {players
             .sort((a, b) => a.rank - b.rank)
@@ -281,7 +281,7 @@ export default function RhymeTimeHistoryDetail({
               <div
                 key={p.userId}
                 className={`flex justify-between text-sm ${
-                  p.userId === currentUserId ? 'text-(--rmhbox-accent) font-semibold' : 'text-(--rmhbox-text)'
+                  p.userId === currentUserId ? 'text-(--app-accent) font-semibold' : 'text-(--app-text)'
                 }`}
               >
                 <span>

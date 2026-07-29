@@ -30,19 +30,19 @@ export default function RmhStudyHeader({
 
   const statusColor =
     connectionStatus === 'connected'
-      ? 'text-(--rmhstudy-success)'
+      ? 'text-(--app-success)'
       : connectionStatus === 'connecting'
-        ? 'text-(--rmhstudy-warning)'
-        : 'text-(--rmhstudy-danger)';
+        ? 'text-(--app-warning)'
+        : 'text-(--app-danger)';
 
   return (
-    <header className="relative flex h-16 shrink-0 items-center border-b border-(--rmhstudy-border) px-4">
+    <header className="relative flex h-16 shrink-0 items-center border-b border-(--app-border) px-4">
       <div className="flex items-center gap-2 z-10">
         {backHref ? (
           <Link
             to={backHref}
             onClick={onBack}
-            className="flex items-center gap-1.5 text-sm font-medium transition-colors text-(--rmhstudy-text-muted) hover:text-(--rmhstudy-text)"
+            className="flex items-center gap-1.5 text-sm font-medium transition-colors text-(--app-text-muted) hover:text-(--app-text)"
           >
             <ArrowLeft className="h-4 w-4" />
             {backLabel}
@@ -50,7 +50,7 @@ export default function RmhStudyHeader({
         ) : (
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 text-sm font-medium transition-colors text-(--rmhstudy-text-muted) hover:text-(--rmhstudy-text)"
+            className="flex items-center gap-1.5 text-sm font-medium transition-colors text-(--app-text-muted) hover:text-(--app-text)"
           >
             <ArrowLeft className="h-4 w-4" />
             {backLabel}
@@ -60,7 +60,7 @@ export default function RmhStudyHeader({
       </div>
 
       <div className="absolute inset-x-0 flex justify-center pointer-events-none">
-        <h1 className="text-lg font-bold tracking-tight" style={{ fontFamily: 'var(--rmhstudy-font-display)' }}>
+        <h1 className="text-lg font-bold tracking-tight" style={{ fontFamily: 'var(--app-font-display)' }}>
           RMH Study
         </h1>
       </div>
@@ -69,7 +69,7 @@ export default function RmhStudyHeader({
         {roomCode && (
           <button
             onClick={onCopyCode}
-            className="flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-sm font-bold tracking-widest transition-colors bg-(--rmhstudy-surface) text-(--rmhstudy-text) hover:bg-(--rmhstudy-surface-hover)"
+            className="flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-sm font-bold tracking-widest transition-colors bg-(--app-surface) text-(--app-text) hover:bg-(--app-surface-hover)"
             title={t("copy-room-code", { defaultValue: "Copy room code" })}
           >
             {roomCode}

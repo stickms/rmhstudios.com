@@ -32,10 +32,10 @@ export default function RmhTubeHeader({
 
   const statusColor =
     connectionStatus === 'connected'
-      ? 'text-(--rmhtube-success)'
+      ? 'text-(--app-success)'
       : connectionStatus === 'connecting'
-        ? 'text-(--rmhtube-warning)'
-        : 'text-(--rmhtube-danger)';
+        ? 'text-(--app-warning)'
+        : 'text-(--app-danger)';
 
   return (
     <header className="relative flex h-16 shrink-0 items-center px-4">
@@ -45,7 +45,7 @@ export default function RmhTubeHeader({
           <Link
             to={backHref}
             onClick={onBack}
-            className="flex items-center gap-1.5 text-sm font-medium transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text)"
+            className="flex items-center gap-1.5 text-sm font-medium transition-colors text-(--app-text-muted) hover:text-(--app-text)"
           >
             <ArrowLeft className="h-4 w-4" />
             {backLabel}
@@ -53,7 +53,7 @@ export default function RmhTubeHeader({
         ) : (
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 text-sm font-medium transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text)"
+            className="flex items-center gap-1.5 text-sm font-medium transition-colors text-(--app-text-muted) hover:text-(--app-text)"
           >
             <ArrowLeft className="h-4 w-4" />
             {backLabel}
@@ -65,7 +65,7 @@ export default function RmhTubeHeader({
       <div className="absolute inset-x-0 flex justify-center pointer-events-none">
         <h1
           className="text-lg font-bold tracking-tight"
-          style={{ fontFamily: 'var(--rmhtube-font-display)' }}
+          style={{ fontFamily: 'var(--app-font-display)' }}
         >
           RmhTube
         </h1>
@@ -76,7 +76,7 @@ export default function RmhTubeHeader({
         {roomCode && (
           <button
             onClick={onCopyCode}
-            className="flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-sm font-bold tracking-widest transition-colors bg-(--rmhtube-surface) text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
+            className="flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-sm font-bold tracking-widest transition-colors bg-(--app-surface) text-(--app-text) hover:bg-(--app-surface-hover)"
             title={t("copy-room-code", { defaultValue: "Copy room code" })}
           >
             {roomCode}

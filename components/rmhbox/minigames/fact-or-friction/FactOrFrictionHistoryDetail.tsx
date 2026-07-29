@@ -46,9 +46,9 @@ export default function FactOrFrictionHistoryDetail({
     <div className="space-y-4" data-testid="fof-history-detail">
       {/* Game Settings */}
       {gameLog.initialState && (
-        <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3">
-          <h4 className="mb-1 text-xs font-semibold uppercase text-(--rmhbox-text-muted)">{t("game-settings", { defaultValue: "Game Settings" })}</h4>
-          <div className="flex flex-wrap gap-3 text-xs text-(--rmhbox-text-muted)">
+        <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-3">
+          <h4 className="mb-1 text-xs font-semibold uppercase text-(--app-text-muted)">{t("game-settings", { defaultValue: "Game Settings" })}</h4>
+          <div className="flex flex-wrap gap-3 text-xs text-(--app-text-muted)">
             <span>{t("questions-count", { defaultValue: "Questions: {{count}}", count: (gameLog.initialState.totalQuestions as number) ?? questionStarts.length })}</span>
             {gameLog.initialState.answerDuration != null && (
               <span>{t("answer-time", { defaultValue: "Answer Time: {{duration}}s", duration: String(gameLog.initialState.answerDuration) })}</span>
@@ -76,16 +76,16 @@ export default function FactOrFrictionHistoryDetail({
         return (
           <div
             key={questionNum}
-            className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4"
+            className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4"
           >
             {/* Question header */}
             <div className="mb-3 flex items-center justify-between">
-              <h4 className="text-sm font-semibold text-(--rmhbox-text-muted)">
+              <h4 className="text-sm font-semibold text-(--app-text-muted)">
                 {t("question-number", { defaultValue: "Question {{num}}", num: questionNum })}
               </h4>
               <div className="flex items-center gap-2">
                 {category && (
-                  <span className="rounded-full bg-(--rmhbox-surface-hover) px-2 py-0.5 text-xs text-(--rmhbox-text-muted)">
+                  <span className="rounded-full bg-(--app-surface-hover) px-2 py-0.5 text-xs text-(--app-text-muted)">
                     {category}
                   </span>
                 )}
@@ -98,7 +98,7 @@ export default function FactOrFrictionHistoryDetail({
             </div>
 
             {/* Question text */}
-            <p className="mb-3 text-sm font-medium text-(--rmhbox-text)">{questionText}</p>
+            <p className="mb-3 text-sm font-medium text-(--app-text)">{questionText}</p>
 
             {/* Options */}
             {options.length > 0 && (
@@ -111,7 +111,7 @@ export default function FactOrFrictionHistoryDetail({
                       className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs ${
                         isCorrect
                           ? 'border-green-500/50 bg-green-500/10 text-green-400 font-semibold'
-                          : 'border-(--rmhbox-border) text-(--rmhbox-text-muted)'
+                          : 'border-(--app-border) text-(--app-text-muted)'
                       }`}
                     >
                       <span className="font-bold">{LABELS[i]}.</span>
@@ -125,8 +125,8 @@ export default function FactOrFrictionHistoryDetail({
 
             {/* Player results for this question */}
             {revealResults.length > 0 && (
-              <div className="border-t border-(--rmhbox-border) pt-2">
-                <span className="text-xs font-medium uppercase text-(--rmhbox-text-muted)">{t("responses", { defaultValue: "Responses" })}</span>
+              <div className="border-t border-(--app-border) pt-2">
+                <span className="text-xs font-medium uppercase text-(--app-text-muted)">{t("responses", { defaultValue: "Responses" })}</span>
                 <div className="mt-1 space-y-1">
                   {revealResults.map((pr) => {
                     const name = players.find((p) => p.userId === pr.userId)?.userName ?? pr.userId;
@@ -135,7 +135,7 @@ export default function FactOrFrictionHistoryDetail({
                       <div
                         key={pr.userId}
                         className={`flex items-center justify-between text-xs ${
-                          isMe ? 'text-(--rmhbox-accent) font-semibold' : 'text-(--rmhbox-text-muted)'
+                          isMe ? 'text-(--app-accent) font-semibold' : 'text-(--app-text-muted)'
                         }`}
                       >
                         <div className="flex items-center gap-1.5">
@@ -172,8 +172,8 @@ export default function FactOrFrictionHistoryDetail({
       })}
 
       {/* Final scores */}
-      <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
-        <h4 className="mb-2 text-sm font-semibold text-(--rmhbox-text-muted)">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
+      <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4">
+        <h4 className="mb-2 text-sm font-semibold text-(--app-text-muted)">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
         <div className="space-y-1">
           {players
             .sort((a, b) => a.rank - b.rank)
@@ -181,7 +181,7 @@ export default function FactOrFrictionHistoryDetail({
               <div
                 key={p.userId}
                 className={`flex justify-between text-sm ${
-                  p.userId === currentUserId ? 'text-(--rmhbox-accent) font-semibold' : 'text-(--rmhbox-text)'
+                  p.userId === currentUserId ? 'text-(--app-accent) font-semibold' : 'text-(--app-text)'
                 }`}
               >
                 <span>

@@ -81,10 +81,10 @@ export default function CategoryCrashResults({
       {/* Header */}
       <div className="text-center">
         <h3 className="text-lg font-bold flex items-center justify-center gap-1.5">
-          {isGameOver ? <><Trophy size={18} className="text-(--rmhbox-warning)" /> {t("final-results", { defaultValue: "Final Results" })}</> : t("round-of", { defaultValue: "Round {{current}} of {{total}}", current: currentRound, total: totalRounds })}
+          {isGameOver ? <><Trophy size={18} className="text-(--app-warning)" /> {t("final-results", { defaultValue: "Final Results" })}</> : t("round-of", { defaultValue: "Round {{current}} of {{total}}", current: currentRound, total: totalRounds })}
         </h3>
-        <p className="text-sm text-(--rmhbox-text-muted)">
-          {t("letter-label", { defaultValue: "Letter:" })} <span className="font-bold text-(--rmhbox-accent)">{roundResults.letter}</span>
+        <p className="text-sm text-(--app-text-muted)">
+          {t("letter-label", { defaultValue: "Letter:" })} <span className="font-bold text-(--app-accent)">{roundResults.letter}</span>
         </p>
       </div>
 
@@ -100,23 +100,23 @@ export default function CategoryCrashResults({
               transition={{ delay: idx * 0.1 }}
               className={`rounded-xl border p-4 ${
                 isMe
-                  ? 'border-(--rmhbox-accent)/50 bg-(--rmhbox-accent)/5'
-                  : 'border-(--rmhbox-border) bg-(--rmhbox-surface)'
+                  ? 'border-(--app-accent)/50 bg-(--app-accent)/5'
+                  : 'border-(--app-border) bg-(--app-surface)'
               }`}
             >
               {/* Player header */}
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {idx === 0 && <Trophy size={16} className="text-(--rmhbox-warning)" />}
+                  {idx === 0 && <Trophy size={16} className="text-(--app-warning)" />}
                   <span className="font-semibold">
                     {result.userName}
                     {isMe && (
-                      <span className="ml-1 text-xs text-(--rmhbox-accent)">{t("you-label", { defaultValue: "(you)" })}</span>
+                      <span className="ml-1 text-xs text-(--app-accent)">{t("you-label", { defaultValue: "(you)" })}</span>
                     )}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded bg-(--rmhbox-accent)/10 px-2 py-0.5 text-sm font-bold text-(--rmhbox-accent)">
+                  <span className="rounded bg-(--app-accent)/10 px-2 py-0.5 text-sm font-bold text-(--app-accent)">
                     +{result.roundScore}
                   </span>
                 </div>
@@ -144,9 +144,9 @@ export default function CategoryCrashResults({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
-        className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4"
+        className="rounded-xl border border-(--app-border) bg-(--app-surface) p-4"
       >
-        <h4 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-(--rmhbox-text-muted)">
+        <h4 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-(--app-text-muted)">
           <TrendingUp size={14} />
           {isGameOver ? t("final-standings", { defaultValue: "Final Standings" }) : t("leaderboard", { defaultValue: "Leaderboard" })}
         </h4>
@@ -157,16 +157,16 @@ export default function CategoryCrashResults({
               <div
                 key={entry.userId}
                 className={`flex items-center justify-between rounded-lg px-3 py-1.5 text-sm ${
-                  isMe ? 'bg-(--rmhbox-accent)/10 font-semibold' : ''
+                  isMe ? 'bg-(--app-accent)/10 font-semibold' : ''
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <span className="w-5 text-right text-xs font-bold text-(--rmhbox-text-muted)">
+                  <span className="w-5 text-right text-xs font-bold text-(--app-text-muted)">
                     {idx + 1}.
                   </span>
-                  {idx === 0 && <Star size={12} className="text-(--rmhbox-warning)" />}
+                  {idx === 0 && <Star size={12} className="text-(--app-warning)" />}
                   <span>{entry.name}</span>
-                  {isMe && <span className="text-xs text-(--rmhbox-accent)">{t("you-label", { defaultValue: "(you)" })}</span>}
+                  {isMe && <span className="text-xs text-(--app-accent)">{t("you-label", { defaultValue: "(you)" })}</span>}
                 </div>
                 <span className="font-bold">{entry.score}</span>
               </div>

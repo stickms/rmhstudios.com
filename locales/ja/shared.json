@@ -1,10 +1,12 @@
 {
   "chat-placeholder": "チャット…",
+  "dismiss": "Dismiss",
   "failed-to-load-media": "メディアの読み込みに失敗しました",
   "game-crashed": "ゲームがクラッシュしました",
   "game-crashed-named": "{{gameName}} がクラッシュしました",
   "loading": "読み込み中…",
   "no-messages-yet": "まだメッセージがありません",
+  "notifications": "Notifications",
   "react": "リアクション",
   "return-home": "ホームに戻る",
   "try-again": "再試行",

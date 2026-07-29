@@ -38,18 +38,18 @@ export default function PreloadScreen({ players, lobbyId }: PreloadScreenProps) 
   const progress = players.length > 0 ? (readyCount / players.length) * 100 : 0;
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6 p-6 text-(--rmhbox-text)">
-      <Loader2 className="h-10 w-10 animate-spin text-(--rmhbox-accent)" />
+    <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6 p-6 text-(--app-text)">
+      <Loader2 className="h-10 w-10 animate-spin text-(--app-accent)" />
       <h2 className="text-xl font-bold">{t("loading-game", { defaultValue: "Loading Game…" })}</h2>
 
       {/* Progress bar */}
-      <div className="h-2 w-full overflow-hidden rounded-full bg-(--rmhbox-border)">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-(--app-border)">
         <div
-          className="h-full rounded-full bg-(--rmhbox-accent) transition-all duration-500"
+          className="h-full rounded-full bg-(--app-accent) transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>
-      <span className="text-sm text-(--rmhbox-text-muted)">
+      <span className="text-sm text-(--app-text-muted)">
         {t("players-ready", { readyCount, total: players.length, defaultValue: "{{readyCount}} / {{total}} players ready" })}
       </span>
 
@@ -58,11 +58,11 @@ export default function PreloadScreen({ players, lobbyId }: PreloadScreenProps) 
         {players.map((p) => (
           <li key={p.userId} className="flex items-center gap-2 text-sm">
             {p.ready ? (
-              <CheckCircle2 className="h-4 w-4 text-(--rmhbox-success)" />
+              <CheckCircle2 className="h-4 w-4 text-(--app-success)" />
             ) : (
-              <Circle className="h-4 w-4 text-(--rmhbox-text-muted)" />
+              <Circle className="h-4 w-4 text-(--app-text-muted)" />
             )}
-            <span className={p.ready ? 'text-(--rmhbox-text)' : 'text-(--rmhbox-text-muted)'}>
+            <span className={p.ready ? 'text-(--app-text)' : 'text-(--app-text-muted)'}>
               {p.userName}
             </span>
           </li>

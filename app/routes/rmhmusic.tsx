@@ -29,11 +29,12 @@ export const Route = createFileRoute('/rmhmusic')({
       },
     ],
   }),
-  // `.rmhmusic-theme` scopes the app's own dark palette (rmhmusic.css). The
-  // site theme class is never applied here (THEME_EXCLUDED_ROUTES), so without
-  // it the tokens resolve light against the app's black backdrop.
+  // `.app-theme` is the shared app chrome and `.rmhmusic-theme` its palette
+  // (rmhmusic.css). The site theme class is never applied here
+  // (THEME_EXCLUDED_ROUTES), so without them the tokens resolve light against
+  // the app's black backdrop.
   component: () => (
-    <div className="rmhmusic-theme">
+    <div className="app-theme rmhmusic-theme">
       <Outlet />
     </div>
   ),

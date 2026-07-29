@@ -145,21 +145,21 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
   const pipSupported = typeof document !== 'undefined' && document.pictureInPictureEnabled;
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2 border-b border-(--rmhtube-border) bg-(--rmhtube-bg-subtle)">
+    <div className="flex items-center gap-3 px-4 py-2 border-b border-(--app-border) bg-(--app-bg-subtle)">
       {/* Play/Pause — visible to all */}
       <button
         onClick={handlePlayPause}
-        className="shrink-0 rounded-full p-2 transition-colors bg-(--rmhtube-accent) text-(--rmhtube-accent-fg) hover:bg-(--rmhtube-accent-hover)"
+        className="shrink-0 rounded-full p-2 transition-colors bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
       >
         {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
       </button>
 
       {/* Now playing title */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate text-(--rmhtube-text)">
+        <p className="text-sm font-medium truncate text-(--app-text)">
           {currentItem.title}
         </p>
-        <p className="text-xs text-(--rmhtube-text-dim)">
+        <p className="text-xs text-(--app-text-dim)">
           {formatDuration(currentTime)} / {formatDuration(duration)}
         </p>
       </div>
@@ -168,7 +168,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
       <div className="shrink-0 flex items-center gap-1.5">
         <button
           onClick={handleMuteToggle}
-          className="rounded-md p-2 transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
+          className="rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
           title={muted ? t("unmute", { defaultValue: "Unmute" }) : t("mute", { defaultValue: "Mute" })}
         >
           <VolumeIcon className="h-4 w-4" />
@@ -180,7 +180,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
           step={0.05}
           value={muted ? 0 : masterVolume}
           onChange={handleVolumeChange}
-          className="w-20 h-1 accent-(--rmhtube-accent) cursor-pointer"
+          className="w-20 h-1 accent-(--app-accent) cursor-pointer"
           title={t("volume-pct", { defaultValue: "Volume: {{pct}}%", pct: Math.round((muted ? 0 : masterVolume) * 100) })}
         />
       </div>
@@ -190,8 +190,8 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
         onClick={handleCaptionsToggle}
         className={`shrink-0 rounded-md p-2 transition-colors ${
           captionsEnabled
-            ? 'text-(--rmhtube-accent) bg-(--rmhtube-accent-dim)'
-            : 'text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)'
+            ? 'text-(--app-accent) bg-(--app-accent-dim)'
+            : 'text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)'
         }`}
         title={captionsEnabled ? t("disable-captions", { defaultValue: "Disable captions" }) : t("enable-captions", { defaultValue: "Enable captions" })}
       >
@@ -205,8 +205,8 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
           onDoubleClick={isLeader ? handleSpeedCycle : undefined}
           className={`rounded-md p-2 transition-colors flex items-center gap-1 ${
             currentSpeed !== 1
-              ? 'text-(--rmhtube-accent) bg-(--rmhtube-accent-dim)'
-              : 'text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)'
+              ? 'text-(--app-accent) bg-(--app-accent-dim)'
+              : 'text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)'
           }`}
           title={isLeader ? t("speed-title-leader", { defaultValue: "Playback speed: {{speed}}x (click to change)", speed: currentSpeed }) : t("speed-title", { defaultValue: "Playback speed: {{speed}}x", speed: currentSpeed })}
         >
@@ -216,15 +216,15 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
 
         {/* Speed dropdown — visible to all, handler guards permissions */}
         {showSpeedMenu && (
-          <div className="absolute bottom-full mb-1 right-0 z-50 rounded-lg border border-(--rmhtube-border) bg-(--rmhtube-surface) shadow-lg py-1 min-w-25">
+          <div className="absolute bottom-full mb-1 right-0 z-50 rounded-lg border border-(--app-border) bg-(--app-surface) shadow-lg py-1 min-w-25">
             {PLAYBACK_SPEEDS.map((speed) => (
               <button
                 key={speed}
                 onClick={() => handleSpeedSelect(speed)}
                 className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
                   speed === currentSpeed
-                    ? 'text-(--rmhtube-accent) bg-(--rmhtube-accent-dim) font-medium'
-                    : 'text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)'
+                    ? 'text-(--app-accent) bg-(--app-accent-dim) font-medium'
+                    : 'text-(--app-text) hover:bg-(--app-surface-hover)'
                 }`}
               >
                 {speed}x
@@ -238,7 +238,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
       {pipSupported && (
         <button
           onClick={handlePiP}
-          className="shrink-0 rounded-md p-2 transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
+          className="shrink-0 rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
           title={t("picture-in-picture", { defaultValue: "Picture-in-Picture" })}
         >
           <PictureInPicture2 className="h-4 w-4" />
@@ -248,7 +248,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
       {/* Fullscreen toggle — always visible */}
       <button
         onClick={handleFullscreenToggle}
-        className="shrink-0 rounded-md p-2 transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
+        className="shrink-0 rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
         title={isFullscreen ? t("exit-fullscreen", { defaultValue: "Exit fullscreen" }) : t("fullscreen", { defaultValue: "Fullscreen" })}
       >
         {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
@@ -257,7 +257,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
       {/* Skip — visible to all */}
       <button
         onClick={handleSkip}
-        className="shrink-0 rounded-md p-2 transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
+        className="shrink-0 rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
         title={t("skip-to-next", { defaultValue: "Skip to next" })}
       >
         <SkipForward className="h-4 w-4" />

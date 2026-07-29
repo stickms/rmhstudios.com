@@ -69,10 +69,10 @@ function SentenceWithEdits({
           return (
             <span key={wi}>
               {wi > 0 && ' '}
-              <span className="inline-flex items-center gap-0.5 rounded bg-(--rmhbox-rare-dim) px-1 py-0.5 text-[inherit]">
-                <span className="line-through text-(--rmhbox-danger)">{edit.originalWord}</span>
-                <span className="text-(--rmhbox-text-muted) text-[0.75em]">→</span>
-                <span className="text-(--rmhbox-success) font-medium">{edit.newWord}</span>
+              <span className="inline-flex items-center gap-0.5 rounded bg-(--app-rare-dim) px-1 py-0.5 text-[inherit]">
+                <span className="line-through text-(--app-danger)">{edit.originalWord}</span>
+                <span className="text-(--app-text-muted) text-[0.75em]">→</span>
+                <span className="text-(--app-success) font-medium">{edit.newWord}</span>
               </span>
             </span>
           );
@@ -106,11 +106,11 @@ export default function UndercoverEditorHistoryDetail({
     <div className="space-y-4" data-testid="undercover-editor-history-detail">
       {/* Game Settings */}
       {gameLog.initialState && (
-        <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3">
-          <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase mb-1">
+        <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-3">
+          <h4 className="text-xs font-semibold text-(--app-text-muted) uppercase mb-1">
             {t("game-settings", { defaultValue: "Game Settings" })}
           </h4>
-          <div className="flex flex-wrap gap-3 text-xs text-(--rmhbox-text-muted)">
+          <div className="flex flex-wrap gap-3 text-xs text-(--app-text-muted)">
             {gameLog.initialState.totalSteps != null && (
               <span>{t("steps-value", { defaultValue: "Steps: {{count}}", count: gameLog.initialState.totalSteps })}</span>
             )}
@@ -125,9 +125,9 @@ export default function UndercoverEditorHistoryDetail({
       {storyReveals.map((reveal, idx) => (
         <div
           key={reveal.storyId}
-          className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4"
+          className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4"
         >
-          <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-3">
+          <h4 className="text-sm font-semibold text-(--app-text-muted) mb-3">
             📖 {t("story-number", { defaultValue: "Story {{number}}", number: idx + 1 })}
           </h4>
 
@@ -139,16 +139,16 @@ export default function UndercoverEditorHistoryDetail({
               const authorLabel = s.authorName || getName(s.authorUserId);
 
               return (
-                <div key={i} className="rounded-lg bg-(--rmhbox-surface) p-3">
-                  <p className="text-sm leading-relaxed text-(--rmhbox-text)">
+                <div key={i} className="rounded-lg bg-(--app-surface) p-3">
+                  <p className="text-sm leading-relaxed text-(--app-text)">
                     <SentenceWithEdits sentence={s} edits={sentenceEdits} />
                   </p>
                   <p className={`mt-1 text-[10px] ${
-                    isMe ? 'text-(--rmhbox-accent) font-semibold' : 'text-(--rmhbox-text-muted)'
+                    isMe ? 'text-(--app-accent) font-semibold' : 'text-(--app-text-muted)'
                   }`}>
                     — {authorLabel} · {t("round-number", { defaultValue: "Round {{number}}", number: s.roundNumber })}
                     {sentenceEdits.length > 0 && (
-                      <span className="text-(--rmhbox-rare)"> · {t("edit-count", { defaultValue: "{{count}} edit(s)", count: sentenceEdits.length })}</span>
+                      <span className="text-(--app-rare)"> · {t("edit-count", { defaultValue: "{{count}} edit(s)", count: sentenceEdits.length })}</span>
                     )}
                   </p>
                 </div>
@@ -158,10 +158,10 @@ export default function UndercoverEditorHistoryDetail({
 
           {/* Editor reveal */}
           <div className="text-sm">
-            <p className="text-(--rmhbox-text)">
+            <p className="text-(--app-text)">
               {t("editor-label", { defaultValue: "Editor:" })}{' '}
               <span className={`font-bold ${
-                reveal.editorUserId === currentUserId ? 'text-(--rmhbox-accent)' : 'text-(--rmhbox-rare)'
+                reveal.editorUserId === currentUserId ? 'text-(--app-accent)' : 'text-(--app-rare)'
               }`}>
                 {reveal.editorName}
               </span>
@@ -171,8 +171,8 @@ export default function UndercoverEditorHistoryDetail({
       ))}
 
       {/* Final Scores */}
-      <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
-        <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-2">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
+      <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4">
+        <h4 className="text-sm font-semibold text-(--app-text-muted) mb-2">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
         <div className="space-y-1">
           {players
             .sort((a, b) => a.rank - b.rank)
@@ -181,8 +181,8 @@ export default function UndercoverEditorHistoryDetail({
                 key={p.userId}
                 className={`flex justify-between text-sm ${
                   p.userId === currentUserId
-                    ? 'text-(--rmhbox-accent) font-semibold'
-                    : 'text-(--rmhbox-text)'
+                    ? 'text-(--app-accent) font-semibold'
+                    : 'text-(--app-text)'
                 }`}
               >
                 <span>#{p.rank} {p.userName}</span>

@@ -1,10 +1,12 @@
 {
   "chat-placeholder": "Obrolan...",
+  "dismiss": "Dismiss",
   "failed-to-load-media": "Gagal memuat media",
   "game-crashed": "Permainan mogok",
   "game-crashed-named": "{{gameName}} mogok",
   "loading": "Memuat…",
   "no-messages-yet": "Belum ada pesan",
+  "notifications": "Notifications",
   "react": "Reaksi",
   "return-home": "Kembali ke Beranda",
   "try-again": "Coba Lagi",

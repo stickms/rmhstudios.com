@@ -179,7 +179,7 @@ export default function RmhTypeRoom() {
         <RmhTypeHeader backLabel={t("back", { defaultValue: "Back" })} backHref="/rmhtype" />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-pulse text-(--rmhtype-text-muted)">
+            <div className="animate-pulse text-(--app-text-muted)">
               {connectionStatus === 'connecting' ? t("connecting", { defaultValue: "Connecting..." }) : t("joining-room", { defaultValue: "Joining room..." })}
             </div>
           </div>
@@ -209,14 +209,14 @@ export default function RmhTypeRoom() {
           {/* WAITING — Lobby */}
           {room.status === 'WAITING' && (
             <>
-              <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
+              <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold">{t("players-count", { defaultValue: "Players ({{count}}/8)", count: room.players.length })}</h2>
                   <div className="flex items-center gap-2">
                     {isHost && (
                       <button
                         onClick={handleTogglePublic}
-                        className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg transition-colors bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:text-(--rmhtype-text)"
+                        className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg transition-colors bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
                       >
                         {room.isPublic ? <Globe className="h-3.5 w-3.5" /> : <GlobeLock className="h-3.5 w-3.5" />}
                         {room.isPublic ? t("public", { defaultValue: "Public" }) : t("private", { defaultValue: "Private" })}
@@ -224,7 +224,7 @@ export default function RmhTypeRoom() {
                     )}
                     <button
                       onClick={handleCopyCode}
-                      className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:text-(--rmhtype-text)"
+                      className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
                     >
                       <Copy className="h-3.5 w-3.5" />
                       {roomCode}
@@ -233,26 +233,26 @@ export default function RmhTypeRoom() {
                 </div>
                 <div className="space-y-2">
                   {room.players.map((p) => (
-                    <div key={p.userId} className="flex items-center justify-between p-3 rounded-lg bg-(--rmhtype-bg)">
+                    <div key={p.userId} className="flex items-center justify-between p-3 rounded-lg bg-(--app-bg)">
                       <div className="flex items-center gap-2">
-                        {p.isHost && <Crown className="h-4 w-4 text-(--rmhtype-accent)" />}
+                        {p.isHost && <Crown className="h-4 w-4 text-(--app-accent)" />}
                         <span className="font-medium">{p.userName}</span>
-                        {p.userId === room.myUserId && <span className="text-xs text-(--rmhtype-text-dim)">{t("you", { defaultValue: "(you)" })}</span>}
+                        {p.userId === room.myUserId && <span className="text-xs text-(--app-text-dim)">{t("you", { defaultValue: "(you)" })}</span>}
                       </div>
                       <div className="flex items-center gap-2">
-                        {p.isReady && <Check className="h-4 w-4 text-(--rmhtype-success)" />}
+                        {p.isReady && <Check className="h-4 w-4 text-(--app-success)" />}
                         {isHost && p.userId !== room.myUserId && (
                           <div className="flex gap-1">
                             <button
                               onClick={() => handleKick(p.userId)}
-                              className="rounded p-1 text-(--rmhtype-text-dim) hover:text-(--rmhtype-danger) transition-colors"
+                              className="rounded p-1 text-(--app-text-dim) hover:text-(--app-danger) transition-colors"
                               title={t("kick", { defaultValue: "Kick" })}
                             >
                               <UserX className="h-3.5 w-3.5" />
                             </button>
                             <button
                               onClick={() => setBanTarget({ userId: p.userId, userName: p.userName })}
-                              className="rounded p-1 text-(--rmhtype-text-dim) hover:text-(--rmhtype-danger) transition-colors"
+                              className="rounded p-1 text-(--app-text-dim) hover:text-(--app-danger) transition-colors"
                               title={t("ban", { defaultValue: "Ban" })}
                             >
                               <Ban className="h-3.5 w-3.5" />
@@ -270,8 +270,8 @@ export default function RmhTypeRoom() {
                       onClick={handleReady}
                       className={`flex-1 py-2.5 rounded-lg font-semibold transition-colors ${
                         myPlayer?.isReady
-                          ? 'bg-(--rmhtype-success) text-white'
-                          : 'bg-(--rmhtype-surface-hover) text-(--rmhtype-text) hover:bg-(--rmhtype-accent) hover:text-white'
+                          ? 'bg-(--app-success) text-white'
+                          : 'bg-(--app-surface-hover) text-(--app-text) hover:bg-(--app-accent) hover:text-white'
                       }`}
                     >
                       {myPlayer?.isReady ? t("ready-done", { defaultValue: "Ready!" }) : t("ready-up", { defaultValue: "Ready Up" })}
@@ -281,14 +281,14 @@ export default function RmhTypeRoom() {
                     <button
                       onClick={handleStart}
                       disabled={!allReady}
-                      className="flex-1 py-2.5 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhtype-accent) hover:bg-(--rmhtype-accent-hover)"
+                      className="flex-1 py-2.5 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
                     >
                       {t("start-game", { defaultValue: "Start Game" })}
                     </button>
                   )}
                 </div>
 
-                <div className="mt-4 p-3 rounded-lg bg-(--rmhtype-bg) text-sm text-(--rmhtype-text-muted)">
+                <div className="mt-4 p-3 rounded-lg bg-(--app-bg) text-sm text-(--app-text-muted)">
                   {isHost ? (
                     <div className="space-y-3">
                       <div>
@@ -300,8 +300,8 @@ export default function RmhTypeRoom() {
                               onClick={() => emit(C2S.ROOM_UPDATE_SETTINGS, { settings: { difficulty: d } })}
                               className={`flex-1 py-1.5 rounded text-xs font-medium capitalize transition-colors ${
                                 room.settings.difficulty === d
-                                  ? 'bg-(--rmhtype-accent) text-white'
-                                  : 'bg-(--rmhtype-surface) text-(--rmhtype-text-muted) hover:bg-(--rmhtype-surface-hover)'
+                                  ? 'bg-(--app-accent) text-white'
+                                  : 'bg-(--app-surface) text-(--app-text-muted) hover:bg-(--app-surface-hover)'
                               }`}
                             >
                               {d}
@@ -318,8 +318,8 @@ export default function RmhTypeRoom() {
                               onClick={() => emit(C2S.ROOM_UPDATE_SETTINGS, { settings: { passageLength: l } })}
                               className={`flex-1 py-1.5 rounded text-xs font-medium capitalize transition-colors ${
                                 room.settings.passageLength === l
-                                  ? 'bg-(--rmhtype-accent) text-white'
-                                  : 'bg-(--rmhtype-surface) text-(--rmhtype-text-muted) hover:bg-(--rmhtype-surface-hover)'
+                                  ? 'bg-(--app-accent) text-white'
+                                  : 'bg-(--app-surface) text-(--app-text-muted) hover:bg-(--app-surface-hover)'
                               }`}
                             >
                               {l}
@@ -335,7 +335,7 @@ export default function RmhTypeRoom() {
                           max={10}
                           value={room.totalRounds}
                           onChange={(e) => emit(C2S.ROOM_UPDATE_SETTINGS, { settings: { rounds: Number(e.target.value) } })}
-                          className="w-full accent-(--rmhtype-accent)"
+                          className="w-full accent-(--app-accent)"
                         />
                       </div>
                     </div>
@@ -343,15 +343,15 @@ export default function RmhTypeRoom() {
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div>
                         <div className="text-xs uppercase tracking-wide">{t("difficulty", { defaultValue: "Difficulty" })}</div>
-                        <div className="font-medium text-(--rmhtype-text) capitalize">{room.settings.difficulty}</div>
+                        <div className="font-medium text-(--app-text) capitalize">{room.settings.difficulty}</div>
                       </div>
                       <div>
                         <div className="text-xs uppercase tracking-wide">{t("length", { defaultValue: "Length" })}</div>
-                        <div className="font-medium text-(--rmhtype-text) capitalize">{room.settings.passageLength}</div>
+                        <div className="font-medium text-(--app-text) capitalize">{room.settings.passageLength}</div>
                       </div>
                       <div>
                         <div className="text-xs uppercase tracking-wide">{t("rounds", { defaultValue: "Rounds" })}</div>
-                        <div className="font-medium text-(--rmhtype-text)">{room.totalRounds}</div>
+                        <div className="font-medium text-(--app-text)">{room.totalRounds}</div>
                       </div>
                     </div>
                   )}
@@ -362,7 +362,7 @@ export default function RmhTypeRoom() {
                   <div className="mt-4 flex items-center justify-end">
                     <button
                       onClick={() => setShowBanList(true)}
-                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:text-(--rmhtype-text)"
+                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
                     >
                       <Ban className="h-3.5 w-3.5" />
                       {t("banned-count", { defaultValue: "{{count}} banned", count: room.bannedUsers.length })}
@@ -372,7 +372,7 @@ export default function RmhTypeRoom() {
               </div>
 
               {/* Chat */}
-              <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) overflow-hidden" style={{ height: '16rem' }}>
+              <div className="rounded-xl border border-(--app-border) bg-(--app-surface) overflow-hidden" style={{ height: '16rem' }}>
                 <ChatPanel
                   messages={room.chat as ChatPanelMessage[]}
                   onSendMessage={handleSendChat}
@@ -391,11 +391,11 @@ export default function RmhTypeRoom() {
           {room.status === 'COUNTDOWN' && (
             <div className="flex items-center justify-center py-20">
               <div className="text-center">
-                <div className="text-8xl font-bold text-(--rmhtype-accent) animate-pulse">
+                <div className="text-8xl font-bold text-(--app-accent) animate-pulse">
                   {room.countdownSeconds ?? '...'}
                 </div>
-                <p className="mt-4 text-(--rmhtype-text-muted)">{t("get-ready", { defaultValue: "Get ready to type!" })}</p>
-                <p className="text-sm text-(--rmhtype-text-dim)">
+                <p className="mt-4 text-(--app-text-muted)">{t("get-ready", { defaultValue: "Get ready to type!" })}</p>
+                <p className="text-sm text-(--app-text-dim)">
                   {t("round-of", { defaultValue: "Round {{current}} of {{total}}", current: room.currentRound, total: room.totalRounds })}
                 </p>
               </div>
@@ -405,12 +405,12 @@ export default function RmhTypeRoom() {
           {/* TYPING */}
           {room.status === 'TYPING' && room.passage && (
             <>
-              <div className="shrink-0 text-sm text-(--rmhtype-text-muted) text-center rmhtype-round-info">
+              <div className="shrink-0 text-sm text-(--app-text-muted) text-center rmhtype-round-info">
                 {t("round-of", { defaultValue: "Round {{current}} of {{total}}", current: room.currentRound, total: room.totalRounds })}
               </div>
 
               {/* Passage display — fills remaining space, scrolls internally */}
-              <div ref={passageRef} className="flex-1 min-h-0 rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6 rmhtype-passage-scroll">
+              <div ref={passageRef} className="flex-1 min-h-0 rounded-xl border border-(--app-border) bg-(--app-surface) p-6 rmhtype-passage-scroll">
                 <div className="rmhtype-passage select-none">
                   {[...room.passage].map((char, i) => {
                     let className = 'rmhtype-char-untyped';
@@ -437,7 +437,7 @@ export default function RmhTypeRoom() {
                 onCopy={(e) => e.preventDefault()}
                 onCut={(e) => e.preventDefault()}
                 disabled={finished}
-                className="shrink-0 w-full px-4 py-3 rounded-lg font-mono border border-(--rmhtype-border) bg-(--rmhtype-bg) text-(--rmhtype-text) outline-none focus:ring-1 focus:ring-(--rmhtype-accent) rmhtype-typing-input"
+                className="shrink-0 w-full px-4 py-3 rounded-lg font-mono border border-(--app-border) bg-(--app-bg) text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent) rmhtype-typing-input"
                 autoFocus
                 placeholder={finished ? t("waiting-for-others", { defaultValue: "Waiting for others..." }) : t("start-typing", { defaultValue: "Start typing..." })}
               />
@@ -446,17 +446,17 @@ export default function RmhTypeRoom() {
               <div className="shrink-0 space-y-2 rmhtype-progress-section">
                 {room.progress.map((p) => (
                   <div key={p.userId} className="flex items-center gap-3">
-                    <span className="text-sm font-medium w-24 truncate text-(--rmhtype-text-muted)">{p.userName}</span>
+                    <span className="text-sm font-medium w-24 truncate text-(--app-text-muted)">{p.userName}</span>
                     <div className="flex-1 rmhtype-progress-bar">
                       <div
                         className="rmhtype-progress-fill"
                         style={{ width: `${p.totalChars > 0 ? (p.charsTyped / p.totalChars) * 100 : 0}%` }}
                       />
                     </div>
-                    <span className="text-sm font-mono w-16 text-right text-(--rmhtype-text-muted)">
+                    <span className="text-sm font-mono w-16 text-right text-(--app-text-muted)">
                       {p.wpm} WPM
                     </span>
-                    {p.finished && <Check className="h-4 w-4 text-(--rmhtype-success)" />}
+                    {p.finished && <Check className="h-4 w-4 text-(--app-success)" />}
                   </div>
                 ))}
               </div>
@@ -465,30 +465,30 @@ export default function RmhTypeRoom() {
 
           {/* ROUND_RESULTS */}
           {room.status === 'ROUND_RESULTS' && room.roundResults && (
-            <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
+            <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
               <h2 className="text-xl font-semibold mb-4 text-center">
                 {t("round-results", { defaultValue: "Round {{round}} Results", round: room.roundResults.round })}
               </h2>
               <div className="space-y-2">
                 {room.roundResults.rankings.map((r, i) => (
                   <div key={r.userId} className={`flex items-center justify-between p-3 rounded-lg ${
-                    i === 0 ? 'bg-(--rmhtype-accent-dim) border border-(--rmhtype-accent)' : 'bg-(--rmhtype-bg)'
+                    i === 0 ? 'bg-(--app-accent-dim) border border-(--app-accent)' : 'bg-(--app-bg)'
                   }`}>
                     <div className="flex items-center gap-3">
-                      <span className="text-lg font-bold w-8 text-center text-(--rmhtype-text-dim)">#{r.rank}</span>
+                      <span className="text-lg font-bold w-8 text-center text-(--app-text-dim)">#{r.rank}</span>
                       <span className="font-medium">{r.userName}</span>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-(--rmhtype-text-muted)">
+                    <div className="flex items-center gap-4 text-sm text-(--app-text-muted)">
                       <span>{r.wpm} WPM</span>
                       <span>{r.accuracy}%</span>
-                      <span className="font-bold text-(--rmhtype-accent)">{r.score} pts</span>
+                      <span className="font-bold text-(--app-accent)">{r.score} pts</span>
                     </div>
                   </div>
                 ))}
               </div>
               {!room.roundResults.isLastRound && (
-                <p className="text-center text-sm mt-4 text-(--rmhtype-text-muted)">
-                  {t("next-round-starting", { defaultValue: "Next round starting in" })} <span className="font-bold text-(--rmhtype-accent)">{nextRoundCountdown ?? '...'}</span>...
+                <p className="text-center text-sm mt-4 text-(--app-text-muted)">
+                  {t("next-round-starting", { defaultValue: "Next round starting in" })} <span className="font-bold text-(--app-accent)">{nextRoundCountdown ?? '...'}</span>...
                 </p>
               )}
             </div>
@@ -496,20 +496,20 @@ export default function RmhTypeRoom() {
 
           {/* FINAL_RESULTS */}
           {room.status === 'FINAL_RESULTS' && room.finalResults && (
-            <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
+            <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
               <h2 className="text-2xl font-bold mb-6 text-center">{t("final-results", { defaultValue: "Final Results" })}</h2>
               <div className="space-y-2">
                 {room.finalResults.rankings.map((r, i) => (
                   <div key={r.userId} className={`flex items-center justify-between p-4 rounded-lg ${
-                    i === 0 ? 'bg-(--rmhtype-accent-dim) border-2 border-(--rmhtype-accent)' : 'bg-(--rmhtype-bg)'
+                    i === 0 ? 'bg-(--app-accent-dim) border-2 border-(--app-accent)' : 'bg-(--app-bg)'
                   }`}>
                     <div className="flex items-center gap-3">
                       <span className="text-xl font-bold w-10 text-center">{i === 0 ? '🏆' : `#${r.rank}`}</span>
                       <span className="font-semibold text-lg">{r.userName}</span>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-(--rmhtype-accent)">{r.totalScore}</div>
-                      <div className="text-xs text-(--rmhtype-text-muted)">{t("total-score", { defaultValue: "Total Score" })}</div>
+                      <div className="text-2xl font-bold text-(--app-accent)">{r.totalScore}</div>
+                      <div className="text-xs text-(--app-text-muted)">{t("total-score", { defaultValue: "Total Score" })}</div>
                     </div>
                   </div>
                 ))}
@@ -517,7 +517,7 @@ export default function RmhTypeRoom() {
               {isHost && (
                 <button
                   onClick={handleStart}
-                  className="w-full mt-6 py-3 rounded-lg font-semibold text-white transition-colors bg-(--rmhtype-accent) hover:bg-(--rmhtype-accent-hover)"
+                  className="w-full mt-6 py-3 rounded-lg font-semibold text-white transition-colors bg-(--app-accent) hover:bg-(--app-accent-hover)"
                 >
                   {t("play-again", { defaultValue: "Play Again" })}
                 </button>
@@ -532,9 +532,9 @@ export default function RmhTypeRoom() {
       {banTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60" onClick={() => { setBanTarget(null); setBanReason(''); }} />
-          <div className="relative w-full max-w-sm rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6 shadow-xl">
+          <div className="relative w-full max-w-sm rounded-xl border border-(--app-border) bg-(--app-surface) p-6 shadow-xl">
             <h3 className="text-lg font-semibold mb-2">{t("ban-confirm-title", { defaultValue: "Ban {{name}}?", name: banTarget.userName })}</h3>
-            <p className="text-sm text-(--rmhtype-text-muted) mb-4">
+            <p className="text-sm text-(--app-text-muted) mb-4">
               {t("ban-confirm-body", { defaultValue: "This player will be removed and cannot rejoin this room." })}
             </p>
             <input
@@ -543,18 +543,18 @@ export default function RmhTypeRoom() {
               onChange={(e) => setBanReason(e.target.value)}
               placeholder={t("ban-reason-placeholder", { defaultValue: "Reason (optional)" })}
               maxLength={200}
-              className="w-full px-3 py-2 rounded-lg text-sm border border-(--rmhtype-border) bg-(--rmhtype-bg) text-(--rmhtype-text) placeholder:text-(--rmhtype-text-dim) outline-none focus:ring-1 focus:ring-(--rmhtype-accent) mb-4"
+              className="w-full px-3 py-2 rounded-lg text-sm border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent) mb-4"
             />
             <div className="flex gap-2">
               <button
                 onClick={() => { setBanTarget(null); setBanReason(''); }}
-                className="flex-1 py-2 rounded-lg font-medium text-sm transition-colors bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:text-(--rmhtype-text)"
+                className="flex-1 py-2 rounded-lg font-medium text-sm transition-colors bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
               >
                 {t("cancel", { defaultValue: "Cancel" })}
               </button>
               <button
                 onClick={handleBanConfirm}
-                className="flex-1 py-2 rounded-lg font-medium text-sm text-white transition-colors bg-(--rmhtype-danger) hover:opacity-90"
+                className="flex-1 py-2 rounded-lg font-medium text-sm text-white transition-colors bg-(--app-danger) hover:opacity-90"
               >
                 {t("ban", { defaultValue: "Ban" })}
               </button>

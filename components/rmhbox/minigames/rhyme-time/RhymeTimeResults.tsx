@@ -54,11 +54,11 @@ interface RhymeTimeResultsProps {
 }
 
 const RARITY_CONFIG_BASE: Record<RarityTier, { color: string; bg: string }> = {
-  rare:           { color: 'text-(--rmhbox-rare)',       bg: 'bg-(--rmhbox-rare)/20 border-(--rmhbox-rare)/40' },
-  uncommon:       { color: 'text-(--rmhbox-info)',       bg: 'bg-(--rmhbox-info)/20 border-(--rmhbox-info)/40' },
-  common:         { color: 'text-(--rmhbox-text-muted)', bg: 'bg-(--rmhbox-text-muted)/20 border-(--rmhbox-text-muted)/40' },
-  does_not_rhyme: { color: 'text-(--rmhbox-danger)',     bg: 'bg-(--rmhbox-danger)/20 border-(--rmhbox-danger)/40' },
-  not_in_dict:    { color: 'text-(--rmhbox-text-dim)',   bg: 'bg-(--rmhbox-text-dim)/10 border-(--rmhbox-text-dim)/30' },
+  rare:           { color: 'text-(--app-rare)',       bg: 'bg-(--app-rare)/20 border-(--app-rare)/40' },
+  uncommon:       { color: 'text-(--app-info)',       bg: 'bg-(--app-info)/20 border-(--app-info)/40' },
+  common:         { color: 'text-(--app-text-muted)', bg: 'bg-(--app-text-muted)/20 border-(--app-text-muted)/40' },
+  does_not_rhyme: { color: 'text-(--app-danger)',     bg: 'bg-(--app-danger)/20 border-(--app-danger)/40' },
+  not_in_dict:    { color: 'text-(--app-text-dim)',   bg: 'bg-(--app-text-dim)/10 border-(--app-text-dim)/30' },
 };
 
 const TIER_ORDER: RarityTier[] = ['rare', 'uncommon', 'common', 'does_not_rhyme', 'not_in_dict'];
@@ -100,7 +100,7 @@ export default function RhymeTimeResults({
 
   return (
     <motion.div
-      className="mx-auto flex w-full max-w-2xl flex-col gap-5 p-4 text-(--rmhbox-text)"
+      className="mx-auto flex w-full max-w-2xl flex-col gap-5 p-4 text-(--app-text)"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -108,8 +108,8 @@ export default function RhymeTimeResults({
       {/* Header */}
       <motion.div variants={itemVariants} className="text-center">
         <h2 className="text-2xl font-bold">{t("round-results-heading", { defaultValue: "Round {{number}} Results", number: roundNumber })}</h2>
-        <p className="mt-1 text-sm text-(--rmhbox-text-muted)">
-          {t("root-word-label", { defaultValue: "Root word:" })} <span className="font-semibold text-(--rmhbox-accent)">{rootWord}</span>
+        <p className="mt-1 text-sm text-(--app-text-muted)">
+          {t("root-word-label", { defaultValue: "Root word:" })} <span className="font-semibold text-(--app-accent)">{rootWord}</span>
         </p>
       </motion.div>
 
@@ -121,7 +121,7 @@ export default function RhymeTimeResults({
           <motion.div
             key={tier}
             variants={itemVariants}
-            className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-3"
+            className="rounded-xl border border-(--app-border) bg-(--app-surface) p-3"
           >
             <h3 className={`mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider ${config.color}`}>
               {tier === 'rare' && <Sparkles className="h-4 w-4" />}
@@ -134,15 +134,15 @@ export default function RhymeTimeResults({
                   <li
                     key={w.word}
                     className={`flex gap-3 items-center justify-between rounded-lg px-3 py-1.5 text-sm ${
-                      isOwn ? 'bg-(--rmhbox-accent)/10 ring-1 ring-(--rmhbox-accent)/30' : ''
+                      isOwn ? 'bg-(--app-accent)/10 ring-1 ring-(--app-accent)/30' : ''
                     } ${isInvalid ? 'opacity-60' : ''}`}
                   >
                     <div className="flex items-center gap-2">
-                      <span className={`font-semibold ${tier === 'does_not_rhyme' ? 'line-through text-(--rmhbox-danger)' : ''} ${tier === 'not_in_dict' ? 'text-(--rmhbox-text-dim)' : ''}`}>
+                      <span className={`font-semibold ${tier === 'does_not_rhyme' ? 'line-through text-(--app-danger)' : ''} ${tier === 'not_in_dict' ? 'text-(--app-text-dim)' : ''}`}>
                         {w.word}
                       </span>
                       {w.multiSyllable && (
-                        <span className="rounded-full bg-(--rmhbox-warning)/20 px-1.5 py-0.5 text-[10px] font-medium text-(--rmhbox-warning) border border-(--rmhbox-warning)/30">
+                        <span className="rounded-full bg-(--app-warning)/20 px-1.5 py-0.5 text-[10px] font-medium text-(--app-warning) border border-(--app-warning)/30">
                           {t("multi-syllable", { defaultValue: "multi" })}
                         </span>
                       )}
@@ -151,20 +151,20 @@ export default function RhymeTimeResults({
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="flex items-center gap-1.5 text-xs text-(--rmhbox-text-muted)">
+                      <span className="flex items-center gap-1.5 text-xs text-(--app-text-muted)">
                         {w.submitters.map((s, si) => (
                           <span key={s.userId} className="inline-flex items-center gap-0.5">
-                            {si > 0 && <span className="text-(--rmhbox-text-dim)">,</span>}
-                            <span className={s.userId === currentUserId ? 'font-semibold text-(--rmhbox-accent)' : ''}>
+                            {si > 0 && <span className="text-(--app-text-dim)">,</span>}
+                            <span className={s.userId === currentUserId ? 'font-semibold text-(--app-accent)' : ''}>
                               {s.userName}
                             </span>
                             {s.speedBonus && (
-                              <span title={t("speed-bonus", { defaultValue: "Speed bonus" })}><Zap className="inline h-3 w-3 text-(--rmhbox-warning)" /></span>
+                              <span title={t("speed-bonus", { defaultValue: "Speed bonus" })}><Zap className="inline h-3 w-3 text-(--app-warning)" /></span>
                             )}
                           </span>
                         ))}
                       </span>
-                      <span className={`font-mono font-semibold ${w.points < 0 ? 'text-(--rmhbox-danger)' : w.points === 0 ? 'text-(--rmhbox-text-dim)' : 'text-(--rmhbox-accent)'}`}>
+                      <span className={`font-mono font-semibold ${w.points < 0 ? 'text-(--app-danger)' : w.points === 0 ? 'text-(--app-text-dim)' : 'text-(--app-accent)'}`}>
                         {w.points > 0 ? '+' : ''}{w.points}
                       </span>
                     </div>
@@ -179,14 +179,14 @@ export default function RhymeTimeResults({
       {/* Per-player breakdown */}
       <motion.div
         variants={itemVariants}
-        className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-3"
+        className="rounded-xl border border-(--app-border) bg-(--app-surface) p-3"
       >
-        <h3 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
+        <h3 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-(--app-text-muted)">
           <Star className="h-4 w-4" /> {t("player-breakdown", { defaultValue: "Player Breakdown" })}
         </h3>
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-(--rmhbox-text-muted)">
+            <tr className="text-left text-(--app-text-muted)">
               <th className="pb-1.5 font-medium">{t("col-player", { defaultValue: "Player" })}</th>
               <th className="pb-1.5 text-right font-medium">{t("col-valid", { defaultValue: "Valid" })}</th>
               <th className="pb-1.5 text-right font-medium">{t("col-invalid", { defaultValue: "Invalid" })}</th>
@@ -199,13 +199,13 @@ export default function RhymeTimeResults({
               .map((p) => (
                 <tr
                   key={p.userId}
-                  className={`border-t border-(--rmhbox-border) ${
-                    p.userId === currentUserId ? 'text-(--rmhbox-accent)' : ''
+                  className={`border-t border-(--app-border) ${
+                    p.userId === currentUserId ? 'text-(--app-accent)' : ''
                   }`}
                 >
                   <td className="py-1 font-medium">{p.userName}</td>
-                  <td className="py-1 text-right font-mono text-(--rmhbox-success)">{p.validCount}</td>
-                  <td className="py-1 text-right font-mono text-(--rmhbox-danger)">{p.invalidCount}</td>
+                  <td className="py-1 text-right font-mono text-(--app-success)">{p.validCount}</td>
+                  <td className="py-1 text-right font-mono text-(--app-danger)">{p.invalidCount}</td>
                   <td className="py-1 text-right font-mono font-bold">{p.roundScore}</td>
                 </tr>
               ))}

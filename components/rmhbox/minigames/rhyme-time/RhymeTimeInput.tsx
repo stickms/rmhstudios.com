@@ -84,30 +84,30 @@ export default function RhymeTimeInput({
   return (
     <div className="flex w-full max-w-4xl gap-6">
       {/* Main panel */}
-      <div className="flex flex-1 flex-col items-center gap-6 text-(--rmhbox-text)">
+      <div className="flex flex-1 flex-col items-center gap-6 text-(--app-text)">
         {/* Timer bar */}
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-(--rmhbox-border)">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-(--app-border)">
           <div
             className="h-full rounded-full transition-all duration-1000 ease-linear"
             style={{
               width: `${timerRatio * 100}%`,
-              backgroundColor: timeRemaining <= 10 ? 'var(--rmhbox-danger)' : 'var(--rmhbox-accent)',
+              backgroundColor: timeRemaining <= 10 ? 'var(--app-danger)' : 'var(--app-accent)',
             }}
           />
         </div>
 
         {/* Timer text */}
-        <div className="flex items-center gap-2 text-sm text-(--rmhbox-text-muted)">
+        <div className="flex items-center gap-2 text-sm text-(--app-text-muted)">
           <Clock className="h-4 w-4" />
           <span className="font-mono font-semibold">{timeRemaining}s</span>
         </div>
 
         {/* Root word */}
         <div className="text-center">
-          <p className="text-xs uppercase tracking-wider text-(--rmhbox-text-muted)">
+          <p className="text-xs uppercase tracking-wider text-(--app-text-muted)">
             {t("rhyme-with", { defaultValue: "Rhyme with" })}
           </p>
-          <h2 className="mt-1 text-5xl font-extrabold text-(--rmhbox-accent)">{rootWord}</h2>
+          <h2 className="mt-1 text-5xl font-extrabold text-(--app-accent)">{rootWord}</h2>
         </div>
 
         {/* Input + submit */}
@@ -120,19 +120,19 @@ export default function RhymeTimeInput({
             onKeyDown={handleKeyDown}
             disabled={atLimit}
             placeholder={atLimit ? t("max-submissions-reached", { defaultValue: "Max submissions reached" }) : t("type-a-rhyming-word", { defaultValue: "Type a rhyming word..." })}
-            className="flex-1 rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) px-4 py-2 text-sm text-(--rmhbox-text) placeholder:text-(--rmhbox-text-muted) focus:outline-none focus:ring-2 focus:ring-(--rmhbox-accent) disabled:opacity-50"
+            className="flex-1 rounded-lg border border-(--app-border) bg-(--app-surface) px-4 py-2 text-sm text-(--app-text) placeholder:text-(--app-text-muted) focus:outline-none focus:ring-2 focus:ring-(--app-accent) disabled:opacity-50"
           />
           <button
             onClick={handleSubmit}
             disabled={atLimit || !value.trim()}
-            className="flex items-center gap-2 rounded-lg bg-(--rmhbox-accent) px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="flex items-center gap-2 rounded-lg bg-(--app-accent) px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             <Send className="h-4 w-4" /> {t("send", { defaultValue: "Send" })}
           </button>
         </div>
 
         {/* Submission count */}
-        <p className="text-xs text-(--rmhbox-text-muted)">
+        <p className="text-xs text-(--app-text-muted)">
           {mySubmissions.length} / {maxSubmissions}
         </p>
 
@@ -152,17 +152,17 @@ export default function RhymeTimeInput({
       </div>
 
       {/* Sidebar — live leaderboard */}
-      <aside className="hidden w-52 shrink-0 rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4 md:block">
-        <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
+      <aside className="hidden w-52 shrink-0 rounded-xl border border-(--app-border) bg-(--app-surface) p-4 md:block">
+        <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-(--app-text-muted)">
           <Users className="h-3.5 w-3.5" /> {t("submissions", { defaultValue: "Submissions" })}
         </h3>
         <ul className="space-y-1.5">
           {submissionCounts
             .sort((a, b) => b.count - a.count)
             .map((p) => (
-              <li key={p.userId} className="flex items-center justify-between text-sm text-(--rmhbox-text)">
+              <li key={p.userId} className="flex items-center justify-between text-sm text-(--app-text)">
                 <span className="truncate">{p.userName}</span>
-                <span className="font-mono text-(--rmhbox-text-muted)">{p.count}</span>
+                <span className="font-mono text-(--app-text-muted)">{p.count}</span>
               </li>
             ))}
         </ul>

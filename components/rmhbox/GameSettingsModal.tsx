@@ -54,16 +54,16 @@ export default function GameSettingsModal({
     <>
       {/* Backdrop */}
       <div
-        className="rmhbox-overlay fixed inset-0 z-60 bg-black/50"
+        className="app-overlay fixed inset-0 z-60 bg-black/50"
         onClick={onClose}
       />
 
       {/* Panel */}
       <div
-        className="rmhbox-modal fixed inset-x-4 top-1/2 z-70 mx-auto max-w-md -translate-y-1/2 rounded-xl border p-5 shadow-2xl"
+        className="app-modal fixed inset-x-4 top-1/2 z-70 mx-auto max-w-md -translate-y-1/2 rounded-xl border p-5 shadow-2xl"
         style={{
-          backgroundColor: 'var(--rmhbox-surface)',
-          borderColor: 'var(--rmhbox-border)',
+          backgroundColor: 'var(--app-surface)',
+          borderColor: 'var(--app-border)',
           maxHeight: '80vh',
           display: 'flex',
           flexDirection: 'column',
@@ -71,13 +71,13 @@ export default function GameSettingsModal({
       >
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-lg font-bold text-(--rmhbox-text)">
-            <Settings className="h-5 w-5 text-(--rmhbox-accent)" />
+          <h2 className="flex items-center gap-2 text-lg font-bold text-(--app-text)">
+            <Settings className="h-5 w-5 text-(--app-accent)" />
             {t("game-settings-title", { defaultValue: "{{displayName}} Settings", displayName })}
           </h2>
           <button
             onClick={onClose}
-            className="rounded p-1 text-(--rmhbox-text-muted) hover:text-(--rmhbox-text)"
+            className="rounded p-1 text-(--app-text-muted) hover:text-(--app-text)"
           >
             <X className="h-5 w-5" />
           </button>
@@ -85,7 +85,7 @@ export default function GameSettingsModal({
 
         {/* Subtitle for non-host */}
         {!editable && (
-          <p className="mb-3 text-xs text-(--rmhbox-text-muted)">
+          <p className="mb-3 text-xs text-(--app-text-muted)">
             {t("host-only-settings", { defaultValue: "Only the host can change game settings." })}
           </p>
         )}

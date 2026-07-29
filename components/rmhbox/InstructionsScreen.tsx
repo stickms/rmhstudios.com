@@ -47,11 +47,11 @@ export default function InstructionsScreen({
   const paused = timerInfo?.paused ?? false;
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-6 p-6 text-(--rmhbox-text)">
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-6 p-6 text-(--app-text)">
       {/* Timer bar — synced with server timer, respects pauses */}
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-(--rmhbox-border)">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-(--app-border)">
         <div
-          className={`h-full rounded-full ${paused ? 'bg-(--rmhbox-warning)' : 'bg-(--rmhbox-accent)'} ${paused ? '' : 'transition-all duration-1000 ease-linear'}`}
+          className={`h-full rounded-full ${paused ? 'bg-(--app-warning)' : 'bg-(--app-accent)'} ${paused ? '' : 'transition-all duration-1000 ease-linear'}`}
           style={{ width: `${(Math.max(0, remaining) / (total || 1)) * 100}%` }}
         />
       </div>
@@ -59,13 +59,13 @@ export default function InstructionsScreen({
       {/* Title + description */}
       <div className="text-center">
         <h2 className="text-3xl font-bold">{title}</h2>
-        <p className="mt-2 text-(--rmhbox-text-muted)">{description}</p>
+        <p className="mt-2 text-(--app-text-muted)">{description}</p>
       </div>
 
       {/* Rules */}
       {rules.length > 0 && (
         <div>
-          <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
+          <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--app-text-muted)">
             <BookOpen className="h-4 w-4" /> {t("rules", { defaultValue: "Rules" })}
           </h3>
           <ul className="list-inside list-disc space-y-1 text-sm">
@@ -79,10 +79,10 @@ export default function InstructionsScreen({
       {/* Tips */}
       {tips.length > 0 && (
         <div>
-          <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
+          <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--app-text-muted)">
             <Lightbulb className="h-4 w-4" /> {t("tips", { defaultValue: "Tips" })}
           </h3>
-          <ul className="list-inside list-disc space-y-1 text-sm text-(--rmhbox-text-muted)">
+          <ul className="list-inside list-disc space-y-1 text-sm text-(--app-text-muted)">
             {tips.map((tip, i) => (
               <li key={i}>{tip}</li>
             ))}
@@ -94,7 +94,7 @@ export default function InstructionsScreen({
       {isHost && (
         <button
           onClick={onSkip}
-          className="mx-auto flex items-center gap-2 rounded-lg bg-(--rmhbox-surface) border border-(--rmhbox-border) px-4 py-2 text-sm font-medium text-(--rmhbox-text-muted) transition-colors hover:bg-(--rmhbox-surface-hover) hover:text-(--rmhbox-text)"
+          className="mx-auto flex items-center gap-2 rounded-lg bg-(--app-surface) border border-(--app-border) px-4 py-2 text-sm font-medium text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-text)"
         >
           <SkipForward className="h-4 w-4" /> {t("skip-instructions", { defaultValue: "Skip Instructions" })}
         </button>

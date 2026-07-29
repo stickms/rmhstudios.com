@@ -34,14 +34,14 @@ export default function VoteSkipIndicator() {
         disabled={hasVoted}
         className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md transition-colors ${
           hasVoted
-            ? 'bg-(--rmhtube-surface-active) text-(--rmhtube-text-dim) cursor-not-allowed'
-            : 'bg-(--rmhtube-surface-hover) text-(--rmhtube-text-muted) hover:text-(--rmhtube-text)'
+            ? 'bg-(--app-surface-active) text-(--app-text-dim) cursor-not-allowed'
+            : 'bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-text)'
         }`}
       >
         <SkipForward className="h-3 w-3" />
         {hasVoted ? t("voted", { defaultValue: "Voted" }) : t("vote-skip", { defaultValue: "Vote Skip" })}
       </button>
-      <span className="text-xs text-(--rmhtube-text-dim)">
+      <span className="text-xs text-(--app-text-dim)">
         {room.skipVotes.length}/{votesNeeded}
       </span>
     </div>

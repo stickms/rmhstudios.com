@@ -1,10 +1,12 @@
 {
   "chat-placeholder": "دردشة...",
+  "dismiss": "Dismiss",
   "failed-to-load-media": "فشل في تحميل الوسائط",
   "game-crashed": "تعطلت اللعبة",
   "game-crashed-named": "تعطلت {{gameName}}",
   "loading": "جارٍ التحميل…",
   "no-messages-yet": "لا توجد رسائل بعد.",
+  "notifications": "Notifications",
   "react": "تفاعل",
   "return-home": "العودة إلى المنزل",
   "try-again": "حاول مرة أخرى",

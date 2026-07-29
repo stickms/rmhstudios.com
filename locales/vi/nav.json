@@ -1,5 +1,5 @@
 {
-  "lang-firstrun-body": "RMH Studios có sẵn bằng 32 ngôn ngữ. Bạn có thể thay đổi điều này bất cứ lúc nào trong phần Cài đặt.",
+  "lang-firstrun-body_other": "RMH Studios is available in {{count}} languages. You can change this any time in Settings.",
   "lang-firstrun-continue": "Tiếp tục bằng {{lang}}",
   "lang-firstrun-title": "Chọn ngôn ngữ của bạn",
   "language": "Ngôn ngữ"

@@ -1,10 +1,12 @@
 {
   "chat-placeholder": "채팅...",
+  "dismiss": "Dismiss",
   "failed-to-load-media": "미디어를 불러오지 못했습니다",
   "game-crashed": "게임이 충돌했습니다",
   "game-crashed-named": "{{gameName}}이(가) 충돌했습니다",
   "loading": "불러오는 중…",
   "no-messages-yet": "아직 메시지가 없습니다",
+  "notifications": "Notifications",
   "react": "반응",
   "return-home": "홈으로 돌아가기",
   "try-again": "다시 시도",

@@ -1,0 +1,18 @@
+{
+  "back-to-top": "Back to top",
+  "breadcrumb": "Breadcrumb",
+  "cancel": "Cancel",
+  "close": "Close",
+  "confirm": "Confirm",
+  "copied": "Copied",
+  "copy": "Copy",
+  "first-page": "First page",
+  "last-page": "Last page",
+  "move-down": "Move down{{name}}",
+  "move-up": "Move up{{name}}",
+  "next-page": "Next page",
+  "page-of": "Page {{page}} of {{total}}",
+  "prev-page": "Previous page",
+  "scroll-back": "Scroll left",
+  "scroll-forward": "Scroll right"
+}

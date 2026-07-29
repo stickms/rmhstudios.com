@@ -1,10 +1,12 @@
 {
   "chat-placeholder": "Trò chuyện...",
+  "dismiss": "Dismiss",
   "failed-to-load-media": "Không tải được phương tiện",
   "game-crashed": "Trò chơi gặp sự cố",
   "game-crashed-named": "{{gameName}} gặp sự cố",
   "loading": "Đang tải…",
   "no-messages-yet": "Chưa có tin nhắn nào",
+  "notifications": "Notifications",
   "react": "Phản ứng",
   "return-home": "Về trang chủ",
   "try-again": "Thử lại",

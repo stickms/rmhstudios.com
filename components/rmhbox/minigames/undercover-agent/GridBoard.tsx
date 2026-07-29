@@ -143,8 +143,8 @@ export default function GridBoard({ grid, canGuess, isSpymaster, highlightCounts
                 isRevealed
                   ? `${revealedStyle?.bg ?? ''} ${revealedStyle?.text ?? ''} border-transparent opacity-80 ${spymasterHint}`
                   : isHighlighted
-                    ? `border-amber-400 bg-amber-400/15 text-(--rmhbox-text) ring-2 ring-amber-400/50 ${spymasterHint}`
-                    : `border-(--rmhbox-border) bg-(--rmhbox-surface) text-(--rmhbox-text) ${spymasterHint}`
+                    ? `border-amber-400 bg-amber-400/15 text-(--app-text) ring-2 ring-amber-400/50 ${spymasterHint}`
+                    : `border-(--app-border) bg-(--app-surface) text-(--app-text) ${spymasterHint}`
               }
               ${clickable && !isHighlighted ? 'cursor-pointer hover:border-amber-400/60 hover:bg-transparent' : ''}
               ${clickable && isHighlighted ? 'cursor-pointer' : ''}

@@ -121,10 +121,10 @@ export default function RmhStudyLanding() {
           {/* Hero */}
           <div className="text-center py-8">
             <div className="inline-flex items-center gap-2 mb-4">
-              <BookOpen className="h-8 w-8 text-(--rmhstudy-accent)" />
+              <BookOpen className="h-8 w-8 text-(--app-accent)" />
               <h2 className="text-3xl font-bold">RMH Study</h2>
             </div>
-            <p className="text-(--rmhstudy-text-muted) max-w-md mx-auto">
+            <p className="text-(--app-text-muted) max-w-md mx-auto">
               {t('hero-subtitle', {
                 defaultValue:
                   'Study together with synced Pomodoro timers. Create a room, invite friends, and stay focused.',
@@ -135,30 +135,30 @@ export default function RmhStudyLanding() {
           {/* Flashcards — solo study with decks + AI tutor */}
           <button
             onClick={() => router.navigate({ to: '/study' })}
-            className="group w-full flex items-center gap-4 rounded-xl border border-(--rmhstudy-border) bg-(--rmhstudy-surface) p-5 text-left transition-colors hover:border-(--rmhstudy-accent)"
+            className="group w-full flex items-center gap-4 rounded-xl border border-(--app-border) bg-(--app-surface) p-5 text-left transition-colors hover:border-(--app-accent)"
           >
-            <div className="rounded-lg p-3 bg-(--rmhstudy-bg)">
-              <Layers className="h-6 w-6 text-(--rmhstudy-accent)" />
+            <div className="rounded-lg p-3 bg-(--app-bg)">
+              <Layers className="h-6 w-6 text-(--app-accent)" />
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold flex items-center gap-2">
                 {t('flashcards', { defaultValue: 'Flashcards' })}
               </h3>
-              <p className="text-sm text-(--rmhstudy-text-muted)">
+              <p className="text-sm text-(--app-text-muted)">
                 {t('flashcards-subtitle', {
                   defaultValue:
                     'Drill solo with flashcard decks and an AI tutor — spaced repetition, your pace.',
                 })}
               </p>
             </div>
-            <ArrowRight className="h-5 w-5 shrink-0 text-(--rmhstudy-text-muted) transition-transform group-hover:translate-x-1" />
+            <ArrowRight className="h-5 w-5 shrink-0 text-(--app-text-muted) transition-transform group-hover:translate-x-1" />
           </button>
 
           <div className="grid md:grid-cols-2 gap-6">
             {/* Create Room */}
-            <div className="rounded-xl border border-(--rmhstudy-border) bg-(--rmhstudy-surface) p-6">
+            <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <Clock className="h-5 w-5 text-(--rmhstudy-accent)" />
+                <Clock className="h-5 w-5 text-(--app-accent)" />
                 {t('create-study-room', { defaultValue: 'Create Study Room' })}
               </h2>
 
@@ -166,7 +166,7 @@ export default function RmhStudyLanding() {
                 <div>
                   <label
                     htmlFor="study-work-duration"
-                    className="block text-xs font-medium mb-1 text-(--rmhstudy-text-muted)"
+                    className="block text-xs font-medium mb-1 text-(--app-text-muted)"
                   >
                     {t('work-duration', {
                       defaultValue: 'Work Duration: {{minutes}} min',
@@ -181,7 +181,7 @@ export default function RmhStudyLanding() {
                     step={5}
                     value={workMinutes}
                     onChange={(e) => setWorkMinutes(Number(e.target.value))}
-                    className="w-full accent-(--rmhstudy-accent)"
+                    className="w-full accent-(--app-accent)"
                   />
                 </div>
 
@@ -189,7 +189,7 @@ export default function RmhStudyLanding() {
                   <div>
                     <label
                       htmlFor="study-short-break"
-                      className="block text-xs font-medium mb-1 text-(--rmhstudy-text-muted)"
+                      className="block text-xs font-medium mb-1 text-(--app-text-muted)"
                     >
                       {t('short-break', {
                         defaultValue: 'Short Break: {{minutes}} min',
@@ -203,13 +203,13 @@ export default function RmhStudyLanding() {
                       max={30}
                       value={shortBreakMinutes}
                       onChange={(e) => setShortBreakMinutes(Number(e.target.value))}
-                      className="w-full accent-(--rmhstudy-accent)"
+                      className="w-full accent-(--app-accent)"
                     />
                   </div>
                   <div>
                     <label
                       htmlFor="study-long-break"
-                      className="block text-xs font-medium mb-1 text-(--rmhstudy-text-muted)"
+                      className="block text-xs font-medium mb-1 text-(--app-text-muted)"
                     >
                       {t('long-break', {
                         defaultValue: 'Long Break: {{minutes}} min',
@@ -224,7 +224,7 @@ export default function RmhStudyLanding() {
                       step={5}
                       value={longBreakMinutes}
                       onChange={(e) => setLongBreakMinutes(Number(e.target.value))}
-                      className="w-full accent-(--rmhstudy-accent)"
+                      className="w-full accent-(--app-accent)"
                     />
                   </div>
                 </div>
@@ -232,7 +232,7 @@ export default function RmhStudyLanding() {
                 <div>
                   <label
                     htmlFor="study-sessions"
-                    className="block text-xs font-medium mb-1 text-(--rmhstudy-text-muted)"
+                    className="block text-xs font-medium mb-1 text-(--app-text-muted)"
                   >
                     {t('sessions-before-long-break', {
                       defaultValue: 'Sessions before long break: {{sessions}}',
@@ -246,7 +246,7 @@ export default function RmhStudyLanding() {
                     max={8}
                     value={sessions}
                     onChange={(e) => setSessions(Number(e.target.value))}
-                    className="w-full accent-(--rmhstudy-accent)"
+                    className="w-full accent-(--app-accent)"
                   />
                 </div>
               </div>
@@ -254,19 +254,19 @@ export default function RmhStudyLanding() {
               <button
                 onClick={handleCreateRoom}
                 disabled={connectionStatus !== 'connected'}
-                className="w-full py-3 rounded-lg font-semibold text-(--rmhstudy-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhstudy-accent) hover:bg-(--rmhstudy-accent-hover)"
+                className="w-full py-3 rounded-lg font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
               >
                 {t('create-room', { defaultValue: 'Create Room' })}
               </button>
             </div>
 
             {/* Join Room */}
-            <div className="rounded-xl border border-(--rmhstudy-border) bg-(--rmhstudy-surface) p-6">
+            <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <Users className="h-5 w-5 text-(--rmhstudy-accent)" />
+                <Users className="h-5 w-5 text-(--app-accent)" />
                 {t('join-study-room', { defaultValue: 'Join Study Room' })}
               </h2>
-              <p className="text-sm mb-4 text-(--rmhstudy-text-muted)">
+              <p className="text-sm mb-4 text-(--app-text-muted)">
                 {t('join-description', {
                   defaultValue: "Enter a 6-character room code to join a friend's study session.",
                 })}
@@ -284,22 +284,22 @@ export default function RmhStudyLanding() {
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                   placeholder="ABCDEF"
-                  className="w-10 min-w-0 flex-1 px-4 py-3 rounded-lg font-mono text-lg uppercase tracking-widest text-center border border-(--rmhstudy-border) bg-(--rmhstudy-bg) text-(--rmhstudy-text) placeholder:text-(--rmhstudy-text-dim) outline-none focus:ring-1 focus:ring-(--rmhstudy-accent)"
+                  className="w-10 min-w-0 flex-1 px-4 py-3 rounded-lg font-mono text-lg uppercase tracking-widest text-center border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
                 />
                 <button
                   type="submit"
                   disabled={connectionStatus !== 'connected' || joinCode.trim().length !== 6}
-                  className="px-6 py-3 rounded-lg font-semibold text-(--rmhstudy-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhstudy-accent) hover:bg-(--rmhstudy-accent-hover)"
+                  className="px-6 py-3 rounded-lg font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
                 >
                   {t('join', { defaultValue: 'Join' })}
                 </button>
               </form>
 
-              <div className="mt-6 p-4 rounded-lg bg-(--rmhstudy-bg) border border-(--rmhstudy-border)">
+              <div className="mt-6 p-4 rounded-lg bg-(--app-bg) border border-(--app-border)">
                 <h3 className="text-sm font-semibold mb-2">
                   {t('how-it-works', { defaultValue: 'How it works' })}
                 </h3>
-                <ul className="text-xs space-y-1 text-(--rmhstudy-text-muted)">
+                <ul className="text-xs space-y-1 text-(--app-text-muted)">
                   <li>{t('how-step-1', { defaultValue: '1. Create or join a study room' })}</li>
                   <li>
                     {t('how-step-2', { defaultValue: '2. The host starts the Pomodoro timer' })}
@@ -317,22 +317,22 @@ export default function RmhStudyLanding() {
           </div>
 
           {/* Public Rooms */}
-          <div className="rounded-xl border border-(--rmhstudy-border) bg-(--rmhstudy-surface) p-6">
+          <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Globe className="h-5 w-5 text-(--rmhstudy-accent)" />
+                <Globe className="h-5 w-5 text-(--app-accent)" />
                 {t('public-study-rooms', { defaultValue: 'Public Study Rooms' })}
               </h2>
               <button
                 onClick={() => emit(C2S.ROOM_BROWSE, {})}
-                className="p-1.5 rounded-lg text-(--rmhstudy-text-muted) hover:text-(--rmhstudy-text) hover:bg-(--rmhstudy-surface-hover) transition-colors"
+                className="p-1.5 rounded-lg text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover) transition-colors"
                 title={t('refresh', { defaultValue: 'Refresh' })}
               >
                 <RefreshCw className="h-4 w-4" />
               </button>
             </div>
             {publicRooms.length === 0 ? (
-              <p className="text-sm text-(--rmhstudy-text-muted) text-center py-4">
+              <p className="text-sm text-(--app-text-muted) text-center py-4">
                 {t('no-public-rooms', { defaultValue: 'No public rooms available. Create one!' })}
               </p>
             ) : (
@@ -341,13 +341,13 @@ export default function RmhStudyLanding() {
                   <button
                     key={r.roomCode}
                     onClick={() => emit(C2S.ROOM_JOIN, { roomCode: r.roomCode })}
-                    className="w-full flex items-center justify-between p-3 rounded-lg bg-(--rmhstudy-bg) border border-(--rmhstudy-border) hover:border-(--rmhstudy-accent) transition-colors text-left"
+                    className="w-full flex items-center justify-between p-3 rounded-lg bg-(--app-bg) border border-(--app-border) hover:border-(--app-accent) transition-colors text-left"
                   >
                     <div>
                       <div className="font-medium text-sm">
                         {t('hosts-room', { defaultValue: "{{host}}'s room", host: r.hostUserName })}
                       </div>
-                      <div className="text-xs text-(--rmhstudy-text-muted) mt-0.5">
+                      <div className="text-xs text-(--app-text-muted) mt-0.5">
                         {t('min-focus', {
                           defaultValue: '{{minutes}} min focus',
                           minutes: Math.round(r.workDurationMs / 60_000),
@@ -362,7 +362,7 @@ export default function RmhStudyLanding() {
                               : t('phase-long-break', { defaultValue: 'Long break' })}
                       </div>
                     </div>
-                    <div className="text-xs font-mono text-(--rmhstudy-text-muted)">
+                    <div className="text-xs font-mono text-(--app-text-muted)">
                       {r.memberCount}/{r.maxMembers}
                     </div>
                   </button>

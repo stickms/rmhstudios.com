@@ -36,27 +36,27 @@ function MinigamesPage() {
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8" style={{ scrollbarGutter: 'stable both-edges' }}>
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold mb-6 text-(--rmhbox-text)">{t("minigames", { defaultValue: "Minigames" })}</h2>
+          <h2 className="text-2xl font-bold mb-6 text-(--app-text)">{t("minigames", { defaultValue: "Minigames" })}</h2>
 
           <div className="grid gap-4 sm:grid-cols-2">
             {minigames.map((game) => (
               <div
                 key={game.id}
-                className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-5 flex flex-col"
+                className="rounded-xl border border-(--app-border) bg-(--app-surface) p-5 flex flex-col"
                 data-testid={`minigame-card-${game.id}`}
               >
                 {/* Icon + name + category */}
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="shrink-0 w-10 h-10 rounded-lg bg-(--rmhbox-accent)/10 flex items-center justify-center">
-                    <LucideAwardIcon name={game.icon} className="h-5 w-5 text-(--rmhbox-accent)" />
+                  <div className="shrink-0 w-10 h-10 rounded-lg bg-(--app-accent)/10 flex items-center justify-center">
+                    <LucideAwardIcon name={game.icon} className="h-5 w-5 text-(--app-accent)" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-(--rmhbox-text)">{game.displayName}</h3>
+                    <h3 className="text-lg font-semibold text-(--app-text)">{game.displayName}</h3>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${CATEGORY_COLORS[game.category] ?? ''}`}>
                         {game.category}
                       </span>
-                      <span className="text-xs text-(--rmhbox-text-muted)">
+                      <span className="text-xs text-(--app-text-muted)">
                         {t("player-range", { minPlayers: game.minPlayers, maxPlayers: game.maxPlayers, defaultValue: "{{minPlayers}}–{{maxPlayers}} players" })}
                       </span>
                     </div>
@@ -64,13 +64,13 @@ function MinigamesPage() {
                 </div>
 
                 {/* Description */}
-                <p className="text-sm text-(--rmhbox-text-muted) mb-4 flex-1">{game.description}</p>
+                <p className="text-sm text-(--app-text-muted) mb-4 flex-1">{game.description}</p>
 
                 {/* Action buttons */}
                 <div className="flex gap-2">
                   <button
                     onClick={() => setLeaderboardGame(game)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-colors bg-(--rmhbox-surface-hover) text-(--rmhbox-text-muted) hover:text-(--rmhbox-text) hover:bg-(--rmhbox-border)"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-colors bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-border)"
                     data-testid={`leaderboard-btn-${game.id}`}
                   >
                     <Trophy className="h-4 w-4" />
@@ -78,7 +78,7 @@ function MinigamesPage() {
                   </button>
                   <button
                     onClick={() => navigate({ to: '/rmhbox/minigames/$minigameId/history', params: { minigameId: game.id } })}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-colors bg-(--rmhbox-accent) text-white hover:bg-(--rmhbox-accent-hover)"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-colors bg-(--app-accent) text-white hover:bg-(--app-accent-hover)"
                     data-testid={`history-btn-${game.id}`}
                   >
                     <History className="h-4 w-4" />

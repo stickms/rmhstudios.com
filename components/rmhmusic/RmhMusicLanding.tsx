@@ -50,9 +50,9 @@ export default function RmhMusicPage() {
         to="/builds"
         className="absolute top-4 left-4 z-20 flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
         style={{
-          background: 'color-mix(in srgb, var(--rmhmusic-surface) 80%, transparent)',
-          color: 'var(--rmhmusic-text-muted)',
-          border: '1px solid var(--rmhmusic-border)',
+          background: 'color-mix(in srgb, var(--app-surface) 80%, transparent)',
+          color: 'var(--app-text-muted)',
+          border: '1px solid var(--app-border)',
         }}
       >
         <span aria-hidden="true">&larr;</span>
@@ -69,18 +69,18 @@ export default function RmhMusicPage() {
           <div className="flex items-center justify-center gap-3 mb-4">
             <div
               className="p-3 rounded-2xl"
-              style={{ background: 'color-mix(in srgb, var(--rmhmusic-accent) 20%, transparent)' }}
+              style={{ background: 'color-mix(in srgb, var(--app-accent) 20%, transparent)' }}
             >
-              <Headphones className="w-8 h-8" style={{ color: 'var(--rmhmusic-accent)' }} />
+              <Headphones className="w-8 h-8" style={{ color: 'var(--app-accent)' }} />
             </div>
           </div>
           <h1
             className="text-4xl font-bold mb-3"
-            style={{ color: 'var(--rmhmusic-text)', fontFamily: 'var(--rmhmusic-font-display)' }}
+            style={{ color: 'var(--app-text)', fontFamily: 'var(--app-font-display)' }}
           >
             RMH Music
           </h1>
-          <p className="text-lg" style={{ color: 'var(--rmhmusic-text-muted)' }}>
+          <p className="text-lg" style={{ color: 'var(--app-text-muted)' }}>
             {t('hero-subtitle', {
               defaultValue: 'Listen to Spotify previews with friends. Vibe together.',
             })}
@@ -97,14 +97,14 @@ export default function RmhMusicPage() {
           <button
             onClick={() => router.navigate({ to: '/rmhmusic/player' })}
             className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:scale-105"
-            style={{ background: 'var(--rmhmusic-accent)', color: 'var(--rmhmusic-accent-fg)' }}
+            style={{ background: 'var(--app-accent)', color: 'var(--app-accent-fg)' }}
           >
             <Music className="w-4 h-4" /> {t('open-player', { defaultValue: 'Open Player' })}
           </button>
           <button
             onClick={() => router.navigate({ to: '/music-trivia' })}
             className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:scale-105"
-            style={{ background: 'var(--rmhmusic-surface)', color: 'var(--rmhmusic-text)' }}
+            style={{ background: 'var(--app-surface)', color: 'var(--app-text)' }}
           >
             <Brain className="w-4 h-4" /> {t('guess-the-song', { defaultValue: 'Guess the Song' })}
           </button>
@@ -120,9 +120,9 @@ export default function RmhMusicPage() {
           {/* Create */}
           <div
             className="p-4 rounded-xl"
-            style={{ background: 'color-mix(in srgb, var(--rmhmusic-surface) 80%, transparent)' }}
+            style={{ background: 'color-mix(in srgb, var(--app-surface) 80%, transparent)' }}
           >
-            <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--rmhmusic-text)' }}>
+            <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--app-text)' }}>
               {t('create-a-room', { defaultValue: 'Create a Room' })}
             </h3>
             <input
@@ -131,14 +131,14 @@ export default function RmhMusicPage() {
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
               className="w-full px-3 py-2 rounded-lg text-sm mb-3 outline-none"
-              style={{ background: 'var(--rmhmusic-bg)', color: 'var(--rmhmusic-text)' }}
+              style={{ background: 'var(--app-bg)', color: 'var(--app-text)' }}
               maxLength={64}
             />
             <button
               onClick={createRoom}
               disabled={connectionStatus !== 'connected'}
               className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-40"
-              style={{ background: 'var(--rmhmusic-accent)', color: 'var(--rmhmusic-accent-fg)' }}
+              style={{ background: 'var(--app-accent)', color: 'var(--app-accent-fg)' }}
             >
               <Plus className="w-4 h-4" /> {t('create-room', { defaultValue: 'Create Room' })}
             </button>
@@ -147,9 +147,9 @@ export default function RmhMusicPage() {
           {/* Join */}
           <div
             className="p-4 rounded-xl"
-            style={{ background: 'color-mix(in srgb, var(--rmhmusic-surface) 80%, transparent)' }}
+            style={{ background: 'color-mix(in srgb, var(--app-surface) 80%, transparent)' }}
           >
-            <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--rmhmusic-text)' }}>
+            <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--app-text)' }}>
               {t('join-a-room', { defaultValue: 'Join a Room' })}
             </h3>
             <input
@@ -158,14 +158,14 @@ export default function RmhMusicPage() {
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               className="w-full px-3 py-2 rounded-lg text-sm mb-3 outline-none font-mono tracking-widest text-center"
-              style={{ background: 'var(--rmhmusic-bg)', color: 'var(--rmhmusic-text)' }}
+              style={{ background: 'var(--app-bg)', color: 'var(--app-text)' }}
               maxLength={6}
             />
             <button
               onClick={joinRoom}
               disabled={!joinCode.trim() || connectionStatus !== 'connected'}
               className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-40"
-              style={{ background: 'var(--rmhmusic-surface)', color: 'var(--rmhmusic-text)' }}
+              style={{ background: 'var(--app-surface)', color: 'var(--app-text)' }}
             >
               <ArrowRight className="w-4 h-4" /> {t('join-room', { defaultValue: 'Join Room' })}
             </button>

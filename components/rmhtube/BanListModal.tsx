@@ -31,22 +31,22 @@ export default function BanListModal({ onClose }: BanListModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative w-full max-w-sm rounded-xl border border-(--rmhtube-border) bg-(--rmhtube-surface) p-6 shadow-xl">
+      <div className="relative w-full max-w-sm rounded-xl border border-(--app-border) bg-(--app-surface) p-6 shadow-xl">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <UserX className="h-5 w-5 text-(--rmhtube-danger)" />
-            <h3 className="text-lg font-semibold text-(--rmhtube-text)">{t("banned-users", { defaultValue: "Banned Users" })}</h3>
+            <UserX className="h-5 w-5 text-(--app-danger)" />
+            <h3 className="text-lg font-semibold text-(--app-text)">{t("banned-users", { defaultValue: "Banned Users" })}</h3>
           </div>
           <button
             onClick={onClose}
-            className="rounded p-1 text-(--rmhtube-text-muted) hover:text-(--rmhtube-text)"
+            className="rounded p-1 text-(--app-text-muted) hover:text-(--app-text)"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {room.bannedUsers.length === 0 ? (
-          <p className="text-sm text-center py-6 text-(--rmhtube-text-dim)">
+          <p className="text-sm text-center py-6 text-(--app-text-dim)">
             {t("no-banned-users", { defaultValue: "No banned users" })}
           </p>
         ) : (
@@ -54,20 +54,20 @@ export default function BanListModal({ onClose }: BanListModalProps) {
             {room.bannedUsers.map((ban) => (
               <div
                 key={ban.userId}
-                className="flex items-center justify-between p-3 rounded-lg bg-(--rmhtube-bg) border border-(--rmhtube-border)"
+                className="flex items-center justify-between p-3 rounded-lg bg-(--app-bg) border border-(--app-border)"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate text-(--rmhtube-text)">
+                  <p className="text-sm font-medium truncate text-(--app-text)">
                     {ban.userName}
                   </p>
-                  <p className="text-xs text-(--rmhtube-text-dim)">
+                  <p className="text-xs text-(--app-text-dim)">
                     {t("banned-at", { defaultValue: "Banned {{time}}", time: formatRelativeTime(ban.bannedAt) })}
                     {ban.reason && ` · ${ban.reason}`}
                   </p>
                 </div>
                 <button
                   onClick={() => handleUnban(ban.userId)}
-                  className="shrink-0 ml-2 flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors bg-(--rmhtube-surface-hover) text-(--rmhtube-text-muted) hover:text-(--rmhtube-success) hover:bg-(--rmhtube-success-dim)"
+                  className="shrink-0 ml-2 flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-success) hover:bg-(--app-success-dim)"
                   title={t("unban-user-title", { defaultValue: "Unban user" })}
                 >
                   <Undo2 className="h-3 w-3" />

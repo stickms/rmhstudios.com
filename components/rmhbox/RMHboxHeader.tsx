@@ -58,10 +58,10 @@ function TimerRing({
 
   // Color: paused → warning (yellow), ≤10s → danger, infinite → accent, else → accent
   const strokeColor = paused
-    ? 'var(--rmhbox-warning)'
+    ? 'var(--app-warning)'
     : !infinite && seconds <= 10
-      ? 'var(--rmhbox-danger)'
-      : 'var(--rmhbox-accent)';
+      ? 'var(--app-danger)'
+      : 'var(--app-accent)';
 
   const handleClick = useCallback(() => {
     if (!isHost || !lobbyId || infinite) return;
@@ -83,7 +83,7 @@ function TimerRing({
           cy="20"
           r={radius}
           fill="none"
-          stroke="var(--rmhbox-border)"
+          stroke="var(--app-border)"
           strokeWidth={strokeWidth}
         />
         <circle
@@ -103,21 +103,21 @@ function TimerRing({
       </svg>
       {/* Center content: number or ∞, with pause/play overlay for host on hover */}
       <span
-        className={`absolute flex items-center justify-center text-xs font-bold ${paused ? 'text-(--rmhbox-warning)' : 'text-(--rmhbox-text)'}`}
+        className={`absolute flex items-center justify-center text-xs font-bold ${paused ? 'text-(--app-warning)' : 'text-(--app-text)'}`}
       >
         {/* Host hover: show pause/play icon replacing the number */}
         {interactive && hovered ? (
           paused ? (
-            <Play className="h-3.5 w-3.5 text-(--rmhbox-warning)" />
+            <Play className="h-3.5 w-3.5 text-(--app-warning)" />
           ) : (
-            <Pause className="h-3.5 w-3.5 text-(--rmhbox-text-muted)" />
+            <Pause className="h-3.5 w-3.5 text-(--app-text-muted)" />
           )
         ) : paused ? (
           /* Paused (not hovering): show Play icon instead of a stale number */
           interactive ? (
-            <Play className="h-3.5 w-3.5 text-(--rmhbox-warning)" />
+            <Play className="h-3.5 w-3.5 text-(--app-warning)" />
           ) : (
-            <Pause className="h-3.5 w-3.5 text-(--rmhbox-warning)" />
+            <Pause className="h-3.5 w-3.5 text-(--app-warning)" />
           )
         ) : infinite ? (
           <InfinityIcon className="h-4 w-4" />
@@ -187,13 +187,13 @@ export default function RMHboxHeader({
           : t('connection-error', { defaultValue: 'Error' });
 
   return (
-    <header className="relative flex shrink-0 items-center border-b border-(--rmhbox-border) bg-(--rmhbox-bg)/90 px-3 py-3 h-16 backdrop-blur-sm">
+    <header className="relative flex shrink-0 items-center border-b border-(--app-border) bg-(--app-bg)/90 px-3 py-3 h-16 backdrop-blur-sm">
       {/* Left side */}
       <div className="flex items-center gap-2 z-10">
         {hasBackLink && (
           <Link
             to={backHref ?? '/rmhbox'}
-            className="text-sm font-medium text-(--rmhbox-text-muted) hover:text-(--rmhbox-accent) transition-colors text-nowrap"
+            className="text-sm font-medium text-(--app-text-muted) hover:text-(--app-accent) transition-colors text-nowrap"
             // when in a lobby, the back link becomes a "Leave" action that also disconnects from the lobby
             onClick={(e) => {
               if (context === 'lobby') {
@@ -226,8 +226,8 @@ export default function RMHboxHeader({
       {/* Center title — absolutely positioned for true centering */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible">
         <h1
-          className="text-4xl font-bold leading-tight text-(--rmhbox-accent) truncate px-24"
-          style={{ fontFamily: 'var(--rmhbox-font-display)' }}
+          className="text-4xl font-bold leading-tight text-(--app-accent) truncate px-24"
+          style={{ fontFamily: 'var(--app-font-display)' }}
         >
           {displayTitle}
         </h1>
@@ -237,7 +237,7 @@ export default function RMHboxHeader({
       <div className="ml-auto flex items-center gap-2 z-10">
         {showConnection && (
           <span
-            className="flex items-center gap-1.5 text-sm text-(--rmhbox-text-muted)"
+            className="flex items-center gap-1.5 text-sm text-(--app-text-muted)"
             title={statusText}
           >
             {statusIcon}

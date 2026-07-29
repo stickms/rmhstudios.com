@@ -50,14 +50,14 @@ export default function ShortcutsOverlay({ onClose }: ShortcutsOverlayProps) {
     <div className="rmhtube-shortcuts-overlay" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60" />
       <div
-        className="relative w-full max-w-md rounded-xl border border-(--rmhtube-border) bg-(--rmhtube-surface) p-6 shadow-xl"
+        className="relative w-full max-w-md rounded-xl border border-(--app-border) bg-(--app-surface) p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-lg font-semibold text-(--rmhtube-text)">{t("keyboard-shortcuts-title", { defaultValue: "Keyboard Shortcuts" })}</h3>
+          <h3 className="text-lg font-semibold text-(--app-text)">{t("keyboard-shortcuts-title", { defaultValue: "Keyboard Shortcuts" })}</h3>
           <button
             onClick={onClose}
-            className="rounded p-1 text-(--rmhtube-text-muted) hover:text-(--rmhtube-text)"
+            className="rounded p-1 text-(--app-text-muted) hover:text-(--app-text)"
           >
             <X className="h-5 w-5" />
           </button>
@@ -66,13 +66,13 @@ export default function ShortcutsOverlay({ onClose }: ShortcutsOverlayProps) {
         <div className="space-y-5">
           {SHORTCUT_GROUPS.map((group) => (
             <div key={group.title}>
-              <h4 className="text-xs font-semibold uppercase tracking-wider mb-2 text-(--rmhtube-text-dim)">
+              <h4 className="text-xs font-semibold uppercase tracking-wider mb-2 text-(--app-text-dim)">
                 {group.title}
               </h4>
               <div className="space-y-1.5">
                 {group.shortcuts.map((s) => (
                   <div key={s.label} className="flex items-center justify-between text-sm">
-                    <span className="text-(--rmhtube-text-muted)">{s.label}</span>
+                    <span className="text-(--app-text-muted)">{s.label}</span>
                     <div className="flex items-center gap-1">
                       {s.keys.map((key) => (
                         <kbd key={key}>{key}</kbd>
@@ -85,7 +85,7 @@ export default function ShortcutsOverlay({ onClose }: ShortcutsOverlayProps) {
           ))}
         </div>
 
-        <p className="mt-5 text-xs text-center text-(--rmhtube-text-dim)">
+        <p className="mt-5 text-xs text-center text-(--app-text-dim)">
           {t("shortcuts-disabled-hint", { defaultValue: "Shortcuts are disabled when a text input is focused" })}
         </p>
       </div>

@@ -1,10 +1,12 @@
 {
   "chat-placeholder": "Sohbet...",
+  "dismiss": "Dismiss",
   "failed-to-load-media": "Medya yüklenemedi",
   "game-crashed": "Oyun çöktü",
   "game-crashed-named": "{{gameName}} çöktü",
   "loading": "Yükleniyor…",
   "no-messages-yet": "Henüz mesaj yok",
+  "notifications": "Notifications",
   "react": "Tepki ver",
   "return-home": "Ana Sayfaya Dön",
   "try-again": "Tekrar Dene",

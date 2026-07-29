@@ -86,7 +86,7 @@ export default function HostControlModal() {
           onClick={() => setIsOpen(true)}
           className="flex h-10 w-10 items-center justify-center rounded-full transition-all hover:scale-110 active:scale-95"
           style={{
-            backgroundColor: 'var(--rmhbox-warning)',
+            backgroundColor: 'var(--app-warning)',
             color: '#000',
           }}
           aria-label={t('host-controls', { defaultValue: 'Host controls' })}
@@ -101,26 +101,26 @@ export default function HostControlModal() {
         <>
           {/* Backdrop */}
           <div
-            className="rmhbox-overlay fixed inset-0 z-80 bg-black/50"
+            className="app-overlay fixed inset-0 z-80 bg-black/50"
             onClick={() => setIsOpen(false)}
           />
 
           {/* Panel */}
           <div
-            className="rmhbox-modal fixed inset-x-4 top-1/2 z-90 mx-auto max-w-md -translate-y-1/2 rounded-xl border p-5 shadow-2xl"
+            className="app-modal fixed inset-x-4 top-1/2 z-90 mx-auto max-w-md -translate-y-1/2 rounded-xl border p-5 shadow-2xl"
             style={{
-              backgroundColor: 'var(--rmhbox-surface)',
-              borderColor: 'var(--rmhbox-border)',
+              backgroundColor: 'var(--app-surface)',
+              borderColor: 'var(--app-border)',
             }}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-lg font-bold text-(--rmhbox-text)">
-                <Shield className="h-5 w-5 text-(--rmhbox-warning)" />
+              <h2 className="flex items-center gap-2 text-lg font-bold text-(--app-text)">
+                <Shield className="h-5 w-5 text-(--app-warning)" />
                 {t('host-controls', { defaultValue: 'Host controls' })}
               </h2>
               <button
                 onClick={() => setIsOpen(false)}
-                className="rounded p-1 text-(--rmhbox-text-muted) hover:text-(--rmhbox-text)"
+                className="rounded p-1 text-(--app-text-muted) hover:text-(--app-text)"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -132,7 +132,7 @@ export default function HostControlModal() {
                 <button
                   onClick={handleForceEnd}
                   className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:brightness-110"
-                  style={{ backgroundColor: 'var(--rmhbox-danger)' }}
+                  style={{ backgroundColor: 'var(--app-danger)' }}
                 >
                   <StopCircle className="h-4 w-4" />
                   {t('force-end', { defaultValue: 'Force End' })}
@@ -143,7 +143,7 @@ export default function HostControlModal() {
             {/* Players */}
             {otherPlayers.length > 0 && (
               <div className="mb-4">
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--app-text-muted)">
                   {t('players-count', { defaultValue: 'Players ({{count}})', count: otherPlayers.length })}
                 </h3>
                 <div className="max-h-48 space-y-1 overflow-y-auto">
@@ -152,8 +152,8 @@ export default function HostControlModal() {
                       key={player.userId}
                       className="flex items-center gap-2 rounded-lg px-3 py-2"
                       style={{
-                        backgroundColor: 'var(--rmhbox-bg)',
-                        border: '1px solid var(--rmhbox-border)',
+                        backgroundColor: 'var(--app-bg)',
+                        border: '1px solid var(--app-border)',
                       }}
                     >
                       {/* Avatar */}
@@ -173,13 +173,13 @@ export default function HostControlModal() {
                       ) : null}
                       <div
                         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                        style={player.avatarUrl ? { display: 'none', backgroundColor: 'var(--rmhbox-accent)' } : { backgroundColor: 'var(--rmhbox-accent)' }}
+                        style={player.avatarUrl ? { display: 'none', backgroundColor: 'var(--app-accent)' } : { backgroundColor: 'var(--app-accent)' }}
                       >
                         {player.userName.charAt(0).toUpperCase()}
                       </div>
 
                       {/* Name */}
-                      <span className="flex-1 truncate text-sm font-medium text-(--rmhbox-text)">
+                      <span className="flex-1 truncate text-sm font-medium text-(--app-text)">
                         {player.userName}
                       </span>
 
@@ -187,14 +187,14 @@ export default function HostControlModal() {
                       <div className="flex gap-1">
                         <button
                           onClick={() => handleTransferHost(player.userId, player.userName)}
-                          className="rounded p-1.5 text-(--rmhbox-warning) transition-colors hover:bg-(--rmhbox-warning-dim)"
+                          className="rounded p-1.5 text-(--app-warning) transition-colors hover:bg-(--app-warning-dim)"
                           title={t('transfer-host', { defaultValue: 'Transfer host' })}
                         >
                           <ArrowRightLeft className="h-3.5 w-3.5" />
                         </button>
                         <button
                           onClick={() => handleKick(player.userId, player.userName)}
-                          className="rounded p-1.5 text-(--rmhbox-danger) transition-colors hover:bg-(--rmhbox-danger-dim)"
+                          className="rounded p-1.5 text-(--app-danger) transition-colors hover:bg-(--app-danger-dim)"
                           title={t('kick-player', { defaultValue: 'Kick player' })}
                         >
                           <UserMinus className="h-3.5 w-3.5" style={{ transform: 'scaleX(-1)' }} />
@@ -209,7 +209,7 @@ export default function HostControlModal() {
             {/* Spectators */}
             {lobby.spectators.length > 0 && (
               <div>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--app-text-muted)">
                   {t('spectators-count', { defaultValue: 'Spectators ({{count}})', count: lobby.spectators.length })}
                 </h3>
                 <div className="max-h-32 space-y-1 overflow-y-auto">
@@ -218,8 +218,8 @@ export default function HostControlModal() {
                       key={spec.userId}
                       className="flex items-center gap-2 rounded-lg px-3 py-2"
                       style={{
-                        backgroundColor: 'var(--rmhbox-bg)',
-                        border: '1px solid var(--rmhbox-border)',
+                        backgroundColor: 'var(--app-bg)',
+                        border: '1px solid var(--app-border)',
                       }}
                     >
                       {spec.avatarUrl ? (
@@ -238,17 +238,17 @@ export default function HostControlModal() {
                       ) : null}
                       <div
                         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                        style={spec.avatarUrl ? { display: 'none', backgroundColor: 'var(--rmhbox-text-muted)' } : { backgroundColor: 'var(--rmhbox-text-muted)' }}
+                        style={spec.avatarUrl ? { display: 'none', backgroundColor: 'var(--app-text-muted)' } : { backgroundColor: 'var(--app-text-muted)' }}
                       >
                         {spec.userName.charAt(0).toUpperCase()}
                       </div>
-                      <span className="flex-1 truncate text-sm text-(--rmhbox-text-muted)">
+                      <span className="flex-1 truncate text-sm text-(--app-text-muted)">
                         {spec.userName}
                       </span>
                       {canPromoteSpectators && (
                         <button
                           onClick={() => handlePromote(spec.userId, spec.userName)}
-                          className="rounded p-1.5 text-(--rmhbox-success) transition-colors hover:bg-(--rmhbox-success-dim)"
+                          className="rounded p-1.5 text-(--app-success) transition-colors hover:bg-(--app-success-dim)"
                           title={t('promote-to-player-btn', { defaultValue: 'Promote to player' })}
                         >
                           <UserPlus className="h-3.5 w-3.5" />
@@ -261,7 +261,7 @@ export default function HostControlModal() {
             )}
 
             {otherPlayers.length === 0 && lobby.spectators.length === 0 && !isInGame && (
-              <p className="text-center text-sm text-(--rmhbox-text-muted)">
+              <p className="text-center text-sm text-(--app-text-muted)">
                 {t('no-other-players', { defaultValue: 'No other players or spectators in the lobby.' })}
               </p>
             )}

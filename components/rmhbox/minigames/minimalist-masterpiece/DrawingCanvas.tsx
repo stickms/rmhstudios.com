@@ -178,8 +178,8 @@ export default function DrawingCanvas({
         viewBox="0 0 300 300"
         className={`w-72 h-72 rounded-lg border-2 touch-none outline-none ${
           canDraw
-            ? 'border-(--rmhbox-accent) cursor-crosshair'
-            : 'border-(--rmhbox-border) cursor-not-allowed'
+            ? 'border-(--app-accent) cursor-crosshair'
+            : 'border-(--app-border) cursor-not-allowed'
         }`}
         style={{ backgroundColor }}
         onPointerDown={handlePointerDown}
@@ -233,7 +233,7 @@ export default function DrawingCanvas({
       {strokes.length > 0 && !disabled && (
         <button
           onClick={onUndo}
-          className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-(--rmhbox-surface)/80 border border-(--rmhbox-border) text-(--rmhbox-text) hover:bg-(--rmhbox-border) transition-colors"
+          className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-(--app-surface)/80 border border-(--app-border) text-(--app-text) hover:bg-(--app-border) transition-colors"
           title={t("undo-last-stroke", { defaultValue: "Undo last stroke" })}
           aria-label={t("undo-last-stroke", { defaultValue: "Undo last stroke" })}
         >
@@ -243,7 +243,7 @@ export default function DrawingCanvas({
 
       {/* Pending indicator — pointer-events-none so it doesn't block endpoint placement */}
       {pendingStart && (
-        <span className="absolute bottom-2 left-2 text-xs text-(--rmhbox-text-muted) bg-(--rmhbox-surface)/80 px-2 py-0.5 rounded pointer-events-none select-none">
+        <span className="absolute bottom-2 left-2 text-xs text-(--app-text-muted) bg-(--app-surface)/80 px-2 py-0.5 rounded pointer-events-none select-none">
           {t("click-to-place-endpoint", { defaultValue: "Click to place endpoint (Esc to cancel)" })}
         </span>
       )}

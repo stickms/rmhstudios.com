@@ -107,7 +107,7 @@ function StatusSelector({ currentStatus }: { currentStatus: UserPresenceStatus }
         ref={btnRef}
         onClick={handleOpen}
         className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium transition-colors
-          text-(--rmhtube-text-dim) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
+          text-(--app-text-dim) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
         title={t("change-your-status", { defaultValue: "Change your status" })}
       >
         <StatusIcon className="h-3 w-3" />
@@ -119,17 +119,17 @@ function StatusSelector({ currentStatus }: { currentStatus: UserPresenceStatus }
           {/* Invisible backdrop to close on outside click */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div
-            className="fixed z-50 min-w-27.5 rounded-md border border-(--rmhtube-border) bg-(--rmhtube-surface) shadow-lg py-1"
+            className="fixed z-50 min-w-27.5 rounded-md border border-(--app-border) bg-(--app-surface) shadow-lg py-1"
             style={{ top: pos.top, right: pos.right }}
           >
             {STATUS_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => handleChange(opt.value)}
-                className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors hover:bg-(--rmhtube-surface-hover) ${
+                className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors hover:bg-(--app-surface-hover) ${
                   opt.value === currentStatus
-                    ? 'text-(--rmhtube-accent) font-semibold'
-                    : 'text-(--rmhtube-text)'
+                    ? 'text-(--app-accent) font-semibold'
+                    : 'text-(--app-text)'
                 }`}
               >
                 {opt.value === 'watching' && <Eye className="h-3 w-3 text-green-400" />}
@@ -152,13 +152,13 @@ function RoleBadge({ isHost, isLeader }: { isHost: boolean; isLeader: boolean })
   return (
     <>
       {isHost && (
-        <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold leading-none bg-(--rmhtube-warning)/20 text-(--rmhtube-warning)">
+        <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold leading-none bg-(--app-warning)/20 text-(--app-warning)">
           <Crown className="h-2.5 w-2.5" />
           {t("role-host", { defaultValue: "Host" })}
         </span>
       )}
       {isLeader && (
-        <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold leading-none bg-(--rmhtube-info)/20 text-(--rmhtube-info)">
+        <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold leading-none bg-(--app-info)/20 text-(--app-info)">
           <Star className="h-2.5 w-2.5" />
           {t("role-leader", { defaultValue: "Leader" })}
         </span>
@@ -187,13 +187,13 @@ function BanConfirmDialog({
       <div className="fixed inset-0 z-50 bg-black/50" onClick={onCancel} />
       <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
         <div
-          className="pointer-events-auto w-80 rounded-lg border border-(--rmhtube-border) bg-(--rmhtube-surface) p-4 shadow-xl"
+          className="pointer-events-auto w-80 rounded-lg border border-(--app-border) bg-(--app-surface) p-4 shadow-xl"
           onClick={(e) => e.stopPropagation()}
         >
-          <h4 className="text-sm font-semibold text-(--rmhtube-text) mb-2">
+          <h4 className="text-sm font-semibold text-(--app-text) mb-2">
             {t("ban-dialog-title", { defaultValue: "Ban {{name}}?", name: memberName })}
           </h4>
-          <p className="text-xs text-(--rmhtube-text-muted) mb-3">
+          <p className="text-xs text-(--app-text-muted) mb-3">
             {t("ban-dialog-description", { defaultValue: "This will remove them from the room and prevent them from rejoining." })}
           </p>
           <input
@@ -201,18 +201,18 @@ function BanConfirmDialog({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder={t("ban-reason-placeholder", { defaultValue: "Reason (optional)" })}
-            className="w-full rounded border border-(--rmhtube-border) bg-(--rmhtube-bg) px-2 py-1.5 text-xs text-(--rmhtube-text) placeholder:text-(--rmhtube-text-dim) focus:outline-none focus:border-(--rmhtube-accent) mb-3"
+            className="w-full rounded border border-(--app-border) bg-(--app-bg) px-2 py-1.5 text-xs text-(--app-text) placeholder:text-(--app-text-dim) focus:outline-none focus:border-(--app-accent) mb-3"
           />
           <div className="flex justify-end gap-2">
             <button
               onClick={onCancel}
-              className="rounded px-3 py-1.5 text-xs font-medium text-(--rmhtube-text-muted) hover:bg-(--rmhtube-surface-hover) transition-colors"
+              className="rounded px-3 py-1.5 text-xs font-medium text-(--app-text-muted) hover:bg-(--app-surface-hover) transition-colors"
             >
               {t("cancel", { defaultValue: "Cancel" })}
             </button>
             <button
               onClick={() => onConfirm(reason)}
-              className="rounded px-3 py-1.5 text-xs font-medium bg-(--rmhtube-danger) text-white hover:opacity-90 transition-opacity"
+              className="rounded px-3 py-1.5 text-xs font-medium bg-(--app-danger) text-white hover:opacity-90 transition-opacity"
             >
               {t("ban-confirm", { defaultValue: "Ban" })}
             </button>
@@ -270,8 +270,8 @@ export default function MemberList() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-3 py-2 border-b border-(--rmhtube-border) flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-(--rmhtube-text-muted)">
+      <div className="px-3 py-2 border-b border-(--app-border) flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-(--app-text-muted)">
           {t("members-header", { defaultValue: "Members ({{count}})", count: room.members.length })}
         </h3>
         {/* Status selector for current user */}
@@ -294,7 +294,7 @@ export default function MemberList() {
           return (
             <div
               key={member.userId}
-              className={`flex items-center gap-2 p-2 rounded-lg transition-colors hover:bg-(--rmhtube-surface-hover) ${
+              className={`flex items-center gap-2 p-2 rounded-lg transition-colors hover:bg-(--app-surface-hover) ${
                 !member.isConnected ? 'opacity-50' : ''
               }`}
             >
@@ -307,7 +307,7 @@ export default function MemberList() {
                   onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
                 />
               ) : (
-                <div className="shrink-0 w-8 h-8 rounded-full bg-(--rmhtube-surface-active) flex items-center justify-center text-xs font-bold text-(--rmhtube-text-muted)">
+                <div className="shrink-0 w-8 h-8 rounded-full bg-(--app-surface-active) flex items-center justify-center text-xs font-bold text-(--app-text-muted)">
                   {member.userName.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -318,15 +318,15 @@ export default function MemberList() {
                   <span
                     className={`text-sm font-medium truncate ${
                       member.isHost
-                        ? 'text-(--rmhtube-accent)'
-                        : 'text-(--rmhtube-text)'
+                        ? 'text-(--app-accent)'
+                        : 'text-(--app-text)'
                     }`}
                   >
                     {member.userName}
                   </span>
                   <RoleBadge isHost={memberIsHost} isLeader={memberIsLeader} />
                   {isMe && (
-                    <span className="text-xs text-(--rmhtube-text-dim)">{t("you-label", { defaultValue: "(you)" })}</span>
+                    <span className="text-xs text-(--app-text-dim)">{t("you-label", { defaultValue: "(you)" })}</span>
                   )}
                 </div>
                 {/* Presence badge (afk / brb) shown below the name row */}
@@ -340,9 +340,9 @@ export default function MemberList() {
               {/* Connection status */}
               <div className="shrink-0">
                 {member.isConnected ? (
-                  <Wifi className="h-3.5 w-3.5 text-(--rmhtube-success)" />
+                  <Wifi className="h-3.5 w-3.5 text-(--app-success)" />
                 ) : (
-                  <WifiOff className="h-3.5 w-3.5 text-(--rmhtube-danger)" />
+                  <WifiOff className="h-3.5 w-3.5 text-(--app-danger)" />
                 )}
               </div>
 
@@ -353,7 +353,7 @@ export default function MemberList() {
                   {showTransfer && (
                     <button
                       onClick={() => handleTransferHost(member.userId)}
-                      className="rounded p-1 transition-colors text-(--rmhtube-text-dim) hover:text-(--rmhtube-warning) hover:bg-(--rmhtube-warning-dim)"
+                      className="rounded p-1 transition-colors text-(--app-text-dim) hover:text-(--app-warning) hover:bg-(--app-warning-dim)"
                       title={t("transfer-host", { defaultValue: "Transfer host" })}
                     >
                       <ArrowRightLeft className="h-3 w-3" />
@@ -364,7 +364,7 @@ export default function MemberList() {
                   {showMakeLeader && (
                     <button
                       onClick={() => handleSetLeader(member.userId)}
-                      className="rounded p-1 transition-colors text-(--rmhtube-text-dim) hover:text-(--rmhtube-info) hover:bg-(--rmhtube-info-dim)"
+                      className="rounded p-1 transition-colors text-(--app-text-dim) hover:text-(--app-info) hover:bg-(--app-info-dim)"
                       title={t("make-leader", { defaultValue: "Make leader" })}
                     >
                       <Star className="h-3 w-3" />
@@ -375,7 +375,7 @@ export default function MemberList() {
                   {showKick && (
                     <button
                       onClick={() => handleKick(member.userId)}
-                      className="rounded p-1 transition-colors text-(--rmhtube-text-dim) hover:text-(--rmhtube-danger) hover:bg-(--rmhtube-danger-dim)"
+                      className="rounded p-1 transition-colors text-(--app-text-dim) hover:text-(--app-danger) hover:bg-(--app-danger-dim)"
                       title={t("kick", { defaultValue: "Kick" })}
                     >
                       <UserX className="h-3 w-3" />
@@ -386,7 +386,7 @@ export default function MemberList() {
                   {showBan && (
                     <button
                       onClick={() => setBanTarget(member)}
-                      className="rounded p-1 transition-colors text-(--rmhtube-text-dim) hover:text-(--rmhtube-danger) hover:bg-(--rmhtube-danger-dim)"
+                      className="rounded p-1 transition-colors text-(--app-text-dim) hover:text-(--app-danger) hover:bg-(--app-danger-dim)"
                       title={t("ban", { defaultValue: "Ban" })}
                     >
                       <Ban className="h-3 w-3" />

@@ -128,45 +128,45 @@ export default function StoryEditor({
   const canSelectMore = pendingEdits.length < MAX_EDITS;
 
   return (
-    <div className="flex w-full max-w-2xl flex-col gap-4 text-(--rmhbox-text)">
+    <div className="flex w-full max-w-2xl flex-col gap-4 text-(--app-text)">
       {/* Header with timer */}
-      <div className="flex items-center justify-between rounded-xl border border-(--rmhbox-rare)/30 bg-(--rmhbox-rare-dim) p-3">
+      <div className="flex items-center justify-between rounded-xl border border-(--app-rare)/30 bg-(--app-rare-dim) p-3">
         <div className="flex items-center gap-2">
-          <span className="text-xs uppercase tracking-wider text-(--rmhbox-rare)">
+          <span className="text-xs uppercase tracking-wider text-(--app-rare)">
             ✏️ {t("secret-editor", { defaultValue: "Secret Editor" })}
           </span>
-          <span className="rounded-md bg-(--rmhbox-rare)/30 px-2 py-0.5 text-xs text-(--rmhbox-rare)">
+          <span className="rounded-md bg-(--app-rare)/30 px-2 py-0.5 text-xs text-(--app-rare)">
             {t("edits-selected", { defaultValue: "{{count}}/{{max}} edits selected", count: pendingEdits.length, max: MAX_EDITS })}
           </span>
         </div>
-        <div className="flex items-center gap-1.5 text-sm text-(--rmhbox-text-muted)">
+        <div className="flex items-center gap-1.5 text-sm text-(--app-text-muted)">
           <Clock className="h-3.5 w-3.5" />
           <span className="font-mono font-semibold">{timeRemaining}s</span>
         </div>
       </div>
 
       {/* Instructions */}
-      <p className="text-center text-xs text-(--rmhbox-text-muted)">
-        {t("select-words-instruction", { defaultValue: "Select" })} <span className="font-bold text-(--rmhbox-rare)">{t("one-or-two-words", { defaultValue: "1 or 2 words" })}</span> {t("in-latest-sentence", { defaultValue: "in the latest sentence to replace." })}
+      <p className="text-center text-xs text-(--app-text-muted)">
+        {t("select-words-instruction", { defaultValue: "Select" })} <span className="font-bold text-(--app-rare)">{t("one-or-two-words", { defaultValue: "1 or 2 words" })}</span> {t("in-latest-sentence", { defaultValue: "in the latest sentence to replace." })}
         {canSelectMore
           ? ` ${t("tap-word-to-edit", { defaultValue: "Tap an underlined word to edit it." })}`
           : ` ${t("ready-to-submit", { defaultValue: "Ready to submit!" })}`}
       </p>
 
       {/* Story prompt */}
-      <div className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-3">
-        <p className="text-[10px] uppercase tracking-wider text-(--rmhbox-text-muted) mb-1">{t("prompt-label", { defaultValue: "Prompt" })}</p>
-        <p className="text-sm italic text-(--rmhbox-accent)">&ldquo;{editableStory.prompt}&rdquo;</p>
+      <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-3">
+        <p className="text-[10px] uppercase tracking-wider text-(--app-text-muted) mb-1">{t("prompt-label", { defaultValue: "Prompt" })}</p>
+        <p className="text-sm italic text-(--app-accent)">&ldquo;{editableStory.prompt}&rdquo;</p>
       </div>
 
       {/* Story context (previous sentences — read only) */}
       {editableStory.sentences.length > 1 && (
-        <div className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-3 opacity-60">
-          <p className="mb-1 text-[10px] uppercase tracking-wider text-(--rmhbox-text-muted)">
+        <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-3 opacity-60">
+          <p className="mb-1 text-[10px] uppercase tracking-wider text-(--app-text-muted)">
             {t("previous-sentences", { defaultValue: "Previous sentences" })}
           </p>
           {editableStory.sentences.slice(0, -1).map((s, i) => (
-            <p key={i} className="text-sm text-(--rmhbox-text-muted) leading-relaxed">
+            <p key={i} className="text-sm text-(--app-text-muted) leading-relaxed">
               <span className="text-xs opacity-50">({s.authorName})</span> {s.text}
             </p>
           ))}
@@ -174,8 +174,8 @@ export default function StoryEditor({
       )}
 
       {/* Editable sentence — word-level tokens */}
-      <div className="rounded-xl border border-(--rmhbox-rare)/30 bg-(--rmhbox-surface) p-4">
-        <p className="mb-2 text-[10px] text-(--rmhbox-text-muted)">
+      <div className="rounded-xl border border-(--app-rare)/30 bg-(--app-surface) p-4">
+        <p className="mb-2 text-[10px] text-(--app-text-muted)">
           {t("latest-sentence-by", { defaultValue: "Latest sentence — by {{author}}", author: editableSentence.authorName })}
         </p>
         <div className="flex flex-wrap gap-1 leading-relaxed">
@@ -195,18 +195,18 @@ export default function StoryEditor({
                     }
                     onKeyDown={handleKeyDown}
                     autoFocus
-                    className="w-24 rounded border border-(--rmhbox-rare)/50 bg-(--rmhbox-surface) px-1.5 py-0.5 text-sm text-(--rmhbox-text) focus:outline-none focus:ring-1 focus:ring-(--rmhbox-rare)"
+                    className="w-24 rounded border border-(--app-rare)/50 bg-(--app-surface) px-1.5 py-0.5 text-sm text-(--app-text) focus:outline-none focus:ring-1 focus:ring-(--app-rare)"
                   />
                   <button
                     onClick={handleConfirmWord}
                     disabled={!editValue.trim() || editValue.trim().includes(' ')}
-                    className="rounded p-0.5 text-(--rmhbox-success) hover:bg-(--rmhbox-success-dim) disabled:opacity-30"
+                    className="rounded p-0.5 text-(--app-success) hover:bg-(--app-success-dim) disabled:opacity-30"
                   >
                     <Check className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={handleCancelWord}
-                    className="rounded p-0.5 text-(--rmhbox-danger) hover:bg-(--rmhbox-danger-dim)"
+                    className="rounded p-0.5 text-(--app-danger) hover:bg-(--app-danger-dim)"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -218,13 +218,13 @@ export default function StoryEditor({
               return (
                 <span
                   key={token.index}
-                  className="inline-flex items-center gap-1 rounded bg-(--rmhbox-rare-dim) px-1 py-0.5 cursor-pointer"
+                  className="inline-flex items-center gap-1 rounded bg-(--app-rare-dim) px-1 py-0.5 cursor-pointer"
                   onClick={() => handleRemovePendingEdit(token.index)}
                   title={t("click-to-undo-edit", { defaultValue: "Click to undo this edit" })}
                 >
-                  <span className="line-through text-(--rmhbox-danger)/70 text-sm">{pendingEdit!.originalWord}</span>
-                  <span className="text-(--rmhbox-success) font-semibold text-sm">{pendingEdit!.newWord}</span>
-                  <X className="h-3 w-3 text-(--rmhbox-text-muted)" />
+                  <span className="line-through text-(--app-danger)/70 text-sm">{pendingEdit!.originalWord}</span>
+                  <span className="text-(--app-success) font-semibold text-sm">{pendingEdit!.newWord}</span>
+                  <X className="h-3 w-3 text-(--app-text-muted)" />
                 </span>
               );
             }
@@ -239,8 +239,8 @@ export default function StoryEditor({
                 }
                 className={`text-sm ${
                   canSelectMore
-                    ? 'cursor-pointer underline decoration-(--rmhbox-rare)/50 text-(--rmhbox-text) hover:bg-(--rmhbox-rare-dim) rounded px-0.5 transition-colors'
-                    : 'text-(--rmhbox-text) opacity-60'
+                    ? 'cursor-pointer underline decoration-(--app-rare)/50 text-(--app-text) hover:bg-(--app-rare-dim) rounded px-0.5 transition-colors'
+                    : 'text-(--app-text) opacity-60'
                 }`}
               >
                 {token.word}
@@ -256,11 +256,11 @@ export default function StoryEditor({
           {pendingEdits.map((edit) => (
             <span
               key={edit.wordIndex}
-              className="inline-flex items-center gap-1 rounded-full bg-(--rmhbox-rare-dim) px-2 py-0.5 text-xs"
+              className="inline-flex items-center gap-1 rounded-full bg-(--app-rare-dim) px-2 py-0.5 text-xs"
             >
-              <span className="line-through text-(--rmhbox-danger)">{edit.originalWord}</span>
-              <span className="text-(--rmhbox-text-muted)">→</span>
-              <span className="text-(--rmhbox-success) font-medium">{edit.newWord}</span>
+              <span className="line-through text-(--app-danger)">{edit.originalWord}</span>
+              <span className="text-(--app-text-muted)">→</span>
+              <span className="text-(--app-success) font-medium">{edit.newWord}</span>
             </span>
           ))}
         </div>
@@ -271,7 +271,7 @@ export default function StoryEditor({
         <button
           onClick={handleSubmitEdits}
           disabled={pendingEdits.length < MIN_EDITS || pendingEdits.length > MAX_EDITS || submitted}
-          className="flex items-center justify-center gap-2 rounded-lg bg-(--rmhbox-accent) px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+          className="flex items-center justify-center gap-2 rounded-lg bg-(--app-accent) px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           <Send className="h-4 w-4" />
           {submitted ? t("submitted", { defaultValue: "Submitted!" }) : t("submit-edits", { defaultValue: "Submit Edits" })}
@@ -280,7 +280,7 @@ export default function StoryEditor({
         <button
           onClick={onSkip}
           disabled={submitted}
-          className="flex items-center justify-center gap-2 rounded-lg border border-(--rmhbox-border) px-4 py-2 text-sm text-(--rmhbox-text-muted) transition-colors hover:bg-(--rmhbox-surface-hover) disabled:opacity-40"
+          className="flex items-center justify-center gap-2 rounded-lg border border-(--app-border) px-4 py-2 text-sm text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) disabled:opacity-40"
         >
           <SkipForward className="h-4 w-4" />
           {t("skip", { defaultValue: "Skip" })}

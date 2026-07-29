@@ -1,0 +1,641 @@
+/**
+ * app-theme.css — the shared chrome for full-screen apps.
+ *
+ * ── Why this file exists ────────────────────────────────────────────────────
+ * RMHbox, RMHType, RMHStudy, RMHTube and RMHMusic are all the same design:
+ * a dark (optionally light) app surface, a hairline border ramp, one accent
+ * hue, a set of status colours, 12px/8px radii, Inter + JetBrains Mono, and
+ * the same toast/modal/glass/skeleton behaviours. Each app used to ship its
+ * own ~200-line copy of that, differing only in the hex values — so a fix to
+ * the scrollbar, the focus ring, or the reduced-motion handling had to be
+ * made five times, and in practice never was.
+ *
+ * Now the *structure* lives here exactly once, expressed against an `--app-*`
+ * token contract, and each app ships a palette: a `.app-theme` element plus a
+ * short block that overrides the hues it cares about.
+ *
+ * ── The contract ────────────────────────────────────────────────────────────
+ * Put `.app-theme` on the app's root element, plus one appearance modifier:
+ *
+ *   <div class="app-theme rmhbox-theme">              → dark (default)
+ *   <div class="app-theme app-light rmhbox-theme">    → light
+ *   <div class="app-theme app-high-contrast …">       → high contrast
+ *
+ * The app's own class (`.rmhbox-theme`) carries only colour. Everything
+ * below — layout rhythm, motion, scrollbars, focus, fallbacks — comes free.
+ *
+ * Tokens an app may override (all optional; each has a sensible default):
+ *
+ *   Surfaces   --app-bg --app-bg-subtle --app-surface --app-surface-hover
+ *              --app-surface-active
+ *   Lines      --app-border --app-border-bright
+ *   Ink        --app-text --app-text-muted --app-text-dim
+ *   Accent     --app-accent --app-accent-fg --app-accent-hover
+ *   Status     --app-success --app-danger --app-warning --app-info --app-rare
+ *   Type       --app-font-display --app-font-body --app-font-mono
+ *   Shape      --app-radius --app-radius-sm --app-radius-lg
+ *   Depth      --app-shadow --app-shadow-sm
+ *
+ * The `-dim` companions (`--app-accent-dim`, `--app-danger-dim`, …) are
+ * DERIVED from their base hue — an app never declares them. Same for the
+ * toast surface. Declare one accent, get the whole family.
+ */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   1. Token defaults — the dark ramp every app starts from
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.app-theme {
+  /* Surfaces */
+  --app-bg: #1a1b1e;
+  --app-bg-subtle: #202124;
+  --app-surface: #27282c;
+  --app-surface-hover: #313238;
+  --app-surface-active: #3a3b42;
+
+  /* Lines */
+  --app-border: #3a3b42;
+  --app-border-bright: #4a4b54;
+
+  /* Ink */
+  --app-text: #e8e8ec;
+  --app-text-muted: #9a9ba4;
+  --app-text-dim: #6a6b74;
+
+  /* Accent — the one hue an app must pick */
+  --app-accent: #6ea8d9;
+  --app-accent-fg: #06121c;
+  --app-accent-hover: #5b96c8;
+
+  /* Status */
+  --app-success: #7bc88a;
+  --app-danger: #d98a8a;
+  --app-warning: #d9c36e;
+  --app-info: #7cacd4;
+  --app-rare: #b58ad9;
+
+  /* Type */
+  --app-font-display: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --app-font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --app-font-mono: 'JetBrains Mono', 'Cascadia Code', ui-monospace, monospace;
+
+  /* Shape */
+  --app-radius: 12px;
+  --app-radius-sm: 8px;
+  --app-radius-lg: 18px;
+
+  /* Depth */
+  --app-shadow: 0 4px 24px rgb(0 0 0 / 0.3);
+  --app-shadow-sm: 0 1px 3px rgb(0 0 0 / 0.24);
+
+  /* Motion — one duration scale, so every app eases alike */
+  --app-duration-fast: 120ms;
+  --app-duration: 200ms;
+  --app-duration-slow: 320ms;
+  --app-ease: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Density — `.app-compact` / `.app-spacious` shift these */
+  --app-density-gap: 0.5rem;
+  --app-density-padding: 0.75rem;
+  --app-density-text: 0.875rem;
+
+  /* Chrome metrics */
+  --app-scrollbar-size: 8px;
+  --app-glass-blur: 12px;
+
+  /* Safe areas, resolved once so components can just consume them. Older
+     engines that don't know `env()` fall back to the 0px default. */
+  --app-safe-top: env(safe-area-inset-top, 0px);
+  --app-safe-right: env(safe-area-inset-right, 0px);
+  --app-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --app-safe-left: env(safe-area-inset-left, 0px);
+}
+
+/* ── Derived tints ─────────────────────────────────────────────────────────
+   Static fallbacks first so an engine without `color-mix()` still gets a
+   readable (if hue-neutral) tint; the upgrade below re-derives them from
+   whatever accent the app declared. */
+
+.app-theme {
+  --app-accent-dim: rgb(110 168 217 / 0.12);
+  --app-success-dim: rgb(123 200 138 / 0.12);
+  --app-danger-dim: rgb(217 138 138 / 0.12);
+  --app-warning-dim: rgb(217 195 110 / 0.12);
+  --app-info-dim: rgb(124 172 212 / 0.12);
+  --app-rare-dim: rgb(181 138 217 / 0.12);
+  --app-toast-bg: #2a2b30;
+  --app-glass-bg: rgb(39 40 44 / 0.85);
+  --app-scrim: rgb(0 0 0 / 0.6);
+}
+
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  .app-theme {
+    --app-accent-dim: color-mix(in srgb, var(--app-accent) 12%, transparent);
+    --app-success-dim: color-mix(in srgb, var(--app-success) 12%, transparent);
+    --app-danger-dim: color-mix(in srgb, var(--app-danger) 12%, transparent);
+    --app-warning-dim: color-mix(in srgb, var(--app-warning) 12%, transparent);
+    --app-info-dim: color-mix(in srgb, var(--app-info) 12%, transparent);
+    --app-rare-dim: color-mix(in srgb, var(--app-rare) 12%, transparent);
+    --app-toast-bg: color-mix(in srgb, var(--app-surface) 92%, var(--app-text));
+    --app-glass-bg: color-mix(in srgb, var(--app-surface) 85%, transparent);
+    --app-scrim: color-mix(in srgb, var(--app-bg) 72%, transparent);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   2. Appearance modifiers
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Light. Apps that want a tinted light ramp re-declare these after their own
+   `.app-light` selector; most only need to swap the accent. */
+.app-theme.app-light {
+  --app-bg: #f5f5f7;
+  --app-bg-subtle: #ededf0;
+  --app-surface: #ffffff;
+  --app-surface-hover: #f0f0f4;
+  --app-surface-active: #e6e6ec;
+  --app-border: #d4d4da;
+  --app-border-bright: #bfbfc8;
+  --app-text: #2a2b30;
+  --app-text-muted: #6a6b74;
+  --app-text-dim: #9a9ba4;
+  --app-shadow: 0 4px 24px rgb(0 0 0 / 0.06);
+  --app-shadow-sm: 0 1px 3px rgb(0 0 0 / 0.08);
+  --app-toast-bg: #ffffff;
+  --app-glass-bg: rgb(255 255 255 / 0.85);
+  --app-scrim: rgb(0 0 0 / 0.4);
+}
+
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  .app-theme.app-light {
+    /* Light surfaces need a stronger tint to register at all. */
+    --app-accent-dim: color-mix(in srgb, var(--app-accent) 9%, transparent);
+    --app-success-dim: color-mix(in srgb, var(--app-success) 9%, transparent);
+    --app-danger-dim: color-mix(in srgb, var(--app-danger) 9%, transparent);
+    --app-warning-dim: color-mix(in srgb, var(--app-warning) 9%, transparent);
+    --app-info-dim: color-mix(in srgb, var(--app-info) 9%, transparent);
+    --app-rare-dim: color-mix(in srgb, var(--app-rare) 9%, transparent);
+    --app-toast-bg: #ffffff;
+  }
+}
+
+/* High contrast. Pure black ground, saturated signal colours, thicker rings,
+   no translucency anywhere. */
+.app-theme.app-high-contrast {
+  --app-bg: #000000;
+  --app-bg-subtle: #0a0a0a;
+  --app-surface: #1a1a1a;
+  --app-surface-hover: #2a2a2a;
+  --app-surface-active: #3a3a3a;
+  --app-border: #555555;
+  --app-border-bright: #777777;
+  --app-text: #ffffff;
+  --app-text-muted: #cccccc;
+  --app-text-dim: #999999;
+  --app-success: #4cff7c;
+  --app-danger: #ff6b6b;
+  --app-warning: #ffd93d;
+  --app-info: #6bc5ff;
+  --app-rare: #d99bff;
+  --app-shadow: 0 4px 24px rgb(0 0 0 / 0.6);
+  --app-toast-bg: #1a1a1a;
+  --app-glass-bg: #1a1a1a;
+  --app-scrim: rgb(0 0 0 / 0.86);
+  --app-focus-width: 3px;
+}
+
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  .app-theme.app-high-contrast {
+    --app-accent-dim: color-mix(in srgb, var(--app-accent) 22%, transparent);
+    --app-success-dim: color-mix(in srgb, var(--app-success) 22%, transparent);
+    --app-danger-dim: color-mix(in srgb, var(--app-danger) 22%, transparent);
+    --app-warning-dim: color-mix(in srgb, var(--app-warning) 22%, transparent);
+    --app-info-dim: color-mix(in srgb, var(--app-info) 22%, transparent);
+    --app-rare-dim: color-mix(in srgb, var(--app-rare) 22%, transparent);
+    --app-glass-bg: #1a1a1a;
+  }
+}
+
+/* Density. Deliberately not scoped under `.app-theme` — apps apply it to an
+   inner region (RMHTube puts it on the room, not the whole app) as often as to
+   the root, and a token override only needs to sit on a common ancestor. */
+.app-compact {
+  --app-density-gap: 0.25rem;
+  --app-density-padding: 0.5rem;
+  --app-density-text: 0.8125rem;
+}
+
+.app-spacious {
+  --app-density-gap: 0.75rem;
+  --app-density-padding: 1rem;
+  --app-density-text: 0.9375rem;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   3. Base surface
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.app-theme {
+  background-color: var(--app-bg);
+  color: var(--app-text);
+  font-family: var(--app-font-body);
+
+  /* `100vh` on mobile is the *largest* viewport, so a bottom bar sits under
+     the browser chrome until the toolbars collapse. `dvh` tracks the live
+     viewport; the plain `vh` line stays as the fallback for engines that
+     don't parse it. */
+  min-height: 100vh;
+  min-height: 100dvh;
+
+  /* Stop iOS/Android from re-flowing text on rotate. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Neutralise the site's own dark-on-light assumptions for form controls that
+   the app renders inside its own palette. */
+.app-theme {
+  accent-color: var(--app-accent);
+  color-scheme: dark;
+}
+
+.app-theme.app-light {
+  color-scheme: light;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   4. Scrollbars — themed on both engines
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.app-theme {
+  scrollbar-width: thin;
+  scrollbar-color: var(--app-border-bright) var(--app-bg-subtle);
+}
+
+.app-theme ::-webkit-scrollbar {
+  width: var(--app-scrollbar-size);
+  height: var(--app-scrollbar-size);
+}
+
+.app-theme ::-webkit-scrollbar-track {
+  background: var(--app-bg-subtle);
+  border-radius: calc(var(--app-scrollbar-size) / 2);
+}
+
+.app-theme ::-webkit-scrollbar-thumb {
+  background: var(--app-border-bright);
+  border-radius: calc(var(--app-scrollbar-size) / 2);
+  transition: background var(--app-duration-fast) linear;
+}
+
+.app-theme ::-webkit-scrollbar-thumb:hover {
+  background: var(--app-accent);
+}
+
+.app-theme ::-webkit-scrollbar-corner {
+  background: var(--app-bg-subtle);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   5. Selection, focus, pointer affordances
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.app-theme ::selection {
+  background: var(--app-accent);
+  color: var(--app-accent-fg);
+}
+
+.app-theme ::-moz-selection {
+  background: var(--app-accent);
+  color: var(--app-accent-fg);
+}
+
+.app-theme :focus-visible {
+  outline: var(--app-focus-width, 2px) solid var(--app-accent);
+  outline-offset: 2px;
+}
+
+/* Firefox draws an extra dotted ring inside buttons and a red "invalid" glow
+   on any field with a pattern/required attribute. Both fight the ring above. */
+.app-theme ::-moz-focus-inner {
+  border: 0;
+}
+
+.app-theme :-moz-ui-invalid {
+  box-shadow: none;
+}
+
+/* Gecko dims placeholders to ~54% on its own; pin the opacity so the muted
+   token is the single source of truth across engines. */
+.app-theme ::placeholder {
+  color: var(--app-text-dim);
+  opacity: 1;
+}
+
+.app-theme button:not(:disabled),
+.app-theme [role='button']:not([aria-disabled='true']) {
+  cursor: pointer;
+}
+
+.app-theme button:disabled,
+.app-theme [aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+/* Kill the grey flash Android/iOS paint on tap, and stop double-tap zoom from
+   eating the second tap of a fast interaction. */
+.app-theme {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-theme button,
+.app-theme [role='button'],
+.app-theme a,
+.app-theme label,
+.app-theme summary {
+  touch-action: manipulation;
+}
+
+/* iOS zooms the page when a sub-16px field takes focus. */
+@media (max-width: 640px) {
+  .app-theme input,
+  .app-theme select,
+  .app-theme textarea {
+    font-size: max(16px, 1em);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   6. Motion primitives
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes app-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes app-toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+}
+
+@keyframes app-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes app-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes app-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes app-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes app-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.app-toast-enter {
+  animation: app-toast-in var(--app-duration, 200ms) var(--app-ease) forwards;
+}
+
+.app-toast-exit {
+  animation: app-toast-out var(--app-duration-fast, 120ms) ease-in forwards;
+}
+
+.app-overlay {
+  animation: app-fade-in var(--app-duration, 200ms) ease-out;
+}
+
+.app-modal {
+  animation: app-slide-up var(--app-duration, 200ms) var(--app-ease);
+}
+
+.app-sheet {
+  animation: app-sheet-up var(--app-duration, 200ms) var(--app-ease);
+}
+
+.app-spin {
+  animation: app-spin 800ms linear infinite;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   7. Material utilities
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Translucent panel. Falls back to the opaque surface where `backdrop-filter`
+   is missing — a see-through panel with no blur is unreadable, not "degraded". */
+.app-glass {
+  background: var(--app-surface);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .app-glass {
+    background: var(--app-glass-bg);
+    -webkit-backdrop-filter: blur(var(--app-glass-blur)) saturate(1.4);
+    backdrop-filter: blur(var(--app-glass-blur)) saturate(1.4);
+  }
+}
+
+.app-scrim {
+  background: var(--app-scrim);
+}
+
+.app-skeleton {
+  background: var(--app-surface-hover);
+  border-radius: var(--app-radius-sm);
+  animation: app-skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.app-skeleton-text {
+  height: 0.875rem;
+  margin-bottom: 0.375rem;
+  border-radius: 4px;
+}
+
+.app-skeleton-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+}
+
+.app-skeleton-thumbnail {
+  width: 4rem;
+  height: 2.25rem;
+  border-radius: 4px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   8. Layout helpers
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Full-viewport app root. Use instead of `h-screen`, which is the same
+   too-tall `vh` trap described above. */
+.app-viewport {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* A scroll region that behaves on touch: momentum on old iOS, no scroll
+   chaining into the page behind it, and a stable gutter so content doesn't
+   shift by the scrollbar width when it appears. */
+.app-scroll-y {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+.app-scroll-x {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Respect the notch/home indicator on the edges an app actually touches. */
+.app-safe-top {
+  padding-top: var(--app-safe-top);
+}
+
+.app-safe-bottom {
+  padding-bottom: var(--app-safe-bottom);
+}
+
+.app-safe-x {
+  padding-left: var(--app-safe-left);
+  padding-right: var(--app-safe-right);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   9. Preference and capability fallbacks
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Reduced transparency — OS-level or the high-contrast appearance. */
+@media (prefers-reduced-transparency: reduce) {
+  .app-theme .app-glass {
+    background: var(--app-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+.app-theme.app-high-contrast .app-glass {
+  background: var(--app-surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* Reduced motion. Transitions collapse rather than vanish so state changes
+   still read as changes; the purely decorative loops stop outright. */
+@media (prefers-reduced-motion: reduce) {
+  .app-theme *,
+  .app-theme *::before,
+  .app-theme *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .app-toast-enter,
+  .app-toast-exit,
+  .app-overlay,
+  .app-modal,
+  .app-sheet {
+    animation: none !important;
+  }
+
+  .app-skeleton {
+    animation: none !important;
+    opacity: 0.5;
+  }
+
+  /* Spinners are the one loop worth keeping — a frozen spinner reads as a
+     hung app. Slow it instead of stopping it. */
+  .app-spin {
+    animation: app-spin 1.6s linear infinite !important;
+    animation-duration: 1.6s !important;
+  }
+}
+
+/* Windows High Contrast / forced-colors: hand every surface back to the OS
+   palette. Custom properties are ignored by forced-colors, so anything that
+   relied on a token for its border would otherwise disappear. */
+@media (forced-colors: active) {
+  .app-theme .app-glass,
+  .app-theme .app-skeleton {
+    background: Canvas;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border: 1px solid CanvasText;
+  }
+
+  .app-theme :focus-visible {
+    outline: 2px solid Highlight;
+  }
+
+  /* Elements that signal state purely through a background colour need a
+     border to survive the palette swap. */
+  .app-theme [data-app-state] {
+    border: 1px solid CanvasText;
+  }
+}
+
+/* Print — apps aren't print targets, but a stray Ctrl+P shouldn't burn ink. */
+@media print {
+  .app-theme {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  .app-theme .app-glass {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}

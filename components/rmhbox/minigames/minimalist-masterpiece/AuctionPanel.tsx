@@ -32,7 +32,7 @@ export default function AuctionPanel({ drawings, currency, onBid, disabled }: Au
 
   if (drawings.length === 0) {
     return (
-      <p className="text-sm text-(--rmhbox-text-muted)">{t("no-drawings-available", { defaultValue: "No drawings available." })}</p>
+      <p className="text-sm text-(--app-text-muted)">{t("no-drawings-available", { defaultValue: "No drawings available." })}</p>
     );
   }
 
@@ -43,13 +43,13 @@ export default function AuctionPanel({ drawings, currency, onBid, disabled }: Au
           key={drawing.drawingId}
           className={`flex flex-col items-center gap-2 p-3 rounded-lg border ${
             drawing.isMine
-              ? 'border-(--rmhbox-text-muted) opacity-60'
-              : 'border-(--rmhbox-border)'
+              ? 'border-(--app-text-muted) opacity-60'
+              : 'border-(--app-border)'
           }`}
         >
           <DrawingCard strokes={drawing.strokes} backgroundColor={drawing.backgroundColor} label={drawing.label} />
           {drawing.isMine ? (
-            <span className="text-xs text-(--rmhbox-text-muted) italic">{t("your-drawing", { defaultValue: "Your drawing" })}</span>
+            <span className="text-xs text-(--app-text-muted) italic">{t("your-drawing", { defaultValue: "Your drawing" })}</span>
           ) : (
             <BidControls
               currentBid={drawing.myBidAmount}

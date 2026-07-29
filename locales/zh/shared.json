@@ -1,10 +1,12 @@
 {
   "chat-placeholder": "聊天……",
+  "dismiss": "Dismiss",
   "failed-to-load-media": "加载媒体失败",
   "game-crashed": "游戏崩溃了",
   "game-crashed-named": "{{gameName}} 崩溃了",
   "loading": "加载中…",
   "no-messages-yet": "暂无消息",
+  "notifications": "Notifications",
   "react": "React",
   "return-home": "回家",
   "try-again": "再试一次",

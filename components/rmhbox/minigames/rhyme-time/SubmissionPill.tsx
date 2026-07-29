@@ -24,10 +24,10 @@ export interface SubmissionPillProps {
 }
 
 const STATUS_STYLES: Record<SubmissionPillProps['status'], string> = {
-  pending:      'bg-(--rmhbox-text-muted)/20 text-(--rmhbox-text-muted) border-(--rmhbox-text-muted)/40',
-  valid:        'bg-(--rmhbox-success)/20 text-(--rmhbox-success) border-(--rmhbox-success)/40',
-  invalid:      'bg-(--rmhbox-danger)/20 text-(--rmhbox-danger) border-(--rmhbox-danger)/40 line-through',
-  not_in_dict:  'bg-(--rmhbox-text-dim)/10 text-(--rmhbox-text-dim) border-(--rmhbox-text-dim)/30',
+  pending:      'bg-(--app-text-muted)/20 text-(--app-text-muted) border-(--app-text-muted)/40',
+  valid:        'bg-(--app-success)/20 text-(--app-success) border-(--app-success)/40',
+  invalid:      'bg-(--app-danger)/20 text-(--app-danger) border-(--app-danger)/40 line-through',
+  not_in_dict:  'bg-(--app-text-dim)/10 text-(--app-text-dim) border-(--app-text-dim)/30',
 };
 
 export default function SubmissionPill({ word, status, invalidReason }: SubmissionPillProps) {
@@ -47,7 +47,7 @@ export default function SubmissionPill({ word, status, invalidReason }: Submissi
 
       {/* Tooltip for invalid words */}
       {showTooltip && invalidReason && (
-        <span className="absolute -top-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded bg-(--rmhbox-surface) px-2 py-1 text-[10px] text-(--rmhbox-text-muted) shadow-lg border border-(--rmhbox-border)">
+        <span className="absolute -top-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded bg-(--app-surface) px-2 py-1 text-[10px] text-(--app-text-muted) shadow-lg border border-(--app-border)">
           {invalidReason}
         </span>
       )}

@@ -1,24 +1,21 @@
 /**
- * RMHboxShell — Client-side wrapper for the RMHbox theme system.
+ * RMHboxShell — RMHbox's root wrapper.
  *
- * Wraps children with the themed container and toast notifications.
- * Manages light/dark theme class based on persisted settings.
- *
- * Settings and host control modals are now rendered inline within
- * the RMHboxHeader component, not as floating overlays here.
+ * Structure and toasts come from the shared `AppShell`; this only supplies the
+ * palette class and the persisted appearance. Settings and host-control modals
+ * render inline within `RMHboxHeader`, not as floating overlays here.
  */
 'use client';
 
+import AppShell from '@/components/shared/AppShell';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
-import ToastContainer from '@/components/rmhbox/ToastContainer';
 
 export default function RMHboxShell({ children }: { children: React.ReactNode }) {
-  const theme = useRMHboxStore((s) => s.settings.theme) ?? 'dark';
+  const theme = useRMHboxStore((s) => s.settings.theme);
 
   return (
-    <div className={`rmhbox-theme ${theme === 'light' ? 'rmhbox-light' : ''}`}>
-      <ToastContainer />
+    <AppShell appClassName="rmhbox-theme" theme={theme}>
       {children}
-    </div>
+    </AppShell>
   );
 }

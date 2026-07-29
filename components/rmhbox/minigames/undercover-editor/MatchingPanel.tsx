@@ -102,18 +102,18 @@ export default function MatchingPanel({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="mx-auto flex w-full max-w-2xl flex-col items-center gap-6 text-(--rmhbox-text)"
+      className="mx-auto flex w-full max-w-2xl flex-col items-center gap-6 text-(--app-text)"
     >
       {/* Header */}
       <div className="flex flex-col items-center gap-1">
         <h2 className="text-lg font-bold">{t("match-the-editors", { defaultValue: "Match the Editors" })}</h2>
-        <p className="text-xs text-(--rmhbox-text-muted)">
+        <p className="text-xs text-(--app-text-muted)">
           {t("match-the-editors-subtitle", { defaultValue: "For each story, guess which player was its undercover editor" })}
         </p>
       </div>
 
       {/* Lock-in progress */}
-      <div className="flex flex-col items-center gap-1 text-xs text-(--rmhbox-text-muted)">
+      <div className="flex flex-col items-center gap-1 text-xs text-(--app-text-muted)">
         <span>
           {t("players-locked-in", { lockedCount, totalPlayers, defaultValue: "{{lockedCount}}/{{totalPlayers}} players locked in" })}
         </span>
@@ -122,7 +122,7 @@ export default function MatchingPanel({
             {lockedInPlayers.map((uid) => (
               <span
                 key={uid}
-                className="rounded-full bg-(--rmhbox-success-dim) px-2 py-0.5 text-[10px] text-(--rmhbox-success)"
+                className="rounded-full bg-(--app-success-dim) px-2 py-0.5 text-[10px] text-(--app-success)"
               >
                 ✓ {getPlayerName(uid)}
               </span>
@@ -142,7 +142,7 @@ export default function MatchingPanel({
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.08, duration: 0.35 }}
-              className="flex flex-col gap-3 rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4"
+              className="flex flex-col gap-3 rounded-xl border border-(--app-border) bg-(--app-surface) p-4"
             >
               {/* Story header — numbered */}
               <div className="flex items-center justify-between">
@@ -152,8 +152,8 @@ export default function MatchingPanel({
               </div>
 
               {/* Full story text with prompt as first sentence */}
-              <div className="flex flex-col gap-1 rounded-lg bg-(--rmhbox-surface)/60 p-3 text-sm leading-relaxed">
-                <span className="text-(--rmhbox-text)">
+              <div className="flex flex-col gap-1 rounded-lg bg-(--app-surface)/60 p-3 text-sm leading-relaxed">
+                <span className="text-(--app-text)">
                   <span className="opacity-50 text-xs">{t("prompt-label", { defaultValue: "(prompt)" })}</span> {story.prompt}
                 </span>
                 {story.sentences
@@ -166,7 +166,7 @@ export default function MatchingPanel({
 
               {/* Editor guess dropdown — only excludes the guessing player */}
               <label className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-(--rmhbox-text-muted)">
+                <span className="text-xs font-medium text-(--app-text-muted)">
                   {t("who-was-the-editor", { defaultValue: "Who was the editor?" })}
                 </span>
                 <select
@@ -175,7 +175,7 @@ export default function MatchingPanel({
                   onChange={(e) =>
                     onGuessChange(story.storyId, e.target.value)
                   }
-                  className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) px-3 py-2 text-sm text-(--rmhbox-text) outline-none transition-colors focus:border-(--rmhbox-accent) disabled:opacity-50"
+                  className="rounded-lg border border-(--app-border) bg-(--app-surface) px-3 py-2 text-sm text-(--app-text) outline-none transition-colors focus:border-(--app-accent) disabled:opacity-50"
                 >
                   <option value="">{t("select-a-player", { defaultValue: "— select a player —" })}</option>
                   {candidates.map((p) => (
@@ -197,7 +197,7 @@ export default function MatchingPanel({
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="flex items-center gap-1.5 rounded-full bg-(--rmhbox-success-dim) px-4 py-1.5 text-sm font-semibold text-(--rmhbox-success)"
+            className="flex items-center gap-1.5 rounded-full bg-(--app-success-dim) px-4 py-1.5 text-sm font-semibold text-(--app-success)"
           >
             ✓ {t("locked-in", { defaultValue: "Locked In" })}
           </motion.div>
@@ -206,14 +206,14 @@ export default function MatchingPanel({
             whileTap={{ scale: 0.96 }}
             disabled={!allGuessed}
             onClick={onLockIn}
-            className="rounded-xl border border-(--rmhbox-accent) bg-(--rmhbox-accent)/15 px-6 py-2 text-sm font-semibold text-(--rmhbox-accent) transition-opacity disabled:opacity-40"
+            className="rounded-xl border border-(--app-accent) bg-(--app-accent)/15 px-6 py-2 text-sm font-semibold text-(--app-accent) transition-opacity disabled:opacity-40"
           >
             {t("lock-in-guesses", { defaultValue: "Lock In Guesses" })}
           </motion.button>
         )}
 
         {!lockedIn && !allGuessed && (
-          <p className="text-[11px] text-(--rmhbox-text-muted)">
+          <p className="text-[11px] text-(--app-text-muted)">
             {t("assign-editor-hint", { defaultValue: "Assign an editor for every story to lock in" })}
           </p>
         )}

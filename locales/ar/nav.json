@@ -1,5 +1,10 @@
 {
-  "lang-firstrun-body": "تتوفر RMH Studios بـ 32 لغة. يمكنك تغيير ذلك في أي وقت من الإعدادات.",
+  "lang-firstrun-body_zero": "RMH Studios is available in {{count}} languages. You can change this any time in Settings.",
+  "lang-firstrun-body_one": "RMH Studios is available in {{count}} languages. You can change this any time in Settings.",
+  "lang-firstrun-body_two": "RMH Studios is available in {{count}} languages. You can change this any time in Settings.",
+  "lang-firstrun-body_few": "RMH Studios is available in {{count}} languages. You can change this any time in Settings.",
+  "lang-firstrun-body_many": "RMH Studios is available in {{count}} languages. You can change this any time in Settings.",
+  "lang-firstrun-body_other": "RMH Studios is available in {{count}} languages. You can change this any time in Settings.",
   "lang-firstrun-continue": "المتابعة بـ {{lang}}",
   "lang-firstrun-title": "اختر لغتك",
   "language": "لغة"

@@ -189,8 +189,8 @@ function LobbyPage() {
         <RMHboxHeader backLabel={backlinkLabel} backHref={backlinkHref}/>
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
-            <div className="text-2xl mb-4 text-(--rmhbox-text)">{t("connecting", { defaultValue: "Connecting..." })}</div>
-            <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto border-(--rmhbox-accent)" style={{ borderTopColor: 'transparent' }} />
+            <div className="text-2xl mb-4 text-(--app-text)">{t("connecting", { defaultValue: "Connecting..." })}</div>
+            <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto border-(--app-accent)" style={{ borderTopColor: 'transparent' }} />
           </div>
         </div>
       </div>
@@ -204,12 +204,12 @@ function LobbyPage() {
         <RMHboxHeader backLabel={backlinkLabel} backHref={backlinkHref}/>
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
-            <div className="text-2xl mb-4 text-(--rmhbox-danger)">
+            <div className="text-2xl mb-4 text-(--app-danger)">
               {t("connection-error", { defaultValue: "Connection error" })}
             </div>
             <button
               onClick={() => navigate({ to: '/rmhbox' })}
-              className="px-6 py-2 rounded-lg bg-(--rmhbox-accent) text-white font-semibold hover:bg-(--rmhbox-accent-hover) transition-colors"
+              className="px-6 py-2 rounded-lg bg-(--app-accent) text-white font-semibold hover:bg-(--app-accent-hover) transition-colors"
             >
               {t("back-to-lobby", { defaultValue: "Back to Lobby" })}
             </button>
@@ -226,8 +226,8 @@ function LobbyPage() {
         <RMHboxHeader backLabel={backlinkLabel} backHref={backlinkHref}/>
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
-            <div className="text-2xl mb-4 text-(--rmhbox-text)">{t("joining-lobby", { defaultValue: "Joining lobby {{lobbyId}}...", lobbyId })}</div>
-            <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto border-(--rmhbox-accent)" style={{ borderTopColor: 'transparent' }} />
+            <div className="text-2xl mb-4 text-(--app-text)">{t("joining-lobby", { defaultValue: "Joining lobby {{lobbyId}}...", lobbyId })}</div>
+            <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto border-(--app-accent)" style={{ borderTopColor: 'transparent' }} />
           </div>
         </div>
       </div>
@@ -299,7 +299,7 @@ function LobbyPage() {
 
       {lobby.state === 'COUNTDOWN' && (
         <div className="flex items-center justify-center h-full">
-          <div className="text-9xl font-bold animate-pulse text-(--rmhbox-accent)" style={{ fontFamily: 'var(--rmhbox-font-display)' }}>
+          <div className="text-9xl font-bold animate-pulse text-(--app-accent)" style={{ fontFamily: 'var(--app-font-display)' }}>
             {/* Read from the centralized timer (TIMER_START/TICK), not
                 currentGame.timeRemaining — the latter is reset to null by every
                 full sync, which would freeze the countdown on the stale
@@ -322,8 +322,8 @@ function LobbyPage() {
           /* Brief loading state while GAME_SELECTED action is in-flight */
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <div className="text-xl mb-3 text-(--rmhbox-text)">{t("starting-game", { defaultValue: "Starting game..." })}</div>
-              <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto" style={{ borderColor: 'var(--rmhbox-accent)', borderTopColor: 'transparent' }} />
+              <div className="text-xl mb-3 text-(--app-text)">{t("starting-game", { defaultValue: "Starting game..." })}</div>
+              <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto" style={{ borderColor: 'var(--app-accent)', borderTopColor: 'transparent' }} />
             </div>
           </div>
         )
@@ -342,26 +342,26 @@ function LobbyPage() {
 
       {lobby.state === 'SESSION_RESULTS' && (
         <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-6 p-6 h-full justify-center">
-          <h1 className="text-4xl font-bold" style={{ fontFamily: 'var(--rmhbox-font-display)' }}>
+          <h1 className="text-4xl font-bold" style={{ fontFamily: 'var(--app-font-display)' }}>
             {t("session-complete", { defaultValue: "Session Complete!" })} <PartyPopper className="h-8 w-8 inline" />
           </h1>
 
           {/* Final Standings */}
           {sessionResults?.standings && sessionResults.standings.length > 0 && (
-            <div className="w-full rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4">
-              <h2 className="mb-3 text-lg font-semibold text-(--rmhbox-accent)">{t("final-standings", { defaultValue: "Final Standings" })}</h2>
+            <div className="w-full rounded-xl border border-(--app-border) bg-(--app-surface) p-4">
+              <h2 className="mb-3 text-lg font-semibold text-(--app-accent)">{t("final-standings", { defaultValue: "Final Standings" })}</h2>
               <div className="space-y-2">
                 {sessionResults.standings.map((s) => (
-                  <div key={s.userId} className="flex items-center justify-between rounded-lg bg-(--rmhbox-bg) px-4 py-2">
+                  <div key={s.userId} className="flex items-center justify-between rounded-lg bg-(--app-bg) px-4 py-2">
                     <div className="flex items-center gap-3">
-                      <span className="text-xl font-bold" style={{ color: s.rank === 1 ? 'var(--rmhbox-warning)' : s.rank === 2 ? '#c0c0c0' : s.rank === 3 ? '#cd7f32' : 'var(--rmhbox-text-muted)' }}>
+                      <span className="text-xl font-bold" style={{ color: s.rank === 1 ? 'var(--app-warning)' : s.rank === 2 ? '#c0c0c0' : s.rank === 3 ? '#cd7f32' : 'var(--app-text-muted)' }}>
                         #{s.rank}
                       </span>
                       <span className="font-semibold">{s.userName}</span>
                     </div>
                     <div className="flex items-center gap-4 text-sm">
-                      <span className="text-(--rmhbox-text-muted)">{s.wins} win{s.wins !== 1 ? 's' : ''}</span>
-                      <span className="font-bold text-(--rmhbox-accent)">{s.totalScore} {t("pts", { defaultValue: "pts" })}</span>
+                      <span className="text-(--app-text-muted)">{s.wins} win{s.wins !== 1 ? 's' : ''}</span>
+                      <span className="font-bold text-(--app-accent)">{s.totalScore} {t("pts", { defaultValue: "pts" })}</span>
                     </div>
                   </div>
                 ))}
@@ -371,16 +371,16 @@ function LobbyPage() {
 
           {/* Match History */}
           {sessionResults?.matchHistory && sessionResults.matchHistory.length > 0 && (
-            <div className="w-full rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4">
-              <h2 className="mb-3 text-lg font-semibold text-(--rmhbox-accent)">{t("match-history", { defaultValue: "Match History" })}</h2>
+            <div className="w-full rounded-xl border border-(--app-border) bg-(--app-surface) p-4">
+              <h2 className="mb-3 text-lg font-semibold text-(--app-accent)">{t("match-history", { defaultValue: "Match History" })}</h2>
               <div className="space-y-2">
                 {sessionResults.matchHistory.map((m) => (
-                  <div key={m.matchId} className="flex items-center justify-between rounded-lg bg-(--rmhbox-bg) px-4 py-2 text-sm">
+                  <div key={m.matchId} className="flex items-center justify-between rounded-lg bg-(--app-bg) px-4 py-2 text-sm">
                     <div>
                       <span className="font-semibold">{m.minigameDisplayName}</span>
-                      <span className="ml-2 text-(--rmhbox-text-muted)">· {t("player-count", { defaultValue: "{{count}} players", count: m.playerCount })}</span>
+                      <span className="ml-2 text-(--app-text-muted)">· {t("player-count", { defaultValue: "{{count}} players", count: m.playerCount })}</span>
                     </div>
-                    <span className="text-(--rmhbox-success) flex items-center gap-1"><Trophy className="h-3.5 w-3.5" /> {m.winnerUserName ?? 'N/A'}</span>
+                    <span className="text-(--app-success) flex items-center gap-1"><Trophy className="h-3.5 w-3.5" /> {m.winnerUserName ?? 'N/A'}</span>
                   </div>
                 ))}
               </div>
@@ -392,7 +392,7 @@ function LobbyPage() {
               useRMHboxStore.getState().leaveLobby();
               navigate({ to: '/rmhbox' });
             }}
-            className="px-8 py-3 rounded-lg font-semibold bg-(--rmhbox-accent) text-white hover:bg-(--rmhbox-accent-hover) transition-colors"
+            className="px-8 py-3 rounded-lg font-semibold bg-(--app-accent) text-white hover:bg-(--app-accent-hover) transition-colors"
           >
             {t("back-to-lobby", { defaultValue: "Back to Lobby" })}
           </button>

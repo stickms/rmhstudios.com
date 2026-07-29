@@ -1,18 +1,17 @@
 /**
- * RmhStudyShell — Client-side wrapper for the RmhStudy theme system.
+ * RmhStudyShell — RMHStudy's root wrapper. Palette only; the rest is `AppShell`.
  */
 'use client';
 
+import AppShell from '@/components/shared/AppShell';
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';
-import ToastContainer from '@/components/rmhstudy/ToastContainer';
 
 export default function RmhStudyShell({ children }: { children: React.ReactNode }) {
-  const theme = useRmhStudyStore((s) => s.settings.theme) ?? 'dark';
+  const theme = useRmhStudyStore((s) => s.settings.theme);
 
   return (
-    <div className={`rmhstudy-theme ${theme === 'light' ? 'rmhstudy-light' : ''}`}>
-      <ToastContainer />
+    <AppShell appClassName="rmhstudy-theme" theme={theme}>
       {children}
-    </div>
+    </AppShell>
   );
 }

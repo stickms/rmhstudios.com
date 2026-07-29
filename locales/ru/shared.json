@@ -1,10 +1,12 @@
 {
   "chat-placeholder": "Чат...",
+  "dismiss": "Dismiss",
   "failed-to-load-media": "Не удалось загрузить медиа",
   "game-crashed": "Игра вылетела",
   "game-crashed-named": "{{gameName}} вылетела",
   "loading": "Загрузка…",
   "no-messages-yet": "Пока нет сообщений",
+  "notifications": "Notifications",
   "react": "Реакция",
   "return-home": "На главную",
   "try-again": "Попробовать снова",

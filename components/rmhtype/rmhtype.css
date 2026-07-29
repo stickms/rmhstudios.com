@@ -1,208 +1,95 @@
 /**
- * RMH Type — Dedicated Theme Stylesheet
+ * RMHType — palette + typing-surface specifics.
  *
- * Emerald/teal/cyan color scheme for competitive typing.
+ * Structure comes from the shared app chrome (see
+ * `components/shared/app-theme.css`). RMHType contributes an emerald accent, a
+ * cooler blue-slate ramp than the app default, and the rules that only a
+ * typing test needs: the passage itself, per-character states, the caret, and
+ * the short-viewport layout for a phone with the keyboard up.
  */
 
-/* ─── Dark Theme (default) ──────────────────────────────────────── */
+@import '../shared/app-theme.css';
+
+/* ─── Dark (default) ─────────────────────────────────────────────── */
 
 .rmhtype-theme {
-  --rmhtype-bg: #0f1419;
-  --rmhtype-bg-subtle: #151b22;
-  --rmhtype-surface: #1c2530;
-  --rmhtype-surface-hover: #243040;
-  --rmhtype-surface-active: #2c3a4c;
-  --rmhtype-border: #2c3a4c;
-  --rmhtype-border-bright: #3a4d64;
-  --rmhtype-text: #e8edf2;
-  --rmhtype-text-muted: #8a9bb0;
-  --rmhtype-text-dim: #5a6d82;
-  --rmhtype-accent: #34d399;
-  --rmhtype-accent-hover: #2cc08a;
-  --rmhtype-accent-dim: rgba(52, 211, 153, 0.12);
-  --rmhtype-success: #34d399;
-  --rmhtype-success-dim: rgba(52, 211, 153, 0.12);
-  --rmhtype-danger: #f87171;
-  --rmhtype-danger-dim: rgba(248, 113, 113, 0.12);
-  --rmhtype-warning: #fbbf24;
-  --rmhtype-warning-dim: rgba(251, 191, 36, 0.12);
-  --rmhtype-info: #38bdf8;
-  --rmhtype-info-dim: rgba(56, 189, 248, 0.12);
-  --rmhtype-font-display: 'Inter', 'Segoe UI', system-ui, sans-serif;
-  --rmhtype-font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
-  --rmhtype-font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
-  --rmhtype-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-  --rmhtype-radius: 12px;
-  --rmhtype-radius-sm: 8px;
-  --rmhtype-toast-bg: #1c2530;
+  --app-bg: #0f1419;
+  --app-bg-subtle: #151b22;
+  --app-surface: #1c2530;
+  --app-surface-hover: #243040;
+  --app-surface-active: #2c3a4c;
+  --app-border: #2c3a4c;
+  --app-border-bright: #3a4d64;
+  --app-text: #e8edf2;
+  --app-text-muted: #8a9bb0;
+  --app-text-dim: #5a6d82;
 
-  /* Typing specific */
-  --rmhtype-cursor: #34d399;
-  --rmhtype-correct: #34d399;
-  --rmhtype-incorrect: #f87171;
-  --rmhtype-untyped: #5a6d82;
+  --app-accent: #34d399;
+  --app-accent-fg: #05231a;
+  --app-accent-hover: #2cc08a;
+  --app-success: #34d399;
+  --app-danger: #f87171;
+  --app-warning: #fbbf24;
+  --app-info: #38bdf8;
+
+  --app-shadow: 0 4px 24px rgb(0 0 0 / 0.4);
+
+  /* Typing surface */
+  --rmhtype-cursor: var(--app-accent);
+  --rmhtype-correct: var(--app-accent);
+  --rmhtype-incorrect: var(--app-danger);
+  --rmhtype-untyped: var(--app-text-dim);
 }
 
-/* ─── Light Theme ───────────────────────────────────────────────── */
+/* ─── Light ──────────────────────────────────────────────────────── */
 
-.rmhtype-theme.rmhtype-light {
-  --rmhtype-bg: #f0fdf4;
-  --rmhtype-bg-subtle: #e8f8ee;
-  --rmhtype-surface: #ffffff;
-  --rmhtype-surface-hover: #f0f9f4;
-  --rmhtype-surface-active: #e4f2ea;
-  --rmhtype-border: #c8e6d2;
-  --rmhtype-border-bright: #a8d4b8;
-  --rmhtype-text: #1a2e24;
-  --rmhtype-text-muted: #5a7a6a;
-  --rmhtype-text-dim: #8aa89a;
-  --rmhtype-accent: #059669;
-  --rmhtype-accent-hover: #047857;
-  --rmhtype-accent-dim: rgba(5, 150, 105, 0.08);
-  --rmhtype-success: #059669;
-  --rmhtype-success-dim: rgba(5, 150, 105, 0.08);
-  --rmhtype-danger: #dc2626;
-  --rmhtype-danger-dim: rgba(220, 38, 38, 0.08);
-  --rmhtype-warning: #d97706;
-  --rmhtype-warning-dim: rgba(217, 119, 6, 0.08);
-  --rmhtype-info: #0284c7;
-  --rmhtype-info-dim: rgba(2, 132, 199, 0.08);
-  --rmhtype-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-  --rmhtype-toast-bg: #ffffff;
-  --rmhtype-cursor: #059669;
-  --rmhtype-correct: #059669;
-  --rmhtype-incorrect: #dc2626;
+.rmhtype-theme.app-light {
+  --app-bg: #f0fdf4;
+  --app-bg-subtle: #e8f8ee;
+  --app-surface: #ffffff;
+  --app-surface-hover: #f0f9f4;
+  --app-surface-active: #e4f2ea;
+  --app-border: #c8e6d2;
+  --app-border-bright: #a8d4b8;
+  --app-text: #1a2e24;
+  --app-text-muted: #5a7a6a;
+  --app-text-dim: #8aa89a;
+
+  --app-accent: #059669;
+  --app-accent-fg: #ffffff;
+  --app-accent-hover: #047857;
+  --app-success: #059669;
+  --app-danger: #dc2626;
+  --app-warning: #d97706;
+  --app-info: #0284c7;
+
   --rmhtype-untyped: #8aa89a;
 }
 
-/* ─── Base Styles ───────────────────────────────────────────────── */
-
-.rmhtype-theme {
-  background-color: var(--rmhtype-bg);
-  color: var(--rmhtype-text);
-  font-family: var(--rmhtype-font-body);
-  min-height: 100vh;
-}
-
-/* ─── Scrollbar ─────────────────────────────────────────────────── */
-
-.rmhtype-theme ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.rmhtype-theme ::-webkit-scrollbar-track {
-  background: var(--rmhtype-bg-subtle);
-  border-radius: 4px;
-}
-
-.rmhtype-theme ::-webkit-scrollbar-thumb {
-  background: var(--rmhtype-border-bright);
-  border-radius: 4px;
-}
-
-.rmhtype-theme ::-webkit-scrollbar-thumb:hover {
-  background: var(--rmhtype-accent);
-}
-
-.rmhtype-theme {
-  scrollbar-width: thin;
-  scrollbar-color: var(--rmhtype-border-bright) var(--rmhtype-bg-subtle);
-}
-
-/* ─── Selection ─────────────────────────────────────────────────── */
-
-.rmhtype-theme ::selection {
-  background: var(--rmhtype-accent);
-  color: #ffffff;
-}
-
-/* ─── Focus ─────────────────────────────────────────────────────── */
-
-.rmhtype-theme :focus-visible {
-  outline: 2px solid var(--rmhtype-accent);
-  outline-offset: 2px;
-}
-
-/* ─── Buttons ───────────────────────────────────────────────────── */
-
-.rmhtype-theme button:not(:disabled) {
-  cursor: pointer;
-}
-
-/* ─── Toast Animations ──────────────────────────────────────────── */
-
-@keyframes rmhtype-toast-in {
-  from { opacity: 0; transform: translateY(-12px) scale(0.96); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes rmhtype-toast-out {
-  from { opacity: 1; transform: translateY(0) scale(1); }
-  to { opacity: 0; transform: translateY(-12px) scale(0.96); }
-}
-
-.rmhtype-toast-enter {
-  animation: rmhtype-toast-in 0.25s ease-out forwards;
-}
-
-.rmhtype-toast-exit {
-  animation: rmhtype-toast-out 0.2s ease-in forwards;
-}
-
-/* ─── Typing Area ───────────────────────────────────────────────── */
+/* ══ Typing surface ══════════════════════════════════════════════════ */
 
 .rmhtype-passage {
-  font-family: var(--rmhtype-font-mono);
-  font-size: 1.25rem;
+  font-family: var(--app-font-mono);
+  /* Scale with the viewport so the passage stays comfortable from a 320px
+     phone to a 4K monitor instead of sitting at one fixed size. */
+  font-size: clamp(1rem, 0.85rem + 0.7vw, 1.5rem);
   line-height: 2;
   letter-spacing: 0.02em;
+  /* Long unbroken tokens (URLs in a passage) must not force a horizontal
+     scrollbar under the input. */
+  overflow-wrap: break-word;
 }
 
 .rmhtype-passage-scroll {
   overflow-y: auto;
+  overscroll-behavior: contain;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
 
-/* Use dynamic viewport height that adjusts for mobile keyboard */
-@supports (height: 100dvh) {
-  .rmhtype-typing-view {
-    height: 100dvh !important;
-  }
-}
-
-/* ─── Short viewport (mobile with keyboard up) ────────────────── */
-
-@media (max-height: 32rem) {
-  .rmhtype-typing-view .rmhtype-wpm-display,
-  .rmhtype-typing-view .rmhtype-round-info {
-    display: none;
-  }
-
-  .rmhtype-typing-view .rmhtype-progress-section {
-    display: none;
-  }
-
-  .rmhtype-typing-view .rmhtype-passage {
-    font-size: 1rem;
-    line-height: 1.75;
-  }
-
-  .rmhtype-typing-view .rmhtype-passage-scroll {
-    padding: 0.75rem !important;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-    border-bottom: none;
-  }
-
-  .rmhtype-typing-view .rmhtype-typing-input {
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-  }
-
-  .rmhtype-typing-view .rmhtype-typing-area {
-    gap: 0 !important;
+@media (prefers-reduced-motion: reduce) {
+  .rmhtype-passage-scroll {
+    scroll-behavior: auto;
   }
 }
 
@@ -221,26 +108,78 @@
 }
 
 .rmhtype-cursor {
-  border-left: 2px solid var(--rmhtype-cursor);
+  border-inline-start: 2px solid var(--rmhtype-cursor);
   animation: rmhtype-blink 1s step-end infinite;
 }
 
 @keyframes rmhtype-blink {
-  50% { border-color: transparent; }
+  50% {
+    border-color: transparent;
+  }
 }
 
-/* ─── Progress Bar ──────────────────────────────────────────────── */
+/* A caret that never blinks is easy to lose, so keep it visible rather than
+   freezing it mid-cycle when the blink is suppressed. */
+@media (prefers-reduced-motion: reduce) {
+  .rmhtype-cursor {
+    animation: none;
+  }
+}
+
+/* ─── Progress ───────────────────────────────────────────────────── */
 
 .rmhtype-progress-bar {
-  background: var(--rmhtype-accent-dim);
+  background: var(--app-accent-dim);
   border-radius: 999px;
   overflow: hidden;
   height: 8px;
 }
 
 .rmhtype-progress-fill {
-  background: var(--rmhtype-accent);
+  background: var(--app-accent);
   height: 100%;
   border-radius: 999px;
-  transition: width 0.3s ease;
+  transition: width var(--app-duration-slow) var(--app-ease);
+}
+
+/* ─── Typing view sizing ─────────────────────────────────────────── */
+
+/* The typing view is a fixed-height flex column: the passage scrolls, the
+   input is pinned. `dvh` keeps the input above a phone's software keyboard
+   instead of behind it; `vh` is the fallback for engines without it. */
+.rmhtype-typing-view {
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* Keyboard up on a phone leaves ~300px of usable height. Drop the stats
+   furniture, shrink the passage, and fuse the passage and input into one
+   surface so every remaining pixel goes to the words being typed. */
+@media (max-height: 32rem) {
+  .rmhtype-typing-view .rmhtype-wpm-display,
+  .rmhtype-typing-view .rmhtype-round-info,
+  .rmhtype-typing-view .rmhtype-progress-section {
+    display: none;
+  }
+
+  .rmhtype-typing-view .rmhtype-passage {
+    font-size: 1rem;
+    line-height: 1.75;
+  }
+
+  .rmhtype-typing-view .rmhtype-passage-scroll {
+    padding: 0.75rem;
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+    border-bottom: none;
+  }
+
+  .rmhtype-typing-view .rmhtype-typing-input {
+    border-start-start-radius: 0;
+    border-start-end-radius: 0;
+  }
+
+  .rmhtype-typing-view .rmhtype-typing-area {
+    gap: 0;
+  }
 }
