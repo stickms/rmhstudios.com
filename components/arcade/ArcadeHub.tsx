@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useRouter } from '@tanstack/react-router';
+import { m as motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { Check, Clock, Flame, Gamepad2, Gift, Play, Trophy, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { games } from '@/lib/games';
+import { APPLE_SPRING } from '@/lib/motion';
+import { usePointerParallax } from '@/hooks/usePointerParallax';
 import type { ArcadeState, ArcadeChallengeView } from '@/lib/quests/arcade';
 
 /** Milliseconds until the next UTC midnight (when challenges rotate). */
@@ -205,14 +208,31 @@ function ChallengeCard({
   onClaim: () => void;
 }) {
   const { t } = useTranslation('site');
+  const parallax = usePointerParallax({ strength: 10, tilt: 3 });
   const game = games.find((g) => g.id === challenge.game);
   const pct = Math.min(100, Math.round((challenge.progress / challenge.target) * 100));
   const claimable = challenge.completed && !challenge.claimed;
 
   return (
-    <div className="flex flex-col items-stretch gap-3 rounded-site border border-site-border bg-site-surface p-3 sm:flex-row">
+    // Apple depth: the card is a stack of planes, not a flat rectangle. The art
+    // sits furthest back and drifts most against the pointer (or the phone's
+    // tilt), the content sits nearly on the surface, and the whole card springs
+    // under a press. Everything rides MotionValues straight to the compositor,
+    // so a grid of these costs no per-frame React work — and it all collapses to
+    // a static card under prefers-reduced-motion.
+    <motion.div
+      ref={parallax.ref as React.RefObject<HTMLDivElement>}
+      className="flex flex-col items-stretch gap-3 rounded-site border border-site-border bg-site-surface p-3 [transform-style:preserve-3d] sm:flex-row"
+      style={{ rotateX: parallax.near.rotateX, rotateY: parallax.near.rotateY }}
+      whileHover={{ scale: 1.008 }}
+      whileTap={{ scale: 0.994 }}
+      transition={APPLE_SPRING.press}
+    >
       {/* Game art */}
-      <div className="relative h-20 w-full shrink-0 overflow-hidden rounded-site-sm bg-site-bg sm:w-28">
+      <motion.div
+        className="relative h-20 w-full shrink-0 overflow-hidden rounded-site-sm bg-site-bg sm:w-28"
+        style={{ x: parallax.far.x, y: parallax.far.y }}
+      >
         {game?.imagePath ? (
           <OptimizedImage
             src={game.imagePath}
@@ -220,17 +240,20 @@ function ChallengeCard({
             width={112}
             height={80}
             layout="fullWidth"
-            className="h-full w-full object-cover"
+            className="h-full w-full scale-110 object-cover"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-site-text-dim">
             <Gamepad2 className="h-6 w-6" aria-hidden />
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Details */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <motion.div
+        className="flex min-w-0 flex-1 flex-col"
+        style={{ x: parallax.near.x, y: parallax.near.y }}
+      >
         <p className="text-sm font-semibold text-site-text">{challenge.title}</p>
         {game && <p className="mt-0.5 text-xs text-site-text-muted">{game.title}</p>}
 
@@ -253,7 +276,7 @@ function ChallengeCard({
             )}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Action */}
       <div className="flex shrink-0 flex-col items-stretch justify-center gap-2 sm:items-end">
@@ -268,14 +291,16 @@ function ChallengeCard({
             {t('arcade-claim', { defaultValue: 'Claim' })}
           </Button>
         ) : game ? (
-          <Link to={game.href}>
-            <Button variant="outline" className="w-full gap-1 sm:w-auto">
+          // asChild: a <button> inside an <a> is invalid HTML and gives keyboard
+          // users two focus stops for one action.
+          <Button asChild variant="outline" className="w-full gap-1 sm:w-auto">
+            <Link to={game.href}>
               <Play className="h-3.5 w-3.5" aria-hidden />
               {t('arcade-play-now', { defaultValue: 'Play now' })}
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         ) : null}
       </div>
-    </div>
+    </motion.div>
   );
 }
