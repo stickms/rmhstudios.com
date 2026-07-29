@@ -293,7 +293,7 @@ export function RMHboxDiscordActivity({ discord }: Props) {
         <RMHboxShell>
             {isPip && <PipOverlay gameStatus={pipStatusText} />}
 
-            <div className="flex h-screen flex-col overflow-hidden">
+            <div className="app-viewport">
                 {/* Connecting state — no lobby yet */}
                 {!lobby && (connectionStatus === 'connecting' || connectionStatus === 'disconnected') && (
                     <div className="flex flex-1 items-center justify-center">

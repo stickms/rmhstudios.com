@@ -168,7 +168,7 @@ export default function RmhStudyRoom() {
 
   if (!room) {
     return (
-      <div className="flex h-screen flex-col">
+      <div className="app-viewport">
         <RmhStudyHeader backLabel={t('back', { defaultValue: 'Back' })} backHref="/rmhstudy" />
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-pulse text-(--app-text-muted)">
@@ -397,7 +397,7 @@ export default function RmhStudyRoom() {
   );
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="app-viewport">
       <RmhStudyHeader
         backLabel={t('leave', { defaultValue: 'Leave' })}
         onBack={handleLeave}

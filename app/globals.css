@@ -280,15 +280,6 @@
   --rainbow-6: #0000ff;
   --rainbow-7: #9400d3;
 
-  /* Temple of Joy — warm parchment / dark walnut theme */
-  --temple-bg: #f5f0e8;
-  --temple-surface: #ede7d9;
-  --temple-border: #c4a97a;
-  --temple-text: #3d2c1e;
-  --temple-text-muted: #7c5c3e;
-  --temple-accent: #8b6914;
-  --temple-accent-bright: #d4a847;
-
   /* Shadcn variables */
   --radius: 0.625rem;
   --card: oklch(1 0 0);
@@ -1853,15 +1844,6 @@ html.readable-font body {
   --color-neon-purple: var(--neon-purple);
   --color-neon-blue: var(--neon-blue);
 
-  /* Temple of Joy color aliases */
-  --color-temple-bg: var(--temple-bg);
-  --color-temple-surface: var(--temple-surface);
-  --color-temple-border: var(--temple-border);
-  --color-temple-text: var(--temple-text);
-  --color-temple-muted: var(--temple-text-muted);
-  --color-temple-accent: var(--temple-accent);
-  --color-temple-accent-bright: var(--temple-accent-bright);
-
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains-mono);
   --font-display: var(--font-inter);
@@ -1954,6 +1936,68 @@ html.readable-font body {
 }
 
 @layer utilities {
+/* ── Full-screen app/game layout helpers ─────────────────────────────────────
+ *
+ * Global rather than per-app because every full-screen experience wants them,
+ * including the games with their own design systems (Altair, Velum, Kowloon,
+ * Temple of Joy) that never import `components/shared/app-theme.css`.
+ *
+ * `.app-viewport` exists because `h-screen` is `100vh`, and on mobile `100vh`
+ * is the LARGEST viewport — the height the page has only once the browser
+ * toolbars have scrolled away. A fixed app shell sized that way puts its
+ * bottom chrome under the toolbar until the user scrolls, which in a
+ * non-scrolling app is never. `dvh` tracks the live viewport; the `vh` line
+ * above it is the fallback, which is why this is a utility rather than
+ * Tailwind's `h-dvh` (one declaration, no fallback).
+ */
+
+.app-viewport {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* A page ground that fills the window without overshooting it: `svh` is the
+   SMALLEST viewport, so no phantom scroll while the toolbars are showing. */
+.app-ground {
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+/* A scroll region that behaves on touch: momentum on older iOS, no scroll
+   chaining into whatever is behind it, and a stable gutter so content doesn't
+   shift sideways by the scrollbar width when one appears. */
+.app-scroll-y {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+.app-scroll-x {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Notch and home-indicator clearance, on the edges an app actually touches.
+   `env()` resolves to 0px on every non-inset device and on engines that don't
+   know the function, so these are safe unconditionally. */
+.app-safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.app-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.app-safe-x {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
   .min-h-screen {
     min-height: 100vh;
     min-height: 100dvh;

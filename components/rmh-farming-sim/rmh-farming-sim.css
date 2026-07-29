@@ -384,6 +384,7 @@
     width: 100%;
     max-width: 600px;
     max-height: 82vh;
+  max-height: 82dvh;
     display: flex;
     flex-direction: column;
     background: linear-gradient(180deg, var(--rfs-wood), var(--rfs-wood-dark));

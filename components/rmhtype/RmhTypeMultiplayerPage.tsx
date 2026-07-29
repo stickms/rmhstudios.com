@@ -94,7 +94,7 @@ export default function RmhTypeMultiplayer() {
   }, [joinCode, t]);
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="app-viewport">
       <RmhTypeHeader backLabel="RMH Type" backHref="/rmhtype" />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8" style={{ scrollbarGutter: 'stable both-edges' }}>

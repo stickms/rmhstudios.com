@@ -175,7 +175,7 @@ export default function RmhTypeRoom() {
 
   if (!room) {
     return (
-      <div className="flex h-screen flex-col">
+      <div className="app-viewport">
         <RmhTypeHeader backLabel={t("back", { defaultValue: "Back" })} backHref="/rmhtype" />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -195,7 +195,7 @@ export default function RmhTypeRoom() {
   const isTyping = room.status === 'TYPING';
 
   return (
-    <div className={`flex h-screen flex-col ${isTyping ? 'rmhtype-typing-view' : ''}`}>
+    <div className={`app-viewport ${isTyping ? 'rmhtype-typing-view' : ''}`}>
       <RmhTypeHeader
         backLabel={t("leave", { defaultValue: "Leave" })}
         onBack={handleLeave}

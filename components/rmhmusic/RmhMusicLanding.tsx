@@ -41,7 +41,7 @@ export default function RmhMusicPage() {
   }
 
   return (
-    <div className="relative min-h-screen">
+    <div className="app-ground relative">
       <Visualizer />
 
       {/* Every other full-screen app ships a labelled way out; this one had

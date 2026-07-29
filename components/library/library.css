@@ -244,6 +244,7 @@
   background: rgba(0, 0, 0, 0.55);
   padding: 2px 7px;
   border-radius: 9999px;
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   white-space: nowrap;
@@ -318,6 +319,7 @@
   gap: 14px;
   padding: 12px clamp(14px, 4vw, 32px);
   background: color-mix(in srgb, var(--site-bg) 72%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
   backdrop-filter: saturate(180%) blur(24px);
   -webkit-backdrop-filter: saturate(180%) blur(24px);
   border-bottom: 0.5px solid var(--site-border);
@@ -418,6 +420,7 @@
   background: var(--site-surface);
   border: 0.5px solid var(--site-border);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
   backdrop-filter: saturate(180%) blur(24px);
   -webkit-backdrop-filter: saturate(180%) blur(24px);
 }
@@ -650,6 +653,7 @@
   border-radius: 9999px;
   background: var(--site-surface);
   border: 0.5px solid var(--site-border);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
   backdrop-filter: saturate(180%) blur(18px);
   -webkit-backdrop-filter: saturate(180%) blur(18px);
   opacity: 0.4;
@@ -905,6 +909,7 @@
 }
 .lib-coll-modal .lib-collections__shelf {
   max-height: 64vh;
+  max-height: 64dvh;
   overflow-y: auto;
 }
 /* Add-books picker list (inside the modal). */
@@ -913,6 +918,7 @@
   margin: 14px 0 0;
   padding: 0;
   max-height: 50vh;
+  max-height: 50dvh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -1031,6 +1037,7 @@
   border: 0.5px solid var(--site-border);
   color: var(--site-text);
   cursor: pointer;
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   transition:
@@ -1141,6 +1148,7 @@
   justify-content: center;
   padding: 20px;
   background: rgba(0, 0, 0, 0.72);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
 .lib-upload {
@@ -1247,6 +1255,7 @@
   flex-direction: column;
   gap: 10px;
   max-height: 60vh;
+  max-height: 60dvh;
   overflow-y: auto;
 }
 .lib-upload__row {
@@ -1381,6 +1390,7 @@
   flex-direction: column;
   gap: 6px;
   max-height: 38vh;
+  max-height: 38dvh;
   overflow-y: auto;
 }
 .lib-upload__gate-row {
@@ -1684,6 +1694,7 @@
   box-shadow:
     0 16px 40px rgba(0, 0, 0, 0.55),
     0 2px 8px rgba(0, 0, 0, 0.4);
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   animation: lib-ctx-in 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -1980,6 +1991,7 @@
   font-weight: 600;
   color: #fff;
   background: rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }
 .lib-album__badge {
@@ -1995,6 +2007,7 @@
   border-radius: 999px;
   color: #fff;
   background: rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }
 .lib-album__meta {
@@ -2480,6 +2493,7 @@
   inset: 0;
   z-index: 39;
   background: rgba(0, 0, 0, 0.42);
+  -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
 }
@@ -2495,6 +2509,7 @@
   border-inline-start: 1px solid var(--site-border);
   background: var(--site-surface);
   box-shadow: -24px 0 70px rgba(0, 0, 0, 0.58);
+  -webkit-backdrop-filter: blur(28px);
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
   animation: lib-details-in 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -2772,6 +2787,12 @@
 
 .lib-playground {
   min-height: 100vh;
+  /* `100vh` on mobile is the LARGEST viewport, so this ground is taller than
+     the visible page whenever the browser toolbars are showing — the page
+     gains a phantom scroll. `svh` is the smallest viewport, so the ground
+     always fills without overshooting; the plain `vh` line above stays as
+     the fallback for engines that don't parse it. */
+  min-height: 100svh;
   padding-inline: var(--lib-gutter);
   perspective: 1200px;
 }
@@ -3116,6 +3137,7 @@
   border: 1px solid var(--site-glass-rim-soft);
   background: var(--site-glass-tint-strong);
   color: var(--site-text);
+  -webkit-backdrop-filter: blur(var(--site-glass-blur-chrome));
   backdrop-filter: blur(var(--site-glass-blur-chrome));
 }
 

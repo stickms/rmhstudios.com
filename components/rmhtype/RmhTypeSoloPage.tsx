@@ -150,7 +150,7 @@ export default function RmhTypeSolo() {
   // Settings screen (shown on fresh load / refresh)
   if (!started) {
     return (
-      <div className="flex h-screen flex-col">
+      <div className="app-viewport">
         <RmhTypeHeader backLabel="RMH Type" backHref="/rmhtype" />
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8" style={{ scrollbarGutter: 'stable both-edges' }}>
@@ -218,7 +218,7 @@ export default function RmhTypeSolo() {
   // Countdown state
   if (soloCountdown !== null) {
     return (
-      <div className="flex h-screen flex-col">
+      <div className="app-viewport">
         <RmhTypeHeader backLabel="Back" onBack={handleBackToSettings} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-8xl font-bold text-(--app-accent) animate-pulse">
@@ -232,7 +232,7 @@ export default function RmhTypeSolo() {
   // Results state
   if (soloResult) {
     return (
-      <div className="flex h-screen flex-col">
+      <div className="app-viewport">
         <RmhTypeHeader backLabel="Back" onBack={handleBackToSettings} />
         <div className="flex-1 overflow-y-auto p-4 md:p-8">
           <div className="max-w-lg mx-auto">
@@ -289,7 +289,7 @@ export default function RmhTypeSolo() {
 
   // Typing state
   return (
-    <div className="flex h-screen flex-col rmhtype-typing-view">
+    <div className="app-viewport rmhtype-typing-view">
       <RmhTypeHeader backLabel="Back" onBack={handleBackToSettings} />
 
       <div className="flex-1 min-h-0 flex flex-col p-4 md:p-8">

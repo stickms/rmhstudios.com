@@ -93,6 +93,12 @@
   color: var(--altair-text);
   font-family: var(--altair-font-body);
   min-height: 100vh;
+  /* `100vh` on mobile is the LARGEST viewport, so this ground is taller than
+     the visible page whenever the browser toolbars are showing — the page
+     gains a phantom scroll. `svh` is the smallest viewport, so the ground
+     always fills without overshooting; the plain `vh` line above stays as
+     the fallback for engines that don't parse it. */
+  min-height: 100svh;
 }
 
 /* ─── Scrollbar ─────────────────────────────────────────────────── */

@@ -110,7 +110,7 @@ export default function RmhStudyLanding() {
   }, [joinCode]);
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="app-viewport">
       <RmhStudyHeader backLabel="Builds" backHref="/builds" />
 
       <div

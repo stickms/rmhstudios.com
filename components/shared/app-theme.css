@@ -512,45 +512,15 @@
    8. Layout helpers
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* Full-viewport app root. Use instead of `h-screen`, which is the same
-   too-tall `vh` trap described above. */
-.app-viewport {
-  height: 100vh;
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* A scroll region that behaves on touch: momentum on old iOS, no scroll
-   chaining into the page behind it, and a stable gutter so content doesn't
-   shift by the scrollbar width when it appears. */
-.app-scroll-y {
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-gutter: stable;
-}
-
-.app-scroll-x {
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Respect the notch/home indicator on the edges an app actually touches. */
-.app-safe-top {
-  padding-top: var(--app-safe-top);
-}
-
-.app-safe-bottom {
-  padding-bottom: var(--app-safe-bottom);
-}
-
-.app-safe-x {
-  padding-left: var(--app-safe-left);
-  padding-right: var(--app-safe-right);
-}
+/* `.app-viewport`, `.app-scroll-y`, `.app-scroll-x` and the `.app-safe-*`
+   helpers live in `app/globals.css` instead of here.
+ *
+ * They are pure layout, not palette, and every full-screen game wants them —
+ * including the ones with their own design system (Altair, Velum, Kowloon)
+ * that never import this file. Keeping them global means a game does not have
+ * to adopt the app palette just to stop its bottom bar hiding under a phone's
+ * browser chrome. The `--app-safe-*` variables they read are declared below,
+ * and default to `0px` outside an `.app-theme`. */
 
 /* ══════════════════════════════════════════════════════════════════════════
    9. Preference and capability fallbacks

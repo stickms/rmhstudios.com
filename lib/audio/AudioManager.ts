@@ -1,3 +1,4 @@
+import { getAudioContext } from '@/lib/shared/platform';
 export class AudioManager {
   private static instance: AudioManager;
   private audioContext: AudioContext | null = null;
@@ -24,12 +25,15 @@ export class AudioManager {
   }
 
   public initialize() {
-    if (!this.audioContext) {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      this.gainNode = this.audioContext.createGain();
-      this.gainNode.connect(this.audioContext.destination);
-      this.gainNode.gain.value = this.volume;
-    }
+    if (this.audioContext) return;
+    // Shared and null-safe: construction throws on a device without Web Audio
+    // (or once the per-document context budget is spent), and this used to be
+    // on the init path of everything that plays a sound.
+    this.audioContext = getAudioContext();
+    if (!this.audioContext) return;
+    this.gainNode = this.audioContext.createGain();
+    this.gainNode.connect(this.audioContext.destination);
+    this.gainNode.gain.value = this.volume;
   }
 
   public getContext(): AudioContext | null {

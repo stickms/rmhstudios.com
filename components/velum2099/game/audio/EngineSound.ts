@@ -1,5 +1,7 @@
 // @ts-nocheck
 /* ═══════════════════════════════════════════
+import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
+
    NEURODRIVE — Engine Sound Synthesizer
    4-cylinder engine idle/rev + turbo spool + BOV
    + 6-speed automatic gearbox with shift sounds
@@ -43,8 +45,11 @@ export class EngineSound {
     start() {
         if (this._running) return;
 
-        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        if (this.ctx.state === 'suspended') this.ctx.resume();
+        this.ctx = getAudioContext();
+        // No Web Audio on this device: drive in silence rather than throwing
+        // out of the start path and taking the simulation with it.
+        if (!this.ctx) return;
+        resumeAudioContext();
 
         this._buildGraph();
         this._running = true;
@@ -276,9 +281,10 @@ export class EngineSound {
 
     dispose() {
         this.stop();
-        if (this.ctx && this.ctx.state !== 'closed') {
-            this.ctx.close().catch(() => {});
-        }
+        // Never close the context: it is the page's shared one, and closing it
+        // is irreversible — every other sound on the site would go silent for
+        // the rest of the session. Stopping the sources above already frees
+        // the graph.
         this.ctx = null;
     }
 }

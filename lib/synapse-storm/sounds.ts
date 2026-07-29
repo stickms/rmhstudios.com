@@ -1,3 +1,5 @@
+import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
+
 class SoundManager {
     private ctx: AudioContext | null = null;
     private initialized = false;
@@ -13,22 +15,15 @@ class SoundManager {
 
     init(): void {
         if (this.initialized) return;
-        this.ctx = new AudioContext();
+        // Shared, and null-safe: a device without Web Audio plays no sound
+        // rather than failing to start the game.
+        this.ctx = getAudioContext();
         this.initialized = true;
     }
 
     private getCtx(): AudioContext | null {
-        if (!this.ctx) {
-            try {
-                this.ctx = new AudioContext();
-                this.initialized = true;
-            } catch {
-                return null;
-            }
-        }
-        if (this.ctx.state === 'suspended') {
-            this.ctx.resume();
-        }
+        if (!this.ctx) this.init();
+        resumeAudioContext();
         return this.ctx;
     }
 

@@ -249,7 +249,7 @@ export default function RmhTubeRoomPage() {
   // Loading state
   if (!room) {
     return (
-      <div className={`flex h-screen flex-col ${densityClass}`}>
+      <div className={`app-viewport ${densityClass}`}>
         <div className="border-b border-(--app-border)">
           <RmhTubeHeader backLabel={t("leave", { defaultValue: "Leave" })} onBack={handleLeave} roomCode={roomId} onCopyCode={handleCopyCode} />
         </div>
@@ -267,7 +267,7 @@ export default function RmhTubeRoomPage() {
   const currentUrl = room.currentItem?.url ?? null;
 
   return (
-    <div className={`flex h-screen flex-col ${densityClass} ${theaterMode ? 'rmhtube-theater-mode' : ''}`}>
+    <div className={`app-viewport ${densityClass} ${theaterMode ? 'rmhtube-theater-mode' : ''}`}>
       {/* Header */}
       <div className="flex items-center border-b border-(--app-border)">
         <div className="flex-1">
