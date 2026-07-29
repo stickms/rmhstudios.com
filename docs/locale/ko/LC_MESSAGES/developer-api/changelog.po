@@ -4,14 +4,13 @@
 # package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: rmhstudios.com 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-29 21:28+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
 "Language: ko\n"
 "Language-Team: ko <LL@li.org>\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
@@ -22,33 +21,33 @@ msgstr ""
 
 #: ../../developer-api/changelog.md:1 95b63df92fc04f5fbe4e142a4377bb5f
 msgid "Changelog"
-msgstr ""
+msgstr "변경 이력"
 
 #: ../../developer-api/changelog.md:3 62fd238c6d1c413b80155a048e8b337a
 msgid "v1.2 — 2026-06"
-msgstr ""
+msgstr "v1.2 — 2026-06"
 
 #: ../../developer-api/changelog.md:5 db2ef47aab9c4cc1bfa3f6dff9fc55a1
 msgid "Major overhaul:"
-msgstr ""
+msgstr "대규모 개편:"
 
 #: ../../developer-api/changelog.md:7 3533b45601454340ae498dd66a12bfaa
 msgid "Scoped + expiring API keys, key rotation, and a 4-char display suffix."
-msgstr ""
+msgstr "스코프 지정 및 만료 가능한 API 키, 키 회전, 4자리 표시 접미사."
 
 #: ../../developer-api/changelog.md:8 c6d434ce41a04c5ea5277da55df34bf6
 msgid ""
 "Standardized errors with `type` + `request_id`; `X-RateLimit-*` headers "
 "on every response."
-msgstr ""
+msgstr "`type` + `request_id`를 포함한 표준화된 오류, 모든 응답에 포함되는 `X-RateLimit-*` 헤더."
 
 #: ../../developer-api/changelog.md:9 c59dd8105d8842d48fac41e213857a7f
 msgid "`Idempotency-Key` support on all writes."
-msgstr ""
+msgstr "모든 쓰기 요청에 대한 `Idempotency-Key` 지원."
 
 #: ../../developer-api/changelog.md:10 5228a7ad17924137a9e2ec86fbcc10f3
 msgid "Outbound webhooks with HMAC-signed delivery + retries."
-msgstr ""
+msgstr "HMAC 서명 전달 및 재시도를 지원하는 아웃바운드 웹훅."
 
 #: ../../developer-api/changelog.md:11 464b4c61ba6942a48ecf50406c5e7c66
 msgid ""
@@ -56,25 +55,25 @@ msgid ""
 " public user profiles + social graph, your "
 "followers/following/notifications/bookmarks, builds, blog, news, and game"
 " leaderboards."
-msgstr ""
+msgstr "새로운 엔드포인트: 단일 게시물 조회/삭제, 좋아요/좋아요 취소, 댓글, 북마크, 공개 사용자 프로필 + 소셜 그래프, 본인의 팔로워/팔로잉/알림/북마크, 빌드, 블로그, 뉴스, 게임 리더보드."
 
 #: ../../developer-api/changelog.md:12 d61bfc798aa441a490d4ed62e072a48e
 msgid "Machine-readable OpenAPI 3.1 at `/api/v1/openapi.json`."
-msgstr ""
+msgstr "`/api/v1/openapi.json`에서 제공되는 기계 판독 가능한 OpenAPI 3.1."
 
 #: ../../developer-api/changelog.md:14 308b735f0da64615a3e95d0853daf4ed
 msgid "v1.1 — 2026-06"
-msgstr ""
+msgstr "v1.1 — 2026-06"
 
 #: ../../developer-api/changelog.md:16 173951ce244540f483cd1b74b4b4fd32
 msgid "Image upload: `POST /api/v1/images`; `media_ids` on `POST /api/v1/posts`."
-msgstr ""
+msgstr "이미지 업로드: `POST /api/v1/images`; `POST /api/v1/posts`의 `media_ids`."
 
 #: ../../developer-api/changelog.md:18 4e4b94cb02ef42a5897dff0e72e95205
 msgid "v1 — 2026-06"
-msgstr ""
+msgstr "v1 — 2026-06"
 
 #: ../../developer-api/changelog.md:20 f9013299147d4bc0a7b0788dd66027ac
 msgid "Initial release: `me`, `posts` (list + create), `feed`."
-msgstr ""
+msgstr "초기 릴리스: `me`, `posts`(목록 + 생성), `feed`."
 

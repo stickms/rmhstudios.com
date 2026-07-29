@@ -4,14 +4,13 @@
 # package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: rmhstudios.com 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-29 21:28+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2026-07-29 00:00+0000\n"
+"Last-Translator: RMH Studios docs pipeline\n"
 "Language: tr\n"
 "Language-Team: tr <LL@li.org>\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
@@ -22,7 +21,7 @@ msgstr ""
 
 #: ../../developer-api/pagination.md:1 fbba2ae065f044e59f3e3478865cb32e
 msgid "Pagination"
-msgstr ""
+msgstr "Sayfalama"
 
 #: ../../developer-api/pagination.md:3 5f7e67ee4bee43729224b7b6d69b3f63
 msgid ""
@@ -30,10 +29,13 @@ msgid ""
 "unlike offset paging, a row inserted while you iterate can't shift items "
 "onto a page you already read."
 msgstr ""
+"Liste uç noktaları, kararlı ve verimli sayfalama için **keyset "
+"sayfalama** kullanır — offset sayfalamanın aksine, siz gezinirken "
+"eklenen bir satır, zaten okuduğunuz bir sayfaya öğeleri kaydıramaz."
 
 #: ../../developer-api/pagination.md:5 e69abbe515fc469ead547ef212947594
 msgid "Pass `?limit=` (1–50, default 20) to size a page."
-msgstr ""
+msgstr "Bir sayfayı boyutlandırmak için `?limit=` (1–50, varsayılan 20) geçirin."
 
 #: ../../developer-api/pagination.md:6 ee384dc76e714ca7a2d6ea6f6e760855
 #, python-brace-format
@@ -41,14 +43,16 @@ msgid ""
 "Each response is `{ \"data\": [...], \"nextCursor\": \"<opaque>\" | null "
 "}`."
 msgstr ""
+"Her yanıt `{ \"data\": [...], \"nextCursor\": \"<opaque>\" | null }` "
+"biçimindedir."
 
 #: ../../developer-api/pagination.md:7 2691830ab48c4cc8b414fde634dd6532
 msgid "To fetch the next page, pass the returned `nextCursor` as `?cursor=`."
-msgstr ""
+msgstr "Bir sonraki sayfayı almak için döndürülen `nextCursor` değerini `?cursor=` olarak geçirin."
 
 #: ../../developer-api/pagination.md:8 ceff1879e8da4286995f484f63b3a192
 msgid "`nextCursor` is `null` on the last page."
-msgstr ""
+msgstr "Son sayfada `nextCursor` değeri `null` olur."
 
 #: ../../developer-api/pagination.md:10 5f9b500f28374d6cb059bd6f4d4b2a8e
 msgid ""
