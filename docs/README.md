@@ -5,6 +5,18 @@ know what to trust. Agent-facing guides live at the repo root
 ([`CLAUDE.md`](../CLAUDE.md), [`AGENTS.md`](../AGENTS.md)) and in each major
 directory's `CLAUDE.md`.
 
+This tree also builds as a Sphinx/MyST site for Read the Docs — `conf.py`,
+`requirements.txt` and `index.md` (the landing page + nav) here, with
+`.readthedocs.yaml` at the repo root. Build it locally with:
+
+```bash
+pip install -r docs/requirements.txt
+python -m sphinx -b html docs docs/_build/html
+```
+
+New Markdown files are picked up by the globbed toctrees in `index.md`
+automatically; a file needs an `# H1` to get a nav entry.
+
 **Trust order for conflicts:** code > `docker-compose.yml`/`deploy.sh` >
 root `CLAUDE.md` / directory `CLAUDE.md`s > the reference docs below > dated
 design docs/plans (historical snapshots — they describe intent at the time of

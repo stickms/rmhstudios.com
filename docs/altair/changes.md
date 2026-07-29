@@ -1,3 +1,5 @@
+# Altair — change requests
+
 1. For the floor tileset, use all the tiles except for the ones at "coords" [0,3] [2,2] and [2,3] as they look like obstacles
 2. For "slicing" or "slashing" weapons (e.g. sword, whip, etc.) instead of a "cone" use an actual slash animation (maybe find sprites for this?)
 3. For weapons that drop "pools" also use more obvious sprites
