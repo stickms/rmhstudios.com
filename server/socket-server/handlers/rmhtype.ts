@@ -11,6 +11,8 @@ import { checkRateLimit } from '../rate-limit';
 import { getPrismaClient } from '../prisma-client';
 import { logger } from '../logger';
 import { awardAppProgress } from '../economy';
+import { PresenceGrace } from '../../shared/presence-grace';
+import { S2C } from '../../../lib/rmhtype/events';
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -91,8 +93,47 @@ const ROUND_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 const COUNTDOWN_SECONDS = 5;
 const PROGRESS_BROADCAST_INTERVAL_MS = 200;
 const NEXT_ROUND_DELAY_MS = 5_000;
-const DISCONNECT_REMOVE_DELAY_MS = 30_000;
 const ROOM_CLEANUP_DELAY_MS = 60_000;
+
+/**
+ * The `io` handle, captured on first registration. The grace manager is
+ * module-scoped (it outlives any one socket) but still needs to broadcast.
+ */
+let ioRef: Server | null = null;
+
+/**
+ * Disconnect grace. Announces who the room is waiting for, and removes them
+ * once the shared 15s window closes so a round can't stall on someone who
+ * closed their laptop mid-passage.
+ */
+const presence = new PresenceGrace({
+  onChange: (roomId, waiting) => {
+    ioRef?.to(`rmhtype:${roomId}`).emit(S2C.PEERS_WAITING, waiting);
+  },
+  onExpire: (roomId, userId) => {
+    const io = ioRef;
+    const room = rooms.get(roomId);
+    if (!io || !room) return;
+
+    const player = room.players.get(userId);
+    // They reconnected between the timer firing and this callback running.
+    if (!player || player.isConnected) return;
+
+    room.players.delete(userId);
+    logger.info({ event: 'rmhtype_player_grace_expired', roomId, userId });
+
+    if (room.players.size === 0) {
+      removeRoom(roomId);
+      return;
+    }
+
+    if (room.hostUserId === userId) migrateHost(io, room);
+    broadcastRoomState(io, room);
+
+    // Their departure may be what the round was waiting on.
+    if (room.state === 'TYPING') checkAllPlayersFinished(io, room);
+  },
+});
 
 const DEFAULT_SETTINGS: RoomSettings = {
   isPublic: false,
@@ -394,6 +435,10 @@ function broadcastRoomState(io: Server, room: TypeRoom): void {
       if (s) s.emit('rmhtype:room:state', buildStateSnapshot(room, player.userId));
     }
   }
+  // Ride along with every state change so a client that just joined, or one
+  // whose snapshot arrived out of order, always agrees with the server about
+  // whether the room is waiting on someone.
+  io.to(`rmhtype:${room.roomId}`).emit(S2C.PEERS_WAITING, presence.getWaiting(room.roomId));
 }
 
 function createPlayer(
@@ -451,6 +496,7 @@ function cleanupRoomTimers(room: TypeRoom): void {
 }
 
 function removeRoom(roomId: string): void {
+  presence.clearRoom(roomId);
   const room = rooms.get(roomId);
   if (!room) return;
   cleanupRoomTimers(room);
@@ -1066,6 +1112,8 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
   const userName: string = socket.data.userName || 'Player';
   const avatarUrl: string | null = socket.data.avatarUrl || null;
 
+  ioRef = io;
+
   // Track socket <-> user mapping
   userSocketMap.set(userId, socket.id);
   socketUserMap.set(socket.id, userId);
@@ -1215,7 +1263,11 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
         socketRoomMap.set(socket.id, roomId);
         socket.join(`rmhtype:${roomId}`);
 
+        // They made it back inside the window — cancel the kick and tell the
+        // room to stop waiting.
+        presence.release(roomId, userId);
         broadcastRoomState(io, room);
+        socket.emit(S2C.PEERS_WAITING, presence.getWaiting(roomId));
 
         logger.info({ event: 'rmhtype_player_reconnected', roomId, userId });
         return;
@@ -1801,6 +1853,9 @@ function handlePlayerLeave(io: Server, socket: Socket, userId: string, roomId: s
   room.players.delete(userId);
   socket.leave(`rmhtype:${roomId}`);
   socketRoomMap.delete(socket.id);
+  // Leaving on purpose ends any grace window they were in — otherwise the room
+  // keeps saying it is waiting for someone who already said goodbye.
+  presence.release(roomId, userId);
 
   if (room.players.size === 0) {
     removeRoom(roomId);
@@ -1869,7 +1924,10 @@ export function handleRmhTypeDisconnect(io: Server, socket: Socket): void {
   const allDisconnected = Array.from(room.players.values()).every((p) => !p.isConnected);
 
   if (allDisconnected) {
-    // Clean up room after grace period
+    // Nobody left to wait *for*, so the grace window has no audience — hold the
+    // room open a while longer in case the whole table is on the same flaky
+    // wifi, then drop it.
+    presence.clearRoom(roomId);
     setTimeout(() => {
       const currentRoom = rooms.get(roomId);
       if (!currentRoom) return;
@@ -1889,24 +1947,15 @@ export function handleRmhTypeDisconnect(io: Server, socket: Socket): void {
     migrateHost(io, room);
   }
 
-  if (room.state === 'WAITING') {
-    // In waiting state, remove player after grace period
-    setTimeout(() => {
-      const currentRoom = rooms.get(roomId);
-      if (!currentRoom) return;
-      const currentPlayer = currentRoom.players.get(userId);
-      if (currentPlayer && !currentPlayer.isConnected) {
-        currentRoom.players.delete(userId);
-        broadcastRoomState(io, currentRoom);
-        if (currentRoom.players.size === 0) {
-          removeRoom(roomId);
-        } else if (currentRoom.hostUserId === userId) {
-          migrateHost(io, currentRoom);
-        }
-      }
-    }, DISCONNECT_REMOVE_DELAY_MS);
-  } else if (room.state === 'TYPING') {
-    // During typing, keep player data but check if round should end
+  // Start the shared grace window. A typing race is a per-player time trial,
+  // so the room is not frozen for everyone else — but it does announce who it
+  // is waiting on, and after 15s it stops waiting so the round can resolve
+  // instead of running to the five-minute timeout because one player left
+  // mid-passage.
+  presence.hold(roomId, userId, player.userName);
+
+  if (room.state === 'TYPING') {
+    // Their absence may already have decided the round.
     checkAllPlayersFinished(io, room);
   }
 

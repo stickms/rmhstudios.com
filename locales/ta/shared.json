@@ -1,14 +1,22 @@
 {
   "chat-placeholder": "Chat...",
+  "connecting": "Connecting…",
+  "connection-lost": "Connection lost",
+  "continue-without-them": "Continue without them",
   "dismiss": "Dismiss",
   "failed-to-load-media": "Failed to load media",
   "game-crashed": "Game crashed",
   "game-crashed-named": "{{gameName}} crashed",
+  "game-paused": "Game paused",
   "loading": "Loading…",
   "no-messages-yet": "No messages yet",
   "notifications": "Notifications",
   "react": "React",
+  "reconnecting": "Reconnecting…",
+  "resuming-in": "Continuing without them in {{seconds}}s",
+  "resuming-now": "Continuing…",
   "return-home": "Return Home",
   "try-again": "Try Again",
-  "unexpected-error": "An unexpected error occurred."
+  "unexpected-error": "An unexpected error occurred.",
+  "waiting-for-peer": "Waiting for {{name}} to reconnect…"
 }

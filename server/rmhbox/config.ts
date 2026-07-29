@@ -6,6 +6,8 @@
  * NEVER hardcode secrets or environment-specific values.
  */
 
+import { PEER_GRACE_MS } from '../../lib/shared/realtime/types';
+
 function envInt(key: string, fallback: number): number {
   const raw = process.env[key];
   if (raw === undefined) return fallback;
@@ -44,7 +46,13 @@ export const config = {
   LOBBY_IDLE_TIMEOUT_MS: envInt('RMHBOX_IDLE_TIMEOUT', 15 * 60 * 1000),
   LOBBY_ABSOLUTE_TIMEOUT_MS: envInt('RMHBOX_ABS_TIMEOUT', 30 * 60 * 1000),
   LOBBY_EMPTY_TIMEOUT_MS: envInt('RMHBOX_EMPTY_TIMEOUT', 2 * 60 * 1000),
-  DISCONNECT_GRACE_PERIOD_MS: envInt('RMHBOX_GRACE_MS', 120_000),
+  /**
+   * How long a lobby waits for a dropped player before removing them. The
+   * shared 15s window (`lib/shared/realtime/types`) — long enough to survive a
+   * tunnel or a screen lock, short enough that seven people aren't held by one
+   * closed laptop. The client shows a countdown against this same number.
+   */
+  DISCONNECT_GRACE_PERIOD_MS: envInt('RMHBOX_GRACE_MS', PEER_GRACE_MS),
   VOTE_DURATION_SECONDS: 30,
   DEFAULT_INSTRUCTION_DURATION_SECONDS: 15,
   PRELOAD_TIMEOUT_MS: 30_000,
@@ -57,11 +65,11 @@ export const config = {
 
   // ─── Rate Limits ───
   SOCKET_RATE_LIMITS: {
-    'rmhbox:lobby:create':   { max: 5,   windowMs: 60_000 },
-    'rmhbox:lobby:join':     { max: 10,  windowMs: 60_000 },
-    'rmhbox:lobby:chat':     { max: 20,  windowMs: 60_000 },
-    'rmhbox:game:input':     { max: 100, windowMs: 10_000 },
-    'rmhbox:game:cast_vote': { max: 10,  windowMs: 60_000 },
+    'rmhbox:lobby:create': { max: 5, windowMs: 60_000 },
+    'rmhbox:lobby:join': { max: 10, windowMs: 60_000 },
+    'rmhbox:lobby:chat': { max: 20, windowMs: 60_000 },
+    'rmhbox:game:input': { max: 100, windowMs: 10_000 },
+    'rmhbox:game:cast_vote': { max: 10, windowMs: 60_000 },
     'rmhbox:leaderboard:fetch': { max: 5, windowMs: 60_000 },
   } as Record<string, { max: number; windowMs: number }>,
 

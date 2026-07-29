@@ -1,14 +1,22 @@
 {
   "chat-placeholder": "Sohbet...",
+  "connecting": "Connecting…",
+  "connection-lost": "Connection lost",
+  "continue-without-them": "Continue without them",
   "dismiss": "Dismiss",
   "failed-to-load-media": "Medya yüklenemedi",
   "game-crashed": "Oyun çöktü",
   "game-crashed-named": "{{gameName}} çöktü",
+  "game-paused": "Game paused",
   "loading": "Yükleniyor…",
   "no-messages-yet": "Henüz mesaj yok",
   "notifications": "Notifications",
   "react": "Tepki ver",
+  "reconnecting": "Reconnecting…",
+  "resuming-in": "Continuing without them in {{seconds}}s",
+  "resuming-now": "Continuing…",
   "return-home": "Ana Sayfaya Dön",
   "try-again": "Tekrar Dene",
-  "unexpected-error": "Beklenmeyen bir hata oluştu."
+  "unexpected-error": "Beklenmeyen bir hata oluştu.",
+  "waiting-for-peer": "Waiting for {{name}} to reconnect…"
 }

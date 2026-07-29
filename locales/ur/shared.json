@@ -1,14 +1,22 @@
 {
   "chat-placeholder": "چیٹ...",
+  "connecting": "Connecting…",
+  "connection-lost": "Connection lost",
+  "continue-without-them": "Continue without them",
   "dismiss": "Dismiss",
   "failed-to-load-media": "میڈیا لوڈ کرنے میں ناکام",
   "game-crashed": "گیم کریش ہو گیا",
   "game-crashed-named": "{{gameName}} کریش ہو گیا",
+  "game-paused": "Game paused",
   "loading": "لوڈ ہو رہا ہے…",
   "no-messages-yet": "ابھی کوئی پیغام نہیں",
   "notifications": "Notifications",
   "react": "React",
+  "reconnecting": "Reconnecting…",
+  "resuming-in": "Continuing without them in {{seconds}}s",
+  "resuming-now": "Continuing…",
   "return-home": "ہوم پر واپس جائیں",
   "try-again": "دوبارہ کوشش کریں",
-  "unexpected-error": "ایک غیر متوقع خرابی پیش آئی۔"
+  "unexpected-error": "ایک غیر متوقع خرابی پیش آئی۔",
+  "waiting-for-peer": "Waiting for {{name}} to reconnect…"
 }

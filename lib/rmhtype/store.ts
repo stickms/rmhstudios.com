@@ -2,6 +2,7 @@
  * RMH Type — Client-Side Zustand Store
  */
 
+import type { RealtimeStatus, PeerWaitState } from '@/lib/shared/realtime/types';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type {
@@ -38,7 +39,9 @@ const DEFAULT_SETTINGS: RmhTypeUserSettings = {
 // ─── Store Interface ─────────────────────────────────────────────
 
 export interface RmhTypeStore {
-  connectionStatus: 'disconnected' | 'connecting' | 'connected' | 'error';
+  connectionStatus: RealtimeStatus;
+  /** Peers the room is paused on, or null when nobody is being waited for. */
+  peersWaiting: PeerWaitState | null;
   room: ClientRoomState | null;
   settings: RmhTypeUserSettings;
 
@@ -50,6 +53,7 @@ export interface RmhTypeStore {
 
   // Actions
   setConnectionStatus: (status: RmhTypeStore['connectionStatus']) => void;
+  setPeersWaiting: (waiting: PeerWaitState | null) => void;
   setRoom: (room: ClientRoomState | null) => void;
   updateRoomPlayers: (players: RoomPlayer[]) => void;
   updateRoomStatus: (status: ClientRoomState['status']) => void;
@@ -77,7 +81,8 @@ export interface RmhTypeStore {
 export const useRmhTypeStore = create<RmhTypeStore>()(
   persist(
     (set, get) => ({
-      connectionStatus: 'disconnected',
+      connectionStatus: 'idle',
+      peersWaiting: null,
       room: null,
       settings: { ...DEFAULT_SETTINGS },
       soloPassage: null,
@@ -86,6 +91,7 @@ export const useRmhTypeStore = create<RmhTypeStore>()(
       soloCountdown: null,
 
       setConnectionStatus: (status) => set({ connectionStatus: status }),
+      setPeersWaiting: (waiting) => set({ peersWaiting: waiting }),
 
       setRoom: (room) => set({ room }),
 
@@ -202,6 +208,7 @@ export const useRmhTypeStore = create<RmhTypeStore>()(
 
       reset: () => set({
         connectionStatus: 'disconnected',
+        peersWaiting: null,
         room: null,
         soloPassage: null,
         soloPassageId: null,

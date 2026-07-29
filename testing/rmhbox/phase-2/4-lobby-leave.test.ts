@@ -8,6 +8,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { LobbyManager } from '../../../server/rmhbox/lobby-manager';
 import { S2C } from '../../../lib/rmhbox/events';
+import { config } from '../../../server/rmhbox/config';
 import {
   createMockServer,
   createMockSocket,
@@ -81,9 +82,7 @@ describe('Lobby Leave (§4.1)', () => {
     callEvent(socketB, 'rmhbox:lobby:leave', { lobbyId });
 
     const actions = findServerEmitted(serverData.emitted, S2C.GAME_ACTION, `lobby:${lobbyId}`);
-    const leftAction = actions.find(
-      (a) => (a.data as { type: string }).type === 'PLAYER_LEFT',
-    );
+    const leftAction = actions.find((a) => (a.data as { type: string }).type === 'PLAYER_LEFT');
     expect(leftAction).toBeDefined();
   });
 
@@ -120,7 +119,11 @@ describe('Lobby Leave (§4.1)', () => {
     callEvent(socketB, 'rmhbox:lobby:leave', { lobbyId });
     callEvent(socketA, 'rmhbox:lobby:leave', { lobbyId });
 
-    const disbanded = findServerEmitted(serverData.emitted, S2C.LOBBY_DISBANDED, `lobby:${lobbyId}`);
+    const disbanded = findServerEmitted(
+      serverData.emitted,
+      S2C.LOBBY_DISBANDED,
+      `lobby:${lobbyId}`,
+    );
     expect(disbanded.length).toBeGreaterThanOrEqual(1);
   });
 
@@ -129,7 +132,9 @@ describe('Lobby Leave (§4.1)', () => {
 
     const lobby = lobbyManager.getLobby(lobbyId)!;
     const systemMsgs = lobby.chat.filter((m) => m.type === 'system');
-    expect(systemMsgs.some((m) => m.content.includes('Bob') && m.content.includes('left'))).toBe(true);
+    expect(systemMsgs.some((m) => m.content.includes('Bob') && m.content.includes('left'))).toBe(
+      true,
+    );
   });
 
   it('should return error when leaving without being in a lobby', () => {
@@ -193,8 +198,8 @@ describe('Disconnect Handling (§4.2)', () => {
   it('should keep player in lobby during grace period', () => {
     lobbyManager.handleDisconnect(socketB.socket as unknown as Socket);
 
-    // Advance time less than grace period (120s)
-    vi.advanceTimersByTime(60_000);
+    // Comfortably inside the grace window.
+    vi.advanceTimersByTime(config.DISCONNECT_GRACE_PERIOD_MS / 2);
 
     const lobby = lobbyManager.getLobby(lobbyId)!;
     expect(lobby.players.has(MOCK_USERS.bob.userId)).toBe(true);
@@ -203,8 +208,8 @@ describe('Disconnect Handling (§4.2)', () => {
   it('should remove player after grace period expires', () => {
     lobbyManager.handleDisconnect(socketB.socket as unknown as Socket);
 
-    // Advance past grace period (120s)
-    vi.advanceTimersByTime(121_000);
+    // Past the grace window.
+    vi.advanceTimersByTime(config.DISCONNECT_GRACE_PERIOD_MS + 1_000);
 
     const lobby = lobbyManager.getLobby(lobbyId)!;
     expect(lobby.players.has(MOCK_USERS.bob.userId)).toBe(false);

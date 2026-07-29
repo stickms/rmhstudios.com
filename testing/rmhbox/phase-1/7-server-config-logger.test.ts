@@ -7,6 +7,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { logger } from '../../../server/rmhbox/logger';
+import { PEER_GRACE_MS } from '../../../lib/shared/realtime/types';
 
 // We need to test validated() but it uses imports that need mocking
 // Test the logger directly and validated() via integration
@@ -71,7 +72,7 @@ describe('Server Config', () => {
     expect(config.MIN_PLAYERS).toBe(2);
     expect(config.ABSOLUTE_MAX_PLAYERS).toBe(16);
     expect(config.HEARTBEAT_INTERVAL_MS).toBe(10_000);
-    expect(config.DISCONNECT_GRACE_PERIOD_MS).toBe(120_000);
+    expect(config.DISCONNECT_GRACE_PERIOD_MS).toBe(PEER_GRACE_MS);
     expect(config.VOTE_DURATION_SECONDS).toBe(30);
     expect(config.VOTE_CANDIDATE_COUNT).toBe(5);
     expect(config.SHUTDOWN_TIMEOUT_MS).toBe(10_000);

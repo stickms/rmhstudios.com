@@ -1,14 +1,22 @@
 {
   "chat-placeholder": "Chat...",
+  "connecting": "Connecting…",
+  "connection-lost": "Connection lost",
+  "continue-without-them": "Continue without them",
   "dismiss": "Dismiss",
   "failed-to-load-media": "Impossibile caricare i contenuti multimediali",
   "game-crashed": "Gioco interrotto",
   "game-crashed-named": "{{gameName}} si è interrotto",
+  "game-paused": "Game paused",
   "loading": "Caricamento…",
   "no-messages-yet": "Ancora nessun messaggio",
   "notifications": "Notifications",
   "react": "Reagisci",
+  "reconnecting": "Reconnecting…",
+  "resuming-in": "Continuing without them in {{seconds}}s",
+  "resuming-now": "Continuing…",
   "return-home": "Torna alla home",
   "try-again": "Riprova",
-  "unexpected-error": "Si è verificato un errore imprevisto."
+  "unexpected-error": "Si è verificato un errore imprevisto.",
+  "waiting-for-peer": "Waiting for {{name}} to reconnect…"
 }

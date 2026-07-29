@@ -86,7 +86,10 @@ export function ReactionMenu({ x, y, onSelect, onClose }: ReactionMenuProps) {
           </Suspense>
         </div>
       ) : (
-        <div ref={barRef} className="flex items-center gap-1 rounded-full px-2 py-1.5 glass-overlay">
+        <div
+          ref={barRef}
+          className="flex items-center gap-1 rounded-full px-2 py-1.5 glass-overlay"
+        >
           {CHAT_REACTION_EMOJIS.map((emoji) => (
             <button
               key={emoji}

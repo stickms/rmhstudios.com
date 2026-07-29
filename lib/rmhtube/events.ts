@@ -87,6 +87,7 @@ export const S2C = {
   REACTION_BROADCAST:   'rmhtube:reaction:broadcast',
 
   // Errors
+  PEERS_WAITING:      'rmhtube:peers:waiting',
   ERROR:                'rmhtube:error',
 
   // Phase 1: Typing Indicators

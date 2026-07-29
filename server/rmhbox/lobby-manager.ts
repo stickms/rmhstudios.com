@@ -12,6 +12,7 @@
 import { Server, Socket } from 'socket.io';
 import { nanoid } from 'nanoid';
 import { config } from './config';
+import { PresenceGrace } from '../shared/presence-grace';
 import { logger } from './logger';
 import { generateRoomCode } from '../../lib/rmhbox/utils';
 import { S2C, C2S } from '../../lib/rmhbox/events';
@@ -50,8 +51,26 @@ export class LobbyManager {
   private readonly channelToLobby = new Map<string, string>();
   /** Per-lobby incrementing sequence counter for game actions */
   private readonly seqCounters = new Map<string, number>();
-  /** Grace period timers keyed by userId */
-  private readonly graceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  /**
+   * Disconnect grace. Holds a dropped player's slot for the shared window,
+   * tells the lobby who it is waiting for so the clients can pause, and
+   * removes them when the window closes.
+   */
+  private readonly presence = new PresenceGrace({
+    graceMs: config.DISCONNECT_GRACE_PERIOD_MS,
+    onChange: (lobbyId, waiting) => {
+      this.io.to(`lobby:${lobbyId}`).emit(S2C.PEERS_WAITING, waiting);
+    },
+    onExpire: (lobbyId, userId) => {
+      const lobby = this.lobbies.get(lobbyId);
+      if (!lobby) return;
+      const player = lobby.players.get(userId);
+      // They reconnected between the timer firing and this callback running.
+      if (!player || player.isConnected) return;
+      logger.info({ event: 'grace_period_expired', userId, lobbyId });
+      this.removePlayer(lobby, userId);
+    },
+  });
   /** End-session disband timers keyed by lobbyId */
   private readonly disbandTimers = new Map<string, ReturnType<typeof setTimeout>>();
   /** Pending join-in-progress players (for join_next_subround policy) keyed by lobbyId */
@@ -238,15 +257,8 @@ export class LobbyManager {
         payload: { userId, userName: player.userName },
       });
 
-      // Start grace period timer
-      const timer = setTimeout(() => {
-        this.graceTimers.delete(userId);
-        logger.info({ event: 'grace_period_expired', userId, lobbyId: lobby.id });
-        // Remove player via leave logic
-        this.removePlayer(lobby, userId);
-      }, config.DISCONNECT_GRACE_PERIOD_MS);
-
-      this.graceTimers.set(userId, timer);
+      // Hold their slot and pause the lobby for the shared grace window.
+      this.presence.hold(lobby.id, userId, player.userName);
       return;
     }
 
@@ -268,13 +280,18 @@ export class LobbyManager {
     }
   }
 
-  /** Cancel a pending grace period timer (called by reconnection handler) */
+  /**
+   * Stop waiting for a user — they reconnected, left on purpose, or were
+   * kicked. Called by the reconnection handler and the leave/kick paths.
+   */
   cancelGraceTimer(userId: string): void {
-    const timer = this.graceTimers.get(userId);
-    if (timer) {
-      clearTimeout(timer);
-      this.graceTimers.delete(userId);
-    }
+    const lobbyId = this.userToLobby.get(userId);
+    if (lobbyId) this.presence.release(lobbyId, userId);
+  }
+
+  /** The set of players a lobby is currently waiting on, for a fresh snapshot. */
+  getPeersWaiting(lobbyId: string) {
+    return this.presence.getWaiting(lobbyId);
   }
 
   // ─── Lobby creation (§2.1) ─────────────────────────────────
@@ -1508,6 +1525,7 @@ export class LobbyManager {
     }
 
     // Clean up lobby data
+    this.presence.clearRoom(lobbyId);
     this.lobbies.delete(lobbyId);
     this.seqCounters.delete(lobbyId);
 

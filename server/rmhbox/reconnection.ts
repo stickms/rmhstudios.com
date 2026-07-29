@@ -100,6 +100,9 @@ export class ReconnectionHandler {
     // ─── Send Full State Snapshot ────────────────────────────
     const clientState = this.stateSync.buildClientState(lobby, userId);
     socket.emit(S2C.LOBBY_STATE_SNAPSHOT, clientState);
+    // Their own client cleared the pause banner when it dropped; send the
+    // lobby's current wait state so it agrees with everyone else's.
+    socket.emit(S2C.PEERS_WAITING, this.lobbyManager.getPeersWaiting(lobby.id));
 
     // ─── Game-Specific State ─────────────────────────────────
     if (lobby.currentGame?.handler && lobby.state === 'PLAYING') {

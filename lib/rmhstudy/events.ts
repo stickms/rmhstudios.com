@@ -40,5 +40,6 @@ export const S2C = {
   TIMER_PAUSED:        'rmhstudy:timer:paused',
   TIMER_RESET:         'rmhstudy:timer:reset',
   TASK_LIST:           'rmhstudy:task:list',
+  PEERS_WAITING:      'rmhstudy:peers:waiting',
   ERROR:               'rmhstudy:error',
 } as const;

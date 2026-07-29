@@ -1,124 +1,87 @@
 /**
- * RMH Study — Socket.io Client Wrapper
+ * RMH Study — realtime client.
  *
- * Connects to the shared socket server (port 7001).
+ * Connection lifecycle, reconnect tuning, credential refresh and the wake
+ * signals live in `lib/shared/realtime/client`; this file is the RMHStudy
+ * event map.
  */
 
 'use client';
 
-import { io, Socket } from 'socket.io-client';
-import { ensureTrailingSlash } from '@/lib/url';
+import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';
+import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
+import type { PeerWaitState } from '@/lib/shared/realtime/types';
 import { useRmhStudyStore } from './store';
 import { S2C } from './events';
 import { toast } from './toast-store';
 import type { ChatMessage, TimerState, PhaseCompleteEvent, Task } from './types';
 
-// ─── Module-Level Socket Reference ──────────────────────────────
+let client: RealtimeClient | null = null;
+let pendingRoomCode: string | null = null;
 
-let socket: Socket | null = null;
+const store = () => useRmhStudyStore.getState();
 
-// ─── Connection ─────────────────────────────────────────────────
+// ─── Connection ─────────────────────────────────────────────────────────────
 
 export async function connectToRmhStudy(roomCode?: string): Promise<Socket> {
-  if (socket?.connected) {
-    // Already connected — join room immediately if requested
-    if (roomCode) socket.emit('rmhstudy:room:join', { roomCode });
-    return socket;
-  }
+  if (roomCode) pendingRoomCode = roomCode;
 
-  if (socket) {
-    socket.removeAllListeners();
-    socket.disconnect();
-    socket = null;
+  if (client) {
+    if (client.socket.connected && roomCode) {
+      client.emit('rmhstudy:room:join', { roomCode });
+    } else {
+      client.reconnectNow();
+    }
+    return client.socket;
   }
-
-  const store = useRmhStudyStore.getState();
-  store.setConnectionStatus('connecting');
 
   const session = await authClient.getSession();
-  const token = session?.data?.session?.token;
-  if (!token) {
-    store.setConnectionStatus('error');
+  if (!session?.data?.session?.token) {
+    store().setConnectionStatus('error');
     throw new Error('Not authenticated');
   }
 
-  const serverUrl = ensureTrailingSlash(import.meta.env.VITE_SOCKET_URL);
-
-  socket = io(serverUrl, {
+  client = createRealtimeClient({
+    name: 'RmhStudy',
+    url: import.meta.env.VITE_SOCKET_URL,
     path: '/socket/',
-    auth: (cb) => {
-      authClient
-        .getSession()
-        .then((s) => cb({ token: s?.data?.session?.token ?? token }))
-        .catch(() => cb({ token }));
+    auth: async () => {
+      const current = await authClient.getSession();
+      return { token: current?.data?.session?.token };
     },
-    reconnection: true,
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 10000,
-    timeout: 10000,
+    onStatus: (status) => {
+      store().setConnectionStatus(status);
+      if (status === 'disconnected' || status === 'error') store().setPeersWaiting(null);
+    },
+    onConnect: (socket) => {
+      const code = store().room?.roomCode ?? pendingRoomCode;
+      if (code) socket.emit('rmhstudy:room:join', { roomCode: code });
+    },
+    bind: registerHandlers,
   });
 
-  // ─── Connection lifecycle ───────────────────────────────────
-  // Track a pending room code for join-on-connect
-  let pendingRoomCode: string | null = roomCode ?? null;
+  return client.socket;
+}
 
-  socket.on('connect', () => {
-    const store = useRmhStudyStore.getState();
-    store.setConnectionStatus('connected');
+function registerHandlers(socket: Socket) {
+  // ─── Room ─────────────────────────────────────────────────────────────
+  socket.on(S2C.ROOM_STATE, (state) => store().setRoom(state));
+  socket.on(S2C.ROOM_CHAT, (msg: ChatMessage) => store().addChatMessage(msg));
 
-    // Re-join room on reconnect (socket ID changed, server lost our mapping)
-    const roomCode = store.room?.roomCode || pendingRoomCode;
-    if (roomCode) {
-      socket!.emit('rmhstudy:room:join', { roomCode });
-      pendingRoomCode = null;
-    }
-  });
+  socket.on(S2C.CHAT_REACTION, (data: { messageId: string; reactions: Record<string, string[]> }) =>
+    store().updateChatReaction(data.messageId, data.reactions),
+  );
 
-  socket.on('disconnect', (reason) => {
-    if (reason === 'io server disconnect' || reason === 'io client disconnect') {
-      useRmhStudyStore.getState().setConnectionStatus('disconnected');
-    } else {
-      useRmhStudyStore.getState().setConnectionStatus('connecting');
-    }
-  });
+  socket.on(S2C.PEERS_WAITING, (waiting: PeerWaitState | null) =>
+    store().setPeersWaiting(waiting?.peers?.length ? waiting : null),
+  );
 
-  socket.on('connect_error', (err) => {
-    if (err.message?.includes('auth') || err.message?.includes('token')) {
-      useRmhStudyStore.getState().setConnectionStatus('error');
-    }
-  });
-
-  // Reconnect when returning from background (phone sleep, tab switch)
-  const handleVisibility = () => {
-    if (document.visibilityState === 'visible' && socket && !socket.connected) {
-      socket.connect();
-    }
-  };
-  document.addEventListener('visibilitychange', handleVisibility);
-
-  // ─── Room state ───────────────────────────────────────────────
-  socket.on(S2C.ROOM_STATE, (state) => {
-    useRmhStudyStore.getState().setRoom(state);
-  });
-
-  // ─── Chat ─────────────────────────────────────────────────────
-  socket.on(S2C.ROOM_CHAT, (msg: ChatMessage) => {
-    useRmhStudyStore.getState().addChatMessage(msg);
-  });
-
-  socket.on(S2C.CHAT_REACTION, (data: { messageId: string; reactions: Record<string, string[]> }) => {
-    useRmhStudyStore.getState().updateChatReaction(data.messageId, data.reactions);
-  });
-
-  // ─── Timer events ─────────────────────────────────────────────
-  socket.on(S2C.TIMER_TICK, (data: TimerState) => {
-    useRmhStudyStore.getState().updateTimer(data);
-  });
+  // ─── Timer ────────────────────────────────────────────────────────────
+  socket.on(S2C.TIMER_TICK, (data: TimerState) => store().updateTimer(data));
 
   socket.on(S2C.TIMER_PHASE_COMPLETE, (data: PhaseCompleteEvent) => {
-    useRmhStudyStore.getState().setPhaseComplete(data);
+    store().setPhaseComplete(data);
     if (data.completedPhase === 'working') {
       toast.success('Focus session complete! Time for a break.');
     } else {
@@ -126,57 +89,50 @@ export async function connectToRmhStudy(roomCode?: string): Promise<Socket> {
     }
   });
 
-  socket.on(S2C.TIMER_PAUSED, (data: { phase: TimerState['phase']; remainingMs: number }) => {
-    useRmhStudyStore.getState().setTimerPaused(data.phase, data.remainingMs);
-  });
+  socket.on(S2C.TIMER_PAUSED, (data: { phase: TimerState['phase']; remainingMs: number }) =>
+    store().setTimerPaused(data.phase, data.remainingMs),
+  );
 
-  socket.on(S2C.TIMER_RESET, () => {
-    useRmhStudyStore.getState().setTimerReset();
-  });
+  socket.on(S2C.TIMER_RESET, () => store().setTimerReset());
 
-  // ─── Tasks ────────────────────────────────────────────────────
-  socket.on(S2C.TASK_LIST, (data: { tasks: Task[] }) => {
-    useRmhStudyStore.getState().setTasks(data.tasks);
-  });
+  // ─── Tasks ────────────────────────────────────────────────────────────
+  socket.on(S2C.TASK_LIST, (data: { tasks: Task[] }) => store().setTasks(data.tasks));
 
-  // ─── Kicked ──────────────────────────────────────────────────
+  // ─── Removal / errors ─────────────────────────────────────────────────
   socket.on(S2C.ROOM_KICKED, () => {
-    useRmhStudyStore.getState().leaveRoom();
+    pendingRoomCode = null;
+    store().leaveRoom();
     toast.warning('You have been kicked from the room.');
   });
 
-  // ─── Errors ───────────────────────────────────────────────────
   socket.on(S2C.ERROR, (error: { message?: string }) => {
     const message = error?.message ?? 'An error occurred.';
     console.error(`[RmhStudy] Server error: ${message}`);
     toast.error(message);
   });
-
-  return socket;
 }
 
-// ─── Socket Access ───────────────────────────────────────────────
+// ─── Access ─────────────────────────────────────────────────────────────────
 
 export function getSocket(): Socket | null {
-  return socket;
+  return client?.socket ?? null;
 }
 
-// ─── Disconnect ──────────────────────────────────────────────────
+export function reconnectNow(): void {
+  client?.reconnectNow();
+}
 
 export function disconnectFromRmhStudy(): void {
-  if (socket) {
-    socket.disconnect();
-    socket = null;
-  }
-  useRmhStudyStore.getState().reset();
+  pendingRoomCode = null;
+  client?.destroy();
+  client = null;
+  store().reset();
 }
 
-// ─── Emit Helper ─────────────────────────────────────────────────
-
-export function emit(event: string, data?: unknown): void {
-  if (!socket?.connected) {
-    console.warn(`[RmhStudy] Cannot emit "${event}" — not connected`);
-    return;
+export function emit(event: string, data?: unknown, options?: { queue?: boolean }): boolean {
+  if (!client) {
+    console.warn(`[RmhStudy] Cannot emit "${event}" — no connection`);
+    return false;
   }
-  socket.emit(event, data);
+  return client.emit(event, data, options);
 }

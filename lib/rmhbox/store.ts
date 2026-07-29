@@ -13,6 +13,7 @@
  * Implementation: docs/rmhbox/implementation/phase-4.md §4
  */
 
+import type { RealtimeStatus, PeerWaitState } from '@/lib/shared/realtime/types';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type {
@@ -82,7 +83,9 @@ export interface MinigameRoundInfo {
 }
 
 export interface RMHboxStore {
-  connectionStatus: 'disconnected' | 'connecting' | 'connected' | 'error';
+  connectionStatus: RealtimeStatus;
+  /** Peers the room is paused on, or null when nobody is being waited for. */
+  peersWaiting: PeerWaitState | null;
   lobby: ClientLobbyState | null;
   gameState: Record<string, unknown>;
   lastSeq: number;
@@ -103,6 +106,7 @@ export interface RMHboxStore {
 
   // Actions
   setConnectionStatus: (status: RMHboxStore['connectionStatus']) => void;
+  setPeersWaiting: (waiting: PeerWaitState | null) => void;
   applyAction: (action: GameAction) => void;
   applyFullSync: (fullState: ClientLobbyState) => void;
   setGameState: (state: Record<string, unknown>) => void;
@@ -122,7 +126,8 @@ export interface RMHboxStore {
 export const useRMHboxStore = create<RMHboxStore>()(
   persist(
     (set, get) => ({
-      connectionStatus: 'disconnected',
+      connectionStatus: 'idle',
+      peersWaiting: null,
       lobby: null,
       gameState: {},
       lastSeq: -1,
@@ -134,6 +139,7 @@ export const useRMHboxStore = create<RMHboxStore>()(
       liveMinigameScore: null,
 
       setConnectionStatus: (status) => set({ connectionStatus: status }),
+      setPeersWaiting: (waiting) => set({ peersWaiting: waiting }),
 
       applyAction: (action) => {
         const state = get();
@@ -227,6 +233,7 @@ export const useRMHboxStore = create<RMHboxStore>()(
 
       reset: () => set({
         connectionStatus: 'disconnected',
+        peersWaiting: null,
         lobby: null,
         gameState: {},
         lastSeq: -1,

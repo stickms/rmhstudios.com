@@ -11,6 +11,7 @@ import { ReconnectionHandler } from '../../../server/rmhbox/reconnection';
 import { StateSyncService } from '../../../server/rmhbox/state-sync';
 import { GameCoordinator, MINIGAME_SERVER_REGISTRY } from '../../../server/rmhbox/game-coordinator';
 import { S2C } from '../../../lib/rmhbox/events';
+import { config } from '../../../server/rmhbox/config';
 import {
   createMockServer,
   createMockSocket,
@@ -48,7 +49,8 @@ function setupLobbyWith2Players(): void {
   gameCoordinator.handleConnection(socketB.socket as unknown as Socket);
 
   callEvent(socketA, 'rmhbox:lobby:create', {});
-  lobbyId = (findLastEmitted(socketA.emitted, S2C.LOBBY_CREATED)!.data as { lobbyId: string }).lobbyId;
+  lobbyId = (findLastEmitted(socketA.emitted, S2C.LOBBY_CREATED)!.data as { lobbyId: string })
+    .lobbyId;
 
   callEvent(socketB, 'rmhbox:lobby:join', { lobbyId, asSpectator: false });
 }
@@ -58,8 +60,16 @@ beforeEach(() => {
   serverData = createMockServer();
   lobbyManager = new LobbyManager(serverData.server as unknown as Server);
   stateSyncService = new StateSyncService(serverData.server as unknown as Server, lobbyManager);
-  gameCoordinator = new GameCoordinator(serverData.server as unknown as Server, lobbyManager, stateSyncService);
-  reconnection = new ReconnectionHandler(serverData.server as unknown as Server, lobbyManager, stateSyncService);
+  gameCoordinator = new GameCoordinator(
+    serverData.server as unknown as Server,
+    lobbyManager,
+    stateSyncService,
+  );
+  reconnection = new ReconnectionHandler(
+    serverData.server as unknown as Server,
+    lobbyManager,
+    stateSyncService,
+  );
 });
 
 afterEach(() => {
@@ -79,7 +89,12 @@ describe('ReconnectionHandler Instantiation (§4.1)', () => {
 
 describe('Reconnection Flow (§4.2)', () => {
   it('should do nothing for users not in a lobby', () => {
-    const newSocket = createMockSocket({ ...MOCK_USERS.diana, userId: 'user-new', sessionToken: 'token-new', userName: 'New' });
+    const newSocket = createMockSocket({
+      ...MOCK_USERS.diana,
+      userId: 'user-new',
+      sessionToken: 'token-new',
+      userName: 'New',
+    });
     registerSocket(serverData, newSocket);
 
     reconnection.attemptReconnect(newSocket.socket as unknown as Socket);
@@ -162,9 +177,7 @@ describe('Reconnection Flow (§4.2)', () => {
     reconnection.attemptReconnect(newBobSocket.socket as unknown as Socket);
 
     const actions = findServerEmitted(serverData.emitted.slice(emittedBefore), S2C.GAME_ACTION);
-    const connected = actions.find(
-      (a) => (a.data as { type: string }).type === 'PLAYER_CONNECTED',
-    );
+    const connected = actions.find((a) => (a.data as { type: string }).type === 'PLAYER_CONNECTED');
     expect(connected).toBeDefined();
   });
 
@@ -182,7 +195,9 @@ describe('Reconnection Flow (§4.2)', () => {
 
     expect(newBobSocket.joinedRooms.has(`lobby:${lobbyId}`)).toBe(true);
     expect(newBobSocket.joinedRooms.has(`lobby:${lobbyId}:players`)).toBe(true);
-    expect(newBobSocket.joinedRooms.has(`lobby:${lobbyId}:player:${MOCK_USERS.bob.userId}`)).toBe(true);
+    expect(newBobSocket.joinedRooms.has(`lobby:${lobbyId}:player:${MOCK_USERS.bob.userId}`)).toBe(
+      true,
+    );
   });
 });
 
@@ -253,7 +268,7 @@ describe('Disconnect Grace Period (§4.3)', () => {
 
     lobbyManager.handleDisconnect(socketB.socket as unknown as Socket);
 
-    vi.advanceTimersByTime(60_000); // Half of grace period
+    vi.advanceTimersByTime(config.DISCONNECT_GRACE_PERIOD_MS / 2);
 
     const lobby = lobbyManager.getLobby(lobbyId)!;
     expect(lobby.players.has(MOCK_USERS.bob.userId)).toBe(true);

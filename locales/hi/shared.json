@@ -1,14 +1,22 @@
 {
   "chat-placeholder": "चैट...",
+  "connecting": "Connecting…",
+  "connection-lost": "Connection lost",
+  "continue-without-them": "Continue without them",
   "dismiss": "Dismiss",
   "failed-to-load-media": "मीडिया लोड करने में विफल",
   "game-crashed": "गेम क्रैश हो गया",
   "game-crashed-named": "{{gameName}} क्रैश हो गया",
+  "game-paused": "Game paused",
   "loading": "लोड हो रहा है…",
   "no-messages-yet": "अभी तक कोई संदेश नहीं",
   "notifications": "Notifications",
   "react": "रिएक्ट करें",
+  "reconnecting": "Reconnecting…",
+  "resuming-in": "Continuing without them in {{seconds}}s",
+  "resuming-now": "Continuing…",
   "return-home": "होम पर लौटें",
   "try-again": "फिर से प्रयास करें",
-  "unexpected-error": "एक अप्रत्याशित त्रुटि हुई।"
+  "unexpected-error": "एक अप्रत्याशित त्रुटि हुई।",
+  "waiting-for-peer": "Waiting for {{name}} to reconnect…"
 }

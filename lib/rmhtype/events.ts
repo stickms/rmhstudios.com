@@ -42,5 +42,6 @@ export const S2C = {
   SOLO_STARTED:        'rmhtype:solo:started',
   SOLO_RESULT:         'rmhtype:solo:result',
   LEADERBOARD_DATA:    'rmhtype:leaderboard:data',
+  PEERS_WAITING:      'rmhtype:peers:waiting',
   ERROR:               'rmhtype:error',
 } as const;

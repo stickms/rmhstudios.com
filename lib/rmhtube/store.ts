@@ -6,6 +6,7 @@
  * and user settings with localStorage persistence.
  */
 
+import type { RealtimeStatus, PeerWaitState } from '@/lib/shared/realtime/types';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { nanoid } from 'nanoid';
@@ -74,7 +75,9 @@ const DEFAULT_SETTINGS: RmhTubeUserSettings = {
 // ─── Store Interface ─────────────────────────────────────────────
 
 export interface RmhTubeStore {
-  connectionStatus: 'disconnected' | 'connecting' | 'connected' | 'error';
+  connectionStatus: RealtimeStatus;
+  /** Peers the room is paused on, or null when nobody is being waited for. */
+  peersWaiting: PeerWaitState | null;
   room: ClientRoomState | null;
   lastSeq: number;
   settings: RmhTubeUserSettings;
@@ -83,6 +86,7 @@ export interface RmhTubeStore {
 
   // Actions
   setConnectionStatus: (status: RmhTubeStore['connectionStatus']) => void;
+  setPeersWaiting: (waiting: PeerWaitState | null) => void;
   applyAction: (action: RoomAction) => void;
   applyFullSync: (fullState: ClientRoomState) => void;
   updateVideoState: (videoState: VideoState) => void;
@@ -101,13 +105,15 @@ export interface RmhTubeStore {
 export const useRmhTubeStore = create<RmhTubeStore>()(
   persist(
     (set, get) => ({
-      connectionStatus: 'disconnected',
+      connectionStatus: 'idle',
+      peersWaiting: null,
       room: null,
       lastSeq: -1,
       settings: { ...DEFAULT_SETTINGS },
       systemMessages: [],
 
       setConnectionStatus: (status) => set({ connectionStatus: status }),
+      setPeersWaiting: (waiting) => set({ peersWaiting: waiting }),
 
       applyAction: (action) => {
         const state = get();
@@ -165,6 +171,7 @@ export const useRmhTubeStore = create<RmhTubeStore>()(
 
       reset: () => set({
         connectionStatus: 'disconnected',
+        peersWaiting: null,
         room: null,
         lastSeq: -1,
         systemMessages: [],

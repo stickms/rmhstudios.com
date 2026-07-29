@@ -1,103 +1,123 @@
+/**
+ * RMH Music — realtime client.
+ *
+ * Connection lifecycle, reconnect tuning, credential refresh and the wake
+ * signals live in `lib/shared/realtime/client`; this file is the RMHMusic
+ * event map plus the listener's drift correction.
+ */
+
 'use client';
 
-import { io, Socket } from 'socket.io-client';
-import { ensureTrailingSlash } from '@/lib/url';
+import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';
+import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
 import { useRmhMusicStore } from './store';
 import { S2C } from './events';
 
-let socket: Socket | null = null;
+let client: RealtimeClient | null = null;
+
+const store = () => useRmhMusicStore.getState();
+
+/** Beyond this the listener is audibly behind the room, so snap rather than drift. */
+const MAX_DRIFT_MS = 2000;
 
 export async function connectToRmhMusic(): Promise<Socket> {
-  if (socket?.connected) return socket;
-  if (socket) { socket.removeAllListeners(); socket.disconnect(); socket = null; }
-
-  const store = useRmhMusicStore.getState();
-  store.setConnectionStatus('connecting');
+  if (client) {
+    client.reconnectNow();
+    return client.socket;
+  }
 
   const session = await authClient.getSession();
-  const token = session?.data?.session?.token;
-  if (!token) { store.setConnectionStatus('error'); throw new Error('Not authenticated'); }
+  if (!session?.data?.session?.token) {
+    store().setConnectionStatus('error');
+    throw new Error('Not authenticated');
+  }
 
-  const serverUrl = ensureTrailingSlash(import.meta.env.VITE_SOCKET_URL);
-
-  socket = io(serverUrl, {
+  client = createRealtimeClient({
+    name: 'RmhMusic',
+    url: import.meta.env.VITE_SOCKET_URL,
     path: '/socket/',
-    auth: (cb) => {
-      authClient.getSession()
-        .then((s) => cb({ token: s?.data?.session?.token ?? token }))
-        .catch(() => cb({ token }));
+    auth: async () => {
+      const current = await authClient.getSession();
+      return { token: current?.data?.session?.token };
     },
-    reconnection: true,
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 10000,
-    timeout: 10000,
+    onStatus: (status) => store().setConnectionStatus(status),
+    bind: registerHandlers,
   });
 
-  socket.on('connect', () => useRmhMusicStore.getState().setConnectionStatus('connected'));
-  socket.on('disconnect', (reason) => {
-    if (reason === 'io server disconnect' || reason === 'io client disconnect') {
-      useRmhMusicStore.getState().setConnectionStatus('disconnected');
-    } else {
-      useRmhMusicStore.getState().setConnectionStatus('connecting');
-    }
-  });
-  socket.on('connect_error', (err) => {
-    if (err.message?.includes('auth') || err.message?.includes('unauthorized')) {
-      useRmhMusicStore.getState().setConnectionStatus('error');
-    }
-  });
+  return client.socket;
+}
 
-  socket.on(S2C.ROOM_STATE_SNAPSHOT, (fullState) => useRmhMusicStore.getState().applyFullSync(fullState));
-  socket.on(S2C.ROOM_ACTION, (action) => useRmhMusicStore.getState().applyAction(action));
+function registerHandlers(socket: Socket) {
+  socket.on(S2C.ROOM_STATE_SNAPSHOT, (fullState) => store().applyFullSync(fullState));
+  socket.on(S2C.ROOM_ACTION, (action) => store().applyAction(action));
 
   socket.on(S2C.MUSIC_PLAY, (data) => {
-    useRmhMusicStore.getState().setPlayback({ trackUri: data.trackUri, positionMs: data.positionMs, isPlaying: true, updatedAt: Date.now() });
-    if (data.track) useRmhMusicStore.getState().setCurrentTrack(data.track);
+    store().setPlayback({
+      trackUri: data.trackUri,
+      positionMs: data.positionMs,
+      isPlaying: true,
+      updatedAt: Date.now(),
+    });
+    if (data.track) store().setCurrentTrack(data.track);
   });
 
   socket.on(S2C.MUSIC_PAUSE, (data) => {
-    useRmhMusicStore.getState().setPlayback({ isPlaying: false, positionMs: data.positionMs, updatedAt: Date.now() });
+    store().setPlayback({ isPlaying: false, positionMs: data.positionMs, updatedAt: Date.now() });
   });
 
   socket.on(S2C.MUSIC_SEEK, (data) => {
-    useRmhMusicStore.getState().setPlayback({ positionMs: data.positionMs, updatedAt: Date.now() });
+    store().setPlayback({ positionMs: data.positionMs, updatedAt: Date.now() });
   });
 
   socket.on(S2C.MUSIC_TRACK_CHANGED, (data) => {
-    useRmhMusicStore.getState().setCurrentTrack(data.track);
-    useRmhMusicStore.getState().setPlayback({ trackUri: data.track?.spotifyUri ?? null, positionMs: 0, isPlaying: false, updatedAt: Date.now() });
+    store().setCurrentTrack(data.track);
+    store().setPlayback({
+      trackUri: data.track?.spotifyUri ?? null,
+      positionMs: 0,
+      isPlaying: false,
+      updatedAt: Date.now(),
+    });
   });
 
   socket.on(S2C.SYNC_HEARTBEAT, (data) => {
-    const store = useRmhMusicStore.getState();
-    if (!store.room || store.room.hostUserId === store.room.myUserId) return;
-    const drift = Math.abs((store.playback.positionMs + (Date.now() - store.playback.updatedAt)) - data.positionMs);
-    if (drift > 2000) {
-      store.setPlayback({ positionMs: data.positionMs, isPlaying: data.isPlaying, updatedAt: Date.now() });
+    const s = store();
+    // The host defines the timeline; correcting it against its own broadcast
+    // would fight itself.
+    if (!s.room || s.room.hostUserId === s.room.myUserId) return;
+    const projected = s.playback.positionMs + (Date.now() - s.playback.updatedAt);
+    if (Math.abs(projected - data.positionMs) > MAX_DRIFT_MS) {
+      s.setPlayback({
+        positionMs: data.positionMs,
+        isPlaying: data.isPlaying,
+        updatedAt: Date.now(),
+      });
     }
   });
 
   socket.on(S2C.QUEUE_UPDATED, (data) => {
-    const room = useRmhMusicStore.getState().room;
+    const room = store().room;
     if (room) useRmhMusicStore.setState({ room: { ...room, queue: data.queue } });
   });
 
   socket.on(S2C.ERROR, (error) => console.error('[RmhMusic] Server error:', error));
-  socket.on(S2C.ROOM_DISBANDED, () => { useRmhMusicStore.getState().leaveRoom(); });
-
-  return socket;
+  socket.on(S2C.ROOM_DISBANDED, () => store().leaveRoom());
 }
 
-export function getSocket(): Socket | null { return socket; }
+export function getSocket(): Socket | null {
+  return client?.socket ?? null;
+}
+
+export function reconnectNow(): void {
+  client?.reconnectNow();
+}
 
 export function disconnectFromRmhMusic(): void {
-  if (socket) { socket.disconnect(); socket = null; }
-  useRmhMusicStore.getState().reset();
+  client?.destroy();
+  client = null;
+  store().reset();
 }
 
-export function emit(event: string, data?: unknown): void {
-  if (!socket?.connected) return;
-  socket.emit(event, data);
+export function emit(event: string, data?: unknown, options?: { queue?: boolean }): boolean {
+  return client?.emit(event, data, options) ?? false;
 }

@@ -1,14 +1,22 @@
 {
   "chat-placeholder": "دردشة...",
+  "connecting": "Connecting…",
+  "connection-lost": "Connection lost",
+  "continue-without-them": "Continue without them",
   "dismiss": "Dismiss",
   "failed-to-load-media": "فشل في تحميل الوسائط",
   "game-crashed": "تعطلت اللعبة",
   "game-crashed-named": "تعطلت {{gameName}}",
+  "game-paused": "Game paused",
   "loading": "جارٍ التحميل…",
   "no-messages-yet": "لا توجد رسائل بعد.",
   "notifications": "Notifications",
   "react": "تفاعل",
+  "reconnecting": "Reconnecting…",
+  "resuming-in": "Continuing without them in {{seconds}}s",
+  "resuming-now": "Continuing…",
   "return-home": "العودة إلى المنزل",
   "try-again": "حاول مرة أخرى",
-  "unexpected-error": "حدث خطأ غير متوقع."
+  "unexpected-error": "حدث خطأ غير متوقع.",
+  "waiting-for-peer": "Waiting for {{name}} to reconnect…"
 }

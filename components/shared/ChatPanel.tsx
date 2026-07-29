@@ -143,26 +143,32 @@ export default function ChatPanel({
     return el.getBoundingClientRect();
   }, []);
 
-  const openReactionPicker = useCallback((messageId: string) => {
-    const rect = getMessageRect(messageId);
-    if (!rect) return;
-    setReactionPickerMessageId(messageId);
-    setPickerPos({
-      top: rect.top - 4,
-      right: window.innerWidth - rect.right + 4,
-    });
-  }, [getMessageRect]);
+  const openReactionPicker = useCallback(
+    (messageId: string) => {
+      const rect = getMessageRect(messageId);
+      if (!rect) return;
+      setReactionPickerMessageId(messageId);
+      setPickerPos({
+        top: rect.top - 4,
+        right: window.innerWidth - rect.right + 4,
+      });
+    },
+    [getMessageRect],
+  );
 
   // ─── Hover action button position ────────────────────────────
 
-  const getHoverButtonPos = useCallback((messageId: string) => {
-    const rect = getMessageRect(messageId);
-    if (!rect) return null;
-    return {
-      top: rect.top - 8,
-      right: window.innerWidth - rect.right + 4,
-    };
-  }, [getMessageRect]);
+  const getHoverButtonPos = useCallback(
+    (messageId: string) => {
+      const rect = getMessageRect(messageId);
+      if (!rect) return null;
+      return {
+        top: rect.top - 8,
+        right: window.innerWidth - rect.right + 4,
+      };
+    },
+    [getMessageRect],
+  );
 
   return (
     <div className={`flex flex-col min-h-0 ${className}`}>
@@ -264,79 +270,88 @@ export default function ChatPanel({
       </div>
 
       {/* Fixed-position hover action button (rendered via portal to avoid overflow clip) */}
-      {showReactions && onReact && hoveredMessageId && (() => {
-        const pos = getHoverButtonPos(hoveredMessageId);
-        if (!pos) return null;
-        return createPortal(
+      {showReactions &&
+        onReact &&
+        hoveredMessageId &&
+        (() => {
+          const pos = getHoverButtonPos(hoveredMessageId);
+          if (!pos) return null;
+          return createPortal(
+            <div
+              className="flex items-center gap-0.5 rounded-site-sm shadow-sm"
+              style={{
+                position: 'fixed',
+                top: pos.top,
+                right: pos.right,
+                zIndex: 50,
+                borderWidth: 1,
+                borderStyle: 'solid',
+                borderColor: `var(--${themePrefix}-border)`,
+                backgroundColor: `var(--${themePrefix}-bg)`,
+              }}
+            >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (reactionPickerMessageId === hoveredMessageId) {
+                    setReactionPickerMessageId(null);
+                    setPickerPos(null);
+                  } else {
+                    openReactionPicker(hoveredMessageId);
+                  }
+                }}
+                className="p-1 rounded transition-colors"
+                title={t('react', { defaultValue: 'React' })}
+                style={{ color: `var(--${themePrefix}-text-muted)` }}
+              >
+                <SmilePlus className="h-3.5 w-3.5" />
+              </button>
+            </div>,
+            document.body,
+          );
+        })()}
+
+      {/* Fixed-position emoji picker (rendered via portal to avoid overflow clip) */}
+      {reactionPickerMessageId &&
+        pickerPos &&
+        createPortal(
           <div
-            className="flex items-center gap-0.5 rounded-site-sm shadow-sm"
+            className="flex items-center gap-0.5 rounded-site-sm shadow-lg px-1 py-0.5"
             style={{
               position: 'fixed',
-              top: pos.top,
-              right: pos.right,
-              zIndex: 50,
+              top: pickerPos.top - 30,
+              right: pickerPos.right,
+              zIndex: 51,
               borderWidth: 1,
               borderStyle: 'solid',
               borderColor: `var(--${themePrefix}-border)`,
               backgroundColor: `var(--${themePrefix}-bg)`,
             }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (reactionPickerMessageId === hoveredMessageId) {
-                  setReactionPickerMessageId(null);
-                  setPickerPos(null);
-                } else {
-                  openReactionPicker(hoveredMessageId);
-                }
-              }}
-              className="p-1 rounded transition-colors"
-              title={t('react', { defaultValue: 'React' })}
-              style={{ color: `var(--${themePrefix}-text-muted)` }}
-            >
-              <SmilePlus className="h-3.5 w-3.5" />
-            </button>
+            {CHAT_REACTION_EMOJIS.map((emoji) => (
+              <button
+                key={emoji}
+                onClick={() => handleReaction(reactionPickerMessageId, emoji)}
+                className="p-1 rounded transition-colors text-sm"
+                title={emoji}
+              >
+                {emoji}
+              </button>
+            ))}
           </div>,
           document.body,
-        );
-      })()}
-
-      {/* Fixed-position emoji picker (rendered via portal to avoid overflow clip) */}
-      {reactionPickerMessageId && pickerPos && createPortal(
-        <div
-          className="flex items-center gap-0.5 rounded-site-sm shadow-lg px-1 py-0.5"
-          style={{
-            position: 'fixed',
-            top: pickerPos.top - 30,
-            right: pickerPos.right,
-            zIndex: 51,
-            borderWidth: 1,
-            borderStyle: 'solid',
-            borderColor: `var(--${themePrefix}-border)`,
-            backgroundColor: `var(--${themePrefix}-bg)`,
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {CHAT_REACTION_EMOJIS.map((emoji) => (
-            <button
-              key={emoji}
-              onClick={() => handleReaction(reactionPickerMessageId, emoji)}
-              className="p-1 rounded transition-colors text-sm"
-              title={emoji}
-            >
-              {emoji}
-            </button>
-          ))}
-        </div>,
-        document.body,
-      )}
+        )}
 
       {/* Input */}
       <form
         onSubmit={handleSend}
         className="flex gap-2 p-3"
-        style={{ borderTopWidth: 1, borderTopStyle: 'solid', borderTopColor: `var(--${themePrefix}-border)` }}
+        style={{
+          borderTopWidth: 1,
+          borderTopStyle: 'solid',
+          borderTopColor: `var(--${themePrefix}-border)`,
+        }}
       >
         <div className="relative flex-1 min-w-0">
           <input

@@ -16,6 +16,8 @@
 
 import type { ReactNode } from 'react';
 import AppToaster from './AppToaster';
+import { ConnectionBanner, PeerWaitOverlay } from './ConnectionStatus';
+import type { RealtimeStatus, PeerWaitState } from '@/lib/shared/realtime/types';
 
 export type AppAppearance = 'dark' | 'light' | 'high-contrast';
 
@@ -34,6 +36,14 @@ const DENSITY_CLASS: Record<AppDensity, string> = {
   spacious: 'app-spacious',
 };
 
+export interface AppRealtimeProps {
+  status: RealtimeStatus;
+  /** Peers the session is paused on; `null` when nobody is being waited for. */
+  peersWaiting?: PeerWaitState | null;
+  /** Manual retry, wired to the client's `reconnectNow()`. */
+  onRetry?: () => void;
+}
+
 export interface AppShellProps {
   children: ReactNode;
   /** The app's palette class, e.g. `rmhbox-theme`. */
@@ -43,6 +53,12 @@ export interface AppShellProps {
   density?: AppDensity;
   /** Skip the toaster for apps that render their own notification surface. */
   toaster?: boolean;
+  /**
+   * Connection state. Supplying it mounts the reconnect banner and the
+   * paused-for-a-peer overlay here, above the app, so every socket-backed app
+   * reports an outage the same way and in the same place.
+   */
+  realtime?: AppRealtimeProps;
   className?: string;
 }
 
@@ -52,12 +68,12 @@ export default function AppShell({
   theme,
   density = 'comfortable',
   toaster = true,
+  realtime,
   className,
 }: AppShellProps) {
   // A persisted preference from an older build (or a hand-edited localStorage
   // value) shouldn't strand the app in an undefined palette.
-  const appearance: AppAppearance =
-    theme === 'light' || theme === 'high-contrast' ? theme : 'dark';
+  const appearance: AppAppearance = theme === 'light' || theme === 'high-contrast' ? theme : 'dark';
 
   return (
     <div
@@ -73,7 +89,9 @@ export default function AppShell({
       data-app-theme={appearance}
     >
       {toaster && <AppToaster />}
+      {realtime && <ConnectionBanner status={realtime.status} onRetry={realtime.onRetry} />}
       {children}
+      {realtime && <PeerWaitOverlay waiting={realtime.peersWaiting ?? null} />}
     </div>
   );
 }

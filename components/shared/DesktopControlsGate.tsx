@@ -44,7 +44,11 @@ interface DesktopControlsGateProps {
  * a "Continue anyway" escape hatch so a capable device that merely reports a
  * coarse pointer (e.g. a tablet with a mouse attached) is never locked out.
  */
-export function DesktopControlsGate({ gameName, backTo = '/', children }: DesktopControlsGateProps) {
+export function DesktopControlsGate({
+  gameName,
+  backTo = '/',
+  children,
+}: DesktopControlsGateProps) {
   const coarse = useCoarsePointer();
   const [override, setOverride] = useState(false);
 
