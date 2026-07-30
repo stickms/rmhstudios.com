@@ -11,6 +11,7 @@ export default defineConfig({
       'lib/cookgame/__tests__/**/*.test.ts',
       'components/cookgame/models/__tests__/**/*.test.ts',
       'lib/dream-rift/__tests__/**/*.test.ts',
+      'lib/laundry-sort/__tests__/**/*.test.ts',
       'lib/rmhark-ai/__tests__/**/*.test.ts',
       'lib/rmhladder/**/*.test.ts',
       'lib/homes/**/*.test.ts',

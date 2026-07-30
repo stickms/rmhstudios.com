@@ -126,6 +126,12 @@ COPY lib/shared/realtime/types.ts ./lib/shared/realtime/types.ts
 # module is a bare constant map, so copy just the file rather than the whole
 # browser-side lib/rmhtype dir.
 COPY lib/rmhtype/events.ts ./lib/rmhtype/events.ts
+# Laundry Sort's versus handler needs its wire protocol and the shared match
+# constants (durations, difficulties, lobby size) so the server validates
+# against the same values the client offers. Both are import-free constant/type
+# modules; the rest of lib/laundry-sort is the browser-side cloth solver.
+COPY lib/laundry-sort/net/events.ts ./lib/laundry-sort/net/events.ts
+COPY lib/laundry-sort/constants.ts ./lib/laundry-sort/constants.ts
 # lights-out, doctrine, rmhvibe, rmhark-ai, media and storage were only imported
 # by the Node workers now running in the Go supervisor — no longer copied here so
 # changes to them don't bust this stage's cache.

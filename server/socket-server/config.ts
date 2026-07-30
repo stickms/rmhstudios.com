@@ -107,6 +107,22 @@ export const config = {
     'dr:join': { max: 30, windowMs: 60_000 },
     'dr:quickplay': { max: 20, windowMs: 60_000 },
     'dr:browse': { max: 30, windowMs: 60_000 },
+    // Laundry Sort versus. `ls:score` is the only high-frequency one — clients
+    // publish on a 400ms timer, so 200/min leaves headroom for a reconnect
+    // burst without letting a socket flood the room.
+    'ls:create': { max: 10, windowMs: 60_000 },
+    'ls:join': { max: 30, windowMs: 60_000 },
+    'ls:quickplay': { max: 20, windowMs: 60_000 },
+    'ls:browse': { max: 30, windowMs: 60_000 },
+    'ls:leave': { max: 30, windowMs: 60_000 },
+    'ls:ready': { max: 60, windowMs: 60_000 },
+    'ls:settings': { max: 60, windowMs: 60_000 },
+    'ls:start': { max: 20, windowMs: 60_000 },
+    'ls:kick': { max: 20, windowMs: 60_000 },
+    'ls:score': { max: 240, windowMs: 60_000 },
+    'ls:finish': { max: 20, windowMs: 60_000 },
+    'ls:rematch': { max: 30, windowMs: 60_000 },
+    'ls:ticket': { max: 20, windowMs: 60_000 },
     // ─── High-frequency relay / movement events ───
     // Movement + per-frame update events were previously unmetered (the rate
     // limiter returns true for events with no rule), so a single socket could

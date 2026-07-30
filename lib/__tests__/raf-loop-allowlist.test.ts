@@ -43,6 +43,11 @@ import { join } from 'node:path';
  *                                       scroll-settle glide after a category
  *                                       switch; cancelled in cleanup and on the
  *                                       next switch.
+ *   - components/laundry-sort/hud/HudReadout.tsx — writes score/clock/combo to its
+ *                                       own text nodes instead of re-rendering the
+ *                                       overlay 60× a second. Starts only while a
+ *                                       round is running and cancels on unmount and
+ *                                       whenever the round stops.
  *   - hooks/useParallax.ts            — pointer lerp stops once it settles at target.
  *   - hooks/useSpatialParallax.ts     — pointer-event throttle; cancels on unmount.
  *   - hooks/useScrollRestoration.ts, hooks/useCardSheen.ts, hooks/useCelebration.ts,
@@ -72,7 +77,7 @@ const ALLOW = new Set<string>([
   'components/game/GameCanvas.tsx',
   'components/game/HUD.tsx',
   'components/kowloon-knockout/arena/GameView.tsx',
-  'components/laundry-sort/LaundryGame.tsx',
+  'components/laundry-sort/hud/HudReadout.tsx',
   'components/library/AlbumUploader.tsx',
   'components/library/BookReader.tsx',
   'components/library/EpubReader.tsx',
