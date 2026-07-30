@@ -97,7 +97,8 @@ export function LibraryContextMenu({
   return createPortal(
     <div
       ref={ref}
-      className="lib-ctx"
+      className="lib-ctx glass-overlay"
+      data-slot="context-menu"
       role="menu"
       aria-label={label}
       style={{ left: coords.x, top: coords.y }}

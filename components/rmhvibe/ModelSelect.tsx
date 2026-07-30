@@ -85,7 +85,13 @@ export function ModelSelect({
       </button>
 
       {open && (
-        <div ref={menuRef} className="vibe-model-select__menu" role="listbox" aria-label={t("generation-model", { defaultValue: "Generation model" })}>
+        <div
+          ref={menuRef}
+          className="vibe-model-select__menu glass-overlay"
+          data-slot="model-select-menu"
+          role="listbox"
+          aria-label={t("generation-model", { defaultValue: "Generation model" })}
+        >
           {VIBE_PROVIDER_ORDER.map((provider) => (
             <div key={provider} className="vibe-model-select__group">
               <div className="vibe-model-select__group-label">{VIBE_PROVIDER_LABELS[provider]}</div>

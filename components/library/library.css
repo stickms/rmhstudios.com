@@ -1682,21 +1682,19 @@
 }
 
 /* ─── Right-click context menu (book / collection management) ────────────────── */
+/* Surface comes from `.glass-overlay` (globals.css §L4) — the shared floating-UI
+   material. This used to hand-roll it: two stacked `rgba(0,0,0,0.55)` shadows
+   built for a dark theme, its own border and blur (with the `-webkit-` prefix
+   declared twice). Placement, size and the open animation stay here. */
 .lib-ctx {
   position: fixed;
   z-index: 1000;
   min-width: 196px;
   max-width: 260px;
   padding: 6px;
-  border-radius: 12px;
-  background: var(--site-surface);
-  border: 1px solid var(--site-border);
-  box-shadow:
-    0 16px 40px rgba(0, 0, 0, 0.55),
-    0 2px 8px rgba(0, 0, 0, 0.4);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  /* Opens over book covers with no scrim behind it — same case as the top bar's
+     quick panels, so the same shared opacity (globals.css). */
+  background-color: color-mix(in srgb, var(--site-bg) var(--site-glass-menu-opacity), transparent);
   animation: lib-ctx-in 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
   transform-origin: top left;
 }

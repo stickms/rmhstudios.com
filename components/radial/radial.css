@@ -1920,9 +1920,24 @@ html.perf-lite .radial-backdrop__blob {
 
    All four panels are the same three parts in the same order — header, body,
    footer link — on one inset (`--panel-inset`, which every row, note, group
-   heading and footer shares so nothing inside sits on its own margin). */
+   heading and footer shares so nothing inside sits on its own margin).
+
+   SPACING IS DECLARED LOCALLY, and it has to be: this panel is portaled to
+   <body>, so it is NOT a descendant of `.radial-shell` and the shell's
+   `--rad-*` scale never reaches it. Every reference to that scale in here
+   resolved to nothing, which kills the whole declaration — so the panel rendered
+   with padding, gaps and margins of ZERO and its contents sat flush against the
+   rounded border. (`--z-quickpanel` is already hoisted to body level in
+   globals.css for exactly this reason; the spacing was missed.) Keep this block
+   on the three variables below and on `--site-*`, which are global. */
 .rad-panel {
+  /* Container inset from the rounded edge. Larger than the row inset because it
+     has a 22px corner curve to clear. */
+  --panel-pad: 0.625rem;
+  /* Row / heading / footer text inset inside the container padding. */
   --panel-inset: 0.5rem;
+  /* Rhythm between body children — a menu's rows sit close. */
+  --panel-gap: 0.25rem;
   position: fixed;
   top: var(--panel-top, 4rem);
   right: var(--panel-right, 0.75rem);
@@ -1934,17 +1949,16 @@ html.perf-lite .radial-backdrop__blob {
     32rem,
     calc(100dvh - var(--panel-top, 4rem) - env(safe-area-inset-bottom, 0px) - 1rem)
   );
-  padding: var(--rad-2);
+  padding: var(--panel-pad);
   border-radius: var(--site-radius, 22px);
   border: var(--site-border-width, 1px) solid var(--site-border);
   box-shadow: var(--site-shadow);
   overflow: hidden;
   /* `.glass-overlay` supplies the blur, the glint and the viewport caps; its 62%
      tint is calibrated for dialogs that sit over a scrim. These panels sit
-     directly over live content with no scrim, so a high-contrast button or
-     headline underneath still reads through. Take the same material at a
-     stronger tint — this is a menu, and its own rows have to win. */
-  background-color: color-mix(in srgb, var(--site-bg) 88%, transparent);
+     directly over live content with no scrim, so take the same material at the
+     shared no-scrim menu opacity (globals.css). */
+  background-color: color-mix(in srgb, var(--site-bg) var(--site-glass-menu-opacity), transparent);
 }
 @media (max-width: 559.98px) {
   .rad-panel {
@@ -1979,7 +1993,7 @@ html.perf-lite .radial-backdrop__blob {
   flex-direction: column;
   /* A menu's rhythm: rows sit close and carry their own padding, so the gap
      only has to keep neighbouring groups apart. */
-  gap: var(--rad-1);
+  gap: var(--panel-gap);
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -1989,7 +2003,7 @@ html.perf-lite .radial-backdrop__blob {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: var(--rad-1);
+  margin-bottom: var(--panel-gap);
   padding: 0.55rem 0.7rem;
   border-radius: 999px;
   border: 1px solid var(--site-border);
@@ -2025,8 +2039,8 @@ html.perf-lite .radial-backdrop__blob {
 .rad-panel__links {
   display: flex;
   flex-direction: column;
-  margin-top: var(--rad-2);
-  padding-top: var(--rad-2);
+  margin-top: var(--panel-inset);
+  padding-top: var(--panel-inset);
   border-top: 1px solid var(--site-border);
 }
 .rad-panel__row,
@@ -2104,7 +2118,7 @@ html.perf-lite .radial-backdrop__blob {
   justify-content: center;
   min-height: 5.5rem;
   margin: 0;
-  padding: var(--rad-3) var(--panel-inset);
+  padding: 0.75rem var(--panel-inset);
   font-size: 0.84rem;
   color: var(--site-text-muted);
   text-align: center;
@@ -2119,7 +2133,7 @@ html.perf-lite .radial-backdrop__blob {
   justify-content: space-between;
   gap: 0.5rem;
   flex: none;
-  margin-top: var(--rad-2);
+  margin-top: var(--panel-inset);
   padding: 0.55rem 0.7rem;
   border: 1px solid var(--site-border);
   border-radius: var(--site-radius-sm, 12px);

@@ -1047,6 +1047,11 @@
 }
 
 /* Popover opens upward — both usages sit near the bottom of the viewport. */
+/* Surface comes from `.glass-overlay` (globals.css §L4) — the one material every
+   dialog, popover and menu on the site shares. This used to hand-roll it: a
+   0.5px border, a hardcoded `rgba(0,0,0,0.5)` drop shadow that only ever suited
+   a dark theme, and its own blur. Only placement and the pop animation are this
+   menu's own business. */
 .vibe-model-select__menu {
   position: absolute;
   bottom: calc(100% + 8px);
@@ -1054,12 +1059,6 @@
   z-index: 50;
   min-width: 220px;
   padding: 6px;
-  border-radius: 14px;
-  background: var(--site-surface);
-  border: 0.5px solid var(--site-border);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   animation: vibe-model-pop 140ms ease;
 }
 

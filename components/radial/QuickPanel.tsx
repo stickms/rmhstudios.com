@@ -161,6 +161,9 @@ export function QuickPanel({
     <div
       ref={panelRef}
       className={['rad-panel', 'glass-overlay', className].filter(Boolean).join(' ')}
+      // Themes restyle through `[data-slot]` (see components/CLAUDE.md), and the
+      // panel portals out of the shell — the attribute is how a theme reaches it.
+      data-slot="quick-panel"
       role="dialog"
       aria-labelledby={headingId}
       tabIndex={-1}
@@ -171,11 +174,13 @@ export function QuickPanel({
         } as CSSProperties
       }
     >
-      <header className="rad-panel__head">
+      <header className="rad-panel__head" data-slot="quick-panel-head">
         {Icon && <Icon aria-hidden />}
         <h2 id={headingId}>{title}</h2>
       </header>
-      <div className="rad-panel__body">{children}</div>
+      <div className="rad-panel__body" data-slot="quick-panel-body">
+        {children}
+      </div>
       {more}
     </div>,
     document.body,

@@ -107,6 +107,7 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
               // Inline card opens the menu downward; the docked pill opens it up.
               inline ? 'top-full mt-2' : 'bottom-full mb-2',
             )}
+            data-slot="party-game-menu"
             role="menu"
           >
             <div className="flex items-center justify-between px-2 py-1">
