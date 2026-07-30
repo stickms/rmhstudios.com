@@ -1,4 +1,5 @@
 {
+  "lang-firstrun-body_one": "RMH Studios は {{count}} 言語で利用可能です。設定からいつでも変更できます。",
   "lang-firstrun-body_other": "RMH Studios is available in {{count}} languages. You can change this any time in Settings.",
   "lang-firstrun-continue": "{{lang}}で続ける",
   "lang-firstrun-title": "言語を選択してください",

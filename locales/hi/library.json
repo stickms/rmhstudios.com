@@ -36,7 +36,7 @@
   "collection-by": "{{who}} द्वारा",
   "collection-delete-confirm": "इस संग्रह को हटाएँ? किताबें नहीं हटाई जातीं।",
   "collection-desc-placeholder": "वैकल्पिक",
-  "collection-empty": "No books yet.",
+  "collection-empty": "अभी तक कोई किताब नहीं है।",
   "collection-rename-prompt": "संग्रह का नाम",
   "collection-title-placeholder": "उदा. मेरी पढ़ने की सूची",
   "collections-community": "Reader collections",
@@ -81,7 +81,7 @@
   "result-count_one": "{{count}} things to explore",
   "result-count_other": "{{count}} things to explore",
   "search-label": "लाइब्रेरी खोजें",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "किताबें, एल्बम, प्लेलिस्ट और रीड्स खोजें…",
   "search-your-books": "अपनी किताबें खोजें…",
   "section-albums": "एल्बम",
   "section-blog": "Blog",
@@ -90,6 +90,6 @@
   "section-curated": "क्यूरेटेड",
   "section-music": "Music",
   "sections-label": "Library sections",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "एक किताब जोड़ें",
+  "upload-label": "एक PDF अपलोड करें"
 }
