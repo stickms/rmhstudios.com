@@ -13,6 +13,7 @@
   "action-strike-desc": "— Gây sát thương (1 cơ bản, 2 nếu bạn đã Chuẩn bị). Nếu họ Chặn, họ vẫn chịu 1 chip sát thương.",
   "actions-heading": "Hành động",
   "active": "Đang kích hoạt",
+  "brace-btn_one": "Niềng răng ({{count}})",
   "brace-btn_other": "Chống đỡ ({{count}})",
   "buy-cost": "Mua ({{cost}} F)",
   "charge": "Nạp năng lượng",
