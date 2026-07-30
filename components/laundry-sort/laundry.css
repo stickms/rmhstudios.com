@@ -1,0 +1,230 @@
+/**
+ * Laundry Sort — game-local palette.
+ *
+ * Like the other full-screen games (Dream Rift, Vega), Laundry Sort renders
+ * over its own 3D scene rather than inside the site shell, so it owns a small
+ * palette instead of inheriting `--site-*`. Everything the overlay paints comes
+ * from these six variables, so the whole game re-tints from one place and the
+ * HUD can never drift from the room behind it.
+ *
+ * Shared primitives that DO come from the site (`components/ui/button`, sonner
+ * toasts) are used unchanged — this file only covers the game's own chrome.
+ */
+
+.laundry-root {
+  --ls-bg: #0b0d14;
+  --ls-panel: rgba(16, 19, 30, 0.88);
+  --ls-panel-strong: rgba(10, 12, 20, 0.96);
+  --ls-border: rgba(148, 163, 208, 0.24);
+  --ls-text: #eef1fa;
+  --ls-muted: #98a2c0;
+  --ls-accent: #5eead4;
+  --ls-warn: #fbbf24;
+  --ls-danger: #f87171;
+
+  /*
+   * The shared primitives this game uses — Button, Input, LiquidTabs, Spinner
+   * — paint from `--site-*`. Game routes are in `THEME_EXCLUDED_ROUTES`
+   * (components/Providers.tsx), so no `.style-*` theme class is applied to the
+   * document and those tokens fall back to the light defaults in globals.css.
+   * The result was a white segmented control and a white text field sitting on
+   * a near-black laundry room.
+   *
+   * Rather than fork the primitives (a hand-rolled tab strip is a CI failure —
+   * lib/__tests__/design-consistency.test.ts), map the site contract onto this
+   * game's palette here. Every shared component then paints correctly, and the
+   * game keeps using the sanctioned renderers.
+   */
+  --site-bg: var(--ls-bg);
+  --site-bg-subtle: rgba(255, 255, 255, 0.05);
+  --site-surface: rgba(255, 255, 255, 0.07);
+  --site-surface-hover: rgba(255, 255, 255, 0.12);
+  --site-surface-active: rgba(255, 255, 255, 0.16);
+  --site-surface-opaque: #151827;
+  --site-border: var(--ls-border);
+  --site-border-bright: rgba(190, 205, 245, 0.5);
+  --site-text: var(--ls-text);
+  --site-text-muted: var(--ls-muted);
+  --site-text-dim: #7d87a6;
+  --site-accent: var(--ls-accent);
+  --site-accent-fg: #07231e;
+  --site-accent-hover: #7df2de;
+  --site-accent-dim: rgba(94, 234, 212, 0.16);
+  --site-success: #34d399;
+  --site-danger: var(--ls-danger);
+  --site-danger-fg: #2a0708;
+  --site-warning: var(--ls-warn);
+  --site-warning-fg: #2a1c00;
+  --site-glass-tint: rgba(20, 24, 38, 0.72);
+  --site-glass-tint-strong: rgba(12, 15, 26, 0.88);
+  --site-glass-ink: rgba(20, 24, 38, 0.9);
+  --site-glass-rim: rgba(255, 255, 255, 0.1);
+  --site-glass-rim-soft: rgba(255, 255, 255, 0.05);
+  --site-glass-light: rgba(255, 255, 255, 0.06);
+
+  /* Touch hardening. A drag across the playfield must not select the HUD text
+     it passes over, flash a grey tap rectangle on Android, or raise iOS's
+     long-press callout menu over a garment the player is trying to hold. */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* …except where selection is the point. */
+.laundry-root input,
+.laundry-root textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Every tappable control skips the legacy 300ms double-tap-zoom wait. */
+.laundry-root button,
+.laundry-root a,
+.laundry-root [role='tab'] {
+  touch-action: manipulation;
+}
+
+/**
+ * A full-viewport overlay: menu, lobby, browser, results.
+ *
+ * These sit OUTSIDE the locked 16:9 stage. The aspect lock is a fairness rule
+ * about how much arena a player can see; a settings panel is not the arena, and
+ * confining it to a 16:9 strip made the front screen unusable on a phone held
+ * upright. Safe-area insets keep content clear of notches and home indicators
+ * (the document already ships `viewport-fit=cover`).
+ */
+.ls-overlay {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  /* The back link floats at the top-left of the viewport, so overlay content
+     starts below it rather than under it. */
+  padding-top: calc(env(safe-area-inset-top, 0px) + 3.5rem);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* The letterbox container. Padded by the safe area so the 16:9 stage is fitted
+   inside the usable screen rather than under a notch or a home indicator. */
+.ls-stage-frame {
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+    env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+
+.ls-panel {
+  background: var(--ls-panel);
+  border: 1px solid var(--ls-border);
+  border-radius: 0.75rem;
+  backdrop-filter: blur(10px);
+  color: var(--ls-text);
+}
+
+.ls-panel-strong {
+  background: var(--ls-panel-strong);
+  border: 1px solid var(--ls-border);
+  border-radius: 0.9rem;
+  backdrop-filter: blur(14px);
+  color: var(--ls-text);
+}
+
+.ls-muted {
+  color: var(--ls-muted);
+}
+
+.ls-accent {
+  color: var(--ls-accent);
+}
+
+/* Tabular figures so the score and clock don't jitter as digits change. */
+.ls-numeric {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* The letterbox outside the locked 16:9 frame. Deliberately inert. */
+.ls-letterbox {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(94, 234, 212, 0.06), transparent 60%), var(--ls-bg);
+}
+
+.ls-popup {
+  animation: ls-rise 900ms ease-out forwards;
+}
+
+@keyframes ls-rise {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 8px) scale(0.9);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -48px) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ls-popup {
+    animation: ls-fade 900ms linear forwards;
+  }
+
+  @keyframes ls-fade {
+    0%,
+    70% {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, 0);
+    }
+  }
+}
+
+/**
+ * Landscape phones. A handset turned sideways is ~340px tall, and the front
+ * screen's full content is taller than that, so the primary action ends up
+ * below the fold on first paint. Prose is the biggest block and the least
+ * urgent — the rules and the blurb are reference material a player can read on
+ * any other screen — so they fold away here and the controls fit.
+ *
+ * Scoped to short *landscape* viewports specifically, so a short desktop window
+ * (which has plenty of width for the two-column layout) keeps everything.
+ */
+@media (max-height: 500px) and (orientation: landscape) {
+  .laundry-root .ls-short-hide {
+    display: none;
+  }
+
+  .laundry-root .ls-panel-strong {
+    padding: 0.75rem;
+  }
+
+  /* Settings beside the buttons rather than above them, so the primary action
+     is on screen the moment the menu paints. */
+  .laundry-root .ls-menu-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 0.75rem;
+  }
+
+  .laundry-root .ls-menu-header {
+    grid-column: 1 / -1;
+  }
+
+  /* On a landscape handset the stage is ~340px tall and the legend strip lands
+     across the bin labels. Drop it: the bins themselves are labelled in 3D with
+     the same name and the same weave mark, so the information is still on
+     screen — larger, in fact — and the playfield stays unobstructed. */
+  .laundry-root .ls-legend {
+    display: none;
+  }
+}

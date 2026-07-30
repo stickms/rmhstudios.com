@@ -578,15 +578,27 @@ model AltairPlayer {
 model LaundryPlayer {
   id          String   @id @default(uuid())
   username    String   @unique
+  // Solo best. Versus scores are tracked separately below: the two modes run
+  // different clocks and different pressure, so one board for both would be
+  // meaningless.
   highScore   Int      @default(0)
   gamesPlayed Int      @default(1)
   updatedAt   DateTime @default(now()) @updatedAt
+
+  // Versus (multiplayer race) record, written by the socket hub on match end.
+  versusWins   Int @default(0)
+  versusPlayed Int @default(0)
+  versusBest   Int @default(0)
+  // Career stats, shown on the results screen and the leaderboard detail rows.
+  bestCombo   Int @default(0)
+  totalSorted Int @default(0)
 
   // Link to Auth User
   userId String? @unique
   user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([highScore(sort: Desc)], map: "idx_laundry_high_score")
+  @@index([versusWins(sort: Desc)], map: "idx_laundry_versus_wins")
 }
 
 // Daily Puzzle Score — generic leaderboard for all daily puzzles including lights-out

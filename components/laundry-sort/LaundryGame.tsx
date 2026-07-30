@@ -1,577 +1,420 @@
 'use client';
 
-import { useRef, useState, useEffect, useCallback } from 'react';
-import { LaundryUI } from './LaundryUI';
+/**
+ * Laundry Sort — game root.
+ *
+ * Owns the match object, the screen the player is on, and the two things that
+ * leave the browser: the solo score POST and the versus score stream.
+ *
+ * The match itself lives in a ref, not in state. It mutates 60 times a second
+ * and nothing above the canvas should re-render when it does — the HUD reads it
+ * imperatively (`HudReadout`), and React only hears about discrete events:
+ * a garment resolved, a round ended, a lobby changed.
+ */
 
-interface Clothing {
-  id: number;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  width: number;
-  height: number;
-  color: string;
-  colorName: string;
-  type: 'shirt' | 'pants';
-  rotation: number;
-  angularVelocity: number;
-  isDragging: boolean;
-}
-
-interface Bin {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  color: string;
-  colorName: string;
-}
-
-interface Wall {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-const COLORS = {
-  red: '#ef4444',
-  blue: '#3b82f6',
-  yellow: '#eab308',
-  green: '#22c55e',
-};
-
-const COLOR_NAMES = ['red', 'blue', 'yellow', 'green'];
-
-const GRAVITY = 0.05;
-const FRICTION = 0.98;
-const BOUNCE = 0.3;
-
-const BINS: Bin[] = [
-  { x: 75, y: 440, width: 150, height: 80, color: COLORS.red, colorName: 'red' },
-  { x: 225, y: 440, width: 150, height: 80, color: COLORS.blue, colorName: 'blue' },
-  { x: 375, y: 440, width: 150, height: 80, color: COLORS.yellow, colorName: 'yellow' },
-  { x: 525, y: 440, width: 150, height: 80, color: COLORS.green, colorName: 'green' },
-];
-
-const WALLS: Wall[] = [
-  { x: 150, y: 440, width: 6, height: 80 },
-  { x: 300, y: 440, width: 6, height: 80 },
-  { x: 450, y: 440, width: 6, height: 80 },
-];
-
-/** Scale client position to canvas coordinates (canvas may be CSS-scaled). */
-function clientToCanvas(canvas: HTMLCanvasElement, clientX: number, clientY: number): { x: number; y: number } {
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  return {
-    x: (clientX - rect.left) * scaleX,
-    y: (clientY - rect.top) * scaleY,
-  };
-}
-
-/** Hit test: is point (px, py) in canvas space inside the clothing's rotated rect? Uses padding for easier grabbing. */
-function hitTestClothing(c: Clothing, px: number, py: number, padding: number = 8): boolean {
-  const dx = px - c.x;
-  const dy = py - c.y;
-  const cos = Math.cos(-c.rotation);
-  const sin = Math.sin(-c.rotation);
-  const localX = dx * cos - dy * sin;
-  const localY = dx * sin + dy * cos;
-  const halfW = c.width / 2 + padding;
-  const halfH = c.height / 2 + padding;
-  return localX >= -halfW && localX <= halfW && localY >= -halfH && localY <= halfH;
-}
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useRouterState } from '@tanstack/react-router';
+import { toast } from 'sonner';
+import { Link } from '@tanstack/react-router';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useSession } from '@/components/Providers';
+import { ConnectionBanner } from '@/components/shared/ConnectionStatus';
+import { SCORE_PUBLISH_MS } from '@/lib/laundry-sort/constants';
+import { LaundryMatch, type MatchEvent } from '@/lib/laundry-sort/match';
+import { randomSeed } from '@/lib/laundry-sort/rng';
+import { useLaundryStore } from '@/lib/laundry-sort/store';
+import {
+  connectLaundry,
+  disconnectLaundry,
+  laundryNet,
+  reconnectNow,
+} from '@/lib/laundry-sort/net/client';
+import type { PartyTicketMsg } from '@/lib/party/types';
+import { AspectStage } from './AspectStage';
+import { GameCanvas } from './GameCanvas';
+import { HudReadout } from './hud/HudReadout';
+import { MainMenu } from './hud/MainMenu';
+import { BrowsePanel, LobbyPanel, lobbyErrorMessage } from './hud/LobbyPanel';
+import { ResultsPanel } from './hud/ResultsPanel';
+import { RotateHint } from './hud/RotateHint';
+import { ScorePopups, popupsFromEvents, type Popup } from './hud/ScorePopups';
+import { VersusTicker } from './hud/VersusTicker';
+import { WashLegend } from './hud/WashLegend';
+import './laundry.css';
 
 export function LaundryGame() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [score, setScore] = useState(0);
-  const [time, setTime] = useState(60);
-  const [gameActive, setGameActive] = useState(false);
-  const [gameOver, setGameOver] = useState(false);
-  const [finalScore, setFinalScore] = useState(0);
+  const { t } = useTranslation('c-laundry-sort');
+  const { data: session } = useSession();
+  const signedIn = Boolean(session?.user?.id);
 
-  // Ref that the spawn loop reads to know if it should keep spawning
-  const spawnActiveRef = useRef(false);
+  const matchRef = useRef<LaundryMatch | null>(null);
+  const [popups, setPopups] = useState<Popup[]>([]);
+  const [leaderboardKey, setLeaderboardKey] = useState(0);
+  const [contextLost, setContextLost] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  /** Our own clock ran out but the server has not published standings yet. */
+  const [awaitingResults, setAwaitingResults] = useState(false);
 
-  const gameStateRef = useRef({
-    clothing: [] as Clothing[],
-    clothingId: 0,
-    draggedClothing: [] as Clothing[],
-    dragOffsetX: 0,
-    dragOffsetY: 0,
-    gameStartTime: 0,
-    isPointerDown: false,
+  const screen = useLaundryStore((s) => s.screen);
+  const mode = useLaundryStore((s) => s.mode);
+  const start = useLaundryStore((s) => s.start);
+  const countdown = useLaundryStore((s) => s.countdown);
+  const connection = useLaundryStore((s) => s.connection);
+  const error = useLaundryStore((s) => s.error);
+
+  const running = screen === 'playing';
+
+  // ── Connection ────────────────────────────────────────────────────────────
+
+  const ensureConnected = useCallback(async (): Promise<boolean> => {
+    setConnecting(true);
+    try {
+      await connectLaundry();
+      return true;
+    } catch {
+      toast.error(t('error-connect', { defaultValue: 'Could not reach the game server.' }));
+      return false;
+    } finally {
+      setConnecting(false);
+    }
+  }, [t]);
+
+  useEffect(() => () => disconnectLaundry(), []);
+
+  // A party leader queued this game, so the hub minted us a seat ticket. It
+  // arrives in router state (never the URL — it is a bearer secret).
+  const partyTicket = useRouterState({
+    select: (state) =>
+      (state.location.state as { partyTicket?: PartyTicketMsg } | undefined)?.partyTicket,
   });
 
-  // Spawn clothing with increasing rate
   useEffect(() => {
-    if (!gameActive || gameOver) return;
-
-    spawnActiveRef.current = true;
-
-    if (gameStateRef.current.gameStartTime === 0) {
-      gameStateRef.current.gameStartTime = Date.now();
-    }
-
-    let lastSpawnTime = 0;
-    const minSpawnInterval = 500; // Minimum interval (max spawn rate)
-    const maxSpawnInterval = 2000; // Initial interval
-
-    const spawn = () => {
-      // Stop spawning immediately when the flag is cleared
-      if (!spawnActiveRef.current) return;
-
-      const now = Date.now();
-
-      // Calculate current spawn interval based on elapsed time
-      const elapsedMs = now - gameStateRef.current.gameStartTime;
-      const elapsedSeconds = Math.min(elapsedMs / 1000, 60);
-      const progressRatio = elapsedSeconds / 60; // 0 to 1 as time progresses
-      const currentInterval = maxSpawnInterval - (progressRatio * (maxSpawnInterval - minSpawnInterval));
-
-      if (now - lastSpawnTime > currentInterval) {
-        lastSpawnTime = now;
-
-        const spawnCount = 1 + Math.floor(progressRatio * 2); // 1 to 3
-        for (let i = 0; i < spawnCount; i++) {
-          const randomColor = COLOR_NAMES[Math.floor(Math.random() * COLOR_NAMES.length)];
-          const isShirt = Math.random() > 0.4;
-          const width = isShirt ? 40 : 35;
-          const height = isShirt ? 50 : 70;
-
-          const newClothing: Clothing = {
-            id: gameStateRef.current.clothingId++,
-            x: Math.random() * (600 - width) + width / 2,
-            y: -30,
-            vx: (Math.random() - 0.5) * 2,
-            vy: 0,
-            width,
-            height,
-            color: COLORS[randomColor as keyof typeof COLORS],
-            colorName: randomColor,
-            type: isShirt ? 'shirt' : 'pants',
-            rotation: Math.random() * Math.PI * 2,
-            angularVelocity: (Math.random() - 0.5) * 0.1,
-            isDragging: false,
-          };
-
-          gameStateRef.current.clothing.push(newClothing);
-
-          // Remove after 15 seconds
-          setTimeout(() => {
-            gameStateRef.current.clothing = gameStateRef.current.clothing.filter(
-              c => c.id !== newClothing.id
-            );
-          }, 15000);
-        }
-      }
-
-      requestAnimationFrame(spawn);
-    };
-
-    const spawnAnimFrameId = requestAnimationFrame(spawn);
-
+    if (!partyTicket?.token || !signedIn) return;
+    let cancelled = false;
+    void (async () => {
+      const ok = await ensureConnected();
+      if (ok && !cancelled) laundryNet.ticket(partyTicket.token);
+    })();
     return () => {
-      spawnActiveRef.current = false;
-      cancelAnimationFrame(spawnAnimFrameId);
+      cancelled = true;
     };
-  }, [gameActive, gameOver]);
+  }, [partyTicket, signedIn, ensureConnected]);
 
-  // Game loop
+  // ── Errors ────────────────────────────────────────────────────────────────
+
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!error) return;
+    // The lobby renders its error inline; everywhere else needs a toast, or a
+    // failed join looks like a dead button.
+    if (screen !== 'lobby') toast.error(lobbyErrorMessage(error, t));
+    const timer = window.setTimeout(() => useLaundryStore.getState().setError(null), 5000);
+    return () => window.clearTimeout(timer);
+  }, [error, screen, t]);
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+  // ── Starting a round ──────────────────────────────────────────────────────
 
-    let animFrameId: number;
-    const animate = () => {
-      // Clear canvas
-      ctx.fillStyle = '#0f0f1e';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const startSolo = useCallback(() => {
+    const state = useLaundryStore.getState();
+    matchRef.current = new LaundryMatch({
+      seed: randomSeed(),
+      durationSec: state.durationSec,
+      difficulty: state.difficulty,
+    });
+    setPopups([]);
+    setAwaitingResults(false);
+    state.setMode('solo');
+    state.setSoloResult(null);
+    state.setResults(null);
+    state.setScreen('playing');
+  }, []);
 
-      if (gameActive && !gameOver) {
-        const state = gameStateRef.current;
+  // Versus rounds start when the server says so, on the seed it chose — that
+  // single number is what guarantees both players get identical laundry.
+  useEffect(() => {
+    if (!start) return;
+    matchRef.current = new LaundryMatch({
+      seed: start.seed,
+      durationSec: start.durationSec,
+      difficulty: start.difficulty,
+    });
+    setPopups([]);
+    setAwaitingResults(false);
+  }, [start]);
 
-        // Update clothing physics
-        state.clothing.forEach(clothing => {
-          if (!clothing.isDragging) {
-            clothing.vy += GRAVITY;
-            clothing.vy *= FRICTION;
-            clothing.vx *= FRICTION;
+  // ── Publishing a running score (versus only) ─────────────────────────────
 
-            clothing.x += clothing.vx;
-            clothing.y += clothing.vy;
-            clothing.rotation += clothing.angularVelocity;
-          }
-
-          // Boundary collisions
-          if (clothing.x - clothing.width / 2 < 0) {
-            clothing.x = clothing.width / 2;
-            clothing.vx = Math.abs(clothing.vx) * BOUNCE;
-          }
-          if (clothing.x + clothing.width / 2 > canvas.width) {
-            clothing.x = canvas.width - clothing.width / 2;
-            clothing.vx = -Math.abs(clothing.vx) * BOUNCE;
-          }
-
-          // Bottom boundary (but don't remove yet, check for bin)
-          if (clothing.y + clothing.height / 2 > canvas.height) {
-            clothing.y = canvas.height - clothing.height / 2;
-            clothing.vy = -Math.abs(clothing.vy) * BOUNCE;
-          }
-
-          // Wall collisions between bins
-          WALLS.forEach(wall => {
-            const overlapX =
-              clothing.x + clothing.width / 2 > wall.x - wall.width / 2 &&
-              clothing.x - clothing.width / 2 < wall.x + wall.width / 2;
-            const overlapY =
-              clothing.y + clothing.height / 2 > wall.y - wall.height / 2 &&
-              clothing.y - clothing.height / 2 < wall.y + wall.height / 2;
-
-            if (overlapX && overlapY) {
-              if (clothing.x < wall.x) {
-                clothing.x = wall.x - wall.width / 2 - clothing.width / 2;
-                clothing.vx = -Math.abs(clothing.vx) * BOUNCE;
-              } else {
-                clothing.x = wall.x + wall.width / 2 + clothing.width / 2;
-                clothing.vx = Math.abs(clothing.vx) * BOUNCE;
-              }
-            }
-          });
-
-          // Check bin collisions
-          BINS.forEach(bin => {
-            if (
-              clothing.x > bin.x - bin.width / 2 &&
-              clothing.x < bin.x + bin.width / 2 &&
-              clothing.y > bin.y - bin.height / 2 &&
-              clothing.y < bin.y + bin.height / 2
-            ) {
-              const correct = clothing.colorName === bin.colorName;
-              setScore(s => correct ? s + 100 : Math.max(0, s - 50));
-              state.clothing = state.clothing.filter(c => c.id !== clothing.id);
-            }
-          });
-        });
-      }
-
-      // Draw bins
-      BINS.forEach(bin => {
-        ctx.fillStyle = bin.color;
-        ctx.globalAlpha = 0.7;
-        ctx.fillRect(
-          bin.x - bin.width / 2,
-          bin.y - bin.height / 2,
-          bin.width,
-          bin.height
-        );
-        ctx.globalAlpha = 1;
-
-        // Bin border
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(
-          bin.x - bin.width / 2,
-          bin.y - bin.height / 2,
-          bin.width,
-          bin.height
-        );
-
-        // Label
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 12px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(bin.colorName.toUpperCase(), bin.x, bin.y);
+  useEffect(() => {
+    if (!running || mode !== 'versus') return;
+    const id = window.setInterval(() => {
+      const match = matchRef.current;
+      if (!match || match.finished) return;
+      laundryNet.score({
+        score: match.stats.score,
+        combo: match.stats.combo,
+        sorted: match.stats.sorted,
+        wrong: match.stats.wrong,
+        missed: match.stats.missed,
+        bestCombo: match.stats.bestCombo,
       });
+    }, SCORE_PUBLISH_MS);
+    return () => window.clearInterval(id);
+  }, [running, mode]);
 
-      // Draw divider walls
-      WALLS.forEach(wall => {
-        ctx.fillStyle = 'rgba(255,255,255,0.35)';
-        ctx.fillRect(
-          wall.x - wall.width / 2,
-          wall.y - wall.height / 2,
-          wall.width,
-          wall.height
-        );
+  // ── Round end ─────────────────────────────────────────────────────────────
+
+  const submitSolo = useCallback(async (match: LaundryMatch) => {
+    const store = useLaundryStore.getState();
+    store.patchSoloResult({ submitted: 'pending' });
+    try {
+      const response = await fetch('/api/laundry-sort/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          score: match.stats.score,
+          sorted: match.stats.sorted,
+          wrong: match.stats.wrong,
+          missed: match.stats.missed,
+          bestCombo: match.stats.bestCombo,
+          durationSec: match.options.durationSec,
+          difficulty: match.options.difficulty,
+        }),
       });
+      if (!response.ok) throw new Error(String(response.status));
+      const data = (await response.json()) as { personalBest?: boolean };
+      useLaundryStore
+        .getState()
+        .patchSoloResult({ submitted: 'done', personalBest: Boolean(data.personalBest) });
+      setLeaderboardKey((key) => key + 1);
+    } catch {
+      useLaundryStore.getState().patchSoloResult({ submitted: 'error' });
+    }
+  }, []);
 
-      // Draw clothing
-      gameStateRef.current.clothing.forEach(clothing => {
-        ctx.save();
-        ctx.translate(clothing.x, clothing.y);
-        ctx.rotate(clothing.rotation);
+  const handleFinished = useCallback(() => {
+    const match = matchRef.current;
+    if (!match) return;
+    const store = useLaundryStore.getState();
 
-        if (clothing.type === 'shirt') {
-          // Draw shirt with collar and sleeves
-          ctx.fillStyle = clothing.color;
-
-          // Main body
-          ctx.fillRect(-clothing.width / 2, -clothing.height / 2, clothing.width, clothing.height);
-
-          // Left sleeve
-          ctx.fillRect(-clothing.width / 2 - 8, -clothing.height / 4, 8, clothing.height / 2);
-
-          // Right sleeve
-          ctx.fillRect(clothing.width / 2, -clothing.height / 4, 8, clothing.height / 2);
-
-          // Collar triangle at top
-          ctx.beginPath();
-          ctx.moveTo(-clothing.width / 4, -clothing.height / 2);
-          ctx.lineTo(clothing.width / 4, -clothing.height / 2);
-          ctx.lineTo(0, -clothing.height / 2 + 8);
-          ctx.fill();
-
-          // Button line down the middle
-          ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(0, -clothing.height / 2 + 5);
-          ctx.lineTo(0, clothing.height / 2 - 5);
-          ctx.stroke();
-
-          // Buttons
-          ctx.fillStyle = 'rgba(0,0,0,0.2)';
-          for (let i = -2; i <= 2; i++) {
-            ctx.fillRect(-2, i * 10, 4, 3);
-          }
-        } else {
-          // Draw pants
-          ctx.fillStyle = clothing.color;
-
-          // Left leg
-          ctx.fillRect(-clothing.width / 2, -clothing.height / 2, clothing.width / 2 - 2, clothing.height);
-
-          // Right leg
-          ctx.fillRect(2, -clothing.height / 2, clothing.width / 2 - 2, clothing.height);
-
-          // Waistband at top
-          ctx.fillStyle = 'rgba(0,0,0,0.2)';
-          ctx.fillRect(-clothing.width / 2, -clothing.height / 2, clothing.width, 4);
-
-          // Seam down the middle
-          ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(0, -clothing.height / 2);
-          ctx.lineTo(0, clothing.height / 2);
-          ctx.stroke();
-        }
-
-        // Border for visibility
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(
-          -clothing.width / 2,
-          -clothing.height / 2,
-          clothing.width,
-          clothing.height
-        );
-
-        ctx.restore();
-      });
-
-      animFrameId = requestAnimationFrame(animate);
+    const report = {
+      score: match.stats.score,
+      combo: match.stats.combo,
+      sorted: match.stats.sorted,
+      wrong: match.stats.wrong,
+      missed: match.stats.missed,
+      bestCombo: match.stats.bestCombo,
     };
 
-    animFrameId = requestAnimationFrame(animate);
+    if (store.mode === 'versus') {
+      laundryNet.finish(report);
+      // The server owns the standings, so hold here until it publishes them
+      // rather than guessing a placement the room might disagree with.
+      setAwaitingResults(true);
+      return;
+    }
 
-    return () => cancelAnimationFrame(animFrameId);
-  }, [gameActive, gameOver]);
+    store.setSoloResult({
+      stats: { ...match.stats },
+      durationSec: match.options.durationSec,
+      difficulty: match.options.difficulty,
+      submitted: 'idle',
+      personalBest: false,
+    });
+    store.setScreen('results');
+    void submitSolo(match);
+  }, [submitSolo]);
 
-  // Timer
+  // The server's standings supersede the local wait.
   useEffect(() => {
-    if (!gameActive || gameOver) return;
+    if (screen === 'results') setAwaitingResults(false);
+  }, [screen]);
 
-    const interval = setInterval(() => {
-      setTime(t => {
-        if (t <= 1) {
-          // Stop spawning immediately
-          spawnActiveRef.current = false;
-          setGameActive(false);
-          setGameOver(true);
-          // Capture final score for auto-submit
-          setScore(currentScore => {
-            setFinalScore(currentScore);
-            return currentScore;
-          });
-          gameStateRef.current.clothing = [];
-          gameStateRef.current.draggedClothing = [];
-          gameStateRef.current.isPointerDown = false;
-          return 0;
-        }
-        return t - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [gameActive, gameOver]);
-
-  // Mouse/touch handlers
-  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const { x, y } = clientToCanvas(canvas, e.clientX, e.clientY);
-
-    gameStateRef.current.isPointerDown = true;
-
-    // Find all clothing under cursor (rotation-aware hitbox + padding)
-    gameStateRef.current.draggedClothing = [];
-    for (let i = gameStateRef.current.clothing.length - 1; i >= 0; i--) {
-      const c = gameStateRef.current.clothing[i];
-      if (hitTestClothing(c, x, y)) {
-        c.isDragging = true;
-        gameStateRef.current.draggedClothing.push(c);
-      }
-    }
-    gameStateRef.current.dragOffsetX = x;
-    gameStateRef.current.dragOffsetY = y;
+  const handleEvents = useCallback((events: MatchEvent[]) => {
+    setPopups(popupsFromEvents(events));
   }, []);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas || !gameStateRef.current.isPointerDown) return;
-
-    const { x, y } = clientToCanvas(canvas, e.clientX, e.clientY);
-
-    // Check if new items are under the cursor and add them (rotation-aware + padding)
-    for (let i = gameStateRef.current.clothing.length - 1; i >= 0; i--) {
-      const c = gameStateRef.current.clothing[i];
-      if (!c.isDragging && hitTestClothing(c, x, y)) {
-        c.isDragging = true;
-        gameStateRef.current.draggedClothing.push(c);
-      }
-    }
-
-    if (gameStateRef.current.draggedClothing.length > 0) {
-      // Move all dragged items
-      const deltaX = x - gameStateRef.current.dragOffsetX;
-      const deltaY = y - gameStateRef.current.dragOffsetY;
-
-      gameStateRef.current.draggedClothing.forEach(c => {
-        c.x += deltaX;
-        c.y += deltaY;
-        c.vx = deltaX * 0.1;
-        c.vy = deltaY * 0.1;
-      });
-    }
-
-    gameStateRef.current.dragOffsetX = x;
-    gameStateRef.current.dragOffsetY = y;
+  // A pointer that is still down when the tab is hidden would otherwise leave a
+  // garment welded to a grip that never releases.
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') matchRef.current?.endGrab();
+    };
+    document.addEventListener('visibilitychange', onHide);
+    return () => document.removeEventListener('visibilitychange', onHide);
   }, []);
 
-  const handleMouseUp = useCallback(() => {
-    gameStateRef.current.isPointerDown = false;
-    gameStateRef.current.draggedClothing.forEach(c => {
-      c.isDragging = false;
-    });
-    gameStateRef.current.draggedClothing = [];
+  // ── Menu actions ──────────────────────────────────────────────────────────
+
+  const withConnection = useCallback(
+    (action: () => void) => async () => {
+      if (await ensureConnected()) action();
+    },
+    [ensureConnected],
+  );
+
+  const leaveLobby = useCallback(() => {
+    laundryNet.leave();
+    const store = useLaundryStore.getState();
+    store.setLobby(null);
+    store.setMode('solo');
+    store.setScreen('menu');
   }, []);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas || !e.touches.length) return;
-
-    const { x, y } = clientToCanvas(canvas, e.touches[0].clientX, e.touches[0].clientY);
-
-    gameStateRef.current.isPointerDown = true;
-
-    // Find all clothing under touch point (rotation-aware + padding)
-    gameStateRef.current.draggedClothing = [];
-    for (let i = gameStateRef.current.clothing.length - 1; i >= 0; i--) {
-      const c = gameStateRef.current.clothing[i];
-      if (hitTestClothing(c, x, y)) {
-        c.isDragging = true;
-        gameStateRef.current.draggedClothing.push(c);
-      }
+  const backToMenu = useCallback(() => {
+    const store = useLaundryStore.getState();
+    matchRef.current = null;
+    setAwaitingResults(false);
+    if (store.mode === 'versus' && store.lobby) {
+      store.setScreen('lobby');
+      store.setResults(null);
+    } else {
+      store.leaveMatch();
     }
-    gameStateRef.current.dragOffsetX = x;
-    gameStateRef.current.dragOffsetY = y;
   }, []);
 
-  const handleTouchMove = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas || !gameStateRef.current.isPointerDown || !e.touches.length) return;
-
-    const { x, y } = clientToCanvas(canvas, e.touches[0].clientX, e.touches[0].clientY);
-
-    // Check if new items are under the touch point and add them (rotation-aware + padding)
-    for (let i = gameStateRef.current.clothing.length - 1; i >= 0; i--) {
-      const c = gameStateRef.current.clothing[i];
-      if (!c.isDragging && hitTestClothing(c, x, y)) {
-        c.isDragging = true;
-        gameStateRef.current.draggedClothing.push(c);
-      }
+  const playAgain = useCallback(() => {
+    const store = useLaundryStore.getState();
+    if (store.mode === 'versus') {
+      store.setResults(null);
+      store.setScreen('lobby');
+      return;
     }
-
-    if (gameStateRef.current.draggedClothing.length > 0) {
-      // Move all dragged items
-      const deltaX = x - gameStateRef.current.dragOffsetX;
-      const deltaY = y - gameStateRef.current.dragOffsetY;
-
-      gameStateRef.current.draggedClothing.forEach(c => {
-        c.x += deltaX;
-        c.y += deltaY;
-      });
-    }
-
-    gameStateRef.current.dragOffsetX = x;
-    gameStateRef.current.dragOffsetY = y;
-  }, []);
-
-  const handleTouchEnd = useCallback(() => {
-    gameStateRef.current.isPointerDown = false;
-    gameStateRef.current.draggedClothing.forEach(c => {
-      c.isDragging = false;
-    });
-    gameStateRef.current.draggedClothing = [];
-  }, []);
+    startSolo();
+  }, [startSolo]);
 
   return (
-    <div className="w-full h-full relative bg-black flex flex-col items-center justify-center overflow-hidden">
-      <canvas
-        ref={canvasRef}
-        width={600}
-        height={480}
-        className="border-2 border-cyan-500 cursor-grab active:cursor-grabbing"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      />
+    <div className="laundry-root ls-letterbox absolute inset-0 overscroll-none">
+      <AspectStage>
+        <GameCanvas
+          matchRef={matchRef}
+          running={running && !awaitingResults}
+          onEvents={handleEvents}
+          onFinished={handleFinished}
+          onContextLost={() => setContextLost(true)}
+          onContextRestored={() => setContextLost(false)}
+        />
 
-      <LaundryUI
-        score={score}
-        time={time}
-        gameActive={gameActive}
-        gameOver={gameOver}
-        finalScore={finalScore}
-        onStart={(username) => {
-          // Fully reset all game state for a fresh game
-          gameStateRef.current.clothing = [];
-          gameStateRef.current.clothingId = 0;
-          gameStateRef.current.draggedClothing = [];
-          gameStateRef.current.dragOffsetX = 0;
-          gameStateRef.current.dragOffsetY = 0;
-          gameStateRef.current.gameStartTime = 0;
-          gameStateRef.current.isPointerDown = false;
-          setScore(0);
-          setFinalScore(0);
-          setTime(60);
-          setGameOver(false);
-          setGameActive(true);
-        }}
-      />
+        {running ? (
+          <>
+            <HudReadout matchRef={matchRef} running={running && !awaitingResults} />
+            <ScorePopups popups={popups} />
+            {mode === 'versus' ? <VersusTicker /> : null}
+            <div className="ls-legend pointer-events-none absolute inset-x-0 bottom-1.5 z-30 flex justify-center px-2">
+              <div className="ls-panel px-2.5 py-1.5">
+                <WashLegend compact />
+              </div>
+            </div>
+          </>
+        ) : null}
+
+        {countdown !== null && screen !== 'lobby' ? (
+          <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/50">
+            <p className="ls-accent text-7xl font-black" role="status" aria-live="assertive">
+              {countdown}
+            </p>
+          </div>
+        ) : null}
+
+        {awaitingResults ? (
+          <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
+            <p className="ls-panel-strong px-5 py-4 text-center text-sm" role="status">
+              {t('waiting-for-others', {
+                defaultValue: 'Your round is done — waiting for the rest of the room.',
+              })}
+            </p>
+          </div>
+        ) : null}
+
+        {contextLost ? (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+            <p className="ls-panel-strong px-5 py-4 text-center text-sm" role="alert">
+              {t('context-lost', {
+                defaultValue:
+                  'The browser reset this page’s graphics. It should come back on its own — reload if it does not.',
+              })}
+            </p>
+          </div>
+        ) : null}
+      </AspectStage>
+
+      {/*
+        Menus live OUTSIDE the aspect lock, on the full viewport.
+        The 16:9 frame exists so nobody sees more *arena* than anyone else —
+        that is a fairness rule about the playfield, and it has nothing to say
+        about a settings panel. Nesting the menus inside it squeezed the whole
+        front screen into a 219px-tall band on a phone held in portrait, which
+        put the start button off the bottom of a strip nobody could scroll.
+      */}
+      {running ? null : (
+        <>
+          {screen === 'menu' ? (
+            <MainMenu
+              signedIn={signedIn}
+              connecting={connecting}
+              leaderboardKey={leaderboardKey}
+              onSolo={startSolo}
+              onQuickMatch={withConnection(() => laundryNet.quickplay())}
+              onCreateLobby={withConnection(() => {
+                const state = useLaundryStore.getState();
+                laundryNet.create({
+                  isPublic: true,
+                  durationSec: state.durationSec,
+                  difficulty: state.difficulty,
+                });
+              })}
+              onJoinCode={(code) => void withConnection(() => laundryNet.join(code))()}
+              onBrowse={withConnection(() => {
+                const state = useLaundryStore.getState();
+                state.setBrowsing(true);
+                state.setScreen('browse');
+                laundryNet.browse();
+              })}
+            />
+          ) : null}
+
+          {screen === 'browse' ? (
+            <BrowsePanel onBack={() => useLaundryStore.getState().setScreen('menu')} />
+          ) : null}
+
+          {screen === 'lobby' ? <LobbyPanel onLeave={leaveLobby} /> : null}
+
+          {screen === 'results' ? (
+            <ResultsPanel onPlayAgain={playAgain} onMenu={backToMenu} />
+          ) : null}
+        </>
+      )}
+
+      {/* The exit. Hidden while a round is running: it lives in the same
+          top-left corner as the score readout, and on a phone in landscape the
+          stage reaches the screen edge, so the two sat on top of each other. */}
+      {running ? null : (
+        <div
+          className="absolute z-[60]"
+          style={{
+            left: 'calc(env(safe-area-inset-left, 0px) + 0.75rem)',
+            top: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
+          }}
+        >
+          <Button asChild variant="ghost" size="sm" className="border border-white/10 bg-black/50">
+            <Link to="/builds">
+              <ArrowLeft className="size-3.5" aria-hidden="true" />
+              <span className="hidden sm:inline">RMH Studios</span>
+              <span className="sr-only sm:hidden">
+                {t('back-to-studios', { defaultValue: 'Back to RMH Studios' })}
+              </span>
+            </Link>
+          </Button>
+        </div>
+      )}
+
+      <RotateHint active={running} />
+
+      {mode === 'versus' && connection !== 'idle' && connection !== 'connected' ? (
+        <div className="pointer-events-auto absolute inset-x-0 top-0 z-50">
+          <ConnectionBanner status={connection} onRetry={reconnectNow} />
+        </div>
+      ) : null}
     </div>
   );
 }

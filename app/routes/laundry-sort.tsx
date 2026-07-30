@@ -1,37 +1,29 @@
-import { lazy, Suspense } from 'react'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
-import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
-import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
+/**
+ * Laundry Sort — a soft-body cloth physics race.
+ *
+ * Full-screen and top-level (no `_site/` shell) like every other game. The route
+ * is deliberately thin — head/SEO plus the lazily loaded game and nothing else.
+ * Even the back link lives inside the game, because it has to know whether a
+ * round is running: on a phone in landscape the stage reaches the screen edge
+ * and a floating back button lands on top of the score readout.
+ *
+ * The playfield enforces its own locked 16:9 frame, so this route gives it the
+ * whole viewport and lets it letterbox.
+ */
 
-const LaundryGame = lazy(() => import('@/components/laundry-sort/LaundryGame').then(m => ({ default: m.LaundryGame })))
+import { lazy, Suspense } from 'react';
+import { createFileRoute } from '@tanstack/react-router';
+import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
+import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
+import { buildCanonical, buildMeta } from '@/lib/seo';
+
+const LaundryGame = lazy(() =>
+  import('@/components/laundry-sort/LaundryGame').then((m) => ({ default: m.LaundryGame })),
+);
 
 function LaundryPage() {
   return (
-    <main className="fixed inset-0 bg-black flex flex-col overflow-hidden">
-      {/* Back button */}
-      <div className="absolute top-3 left-3 z-50">
-        <Link to="/builds">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-zinc-500 hover:text-white flex items-center gap-1.5 bg-black/50 backdrop-blur-sm border border-zinc-800 text-xs sm:text-sm"
-          >
-            <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">RMH Studios</span>
-          </Button>
-        </Link>
-      </div>
-
-      {/* Title */}
-      <div className="text-center pt-3 pb-1 shrink-0">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-black rainbow-text tracking-tighter italic glitch-text leading-none">
-          LAUNDRY SORT
-        </h1>
-      </div>
-
-      {/* Game area — fills remaining space */}
+    <main className="fixed inset-0 flex flex-col overflow-hidden bg-black">
       <div className="grow relative">
         <GameErrorBoundary gameName="Laundry Sort">
           <Suspense fallback={<GameLoadingFallback />}>
@@ -40,9 +32,19 @@ function LaundryPage() {
         </GameErrorBoundary>
       </div>
     </main>
-  )
+  );
 }
 
 export const Route = createFileRoute('/laundry-sort')({
+  head: () => ({
+    meta: buildMeta({
+      title: 'Laundry Sort | RMH Studios',
+      description:
+        'A soft-body cloth physics race. Grab real simulated garments out of the air and sort them by wash — solo against the clock, or against up to seven other people on the same seeded laundry.',
+      path: '/laundry-sort',
+      image: '/images/games/laundry_sort.webp',
+    }),
+    links: [buildCanonical('/laundry-sort')],
+  }),
   component: LaundryPage,
-})
+});

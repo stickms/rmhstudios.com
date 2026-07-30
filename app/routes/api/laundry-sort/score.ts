@@ -1,9 +1,50 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { recordGamePlay } from '@/lib/quests/engine.server';
 import { reportGameResult } from '@/lib/game/results.server';
+import {
+  MATCH_DURATIONS,
+  DIFFICULTIES,
+  SCORE,
+  comboMultiplier,
+} from '@/lib/laundry-sort/constants';
+
+/**
+ * Submit a **solo** Laundry Sort run.
+ *
+ * Versus results never come through here — the socket hub writes those itself
+ * when a race ends, from reports it has already reconciled across the room.
+ *
+ * The cloth simulation runs on the client, so the score arrives untrusted. A
+ * full server-side replay is not worth its cost for an arcade board, but a
+ * score has to be *reachable*: it is bounded below by the reported sort count
+ * and the best possible combo multiplier, and above by what the match length
+ * physically allows. That closes the "POST a million" hole without pretending
+ * to be an authoritative simulation.
+ */
+
+const bodySchema = z.object({
+  score: z.number().int().min(0).max(1_000_000),
+  sorted: z.number().int().min(0).max(10_000),
+  wrong: z.number().int().min(0).max(10_000),
+  missed: z.number().int().min(0).max(10_000),
+  bestCombo: z.number().int().min(0).max(10_000),
+  durationSec: z
+    .number()
+    .int()
+    .refine((d): d is (typeof MATCH_DURATIONS)[number] =>
+      (MATCH_DURATIONS as readonly number[]).includes(d),
+    ),
+  difficulty: z.enum(DIFFICULTIES),
+});
+
+/** The most a run of `sorted` correct garments could possibly be worth. */
+function scoreCeiling(sorted: number): number {
+  return Math.round(sorted * SCORE.correct * comboMultiplier(SCORE.maxComboSteps));
+}
 
 export const Route = createFileRoute('/api/laundry-sort/score')({
   server: {
@@ -11,106 +52,84 @@ export const Route = createFileRoute('/api/laundry-sort/score')({
       POST: async ({ request }) => {
         const ip = getClientIp(request);
         const { allowed, retryAfter } = rateLimit(ip, {
-          limit: 5,
+          limit: 10,
           windowMs: 60_000,
           prefix: 'laundry-score',
         });
         if (!allowed) {
           return Response.json(
             { error: 'Too many requests' },
-            {
-              status: 429,
-              headers: { 'Retry-After': String(retryAfter) },
-            },
+            { status: 429, headers: { 'Retry-After': String(retryAfter) } },
           );
         }
 
         try {
-          const { username, score } = await request.json();
-
-          if (!username || typeof username !== 'string') {
-            return Response.json({ error: 'Invalid username' }, { status: 400 });
-          }
-          const cleanUsername = username
-            .trim()
-            .replace(/[^a-zA-Z0-9_\-. ]/g, '')
-            .slice(0, 24);
-          if (cleanUsername.length < 2) {
-            return Response.json({ error: 'Invalid username' }, { status: 400 });
-          }
-          if (typeof score !== 'number' || score < 0 || score > 1_000_000) {
-            return Response.json({ error: 'Invalid score' }, { status: 400 });
-          }
-
-          // Check Auth using headers
-          const session = await auth.api.getSession({
-            headers: request.headers,
-          });
-
-          const userId = session?.user?.id;
-
-          // Logic:
-          // 1. If Logged In:
-          //    - Check if User has a profile (by userId).
-          //    - If yes -> Update it.
-          //    - If no -> Check if username exists.
-          //      - If user exists but is guest (no userId) -> Claim it (Update userId).
-          //      - If user exists and has userId -> Error (Username taken).
-          //      - If user doesn't exist -> Create.
-          // 2. If Guest:
-          //    - Check if username exists.
-          //    - If user exists and has userId -> Error (Username taken by registered user).
-          //    - If user exists and no userId -> Update.
-          //    - If user doesn't exist -> Create.
-
-          if (!userId) {
+          const session = await auth.api.getSession({ headers: request.headers });
+          if (!session?.user?.id) {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
           }
+          const userId = session.user.id;
 
-          // Check for existing profile linked to this user
-          const existingProfile = await prisma.laundryPlayer.findUnique({
-            where: { userId },
-          });
+          const body = await request.json().catch(() => ({}));
+          const parsed = bodySchema.safeParse(body);
+          if (!parsed.success) {
+            return Response.json({ error: 'Invalid input' }, { status: 400 });
+          }
+          const { score, sorted, bestCombo } = parsed.data;
 
-          if (existingProfile) {
-            // Update existing profile
+          if (score > scoreCeiling(sorted) || bestCombo > sorted) {
+            return Response.json({ error: 'Implausible result' }, { status: 400 });
+          }
+
+          const existing = await prisma.laundryPlayer.findUnique({ where: { userId } });
+
+          if (existing) {
+            const personalBest = score > existing.highScore;
             await prisma.laundryPlayer.update({
-              where: { id: existingProfile.id },
+              where: { id: existing.id },
               data: {
-                highScore: Math.max(existingProfile.highScore, score),
+                highScore: Math.max(existing.highScore, score),
+                bestCombo: Math.max(existing.bestCombo, bestCombo),
+                totalSorted: { increment: sorted },
                 gamesPlayed: { increment: 1 },
-                updatedAt: new Date(),
-                username: cleanUsername,
               },
             });
             await recordGamePlay(userId);
             await reportGameResult(userId, { game: 'laundry-sort', score });
-            return Response.json({ success: true, linked: true });
+            return Response.json({ ok: true, personalBest });
           }
 
-          // No profile yet, check username availability
-          const usernameConfig = await prisma.laundryPlayer.findUnique({
-            where: { username: cleanUsername },
-          });
+          // First run for this account. `username` is unique across the board,
+          // so a display name someone else already claimed falls back to a
+          // suffixed form rather than losing the score.
+          const base = (session.user.name || 'Player')
+            .trim()
+            .replace(/[^a-zA-Z0-9_\-. ]/g, '')
+            .slice(0, 24);
+          const username = base.length >= 2 ? base : `Player-${userId.slice(0, 6)}`;
 
-          if (usernameConfig) {
-            return Response.json({ error: 'Username already taken.' }, { status: 409 });
+          try {
+            await prisma.laundryPlayer.create({
+              data: { userId, username, highScore: score, bestCombo, totalSorted: sorted },
+            });
+          } catch {
+            await prisma.laundryPlayer.create({
+              data: {
+                userId,
+                username: `${username}-${userId.slice(0, 6)}`.slice(0, 32),
+                highScore: score,
+                bestCombo,
+                totalSorted: sorted,
+              },
+            });
           }
 
-          // Create new linked profile
-          await prisma.laundryPlayer.create({
-            data: {
-              userId,
-              username: cleanUsername,
-              highScore: score,
-              gamesPlayed: 1,
-            },
-          });
           await recordGamePlay(userId);
-          return Response.json({ success: true, created: true });
-        } catch (e) {
-          console.error('Failed to submit score:', e);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+          await reportGameResult(userId, { game: 'laundry-sort', score });
+          return Response.json({ ok: true, personalBest: true });
+        } catch (error) {
+          console.error('Laundry score submit failed:', error);
+          return Response.json({ error: 'Internal server error' }, { status: 500 });
         }
       },
     },
