@@ -9,6 +9,7 @@
  */
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 
 export type MenuPos = { x: number; y: number };
 
@@ -66,6 +67,12 @@ export function LibraryContextMenu({
     if (x !== coords.x || y !== coords.y) setCoords({ x, y });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pos]);
+
+  // The clamp above only moves the menu — a menu taller than the viewport still
+  // hangs off the bottom with its last items unreachable, and it knows nothing
+  // about safe areas or the mobile URL bar. This caps it and scrolls the
+  // overflow instead, and re-measures whenever the viewport changes.
+  useMenuViewportFit(Boolean(pos), ref, [coords.x, coords.y]);
 
   useEffect(() => {
     if (!pos) return;

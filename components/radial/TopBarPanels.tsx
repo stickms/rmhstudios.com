@@ -12,7 +12,15 @@
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Bell, LogOut, Search, Settings, User as UserIcon, Wallet } from 'lucide-react';
+import {
+  Bell,
+  LogOut,
+  MessageSquare,
+  Search,
+  Settings,
+  User as UserIcon,
+  Wallet,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser, useSession } from '@/components/Providers';
@@ -123,6 +131,7 @@ export function SearchPanel({ open, onClose, anchorRef }: PanelProps) {
       open={open}
       onClose={onClose}
       title={t('search', { defaultValue: 'Search' })}
+      icon={Search}
       anchorRef={anchorRef}
       more={
         <Link
@@ -240,6 +249,7 @@ export function NotificationsPanel({ open, onClose, anchorRef }: PanelProps) {
       open={open}
       onClose={onClose}
       title={t('notifications', { defaultValue: 'Notifications' })}
+      icon={Bell}
       anchorRef={anchorRef}
       more={
         <Link to="/notifications" className="rad-panel__more" onClick={onClose}>
@@ -248,10 +258,6 @@ export function NotificationsPanel({ open, onClose, anchorRef }: PanelProps) {
         </Link>
       }
     >
-      <h3 className="rad-panel__title">
-        <Bell aria-hidden />
-        {t('notifications', { defaultValue: 'Notifications' })}
-      </h3>
       {failed ? (
         <QuickPanelNote>
           {t('panel-failed', { defaultValue: "Couldn't load that just now." })}
@@ -310,6 +316,7 @@ export function MessagesPanel({ open, onClose, anchorRef }: PanelProps) {
       open={open}
       onClose={onClose}
       title={t('messages', { defaultValue: 'Messages' })}
+      icon={MessageSquare}
       anchorRef={anchorRef}
       more={
         <Link to="/messages" className="rad-panel__more" onClick={onClose}>
@@ -318,7 +325,6 @@ export function MessagesPanel({ open, onClose, anchorRef }: PanelProps) {
         </Link>
       }
     >
-      <h3 className="rad-panel__title">{t('messages', { defaultValue: 'Messages' })}</h3>
       {failed ? (
         <QuickPanelNote>
           {t('panel-failed', { defaultValue: "Couldn't load that just now." })}
@@ -390,6 +396,7 @@ export function ProfilePanel({ open, onClose, anchorRef }: PanelProps) {
       open={open}
       onClose={onClose}
       title={t('profile', { defaultValue: 'Profile' })}
+      icon={UserIcon}
       anchorRef={anchorRef}
       more={
         <Link to={profileHref} className="rad-panel__more" onClick={onClose}>

@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -10,7 +11,7 @@ import {
   type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, type LucideIcon } from 'lucide-react';
 import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 
 // useLayoutEffect warns during SSR; panels only ever open from a client
@@ -20,8 +21,14 @@ const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : use
 interface QuickPanelProps {
   open: boolean;
   onClose: () => void;
-  /** Accessible name for the panel (the trigger's label). */
+  /**
+   * The panel's heading. Rendered — every panel wears the same header row, so
+   * the four of them read as one control family rather than four one-offs; it
+   * doubles as the dialog's accessible name via `aria-labelledby`.
+   */
   title: string;
+  /** Glyph beside the heading. Matches the top-bar control the panel hangs off. */
+  icon?: LucideIcon;
   /** The top-bar control the panel hangs from — it aligns to its trailing edge. */
   anchorRef: RefObject<HTMLElement | null>;
   /**
@@ -43,12 +50,18 @@ interface QuickPanelProps {
  * footer link through to the full page. That keeps the common case (a glance)
  * off the router entirely, and the uncommon case one click away.
  *
+ * Every panel is built from the same three parts — header, body, footer link —
+ * so the family shares one silhouette, one inset and one type scale no matter
+ * what each one is previewing. The body also carries a floor height, because a
+ * panel that collapses to the height of its "Nothing new right now." line reads
+ * as a rendering glitch rather than an empty inbox.
+ *
  * Bounds are not left to chance: the panel is anchored to its trigger, capped to
  * a fraction of the viewport, and then run through `useMenuViewportFit`, which
  * measures the rendered box and clamps/translates it back inside the visual
- * viewport (safe-area aware) — the same guard the composer and sidebar menus
- * use. On narrow screens the CSS drops the anchor entirely and it spans the
- * gutters as a drawer.
+ * viewport (safe-area aware) and re-runs on every resize/rotation — the same
+ * guard the composer and sidebar menus use. On narrow screens the CSS drops the
+ * anchor entirely and it spans the gutters as a drawer.
  *
  * It **portals to `<body>`**. Rendering it where the trigger lives would put it
  * inside `.radial-topbar`, and the top bar carries a `backdrop-filter` at ≥768px
@@ -62,12 +75,14 @@ export function QuickPanel({
   open,
   onClose,
   title,
+  icon: Icon,
   anchorRef,
   more,
   children,
   className,
 }: QuickPanelProps) {
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const headingId = useId();
   const [anchor, setAnchor] = useState({ top: 56, right: 12 });
   const [mounted, setMounted] = useState(false);
 
@@ -147,7 +162,7 @@ export function QuickPanel({
       ref={panelRef}
       className={['rad-panel', 'glass-overlay', className].filter(Boolean).join(' ')}
       role="dialog"
-      aria-label={title}
+      aria-labelledby={headingId}
       tabIndex={-1}
       style={
         {
@@ -156,6 +171,10 @@ export function QuickPanel({
         } as CSSProperties
       }
     >
+      <header className="rad-panel__head">
+        {Icon && <Icon aria-hidden />}
+        <h2 id={headingId}>{title}</h2>
+      </header>
       <div className="rad-panel__body">{children}</div>
       {more}
     </div>,
