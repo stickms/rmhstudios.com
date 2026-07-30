@@ -27,6 +27,13 @@ const DEFAULT_SETTINGS: RmhMusicSettings = {
   roomHistory: [],
 };
 
+/**
+ * Chat messages retained client-side, mirroring the RMHTube store's cap. A ceiling
+ * on scrollback for a long-running room, not a page size — deeper history is
+ * server-side.
+ */
+const CHAT_SCROLLBACK = 200;
+
 export interface RmhMusicStore {
   connectionStatus: RealtimeStatus;
   /** Peers the room is paused on, or null when nobody is being waited for. */
@@ -193,7 +200,14 @@ function applyRoomAction(
       };
 
     case 'CHAT_MESSAGE':
-      return { ...room, chat: [...room.chat, data as unknown as ChatMessage] };
+      // Bounded scrollback, matching the `systemMessages.slice(-100)` cap below.
+      // A listening room can run for hours and this array was the one structure
+      // that grew for its whole lifetime, re-sorted and re-rendered on every new
+      // message. Deeper history stays server-side.
+      return {
+        ...room,
+        chat: [...room.chat.slice(1 - CHAT_SCROLLBACK), data as unknown as ChatMessage],
+      };
 
     case 'QUEUE_ITEM_ADDED':
       return { ...room, queue: [...room.queue, data.item as ClientQueueItem] };
@@ -218,8 +232,14 @@ function applyRoomAction(
   }
 }
 
-export function getChatEntries(store: RmhMusicStore): ChatEntry[] {
-  const messages: ChatEntry[] = store.room?.chat ?? [];
-  const system: ChatEntry[] = store.systemMessages;
-  return [...messages, ...system].sort((a, b) => a.createdAt - b.createdAt);
+/**
+ * Merge chat and system messages into one time-ordered list. Takes the two arrays
+ * rather than the whole store so the caller can memoise on exactly what this
+ * reads — the store object itself changes on unrelated playback updates.
+ */
+export function getChatEntries(
+  chat: ChatEntry[] | undefined,
+  systemMessages: ChatEntry[],
+): ChatEntry[] {
+  return [...(chat ?? []), ...systemMessages].sort((a, b) => a.createdAt - b.createdAt);
 }

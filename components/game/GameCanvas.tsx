@@ -16,6 +16,7 @@ import { MultiplayerSidebar } from './MultiplayerSidebar';
 import { MatchResults } from './MatchResults';
 import { MultiplayerFactory } from '@/lib/game/MultiplayerFactory';
 import { authClient } from '@/lib/auth-client';
+import { canvasGlowEnabled } from '@/lib/render/canvas2d-fx';
 
 // Neumorphic Palette (dark-mode-aware colors are read from CSS vars at render time)
 const COLORS = {
@@ -82,6 +83,12 @@ export function GameCanvas() {
     const v = (name: string, fallback: string) => cs.getPropertyValue(name).trim() || fallback;
     const holdTrail = v('--slice-hold-trail', 'rgba(255, 255, 255, 0.5)');
     return {
+      // Blurred shadows are this renderer's dominant cost — the canvas-2D probe
+      // measured ~10 `shadowBlur` activations per frame against ~15 rasterising
+      // ops, i.e. most of what it draws goes through a blur. Resolved here so the
+      // decision is made once per theme/class change rather than per frame; the
+      // MutationObserver below re-reads it when `perf-lite` is toggled.
+      glow: canvasGlowEnabled(),
       bg: v('--slice-bg', '#e0e5ec'),
       shadowDark: v('--slice-shadow-dark', '#a3b1c6'),
       shadowLight: v('--slice-shadow-light', '#ffffff'),
@@ -711,6 +718,10 @@ export function GameCanvas() {
     // per-frame getComputedStyle (see themeRef).
     const theme = (themeRef.current ??= readTheme(ctx.canvas));
     const bgColor = theme.bg;
+    // Multiplier applied to every shadowBlur below: 0 collapses the blur to a
+    // no-op (offsets are always 0 here, so nothing is drawn) on low-end devices
+    // and under reduced motion, while capable devices keep the neumorphic look.
+    const glow = theme.glow ? 1 : 0;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
     ctx.fillStyle = bgColor;
@@ -783,13 +794,13 @@ export function GameCanvas() {
       if (isMobileV) {
         // Vertical tracks running top-to-bottom
         ctx.shadowColor = shadowDark;
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = glow * 10;
         ctx.shadowOffsetX = 3;
         ctx.shadowOffsetY = 3;
         ctx.fillStyle = bgColor;
         ctx.fillRect(laneVal - trackThickness / 2, 0, trackThickness, h);
         ctx.shadowColor = shadowLight;
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = glow * 10;
         ctx.shadowOffsetX = -3;
         ctx.shadowOffsetY = -3;
         ctx.fillRect(laneVal - trackThickness / 2, 0, trackThickness, h);
@@ -803,13 +814,13 @@ export function GameCanvas() {
       } else {
         // Horizontal tracks running left-to-right (desktop)
         ctx.shadowColor = shadowDark;
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = glow * 10;
         ctx.shadowOffsetX = 3;
         ctx.shadowOffsetY = 3;
         ctx.fillStyle = bgColor;
         ctx.fillRect(0, laneVal - trackThickness / 2, w, trackThickness);
         ctx.shadowColor = shadowLight;
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = glow * 10;
         ctx.shadowOffsetX = -3;
         ctx.shadowOffsetY = -3;
         ctx.fillRect(0, laneVal - trackThickness / 2, w, trackThickness);
@@ -854,7 +865,7 @@ export function GameCanvas() {
     if (map) {
       // Shadow for floating notes
       ctx.shadowColor = 'rgba(163, 177, 198, 0.6)';
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = glow * 8;
       ctx.shadowOffsetX = 4;
       ctx.shadowOffsetY = 4;
 
@@ -980,7 +991,7 @@ export function GameCanvas() {
         if (isTargeted && slice.type !== 'BOMB') {
           ctx.save();
           ctx.shadowColor = color;
-          ctx.shadowBlur = 18;
+          ctx.shadowBlur = glow * 18;
           ctx.shadowOffsetX = 0;
           ctx.shadowOffsetY = 0;
           // Draw a transparent filled shape at the note position to produce the glow
@@ -1004,7 +1015,7 @@ export function GameCanvas() {
           ctx.fillStyle = color;
           // Restore the normal note shadow
           ctx.shadowColor = 'rgba(163, 177, 198, 0.6)';
-          ctx.shadowBlur = 8;
+          ctx.shadowBlur = glow * 8;
           ctx.shadowOffsetX = 4;
           ctx.shadowOffsetY = 4;
         }
@@ -1019,14 +1030,14 @@ export function GameCanvas() {
             ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)';
             ctx.lineWidth = 3;
             ctx.shadowColor = '#ef4444';
-            ctx.shadowBlur = 12;
+            ctx.shadowBlur = glow * 12;
             ctx.beginPath();
             ctx.arc(nx, ny, CURSOR_R + 6, 0, Math.PI * 2);
             ctx.stroke();
             ctx.restore();
 
             ctx.shadowColor = 'rgba(163, 177, 198, 0.6)';
-            ctx.shadowBlur = 8;
+            ctx.shadowBlur = glow * 8;
             ctx.shadowOffsetX = 4;
             ctx.shadowOffsetY = 4;
           }
@@ -1073,7 +1084,7 @@ export function GameCanvas() {
             if (isHeldActive) {
               ctx.save();
               ctx.shadowColor = color;
-              ctx.shadowBlur = 10;
+              ctx.shadowBlur = glow * 10;
               ctx.beginPath();
               ctx.roundRect(nx - headW / 2, ny - headH / 2, headW, headH, 4);
               ctx.fill();
@@ -1167,7 +1178,7 @@ export function GameCanvas() {
       ctx.fillStyle = latestFeedback.color;
       ctx.font = `900 ${isMobileV ? 28 : 32}px sans-serif`;
       ctx.shadowColor = latestFeedback.color;
-      ctx.shadowBlur = 6;
+      ctx.shadowBlur = glow * 6;
       ctx.fillText(latestFeedback.text, feedbackX, feedbackY);
 
       ctx.shadowColor = 'transparent';
@@ -1193,7 +1204,7 @@ export function GameCanvas() {
 
     const drawCursor = (cx: number, cy: number, color: string, label?: string) => {
       ctx.shadowColor = shadowLight;
-      ctx.shadowBlur = 5;
+      ctx.shadowBlur = glow * 5;
       ctx.shadowOffsetX = -2;
       ctx.shadowOffsetY = -2;
       ctx.strokeStyle = bgColor;
@@ -1202,7 +1213,7 @@ export function GameCanvas() {
       ctx.arc(cx, cy, CURSOR_R * 1.5, 0, Math.PI * 2);
       ctx.stroke();
       ctx.shadowColor = shadowDark;
-      ctx.shadowBlur = 5;
+      ctx.shadowBlur = glow * 5;
       ctx.shadowOffsetX = 2;
       ctx.shadowOffsetY = 2;
       ctx.stroke();
@@ -1217,7 +1228,7 @@ export function GameCanvas() {
         ctx.font = 'bold 12px sans-serif';
         ctx.textAlign = 'center';
         ctx.shadowColor = textShadowColor;
-        ctx.shadowBlur = 2;
+        ctx.shadowBlur = glow * 2;
         ctx.shadowOffsetX = 1;
         ctx.shadowOffsetY = 1;
         ctx.fillText(label, cx, cy + 4);

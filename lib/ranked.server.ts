@@ -14,6 +14,13 @@ import { RANKED_GAMES } from '@/lib/ranked/elo';
 import { tierForRating, type RankTier } from '@/lib/ranked/tiers';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 
+/**
+ * Cap on the challenge lists. The incoming list is populated by other users, so
+ * it has no natural ceiling; well above any real pending-challenge count, so it
+ * only clips a pathological (or abusive) pile-up.
+ */
+const CHALLENGE_LIST_CAP = 50;
+
 export interface RankedRating {
   id: string;
   userId: string;
@@ -47,16 +54,22 @@ export async function getRankedOverview(userId: string | null): Promise<RankedOv
   }
 
   const [ratings, incoming, outgoing] = await Promise.all([
+    // Bounded by RANKED_GAMES (one rating per game per user), so no cap needed.
     prisma.eloRating.findMany({ where: { userId }, orderBy: { rating: 'desc' } }),
+    // These two are NOT self-bounded: anyone can open a challenge against this
+    // user, so the incoming list grows with other people's actions, each row
+    // hydrating a full user-display include. Newest-first with a cap.
     prisma.rankedChallenge.findMany({
       where: { opponentId: userId, status: { in: ['pending', 'accepted'] } },
       orderBy: { createdAt: 'desc' },
       include: { challenger: { select: userDisplaySelect } },
+      take: CHALLENGE_LIST_CAP,
     }),
     prisma.rankedChallenge.findMany({
       where: { challengerId: userId, status: { in: ['pending', 'accepted'] } },
       orderBy: { createdAt: 'desc' },
       include: { opponent: { select: userDisplaySelect } },
+      take: CHALLENGE_LIST_CAP,
     }),
   ]);
 

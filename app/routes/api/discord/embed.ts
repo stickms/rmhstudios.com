@@ -319,10 +319,15 @@ export const Route = createFileRoute('/api/discord/embed')({
                 // Leaderboard mode: return all participants for a guild+date
                 if (leaderboard && guildId) {
                     try {
+                        // Bounded: participant count scales with guild size, which is
+                        // outside this app's control, and a leaderboard only ever shows
+                        // a top slice. The ordering already puts the ranked entries
+                        // first, so the cap trims the tail nobody reads.
                         const participants = await prisma.discordDailyParticipant.findMany({
                             where: { guildId, dateKey },
                             select: { username: true, status: true, moves: true, ratingEmoji: true },
                             orderBy: [{ status: 'asc' }, { moves: 'asc' }],
+                            take: 100,
                         });
                         return Response.json({ participants });
                     } catch (e) {

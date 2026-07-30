@@ -29,19 +29,28 @@ result is a complete set for its category rather than a sample:
 
 ## What shipped in this pass
 
-| #   | Change                                                      | Effect                                                                            | Where                                                                |
-| --- | ----------------------------------------------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| 1   | `POST /api/pulse` + shared client pulse replaces 4 pollers  | idle signed-in tab: **5 → 2 requests/min**, **4 → 1** session resolutions         | `app/routes/api/pulse.ts`, `lib/pulse.ts`                            |
-| 2   | Notification writes no longer awaited on like/unlike/follow | **~3 fewer serial queries** in front of the response on the hottest write path    | `lib/social/engagement.server.ts`                                    |
-| 3   | Comment notification block deferred as a unit               | **~4–12 fewer serial queries** in front of the comment response                   | `lib/social/engagement.server.ts`                                    |
-| 4   | Hashtag linking batched                                     | **3N → 5 fixed** queries, and the post-create transaction closes far sooner       | `lib/tags-extract.server.ts`                                         |
-| 5   | Five missing predicate indexes                              | two per-viewer seq scans per presence poll, plus the notification dedupe, removed | `prisma/schema.prisma` + `20260730120000_hot_path_predicate_indexes` |
-| 6   | `getComputedStyle` hoisted out of the slice-it frame loop   | removes **1 + N forced style recalcs per frame** (N = visible hold notes)         | `components/game/GameCanvas.tsx`                                     |
-| 7   | Song comment list bounded                                   | removes an unbounded public payload                                               | `app/routes/api/slice-it/songs/$id/comments.ts`                      |
+| #   | Change                                                       | Effect                                                                             | Where                                                                |
+| --- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| 1   | `POST /api/pulse` + shared client pulse replaces 4 pollers   | idle signed-in tab: **5 → 2 requests/min**, **4 → 1** session resolutions          | `app/routes/api/pulse.ts`, `lib/pulse.ts`                            |
+| 2   | Notification writes no longer awaited on like/unlike/follow  | **~3 fewer serial queries** in front of the response on the hottest write path     | `lib/social/engagement.server.ts`                                    |
+| 3   | Comment notification block deferred as a unit                | **~4–12 fewer serial queries** in front of the comment response                    | `lib/social/engagement.server.ts`                                    |
+| 4   | Hashtag linking batched                                      | **3N → 5 fixed** queries, and the post-create transaction closes far sooner        | `lib/tags-extract.server.ts`                                         |
+| 5   | Five missing predicate indexes                               | two per-viewer seq scans per presence poll, plus the notification dedupe, removed  | `prisma/schema.prisma` + `20260730120000_hot_path_predicate_indexes` |
+| 6   | `getComputedStyle` hoisted out of the slice-it frame loop    | removes **1 + N forced style recalcs per frame** (N = visible hold notes)          | `components/game/GameCanvas.tsx`                                     |
+| 7   | Song comment list bounded                                    | removes an unbounded public payload                                                | `app/routes/api/slice-it/songs/$id/comments.ts`                      |
+| 8   | Presence answered from Redis; the two fan-outs share work    | fixes a real "shows offline while online" bug; no DB read at all on the Redis path | `lib/presence.server.ts`, `lib/hot-counters.server.ts`               |
+| 9   | Three genuinely unbounded queries capped                     | incoming ranked challenges and Discord guild leaderboards no longer grow unbounded | `lib/ranked.server.ts`, `app/routes/api/discord/embed.ts`            |
+| 10  | RMHTube + RMHMusic chat scrollback bounded, memos fixed      | client chat no longer grows for the room's lifetime or re-sorts on playback ticks  | `lib/rmhtube/store.ts`, `lib/rmhmusic/store.ts`, both `ChatPanel`s   |
+| 11  | Canvas-2D probe committed; blurred shadows put behind a tier | slice-it: **10 → 0** blurred-shadow activations/frame on low-end + reduced motion  | `scripts/perf/canvas2d-probe.mjs`, `lib/render/canvas2d-fx.ts`       |
+| 12  | `liquid-gl` theme check moved out of the frame loop          | zero per-frame work/allocation for theme detection, on every page                  | `lib/liquid-gl/index.ts`                                             |
 
 Verified: `tsc --noEmit` clean, `eslint` 0 errors and **no new warnings**
-(GameCanvas was 13 warnings before and after), `vitest run` 252 files / 4600
-tests green, production `vite build` green.
+(checked file-by-file against the pre-change baseline), `vitest run` 252 files /
+4600 tests green, production `vite build` green, and the migration applied to a
+real PostgreSQL 16 with all five indexes confirmed and no `migrate status` drift.
+
+Items 1–7 were the first pass; 8–12 are the follow-up described under
+"Second pass" below, which also corrects two findings the first pass overstated.
 
 ### 1. The idle tab made five authenticated requests a minute
 
@@ -191,101 +200,184 @@ list should be regenerated rather than trusted from here.
 
 ---
 
-## Found and not implemented, ranked
+## Second pass — the rest of the list
 
-### HIGH — `/api/presence/friends` and `/api/friends/active` are two fan-outs over the same graph
+Everything the first pass deferred was then worked through. This section records
+what each item turned out to be, including the two where the honest answer was
+"the finding was overstated".
 
-`getOnlineFriends` and `getActiveFriends` (`lib/presence.server.ts`) both walk
-the viewer's follow graph, both filter on `lastSeenAt`, and both resolve user
-display shapes — for two widgets that render nearly the same list. They are now
-sections of one request, but they are still two independent server computations
-with two caches (45s and 15s). Merging them into one query whose result is
-projected two ways would roughly halve the remaining presence cost. Left alone
-because they have genuinely different semantics (follows vs. mutuals, and
-`activeFriends` applies per-target presence-visibility filtering) and conflating
-them risks leaking presence to a non-mutual — a privacy bug, not a perf bug.
+### 8. Presence now answers from Redis, and the two fan-outs share their work
 
-### HIGH — the presence "online" signal is derived from a value throttled to 5-minute writes
+Both presence readers filtered `lastSeenAt >= now - 2min`, but `markPresence`
+throttles that Postgres write to roughly once per 5 minutes per user
+(`PRESENCE_DB_THROTTLE_MS`) because Redis holds the live set. **A 2-minute window
+over a 5-minute-granularity column reports most genuinely-online users as
+offline.** This was a correctness bug with a performance payoff, and it is now
+answered from the Redis presence set — the same buckets the site-wide count
+already trusts — via `filterOnlineUsers` (`lib/hot-counters.server.ts`), which is
+two `SMISMEMBER`s regardless of how many follows are being tested, and returns
+null so the caller falls back to the old `lastSeenAt` filter when Redis is off.
 
-Both presence readers filter `lastSeenAt >= now - 2min`, but `markPresence`
-throttles the Postgres `lastSeenAt` write to roughly once per 5 minutes per user
-(Redis holds the live set). A 2-minute window over a 5-minute-granularity column
-cannot be right: it misses genuinely-online users. Answering "who is online"
-entirely from the Redis presence set — which is already the authority for the
-site-wide count — would be both cheaper and more accurate. This is a correctness
-issue with a performance payoff, and the prior audit flagged its §3.3 ancestor.
+`getOnlineFriends` and `getActiveFriends` now share `onlineFollowIds` — the follow
+graph plus the online test, cached per viewer, with **no database read at all on
+the Redis path**. `getActiveFriends` also gained the larger win: its mutual check
+(`follow.findMany`) used to run against the viewer's entire follow list, up to a
+5000-wide `IN` list; it now runs against the already-online subset.
 
-### MEDIUM — 194 `findMany` calls have no `take`
+What was deliberately **not** shared is the user-row fetch. The two surfaces
+select different scopes with different limits, and folding them into one capped
+base query would silently truncate the rail's mutuals for anyone with more online
+follows than the cap. Two `take`-bounded PK reads is the correct shape.
 
-Most are inherently bounded (a user's own playlists, lists, API keys). The ones
-that grow without the caller's control, in rough order of exposure:
+`getActivities` also went from one Redis `GET` per friend to a single `MGET`.
 
-- `app/routes/api/rmharks/$id/comment.ts:75,186` — comment tree levels. The BFS
-  was batched per the prior audit's §2.5, but each level is still unbounded.
-- `lib/feed/thread.server.ts:18` — a thread's posts.
-- `app/routes/api/messages/search.ts:67` — DM search results.
-- `app/routes/api/discord/embed.ts:322` — daily participants.
-- `lib/replays.server.ts:172`, `lib/ranked.server.ts:51,56`,
-  `lib/tournaments/tournament.server.ts:608`.
+**One behaviour change worth calling out:** `presenceVisibility: 'nobody'` is now
+honoured by `getOnlineFriends` too. It was only applied by `getActiveFriends`, so
+a user who had explicitly opted out of presence still appeared in the "Friends
+online" widget. Merging the two loaders forced a decision, and honouring an
+explicit privacy opt-out is the conservative one — but it does mean that widget
+shows fewer people than before. Reverse it by dropping `visibilityFilter()` from
+`getOnlineFriends` if the old behaviour was intended.
 
-Each needs a product call on what the cap should be and whether the surface needs
-pagination, which is why they are listed rather than changed.
+### 9. Unbounded queries — the "194" was overstated
 
-### MEDIUM — 2D canvas games were never audited
+The original scan counted any `findMany` without a `take:` **key**, which missed
+shorthand `take,` and queries bounded by an `id: { in: [...] }` built from an
+already-capped set. Corrected count: **163**, and of the eight sites the first
+pass named, five were false positives:
 
-The 3D audit instrumented every route that opens a WebGL context. The 2D canvas
-games were out of its scope and remain unmeasured. The static signals that stand
-out:
+| Site                       | Verdict                                                          |
+| -------------------------- | ---------------------------------------------------------------- |
+| `comment.ts:75`            | already takes a `take` argument — bounded                        |
+| `comment.ts:186`           | bounded by `REPLY_CAP_PER_PARENT` × batch                        |
+| `tournament.server.ts:608` | shorthand `take` — bounded                                       |
+| `replays.server.ts:172`    | shorthand `take` — bounded                                       |
+| `messages/search.ts:67`    | bounded by `distinct` over a capped conversation set             |
+| `ranked.server.ts:51,56`   | **real** — capped at 50                                          |
+| `discord/embed.ts:322`     | **real** — capped at 100                                         |
+| `thread.server.ts:18`      | author-bounded (`MAX_SEGMENTS = 25`); defensive cap at 100 added |
 
-- `lib/void-breaker/renderer.ts` — 24 `shadowBlur` assignments and 12 gradients
-  created inside the draw path. `shadowBlur` is among the most expensive canvas 2D
-  operations, and a gradient rebuilt per entity per frame is pure waste (cache per
-  colour/radius, or bake to an offscreen sprite once). It does have a `reducedFx`
-  flag, so the mechanism for a quality tier already exists.
-- `components/game/GameCanvas.tsx` — 15 `shadowBlur` assignments beyond the
-  `getComputedStyle` issue fixed above.
-- `lib/vega/Renderer.ts` (6), `components/velum2099/game/ui/Minimap.ts` (8).
+The ranked one is the only one that mattered: **anyone can open a challenge
+against you**, so the incoming list grows with other people's actions and each row
+hydrated a full user-display include. The rest of the 163 are user-scoped lists
+(your playlists, your API keys, your saved places) whose size the owner controls.
 
-The right move is to point the existing 3D harness (it counts draw calls via a
-monkey-patched `WebGL2RenderingContext`) at a canvas-2D equivalent — patch
-`CanvasRenderingContext2D.prototype` fill/stroke/drawImage — and get numbers
-before changing anything. `lib/render/tier.ts` already exists and is
-renderer-agnostic, so a 2D game can consume the same tier.
+### 10. The app tier did not need a virtualizer — it needed a bound
 
-### MEDIUM — the app tier has no virtualization
+`ChatPanel`'s problem was not that it rendered every row; it was that
+`room.chat` **grew for the room's entire lifetime**. The same store already capped
+`systemMessages` at `slice(-100)` and simply never applied the same treatment to
+chat. Both RMHTube and RMHMusic had the identical bug. Capped at 200; older
+history stays server-side.
 
-The prior audit's §6.1 extracted `components/feed/VirtualPostList.tsx` and
-applied it across all six feed timelines. Nothing outside the feed uses it.
-Unbounded, unvirtualized lists in the full-screen apps:
-`components/rmhtube/ChatPanel.tsx` (649 lines, a realtime chat that accumulates
-for the room's lifetime), `components/rmhtube/MemberList.tsx`,
-`components/library/LibraryCollections.tsx`, `components/library/AlbumViewer.tsx`.
-`ChatPanel` is the one that matters — it has the same growth profile as the
-`GroupChatView` the prior audit fixed.
+With the array bounded the DOM is bounded, which is what virtualization would have
+bought — at a fraction of the risk of retrofitting a virtualizer into a realtime
+chat with variable-height rows, reactions, a mention dropdown and autoscroll.
 
-### LOW — `lib/liquid-gl` allocates a string per frame while idle
+Two adjacent re-render bugs fell out of reading it: `getChatEntries` was keyed on
+the whole store in a `useMemo`, and `useRmhTubeStore()` subscribes to the whole
+store — which changes on every `SYNC_STATE` and clock sync — so the entire
+transcript was re-merged and re-sorted several times a minute on updates that had
+nothing to do with chat. RMHMusic's copy had no memo at all. `getChatEntries` now
+takes the two arrays it reads so the memo can be keyed correctly.
 
-`frame()` calls `buildInlineSig()` every frame to detect a theme change, which
-concatenates four inline-style reads into a fresh string — including on the idle
-path that then early-returns without rendering. The reads are cheap (inline
-style, no flush) but the module docblock claims "zero per-frame allocation", and
-at 120Hz this is ~120 short-lived strings a second on every page. Compare the four
-values field-by-field against the cached copy instead of building a string, or
-check the signature every Nth frame. Genuinely minor; listed for honesty because
-the docblock overstates the current state.
+The other candidates dissolved on inspection: `MemberList` is structurally capped
+(`ABSOLUTE_MAX_MEMBERS = 50`), and the library lists are user-scoped.
+
+### 11. 2D canvas games — measured, and the harness is committed
+
+`scripts/perf/canvas2d-probe.mjs` is the 2D counterpart to the (throwaway) WebGL
+harness: it patches `CanvasRenderingContext2D.prototype` and counts rasterising
+ops, **non-zero `shadowBlur` activations**, gradient/pattern constructions and
+`getComputedStyle` calls, per frame. Unlike the 3D one it is committed, so this is
+repeatable.
+
+Measured at 1280×720, DPR 1, software rasteriser (no GPU — treat fps as
+relative-only, exactly as the 3D audit warns; the op counts are hardware
+independent):
+
+| Route            |  fps | ops/frame | shadowBlur-on/frame | gradients/frame | getComputedStyle/frame |
+| ---------------- | ---: | --------: | ------------------: | --------------: | ---------------------: |
+| `/slice-it`      | 44.7 |        15 |              **10** |               0 |                  **0** |
+| `/laundry-sort`  | 59.9 |        16 |                   0 |               0 |                      0 |
+| `/neon-driftway` | 33.6 |         1 |                   0 |               0 |                      0 |
+
+Two things to read off that table:
+
+1. **slice-it enabled a blurred shadow ~10 times per frame against ~15 rasterising
+   operations** — two thirds of everything it drew went through a blur, and that is
+   at rest on a menu, before any notes are on screen. `shadowBlur` is the most
+   expensive thing on a 2D canvas: the shape is rasterised to a scratch surface,
+   blurred, then composited.
+2. `getComputedStyle/frame` is **0**, which independently confirms the fix in item
+   6 above is working in a real browser.
+
+The fix is `lib/render/canvas2d-fx.ts` — the 2D counterpart to `lib/render/tier.ts`,
+gating decorative blur on the site's existing low-end signals (`html.perf-lite`,
+the same class that already disables the glass blur, the aurora parallax and the
+liquid layer, plus reduced motion) rather than a new heuristic. Resolved once per
+theme/class change, never per frame. Verified with the harness:
+
+| `/slice-it`                | ops/frame | shadowBlur-on/frame |
+| -------------------------- | --------: | ------------------: |
+| default                    |        15 |                  10 |
+| `--reduced` (gate engaged) |        15 |               **0** |
+
+Identical geometry, zero blur — so the gate drops only the expensive part.
+void-breaker already had a `reducedFx` flag driven by reduced motion; it now also
+honours `perf-lite`, so it degrades on the same signal as everything else.
+
+**Honest caveat:** fps did not measurably move at rest (44.8 → 44.5) because 15
+ops/frame is not enough work for the blur to dominate on this capture machine. The
+removed work is real and the gate is verified to fire; the frame-rate claim needs
+a run during actual gameplay on real hardware. Routes behind a menu or a loadout
+screen (`/void-breaker`, `/house-always-wins`, `/synapse-storm`, `/temple-of-joy`)
+were not reached — the harness reports `no canvas animation observed` rather than
+summarising a menu, and driving them to gameplay needs per-route click selectors
+that are not written yet. `lib/vega/Renderer.ts` and
+`components/velum2099/game/ui/Minimap.ts` still have un-gated `shadowBlur` and are
+not on a routable path this harness could reach.
+
+### 12. `liquid-gl` no longer touches the theme in the frame loop
+
+`frame()` built a signature string every frame — including on the idle path that
+then returned without rendering — to detect a theme change. The check now lives in
+a `style` `MutationObserver`, so the frame loop does nothing at all for it.
+
+The reason it was in the loop is documented in the module: inline style churns on
+every pointer move via `--light-x/y`, so a naive `style` observer would fire
+constantly. The callback therefore compares the three colour variables and only
+re-parses when one actually changed — a pointer move fails that test and does
+nothing — and `MutationObserver` batches into a microtask, so a drag costs one
+comparison per batch instead of one per frame, and an idle page costs nothing.
 
 ---
 
 ## Measurement
 
-Nothing here was measured against production; the effects in the table are query
-counts and request counts read off the code, which are exact, plus one style-recalc
-count that is structural. The RUM and synthetic plumbing described in
-[`performance-slo.md`](performance-slo.md) is the way to confirm the latency
-effect of items 2–4, and its checklist still has "forward `[rum:metric]` logs to a
-durable metrics backend" unchecked — until that is done, before/after percentiles
-for a write-path change are not obtainable from this repo.
+The request-count and query-count effects are read off the code and are exact. The
+canvas-2D numbers are measured (see item 11 for the harness, the conditions, and
+what the numbers do _not_ establish). The migration was applied to a real
+PostgreSQL 16 instance and all five indexes verified present, with
+`prisma migrate status` reporting no drift.
 
-The pulse change is the one item with an effect visible without a metrics
+Not measured: the latency effect of items 2–4. The RUM and synthetic plumbing in
+[`performance-slo.md`](performance-slo.md) is how to confirm those, and its
+checklist still has "forward `[rum:metric]` logs to a durable metrics backend"
+unchecked — until that is done, before/after percentiles for a write-path change
+are not obtainable from this repo.
+
+The pulse change is the one item with an effect visible without any metrics
 backend: request count per idle tab per minute, straight from a browser network
 panel or an Apache access log.
+
+### Re-running the canvas probe
+
+```bash
+pnpm dev                       # or any server on BASE_URL
+node scripts/perf/canvas2d-probe.mjs --all --seconds=12
+node scripts/perf/canvas2d-probe.mjs --route=/slice-it --reduced
+```
+
+`CHROME_PATH` overrides the browser binary; `BASE_URL` defaults to
+`http://localhost:7005`.

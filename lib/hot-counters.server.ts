@@ -27,6 +27,7 @@ import {
   redisGetDel,
   redisPresenceMark,
   redisPresenceCount,
+  redisPresenceFilter,
 } from '@/lib/redis.server';
 
 // ─── View counts ────────────────────────────────────────────────────────────
@@ -133,7 +134,33 @@ export async function markPresence(userId: string): Promise<void> {
  */
 export async function getOnlinePresenceCount(): Promise<number | null> {
   if (!redisEnabled()) return null;
+  return redisPresenceCount(onlineBuckets());
+}
+
+/** The presence buckets that make up the ~2-minute "online now" window. */
+function onlineBuckets(): string[] {
   const now = Date.now();
-  const buckets = [presenceBucket(now), presenceBucket(now - 60_000)];
-  return redisPresenceCount(buckets);
+  return [presenceBucket(now), presenceBucket(now - 60_000)];
+}
+
+/**
+ * Which of `userIds` are online right now, against the same ~2-minute window the
+ * site-wide count uses. Returns null when Redis is off so the caller can fall
+ * back to its `lastSeenAt` query.
+ *
+ * This is the accurate answer to "who is online", and `lastSeenAt` is not: a
+ * heartbeat only reaches Postgres about once every 5 minutes
+ * (PRESENCE_DB_THROTTLE_MS), so filtering that column on a 2-minute window
+ * reports most genuinely-online users as offline. The Redis set is written on
+ * every heartbeat, which is why it is the authority for the count and should be
+ * the authority for membership too.
+ */
+export async function filterOnlineUsers(userIds: string[]): Promise<string[] | null> {
+  if (!redisEnabled()) return null;
+  if (userIds.length === 0) return [];
+  const found = await redisPresenceFilter(onlineBuckets(), userIds);
+  if (!found) return null;
+  // Preserve the caller's ordering — it is usually a meaningful one (the follow
+  // graph is most-recently-followed first).
+  return userIds.filter((id) => found.has(id));
 }
