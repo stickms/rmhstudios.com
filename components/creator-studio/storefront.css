@@ -1,7 +1,7 @@
 /**
- * Creator Studio · Storefront styles.
+ * Create · Storefront styles.
  *
- * The Steam-like store layout used across every Creator Studio tab: a big hero
+ * The Steam-like store layout used across every Create tab: a big hero
  * banner, a horizontally-scrollable spotlight rail, and a varied catalog mosaic
  * where `.is-wide` tiles span two columns. Mobile-first — the mosaic starts at
  * two columns and the rail scroll-snaps — and shares the site's dark palette.

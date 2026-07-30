@@ -1,5 +1,5 @@
 /**
- * Creator Studio · AI Personas tab.
+ * Create · AI Personas tab.
  *
  * The AI-persona gallery, rendered as a Steam-style storefront (rotating hero +
  * spotlight rail + varied mosaic) via the shared `Storefront`, with the inline

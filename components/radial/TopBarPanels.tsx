@@ -252,7 +252,15 @@ export function NotificationsPanel({ open, onClose, anchorRef }: PanelProps) {
       icon={Bell}
       anchorRef={anchorRef}
       more={
-        <Link to="/notifications" className="rad-panel__more" onClick={onClose}>
+        // Through to the Inbox's Notifications tab — the one full notifications
+        // surface. (`/notifications` redirects there too, which is what the
+        // per-row fallback below relies on.)
+        <Link
+          to="/messages"
+          search={{ tab: 'notifications' }}
+          className="rad-panel__more"
+          onClick={onClose}
+        >
           <span>{t('notifications-see-all', { defaultValue: 'All notifications' })}</span>
           <QuickPanelMoreIcon />
         </Link>

@@ -30,7 +30,7 @@ Implementations: `lib/shop/`, `lib/store/`, `lib/storefront/`, `lib/market/`, `l
 | ----- | ---------- |
 | `/progress` | The progression dashboard. |
 | `/achievements` | Achievement gallery. |
-| `/arcade` | Arcade Pass — per-game daily challenges. `/leaderboard` redirects here. |
+| `/create?tab=games` | Arcade Pass — per-game daily challenges, in the Games tab under Ranked. `/arcade` and `/leaderboard` redirect here. |
 | `/history` | Activity history. |
 | `/wrapped`, `/recap` | Periodic summaries. |
 
@@ -55,4 +55,4 @@ Entitlement is re-checked on **every** developer API request rather than cached 
 
 ## Redirects worth knowing
 
-Several economy URLs are permanent redirects kept alive after a rename — `/wallet` → `/predictions`, `/market` → `/store`, `/leaderboard` → `/arcade`, `/events` → `/communities`. They are listed as redirects in the [page inventory](./pages.md). Don't "clean them up": they're load-bearing for existing links.
+Several economy URLs are permanent redirects kept alive after a rename — `/wallet` → `/predictions`, `/market` → `/store`, `/leaderboard` and `/arcade` → `/create?tab=games`, `/events` → `/communities`. They are listed as redirects in the [page inventory](./pages.md). Don't "clean them up": they're load-bearing for existing links.

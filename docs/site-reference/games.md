@@ -21,7 +21,7 @@ Generated from `lib/games.ts`, the single source of truth every card on the site
 | **Synapse Storm** | [`/synapse-storm`](https://rmhstudios.com/synapse-storm) | — | required | `Action` `Puzzle` `Fast-paced` |
 | **Temple of Joy** | [`/temple-of-joy`](https://rmhstudios.com/temple-of-joy) | — | required | `Idle` `Clicker` `Prestige` `Minigames` |
 | **Neon Driftway** | [`/neon-driftway`](https://rmhstudios.com/neon-driftway) | Playable Demo | required | `Arcade` `Racing` `Endless` |
-| **Laundry Sort** | [`/laundry-sort`](https://rmhstudios.com/laundry-sort) | Playable Demo | required | `Casual` `Physics` `Puzzle` |
+| **Laundry Sort** | [`/laundry-sort`](https://rmhstudios.com/laundry-sort) | Playable | required | `Multiplayer` `Physics` `3D` |
 | **Forest Explorer** | [`/forest-explorer`](https://rmhstudios.com/forest-explorer) | — | — | `Exploration` `3D` `Relaxing` |
 | **Void Breaker** | [`/void-breaker`](https://rmhstudios.com/void-breaker) | — | required | `Arcade` `Shooter` `3D` `Survival` |
 | **Kowloon Knockout** | [`/kowloon-knockout`](https://rmhstudios.com/kowloon-knockout) | — | — | `Fighting` `Multiplayer` `3D` |
@@ -89,9 +89,9 @@ Push your car to the limit across three distinct levels: Sunset Freeway, Rainlin
 
 ### Laundry Sort
 
-Sort falling laundry into color-coded bins using ragdoll physics. Watch clothes tumble and bounce through complex dividers as you chase high scores in a race against the clock. Simple controls, chaotic physics.
+Every garment is actual cloth: a mass of particles solved with position-based dynamics, so a shirt drapes over a bin rim, a towel planes as it falls, and a sock you flick across the room tumbles like one. Play solo against the clock or race up to seven other people on the same seeded laundry, with a locked 16:9 frame so nobody gets a wider view than anyone else.
 
-**Route:** `/laundry-sort` · **Catalog id:** `laundry-sort` · **Status:** Playable Demo · **Sign-in:** required
+**Route:** `/laundry-sort` · **Catalog id:** `laundry-sort` · **Status:** Playable · **Sign-in:** required
 
 ### Forest Explorer
 

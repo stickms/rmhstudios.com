@@ -1,5 +1,5 @@
 /**
- * Creator Studio chrome — the page header and the top-level tab bar that sits
+ * Create (/create) chrome — the page header and the top-level tab bar that sits
  * above the Pages / Builds / Personas surfaces. The individual tabs reuse the
  * vibe + builds + library styles; this file only styles the shared shell.
  */
@@ -259,6 +259,77 @@
 
 @media (max-width: 640px) {
   .cstudio-ranked__sub {
+    display: none;
+  }
+}
+
+/* ── Arcade Pass (Games tab, directly under Ranked) ──────────────────────── */
+/* The former standalone /arcade page. It borrows the ranked summary's panel
+   shell deliberately — the two sit stacked at the top of the same tab and would
+   read as unrelated widgets otherwise — but it is always expanded (its content
+   IS the point) and switches surfaces with a LiquidTabs strip rather than a
+   disclosure toggle. The strip's pill styling comes from LiquidTabs; the wrapper
+   below only places it. */
+.cstudio-arcade {
+  margin-bottom: clamp(16px, 3vw, 24px);
+  border: 1px solid var(--site-border, #232328);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--site-surface, #18181b) 60%, transparent);
+  overflow: hidden;
+}
+
+.cstudio-arcade__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.cstudio-arcade__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  color: var(--site-accent, #6c5cff);
+  background: var(--site-accent-dim, rgba(108, 92, 255, 0.14));
+}
+
+.cstudio-arcade__titles {
+  min-width: 0;
+  flex: 1;
+}
+
+.cstudio-arcade__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--site-text, #f5f5f7);
+}
+
+.cstudio-arcade__sub {
+  margin-top: 2px;
+  font-size: 0.82rem;
+  color: var(--site-text-muted, #a9a9b2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cstudio-arcade__tabs {
+  padding: 0 16px 4px;
+}
+
+/* The hosted columns bring their own padding, so the panel only owns the
+   hairline that separates it from the strip. */
+.cstudio-arcade__body {
+  border-top: 1px solid var(--site-border, #232328);
+  margin-top: 12px;
+}
+
+@media (max-width: 640px) {
+  .cstudio-arcade__sub {
     display: none;
   }
 }

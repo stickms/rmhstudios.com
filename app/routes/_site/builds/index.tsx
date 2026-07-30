@@ -1,7 +1,7 @@
 /**
  * /builds — legacy path.
  *
- * The standalone Builds gallery was folded into the unified Creator Studio
+ * The standalone Builds gallery was folded into the unified Create
  * (/create) and later split into separate Games / Apps / User Builds tabs. This
  * route now forwards to the Studio's Games tab so the many in-app "← Builds"
  * back-links and existing bookmarks keep working.

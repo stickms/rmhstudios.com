@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 229 routes. 117 render inside the standard site shell (sidebar, nav, context rail); 112 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 229 routes. 119 render inside the standard site shell (sidebar, nav, context rail); 110 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -39,13 +39,14 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/user-builds` | — | admin | `app/routes/_site/admin/user-builds.tsx` |
 | `/admin/users` | — | admin | `app/routes/_site/admin/users.tsx` |
 | `/analytics` | Creator Analytics | public | `app/routes/_site/analytics.tsx` |
-| `/arcade` | Arcade Pass | public | `app/routes/_site/arcade.tsx` |
+| `/arcade` | redirects to `/create?tab=games` (Arcade Pass) | public | `app/routes/_site/arcade.tsx` |
 | `/blog` | redirects to `/library` | public | `app/routes/_site/blog/index.tsx` |
 | `/bookmarks` | Bookmarks | public | `app/routes/_site/bookmarks.tsx` |
 | `/builds` | redirects to `/create` | public | `app/routes/_site/builds/index.tsx` |
+| `/builds/:slug` | Build Not Found | public | `app/routes/_site/builds/$slug.tsx` |
 | `/c/:slug` | — | public | `app/routes/_site/c.$slug.tsx` |
 | `/communities` | Communities | public | `app/routes/_site/communities.tsx` |
-| `/create` | Creator Studio | public | `app/routes/_site/create/index.tsx` |
+| `/create` | Create | public | `app/routes/_site/create/index.tsx` |
 | `/creator-studio` | redirects to `/create` | public | `app/routes/_site/creator-studio.tsx` |
 | `/developer` | Developer API | public | `app/routes/_site/developer/index.tsx` |
 | `/drafts` | Drafts | public | `app/routes/_site/drafts.tsx` |
@@ -63,7 +64,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/homes/saved` | RMHHomes — Saved | public | `app/routes/_site/homes/saved.tsx` |
 | `/homes/submit` | RMHHomes — Post a listing | public | `app/routes/_site/homes/submit.tsx` |
 | `/homes/watches` | RMHHomes — My alerts | public | `app/routes/_site/homes/watches.tsx` |
-| `/leaderboard` | redirects to `/arcade` | public | `app/routes/_site/leaderboard.tsx` |
+| `/leaderboard` | redirects to `/create?tab=games&sub=leaderboard` | public | `app/routes/_site/leaderboard.tsx` |
 | `/library` | Library | public | `app/routes/_site/library/index.tsx` |
 | `/lists` | Lists | public | `app/routes/_site/lists/index.tsx` |
 | `/lists/:id` | List | public | `app/routes/_site/lists/$id.tsx` |
@@ -73,7 +74,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/moments/:id` | — | public | `app/routes/_site/moments.$id.tsx` |
 | `/music-trivia` | Guess the Song | public | `app/routes/_site/music-trivia.tsx` |
 | `/news` | News | public | `app/routes/_site/news/index.tsx` |
-| `/notifications` | Notifications | public | `app/routes/_site/notifications.tsx` |
+| `/notifications` | redirects to `/messages?tab=notifications` | public | `app/routes/_site/notifications.tsx` |
 | `/personas` | redirects to `/create` | public | `app/routes/_site/personas/index.tsx` |
 | `/personas/:id` | Chat | public | `app/routes/_site/personas/$id.tsx` |
 | `/playlists` | redirects to `/library` | public | `app/routes/_site/playlists.tsx` |
@@ -126,6 +127,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/u/:userid` | User Not Found \| RMH | public | `app/routes/_site/u/$userid/index.tsx` |
 | `/u/:userid/post/:postid` | Post Not Found \| RMH | public | `app/routes/_site/u/$userid/post/$postid.tsx` |
 | `/user-builds` | redirects to `/builds` | public | `app/routes/_site/user-builds/index.tsx` |
+| `/user-builds/:slug` | — | public | `app/routes/_site/user-builds/$slug.tsx` |
 | `/user-builds/manage` | — | public | `app/routes/_site/user-builds/manage.tsx` |
 | `/user-builds/submit` | — | public | `app/routes/_site/user-builds/submit.tsx` |
 | `/v` | redirects to `/create` | public | `app/routes/_site/v/index.tsx` |
@@ -151,7 +153,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/black-lives-matter` | Black Lives Matter | public | `app/routes/black-lives-matter.tsx` |
 | `/blog/:slug` | — | public | `app/routes/blog.$slug.tsx` |
 | `/blog/rss.xml` | RMH Studios — Blog | public | `app/routes/blog.rss[.]xml.ts` |
-| `/builds/:slug` | Build Not Found | public | `app/routes/builds_.$slug.tsx` |
 | `/cookgame` | Game | public | `app/routes/cookgame.tsx` |
 | `/cookies` | Cookie Policy | public | `app/routes/cookies.tsx` |
 | `/copyright` | Copyright | public | `app/routes/copyright.tsx` |
@@ -176,7 +177,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/forest-explorer/story` | — | public | `app/routes/forest-explorer/story.tsx` |
 | `/house-always-wins` | — | public | `app/routes/house-always-wins.tsx` |
 | `/kowloon-knockout` | — | public | `app/routes/kowloon-knockout/index.tsx` |
-| `/laundry-sort` | — | public | `app/routes/laundry-sort.tsx` |
+| `/laundry-sort` | Laundry Sort | public | `app/routes/laundry-sort.tsx` |
 | `/library/:slug` | — | public | `app/routes/library.$slug.tsx` |
 | `/library/albums/:albumId` | — | public | `app/routes/library.albums.$albumId.tsx` |
 | `/lights-out` | redirects to `/daily/lights-out` | public | `app/routes/lights-out.tsx` |
@@ -248,7 +249,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/synapse-storm` | — | public | `app/routes/synapse-storm.tsx` |
 | `/temple-of-joy` | — | public | `app/routes/temple-of-joy/index.tsx` |
 | `/terms` | Terms of Use | public | `app/routes/terms.tsx` |
-| `/user-builds/:slug` | — | public | `app/routes/user-builds.$slug.tsx` |
 | `/v/:slug` | — | public | `app/routes/v.$slug.tsx` |
 | `/v/new` | redirects to `/v` | public | `app/routes/v.new.tsx` |
 | `/velum2099` | — | public | `app/routes/velum2099.tsx` |

@@ -2,10 +2,14 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Heart, Eye, GitBranch, ExternalLink, Calendar, ArrowLeft, Edit, Trash2, Loader2, Lock } from 'lucide-react';
+import { Heart, Eye, GitBranch, ExternalLink, Calendar, Edit, Trash2, Lock } from 'lucide-react';
+import { toast } from 'sonner';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { BlurImage } from '@/components/ui/BlurImage';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import ReactMarkdown from 'react-markdown';
 import { useTranslation } from 'react-i18next';
@@ -22,7 +26,6 @@ import { AnimatedCount } from '@/components/ui/AnimatedCount';
 
 interface BuildDetailProps {
   build: Build;
-  backHref?: string;
 }
 
 function formatDate(dateStr: string): string {
@@ -33,7 +36,11 @@ function formatDate(dateStr: string): string {
   });
 }
 
-export function BuildDetail({ build: initialBuild, backHref = '/builds' }: BuildDetailProps) {
+/**
+ * Body of a build detail page. The title, lede and back link belong to the
+ * route's `PageLayout` header — this renders everything below it.
+ */
+export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
   const { t } = useTranslation("c-user-builds");
   const confirm = useConfirm();
   const navigate = useNavigate();
@@ -84,7 +91,7 @@ export function BuildDetail({ build: initialBuild, backHref = '/builds' }: Build
           demoUrl: data.demoUrl ?? prev.demoUrl,
         }));
       } else if (data?.error) {
-        alert(data.error);
+        toast.error(data.error);
       }
     } finally {
       setUnlocking(false);
@@ -133,42 +140,27 @@ export function BuildDetail({ build: initialBuild, backHref = '/builds' }: Build
     });
   };
 
-  const chip = 'px-2.5 py-1 rounded-full text-xs border border-site-border bg-site-surface text-site-text-muted';
-  const card = 'rounded-site border border-site-border bg-site-surface p-6';
+  const hasStatusChips = !!build.category || build.featured || build.visibility !== 'PUBLIC';
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Back link */}
-      <Link to={backHref} className="builds-detail__back">
-        <ArrowLeft className="w-4 h-4" />
-        {t("back-to-builds", { defaultValue: "Back to builds" })}
-      </Link>
+    <div className="space-y-[var(--site-section-gap)]">
+      <header className="space-y-5">
+        {/* Category & status */}
+        {hasStatusChips && (
+          <div className="flex flex-wrap items-center gap-2">
+            {build.category && <Badge>{build.category.name}</Badge>}
+            {build.featured && (
+              <Badge variant="warning">{t("curated", { defaultValue: "Curated" })}</Badge>
+            )}
+            {build.visibility !== 'PUBLIC' && <Badge variant="outline">{build.visibility}</Badge>}
+          </div>
+        )}
 
-      {/* Header */}
-      <div className="mt-7 mb-8">
-        {/* Category & Status */}
-        <div className="flex items-center gap-2 mb-4">
-          {build.category && <span className={chip}>{build.category.name}</span>}
-          {build.featured && (
-            <span className="px-2.5 py-1 rounded-full text-xs border border-site-warning/30 bg-site-warning/10 text-site-warning">
-              {t("curated", { defaultValue: "Curated" })}
-            </span>
-          )}
-          {build.visibility !== 'PUBLIC' && (
-            <span className="px-2.5 py-1 rounded-full text-xs border border-site-border bg-site-surface text-site-text-dim">
-              {build.visibility}
-            </span>
-          )}
-        </div>
-
-        {/* Title */}
-        <h1 className="builds-detail__title">{build.title}</h1>
-
-        {/* Author & Date */}
-        <div className="flex items-center flex-wrap gap-4 mt-5 mb-5">
+        {/* Author & date */}
+        <div className="flex flex-wrap items-center gap-4">
           <Link
             to={`/u/${build.user.handle || build.user.id}` as string}
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-3 transition-opacity hover:opacity-80"
           >
             <UserAvatar src={build.user.image ?? undefined} alt={build.user.name || 'User'} size={40} fallbackName={build.user.name ?? undefined} />
             <div>
@@ -177,113 +169,96 @@ export function BuildDetail({ build: initialBuild, backHref = '/builds' }: Build
             </div>
           </Link>
 
-          <span className="text-site-text-dim">|</span>
+          <span aria-hidden className="text-site-text-dim">|</span>
 
           <span className="flex items-center gap-2 text-sm text-site-text-muted">
-            <Calendar className="w-4 h-4" />
+            <Calendar className="size-4" aria-hidden />
             {formatDate(build.publishedAt || build.createdAt)}
           </span>
 
           {isOwner && (
             <div className="ml-auto flex items-center gap-2">
-              <Link
-                to={`/user-builds/submit?edit=${build.id}` as string}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-site-surface border border-site-border text-sm text-site-text-muted hover:text-site-text hover:border-site-border-bright transition-colors"
-              >
-                <Edit className="w-4 h-4" />
-                {t("edit", { defaultValue: "Edit" })}
-              </Link>
-              <button
+              <Button asChild variant="secondary" size="sm">
+                <Link to={`/user-builds/submit?edit=${build.id}` as string}>
+                  <Edit aria-hidden />
+                  {t("edit", { defaultValue: "Edit" })}
+                </Link>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleDelete}
-                disabled={deleting}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-site-surface border border-site-border text-sm text-site-danger hover:text-site-danger hover:border-site-danger/40 transition-colors disabled:opacity-50"
+                loading={deleting}
+                className="text-site-danger hover:text-site-danger hover:bg-site-danger/10"
               >
-                {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                <Trash2 aria-hidden />
                 {t("delete", { defaultValue: "Delete" })}
-              </button>
+              </Button>
             </div>
           )}
         </div>
 
         {/* Post awards (§7): public paid recognition on the build. */}
-        <div className="mb-5">
-          <PostAwards entityType="build" entityId={build.id} canGive={!isOwner} />
-        </div>
+        <PostAwards entityType="build" entityId={build.id} canGive={!isOwner} />
 
-        {/* Description */}
-        <p className="builds-detail__lead">{build.description}</p>
-
-        {/* Tech Stack */}
-        {build.technologies.length > 0 && (
-          <div className="mt-6">
-            <TechBadges technologies={build.technologies} />
-          </div>
-        )}
+        {/* Tech stack */}
+        {build.technologies.length > 0 && <TechBadges technologies={build.technologies} />}
 
         {/* Tags */}
         {build.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-4">
+          <div className="flex flex-wrap gap-2">
             {build.tags.map((tag) => (
-              <span key={tag} className={chip}>
-                #{tag}
-              </span>
+              <Badge key={tag}>#{tag}</Badge>
             ))}
           </div>
         )}
 
         {/* Actions */}
-        <div className="flex items-center flex-wrap gap-3 mt-7">
+        <div className="flex flex-wrap items-center gap-3">
           {build.repoUrl && (
-            <a
-              href={safeHref(build.repoUrl)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-site-surface border border-site-border text-site-text hover:border-site-border-bright transition-colors"
-            >
-              <GitBranch className="w-4 h-4" />
-              {t("view-source", { defaultValue: "View Source" })}
-            </a>
+            <Button asChild variant="secondary">
+              <a href={safeHref(build.repoUrl)} target="_blank" rel="noopener noreferrer">
+                <GitBranch aria-hidden />
+                {t("view-source", { defaultValue: "View Source" })}
+              </a>
+            </Button>
           )}
           {build.demoUrl && (
-            <a
-              href={safeHref(build.demoUrl)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-site-accent text-site-accent-fg font-medium hover:bg-site-accent-hover transition-colors"
-            >
-              <ExternalLink className="w-4 h-4" />
-              {t("live-demo", { defaultValue: "Live Demo" })}
-            </a>
+            <Button asChild variant="accent">
+              <a href={safeHref(build.demoUrl)} target="_blank" rel="noopener noreferrer">
+                <ExternalLink aria-hidden />
+                {t("live-demo", { defaultValue: "Live Demo" })}
+              </a>
+            </Button>
           )}
 
-          <div className="flex items-center gap-5 ml-auto text-site-text-muted">
-            <button
+          <div className="ml-auto flex items-center gap-2 text-site-text-muted">
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleLike}
-              disabled={liking || !session}
-              className={`flex items-center gap-2 transition-colors ${
-                build.liked ? 'text-site-danger' : 'hover:text-site-danger'
-              } disabled:opacity-50`}
-              title={session ? '' : t("sign-in-to-like", { defaultValue: "Sign in to like" })}
+              disabled={!session}
+              loading={liking}
+              loadingText={<AnimatedCount value={build.likeCount} format={formatCount} />}
+              className={build.liked ? 'text-site-danger' : 'hover:text-site-danger'}
+              aria-pressed={!!build.liked}
+              title={session ? undefined : t("sign-in-to-like", { defaultValue: "Sign in to like" })}
             >
-              {liking ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Heart className={`w-5 h-5 ${build.liked ? 'fill-current' : ''}`} />
-              )}
+              <Heart className={build.liked ? 'fill-current' : undefined} aria-hidden />
               <AnimatedCount value={build.likeCount} format={formatCount} />
-            </button>
-            <span className="flex items-center gap-2">
-              <Eye className="w-5 h-5" />
+            </Button>
+            <span className="flex items-center gap-2 px-2 text-sm">
+              <Eye className="size-4" aria-hidden />
               <AnimatedCount value={build.viewCount} format={formatCount} />
             </span>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Thumbnail — §5.48 liquid-open hero the build card's thumbnail morphs into. */}
       {build.thumbnailUrl && (
         <div
-          className="builds-detail__thumb mb-8"
+          className="overflow-hidden rounded-site border border-site-border shadow-site"
           style={{ viewTransitionName: liquidVTName('build', build.id) }}
         >
           <BlurImage src={build.thumbnailUrl} alt={build.title} fit="cover" width={1280} quality={85} sizes="100vw" className="w-full" imgClassName="w-full" />
@@ -292,66 +267,70 @@ export function BuildDetail({ build: initialBuild, backHref = '/builds' }: Build
 
       {/* Paywall — paid build whose content the viewer hasn't unlocked */}
       {build.locked && (
-        <div className={`${card} mb-6 text-center`}>
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-site-surface">
-            <Lock className="h-6 w-6 text-site-warning" />
-          </div>
-          <h2 className="text-lg font-semibold text-site-text">{t("premium-build", { defaultValue: "Premium build" })}</h2>
-          <p className="mx-auto mt-1 max-w-md text-sm text-site-text-muted">
-            {t("premium-build-desc", { defaultValue: "Unlock the README, source, and live demo for this build." })}
-          </p>
-          <button
-            onClick={handleUnlock}
-            disabled={unlocking || !session}
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-site-accent px-5 py-2.5 font-semibold text-site-accent-fg transition-colors hover:bg-site-accent-hover disabled:opacity-50"
-          >
-            {unlocking ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                <CoinIcon className="h-4 w-4" />
-                {session ? t("unlock-for", { defaultValue: "Unlock for {{price}}", price: (build.price ?? 0).toLocaleString() }) : t("sign-in-to-unlock", { defaultValue: "Sign in to unlock" })}
-              </>
-            )}
-          </button>
-        </div>
+        <Card>
+          <CardContent className="text-center">
+            <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-site-surface">
+              <Lock className="size-6 text-site-warning" aria-hidden />
+            </div>
+            <h2 className="text-lg font-semibold text-site-text">{t("premium-build", { defaultValue: "Premium build" })}</h2>
+            <p className="mx-auto mt-1 max-w-md text-sm text-site-text-muted">
+              {t("premium-build-desc", { defaultValue: "Unlock the README, source, and live demo for this build." })}
+            </p>
+            <Button
+              variant="accent"
+              onClick={handleUnlock}
+              disabled={!session}
+              loading={unlocking}
+              className="mt-4"
+            >
+              <CoinIcon className="size-4" aria-hidden />
+              {session ? t("unlock-for", { defaultValue: "Unlock for {{price}}", price: (build.price ?? 0).toLocaleString() }) : t("sign-in-to-unlock", { defaultValue: "Sign in to unlock" })}
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {/* README */}
       {!build.locked && build.readme && (
-        <div className={`${card} mb-6`}>
-          <h2 className="text-lg font-semibold text-site-text mb-4">{t("readme", { defaultValue: "README" })}</h2>
-          <div className="prose prose-invert max-w-none">
-            <ReactMarkdown>{build.readme}</ReactMarkdown>
-          </div>
-        </div>
+        <Card>
+          <CardContent>
+            <h2 className="mb-4 text-lg font-semibold text-site-text">{t("readme", { defaultValue: "README" })}</h2>
+            <div className="prose max-w-none prose-headings:text-site-text prose-p:text-site-text-muted prose-li:text-site-text-muted prose-strong:text-site-text prose-code:text-site-text prose-a:text-site-accent hover:prose-a:text-site-accent-hover prose-img:rounded-site prose-img:border prose-img:border-site-border">
+              <ReactMarkdown>{build.readme}</ReactMarkdown>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Version History */}
       {build.versions && build.versions.length > 0 && (
-        <div className={`${card} mb-6`}>
-          <h2 className="text-lg font-semibold text-site-text mb-4">{t("version-history", { defaultValue: "Version History" })}</h2>
-          <div className="space-y-3">
-            {build.versions.map((version) => (
-              <div key={version.id} className="flex items-start gap-3 p-3 rounded-site bg-site-surface">
-                <span className="px-2 py-0.5 rounded bg-site-surface text-site-text text-sm font-mono">v{version.version}</span>
-                <div className="flex-1 min-w-0">
-                  {version.changelog && <p className="text-sm text-site-text-muted">{version.changelog}</p>}
-                  <p className="text-xs text-site-text-dim mt-1">
-                    {formatDate(version.createdAt)}
-                    {version.commitHash && <span className="ml-2 font-mono">{version.commitHash.slice(0, 7)}</span>}
-                  </p>
+        <Card>
+          <CardContent>
+            <h2 className="mb-4 text-lg font-semibold text-site-text">{t("version-history", { defaultValue: "Version History" })}</h2>
+            <div className="space-y-3">
+              {build.versions.map((version) => (
+                <div key={version.id} className="flex items-start gap-3 rounded-site-sm bg-site-surface p-3">
+                  <Badge className="font-mono">v{version.version}</Badge>
+                  <div className="min-w-0 flex-1">
+                    {version.changelog && <p className="text-sm text-site-text-muted">{version.changelog}</p>}
+                    <p className="mt-1 text-xs text-site-text-dim">
+                      {formatDate(version.createdAt)}
+                      {version.commitHash && <span className="ml-2 font-mono">{version.commitHash.slice(0, 7)}</span>}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Comments */}
-      <div className={card}>
-        <BuildComments buildId={build.id} />
-      </div>
+      <Card>
+        <CardContent>
+          <BuildComments buildId={build.id} />
+        </CardContent>
+      </Card>
     </div>
   );
 }
