@@ -1,144 +1,149 @@
 /**
- * Temple of Joy — the temple, in the DOM.
+ * Temple of Joy — the look.
  *
- * The game used to render its entire interface as three.js meshes: the
- * happiness read-out, the tab bar, every codex row, every modal. That bought a
- * nice-looking sanctum and cost everything else — no selectable text, no
- * screen-reader access, no keyboard, no reflow, a 3D "panel" that paged nine
- * rows at a time through six hundred upgrades, and a WebGL dependency for a
- * game that is fundamentally a list of buttons.
+ * Alabaster and gold leaf. The brief is *minimal but not cold*: one warm
+ * off-white ground, hairline rules instead of boxes, a single serif for
+ * anything that is a number or a name, and gold used exactly where the game
+ * wants your eye — the counter, the affordable row, the halo, the button that
+ * matters. Nothing else is coloured. A page that is 95% paper makes the 5%
+ * that is gold read as light rather than as decoration.
  *
- * So the interface is HTML again. The *aesthetic* is not a step back: the
- * sanctum is a lit, layered, animated scene built from gradients, blurs and
- * SVG, the panels are frosted stone tablets, and everything below respects
- * reduced motion, forced colors, and a 320px viewport.
+ * Dawn is the default, because this is a game about being glad. Vespers is the
+ * same building after sunset, and every token below flips.
  *
- * Everything is scoped under `.toj` so it can't leak into anything that
- * embeds it.
+ * Motion: every transition is short, eased out, and driven by transform and
+ * opacity only — nothing that triggers layout sits on a hot path. The whole
+ * motion layer collapses under `prefers-reduced-motion`, and again under the
+ * in-game "reduced flourish" switch, which sets `data-flourish="off"`.
+ *
+ * Everything is scoped under `.toj` so it cannot leak into whatever embeds it.
  */
 
 /* ══════════════════════════════════════════════════════════════════════════
-   1. Palette — candlelit stone
+   1. Tokens
    ══════════════════════════════════════════════════════════════════════════ */
 
 .toj {
-  /* Ground: the unlit interior. */
-  --toj-bg: #14100c;
-  --toj-bg-deep: #0b0805;
-  /* Stone: the tablets and walls the light falls on. */
-  --toj-stone: #241b12;
-  --toj-stone-raised: #2f2418;
-  --toj-stone-sunk: #1b1410;
-  --toj-line: #443627;
-  --toj-line-bright: #61492f;
+  /* Ground — paper, and the wash behind it. */
+  --toj-ground: #fbf9f4;
+  --toj-ground-deep: #f2eee3;
+  --toj-surface: #ffffff;
+  --toj-surface-sunk: #f7f4ec;
+
+  /* Hairlines. There are no borders in this design, only rules. */
+  --toj-rule: #e8e1d1;
+  --toj-rule-strong: #d6cbb2;
 
   /* Ink. */
-  --toj-ink: #f2e3c6;
-  --toj-ink-soft: #bda887;
-  --toj-ink-faint: #85735a;
+  --toj-ink: #241f16;
+  --toj-ink-soft: #6b6152;
+  --toj-ink-faint: #9c9385;
 
-  /* Flame — the accent. Gold for gilt, ember for heat, halo for glow. */
-  --toj-gold: #e8b84b;
-  --toj-gold-bright: #ffd775;
-  --toj-gold-deep: #a67c26;
-  --toj-ember: #e07a3c;
-  --toj-halo: 232 184 75; /* raw channels, for rgb(… / α) */
+  /* Gold leaf — the only accent. */
+  --toj-gold: #b8912a;
+  --toj-gold-bright: #e0bb54;
+  --toj-gold-deep: #8a6a12;
+  --toj-gold-wash: #f6efd9;
+  /* Raw channels, for rgb(… / α). */
+  --toj-gold-rgb: 184 145 42;
 
-  /* Currencies, each with its own signal colour. */
-  --toj-happiness: #ffd775;
-  --toj-karma: #9fd8c4;
-  --toj-shard: #a9b8ff;
-  --toj-radiance: #ffb95e;
+  /* The three things allowed their own colour. */
+  --toj-grace: #6f7fb8;
+  --toj-manna: #b57f38;
+  --toj-sable: #6a5a78;
 
-  --toj-danger: #e2796f;
-  --toj-success: #8fca82;
+  --toj-good: #4b7d4a;
+  --toj-warn: #a75437;
 
-  /* Type. Cormorant is loaded by the route layout. */
-  --toj-font-display: 'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
-  --toj-font-body: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Type. Cormorant is loaded by the route's head. */
+  --toj-serif: 'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
+  --toj-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-  /* Shape + depth. */
-  --toj-radius: 14px;
-  --toj-radius-sm: 9px;
-  --toj-radius-lg: 22px;
-  --toj-shadow: 0 18px 48px rgb(0 0 0 / 0.55);
-  --toj-shadow-sm: 0 2px 10px rgb(0 0 0 / 0.35);
-  --toj-glow: 0 0 32px rgb(var(--toj-halo) / 0.28);
+  /* Shape. Small radii; this is a building, not a bubble. */
+  --toj-radius: 10px;
+  --toj-radius-sm: 6px;
+  --toj-radius-lg: 18px;
 
-  /* Motion. */
-  --toj-ease: cubic-bezier(0.32, 0.72, 0, 1);
-  --toj-fast: 130ms;
-  --toj-base: 240ms;
+  /* Depth, used sparingly. */
+  --toj-lift: 0 1px 2px rgb(36 31 22 / 0.04), 0 8px 24px rgb(36 31 22 / 0.06);
+  --toj-lift-sm: 0 1px 2px rgb(36 31 22 / 0.05);
+  --toj-halo: 0 0 0 1px rgb(var(--toj-gold-rgb) / 0.28), 0 0 28px rgb(var(--toj-gold-rgb) / 0.22);
 
-  /* Rhythm. Scales with the viewport so a phone isn't padded like a desktop. */
-  --toj-gutter: clamp(0.75rem, 2.5vw, 1.5rem);
-  --toj-gap: clamp(0.5rem, 1.6vw, 1rem);
+  /* Motion. One ease, three durations — the whole vocabulary. */
+  --toj-ease: cubic-bezier(0.22, 0.68, 0.28, 1);
+  --toj-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --toj-quick: 120ms;
+  --toj-base: 220ms;
+  --toj-slow: 420ms;
 
-  /* Width of the docked codex column, referenced by the floating vibe prompt
-     so it can sit clear of it. */
-  --toj-codex-w: clamp(24rem, 34vw, 32rem);
+  /* Rhythm, scaled to the viewport. */
+  --toj-gutter: clamp(0.85rem, 2.4vw, 1.6rem);
+  --toj-gap: clamp(0.5rem, 1.4vw, 0.9rem);
+
+  /* The docked panel column on wide screens. */
+  --toj-panel-w: clamp(23rem, 33vw, 31rem);
 
   --toj-safe-top: env(safe-area-inset-top, 0px);
   --toj-safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Dawn. Same temple, sun through the doorway instead of candles. */
-.toj[data-theme='light'] {
-  --toj-bg: #efe3cd;
-  --toj-bg-deep: #e2d2b6;
-  --toj-stone: #fbf5e9;
-  --toj-stone-raised: #ffffff;
-  --toj-stone-sunk: #eee2cb;
-  --toj-line: #d6c3a2;
-  --toj-line-bright: #bfa87f;
+/* Vespers. Same building, after the sun. */
+.toj[data-theme='vespers'] {
+  --toj-ground: #16130e;
+  --toj-ground-deep: #0d0b07;
+  --toj-surface: #1e1a13;
+  --toj-surface-sunk: #171309;
 
-  --toj-ink: #2e2317;
-  --toj-ink-soft: #6b5942;
-  --toj-ink-faint: #96826a;
+  --toj-rule: #2f2820;
+  --toj-rule-strong: #453a2b;
 
-  --toj-gold: #a9761a;
-  --toj-gold-bright: #c9922c;
-  --toj-gold-deep: #7c530c;
-  --toj-ember: #c25a1c;
-  --toj-halo: 169 118 26;
+  --toj-ink: #f4ecda;
+  --toj-ink-soft: #b7ab92;
+  --toj-ink-faint: #7f7663;
 
-  --toj-happiness: #a9761a;
-  --toj-karma: #2f7d64;
-  --toj-shard: #4a5bbf;
-  --toj-radiance: #b96a12;
+  --toj-gold: #e0bb54;
+  --toj-gold-bright: #ffdd8e;
+  --toj-gold-deep: #d3ac48;
+  --toj-gold-wash: #241d0d;
+  --toj-gold-rgb: 224 187 84;
 
-  --toj-danger: #b23e33;
-  --toj-success: #3f7d33;
+  --toj-grace: #9aa8dd;
+  --toj-manna: #d9a35c;
+  --toj-sable: #a692b8;
 
-  --toj-shadow: 0 18px 44px rgb(90 66 30 / 0.18);
-  --toj-shadow-sm: 0 2px 8px rgb(90 66 30 / 0.12);
-  --toj-glow: 0 0 28px rgb(var(--toj-halo) / 0.22);
+  --toj-good: #7db07a;
+  --toj-warn: #d78161;
+
+  --toj-lift: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px rgb(0 0 0 / 0.45);
+  --toj-lift-sm: 0 1px 3px rgb(0 0 0 / 0.4);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   2. Root surface
+   2. Ground
    ══════════════════════════════════════════════════════════════════════════ */
 
 .toj {
   position: fixed;
   inset: 0;
   overflow: hidden;
-  background: var(--toj-bg-deep);
+  background: var(--toj-ground);
   color: var(--toj-ink);
-  font-family: var(--toj-font-body);
+  font-family: var(--toj-sans);
+  font-size: 15px;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
-  -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
   accent-color: var(--toj-gold);
-  color-scheme: dark;
-  /* Every number here changes several times a second; proportional digits
-     make them jitter sideways as they tick. */
+  color-scheme: light;
+  /* Every figure here changes several times a second; proportional digits
+     make them shuffle sideways as they tick. */
   font-variant-numeric: tabular-nums;
 }
 
-.toj[data-theme='light'] {
-  color-scheme: light;
+.toj[data-theme='vespers'] {
+  color-scheme: dark;
 }
 
 .toj *,
@@ -150,179 +155,221 @@
 .toj button {
   font: inherit;
   color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
   cursor: pointer;
   touch-action: manipulation;
 }
 
 .toj button:disabled {
-  cursor: not-allowed;
+  cursor: default;
 }
 
 .toj :focus-visible {
-  outline: 2px solid var(--toj-gold-bright);
-  outline-offset: 3px;
-  border-radius: 4px;
+  outline: 2px solid var(--toj-gold);
+  outline-offset: 2px;
+  border-radius: var(--toj-radius-sm);
 }
 
 .toj ::selection {
-  background: rgb(var(--toj-halo) / 0.32);
-  color: var(--toj-ink);
+  background: rgb(var(--toj-gold-rgb) / 0.28);
 }
 
-.toj ::-webkit-scrollbar {
+.toj-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--toj-rule-strong) transparent;
+}
+
+.toj-scroll::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-.toj ::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.toj ::-webkit-scrollbar-thumb {
-  background: var(--toj-line-bright);
+.toj-scroll::-webkit-scrollbar-thumb {
+  background: var(--toj-rule-strong);
   border-radius: 99px;
 }
 
-/* Hover colour for the global show-on-scroll reveal (app/globals.css
-   §Scrollbars). It goes through this variable rather than a
-   `::-webkit-scrollbar-thumb:hover` rule because the reveal's hover exception is
-   `!important` and outranks one. */
-.toj {
-  --sb-thumb-hover: var(--toj-gold-deep);
+.toj-scroll::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.toj-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: var(--toj-line-bright) transparent;
+.toj-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   3. Layout
+   3. Frame
    ══════════════════════════════════════════════════════════════════════════ */
 
-/**
- * Three regions: the HUD across the top, the sanctum, and the codex.
- *
- * Phones stack them and the codex becomes a sheet over the sanctum. From 60rem
- * the codex docks beside the sanctum as a real column, because at that width
- * there is room to buy an upgrade *and* watch the temple react to it.
- */
 .toj-frame {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  /* `dvh` is the live viewport, so a phone's collapsing toolbar can't crop the
-     tab rail; the `%` line is the fallback for engines without it. */
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
   height: 100%;
-  height: 100dvh;
+  padding-top: var(--toj-safe-top);
+  padding-bottom: var(--toj-safe-bottom);
 }
 
 .toj-body {
-  position: relative;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-@media (min-width: 60rem) {
+.toj-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.toj-dock {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--toj-surface);
+}
+
+@media (min-width: 62rem) {
   .toj-body {
-    grid-template-rows: auto minmax(0, 1fr);
-    grid-template-columns: minmax(0, 1fr) var(--toj-codex-w);
-    gap: var(--toj-gap);
-    padding-inline: var(--toj-gutter);
-    padding-bottom: var(--toj-gutter);
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .toj-stage {
+    min-width: 0;
+  }
+
+  .toj-dock {
+    width: var(--toj-panel-w);
+    flex-shrink: 0;
+    border-left: 1px solid var(--toj-rule);
   }
 }
 
-/* A very wide window gets a wider codex rather than a stretched sanctum. */
-@media (min-width: 100rem) {
-  .toj {
-    --toj-codex-w: clamp(30rem, 30vw, 40rem);
+/* On a phone the panel takes the bottom half; the sanctum keeps the top. */
+@media (max-width: 61.99rem) {
+  .toj-dock {
+    height: min(52vh, 30rem);
+    flex-shrink: 0;
+    border-top: 1px solid var(--toj-rule);
+  }
+
+  .toj-stage {
+    min-height: 15rem;
   }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   4. The HUD
+   4. The head — the counter
    ══════════════════════════════════════════════════════════════════════════ */
 
 .toj-hud {
-  position: relative;
-  z-index: 3;
   display: flex;
+  align-items: flex-start;
+  gap: var(--toj-gutter);
+  padding: var(--toj-gap) var(--toj-gutter);
+  border-bottom: 1px solid var(--toj-rule);
+  background: var(--toj-surface);
   flex-wrap: wrap;
-  align-items: center;
-  gap: var(--toj-gap);
-  padding: calc(var(--toj-safe-top) + 0.6rem) var(--toj-gutter) 0.6rem;
-  background: linear-gradient(to bottom, rgb(0 0 0 / 0.4), transparent);
-}
-
-.toj[data-theme='light'] .toj-hud {
-  background: linear-gradient(to bottom, rgb(255 255 255 / 0.5), transparent);
 }
 
 .toj-hud-main {
-  display: flex;
-  min-width: 0;
-  flex: 1 1 12rem;
-  flex-direction: column;
-  align-items: flex-start;
-  line-height: 1.05;
+  flex: 1;
+  min-width: 9rem;
 }
 
-/* The headline figure. Scales from a 320px phone to a wall display without a
-   media query per stop, and never wraps mid-number. */
-.toj-happiness {
-  font-family: var(--toj-font-display);
-  font-size: clamp(2rem, 7vw, 3.75rem);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--toj-happiness);
-  text-shadow: 0 0 24px rgb(var(--toj-halo) / 0.35);
-  white-space: nowrap;
+.toj-joy {
+  display: block;
+  font-family: var(--toj-serif);
+  font-size: clamp(1.9rem, 5.5vw, 3rem);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.015em;
 }
 
 .toj-rate {
-  font-size: clamp(0.75rem, 2vw, 0.9rem);
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.8rem;
   color: var(--toj-ink-soft);
-  white-space: nowrap;
 }
 
-.toj-currencies {
+.toj-rate[data-drained='true'] {
+  color: var(--toj-sable);
+}
+
+.toj-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
+  align-items: center;
 }
 
 .toj-chip {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.3rem 0.6rem;
+  padding: 0.28rem 0.6rem;
   border-radius: 99px;
-  border: 1px solid var(--toj-line);
-  background: rgb(0 0 0 / 0.28);
-  font-size: 0.78rem;
-  font-weight: 600;
+  border: 1px solid var(--toj-rule);
+  background: var(--toj-surface-sunk);
+  font-size: 0.8rem;
   white-space: nowrap;
+  transition: border-color var(--toj-base) var(--toj-ease);
 }
 
-.toj[data-theme='light'] .toj-chip {
-  background: rgb(255 255 255 / 0.6);
+button.toj-chip:hover {
+  border-color: var(--toj-gold);
 }
 
-.toj-chip[data-kind='karma'] {
-  color: var(--toj-karma);
+.toj-chip[data-kind='grace'] {
+  color: var(--toj-grace);
+  border-color: color-mix(in oklab, var(--toj-grace) 35%, var(--toj-rule));
 }
-.toj-chip[data-kind='shard'] {
-  color: var(--toj-shard);
+
+.toj-chip[data-kind='manna'] {
+  color: var(--toj-manna);
+  border-color: color-mix(in oklab, var(--toj-manna) 35%, var(--toj-rule));
 }
-.toj-chip[data-kind='radiance'] {
-  color: var(--toj-radiance);
+
+.toj-chip[data-kind='manna'][data-ready='true'] {
+  animation: toj-chip-ready 2.4s var(--toj-ease) infinite;
+}
+
+@keyframes toj-chip-ready {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(181 127 56 / 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgb(181 127 56 / 0.18);
+  }
+}
+
+.toj-chip[data-kind='devotion'] {
+  color: var(--toj-gold-deep);
+  border-color: color-mix(in oklab, var(--toj-gold) 35%, var(--toj-rule));
 }
 
 .toj-hud-actions {
   display: flex;
   gap: 0.4rem;
-  margin-inline-start: auto;
+  align-items: center;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -331,211 +378,401 @@
 
 .toj-sanctum {
   position: relative;
-  display: grid;
-  place-items: center;
+  flex: 1;
   min-height: 0;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--toj-gap);
   padding: var(--toj-gutter);
+  isolation: isolate;
+  overflow: hidden;
 }
 
-/* Layer 1: the halo behind the temple — the light the whole scene is lit by. */
+/* The light the temple is built to face. One soft radial, nothing more. */
 .toj-sanctum::before {
   content: '';
   position: absolute;
   inset: -20%;
+  z-index: -2;
   background: radial-gradient(
-    circle at 50% 42%,
-    rgb(var(--toj-halo) / 0.22) 0%,
-    rgb(var(--toj-halo) / 0.08) 28%,
-    transparent 62%
+    circle at 50% 38%,
+    rgb(var(--toj-gold-rgb) / 0.2),
+    rgb(var(--toj-gold-rgb) / 0.06) 38%,
+    transparent 68%
   );
-  animation: toj-breathe 9s ease-in-out infinite;
-  pointer-events: none;
-}
-
-/* Layer 2: the floor the temple stands on. */
-.toj-sanctum::after {
-  content: '';
-  position: absolute;
-  inset-inline: -10%;
-  bottom: 0;
-  height: 38%;
-  background: linear-gradient(to top, var(--toj-bg) 0%, transparent 100%);
-  pointer-events: none;
+  animation: toj-breathe 9s var(--toj-ease) infinite;
 }
 
 @keyframes toj-breathe {
   0%,
   100% {
-    opacity: 0.85;
     transform: scale(1);
+    opacity: 0.85;
   }
   50% {
+    transform: scale(1.06);
     opacity: 1;
-    transform: scale(1.045);
   }
 }
 
-/* The temple itself — a button, because that is what it is. */
-.toj-temple {
+/* During the Rapture the light goes cold at the edges. */
+.toj-sanctum[data-rapture='1']::before,
+.toj-sanctum[data-rapture='2']::before,
+.toj-sanctum[data-rapture='3']::before {
+  background:
+    radial-gradient(circle at 50% 38%, rgb(var(--toj-gold-rgb) / 0.22), transparent 55%),
+    radial-gradient(
+      circle at 50% 50%,
+      transparent 38%,
+      color-mix(in oklab, var(--toj-sable) 24%, transparent) 100%
+    );
+}
+
+.toj-altar {
   position: relative;
-  z-index: 1;
+  width: min(44vh, 76vw, 24rem);
+  aspect-ratio: 1;
   display: grid;
   place-items: center;
-  width: min(78vw, 46vh, 30rem);
-  aspect-ratio: 1;
-  padding: 0;
-  border: 0;
-  background: none;
-  transition: transform var(--toj-fast) var(--toj-ease);
-  -webkit-user-select: none;
-  user-select: none;
+  border-radius: 50%;
+  transition: transform var(--toj-quick) var(--toj-ease);
+  will-change: transform;
 }
 
-.toj-temple:hover {
-  transform: scale(1.015);
+.toj-altar:hover {
+  transform: translateY(-2px);
 }
 
-.toj-temple:active {
-  transform: scale(0.975);
+.toj-altar:active {
+  transform: translateY(1px) scale(0.985);
+  transition-duration: 60ms;
 }
 
-.toj-temple svg {
+.toj-altar svg {
   width: 100%;
   height: 100%;
-  overflow: visible;
-  filter: drop-shadow(0 12px 32px rgb(0 0 0 / 0.5));
+  display: block;
+  filter: drop-shadow(0 12px 28px rgb(var(--toj-gold-rgb) / 0.2));
 }
 
-.toj[data-theme='light'] .toj-temple svg {
-  filter: drop-shadow(0 12px 28px rgb(120 88 40 / 0.28));
+/* A ring that pulses outward on every offering. */
+.toj-altar::after {
+  content: '';
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  border: 1px solid rgb(var(--toj-gold-rgb) / 0.5);
+  opacity: 0;
+  pointer-events: none;
 }
 
-/* Candle flames on the temple steps. */
+.toj-altar[data-struck='true']::after {
+  animation: toj-ring var(--toj-slow) var(--toj-ease-out);
+}
+
+@keyframes toj-ring {
+  from {
+    opacity: 0.8;
+    transform: scale(0.88);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.2);
+  }
+}
+
+/* The flames on the steps. */
 .toj-flame {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
+  transform-origin: center bottom;
   animation: toj-flicker 2.4s ease-in-out infinite;
 }
-
-/* Each candle's phase and rate are set inline per flame — sibling selectors
-   can't reach them, since every candle lives in its own <g>. Four flames
-   flickering in lockstep read as a strobe, not as fire. */
 
 @keyframes toj-flicker {
   0%,
   100% {
     transform: scaleY(1) scaleX(1);
+    opacity: 0.95;
+  }
+  35% {
+    transform: scaleY(1.16) scaleX(0.92);
     opacity: 1;
   }
-  22% {
-    transform: scaleY(0.9) scaleX(1.05);
-    opacity: 0.86;
-  }
-  47% {
-    transform: scaleY(1.08) scaleX(0.96);
-    opacity: 1;
-  }
-  71% {
-    transform: scaleY(0.95) scaleX(1.03);
-    opacity: 0.92;
+  70% {
+    transform: scaleY(0.9) scaleX(1.06);
+    opacity: 0.85;
   }
 }
 
-/* Incense drifting up behind the temple. */
-.toj-incense {
+/* Motes of light drifting up. Purely atmosphere. */
+.toj-mote {
   position: absolute;
-  bottom: 22%;
+  bottom: 10%;
   width: 3px;
   height: 3px;
-  border-radius: 99px;
-  background: rgb(var(--toj-halo) / 0.5);
-  filter: blur(2px);
+  border-radius: 50%;
+  background: rgb(var(--toj-gold-rgb) / 0.5);
   pointer-events: none;
   animation: toj-drift 11s linear infinite;
+  z-index: -1;
 }
 
 @keyframes toj-drift {
-  0% {
+  from {
+    transform: translate3d(0, 0, 0);
     opacity: 0;
-    transform: translate3d(0, 0, 0) scale(0.6);
   }
   12% {
     opacity: 0.7;
   }
-  100% {
+  85% {
+    opacity: 0.2;
+  }
+  to {
+    transform: translate3d(var(--toj-drift-x, 0), -55vh, 0);
     opacity: 0;
-    transform: translate3d(var(--toj-drift-x, 24px), -46vh, 0) scale(2.6);
   }
 }
 
-/* The "+N" that rises from a tap. Positioned by the component. */
+/* ── The "+N" that rises from a tap ── */
+
 .toj-burst {
   position: absolute;
-  z-index: 2;
-  font-family: var(--toj-font-display);
-  font-size: clamp(1.1rem, 3.4vw, 1.75rem);
-  font-weight: 700;
-  color: var(--toj-gold-bright);
-  text-shadow: 0 2px 12px rgb(0 0 0 / 0.6);
   pointer-events: none;
-  white-space: nowrap;
-  animation: toj-rise 1s var(--toj-ease) forwards;
+  font-family: var(--toj-serif);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--toj-gold-deep);
+  transform: translate(-50%, -50%);
+  animation: toj-rise 900ms var(--toj-ease-out) forwards;
+  z-index: 3;
 }
 
 @keyframes toj-rise {
-  0% {
+  from {
     opacity: 0;
-    transform: translate(-50%, 0) scale(0.7);
+    transform: translate(-50%, -50%) scale(0.7);
   }
   18% {
     opacity: 1;
-    transform: translate(-50%, -12px) scale(1.05);
+    transform: translate(-50%, -62%) scale(1.06);
   }
-  100% {
+  to {
     opacity: 0;
-    transform: translate(-50%, -84px) scale(0.95);
+    transform: translate(-50%, -190%) scale(0.94);
   }
 }
 
-/* Ritual: a fast click streak lights the whole sanctum. */
-.toj-sanctum[data-ritual='true']::before {
-  animation-duration: 1.6s;
+/* ── Halos ── */
+
+.toj-halo {
+  position: absolute;
+  width: clamp(3rem, 8vw, 4.25rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: clamp(1.4rem, 3.6vw, 1.9rem);
+  z-index: 4;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgb(var(--toj-gold-rgb) / 0.5);
+  background:
+    radial-gradient(circle at 50% 40%, rgb(var(--toj-gold-rgb) / 0.3), transparent 70%),
+    var(--toj-surface);
+  box-shadow: var(--toj-halo);
+  animation:
+    toj-halo-in var(--toj-slow) var(--toj-ease-out),
+    toj-halo-hover 3.4s var(--toj-ease) 420ms infinite;
+  transition: transform var(--toj-quick) var(--toj-ease);
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   6. Rites — the actions under the sanctum
-   ══════════════════════════════════════════════════════════════════════════ */
+.toj-halo:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.toj-halo:active {
+  transform: translate(-50%, -50%) scale(0.9);
+}
+
+.toj-halo[data-kind='sable'] {
+  border-color: color-mix(in oklab, var(--toj-sable) 60%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--toj-sable) 35%, transparent),
+    0 0 26px color-mix(in oklab, var(--toj-sable) 32%, transparent);
+  background:
+    radial-gradient(
+      circle at 50% 40%,
+      color-mix(in oklab, var(--toj-sable) 30%, transparent),
+      transparent 70%
+    ),
+    var(--toj-surface);
+}
+
+.toj-halo[data-kind='seraphic'] {
+  animation:
+    toj-halo-in var(--toj-slow) var(--toj-ease-out),
+    toj-halo-blaze 1.6s var(--toj-ease) infinite;
+}
+
+@keyframes toj-halo-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes toj-halo-hover {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgb(var(--toj-gold-rgb) / 0.28),
+      0 0 22px rgb(var(--toj-gold-rgb) / 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgb(var(--toj-gold-rgb) / 0.5),
+      0 0 40px rgb(var(--toj-gold-rgb) / 0.36);
+  }
+}
+
+@keyframes toj-halo-blaze {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px rgb(var(--toj-gold-rgb) / 0.6),
+      0 0 44px rgb(var(--toj-gold-rgb) / 0.5);
+  }
+  50% {
+    box-shadow:
+      0 0 0 5px rgb(var(--toj-gold-rgb) / 0.22),
+      0 0 72px rgb(var(--toj-gold-rgb) / 0.7);
+  }
+}
+
+/* ── Sinners ── */
+
+.toj-sinners {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.toj-sinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2.4rem;
+  height: 2.4rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  pointer-events: auto;
+  font-size: 1.1rem;
+  color: var(--toj-sable);
+  background: var(--toj-surface);
+  border: 1px solid color-mix(in oklab, var(--toj-sable) 45%, transparent);
+  box-shadow: var(--toj-lift-sm);
+  transition: filter var(--toj-quick) var(--toj-ease);
+  animation: toj-sinner-breathe 3.6s var(--toj-ease) infinite;
+}
+
+.toj-sinner:hover {
+  filter: brightness(1.12);
+}
+
+.toj-sinner[data-penitent='true'] {
+  color: var(--toj-gold-deep);
+  border-color: rgb(var(--toj-gold-rgb) / 0.6);
+  box-shadow: var(--toj-halo);
+}
+
+@keyframes toj-sinner-breathe {
+  0%,
+  100% {
+    opacity: 0.82;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ── Standing actions under the altar ── */
 
 .toj-rites {
-  position: absolute;
-  bottom: var(--toj-gutter);
-  left: 50%;
-  z-index: 2;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   gap: 0.5rem;
-  width: min(100%, 34rem);
-  padding-inline: var(--toj-gutter);
+  justify-content: center;
+  align-items: center;
+  min-height: 2.25rem;
+}
+
+/* ── Active blessings ── */
+
+.toj-buffs {
+  position: absolute;
+  top: var(--toj-gap);
+  left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: calc(100% - 2 * var(--toj-gutter));
+  z-index: 3;
 }
 
-.toj-rite-note {
-  width: 100%;
-  text-align: center;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--toj-gold-bright);
-  text-shadow: 0 1px 8px rgb(0 0 0 / 0.6);
+.toj-buff {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem 0.3rem;
+  border-radius: 99px;
+  border: 1px solid rgb(var(--toj-gold-rgb) / 0.4);
+  background: var(--toj-surface);
+  box-shadow: var(--toj-lift-sm);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  animation: toj-buff-in var(--toj-base) var(--toj-ease-out);
 }
 
-.toj[data-theme='light'] .toj-rite-note {
-  text-shadow: none;
+.toj-buff[data-bad='true'] {
+  border-color: color-mix(in oklab, var(--toj-warn) 45%, transparent);
+  color: var(--toj-warn);
+}
+
+/* The remaining time, as a bar that drains under the label. */
+.toj-buff::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  background: var(--toj-gold);
+  transform-origin: left;
+  transform: scaleX(var(--toj-buff-left, 1));
+}
+
+@keyframes toj-buff-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   7. Buttons
+   6. Buttons
    ══════════════════════════════════════════════════════════════════════════ */
 
 .toj-btn {
@@ -543,25 +780,24 @@
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  min-height: 2.5rem;
   padding: 0.5rem 0.95rem;
-  border: 1px solid var(--toj-line-bright);
   border-radius: var(--toj-radius-sm);
-  background: var(--toj-stone-raised);
+  border: 1px solid var(--toj-rule-strong);
+  background: var(--toj-surface);
   color: var(--toj-ink);
   font-size: 0.85rem;
-  font-weight: 600;
-  line-height: 1.2;
+  font-weight: 500;
   white-space: nowrap;
   transition:
-    background-color var(--toj-fast) var(--toj-ease),
-    border-color var(--toj-fast) var(--toj-ease),
-    transform var(--toj-fast) var(--toj-ease);
+    transform var(--toj-quick) var(--toj-ease),
+    border-color var(--toj-quick) var(--toj-ease),
+    background-color var(--toj-quick) var(--toj-ease),
+    box-shadow var(--toj-quick) var(--toj-ease);
 }
 
 .toj-btn:hover:not(:disabled) {
-  background: var(--toj-stone);
-  border-color: var(--toj-gold-deep);
+  border-color: var(--toj-gold);
+  background: var(--toj-gold-wash);
 }
 
 .toj-btn:active:not(:disabled) {
@@ -569,20 +805,19 @@
 }
 
 .toj-btn:disabled {
-  opacity: 0.42;
+  opacity: 0.4;
 }
 
 .toj-btn[data-variant='gold'] {
   border-color: transparent;
-  background: linear-gradient(160deg, var(--toj-gold-bright), var(--toj-gold-deep));
-  /* Fixed near-black rather than `--toj-ink`: the gold fill is light in both
-     themes, so the theme's own ink would be white-on-gold at dawn. */
-  color: #241703;
-  box-shadow: var(--toj-glow);
+  background: linear-gradient(180deg, var(--toj-gold-bright), var(--toj-gold));
+  color: #241f16;
+  box-shadow: var(--toj-lift-sm);
 }
 
 .toj-btn[data-variant='gold']:hover:not(:disabled) {
-  background: linear-gradient(160deg, var(--toj-gold-bright), var(--toj-gold));
+  filter: brightness(1.06);
+  background: linear-gradient(180deg, var(--toj-gold-bright), var(--toj-gold));
 }
 
 .toj-btn[data-variant='quiet'] {
@@ -592,89 +827,723 @@
 }
 
 .toj-btn[data-variant='quiet']:hover:not(:disabled) {
-  background: var(--toj-stone-sunk);
+  background: var(--toj-surface-sunk);
   color: var(--toj-ink);
 }
 
-.toj-btn[data-variant='danger'] {
-  border-color: var(--toj-danger);
-  color: var(--toj-danger);
-  background: transparent;
+.toj-btn[data-variant='danger']:hover:not(:disabled) {
+  border-color: var(--toj-warn);
+  background: color-mix(in oklab, var(--toj-warn) 10%, var(--toj-surface));
+  color: var(--toj-warn);
 }
 
 .toj-btn[data-size='sm'] {
-  min-height: 2rem;
-  padding: 0.3rem 0.6rem;
+  padding: 0.32rem 0.6rem;
   font-size: 0.78rem;
 }
 
-/* An affordable purchase pulses gently — the one place in the UI that should
-   catch the eye without being read. */
+/* A button whose moment has come. */
 .toj-btn[data-ready='true'] {
-  animation: toj-ready 2.4s ease-in-out infinite;
+  animation: toj-ready 2.6s var(--toj-ease) infinite;
 }
 
 @keyframes toj-ready {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgb(var(--toj-halo) / 0.4);
+    box-shadow: 0 0 0 0 rgb(var(--toj-gold-rgb) / 0);
   }
   50% {
-    box-shadow: 0 0 0 5px rgb(var(--toj-halo) / 0);
+    box-shadow: 0 0 0 5px rgb(var(--toj-gold-rgb) / 0.16);
   }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   8. The codex
+   7. Tabs
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* Phones: a sheet that rises over the sanctum, capped so the temple stays
-   visible above it. Desktop: a docked column. */
-.toj-codex {
-  position: relative;
-  z-index: 4;
+.toj-tabs {
   display: flex;
-  min-height: 0;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid var(--toj-line);
-  border-bottom: 0;
-  border-start-start-radius: var(--toj-radius-lg);
-  border-start-end-radius: var(--toj-radius-lg);
-  background: var(--toj-stone);
-  box-shadow: var(--toj-shadow);
-  max-height: min(62dvh, 34rem);
-  animation: toj-sheet-up var(--toj-base) var(--toj-ease);
+  gap: 0.15rem;
+  padding: 0.45rem 0.65rem;
+  border-bottom: 1px solid var(--toj-rule);
+  background: var(--toj-surface);
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
 }
 
-@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .toj-codex {
-    background: color-mix(in srgb, var(--toj-stone) 88%, transparent);
-    -webkit-backdrop-filter: blur(18px) saturate(1.3);
-    backdrop-filter: blur(18px) saturate(1.3);
+.toj-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.toj-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.42rem 0.7rem;
+  border-radius: var(--toj-radius-sm);
+  font-size: 0.78rem;
+  color: var(--toj-ink-soft);
+  white-space: nowrap;
+  transition:
+    color var(--toj-quick) var(--toj-ease),
+    background-color var(--toj-quick) var(--toj-ease);
+}
+
+.toj-tab:hover {
+  color: var(--toj-ink);
+  background: var(--toj-surface-sunk);
+}
+
+.toj-tab[aria-selected='true'] {
+  color: var(--toj-ink);
+  background: var(--toj-gold-wash);
+  font-weight: 600;
+}
+
+.toj-tab-glyph {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+/* Something in here is newly affordable. */
+.toj-tab-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--toj-gold);
+  animation: toj-dot 2s var(--toj-ease) infinite;
+}
+
+@keyframes toj-dot {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
   }
 }
 
-@keyframes toj-sheet-up {
+/* ══════════════════════════════════════════════════════════════════════════
+   8. Panels
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.toj-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  background: var(--toj-surface);
+}
+
+.toj-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: var(--toj-gap) var(--toj-gutter) 0.4rem;
+  flex-shrink: 0;
+}
+
+.toj-panel-title {
+  font-family: var(--toj-serif);
+  font-size: 1.28rem;
+  font-weight: 600;
+}
+
+.toj-panel-sub {
+  font-size: 0.8rem;
+  color: var(--toj-ink-soft);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.toj-panel-scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 0 var(--toj-gutter) var(--toj-gutter);
+  animation: toj-panel-in var(--toj-base) var(--toj-ease-out);
+}
+
+@keyframes toj-panel-in {
   from {
-    transform: translateY(12%);
     opacity: 0;
+    transform: translateY(6px);
   }
   to {
-    transform: translateY(0);
     opacity: 1;
+    transform: none;
   }
 }
 
-@media (min-width: 60rem) {
-  .toj-codex {
-    grid-column: 2;
-    grid-row: 2;
-    max-height: none;
-    border: 1px solid var(--toj-line);
-    border-radius: var(--toj-radius-lg);
-    animation-name: toj-fade;
+.toj-panel-note {
+  font-size: 0.82rem;
+  color: var(--toj-ink-soft);
+  padding: 0.55rem 0;
+}
+
+.toj-empty {
+  padding: 2rem 0;
+  text-align: center;
+  color: var(--toj-ink-faint);
+  font-family: var(--toj-serif);
+  font-size: 1.02rem;
+  font-style: italic;
+}
+
+/* ── Rows ── */
+
+.toj-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.6rem 0.15rem;
+  text-align: left;
+  border-bottom: 1px solid var(--toj-rule);
+  color: inherit;
+  transition:
+    background-color var(--toj-quick) var(--toj-ease),
+    padding-left var(--toj-quick) var(--toj-ease);
+}
+
+button.toj-row:hover:not(:disabled) {
+  background: var(--toj-surface-sunk);
+  padding-left: 0.4rem;
+}
+
+button.toj-row:active:not(:disabled) {
+  background: var(--toj-gold-wash);
+}
+
+.toj-row:disabled {
+  opacity: 0.45;
+}
+
+/* Affordable rows get a gold spine. It is the only cue the list needs. */
+.toj-row[data-affordable='true']::before {
+  content: '';
+  position: absolute;
+  left: -0.15rem;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--toj-gold);
+}
+
+.toj-row[data-recommended='true'] .toj-row-price {
+  color: var(--toj-gold-deep);
+}
+
+/* A purchase flashes the row once, so a click always has a visible result. */
+.toj-row[data-flash='true'] {
+  animation: toj-flash var(--toj-slow) var(--toj-ease-out);
+}
+
+@keyframes toj-flash {
+  from {
+    background: rgb(var(--toj-gold-rgb) / 0.26);
   }
+  to {
+    background: transparent;
+  }
+}
+
+.toj-row-icon {
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  font-size: 1.1rem;
+  border-radius: var(--toj-radius-sm);
+  background: var(--toj-surface-sunk);
+  flex-shrink: 0;
+}
+
+.toj-row-body {
+  min-width: 0;
+}
+
+.toj-row-name {
+  display: block;
+  font-weight: 550;
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+
+.toj-row-note {
+  margin-top: 0.1rem;
+  font-size: 0.76rem;
+  color: var(--toj-ink-soft);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.toj-row-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.toj-row-price {
+  font-family: var(--toj-serif);
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.toj-row-count {
+  font-size: 0.72rem;
+  color: var(--toj-ink-faint);
+}
+
+/* Level pips: one per Manna level, so patience is visible. */
+.toj-pips {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.toj-pip {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--toj-manna);
+}
+
+/* ── Segmented switch ── */
+
+.toj-segments {
+  display: flex;
+  gap: 0.1rem;
+  padding: 0.15rem;
+  border-radius: var(--toj-radius-sm);
+  background: var(--toj-surface-sunk);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.toj-segments::-webkit-scrollbar {
+  display: none;
+}
+
+.toj-segment {
+  padding: 0.3rem 0.6rem;
+  border-radius: calc(var(--toj-radius-sm) - 2px);
+  font-size: 0.76rem;
+  color: var(--toj-ink-soft);
+  white-space: nowrap;
+  transition:
+    background-color var(--toj-quick) var(--toj-ease),
+    color var(--toj-quick) var(--toj-ease);
+}
+
+.toj-segment:hover {
+  color: var(--toj-ink);
+}
+
+.toj-segment[aria-pressed='true'] {
+  background: var(--toj-surface);
+  color: var(--toj-ink);
+  font-weight: 600;
+  box-shadow: var(--toj-lift-sm);
+}
+
+.toj-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0 0.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--toj-surface);
+}
+
+/* ── Settings rows ── */
+
+.toj-setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--toj-rule);
+}
+
+.toj-setting-label {
+  min-width: 0;
+}
+
+.toj-setting-name {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.toj-setting-note {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.76rem;
+  color: var(--toj-ink-soft);
+}
+
+.toj-setting-control {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.toj-setting-value {
+  font-family: var(--toj-serif);
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+.toj-section {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--toj-ink-faint);
+  padding: 1.1rem 0 0.35rem;
+}
+
+/* Switch. */
+.toj-switch {
+  position: relative;
+  width: 2.6rem;
+  height: 1.5rem;
+  border-radius: 99px;
+  background: var(--toj-rule-strong);
+  transition: background-color var(--toj-base) var(--toj-ease);
+  flex-shrink: 0;
+}
+
+.toj-switch[aria-checked='true'] {
+  background: var(--toj-gold);
+}
+
+.toj-switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+  transition: transform var(--toj-base) var(--toj-ease-out);
+}
+
+.toj-switch[aria-checked='true']::after {
+  transform: translateX(1.1rem);
+}
+
+/* Slider. */
+.toj-slider {
+  width: clamp(6rem, 22vw, 9rem);
+  height: 1.5rem;
+  accent-color: var(--toj-gold);
+}
+
+.toj-slider-value {
+  width: 2.6rem;
+  text-align: right;
+  font-size: 0.78rem;
+  color: var(--toj-ink-soft);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   9. The garden
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.toj-beds {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
+  margin: 0.5rem 0;
+  padding: 4px;
+  border-radius: var(--toj-radius);
+  background: var(--toj-surface-sunk);
+}
+
+.toj-plot {
+  position: relative;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: var(--toj-radius-sm);
+  background: var(--toj-surface);
+  border: 1px solid var(--toj-rule);
+  font-size: clamp(0.85rem, 3vw, 1.25rem);
+  overflow: hidden;
+  transition:
+    transform var(--toj-quick) var(--toj-ease),
+    border-color var(--toj-quick) var(--toj-ease);
+}
+
+.toj-plot:hover:not(:disabled) {
+  border-color: var(--toj-gold);
+  transform: scale(1.06);
+  z-index: 1;
+}
+
+.toj-plot:disabled {
+  background: transparent;
+  border-style: dashed;
+  opacity: 0.4;
+}
+
+/* A growing plant fills its bed from the bottom. */
+.toj-plot-growth {
+  position: absolute;
+  inset: auto 0 0 0;
+  background: rgb(var(--toj-gold-rgb) / 0.18);
+  transition: height var(--toj-slow) linear;
+}
+
+.toj-plot-seed {
+  position: relative;
+  z-index: 1;
+  transition: transform var(--toj-slow) var(--toj-ease-out);
+}
+
+.toj-plot[data-ripe='true'] {
+  border-color: var(--toj-gold);
+}
+
+.toj-plot[data-ripe='true'] .toj-plot-seed {
+  animation: toj-ripe 2.8s var(--toj-ease) infinite;
+}
+
+@keyframes toj-ripe {
+  0%,
+  100% {
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    transform: scale(1.1) translateY(-1px);
+  }
+}
+
+/* Ripe, but it has been standing a while and is worth less than it was.
+   Dimmed rather than alarmed: nothing is lost, it is just going over. */
+.toj-plot[data-stale='true'] .toj-plot-seed {
+  opacity: 0.62;
+}
+
+.toj-plot[data-bane='true'] {
+  border-color: color-mix(in oklab, var(--toj-warn) 40%, var(--toj-rule));
+}
+
+.toj-seedbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.4rem 0;
+}
+
+.toj-seed {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 99px;
+  border: 1px solid var(--toj-rule);
+  background: var(--toj-surface);
+  font-size: 0.76rem;
+  transition:
+    border-color var(--toj-quick) var(--toj-ease),
+    background-color var(--toj-quick) var(--toj-ease);
+}
+
+.toj-seed:hover:not(:disabled) {
+  border-color: var(--toj-gold);
+}
+
+.toj-seed[aria-pressed='true'] {
+  border-color: var(--toj-gold);
+  background: var(--toj-gold-wash);
+  font-weight: 600;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   10. The choir
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.toj-stalls {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.toj-stall {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.65rem;
+  border-radius: var(--toj-radius);
+  border: 1px dashed var(--toj-rule-strong);
+  background: var(--toj-surface-sunk);
+  transition: border-color var(--toj-base) var(--toj-ease);
+}
+
+.toj-stall[data-filled='true'] {
+  border-style: solid;
+  border-color: rgb(var(--toj-gold-rgb) / 0.45);
+  background: var(--toj-gold-wash);
+}
+
+.toj-stall-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--toj-surface);
+  border: 1px solid var(--toj-rule);
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.toj-stall-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.toj-stall-role {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--toj-ink-faint);
+}
+
+.toj-stall-name {
+  font-family: var(--toj-serif);
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.toj-stall-effect {
+  font-size: 0.76rem;
+  color: var(--toj-ink-soft);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   11. The exchange
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.toj-chart {
+  height: 5.5rem;
+  width: 100%;
+  margin: 0.4rem 0 0.6rem;
+  border-radius: var(--toj-radius);
+  background: var(--toj-surface-sunk);
+  overflow: hidden;
+}
+
+.toj-chart svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.toj-chart-line {
+  fill: none;
+  stroke: var(--toj-gold);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.toj-chart-fill {
+  fill: rgb(var(--toj-gold-rgb) / 0.12);
+  stroke: none;
+}
+
+.toj-trend {
+  font-size: 0.74rem;
+}
+
+.toj-trend[data-up='true'] {
+  color: var(--toj-good);
+}
+
+.toj-trend[data-up='false'] {
+  color: var(--toj-warn);
+}
+
+.toj-desk {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.5rem 0;
+  flex-wrap: wrap;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   12. The book of hours
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.toj-mana {
+  height: 0.55rem;
+  border-radius: 99px;
+  background: var(--toj-surface-sunk);
+  overflow: hidden;
+  margin: 0.35rem 0 0.7rem;
+}
+
+.toj-mana-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--toj-grace), var(--toj-gold));
+  transition: width 400ms linear;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   13. The ladder
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.toj-rung[data-owned='true'] {
+  color: var(--toj-ink-soft);
+}
+
+.toj-rung[data-owned='true'] .toj-row-icon {
+  background: var(--toj-gold-wash);
+  box-shadow: inset 0 0 0 1px rgb(var(--toj-gold-rgb) / 0.4);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   14. Dialogs & toasts
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.toj-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: var(--toj-gutter);
+  background: color-mix(in oklab, var(--toj-ground-deep) 80%, transparent);
+  backdrop-filter: blur(3px);
+  animation: toj-fade var(--toj-base) var(--toj-ease);
 }
 
 @keyframes toj-fade {
@@ -686,322 +1555,17 @@
   }
 }
 
-.toj-codex-head {
-  display: flex;
-  align-items: baseline;
-  gap: 0.6rem;
-  padding: 0.85rem var(--toj-gutter) 0.6rem;
-  border-bottom: 1px solid var(--toj-line);
-}
-
-.toj-codex-title {
-  flex: 1;
-  min-width: 0;
-  font-family: var(--toj-font-display);
-  font-size: 1.35rem;
-  font-weight: 600;
-  color: var(--toj-gold);
-}
-
-.toj-codex-sub {
-  font-family: var(--toj-font-body);
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--toj-ink-faint);
-  white-space: nowrap;
-}
-
-.toj-codex-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  padding: var(--toj-gap) var(--toj-gutter) calc(var(--toj-gutter) + var(--toj-safe-bottom));
-  scrollbar-gutter: stable;
-}
-
-/* ─── Rows ─────────────────────────────────────────────────────────────── */
-
-.toj-row {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 0.7rem 0.8rem;
-  border: 1px solid var(--toj-line);
-  border-radius: var(--toj-radius-sm);
-  background: var(--toj-stone-sunk);
-  text-align: start;
-  transition:
-    border-color var(--toj-fast) var(--toj-ease),
-    background-color var(--toj-fast) var(--toj-ease);
-}
-
-.toj-row + .toj-row {
-  margin-top: 0.45rem;
-}
-
-.toj-row[data-affordable='true'] {
-  border-color: var(--toj-gold-deep);
-}
-
-.toj-row[data-owned='true'] {
-  border-color: color-mix(in srgb, var(--toj-success) 45%, transparent);
-}
-
-.toj-row[data-locked='true'] {
-  opacity: 0.55;
-}
-
-button.toj-row:hover:not(:disabled) {
-  background: var(--toj-stone-raised);
-  border-color: var(--toj-gold-deep);
-}
-
-.toj-row-icon {
-  display: grid;
-  place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: var(--toj-radius-sm);
-  background: rgb(var(--toj-halo) / 0.1);
-  font-size: 1.1rem;
-}
-
-.toj-row-name {
-  font-weight: 600;
-  font-size: 0.9rem;
-  line-height: 1.25;
-}
-
-.toj-row-note {
-  margin-top: 0.1rem;
-  font-size: 0.76rem;
-  line-height: 1.35;
-  color: var(--toj-ink-faint);
-  /* Flavour text is nice-to-have; two lines is plenty before it starts pushing
-     the price out of reach on a phone. */
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.toj-row-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.15rem;
-  font-size: 0.8rem;
-  white-space: nowrap;
-}
-
-.toj-row-price {
-  font-weight: 700;
-  color: var(--toj-ink-soft);
-}
-
-.toj-row[data-affordable='true'] .toj-row-price {
-  color: var(--toj-gold-bright);
-}
-
-.toj-row-count {
-  font-size: 0.72rem;
-  color: var(--toj-ink-faint);
-}
-
-/* ─── Filters / segmented controls ─────────────────────────────────────── */
-
-.toj-segments {
-  display: flex;
-  gap: 0.25rem;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  padding-bottom: 0.35rem;
-  margin-bottom: var(--toj-gap);
-  scrollbar-width: none;
-}
-
-.toj-segments::-webkit-scrollbar {
-  display: none;
-}
-
-.toj-segment {
-  flex: 0 0 auto;
-  padding: 0.3rem 0.7rem;
-  border: 1px solid var(--toj-line);
-  border-radius: 99px;
-  background: transparent;
-  font-size: 0.76rem;
-  font-weight: 600;
-  color: var(--toj-ink-faint);
-  transition:
-    color var(--toj-fast) var(--toj-ease),
-    border-color var(--toj-fast) var(--toj-ease);
-}
-
-.toj-segment[aria-pressed='true'] {
-  border-color: var(--toj-gold);
-  color: var(--toj-gold-bright);
-  background: rgb(var(--toj-halo) / 0.12);
-}
-
-.toj-empty {
-  padding: 2.5rem 1rem;
-  text-align: center;
-  font-family: var(--toj-font-display);
-  font-size: 1.1rem;
-  font-style: italic;
-  color: var(--toj-ink-faint);
-}
-
-/* A settings row: label + control, stacking on narrow sheets. */
-.toj-setting {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.7rem 0.8rem;
-  border: 1px solid var(--toj-line);
-  border-radius: var(--toj-radius-sm);
-  background: var(--toj-stone-sunk);
-}
-
-.toj-setting + .toj-setting {
-  margin-top: 0.45rem;
-}
-
-.toj-setting-label {
-  flex: 1 1 9rem;
-  min-width: 0;
-}
-
-.toj-setting-control {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-inline-start: auto;
-}
-
-.toj-setting input[type='range'] {
-  width: clamp(6rem, 30vw, 10rem);
-  accent-color: var(--toj-gold);
-}
-
-/* ══════════════════════════════════════════════════════════════════════════
-   9. The tab rail
-   ══════════════════════════════════════════════════════════════════════════ */
-
-/* Phones: a scrolling rail pinned to the bottom edge, thumb-reachable.
-   Desktop: the same rail, at the top of the codex column. */
-.toj-tabs {
-  position: relative;
-  z-index: 5;
-  display: flex;
-  gap: 0.3rem;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  padding: 0.5rem var(--toj-gutter) calc(0.5rem + var(--toj-safe-bottom));
-  border-top: 1px solid var(--toj-line);
-  background: var(--toj-bg);
-  scrollbar-width: none;
-}
-
-.toj-tabs::-webkit-scrollbar {
-  display: none;
-}
-
-@media (min-width: 60rem) {
-  .toj-tabs {
-    grid-column: 2;
-    grid-row: 1;
-    align-self: start;
-    padding: 0;
-    border: 0;
-    background: none;
-  }
-}
-
-.toj-tab {
-  position: relative;
-  display: inline-flex;
-  flex: 0 0 auto;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.15rem;
-  min-width: 3.6rem;
-  padding: 0.4rem 0.55rem;
-  border: 0;
-  border-radius: var(--toj-radius-sm);
-  background: transparent;
-  color: var(--toj-ink-faint);
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  transition:
-    color var(--toj-fast) var(--toj-ease),
-    background-color var(--toj-fast) var(--toj-ease);
-}
-
-.toj-tab:hover {
-  color: var(--toj-ink-soft);
-  background: var(--toj-stone-sunk);
-}
-
-.toj-tab[aria-selected='true'] {
-  color: var(--toj-gold-bright);
-  background: rgb(var(--toj-halo) / 0.12);
-}
-
-.toj-tab-glyph {
-  font-size: 1.05rem;
-  line-height: 1;
-}
-
-/* A tab with something newly affordable behind it gets a dot. */
-.toj-tab-dot {
-  position: absolute;
-  inset-block-start: 0.3rem;
-  inset-inline-end: 0.65rem;
-  width: 0.4rem;
-  height: 0.4rem;
-  border-radius: 99px;
-  background: var(--toj-gold-bright);
-}
-
-/* ══════════════════════════════════════════════════════════════════════════
-   10. Dialogs
-   ══════════════════════════════════════════════════════════════════════════ */
-
-.toj-scrim {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  display: grid;
-  place-items: center;
-  padding: var(--toj-gutter);
-  background: rgb(0 0 0 / 0.68);
-  animation: toj-fade var(--toj-base) ease-out;
-}
-
-.toj[data-theme='light'] .toj-scrim {
-  background: rgb(60 44 20 / 0.5);
-}
-
 .toj-dialog {
+  width: min(30rem, 100%);
+  max-height: min(84vh, 42rem);
   display: flex;
-  width: min(100%, 28rem);
-  max-height: min(86dvh, 44rem);
   flex-direction: column;
-  overflow: hidden;
-  border: 1px solid var(--toj-line-bright);
   border-radius: var(--toj-radius-lg);
-  background: var(--toj-stone);
-  box-shadow: var(--toj-shadow);
-  animation: toj-dialog-in var(--toj-base) var(--toj-ease);
+  border: 1px solid var(--toj-rule-strong);
+  background: var(--toj-surface);
+  box-shadow: var(--toj-lift);
+  overflow: hidden;
+  animation: toj-dialog-in var(--toj-slow) var(--toj-ease-out);
 }
 
 @keyframes toj-dialog-in {
@@ -1011,175 +1575,166 @@ button.toj-row:hover:not(:disabled) {
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: none;
   }
 }
 
 .toj-dialog-body {
+  padding: var(--toj-gutter);
   overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 1.5rem;
-  text-align: center;
 }
 
 .toj-dialog-title {
-  font-family: var(--toj-font-display);
-  font-size: 1.6rem;
+  font-family: var(--toj-serif);
+  font-size: 1.55rem;
   font-weight: 600;
-  color: var(--toj-gold);
+  line-height: 1.15;
+  margin: 0 0 0.35rem;
 }
 
 .toj-dialog-text {
-  margin-top: 0.6rem;
-  font-size: 0.9rem;
-  line-height: 1.55;
+  font-size: 0.88rem;
   color: var(--toj-ink-soft);
+  margin: 0;
 }
 
 .toj-dialog-figure {
-  margin-top: 1rem;
-  font-family: var(--toj-font-display);
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--toj-gold-bright);
+  font-family: var(--toj-serif);
+  font-size: 2.1rem;
+  font-weight: 600;
+  color: var(--toj-gold-deep);
+  margin: 0.6rem 0 0.1rem;
+}
+
+.toj-dialog-list {
+  margin: 0.9rem 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--toj-rule);
+}
+
+.toj-dialog-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--toj-rule);
+  font-size: 0.85rem;
 }
 
 .toj-dialog-actions {
   display: flex;
-  flex-wrap: wrap;
   gap: 0.5rem;
-  padding: 0 1.5rem 1.5rem;
+  padding: var(--toj-gap) var(--toj-gutter);
+  border-top: 1px solid var(--toj-rule);
+  background: var(--toj-surface-sunk);
 }
 
 .toj-dialog-actions .toj-btn {
-  flex: 1 1 8rem;
+  flex: 1;
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   11. Toasts
-   ══════════════════════════════════════════════════════════════════════════ */
+/* ── Toast rail ── */
 
 .toj-toasts {
   position: fixed;
   z-index: 45;
-  inset-block-start: calc(var(--toj-safe-top) + 0.75rem);
-  inset-inline-end: 0.75rem;
+  bottom: calc(var(--toj-safe-bottom) + 1rem);
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   gap: 0.4rem;
-  width: min(20rem, calc(100vw - 1.5rem));
+  width: min(22rem, calc(100vw - 2rem));
   pointer-events: none;
+}
+
+@media (min-width: 62rem) {
+  .toj-toasts {
+    left: auto;
+    right: calc(var(--toj-panel-w) + var(--toj-gutter));
+    transform: none;
+  }
 }
 
 .toj-toast {
   display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.6rem 0.8rem;
-  border: 1px solid var(--toj-gold-deep);
-  border-radius: var(--toj-radius-sm);
-  background: var(--toj-stone-raised);
-  box-shadow: var(--toj-shadow-sm);
-  animation: toj-toast-in var(--toj-base) var(--toj-ease);
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--toj-radius);
+  border: 1px solid var(--toj-rule-strong);
+  background: var(--toj-surface);
+  box-shadow: var(--toj-lift);
+  pointer-events: auto;
+  text-align: left;
+  width: 100%;
+  animation: toj-toast-in var(--toj-base) var(--toj-ease-out);
+}
+
+.toj-toast[data-kind='trophy'] {
+  border-color: rgb(var(--toj-gold-rgb) / 0.5);
+  background: var(--toj-gold-wash);
+}
+
+.toj-toast[data-kind='warn'] {
+  border-color: color-mix(in oklab, var(--toj-warn) 40%, var(--toj-rule-strong));
 }
 
 @keyframes toj-toast-in {
   from {
     opacity: 0;
-    transform: translateX(18%);
+    transform: translateY(10px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: none;
   }
 }
 
-[dir='rtl'] .toj-toast {
-  animation-name: toj-toast-in-rtl;
+.toj-toast-icon {
+  font-size: 1.1rem;
+  line-height: 1.2;
 }
 
-@keyframes toj-toast-in-rtl {
-  from {
-    opacity: 0;
-    transform: translateX(-18%);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.toj-toast-label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--toj-gold);
-}
-
-.toj-toast-name {
+.toj-toast-title {
   font-size: 0.85rem;
   font-weight: 600;
+  line-height: 1.25;
+}
+
+.toj-toast-body {
+  font-size: 0.76rem;
+  color: var(--toj-ink-soft);
+  margin-top: 0.1rem;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   12. The vibe check
-   ══════════════════════════════════════════════════════════════════════════ */
-
-.toj-vibe {
-  position: fixed;
-  z-index: 35;
-  inset-block-end: calc(6.5rem + var(--toj-safe-bottom));
-  inset-inline-end: 1rem;
-  animation: toj-vibe-in var(--toj-base) var(--toj-ease);
-}
-
-@media (min-width: 60rem) {
-  .toj-vibe {
-    inset-block-end: 2rem;
-    inset-inline-end: calc(var(--toj-codex-w) + 2rem);
-  }
-}
-
-@keyframes toj-vibe-in {
-  from {
-    opacity: 0;
-    transform: scale(0.85);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* ══════════════════════════════════════════════════════════════════════════
-   13. Loading
+   15. Loading
    ══════════════════════════════════════════════════════════════════════════ */
 
 .toj-loading {
+  position: absolute;
+  inset: 0;
   display: grid;
   place-content: center;
   justify-items: center;
-  gap: 1.25rem;
-  height: 100%;
-  height: 100dvh;
+  gap: 0.4rem;
   text-align: center;
+  padding: var(--toj-gutter);
 }
 
 .toj-loading-title {
-  font-family: var(--toj-font-display);
-  font-size: clamp(1.75rem, 6vw, 2.75rem);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  color: var(--toj-gold);
+  font-family: var(--toj-serif);
+  font-size: clamp(1.9rem, 6vw, 2.8rem);
+  font-weight: 500;
+  margin: 0;
 }
 
 .toj-loading-note {
-  font-size: 0.78rem;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: var(--toj-ink-faint);
-  animation: toj-pulse 2.2s ease-in-out infinite;
+  font-size: 0.85rem;
+  color: var(--toj-ink-soft);
+  animation: toj-pulse 2.4s var(--toj-ease) infinite;
 }
 
 @keyframes toj-pulse {
@@ -1193,9 +1748,16 @@ button.toj-row:hover:not(:disabled) {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   14. Reduced motion, contrast, and other people's preferences
+   16. Restraint
    ══════════════════════════════════════════════════════════════════════════ */
 
+/**
+ * Two switches turn the motion off: the OS-level preference, and the game's
+ * own "reduced flourish" setting, for players who want a quiet page without
+ * changing their system. Both leave every *state* change visible — a caught
+ * halo still disappears, an affordable row still shows its spine — and remove
+ * only the ambient, looping and decorative motion.
+ */
 @media (prefers-reduced-motion: reduce) {
   .toj *,
   .toj *::before,
@@ -1203,73 +1765,61 @@ button.toj-row:hover:not(:disabled) {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
 
-  /* The ambient loops are decoration; stop them outright rather than leaving
-     them frozen mid-cycle in a random pose. */
-  .toj-sanctum::before,
-  .toj-flame,
-  .toj-btn[data-ready='true'],
-  .toj-loading-note {
-    animation: none !important;
-    opacity: 1;
-    transform: none;
-  }
-
-  .toj-incense {
-    display: none;
-  }
-
-  /* Click feedback still needs to *say* something happened — keep the number,
-     lose the flight. */
+  /* The offering still needs acknowledging — a "+N" that appears and fades
+     carries the same information without the travel. */
   .toj-burst {
-    animation: toj-burst-static 0.6s steps(1, end) forwards !important;
+    animation: toj-burst-still 700ms linear forwards !important;
   }
 }
 
-@keyframes toj-burst-static {
-  0% {
+.toj[data-flourish='off'] .toj-sanctum::before,
+.toj[data-flourish='off'] .toj-flame,
+.toj[data-flourish='off'] .toj-halo,
+.toj[data-flourish='off'] .toj-sinner,
+.toj[data-flourish='off'] .toj-tab-dot,
+.toj[data-flourish='off'] .toj-btn[data-ready='true'],
+.toj[data-flourish='off'] .toj-chip,
+.toj[data-flourish='off'] .toj-plot[data-ripe='true'] .toj-plot-seed {
+  animation: none;
+}
+
+.toj[data-flourish='off'] .toj-mote {
+  display: none;
+}
+
+.toj[data-flourish='off'] .toj-burst {
+  animation: toj-burst-still 700ms linear forwards;
+}
+
+@keyframes toj-burst-still {
+  from {
     opacity: 1;
-    transform: translate(-50%, -28px);
   }
-  100% {
+  to {
     opacity: 0;
-    transform: translate(-50%, -28px);
   }
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .toj-codex {
-    background: var(--toj-stone);
-    -webkit-backdrop-filter: none;
+  .toj-scrim {
     backdrop-filter: none;
+    background: var(--toj-ground-deep);
   }
 }
 
-/* Windows High Contrast: custom properties are ignored, so anything that
-   signalled state through a background alone needs a real border. */
 @media (forced-colors: active) {
-  .toj-row,
+  .toj-row[data-affordable='true']::before,
+  .toj-halo,
   .toj-chip,
-  .toj-setting,
-  .toj-dialog,
-  .toj-toast,
-  .toj-codex {
+  .toj-btn,
+  .toj-plot {
+    forced-color-adjust: none;
     border: 1px solid CanvasText;
-    background: Canvas;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
   }
 
-  .toj-tab[aria-selected='true'],
-  .toj-segment[aria-pressed='true'] {
-    border: 2px solid Highlight;
-    color: Highlight;
-  }
-
-  .toj-sanctum::before,
-  .toj-incense {
-    display: none;
+  .toj-tab[aria-selected='true'] {
+    outline: 2px solid Highlight;
   }
 }

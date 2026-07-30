@@ -1,117 +1,111 @@
 /**
- * Temple of Joy — Number Formatting
- * Converts large numbers to abbreviated form with religious tier names.
+ * How the temple writes numbers down.
+ *
+ * An idle game spends most of its life somewhere between a thousand and
+ * 10^100, and the player has to be able to compare two of those at a glance.
+ * The short-scale names run to vigintillion and then keep going on the
+ * standard Latin construction, so `1.24 Qig` and `3.10 Qig` sort by eye the
+ * same way `1.24M` and `3.10M` do.
  */
 
-interface Tier {
-  value: number;
-  suffix: string;
-  name: string;
-}
-
-const TIERS: Tier[] = [
-  // Custom high tiers (1e66+) — game-specific flavor names
-  { value: 1e99, suffix: 'JC',   name: 'Joy Complete' },
-  { value: 1e96, suffix: 'BI',   name: 'Beyond Infinity' },
-  { value: 1e93, suffix: 'AB',   name: 'Absolute Bliss' },
-  { value: 1e90, suffix: 'OH',   name: 'Omega Happiness' },
-  { value: 1e87, suffix: 'JV',   name: 'Joy Convergence' },
-  { value: 1e84, suffix: 'TC',   name: 'Total Contentment' },
-  { value: 1e81, suffix: 'NO',   name: 'Nirvana Overflow' },
-  { value: 1e78, suffix: 'GE',   name: 'Great Exhale' },
-  { value: 1e75, suffix: 'IC',   name: 'Infinite Cuddle' },
-  { value: 1e72, suffix: 'RC',   name: 'Rapture Cascade' },
-  { value: 1e69, suffix: 'Nc',   name: 'Nice' },
-  { value: 1e66, suffix: 'GS',   name: 'Grand Sigh' },
-  // Standard English number names (1e3–1e63)
-  { value: 1e63, suffix: 'Vg',   name: 'Vigintillion' },
-  { value: 1e60, suffix: 'Nvd',  name: 'Novemdecillion' },
-  { value: 1e57, suffix: 'Ocd',  name: 'Octodecillion' },
-  { value: 1e54, suffix: 'Spd',  name: 'Septendecillion' },
-  { value: 1e51, suffix: 'Sxd',  name: 'Sexdecillion' },
-  { value: 1e48, suffix: 'Qid',  name: 'Quindecillion' },
-  { value: 1e45, suffix: 'Qad',  name: 'Quattuordecillion' },
-  { value: 1e42, suffix: 'Td',   name: 'Tredecillion' },
-  { value: 1e39, suffix: 'Dd',   name: 'Duodecillion' },
-  { value: 1e36, suffix: 'Ud',   name: 'Undecillion' },
-  { value: 1e33, suffix: 'Dc',   name: 'Decillion' },
-  { value: 1e30, suffix: 'No',   name: 'Nonillion' },
-  { value: 1e27, suffix: 'Oc',   name: 'Octillion' },
-  { value: 1e24, suffix: 'Sp',   name: 'Septillion' },
-  { value: 1e21, suffix: 'Sx',   name: 'Sextillion' },
-  { value: 1e18, suffix: 'Qi',   name: 'Quintillion' },
-  { value: 1e15, suffix: 'Qa',   name: 'Quadrillion' },
-  { value: 1e12, suffix: 'T',    name: 'Trillion' },
-  { value: 1e9,  suffix: 'B',    name: 'Billion' },
-  { value: 1e6,  suffix: 'M',    name: 'Million' },
-  { value: 1e3,  suffix: 'K',    name: 'Thousand' },
-];
+/** Short-scale names, 10^3 upward, index 0 = thousand. */
+const ONES = ['', 'Un', 'Do', 'Tre', 'Qua', 'Qui', 'Sex', 'Sep', 'Oct', 'Non'];
+const TENS = ['', 'Dec', 'Vig', 'Tri', 'Qua', 'Qui', 'Sex', 'Sep', 'Oct', 'Non'];
+const SMALL = ['K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
 
 /**
- * Format a number in abbreviated form.
- * @param n The number to format
- * @param decimals Decimal places (default 2)
+ * The suffix for 10^(3(n+1)). `n = 0` is thousand.
+ *
+ * Built rather than tabulated: a table long enough for the deep game is a
+ * hundred lines of strings nobody will ever proof-read, and the construction
+ * rule is four lines.
  */
-export function formatNumber(n: number, decimals = 2): string {
-  if (!isFinite(n) || isNaN(n)) return '0';
-  if (n < 0) return '-' + formatNumber(-n, decimals);
-  if (n < 1000) return n % 1 === 0 ? n.toString() : n.toFixed(decimals);
+function suffixFor(n: number): string {
+  if (n < SMALL.length) return SMALL[n]!;
+  // Past decillion the names are regular: ones prefix + tens prefix.
+  const index = n - 1; // undecillion is 10^36 → index 11
+  const ones = index % 10;
+  const tens = Math.floor(index / 10);
+  if (tens >= TENS.length) return `e${(n + 1) * 3}`;
+  return `${ONES[ones]}${TENS[tens]}`.trim() || `e${(n + 1) * 3}`;
+}
 
-  for (const tier of TIERS) {
-    if (n >= tier.value) {
-      const val = n / tier.value;
-      return val.toFixed(decimals) + tier.suffix;
-    }
+/**
+ * Format for display. Under a thousand the number is shown as-is (whole
+ * numbers stay whole — "15" not "15.00"); above it, three significant figures
+ * and a suffix.
+ */
+export function formatNumber(n: number, decimals = 3): string {
+  if (!Number.isFinite(n)) return '∞';
+  if (Number.isNaN(n)) return '0';
+  if (n < 0) return `−${formatNumber(-n, decimals)}`;
+  if (n < 1) return n === 0 ? '0' : n.toFixed(Math.min(decimals, 3));
+  if (n < 1000) {
+    // 12.5 reads better than 12.500, and 15 better than 15.0.
+    return Number.isInteger(n) ? String(n) : n.toFixed(n < 10 ? 2 : 1);
   }
-  return n.toFixed(0);
+
+  const power = Math.floor(Math.log10(n) / 3);
+  const scaled = n / Math.pow(1000, power);
+  const suffix = suffixFor(power - 1);
+  // Keep the width steady: 3 significant figures, however big the mantissa.
+  const text =
+    scaled >= 100 ? scaled.toFixed(1) : scaled >= 10 ? scaled.toFixed(2) : scaled.toFixed(3);
+  return `${text} ${suffix}`;
 }
 
-/**
- * Format in scientific notation.
- */
 export function formatScientific(n: number): string {
-  if (!isFinite(n) || isNaN(n)) return '0';
-  if (n < 1000) return formatNumber(n, 2);
-  const exp = Math.floor(Math.log10(Math.abs(n)));
-  const coef = n / Math.pow(10, exp);
-  return `${coef.toFixed(2)}e${exp}`;
+  if (!Number.isFinite(n)) return '∞';
+  if (Number.isNaN(n)) return '0';
+  if (n < 0) return `−${formatScientific(-n)}`;
+  if (n < 1000) return formatNumber(n);
+  const exponent = Math.floor(Math.log10(n));
+  return `${(n / Math.pow(10, exponent)).toFixed(3)}e${exponent}`;
 }
 
-/**
- * Format a number using the player's chosen format.
- */
-export function fmt(n: number, format: 'abbreviated' | 'scientific' = 'abbreviated'): string {
+export function fmt(n: number, format: 'named' | 'scientific' = 'named'): string {
   return format === 'scientific' ? formatScientific(n) : formatNumber(n);
 }
 
+/** A rate, with its unit. */
+export function fmtRate(n: number, format: 'named' | 'scientific' = 'named'): string {
+  return `${fmt(n, format)}/s`;
+}
+
+/** A whole number of things you own. Never abbreviated below a million. */
+export function fmtCount(n: number): string {
+  return n < 1e6 ? n.toLocaleString('en-US') : formatNumber(n);
+}
+
 /**
- * Format a duration in seconds to a human-readable string.
+ * A duration, at the coarsest useful precision: seconds under a minute, then
+ * minutes, then hours-and-minutes, then days.
  */
 export function formatDuration(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return '—';
   if (seconds < 60) return `${Math.round(seconds)}s`;
   if (seconds < 3600) {
     const m = Math.floor(seconds / 60);
     const s = Math.round(seconds % 60);
-    return `${m}m ${s}s`;
+    return s === 0 ? `${m}m` : `${m}m ${s}s`;
   }
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  return `${h}h ${m}m`;
+  if (seconds < 86_400) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return m === 0 ? `${h}h` : `${h}h ${m}m`;
+  }
+  const d = Math.floor(seconds / 86_400);
+  const h = Math.floor((seconds % 86_400) / 3600);
+  return h === 0 ? `${d}d` : `${d}d ${h}h`;
 }
 
 /**
- * Format HPS rate.
+ * "in 2h 40m" — how long until you can afford `cost` at `rate`, given what you
+ * already hold. The single most useful number on a source row, and the reason
+ * an idle game feels navigable rather than arbitrary.
  */
-export function formatRate(hps: number, format: 'abbreviated' | 'scientific' = 'abbreviated'): string {
-  return `${fmt(hps, format)}/s`;
-}
-
-/**
- * Get the religious tier name for a value (for flavor text).
- */
-export function getTierName(n: number): string {
-  for (const tier of TIERS) {
-    if (n >= tier.value) return tier.name;
-  }
-  return 'Humble';
+export function formatTimeTo(cost: number, held: number, rate: number): string {
+  if (held >= cost) return '';
+  if (rate <= 0) return '—';
+  return formatDuration((cost - held) / rate);
 }

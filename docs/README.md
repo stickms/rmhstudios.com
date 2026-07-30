@@ -99,5 +99,8 @@ These predate the Next.js → TanStack Start migration and/or the Go cutover:
 
 Fixed in the 2026-07-29 audit: the stack lines in `void-breaker/specs.md`,
 `temple-of-joy/game-design.md` and `rmhtube/features.md` now name TanStack
-Start. The repo-root `specs/` directory this file used to point at no longer
+Start. `temple-of-joy/` was rewritten again on 2026-07-30 alongside the game
+itself: `game-design.md` describes the current economy, and the four docs that
+described the superseded one (`patch-1.md`, `patch-2.md`,
+`content-expansion.md`, `implementation-plan.md`) were deleted. The repo-root `specs/` directory this file used to point at no longer
 exists — the reference was removed rather than repaired.

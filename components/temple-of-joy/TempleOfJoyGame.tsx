@@ -1,99 +1,77 @@
 /**
- * Temple of Joy — the game shell.
+ * Temple of Joy — the shell.
  *
- * Owns the things that are true for the whole session: loading the save,
- * running the tick loop, wiring audio, and saving on the way out. The
- * interface itself is the four components below it.
+ * Owns what is true for the whole session: loading the save, running the
+ * vigil catch-up, driving the tick, wiring the audio, and saving on the way
+ * out. The interface itself is the four components below it.
  */
 'use client';
 
 import { useEffect, useRef } from 'react';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
-import {
-  saveDataToState,
-  computeOfflineProgress,
-  useAutoSave,
-  saveToServer,
-} from '@/lib/temple-of-joy/persistence';
+import { applyVigil } from '@/lib/temple-of-joy/tick';
+import { doAudit } from '@/lib/temple-of-joy/actions';
+import { saveToServer, useAutoSave } from '@/lib/temple-of-joy/persistence';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
-import type { SaveData } from '@/lib/temple-of-joy/types';
+import type { GameState } from '@/lib/temple-of-joy/types';
 import { useTempleValue } from './hooks';
 import { TempleHud } from './TempleHud';
 import { TempleSanctum } from './TempleSanctum';
 import { TempleTabs } from './TempleTabs';
-import { TempleCodex } from './codex/TempleCodex';
+import { TemplePanel } from './panels/TemplePanel';
 import { TempleDialogs } from './TempleDialogs';
 
-/** Below this, an absence isn't worth a "welcome back". */
-const OFFLINE_REPORT_THRESHOLD_S = 30;
-
-export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveData | null }) {
+export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameState> | null }) {
   const theme = useTempleValue((s) => s.theme);
+  const flourish = useTempleValue((s) => s.reducedFlourish);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  // ── Load ────────────────────────────────────────────────────────────────
+  /* ── Load, then catch up on the absence ──────────────────────────────── */
+
   useEffect(() => {
-    const base = useTempleStore.getState();
     const now = Date.now();
 
-    if (initialSaveData) {
-      const merged = {
-        ...base,
-        ...saveDataToState(initialSaveData, base),
-        lastClickTime: now,
-        pageOpenTime: now,
-        lastTickTime: now,
-      };
-      const offline = computeOfflineProgress(merged, now);
+    if (initialSave) {
+      useTempleStore.setState({ ...initialSave, lastTick: now, openedAt: now });
 
+      // The vigil runs against the *loaded* state, so everything it reads —
+      // the rate, the Sinners' appetite, the garden's soil — is what the
+      // player actually left behind.
+      const vigil = applyVigil(useTempleStore.getState(), now);
       useTempleStore.setState({
-        ...merged,
-        offlineHappinessOnLoad: offline.happiness,
-        offlineSecondsOnLoad: offline.seconds,
-        happiness: merged.happiness + offline.happiness,
-        lifetimeHappiness: merged.lifetimeHappiness + offline.happiness,
-        runHappiness: merged.runHappiness + offline.happiness,
-        pilgrimageActive: offline.pilgrimageActive,
-        pilgrimageTimer: offline.pilgrimageTimer,
-        pilgrimageCooldown: offline.pilgrimageCooldown,
-        totalPilgrimages: offline.totalPilgrimages,
-        showOfflineModal: offline.seconds > OFFLINE_REPORT_THRESHOLD_S,
+        ...vigil.state,
+        openedAt: now,
+        touchesAtOpen: vigil.state.totalTouches,
+        showVigilDialog: vigil.state.vigil.pending,
       });
     } else {
-      useTempleStore.setState((s) => ({
-        ...s,
-        lastClickTime: now,
-        pageOpenTime: now,
-        lastTickTime: now,
-      }));
+      useTempleStore.setState({ lastTick: now, lastSaved: now, openedAt: now });
     }
 
-    useTempleStore.getState().auditAchievements();
-    useTempleStore.setState({ gameInitialized: true });
+    // Catch up any trophy this build added since the save was written.
+    useTempleStore.setState(doAudit(useTempleStore.getState()));
+    useTempleStore.setState({ initialized: true });
     // Load runs once, against the save this component was handed.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Tick ────────────────────────────────────────────────────────────────
+  /* ── The loop ────────────────────────────────────────────────────────── */
+
   useEffect(() => {
     let frame = 0;
-    const tick = () => {
+    const step = () => {
       useTempleStore.getState().tick();
-      frame = requestAnimationFrame(tick);
+      frame = requestAnimationFrame(step);
     };
-    frame = requestAnimationFrame(tick);
+    frame = requestAnimationFrame(step);
+    // The loop is bounded by this component's lifetime: unmounting cancels it.
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  // ── Events surface as a dialog ──────────────────────────────────────────
-  const pendingEvent = useTempleValue((s) => s.pendingEvent);
-  useEffect(() => {
-    if (pendingEvent != null) useTempleStore.getState().setShowEventModal(true);
-  }, [pendingEvent]);
-
   useAutoSave();
 
-  // ── Audio ───────────────────────────────────────────────────────────────
+  /* ── Sound ───────────────────────────────────────────────────────────── */
+
   useEffect(() => {
     templeAudio.init();
     const { soundEnabled, musicVolume, sfxVolume } = useTempleStore.getState();
@@ -101,7 +79,7 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
     templeAudio.setSfxVolume(sfxVolume);
     templeAudio.setEnabled(soundEnabled);
 
-    const unsubscribers = [
+    const off = [
       useTempleStore.subscribe(
         (s) => s.soundEnabled,
         (enabled) => templeAudio.setEnabled(enabled),
@@ -116,14 +94,13 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
       ),
     ];
 
-    return () => unsubscribers.forEach((off) => off());
+    return () => off.forEach((unsubscribe) => unsubscribe());
   }, []);
 
-  // Browsers refuse to start audio until the user has interacted with the page.
+  // Browsers refuse to start audio until the user has interacted with the
+  // page. `pointerdown` covers mouse, touch and pen in one listener.
   useEffect(() => {
     const unlock = () => templeAudio.markInteracted();
-    // `once` handles the removal; `pointerdown` covers mouse, touch and pen in
-    // one listener.
     document.addEventListener('pointerdown', unlock, { once: true });
     document.addEventListener('keydown', unlock, { once: true });
     return () => {
@@ -132,31 +109,15 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
     };
   }, []);
 
-  // ── A click anywhere in the temple should sound like one ────────────────
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root) return;
-    const onClick = (event: MouseEvent) => {
-      const button = (event.target as HTMLElement).closest('button');
-      // The sanctum plays its own note on pointerdown; this would double it.
-      if (!button || button.disabled || button.classList.contains('toj-temple')) return;
-      templeAudio.playClick();
-    };
-    root.addEventListener('click', onClick);
-    return () => root.removeEventListener('click', onClick);
-  }, []);
+  /* ── Save on the way out ─────────────────────────────────────────────── */
 
-  // ── Save on the way out ─────────────────────────────────────────────────
+  // Deliberately no `beforeunload` confirmation: it fires the browser's native
+  // "Leave site?" dialog on every navigation — unstyled, untranslatable, and
+  // pointless for a game that autosaves continuously — and it blocks bfcache,
+  // so coming back re-downloads and re-initialises everything.
   //
-  // Deliberately no `beforeunload` confirmation. The old one fired the
-  // browser's native "Leave site?" dialog on every navigation — unstyled,
-  // untranslatable, and pointless for a game that autosaves continuously. It
-  // also blocks bfcache, so returning re-downloaded and re-initialised
-  // everything.
-  //
-  // `pagehide` and a hidden `visibilitychange` are the two events that
-  // actually fire when a tab closes on mobile Safari, where `beforeunload`
-  // frequently does not.
+  // `pagehide` and a hidden `visibilitychange` are the two events that actually
+  // fire when a tab closes on mobile Safari, where `beforeunload` often does not.
   useEffect(() => {
     const flush = () => {
       saveToServer(useTempleStore.getState()).catch(() => {});
@@ -177,13 +138,23 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
   return (
     // `data-no-twemoji` keeps the site-wide observer out of a tree React
     // re-renders constantly; emoji here go through `<Glyph>` instead.
-    <div ref={rootRef} className="toj" data-theme={theme} data-no-twemoji>
+    <div
+      ref={rootRef}
+      className="toj"
+      data-theme={theme}
+      data-flourish={flourish ? 'off' : undefined}
+      data-no-twemoji
+    >
       <div className="toj-frame">
         <TempleHud />
         <div className="toj-body">
-          <TempleSanctum />
-          <TempleTabs />
-          <TempleCodex />
+          <div className="toj-stage">
+            <TempleSanctum />
+          </div>
+          <div className="toj-dock">
+            <TempleTabs />
+            <TemplePanel />
+          </div>
         </div>
       </div>
       <TempleDialogs />

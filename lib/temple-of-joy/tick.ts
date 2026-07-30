@@ -1,358 +1,412 @@
 /**
- * Temple of Joy — Tick Engine
- * Called on every animation frame. Mutates state immutably.
+ * The tick.
+ *
+ * `applyTick(state) -> state`, pure apart from `Date.now()` and the dice. It
+ * runs on every animation frame, but almost nothing in it runs at that rate:
+ * income and buffs are per-frame, and everything slower (the garden, the
+ * market, manna, the trophy audit) carries its own accumulator and fires on a
+ * coarse beat. That is what lets the same function also be the offline
+ * simulation — hand it a delta of nine hours and it does the right thing.
+ *
+ * Wall-clock deltas throughout, never frame counts, so a throttled background
+ * tab loses nothing.
  */
-import type { GameState, SourceId } from './types';
-import { computeTotalHPS, computeKarmaRate, computeSourceCost, computeMaxAffordable, computeSourcePrestigeReq } from './engine';
-import { MILESTONES } from './data/milestones';
-import { EVENTS } from './data/events';
+import type { Buff, GameState, Halo, HaloKind, Notice } from './types';
+import {
+  computeGrossJps,
+  computeJps,
+  computeRateModifiers,
+  computeSinnerDrain,
+  computeSourceCost,
+  computeStewardActive,
+  computeBestPurchase,
+  computeTotalSources,
+} from './engine';
+import { HALO_INTERVAL_MAX, HALO_INTERVAL_MIN, HALO_LIFETIME, SERAPHIC_CHANCE } from './data/halos';
+import { advanceGarden } from './minigames/garden';
+import { advanceExchange } from './minigames/exchange';
+import { advanceHours } from './minigames/hours';
+import { advanceManna } from './minigames/manna';
+import { advanceSinners } from './minigames/sinners';
+import { auditTrophies } from './trophies';
 import { SOURCES } from './data/sources';
-import { auditObjectives } from './data/objectives';
+import { BLESSING_MAP } from './data/blessings';
 
-// ACHIEVEMENTS is imported for completeness; individual IDs are hardcoded
-// in the tick for performance.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { ACHIEVEMENTS } from './data/achievements';
+/* ── Ids ─────────────────────────────────────────────────────────────────── */
 
-// ─── Pilgrimage Burst ─────────────────────────────────────────────────────────
-
-export function computePilgrimageBurst(state: GameState): number {
-  const pilgrimageRelicBonus = state.activeRelics.includes('stuffedPillow') ? 1.5 : 1;
-  const nappingCatBonus = state.activeRelics.includes('nappingCat') ? 2 : 1;
-  // pilgrimsStaff relic: burst ×3
-  const staffBonus = state.activeRelics.includes('pilgrimsStaff') ? 3 : 1;
-  // pilgrimsEnlightenment wheel: burst ×10
-  const enlightenmentBonus = state.wheelPurchased.has('pilgrimsEnlightenment') ? 10 : 1;
-  return 5 * 60 * computeTotalHPS(state) * pilgrimageRelicBonus * nappingCatBonus * staffBonus * enlightenmentBonus;
+let idCounter = 1;
+export function nextId(): number {
+  return idCounter++;
 }
 
-// ─── Main Tick ────────────────────────────────────────────────────────────────
+/** Longest single step the tick will simulate. Anything more is a vigil. */
+const MAX_STEP_SECONDS = 60;
+
+/** The trophy audit is not cheap enough to run at 60Hz, and does not need to be. */
+const AUDIT_INTERVAL_MS = 1_000;
+let auditCarry = 0;
+
+/** Notices fade on their own. */
+const NOTICE_LIFETIME_MS = 6_000;
+
+export function applyTick(state: GameState, nowMs = Date.now()): GameState {
+  const rawDelta = (nowMs - state.lastTick) / 1000;
+  if (!Number.isFinite(rawDelta) || rawDelta <= 0) {
+    return state.lastTick === nowMs ? state : { ...state, lastTick: nowMs };
+  }
+  // A tab that was asleep for an hour catches up through the vigil path on
+  // load, not by asking the tick to integrate an hour in one step.
+  const delta = Math.min(rawDelta, MAX_STEP_SECONDS);
+  const deltaMs = delta * 1000;
+
+  const modifiers = computeRateModifiers(state);
+  const grossJps = computeGrossJps(state);
+
+  /* ── 1. Sinners drink first, so income is what is left ── */
+
+  let appetite = 1;
+  for (const id of state.blessings) {
+    const def = BLESSING_MAP[id];
+    if (def?.sinnerAppetite) appetite *= def.sinnerAppetite;
+  }
+
+  const sinnerStep = advanceSinners(
+    state.sinners,
+    delta,
+    grossJps,
+    state.rapture,
+    appetite,
+    nextId,
+  );
+
+  const earned = grossJps * delta - sinnerStep.swallowed;
+
+  /* ── 2. Joy ── */
+
+  const joy = state.joy + earned;
+  const runJoy = state.runJoy + Math.max(0, earned);
+  const lifetimeJoy = state.lifetimeJoy + Math.max(0, earned);
+  const peakJoy = Math.max(state.peakJoy, joy);
+
+  // Per-source earnings, for the ledger. Shares of the gross, which is what a
+  // player means by "how much is the grove making".
+  const sourceEarnings = { ...state.sourceEarnings };
+  if (grossJps > 0 && earned > 0) {
+    for (const source of SOURCES) {
+      const count = state.sources[source.id] ?? 0;
+      if (count === 0) continue;
+      // Cheap approximation of each source's share; exact per-source
+      // attribution would mean 24 full stack walks a frame for a readout.
+      sourceEarnings[source.id] =
+        (sourceEarnings[source.id] ?? 0) + (earned * (source.baseJps * count)) / rawBase(state);
+    }
+  }
+
+  /* ── 3. Buffs ── */
+
+  const buffs: Buff[] = [];
+  for (const buff of state.buffs) {
+    const remaining = buff.remaining - delta;
+    if (remaining > 0) buffs.push({ ...buff, remaining });
+  }
+
+  /* ── 4. Halos ── */
+
+  let haloTimer = state.haloTimer - delta * modifiers.haloFrequency;
+  let halos: Halo[] = [];
+  let haloStreak = state.haloStreak;
+  const notices: Notice[] = state.notices.filter((n) => n.id > nowMs - NOTICE_LIFETIME_MS);
+
+  for (const halo of state.halos) {
+    const life = halo.life - delta;
+    if (life > 0) halos.push({ ...halo, life });
+    // A halo that fades unclaimed breaks the streak. Missing one should sting
+    // slightly, or catching them would not be a skill.
+    else haloStreak = 0;
+  }
+
+  if (haloTimer <= 0) {
+    const kind = rollHaloKind(state.rapture);
+    const life = HALO_LIFETIME * modifiers.haloPatience;
+    halos = [
+      ...halos,
+      {
+        id: nextId(),
+        kind,
+        // Kept clear of the edges so a halo is never half off-screen.
+        x: 0.1 + Math.random() * 0.8,
+        y: 0.1 + Math.random() * 0.8,
+        life,
+        maxLife: life,
+      },
+    ];
+    haloTimer = HALO_INTERVAL_MIN + Math.random() * (HALO_INTERVAL_MAX - HALO_INTERVAL_MIN);
+  }
+
+  /* ── 5. The slow layers ── */
+
+  const gardenStep = advanceGarden(
+    state.garden,
+    deltaMs * modifiers.gardenSpeed,
+    state.sourceLevels.grove ?? 0,
+  );
+  for (const seed of gardenStep.discovered) {
+    notices.push({
+      id: nowMs + notices.length,
+      icon: '🌱',
+      title: 'Something new in the garden',
+      body: seed,
+      kind: 'gift',
+    });
+  }
+
+  const exchange = advanceExchange(state.exchange, deltaMs, state.sourceLevels.almshouse ?? 0);
+  const hours = advanceHours(state.hours, deltaMs, state.sourceLevels.scriptorium ?? 0);
+  const mannaStep = advanceManna(state.manna, deltaMs, modifiers.mannaSpeed);
+  if (mannaStep.ripened > 0) {
+    notices.push({
+      id: nowMs + notices.length,
+      icon: '🍞',
+      title:
+        mannaStep.ripened === 1 ? 'Manna has ripened' : `${mannaStep.ripened} manna have ripened`,
+      kind: 'gift',
+    });
+  }
+
+  /* ── 6. Book-keeping ── */
+
+  let next: GameState = {
+    ...state,
+    lastTick: nowMs,
+    joy,
+    runJoy,
+    lifetimeJoy,
+    peakJoy,
+    sourceEarnings,
+    sinners: sinnerStep.sinners,
+    buffs,
+    halos,
+    haloTimer,
+    haloStreak,
+    garden: gardenStep.garden,
+    exchange,
+    hours,
+    manna: mannaStep.manna,
+    playtime: state.playtime + delta,
+    runPlaytime: state.runPlaytime + delta,
+    recentTouches: state.recentTouches.filter((t) => nowMs - t < 3_000),
+    notices,
+  };
+
+  /* ── 7. The Steward ── */
+
+  if (computeStewardActive(next)) {
+    const timer = next.stewardTimer - delta;
+    if (timer <= 0) {
+      next = { ...runSteward(next), stewardTimer: 5 };
+    } else {
+      next = { ...next, stewardTimer: timer };
+    }
+  }
+
+  /* ── 8. Trophies, on a one-second beat ── */
+
+  auditCarry += deltaMs;
+  if (auditCarry >= AUDIT_INTERVAL_MS) {
+    auditCarry = 0;
+    next = auditTrophies(next, nowMs);
+  }
+
+  return next;
+}
+
+/** Sum of raw base output, used only to split earnings between sources. */
+function rawBase(state: GameState): number {
+  let sum = 0;
+  for (const source of SOURCES) sum += source.baseJps * (state.sources[source.id] ?? 0);
+  return sum || 1;
+}
+
+function rollHaloKind(rapture: number): HaloKind {
+  if (rapture > 0 && Math.random() < SERAPHIC_CHANCE * rapture) return 'seraphic';
+  // Deep in the Rapture most halos are sable — richer, and two of them bite.
+  if (rapture > 0 && Math.random() < 0.2 + rapture * 0.2) return 'sable';
+  return 'gilded';
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   The Steward
+   ══════════════════════════════════════════════════════════════════════════ */
 
 /**
- * Advances the game state by `deltaMs` milliseconds.
- * Returns a new state object — never mutates the input.
+ * Spends spare joy on whatever has the shortest payback, keeping a reserve so
+ * it never empties the treasury out from under a player who was saving for a
+ * halo's Lucky payout — which reads 15% of what you hold, and would otherwise
+ * be quietly sabotaged by their own automation.
  */
-export function applyTick(state: GameState): GameState {
-  // Wall-clock delta — accurate even when the tab is hidden / throttled
-  const now = Date.now();
-  const realDelta = (now - state.lastTickTime) / 1000;
-  // Use full wall-clock delta for income so background time is never lost
-  const deltaSeconds = realDelta;
+function runSteward(state: GameState): GameState {
+  const best = computeBestPurchase(state);
+  if (!best) return state;
 
-  // ── 1 & 2. Rates ──────────────────────────────────────────────────────────
-  const hps = computeTotalHPS(state);
-  const karmaRate = computeKarmaRate(state);
+  const reserve = computeGrossJps(state) * 60;
+  if (state.joy - best.cost < reserve) return state;
 
-  // ── 3–6. Happiness & peak ─────────────────────────────────────────────────
-  let happinessGained = hps * deltaSeconds;
-
-  // prestigeMomentum: ×3 HPS during first 3 minutes of a new run
-  // perpetualMomentum: extends to 10 minutes
-  const momentumDuration = state.wheelPurchased.has('perpetualMomentum') ? 600 : 180;
-  if (state.wheelPurchased.has('prestigeMomentum') && state.runPlaytime < momentumDuration) {
-    happinessGained *= 3;
-  }
-
-  let newHappiness = state.happiness + happinessGained;
-  let newLifetimeHappiness = state.lifetimeHappiness + happinessGained;
-  const newRunHappiness = state.runHappiness + happinessGained;
-  let newPeakHappiness = Math.max(state.peakHappiness, newHappiness);
-
-  // ── 7. Karma ──────────────────────────────────────────────────────────────
-  const newKarma = state.karma + karmaRate * deltaSeconds;
-  const newPeakKarma = Math.max(state.peakKarma, newKarma);
-
-  // ── 8. Total playtime ─────────────────────────────────────────────────────
-  const newTotalPlaytime = state.totalPlaytime + deltaSeconds;
-  const newRunPlaytime = state.runPlaytime + deltaSeconds;
-
-  // ── 9. Hedonic Treadmill ──────────────────────────────────────────────────
-  // Baseline slowly drifts toward current happiness (~14 hours to fully catch up)
-  const newBaseline =
-    state.baselineHappiness +
-    (state.happiness - state.baselineHappiness) * 0.00002 * deltaSeconds;
-
-  // ── 10. Timed buffs ───────────────────────────────────────────────────────
-  // temporalComfort relic: buffs tick down at 2/3 speed (last 50% longer)
-  let buffTickRate = state.activeRelics.includes('temporalComfort') ? realDelta * (2 / 3) : realDelta;
-  // temporalLoop wheel: buffs ×3 duration (tick down at 1/3 speed)
-  if (state.wheelPurchased.has('temporalLoop')) buffTickRate /= 3;
-  const newActiveBuffs = state.activeBuffs
-    .map((b) => ({ ...b, remainingSeconds: b.remainingSeconds - buffTickRate }))
-    .filter((b) => b.remainingSeconds > 0);
-
-  // ── 11. Vibe buff ─────────────────────────────────────────────────────────
-  let newVibeBuff = state.vibeBuff;
-  if (newVibeBuff) {
-    const remaining = newVibeBuff.remainingSeconds - buffTickRate;
-    newVibeBuff = remaining > 0 ? { ...newVibeBuff, remainingSeconds: remaining } : null;
-  }
-
-  // ── 12. Timers (use realDelta for accurate catch-up after tab hidden) ────
-  // crystalBall relic: vibe timer fills 30% faster
-  const vibeTimerRate = state.activeRelics.includes('crystalBall') ? realDelta * 1.3 : realDelta;
-  const newVibeCheckTimer = Math.max(0, state.vibeCheckTimer - vibeTimerRate);
-
-  let newPilgrimageActive = state.pilgrimageActive;
-  let newPilgrimageTimer = state.pilgrimageTimer;
-  // pilgrimsStaff relic: pilgrimage duration −25% (tick rate ×4/3)
-  const pilgrimageTickRate = state.activeRelics.includes('pilgrimsStaff') ? realDelta * (4 / 3) : realDelta;
-  let newPilgrimageCooldown = Math.max(0, state.pilgrimageCooldown - realDelta);
-  // celestialCompass relic: pilgrimage cooldown reduced 50%
-  if (state.activeRelics.includes('celestialCompass')) {
-    newPilgrimageCooldown = Math.max(0, state.pilgrimageCooldown - realDelta * 2);
-  }
-  // pilgrimsEnlightenment wheel: pilgrimage no cooldown
-  if (state.wheelPurchased.has('pilgrimsEnlightenment')) newPilgrimageCooldown = 0;
-  if (newPilgrimageActive) {
-    newPilgrimageTimer = state.pilgrimageTimer - pilgrimageTickRate;
-  }
-
-  const newRitualCooldown = Math.max(0, state.ritualCooldown - realDelta);
-  let newEventTimer = Math.max(0, state.eventTimer - realDelta);
-  // temporalComfort relic: event frequency +25% (timer ticks 1.25× faster)
-  if (state.activeRelics.includes('temporalComfort')) {
-    newEventTimer = Math.max(0, state.eventTimer - realDelta * 1.25);
-  }
-  // temporalLoop wheel: events 2× faster
-  if (state.wheelPurchased.has('temporalLoop')) {
-    newEventTimer = Math.max(0, newEventTimer - realDelta);
-  }
-
-  // ── 13. Pending event ─────────────────────────────────────────────────────
-  let newPendingEvent = state.pendingEvent;
-  if (newEventTimer <= 0 && !newPendingEvent && EVENTS.length > 0) {
-    const randomEvent = EVENTS[Math.floor(Math.random() * EVENTS.length)];
-    newPendingEvent = randomEvent.id;
-    // Reset timer to 120–600 seconds (2–10 minutes)
-    newEventTimer = Math.random() * 480 + 120;
-  }
-
-  // ── 14. Pilgrimage completion ─────────────────────────────────────────────
-  let pilgrimeCompleted = false;
-  let newPilgrimageStreak = state.pilgrimageStreak;
-
-  if (newPilgrimageActive && newPilgrimageTimer <= 0) {
-    const overshoot = -newPilgrimageTimer; // seconds past completion
-    const burst = computePilgrimageBurst(state);
-    newHappiness += burst;
-    newLifetimeHappiness += burst;
-    newPeakHappiness = Math.max(newPeakHappiness, newHappiness);
-    newPilgrimageActive = false;
-    newPilgrimageTimer = 0;
-    newPilgrimageCooldown = Math.max(0, 900 - overshoot);
-    pilgrimeCompleted = true;
-    newPilgrimageStreak += 1;
-  }
-
-  // ── 15. Milestones ────────────────────────────────────────────────────────
-  // astronomersLens relic: milestones unlock 1 tier earlier (threshold ÷10)
-  const hasAstronomersLens = state.activeRelics.includes('astronomersLens');
-  let newMilestones = state.milestones;
-  for (const milestone of MILESTONES) {
-    const effectiveThreshold = hasAstronomersLens ? milestone.threshold / 10 : milestone.threshold;
-    if (newRunHappiness >= effectiveThreshold && !newMilestones.has(milestone.id)) {
-      newMilestones = new Set(newMilestones);
-      newMilestones.add(milestone.id);
-    }
-  }
-
-  // ── 16. Achievements ─────────────────────────────────────────────────────
-  let newAchievements = state.achievements;
-
-  function grantAchievement(id: string): void {
-    if (!newAchievements.has(id)) {
-      newAchievements = new Set(newAchievements);
-      newAchievements.add(id);
-    }
-  }
-
-  // Playtime achievements
-  if (newTotalPlaytime >= 3600) grantAchievement('oneHour');
-  if (newTotalPlaytime >= 36_000) grantAchievement('tenHours');
-  if (newTotalPlaytime >= 360_000) grantAchievement('hundredHours');
-  if (newTotalPlaytime >= 720_000) grantAchievement('twoHundredHours');
-  if (newTotalPlaytime >= 1_800_000) grantAchievement('fiveHundredHours');
-  if (newTotalPlaytime >= 3_600_000) grantAchievement('thousandHours');
-
-  // Lifetime happiness achievements
-  if (newLifetimeHappiness >= 1_000) grantAchievement('firstThousand');
-  if (newLifetimeHappiness >= 10_000) grantAchievement('tenThousandHappiness');
-  if (newLifetimeHappiness >= 1e6) grantAchievement('millionaire');
-  if (newLifetimeHappiness >= 1e9) grantAchievement('billionaire');
-  if (newLifetimeHappiness >= 1e12) grantAchievement('trillionaire');
-  if (newLifetimeHappiness >= 1e15) grantAchievement('philosopher');
-  if (newLifetimeHappiness >= 1e18) grantAchievement('quintillion');
-  if (newLifetimeHappiness >= 1e24) grantAchievement('septillion');
-  if (newLifetimeHappiness >= 1e30) grantAchievement('nonillion');
-  if (newLifetimeHappiness >= 1e48) grantAchievement('quindecillion');
-  if (newLifetimeHappiness >= 1e66) grantAchievement('happiness1e66');
-  if (newLifetimeHappiness >= 1e84) grantAchievement('happiness1e84');
-  if (newLifetimeHappiness >= 1e99) grantAchievement('happiness1e99');
-  if (newLifetimeHappiness >= 1e108) grantAchievement('happiness1e108');
-  if (newLifetimeHappiness >= 1e120) grantAchievement('happiness1e120');
-  if (newLifetimeHappiness >= 1e135) grantAchievement('happiness1e135');
-  if (newLifetimeHappiness >= 1e150) grantAchievement('happiness1e150');
-  if (newLifetimeHappiness >= 1e200) grantAchievement('happiness1e200');
-  if (newLifetimeHappiness >= 1e300) grantAchievement('happiness1e300');
-
-  // Karma achievements
-  if (newKarma >= 0.1 && state.karma < 0.1) grantAchievement('firstKarma');
-  if (newKarma >= 100) grantAchievement('hundredKarma');
-  if (newKarma >= 500) grantAchievement('goodKarma');
-
-  // Pilgrimage achievements
-  if (pilgrimeCompleted) grantAchievement('pilgrimageFirst');
-  if (pilgrimeCompleted && state.totalPilgrimages + 1 >= 10) grantAchievement('pilgrimageTen');
-  if (pilgrimeCompleted && state.totalPilgrimages + 1 >= 25) grantAchievement('pilgrimageTwentyFive');
-  if (pilgrimeCompleted && state.totalPilgrimages + 1 >= 50) grantAchievement('pilgrimageFifty');
-  if (newPilgrimageStreak >= 5) grantAchievement('pilgrimageStreak');
-
-  // Hidden achievements
-  // noUpgrades: reach 1B happiness with zero upgrades
-  if (newLifetimeHappiness >= 1e9 && state.upgrades.size === 0) grantAchievement('noUpgrades');
-  // idleForever: let game run 1 hour without clicking
-  if (Date.now() - state.lastClickTime >= 3_600_000) grantAchievement('idleForever');
-
-  // Prestige achievements are now tracked in actions.ts (doTriggerTranscendence)
-
-  // ── 17. Auto-buy timer (autoBuyer wheel upgrades) ────────────────────────
-  let newAutoBuyTimer = state.autoBuyTimer - deltaSeconds;
-  let autoBuySources = state.sources;
-  let autoBuyHappiness = newHappiness;
-
-  // Prune recentClickTimes — remove entries > 10s old to keep state consistent
-  const prunedClickTimes = state.recentClickTimes.filter(t => now - t <= 10_000);
-
-  const hasAutoBuyer =
-    state.wheelPurchased.has('autoBuyer1') ||
-    state.wheelPurchased.has('autoBuyer2') ||
-    state.wheelPurchased.has('autoBuyer3');
-
-  if (hasAutoBuyer && state.autoBuyEnabled && newAutoBuyTimer <= 0) {
-    // sacredAutomation wheel: auto-buyer every 10s; omegaAutomation: every 5s
-    const autoBuyInterval = state.wheelPurchased.has('omegaAutomation') ? 5
-      : state.wheelPurchased.has('sacredAutomation') ? 10
-      : 30;
-    newAutoBuyTimer = autoBuyInterval;
-    // Work on mutable copies only when the timer fires
-    let workSources = { ...state.sources };
-    let workHappiness = newHappiness;
-
-    // Helper: build an ephemeral state with latest happiness/sources
-    const tempState = (): GameState => ({
+  if (best.kind === 'source') {
+    const have = state.sources[best.id] ?? 0;
+    return {
       ...state,
-      happiness: workHappiness,
-      sources: workSources,
-    });
-
-    // Unlocked sources sorted by baseCost descending
-    const unlocked = SOURCES.filter(
-      (b) => {
-        const req = computeSourcePrestigeReq(b.id as SourceId, state);
-        return req <= state.prestigeCount;
-      }
-    ).sort((a, b) => b.baseCost - a.baseCost);
-
-    if (state.wheelPurchased.has('autoBuyer3')) {
-      // Cascade: buy max of most expensive, then next, etc.
-      for (const source of unlocked) {
-        const ts = tempState();
-        const n = computeMaxAffordable(source.id as SourceId, ts);
-        if (n <= 0) continue;
-        let cost = 0;
-        for (let i = 0; i < n; i++) {
-          cost += computeSourceCost(
-            source.id as SourceId,
-            (workSources[source.id as SourceId] ?? 0) + i,
-            ts
-          );
-        }
-        workHappiness -= cost;
-        workSources = {
-          ...workSources,
-          [source.id]: (workSources[source.id as SourceId] ?? 0) + n,
-        };
-      }
-    } else if (state.wheelPurchased.has('autoBuyer2')) {
-      // Buy max of the single most expensive affordable source
-      for (const source of unlocked) {
-        const ts = tempState();
-        const n = computeMaxAffordable(source.id as SourceId, ts);
-        if (n <= 0) continue;
-        let cost = 0;
-        for (let i = 0; i < n; i++) {
-          cost += computeSourceCost(
-            source.id as SourceId,
-            (workSources[source.id as SourceId] ?? 0) + i,
-            ts
-          );
-        }
-        workHappiness -= cost;
-        workSources = {
-          ...workSources,
-          [source.id]: (workSources[source.id as SourceId] ?? 0) + n,
-        };
-        break; // only most expensive
-      }
-    } else {
-      // autoBuyer1: buy 1 of most expensive affordable source
-      for (const source of unlocked) {
-        const ts = tempState();
-        const cost = computeSourceCost(
-          source.id as SourceId,
-          workSources[source.id as SourceId] ?? 0,
-          ts
-        );
-        if (workHappiness < cost) continue;
-        workHappiness -= cost;
-        workSources = {
-          ...workSources,
-          [source.id]: (workSources[source.id as SourceId] ?? 0) + 1,
-        };
-        break; // only most expensive
-      }
-    }
-
-    autoBuySources = workSources;
-    autoBuyHappiness = workHappiness;
+      joy: state.joy - best.cost,
+      sources: { ...state.sources, [best.id]: have + 1 },
+    };
   }
 
-  // ── 18. Return new state ──────────────────────────────────────────────────
-  // Clear expired event effect summary
-  let newLastEventEffect = state.lastEventEffect;
-  if (newLastEventEffect && Date.now() >= newLastEventEffect.expiresAt) {
-    newLastEventEffect = null;
-  }
-
-  return auditObjectives({
+  return {
     ...state,
-    lastTickTime: now,
-    recentClickTimes: prunedClickTimes,
-    happiness: autoBuySources !== state.sources ? autoBuyHappiness : newHappiness,
-    sources: autoBuySources,
-    lifetimeHappiness: newLifetimeHappiness,
-    runHappiness: newRunHappiness,
-    peakHappiness: newPeakHappiness,
-    karma: newKarma,
-    peakKarma: newPeakKarma,
-    totalPlaytime: newTotalPlaytime,
-    runPlaytime: newRunPlaytime,
-    totalPilgrimages: state.totalPilgrimages + (pilgrimeCompleted ? 1 : 0),
-    baselineHappiness: newBaseline,
-    activeBuffs: newActiveBuffs,
-    vibeBuff: newVibeBuff,
-    vibeCheckTimer: newVibeCheckTimer,
-    pilgrimageActive: newPilgrimageActive,
-    pilgrimageTimer: newPilgrimageTimer,
-    pilgrimageCooldown: newPilgrimageCooldown,
-    pilgrimageStreak: newPilgrimageStreak,
-    ritualCooldown: newRitualCooldown,
-    eventTimer: newEventTimer,
-    pendingEvent: newPendingEvent,
-    lastEventEffect: newLastEventEffect,
-    milestones: newMilestones,
-    achievements: newAchievements,
-    autoBuyTimer: newAutoBuyTimer,
-  });
+    joy: state.joy - best.cost,
+    blessings: new Set([...state.blessings, best.id]),
+  };
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   The vigil — what happened while the temple was shut
+   ══════════════════════════════════════════════════════════════════════════ */
+
+export interface VigilResult {
+  state: GameState;
+  seconds: number;
+  joy: number;
+  sinnerJoy: number;
+  manna: number;
+}
+
+/**
+ * Fast-forward a save by the time since it was written.
+ *
+ * Income is capped by the vigil terms, but everything else — the garden, the
+ * market, the manna, and above all the Sinners — runs on the *full* elapsed
+ * time. That asymmetry is deliberate and is the whole answer to "is this game
+ * fun when it is closed": your rate is throttled, but your garden matured,
+ * your market moved, three manna ripened, and twelve Sinners spent nine hours
+ * getting fat on your behalf.
+ */
+export function applyVigil(state: GameState, nowMs = Date.now()): VigilResult {
+  const elapsedSeconds = Math.max(0, (nowMs - state.lastSaved) / 1000);
+  if (elapsedSeconds < 5) {
+    return { state: { ...state, lastTick: nowMs }, seconds: 0, joy: 0, sinnerJoy: 0, manna: 0 };
+  }
+
+  const elapsedMs = elapsedSeconds * 1000;
+  const modifiers = computeRateModifiers(state);
+  const grossJps = computeGrossJps(state);
+
+  // ── Income, capped ──
+  const { efficiency, hours } = computeVigilTerms(state);
+  const countedSeconds = Math.min(elapsedSeconds, hours * 3600);
+  const drain = computeSinnerDrain(state);
+  const joy = grossJps * (1 - drain) * countedSeconds * efficiency;
+
+  // ── Sinners, uncapped: they were here the whole time ──
+  let appetite = 1;
+  for (const id of state.blessings) {
+    const def = BLESSING_MAP[id];
+    if (def?.sinnerAppetite) appetite *= def.sinnerAppetite;
+  }
+  const sinnerStep = advanceSinners(
+    state.sinners,
+    elapsedSeconds,
+    grossJps * efficiency,
+    state.rapture,
+    appetite,
+    nextId,
+  );
+
+  // ── The slow layers, uncapped ──
+  const gardenStep = advanceGarden(
+    state.garden,
+    elapsedMs * modifiers.gardenSpeed,
+    state.sourceLevels.grove ?? 0,
+  );
+  const exchange = advanceExchange(state.exchange, elapsedMs, state.sourceLevels.almshouse ?? 0);
+  const hoursState = advanceHours(state.hours, elapsedMs, state.sourceLevels.scriptorium ?? 0);
+  const mannaStep = advanceManna(state.manna, elapsedMs, modifiers.mannaSpeed);
+
+  // Buffs do not survive an absence. A frenzy you were not present for was
+  // never a frenzy.
+  const next: GameState = {
+    ...state,
+    lastTick: nowMs,
+    joy: state.joy + joy,
+    runJoy: state.runJoy + joy,
+    lifetimeJoy: state.lifetimeJoy + joy,
+    peakJoy: Math.max(state.peakJoy, state.joy + joy),
+    sinners: sinnerStep.sinners,
+    buffs: [],
+    halos: [],
+    garden: gardenStep.garden,
+    exchange,
+    hours: hoursState,
+    manna: mannaStep.manna,
+    playtime: state.playtime + countedSeconds,
+    runPlaytime: state.runPlaytime + countedSeconds,
+    vigil: {
+      seconds: elapsedSeconds,
+      joy,
+      sinnerJoy: sinnerStep.sinners.reduce((sum, s) => sum + s.swallowed, 0),
+      manna: mannaStep.ripened,
+      pending: elapsedSeconds > 60,
+    },
+  };
+
+  return {
+    state: next,
+    seconds: elapsedSeconds,
+    joy,
+    sinnerJoy: next.vigil.sinnerJoy,
+    manna: mannaStep.ripened,
+  };
+}
+
+/** Local copy so the vigil does not import a cycle back through the engine. */
+function computeVigilTerms(state: GameState): { efficiency: number; hours: number } {
+  let efficiency = 0.2;
+  let hours = 2;
+  for (const id of state.blessings) {
+    const def = BLESSING_MAP[id];
+    if (!def) continue;
+    if (def.vigilEfficiency) efficiency += def.vigilEfficiency;
+    if (def.vigilHours) hours += def.vigilHours;
+  }
+  // Legacy rungs are read through the engine's own helper on the hot path;
+  // here the same two fields are enough and keep this function self-contained.
+  for (const id of state.legacy) {
+    const def = LEGACY_VIGIL[id];
+    if (!def) continue;
+    efficiency += def.efficiency;
+    hours += def.hours;
+  }
+  return { efficiency: Math.min(1, efficiency), hours };
+}
+
+/** The Legacy rungs that touch the vigil, flattened for the lookup above. */
+const LEGACY_VIGIL: Record<string, { efficiency: number; hours: number }> = {
+  gates_1: { efficiency: 0.15, hours: 5 },
+  gates_2: { efficiency: 0.2, hours: 16 },
+  gates_3: { efficiency: 0.35, hours: 96 },
+};
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Fervour — the reward for a burst of offerings
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/** True while the player is offering fast enough to count as fervent. */
+export function isFervent(state: GameState, nowMs = Date.now()): boolean {
+  return state.recentTouches.filter((t) => nowMs - t < 3_000).length >= 8;
+}
+
+/** How many sources exist at all, for the congregation halo. */
+export function congregationSize(state: GameState): number {
+  return computeTotalSources(state);
+}
+
+/** Re-exported so callers do not reach past the tick for the same number. */
+export { computeJps, computeSourceCost };

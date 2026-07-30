@@ -1,25 +1,27 @@
 /**
  * The tab rail.
  *
- * A real `role="tablist"` with arrow-key navigation, so the codex is reachable
- * without a mouse — the 3D version's tabs were meshes you could only click.
- * Tabs whose panel contains something newly affordable get a dot, which is the
- * whole reason an idle game has tabs at all: to tell you where to look next.
+ * A real `role="tablist"` with arrow-key navigation, so every panel is
+ * reachable without a mouse. Tabs whose panel holds something newly affordable
+ * get a dot, which is the whole reason an idle game has tabs at all: to tell
+ * you where to look next.
+ *
+ * Minigame tabs appear only once their source has been raised with Manna —
+ * a rail of four locked buttons teaches nothing.
  */
 'use client';
 
 import { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
-import type { GameState } from '@/lib/temple-of-joy/types';
+import { templeAudio } from '@/lib/temple-of-joy/audio';
+import type { GameState, TabId } from '@/lib/temple-of-joy/types';
 import { useTempleSnapshot, useTempleValue } from './hooks';
 import { Glyph } from './ui';
-import { computeAlerts } from './codex/alerts';
-
-type Tab = GameState['activeTab'];
+import { computeAlerts } from './panels/alerts';
 
 interface TabDef {
-  id: Tab;
+  id: TabId;
   glyph: string;
   label: string;
   /** Hide until the mechanic behind it exists. */
@@ -27,25 +29,21 @@ interface TabDef {
 }
 
 const TABS: TabDef[] = [
-  { id: 'temple', glyph: '🛕', label: 'Temple' },
-  { id: 'sources', glyph: '🌿', label: 'Sources' },
-  { id: 'upgrades', glyph: '⬆️', label: 'Upgrades' },
-  { id: 'relics', glyph: '💍', label: 'Relics', visible: (s) => s.peakKarma > 0 },
-  { id: 'wheel', glyph: '🔄', label: 'Wheel', visible: (s) => s.prestigeCount > 0 },
-  {
-    id: 'ascension',
-    glyph: '☀️',
-    label: 'Ascension',
-    visible: (s) => s.lifetimeRadiance > 0 || s.prestigeCount >= 3,
-  },
-  { id: 'objectives', glyph: '🎯', label: 'Goals' },
-  { id: 'achievements', glyph: '🏆', label: 'Trophies' },
+  { id: 'temple', glyph: '⛪', label: 'Temple' },
+  { id: 'sources', glyph: '🕯️', label: 'Sources' },
+  { id: 'blessings', glyph: '✨', label: 'Blessings' },
+  { id: 'garden', glyph: '🌱', label: 'Garden', visible: (s) => s.garden.unlocked },
+  { id: 'choir', glyph: '🎼', label: 'Choir', visible: (s) => s.choir.unlocked },
+  { id: 'exchange', glyph: '📈', label: 'Exchange', visible: (s) => s.exchange.unlocked },
+  { id: 'hours', glyph: '📖', label: 'Hours', visible: (s) => s.hours.unlocked },
+  { id: 'legacy', glyph: '☁️', label: 'Ladder', visible: (s) => s.grace > 0 || s.ascensions > 0 },
+  { id: 'trophies', glyph: '🏆', label: 'Trophies' },
   { id: 'settings', glyph: '⚙️', label: 'Settings' },
 ];
 
 export function TempleTabs() {
   const { t } = useTranslation('c-temple-of-joy');
-  const active = useTempleValue((s) => s.activeTab);
+  const active = useTempleValue((s) => s.tab);
   const railRef = useRef<HTMLDivElement>(null);
 
   const state = useTempleSnapshot(
@@ -55,17 +53,16 @@ export function TempleTabs() {
         .join(','),
       alerts: computeAlerts(s).join(','),
     }),
-    600,
+    700,
   );
 
-  const visibleIds = state.visible.split(',').filter(Boolean) as Tab[];
+  const visibleIds = state.visible.split(',').filter(Boolean) as TabId[];
   const alerts = new Set(state.alerts.split(',').filter(Boolean));
 
   /** Left/Right walk the rail; Home/End jump to its ends. */
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
-      const keys = ['ArrowLeft', 'ArrowRight', 'Home', 'End'];
-      if (!keys.includes(event.key)) return;
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
       event.preventDefault();
 
       const index = visibleIds.indexOf(active);
@@ -83,10 +80,9 @@ export function TempleTabs() {
 
       const target = visibleIds[next];
       if (!target) return;
-      useTempleStore.getState().setActiveTab(target);
-      railRef.current
-        ?.querySelector<HTMLButtonElement>(`[data-tab="${target}"]`)
-        ?.focus({ preventScroll: false });
+      templeAudio.play('tab');
+      useTempleStore.getState().setTab(target);
+      railRef.current?.querySelector<HTMLButtonElement>(`[data-tab="${target}"]`)?.focus();
     },
     [active, visibleIds],
   );
@@ -94,7 +90,7 @@ export function TempleTabs() {
   return (
     <div
       ref={railRef}
-      className="toj-tabs toj-scroll"
+      className="toj-tabs"
       role="tablist"
       aria-label={t('temple-sections', { defaultValue: 'Temple sections' })}
       onKeyDown={onKeyDown}
@@ -108,11 +104,14 @@ export function TempleTabs() {
             role="tab"
             data-tab={tab.id}
             aria-selected={selected}
-            aria-controls="toj-codex-panel"
+            aria-controls="toj-panel"
             // Roving tabindex: one stop for the whole rail, then arrow keys.
             tabIndex={selected ? 0 : -1}
             className="toj-tab"
-            onClick={() => useTempleStore.getState().setActiveTab(tab.id)}
+            onClick={() => {
+              templeAudio.play('tab');
+              useTempleStore.getState().setTab(tab.id);
+            }}
           >
             <span className="toj-tab-glyph">
               <Glyph>{tab.glyph}</Glyph>
