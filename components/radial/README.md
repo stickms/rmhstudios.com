@@ -150,12 +150,22 @@ page that renders at 15fps:
   where it hasn't moved, so a plain glide doesn't restyle all three blobs.
 - **Legibility is built into the shape, not borrowed from the backdrop.**
   Without a blend mode there is no inversion to rely on, so the drop is filled
-  with `--site-text` and carries a halo in `--site-bg` (two `drop-shadow`s
-  chained after the goo, so the rim traces the fused outline rather than each
-  blob). Those tokens are contrast-paired by definition, so it reads on the page
+  with `--site-text` and carries a halo in `--site-bg`. The halo is built from
+  filter primitives **inside** the one filter — dilate the fused alpha
+  (`feMorphology`), flood it with the background (`feFlood` + `feComposite`), and
+  merge it under the ink — so the rim traces the fused outline rather than each
+  blob. Those tokens are contrast-paired by definition, so it reads on the page
   in every theme — and on a control whose fill matches the ink (on the default
   theme the accent IS the ink, so over the compose button the halo is the whole
   mark) it reads as a ring.
+- **Never chain a CSS filter function after the `url()`.** The halo used to be
+  `filter: url(#rmh-pointer-goo) drop-shadow(…) drop-shadow(…)`, which reads like
+  two cheap shadows over a cheap filter and is anything but. Measured headless
+  with vsync off: the `url()` alone runs at ~0.4ms/frame, and with the chain a
+  1-second `setInterval` did not fire once in **10 seconds** — the main thread was
+  blocked outright. This is the one that made the cursor feel slow after the
+  backdrop field was fixed. Extra passes go inside the `<filter>` as primitives;
+  `lib/__tests__/metaball-perf-budget.test.ts` fails the build on the chain.
 - **It replaces the OS cursor.** While a real mouse is driving it, the native
   arrow is hidden (`[data-metaball-cursor]` in `radial.css`) — two pointers on
   screen read as a bug. Anything that needs the real cursor opts out with
