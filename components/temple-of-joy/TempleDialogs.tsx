@@ -148,7 +148,9 @@ function AscendDialog() {
           })}
         </p>
 
-        <p className="toj-dialog-figure">+{plan.grace} ☁️</p>
+        <p className="toj-dialog-figure">
+          +{plan.grace} <Glyph>☁️</Glyph>
+        </p>
 
         <ul className="toj-dialog-list">
           <li>
@@ -247,7 +249,9 @@ function MannaDialog() {
           })}
         </p>
 
-        <p className="toj-dialog-figure">{manna.held} 🍞</p>
+        <p className="toj-dialog-figure">
+          {manna.held} <Glyph>🍞</Glyph>
+        </p>
         <p className="toj-dialog-text">
           {t('manna-next', {
             kind: kind.name,
@@ -283,7 +287,11 @@ function MannaDialog() {
                           defaultValue: 'Level {{level}} · +{{percent}}% output',
                         })
                   }
-                  price={`${row.cost} 🍞`}
+                  price={
+                    <>
+                      {row.cost} <Glyph>🍞</Glyph>
+                    </>
+                  }
                   affordable={row.affordable}
                   disabled={!row.affordable}
                   onClick={() => {

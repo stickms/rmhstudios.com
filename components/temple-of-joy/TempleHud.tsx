@@ -11,7 +11,7 @@
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { fmt, formatDuration } from '@/lib/temple-of-joy/numbers';
-import { saveToServer } from '@/lib/temple-of-joy/persistence';
+import { saveNow } from '@/lib/temple-of-joy/persistence';
 import {
   computeDevotion,
   computeRateModifiers,
@@ -109,9 +109,10 @@ export function TempleHud() {
           variant="quiet"
           size="sm"
           onClick={() => {
-            // Best-effort: leaving should not be blocked on the network, and
-            // the autosave loop has almost certainly already covered this.
-            saveToServer(useTempleStore.getState()).catch(() => {});
+            // Best-effort: leaving should not be blocked on the network. The
+            // local half of this write is synchronous and always lands, so the
+            // save is safe even if the request never completes.
+            saveNow().catch(() => {});
             window.location.href = '/builds';
           }}
         >

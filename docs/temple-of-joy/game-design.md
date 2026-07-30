@@ -192,10 +192,64 @@ Inside the tick, only income and buffs run per frame; the garden, market, mana,
 manna and trophy audit each carry an accumulator and fire on a coarse beat. That
 is also what lets the same code run the offline simulation.
 
+## Mobile
+
+The game is built for a phone first and widens on a desktop, not the reverse.
+
+- **Layout.** Under 62rem the altar takes the top of the screen and the panel
+  takes the bottom half — every menu under your thumb, the thing you tap under
+  your eyes. A landscape phone gets a taller panel and a smaller altar. Above
+  62rem the panel docks to the right.
+- **Viewport.** `100dvh`, so the layout does not sit under iOS Safari's
+  collapsing toolbar, plus `viewport-fit=cover` and `env(safe-area-inset-*)`
+  padding for the notch and the home indicator.
+- **Touch.** `overscroll-behavior: none` (Android's pull-to-refresh would
+  otherwise fire on a drag that starts at the altar), `touch-action:
+manipulation` (kills double-tap zoom), and `user-select`/`-webkit-touch-callout`
+  off, because tapping one spot repeatedly otherwise raises iOS's selection
+  magnifier within a few taps.
+- **Targets.** Every control gets a real minimum under `@media (pointer:
+coarse)` — 44px for buttons and tabs, 56px rows, and a switch whose visible
+  track stays 24px while its hit area grows past it with a pseudo-element.
+- **Hover.** Every hover affordance lives in one `@media (hover: hover)` block.
+  Touch browsers leave `:hover` applied after a tap, so an ungated rule means a
+  phone permanently shows one row highlighted and one plot scaled up.
+
+`lib/temple-of-joy/__tests__/snapshot-html.test.tsx` renders the real markup to
+standalone HTML (guarded by `TOJ_SNAPSHOT`, skipped in CI) so the layout can be
+checked in a browser at device sizes.
+
+## Emoji
+
+Every glyph goes through `<Glyph>` → `<Emoji>`, which renders a Twemoji SVG as
+an ordinary `<img>` — the same candle on Windows, Android, and a Linux box with
+no colour emoji font. The tree is marked `data-no-twemoji` so the site-wide
+MutationObserver stays out of a subtree React re-renders constantly. A test
+asserts no raw emoji character survives into rendered text; `✓` is the one
+documented exception, being a text dingbat with no Twemoji asset.
+
 ## Saves
 
 `SaveData` v2, plain JSON, stored per user in `TempleOfJoySave` and mirrored to
-`localStorage`; on load the newer of the two wins. A v1 save is detected by its
+`localStorage`; on load the newer of the two wins.
+
+Autosave (`useAutoSave`) writes on a 30-second heartbeat, again 15 seconds
+after the last interaction, and again on every path by which a tab goes away —
+`visibilitychange → hidden`, `pagehide`, and `freeze`. Three properties matter:
+
+1. **Local storage is written first, synchronously, on every path.** It is the
+   only write that cannot be cancelled by the page disappearing.
+2. **Teardown uses `sendBeacon`**, falling back to a `keepalive` fetch. A plain
+   request issued from `pagehide` is routinely dropped.
+3. **`visibilitychange` is the load-bearing one on mobile**, where `pagehide`
+   and `beforeunload` frequently never fire at all.
+
+Server writes are throttled to one per 10 s so the interval, the idle timer and
+tab-switching cannot walk into the endpoint's own 20-per-minute rate limit.
+
+A tab left open in the background stops receiving animation frames, so waking
+runs the vigil from the last tick rather than letting `applyTick`'s one-minute
+clamp swallow the afternoon. A v1 save is detected by its
 `lifetimeHappiness` field and migrated to Grace on the new curve plus its
 playtime and settings — the old structure has no equivalent, but the time
 someone put in does.

@@ -136,7 +136,15 @@ export function LadderPanel() {
                   icon={<Glyph>{rung.icon}</Glyph>}
                   name={rung.name}
                   note={rung.description}
-                  price={row.owned ? '✓' : `${fmt(rung.cost, ladder.format)} ☁️`}
+                  price={
+                    row.owned ? (
+                      '✓'
+                    ) : (
+                      <>
+                        {fmt(rung.cost, ladder.format)} <Glyph>☁️</Glyph>
+                      </>
+                    )
+                  }
                   affordable={row.affordable}
                   flash={flashed === rung.id}
                   disabled={row.owned || !row.affordable}

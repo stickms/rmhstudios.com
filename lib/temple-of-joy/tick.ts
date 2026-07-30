@@ -288,9 +288,19 @@ export interface VigilResult {
  * fun when it is closed": your rate is throttled, but your garden matured,
  * your market moved, three manna ripened, and twelve Sinners spent nine hours
  * getting fat on your behalf.
+ *
+ * `sinceMs` defaults to when the save was written, which is the case on load.
+ * The other caller is a tab waking from the background: browsers stop serving
+ * animation frames to a hidden tab, so the game simply stops, and the clamp in
+ * `applyTick` means the first frame back would credit at most a minute of a
+ * nine-hour afternoon. Waking runs this instead, from the last tick.
  */
-export function applyVigil(state: GameState, nowMs = Date.now()): VigilResult {
-  const elapsedSeconds = Math.max(0, (nowMs - state.lastSaved) / 1000);
+export function applyVigil(
+  state: GameState,
+  nowMs = Date.now(),
+  sinceMs = state.lastSaved,
+): VigilResult {
+  const elapsedSeconds = Math.max(0, (nowMs - sinceMs) / 1000);
   if (elapsedSeconds < 5) {
     return { state: { ...state, lastTick: nowMs }, seconds: 0, joy: 0, sinnerJoy: 0, manna: 0 };
   }

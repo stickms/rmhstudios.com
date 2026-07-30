@@ -95,7 +95,11 @@ export function HoursPanel() {
                   })
                 : def.description
             }
-            price={`${row.cost} 🔮`}
+            price={
+              <>
+                {row.cost} <Glyph>🔮</Glyph>
+              </>
+            }
             meta={
               row.locked
                 ? undefined

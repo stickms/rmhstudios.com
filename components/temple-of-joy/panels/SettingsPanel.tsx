@@ -17,7 +17,12 @@ import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
 import { fmt, formatDuration } from '@/lib/temple-of-joy/numbers';
-import { exportSave, importSave, saveToServer } from '@/lib/temple-of-joy/persistence';
+import {
+  AUTOSAVE_INTERVAL_MS,
+  exportSave,
+  importSave,
+  saveNow,
+} from '@/lib/temple-of-joy/persistence';
 import { useTempleSnapshot, useTempleValue } from '../hooks';
 import { TempleButton, TempleSection, TempleSlider, TempleSwitch } from '../ui';
 
@@ -39,6 +44,7 @@ export function SettingsPanel() {
     (s) => ({
       playtime: s.playtime,
       lifetime: fmt(s.lifetimeJoy, s.numberFormat),
+      sinceSave: Math.max(0, (Date.now() - s.lastSaved) / 1000),
     }),
     2_000,
   );
@@ -158,6 +164,30 @@ export function SettingsPanel() {
 
       <TempleSection>{t('section-save', { defaultValue: 'The save' })}</TempleSection>
 
+      <p className="toj-panel-note">
+        {t('save-note', {
+          seconds: Math.round(AUTOSAVE_INTERVAL_MS / 1000),
+          defaultValue:
+            'The temple saves itself every {{seconds}} seconds, again shortly after you stop playing, and again the moment the tab is closed or backgrounded. You should never need the button below.',
+        })}
+      </p>
+
+      <Setting
+        name={t('save-last', { defaultValue: 'Last saved' })}
+        note={t('save-where', {
+          defaultValue: 'To your account, and to this browser as a fallback.',
+        })}
+      >
+        <span className="toj-setting-value">
+          {stats.sinceSave < 5
+            ? t('save-just-now', { defaultValue: 'just now' })
+            : t('save-ago', {
+                time: formatDuration(stats.sinceSave),
+                defaultValue: '{{time}} ago',
+              })}
+        </span>
+      </Setting>
+
       <Setting
         name={t('save-playtime', { defaultValue: 'Time in the temple' })}
         note={t('save-lifetime', {
@@ -176,9 +206,9 @@ export function SettingsPanel() {
 /**
  * Export, import, and a save-now button.
  *
- * The game autosaves to the server every thirty seconds, but "I am about to
- * close this laptop" is a real feeling and a button that answers it costs one
- * request.
+ * The game saves itself on a timer, shortly after you stop playing, and on
+ * every way a tab can close — but "I am about to shut this laptop" is a real
+ * feeling and a button that answers it costs one request.
  */
 function SaveTools() {
   const { t } = useTranslation('c-temple-of-joy');
@@ -190,7 +220,7 @@ function SaveTools() {
         <TempleButton
           size="sm"
           onClick={() => {
-            saveToServer(useTempleStore.getState())
+            saveNow()
               .then(() => setStatus(t('save-done', { defaultValue: 'Saved.' })))
               .catch(() =>
                 setStatus(t('save-failed', { defaultValue: 'Could not reach the server.' })),

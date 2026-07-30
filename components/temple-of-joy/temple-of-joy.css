@@ -125,7 +125,19 @@
 .toj {
   position: fixed;
   inset: 0;
+  /* `inset: 0` alone resolves against the *layout* viewport, which on iOS
+     Safari is the one that ignores the collapsing toolbars — the bottom of the
+     game ends up underneath them. `dvh` tracks the visible viewport as the
+     toolbars come and go; the `vh` line before it is the fallback for engines
+     that do not know `dvh`. With top, bottom and height all set, height wins
+     and `bottom` is ignored, which is exactly what is wanted here. */
+  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
+  /* Without this, a drag that starts on the altar triggers Android Chrome's
+     pull-to-refresh and iOS's rubber-band — in a game whose entire interface
+     is tapping near the top of the screen. */
+  overscroll-behavior: none;
   background: var(--toj-ground);
   color: var(--toj-ink);
   font-family: var(--toj-sans);
@@ -135,6 +147,15 @@
   text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
+  /* Tapping the same spot repeatedly is the core verb of this game. Left
+     selectable, iOS raises the selection magnifier and the copy callout within
+     a few taps, and Android draws selection handles over the altar. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  /* Kills the 300ms double-tap-to-zoom delay across the whole game, not just
+     on buttons — a fast clicker taps in the gaps between them too. */
+  touch-action: manipulation;
   accent-color: var(--toj-gold);
   color-scheme: light;
   /* Every figure here changes several times a second; proportional digits
@@ -261,16 +282,81 @@
   }
 }
 
-/* On a phone the panel takes the bottom half; the sanctum keeps the top. */
+/**
+ * On a phone the panel takes the bottom half and the sanctum keeps the top —
+ * the altar under your eyes, every menu under your thumb. `dvh` again, so the
+ * split does not jump when iOS collapses its toolbar mid-scroll.
+ */
 @media (max-width: 61.99rem) {
+  .toj {
+    /* One number for the split, so the toast rail can sit clear of the panel
+       instead of guessing at it. */
+    --toj-dock-h: min(52dvh, 30rem);
+  }
+
+  /* The head is pure overhead on a phone: every row it wraps onto is a row
+     stolen from the altar. The counter stays large — it is the whole point —
+     but the rate, the chips and the way out share one line beneath it. */
+  .toj-hud {
+    gap: 0.5rem;
+    padding-block: 0.45rem;
+    align-items: center;
+  }
+
+  .toj-hud-main {
+    flex-basis: 100%;
+    min-width: 0;
+  }
+
+  .toj-joy {
+    font-size: clamp(1.7rem, 8vw, 2.4rem);
+  }
+
+  .toj-chips {
+    flex: 1;
+    gap: 0.3rem;
+  }
+
+  .toj-hud-actions {
+    margin-inline-start: auto;
+  }
+
   .toj-dock {
-    height: min(52vh, 30rem);
+    height: var(--toj-dock-h);
     flex-shrink: 0;
     border-top: 1px solid var(--toj-rule);
   }
 
   .toj-stage {
-    min-height: 15rem;
+    min-height: 11rem;
+  }
+}
+
+/**
+ * A phone in landscape is ~380px tall. The portrait split would ask for more
+ * height than exists, so the panel takes most of it and the altar shrinks to
+ * a strip — you turned the phone sideways to read a list, not to admire the
+ * architecture.
+ */
+@media (max-width: 61.99rem) and (max-height: 32rem) {
+  .toj {
+    --toj-dock-h: 62dvh;
+  }
+
+  .toj-stage {
+    min-height: 6rem;
+  }
+
+  .toj-altar {
+    width: min(30dvh, 40vw);
+  }
+
+  .toj-joy {
+    font-size: clamp(1.3rem, 4.5vw, 1.9rem);
+  }
+
+  .toj-hud {
+    padding-block: 0.35rem;
   }
 }
 
@@ -331,10 +417,6 @@
   font-size: 0.8rem;
   white-space: nowrap;
   transition: border-color var(--toj-base) var(--toj-ease);
-}
-
-button.toj-chip:hover {
-  border-color: var(--toj-gold);
 }
 
 .toj-chip[data-kind='grace'] {
@@ -439,10 +521,6 @@ button.toj-chip:hover {
   border-radius: 50%;
   transition: transform var(--toj-quick) var(--toj-ease);
   will-change: transform;
-}
-
-.toj-altar:hover {
-  transform: translateY(-2px);
 }
 
 .toj-altar:active {
@@ -587,10 +665,6 @@ button.toj-chip:hover {
   transition: transform var(--toj-quick) var(--toj-ease);
 }
 
-.toj-halo:hover {
-  transform: translate(-50%, -50%) scale(1.1);
-}
-
 .toj-halo:active {
   transform: translate(-50%, -50%) scale(0.9);
 }
@@ -680,10 +754,6 @@ button.toj-chip:hover {
   box-shadow: var(--toj-lift-sm);
   transition: filter var(--toj-quick) var(--toj-ease);
   animation: toj-sinner-breathe 3.6s var(--toj-ease) infinite;
-}
-
-.toj-sinner:hover {
-  filter: brightness(1.12);
 }
 
 .toj-sinner[data-penitent='true'] {
@@ -795,11 +865,6 @@ button.toj-chip:hover {
     box-shadow var(--toj-quick) var(--toj-ease);
 }
 
-.toj-btn:hover:not(:disabled) {
-  border-color: var(--toj-gold);
-  background: var(--toj-gold-wash);
-}
-
 .toj-btn:active:not(:disabled) {
   transform: translateY(1px);
 }
@@ -815,26 +880,10 @@ button.toj-chip:hover {
   box-shadow: var(--toj-lift-sm);
 }
 
-.toj-btn[data-variant='gold']:hover:not(:disabled) {
-  filter: brightness(1.06);
-  background: linear-gradient(180deg, var(--toj-gold-bright), var(--toj-gold));
-}
-
 .toj-btn[data-variant='quiet'] {
   border-color: transparent;
   background: transparent;
   color: var(--toj-ink-soft);
-}
-
-.toj-btn[data-variant='quiet']:hover:not(:disabled) {
-  background: var(--toj-surface-sunk);
-  color: var(--toj-ink);
-}
-
-.toj-btn[data-variant='danger']:hover:not(:disabled) {
-  border-color: var(--toj-warn);
-  background: color-mix(in oklab, var(--toj-warn) 10%, var(--toj-surface));
-  color: var(--toj-warn);
 }
 
 .toj-btn[data-size='sm'] {
@@ -891,11 +940,6 @@ button.toj-chip:hover {
     background-color var(--toj-quick) var(--toj-ease);
 }
 
-.toj-tab:hover {
-  color: var(--toj-ink);
-  background: var(--toj-surface-sunk);
-}
-
 .toj-tab[aria-selected='true'] {
   color: var(--toj-ink);
   background: var(--toj-gold-wash);
@@ -908,7 +952,12 @@ button.toj-chip:hover {
 }
 
 /* Something in here is newly affordable. */
+/* A badge in the tab's corner, not a glyph in its text: sitting in the flow
+   it read as a bullet separating one tab from the next. */
 .toj-tab-dot {
+  position: absolute;
+  top: 5px;
+  inset-inline-end: 5px;
   width: 5px;
   height: 5px;
   border-radius: 50%;
@@ -1012,11 +1061,6 @@ button.toj-chip:hover {
   transition:
     background-color var(--toj-quick) var(--toj-ease),
     padding-left var(--toj-quick) var(--toj-ease);
-}
-
-button.toj-row:hover:not(:disabled) {
-  background: var(--toj-surface-sunk);
-  padding-left: 0.4rem;
 }
 
 button.toj-row:active:not(:disabled) {
@@ -1150,10 +1194,6 @@ button.toj-row:active:not(:disabled) {
   transition:
     background-color var(--toj-quick) var(--toj-ease),
     color var(--toj-quick) var(--toj-ease);
-}
-
-.toj-segment:hover {
-  color: var(--toj-ink);
 }
 
 .toj-segment[aria-pressed='true'] {
@@ -1299,12 +1339,6 @@ button.toj-row:active:not(:disabled) {
     border-color var(--toj-quick) var(--toj-ease);
 }
 
-.toj-plot:hover:not(:disabled) {
-  border-color: var(--toj-gold);
-  transform: scale(1.06);
-  z-index: 1;
-}
-
 .toj-plot:disabled {
   background: transparent;
   border-style: dashed;
@@ -1374,10 +1408,6 @@ button.toj-row:active:not(:disabled) {
     background-color var(--toj-quick) var(--toj-ease);
 }
 
-.toj-seed:hover:not(:disabled) {
-  border-color: var(--toj-gold);
-}
-
 .toj-seed[aria-pressed='true'] {
   border-color: var(--toj-gold);
   background: var(--toj-gold-wash);
@@ -1429,6 +1459,7 @@ button.toj-row:active:not(:disabled) {
 }
 
 .toj-stall-role {
+  display: block;
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -1436,6 +1467,7 @@ button.toj-row:active:not(:disabled) {
 }
 
 .toj-stall-name {
+  display: block;
   font-family: var(--toj-serif);
   font-size: 1.02rem;
   font-weight: 600;
@@ -1443,6 +1475,7 @@ button.toj-row:active:not(:disabled) {
 }
 
 .toj-stall-effect {
+  display: block;
   font-size: 0.76rem;
   color: var(--toj-ink-soft);
 }
@@ -1636,10 +1669,15 @@ button.toj-row:active:not(:disabled) {
 
 /* ── Toast rail ── */
 
+/**
+ * On a phone the bottom of the screen is the panel, so the rail sits just
+ * above it — over the sanctum's empty air rather than over the list the player
+ * is reading. On a wide screen it tucks beside the docked column.
+ */
 .toj-toasts {
   position: fixed;
   z-index: 45;
-  bottom: calc(var(--toj-safe-bottom) + 1rem);
+  bottom: calc(var(--toj-dock-h, 0px) + var(--toj-safe-bottom) + 0.75rem);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -1698,12 +1736,14 @@ button.toj-row:active:not(:disabled) {
 }
 
 .toj-toast-title {
+  display: block;
   font-size: 0.85rem;
   font-weight: 600;
   line-height: 1.25;
 }
 
 .toj-toast-body {
+  display: block;
   font-size: 0.76rem;
   color: var(--toj-ink-soft);
   margin-top: 0.1rem;
@@ -1748,7 +1788,164 @@ button.toj-row:active:not(:disabled) {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   16. Restraint
+   16. Pointers and thumbs
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Every hover affordance in the game lives here, behind `hover: hover`.
+ *
+ * A touch browser applies `:hover` on tap and then *leaves it applied* until
+ * you touch something else, so an ungated hover style means a phone is
+ * permanently showing one row as highlighted, one plot as scaled up, and one
+ * tab as focused — all of them lying about where your finger is. Gating them
+ * costs a mouse nothing and fixes the lie.
+ */
+@media (hover: hover) and (pointer: fine) {
+  button.toj-chip:hover {
+    border-color: var(--toj-gold);
+  }
+
+  .toj-altar:hover {
+    transform: translateY(-2px);
+  }
+
+  .toj-halo:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+
+  .toj-sinner:hover {
+    filter: brightness(1.12);
+  }
+
+  .toj-btn:hover:not(:disabled) {
+    border-color: var(--toj-gold);
+    background: var(--toj-gold-wash);
+  }
+
+  .toj-btn[data-variant='gold']:hover:not(:disabled) {
+    filter: brightness(1.06);
+    background: linear-gradient(180deg, var(--toj-gold-bright), var(--toj-gold));
+  }
+
+  .toj-btn[data-variant='quiet']:hover:not(:disabled) {
+    background: var(--toj-surface-sunk);
+    color: var(--toj-ink);
+  }
+
+  .toj-btn[data-variant='danger']:hover:not(:disabled) {
+    border-color: var(--toj-warn);
+    background: color-mix(in oklab, var(--toj-warn) 10%, var(--toj-surface));
+    color: var(--toj-warn);
+  }
+
+  .toj-tab:hover {
+    color: var(--toj-ink);
+    background: var(--toj-surface-sunk);
+  }
+
+  button.toj-row:hover:not(:disabled) {
+    background: var(--toj-surface-sunk);
+    padding-left: 0.4rem;
+  }
+
+  .toj-segment:hover {
+    color: var(--toj-ink);
+  }
+
+  .toj-plot:hover:not(:disabled) {
+    border-color: var(--toj-gold);
+    transform: scale(1.06);
+    z-index: 1;
+  }
+
+  .toj-seed:hover:not(:disabled) {
+    border-color: var(--toj-gold);
+  }
+}
+
+/**
+ * Thumbs.
+ *
+ * A finger is about 9mm across and lands ±4mm from where its owner thinks. The
+ * platform guidance (44pt on iOS, 48dp on Android) exists because anything
+ * smaller is a coin toss, and this game is nothing but small controls in long
+ * lists. Every interactive target gets a real minimum on a coarse pointer,
+ * without changing a thing for a mouse.
+ */
+@media (pointer: coarse) {
+  .toj-btn {
+    min-height: 44px;
+    padding-inline: 1.05rem;
+  }
+
+  .toj-btn[data-size='sm'] {
+    min-height: 40px;
+    padding-inline: 0.8rem;
+  }
+
+  .toj-tab {
+    min-height: 44px;
+    padding-inline: 0.85rem;
+  }
+
+  .toj-segment {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    padding-inline: 0.8rem;
+  }
+
+  .toj-row {
+    min-height: 56px;
+    padding-block: 0.7rem;
+  }
+
+  .toj-seed {
+    min-height: 40px;
+  }
+
+  .toj-chip {
+    min-height: 36px;
+  }
+
+  /* The switch is the control a thumb misses most often: the track is only
+     24px tall. Rather than redesign it, grow an invisible hit area past it —
+     the switch looks identical and answers to a 44px target. */
+  .toj-switch::before {
+    content: '';
+    position: absolute;
+    inset: -10px -8px;
+  }
+
+  /* A range input's native thumb is fine on touch, but the track needs the
+     height to be draggable without grabbing the panel underneath. */
+  .toj-slider {
+    height: 44px;
+  }
+
+  /* The garden is 36 targets in a grid — the one place where a few pixels of
+     cell size is the difference between planting and mis-planting. */
+  .toj-beds {
+    gap: 4px;
+  }
+
+  .toj-plot {
+    min-height: 44px;
+  }
+
+  /* Halos and Sinners are caught under time pressure; make them forgiving. */
+  .toj-halo {
+    width: clamp(3.6rem, 15vw, 4.5rem);
+  }
+
+  .toj-sinner {
+    width: 3rem;
+    height: 3rem;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   17. Restraint
    ══════════════════════════════════════════════════════════════════════════ */
 
 /**

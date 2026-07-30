@@ -214,6 +214,45 @@ describe('dialogs render', () => {
   });
 });
 
+describe('emoji', () => {
+  /**
+   * Every glyph must render as a Twemoji image rather than as a raw character.
+   *
+   * A bare emoji in a template string — `` price={`${cost} 🍞`} `` — looks
+   * identical in the editor and renders as whatever the OS has: a different
+   * shape on Windows, a different shape on Android, and on a Linux box with no
+   * colour emoji font, a box. Six of those had slipped in beside numbers.
+   */
+  const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
+
+  /**
+   * `✓` (U+2713) is a typographic dingbat: text presentation by default, no
+   * Twemoji asset, and used here as a tick mark rather than a picture. It is
+   * the one character in the range that is correct as a raw character.
+   */
+  const TEXT_MARKS = new Set(['✓']);
+
+  it('renders every glyph through Twemoji, never as a raw character', () => {
+    useTempleStore.setState(deepGame());
+
+    for (const tab of TABS.map(([id]) => id)) {
+      useTempleStore.setState({ tab });
+      const html = renderToString(<TemplePanel />);
+
+      // Strip the tags — an emoji inside an `alt` or `src` is Twemoji doing
+      // its job; one left in the text is the bug.
+      const text = html.replace(/<[^>]*>/g, '');
+      const stray = [...text].filter((c) => EMOJI.test(c) && !TEXT_MARKS.has(c));
+      expect(stray, `${tab} renders raw emoji: ${stray.join(' ')}`).toEqual([]);
+    }
+  });
+
+  it('points at the Twemoji asset host', () => {
+    useTempleStore.setState({ ...deepGame(), tab: 'sources' });
+    expect(renderToString(<TemplePanel />)).toContain('twemoji');
+  });
+});
+
 describe('tab alerts', () => {
   it('marks nothing on an empty save', () => {
     expect(computeAlerts(createInitialState())).toEqual([]);

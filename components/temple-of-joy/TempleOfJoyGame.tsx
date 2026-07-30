@@ -11,7 +11,7 @@ import { useEffect, useRef } from 'react';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { applyVigil } from '@/lib/temple-of-joy/tick';
 import { doAudit } from '@/lib/temple-of-joy/actions';
-import { saveToServer, useAutoSave } from '@/lib/temple-of-joy/persistence';
+import { useAutoSave } from '@/lib/temple-of-joy/persistence';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
 import type { GameState } from '@/lib/temple-of-joy/types';
 import { useTempleValue } from './hooks';
@@ -68,6 +68,38 @@ export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameSta
     return () => cancelAnimationFrame(frame);
   }, []);
 
+  /* ── Waking from the background ──────────────────────────────────────── */
+
+  // A hidden tab stops receiving animation frames, so the game simply stops —
+  // and `applyTick` clamps a single step to a minute, which would credit one
+  // minute of a nine-hour afternoon spent in another tab. Coming back runs the
+  // same vigil the loader does, measured from the last tick rather than the
+  // last save.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+
+      const state = useTempleStore.getState();
+      if (!state.initialized) return;
+
+      const now = Date.now();
+      const asleep = (now - state.lastTick) / 1000;
+      // Under a couple of minutes the tick's own clamp covers it, and a
+      // "welcome back" for a glance at another tab would be absurd.
+      if (asleep < 120) return;
+
+      const vigil = applyVigil(state, now, state.lastTick);
+      useTempleStore.setState({
+        ...vigil.state,
+        // Only worth interrupting for a real absence.
+        showVigilDialog: asleep > 600,
+      });
+    };
+
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
+
   useAutoSave();
 
   /* ── Sound ───────────────────────────────────────────────────────────── */
@@ -109,31 +141,16 @@ export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameSta
     };
   }, []);
 
-  /* ── Save on the way out ─────────────────────────────────────────────── */
-
-  // Deliberately no `beforeunload` confirmation: it fires the browser's native
-  // "Leave site?" dialog on every navigation — unstyled, untranslatable, and
-  // pointless for a game that autosaves continuously — and it blocks bfcache,
-  // so coming back re-downloads and re-initialises everything.
+  // Saving on the way out belongs to `useAutoSave` and lives there alone: this
+  // component used to register its own `pagehide` and `visibilitychange`
+  // handlers too, which meant every tab switch fired two identical POSTs at an
+  // endpoint rate-limited to twenty a minute.
   //
-  // `pagehide` and a hidden `visibilitychange` are the two events that actually
-  // fire when a tab closes on mobile Safari, where `beforeunload` often does not.
-  useEffect(() => {
-    const flush = () => {
-      saveToServer(useTempleStore.getState()).catch(() => {});
-    };
-    const onVisibility = () => {
-      if (document.visibilityState === 'hidden') flush();
-    };
-
-    window.addEventListener('pagehide', flush);
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => {
-      window.removeEventListener('pagehide', flush);
-      document.removeEventListener('visibilitychange', onVisibility);
-      flush();
-    };
-  }, []);
+  // Deliberately no `beforeunload` confirmation anywhere: it fires the
+  // browser's native "Leave site?" dialog on every navigation — unstyled,
+  // untranslatable, and pointless for a game that autosaves continuously — and
+  // it blocks bfcache, so coming back re-downloads and re-initialises
+  // everything.
 
   return (
     // `data-no-twemoji` keeps the site-wide observer out of a tree React

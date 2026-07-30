@@ -25,7 +25,14 @@ export const SAVE_VERSION = 2 as const;
    Serialising
    ══════════════════════════════════════════════════════════════════════════ */
 
-export function stateToSave(state: GameState): SaveData {
+/**
+ * `at` is passed in rather than read from the clock so that the timestamp
+ * inside the payload and the one written back to the store are the same
+ * instant. They are what the vigil measures the absence from; a few
+ * milliseconds of drift between them is harmless, but two different notions of
+ * "when this was saved" is the kind of thing that rots into a real bug.
+ */
+export function stateToSave(state: GameState, at = Date.now()): SaveData {
   return {
     version: SAVE_VERSION,
     joy: state.joy,
@@ -56,7 +63,7 @@ export function stateToSave(state: GameState): SaveData {
     choir: state.choir,
     exchange: state.exchange,
     hours: state.hours,
-    lastSaved: Date.now(),
+    lastSaved: at,
     playtime: state.playtime,
     runPlaytime: state.runPlaytime,
     theme: state.theme,
@@ -211,9 +218,17 @@ export function readSave(raw: unknown): Partial<GameState> | null {
    Storage
    ══════════════════════════════════════════════════════════════════════════ */
 
-export function saveLocal(state: GameState): void {
+/**
+ * The guaranteed write.
+ *
+ * Synchronous, same-process, no network — which is why it is the one that runs
+ * first in every path, including the one where the tab is being torn down. The
+ * server write is how a save reaches another device; *this* is how a save
+ * survives closing the laptop.
+ */
+export function saveLocal(state: GameState, at = Date.now()): void {
   try {
-    localStorage.setItem(LOCAL_KEY, JSON.stringify(stateToSave(state)));
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(stateToSave(state, at)));
   } catch {
     // Private browsing, quota, a disabled storage API — none of which should
     // interrupt a game that also saves to the server.
@@ -229,12 +244,58 @@ export function loadLocal(): unknown {
   }
 }
 
-export async function saveToServer(state: GameState): Promise<void> {
-  await fetch('/api/temple-of-joy/save', {
+const SAVE_URL = '/api/temple-of-joy/save';
+
+export async function saveToServer(state: GameState, at = Date.now()): Promise<void> {
+  await fetch(SAVE_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ saveData: stateToSave(state) }),
+    // `keepalive` lets the request outlive the document, which matters on the
+    // paths that fire while the page is going away.
+    keepalive: true,
+    body: JSON.stringify({ saveData: stateToSave(state, at) }),
   });
+}
+
+/**
+ * The last-chance write, for when the page is being torn down.
+ *
+ * A plain `fetch` issued from `pagehide` is routinely cancelled mid-flight —
+ * the browser is under no obligation to finish a request for a document that
+ * no longer exists. `sendBeacon` is the API built for exactly this: the
+ * request is handed to the browser's own queue and survives the unload.
+ *
+ * Both it and `keepalive` cap the body at 64 KB, and a late-game save can
+ * approach that, so a `false` return falls through to `keepalive` and, failing
+ * that, to nothing at all — which is survivable, because {@link saveLocal} has
+ * already run by the time this is called.
+ */
+export function saveBeacon(state: GameState, at = Date.now()): boolean {
+  const body = JSON.stringify({ saveData: stateToSave(state, at) });
+
+  try {
+    if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+      // The Blob's type becomes the Content-Type; without it the route sees
+      // `text/plain` and some stacks refuse to parse the body.
+      if (navigator.sendBeacon(SAVE_URL, new Blob([body], { type: 'application/json' }))) {
+        return true;
+      }
+    }
+  } catch {
+    // Beacon can throw on a body the browser considers too large.
+  }
+
+  try {
+    void fetch(SAVE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
+      body,
+    }).catch(() => {});
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function loadFromServer(): Promise<unknown> {
@@ -262,36 +323,145 @@ export function importSave(encoded: string): Partial<GameState> | null {
   }
 }
 
-/* ── Autosave ────────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════════
+   Autosave
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/** The heartbeat, while the player is here. */
+export const AUTOSAVE_INTERVAL_MS = 30_000;
 
 /**
- * Writes to the server on an interval and to local storage as a fallback. The
- * local write also happens on every server success, so a session that loses
- * its connection mid-play still has something to come back to.
+ * Save once this long after the last interaction.
+ *
+ * The case this exists for is the common one: somebody plays for a minute,
+ * puts the phone down mid-interval, and the tab is later killed by the OS
+ * without ever firing `pagehide`. Fifteen seconds of quiet is a reliable
+ * signal that now is a good moment, and it costs one request.
  */
-export function useAutoSave(intervalMs = 30_000): void {
+export const IDLE_SAVE_MS = 15_000;
+
+/**
+ * Never write to the server more often than this.
+ *
+ * The endpoint is rate-limited to 20 requests a minute; between the interval,
+ * the idle timer and every tab switch, an engaged player could otherwise walk
+ * into their own 429. Local writes are not throttled — they cost nothing.
+ */
+export const MIN_SERVER_GAP_MS = 10_000;
+
+/** What prompted a save. Only used to decide *how* to reach the server. */
+type SaveReason = 'interval' | 'idle' | 'hidden' | 'unload' | 'manual';
+
+/**
+ * Keep the save current: on a timer, shortly after the player stops touching
+ * anything, and on every path by which a tab can go away.
+ *
+ * Three properties are worth stating, because each is a bug somebody has
+ * shipped before:
+ *
+ * 1. **Local storage is written first, synchronously, on every path.** It is
+ *    the only write that cannot be cancelled by the page disappearing, and the
+ *    loader takes whichever of local and server is newer — so a killed tab
+ *    costs nothing on the same device.
+ * 2. **The teardown paths use `sendBeacon`**, not `fetch`. A plain request
+ *    issued from `pagehide` is routinely dropped.
+ * 3. **`visibilitychange → hidden` is the load-bearing one on mobile.** iOS
+ *    and Android frequently never fire `pagehide` or `beforeunload` at all;
+ *    backgrounding the app is the last event you are guaranteed to see, so it
+ *    is treated as a full save rather than a hint.
+ */
+export function useAutoSave(intervalMs = AUTOSAVE_INTERVAL_MS): void {
   useEffect(() => {
-    const flush = () => {
+    let lastServerWrite = 0;
+    let idleTimer = 0;
+    /** Set once the idle save has fired; cleared by the next interaction. */
+    let idleSaved = false;
+
+    const flush = (reason: SaveReason) => {
       const state = useTempleStore.getState();
+      // Saving before the load has finished would write the empty initial
+      // state over a real save — the one genuinely destructive thing this
+      // module can do.
       if (!state.initialized) return;
-      saveLocal(state);
-      saveToServer(state).catch(() => {});
-      useTempleStore.setState({ lastSaved: Date.now() });
+
+      const now = Date.now();
+      saveLocal(state, now);
+
+      const leaving = reason === 'hidden' || reason === 'unload';
+      if (leaving) {
+        saveBeacon(state, now);
+        lastServerWrite = now;
+      } else if (now - lastServerWrite >= MIN_SERVER_GAP_MS) {
+        lastServerWrite = now;
+        saveToServer(state, now).catch(() => {
+          // The local write above already succeeded; a failed server write
+          // just means this device is the freshest copy for now. Rewind the
+          // clock so the next tick retries promptly rather than in 10s.
+          lastServerWrite = 0;
+        });
+      }
+
+      useTempleStore.setState({ lastSaved: now });
     };
 
-    const id = window.setInterval(flush, intervalMs);
-    const onHide = () => {
-      if (document.visibilityState === 'hidden') flush();
+    /* ── The heartbeat ── */
+    const interval = window.setInterval(() => flush('interval'), intervalMs);
+
+    /* ── Inactivity ── */
+    const armIdle = () => {
+      window.clearTimeout(idleTimer);
+      idleTimer = window.setTimeout(() => {
+        if (idleSaved) return;
+        idleSaved = true;
+        flush('idle');
+      }, IDLE_SAVE_MS);
     };
 
-    document.addEventListener('visibilitychange', onHide);
-    window.addEventListener('pagehide', flush);
+    const onActivity = () => {
+      idleSaved = false;
+      armIdle();
+    };
+
+    // Passive listeners: this must not delay a tap in a game whose whole
+    // interface is taps.
+    const activity = ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const;
+    for (const event of activity) {
+      window.addEventListener(event, onActivity, { passive: true });
+    }
+    armIdle();
+
+    /* ── Going away ── */
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') flush('hidden');
+      else onActivity();
+    };
+    const onPageHide = () => flush('unload');
+    // Fired when a page enters the back/forward cache — the tab is not closing
+    // but it is about to stop running, which amounts to the same thing here.
+    const onFreeze = () => flush('unload');
+
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', onPageHide);
+    document.addEventListener('freeze', onFreeze);
 
     return () => {
-      window.clearInterval(id);
-      document.removeEventListener('visibilitychange', onHide);
-      window.removeEventListener('pagehide', flush);
-      flush();
+      window.clearInterval(interval);
+      window.clearTimeout(idleTimer);
+      for (const event of activity) window.removeEventListener(event, onActivity);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', onPageHide);
+      document.removeEventListener('freeze', onFreeze);
+      // Navigating away inside the app is a teardown like any other.
+      flush('unload');
     };
   }, [intervalMs]);
+}
+
+/** Save right now, from a button or an irreversible moment. */
+export function saveNow(): Promise<void> {
+  const state = useTempleStore.getState();
+  const now = Date.now();
+  saveLocal(state, now);
+  useTempleStore.setState({ lastSaved: now });
+  return saveToServer(state, now);
 }
