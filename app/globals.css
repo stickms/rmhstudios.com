@@ -185,9 +185,65 @@
   --site-text-shadow: none;
   --site-letter-spacing: -0.022em;
 
+  /* ── The display scale (audit SPA-006) ──────────────────────────────────
+     `--site-font-display` was tokenised but its SIZE never was, so 44 files each
+     invented their own clamp/weight/tracking and the shared page header topped
+     out at 3.4rem while /design's reference h1 is 10rem. These four steps carry
+     the whole look — size, weight, leading AND tracking together, because the
+     tight leading and negative tracking are what make big type read as editorial
+     rather than merely large. Lifted from the /design page (globals.css
+     §"Standalone design-system story"), which is the reference implementation.
+
+     Use them through `.site-display-1..4`; never re-type a clamp on a page.
+
+     On the middle (vw) term: /design's h1 can afford `11vw` because it is a
+     full-bleed hero. A page TITLE lives in a ~44rem column, so a vw term tuned
+     for full-bleed undershoots badly there — measured at an 820px viewport, a
+     `4vw` middle term rendered the new header SMALLER than the 3.4rem cap it was
+     meant to replace. These terms are tuned so each step is comfortably larger
+     than what it replaces at ordinary column widths, not just at the extremes. */
+  --site-display-1: clamp(2.75rem, 9vw, 10rem);
+  --site-display-1-leading: 0.86;
+  --site-display-1-tracking: -0.065em;
+  --site-display-2: clamp(2.25rem, 6.5vw, 7rem);
+  --site-display-2-leading: 0.94;
+  --site-display-2-tracking: -0.055em;
+  --site-display-3: clamp(1.9rem, 5.5vw, 4.5rem);
+  --site-display-3-leading: 1;
+  --site-display-3-tracking: -0.05em;
+  --site-display-4: clamp(1.35rem, 3vw, 2.75rem);
+  --site-display-4-leading: 1.04;
+  --site-display-4-tracking: -0.042em;
+  /* The one weight the display scale uses. 500 (not 700): at these sizes weight
+     comes from the size itself, and 500 is what keeps SF Pro Display looking
+     drawn rather than shouted. */
+  --site-display-weight: 500;
+
+  /* Kicker (the micro-caps eyebrow above a display heading). /design uses
+     0.625rem; this is 0.6875rem — the 11px floor the 2026-07-28 audit set in
+     AUD-002 — a deliberate deviation from the reference in accessibility's
+     favour. See ui-audit-apple-2026-07-30.md §6.3. */
+  --site-kicker-size: 0.6875rem;
+  --site-kicker-tracking: 0.2em;
+  --site-kicker-weight: 700;
+
+  /* The lede paragraph that follows a display heading. */
+  --site-lede-size: clamp(1rem, 1.5vw, 1.3rem);
+  --site-lede-leading: 1.65;
+
+  /* Reveal-on-scroll, one curve for the whole site (audit SPA-003). */
+  --site-reveal-distance: 18px;
+  --site-reveal-duration: 700ms;
+  --site-reveal-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
   /* Layout rhythm — generous minimalist negative space & clean breathing room */
   --site-page-gutter: clamp(0.75rem, 1.5vw, 1.25rem);
   --site-section-gap: clamp(1rem, 2vw, 1.5rem);
+  /* The gap between two MAJOR sections of an editorial page — an order of
+     magnitude more air than --site-section-gap, which stays what it is so
+     existing callers don't shift (audit SPA-005). */
+  --site-section-block: clamp(3.5rem, 10vw, 9rem);
+  --site-section-inline: clamp(0rem, 4vw, 4rem);
   --site-panel-padding: clamp(1rem, 2vw, 1.5rem);
   --site-shell-gap: clamp(0.75rem, 1.25vw, 1.25rem);
   --site-sticky-edge: clamp(0.375rem, 0.8vw, 0.625rem);
@@ -1936,7 +1992,7 @@ html.readable-font body {
 }
 
 @layer utilities {
-/* ── Full-screen app/game layout helpers ─────────────────────────────────────
+  /* ── Full-screen app/game layout helpers ─────────────────────────────────────
  *
  * Global rather than per-app because every full-screen experience wants them,
  * including the games with their own design systems (Altair, Velum, Kowloon,
@@ -1951,52 +2007,52 @@ html.readable-font body {
  * Tailwind's `h-dvh` (one declaration, no fallback).
  */
 
-.app-viewport {
-  height: 100vh;
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
+  .app-viewport {
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
-/* A page ground that fills the window without overshooting it: `svh` is the
+  /* A page ground that fills the window without overshooting it: `svh` is the
    SMALLEST viewport, so no phantom scroll while the toolbars are showing. */
-.app-ground {
-  min-height: 100vh;
-  min-height: 100svh;
-}
+  .app-ground {
+    min-height: 100vh;
+    min-height: 100svh;
+  }
 
-/* A scroll region that behaves on touch: momentum on older iOS, no scroll
+  /* A scroll region that behaves on touch: momentum on older iOS, no scroll
    chaining into whatever is behind it, and a stable gutter so content doesn't
    shift sideways by the scrollbar width when one appears. */
-.app-scroll-y {
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-gutter: stable;
-}
+  .app-scroll-y {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+  }
 
-.app-scroll-x {
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  -webkit-overflow-scrolling: touch;
-}
+  .app-scroll-x {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
 
-/* Notch and home-indicator clearance, on the edges an app actually touches.
+  /* Notch and home-indicator clearance, on the edges an app actually touches.
    `env()` resolves to 0px on every non-inset device and on engines that don't
    know the function, so these are safe unconditionally. */
-.app-safe-top {
-  padding-top: env(safe-area-inset-top, 0px);
-}
+  .app-safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
 
-.app-safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
+  .app-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 
-.app-safe-x {
-  padding-left: env(safe-area-inset-left, 0px);
-  padding-right: env(safe-area-inset-right, 0px);
-}
+  .app-safe-x {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
 
   .min-h-screen {
     min-height: 100vh;
@@ -3891,6 +3947,128 @@ body {
   }
 }
 
+/* ==========================================================================
+   The editorial vocabulary (audit SPA-001 / SPA-002 / SPA-004 / SPA-005)
+   --------------------------------------------------------------------------
+   These are the classes the /design page SHOULD have been built from. That page
+   demonstrated the target language as ~270 lines of page-scoped CSS, which meant
+   no other surface could adopt it without copying — measured adoption of its
+   ideas outside itself was: `--site-section-gap` 3 files, `--site-inverse-*` 3
+   files, its kicker 1 file. Promoting the language here is what lets 64
+   PageLayout routes inherit it from one component change.
+
+   Everything below is type, rhythm and structure only — no colour decisions. The
+   palette, the themes and `ensureReadableAccent()` are unchanged.
+   ========================================================================== */
+
+/* ── Display scale ────────────────────────────────────────────────────────
+   Size, weight, leading and tracking arrive together: at these sizes the tight
+   leading and negative tracking ARE the look, and a page that sets only the size
+   gets large-but-wrong type. Tokens in the `:root` block above. */
+.site-display-1,
+.site-display-2,
+.site-display-3,
+.site-display-4 {
+  font-family: var(--site-font-display);
+  font-weight: var(--site-display-weight);
+  /* Long single words (a handle, a game title) must not spill the column. */
+  overflow-wrap: anywhere;
+}
+.site-display-1 {
+  font-size: var(--site-display-1);
+  line-height: var(--site-display-1-leading);
+  letter-spacing: var(--site-display-1-tracking);
+}
+.site-display-2 {
+  font-size: var(--site-display-2);
+  line-height: var(--site-display-2-leading);
+  letter-spacing: var(--site-display-2-tracking);
+}
+.site-display-3 {
+  font-size: var(--site-display-3);
+  line-height: var(--site-display-3-leading);
+  letter-spacing: var(--site-display-3-tracking);
+}
+.site-display-4 {
+  font-size: var(--site-display-4);
+  line-height: var(--site-display-4-leading);
+  letter-spacing: var(--site-display-4-tracking);
+}
+
+/* ── Kicker + lede ───────────────────────────────────────────────────────── */
+.site-kicker {
+  font-size: var(--site-kicker-size);
+  font-weight: var(--site-kicker-weight);
+  letter-spacing: var(--site-kicker-tracking);
+  text-transform: uppercase;
+  color: var(--site-text-muted);
+}
+.site-lede {
+  max-width: 34rem;
+  font-size: var(--site-lede-size);
+  line-height: var(--site-lede-leading);
+  color: var(--site-text-muted);
+}
+
+/* ── Section rhythm + hairline section head ─────────────────────────────── */
+.site-section {
+  padding-block: var(--site-section-block);
+  padding-inline: var(--site-section-inline);
+}
+.site-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: clamp(1.25rem, 4vw, 3rem);
+  /* A hairline, not a card edge — the structural signature of the reference. */
+  border-bottom: 1px solid var(--site-border);
+}
+
+/* ── Hairline rows (audit SPA-004) ────────────────────────────────────────
+   For a HOMOGENEOUS list, one hairline between rows instead of a bordered,
+   shadowed card per row. Cards remain correct for heterogeneous content — a
+   post, a product, a game card — where each item is its own object. */
+.site-rows > * + * {
+  border-top: 1px solid var(--site-border);
+}
+.site-rows > * {
+  padding-block: clamp(1rem, 3vw, 2rem);
+}
+
+/* ── Inverse block ────────────────────────────────────────────────────────
+   A full-bleed statement panel. `.site-inverse` (above) already remaps the whole
+   token contract, so descendants stay correct without per-element colours. */
+.site-inverse-block {
+  border-radius: var(--site-radius);
+  padding: clamp(2rem, 8vw, 8rem);
+  background: var(--site-inverse-bg);
+  color: var(--site-inverse-text);
+}
+
+/* ── Reveal on scroll (audit SPA-003) ─────────────────────────────────────
+   One curve for the whole site, replacing five implementations that disagreed on
+   timing, distance and easing.
+
+   CRITICALLY: visible by DEFAULT. The hidden state only applies under
+   `[data-reveal-armed]`, which `hooks/useReveal` sets **after** it has an
+   IntersectionObserver watching. That inverts the failure mode behind AUD-006 in
+   the 2026-07-28 audit — pages whose entire body sat at `opacity: 0` whenever the
+   observer didn't fire (print, full-page capture, reader mode, pre-hydration,
+   `/pricing`'s plan grid, ~4,700px of `/rmh-capital`). If JS never runs, content
+   shows. */
+[data-reveal-armed] .site-reveal {
+  opacity: 0;
+  transform: translateY(var(--site-reveal-distance));
+  transition:
+    opacity var(--site-reveal-duration) var(--site-reveal-ease) var(--site-reveal-delay, 0ms),
+    transform var(--site-reveal-duration) var(--site-reveal-ease) var(--site-reveal-delay, 0ms);
+}
+[data-reveal-armed] .site-reveal[data-visible] {
+  opacity: 1;
+  transform: none;
+}
+
 /* Standalone design-system story. */
 .spatial-design-page {
   min-height: 100dvh;
@@ -4601,6 +4779,45 @@ html.reduce-motion .u-parallax {
   color: var(--site-accent-fg);
 }
 
+/* ==========================================================================
+   The segmented-control grid (§5.45)
+   ------------------------------------------------------------------------
+   `LiquidTabs` lays its tabs out as EQUAL COLUMNS spanning the track, not as a
+   flex row of content-sized pills. One declaration buys both halves of the
+   Apple segmented-control behaviour:
+
+     - equal widths, track always full — `1fr` columns, so two tabs take half
+       each instead of huddling in the middle of a wide sheet;
+     - no horizontal scrolling, ever — `auto-fit` packs as many columns as fit
+       and WRAPS the rest onto further rows, all still equal width. Apple's
+       guidance is that a segmented control which doesn't fit is the wrong
+       control, not one to make swipeable, and a scroll track hides destinations
+       behind a gesture with no affordance.
+
+   `--tab-seg-min` is the width below which a column will not be squeezed — hit
+   it and the strip wraps rather than shrinking further. `min(…, 100%)` is the
+   standard `auto-fit` guard: without it a container narrower than the minimum
+   overflows instead of collapsing to a single column.
+
+   This replaced a ResizeObserver that measured whether the strip fitted (to
+   decide whether centring it was safe) plus a `tab-sheet-scroll` overflow track.
+   The grid needs neither.
+   ========================================================================== */
+[data-slot='liquid-tabs'] {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(var(--tab-seg-min, 6.5rem), 100%), 1fr));
+  align-items: center;
+  gap: 0.25rem;
+}
+[data-slot='liquid-tabs'][data-tab-size='sm'] {
+  --tab-seg-min: 5.5rem;
+}
+/* A glyph strip needs far less room per segment than a labelled one, so it packs
+   more columns before it wraps. */
+[data-slot='liquid-tabs'][data-tab-icon-only] {
+  --tab-seg-min: 3.25rem;
+}
+
 /* §5.5x B — the strip is primary navigation on several routes, and its pills
    were 36–38px on touch. Grow the hit area on coarse pointers only; fine
    pointers keep the compact strip. */
@@ -4620,8 +4837,9 @@ html.reduce-motion .u-parallax {
    the page's name existed only inside a tab strip's aria-label — so no word
    identifying the page appeared anywhere on a phone. Recognition, not recall.
 
-   Labels stay. Strips that don't fit scroll in the canonical `tab-sheet-scroll`
-   track (§5.5x A.4), whose partially visible next pill is the overflow cue.
+   Labels stay. A strip that doesn't fit now WRAPS onto further rows of equal
+   segments (see the segmented-control grid above) rather than scrolling, so there
+   is room for the labels at every width and nothing is hidden behind a swipe.
    `iconOnly` callers keep a glyph strip on phones only — see below.
    ========================================================================== */
 @media (max-width: 767.98px) {
@@ -4641,16 +4859,19 @@ html.reduce-motion .u-parallax {
     border-width: 0;
   }
 
-  /* A strip that did not opt into the scroll track still must not push the page
-     sideways, so it wraps (as everything used to). Strips that passed `scroll`
-     keep their single row and scroll it. */
-  [data-slot='liquid-tabs']:not(.tab-sheet-scroll) {
-    flex-wrap: wrap;
-    row-gap: 0.25rem;
-  }
-  [data-slot='liquid-tabs']:not(.tab-sheet-scroll) > * {
-    flex-shrink: 1;
-    min-width: 0;
+  /* Wrapping and shrink behaviour used to be patched in here for flex strips.
+     The grid above owns both at every width now.
+
+     What phones DO still need is room for the words. In a segmented control every
+     column is as wide as the widest one needs to be, so on a 320px screen a
+     three-tab strip gives each segment ~96px — and an icon plus its gap eats a
+     quarter of that, which is what turned "Messages" into "Messa…". The label is
+     the information and the glyph is decoration, so the glyph is what goes: below
+     md a strip that shows labels drops its icons and spends the width on text.
+     `iconOnly` strips are the exception — there the glyph IS the label, so it
+     stays (and its own label is the thing hidden, just above). */
+  [data-slot='liquid-tabs']:not([data-tab-icon-only]) :is(button, a) > svg:first-child {
+    display: none;
   }
 }
 
