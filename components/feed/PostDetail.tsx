@@ -278,11 +278,11 @@ export function PostDetail({ postId }: PostDetailProps) {
  <div className="flex flex-col">
  {/* Header bar — §17.6: reserve the sticky-shift with a bottom margin so the
  hero's mt-3 gutter below is honoured (same fix as PageLayout). */}
- <div className="site-sticky-chrome bg-site-surface border border-site-border rounded-2xl shadow-xs">
+ <div className="site-sticky-chrome bg-site-surface border border-site-border rounded-site shadow-site-sm">
  <div className="flex items-center gap-3 px-4 py-3">
  <button
  onClick={() => window.history.back()}
- className="p-1.5 -ml-1.5 rounded-site-sm hover:bg-site-surface transition-colors"
+ className="p-1.5 -ml-1.5 rounded-site-sm hover:bg-site-surface-hover transition-colors"
  >
  <ArrowLeft className="w-5 h-5 text-site-text"/>
  </button>

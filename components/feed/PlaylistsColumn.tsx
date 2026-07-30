@@ -259,7 +259,7 @@ export function PlaylistsColumn({
  key={pl.id}
  className={
  embedded
- ?'bg-site-surface border border-site-border rounded-2xl shadow-xs glass-interactive lib-orbit-card rounded-site'
+ ?'bg-site-surface border border-site-border rounded-site shadow-site-sm glass-interactive lib-orbit-card rounded-site'
  :'rounded-site border border-site-border bg-site-surface'
  }
  data-glass-light={embedded ?'': undefined}

@@ -304,12 +304,12 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  <button
  ref={menuBtnRef}
  onClick={() => setMenuOpen((v) => !v)}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+ className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <MoreHorizontal className="w-3.5 h-3.5"/>
  </button>
  {menuOpen && (
- <div ref={menuPanelRef} className="absolute right-0 top-full mt-1 w-44 bg-site-surface border border-site-border rounded-2xl shadow-xs py-1 z-30">
+ <div ref={menuPanelRef} className="absolute right-0 top-full mt-1 w-44 bg-site-surface border border-site-border rounded-site shadow-site-sm py-1 z-30">
  <button
  onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"

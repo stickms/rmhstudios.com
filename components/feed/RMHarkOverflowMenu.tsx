@@ -130,8 +130,22 @@ export function RMHarkOverflowMenu({
  const handleClick = (e: MouseEvent) => {
  if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
  };
+ // Escape closes and hands focus back to the trigger — an open menu was
+ // dismissable only by clicking outside it, which a keyboard user can't do.
+ // CAPTURE phase on purpose: the panel stops keydown propagation, and React
+ // routes that through the native event, so a bubble-phase listener here would
+ // never fire while focus was inside the menu.
+ const handleKey = (e: KeyboardEvent) => {
+ if (e.key !== 'Escape') return;
+ setMenuOpen(false);
+ triggerRef.current?.focus();
+ };
  document.addEventListener('mousedown', handleClick);
- return () => document.removeEventListener('mousedown', handleClick);
+ document.addEventListener('keydown', handleKey, true);
+ return () => {
+ document.removeEventListener('mousedown', handleClick);
+ document.removeEventListener('keydown', handleKey, true);
+ };
  }, [menuOpen]);
 
  const shareUrl =
@@ -278,7 +292,7 @@ export function RMHarkOverflowMenu({
  };
 
  const itemClass =
-'flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors';
+'flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors';
  const dangerClass =
 'flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors';
  const showTranslate =
@@ -298,7 +312,7 @@ export function RMHarkOverflowMenu({
  aria-haspopup="menu"
  aria-expanded={menuOpen}
  className={cn(
-'p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors',
+'p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors',
  buttonClassName,
  )}
  >
@@ -309,7 +323,7 @@ export function RMHarkOverflowMenu({
  ref={panelRef}
  role="menu"
  tabIndex={-1}
- className="absolute right-0 top-full mt-1 w-44 bg-site-surface border border-site-border rounded-2xl shadow-xs py-1 z-30"
+ className="absolute right-0 top-full mt-1 w-44 bg-site-surface border border-site-border rounded-site shadow-site-sm py-1 z-30"
  onClick={(e) => e.stopPropagation()}
  onKeyDown={(e) => e.stopPropagation()}
  >

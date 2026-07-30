@@ -222,8 +222,8 @@ function PreferencesPanel() {
  ];
 
  return (
- // Floating slab (§8.4): a discrete bg-site-surface border border-site-border rounded-2xl shadow-xs card over the aurora gutter.
- <div className="bg-site-surface border border-site-border rounded-2xl shadow-xs rounded-site mx-3 mt-3 px-4 py-3">
+ // Floating slab (§8.4): a discrete bg-site-surface border border-site-border rounded-site shadow-site-sm card over the aurora gutter.
+ <div className="bg-site-surface border border-site-border rounded-site shadow-site-sm rounded-site mx-3 mt-3 px-4 py-3">
  <p className="mb-2 text-sm font-semibold text-site-text">
  {t('notification-prefs-title', { defaultValue:'Which notifications do you want?'})}
  </p>
@@ -480,12 +480,12 @@ export function NotificationsColumn({
  </p>
  </Reveal>
  ) : (
- // Density page (§8.4): rows stay dense INSIDE one floating bg-site-surface border border-site-border rounded-2xl shadow-xs
+ // Density page (§8.4): rows stay dense INSIDE one floating bg-site-surface border border-site-border rounded-site shadow-site-sm
  // container — the internal divide-y hairlines are the only row separators
  // (not per-row cards); overflow-hidden clips them to the rounded corners.
  <Reveal
  as="ul"
- className="bg-site-surface border border-site-border rounded-2xl shadow-xs rounded-site mx-3 mt-3 divide-y divide-site-border overflow-hidden"
+ className="bg-site-surface border border-site-border rounded-site shadow-site-sm rounded-site mx-3 mt-3 divide-y divide-site-border overflow-hidden"
  >
  {groups.map((g) => {
  const n = g.newest;

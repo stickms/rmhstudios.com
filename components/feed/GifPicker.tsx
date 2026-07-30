@@ -74,7 +74,7 @@ export function GifPicker({ onSelect, onClose, className =''}: GifPickerProps) {
  </div>
  {onClose && (
  <button type="button"onClick={onClose} aria-label={t('close', { defaultValue:'Close'})}
- className="p-1.5 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors">
+ className="p-1.5 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors">
  <X className="w-4 h-4"/>
  </button>
  )}

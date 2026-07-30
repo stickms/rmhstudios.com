@@ -51,7 +51,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="inline-flex min-w-6 items-center justify-center rounded-md border border-site-border bg-site-glass-tint px-1.5 py-0.5 text-[11px] font-medium text-site-text-muted shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]">
+    <kbd className="inline-flex min-w-6 items-center justify-center rounded-site-sm border border-site-border bg-site-glass-tint px-1.5 py-0.5 text-[11px] font-medium text-site-text-muted shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]">
       {children}
     </kbd>
   );

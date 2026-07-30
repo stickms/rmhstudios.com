@@ -59,8 +59,19 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  const onClick = (e: MouseEvent) => {
  if (repostRef.current && !repostRef.current.contains(e.target as Node)) setRepostMenu(false);
  };
+ // Escape closes and returns focus to the trigger. Capture phase so the
+ // panel's own stopPropagation can't swallow it (see RMHarkOverflowMenu).
+ const onKey = (e: KeyboardEvent) => {
+ if (e.key !== 'Escape') return;
+ setRepostMenu(false);
+ repostBtnRef.current?.focus();
+ };
  document.addEventListener('mousedown', onClick);
- return () => document.removeEventListener('mousedown', onClick);
+ document.addEventListener('keydown', onKey, true);
+ return () => {
+ document.removeEventListener('mousedown', onClick);
+ document.removeEventListener('keydown', onKey, true);
+ };
  }, [repostMenu]);
 
  const updateItem = onUpdate ?? storeUpdate;
@@ -137,6 +148,8 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  }`}
  title="reRMHark"
  aria-label="reRMHark"
+ aria-haspopup="menu"
+ aria-expanded={repostMenu}
  >
  <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform"aria-hidden />
  <AnimatedCount
@@ -149,25 +162,33 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  {repostMenu && (
  <div
  ref={repostPanelRef}
- className="absolute left-0 top-full mt-1 w-40 bg-site-surface border border-site-border rounded-2xl shadow-xs py-1 z-30"
+ role="menu"
+ tabIndex={-1}
+ className="absolute left-0 top-full mt-1 w-40 bg-site-surface border border-site-border rounded-site shadow-site-sm py-1 z-30"
  onClick={(e) => e.stopPropagation()}
  >
  <button
+ type="button"
+ role="menuitem"
  onClick={() => {
  setRepostMenu(false);
  toggleRepost();
  }}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+ className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <Repeat className="w-4 h-4 text-site-text-dim"/>
- {item.reposted ?'Undo reRMHark':'reRMHark'}
+ {item.reposted
+ ? t('undo-rermhark', { defaultValue:'Undo reRMHark'})
+ : t('rermhark', { defaultValue:'reRMHark'})}
  </button>
  <button
+ type="button"
+ role="menuitem"
  onClick={() => {
  setRepostMenu(false);
  setQuoteOpen(true);
  }}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+ className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <PenSquare className="w-4 h-4 text-site-text-dim"/>
  {t('quote', { defaultValue:'Quote'})}

@@ -95,7 +95,7 @@ export function ExploreColumn({
  <ColumnHeader icon={Compass} title={t('explore-title', { defaultValue:'Explore'})} />
 
  {/* Ask the feed */}
- <section className="m-4 rounded-tr-[2.5rem] rounded-bl-[2.5rem] rounded-tl-2xl rounded-br-2xl border border-site-border bg-site-surface p-5 shadow-sm">
+ <section className="m-4 rounded-tr-[2.5rem] rounded-bl-[2.5rem] rounded-tl-site rounded-br-site border border-site-border bg-site-surface p-5 shadow-site-sm">
  <label
  htmlFor="ask-feed"
  className="mb-3 flex items-center gap-2 font-serif text-lg font-bold text-site-text"
@@ -129,7 +129,7 @@ export function ExploreColumn({
  </Button>
  </div>
  {answer && (
- <p className="mt-3 whitespace-pre-line rounded-2xl border border-site-border bg-site-bg-subtle p-4 text-sm text-site-text leading-relaxed">
+ <p className="mt-3 whitespace-pre-line rounded-site border border-site-border bg-site-bg-subtle p-4 text-sm text-site-text leading-relaxed">
  {answer}
  </p>
  )}
@@ -211,7 +211,7 @@ export function ExploreColumn({
  <Link
  key={l.user.id}
  to={`/u/${l.user.handle || l.user.id}`as string}
- className="flex items-center gap-3 rounded-site-sm px-2 py-1.5 hover:bg-site-surface"
+ className="flex items-center gap-3 rounded-site-sm px-2 py-1.5 hover:bg-site-surface-hover"
  >
  <span className="w-5 text-center text-sm font-bold text-site-text-dim">
  {i + 1}

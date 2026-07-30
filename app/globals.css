@@ -311,6 +311,9 @@
      below the z-50 dialogs/sheets, so a modal still covers a popover. */
   --z-quickpanel: 40;
   --z-skip: 200;
+  /* Tooltips portal to <body> and must clear the z-50 dialogs/sheets they can
+     be triggered from inside, so they sit above the whole stack bar the cursor. */
+  --z-tooltip: 9999;
   --z-cursor: 2147483000;
 
   /* Width of the shell's desktop rails. `--site-rail-width` is the historical

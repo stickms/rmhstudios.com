@@ -1001,7 +1001,7 @@ function RoadmapStyles() {
         background: var(--era-color);
         box-shadow:
           0 0 0 4px color-mix(in srgb, var(--era-color) 18%, transparent),
-          var(--site-shadow-sm);
+          var(--site-shadow-site-sm);
       }
       @media (min-width: 640px) {
         .roadmap-node { left: 3px; }

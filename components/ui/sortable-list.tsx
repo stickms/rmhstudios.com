@@ -105,7 +105,7 @@ function SortableRow<T extends SortableItem>({
  dragControls={controls}
  transition={SPRING.soft}
  // L1 bg-site-surface border border-site-border row — cheap, unlimited, matches list surfaces.
- className="bg-site-surface border border-site-border flex items-center gap-2 rounded-2xl px-3 py-2 text-site-text"
+ className="bg-site-surface border border-site-border flex items-center gap-2 rounded-site px-3 py-2 text-site-text"
  >
  {/* Drag handle (pointer devices). Touch/keyboard users use the buttons. */}
  <span

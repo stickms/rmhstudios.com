@@ -89,7 +89,7 @@ export function RMHCoinsPage() {
             loading={claiming}
             variant="outline"
             size="sm"
-            className="rounded-lg border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10"
+            className="rounded-site-sm border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10"
           >
             {t("claim-free-coins", { defaultValue: "Claim 10 Free Coins" })}
           </Button>

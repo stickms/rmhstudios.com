@@ -63,7 +63,7 @@ export function PredictionsMarketTab({ coins, setCoins }: Props) {
               className={`px-3 py-1.5 rounded-site-sm text-sm font-medium transition-colors ${
                 filter === f.id
                   ? 'bg-site-accent-dim text-site-accent'
-                  : 'text-site-text-dim hover:text-site-text hover:bg-site-surface'
+                  : 'text-site-text-dim hover:text-site-text hover:bg-site-surface-hover'
               }`}
             >
               {f.label}

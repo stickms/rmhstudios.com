@@ -57,7 +57,7 @@ export function InboxColumn({
  return (
  <div className="flex flex-col min-h-screen">
  {/* Shared header + tab switcher */}
- <div className="site-sticky-chrome bg-site-surface border border-site-border rounded-2xl shadow-xs">
+ <div className="site-sticky-chrome bg-site-surface border border-site-border rounded-site shadow-site-sm">
  <div className="flex items-center gap-3 px-4 py-3">
  <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 min-w-0">
  <MobileBrandPrefix />

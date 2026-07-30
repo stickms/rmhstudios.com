@@ -14,7 +14,7 @@ import './sheet.css';
  * `docs/plans/2026-07-20-parity-qol-customization-design.md`. It is a Radix
  * Dialog (focus-trapped, Escape/backdrop close, portalled) that renders as a
  * **bottom sheet on mobile** (< 768px) and a **centered dialog on desktop**,
- * both on the L4 `.bg-site-surface border border-site-border shadow-lg` material over a `.bg-black/50` backdrop — the
+ * both on the L4 `.bg-site-surface border border-site-border shadow-site` material over a `.bg-black/50` backdrop — the
  * exact glass Dialog uses. On mobile it also gets a drag handle and
  * swipe-down-to-dismiss, and pads the iOS home-indicator safe area.
  *
@@ -87,8 +87,8 @@ const SheetContent = React.forwardRef<
  data-mobile-fullscreen={mobileFullscreen || undefined}
  style={dragY ? { transform: `translateY(${dragY}px)`, transition: 'none' } : undefined}
  className={cn(
- // L4 bg-site-surface border border-site-border shadow-lg for both layouts.
- 'bg-site-surface border border-site-border shadow-lg fixed z-50 flex flex-col text-site-text',
+ // L4 bg-site-surface border border-site-border shadow-site for both layouts.
+ 'bg-site-surface border border-site-border shadow-site fixed z-50 flex flex-col text-site-text',
  // Mobile: a horizontally-centered floating bottom sheet by default;
  // complex editors can opt into the full visual viewport instead.
  mobileFullscreen

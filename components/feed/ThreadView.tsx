@@ -13,10 +13,10 @@ export function ThreadView({ items }: { items: FeedItem[] }) {
  const { t } = useTranslation('feed');
  return (
  <div className="min-h-screen">
- <header className="site-sticky-chrome bg-site-surface border border-site-border rounded-2xl shadow-xs flex items-center gap-3 px-4 py-3">
+ <header className="site-sticky-chrome bg-site-surface border border-site-border rounded-site shadow-site-sm flex items-center gap-3 px-4 py-3">
  <Link
  to="/"
- className="rounded-site-sm p-1 text-site-text-muted hover:bg-site-surface hover:text-site-text"
+ className="rounded-site-sm p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
  aria-label={t('back', { defaultValue:'Back'})}
  >
  <ArrowLeft className="h-5 w-5"/>

@@ -253,7 +253,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  type="button"
  onClick={onClose}
  aria-label={t('close', { defaultValue:'Close'})}
- className="p-1.5 -ml-1.5 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
+ className="p-1.5 -ml-1.5 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <X className="w-5 h-5"aria-hidden />
  </button>
@@ -315,7 +315,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  {menuOpen && (
  <div
  ref={menuPopRef}
- className="absolute top-full right-0 mt-1 w-40 bg-site-surface border border-site-border rounded-2xl shadow-xs py-1 z-30"
+ className="absolute top-full right-0 mt-1 w-40 bg-site-surface border border-site-border rounded-site shadow-site-sm py-1 z-30"
  >
  <button
  onClick={() => {
@@ -323,7 +323,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  setGifUrl('');
  setMenuOpen(false);
  }}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+ className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <BarChart3 className="w-4 h-4 text-site-text-dim"/>
  {t('create-poll', { defaultValue:'Create Poll'})}
@@ -409,7 +409,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  setAttachment(null);
  setPoll({ question:'', options: ['',''], multiSelect: false });
  }}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+ className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <X className="w-3.5 h-3.5"/>
  </button>
@@ -497,7 +497,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  setAttachment(null);
  setGifUrl('');
  }}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+ className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <X className="w-3.5 h-3.5"/>
  </button>
@@ -619,7 +619,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  role="dialog"
  aria-modal="true"
  aria-labelledby="compose-alt-title"
- className="relative w-full max-w-md p-4 bg-site-surface border border-site-border rounded-2xl shadow-xs animate-in zoom-in-95 fade-in duration-150"
+ className="relative w-full max-w-md p-4 bg-site-surface border border-site-border rounded-site shadow-site-sm animate-in zoom-in-95 fade-in duration-150"
  >
  <div className="mb-2 flex items-center justify-between">
  <h3 id="compose-alt-title"className="text-sm font-semibold text-site-text">
@@ -629,7 +629,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  type="button"
  onClick={() => setAltEditIndex(null)}
  aria-label={t('close', { defaultValue:'Close'})}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+ className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <X className="h-4 w-4"/>
  </button>
