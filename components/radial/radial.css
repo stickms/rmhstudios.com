@@ -2123,13 +2123,20 @@ html.perf-lite .radial-backdrop__blob {
   z-index: var(--z-cursor);
   pointer-events: none;
   opacity: 0;
-  /* Two passes of the same tight shadow build a solid rim rather than a smudge.
-     Chained after the goo, so the halo traces the FUSED outline, not each blob.
-     The rim is what carries the drop over a surface its ink matches — on the
-     default theme the accent IS the ink, so on the compose button the halo is
-     the entire mark. Sized to read as a ring at a glance, not a hairline. */
-  filter: url(#rmh-pointer-goo) drop-shadow(0 0 2px var(--site-bg))
-    drop-shadow(0 0 2px var(--site-bg));
+  /* ONE `url()` and nothing chained after it. The halo (the rim that carries the
+     drop over a surface its ink matches — on the default theme the accent IS the
+     ink, so on the compose button the halo is the entire mark) is built INSIDE
+     the filter now; see MetaballCursor's `feMorphology` rim.
+
+     Do not chain CSS filter functions after this. It used to read
+     `url(#rmh-pointer-goo) drop-shadow(…) drop-shadow(…)`, and that chain is what
+     made the cursor feel slow: measured headless with vsync off, the `url()`
+     alone runs at ~0.4ms/frame, while the chained version blocked the main thread
+     so completely that a 1-second `setInterval` did not fire once in 10 seconds.
+     Chaining a shorthand filter function after a `url()` reference drops Chromium
+     off its fast path; the same rim done as filter primitives does not.
+     `lib/__tests__/metaball-perf-budget.test.ts` guards this. */
+  filter: url(#rmh-pointer-goo);
   transition: opacity 0.25s ease;
   /* Bounded work: the box can never be asked to lay out anything outside its own
      fixed size (the JS clamps every blob inside it too). Not `paint`/`strict` —

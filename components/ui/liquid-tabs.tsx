@@ -156,25 +156,51 @@ export function LiquidTabs({
   const link = Boolean(renderTab);
   const activeTabId = tabId(value);
 
-  // §5.45 — centre a strip that does not fill its sheet. The pills are
+  // §5.45 — DISTRIBUTE a strip that does not fill its sheet. The pills are
   // `shrink-0` and a `scroll` sheet is full-width, so a two- or three-tab strip
-  // bunched against the left edge with as much as 261px of dead space beside it,
+  // bunched against the left edge left as much as 261px of dead space beside it,
   // which reads as a broken container rather than a control.
   //
-  // Whether centring is safe depends on the strip, so it is MEASURED rather than
-  // assumed. Centring a horizontally-overflowing scroll container pushes half of
-  // the overflow off the leading edge where it can never be scrolled back — the
-  // first tab becomes unreachable. (`justify-content: safe center` is meant to
-  // cover exactly this and does not do so reliably; a wrapping strip needs plain
-  // centring anyway, and auto margins only reach the first and last items, which
-  // on a wrapped strip sit on different lines.) So: centre only while the
-  // content actually fits — true for a strip with slack AND for a wrapping one,
-  // false the moment a single line overflows.
+  // The slack is spread EVENLY (`justify-evenly`), not collected on both flanks
+  // (`justify-center`): centring a three-tab strip in a 44rem column still reads
+  // as a small control adrift in a wide sheet, whereas spacing the tabs out makes
+  // the sheet look like it is meant to be that wide. `fullWidth` strips already do
+  // this via `flex-1` on each pill, and a `w-fit` sheet has no slack to spread, so
+  // this is the case that was left looking wrong.
+  //
+  // `space-evenly` rather than `space-between`: equal gaps INCLUDING the two
+  // flanks, so a two-tab strip reads as a spaced pair instead of one pill flung
+  // into each corner of the sheet.
+  //
+  // Whether to do it at all depends on the strip, so it is MEASURED rather than
+  // assumed, and the gate is load-bearing in two ways:
+  //   - Overflow: with negative free space `space-evenly` falls back to `center`
+  //     per spec, and centring a horizontally-overflowing scroll container pushes
+  //     half the overflow off the LEADING edge, where it can never be scrolled
+  //     back — the first tab becomes unreachable. (`justify-content: safe center`
+  //     is meant to cover exactly this and does not do so reliably.)
+  //   - Wrapping: a wrapped strip would get each row spaced out independently,
+  //     opening ragged gaps mid-row. (Auto margins are no help either — they only
+  //     reach the first and last items, which on a wrapped strip sit on different
+  //     lines.)
+  // So: distribute only while the content actually fits on one line.
   const [fits, setFits] = useState(true);
   useEffect(() => {
     const el = listRef.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
-    const measure = () => setFits(el.scrollWidth <= el.clientWidth + 1);
+    const measure = () => {
+      const noOverflow = el.scrollWidth <= el.clientWidth + 1;
+      // A non-scroll strip WRAPS (globals.css), and wrapping produces no
+      // horizontal overflow — so `scrollWidth` alone reports a wrapped strip as
+      // fitting. Distributing then spreads every row to the sheet's edges and
+      // opens ragged gaps mid-row, so require one row too: all pills share a
+      // row exactly when they share an `offsetTop`. Runs on resize only, never
+      // per frame, and reads layout from inside a ResizeObserver callback (so
+      // after layout, not interleaved with it).
+      const kids = Array.from(el.children) as HTMLElement[];
+      const oneRow = kids.length < 2 || kids.every((k) => k.offsetTop === kids[0].offsetTop);
+      setFits(noOverflow && oneRow);
+    };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
@@ -322,8 +348,9 @@ export function LiquidTabs({
     'relative flex items-center gap-1',
     // Scroll overflows inside the sheet; otherwise size to content (or full width).
     scroll ? 'tab-sheet-scroll w-full min-w-0' : fullWidth ? 'w-full' : 'inline-flex',
-    // See the `fits` measurement above — never centre an overflowing strip.
-    fits && !fullWidth && 'justify-center',
+    // See the `fits` measurement above — never distribute an overflowing or
+    // wrapped strip.
+    fits && !fullWidth && 'justify-evenly',
     !sheet && className,
   );
 

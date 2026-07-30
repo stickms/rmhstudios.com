@@ -27,9 +27,16 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
  *
  * Legibility then has to come from the shape itself rather than from inverting
  * the backdrop: the drop is filled with the theme's ink and carries a halo in
- * the theme's background colour (two `drop-shadow`s in the same filter chain).
- * Those two tokens are contrast-paired by definition, so the drop reads on the
- * page *and* on an accent-filled control, in every theme.
+ * the theme's background colour — a rim built from filter primitives (dilate the
+ * fused alpha, flood it, merge it underneath), all inside the one filter. Those
+ * two tokens are contrast-paired by definition, so the drop reads on the page
+ * *and* on an accent-filled control, in every theme.
+ *
+ * The halo used to be two CSS `drop-shadow()`s chained after this filter in CSS.
+ * Never do that: chaining a shorthand filter function after a `url()` reference
+ * takes Chromium off its fast path badly enough to block the main thread outright
+ * (measured — see the note on `.metaball` in `radial.css`), and the dilated rim
+ * reads as a cleaner ring than two stacked blurs did anyway.
  *
  * Dropping the blend is also a straight win: blending forces the compositor to
  * read back the backdrop under a moving layer every single frame.
@@ -425,20 +432,18 @@ export function MetaballCursor() {
           blob edges inside the fused shape. */}
       <svg className="metaball-defs" width="0" height="0" aria-hidden focusable="false">
         <defs>
-          {/* The region is the box itself (plus a 2% safety margin), NOT the
-              default -10%/120% and not the 140% this used to declare. The loop
+          {/* The region is the box plus a hair for the rim's dilation, NOT the
+              default -10%/120% and not the 140% this once declared. The loop
               clamps every blob to `HALF − size/2 − BLUR_PAD`, so the fused
               silhouette plus the blur's spill provably fits inside the border
               box — padding the region just blurs empty pixels, and the region's
-              area is the whole cost of this component. The two CSS
-              `drop-shadow()`s chained after this in `radial.css` get their own
-              (unclipped) region, so the halo still draws past the box. */}
+              area is the whole cost of this component. */}
           <filter
             id={GOO_ID}
-            x="-2%"
-            y="-2%"
-            width="104%"
-            height="104%"
+            x="-4%"
+            y="-4%"
+            width="108%"
+            height="108%"
             colorInterpolationFilters="sRGB"
           >
             <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
@@ -446,7 +451,28 @@ export function MetaballCursor() {
               in="blur"
               mode="matrix"
               values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
+              result="goo"
             />
+            {/* The halo, in ONE cheap pass. It used to be two CSS
+                `drop-shadow()`s chained after this filter in `radial.css`, and
+                that chain — not the goo — was what made the drop feel slow:
+                measured with vsync off, `url(#goo)` alone runs at 0.4ms/frame,
+                while adding the drop-shadows blew the frame budget so badly the
+                harness could not finish 700 frames in 60s. Chaining a CSS filter
+                function after a `url()` reference drops Chromium off its fast
+                path; keeping the whole graph inside the one SVG filter does not.
+
+                Same rim, no Gaussian: dilate the FUSED alpha (so the rim traces
+                the merged silhouette, not each blob), flood it with the page
+                background, and merge it UNDER the ink. Dilation is a hard edge,
+                which reads as a more definite ring than two stacked blurs did. */}
+            <feMorphology in="goo" operator="dilate" radius="2" result="rimAlpha" />
+            <feFlood style={{ floodColor: 'var(--site-bg)' }} result="rimFill" />
+            <feComposite in="rimFill" in2="rimAlpha" operator="in" result="rim" />
+            <feMerge>
+              <feMergeNode in="rim" />
+              <feMergeNode in="goo" />
+            </feMerge>
           </filter>
         </defs>
       </svg>

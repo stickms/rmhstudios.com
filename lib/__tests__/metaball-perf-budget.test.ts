@@ -39,6 +39,15 @@ import { join } from 'node:path';
  * 4. Every goo layer keeps its `(min-width) and (prefers-reduced-motion:
  *    no-preference)` gate — the cost budget `components/radial/README.md`
  *    §Metaballs rule 3 promises.
+ * 5. Nothing chains a CSS filter FUNCTION after a `url()` reference. This one is
+ *    the worst of the set and the least obvious: `.metaball` shipped as
+ *    `filter: url(#rmh-pointer-goo) drop-shadow(…) drop-shadow(…)`, which reads
+ *    like two cheap shadows on top of a cheap filter. Measured headless with
+ *    vsync off, the `url()` alone runs at ~0.4ms/frame; with the chain, a
+ *    1-second `setInterval` did not fire once in 10 seconds — the main thread was
+ *    blocked outright. Build the extra passes as filter primitives inside the
+ *    referenced `<filter>` instead (the pointer rim is an feMorphology/feFlood/
+ *    feComposite/feMerge, and it looks better besides).
  */
 
 const ROOT = process.cwd();
@@ -183,6 +192,45 @@ describe('metaball / goo-filter cost budget', () => {
         ungated.map((s) => `  #${s}`).join('\n') +
         `\n\nSee components/radial/README.md §Metaballs rule 3 — an always-on SVG ` +
         `filter is continuous GPU work, so every decorative goo layer is gated.\n`,
+    ).toEqual([]);
+  });
+
+  it('no CSS filter function is chained after a url() reference', () => {
+    // Scan every stylesheet, not just radial.css: the hazard is a property of the
+    // CSS, not of this module, and `.lg-goo` / the app tiers use `url()` filters
+    // too. A declaration qualifies when a `url(...)` is followed by anything that
+    // looks like `name(`, e.g. `url(#goo) drop-shadow(0 0 2px red)`.
+    const sheets = [
+      RADIAL_CSS,
+      join('app', 'globals.css'),
+      join('components', 'feed', 'feed.css'),
+      join('components', 'shared', 'app-theme.css'),
+    ];
+    const offenders: string[] = [];
+    for (const sheet of sheets) {
+      let css: string;
+      try {
+        css = code(sheet);
+      } catch {
+        continue; // a sheet that moved is covered by the path test below
+      }
+      for (const m of css.matchAll(/(?:^|[\s;{])filter:\s*([^;}]+)/g)) {
+        const value = m[1].replace(/\s+/g, ' ').trim();
+        if (!/\burl\(/.test(value)) continue;
+        // Strip the url(...) token(s), then look for a remaining `fn(` call.
+        const rest = value.replace(/\burl\([^)]*\)/g, ' ');
+        if (/[a-z-]+\(/i.test(rest)) offenders.push(`${sheet}: filter: ${value}`);
+      }
+    }
+    expect(
+      offenders,
+      `\nA CSS filter function is chained after a url() filter:\n` +
+        offenders.map((s) => `  ${s}`).join('\n') +
+        `\n\nThat combination takes Chromium off its fast path hard enough to ` +
+        `block the main thread (measured: a 1s setInterval did not fire in 10s, ` +
+        `vs ~0.4ms/frame for the url() alone). Move the extra passes INSIDE the ` +
+        `referenced <filter> as filter primitives — see the feMorphology rim in ` +
+        `components/radial/MetaballCursor.tsx.\n`,
     ).toEqual([]);
   });
 
