@@ -19,7 +19,7 @@ Generated from `lib/games.ts`, the single source of truth every card on the site
 | **Slice It!** | [`/slice-it`](https://rmhstudios.com/slice-it) | — | required | `Arcade` `Rhythm` `Action` |
 | **VELUM2099** | [`/velum2099`](https://rmhstudios.com/velum2099) | — | — | `Simulation` `Driving` `3D` `Cyberpunk` |
 | **Synapse Storm** | [`/synapse-storm`](https://rmhstudios.com/synapse-storm) | — | required | `Action` `Puzzle` `Fast-paced` |
-| **Temple of Joy** | [`/temple-of-joy`](https://rmhstudios.com/temple-of-joy) | — | required | `Idle` `Clicker` `Prestige` |
+| **Temple of Joy** | [`/temple-of-joy`](https://rmhstudios.com/temple-of-joy) | — | required | `Idle` `Clicker` `Prestige` `Minigames` |
 | **Neon Driftway** | [`/neon-driftway`](https://rmhstudios.com/neon-driftway) | Playable Demo | required | `Arcade` `Racing` `Endless` |
 | **Laundry Sort** | [`/laundry-sort`](https://rmhstudios.com/laundry-sort) | Playable Demo | required | `Casual` `Physics` `Puzzle` |
 | **Forest Explorer** | [`/forest-explorer`](https://rmhstudios.com/forest-explorer) | — | — | `Exploration` `3D` `Relaxing` |
@@ -77,7 +77,7 @@ Juggle a storm of micro-challenges. Stay sharp. See how long your mind can keep 
 
 ### Temple of Joy
 
-Accumulate Happiness to construct a sprawling temple of delights. Balance the Hedonic Treadmill, earn Karma through pilgrimages, and Transcend the Wheel of Samsara in a deep idle game featuring relics, rituals, and philosophical choices.
+Twenty-four sources of joy, four hundred trophies, and four minigames that keep running while the tab is shut: a garden that grows overnight, a market that moves without you, a choir of saints, and a book of prayers that sometimes go wrong. Catch halos, invite the Rapture and let its Sinners fatten while you sleep, and give the whole temple back for Grace when you are ready to climb again. Hundreds of hours, on a curve that has been play-tested for a decade.
 
 **Route:** `/temple-of-joy` · **Catalog id:** `temple-of-joy` · **Sign-in:** required
 

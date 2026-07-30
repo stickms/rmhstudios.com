@@ -1,205 +1,253 @@
+/**
+ * The store.
+ *
+ * A thin zustand shell over the pure functions in `actions.ts` and `tick.ts`.
+ * Deliberately thin: keeping the rules out of the store is what lets the same
+ * `applyTick` run the live game and the offline catch-up, and what lets any of
+ * it be reasoned about without a React tree.
+ *
+ * Reads are the interesting part — see `components/temple-of-joy/hooks.ts`.
+ * Nothing here should be subscribed to naively; the state changes sixty times
+ * a second.
+ */
 'use client';
 
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import type { GameState, SourceId, RelicId, UpgradePath } from './types';
-import { applyTick } from './tick';
+import type {
+  BlessingKind,
+  BuyQty,
+  GameState,
+  GoodId,
+  PrayerId,
+  SaintId,
+  SeedId,
+  SoilId,
+  SourceId,
+  TabId,
+} from './types';
 import * as Actions from './actions';
+import { applyTick } from './tick';
+import { ZERO_SOURCES } from './data/sources';
+import { createGarden } from './minigames/garden';
+import { createChoir } from './minigames/choir';
+import { createExchange } from './minigames/exchange';
+import { createHours } from './minigames/hours';
+import { createManna } from './minigames/manna';
 import {
-  computeTotalHPS, computeHPC, computeCanTranscend,
-  computeBlissShards, computeEffectiveSatisfaction, computeIsIdle,
-  computeMaxAffordable, computeGlobalHPSMultiplier,
-  computeCanAscend, computeRadianceGain, computeAscensionPrestigeReq,
-  computeAscensionMultiplier,
+  computeCanAscend,
+  computeAscensionGrace,
+  computeGrossJps,
+  computeJps,
+  computeMultipliers,
+  computeTouch,
 } from './engine';
-import { INITIAL_SOURCES } from './data/sources';
-
-// ─── Initial State ────────────────────────────────────────────────────────────
 
 export function createInitialState(): GameState {
   const now = Date.now();
   return {
-    happiness: 0,
-    lifetimeHappiness: 0,
-    runHappiness: 0,
-    peakHappiness: 0,
-    peakKarma: 0,
-    karma: 0,
-    blissShards: 0,
-    sources: { ...INITIAL_SOURCES },
-    upgrades: new Set<string>(),
-    activeRelics: [],
-    maxRelicSlots: 5,
-    equippedRelicsHistory: [],
-    prestigeCount: 0,
-    wheelPurchased: new Set<string>(),
-    samsaraGiftStacks: 0,
-    emberSelections: [],
-    radiance: 0,
-    lifetimeRadiance: 0,
-    ascensionCount: 0,
-    ascensionUpgrades: new Set<string>(),
-    completedObjectives: new Set<string>(),
+    joy: 0,
+    runJoy: 0,
+    lifetimeJoy: 0,
+    peakJoy: 0,
+
+    sources: { ...ZERO_SOURCES },
+    sourceLevels: { ...ZERO_SOURCES },
+    sourceEarnings: { ...ZERO_SOURCES },
+
+    blessings: new Set(),
+    trophies: new Set(),
+
+    grace: 0,
+    graceSpent: 0,
+    graceEarned: 0,
+    legacy: new Set(),
+    ascensions: 0,
+    keepsakes: [],
+
+    manna: createManna(),
+
+    totalTouches: 0,
+    recentTouches: [],
+    touchesAtOpen: 0,
+
+    halos: [],
+    // The first halo comes early, so a new player meets the mechanic before
+    // they have decided what this game is.
+    haloTimer: 90,
+    halosCaught: 0,
+    buffs: [],
+    haloStreak: 0,
+
+    rapture: 0,
+    sinners: [],
+    sinnersStruck: 0,
+    sinnerHarvest: 0,
+
+    garden: createGarden(),
+    choir: createChoir(),
+    exchange: createExchange(),
+    hours: createHours(),
+
+    lastTick: now,
     lastSaved: now,
-    lastTickTime: now,
-    totalPlaytime: 0,
+    openedAt: now,
+    playtime: 0,
     runPlaytime: 0,
-    totalClicks: 0,
-    totalPilgrimages: 0,
-    totalVibeChecks: 0,
-    totalEventsResolved: 0,
-    totalRituals: 0,
-    totalOfferings: 0,
-    achievements: new Set<string>(),
-    milestones: new Set<string>(),
-    pilgrimageStreak: 0,
-    epicurusApprovedCount: 0,
-    baselineHappiness: 0,
-    vibeCheckTimer: Math.random() * 240 + 180,
-    vibeBuff: null,
-    pilgrimageActive: false,
-    pilgrimageTimer: 0,
-    pilgrimageCooldown: 0,
-    ritualCooldown: 0,
-    recentClickTimes: [],
-    eventTimer: Math.random() * 480 + 120,
-    pendingEvent: null,
-    lastEventEffect: null,
-    activeBuffs: [],
-    permanentHPSBonus: 0,
-    permanentHPCBonus: 0,
-    lastClickTime: now,
-    pageOpenTime: now,
-    offlineHappinessOnLoad: 0,
-    offlineSecondsOnLoad: 0,
-    autoBuyTimer: 30,
-    theme: 'dark',
-    numberFormat: 'abbreviated',
+
+    vigil: { seconds: 0, joy: 0, sinnerJoy: 0, manna: 0, pending: false },
+
+    theme: 'dawn',
+    numberFormat: 'named',
     soundEnabled: true,
-    musicVolume: 0.5,
+    musicVolume: 0.35,
     sfxVolume: 0.5,
-    autoBuyEnabled: true,
-    activeTab: 'temple',
-    upgradePathFilter: 'all',
-    sourceBuyQty: 1,
-    showTranscendenceModal: false,
-    showOfflineModal: false,
-    showEventModal: false,
-    gameInitialized: false,
+    stewardEnabled: false,
+    stewardTimer: 5,
+    confirmAscend: true,
+    reducedFlourish: false,
+
+    tab: 'temple',
+    blessingFilter: 'all',
+    buyQty: 1,
+    levelMode: false,
+    showAscendDialog: false,
+    showVigilDialog: false,
+    showMannaDialog: false,
+    initialized: false,
+    notices: [],
   };
 }
 
-// ─── Store Interface ──────────────────────────────────────────────────────────
-
 interface TempleStore extends GameState {
-  // Derived (computed on demand from store)
-  getHPS: () => number;
-  getHPC: () => number;
-  getGlobalHPSMultiplier: () => number;
-  getCanTranscend: () => boolean;
-  getBlissShards: () => number;
-  getEffectiveSatisfaction: () => number;
-  getIsIdle: () => boolean;
+  // ── Derived ──
+  getJps: () => number;
+  getGrossJps: () => number;
+  getTouch: () => number;
+  getMultipliers: () => ReturnType<typeof computeMultipliers>;
   getCanAscend: () => boolean;
-  getRadianceGain: () => number;
-  getAscensionPrestigeReq: () => number;
-  getAscensionMultiplier: () => number;
+  getAscensionGrace: () => number;
 
-  // Actions
+  // ── The loop ──
   tick: () => void;
-  click: () => void;
+
+  // ── Play ──
+  touch: () => void;
   buySource: (id: SourceId) => void;
-  buySourceN: (id: SourceId, n: number) => void;
-  buySourceMax: (id: SourceId) => void;
-  purchaseUpgrade: (id: string) => void;
-  equipRelic: (id: RelicId) => void;
-  unequipRelic: (id: RelicId) => void;
-  triggerPilgrimage: () => void;
-  passVibeCheck: () => void;
-  transcend: () => void;
+  sellSource: (id: SourceId, n: number) => void;
+  buyBlessing: (id: string) => void;
+  levelSource: (id: SourceId) => void;
+  catchHalo: (id: number) => void;
+  strikeSinner: (id: number) => void;
+  strikeAllSinners: () => void;
+
+  // ── Garden ──
+  sow: (index: number) => void;
+  harvest: (index: number) => void;
+  harvestAll: () => void;
+  selectSeed: (seed: SeedId | null) => void;
+  till: (soil: SoilId) => void;
+
+  // ── Choir ──
+  seatSaint: (stall: 0 | 1 | 2, saint: SaintId | null) => void;
+
+  // ── Exchange ──
+  buyGood: (good: GoodId, units: number) => void;
+  sellGood: (good: GoodId, units: number) => void;
+  focusGood: (good: GoodId) => void;
+
+  // ── Hours ──
+  pray: (prayer: PrayerId) => void;
+
+  // ── Ascension ──
+  buyLegacy: (id: string) => void;
+  setKeepsakes: (ids: string[]) => void;
   ascend: () => void;
-  purchaseAscensionUpgrade: (id: string) => void;
-  purchaseWheelUpgrade: (id: string) => void;
-  resolveEvent: (eventId: string, choiceIndex: number) => void;
-  makeOffering: (tier: 1 | 2 | 3) => void;
-  auditAchievements: () => void;
 
-  // UI setters
-  setActiveTab: (tab: GameState['activeTab']) => void;
-  setUpgradePathFilter: (filter: UpgradePath | 'all') => void;
-  setSourceBuyQty: (qty: 1 | 10 | 100 | 'max') => void;
-  setTheme: (theme: 'light' | 'dark') => void;
-  setNumberFormat: (fmt: 'abbreviated' | 'scientific') => void;
-  setSoundEnabled: (enabled: boolean) => void;
-  setMusicVolume: (vol: number) => void;
-  setSfxVolume: (vol: number) => void;
-  setAutoBuyEnabled: (enabled: boolean) => void;
-  setEmberSelections: (ids: string[]) => void;
-  setShowTranscendenceModal: (show: boolean) => void;
-  setShowOfflineModal: (show: boolean) => void;
-  setShowEventModal: (show: boolean) => void;
+  // ── UI ──
+  setTab: (tab: TabId) => void;
+  setBlessingFilter: (filter: BlessingKind | 'all') => void;
+  setBuyQty: (qty: BuyQty) => void;
+  setLevelMode: (on: boolean) => void;
+  setTheme: (theme: GameState['theme']) => void;
+  setNumberFormat: (format: GameState['numberFormat']) => void;
+  setSoundEnabled: (on: boolean) => void;
+  setMusicVolume: (v: number) => void;
+  setSfxVolume: (v: number) => void;
+  setStewardEnabled: (on: boolean) => void;
+  setConfirmAscend: (on: boolean) => void;
+  setReducedFlourish: (on: boolean) => void;
+  setShowAscendDialog: (open: boolean) => void;
+  setShowVigilDialog: (open: boolean) => void;
+  setShowMannaDialog: (open: boolean) => void;
+  dismissNotice: (id: number) => void;
 
-  // Persistence
-  loadState: (partial: Partial<GameState>) => void;
-  resetRun: () => void;
+  // ── Persistence ──
+  load: (partial: Partial<GameState>) => void;
+  reset: () => void;
 }
-
-// ─── Store Implementation ─────────────────────────────────────────────────────
 
 export const useTempleStore = create<TempleStore>()(
   subscribeWithSelector((set, get) => ({
     ...createInitialState(),
 
-    // ── Derived getters ──
-    getHPS: () => computeTotalHPS(get()),
-    getHPC: () => computeHPC(get()),
-    getGlobalHPSMultiplier: () => computeGlobalHPSMultiplier(get()),
-    getCanTranscend: () => computeCanTranscend(get()),
-    getBlissShards: () => computeBlissShards(get()),
-    getEffectiveSatisfaction: () => computeEffectiveSatisfaction(get()),
-    getIsIdle: () => computeIsIdle(get()),
+    getJps: () => computeJps(get()),
+    getGrossJps: () => computeGrossJps(get()),
+    getTouch: () => computeTouch(get()),
+    getMultipliers: () => computeMultipliers(get()),
     getCanAscend: () => computeCanAscend(get()),
-    getRadianceGain: () => computeRadianceGain(get()),
-    getAscensionPrestigeReq: () => computeAscensionPrestigeReq(get()),
-    getAscensionMultiplier: () => computeAscensionMultiplier(get()),
+    getAscensionGrace: () => computeAscensionGrace(get()),
 
-    // ── Actions ──
-    tick: () => set(state => applyTick(state)),
-    click: () => set(state => Actions.doClick(state)),
-    buySource: (id: SourceId) => set(state => Actions.doBuySource(state, id)),
-    buySourceN: (id: SourceId, n: number) => set(state => Actions.doBuySourceN(state, id, n)),
-    buySourceMax: (id: SourceId) => set(state => Actions.doBuySourceN(state, id, computeMaxAffordable(id, state))),
-    purchaseUpgrade: (id: string) => set(state => Actions.doPurchaseUpgrade(state, id)),
-    equipRelic: (id: RelicId) => set(state => Actions.doEquipRelic(state, id)),
-    unequipRelic: (id: RelicId) => set(state => Actions.doUnequipRelic(state, id)),
-    triggerPilgrimage: () => set(state => Actions.doTriggerPilgrimage(state)),
-    passVibeCheck: () => set(state => Actions.doPassVibeCheck(state)),
-    transcend: () => set(state => Actions.doTriggerTranscendence(state)),
-    ascend: () => set(state => Actions.doTriggerAscension(state)),
-    purchaseAscensionUpgrade: (id: string) => set(state => Actions.doPurchaseAscensionUpgrade(state, id)),
-    purchaseWheelUpgrade: (id: string) => set(state => Actions.doPurchaseWheelUpgrade(state, id)),
-    resolveEvent: (eventId: string, choiceIndex: number) =>
-      set(state => Actions.doResolveEvent(state, eventId, choiceIndex)),
-    makeOffering: (tier: 1 | 2 | 3) => set(state => Actions.doMakeOffering(state, tier)),
-    auditAchievements: () => set(state => Actions.doAuditAchievements(state)),
+    tick: () => set((s) => applyTick(s)),
 
-    // ── UI setters ──
-    setActiveTab: (tab) => set({ activeTab: tab }),
-    setUpgradePathFilter: (filter) => set({ upgradePathFilter: filter }),
-    setSourceBuyQty: (qty) => set({ sourceBuyQty: qty }),
+    touch: () => set((s) => Actions.doTouch(s)),
+    buySource: (id) => set((s) => Actions.doBuySourceQty(s, id)),
+    sellSource: (id, n) => set((s) => Actions.doSellSource(s, id, n)),
+    buyBlessing: (id) => set((s) => Actions.doBuyBlessing(s, id)),
+    levelSource: (id) => set((s) => Actions.doLevelSource(s, id)),
+    catchHalo: (id) => set((s) => Actions.doCatchHalo(s, id)),
+    strikeSinner: (id) => set((s) => Actions.doStrikeSinner(s, id)),
+    strikeAllSinners: () => set((s) => Actions.doStrikeAllSinners(s)),
+
+    sow: (index) => set((s) => Actions.doSow(s, index)),
+    harvest: (index) => set((s) => Actions.doHarvest(s, index)),
+    harvestAll: () => set((s) => Actions.doHarvestAll(s)),
+    selectSeed: (seed) => set((s) => Actions.doSelectSeed(s, seed)),
+    till: (soil) => set((s) => Actions.doTill(s, soil)),
+
+    seatSaint: (stall, saint) => set((s) => Actions.doSeatSaint(s, stall, saint)),
+
+    buyGood: (good, units) => set((s) => Actions.doBuyGood(s, good, units)),
+    sellGood: (good, units) => set((s) => Actions.doSellGood(s, good, units)),
+    focusGood: (good) => set((s) => Actions.doFocusGood(s, good)),
+
+    pray: (prayer) => set((s) => Actions.doPray(s, prayer)),
+
+    buyLegacy: (id) => set((s) => Actions.doBuyLegacy(s, id)),
+    setKeepsakes: (ids) => set((s) => Actions.doSetKeepsakes(s, ids)),
+    ascend: () => set((s) => Actions.doAscend(s)),
+
+    setTab: (tab) => set({ tab }),
+    setBlessingFilter: (blessingFilter) => set({ blessingFilter }),
+    setBuyQty: (buyQty) => set({ buyQty }),
+    setLevelMode: (levelMode) => set({ levelMode }),
     setTheme: (theme) => set({ theme }),
-    setNumberFormat: (fmt) => set({ numberFormat: fmt }),
-    setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
-    setMusicVolume: (vol) => set({ musicVolume: vol }),
-    setSfxVolume: (vol) => set({ sfxVolume: vol }),
-    setAutoBuyEnabled: (enabled) => set({ autoBuyEnabled: enabled }),
-    setEmberSelections: (ids) => set({ emberSelections: ids.slice(0, 5) }),
-    setShowTranscendenceModal: (show) => set({ showTranscendenceModal: show }),
-    setShowOfflineModal: (show) => set({ showOfflineModal: show }),
-    setShowEventModal: (show) => set({ showEventModal: show }),
+    setNumberFormat: (numberFormat) => set({ numberFormat }),
+    setSoundEnabled: (soundEnabled) => set({ soundEnabled }),
+    setMusicVolume: (musicVolume) => set({ musicVolume }),
+    setSfxVolume: (sfxVolume) => set({ sfxVolume }),
+    setStewardEnabled: (stewardEnabled) => set({ stewardEnabled }),
+    setConfirmAscend: (confirmAscend) => set({ confirmAscend }),
+    setReducedFlourish: (reducedFlourish) => set({ reducedFlourish }),
+    setShowAscendDialog: (showAscendDialog) => set({ showAscendDialog }),
+    setShowVigilDialog: (showVigilDialog) => set({ showVigilDialog }),
+    setShowMannaDialog: (showMannaDialog) => set({ showMannaDialog }),
+    dismissNotice: (id) => set((s) => Actions.doDismissNotice(s, id)),
 
-    // ── Persistence ──
-    loadState: (partial: Partial<GameState>) => set(partial),
-    resetRun: () => set(createInitialState()),
-  }))
+    load: (partial) => set(partial),
+    reset: () => set(createInitialState()),
+  })),
 );
+
+/** Read the live state outside React. */
+export const temple = () => useTempleStore.getState();

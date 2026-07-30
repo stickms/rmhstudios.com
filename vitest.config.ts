@@ -17,6 +17,8 @@ export default defineConfig({
       'lib/personas/__tests__/**/*.test.ts',
       'lib/predictions/__tests__/**/*.test.ts',
       'lib/tournaments/__tests__/**/*.test.ts',
+      'lib/temple-of-joy/__tests__/**/*.test.ts',
+      'lib/temple-of-joy/__tests__/**/*.test.tsx',
       'lib/__tests__/**/*.test.ts',
       'lib/liquid-gl/__tests__/**/*.test.ts',
       'lib/daily-puzzles/__tests__/**/*.test.ts',

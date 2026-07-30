@@ -1,751 +1,544 @@
 /**
- * Temple of Joy — Game Engine
- * Pure computation functions for deriving game state values.
+ * The engine — every derived number in the game, computed from state alone.
+ *
+ * Nothing here mutates and nothing here is cached: `computeJps` walks the whole
+ * blessing list on every call. That sounds expensive and is not — a few hundred
+ * array entries at a handful of calls per second is nothing — and it buys the
+ * property that matters most in an idle game: **there is exactly one place a
+ * multiplier can come from**, so a number on screen can always be explained.
+ *
+ * The order of the stack is Cookie Clicker's, which is worth preserving because
+ * players reason about it:
+ *
+ *   per-source base × copies
+ *     × tier blessings × synergies × manna levels
+ *   summed
+ *     × global blessings × Devotion (Cherubim) × Grace × Legacy
+ *     × garden × choir × halo buffs
+ *     − what the Sinners are drinking
  */
-import type { GameState, SourceId, RelicId, TimedBuff } from './types';
-import { SOURCES, SOURCE_MAP, INITIAL_SOURCES } from './data/sources';
-import { UPGRADES, UPGRADE_MAP } from './data/upgrades';
-import { SYNERGIES } from './data/synergies';
-import { MILESTONES } from './data/milestones';
-import { ASCENSION_UPGRADES } from './data/ascension';
+import type { BlessingDef, GameState, SourceId } from './types';
+import { BLESSINGS, BLESSING_MAP } from './data/blessings';
+import { SOURCES, SOURCE_MAP, COST_GROWTH, REVEAL_SHARE } from './data/sources';
+import { LEGACY, LEGACY_MAP, GRACE_DIVISOR, MIN_ASCEND_JOY } from './data/legacy';
+import { DEVOTION_PER_TROPHY, DEVOTION_TROPHIES } from './data/trophies';
+import { gardenEffects } from './minigames/garden';
+import { choirEffects } from './minigames/choir';
+import { levelMultiplier } from './minigames/manna';
+import { sinnerDrain } from './minigames/sinners';
 
-// ─── Ascension (meta-prestige) ────────────────────────────────────────────────
+/* ══════════════════════════════════════════════════════════════════════════
+   Small shared reads
+   ══════════════════════════════════════════════════════════════════════════ */
 
-/** Prestige count required for the player's next Ascension. */
-export function computeAscensionPrestigeReq(state: GameState): number {
-  let discount = 0;
-  for (const up of ASCENSION_UPGRADES) {
-    if (state.ascensionUpgrades.has(up.id) && up.ascensionDiscount) {
-      discount = Math.min(0.75, discount + up.ascensionDiscount);
-    }
+/** The blessings the player owns, as definitions. */
+function owned(state: GameState): BlessingDef[] {
+  const out: BlessingDef[] = [];
+  for (const id of state.blessings) {
+    const def = BLESSING_MAP[id];
+    if (def) out.push(def);
   }
-  const base = 15 + state.ascensionCount * 8;
-  return Math.max(5, Math.ceil(base * (1 - discount)));
+  return out;
 }
 
-export function computeCanAscend(state: GameState): boolean {
-  return state.prestigeCount >= computeAscensionPrestigeReq(state);
+/** Devotion: 4% per qualifying trophy. The Cherubim turn this into income. */
+export function computeDevotion(state: GameState): number {
+  let count = 0;
+  for (const id of state.trophies) if (DEVOTION_TROPHIES.has(id)) count++;
+  return count * DEVOTION_PER_TROPHY;
 }
 
-/** Radiance earned if the player Ascends right now. */
-export function computeRadianceGain(state: GameState): number {
-  if (!computeCanAscend(state)) return 0;
-  const fromPrestige = Math.pow(Math.max(0, state.prestigeCount) / 12, 1.4);
-  const fromLifetime = Math.max(0, Math.log10(Math.max(1, state.lifetimeHappiness)) - 13);
-  let gain = 1 + fromPrestige + fromLifetime;
-  for (const up of ASCENSION_UPGRADES) {
-    if (state.ascensionUpgrades.has(up.id) && up.radianceGainMultiplier) gain *= up.radianceGainMultiplier;
-  }
-  return Math.max(1, Math.floor(gain));
-}
-
-/** Permanent global HPS multiplier from Radiance + ascension upgrades. */
-export function computeAscensionMultiplier(state: GameState): number {
-  // Each point of Radiance is a flat +3% (linear, predictable).
-  let m = 1 + 0.03 * state.radiance;
-  for (const up of ASCENSION_UPGRADES) {
-    if (state.ascensionUpgrades.has(up.id) && up.globalHPSMultiplier) m *= up.globalHPSMultiplier;
-  }
-  return m;
-}
-
-export function computeAscensionHPCMultiplier(state: GameState): number {
-  let m = 1;
-  for (const up of ASCENSION_UPGRADES) {
-    if (state.ascensionUpgrades.has(up.id) && up.hpcMultiplier) m *= up.hpcMultiplier;
-  }
-  return m;
-}
-
-export function computeAscensionOfflineBonus(state: GameState): number {
-  let bonus = 0;
-  for (const up of ASCENSION_UPGRADES) {
-    if (state.ascensionUpgrades.has(up.id) && up.offlineEfficiencyBonus) bonus += up.offlineEfficiencyBonus;
-  }
-  return bonus;
-}
-
-export function computeAscensionBonusRelicSlots(state: GameState): number {
-  let slots = 0;
-  for (const up of ASCENSION_UPGRADES) {
-    if (state.ascensionUpgrades.has(up.id) && up.bonusRelicSlots) slots += up.bonusRelicSlots;
-  }
-  return slots;
-}
-
-export function computeAscensionStartingShards(state: GameState): number {
-  let shards = 0;
-  for (const up of ASCENSION_UPGRADES) {
-    if (state.ascensionUpgrades.has(up.id) && up.startingShards) shards = Math.max(shards, up.startingShards);
-  }
-  return shards;
-}
-
-// ─── Transcendence ────────────────────────────────────────────────────────────
-
-export function computeTranscendenceThreshold(prestigeCount: number): number {
-  return 1e13 * Math.pow(8, prestigeCount);
-}
-
-export function computeBlissShards(state: GameState): number {
-  if (state.happiness <= 0 && state.prestigeCount === 0) return 0;
-
-  // Base shards from number of times transcended
-  // cosmicDividend wheel: +20 base per prestige instead of +10
-  const perPrestige = state.wheelPurchased.has('cosmicDividend') ? 20 : 10;
-  let shards = 10 + (state.prestigeCount * perPrestige);
-
-  // Small bonus from current happiness balance
-  shards += Math.floor(Math.log10(Math.max(1, state.happiness)));
-
-  // infiniteWheel wheel: 15% bonus
-  if (state.wheelPurchased.has('infiniteWheel')) {
-    shards = Math.floor(shards * 1.15);
-  }
-
-  // eternalReturn wheel: ×1.25 shard yield
-  if (state.wheelPurchased.has('eternalReturn')) {
-    shards = Math.floor(shards * 1.25);
-  }
-
-  // infiniteWheel2 wheel: ×2.0 shard yield
-  if (state.wheelPurchased.has('infiniteWheel2')) {
-    shards = Math.floor(shards * 2.0);
-  }
-
-  // alchemistsFlask relic: +20% shard yield
-  if (state.activeRelics.includes('alchemistsFlask')) {
-    shards = Math.floor(shards * 1.2);
-  }
-
-  return Math.max(1, shards);
-}
-
-// ─── Source Costs ───────────────────────────────────────────────────────────
-
-export function computeSourceCost(
-  SourceId: SourceId,
-  owned: number,
-  state: GameState
-): number {
-  const def = SOURCE_MAP[SourceId];
-  const multiplier = def.costMultiplier ?? 1.15;
-  let cost = def.baseCost * Math.pow(multiplier, owned);
-  if (state.wheelPurchased.has('earlyWarmth')) cost *= 0.95;
-  if (state.wheelPurchased.has('heavensInfrastructure')) cost *= 0.9;
-  // holyInfrastructure wheel: −25% source costs
-  if (state.wheelPurchased.has('holyInfrastructure')) cost *= 0.75;
-  // celestialArchitect wheel: −50% source costs
-  if (state.wheelPurchased.has('celestialArchitect')) cost *= 0.5;
-  return Math.floor(cost);
-}
-
-/** Total cost of buying n sources starting from currentOwned. */
-export function computeSourceCostN(
-  SourceId: SourceId,
-  ownedNow: number,
-  n: number,
-  state: GameState,
-): number {
+/** Total Manna levels bought, across every source. */
+export function computeTotalLevels(state: GameState): number {
   let total = 0;
-  for (let i = 0; i < n; i++) {
-    total += computeSourceCost(SourceId, ownedNow + i, state);
+  for (const id of Object.keys(state.sourceLevels) as SourceId[]) {
+    total += state.sourceLevels[id] ?? 0;
   }
   return total;
 }
 
-/** Max sources affordable with current happiness. */
-export function computeMaxAffordable(
-  SourceId: SourceId,
-  state: GameState,
-): number {
-  let budget = state.happiness;
-  const owned = state.sources[SourceId] ?? 0;
-  let bought = 0;
-  while (bought < 10_000) {
-    const cost = computeSourceCost(SourceId, owned + bought, state);
-    if (budget < cost) break;
-    budget -= cost;
-    bought++;
-  }
-  return bought;
+/** Total copies of everything. */
+export function computeTotalSources(state: GameState): number {
+  let total = 0;
+  for (const id of Object.keys(state.sources) as SourceId[]) total += state.sources[id] ?? 0;
+  return total;
 }
 
-// ─── Multipliers ──────────────────────────────────────────────────────────────
+/* ══════════════════════════════════════════════════════════════════════════
+   Prices
+   ══════════════════════════════════════════════════════════════════════════ */
 
-export function computeSynergyMultiplier(SourceId: SourceId, state: GameState): number {
-  let product = 1.0;
-  for (const synergy of SYNERGIES) {
-    if (!synergy.targetSources.includes(SourceId)) continue;
-    const requirementsMet = (
-      Object.entries(synergy.requirements) as [SourceId, number][]
-    ).every(([reqId, reqCount]) => (state.sources[reqId] ?? 0) >= reqCount);
-    if (requirementsMet) product *= synergy.multiplier;
-  }
-  return product;
-}
-
-export function computeOfferingMultiplier(SourceId: SourceId, state: GameState): number {
-  let multiplier = 1.0;
-  for (const tier of [1, 2, 3] as const) {
-    const upgradeId = `${SourceId}Offering${tier}`;
-    if (state.upgrades.has(upgradeId)) {
-      const def = UPGRADE_MAP[upgradeId];
-      if (def?.sourceMultiplier) multiplier *= def.sourceMultiplier;
-    }
-  }
-  return multiplier;
-}
-
-// ─── HPS ──────────────────────────────────────────────────────────────────────
-
-export function computeSourceHPS(SourceId: SourceId, state: GameState): number {
-  const owned = state.sources[SourceId] ?? 0;
-  if (owned === 0) return 0;
-  const def = SOURCE_MAP[SourceId];
-  let hps = def.baseHPS * owned;
-  // Apply upgrade multipliers (skip offerings — handled by computeOfferingMultiplier)
-  for (const upgrade of UPGRADES) {
-    if (!state.upgrades.has(upgrade.id)) continue;
-    if (upgrade.path === 'offering') continue;
-    if (!upgrade.targetSources?.includes(SourceId)) continue;
-    if (upgrade.sourceMultiplier) hps *= upgrade.sourceMultiplier;
-  }
-  hps *= computeSynergyMultiplier(SourceId, state);
-  hps *= computeOfferingMultiplier(SourceId, state);
-  // bubbleTeaCard relic: Sweet Treat HPS ×3
-  if (SourceId === 'sweetTreat' && state.activeRelics.includes('bubbleTeaCard')) hps *= 3;
-  // stuffedPillow relic: ×3 Nap Pod HPS
-  if (SourceId === 'napPod' && state.activeRelics.includes('stuffedPillow')) hps *= 3;
-  // goldenFork relic: ×4 Feast Hall HPS, ×2 Snack Bar HPS
-  if (SourceId === 'feastHall' && state.activeRelics.includes('goldenFork')) hps *= 4;
-  if (SourceId === 'snackBar' && state.activeRelics.includes('goldenFork')) hps *= 2;
-  // lighthouseOfJoy relic: ×3 for post-prestige sources
-  if (state.activeRelics.includes('lighthouseOfJoy')) {
-    const def = SOURCE_MAP[SourceId];
-    if (def.requiresPrestige && def.requiresPrestige >= 1) hps *= 3;
-  }
-  // perpetualTeapot relic: ×2 Snack Bar, Sweet Treat, Feast Hall
-  if (state.activeRelics.includes('perpetualTeapot')) {
-    if (['snackBar', 'feastHall', 'sweetTreat'].includes(SourceId)) hps *= 2;
-  }
-  // mirrorOfTruth relic: ×2 Therapy & Gratitude Journal
-  if (state.activeRelics.includes('mirrorOfTruth')) {
-    if (SourceId === 'therapy' || SourceId === 'gratitudeJournal') hps *= 2;
-  }
-  // gardenersGlove relic: ×5 Zen Garden, ×2 Echo Garden
-  if (state.activeRelics.includes('gardenersGlove')) {
-    if (SourceId === 'zenGarden') hps *= 5;
-    if (SourceId === 'echoGarden') hps *= 2;
-  }
-  // dreamCatcher relic: ×4 Dream Weaver, ×2 Memory Palace
-  if (state.activeRelics.includes('dreamCatcher')) {
-    if (SourceId === 'dreamWeaver') hps *= 4;
-    if (SourceId === 'memoryPalace') hps *= 2;
-  }
-  // cosmicTeaCup relic: ×3 Ambrosia Tap, Celestial Bath
-  if (state.activeRelics.includes('cosmicTeaCup')) {
-    if (SourceId === 'ambrosiaTap' || SourceId === 'celestialBath') hps *= 3;
-  }
-  return hps;
-}
-
-export function computeTotalHPS(state: GameState): number {
-  let hps = 0;
-
-  // 1. Sum per-source HPS
-  for (const source of SOURCES) {
-    hps += computeSourceHPS(source.id, state);
-  }
-
-  // 2. Apply global upgrade multipliers
-  for (const upgrade of UPGRADES) {
-    if (!state.upgrades.has(upgrade.id)) continue;
-    if (upgrade.globalHPSMultiplier) hps *= upgrade.globalHPSMultiplier;
-  }
-
-  // 3. Rest-mastery multipliers (always applied — clicking never reduces HPS)
-  for (const upgrade of UPGRADES) {
-    if (!state.upgrades.has(upgrade.id)) continue;
-    if (upgrade.idleHPSMultiplier) hps *= upgrade.idleHPSMultiplier;
-  }
-  // laurelCrown relic: ×2 HPS
-  if (state.activeRelics.includes('laurelCrown')) hps *= 2;
-  // silkRobe relic: ×2 rest-mastery bonus
-  if (state.activeRelics.includes('silkRobe')) hps *= 2;
-  // warmBlanket relic: ×1.25 global HPS
-  if (state.activeRelics.includes('warmBlanket')) hps *= 1.25;
-
-  // 4. Active timed buffs
-  for (const buff of state.activeBuffs) {
-    hps *= buff.hpsMultiplier;
-  }
-
-  // 5. Vibe buff
-  if (state.vibeBuff) hps *= state.vibeBuff.hpsMultiplier;
-
-  // 6. Permanent HPS bonus (additive %)
-  hps *= 1 + state.permanentHPSBonus;
-
-  // 7. Samsara's Gift: +5% per stack
-  hps *= 1 + 0.05 * state.samsaraGiftStacks;
-
-  // 8. Temple Eternal wheel upgrade
-  if (state.wheelPurchased.has('templeEternal')) hps *= 10;
-
-  // 9. Sacred Ledger relic: grows with time on page
-  // ancientHourglass relic: doubles ramp speed (×0.2/min instead of ×0.1/min)
-  if (state.activeRelics.includes('sacredLedger')) {
-    const minutesOpen = (Date.now() - state.pageOpenTime) / 60_000;
-    const rampRate = state.activeRelics.includes('ancientHourglass') ? 0.2 : 0.1;
-    hps *= 1 + Math.min(minutesOpen * rampRate, 4.0);
-  }
-
-  // 10. Hymnal of Excess relic: each source adds bonus proportional to count
-  if (state.activeRelics.includes('hymnalOfExcess')) {
-    for (const source of SOURCES) {
-      const owned = state.sources[source.id] ?? 0;
-      if (owned === 0) continue;
-      const rawHPS = computeSourceHPS(source.id, state);
-      hps += rawHPS * (Math.pow(1.01, owned) - 1);
-    }
-  }
-
-  // 11. Confession Booth relic: scales with bliss shards
-  if (state.activeRelics.includes('confessionBooth')) {
-    hps *= 1 + 0.05 * state.blissShards;
-  }
-
-  // 12. cozyPlaylist relic: +15% global HPS
-  if (state.activeRelics.includes('cozyPlaylist')) hps *= 1.15;
-
-  // 13. Milestone bonuses (flat hpsBonus + multiplicative hpsMultiplier)
-  for (const milestone of MILESTONES) {
-    if (!state.milestones.has(milestone.id)) continue;
-    if (milestone.hpsBonus) hps += milestone.hpsBonus;
-    if (milestone.hpsMultiplier) {
-      let mult = milestone.hpsMultiplier;
-      // karmaResonator relic: milestones grant ×1.5 bonus
-      if (state.activeRelics.includes('karmaResonator')) mult = 1 + (mult - 1) * 1.5;
-      hps *= mult;
-    }
-  }
-
-  // 14. infiniteGratitude relic: +2% HPS per prestige count
-  if (state.activeRelics.includes('infiniteGratitude') && state.prestigeCount > 0) {
-    hps *= 1 + 0.02 * state.prestigeCount;
-  }
-
-  // 15. beginnersBliss wheel: +50 flat HPS
-  if (state.wheelPurchased.has('beginnersBliss')) hps += 50;
-
-  // 16. philosophersStone relic: ×2 all multipliers (skipped if omegaRelic is active)
-  if (state.activeRelics.includes('philosophersStone') && !state.activeRelics.includes('omegaRelic')) hps *= 2;
-
-  // 17. New wheel HPS multipliers
-  if (state.wheelPurchased.has('singularityEngine')) hps *= 50;
-  if (state.wheelPurchased.has('nirvanaEngine')) hps *= 500;
-  if (state.wheelPurchased.has('dimensionalRift')) hps *= 5000;
-  if (state.wheelPurchased.has('theGrandDesign')) hps *= 100000;
-  if (state.wheelPurchased.has('theLastSmile')) hps *= 1000000;
-
-  // 18. templeComplete wheel: +10% HPS per achievement
-  if (state.wheelPurchased.has('templeComplete')) {
-    hps *= 1 + 0.1 * state.achievements.size;
-  }
-
-  // 19. astronomersLens relic: milestones threshold ÷10 (handled in tick.ts milestone check)
-  // No HPS effect here — the relic makes milestones unlock earlier.
-
-  // 20. starChart relic: +3% HPS per prestige count
-  if (state.activeRelics.includes('starChart') && state.prestigeCount > 0) {
-    hps *= 1 + 0.03 * state.prestigeCount;
-  }
-
-  // 21. ancientHourglass relic: doubles sacredLedger ramp (handled in sacredLedger block above)
-  // No separate HPS effect.
-
-  // 22. soulLantern relic: +0.5% HPS per source copy owned
-  if (state.activeRelics.includes('soulLantern')) {
-    const totalOwned = Object.values(state.sources).reduce((sum, n) => sum + (n ?? 0), 0);
-    hps *= 1 + 0.005 * totalOwned;
-  }
-
-  // 23. cosmicTeaCup relic: per-source ×3 handled in computeSourceHPS
-  // No global HPS effect.
-
-  // 24. infinityScarf relic: +5% HPS per equipped relic
-  if (state.activeRelics.includes('infinityScarf')) {
-    hps *= 1 + 0.05 * state.activeRelics.length;
-  }
-
-  // 25. omegaRelic: ×3 all HPS (replaces philosophersStone)
-  if (state.activeRelics.includes('omegaRelic')) hps *= 3;
-
-  // 26. goldenPen relic: +20% per event resolved, capped at +100%
-  if (state.activeRelics.includes('goldenPen')) {
-    hps *= 1 + Math.min(0.20 * state.totalEventsResolved, 1.0);
-  }
-
-  // 27. Ascension: permanent meta multiplier (Radiance + ascension upgrades)
-  hps *= computeAscensionMultiplier(state);
-
-  return hps;
+export function computeSourceCost(id: SourceId, alreadyOwned: number): number {
+  return Math.ceil(SOURCE_MAP[id].baseCost * Math.pow(COST_GROWTH, alreadyOwned));
 }
 
 /**
- * Computes the stable "Global Mult" for display.
- * Excludes volatile / temporary effects (timed buffs, vibe buff, Sacred Ledger)
- * so the displayed number doesn't randomly fluctuate.
+ * Cost of `n` more copies. Closed form rather than a loop: buying "max" at
+ * 400 copies would otherwise be four hundred `Math.pow` calls per frame, and
+ * the geometric sum is exact.
  */
-export function computeGlobalHPSMultiplier(state: GameState): number {
-  let multiplier = 1.0;
+export function computeSourceCostN(id: SourceId, alreadyOwned: number, n: number): number {
+  if (n <= 0) return 0;
+  const base = SOURCE_MAP[id].baseCost * Math.pow(COST_GROWTH, alreadyOwned);
+  return Math.ceil((base * (Math.pow(COST_GROWTH, n) - 1)) / (COST_GROWTH - 1));
+}
 
-  // Global upgrade multipliers
-  for (const upgrade of UPGRADES) {
-    if (!state.upgrades.has(upgrade.id)) continue;
-    if (upgrade.globalHPSMultiplier) multiplier *= upgrade.globalHPSMultiplier;
-  }
+/**
+ * How many copies `joy` can buy. Solved rather than iterated, then corrected
+ * by one — floating point on a geometric series is close but not exact, and an
+ * off-by-one that lets a purchase go negative is worse than a spare `while`.
+ */
+export function computeMaxAffordable(id: SourceId, alreadyOwned: number, joy: number): number {
+  if (joy <= 0) return 0;
+  const base = SOURCE_MAP[id].baseCost * Math.pow(COST_GROWTH, alreadyOwned);
+  if (joy < base) return 0;
+  const exact = Math.log((joy * (COST_GROWTH - 1)) / base + 1) / Math.log(COST_GROWTH);
+  let n = Math.max(0, Math.floor(exact));
+  while (n > 0 && computeSourceCostN(id, alreadyOwned, n) > joy) n--;
+  while (computeSourceCostN(id, alreadyOwned, n + 1) <= joy) n++;
+  return n;
+}
 
-  // Rest-mastery multipliers (always applied — clicking never reduces HPS)
-  for (const upgrade of UPGRADES) {
-    if (!state.upgrades.has(upgrade.id)) continue;
-    if (upgrade.idleHPSMultiplier) multiplier *= upgrade.idleHPSMultiplier;
-  }
-  if (state.activeRelics.includes('laurelCrown')) multiplier *= 2;
-  if (state.activeRelics.includes('silkRobe')) multiplier *= 2;
-  if (state.activeRelics.includes('warmBlanket')) multiplier *= 1.25;
+/** How many the current buy-quantity setting would purchase. */
+export function computeBuyCount(state: GameState, id: SourceId): number {
+  const have = state.sources[id] ?? 0;
+  if (state.buyQty === 'max') return computeMaxAffordable(id, have, state.joy);
+  return state.buyQty;
+}
 
-  // NOTE: activeBuffs, vibeBuff, and sacredLedger are EXCLUDED from this
-  // display multiplier. They are temporary / time-varying effects and
-  // including them causes the "Global Mult" readout to fluctuate randomly.
-  // They still affect actual HPS via computeTotalHPS().
+/* ══════════════════════════════════════════════════════════════════════════
+   Per-source output
+   ══════════════════════════════════════════════════════════════════════════ */
 
-  // Permanent HPS bonus
-  multiplier *= 1 + state.permanentHPSBonus;
+/**
+ * One source's contribution to joy-per-second, with everything that applies to
+ * it specifically but nothing that applies to the temple as a whole.
+ */
+export function computeSourceJps(state: GameState, id: SourceId): number {
+  const count = state.sources[id] ?? 0;
+  if (count === 0) return 0;
 
-  // Samsara's Gift
-  multiplier *= 1 + 0.05 * state.samsaraGiftStacks;
+  const def = SOURCE_MAP[id];
+  let per = def.baseJps;
 
-  // Temple Eternal wheel
-  if (state.wheelPurchased.has('templeEternal')) multiplier *= 10;
-
-  // cozyPlaylist relic: +15% global HPS
-  if (state.activeRelics.includes('cozyPlaylist')) multiplier *= 1.15;
-
-  // Milestone bonuses
-  for (const milestone of MILESTONES) {
-    if (!state.milestones.has(milestone.id)) continue;
-    if (milestone.hpsMultiplier) {
-      let mult = milestone.hpsMultiplier;
-      if (state.activeRelics.includes('karmaResonator')) mult = 1 + (mult - 1) * 1.5;
-      multiplier *= mult;
+  // Tier blessings and synergies.
+  for (const blessing of owned(state)) {
+    if (blessing.sourceMultiplier?.id === id) per *= blessing.sourceMultiplier.factor;
+    if (blessing.synergy?.boosted === id) {
+      const partners = state.sources[blessing.synergy.from] ?? 0;
+      per *= 1 + blessing.synergy.factor * partners;
     }
   }
 
-  // infiniteGratitude relic: +2% per prestige
-  if (state.activeRelics.includes('infiniteGratitude') && state.prestigeCount > 0) {
-    multiplier *= 1 + 0.02 * state.prestigeCount;
+  // The Acolyte line: every other source in the temple lends it a hand.
+  if (id === 'acolyte') {
+    let fromCongregation = 0;
+    for (const blessing of owned(state)) {
+      if (blessing.acolyteFromCongregation) {
+        const others = computeTotalSources(state) - count;
+        fromCongregation += blessing.acolyteFromCongregation * others;
+      }
+    }
+    per += fromCongregation;
   }
 
-  // philosophersStone (skipped if omegaRelic active)
-  if (state.activeRelics.includes('philosophersStone') && !state.activeRelics.includes('omegaRelic')) multiplier *= 2;
+  // Manna levels: +1% each.
+  per *= levelMultiplier(state.sourceLevels[id] ?? 0);
 
-  // Wheel HPS multipliers
-  if (state.wheelPurchased.has('singularityEngine')) multiplier *= 50;
-  if (state.wheelPurchased.has('nirvanaEngine')) multiplier *= 500;
-  if (state.wheelPurchased.has('dimensionalRift')) multiplier *= 5000;
-  if (state.wheelPurchased.has('theGrandDesign')) multiplier *= 100000;
-  if (state.wheelPurchased.has('theLastSmile')) multiplier *= 1000000;
-
-  // templeComplete: +10% HPS per achievement
-  if (state.wheelPurchased.has('templeComplete')) {
-    multiplier *= 1 + 0.1 * state.achievements.size;
-  }
-
-  // starChart relic: +3% per prestige
-  if (state.activeRelics.includes('starChart') && state.prestigeCount > 0) {
-    multiplier *= 1 + 0.03 * state.prestigeCount;
-  }
-
-  // soulLantern relic: +0.5% per source copy
-  if (state.activeRelics.includes('soulLantern')) {
-    const totalOwned = Object.values(state.sources).reduce((sum, n) => sum + (n ?? 0), 0);
-    multiplier *= 1 + 0.005 * totalOwned;
-  }
-
-  // infinityScarf relic: +5% per equipped relic
-  if (state.activeRelics.includes('infinityScarf')) {
-    multiplier *= 1 + 0.05 * state.activeRelics.length;
-  }
-
-  // omegaRelic: ×3 all (replaces philosophersStone)
-  if (state.activeRelics.includes('omegaRelic')) multiplier *= 3;
-
-  // goldenPen relic: +20% per event resolved, capped at +100%
-  if (state.activeRelics.includes('goldenPen')) {
-    multiplier *= 1 + Math.min(0.20 * state.totalEventsResolved, 1.0);
-  }
-
-  // Ascension: permanent meta multiplier (Radiance + ascension upgrades)
-  multiplier *= computeAscensionMultiplier(state);
-
-  // Note: Hymnal of Excess and Confession Booth add flat HPS, not multiplicative
-  // so we don't include them here
-
-  return multiplier;
+  return per * count;
 }
 
-// ─── HPC ──────────────────────────────────────────────────────────────────────
+/* ══════════════════════════════════════════════════════════════════════════
+   The global stack
+   ══════════════════════════════════════════════════════════════════════════ */
 
-export function computeHPC(state: GameState): number {
-  let base = 1;
-  let bonus = 0;
+export interface MultiplierBreakdown {
+  blessings: number;
+  devotion: number;
+  grace: number;
+  legacy: number;
+  garden: number;
+  choir: number;
+  buffs: number;
+  /** Everything above, multiplied together. */
+  total: number;
+}
+
+/**
+ * The whole global multiplier, itemised — because a player who cannot see
+ * where a ×400 came from stops trusting the game, and because the panel that
+ * shows this is one of the better things in the genre.
+ */
+export function computeMultipliers(state: GameState): MultiplierBreakdown {
+  let blessings = 1;
+  let devotionMult = 1;
+
+  const devotion = computeDevotion(state);
+  for (const blessing of owned(state)) {
+    if (blessing.globalMultiplier) blessings *= blessing.globalMultiplier;
+    if (blessing.devotionFactor) devotionMult *= 1 + devotion * blessing.devotionFactor;
+  }
+
+  // Grace only counts once the Communion rungs unlock it.
+  let graceShare = 0;
+  let legacyMult = 1;
+  for (const id of state.legacy) {
+    const def = LEGACY_MAP[id];
+    if (!def) continue;
+    if (def.graceShare) graceShare += def.graceShare;
+    if (def.globalMultiplier) legacyMult *= def.globalMultiplier;
+  }
+  for (const blessing of owned(state)) {
+    if (blessing.graceShare) graceShare += blessing.graceShare;
+  }
+  const grace = 1 + computeGraceHeld(state) * 0.01 * Math.min(1, graceShare);
+
+  const garden = gardenEffects(state.garden).jpsMultiplier;
+  const choir = choirEffects(state.choir, state.runPlaytime).jpsMultiplier;
+
+  let buffs = 1;
+  for (const buff of state.buffs) buffs *= buff.jpsMultiplier;
+
+  const total = blessings * devotionMult * grace * legacyMult * garden * choir * buffs;
+  return {
+    blessings,
+    devotion: devotionMult,
+    grace,
+    legacy: legacyMult,
+    garden,
+    choir,
+    buffs,
+    total,
+  };
+}
+
+/**
+ * Joy per second, as the temple actually earns it — Sinners included, which is
+ * why this can be much lower than the sum of its parts during the Rapture.
+ */
+export function computeJps(state: GameState): number {
+  return computeGrossJps(state) * (1 - computeSinnerDrain(state));
+}
+
+/** Joy per second before the Sinners take their share. */
+export function computeGrossJps(state: GameState): number {
+  let sum = 0;
+  for (const source of SOURCES) sum += computeSourceJps(state, source.id);
+  return sum * computeMultipliers(state).total;
+}
+
+/** The share of income currently being diverted into Sinners, 0..1. */
+export function computeSinnerDrain(state: GameState): number {
+  if (state.sinners.length === 0) return 0;
+  let appetite = 1;
+  for (const blessing of owned(state)) {
+    if (blessing.sinnerAppetite) appetite *= blessing.sinnerAppetite;
+  }
+  return sinnerDrain(state.sinners, appetite);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   The offering
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Joy per hand-offering. The share-of-rate term is what keeps clicking
+ * meaningful at 10^40 — without it the button is decoration after an hour.
+ */
+export function computeTouch(state: GameState): number {
+  let flat = 1;
   let multiplier = 1;
+  let shareOfJps = 0;
 
-  for (const upgrade of UPGRADES) {
-    if (!state.upgrades.has(upgrade.id)) continue;
-    if (upgrade.hpcBonus) bonus += upgrade.hpcBonus;
-    if (upgrade.hpcMultiplier) multiplier *= upgrade.hpcMultiplier;
+  for (const blessing of owned(state)) {
+    if (blessing.touchFlat) flat += blessing.touchFlat;
+    if (blessing.touchMultiplier) multiplier *= blessing.touchMultiplier;
+    if (blessing.touchShareOfJps) shareOfJps += blessing.touchShareOfJps;
   }
 
-  base = (base + bonus) * multiplier;
-
-  // The Second Smile wheel
-  if (state.wheelPurchased.has('theSecondSmile')) base *= 2;
-
-  // Enlightened Clicker wheel (skipped if ascendedClicker purchased — ascended replaces it)
-  if (state.wheelPurchased.has('enlightenedClicker') && !state.wheelPurchased.has('ascendedClicker')) {
-    base *= 1 + 0.1 * state.prestigeCount;
+  for (const id of state.legacy) {
+    const def = LEGACY_MAP[id];
+    if (def?.touchMultiplier) multiplier *= def.touchMultiplier;
   }
 
-  // ascendedClicker wheel: replaces enlightenedClicker with ×(1 + 0.25 × prestige)
-  if (state.wheelPurchased.has('ascendedClicker')) {
-    base *= 1 + 0.25 * state.prestigeCount;
+  multiplier *= gardenEffects(state.garden).touchMultiplier;
+  multiplier *= choirEffects(state.choir, state.runPlaytime).touchMultiplier;
+  for (const buff of state.buffs) multiplier *= buff.touchMultiplier;
+
+  // The share term reads gross rate: a temple full of Sinners should still
+  // reward the hand, and the Sinners will take their cut of the result anyway.
+  return flat * multiplier + computeGrossJps(state) * shareOfJps * multiplier;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Halos, manna, the vigil
+   ══════════════════════════════════════════════════════════════════════════ */
+
+export interface RateModifiers {
+  haloFrequency: number;
+  haloPotency: number;
+  haloPatience: number;
+  mannaSpeed: number;
+  sinnerYield: number;
+  gardenSpeed: number;
+  graceGain: number;
+}
+
+export function computeRateModifiers(state: GameState): RateModifiers {
+  const out: RateModifiers = {
+    haloFrequency: 1,
+    haloPotency: 1,
+    haloPatience: 1,
+    mannaSpeed: 1,
+    sinnerYield: 1,
+    gardenSpeed: 1,
+    graceGain: 1,
+  };
+
+  for (const blessing of owned(state)) {
+    if (blessing.haloFrequency) out.haloFrequency *= blessing.haloFrequency;
+    if (blessing.haloPotency) out.haloPotency *= blessing.haloPotency;
+    if (blessing.haloPatience) out.haloPatience *= blessing.haloPatience;
+    if (blessing.mannaSpeed) out.mannaSpeed *= blessing.mannaSpeed;
+    if (blessing.sinnerYield) out.sinnerYield *= blessing.sinnerYield;
   }
 
-  // Permanent HPC bonus
-  base *= 1 + state.permanentHPCBonus;
-
-  // philosophersStone relic: ×2 all multipliers (skipped if omegaRelic is active)
-  if (state.activeRelics.includes('philosophersStone') && !state.activeRelics.includes('omegaRelic')) base *= 2;
-
-  // Ascension: permanent click multiplier
-  base *= computeAscensionHPCMultiplier(state);
-
-  return Math.max(1, base);
-}
-
-// ─── Karma ────────────────────────────────────────────────────────────────────
-
-export function computeKarmaRate(state: GameState): number {
-  let rate = 0.01;
-  for (const upgrade of UPGRADES) {
-    if (!state.upgrades.has(upgrade.id)) continue;
-    if (upgrade.karmaRateMultiplier) rate *= upgrade.karmaRateMultiplier;
+  for (const id of state.legacy) {
+    const def = LEGACY_MAP[id];
+    if (!def) continue;
+    if (def.haloFrequency) out.haloFrequency *= def.haloFrequency;
+    if (def.haloPotency) out.haloPotency *= def.haloPotency;
+    if (def.mannaSpeed) out.mannaSpeed *= def.mannaSpeed;
+    if (def.graceGain) out.graceGain *= def.graceGain;
   }
-  // Karma Dividend wheel: ×5 if prestigeCount >= 3
-  if (state.wheelPurchased.has('karmicDividend') && state.prestigeCount >= 3) {
-    rate *= 5;
+
+  const garden = gardenEffects(state.garden);
+  out.haloFrequency *= garden.haloFrequency;
+  out.mannaSpeed *= garden.mannaSpeed;
+  out.sinnerYield *= garden.sinnerYield;
+
+  const choir = choirEffects(state.choir, state.runPlaytime);
+  out.haloFrequency *= choir.haloFrequency;
+  out.haloPotency *= choir.haloPotency;
+  out.mannaSpeed *= choir.mannaSpeed;
+  out.sinnerYield *= choir.sinnerYield;
+  out.gardenSpeed *= choir.gardenSpeed;
+  out.graceGain *= choir.graceGain;
+
+  return out;
+}
+
+export interface VigilTerms {
+  /** Share of rate earned while the temple is shut, 0..1. */
+  efficiency: number;
+  /** How many hours of absence count. */
+  hours: number;
+}
+
+/**
+ * What the temple does while nobody is watching. Base is deliberately small —
+ * a fifth of rate for two hours — so that the Legacy rungs and the vigil
+ * blessings that raise it feel like the meaningful unlocks they are.
+ */
+export function computeVigil(state: GameState): VigilTerms {
+  let efficiency = 0.2;
+  let hours = 2;
+
+  for (const blessing of owned(state)) {
+    if (blessing.vigilEfficiency) efficiency += blessing.vigilEfficiency;
+    if (blessing.vigilHours) hours += blessing.vigilHours;
   }
-  // karmaTithe wheel: +0.001 per source owned
-  if (state.wheelPurchased.has('karmaTithe')) {
-    const totalOwned = Object.values(state.sources).reduce((sum, n) => sum + (n ?? 0), 0);
-    rate += 0.001 * totalOwned;
+  for (const id of state.legacy) {
+    const def = LEGACY_MAP[id];
+    if (!def) continue;
+    if (def.vigilEfficiency) efficiency += def.vigilEfficiency;
+    if (def.vigilHours) hours += def.vigilHours;
   }
-  // zenBell relic: +1 flat karma/s
-  if (state.activeRelics.includes('zenBell')) rate += 1;
-  // karmaResonator relic: ×2 karma gain rate
-  if (state.activeRelics.includes('karmaResonator')) rate *= 2;
-  // karmicOverflow wheel: ×10 karma rate
-  if (state.wheelPurchased.has('karmicOverflow')) rate *= 10;
-  // karmicResonance wheel: ×25 karma rate
-  if (state.wheelPurchased.has('karmicResonance')) rate *= 25;
-  // theThirdEye wheel: ×2 karma rate
-  if (state.wheelPurchased.has('theThirdEye')) rate *= 2;
-  // karmicAscension wheel: ×100 karma rate
-  if (state.wheelPurchased.has('karmicAscension')) rate *= 100;
-  return rate;
+
+  return { efficiency: Math.min(1, efficiency), hours };
 }
 
-// ─── Source Availability ────────────────────────────────────────────────────
+/* ══════════════════════════════════════════════════════════════════════════
+   Prestige
+   ══════════════════════════════════════════════════════════════════════════ */
 
-/** Returns effective prestige requirement for a source, accounting for eternalFoundation. */
-export function computeSourcePrestigeReq(SourceId: SourceId, state: GameState): number {
-  const def = SOURCE_MAP[SourceId];
-  if (!def.requiresPrestige) return 0;
-  let req = def.requiresPrestige;
-  // eternalFoundation wheel: post-prestige sources unlock 1 prestige earlier
-  if (state.wheelPurchased.has('eternalFoundation')) req = Math.max(1, req - 1);
-  return req;
+/** Grace the save has earned in total, from lifetime joy. Cookie Clicker's cube root. */
+export function computeGraceEarned(lifetimeJoy: number): number {
+  return Math.floor(Math.cbrt(Math.max(0, lifetimeJoy) / GRACE_DIVISOR));
 }
 
-// ─── Derived States ───────────────────────────────────────────────────────────
-
-export function computeEffectiveSatisfaction(state: GameState): number {
-  return Math.max(0, state.happiness - state.baselineHappiness);
+/** Grace currently spendable. */
+export function computeGraceHeld(state: GameState): number {
+  return state.grace;
 }
 
-export function computeIsIdle(state: GameState): boolean {
-  // Tolerant idle detection: occasional clicks don't break idle status.
-  // Player is "active" only if they've clicked 5+ times in the last 10 seconds.
-  const now = Date.now();
-  const recentClicks = state.recentClickTimes.filter(t => now - t <= 10_000).length;
-  return recentClicks < 5;
+/** Grace an ascension right now would hand over. */
+export function computeAscensionGrace(state: GameState): number {
+  const wouldHave = computeGraceEarned(state.lifetimeJoy);
+  const gain = Math.max(0, wouldHave - state.graceEarned);
+  return Math.floor(gain * computeRateModifiers(state).graceGain);
 }
 
-export function computeCanTranscend(state: GameState): boolean {
-  return state.runHappiness >= computeTranscendenceThreshold(state.prestigeCount);
+export function computeCanAscend(state: GameState): boolean {
+  return state.runJoy >= MIN_ASCEND_JOY && computeAscensionGrace(state) >= 1;
 }
 
-// ─── Upgrade Queries ──────────────────────────────────────────────────────────
-
-export function computeUpgradeCost(upgradeId: string, state: GameState): number {
-  const def = UPGRADE_MAP[upgradeId];
-  if (!def) return Infinity;
-  let cost = def.cost;
-  if (def.path === 'philosophy' && state.activeRelics.includes('epicurusRing')) {
-    cost *= 0.5;
+/** How many blessings the player may carry through an ascension. */
+export function computeKeepsakeSlots(state: GameState): number {
+  let slots = 0;
+  for (const id of state.legacy) {
+    const def = LEGACY_MAP[id];
+    if (def?.keptBlessings) slots += def.keptBlessings;
   }
-  // goldenPen relic: −15% upgrade costs globally
-  if (state.activeRelics.includes('goldenPen')) cost *= 0.85;
-  // karmicAscension wheel: relics cost 50% less (handled in actions, not here for upgrades)
-  return cost;
+  return slots;
 }
 
-export function computeIsUpgradeVisible(upgradeId: string, state: GameState): boolean {
-  const def = UPGRADE_MAP[upgradeId];
+export function computeKeepsMinigames(state: GameState): boolean {
+  for (const id of state.legacy) {
+    if (LEGACY_MAP[id]?.keepsMinigames) return true;
+  }
+  return false;
+}
+
+export function computeStartingGift(state: GameState): { joy: number; acolytes: number } {
+  let joy = 0;
+  let acolytes = 0;
+  for (const id of state.legacy) {
+    const def = LEGACY_MAP[id];
+    if (!def) continue;
+    if (def.startingJoy) joy = Math.max(joy, def.startingJoy);
+    if (def.startingAcolytes) acolytes = Math.max(acolytes, def.startingAcolytes);
+  }
+  return { joy, acolytes };
+}
+
+export function computeLegacyAffordable(state: GameState, id: string): boolean {
+  const def = LEGACY_MAP[id];
+  if (!def || state.legacy.has(id)) return false;
+  if (state.grace < def.cost) return false;
+  return (def.requires ?? []).every((r) => state.legacy.has(r));
+}
+
+export function computeLegacyVisible(state: GameState, id: string): boolean {
+  const def = LEGACY_MAP[id];
   if (!def) return false;
-  if (def.requiresPrestige !== undefined) {
-    let req = def.requiresPrestige;
-    // eternalFoundation wheel: post-prestige upgrades unlock 1 prestige earlier
-    if (state.wheelPurchased.has('eternalFoundation')) req = Math.max(1, req - 1);
-    if (state.prestigeCount < req) return false;
-  }
-  if (def.postPrestige && state.prestigeCount < 1) return false;
-  if (def.requiresAscension !== undefined && state.ascensionCount < def.requiresAscension) return false;
-  if (def.requiresUpgrade && !state.upgrades.has(def.requiresUpgrade)) return false;
-  if (def.requiresSource) {
-    const met = (Object.entries(def.requiresSource) as [SourceId, number][]).every(
-      ([bid, count]) => (state.sources[bid] ?? 0) >= count
-    );
-    if (!met) return false;
-  }
-  // Only show once player has reached at least 1/10th of the cost (sticky — uses peak)
-  const cost = computeUpgradeCost(upgradeId, state);
-  if (state.peakHappiness < cost * 0.1) return false;
+  if (state.legacy.has(id)) return true;
+  // A rung is visible once everything below it is bought — the ladder should
+  // read as a ladder, not as a wishlist.
+  return (def.requires ?? []).every((r) => state.legacy.has(r));
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Availability
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/** Whether a source is on the shelf yet. */
+export function computeSourceVisible(state: GameState, id: SourceId): boolean {
+  if ((state.sources[id] ?? 0) > 0) return true;
+  const index = SOURCES.findIndex((s) => s.id === id);
+  // The first two are always there; everything else appears once you could
+  // plausibly reach it, and once the tier below it exists.
+  if (index <= 1) return true;
+  const previous = SOURCES[index - 1]!;
+  if ((state.sources[previous.id] ?? 0) === 0) return false;
+  return state.peakJoy >= SOURCE_MAP[id].baseCost * REVEAL_SHARE;
+}
+
+/** Whether a blessing is on offer. */
+export function computeBlessingVisible(state: GameState, id: string): boolean {
+  const def = BLESSING_MAP[id];
+  if (!def || state.blessings.has(id)) return false;
+  const u = def.unlock;
+
+  if (u.requires && !state.blessings.has(u.requires)) return false;
+  if (u.source && (state.sources[u.source.id] ?? 0) < u.source.count) return false;
+  if (u.joy !== undefined && state.peakJoy < u.joy) return false;
+  if (u.lifetimeJoy !== undefined && state.lifetimeJoy < u.lifetimeJoy) return false;
+  if (u.trophies !== undefined && state.trophies.size < u.trophies) return false;
+  if (u.touches !== undefined && state.totalTouches < u.touches) return false;
+  if (u.rapture !== undefined && state.rapture < u.rapture) return false;
+  if (u.ascensions !== undefined && state.ascensions < u.ascensions) return false;
+  if (u.sourceLevels !== undefined && computeTotalLevels(state) < u.sourceLevels) return false;
+
+  // The Rapture's exit only shows once you are in it.
+  if (id === 'rapture_calm' && state.rapture === 0) return false;
   return true;
 }
 
-export function computeIsUpgradeAffordable(upgradeId: string, state: GameState): boolean {
-  return state.happiness >= computeUpgradeCost(upgradeId, state);
+/** Every blessing currently on offer, cheapest first. */
+export function computeAvailableBlessings(state: GameState): BlessingDef[] {
+  const out: BlessingDef[] = [];
+  for (const blessing of BLESSINGS) {
+    if (computeBlessingVisible(state, blessing.id)) out.push(blessing);
+  }
+  return out.sort((a, b) => a.cost - b.cost);
 }
 
-// ─── Wheel Starting Bonuses ───────────────────────────────────────────────────
-
-/** The first 5 sources (by index) used for deepRoots calculation. */
-const DEEP_ROOTS_SOURCE_IDS: SourceId[] = [
-  'moodCandle',
-  'napPod',
-  'snackBar',
-  'sweetTreat',
-  'hotTub',
-];
-
 /**
- * Returns the total starting HPS bonus granted by prestige wheel upgrades.
- * Used when constructing initial state after transcendence.
+ * The best thing to buy right now, by payback time — what the Steward buys and
+ * what the "recommended" mark on a source row points at.
+ *
+ * Payback is `price ÷ (extra joy per second)`, which is the right metric and
+ * the one experienced idle players compute in their heads anyway.
  */
-export function computeStartingHPSFromWheel(
-  state: Pick<GameState, 'wheelPurchased' | 'prestigeCount' | 'sources' | 'upgrades'>
-): number {
-  let bonus = 0;
+export function computeBestPurchase(
+  state: GameState,
+):
+  | { kind: 'source'; id: SourceId; cost: number }
+  | { kind: 'blessing'; id: string; cost: number }
+  | null {
+  let best: { kind: 'source' | 'blessing'; id: string; cost: number; payback: number } | null =
+    null;
+  const currentJps = computeGrossJps(state);
 
-  if (state.wheelPurchased.has('beginnersBliss')) bonus += 50;
-
-  if (state.wheelPurchased.has('deepRoots')) {
-    // Simulate 5 copies of the first 5 sources
-    const fakeSources: Record<SourceId, number> = {
-      ...INITIAL_SOURCES,
-      moodCandle: 5,
-      napPod: 5,
-      snackBar: 5,
-      sweetTreat: 5,
-      hotTub: 5,
-    };
-    const fakeState: GameState = {
-      happiness: 0,
-      lifetimeHappiness: 0,
-      peakHappiness: Infinity,     // prevent unlock threshold from hiding upgrades in fake state
-      peakKarma: Infinity,
-      karma: 0,
-      blissShards: 0,
-      sources: fakeSources,
-      upgrades: state.upgrades,
-      activeRelics: [] as RelicId[],
-      maxRelicSlots: 0,
-      equippedRelicsHistory: [] as RelicId[],
-      prestigeCount: state.prestigeCount,
-      wheelPurchased: state.wheelPurchased,
-      samsaraGiftStacks: 0,
-      radiance: 0,
-      lifetimeRadiance: 0,
-      ascensionCount: 0,
-      ascensionUpgrades: new Set<string>(),
-      completedObjectives: new Set<string>(),
-      lastSaved: 0,
-      lastTickTime: 0,
-      totalPlaytime: 0,
-      runPlaytime: 0,
-      totalClicks: 0,
-      totalPilgrimages: 0,
-      totalVibeChecks: 0,
-      totalEventsResolved: 0,
-      totalRituals: 0,
-      totalOfferings: 0,
-      achievements: new Set<string>(),
-      milestones: new Set<string>(),
-      pilgrimageStreak: 0,
-      epicurusApprovedCount: 0,
-      baselineHappiness: 0,
-      vibeCheckTimer: 0,
-      vibeBuff: null,
-      pilgrimageActive: false,
-      pilgrimageTimer: 0,
-      pilgrimageCooldown: 0,
-      ritualCooldown: 0,
-      recentClickTimes: [],
-      eventTimer: 0,
-      pendingEvent: null,
-      lastEventEffect: null,
-      activeBuffs: [] as TimedBuff[],
-      permanentHPSBonus: 0,
-      permanentHPCBonus: 0,
-      lastClickTime: 0,
-      pageOpenTime: 0,
-      offlineHappinessOnLoad: 0,
-      offlineSecondsOnLoad: 0,
-      runHappiness: 0,
-      autoBuyTimer: 30,
-      theme: 'light',
-      numberFormat: 'abbreviated',
-      sourceBuyQty: 1,
-      soundEnabled: true,
-      musicVolume: 0.5,
-      sfxVolume: 0.5,
-      autoBuyEnabled: true,
-      emberSelections: [],
-      activeTab: 'temple',
-      upgradePathFilter: 'all',
-      showTranscendenceModal: false,
-      showOfflineModal: false,
-      showEventModal: false,
-      gameInitialized: false,
-    };
-    for (const id of DEEP_ROOTS_SOURCE_IDS) {
-      bonus += computeSourceHPS(id, fakeState);
+  for (const source of SOURCES) {
+    if (!computeSourceVisible(state, source.id)) continue;
+    const have = state.sources[source.id] ?? 0;
+    const cost = computeSourceCost(source.id, have);
+    const after = { ...state, sources: { ...state.sources, [source.id]: have + 1 } };
+    const gain = computeGrossJps(after) - currentJps;
+    if (gain <= 0) continue;
+    const payback = cost / gain;
+    if (!best || payback < best.payback) {
+      best = { kind: 'source', id: source.id, cost, payback };
     }
   }
 
-  return bonus;
+  // Blessings are compared on the same footing, but a blessing that only
+  // unlocks something (the Steward, a Rapture stage) has no rate to measure,
+  // so it is left out rather than treated as infinitely bad.
+  for (const blessing of computeAvailableBlessings(state)) {
+    if (blessing.raptureStage !== undefined) continue;
+    const after = { ...state, blessings: new Set([...state.blessings, blessing.id]) };
+    const gain = computeGrossJps(after) - currentJps;
+    if (gain <= 0) continue;
+    const payback = blessing.cost / gain;
+    if (!best || payback < best.payback) {
+      best = { kind: 'blessing', id: blessing.id, cost: blessing.cost, payback };
+    }
+  }
+
+  if (!best) return null;
+  return best.kind === 'source'
+    ? { kind: 'source', id: best.id as SourceId, cost: best.cost }
+    : { kind: 'blessing', id: best.id, cost: best.cost };
 }
+
+/** Whether the Steward blessing has been bought and switched on. */
+export function computeStewardActive(state: GameState): boolean {
+  return state.stewardEnabled && state.blessings.has('steward');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Minigame gates
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/** Which sources open a minigame, and at which level. */
+export function computeMinigameUnlocked(state: GameState, minigame: string): boolean {
+  const source = SOURCES.find((s) => s.minigame === minigame);
+  if (!source) return false;
+  return (state.sourceLevels[source.id] ?? 0) >= 1;
+}
+
+/** The Ladder, ordered for display. */
+export const LEGACY_TIERS: number[] = [...new Set(LEGACY.map((l) => l.tier))].sort((a, b) => a - b);

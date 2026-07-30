@@ -1,379 +1,415 @@
 /**
- * The temple's dialogs, toasts and prompts.
+ * The three dialogs, and the toast rail.
  *
- * All real DOM with real roles: `alertdialog` for the ones that appear on
- * their own, focus moved in and restored out, Escape to dismiss where
- * dismissing is safe. The 3D versions were meshes — no focus, no Escape, no
- * announcement, and no way to read them with a screen reader.
- *
- * Nothing here uses `window.alert`/`confirm`. Those ignore the theme, ignore
- * the locale, and block the tick loop.
+ * The vigil report is the important one: it is the first thing a returning
+ * player sees, and it has to make an absence feel like it *paid*. So it
+ * itemises — joy earned, what the Sinners are holding, what ripened, what grew
+ * — rather than showing one number that could have come from anywhere.
  */
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
-import { fmt, formatDuration } from '@/lib/temple-of-joy/numbers';
-import { computeBlissShards } from '@/lib/temple-of-joy/engine';
-import { EVENT_MAP } from '@/lib/temple-of-joy/data/events';
-import { ACHIEVEMENT_MAP } from '@/lib/temple-of-joy/data/achievements';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
+import { fmt, formatDuration } from '@/lib/temple-of-joy/numbers';
+import {
+  computeAscensionGrace,
+  computeKeepsMinigames,
+  computeKeepsakeSlots,
+  computeRateModifiers,
+} from '@/lib/temple-of-joy/engine';
+import { MANNA_KIND_MAP, ripenDuration, levelCost } from '@/lib/temple-of-joy/minigames/manna';
+import { SOURCES } from '@/lib/temple-of-joy/data/sources';
 import { useTempleSnapshot, useTempleValue } from './hooks';
-import { TempleButton, Glyph } from './ui';
+import { TempleButton, TempleRow, Glyph } from './ui';
 
-const store = () => useTempleStore.getState();
-
-/* ─── Dialog shell ──────────────────────────────────────────────────────── */
-
-interface DialogProps {
-  title: string;
-  children: ReactNode;
-  actions: ReactNode;
-  /** Escape and backdrop clicks dismiss. Omit for a choice that must be made. */
-  onDismiss?: () => void;
+export function TempleDialogs() {
+  return (
+    <>
+      <VigilDialog />
+      <AscendDialog />
+      <MannaDialog />
+      <Toasts />
+    </>
+  );
 }
 
-function Dialog({ title, children, actions, onDismiss }: DialogProps) {
-  const panelRef = useRef<HTMLDivElement>(null);
-  const restoreTo = useRef<HTMLElement | null>(null);
+/* ─── The vigil report ──────────────────────────────────────────────────── */
+
+function VigilDialog() {
+  const { t } = useTranslation('c-temple-of-joy');
+  const open = useTempleValue((s) => s.showVigilDialog);
+  const vigil = useTempleSnapshot(
+    (s) => ({
+      seconds: s.vigil.seconds,
+      joy: fmt(s.vigil.joy, s.numberFormat),
+      sinnerText: fmt(s.vigil.sinnerJoy, s.numberFormat),
+      sinners: s.sinners.length,
+      manna: s.vigil.manna,
+      ripe: s.garden.plots.filter((p) => p.seed && p.growth >= 100).length,
+    }),
+    1_000,
+  );
+
+  if (!open) return null;
+
+  return (
+    <Scrim onClose={() => useTempleStore.getState().setShowVigilDialog(false)}>
+      <div className="toj-dialog-body">
+        <h2 className="toj-dialog-title">
+          {t('vigil-title', { defaultValue: 'The night office' })}
+        </h2>
+        <p className="toj-dialog-text">
+          {t('vigil-away', {
+            time: formatDuration(vigil.seconds),
+            defaultValue: 'The temple kept going for {{time}}.',
+          })}
+        </p>
+
+        <p className="toj-dialog-figure">+{vigil.joy}</p>
+
+        <ul className="toj-dialog-list">
+          {vigil.sinners > 0 && (
+            <li>
+              <span>
+                {t('vigil-sinners', {
+                  count: vigil.sinners,
+                  defaultValue: '{{count}} Sinners, holding',
+                })}
+              </span>
+              <strong>{vigil.sinnerText}</strong>
+            </li>
+          )}
+          {vigil.manna > 0 && (
+            <li>
+              <span>{t('vigil-manna', { defaultValue: 'Manna ripened' })}</span>
+              <strong>{vigil.manna}</strong>
+            </li>
+          )}
+          {vigil.ripe > 0 && (
+            <li>
+              <span>{t('vigil-garden', { defaultValue: 'Plants ready to harvest' })}</span>
+              <strong>{vigil.ripe}</strong>
+            </li>
+          )}
+        </ul>
+
+        {vigil.sinners > 0 && (
+          <p className="toj-dialog-text" style={{ marginTop: '0.9rem' }}>
+            {t('vigil-sinner-note', {
+              defaultValue:
+                'Everything the Sinners are holding comes back, multiplied, the moment you strike them.',
+            })}
+          </p>
+        )}
+      </div>
+
+      <div className="toj-dialog-actions">
+        <TempleButton
+          variant="gold"
+          onClick={() => useTempleStore.getState().setShowVigilDialog(false)}
+        >
+          {t('vigil-return', { defaultValue: 'Come back in' })}
+        </TempleButton>
+      </div>
+    </Scrim>
+  );
+}
+
+/* ─── Ascension ─────────────────────────────────────────────────────────── */
+
+function AscendDialog() {
+  const { t } = useTranslation('c-temple-of-joy');
+  const open = useTempleValue((s) => s.showAscendDialog);
+
+  const plan = useTempleSnapshot(
+    (s) => ({
+      grace: computeAscensionGrace(s),
+      have: s.grace,
+      slots: computeKeepsakeSlots(s),
+      keepsakes: s.keepsakes.length,
+      keepsMinigames: computeKeepsMinigames(s),
+      levels: SOURCES.reduce((sum, source) => sum + (s.sourceLevels[source.id] ?? 0), 0),
+    }),
+    600,
+  );
+
+  if (!open) return null;
+
+  return (
+    <Scrim onClose={() => useTempleStore.getState().setShowAscendDialog(false)}>
+      <div className="toj-dialog-body">
+        <h2 className="toj-dialog-title">{t('ascend-title', { defaultValue: 'Let it go' })}</h2>
+        <p className="toj-dialog-text">
+          {t('ascend-text', {
+            defaultValue:
+              'The temple, the blessings, everything you built this run — given back. What you receive for it never leaves you again.',
+          })}
+        </p>
+
+        <p className="toj-dialog-figure">
+          +{plan.grace} <Glyph>☁️</Glyph>
+        </p>
+
+        <ul className="toj-dialog-list">
+          <li>
+            <span>{t('ascend-kept-levels', { defaultValue: 'Manna levels kept' })}</span>
+            <strong>{plan.levels}</strong>
+          </li>
+          <li>
+            <span>{t('ascend-kept-blessings', { defaultValue: 'Blessings carried' })}</span>
+            <strong>
+              {Math.min(plan.keepsakes, plan.slots)} / {plan.slots}
+            </strong>
+          </li>
+          <li>
+            <span>
+              {t('ascend-kept-minigames', { defaultValue: 'Garden, choir, market, book' })}
+            </span>
+            <strong>
+              {plan.keepsMinigames
+                ? t('ascend-kept', { defaultValue: 'kept' })
+                : t('ascend-reset', { defaultValue: 'reset' })}
+            </strong>
+          </li>
+          <li>
+            <span>{t('ascend-total', { defaultValue: 'Grace after' })}</span>
+            <strong>{plan.have + plan.grace}</strong>
+          </li>
+        </ul>
+      </div>
+
+      <div className="toj-dialog-actions">
+        <TempleButton
+          variant="quiet"
+          onClick={() => useTempleStore.getState().setShowAscendDialog(false)}
+        >
+          {t('cancel', { defaultValue: 'Not yet' })}
+        </TempleButton>
+        <TempleButton
+          variant="gold"
+          tone={null}
+          onClick={() => {
+            templeAudio.play('ascend');
+            templeAudio.buzz([20, 60, 20, 60, 40]);
+            useTempleStore.getState().ascend();
+          }}
+        >
+          {t('ascend-confirm', { defaultValue: 'Let it all go' })}
+        </TempleButton>
+      </div>
+    </Scrim>
+  );
+}
+
+/* ─── Manna ─────────────────────────────────────────────────────────────── */
+
+/**
+ * Spending manna. Deliberately a dialog rather than a panel: it is a decision
+ * you make once every twenty hours, and it deserves to interrupt.
+ */
+function MannaDialog() {
+  const { t } = useTranslation('c-temple-of-joy');
+  const open = useTempleValue((s) => s.showMannaDialog);
+
+  const manna = useTempleSnapshot((s) => {
+    const speed = computeRateModifiers(s).mannaSpeed;
+    const total = ripenDuration(s.manna.kind, speed);
+    return {
+      held: s.manna.held,
+      gathered: s.manna.gathered,
+      kind: s.manna.kind,
+      left: Math.max(0, (total - s.manna.ripening) / 1000),
+      rows: SOURCES.map((source) => {
+        const level = s.sourceLevels[source.id] ?? 0;
+        return {
+          id: source.id,
+          level,
+          cost: levelCost(level),
+          affordable: s.manna.held >= levelCost(level),
+          owned: s.sources[source.id] ?? 0,
+        };
+      }),
+    };
+  }, 800);
+
+  if (!open) return null;
+
+  const kind = MANNA_KIND_MAP[manna.kind];
+
+  return (
+    <Scrim onClose={() => useTempleStore.getState().setShowMannaDialog(false)}>
+      <div className="toj-dialog-body">
+        <h2 className="toj-dialog-title">{t('manna-title', { defaultValue: 'Manna' })}</h2>
+        <p className="toj-dialog-text">
+          {t('manna-text', {
+            defaultValue:
+              'It ripens on its own, roughly once a day, and nothing you do with joy will hurry it. Spend it raising a source: +1% output per level, forever, through every ascension.',
+          })}
+        </p>
+
+        <p className="toj-dialog-figure">
+          {manna.held} <Glyph>🍞</Glyph>
+        </p>
+        <p className="toj-dialog-text">
+          {t('manna-next', {
+            kind: kind.name,
+            time: formatDuration(manna.left),
+            defaultValue: 'Next: {{kind}}, in {{time}}.',
+          })}{' '}
+          {kind.note}
+        </p>
+
+        <ul className="toj-dialog-list">
+          <li>
+            <span>{t('manna-gathered', { defaultValue: 'Gathered, all time' })}</span>
+            <strong>{manna.gathered}</strong>
+          </li>
+        </ul>
+
+        <div style={{ marginTop: '0.8rem' }}>
+          {manna.rows
+            .filter((row) => row.owned > 0 || row.level > 0)
+            .map((row) => {
+              const def = SOURCES.find((s) => s.id === row.id)!;
+              return (
+                <TempleRow
+                  key={row.id}
+                  icon={<Glyph>{def.icon}</Glyph>}
+                  name={def.name}
+                  note={
+                    def.minigame && row.level === 0
+                      ? t('raise-opens', { defaultValue: 'Raising this opens something.' })
+                      : t('raise-level', {
+                          level: row.level,
+                          percent: row.level,
+                          defaultValue: 'Level {{level}} · +{{percent}}% output',
+                        })
+                  }
+                  price={
+                    <>
+                      {row.cost} <Glyph>🍞</Glyph>
+                    </>
+                  }
+                  affordable={row.affordable}
+                  disabled={!row.affordable}
+                  onClick={() => {
+                    templeAudio.play('level');
+                    useTempleStore.getState().levelSource(row.id);
+                  }}
+                />
+              );
+            })}
+        </div>
+      </div>
+
+      <div className="toj-dialog-actions">
+        <TempleButton onClick={() => useTempleStore.getState().setShowMannaDialog(false)}>
+          {t('close', { defaultValue: 'Close' })}
+        </TempleButton>
+      </div>
+    </Scrim>
+  );
+}
+
+/* ─── Shared scrim ──────────────────────────────────────────────────────── */
+
+/**
+ * Escape closes, the first button takes focus, and focus returns where it came
+ * from. Three lines each, and the difference between a dialog and a div.
+ */
+function Scrim({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const returnTo = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    restoreTo.current = document.activeElement as HTMLElement | null;
-    // Focus the panel, not the first button: a modal that opens with "Confirm"
-    // focused is one stray Enter away from an irreversible reset.
-    panelRef.current?.focus();
-    return () => restoreTo.current?.focus?.();
-  }, []);
+    returnTo.current = document.activeElement as HTMLElement | null;
+    ref.current?.querySelector<HTMLButtonElement>('button')?.focus();
 
-  /** Keep Tab inside the dialog while it is open. */
-  const onKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLDivElement>) => {
-      if (event.key === 'Escape' && onDismiss) {
-        event.stopPropagation();
-        onDismiss();
-        return;
-      }
-      if (event.key !== 'Tab') return;
-
-      const focusable = panelRef.current?.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])',
-      );
-      if (!focusable?.length) return;
-
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      const active = document.activeElement;
-
-      if (event.shiftKey && (active === first || active === panelRef.current)) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && active === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    },
-    [onDismiss],
-  );
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      returnTo.current?.focus?.();
+    };
+  }, [onClose]);
 
   return (
     <div
       className="toj-scrim"
       onPointerDown={(event) => {
-        if (onDismiss && event.target === event.currentTarget) onDismiss();
+        if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div
-        ref={panelRef}
-        className="toj-dialog"
-        role="alertdialog"
-        aria-modal="true"
-        aria-label={title}
-        tabIndex={-1}
-        onKeyDown={onKeyDown}
-      >
-        <div className="toj-dialog-body">
-          <h2 className="toj-dialog-title">{title}</h2>
-          {children}
-        </div>
-        <div className="toj-dialog-actions">{actions}</div>
+      <div className="toj-dialog" role="dialog" aria-modal="true" ref={ref}>
+        {children}
       </div>
     </div>
   );
 }
 
-/* ─── Events ────────────────────────────────────────────────────────────── */
+/* ─── Toasts ────────────────────────────────────────────────────────────── */
 
-function EventDialog() {
-  const { t } = useTranslation('c-temple-of-joy');
-  const show = useTempleValue((s) => s.showEventModal);
-  const pending = useTempleValue((s) => s.pendingEvent);
+/**
+ * Notices are packed into single strings so the snapshot's shallow compare can
+ * tell two renders apart — an array of fresh objects never compares equal. The
+ * separator is a unit separator because titles and bodies contain everything
+ * else a person would reach for.
+ */
+const SEP = '\u001f';
 
-  if (!show || !pending) return null;
-  const event = EVENT_MAP[pending];
-  if (!event) return null;
+/**
+ * The notice rail. Notices are created by the tick and the actions; this only
+ * renders them and plays the trophy sting, so nothing here can change state the
+ * game did not already decide.
+ */
+function Toasts() {
+  const notices = useTempleSnapshot(
+    (s) => s.notices.slice(-4).map((n) => [n.id, n.kind, n.icon, n.title, n.body ?? ''].join(SEP)),
+    300,
+  );
 
-  const choices =
-    event.type === 'blessing'
-      ? [{ label: t('accept-the-gift', { defaultValue: 'Accept the gift' }) }]
-      : (event.choices ?? []);
+  // A trophy gets the recorded sting; everything else already made a sound
+  // when it happened.
+  const seen = useRef(new Set<string>());
+  useEffect(() => {
+    for (const packed of notices) {
+      const [id, kind] = packed.split(SEP);
+      if (!id || seen.current.has(id)) continue;
+      seen.current.add(id);
+      if (kind === 'trophy') templeAudio.playTrophy();
+    }
+    // The set would grow without bound over a three-hundred-hour session.
+    if (seen.current.size > 200) seen.current = new Set([...seen.current].slice(-50));
+  }, [notices]);
 
-  const resolve = (index: number) => {
-    store().resolveEvent(pending, index);
-    store().setShowEventModal(false);
-  };
+  if (notices.length === 0) return null;
 
   return (
-    <Dialog
-      title={event.title}
-      actions={choices.map((choice, index) => (
-        <TempleButton
-          key={choice.label}
-          variant={index === 0 ? 'gold' : 'stone'}
-          onClick={() => resolve(index)}
-        >
-          {choice.label}
-        </TempleButton>
-      ))}
-    >
-      <p className="toj-dialog-text">{event.body}</p>
-    </Dialog>
-  );
-}
-
-/* ─── Transcendence ─────────────────────────────────────────────────────── */
-
-function TranscendenceDialog() {
-  const { t } = useTranslation('c-temple-of-joy');
-  const show = useTempleValue((s) => s.showTranscendenceModal);
-  const shards = useTempleSnapshot(
-    (s) => (s.showTranscendenceModal ? computeBlissShards(s) : 0),
-    500,
-  );
-  const format = useTempleValue((s) => s.numberFormat);
-
-  if (!show) return null;
-
-  return (
-    <Dialog
-      title={t('transcend', { defaultValue: 'Transcend' })}
-      onDismiss={() => store().setShowTranscendenceModal(false)}
-      actions={
-        <>
-          <TempleButton variant="quiet" onClick={() => store().setShowTranscendenceModal(false)}>
-            {t('cancel', { defaultValue: 'Not yet' })}
-          </TempleButton>
-          <TempleButton
-            variant="gold"
-            onClick={() => {
-              store().transcend();
-              store().setShowTranscendenceModal(false);
-            }}
+    <div className="toj-toasts" aria-live="polite">
+      {notices.map((packed) => {
+        const [id, kind, icon, title, body] = packed.split(SEP);
+        return (
+          <button
+            key={id}
+            type="button"
+            className="toj-toast"
+            data-kind={kind}
+            onClick={() => useTempleStore.getState().dismissNotice(Number(id))}
           >
-            {t('confirm-transcend', { defaultValue: 'Let it all go' })}
-          </TempleButton>
-        </>
-      }
-    >
-      <p className="toj-dialog-text">
-        {t('transcend-warning', {
-          defaultValue:
-            'Everything in this run — your joy, your sources, your upgrades — returns to the wheel. What you keep is permanent.',
-        })}
-      </p>
-      <p className="toj-dialog-figure">
-        <Glyph>💎</Glyph> +{fmt(shards, format)}
-      </p>
-      <p className="toj-dialog-text">{t('bliss-shards', { defaultValue: 'Bliss Shards' })}</p>
-    </Dialog>
-  );
-}
-
-/* ─── Welcome back ──────────────────────────────────────────────────────── */
-
-function OfflineDialog() {
-  const { t } = useTranslation('c-temple-of-joy');
-  const show = useTempleValue((s) => s.showOfflineModal);
-  const seconds = useTempleValue((s) => s.offlineSecondsOnLoad);
-  const happiness = useTempleValue((s) => s.offlineHappinessOnLoad);
-  const format = useTempleValue((s) => s.numberFormat);
-
-  if (!show || seconds <= 0) return null;
-
-  return (
-    <Dialog
-      title={t('welcome-back', { defaultValue: 'Welcome back' })}
-      onDismiss={() => store().setShowOfflineModal(false)}
-      actions={
-        <TempleButton variant="gold" onClick={() => store().setShowOfflineModal(false)}>
-          {t('collect', { defaultValue: 'Collect' })}
-        </TempleButton>
-      }
-    >
-      <p className="toj-dialog-text">
-        {t('you-were-away-for', { defaultValue: 'The temple kept burning for' })}{' '}
-        {formatDuration(seconds)}
-      </p>
-      <p className="toj-dialog-figure">+{fmt(happiness, format)}</p>
-    </Dialog>
-  );
-}
-
-/* ─── Vibe check ────────────────────────────────────────────────────────── */
-
-/** How long the prompt stays up before it fades unclaimed. */
-const VIBE_WINDOW_S = 10;
-
-function VibeCheck() {
-  const { t } = useTranslation('c-temple-of-joy');
-  const snap = useTempleSnapshot(
-    (s) => ({
-      due: s.vibeCheckTimer <= 0,
-      hasBuff: s.vibeBuff !== null,
-      eventOpen: s.showEventModal,
-      // Once the timer resets above the window, a new cycle has begun.
-      fresh: s.vibeCheckTimer > VIBE_WINDOW_S,
-    }),
-    400,
-  );
-
-  const [remaining, setRemaining] = useState<number | null>(null);
-  const dismissed = useRef(false);
-
-  const shouldOffer = snap.due && !snap.hasBuff && !snap.eventOpen && !dismissed.current;
-
-  useEffect(() => {
-    if (snap.fresh) dismissed.current = false;
-  }, [snap.fresh]);
-
-  useEffect(() => {
-    if (!shouldOffer) {
-      setRemaining(null);
-      return;
-    }
-    setRemaining(VIBE_WINDOW_S);
-    const id = window.setInterval(() => {
-      setRemaining((current) => {
-        if (current === null) return null;
-        if (current <= 1) {
-          dismissed.current = true;
-          window.clearInterval(id);
-          return null;
-        }
-        return current - 1;
-      });
-    }, 1000);
-    return () => window.clearInterval(id);
-  }, [shouldOffer]);
-
-  if (remaining === null) return null;
-
-  return (
-    <div className="toj-vibe">
-      <TempleButton
-        variant="gold"
-        ready
-        onClick={() => {
-          store().passVibeCheck();
-          dismissed.current = true;
-          setRemaining(null);
-        }}
-      >
-        <Glyph>✨</Glyph>
-        {t('vibe-check-timed', {
-          seconds: remaining,
-          defaultValue: 'Vibe check! ({{seconds}})',
-        })}
-      </TempleButton>
-    </div>
-  );
-}
-
-/* ─── Achievement toasts ────────────────────────────────────────────────── */
-
-interface Trophy {
-  key: number;
-  name: string;
-}
-
-/** Beyond three at once the corner is a wall of text nobody reads. */
-const MAX_TOASTS = 3;
-const TOAST_MS = 4500;
-
-function AchievementToasts() {
-  const { t } = useTranslation('c-temple-of-joy');
-  const [trophies, setTrophies] = useState<Trophy[]>([]);
-  const seen = useRef<Set<string> | null>(null);
-  const counter = useRef(0);
-
-  const snap = useTempleSnapshot(
-    (s) => ({ ids: [...s.achievements].join(','), ready: s.gameInitialized }),
-    700,
-  );
-
-  useEffect(() => {
-    if (!snap.ready) return;
-    const ids = snap.ids.split(',').filter(Boolean);
-
-    // The first sample after load is the baseline — a returning player should
-    // not be handed four hundred toasts for achievements they earned last week.
-    if (seen.current === null) {
-      seen.current = new Set(ids);
-      return;
-    }
-
-    const fresh = ids.filter((id) => !seen.current!.has(id));
-    seen.current = new Set(ids);
-    if (fresh.length === 0) return;
-
-    templeAudio.playAchievement();
-    setTrophies((current) =>
-      [
-        ...current,
-        ...fresh.map((id) => ({ key: ++counter.current, name: ACHIEVEMENT_MAP[id]?.name ?? id })),
-      ].slice(-MAX_TOASTS),
-    );
-  }, [snap.ids, snap.ready]);
-
-  // One sweep rather than a timer per toast.
-  useEffect(() => {
-    if (trophies.length === 0) return;
-    const id = window.setTimeout(() => setTrophies((current) => current.slice(1)), TOAST_MS);
-    return () => window.clearTimeout(id);
-  }, [trophies]);
-
-  if (trophies.length === 0) return null;
-
-  return (
-    <div className="toj-toasts" role="status" aria-live="polite">
-      {trophies.map((trophy) => (
-        <div className="toj-toast" key={trophy.key}>
-          <Glyph>🏆</Glyph>
-          <span>
-            <span className="toj-toast-label">
-              {t('achievement-unlocked', { defaultValue: 'Trophy' })}
+            <span className="toj-toast-icon">
+              <Glyph>{icon || '✨'}</Glyph>
             </span>
-            <br />
-            <span className="toj-toast-name">{trophy.name}</span>
-          </span>
-        </div>
-      ))}
+            <span>
+              <span className="toj-toast-title">{title}</span>
+              {body && <span className="toj-toast-body">{body}</span>}
+            </span>
+          </button>
+        );
+      })}
     </div>
-  );
-}
-
-/* ─── Everything at once ────────────────────────────────────────────────── */
-
-export function TempleDialogs() {
-  return (
-    <>
-      {/* Order matters: only one scrim should ever be up, and an event that
-          fires while a confirm is open must not stack on top of it. */}
-      <EventDialog />
-      <TranscendenceDialog />
-      <OfflineDialog />
-      <VibeCheck />
-      <AchievementToasts />
-    </>
   );
 }
