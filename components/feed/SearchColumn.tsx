@@ -204,17 +204,26 @@ export function SearchColumn({
 
   return (
     <div className="min-h-screen">
-      {/* The search field is the header (its own sticky bg-site-surface border border-site-border rounded-2xl shadow-xs capsule,
- §8.2); the category tabs are a standalone sheet BELOW the search well
- (§5.45), never inside the sticky block. bg/blur/glint clip to
- rounded-site on their own. */}
+      {/* The search field is the header (its own sticky surface capsule, §8.2); the
+ category tabs are a standalone sheet BELOW the search well (§5.45), never
+ inside the sticky block. bg/blur/glint clip to rounded-site on their own.
+ (The class list that used to be inlined into this sentence was a stray from
+ a find-and-replace over `glass-pane` — prose, not markup.) */}
       <div className="site-sticky-chrome bg-site-surface border border-site-border rounded-2xl shadow-xs">
         {/* The search field IS this page's chrome, so there was no heading of any
  kind — the route had no h1 at any viewport. */}
         <h1 className="sr-only">{t('search-title', { defaultValue: 'Search' })}</h1>
         <ColumnHeader sticky={false} className="border-b-0">
-          <div className="flex items-center gap-2 rounded-full border border-site-border bg-site-surface px-4 py-2">
-            <Search className="h-4 w-4 text-site-text-muted" />
+          {/* ONE ring around the field, not three. This used to nest a bordered
+ `rounded-full` wrapper INSIDE the sticky capsule above and put a bare
+ `<input>` inside that — and a bare input (no `data-slot`) also picks up
+ the themed border from the global input rule in globals.css §base, so
+ the field rendered as three concentric rounded rectangles. The pill
+ belongs ON the input, with the icon absolutely positioned over it and
+ padding making room — the same idiom MessagesColumn and GroupChatsColumn
+ already use for their search fields. */}
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-muted" />
             <input
               autoFocus
               type="search"
@@ -226,9 +235,14 @@ export function SearchColumn({
               placeholder={t('search-placeholder', {
                 defaultValue: 'Search people, posts, builds…',
               })}
-              className="w-full bg-transparent text-sm text-site-text placeholder:text-site-text-muted focus:outline-none"
+              className="w-full rounded-full border border-site-border bg-site-surface py-2 pl-9 pr-9 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none"
             />
-            {loading && <Spinner size={16} className="text-site-text-muted" />}
+            {loading && (
+              <Spinner
+                size={16}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-site-text-muted"
+              />
+            )}
           </div>
         </ColumnHeader>
       </div>
