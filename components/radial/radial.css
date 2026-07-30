@@ -2225,53 +2225,14 @@ html.perf-lite .radial-backdrop__blob {
    monochrome, backdrop-floating radial language so the whole site reads as one.
    ========================================================================== */
 
-/* ── Shared PageLayout header (used by ~53 routes) ─────────────────────────
-   feed.css renders .page-heading as a bordered, shadowed surface card; on the
-   ring backdrop that reads as leftover chrome. Flatten it to clean type that
-   sits directly on the backdrop, matching the home. (The h1 already uses the
-   display font — we only drop the card and enlarge a touch.) */
-.radial-shell .page-heading {
-  margin: 0 0 var(--rad-4);
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-}
-/* Mobile-first sizing. A 2rem floor plus a 2rem margin spent most of a phone's
-   first screen on the title alone — the page's actual content started below the
-   fold. The type still scales up to a display-size headline on wide screens;
-   phones get a compact one so real content is visible immediately. */
-.radial-shell .page-heading h1 {
-  font-size: clamp(1.4rem, 5.5vw, 3.4rem);
-  letter-spacing: -0.03em;
-  line-height: 1.1;
-}
-@media (min-width: 768px) {
-  .radial-shell .page-heading {
-    margin-bottom: var(--rad-6);
-  }
-  .radial-shell .page-heading h1 {
-    letter-spacing: -0.04em;
-    line-height: 1.05;
-  }
-}
-/* Clean rhythm inside the flat header (the card padding is gone). */
-.radial-shell .page-heading [data-slot='page-description'] {
-  margin-top: var(--rad-2);
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: var(--site-text-muted);
-}
-@media (min-width: 768px) {
-  .radial-shell .page-heading [data-slot='page-description'] {
-    margin-top: var(--rad-3);
-    font-size: 1rem;
-    line-height: 1.55;
-  }
-}
-.radial-shell .page-heading__content {
-  gap: var(--rad-4);
-}
+/* ── Shared PageLayout header ──────────────────────────────────────────────
+   NOTHING here any more, deliberately. This block used to unpaint feed.css's
+   card-style `.page-heading` and re-type its h1 at `clamp(1.4rem, 5.5vw, 3.4rem)`
+   — two stylesheets fighting over one header, with the smaller type winning on
+   every `_site` route (audit SPA-002). The flat treatment won the argument, so it
+   moved into the base rule in `feed.css`, and the type now comes from the shared
+   display scale (`.site-display-3`, applied in `PageLayout`). Re-adding a
+   `.radial-shell .page-heading` override here would restart the fight. */
 
 /* ── Glass surfaces inside the radial shell ───────────────────────────────
    The radial shell used to DEMOTE every glass panel to a flat --site-surface

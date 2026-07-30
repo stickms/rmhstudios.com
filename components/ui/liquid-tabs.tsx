@@ -30,13 +30,26 @@
  *    tab strip reads as a standalone, tactile control placed BELOW a hero/title
  *    (never buried in header chrome). Pass `sheet={false}` where the caller
  *    supplies its own container.
- *  - `scroll` (§5.45 / §5.5x A.4): the tablist scrolls horizontally INSIDE its
- *    sheet when the tabs overflow, so the sheet can stay put (e.g. sticky) while
- *    the tabs slide — the decoupled structure mobile Safari needs (a single
- *    element that is both sticky and overflow-x drops horizontal touch scroll).
+ *  - **It is a segmented control, so it behaves like one.** The strip is a GRID of
+ *    equal columns that spans its container (`repeat(auto-fit, minmax(…, 1fr))`,
+ *    see the `[data-slot='liquid-tabs']` rules in globals.css). Two consequences,
+ *    both deliberate and both matching Apple's control rather than a chip row:
+ *      1. **Every segment is the same width and the track is always full.** Tabs
+ *         no longer size to their own content, so two or three of them can't sit
+ *         adrift in a wide sheet with dead space around them — they split it.
+ *      2. **Nothing scrolls. Ever.** When the tabs stop fitting, `auto-fit` wraps
+ *         them onto further rows of equal columns. A horizontal scroll track hides
+ *         destinations behind a gesture with no affordance, and Apple's own
+ *         guidance is that a segmented control which doesn't fit is the wrong
+ *         control — not one to make swipeable. Wrapping keeps every label visible
+ *         and every target tappable, which is also what the audit asked for when
+ *         it flagged icon-only strips as glyph-guessing (AUD-320).
+ *    This replaced a flex row of `shrink-0` pills that was either centred with a
+ *    ResizeObserver measurement or scrolled in a `tab-sheet-scroll` track; the
+ *    grid needs neither, so both are gone.
  */
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useRef } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { m as motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -91,15 +104,17 @@ interface LiquidTabsProps {
    */
   sheet?: boolean;
   /**
-   * Stretch every tab to equal width and the sheet to the full column width —
-   * for section switchers that serve as a page's primary chrome (Inbox, Journey)
-   * rather than a compact w-fit control.
+   * @deprecated No-op — this is now the only behaviour. Every strip stretches its
+   * tabs to equal width and its sheet to the full column width, because that is
+   * what a segmented control is (see the layout note in the module docblock).
+   * Still accepted so no caller has to change; safe to delete at any call site.
    */
   fullWidth?: boolean;
   /**
-   * Scroll the tablist horizontally inside its sheet when the tabs overflow the
-   * column, instead of wrapping/clipping (§5.45 / §5.5x A.4). Keeps the sheet
-   * static (so it can be sticky) while the tabs slide, and edge-fades the ends.
+   * @deprecated No-op — strips no longer scroll horizontally at any width. A strip
+   * that outgrows its container wraps onto further rows of equal segments instead,
+   * so no destination is hidden behind a swipe (see the module docblock).
+   * Still accepted so no caller has to change; safe to delete at any call site.
    */
   scroll?: boolean;
   /**
@@ -135,8 +150,6 @@ export function LiquidTabs({
   size = 'default',
   className,
   sheet = true,
-  fullWidth = false,
-  scroll = false,
   iconOnly = false,
   idBase,
   renderTab,
@@ -154,72 +167,6 @@ export function LiquidTabs({
   const panelId = (id: string) => (idBase ? `${idBase}-panel-${id}` : undefined);
 
   const link = Boolean(renderTab);
-  const activeTabId = tabId(value);
-
-  // §5.45 — DISTRIBUTE a strip that does not fill its sheet. The pills are
-  // `shrink-0` and a `scroll` sheet is full-width, so a two- or three-tab strip
-  // bunched against the left edge left as much as 261px of dead space beside it,
-  // which reads as a broken container rather than a control.
-  //
-  // The slack is spread EVENLY (`justify-evenly`), not collected on both flanks
-  // (`justify-center`): centring a three-tab strip in a 44rem column still reads
-  // as a small control adrift in a wide sheet, whereas spacing the tabs out makes
-  // the sheet look like it is meant to be that wide. `fullWidth` strips already do
-  // this via `flex-1` on each pill, and a `w-fit` sheet has no slack to spread, so
-  // this is the case that was left looking wrong.
-  //
-  // `space-evenly` rather than `space-between`: equal gaps INCLUDING the two
-  // flanks, so a two-tab strip reads as a spaced pair instead of one pill flung
-  // into each corner of the sheet.
-  //
-  // Whether to do it at all depends on the strip, so it is MEASURED rather than
-  // assumed, and the gate is load-bearing in two ways:
-  //   - Overflow: with negative free space `space-evenly` falls back to `center`
-  //     per spec, and centring a horizontally-overflowing scroll container pushes
-  //     half the overflow off the LEADING edge, where it can never be scrolled
-  //     back — the first tab becomes unreachable. (`justify-content: safe center`
-  //     is meant to cover exactly this and does not do so reliably.)
-  //   - Wrapping: a wrapped strip would get each row spaced out independently,
-  //     opening ragged gaps mid-row. (Auto margins are no help either — they only
-  //     reach the first and last items, which on a wrapped strip sit on different
-  //     lines.)
-  // So: distribute only while the content actually fits on one line.
-  const [fits, setFits] = useState(true);
-  useEffect(() => {
-    const el = listRef.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-    const measure = () => {
-      const noOverflow = el.scrollWidth <= el.clientWidth + 1;
-      // A non-scroll strip WRAPS (globals.css), and wrapping produces no
-      // horizontal overflow — so `scrollWidth` alone reports a wrapped strip as
-      // fitting. Distributing then spreads every row to the sheet's edges and
-      // opens ragged gaps mid-row, so require one row too: all pills share a
-      // row exactly when they share an `offsetTop`. Runs on resize only, never
-      // per frame, and reads layout from inside a ResizeObserver callback (so
-      // after layout, not interleaved with it).
-      const kids = Array.from(el.children) as HTMLElement[];
-      const oneRow = kids.length < 2 || kids.every((k) => k.offsetTop === kids[0].offsetTop);
-      setFits(noOverflow && oneRow);
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [tabs.length]);
-
-  // Route-backed tabs can mount with an active item outside the visible part of
-  // a narrow strip. Bring only that item into the nearest horizontal viewport;
-  // `block: nearest` prevents this from unexpectedly repositioning the page.
-  useEffect(() => {
-    if (!scroll) return;
-    const item = document.getElementById(activeTabId);
-    if (!item || !listRef.current?.contains(item)) return;
-    item.scrollIntoView({
-      behavior: reduced ? 'auto' : 'smooth',
-      block: 'nearest',
-      inline: 'nearest',
-    });
-  }, [activeTabId, reduced, scroll]);
 
   // Roving keyboard nav (WAI-ARIA tabs pattern): ←/→/↑/↓ move, Home/End jump to
   // the ends, and focus follows. Disabled tabs are skipped. Tablist mode only —
@@ -269,12 +216,16 @@ export function LiquidTabs({
 
   const itemClass = (active: boolean) =>
     cn(
-      'relative inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[var(--site-control-radius)] font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+      // `flex` (not `inline-flex`) and no `shrink-0`: each tab now fills its own
+      // grid column, so it is the column that sets the width and the tab that
+      // centres its content inside it — the segmented-control geometry. The
+      // `min-w-0` + `overflow-hidden` pair lets an over-long label ellipsis
+      // instead of pushing out of its segment.
+      'relative flex min-w-0 items-center justify-center gap-1.5 overflow-hidden rounded-[var(--site-control-radius)] font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-40',
       pad,
       // Tighter, more square padding while the strip is glyph-only; it relaxes
       // at md, where the labels come back (see globals.css).
       iconOnly && (size === 'sm' ? 'px-2.5 md:px-3' : 'px-3 md:px-4'),
-      fullWidth && 'flex-1',
       // NOT `text-site-accent-fg` here. That ink is only correct ON the accent
       // capsule, and the capsule is a separate element — when it failed to
       // render (observed on high-contrast, where accent-fg is black on a black
@@ -326,7 +277,9 @@ export function LiquidTabs({
         )}
         <span
           className={cn(
-            'liquid-tabs__label relative z-1',
+            // `truncate` (with the item's `min-w-0`) so a long label ellipses
+            // inside its segment rather than widening or escaping it.
+            'liquid-tabs__label relative z-1 min-w-0 truncate',
             // Not `sr-only` outright: globals.css applies the sr-only technique
             // below md and lets the label render from md up.
             compactLabel && 'liquid-tabs__label--compact',
@@ -344,15 +297,11 @@ export function LiquidTabs({
     );
   };
 
-  const innerClass = cn(
-    'relative flex items-center gap-1',
-    // Scroll overflows inside the sheet; otherwise size to content (or full width).
-    scroll ? 'tab-sheet-scroll w-full min-w-0' : fullWidth ? 'w-full' : 'inline-flex',
-    // See the `fits` measurement above — never distribute an overflowing or
-    // wrapped strip.
-    fits && !fullWidth && 'justify-evenly',
-    !sheet && className,
-  );
+  // A segmented control, so the LAYOUT is a grid of equal columns (see the
+  // `[data-slot='liquid-tabs']` rules in globals.css) rather than a flex row of
+  // content-sized pills. `data-tab-size` / `data-tab-icon-only` pick the minimum
+  // segment width there; everything else about the strip is width-independent.
+  const innerClass = cn('relative w-full min-w-0', !sheet && className);
 
   const items = tabs.map((tab) => {
     const active = tab.id === value;
@@ -365,7 +314,7 @@ export function LiquidTabs({
           key={tab.id}
           data-has-icon={tab.icon ? '' : undefined}
           data-tab-active={active ? 'true' : 'false'}
-          className={cn('relative shrink-0', fullWidth && 'flex-1')}
+          className="relative min-w-0"
         >
           {capsule(active)}
           {renderTab!(tab, {
@@ -411,6 +360,8 @@ export function LiquidTabs({
       ref={listRef as React.Ref<HTMLElement>}
       aria-label={ariaLabel}
       data-slot="liquid-tabs"
+      data-tab-size={size}
+      data-tab-icon-only={iconOnly ? '' : undefined}
       className={innerClass}
     >
       {items}
@@ -422,6 +373,8 @@ export function LiquidTabs({
       aria-label={ariaLabel}
       onKeyDown={onKeyDown}
       data-slot="liquid-tabs"
+      data-tab-size={size}
+      data-tab-icon-only={iconOnly ? '' : undefined}
       className={innerClass}
     >
       {items}
@@ -434,9 +387,16 @@ export function LiquidTabs({
     <div
       data-slot="liquid-tabs-sheet"
       className={cn(
-        'min-w-0 max-w-full rounded-[var(--site-control-radius)] border border-site-border bg-site-surface p-1 shadow-site-sm',
-        scroll && 'overflow-hidden',
-        fullWidth || scroll ? 'w-full' : 'w-fit',
+        // Always full width: a segmented control's track spans its container, and
+        // a `w-fit` track is what left two or three tabs adrift in a wide sheet.
+        //
+        // `--site-radius` (22px on the default theme), NOT `--site-control-radius`
+        // (9999px): on a single row the track is ~44px tall, so 22px IS the pill —
+        // identical to the capsule radius. But when the strip wraps to two rows the
+        // same value reads as a correctly-rounded rectangle instead of a stretched
+        // lozenge, which is what a 9999px radius degrades into. One value, right in
+        // both states, and it tracks each theme's own radius scale.
+        'w-full min-w-0 max-w-full rounded-[var(--site-radius)] border border-site-border bg-site-surface p-1 shadow-site-sm',
         className,
       )}
     >
