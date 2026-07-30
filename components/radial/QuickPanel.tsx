@@ -145,7 +145,14 @@ export function QuickPanel({
     const raf = requestAnimationFrame(() => {
       const el = panelRef.current;
       if (!el) return;
-      (el.querySelector<HTMLElement>('input, a[href], button') ?? el).focus();
+      // `preventScroll` because the panel is position:fixed — it is already in
+      // view by construction, so the browser's focus scroll can only drag the
+      // page underneath it. On a phone that scroll lands at the same moment the
+      // keyboard opens for the search field, and the two together read as the
+      // viewport jumping the instant you tap the top bar.
+      (el.querySelector<HTMLElement>('input, a[href], button') ?? el).focus({
+        preventScroll: true,
+      });
     });
     return () => {
       cancelAnimationFrame(raf);

@@ -502,7 +502,9 @@
   outline: 0;
   background: transparent;
   color: var(--site-text);
-  font-size: 0.9rem;
+  /* Floored on touch so focusing it can't zoom the page — see
+     `--site-field-font-floor` in globals.css. */
+  font-size: max(0.9rem, var(--site-field-font-floor));
 }
 
 .feed-search button {

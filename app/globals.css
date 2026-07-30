@@ -259,6 +259,16 @@
     var(--site-sticky-edge) + var(--site-sticky-primary-height) + var(--site-section-gap)
   );
   --site-touch-target: 2.75rem;
+  /* Smallest font-size a text-entry control may compute to. Zero on a pointer
+     device — desktop density is nobody's accessibility problem — and 16px on a
+     touch screen, where anything smaller makes mobile Safari zoom the whole page
+     the instant the field takes focus. Consume it as a FLOOR, never as a size:
+     `font-size: max(0.9rem, var(--site-field-font-floor))` keeps the compact
+     desktop value and lifts only the touch case. It exists because the blanket
+     `input { font-size: 16px }` net further down is a bare element selector, so
+     any component rule as ordinary as `.lib-search input` out-ranks it and drops
+     back through the floor without anyone noticing. */
+  --site-field-font-floor: 0px;
   --site-page-bottom-space: clamp(2rem, 5vw, 3.5rem);
   --site-mobile-content-end: clamp(2rem, 7vw, 3rem);
   --site-floating-edge: clamp(0.75rem, 3vw, 1.25rem);
@@ -2601,14 +2611,28 @@ body {
 
 /* Prevent iOS Safari from auto-zooming the page when a form control is focused.
    Mobile Safari zooms whenever the focused field's computed font-size is < 16px,
-   which reads as a jarring jump on tap. Floor every text-entry control at 16px on
-   phones (<=640px) only, so desktop information density is untouched. This is the
-   site-wide safety net for the many fields that use Tailwind's text-sm/text-xs. */
-@media (max-width: 640px) {
+   which reads as a jarring jump on tap. This is the site-wide safety net for the
+   many fields that use Tailwind's text-sm/text-xs.
+
+   The floor is keyed to the DEVICE, not only to a width breakpoint. The zoom is a
+   touch-keyboard behaviour and it does not care how wide the window is: at the
+   <=640px bound alone, the very same phone turned landscape (390x844 -> a 844px
+   viewport) fell straight back out of the guard and zoomed on every tap, and so
+   did every tablet. `(hover: none) and (pointer: coarse)` is the set of devices
+   that actually raise a virtual keyboard; a touch-screen laptop still reports a
+   fine primary pointer, so desktop information density is untouched. */
+@media (max-width: 640px), (hover: none) and (pointer: coarse) {
   input,
   select,
   textarea {
     font-size: 16px;
+  }
+}
+/* …and the floor the more specific rules opt into, since they out-rank the net
+   above by simply naming a class (see `--site-field-font-floor`). */
+@media (hover: none) and (pointer: coarse) {
+  :root {
+    --site-field-font-floor: 16px;
   }
 }
 

@@ -269,7 +269,7 @@
 .rmhc-root .form-field label{display:block;font-size:12.5px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--gold);margin-bottom:9px}
 .rmhc-root .form-field input,.rmhc-root .form-field select,.rmhc-root .form-field textarea{
   width:100%;background:var(--ink);border:1px solid var(--line-soft);color:var(--ivory);
-  font-family:var(--sans);font-size:15px;padding:14px 16px;transition:border-color .2s;border-radius:var(--spatial-radius);
+  font-family:var(--sans);font-size:max(15px,var(--site-field-font-floor,0px));padding:14px 16px;transition:border-color .2s;border-radius:var(--spatial-radius);
 }
 .rmhc-root .form-field input:focus,.rmhc-root .form-field select:focus,.rmhc-root .form-field textarea:focus{outline:none;border-color:var(--gold)}
 .rmhc-root .form-field textarea{resize:vertical;min-height:130px}
