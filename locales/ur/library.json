@@ -51,7 +51,6 @@
   "label-description": "تفصیل",
   "label-title": "عنوان",
   "library-heading": "لائبریری",
-  "library-totals": "Library totals",
   "manage": "انتظام کریں",
   "manage-albums": "Create or manage albums",
   "migrate-button": "S3 پر منتقل کریں",
@@ -91,10 +90,6 @@
   "section-curated": "منتخب شدہ",
   "section-music": "Music",
   "sections-label": "Library sections",
-  "stat-albums": "Albums",
-  "stat-collections": "Collections",
-  "stat-pages": "Pages",
-  "stat-volumes": "Volumes",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

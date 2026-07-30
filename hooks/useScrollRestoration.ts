@@ -49,6 +49,36 @@ function remember(key: string, y: number) {
 
 type Scroller = { el: HTMLElement; win: boolean };
 
+/**
+ * One-shot opt-out of the fresh-navigation reset below.
+ *
+ * A page that mirrors an in-page filter into the URL (the library's category
+ * tabs → `?view=`) is not navigating anywhere: the same component stays mounted
+ * and it has already decided where the viewport belongs. Without this, the href
+ * change alone reads as a fresh navigation and the reset yanks the page to the
+ * top a frame after the filter applies — which is exactly the jump such a page
+ * is trying to avoid, and no amount of re-asserting the offset afterwards hides
+ * it cleanly.
+ *
+ * Scoped to the pathname and a short window so a suppression that is never
+ * followed by its navigation (a rejected `navigate`, a route guard) expires
+ * instead of swallowing the next real reset.
+ */
+let suppressed: { pathname: string; at: number } | null = null;
+const SUPPRESS_WINDOW_MS = 1000;
+
+export function suppressNextScrollReset(pathname: string) {
+  suppressed = { pathname, at: Date.now() };
+}
+
+function claimSuppression(pathname: string): boolean {
+  const claim = suppressed;
+  suppressed = null;
+  return Boolean(
+    claim && claim.pathname === pathname && Date.now() - claim.at < SUPPRESS_WINDOW_MS,
+  );
+}
+
 // The element that actually scrolls right now. In practice this is ALWAYS the
 // window today: nothing sets `data-scroll-root` any more (every _site page
 // scrolls the document on mobile and desktop alike — which is deliberate, since
@@ -137,8 +167,9 @@ export function useScrollRestoration() {
       // visibly yank the feed to the top DURING the transition — it only resets
       // once the destination is actually rendering. Covers both the window and
       // the mobile container (which the router doesn't reset). Skipped on first
-      // mount so an initial/reloaded position is left to the router/browser.
-      applyScroll(s, 0);
+      // mount so an initial/reloaded position is left to the router/browser, and
+      // on a page that claimed this href change as an in-page filter.
+      if (!claimSuppression(window.location.pathname)) applyScroll(s, 0);
     }
 
     // Remember this location's offset as the user scrolls, so leaving in any

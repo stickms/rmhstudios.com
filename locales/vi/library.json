@@ -50,7 +50,6 @@
   "label-description": "Mô tả",
   "label-title": "Tiêu đề",
   "library-heading": "Thư viện",
-  "library-totals": "Library totals",
   "manage": "Quản lý",
   "manage-albums": "Create or manage albums",
   "migrate-button": "Di chuyển sang S3",
@@ -87,10 +86,6 @@
   "section-curated": "Tuyển chọn",
   "section-music": "Music",
   "sections-label": "Library sections",
-  "stat-albums": "Albums",
-  "stat-collections": "Collections",
-  "stat-pages": "Pages",
-  "stat-volumes": "Volumes",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

@@ -50,7 +50,6 @@
   "label-description": "Deskripsi",
   "label-title": "Judul",
   "library-heading": "Perpustakaan",
-  "library-totals": "Library totals",
   "manage": "Kelola",
   "manage-albums": "Create or manage albums",
   "migrate-button": "Migrasikan ke S3",
@@ -87,10 +86,6 @@
   "section-curated": "Kurasi",
   "section-music": "Music",
   "sections-label": "Library sections",
-  "stat-albums": "Albums",
-  "stat-collections": "Collections",
-  "stat-pages": "Pages",
-  "stat-volumes": "Volumes",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

@@ -53,7 +53,6 @@
   "label-description": "Описание",
   "label-title": "Название",
   "library-heading": "Библиотека",
-  "library-totals": "Library totals",
   "manage": "Управление",
   "manage-albums": "Create or manage albums",
   "migrate-button": "Перенести в S3",
@@ -99,10 +98,6 @@
   "section-curated": "Подборка",
   "section-music": "Music",
   "sections-label": "Library sections",
-  "stat-albums": "Albums",
-  "stat-collections": "Collections",
-  "stat-pages": "Pages",
-  "stat-volumes": "Volumes",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

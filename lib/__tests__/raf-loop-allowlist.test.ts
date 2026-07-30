@@ -39,6 +39,10 @@ import { join } from 'node:path';
  *   - components/radial/RadialHub.tsx, components/radial/QuickPanel.tsx —
  *                                       one-shot rAF to move focus after the
  *                                       menu/panel opens; cancelled in cleanup.
+ *   - app/routes/_site/library/index.tsx — one-shot rAF that starts the
+ *                                       scroll-settle glide after a category
+ *                                       switch; cancelled in cleanup and on the
+ *                                       next switch.
  *   - hooks/useParallax.ts            — pointer lerp stops once it settles at target.
  *   - hooks/useSpatialParallax.ts     — pointer-event throttle; cancels on unmount.
  *   - hooks/useScrollRestoration.ts, hooks/useCardSheen.ts, hooks/useCelebration.ts,
@@ -53,6 +57,7 @@ const SCAN_DIRS = ['components', 'app', 'hooks', 'lib', 'stores'];
 
 /** Files permitted to call requestAnimationFrame (see the doc block above). */
 const ALLOW = new Set<string>([
+  'app/routes/_site/library/index.tsx',
   'app/routes/_site/rmhladder/pipeline.tsx',
   'components/assistant/ConciergePanel.tsx',
   'components/breakpoint/GameView.tsx',

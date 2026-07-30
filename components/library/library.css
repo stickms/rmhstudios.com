@@ -2083,7 +2083,7 @@
 
 .lib-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: end;
   gap: clamp(38px, 7vw, 112px);
   max-width: 1400px;
@@ -2123,41 +2123,6 @@
   font-size: clamp(1rem, 1.7vw, 1.25rem);
   line-height: 1.55;
   text-wrap: pretty;
-}
-
-.lib-stats {
-  display: grid;
-  grid-template-columns: repeat(2, auto);
-  gap: 24px clamp(26px, 4vw, 48px);
-  margin: 0 0 5px;
-}
-.lib-stats div {
-  display: flex;
-  flex-direction: column-reverse;
-  gap: 6px;
-}
-/* Etched stats (§8.4): a vertical light hairline separates the second column
-   from the first (logical border → RTL-safe). */
-.lib-stats div:nth-child(even) {
-  padding-inline-start: clamp(16px, 2.5vw, 24px);
-  border-inline-start: 1px solid var(--site-glass-rim-soft, rgba(255, 255, 255, 0.08));
-}
-.lib-stats dt {
-  color: var(--site-text-muted, #565656);
-  font-family: var(--site-font-mono, ui-monospace, monospace);
-  font-size: 0.6875rem;
-  font-weight: 650;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-.lib-stats dd {
-  margin: 0;
-  color: var(--site-text, #e9e9ec);
-  font-family: var(--site-font-display);
-  font-size: clamp(1.15rem, 2vw, 1.6rem);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.04em;
 }
 
 .lib-search {
@@ -2667,10 +2632,6 @@
   .lib-hero h1 {
     font-size: clamp(3rem, 13.5vw, 5.2rem);
   }
-  .lib-stats {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-  }
   .lib-search {
     margin-top: 0;
   }
@@ -2711,9 +2672,6 @@
   }
   .lib-hero {
     padding-inline: 20px;
-  }
-  .lib-stats {
-    grid-template-columns: repeat(2, 1fr);
   }
   .lib__shelf--catalog {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2832,9 +2790,9 @@
   background: var(--site-surface-hover);
 }
 
-/* Hero: a compact editorial statement surrounded by touchable count bubbles. */
+/* Hero: a compact editorial statement, and nothing competing with it. */
 .lib--glass-playground .lib-hero {
-  grid-template-columns: minmax(0, 1fr) minmax(238px, 0.44fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
   gap: clamp(28px, 6vw, 84px);
   max-width: var(--lib-content);
@@ -2861,52 +2819,6 @@
   max-width: 620px;
   margin-top: clamp(18px, 3vw, 30px);
   font-size: clamp(0.98rem, 1.45vw, 1.16rem);
-}
-
-.lib--glass-playground .lib-stats {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(96px, 1fr));
-  gap: 10px;
-  margin: 0;
-}
-
-.lib--glass-playground .lib-stats > div {
-  display: flex;
-  min-height: 104px;
-  aspect-ratio: 1;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding: 14px;
-  overflow: hidden;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  text-align: center;
-}
-
-.lib--glass-playground .lib-stats > div:nth-child(even) {
-  padding-inline-start: 14px;
-  border-inline-start: 1px solid transparent;
-}
-
-.lib--glass-playground .lib-stats > div:nth-child(2),
-.lib--glass-playground .lib-stats > div:nth-child(3) {
-  translate: 0 10px;
-}
-
-.lib--glass-playground .lib-stats dt {
-  color: var(--site-text-muted);
-  /* 11px floor for micro-caps (§AUD-002). This was 0.58rem — 9.3px, the
-     smallest type on the site. */
-  font-size: 0.6875rem;
-}
-
-.lib--glass-playground .lib-stats dd {
-  order: -1;
-  font-size: clamp(1.3rem, 2.3vw, 1.85rem);
 }
 
 /* The explorer is the only sticky group: search, result feedback, and tabs
@@ -3190,19 +3102,6 @@
     gap: 30px;
     padding-block: 46px 38px;
   }
-
-  .lib--glass-playground .lib-stats {
-    grid-template-columns: repeat(4, minmax(76px, 1fr));
-  }
-
-  .lib--glass-playground .lib-stats > div {
-    min-height: 0;
-  }
-
-  .lib--glass-playground .lib-stats > div:nth-child(2),
-  .lib--glass-playground .lib-stats > div:nth-child(3) {
-    translate: 0;
-  }
 }
 
 @media (max-width: 560px) {
@@ -3221,15 +3120,6 @@
 
   .lib--glass-playground .lib-hero h1 {
     font-size: clamp(2.55rem, 13vw, 4rem);
-  }
-
-  .lib--glass-playground .lib-stats {
-    grid-template-columns: repeat(2, minmax(90px, 1fr));
-  }
-
-  .lib--glass-playground .lib-stats > div {
-    aspect-ratio: auto;
-    min-height: 88px;
   }
 
   .lib-explorer {
