@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { Play, ArrowLeft, RotateCcw, Trophy, Lock, Users, Glasses, Compass } from 'lucide-react';
+import { Play, ArrowLeft, RotateCcw, Trophy, Lock, Users, Glasses, Compass, Eye } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { useNavigate } from '@tanstack/react-router';
 import { LEVELS } from '@/lib/neon-driftway/constants';
 import type { LevelId, RunStats } from '@/lib/neon-driftway/types';
 import type { GyroStatus } from '@/lib/neon-driftway/gyro';
-import type { VrPrefs } from './NeonDriftwayGame';
+import type { ViewMode } from './NeonDriftwayGame';
 
 type LeaderboardEntry = {
   username: string;
@@ -17,12 +17,13 @@ type LeaderboardEntry = {
 };
 
 interface VrProps {
-  vr: VrPrefs;
+  viewMode: ViewMode;
   gyroStatus: GyroStatus;
   /** False on hardware where a motion sensor is not plausible at all. */
   canOfferHeadLook: boolean;
-  onToggleHeadLook: () => void;
-  onToggleStereo: () => void;
+  /** A headset was detected, so the split screen is the sensible default. */
+  headsetDetected: boolean;
+  onSelectMode: (mode: ViewMode) => void;
 }
 
 export function NeonDriftwayUI({
@@ -35,11 +36,11 @@ export function NeonDriftwayUI({
   onStartLevel,
   onContinueEndless,
   onGoToMultiplayer,
-  vr,
+  viewMode,
   gyroStatus,
   canOfferHeadLook,
-  onToggleHeadLook,
-  onToggleStereo,
+  headsetDetected,
+  onSelectMode,
 }: {
   uiState: 'menu' | 'levelSelect' | 'playing' | 'gameOver' | 'levelComplete' | 'multiplayerMenu' | 'lobby' | 'multiplayerPlaying' | 'multiplayerGameOver';
   unlockedLevels: Set<LevelId>;
@@ -103,69 +104,81 @@ export function NeonDriftwayUI({
   // ── View mode panel ──
   // Only offered where a motion sensor is plausible. Everywhere else the
   // static forward camera is simply the game, with nothing to configure.
+  const modes: { id: ViewMode; label: string; hint: string; icon: typeof Eye }[] = [
+    {
+      id: 'gyro',
+      label: t('mode-gyro', { defaultValue: 'Gyro' }),
+      hint: t('mode-gyro-hint', { defaultValue: 'One screen. Move your device to look around as you drive.' }),
+      icon: Compass,
+    },
+    {
+      id: 'vr',
+      label: t('mode-vr', { defaultValue: 'VR' }),
+      hint: t('mode-vr-hint', { defaultValue: 'Split screen for a headset or phone viewer. Hold a screen edge to steer.' }),
+      icon: Glasses,
+    },
+    {
+      id: 'fixed',
+      label: t('mode-fixed', { defaultValue: 'Fixed' }),
+      hint: t('mode-fixed-hint', { defaultValue: 'Camera locked straight ahead. No motion needed.' }),
+      icon: Eye,
+    },
+  ];
+  const activeMode = modes.find((m) => m.id === viewMode) ?? modes[2];
+
+  // Without a motion sensor there is exactly one mode, so there is nothing to
+  // choose — the panel would be a control that does nothing.
   const viewPanel = canOfferHeadLook ? (
     <div className="space-y-2 rounded-lg border border-zinc-700 bg-black/60 p-3 text-left">
-      <div className="flex items-center gap-2">
-        <Glasses className="h-4 w-4 text-cyan-400" aria-hidden="true" />
+      <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
           {t('view-mode', { defaultValue: 'View' })}
         </span>
+        {headsetDetected && (
+          <span className="rounded-full bg-purple-500/25 px-2 py-0.5 text-[10px] font-bold tracking-wider text-purple-200">
+            {t('headset-detected', { defaultValue: 'HEADSET DETECTED' })}
+          </span>
+        )}
       </div>
 
-      <button
-        type="button"
-        onClick={onToggleHeadLook}
-        aria-pressed={vr.headLook}
-        className="flex w-full items-center justify-between gap-3 rounded border border-zinc-700 bg-zinc-900/70 px-3 py-2 text-left transition-colors hover:border-cyan-500/60"
-      >
-        <span className="min-w-0">
-          <span className="block text-sm font-bold text-white">
-            {t('head-look', { defaultValue: 'Head look' })}
-          </span>
-          <span className="block text-[11px] text-zinc-400">
-            {t('head-look-desc', { defaultValue: 'Move your device to look around the cockpit as you drive.' })}
-          </span>
-        </span>
-        <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black tracking-wider ${vr.headLook ? 'bg-cyan-500 text-black' : 'bg-zinc-700 text-zinc-300'}`}
-        >
-          {vr.headLook ? t('on', { defaultValue: 'ON' }) : t('off', { defaultValue: 'OFF' })}
-        </span>
-      </button>
+      <div role="radiogroup" aria-label={t('view-mode', { defaultValue: 'View' })} className="flex gap-1.5">
+        {modes.map((mode) => {
+          const Icon = mode.icon;
+          const active = mode.id === viewMode;
+          return (
+            <button
+              key={mode.id}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => onSelectMode(mode.id)}
+              className={`flex flex-1 flex-col items-center gap-1 rounded border px-2 py-2 transition-colors ${
+                active
+                  ? 'border-cyan-400 bg-cyan-500/20 text-cyan-200'
+                  : 'border-zinc-700 bg-zinc-900/70 text-zinc-400 hover:border-zinc-500'
+              }`}
+            >
+              <Icon className="h-4 w-4" aria-hidden="true" />
+              <span className="text-xs font-bold">{mode.label}</span>
+            </button>
+          );
+        })}
+      </div>
 
-      {vr.headLook && (
-        <button
-          type="button"
-          onClick={onToggleStereo}
-          aria-pressed={vr.stereo}
-          className="flex w-full items-center justify-between gap-3 rounded border border-zinc-700 bg-zinc-900/70 px-3 py-2 text-left transition-colors hover:border-purple-500/60"
-        >
-          <span className="min-w-0">
-            <span className="block text-sm font-bold text-white">
-              {t('viewer-mode', { defaultValue: 'Headset (split screen)' })}
-            </span>
-            <span className="block text-[11px] text-zinc-400">
-              {t('viewer-mode-desc', { defaultValue: 'Side-by-side view for a phone VR viewer. Hold a screen edge to steer.' })}
-            </span>
-          </span>
-          <span
-            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black tracking-wider ${vr.stereo ? 'bg-purple-500 text-black' : 'bg-zinc-700 text-zinc-300'}`}
-          >
-            {vr.stereo ? t('on', { defaultValue: 'ON' }) : t('off', { defaultValue: 'OFF' })}
-          </span>
-        </button>
-      )}
+      <p className="text-[11px] text-zinc-400">{activeMode.hint}</p>
 
       <p className="flex items-start gap-1.5 text-[11px] text-zinc-500">
         <Compass className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
         <span>
-          {gyroStatus === 'active'
-            ? t('gyro-active', { defaultValue: 'Motion sensor live. Press C or tap recenter to face forward again.' })
-            : gyroStatus === 'denied'
-              ? t('gyro-denied', { defaultValue: 'Motion access was declined, so the camera stays locked forward. You can allow it in your browser settings.' })
-              : gyroStatus === 'unavailable'
-                ? t('gyro-unavailable', { defaultValue: 'No motion sensor here — the camera stays locked forward.' })
-                : t('gyro-waiting', { defaultValue: 'Waiting for the motion sensor…' })}
+          {viewMode === 'fixed'
+            ? t('gyro-off', { defaultValue: 'Head look is off — the camera stays locked forward.' })
+            : gyroStatus === 'active'
+              ? t('gyro-active', { defaultValue: 'Motion sensor live. Press C or tap recenter to face forward again.' })
+              : gyroStatus === 'denied'
+                ? t('gyro-denied', { defaultValue: 'Motion access was declined, so the camera stays locked forward. You can allow it in your browser settings.' })
+                : gyroStatus === 'unavailable'
+                  ? t('gyro-unavailable', { defaultValue: 'No motion sensor here — the camera stays locked forward.' })
+                  : t('gyro-waiting', { defaultValue: 'Waiting for the motion sensor…' })}
         </span>
       </p>
     </div>

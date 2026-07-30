@@ -8,29 +8,32 @@
  * VR toggles. The simulation lives in `lib/neon-driftway/game`, the drawing in
  * `lib/neon-driftway/renderer3d`, and neither knows this file exists.
  *
- * Three display modes, picked automatically then overridable by the player:
+ * Three view modes. The default is picked from what the device can actually
+ * do, and the player can always override it:
  *
- *  - **Static** — no usable motion sensor (most desktops). The camera is
- *    locked forward with a small lean into the steering. Fully playable.
- *  - **Head look** — the gyro drives the camera in real time, so you can
- *    check your mirrors and look into a bend while you drive.
- *  - **Viewer** — head look plus side-by-side stereo for a Cardboard-style
- *    phone holder, with throttle held open and screen-half steering.
+ *  - **fixed** — camera locked forward with a small lean into the steering.
+ *    The default only where there is no usable motion sensor (most desktops),
+ *    and always available for anyone who finds head look uncomfortable.
+ *  - **gyro** — one eye, head look live. The gyro drives the camera in real
+ *    time so you can check your mirrors and look into a bend as you drive.
+ *    **This is the default on any device with a motion sensor.**
+ *  - **vr** — head look plus side-by-side stereo for a headset or a
+ *    Cardboard-style holder, with the throttle held open and screen-half
+ *    steering. Only the default when a headset is actually detected, because
+ *    a split screen on a bare phone is just a broken-looking game.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NeonDriftwayEngine } from '@/lib/neon-driftway/game';
 import { NeonDriftwayRenderer3D } from '@/lib/neon-driftway/renderer3d';
-import {
-  GyroTracker, gyroPermissionGateExists, hasStoredMotionConsent,
-  type GyroStatus,
-} from '@/lib/neon-driftway/gyro';
+import { GyroTracker, gyroPermissionGateExists, type GyroStatus } from '@/lib/neon-driftway/gyro';
+import { detectHeadset } from '@/lib/neon-driftway/headset';
 import {
   LEVELS, LEVEL_2_UNLOCK_DISTANCE, LEVEL_3_UNLOCK_DISTANCE, MPS_PER_UNIT,
 } from '@/lib/neon-driftway/constants';
 import type { GameState, InputState, LevelId, RunStats } from '@/lib/neon-driftway/types';
-import { isLowPowerDevice, requestScreenWakeLock, supportsWebGL, toggleFullscreen } from '@/lib/shared/platform';
+import { isFullscreen, isLowPowerDevice, requestScreenWakeLock, supportsWebGL, toggleFullscreen } from '@/lib/shared/platform';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { NeonDriftwayUI } from './NeonDriftwayUI';
 import { NeonDriftwayTouchControls } from './NeonDriftwayTouchControls';
@@ -44,12 +47,8 @@ const VR_KEY = 'neon-driftway.vr';
 type UIState = 'menu' | 'levelSelect' | 'playing' | 'gameOver' | 'levelComplete'
   | 'multiplayerMenu' | 'lobby' | 'multiplayerPlaying' | 'multiplayerGameOver';
 
-export interface VrPrefs {
-  /** Gyro drives the camera. */
-  headLook: boolean;
-  /** Side-by-side stereo for a phone viewer. Implies headLook. */
-  stereo: boolean;
-}
+/** One eye or two, and whether the gyro is driving the camera. */
+export type ViewMode = 'fixed' | 'gyro' | 'vr';
 
 function loadUnlocks(): Set<LevelId> {
   const set = new Set<LevelId>([1 as LevelId]);
@@ -69,20 +68,18 @@ function saveUnlocks(unlocks: Set<LevelId>): void {
   } catch { /* ignore */ }
 }
 
-function loadVrPrefs(): VrPrefs {
+/** A stored mode, or null when the player has never chosen one. */
+function loadViewMode(): ViewMode | null {
   try {
     const raw = localStorage.getItem(VR_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as Partial<VrPrefs>;
-      return { headLook: parsed.headLook === true, stereo: parsed.stereo === true };
-    }
+    if (raw === 'fixed' || raw === 'gyro' || raw === 'vr') return raw;
   } catch { /* ignore */ }
-  return { headLook: false, stereo: false };
+  return null;
 }
 
-function saveVrPrefs(prefs: VrPrefs): void {
+function saveViewMode(mode: ViewMode): void {
   try {
-    localStorage.setItem(VR_KEY, JSON.stringify(prefs));
+    localStorage.setItem(VR_KEY, mode);
   } catch { /* ignore */ }
 }
 
@@ -117,9 +114,10 @@ export function NeonDriftwayGame() {
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [webglReady, setWebglReady] = useState(true);
   const [rendererEpoch, setRendererEpoch] = useState(0);
-  const [vr, setVr] = useState<VrPrefs>({ headLook: false, stereo: false });
+  const [viewMode, setViewMode] = useState<ViewMode>('fixed');
   const [gyroStatus, setGyroStatus] = useState<GyroStatus>('unavailable');
   const [canOfferHeadLook, setCanOfferHeadLook] = useState(false);
+  const [headsetDetected, setHeadsetDetected] = useState(false);
 
   // Values the frame loop reads. Kept in refs so the loop is created once.
   const unlocksRef = useRef(unlockedLevels);
@@ -129,7 +127,7 @@ export function NeonDriftwayGame() {
   const scoreTickRef = useRef(0);
 
   unlocksRef.current = unlockedLevels;
-  stereoRef.current = vr.stereo;
+  stereoRef.current = viewMode === 'vr';
 
   // ── Mount: capabilities, saved state, gyro tracker ──
 
@@ -137,38 +135,70 @@ export function NeonDriftwayGame() {
     setUnlockedLevels(loadUnlocks());
     setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
     setWebglReady(supportsWebGL());
-    setCanOfferHeadLook(motionPlausible());
+
+    const sensorPlausible = motionPlausible();
+    setCanOfferHeadLook(sensorPlausible);
 
     const tracker = new GyroTracker();
     tracker.onStatusChange = setGyroStatus;
     trackerRef.current = tracker;
 
-    // Only auto-start where the browser will not prompt: either there is no
-    // permission gate, or the player already granted motion site-wide.
-    const prefs = loadVrPrefs();
-    if (prefs.headLook && (!gyroPermissionGateExists() || hasStoredMotionConsent())) {
-      tracker.start();
-      setVr(prefs);
-    } else if (prefs.headLook) {
-      // Gated and not yet granted — remember the intent, ask on the next tap.
-      setVr({ headLook: false, stereo: false });
+    const stored = loadViewMode();
+    if (stored) {
+      setViewMode(stored);
+      return () => {
+        tracker.onStatusChange = null;
+        tracker.stop();
+        trackerRef.current = null;
+      };
     }
 
+    // No stored choice — pick the default from the hardware. Head look is the
+    // default wherever a sensor is plausible; the split screen only when a
+    // headset is actually there, since it is unusable on a bare phone.
+    let cancelled = false;
+    void detectHeadset().then((headset) => {
+      if (cancelled) return;
+      setHeadsetDetected(headset);
+      setViewMode(headset ? 'vr' : sensorPlausible ? 'gyro' : 'fixed');
+    });
+
     return () => {
+      cancelled = true;
       tracker.onStatusChange = null;
       tracker.stop();
       trackerRef.current = null;
     };
   }, []);
 
-  // Head look silently falling back (sensor never reported in) should not
-  // leave the player stuck in a stereo view they cannot steer out of.
+  // Start or stop the sensor to match the mode. `start()` never prompts, so on
+  // a gated platform this settles at `needs-permission` until the tap below.
   useEffect(() => {
-    if (vr.stereo && (gyroStatus === 'unavailable' || gyroStatus === 'denied')) {
-      setVr({ headLook: false, stereo: false });
-      saveVrPrefs({ headLook: false, stereo: false });
+    const tracker = trackerRef.current;
+    if (!tracker) return;
+    if (viewMode === 'fixed') tracker.stop();
+    else tracker.start();
+  }, [viewMode]);
+
+  // iOS only grants motion access from inside a user gesture. Head look being
+  // the default means we cannot ask on load, so we ask on the player's first
+  // touch — which is also the first moment the answer could matter.
+  useEffect(() => {
+    if (viewMode === 'fixed' || gyroStatus !== 'needs-permission') return;
+    const onGesture = () => {
+      void trackerRef.current?.requestPermission();
+    };
+    window.addEventListener('pointerdown', onGesture, { once: true });
+    return () => window.removeEventListener('pointerdown', onGesture);
+  }, [viewMode, gyroStatus]);
+
+  // A sensor that never reports in must not stand the player up in a split
+  // screen they cannot steer out of — fall back to one eye.
+  useEffect(() => {
+    if (viewMode !== 'fixed' && (gyroStatus === 'unavailable' || gyroStatus === 'denied')) {
+      setViewMode('fixed');
     }
-  }, [gyroStatus, vr.stereo]);
+  }, [gyroStatus, viewMode]);
 
   // ── Renderer lifecycle ──
 
@@ -236,11 +266,12 @@ export function NeonDriftwayGame() {
   }, [webglReady, reducedMotion, rendererEpoch]);
 
   useEffect(() => {
-    rendererRef.current?.setStereo(vr.stereo);
+    const stereo = viewMode === 'vr';
+    rendererRef.current?.setStereo(stereo);
     // Viewer mode holds the throttle open; leaving it must hand control back
     // rather than stranding the player at full speed.
-    if (!vr.stereo) inputRef.current.up = false;
-  }, [vr.stereo]);
+    if (!stereo) inputRef.current.up = false;
+  }, [viewMode]);
 
   useEffect(() => {
     rendererRef.current?.setReducedMotion(reducedMotion);
@@ -497,55 +528,44 @@ export function NeonDriftwayGame() {
 
   // ── VR controls ──
 
-  const setVrPrefs = useCallback((next: VrPrefs) => {
-    setVr(next);
-    saveVrPrefs(next);
-  }, []);
+  /**
+   * Switch view mode. Always called from a click, which is what lets us ask
+   * for motion access and for fullscreen in the same breath.
+   */
+  const handleSelectMode = useCallback(async (next: ViewMode) => {
+    const wasStereo = viewMode === 'vr';
 
-  const handleToggleHeadLook = useCallback(async () => {
-    const tracker = trackerRef.current;
-    if (!tracker) return;
-
-    if (vr.headLook) {
-      tracker.stop();
-      setVrPrefs({ headLook: false, stereo: false });
-      return;
-    }
-
-    // This runs inside the toggle's click, which is the gesture iOS requires.
-    const granted = await tracker.requestPermission();
-    setVrPrefs({ headLook: granted, stereo: false });
-  }, [vr.headLook, setVrPrefs]);
-
-  const handleToggleStereo = useCallback(async () => {
-    if (vr.stereo) {
-      setVrPrefs({ headLook: vr.headLook, stereo: false });
-      try {
-        window.screen?.orientation?.unlock?.();
-      } catch { /* not supported here */ }
-      if (containerRef.current) await toggleFullscreen(containerRef.current);
-      return;
-    }
-
-    let headLook = vr.headLook;
-    if (!headLook) {
-      headLook = (await trackerRef.current?.requestPermission()) ?? false;
-      if (!headLook) {
-        setVrPrefs({ headLook: false, stereo: false });
+    if (next === 'fixed') {
+      trackerRef.current?.stop();
+    } else if (gyroStatus !== 'active') {
+      const granted = await trackerRef.current?.requestPermission();
+      if (!granted) {
+        // Declined: stay on the locked camera rather than a dead head look.
+        setViewMode('fixed');
+        saveViewMode('fixed');
         return;
       }
     }
 
-    // A viewer needs the whole panel and a fixed landscape orientation. Both
-    // are best-effort: iOS Safari offers neither, and the mode still works.
-    if (containerRef.current) await toggleFullscreen(containerRef.current);
-    try {
-      await (window.screen?.orientation as { lock?: (o: string) => Promise<void> } | undefined)?.lock?.('landscape');
-    } catch { /* orientation lock unavailable */ }
+    // Entering the split screen wants the whole panel and a locked landscape;
+    // leaving it gives both back. Every step here is best-effort — iOS Safari
+    // offers neither, and the mode works fine without them.
+    if (next === 'vr' && !wasStereo) {
+      if (containerRef.current) await toggleFullscreen(containerRef.current);
+      try {
+        await (window.screen?.orientation as { lock?: (o: string) => Promise<void> } | undefined)?.lock?.('landscape');
+      } catch { /* orientation lock unavailable */ }
+    } else if (next !== 'vr' && wasStereo) {
+      try {
+        window.screen?.orientation?.unlock?.();
+      } catch { /* not supported here */ }
+      if (containerRef.current && isFullscreen()) await toggleFullscreen(containerRef.current);
+    }
 
-    setVrPrefs({ headLook: true, stereo: true });
+    setViewMode(next);
+    saveViewMode(next);
     rendererRef.current?.recenterView();
-  }, [vr.headLook, vr.stereo, setVrPrefs]);
+  }, [viewMode, gyroStatus]);
 
   const handleRecenter = useCallback(() => {
     rendererRef.current?.recenterView();
@@ -638,13 +658,13 @@ export function NeonDriftwayGame() {
         style={{ touchAction: 'none' }}
       />
 
-      <NeonDriftwayHud ref={hudRef} stereo={vr.stereo} visible={playing} />
+      <NeonDriftwayHud ref={hudRef} stereo={viewMode === 'vr'} visible={playing} />
 
       {/* Viewer mode hides every menu affordance, so keep one way out. */}
-      {vr.stereo && (
+      {viewMode === 'vr' && (
         <button
           type="button"
-          onClick={handleToggleStereo}
+          onClick={() => void handleSelectMode('gyro')}
           className="absolute left-1/2 top-2 z-50 -translate-x-1/2 rounded-full border border-white/25 bg-black/70 px-3 py-1 text-[11px] font-bold tracking-wider text-white/80 backdrop-blur-sm"
         >
           {t('exit-vr', { defaultValue: 'EXIT VR' })}
@@ -656,8 +676,8 @@ export function NeonDriftwayGame() {
         onPause={handleTouchPause}
         onRecenter={handleRecenter}
         showRecenter={gyroStatus === 'active'}
-        stereo={vr.stereo}
-        visible={playing && (isTouchDevice || vr.stereo)}
+        stereo={viewMode === 'vr'}
+        visible={playing && (isTouchDevice || viewMode === 'vr')}
       />
 
       {(uiState === 'multiplayerMenu' || uiState === 'lobby') && (
@@ -743,11 +763,11 @@ export function NeonDriftwayGame() {
         onStartLevel={handleStartLevel}
         onContinueEndless={handleContinueEndless}
         onGoToMultiplayer={handleGoToMultiplayer}
-        vr={vr}
+        viewMode={viewMode}
         gyroStatus={gyroStatus}
         canOfferHeadLook={canOfferHeadLook}
-        onToggleHeadLook={handleToggleHeadLook}
-        onToggleStereo={handleToggleStereo}
+        headsetDetected={headsetDetected}
+        onSelectMode={handleSelectMode}
       />
     </div>
   );
