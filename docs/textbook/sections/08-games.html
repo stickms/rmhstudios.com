@@ -343,10 +343,14 @@ canvas drawing API (Canvas 2D) or a 2D-batched GPU layer (WebGL/Pixi), updating 
 3D game describes a scene graph of meshes that React Three Fiber renders and Rapier simulates with real
 physics. The same game-loop pattern drives both; only the renderer and physics differ.</div>
 
-<p>Slice-It, Signal Forge, and Neon Driftway draw with the plain <b>Canvas 2D</b> context
-(<code>canvas.getContext('2d')</code>); Slice-It synthesizes its audio through the Web Audio API, while
-Neon Driftway renders pixel-art sprites (<code>setPixelArt(ctx)</code>) and clamps its timestep as its
-spec demands. Altair is also 2D but renders through a hand-written <b>WebGL2</b> batch renderer
+<p>Slice-It and Signal Forge draw with the plain <b>Canvas 2D</b> context
+(<code>canvas.getContext('2d')</code>); Slice-It synthesizes its audio through the Web Audio API. Neon
+Driftway used to sit in this group, and is now the clearest illustration of the key term above: the
+simulation in <code>lib/neon-driftway/game.ts</code> was rewritten into world metres and its Canvas 2D
+renderer swapped for a first-person <b>three.js</b> scene
+(<code>lib/neon-driftway/renderer3d.ts</code>) — imperative <code>three</code>, not R3F — while the
+loop → update → render pattern and the score/leaderboard path were untouched. Altair is also 2D but
+renders through a hand-written <b>WebGL2</b> batch renderer
 (<code>lib/altair/engine/webgl/</code>, with <code>initWebGL()</code> and a <code>SpriteBatch</code>)
 and uses <b>howler</b> for audio — it is the survivors-like with the heaviest draw load, so it pays for
 a GPU path. Temple of Joy renders no canvas at all: it is a pure React-DOM idle game whose engine
@@ -356,7 +360,8 @@ a GPU path. Temple of Joy renders no canvas at all: it is a pure React-DOM idle 
 <div class="scope"><b>Scope: where the 3D stack actually runs.</b> <code>@react-three/fiber</code>,
 <code>@react-three/rapier</code>, and <code>three</code> are real dependencies, and the README assigns
 them to the 3D titles (VELUM 2099, "a 3D cyberpunk game"; Forest Explorer, "a 3D exploration game").
-None of the five games dissected in this chapter import them — a useful reminder to read source rather
+Of the five games dissected in this chapter only Neon Driftway imports them, and it uses
+<code>three</code> directly rather than through R3F — a useful reminder to read source rather
 than the dependency list. The <i>pattern</i> (loop → update → render) is identical across 2D and 3D;
 only the renderer (a canvas context vs. an R3F scene graph) and the physics (manual AABB checks vs.
 Rapier) change.</div>
@@ -366,7 +371,7 @@ Rapier) change.</div>
   <tbody>
     <tr><td>Slice It!</td><td>Rhythm</td><td>2D</td><td>Canvas 2D + Web Audio</td><td><code>lib/game/GameEngine.ts</code></td></tr>
     <tr><td>Signal Forge</td><td>Deckbuilder roguelike</td><td>2D</td><td>Canvas 2D (pure render fn)</td><td><code>lib/signal-forge/index.ts</code></td></tr>
-    <tr><td>Neon Driftway</td><td>Endless racer</td><td>2D</td><td>Canvas 2D, pixel-art sprites</td><td><code>lib/neon-driftway/game.ts</code></td></tr>
+    <tr><td>Neon Driftway</td><td>Endless racer</td><td>3D</td><td>three.js (imperative), gyro head look</td><td><code>lib/neon-driftway/game.ts</code></td></tr>
     <tr><td>Altair</td><td>Survivors-like</td><td>2D</td><td>WebGL2 batches + howler</td><td><code>lib/altair/engine/game-loop.ts</code></td></tr>
     <tr><td>Temple of Joy</td><td>Idle / incremental</td><td>2D (DOM)</td><td>React DOM, no canvas</td><td><code>lib/temple-of-joy/engine.ts</code></td></tr>
     <tr><td>VELUM 2099 / Forest Explorer</td><td>3D action / exploration</td><td>3D</td><td>R3F + Rapier (per README)</td><td><i>3D stack</i></td></tr>

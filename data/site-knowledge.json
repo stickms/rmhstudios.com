@@ -544,11 +544,12 @@
       "tags": [
         "Arcade",
         "Racing",
-        "Endless"
+        "3D",
+        "VR"
       ],
       "route": "/neon-driftway",
       "players": "single-player",
-      "text": "An endless highway survival racer featuring high-speed drifting and close-call mechanics. Push your car to the limit across three distinct levels: Sunset Freeway, Rainline, and Night Circuit. Rack up multipliers with daring close calls, manage grip in the rain, and dodge aggressive traffic in a neon-soaked endless racer."
+      "text": "A first-person 3D highway survival racer. You drive from inside the cockpit across three levels: Sunset Freeway, Rainline, and Night Circuit. On phones the gyroscope drives the camera in real time, so you can look around the cabin and into bends while you drive, and a side-by-side split-screen mode works with a Cardboard-style viewer. Devices with no motion sensor get a locked forward camera and the same game. Rack up multipliers with daring close calls, manage grip in the rain, and dodge aggressive traffic."
     },
     {
       "id": "game:laundry-sort",
