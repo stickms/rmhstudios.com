@@ -1,5 +1,5 @@
 /**
- * Creator Studio · Pages tab.
+ * Create · Pages tab.
  *
  * The page-generation surface: a prompt dock (type anything, get a shareable,
  * collaboratively-editable webpage) above a public, searchable, lazy-loaded

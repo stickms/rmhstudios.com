@@ -1,7 +1,7 @@
 /**
  * /personas — legacy path.
  *
- * The standalone AI Personas gallery was folded into the unified Creator Studio
+ * The standalone AI Personas gallery was folded into the unified Create
  * (/studio). This route forwards to the Studio's Personas tab so existing links
  * and bookmarks keep working. The /personas/$id chat view remains its own route.
  */

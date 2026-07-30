@@ -1,7 +1,7 @@
 /**
- * Creator Studio · Storefront.
+ * Create · Storefront.
  *
- * A Steam-style "store" layout shared by every Creator Studio surface (Games,
+ * A Steam-style "store" layout shared by every Create surface (Games,
  * Apps, User Builds, AI Personas, and the Pages gallery). Instead of a flat,
  * uniform grid, items are laid out as:
  *

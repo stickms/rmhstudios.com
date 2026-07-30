@@ -106,11 +106,13 @@ const PAGES: Array<Omit<Command, 'section'>> = [
     requiresAuth: true,
   },
   {
+    // Notifications live as a tab of the Inbox; `/notifications` redirects
+    // there, so this entry stays as the name people actually search for.
     id: 'page-notifications',
     label: 'Notifications',
     href: '/notifications',
     icon: Bell,
-    keywords: 'alerts mentions activity',
+    keywords: 'alerts mentions activity inbox',
     requiresAuth: true,
   },
   {
@@ -143,11 +145,13 @@ const PAGES: Array<Omit<Command, 'section'>> = [
     keywords: 'shop marketplace buy market listings trade sell cosmetics',
   },
   {
+    // The Arcade Pass is a section of Create's Games tab; `/arcade` redirects
+    // there, so this entry stays as the name people actually search for.
     id: 'page-arcade',
-    label: 'Arcade',
+    label: 'Arcade Pass',
     href: '/arcade',
     icon: Gamepad2,
-    keywords: 'games daily challenge leaderboard ranking',
+    keywords: 'games daily challenge leaderboard ranking create',
   },
   {
     id: 'page-predictions',
@@ -158,10 +162,10 @@ const PAGES: Array<Omit<Command, 'section'>> = [
   },
   {
     id: 'page-create',
-    label: 'Creator Studio',
+    label: 'Create',
     href: '/create',
     icon: Wand2,
-    keywords: 'vibe build ai generate',
+    keywords: 'vibe build ai generate creator studio games apps personas arcade',
   },
   {
     id: 'page-achievements',

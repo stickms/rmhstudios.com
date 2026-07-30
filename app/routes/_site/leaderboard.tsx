@@ -1,15 +1,16 @@
 /**
- * /leaderboard — merged into /arcade.
+ * /leaderboard — merged into /create.
  *
- * The standalone leaderboard now lives as the "Leaderboard" tab of the Arcade
- * page (/arcade?tab=leaderboard). This route redirects there so old links and
- * the former nav entry land on the right tab.
+ * The standalone leaderboard became the "Leaderboard" tab of the Arcade page,
+ * and the Arcade page in turn became the Arcade Pass section of Create's Games
+ * tab. This route redirects straight to that board so old links and the former
+ * nav entry skip the intermediate hop.
  */
 
 import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_site/leaderboard')({
   beforeLoad: () => {
-    throw redirect({ to: '/arcade', search: { tab: 'leaderboard' } });
+    throw redirect({ to: '/create', search: { tab: 'games', sub: 'leaderboard' } });
   },
 });

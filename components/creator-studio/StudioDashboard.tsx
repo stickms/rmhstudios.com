@@ -12,7 +12,7 @@ import type { StudioOverview } from '@/lib/creator/studio.server';
 /**
  * StudioDashboard — the monetization dashboard that used to live at the
  * standalone `/creator-studio` ("Studio") route, now merged into the `/create`
- * Creator Studio Earnings tab. Fetches the caller's overview client-side, then
+ * Earnings tab. Fetches the caller's overview client-side, then
  * renders the headline stats, earnings-by-source breakdown, recent tips, and
  * (below) the membership tier editor.
  */

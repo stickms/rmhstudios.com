@@ -21,7 +21,6 @@ import { Link, useLocation } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { useUnreadCount } from '@/lib/useUnreadCount';
-import { useNotificationCount } from '@/lib/useNotificationCount';
 import { useAdminReviewCount } from '@/lib/useAdminReviewCount';
 import { SIDEBAR_NAV, isNavGroup, type NavGroup, type NavLeaf } from '@/lib/sidebar-nav';
 
@@ -40,7 +39,6 @@ export function RadialNavRail() {
   // Shared, already-deduplicated counters (one SSE stream / one poll for the
   // whole app), so the rail's badges cost nothing extra.
   const unread = useUnreadCount(signedIn);
-  const { count: notifications } = useNotificationCount(signedIn);
   const { counts: adminCounts } = useAdminReviewCount(Boolean(user?.isAdmin));
   const adminReview = adminCounts.total;
 
@@ -116,40 +114,11 @@ export function RadialNavRail() {
             </div>
           ),
         )}
-
-        {signedIn && (
-          <Link
-            to="/notifications"
-            className={
-              'rad-rail__item' + (isActive(pathname, '/notifications') ? ' is-active' : '')
-            }
-          >
-            <BellGlyph />
-            <span className="rad-rail__label">
-              {t('notifications', { defaultValue: 'Notifications' })}
-            </span>
-            {notifications > 0 && (
-              <span className="rad-rail__badge" aria-hidden>
-                {notifications > 99 ? '99+' : notifications}
-              </span>
-            )}
-          </Link>
-        )}
+        {/* No Notifications entry: notifications are a tab of the Inbox
+            (/messages?tab=notifications), so a rail row of their own was a
+            second door onto the same room. The top bar's bell still opens the
+            preview panel, and its footer link leads to that tab. */}
       </nav>
     </aside>
-  );
-}
-
-/** Inline so the rail's only icon import stays the nav data's own set. */
-function BellGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <path
-        d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
   );
 }
