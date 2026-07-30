@@ -58,7 +58,7 @@ export function ComposeAssist({ value, onChange }: { value: string; onChange: (v
  type="button"
  disabled={busy !== null}
  onClick={() => run(id)}
- className="inline-flex items-center gap-1 rounded-full border border-site-border px-2.5 py-1 text-xs text-site-text-muted transition-colors hover:bg-site-surface hover:text-site-text disabled:opacity-50"
+ className="inline-flex items-center gap-1 rounded-full border border-site-border px-2.5 py-1 text-xs text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text disabled:opacity-50"
  >
  {busy === id ? <Loader2 className="h-3 w-3 animate-spin"/> : null}
  {ACTION_LABELS[id]}

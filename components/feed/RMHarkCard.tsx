@@ -467,7 +467,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  });
  }
  }}
- className="mt-3 border border-site-border rounded-site p-3 bg-site-surface/30 cursor-pointer transition-colors hover:bg-site-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+ className="mt-3 border border-site-border rounded-site p-3 bg-site-surface/30 cursor-pointer transition-colors hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
  >
  <div className="flex items-center gap-1.5 text-sm mb-1">
  {freshOriginalUser ? (

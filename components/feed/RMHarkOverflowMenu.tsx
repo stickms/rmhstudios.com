@@ -278,7 +278,7 @@ export function RMHarkOverflowMenu({
  };
 
  const itemClass =
-'flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors';
+'flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors';
  const dangerClass =
 'flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors';
  const showTranslate =
@@ -298,7 +298,7 @@ export function RMHarkOverflowMenu({
  aria-haspopup="menu"
  aria-expanded={menuOpen}
  className={cn(
-'p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors',
+'p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors',
  buttonClassName,
  )}
  >

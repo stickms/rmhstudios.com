@@ -75,7 +75,7 @@ export function ThreadComposer() {
  <DialogTrigger asChild>
  <button
  type="button"
- className="inline-flex items-center gap-1.5 rounded-site-sm px-2.5 py-1.5 text-sm font-medium text-site-text-muted transition-colors hover:bg-site-surface hover:text-site-text"
+ className="inline-flex items-center gap-1.5 rounded-site-sm px-2.5 py-1.5 text-sm font-medium text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
  >
  <MessagesSquare className="h-4 w-4"aria-hidden />
  {t('start-thread', { defaultValue:'Start a thread'})}

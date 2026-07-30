@@ -67,7 +67,7 @@ export function AchievementBadgeStrip({
  return (
  <button
  onClick={onShowAll}
- className="mb-3 flex items-center gap-2 rounded-full border border-site-border bg-site-surface/40 py-1 pl-1.5 pr-3 text-sm transition-colors hover:bg-site-surface"
+ className="mb-3 flex items-center gap-2 rounded-full border border-site-border bg-site-surface/40 py-1 pl-1.5 pr-3 text-sm transition-colors hover:bg-site-surface-hover"
  title={t('achievements-showcase', { defaultValue:'View all achievements'})}
  >
  <span className="flex items-center">

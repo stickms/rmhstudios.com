@@ -645,7 +645,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  setAttachOpen(false);
  imageInputRef.current?.click();
  }}
- className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface disabled:cursor-not-allowed disabled:opacity-40"
+ className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover disabled:cursor-not-allowed disabled:opacity-40"
  >
  <ImagePlus className="h-4 w-4 text-site-text-dim"/>{''}
  {t('menu-add-image', { defaultValue:'Add Image'})}
@@ -656,7 +656,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  setAttachOpen(false);
  setShowGifPicker((v) => !v);
  }}
- className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface"
+ className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover"
  >
  <ImagePlay className="h-4 w-4 text-site-text-dim"/>{''}
  {t('menu-add-gif', { defaultValue:'Add GIF'})}
@@ -667,7 +667,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  setAttachOpen(false);
  setPollDraft((p) => (p ? null : { question:'', options: ['',''] }));
  }}
- className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface"
+ className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover"
  >
  <BarChart3 className="h-4 w-4 text-site-text-dim"/>{''}
  {t('menu-create-poll', { defaultValue:'Create Poll'})}

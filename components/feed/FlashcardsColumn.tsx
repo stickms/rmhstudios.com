@@ -142,7 +142,7 @@ export function FlashcardsColumn({
           <>
             <Link
               to="/study/browse"
-              className="inline-flex items-center gap-1 rounded-site-sm px-2.5 py-1.5 text-sm font-medium text-site-text-muted transition-colors hover:bg-site-surface hover:text-site-text"
+              className="inline-flex items-center gap-1 rounded-site-sm px-2.5 py-1.5 text-sm font-medium text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
             >
               <Layers className="h-3.5 w-3.5" /> {t('deck-browse', { defaultValue: 'Browse' })}
             </Link>

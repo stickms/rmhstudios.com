@@ -134,7 +134,7 @@ export function GiftCoinsButton({
                 className={`rounded-site-sm border px-3 py-1.5 text-sm font-semibold transition-colors ${
                   amount === a
                     ? 'border-site-accent bg-site-accent-dim text-site-text'
-                    : 'border-site-border text-site-text-muted hover:bg-site-surface'
+                    : 'border-site-border text-site-text-muted hover:bg-site-surface-hover'
                 }`}
               >
                 <CoinIcon className="inline h-3.5 w-3.5" /> {a}

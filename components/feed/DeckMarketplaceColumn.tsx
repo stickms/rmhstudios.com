@@ -90,7 +90,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  <header className="site-sticky-chrome bg-site-surface border border-site-border rounded-site shadow-site-sm flex items-center gap-3 px-4 py-3">
  <Link
  to="/study"
- className="rounded-site-sm p-1 text-site-text-muted hover:text-site-text hover:bg-site-surface"
+ className="rounded-site-sm p-1 text-site-text-muted hover:text-site-text hover:bg-site-surface-hover"
  aria-label={t('back', { defaultValue:'Back'})}
  >
  <ArrowLeft className="h-5 w-5"/>

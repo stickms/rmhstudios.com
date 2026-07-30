@@ -157,7 +157,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  setRepostMenu(false);
  toggleRepost();
  }}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+ className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <Repeat className="w-4 h-4 text-site-text-dim"/>
  {item.reposted ?'Undo reRMHark':'reRMHark'}
@@ -167,7 +167,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  setRepostMenu(false);
  setQuoteOpen(true);
  }}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+ className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <PenSquare className="w-4 h-4 text-site-text-dim"/>
  {t('quote', { defaultValue:'Quote'})}

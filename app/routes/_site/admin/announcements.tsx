@@ -270,7 +270,7 @@ function AdminAnnouncementsPage() {
                     setAttachment(null);
                     setPoll({ question: '', options: ['', ''], multiSelect: false });
                   }}
-                  className="rounded-full p-1 text-site-text-dim transition-colors hover:bg-site-surface hover:text-site-text"
+                  className="rounded-full p-1 text-site-text-dim transition-colors hover:bg-site-surface-hover hover:text-site-text"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -357,7 +357,7 @@ function AdminAnnouncementsPage() {
                     setAttachment(null);
                     setGifUrl('');
                   }}
-                  className="rounded-full p-1 text-site-text-dim transition-colors hover:bg-site-surface hover:text-site-text"
+                  className="rounded-full p-1 text-site-text-dim transition-colors hover:bg-site-surface-hover hover:text-site-text"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>

@@ -304,7 +304,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  <button
  ref={menuBtnRef}
  onClick={() => setMenuOpen((v) => !v)}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+ className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <MoreHorizontal className="w-3.5 h-3.5"/>
  </button>

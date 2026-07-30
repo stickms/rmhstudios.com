@@ -113,7 +113,7 @@ export function ImageCropModal({
  <button
  type="button"
  onClick={onCancel}
- className="p-2.5 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
+ className="p-2.5 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
  aria-label={t('close-crop-modal', { defaultValue:'Close crop modal'})}
  >
  <X className="w-5 h-5"aria-hidden />
@@ -163,7 +163,7 @@ export function ImageCropModal({
  <button
  type="button"
  onClick={() => setRotation((r) => r - 90)}
- className="p-3 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
+ className="p-3 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
  title={t('rotate-left', { defaultValue:'Rotate left'})}
  aria-label={t('rotate-left', { defaultValue:'Rotate left'})}
  >
@@ -172,7 +172,7 @@ export function ImageCropModal({
  <button
  type="button"
  onClick={() => setRotation((r) => r + 90)}
- className="p-3 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
+ className="p-3 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
  title={t('rotate-right', { defaultValue:'Rotate right'})}
  aria-label={t('rotate-right', { defaultValue:'Rotate right'})}
  >
@@ -181,7 +181,7 @@ export function ImageCropModal({
  <button
  type="button"
  onClick={() => setFlipH((f) => !f)}
- className={`p-3 rounded-site-sm transition-colors ${flipH ?'text-site-accent bg-site-accent/10':'text-site-text-muted hover:text-site-text hover:bg-site-surface'}`}
+ className={`p-3 rounded-site-sm transition-colors ${flipH ?'text-site-accent bg-site-accent/10':'text-site-text-muted hover:text-site-text hover:bg-site-surface-hover'}`}
  title={t('flip-horizontal', { defaultValue:'Flip horizontal'})}
  aria-label={t('flip-horizontal', { defaultValue:'Flip horizontal'})}
  >
@@ -190,7 +190,7 @@ export function ImageCropModal({
  <button
  type="button"
  onClick={() => setFlipV((f) => !f)}
- className={`p-3 rounded-site-sm transition-colors ${flipV ?'text-site-accent bg-site-accent/10':'text-site-text-muted hover:text-site-text hover:bg-site-surface'}`}
+ className={`p-3 rounded-site-sm transition-colors ${flipV ?'text-site-accent bg-site-accent/10':'text-site-text-muted hover:text-site-text hover:bg-site-surface-hover'}`}
  title={t('flip-vertical', { defaultValue:'Flip vertical'})}
  aria-label={t('flip-vertical', { defaultValue:'Flip vertical'})}
  >

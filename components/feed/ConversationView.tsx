@@ -566,7 +566,7 @@ export function ConversationView({
  <div className="flex items-center gap-3 px-4 py-3">
  <Link
  to="/messages"
- className="p-1.5 -ml-1.5 rounded-site-sm hover:bg-site-surface transition-colors"
+ className="p-1.5 -ml-1.5 rounded-site-sm hover:bg-site-surface-hover transition-colors"
  >
  <ArrowLeft className="w-5 h-5 text-site-text"/>
  </Link>
@@ -876,7 +876,7 @@ export function ConversationView({
  aria-expanded={attachOpen}
  onClick={() => setAttachOpen((v) => !v)}
  disabled={uploading}
- className="h-[42px] rounded-site px-3 text-site-text-dim transition-colors hover:bg-site-surface hover:text-site-accent disabled:opacity-50"
+ className="h-[42px] rounded-site px-3 text-site-text-dim transition-colors hover:bg-site-surface-hover hover:text-site-accent disabled:opacity-50"
  >
  {uploading ? (
  <Loader2 className="h-4 w-4 animate-spin"/>
@@ -896,7 +896,7 @@ export function ConversationView({
  setAttachOpen(false);
  imageInputRef.current?.click();
  }}
- className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface disabled:cursor-not-allowed disabled:opacity-40"
+ className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover disabled:cursor-not-allowed disabled:opacity-40"
  >
  <ImagePlus className="h-4 w-4 text-site-text-dim"/>{''}
  {t('menu-add-image', { defaultValue:'Add Image'})}
@@ -907,7 +907,7 @@ export function ConversationView({
  setAttachOpen(false);
  setShowGifPicker((v) => !v);
  }}
- className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface"
+ className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover"
  >
  <ImagePlay className="h-4 w-4 text-site-text-dim"/>{''}
  {t('menu-add-gif', { defaultValue:'Add GIF'})}

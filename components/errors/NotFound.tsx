@@ -44,7 +44,7 @@ export function NotFound() {
  </Link>
  <Link
  to="/explore"
- className="inline-flex items-center justify-center gap-2 rounded-full border border-site-border bg-transparent px-5 py-3 text-sm font-semibold text-site-text transition hover:bg-site-surface focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-site-text/25"
+ className="inline-flex items-center justify-center gap-2 rounded-full border border-site-border bg-transparent px-5 py-3 text-sm font-semibold text-site-text transition hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-site-text/25"
  >
  <Compass className="size-4"aria-hidden="true"/>
  {t('notFound.explore', { defaultValue:'Explore'})}
@@ -52,7 +52,7 @@ export function NotFound() {
  <Link
  to="/search"
  search={{ q:'', tab:'top'}}
- className="inline-flex items-center justify-center gap-2 rounded-full border border-site-border bg-transparent px-5 py-3 text-sm font-semibold text-site-text transition hover:bg-site-surface focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-site-text/25"
+ className="inline-flex items-center justify-center gap-2 rounded-full border border-site-border bg-transparent px-5 py-3 text-sm font-semibold text-site-text transition hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-site-text/25"
  >
  <Search className="size-4"aria-hidden="true"/>
  {t('notFound.search', { defaultValue:'Search'})}

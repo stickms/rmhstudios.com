@@ -282,7 +282,7 @@ export function PostDetail({ postId }: PostDetailProps) {
  <div className="flex items-center gap-3 px-4 py-3">
  <button
  onClick={() => window.history.back()}
- className="p-1.5 -ml-1.5 rounded-site-sm hover:bg-site-surface transition-colors"
+ className="p-1.5 -ml-1.5 rounded-site-sm hover:bg-site-surface-hover transition-colors"
  >
  <ArrowLeft className="w-5 h-5 text-site-text"/>
  </button>

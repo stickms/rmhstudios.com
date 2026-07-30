@@ -211,7 +211,7 @@ export function ExploreColumn({
  <Link
  key={l.user.id}
  to={`/u/${l.user.handle || l.user.id}`as string}
- className="flex items-center gap-3 rounded-site-sm px-2 py-1.5 hover:bg-site-surface"
+ className="flex items-center gap-3 rounded-site-sm px-2 py-1.5 hover:bg-site-surface-hover"
  >
  <span className="w-5 text-center text-sm font-bold text-site-text-dim">
  {i + 1}

@@ -590,7 +590,7 @@ export function ComposeBox({
  setAttachment(null);
  setPoll({ question:'', options: ['',''], multiSelect: false });
  }}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+ className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <X className="w-3.5 h-3.5"/>
  </button>
@@ -706,7 +706,7 @@ export function ComposeBox({
  setAttachment(null);
  setGifUrl('');
  }}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+ className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <X className="w-3.5 h-3.5"/>
  </button>
@@ -827,7 +827,7 @@ export function ComposeBox({
  setShowSchedule(false);
  setScheduleAt('');
  }}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+ className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
  aria-label={t('cancel-scheduling-aria', { defaultValue:'Cancel scheduling'})}
  >
  <X className="h-3.5 w-3.5"/>
@@ -900,7 +900,7 @@ export function ComposeBox({
  setAudienceOpen(true);
  setMenuOpen(false);
  }}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+ className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <CurrentAudienceIcon className="w-4 h-4 text-site-text-dim"/>
  <span className="flex-1 text-left">
@@ -915,7 +915,7 @@ export function ComposeBox({
  setReplyOpen(true);
  setMenuOpen(false);
  }}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+ className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <CurrentReplyIcon className="w-4 h-4 text-site-text-dim"/>
  <span className="flex-1 text-left">
@@ -929,7 +929,7 @@ export function ComposeBox({
  type="button"
  onClick={() => setIsSensitive((v) => !v)}
  aria-pressed={isSensitive}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+ className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <AlertTriangle
  className={`w-4 h-4 ${isSensitive ?'text-site-warning':'text-site-text-dim'}`}
@@ -952,7 +952,7 @@ export function ComposeBox({
  ? t('max-images-title', { defaultValue:'Maximum 4 images'})
  : undefined
  }
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+ className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
  >
  <ImagePlus className="w-4 h-4 text-site-text-dim"/>
  {t('menu-add-image', { defaultValue:'Add Image'})}
@@ -964,7 +964,7 @@ export function ComposeBox({
  setMenuOpen(false);
  }}
  aria-pressed={attachment ==='gif'}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+ className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <ImagePlay className="w-4 h-4 text-site-text-dim"/>
  {t('menu-add-gif', { defaultValue:'Add GIF'})}
@@ -975,7 +975,7 @@ export function ComposeBox({
  setGifUrl('');
  setMenuOpen(false);
  }}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+ className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <BarChart3 className="w-4 h-4 text-site-text-dim"/>
  {t('menu-create-poll', { defaultValue:'Create Poll'})}
@@ -986,7 +986,7 @@ export function ComposeBox({
  setShowPriceModal(true);
  setMenuOpen(false);
  }}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+ className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <Coins className="w-4 h-4 text-site-text-dim"/>
  {t('menu-set-unlock-price', { defaultValue:'Set unlock price'})}
@@ -997,7 +997,7 @@ export function ComposeBox({
  setShowCheatSheet(true);
  setMenuOpen(false);
  }}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+ className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <Type className="w-4 h-4 text-site-text-dim"/>
  {t('menu-markdown-cheatsheet', { defaultValue:'Formatting help'})}
@@ -1009,7 +1009,7 @@ export function ComposeBox({
  setMenuOpen(false);
  }}
  disabled={!canSubmit}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+ className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
  >
  <FileText className="w-4 h-4 text-site-text-dim"/>
  {t('menu-save-draft', { defaultValue:'Save as draft'})}
@@ -1020,7 +1020,7 @@ export function ComposeBox({
  setMenuOpen(false);
  }}
  disabled={!canSubmit}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+ className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
  >
  <CalendarClock className="w-4 h-4 text-site-text-dim"/>
  {t('menu-schedule', { defaultValue:'Schedule…'})}
@@ -1028,7 +1028,7 @@ export function ComposeBox({
  <Link
  to="/drafts"
  onClick={() => setMenuOpen(false)}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text-muted hover:bg-site-surface hover:text-site-text transition-colors"
+ className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text-muted hover:bg-site-surface-hover hover:text-site-text transition-colors"
  >
  <FileText className="w-4 h-4 text-site-text-dim"/>
  {t('menu-view-drafts', { defaultValue:'View drafts'})}
@@ -1067,7 +1067,7 @@ export function ComposeBox({
  type="button"
  onClick={() => setAudienceOpen(false)}
  aria-label={t('close', { defaultValue:'Close'})}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+ className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <X className="h-4 w-4"/>
  </button>
@@ -1083,7 +1083,7 @@ export function ComposeBox({
  setAudience(value);
  setAudienceOpen(false);
  }}
- className={`flex items-center gap-2 w-full rounded-site-sm px-3 py-2 text-sm transition-colors hover:bg-site-surface ${
+ className={`flex items-center gap-2 w-full rounded-site-sm px-3 py-2 text-sm transition-colors hover:bg-site-surface-hover ${
  audience === value ?'text-site-accent':'text-site-text'
  }`}
  >
@@ -1117,7 +1117,7 @@ export function ComposeBox({
  type="button"
  onClick={() => setReplyOpen(false)}
  aria-label={t('close', { defaultValue:'Close'})}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+ className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <X className="h-4 w-4"/>
  </button>
@@ -1133,7 +1133,7 @@ export function ComposeBox({
  setReplyControl(value);
  setReplyOpen(false);
  }}
- className={`flex items-center gap-2 w-full rounded-site-sm px-3 py-2 text-sm transition-colors hover:bg-site-surface ${
+ className={`flex items-center gap-2 w-full rounded-site-sm px-3 py-2 text-sm transition-colors hover:bg-site-surface-hover ${
  replyControl === value ?'text-site-accent':'text-site-text'
  }`}
  >
@@ -1164,7 +1164,7 @@ export function ComposeBox({
  type="button"
  onClick={() => setShowPriceModal(false)}
  aria-label={t('close', { defaultValue:'Close'})}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+ className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <X className="h-4 w-4"/>
  </button>
@@ -1229,7 +1229,7 @@ export function ComposeBox({
  type="button"
  onClick={() => setShowCheatSheet(false)}
  aria-label={t('close', { defaultValue:'Close'})}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+ className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <X className="h-4 w-4"/>
  </button>
@@ -1307,7 +1307,7 @@ export function ComposeBox({
  type="button"
  onClick={() => setAltEditIndex(null)}
  aria-label={t('close', { defaultValue:'Close'})}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+ className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <X className="h-4 w-4"/>
  </button>

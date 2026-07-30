@@ -99,7 +99,7 @@ export function EditPostModal({
  setGifUrl('');
  setShowGifPicker(false);
  }}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+ className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
  aria-label={t('remove-gif-aria', { defaultValue:'Remove GIF'})}
  >
  <X className="w-3.5 h-3.5"/>
