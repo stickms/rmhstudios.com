@@ -355,6 +355,16 @@ a `position:fixed` element (`backdrop-filter` creates a containing block — use
 `prefers-reduced-transparency`, `html.reduce-transparency`, and `html.perf-lite`
 all degrade these classes automatically — no per-component branching.
 
+`html.perf-lite` is applied by **`lib/perf-tier.ts`** (from `Providers.tsx`) off
+two conservative device facts: `navigator.deviceMemory < 4`, or
+`hardwareConcurrency <= 2`. It is read in a dozen places (both aurora layers, the
+radial blob field, `.lg-goo`, the GL shader-tier gate, `glass-lens`,
+`canvas2d-fx`, `useGlassLight`, `useLiquidBackground`, liquid morph/pop) and
+until 2026-07-30 **nothing ever set it**, so every one of those degradations was
+dead code and the weakest machine on the site rendered the full effect stack.
+Deliberately capability reads and not a measured-fps probe: a tier that can flip
+mid-session restyles the document under the user for reasons they can't see.
+
 The `Card` primitive is L1 `.glass-fill` by default; pass `pane` for L2 and
 `interactive` for the pointer light. Inputs/Textarea/Select are `.glass-inset`;
 Dialog is `.glass-overlay` + `.glass-scrim`; the shell chrome is `.glass-chrome`.
@@ -611,6 +621,20 @@ Global (in `globals.css`):
   is excluded from (or not matched by) the global rule.
 - Selection uses the accent with its `--site-accent-fg` text; native controls
   get `accent-color: var(--site-accent)`; scrollbars are thin and themed.
+- **Scrollbars show on scroll, not always.** Every scrollbar on the site — the
+  document's, both desktop rails', every panel and every full-screen app tier's —
+  is painted transparent while its scroller is idle and fades in only while that
+  scroller is actually being scrolled. `lib/scrollbar-reveal.ts` (installed once
+  from `Providers.tsx`) stamps `data-scrolling` on the scrolled element and clears
+  it ~900ms after it stops; the `§Scrollbars` block in `globals.css` is what
+  paints. Two things to know before touching it: the reveal is done with **colour,
+  never `scrollbar-width`**, so the gutter stays reserved and revealing a
+  scrollbar can never reflow the page; and per the engine note in that block,
+  Chromium ignores `::-webkit-scrollbar*` rules on any element that has a standard
+  `scrollbar-width` — which `* { scrollbar-width: thin }` gives every element — so
+  the standard properties are the live path there and the `::-webkit-*` rules are
+  the older-WebKit fallback. An app tier sets its hover colour with
+  `--sb-thumb-hover`, not a `:hover` rule of its own.
 - **Cross-engine consistency:** the accent outline replaces every browser's
   default focus ring; Firefox's `::-moz-focus-inner` dotted border and
   `:-moz-ui-invalid` red validation glow are neutralized; `::placeholder` is

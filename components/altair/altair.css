@@ -119,18 +119,19 @@
   transition: background 0.2s;
 }
 
-.altair-theme ::-webkit-scrollbar-thumb:hover {
-  background: var(--altair-accent);
-}
-
 .altair-theme ::-webkit-scrollbar-corner {
   background: var(--altair-bg-subtle);
 }
 
-/* Firefox scrollbar */
+/* Standard-properties scrollbar (and the one Chromium actually renders — see the
+   engine note in app/globals.css §Scrollbars). `--sb-thumb-hover` is this tier's
+   hover colour for the global show-on-scroll reveal; that reveal's hover
+   exception is `!important`, so a `.altair-theme ::-webkit-scrollbar-thumb:hover`
+   rule here could never apply. */
 .altair-theme {
   scrollbar-width: thin;
   scrollbar-color: var(--altair-border-bright) var(--altair-bg-subtle);
+  --sb-thumb-hover: var(--altair-accent);
 }
 
 /* ─── Selection ─────────────────────────────────────────────────── */

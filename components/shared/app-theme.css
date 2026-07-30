@@ -269,9 +269,18 @@
    4. Scrollbars — themed on both engines
    ══════════════════════════════════════════════════════════════════════════ */
 
+/* Scrollbars here are revealed on scroll like the rest of the site (the
+   `data-scrolling` mechanism in app/globals.css §Scrollbars); these rules supply
+   the app tier's colours for when they ARE shown. The hover colour goes through
+   `--sb-thumb-hover` because the global reveal's hover exception is `!important`
+   and outranks a per-theme `:hover` rule. (Read the engine note in that same
+   globals.css block before editing the `::-webkit-*` rules below — Chromium
+   ignores them wherever a standard `scrollbar-width` is set, which is
+   site-wide.) */
 .app-theme {
   scrollbar-width: thin;
   scrollbar-color: var(--app-border-bright) var(--app-bg-subtle);
+  --sb-thumb-hover: var(--app-accent);
 }
 
 .app-theme ::-webkit-scrollbar {
@@ -290,9 +299,9 @@
   transition: background var(--app-duration-fast) linear;
 }
 
-.app-theme ::-webkit-scrollbar-thumb:hover {
-  background: var(--app-accent);
-}
+/* No `::-webkit-scrollbar-thumb:hover` rule here: the global reveal's hover
+   exception is `!important`, so a plain rule at this specificity would never
+   apply. `--sb-thumb-hover` above is how this tier sets that colour. */
 
 .app-theme ::-webkit-scrollbar-corner {
   background: var(--app-bg-subtle);

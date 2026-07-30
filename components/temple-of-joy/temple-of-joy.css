@@ -183,8 +183,12 @@
   border-radius: 99px;
 }
 
-.toj ::-webkit-scrollbar-thumb:hover {
-  background: var(--toj-gold-deep);
+/* Hover colour for the global show-on-scroll reveal (app/globals.css
+   §Scrollbars). It goes through this variable rather than a
+   `::-webkit-scrollbar-thumb:hover` rule because the reveal's hover exception is
+   `!important` and outranks one. */
+.toj {
+  --sb-thumb-hover: var(--toj-gold-deep);
 }
 
 .toj-scroll {

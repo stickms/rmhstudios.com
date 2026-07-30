@@ -161,11 +161,14 @@
   }
 }
 /* ── Metaball blob field ──────────────────────────────────────────────────
-   A few huge, very faint blobs drifting behind everything under a WIDE goo
-   filter, so they stretch toward each other, fuse, and pull apart again — the
-   lava-lamp substrate the glass surfaces float on. Hidden entirely on phones and
-   under reduced motion (a full-screen SVG filter animating forever is exactly
-   the continuous GPU cost the backdrop rules already avoid there). */
+   A few huge, very faint blobs drifting behind everything, stretching toward
+   each other, swelling together and pulling apart again — the lava-lamp
+   substrate the glass surfaces float on. Hidden entirely on phones and under
+   reduced motion (a full-screen layer animating forever is a continuous cost
+   the backdrop rules already avoid there).
+
+   The fusing is done by the blobs' own soft edges, NOT by a goo filter. See the
+   cost note above the media query below before adding one back. */
 .radial-backdrop__field {
   display: none;
   position: absolute;
@@ -176,8 +179,19 @@
   position: absolute;
   width: clamp(18rem, 34vw, 32rem);
   height: clamp(18rem, 34vw, 32rem);
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--site-text) 7%, transparent);
+  /* A soft-edged field rather than a hard disc: at this opacity the fade IS the
+     fusing. Two blobs drifting together add through their tails and read as one
+     swollen body, then pull apart — the same lava-lamp result the goo filter was
+     supposed to produce (it never did — see below), for zero filter cost. The
+     centre is a touch denser than the old flat 7% so the field keeps its weight
+     once the edges fall off. No `border-radius`: the gradient's own falloff is
+     the shape. */
+  background: radial-gradient(
+    closest-side circle at 50% 50%,
+    color-mix(in srgb, var(--site-text) 10%, transparent),
+    color-mix(in srgb, var(--site-text) 6%, transparent) 55%,
+    transparent 100%
+  );
   will-change: transform;
 }
 .radial-backdrop__blob:nth-child(1) {
@@ -196,15 +210,42 @@
   right: 16%;
   bottom: 10%;
 }
+/* ── Why this layer carries NO `filter: url(…)` ───────────────────────────
+   It used to carry `filter: url(#rmh-liquid-lg)`. That filter was a **no-op**
+   here and it cost the whole page ~4× its frame time. Measured 2026-07-30,
+   headless Chromium at 1920×1080, this exact markup:
+
+     without the filter   16.70ms median frame  (16.70 p95)  ~60fps
+     with    the filter   66.70ms median frame  (83.40 p95)  ~15fps
+
+   - **No-op.** The blobs are ~7% alpha and the goo's ramp is `a' = 24a − 11.5`,
+     which clamps everything below 48% alpha to zero — including where two blobs
+     overlap (~13%). `feBlend` then composited the sharp SourceGraphic back over
+     that empty result, so the output was pixel-identical to no filter at all
+     (verified side-by-side). The goo filters only fuse OPAQUE shapes; that is
+     why the hub dial and the orb aura (solid fills) do work.
+   - **Not free.** The blobs animate forever, and an animated subtree inside an
+     SVG filter cannot take the compositor fast path — Chromium re-ran a σ=16
+     Gaussian + colour matrix + blend across the FULL viewport every frame, on
+     every `_site` route at ≥768px. That is what made desktop feel unusable.
+
+   Rule: never put `filter: url(…)` on a full-viewport layer that has animating
+   children, and never expect a goo ramp to fuse near-transparent shapes.
+   `lib/__tests__/metaball-perf-budget.test.ts` fails the build if this returns. */
 @media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
   .radial-backdrop__field {
     display: block;
-    filter: url(#rmh-liquid-lg);
   }
   .radial-backdrop__blob {
     animation: radial-blob-drift 26s ease-in-out infinite alternate;
     animation-delay: calc(var(--i) * -6s);
   }
+}
+/* Low-end tier: same treatment the aurora layers get in globals.css — the field
+   still composes the scene, it just stops moving (and stops holding layers). */
+html.perf-lite .radial-backdrop__blob {
+  animation: none;
+  will-change: auto;
 }
 @keyframes radial-blob-drift {
   0% {

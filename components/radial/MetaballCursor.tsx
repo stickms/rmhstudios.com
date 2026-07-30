@@ -56,10 +56,23 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
  * blows up when you shake the pointer to find it.
  */
 
-/** Filter-region size (px). Also the hard bound on how far the tail can lag. */
-const BOX = 220;
+/**
+ * Filter-region size (px). Also the hard bound on how far the tail can lag.
+ *
+ * Cost here is **quadratic in this number** — every frame the pointer moves,
+ * the whole region goes through the goo (blur + alpha ramp) plus the two halo
+ * passes. It was 220 with the filter region padded to 140% (308² ≈ 95k px);
+ * it is now 168 with the region at 104% (175² ≈ 31k px), a ~3× cut for a tail
+ * that is ~50px instead of ~70px at speed. The arithmetic that keeps the drop
+ * inside the region at every extreme (shake, swell, caret, touch) is in
+ * {@link BLUR_PAD}'s clamp — see the `reach` computation in the loop.
+ */
+const BOX = 168;
 const HALF = BOX / 2;
-/** Room reserved inside the box for the goo blur's spill, so nothing clips. */
+/**
+ * Room reserved inside the box for the goo blur's spill, so nothing clips.
+ * σ=4 spills ~3σ = 12px; 20 leaves margin and doubles as the lag bound.
+ */
 const BLUR_PAD = 20;
 /** Id of this component's own goo filter (it does not share the shell's bank). */
 const GOO_ID = 'rmh-pointer-goo';
@@ -163,6 +176,10 @@ export function MetaballCursor() {
 
     let raf = 0;
     let last = 0;
+    /** Last value written to `--metaball-swell`, so an unchanged frame skips it. */
+    let swellWritten = -1;
+    /** Last element `onOver` probed, so re-entering it skips the selector walks. */
+    let overTarget: Element | null = null;
 
     /** The native cursor is hidden only while the drop is actually driving. */
     const setNativeCursor = (hidden: boolean) => {
@@ -187,8 +204,14 @@ export function MetaballCursor() {
       shake += (shakeTarget - shake) * ease(shakeTarget > shake ? 16 : 5);
 
       box.style.transform = `translate3d(${(cx - HALF).toFixed(1)}px, ${(cy - HALF).toFixed(1)}px, 0)`;
-      // Drives the fill's thinning while swollen — see .metaball__blob.
-      box.style.setProperty('--metaball-swell', swell.toFixed(3));
+      // Drives the fill's thinning while swollen — see .metaball__blob. This one
+      // is a custom property feeding an inherited `calc()` on all three blobs, so
+      // writing it recomputes their style; the drop is usually moving with a
+      // settled swell, so only write it when it has actually moved.
+      if (Math.abs(swell - swellWritten) > 0.002) {
+        swellWritten = swell;
+        box.style.setProperty('--metaball-swell', swell.toFixed(3));
+      }
 
       const mul = mode === 'touch' ? TOUCH_MUL : 1;
       const grow = (1 + swell * SWELL_GAIN + shake * SHAKE_GAIN) * (1 - press * 0.18) * mul;
@@ -299,6 +322,7 @@ export function MetaballCursor() {
         setNativeCursor(!touch && visible);
         reversals.length = 0;
         shakeUntil = 0;
+        overTarget = null;
       }
       const now = performance.now();
       if (!touch) trackShake(e.clientX, e.clientY, now);
@@ -310,9 +334,20 @@ export function MetaballCursor() {
 
     const onOver = (e: PointerEvent) => {
       if (e.pointerType !== 'mouse') return;
-      const target = e.target as Element | null;
-      caretTarget = target?.closest?.(TEXT_SELECTOR) ? 1 : 0;
-      swellTarget = !caretTarget && target?.closest?.(HOVER_SELECTOR) ? 1 : 0;
+      const target = (e.target as Element | null) ?? null;
+      // `pointerover` fires on every element boundary the pointer crosses, and
+      // both selectors below are long lists walked up the whole ancestor chain.
+      // Skip the walk when the target is the one already probed, and only kick
+      // the loop when a target actually changed — moving across inert markup
+      // (two plain <span>s in a paragraph) must not restart it just to re-run
+      // the filter on a drop that is already at rest.
+      if (target === overTarget) return;
+      overTarget = target;
+      const nextCaret = target?.closest?.(TEXT_SELECTOR) ? 1 : 0;
+      const nextSwell = !nextCaret && target?.closest?.(HOVER_SELECTOR) ? 1 : 0;
+      if (nextCaret === caretTarget && nextSwell === swellTarget) return;
+      caretTarget = nextCaret;
+      swellTarget = nextSwell;
       ensure();
     };
 
@@ -330,6 +365,9 @@ export function MetaballCursor() {
         }
         swellTarget = 0;
         caretTarget = 0;
+        // The hover targets were just forced; drop the memo so the next real
+        // mouse `pointerover` re-probes even if it lands on the same element.
+        overTarget = null;
         show();
       }
       ensure();
@@ -387,12 +425,20 @@ export function MetaballCursor() {
           blob edges inside the fused shape. */}
       <svg className="metaball-defs" width="0" height="0" aria-hidden focusable="false">
         <defs>
+          {/* The region is the box itself (plus a 2% safety margin), NOT the
+              default -10%/120% and not the 140% this used to declare. The loop
+              clamps every blob to `HALF − size/2 − BLUR_PAD`, so the fused
+              silhouette plus the blur's spill provably fits inside the border
+              box — padding the region just blurs empty pixels, and the region's
+              area is the whole cost of this component. The two CSS
+              `drop-shadow()`s chained after this in `radial.css` get their own
+              (unclipped) region, so the halo still draws past the box. */}
           <filter
             id={GOO_ID}
-            x="-20%"
-            y="-20%"
-            width="140%"
-            height="140%"
+            x="-2%"
+            y="-2%"
+            width="104%"
+            height="104%"
             colorInterpolationFilters="sRGB"
           >
             <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
