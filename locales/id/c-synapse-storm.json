@@ -53,6 +53,7 @@
   "music": "Musik",
   "neural-collapse": "KERUNTUHAN NEURAL",
   "neural-lobby": "LOBI NEURAL",
+  "neural-operatives_one": "NEURAL OPERATIVES ({{count}}/{{max}})",
   "neural-operatives_other": "OPERATIF NEURAL ({{count}}/{{max}})",
   "no-scores-yet": "Belum ada skor. Jadilah yang pertama!",
   "not-ranked": "Kamu belum ditempatkan. Mainkan satu ronde!",

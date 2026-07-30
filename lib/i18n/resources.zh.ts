@@ -5,8 +5,11 @@ import zhAdmin from "@/locales/zh/admin.json";
 import zhBuilds from "@/locales/zh/builds.json";
 import zhCAdmin from "@/locales/zh/c-admin.json";
 import zhCAltair from "@/locales/zh/c-altair.json";
+import zhCAwards from "@/locales/zh/c-awards.json";
 import zhCBlog from "@/locales/zh/c-blog.json";
 import zhCBuilds from "@/locales/zh/c-builds.json";
+import zhCCircle from "@/locales/zh/c-circle.json";
+import zhCCreator from "@/locales/zh/c-creator.json";
 import zhCCursedLogic from "@/locales/zh/c-cursed-logic.json";
 import zhCDailyPuzzles from "@/locales/zh/c-daily-puzzles.json";
 import zhCDoctrine from "@/locales/zh/c-doctrine.json";
@@ -14,19 +17,25 @@ import zhCDreamRift from "@/locales/zh/c-dream-rift.json";
 import zhCEconomy from "@/locales/zh/c-economy.json";
 import zhCForestExplorer from "@/locales/zh/c-forest-explorer.json";
 import zhCGame from "@/locales/zh/c-game.json";
+import zhCHistory from "@/locales/zh/c-history.json";
 import zhCHouseAlwaysWins from "@/locales/zh/c-house-always-wins.json";
 import zhCKowloonKnockout from "@/locales/zh/c-kowloon-knockout.json";
 import zhCLaundrySort from "@/locales/zh/c-laundry-sort.json";
+import zhCLayout from "@/locales/zh/c-layout.json";
 import zhCLibrary from "@/locales/zh/c-library.json";
 import zhCLightsOut from "@/locales/zh/c-lights-out.json";
+import zhCLists from "@/locales/zh/c-lists.json";
 import zhCLockdown from "@/locales/zh/c-lockdown.json";
 import zhCModeration from "@/locales/zh/c-moderation.json";
 import zhCNeonDriftway from "@/locales/zh/c-neon-driftway.json";
 import zhCNews from "@/locales/zh/c-news.json";
+import zhCPredictions from "@/locales/zh/c-predictions.json";
+import zhCProfileModules from "@/locales/zh/c-profile-modules.json";
 import zhCRideshare from "@/locales/zh/c-rideshare.json";
 import zhCRmhCapital from "@/locales/zh/c-rmh-capital.json";
 import zhCRmhPmc from "@/locales/zh/c-rmh-pmc.json";
 import zhCRmhbox from "@/locales/zh/c-rmhbox.json";
+import zhCRmhcalculator from "@/locales/zh/c-rmhcalculator.json";
 import zhCRmhcode from "@/locales/zh/c-rmhcode.json";
 import zhCRmhcoins from "@/locales/zh/c-rmhcoins.json";
 import zhCRmhmusic from "@/locales/zh/c-rmhmusic.json";
@@ -36,18 +45,24 @@ import zhCRmhtube from "@/locales/zh/c-rmhtube.json";
 import zhCRmhtype from "@/locales/zh/c-rmhtype.json";
 import zhCRmhvibe from "@/locales/zh/c-rmhvibe.json";
 import zhCRoadmap from "@/locales/zh/c-roadmap.json";
+import zhCSaves from "@/locales/zh/c-saves.json";
 import zhCSignalForge from "@/locales/zh/c-signal-forge.json";
+import zhCStatus from "@/locales/zh/c-status.json";
 import zhCStudio from "@/locales/zh/c-studio.json";
 import zhCSynapseStorm from "@/locales/zh/c-synapse-storm.json";
 import zhCTempleOfJoy from "@/locales/zh/c-temple-of-joy.json";
+import zhCTournaments from "@/locales/zh/c-tournaments.json";
 import zhCUi from "@/locales/zh/c-ui.json";
 import zhCUserBuilds from "@/locales/zh/c-user-builds.json";
 import zhCVega from "@/locales/zh/c-vega.json";
 import zhCVelum2099 from "@/locales/zh/c-velum2099.json";
 import zhCVersecraft from "@/locales/zh/c-versecraft.json";
 import zhCVoidBreaker from "@/locales/zh/c-void-breaker.json";
+import zhCWager from "@/locales/zh/c-wager.json";
+import zhCWishlist from "@/locales/zh/c-wishlist.json";
 import zhCommon from "@/locales/zh/common.json";
 import zhFeed from "@/locales/zh/feed.json";
+import zhGamesHub from "@/locales/zh/games-hub.json";
 import zhGroups from "@/locales/zh/groups.json";
 import zhLibrary from "@/locales/zh/library.json";
 import zhNav from "@/locales/zh/nav.json";
@@ -63,8 +78,13 @@ import zhRSliceIt from "@/locales/zh/r-slice-it.json";
 import zhRStrategies from "@/locales/zh/r-strategies.json";
 import zhRStudio from "@/locales/zh/r-studio.json";
 import zhRideshare from "@/locales/zh/rideshare.json";
+import zhSearch from "@/locales/zh/search.json";
+import zhSettingsAppearance from "@/locales/zh/settings-appearance.json";
+import zhSettingsContent from "@/locales/zh/settings-content.json";
+import zhSettingsNotifications from "@/locales/zh/settings-notifications.json";
 import zhShared from "@/locales/zh/shared.json";
 import zhSite from "@/locales/zh/site.json";
+import zhThemeStudio from "@/locales/zh/theme-studio.json";
 import zhUserBuilds from "@/locales/zh/user-builds.json";
 import zhV from "@/locales/zh/v.json";
 
@@ -73,8 +93,11 @@ const zhResources = {
   "builds": zhBuilds,
   "c-admin": zhCAdmin,
   "c-altair": zhCAltair,
+  "c-awards": zhCAwards,
   "c-blog": zhCBlog,
   "c-builds": zhCBuilds,
+  "c-circle": zhCCircle,
+  "c-creator": zhCCreator,
   "c-cursed-logic": zhCCursedLogic,
   "c-daily-puzzles": zhCDailyPuzzles,
   "c-doctrine": zhCDoctrine,
@@ -82,19 +105,25 @@ const zhResources = {
   "c-economy": zhCEconomy,
   "c-forest-explorer": zhCForestExplorer,
   "c-game": zhCGame,
+  "c-history": zhCHistory,
   "c-house-always-wins": zhCHouseAlwaysWins,
   "c-kowloon-knockout": zhCKowloonKnockout,
   "c-laundry-sort": zhCLaundrySort,
+  "c-layout": zhCLayout,
   "c-library": zhCLibrary,
   "c-lights-out": zhCLightsOut,
+  "c-lists": zhCLists,
   "c-lockdown": zhCLockdown,
   "c-moderation": zhCModeration,
   "c-neon-driftway": zhCNeonDriftway,
   "c-news": zhCNews,
+  "c-predictions": zhCPredictions,
+  "c-profile-modules": zhCProfileModules,
   "c-rideshare": zhCRideshare,
   "c-rmh-capital": zhCRmhCapital,
   "c-rmh-pmc": zhCRmhPmc,
   "c-rmhbox": zhCRmhbox,
+  "c-rmhcalculator": zhCRmhcalculator,
   "c-rmhcode": zhCRmhcode,
   "c-rmhcoins": zhCRmhcoins,
   "c-rmhmusic": zhCRmhmusic,
@@ -104,18 +133,24 @@ const zhResources = {
   "c-rmhtype": zhCRmhtype,
   "c-rmhvibe": zhCRmhvibe,
   "c-roadmap": zhCRoadmap,
+  "c-saves": zhCSaves,
   "c-signal-forge": zhCSignalForge,
+  "c-status": zhCStatus,
   "c-studio": zhCStudio,
   "c-synapse-storm": zhCSynapseStorm,
   "c-temple-of-joy": zhCTempleOfJoy,
+  "c-tournaments": zhCTournaments,
   "c-ui": zhCUi,
   "c-user-builds": zhCUserBuilds,
   "c-vega": zhCVega,
   "c-velum2099": zhCVelum2099,
   "c-versecraft": zhCVersecraft,
   "c-void-breaker": zhCVoidBreaker,
+  "c-wager": zhCWager,
+  "c-wishlist": zhCWishlist,
   "common": zhCommon,
   "feed": zhFeed,
+  "games-hub": zhGamesHub,
   "groups": zhGroups,
   "library": zhLibrary,
   "nav": zhNav,
@@ -131,8 +166,13 @@ const zhResources = {
   "r-strategies": zhRStrategies,
   "r-studio": zhRStudio,
   "rideshare": zhRideshare,
+  "search": zhSearch,
+  "settings-appearance": zhSettingsAppearance,
+  "settings-content": zhSettingsContent,
+  "settings-notifications": zhSettingsNotifications,
   "shared": zhShared,
   "site": zhSite,
+  "theme-studio": zhThemeStudio,
   "user-builds": zhUserBuilds,
   "v": zhV,
 } as const;

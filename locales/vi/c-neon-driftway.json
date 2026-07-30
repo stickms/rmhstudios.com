@@ -27,6 +27,7 @@
   "or-divider": "— hoặc —",
   "play": "Chơi",
   "play-again": "Chơi lại",
+  "players-count_one": "Người chơi ({{count}}/6)",
   "players-count_other": "Người chơi ({{count}}/6)",
   "race-over": "KẾT THÚC CUỘC ĐUA",
   "race-starting-in": "Cuộc đua bắt đầu sau",
