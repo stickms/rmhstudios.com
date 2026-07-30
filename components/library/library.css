@@ -387,7 +387,9 @@
   background: var(--site-surface-hover);
   border: 0.5px solid var(--site-border);
   color: var(--site-text);
-  font-size: 0.78rem;
+  /* Floored on touch so focusing it can't zoom the page — see
+     `--site-field-font-floor` in globals.css. */
+  font-size: max(0.78rem, var(--site-field-font-floor));
   font-variant-numeric: tabular-nums;
   text-align: center;
   outline: none;
@@ -2158,7 +2160,9 @@
   background: transparent;
   color: var(--site-text, #f5f5f7);
   font: inherit;
-  font-size: 0.9rem;
+  /* Floored on touch so focusing it can't zoom the page — see
+     `--site-field-font-floor` in globals.css. */
+  font-size: max(0.9rem, var(--site-field-font-floor));
 }
 .lib-search input::placeholder {
   color: var(--site-text-dim, #66666d);

@@ -374,7 +374,9 @@
   border: 1.5px solid var(--hairline);
   border-radius: 2px;
   font-family: var(--font-data);
-  font-size: 11px;
+  /* Floored on touch so focusing it can't zoom the page — see
+     `--site-field-font-floor` in globals.css. */
+  font-size: max(11px, var(--site-field-font-floor));
   letter-spacing: 0.06em;
   color: var(--slate);
   background: var(--paper);
@@ -413,7 +415,9 @@
   border: 1.5px solid var(--hairline);
   border-radius: 2px;
   font-family: var(--font-ui);
-  font-size: 12px;
+  /* Floored on touch so focusing it can't zoom the page — see
+     `--site-field-font-floor` in globals.css. */
+  font-size: max(12px, var(--site-field-font-floor));
   color: var(--ink);
   background: var(--paper);
   min-width: 160px;
@@ -1362,7 +1366,9 @@
 .rl-field input[type='number'],
 .rl-field textarea {
   font-family: var(--font-ui);
-  font-size: 13px;
+  /* Floored on touch so focusing it can't zoom the page — see
+     `--site-field-font-floor` in globals.css. */
+  font-size: max(13px, var(--site-field-font-floor));
   padding: 8px 10px;
   border: 1px solid var(--hairline);
   background: var(--site-surface);
@@ -1409,7 +1415,9 @@
 
 .rl-keyword-add input[type='text'] {
   min-width: 220px;
-  font-size: 13px;
+  /* Floored on touch so focusing it can't zoom the page — see
+     `--site-field-font-floor` in globals.css. */
+  font-size: max(13px, var(--site-field-font-floor));
   padding: 8px 10px;
   border: 1px solid var(--hairline);
   background: var(--site-surface);

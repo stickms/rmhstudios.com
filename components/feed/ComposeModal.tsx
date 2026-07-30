@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from'react';
+import { createPortal } from'react-dom';
 import { useTranslation } from'react-i18next';
 import { X, Plus, BarChart3, ImagePlus } from'lucide-react';
 import { GifEmbed } from'./GifEmbed';
@@ -65,6 +66,8 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  const [imageAlts, setImageAlts] = useState<string[]>([]);
  const [altEditIndex, setAltEditIndex] = useState<number | null>(null);
  const [imageError, setImageError] = useState<string | null>(null);
+ // The portal target only exists on the client; render nothing until mounted.
+ const [mounted, setMounted] = useState(false);
  const imageInputRef = useRef<HTMLInputElement>(null);
  const menuRef = useRef<HTMLDivElement>(null);
  const menuPopRef = useRef<HTMLDivElement>(null);
@@ -86,6 +89,28 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  // Autosave plain drafts (not quotes/seeded shares — those would overwrite a
  // draft typed elsewhere). Restore is offered by the feed ComposeBox.
  useComposeDraftAutosave(content, gifUrl, open && !quoteItem && !initialContent);
+
+ useEffect(() => setMounted(true), []);
+
+ // Escape closes the composer — the one dismissal every modal on the site owes a
+ // keyboard user, and the only one this hand-rolled dialog never had. The nested
+ // alt-text editor takes it first while it is up, so Escape backs out one layer
+ // at a time instead of throwing away a half-written post.
+ useEffect(() => {
+ if (!open) return;
+ const onKey = (e: KeyboardEvent) => {
+ if (e.key !=='Escape') return;
+ if (menuOpen) {
+ setMenuOpen(false);
+ } else if (altEditIndex !== null) {
+ setAltEditIndex(null);
+ } else {
+ onClose();
+ }
+ };
+ window.addEventListener('keydown', onKey);
+ return () => window.removeEventListener('keydown', onKey);
+ }, [open, menuOpen, altEditIndex, onClose]);
 
  // Close menu on outside click
  useEffect(() => {
@@ -185,15 +210,31 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  }
  };
 
- if (!open || !session) return null;
+ if (!open || !session || !mounted) return null;
 
- return (
- <div className="fixed inset-0 z-[100]">
- {/* Backdrop */}
+ return createPortal(
+ // PORTALLED TO <body>, and it has to be. Rendered in place, the composer sits
+ // inside `.radial-frame`, which is `position: relative; z-index: var(--z-content)`
+ // — a stacking context pinned at 1. Every z-index below is then measured
+ // INSIDE it, so the old `z-[100]` bought nothing against the shell's own fixed
+ // chrome: the top bar (60), the hub orb and its aura (79/80), back-to-top and
+ // the compose FAB itself (80) all painted straight over the dialog. On a phone,
+ // where the sheet goes full-screen, that is the whole bug — a dark wash over
+ // the page with the site's chrome floating on top of it and the composer buried
+ // underneath. globals.css §5.6 states the contract this restores: the shell's
+ // stacking scale is capped by `.radial-shell`'s `isolation: isolate`, and a
+ // modal clears it by leaving the shell for <body> at z-50, exactly as the
+ // Dialog/Sheet primitives do.
+ <div className="fixed inset-0 z-50">
+ {/* Backdrop — the site's shared dialog scrim: a blur over the page, not a
+ flat black wash. `touch-none` keeps the page behind from panning while
+ the composer is up, which is how the radial hub blocks it too (a document
+ scroll-lock clips to the visual viewport and leaves a stray band under
+ iOS Safari's bottom bar — see the note in RadialHub). */}
  <button
  type="button"
  tabIndex={-1}
- className="absolute inset-0 bg-black/60"
+ className="glass-scrim absolute inset-0 touch-none"
  onClick={onClose}
  aria-label={t('close', { defaultValue:'Close'})}
  />
@@ -204,7 +245,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  role="dialog"
  aria-modal="true"
  aria-label={t('palette-new-post', { defaultValue:'New post'})}
- className="bg-site-surface border border-site-border shadow-site-sm absolute inset-0 h-dvh max-h-none overflow-y-auto rounded-none pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] animate-in fade-in zoom-in-95 duration-200 sm:inset-x-4 sm:bottom-auto sm:top-[10vh] sm:mx-auto sm:h-auto sm:max-h-[80dvh] sm:max-w-lg sm:rounded-site sm:p-0"
+ className="glass-overlay absolute inset-0 h-dvh max-h-none overflow-y-auto overscroll-contain rounded-none pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] text-site-text sm:inset-x-4 sm:bottom-auto sm:top-[10vh] sm:mx-auto sm:h-auto sm:max-h-[80dvh] sm:max-w-lg sm:rounded-site sm:p-0"
  >
  {/* Header */}
  <div className="flex items-center justify-between px-4 py-3 border-b border-site-border">
@@ -570,7 +611,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  <button
  type="button"
  tabIndex={-1}
- className="absolute inset-0 bg-black/60"
+ className="glass-scrim absolute inset-0"
  onClick={() => setAltEditIndex(null)}
  aria-label={t('close', { defaultValue:'Close'})}
  />
@@ -638,6 +679,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  </div>
  </div>
  )}
- </div>
+ </div>,
+ document.body,
  );
 }
