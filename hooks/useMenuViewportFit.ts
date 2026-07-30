@@ -9,6 +9,15 @@ import { viewportFitTranslation, type ViewportBounds } from '@/lib/viewport-fit'
 // identical either way.
 const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
+/**
+ * How much shorter the visual viewport has to get before we call it a keyboard
+ * rather than a browser bar. Mobile URL/tab bars collapse by roughly 45–100px;
+ * the shortest on-screen keyboard (a landscape phone) still takes well over 160.
+ */
+const KEYBOARD_MIN_INSET_PX = 150;
+/** Width wobble tolerated before a visual-viewport shrink counts as a zoom. */
+const ZOOM_WIDTH_SLACK_PX = 2;
+
 interface Options {
   /** Gap (px) to keep between the menu and each viewport edge. */
   margin?: number;
@@ -31,6 +40,11 @@ interface Options {
  * sidebar) without caring about their containing block. Pass any values the
  * menu's size/placement depends on (e.g. the anchor position) via `deps` so the
  * fit recomputes when they change.
+ *
+ * It deliberately ignores the on-screen keyboard — see the note in `fit()`. The
+ * keyboard covers a fixed menu; it does not move it, and re-fitting to the
+ * viewport it leaves behind is what made tapping a field inside one of these
+ * panels resize the screen on a phone.
  */
 export function useMenuViewportFit<T extends HTMLElement>(
   open: boolean,
@@ -57,7 +71,24 @@ export function useMenuViewportFit<T extends HTMLElement>(
       clear();
       const rootStyle = getComputedStyle(document.documentElement);
       const cssPx = (name: string) => parseFloat(rootStyle.getPropertyValue(name)) || 0;
-      const viewport = window.visualViewport;
+      // An on-screen keyboard shrinks the VISUAL viewport and leaves the LAYOUT
+      // viewport alone — and the layout viewport is what these menus are actually
+      // placed against (they are all position:fixed). Clamping to the shrunken box
+      // is therefore wrong twice over: it shoves a correctly-placed panel upward
+      // and squeezes a max-height onto it the moment a field inside it takes
+      // focus, and then re-does it on every keyboard-driven resize/scroll tick —
+      // which, from the thumb that just tapped the top bar's search box, reads as
+      // the whole screen resizing under it. Keep the keyboard out of the maths and
+      // treat it as what it is here: an overlay in front of a panel that has not
+      // moved. A pinch-zoom shrinks the visual viewport too, but it shrinks BOTH
+      // axes, so the width check tells the two apart and zoom still gets clamped.
+      const live = window.visualViewport;
+      const keyboardInset = live ? window.innerHeight - live.height : 0;
+      const keyboardUp =
+        !!live &&
+        keyboardInset > KEYBOARD_MIN_INSET_PX &&
+        live.width > window.innerWidth - ZOOM_WIDTH_SLACK_PX;
+      const viewport = keyboardUp ? null : live;
       const viewportLeft = viewport?.offsetLeft ?? 0;
       const viewportTop = viewport?.offsetTop ?? 0;
       const viewportWidth = viewport?.width ?? window.innerWidth;
@@ -93,7 +124,9 @@ export function useMenuViewportFit<T extends HTMLElement>(
     const settleTimer = window.setTimeout(fit, 520);
 
     // Re-fit if the viewport changes while the menu is open (rotation, the
-    // mobile URL bar collapsing, an on-screen keyboard, desktop resize).
+    // mobile URL bar collapsing, a pinch-zoom, desktop resize). Keyboard-driven
+    // changes still land here — `fit()` is what recognises and ignores them, so
+    // they recompute to the same bounds and nothing moves.
     const onViewportChange = () => fit();
     window.addEventListener('resize', onViewportChange);
     window.visualViewport?.addEventListener('resize', onViewportChange);

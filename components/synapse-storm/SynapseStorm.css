@@ -782,7 +782,9 @@
 .puzzle-text-input {
     flex: 1;
     font-family: var(--font-mono);
-    font-size: 0.95rem;
+    /* Floored on touch so focusing it can't zoom the page — see
+       `--site-field-font-floor` in globals.css. */
+    font-size: max(0.95rem, var(--site-field-font-floor));
     padding: 0.45rem 0.65rem;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);

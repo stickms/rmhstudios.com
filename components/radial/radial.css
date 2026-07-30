@@ -1021,11 +1021,34 @@ html.perf-lite .radial-backdrop__blob {
   background: color-mix(in srgb, var(--site-bg) 20%, transparent);
   -webkit-backdrop-filter: blur(20px) saturate(118%);
   backdrop-filter: blur(20px) saturate(118%);
+  /* The disc only ever has to reach the farthest CORNER — half the viewport
+     diagonal, which at any aspect ratio is at most 0.708vmax*100. This used to
+     open to 150vmax, better than twice what it needs, and that overshoot is free
+     on the way out but ruinous on the way back: the contraction is eased-OUT, so
+     the radius has already fallen past the corner (the first frame you can
+     actually SEE) inside the curve's first eighth, and the whole visible half of
+     the shrink then plays out in its slow tail. The orb was home while a blurred
+     blob was still dissolving in the middle of the screen. Sized to the corner,
+     every frame of the transition is a frame that reads. */
+  --blur-r: 72vmax;
   clip-path: circle(0 at 50% 50%);
-  transition: clip-path 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+  opacity: 0;
+  /* CLOSING — the base state is what a closing hub transitions back to. The
+     radius rides the orb home on the orb's own curve; the opacity fade lands
+     first so the last handful of pixels, which no easing can shrink fast enough
+     to stop reading as a smudge, are already gone when the circle arrives. */
+  transition:
+    clip-path 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
+    opacity 0.3s ease-in;
 }
 .radial-hub[data-phase='open'] .radial-hub__blur {
-  clip-path: circle(150vmax at 50% 50%);
+  clip-path: circle(var(--blur-r) at 50% 50%);
+  opacity: 1;
+  /* OPENING — the frost is at full strength from the first frame, so only the
+     circle animates and the reveal stays a wipe rather than a cross-fade. */
+  transition:
+    clip-path 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
+    opacity 0.12s ease;
 }
 /* ── Wedge (ring) navigation dial ──────────────────────────────────────── */
 /* The dial is also the DIVIDER BED: the sectors tile it with thin angular gaps,
@@ -2021,7 +2044,13 @@ html.perf-lite .radial-backdrop__blob {
   border: none;
   background: transparent;
   color: var(--site-text);
-  font-size: 0.9rem;
+  /* Floored on touch — see `--site-field-font-floor`. At a flat 0.9rem (14.4px)
+     this field sat under mobile Safari's 16px zoom threshold, and because a
+     `.class element` selector out-ranks globals.css's blanket `input` net, the
+     site-wide guard never reached it: tapping the top bar's search box zoomed
+     and re-laid-out the entire page. It is the site's most-tapped field on a
+     phone, so it was also the most visible way to hit this. */
+  font-size: max(0.9rem, var(--site-field-font-floor));
   outline: none;
 }
 .rad-panel__group {

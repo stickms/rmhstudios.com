@@ -153,7 +153,9 @@
     border-radius: 8px;
     padding: 10px 12px;
     color: #fff;
-    font-size: 14px;
+    /* Floored on touch so focusing it can't zoom the page — see
+       `--site-field-font-floor` in globals.css. */
+    font-size: max(14px, var(--site-field-font-floor));
     letter-spacing: 2px;
     text-transform: uppercase;
 }
@@ -557,7 +559,9 @@
     border-radius: 8px;
     padding: 8px 10px;
     color: #fff;
-    font-size: 13px;
+    /* Floored on touch so focusing it can't zoom the page — see
+       `--site-field-font-floor` in globals.css. */
+    font-size: max(13px, var(--site-field-font-floor));
 }
 .rfs-section-title {
     font-family: 'Press Start 2P', monospace;
@@ -647,7 +651,9 @@
     border-radius: 6px;
     padding: 6px 8px;
     color: #fff;
-    font-size: 12px;
+    /* Floored on touch so focusing it can't zoom the page — see
+       `--site-field-font-floor` in globals.css. */
+    font-size: max(12px, var(--site-field-font-floor));
 }
 
 /* ── Toasts ───────────────────────────────────────────────── */
