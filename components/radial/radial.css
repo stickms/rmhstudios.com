@@ -2278,6 +2278,49 @@ html.perf-lite .radial-backdrop__blob {
   cursor: none !important;
 }
 
+/* ── The drop, stood down ─────────────────────────────────────────────────
+   While a viewport-covering `backdrop-filter` layer is up (`.glass-scrim`, the
+   hub's `.radial-hub__blur`) the drop cannot paint. Chromium re-blurs such a
+   layer IN FULL whenever anything above it moves — measured at 1920×1080, a
+   plain 24px dot wiggling in a 50px arc over the open hub takes the page from
+   60fps to 10.7fps, and the drop is a dot that moves every frame by definition.
+   See hooks/useFrostedOverlay for the table.
+
+   So the OS draws it instead: `--metaball-still` is a data-URI SVG of the drop
+   at rest (ink disc + the filter's dilated rim), minted by MetaballCursor from
+   the live theme's own colours. Same mark, drawn by the compositor, zero page
+   damage — rather than the bare arrow reappearing every time a dialog opens. */
+:root[data-metaball-cursor='still']
+  :where(body, body *:not([data-native-cursor], [data-native-cursor] *)) {
+  cursor: var(--metaball-still, auto) !important;
+}
+/* …except over text. A still blob parked on the insertion point is precisely
+   what the live drop's caret morph exists to avoid, and a dialog is mostly
+   where the text fields are. Same zero specificity, later in source order. */
+:root[data-metaball-cursor='still']
+  :where(
+    textarea,
+    [contenteditable=''],
+    [contenteditable='true'],
+    input:not([type]),
+    input:is(
+      [type='text'],
+      [type='search'],
+      [type='email'],
+      [type='url'],
+      [type='tel'],
+      [type='password'],
+      [type='number'],
+      [type='date'],
+      [type='time'],
+      [type='datetime-local'],
+      [type='month'],
+      [type='week']
+    )
+  ) {
+  cursor: text !important;
+}
+
 /* ── The loading mark, fused ──────────────────────────────────────────────
    `.rad-loader` is defined in globals.css (it is used outside this shell too).
    Inside the shell the goo filter is available, so the orbiting blobs melt into

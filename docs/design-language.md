@@ -420,7 +420,8 @@ The `_site` layout route delegates to `components/feed/SiteShell.tsx`, which now
 renders the **radial shell** ([`components/radial/RadialShell.tsx`](../components/radial/RadialShell.tsx)):
 a fixed parallax **ring backdrop**, a slim sticky **utility top bar** (brand ·
 search · inbox · avatar), the **frame**, the central **RMH hub** (`RadialHub`),
-and a site-wide gooey **pointer metaball** (mouse _and_ touch). The single
+and a site-wide gooey **pointer metaball** (fine pointers only — it replaces a
+cursor, so phones never mount it). The single
 `<main id="main-content">` landmark lives inside the frame; **pages never add
 their own sidebars or page-frame** (and `AnimatedMain` renders a `<div>` — the
 shell's `<main>` is the one landmark).
@@ -505,9 +506,11 @@ gated off there too, via `html.app-route`).
   thrash — `RadialWheel`), the **hub** glides the orb to centre then blooms the
   wedges under an expanding `clip-path` **circular blur** (CSS-only phase
   machine), the **pointer metaball** trails on one rAF tick with delta-time
-  easing so it is identical at 60Hz and 240Hz (`MetaballCursor` — mouse and
-  touch; an SVG alpha ramp fuses it into a shape with no plate and no blend
-  mode, and it replaces the native cursor while a mouse drives it),
+  easing so it is identical at 60Hz and 240Hz (`MetaballCursor` — mouse only; an
+  SVG alpha ramp fuses it into a shape with no plate and no blend mode, and it
+  replaces the native cursor while a mouse drives it, standing down to a still
+  native cursor image under a full-screen frosted overlay because a
+  `backdrop-filter` is re-blurred in full by anything moving above it),
   the **ring backdrop** parallaxes to the pointer, and page headers/heroes rise
   in on mount (`radial-page-rise`). All of it is `transform`/`opacity` only and gated off
   under reduced motion; optional scroll **haptics** (`navigator.vibrate`) tick

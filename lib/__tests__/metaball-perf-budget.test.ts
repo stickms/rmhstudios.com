@@ -48,6 +48,26 @@ import { join } from 'node:path';
  *    blocked outright. Build the extra passes as filter primitives inside the
  *    referenced `<filter>` instead (the pointer rim is an feMorphology/feFlood/
  *    feComposite/feMerge, and it looks better besides).
+ * 6. The drop runs on fine pointers only. It replaces a cursor; a phone has none
+ *    to replace, and a per-frame SVG filter chasing a finger is a phone's battery
+ *    spent on a mark the finger is covering.
+ * 7. **Every viewport-covering `backdrop-filter` layer stands the drop down.**
+ *    Chromium invalidates a `backdrop-filter` as a WHOLE ELEMENT, not per damaged
+ *    rect: anything that paints a moving pixel above one re-runs the blur over
+ *    its entire area, every frame. Measured headless at 1920×1080 over the open
+ *    hub (`.radial-hub__blur`, `inset: 0`, `blur(20px) saturate(118%)`), vsync on:
+ *    nothing moving 60.2fps; a plain 24px dot wiggling in a 50px arc 10.7fps; the
+ *    pointer metaball 10.6fps; the same with no `backdrop-filter` 60.1fps.
+ *    Damage size and position are irrelevant — only the blurred layer's area is
+ *    (a 500px frosted disc stays at 60fps) — and radius barely matters either
+ *    (`blur(6px)` still measured 11.9fps), so it is not tunable. `will-change`,
+ *    `isolation` and promotion hints do nothing.
+ *
+ *    The drop is the one element guaranteed to move above every overlay, because
+ *    it IS the cursor — which is why this reads as "the cursor is laggy" and not
+ *    "the menu is janky". So a component that renders one of these layers calls
+ *    `useFrostedOverlay()` for as long as it is up, and `MetaballCursor` hands the
+ *    pointer back to the OS as a still image of the drop.
  */
 
 const ROOT = process.cwd();
@@ -231,6 +251,90 @@ describe('metaball / goo-filter cost budget', () => {
         `vs ~0.4ms/frame for the url() alone). Move the extra passes INSIDE the ` +
         `referenced <filter> as filter primitives — see the feMorphology rim in ` +
         `components/radial/MetaballCursor.tsx.\n`,
+    ).toEqual([]);
+  });
+
+  it('the pointer drop runs on fine pointers only', () => {
+    const src = code(CURSOR);
+    expect(
+      /\(hover:\s*hover\)\s*and\s*\(pointer:\s*fine\)/.test(src),
+      `\ncomponents/radial/MetaballCursor.tsx no longer gates on a fine pointer.\n\n` +
+        `The drop replaces a cursor. A phone has none to replace, so all it can do ` +
+        `there is spend the battery re-running an SVG filter under a finger that is ` +
+        `already covering the mark.\n`,
+    ).toBe(true);
+    expect(
+      /pointerType\s*===\s*'touch'/.test(src),
+      `\nMetaballCursor must still ignore touch pointer events.\n\n` +
+        `A touchscreen laptop matches (hover: hover) and (pointer: fine) and STILL ` +
+        `delivers touch events; without the guard a tap teleports the drop to the ` +
+        `finger and steals it from the mouse.\n`,
+    ).toBe(true);
+  });
+
+  it('every viewport-covering backdrop-filter layer stands the drop down', () => {
+    // The full-screen frosted layers, and the component that renders each. A
+    // moving pixel above one of these re-blurs it entirely, every frame (rule 7).
+    const OWNERS = [
+      { layer: 'glass-scrim', file: join('components', 'ui', 'dialog.tsx') },
+      { layer: 'glass-scrim', file: join('components', 'feed', 'ComposeModal.tsx') },
+      { layer: 'glass-scrim', file: join('components', 'site', 'CommandPalette.tsx') },
+      { layer: 'glass-scrim', file: join('components', 'site', 'KeyboardShortcuts.tsx') },
+      { layer: 'radial-hub__blur', file: join('components', 'radial', 'RadialHub.tsx') },
+    ];
+
+    const missing = OWNERS.filter(({ file }) => !/useFrostedOverlay\s*\(/.test(code(file)));
+    expect(
+      missing.map((m) => `${m.file} (renders .${m.layer})`),
+      `\nA viewport-covering backdrop-filter layer is rendered without calling ` +
+        `useFrostedOverlay():\n` +
+        missing.map((m) => `  ${m.file} — .${m.layer}`).join('\n') +
+        `\n\nChromium re-blurs such a layer IN FULL whenever anything above it ` +
+        `moves, and the pointer metaball moves above it every frame by definition ` +
+        `— measured 60fps → ~11fps at 1920x1080. Call useFrostedOverlay() for as ` +
+        `long as the layer is up so the drop hands the pointer back to the OS.\n`,
+    ).toEqual([]);
+
+    // …and the drop must actually be listening.
+    expect(
+      /subscribeFrostedOverlay/.test(code(CURSOR)),
+      `\ncomponents/radial/MetaballCursor.tsx no longer subscribes to ` +
+        `useFrostedOverlay's registry, so every claim above is a no-op.\n`,
+    ).toBe(true);
+  });
+
+  it('no NEW full-screen scrim slips in unwired', () => {
+    // Anything else that renders `glass-scrim` is a viewport-covering
+    // backdrop-filter this budget has never seen. Add it to OWNERS above (and
+    // wire the hook) rather than widening this.
+    const KNOWN = new Set([
+      join('components', 'ui', 'dialog.tsx'),
+      join('components', 'feed', 'ComposeModal.tsx'),
+      join('components', 'site', 'CommandPalette.tsx'),
+      join('components', 'site', 'KeyboardShortcuts.tsx'),
+    ]);
+
+    const walk = (dir: string, out: string[] = []): string[] => {
+      for (const entry of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
+        const rel = join(dir, entry.name);
+        if (entry.isDirectory()) walk(rel, out);
+        else if (/\.tsx?$/.test(entry.name)) out.push(rel);
+      }
+      return out;
+    };
+
+    const unwired = walk('components').filter(
+      (rel) =>
+        !KNOWN.has(rel) &&
+        /glass-scrim/.test(read(rel)) &&
+        !/useFrostedOverlay\s*\(/.test(code(rel)),
+    );
+    expect(
+      unwired,
+      `\nNew component(s) render \`.glass-scrim\` without standing the pointer ` +
+        `drop down:\n` +
+        unwired.map((s) => `  ${s}`).join('\n') +
+        `\n\nSee rule 7 above — call useFrostedOverlay() while the scrim is up.\n`,
     ).toEqual([]);
   });
 
