@@ -38,7 +38,7 @@ There is **no `app/lib/`** — shared code is at repo root `lib/`, imported as
 | leading `_`    | pathless layout (no URL segment)                                             | `_site.tsx`, `_site/…`                                                  |
 | `index.tsx`    | directory index route                                                        | `_site/index.tsx` = `/` (the feed)                                      |
 | `route.tsx`    | layout route for a directory (renders `<Outlet/>`, holds `beforeLoad` gates) | `_site/admin/route.tsx`                                                 |
-| trailing `_`   | opt out of parent layout nesting                                             | `builds_.$slug.tsx` → `/builds/$slug`, not nested under a builds layout |
+| trailing `_`   | opt out of parent layout nesting                                             | `$gameId_.guides.$guideId.tsx` → `/games/$gameId/guides/$guideId`, not nested under the `$gameId` route |
 | `[.]`          | escaped literal character                                                    | `sitemap[.]xml.ts`                                                      |
 
 **Placement decides chrome:** files under `_site/` get the sidebar shell;
