@@ -4,19 +4,23 @@ import { ArrowRight, Menu, Search } from 'lucide-react';
 /**
  * /covid — "Feature Leak: The True Origins of X".
  *
- * A parody of the single-page federal landing page at
- * whitehouse.gov/lab-leak-true-origins-of-covid-19: an in-universe RMH "Office
- * of Platform Integrity" finding that the product shipping as X escaped from
- * RMH Studios via nine departing engineers.
+ * Modelled on the single-page federal landing page at
+ * whitehouse.gov/lab-leak-true-origins-of-covid-19: an RMH "Office of Platform
+ * Integrity" finding that the product shipping as X escaped from RMH Studios
+ * via nine departing engineers.
  *
  * The layout deliberately tracks the source page beat for beat — promo ticker,
  * sticky masthead that inverts on scroll, a giant serif wordmark split around a
  * central emblem, a blue-ruled box of numbered claims over a faint map, a
  * full-bleed map plate with blue label chips, and two-column evidence rows.
  *
- * It is satire, and says so in three places: the ticker, the FAQ, and the
- * footer disclaimer. No allegation here is a statement of fact, and no real
- * person is named or depicted (docs/people.md §4).
+ * MAINTAINERS: everything on this page is fiction, in the same in-universe
+ * register as /rmh-capital and /rmh-pmc — the office, the case number, the
+ * exhibits, the ledger dates and the nine departures were written for the bit.
+ * It is played entirely straight by editorial choice: the parody notice, the
+ * disclosure FAQ and the footer disclaimer were removed on request. Keep the
+ * one hard rule that remains — no real person is ever named or depicted here
+ * (docs/people.md §4).
  *
  * Design system: `components/covid/covid.css`, scoped under `.cvd-root`, in the
  * standalone-arm tradition of /rmh-pmc and /rmh-capital — its own palette and
@@ -426,51 +430,6 @@ const ELSEWHERE: Evidence[] = [
   },
 ];
 
-const FAQ: { q: string; a: ReactNode }[] = [
-  {
-    q: 'Is any of this real?',
-    a: (
-      <>
-        No. This page is satire — a parody of a particular genre of official web page, set in the
-        same fiction as <a href="/rmh-capital">RMH Capital</a> and <a href="/rmh-pmc">RMH PMC</a>.
-        There is no Office of Platform Integrity, there was no investigation, no cake was
-        photographed, nobody left, and X Corp. has taken nothing from RMH Studios. Every date,
-        exhibit, and finding above is invented.
-      </>
-    ),
-  },
-  {
-    q: 'Then why put it at /covid?',
-    a: (
-      <>
-        Because the page being imitated is, and because “outbreak” turned out to be the right shape
-        for a story about a design language spreading: an index case, an incubation period,
-        community spread, endemicity. We considered /origins. This was funnier.
-      </>
-    ),
-  },
-  {
-    q: 'Is this a shot at X specifically?',
-    a: (
-      <>
-        It is a shot at the format — the confident official page that arranges circumstantial detail
-        into a conclusion it had picked before it started, and prints it under a seal. X is the
-        pretext, chosen because its product is the one closest to ours. Their engineers have our
-        sympathy; they work in the building described in claim three.
-      </>
-    ),
-  },
-  {
-    q: 'Can I steal this design?',
-    a: (
-      <>
-        Yes. That is the joke, and you have our written permission, which is more than we got. The
-        stylesheet is <code>components/covid/covid.css</code>.
-      </>
-    ),
-  },
-];
-
 const NAV: { href: string; label: string }[] = [
   { href: '#origin', label: 'The Origin' },
   { href: '#chronology', label: 'Chronology' },
@@ -489,10 +448,10 @@ const FOOT_LINKS: { href: string; label: string }[] = [
 ];
 
 const TICKER = [
-  'Parody — an RMH Studios satire',
-  'No investigation exists',
-  'No allegation is made against X Corp.',
-  'Not a COVID-19 information page',
+  'Read the full finding',
+  'Case RMH-OPI-2026-0417',
+  'Filed by the Office of Platform Integrity',
+  'A direct line to the record →',
 ];
 
 const SHARE_URL = 'https://rmhstudios.com/covid';
@@ -574,12 +533,8 @@ export function CovidPage() {
         Skip to content
       </a>
 
-      {/* ─── Promo ticker, carrying the parody notice ──────────────────── */}
+      {/* ─── Promo ticker ─────────────────────────────────────────────── */}
       <div className="ticker">
-        <p className="sr-only">
-          Notice: this page is a parody published by RMH Studios. No investigation exists, no
-          allegation is made against X Corp., and this is not a COVID-19 information page.
-        </p>
         <div className="ticker-track" aria-hidden="true">
           {[0, 1].map((run) => (
             <div className="ticker-run" key={run}>
@@ -911,29 +866,12 @@ export function CovidPage() {
                   Case no. <b>RMH-OPI-2026-0417</b>
                 </div>
                 <div>
-                  Classification <b>Parody — unclassified</b>
+                  Classification <b>Unrestricted</b>
                 </div>
                 <div>
                   Peer review <b>None sought</b>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ─── FAQ — where the joke stops and the disclosure starts ───── */}
-        <section className="sec sec--hair" aria-labelledby="cvd-faq">
-          <div className="wrap">
-            <h2 className="sec-title reveal" id="cvd-faq">
-              Questions
-            </h2>
-            <div className="faq reveal">
-              {FAQ.map((f) => (
-                <details key={f.q}>
-                  <summary>{f.q}</summary>
-                  <p>{f.a}</p>
-                </details>
-              ))}
             </div>
           </div>
         </section>
@@ -947,8 +885,8 @@ export function CovidPage() {
               <div>
                 <b>Office of Platform Integrity</b>
                 <span>
-                  An in-universe office of RMH Studios, alongside RMH Capital and RMH PMC. It has
-                  one page, no staff, and no powers.
+                  Design provenance and prior-art review for RMH Studios. One page, no staff, and no
+                  powers.
                 </span>
               </div>
             </div>
@@ -961,30 +899,8 @@ export function CovidPage() {
             </nav>
           </div>
 
-          <p className="disclaimer">
-            <b>This page is satire.</b> RMH Studios has no Office of Platform Integrity, has
-            conducted no investigation, and makes no allegation of any kind against X Corp.,
-            Twitter, or any of their staff, past or present. Nothing above is a statement of fact:
-            the case number, the dates, the ledger, the exhibits, the nine departures and the cake
-            are invented for the joke, and the layout is a deliberate pastiche of a government
-            information page. No real person is named or depicted anywhere on this page.{' '}
-            <b>
-              If you came here looking for public-health information about COVID-19, this is not
-              that page
-            </b>{' '}
-            — please use your national health service or the{' '}
-            <a
-              href="https://www.who.int/health-topics/coronavirus"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              World Health Organization
-            </a>
-            .
-          </p>
-
           <p className="foot-copy">
-            © {new Date().getFullYear()} RMH Studios · Filed under fiction
+            © {new Date().getFullYear()} RMH Studios · Office of Platform Integrity
           </p>
         </div>
       </footer>

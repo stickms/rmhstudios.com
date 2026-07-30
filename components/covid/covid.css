@@ -74,18 +74,6 @@
 .cvd-root [id] {
   scroll-margin-top: 120px;
 }
-.cvd-root .sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
-}
-
 .cvd-root .wrap {
   max-width: var(--maxw);
   margin: 0 auto;
@@ -896,65 +884,14 @@
   font-weight: 600;
 }
 
-/* ════ FAQ ════ */
-.cvd-root .faq {
-  margin: clamp(38px, 5vw, 58px) auto 0;
-  max-width: 880px;
-  border-top: 1px solid var(--hair-soft);
-}
-.cvd-root .faq details {
-  border-bottom: 1px solid var(--hair-soft);
-}
-.cvd-root .faq summary {
-  display: flex;
-  gap: 14px;
-  align-items: flex-start;
-  padding: clamp(18px, 2.2vw, 24px) 0;
-  cursor: pointer;
-  list-style: none;
-  font-family: var(--serif);
-  font-size: clamp(17px, 1.9vw, 21px);
-  font-weight: 700;
-  line-height: 1.36;
-  color: var(--white);
-}
-.cvd-root .faq summary::-webkit-details-marker {
-  display: none;
-}
-.cvd-root .faq summary::before {
-  content: '+';
-  flex: 0 0 auto;
-  font-family: var(--sans);
-  font-size: 19px;
-  font-weight: 400;
-  line-height: 1.25;
-  color: var(--blue-script);
-}
-.cvd-root .faq details[open] summary::before {
-  content: '−';
-}
-.cvd-root .faq p {
-  margin: 0 0 clamp(20px, 2.4vw, 26px);
-  padding-left: 30px;
-  font-size: 16px;
-  line-height: 1.7;
-  color: var(--ink-soft);
-}
-.cvd-root .faq a {
-  color: var(--blue-script);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.cvd-root .faq code {
-  font-family: ui-monospace, 'SFMono-Regular', monospace;
-  font-size: 0.88em;
-}
-
 /* ════ FOOTER ════ */
 .cvd-root .foot {
   background: var(--navy-deep);
   border-top: 1px solid var(--hair);
-  padding: clamp(44px, 6vw, 78px) 0 calc(clamp(34px, 4vw, 54px) + env(safe-area-inset-bottom, 0px));
+  /* The trailing 68px reserves room for the fixed pill, which would otherwise
+     sit on top of the copyright line once the page is scrolled to the end. */
+  padding: clamp(44px, 6vw, 78px) 0
+    calc(clamp(34px, 4vw, 54px) + 68px + env(safe-area-inset-bottom, 0px));
 }
 .cvd-root .foot-top {
   display: flex;
@@ -1008,22 +945,6 @@
 }
 .cvd-root .foot-links a:hover {
   color: var(--white);
-}
-.cvd-root .disclaimer {
-  margin: clamp(24px, 3vw, 34px) 0 0;
-  max-width: 88ch;
-  font-size: 12.5px;
-  line-height: 1.72;
-  color: var(--ink-dim);
-}
-.cvd-root .disclaimer b {
-  color: var(--ink-soft);
-  font-weight: 600;
-}
-.cvd-root .disclaimer a {
-  color: var(--blue-script);
-  text-decoration: underline;
-  text-underline-offset: 2px;
 }
 .cvd-root .foot-copy {
   margin: clamp(18px, 2.4vw, 26px) 0 0;

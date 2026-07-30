@@ -8,13 +8,13 @@ import { buildMeta, buildCanonical } from '@/lib/seo';
  *
  * A standalone full-screen page in the same tradition as /rmh-pmc and
  * /rmh-capital: its own palette, its own fonts, its own stylesheet served by
- * URL so none of it enters the main bundle. Satire — see the page's footer
- * disclaimer and FAQ.
+ * URL so none of it enters the main bundle. The page is fiction, in the same
+ * in-universe register as those two — see the note in CovidPage.tsx.
  */
 const PATH = '/covid';
 const TITLE = 'Feature Leak: The True Origins of X | RMH Studios';
 const DESC =
-  'A satirical finding from the RMH Studios Office of Platform Integrity: five facts, a ship-date ledger, and nine departing engineers. Parody — no investigation exists, and this is not a COVID-19 information page.';
+  'A finding from the RMH Studios Office of Platform Integrity: five facts, a ship-date ledger, and nine departing engineers.';
 
 export const Route = createFileRoute('/covid')({
   head: () => ({
