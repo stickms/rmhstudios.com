@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Map, { Marker, type MapRef } from 'react-map-gl/maplibre';
 import type { StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { ensureMaplibreWorker } from '@/lib/maplibre';
 import type { Listing, SearchCenter } from '@/lib/homes/types';
 
 /**
@@ -69,7 +70,17 @@ export function ListingsMap({
 }: ListingsMapProps) {
   const mapRef = useRef<MapRef | null>(null);
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  // Wire MapLibre's worker up before the canvas mounts, or the map never
+  // finishes loading — see lib/maplibre.ts.
+  useEffect(() => {
+    let cancelled = false;
+    ensureMaplibreWorker().then(() => {
+      if (!cancelled) setMounted(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const pins = useMemo(
     () => listings.filter((l) => Number.isFinite(l.lat) && Number.isFinite(l.lng)),
