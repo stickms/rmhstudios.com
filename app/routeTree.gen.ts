@@ -16,6 +16,7 @@ import { Route as BlackLivesMatterRouteImport } from './routes/black-lives-matte
 import { Route as CookgameRouteImport } from './routes/cookgame'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as CopyrightRouteImport } from './routes/copyright'
+import { Route as CovidRouteImport } from './routes/covid'
 import { Route as DailyRouteImport } from './routes/daily'
 import { Route as DeeplinkRouteImport } from './routes/deeplink'
 import { Route as DesignRouteImport } from './routes/design'
@@ -750,6 +751,11 @@ const CookiesRoute = CookiesRouteImport.update({
 const CopyrightRoute = CopyrightRouteImport.update({
   id: '/copyright',
   path: '/copyright',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CovidRoute = CovidRouteImport.update({
+  id: '/covid',
+  path: '/covid',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DailyRoute = DailyRouteImport.update({
@@ -4365,6 +4371,7 @@ export interface FileRoutesByFullPath {
   '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
+  '/covid': typeof CovidRoute
   '/daily': typeof DailyRouteWithChildren
   '/deeplink': typeof DeeplinkRouteWithChildren
   '/design': typeof DesignRoute
@@ -5072,6 +5079,7 @@ export interface FileRoutesByTo {
   '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
+  '/covid': typeof CovidRoute
   '/deeplink': typeof DeeplinkRouteWithChildren
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
@@ -5760,6 +5768,7 @@ export interface FileRoutesById {
   '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
+  '/covid': typeof CovidRoute
   '/daily': typeof DailyRouteWithChildren
   '/deeplink': typeof DeeplinkRouteWithChildren
   '/design': typeof DesignRoute
@@ -6472,6 +6481,7 @@ export interface FileRouteTypes {
     | '/cookgame'
     | '/cookies'
     | '/copyright'
+    | '/covid'
     | '/daily'
     | '/deeplink'
     | '/design'
@@ -7179,6 +7189,7 @@ export interface FileRouteTypes {
     | '/cookgame'
     | '/cookies'
     | '/copyright'
+    | '/covid'
     | '/deeplink'
     | '/design'
     | '/dream-rift'
@@ -7866,6 +7877,7 @@ export interface FileRouteTypes {
     | '/cookgame'
     | '/cookies'
     | '/copyright'
+    | '/covid'
     | '/daily'
     | '/deeplink'
     | '/design'
@@ -8577,6 +8589,7 @@ export interface RootRouteChildren {
   CookgameRoute: typeof CookgameRoute
   CookiesRoute: typeof CookiesRoute
   CopyrightRoute: typeof CopyrightRoute
+  CovidRoute: typeof CovidRoute
   DailyRoute: typeof DailyRouteWithChildren
   DeeplinkRoute: typeof DeeplinkRouteWithChildren
   DesignRoute: typeof DesignRoute
@@ -9017,6 +9030,13 @@ declare module '@tanstack/react-router' {
       path: '/copyright'
       fullPath: '/copyright'
       preLoaderRoute: typeof CopyrightRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/covid': {
+      id: '/covid'
+      path: '/covid'
+      fullPath: '/covid'
+      preLoaderRoute: typeof CovidRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/daily': {
@@ -15342,6 +15362,7 @@ const rootRouteChildren: RootRouteChildren = {
   CookgameRoute: CookgameRoute,
   CookiesRoute: CookiesRoute,
   CopyrightRoute: CopyrightRoute,
+  CovidRoute: CovidRoute,
   DailyRoute: DailyRouteWithChildren,
   DeeplinkRoute: DeeplinkRouteWithChildren,
   DesignRoute: DesignRoute,
