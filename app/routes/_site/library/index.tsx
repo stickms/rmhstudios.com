@@ -11,7 +11,7 @@
  * and to migrate the bundled catalog into object storage.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
 import { createServerFn } from '@tanstack/react-start';
@@ -48,6 +48,8 @@ import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { ContextRail } from '@/components/feed/ContextRail';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { useSession } from '@/components/Providers';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { suppressNextScrollReset } from '@/hooks/useScrollRestoration';
 import { UploadModal } from '@/components/library/UploadModal';
 import { BookContextMenu, LibraryEditModal } from '@/components/library/LibraryEditControls';
 import { useContextMenu } from '@/components/library/LibraryContextMenu';
@@ -103,6 +105,10 @@ const fetchPlaylists = createServerFn({ method: 'GET' }).handler(async () => {
 const LIBRARY_VIEWS = ['all', 'reads', 'albums', 'collections', 'books', 'music'] as const;
 type LibraryView = (typeof LIBRARY_VIEWS)[number];
 
+// useLayoutEffect warns during SSR; the scroll settle below only ever has work
+// to do after a client-side tab press, so useEffect is an identical no-op there.
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
 export const Route = createFileRoute('/_site/library/')({
   head: () => ({
     meta: [
@@ -133,13 +139,6 @@ export const Route = createFileRoute('/_site/library/')({
   },
   component: Library,
 });
-
-function formatCount(value: number): string {
-  return new Intl.NumberFormat(undefined, {
-    notation: value >= 10_000 ? 'compact' : 'standard',
-    maximumFractionDigits: 1,
-  }).format(value);
-}
 
 function resetLibraryOrbit(element: HTMLElement | null) {
   if (!element) return;
@@ -209,35 +208,132 @@ function Library() {
   const [view, setActiveView] = useState<LibraryView>(routeView);
   const [hasFiltered, setHasFiltered] = useState(false);
   const orbit = useLibraryOrbit();
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => setActiveView(routeView), [routeView]);
 
-  const setView = async (next: LibraryView) => {
+  // Switching category swaps whole sections out of the document, so the page can
+  // get much shorter than it was — and a shorter page means the browser clamps
+  // the scroll offset, which reads as the library snapping back to the top. The
+  // pin below freezes the old height across the swap so nothing moves on its
+  // own; the settle effect then either leaves the scroll exactly where it was
+  // (the new view is tall enough) or glides up to the new bottom.
+  const playgroundRef = useRef<HTMLDivElement | null>(null);
+  const pendingScrollTop = useRef<number | null>(null);
+  const releasePin = useRef<(() => void) | null>(null);
+
+  const setView = (next: LibraryView) => {
     if (next === view) return;
-    const scrollLeft = window.scrollX;
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    // Any settle still running belongs to the previous press — retire it before
+    // this one takes over so the two can't fight over the pin.
+    releasePin.current?.();
+    const ground = playgroundRef.current;
+    if (ground) ground.style.minHeight = `${ground.offsetHeight}px`;
+    pendingScrollTop.current = window.scrollY || document.documentElement.scrollTop;
     setHasFiltered(true);
     setActiveView(next);
-    try {
-      await navigate({
-        to: '/library',
-        search: next === 'all' ? {} : { view: next },
-        replace: true,
-        resetScroll: false,
-      });
-    } catch {
-      // The local filter is already usable; a transient history-sync failure
-      // should not break the interaction or skip scroll recovery.
-    } finally {
-      // TanStack/browser restoration can run just after the search-only
-      // navigation commits. Restore now, then make two bounded one-shot retries
-      // across that short window; there is no persistent animation-frame loop.
-      const restoreScroll = () => window.scrollTo(scrollLeft, scrollTop);
-      restoreScroll();
-      window.setTimeout(restoreScroll, 0);
-      window.setTimeout(restoreScroll, 50);
-    }
+    // The URL only mirrors the filter — nobody is going anywhere, so claim this
+    // href change before it lands (`resetScroll: false` covers the router; the
+    // shared scroller needs telling separately).
+    suppressNextScrollReset('/library');
+    // Fire-and-forget: the filter is already applied locally, so a transient
+    // history-sync failure must not break the interaction.
+    void navigate({
+      to: '/library',
+      search: next === 'all' ? {} : { view: next },
+      replace: true,
+      resetScroll: false,
+    }).catch(() => {});
   };
+
+  useIsoLayoutEffect(() => {
+    const from = pendingScrollTop.current;
+    if (from === null) return;
+    pendingScrollTop.current = null;
+
+    const ground = playgroundRef.current;
+    const scrollLeft = window.scrollX;
+    // The new view is committed but the pin still holds the old height, so the
+    // scroll offset is untouched. Drop the pin for one measurement to learn how
+    // far the page can actually scroll now, then put it straight back.
+    const pinned = ground?.style.minHeight ?? '';
+    if (ground) ground.style.minHeight = '';
+    const bottom = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    if (ground) ground.style.minHeight = pinned;
+
+    const unpin = () => {
+      if (ground) ground.style.removeProperty('min-height');
+    };
+
+    // `behavior: 'instant'` is load-bearing: `html { scroll-behavior: smooth }`
+    // is global, so a bare `scrollTo(x, y)` here would ANIMATE the hold — the
+    // page would visibly slide back to where it already was.
+    const hold = () => window.scrollTo({ left: scrollLeft, top: from, behavior: 'instant' });
+
+    // Enough room below: stay put. Two bounded one-shots cover anything that
+    // nudges the offset as the navigation commits (rather than a running
+    // animation-frame loop); with the reset suppressed they are usually no-ops.
+    if (from <= bottom) {
+      hold();
+      const timers = [window.setTimeout(hold, 0), window.setTimeout(hold, 50)];
+      const done = () => {
+        timers.forEach(window.clearTimeout);
+        unpin();
+        releasePin.current = null;
+      };
+      releasePin.current = done;
+      return () => {
+        timers.forEach(window.clearTimeout);
+        unpin();
+      };
+    }
+
+    // Not enough room below: the scroll has to move, so move it deliberately —
+    // hold the old offset, then glide to the new bottom from there.
+    hold();
+    if (reducedMotion) {
+      window.scrollTo({ left: scrollLeft, top: bottom, behavior: 'instant' });
+      unpin();
+      return;
+    }
+
+    // The pin outlives the animation — released early, the document collapses
+    // mid-glide and the browser jumps the rest of the way, which is the exact
+    // snap this is here to avoid.
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      window.removeEventListener('scrollend', onScrollEnd);
+      window.clearTimeout(fallback);
+      unpin();
+      releasePin.current = null;
+    };
+    // Only the glide's OWN end may release the pin. `hold()` above is itself a
+    // scroll and fires its own `scrollend`; taking that one at face value
+    // unpinned the page before the glide had started. The timeout is the
+    // fallback for browsers without `scrollend` and for a glide the user
+    // interrupts partway.
+    const onScrollEnd = () => {
+      if (Math.abs(window.scrollY - bottom) <= 2) finish();
+    };
+    const fallback = window.setTimeout(finish, 900);
+    const frame = requestAnimationFrame(() => {
+      window.addEventListener('scrollend', onScrollEnd);
+      window.scrollTo({ left: scrollLeft, top: bottom, behavior: 'smooth' });
+    });
+    releasePin.current = () => {
+      cancelAnimationFrame(frame);
+      finish();
+    };
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('scrollend', onScrollEnd);
+      window.clearTimeout(fallback);
+      unpin();
+    };
+  }, [view, reducedMotion]);
+
   // A section renders when we're on "All" or on its own category.
   const shows = (id: LibraryView) => view === 'all' || view === id;
   const session = useSession();
@@ -251,12 +347,6 @@ function Library() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [editing, setEditing] = useState<LibraryBook | null>(null);
   const [migrating, setMigrating] = useState(false);
-
-  const publicBooks = useMemo(() => books.filter((book) => !book.hidden), [books]);
-  const totalPages = useMemo(
-    () => publicBooks.reduce((sum, book) => sum + Math.max(0, book.pages), 0),
-    [publicBooks],
-  );
 
   // Admins load the full list (including hidden books) so they can manage
   // everything via the per-item right-click menu; everyone else mirrors the
@@ -442,7 +532,7 @@ function Library() {
   return (
     <>
       <AnimatedMain className="vibe-screen lib lib--glass-playground min-h-screen w-full min-w-0 pb-dock">
-        <div className="lib-playground" {...orbit}>
+        <div className="lib-playground" ref={playgroundRef} {...orbit}>
           <LibraryRevealProvider instant={hasFiltered}>
             {/* The lightweight title stays above the hero. The explorer below is
               the page's single sticky control group. */}
@@ -490,43 +580,6 @@ function Library() {
                   })}
                 </p>
               </div>
-              <dl
-                className="lib-stats"
-                aria-label={t('library-totals', { defaultValue: 'Library totals' })}
-              >
-                <div
-                  className="glass-fill glass-interactive"
-                  data-glass-light=""
-                  data-library-orbit=""
-                >
-                  <dt>{t('stat-volumes', { defaultValue: 'Volumes' })}</dt>
-                  <dd>{publicBooks.length.toLocaleString()}</dd>
-                </div>
-                <div
-                  className="glass-fill glass-interactive"
-                  data-glass-light=""
-                  data-library-orbit=""
-                >
-                  <dt>{t('stat-pages', { defaultValue: 'Pages' })}</dt>
-                  <dd>{formatCount(totalPages)}</dd>
-                </div>
-                <div
-                  className="glass-fill glass-interactive"
-                  data-glass-light=""
-                  data-library-orbit=""
-                >
-                  <dt>{t('stat-albums', { defaultValue: 'Albums' })}</dt>
-                  <dd>{albums.length.toLocaleString()}</dd>
-                </div>
-                <div
-                  className="glass-fill glass-interactive"
-                  data-glass-light=""
-                  data-library-orbit=""
-                >
-                  <dt>{t('stat-collections', { defaultValue: 'Collections' })}</dt>
-                  <dd>{collections.length.toLocaleString()}</dd>
-                </div>
-              </dl>
             </section>
 
             <div
@@ -618,7 +671,7 @@ function Library() {
                   ] as LiquidTab[]
                 }
                 value={view}
-                onChange={(next) => void setView(next as LibraryView)}
+                onChange={(next) => setView(next as LibraryView)}
                 sheet={false}
                 scroll
                 aria-label={t('sections-label', { defaultValue: 'Library sections' })}

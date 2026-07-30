@@ -50,7 +50,6 @@
   "label-description": "説明",
   "label-title": "タイトル",
   "library-heading": "ライブラリ",
-  "library-totals": "Library totals",
   "manage": "管理",
   "manage-albums": "Create or manage albums",
   "migrate-button": "S3 に移行",
@@ -87,10 +86,6 @@
   "section-curated": "厳選",
   "section-music": "Music",
   "sections-label": "Library sections",
-  "stat-albums": "Albums",
-  "stat-collections": "Collections",
-  "stat-pages": "Pages",
-  "stat-volumes": "Volumes",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

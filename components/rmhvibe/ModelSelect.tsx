@@ -17,6 +17,7 @@ import {
   VIBE_PROVIDER_ORDER,
   type VibeModel,
 } from '@/lib/rmhvibe/vibe-types';
+import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 
 export function ModelSelect({
   value,
@@ -32,6 +33,13 @@ export function ModelSelect({
   const { t } = useTranslation("c-rmhvibe");
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // The menu is a `min-width: 220px` box pinned to the trigger's left edge and
+  // is taller than a phone once every provider group is listed — on a narrow or
+  // short viewport it ran off the screen with no way to reach the models past
+  // the edge. Clamp it (and re-clamp on every resize/rotation).
+  useMenuViewportFit(open, menuRef);
 
   // Close on outside click or Escape.
   useEffect(() => {
@@ -77,7 +85,13 @@ export function ModelSelect({
       </button>
 
       {open && (
-        <div className="vibe-model-select__menu" role="listbox" aria-label={t("generation-model", { defaultValue: "Generation model" })}>
+        <div
+          ref={menuRef}
+          className="vibe-model-select__menu glass-overlay"
+          data-slot="model-select-menu"
+          role="listbox"
+          aria-label={t("generation-model", { defaultValue: "Generation model" })}
+        >
           {VIBE_PROVIDER_ORDER.map((provider) => (
             <div key={provider} className="vibe-model-select__group">
               <div className="vibe-model-select__group-label">{VIBE_PROVIDER_LABELS[provider]}</div>

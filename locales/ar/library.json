@@ -55,7 +55,6 @@
   "label-description": "الوصف",
   "label-title": "العنوان",
   "library-heading": "مكتبة",
-  "library-totals": "Library totals",
   "manage": "إدارة",
   "manage-albums": "Create or manage albums",
   "migrate-button": "النقل إلى S3",
@@ -107,10 +106,6 @@
   "section-curated": "مختارة",
   "section-music": "Music",
   "sections-label": "Library sections",
-  "stat-albums": "Albums",
-  "stat-collections": "Collections",
-  "stat-pages": "Pages",
-  "stat-volumes": "Volumes",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

@@ -51,7 +51,6 @@
   "label-description": "Açıklama",
   "label-title": "Başlık",
   "library-heading": "Kütüphane",
-  "library-totals": "Library totals",
   "manage": "Yönet",
   "manage-albums": "Create or manage albums",
   "migrate-button": "S3'e taşı",
@@ -91,10 +90,6 @@
   "section-curated": "Seçilmiş",
   "section-music": "Music",
   "sections-label": "Library sections",
-  "stat-albums": "Albums",
-  "stat-collections": "Collections",
-  "stat-pages": "Pages",
-  "stat-volumes": "Volumes",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

@@ -1914,32 +1914,51 @@ html.perf-lite .radial-backdrop__blob {
 /* ── Top bar quick panels ─────────────────────────────────────────────────
    Anchored under their trigger, capped against the viewport in CSS *and* then
    clamped by useMenuViewportFit at runtime (belt and braces: the CSS bound holds
-   before the measurement lands, the JS one handles safe areas and the mobile
-   URL bar). Below 560px the anchor is dropped and the panel spans the gutters —
-   a drawer, which is the right shape for a thumb. */
+   before the measurement lands, the JS one handles safe areas, the mobile URL
+   bar and every later resize/rotation). Below 560px the anchor is dropped and
+   the panel spans the gutters — a drawer, which is the right shape for a thumb.
+
+   All four panels are the same three parts in the same order — header, body,
+   footer link — on one inset (`--panel-inset`, which every row, note, group
+   heading and footer shares so nothing inside sits on its own margin).
+
+   SPACING IS DECLARED LOCALLY, and it has to be: this panel is portaled to
+   <body>, so it is NOT a descendant of `.radial-shell` and the shell's
+   `--rad-*` scale never reaches it. Every reference to that scale in here
+   resolved to nothing, which kills the whole declaration — so the panel rendered
+   with padding, gaps and margins of ZERO and its contents sat flush against the
+   rounded border. (`--z-quickpanel` is already hoisted to body level in
+   globals.css for exactly this reason; the spacing was missed.) Keep this block
+   on the three variables below and on `--site-*`, which are global. */
 .rad-panel {
+  /* Container inset from the rounded edge. Larger than the row inset because it
+     has a 22px corner curve to clear. */
+  --panel-pad: 0.625rem;
+  /* Row / heading / footer text inset inside the container padding. */
+  --panel-inset: 0.5rem;
+  /* Rhythm between body children — a menu's rows sit close. */
+  --panel-gap: 0.25rem;
   position: fixed;
   top: var(--panel-top, 4rem);
   right: var(--panel-right, 0.75rem);
   z-index: var(--z-quickpanel);
   display: flex;
   flex-direction: column;
-  width: min(24rem, calc(100vw - 1.5rem));
+  width: min(23rem, calc(100vw - 1.5rem));
   max-height: min(
     32rem,
     calc(100dvh - var(--panel-top, 4rem) - env(safe-area-inset-bottom, 0px) - 1rem)
   );
-  padding: var(--rad-3);
+  padding: var(--panel-pad);
   border-radius: var(--site-radius, 22px);
   border: var(--site-border-width, 1px) solid var(--site-border);
   box-shadow: var(--site-shadow);
   overflow: hidden;
   /* `.glass-overlay` supplies the blur, the glint and the viewport caps; its 62%
      tint is calibrated for dialogs that sit over a scrim. These panels sit
-     directly over live content with no scrim, so a high-contrast button or
-     headline underneath still reads through. Take the same material at a
-     stronger tint — this is a menu, and its own rows have to win. */
-  background-color: color-mix(in srgb, var(--site-bg) 88%, transparent);
+     directly over live content with no scrim, so take the same material at the
+     shared no-scrim menu opacity (globals.css). */
+  background-color: color-mix(in srgb, var(--site-bg) var(--site-glass-menu-opacity), transparent);
 }
 @media (max-width: 559.98px) {
   .rad-panel {
@@ -1948,34 +1967,44 @@ html.perf-lite .radial-backdrop__blob {
     width: auto;
   }
 }
+.rad-panel__head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.25rem var(--panel-inset) 0.5rem;
+  color: var(--site-text-muted);
+}
+.rad-panel__head h2 {
+  margin: 0;
+  color: var(--site-text);
+  font-family: var(--site-font-display, inherit);
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.rad-panel__head svg {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+}
 .rad-panel__body {
   display: flex;
   flex-direction: column;
-  gap: var(--rad-2);
+  /* A menu's rhythm: rows sit close and carry their own padding, so the gap
+     only has to keep neighbouring groups apart. */
+  gap: var(--panel-gap);
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
 }
-.rad-panel__title {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0 0.4rem;
-  font-family: var(--site-font-display, inherit);
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: var(--site-text);
-}
-.rad-panel__title svg {
-  width: 1rem;
-  height: 1rem;
-}
 .rad-panel__search {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.55rem 0.75rem;
+  margin-bottom: var(--panel-gap);
+  padding: 0.55rem 0.7rem;
   border-radius: 999px;
   border: 1px solid var(--site-border);
   background: var(--site-surface);
@@ -2000,7 +2029,7 @@ html.perf-lite .radial-backdrop__blob {
   flex-direction: column;
 }
 .rad-panel__group h3 {
-  padding: 0.35rem 0.4rem 0.15rem;
+  padding: 0.35rem var(--panel-inset) 0.15rem;
   font-size: 0.6875rem;
   font-weight: 800;
   letter-spacing: 0.16em;
@@ -2010,8 +2039,8 @@ html.perf-lite .radial-backdrop__blob {
 .rad-panel__links {
   display: flex;
   flex-direction: column;
-  margin-top: var(--rad-2);
-  padding-top: var(--rad-2);
+  margin-top: var(--panel-inset);
+  padding-top: var(--panel-inset);
   border-top: 1px solid var(--site-border);
 }
 .rad-panel__row,
@@ -2021,7 +2050,7 @@ html.perf-lite .radial-backdrop__blob {
   gap: 0.6rem;
   width: 100%;
   min-width: 0;
-  padding: 0.5rem 0.4rem;
+  padding: 0.5rem var(--panel-inset);
   border: none;
   border-radius: var(--site-radius-sm, 12px);
   background: transparent;
@@ -2075,30 +2104,57 @@ html.perf-lite .radial-backdrop__blob {
   color: var(--site-text-muted);
   font-variant-numeric: tabular-nums;
 }
+/* Empty and loading states are the panel's most common state, not its edge case.
+   Given only its text height the panel collapsed to a strip — a header, one grey
+   line and a button — which read as a broken render rather than an empty inbox.
+   The floor gives it the body of a panel, and `flex: 1` centres the line in
+   whatever room is actually left (e.g. under the search field). */
 .rad-panel__note {
-  padding: var(--rad-4) 0.4rem;
+  display: flex;
+  /* `1 0 auto`, not `1`: a zero basis would let a long message shrink below its
+     own text height and spill out of the panel. */
+  flex: 1 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 5.5rem;
+  margin: 0;
+  padding: 0.75rem var(--panel-inset);
   font-size: 0.84rem;
   color: var(--site-text-muted);
   text-align: center;
+  text-wrap: balance;
 }
+/* The way through to the full page — a peer of the rows above it, not a slab.
+   As a filled accent pill it was the loudest thing in every panel, shouting over
+   the very content it exists to supplement. */
 .rad-panel__more {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
   flex: none;
-  margin-top: var(--rad-2);
-  padding: 0.6rem 0.75rem;
-  border-radius: 999px;
-  background: var(--site-accent);
-  color: var(--site-accent-fg);
+  margin-top: var(--panel-inset);
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius-sm, 12px);
+  background: var(--site-surface);
+  color: var(--site-text);
   font-size: 0.82rem;
   font-weight: 700;
   text-decoration: none;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease;
+}
+.rad-panel__more:hover {
+  border-color: var(--site-border-bright, var(--site-border));
+  background: var(--site-surface-hover);
 }
 .rad-panel__more svg {
   width: 1rem;
   height: 1rem;
+  flex: none;
+  color: var(--site-accent);
 }
 
 /* ── Pointer metaball (mouse cursor + touch drop) ─────────────────────────
@@ -2361,7 +2417,8 @@ html.perf-lite .radial-backdrop__blob {
   .rad-deck__row,
   .rad-deck__tab,
   .rad-panel__row,
-  .rad-panel__identity {
+  .rad-panel__identity,
+  .rad-panel__more {
     transition-duration: 0.001ms;
   }
   .rad-live__dot::after {

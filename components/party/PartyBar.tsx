@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Crown, Gamepad2, LogOut, UserPlus, Users, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 import { useParty } from '@/hooks/useParty';
 import type { PartyMemberView } from '@/lib/party/types';
 
@@ -63,6 +64,12 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
   const { data: session } = useSession();
   const { party, createParty, leave, queue } = useParty();
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // The game list hangs off the trigger's trailing edge with nothing holding it
+  // inside the window — on a phone, or with the bar near an edge, part of it
+  // sat off-screen. Clamp it, and re-clamp whenever the viewport changes.
+  useMenuViewportFit(menuOpen, menuRef);
 
   if (!session?.user) return null;
 
@@ -94,11 +101,13 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
         </Button>
         {menuOpen && (
           <div
+            ref={menuRef}
             className={cn(
               'absolute right-0 z-10 w-52 glass-overlay p-1',
               // Inline card opens the menu downward; the docked pill opens it up.
               inline ? 'top-full mt-2' : 'bottom-full mb-2',
             )}
+            data-slot="party-game-menu"
             role="menu"
           >
             <div className="flex items-center justify-between px-2 py-1">

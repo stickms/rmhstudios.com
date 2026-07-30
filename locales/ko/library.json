@@ -50,7 +50,6 @@
   "label-description": "설명",
   "label-title": "제목",
   "library-heading": "라이브러리",
-  "library-totals": "Library totals",
   "manage": "관리",
   "manage-albums": "Create or manage albums",
   "migrate-button": "S3로 마이그레이션",
@@ -87,10 +86,6 @@
   "section-curated": "엄선",
   "section-music": "Music",
   "sections-label": "Library sections",
-  "stat-albums": "Albums",
-  "stat-collections": "Collections",
-  "stat-pages": "Pages",
-  "stat-volumes": "Volumes",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

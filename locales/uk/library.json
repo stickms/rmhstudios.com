@@ -53,7 +53,6 @@
   "label-description": "Description",
   "label-title": "Title",
   "library-heading": "Library",
-  "library-totals": "Library totals",
   "manage": "Manage",
   "manage-albums": "Create or manage albums",
   "migrate-button": "Migrate to S3",
@@ -99,10 +98,6 @@
   "section-curated": "Curated",
   "section-music": "Music",
   "sections-label": "Library sections",
-  "stat-albums": "Albums",
-  "stat-collections": "Collections",
-  "stat-pages": "Pages",
-  "stat-volumes": "Volumes",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

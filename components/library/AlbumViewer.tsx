@@ -33,6 +33,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { Album, AlbumSlide } from '@/lib/albums';
 import { albumCoverVTName } from '@/lib/view-transition';
+import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 import './album-viewer.css';
 
 const MAX_SCALE = 6;
@@ -68,6 +69,12 @@ export function AlbumViewer({ album }: { album: Album }) {
   const [toast, setToast] = useState<string | null>(null);
   // Which toolbar action's "full vs optimized" menu is open (images only).
   const [menu, setMenu] = useState<'download' | 'share' | null>(null);
+  // Only ever one of the two quality menus is mounted, so they share a ref. The
+  // clamp keeps either inside the visual viewport on a phone and re-runs on
+  // rotation/resize — the menus are wider than a toolbar button and anchored to
+  // its edge, so nothing else stops them spilling off-screen.
+  const menuRef = useRef<HTMLDivElement>(null);
+  useMenuViewportFit(menu !== null, menuRef, [menu]);
   // Which slide index has fully loaded (drives the blur-up). Deriving `loaded`
   // from this means it flips to false the instant we navigate, so the blurred
   // thumbnail shows immediately instead of flashing a blank frame.
@@ -405,7 +412,7 @@ export function AlbumViewer({ album }: { album: Album }) {
               <Share2 size={18} />
             </button>
             {menu === 'share' && slide.type === 'image' && (
-              <div className="av__menu" role="menu">
+              <div ref={menuRef} className="av__menu" role="menu">
                 <button type="button" role="menuitem" className="av__menu-item" onClick={() => chooseShare('full')}>
                   {t('album-quality-full', { defaultValue: 'Full resolution' })}
                 </button>
@@ -427,7 +434,7 @@ export function AlbumViewer({ album }: { album: Album }) {
               <Download size={18} />
             </button>
             {menu === 'download' && slide.type === 'image' && (
-              <div className="av__menu" role="menu">
+              <div ref={menuRef} className="av__menu" role="menu">
                 <button type="button" role="menuitem" className="av__menu-item" onClick={() => chooseDownload('full')}>
                   {t('album-quality-full', { defaultValue: 'Full resolution' })}
                 </button>
