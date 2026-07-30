@@ -59,6 +59,53 @@ export function GameCanvas() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [engine, setEngine] = useState<GameEngine | null>(null);
   const rafRef = useRef<number | null>(null);
+
+  /**
+   * Theme colours the renderer needs, resolved once per theme change instead of
+   * per frame.
+   *
+   * `getComputedStyle()` flushes pending style/layout, so calling it inside the
+   * draw loop costs a full style recalculation every time. This used to happen
+   * once per frame for `--slice-bg` *and once per visible LONG note* for
+   * `--slice-hold-trail` — i.e. several forced recalcs per frame on a busy
+   * chart, on the one screen in the app where frame timing is the gameplay.
+   *
+   * Resolved against the canvas, not `<html>`: the `--slice-*` palette is scoped
+   * to `.slice-theme` (a wrapper div, see app/routes/slice-it.tsx), so reading it
+   * off `document.documentElement` returned "" and silently fell back to the
+   * hard-coded light-mode trail colour in both themes.
+   */
+  const themeRef = useRef<ReturnType<typeof readTheme> | null>(null);
+
+  const readTheme = (canvas: HTMLCanvasElement) => {
+    const cs = getComputedStyle(canvas);
+    const v = (name: string, fallback: string) => cs.getPropertyValue(name).trim() || fallback;
+    const holdTrail = v('--slice-hold-trail', 'rgba(255, 255, 255, 0.5)');
+    return {
+      bg: v('--slice-bg', '#e0e5ec'),
+      shadowDark: v('--slice-shadow-dark', '#a3b1c6'),
+      shadowLight: v('--slice-shadow-light', '#ffffff'),
+      textColor: v('--slice-text-muted', '#64748b'),
+      textShadowColor: v('--slice-text-shadow', 'rgba(0,0,0,0.3)'),
+      holdTrail,
+      // The held-note variant is a fixed transform of the same colour — compute
+      // it with the cache rather than re-running the regex per note per frame.
+      holdTrailHeld: holdTrail.replace(/,\s*[\d.]+\)$/, ', 0.9)'),
+    };
+  };
+
+  // DarkModeWrapper toggles `.dark` on <html>, which is what re-resolves the
+  // scoped `--slice-*` values. Drop the cache when that happens (and on unmount).
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      themeRef.current = null;
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class', 'style'],
+    });
+    return () => observer.disconnect();
+  }, []);
   const [showMobileButtons, setShowMobileButtons] = useState(false);
   const [isPortrait, setIsPortrait] = useState(false);
 
@@ -660,9 +707,10 @@ export function GameCanvas() {
     const H = ctx.canvas.height;
     const dpr = window.devicePixelRatio || 1;
 
-    // Reset & Clear — read background color from CSS variable so dark mode works
-    const canvasStyle = getComputedStyle(ctx.canvas);
-    const bgColor = canvasStyle.getPropertyValue('--slice-bg').trim() || '#e0e5ec';
+    // Reset & Clear — theme colours come from the per-theme cache, never from a
+    // per-frame getComputedStyle (see themeRef).
+    const theme = (themeRef.current ??= readTheme(ctx.canvas));
+    const bgColor = theme.bg;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
     ctx.fillStyle = bgColor;
@@ -728,8 +776,7 @@ export function GameCanvas() {
       isMobileV ? CURSOR_MAIN - timeDelta * PPS : CURSOR_MAIN + timeDelta * PPS;
 
     // 1. Draw Tracks (Neumorphic Trough)
-    const shadowDark = canvasStyle.getPropertyValue('--slice-shadow-dark').trim() || '#a3b1c6';
-    const shadowLight = canvasStyle.getPropertyValue('--slice-shadow-light').trim() || '#ffffff';
+    const { shadowDark, shadowLight } = theme;
     LANE_POS.forEach((laneVal, i) => {
       const trackThickness = BAR_H * 1.5;
 
@@ -997,13 +1044,7 @@ export function GameCanvas() {
 
           if (remainingDuration > 0) {
             const len = remainingDuration * PPS;
-            const trailColor =
-              getComputedStyle(document.documentElement)
-                .getPropertyValue('--slice-hold-trail')
-                .trim() || 'rgba(255, 255, 255, 0.5)';
-            ctx.fillStyle = isHeldActive
-              ? trailColor.replace(/,\s*[\d.]+\)$/, ', 0.9)')
-              : trailColor;
+            ctx.fillStyle = isHeldActive ? theme.holdTrailHeld : theme.holdTrail;
             ctx.globalAlpha = noteAlpha;
             ctx.beginPath();
             if (isMobileV) {
@@ -1148,9 +1189,7 @@ export function GameCanvas() {
     }
 
     // 5. Cursors (Receptors)
-    const textColor = canvasStyle.getPropertyValue('--slice-text-muted').trim() || '#64748b';
-    const textShadowColor =
-      canvasStyle.getPropertyValue('--slice-text-shadow').trim() || 'rgba(0,0,0,0.3)';
+    const { textColor, textShadowColor } = theme;
 
     const drawCursor = (cx: number, cy: number, color: string, label?: string) => {
       ctx.shadowColor = shadowLight;

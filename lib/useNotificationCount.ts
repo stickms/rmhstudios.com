@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useIdleReady } from '@/hooks/useIdleReady';
+import { pulseSnapshot, requestPulse, setPulseNotifications, subscribePulse } from '@/lib/pulse';
 
 /**
  * Fired (on `window`) when notifications are marked read somewhere in the app so
@@ -12,105 +13,20 @@ import { useIdleReady } from '@/hooks/useIdleReady';
 export const NOTIFICATIONS_READ_EVENT = 'notifications:read';
 
 /**
- * Polls the unread notification count (interval + focus/visibility + the
- * read-event above). Ref-counted module singleton so the several consumers (the
- * left sidebar — which the layout mounts twice, desktop rail + mobile drawer —
- * plus the inbox column) share ONE poll/interval instead of each running their
- * own. Returns the shared count plus `refresh`/`setCount` that fan out to all.
+ * The unread notification count for the nav badge.
+ *
+ * This used to own a 45s interval plus focus/visibility listeners against
+ * `/api/notifications/unread-count`. It now reads the `notifications` section of
+ * the shared pulse (`lib/pulse.ts`), which carries the presence heartbeat and the
+ * friends surfaces in the same request — so the several consumers here (the nav
+ * rail, the shell — which mounts twice, desktop rail + mobile drawer — and the
+ * inbox column) cost no requests of their own at all.
+ *
+ * The subscription is still ref-counted and idle-deferred, and the returned
+ * `refresh`/`setCount` still fan out to every consumer, so callers are unchanged.
  */
-
-let count = 0;
-const subscribers = new Set<(n: number) => void>();
-let interval: ReturnType<typeof setInterval> | null = null;
-let listenersBound = false;
-let fetchController: AbortController | null = null;
-let fetchPromise: Promise<void> | null = null;
-let generation = 0;
-
-function broadcast(n: number) {
-  count = n;
-  for (const s of subscribers) s(n);
-}
-
-function fetchCount(): Promise<void> {
-  // Focus, visibility, the read event, and the interval can all fire together.
-  // Share one request so those triggers never fan out duplicate reads.
-  if (fetchPromise) return fetchPromise;
-
-  const requestGeneration = generation;
-  const controller = new AbortController();
-  fetchController = controller;
-
-  // Begin in a microtask so fetchPromise owns the request before any mocked or
-  // platform fetch implementation has a chance to throw synchronously.
-  const request = Promise.resolve()
-    .then(async () => {
-      const res = await fetch('/api/notifications/unread-count', {
-        credentials: 'include',
-        signal: controller.signal,
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      // stop() advances the generation before aborting. Ignore a response that
-      // raced teardown so one signed-in user's count cannot repopulate the store
-      // after the final subscriber leaves.
-      if (requestGeneration === generation && typeof data.count === 'number') {
-        broadcast(data.count);
-      }
-    })
-    .catch(() => {
-      // Network hiccup or teardown abort — keep the last known value.
-    })
-    .finally(() => {
-      // A stopped transport may already have started a newer request. Only the
-      // request that still owns these slots may clear them.
-      if (fetchController === controller) {
-        fetchController = null;
-        fetchPromise = null;
-      }
-    });
-
-  fetchPromise = request;
-  return request;
-}
-
-function onVisible() {
-  if (document.visibilityState === 'visible') fetchCount();
-}
-
-function start(intervalMs: number) {
-  if (interval) return;
-  fetchCount();
-  interval = setInterval(fetchCount, intervalMs);
-  if (!listenersBound) {
-    document.addEventListener('visibilitychange', onVisible);
-    window.addEventListener('focus', fetchCount);
-    window.addEventListener(NOTIFICATIONS_READ_EVENT, fetchCount);
-    listenersBound = true;
-  }
-}
-
-function stop() {
-  generation++;
-
-  if (interval) {
-    clearInterval(interval);
-    interval = null;
-  }
-  fetchController?.abort();
-  fetchController = null;
-  fetchPromise = null;
-  if (listenersBound) {
-    document.removeEventListener('visibilitychange', onVisible);
-    window.removeEventListener('focus', fetchCount);
-    window.removeEventListener(NOTIFICATIONS_READ_EVENT, fetchCount);
-    listenersBound = false;
-  }
-  count = 0;
-}
-
-export function useNotificationCount(isLoggedIn: boolean, intervalMs = 45_000) {
-  const [value, setValue] = useState(count);
+export function useNotificationCount(isLoggedIn: boolean) {
+  const [value, setValue] = useState(() => pulseSnapshot().notifications);
   const idleReady = useIdleReady();
 
   useEffect(() => {
@@ -118,16 +34,24 @@ export function useNotificationCount(isLoggedIn: boolean, intervalMs = 45_000) {
       setValue(0);
       return;
     }
-    subscribers.add(setValue);
-    setValue(count);
-    // Defer the first fetch + polling until the browser is idle so the badge
-    // count doesn't contend for the network during hydration/TTI.
-    if (idleReady) start(intervalMs);
-    return () => {
-      subscribers.delete(setValue);
-      if (subscribers.size === 0) stop();
-    };
-  }, [isLoggedIn, intervalMs, idleReady]);
+    // Defer joining the pulse until the browser is idle so the badge count
+    // doesn't contend for the network during hydration/TTI.
+    if (!idleReady) return;
 
-  return { count: isLoggedIn ? value : 0, refresh: fetchCount, setCount: broadcast };
+    const unsubscribe = subscribePulse(['notifications'], (data) => setValue(data.notifications));
+    // A client-side navigation that marks notifications read fires neither focus
+    // nor visibilitychange, so it gets its own immediate pulse.
+    const onRead = () => void requestPulse();
+    window.addEventListener(NOTIFICATIONS_READ_EVENT, onRead);
+    return () => {
+      window.removeEventListener(NOTIFICATIONS_READ_EVENT, onRead);
+      unsubscribe();
+    };
+  }, [isLoggedIn, idleReady]);
+
+  return {
+    count: isLoggedIn ? value : 0,
+    refresh: requestPulse,
+    setCount: setPulseNotifications,
+  };
 }

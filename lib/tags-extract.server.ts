@@ -41,24 +41,40 @@ export function extractHashtags(content: string): string[] {
 export async function linkPostHashtags(tx: Tx, postId: string, content: string): Promise<void> {
   const tags = extractHashtags(content);
   if (tags.length === 0) return;
-  for (const tag of tags) {
-    const hashtag = await tx.hashtag.upsert({
-      where: { tag },
-      create: { tag },
-      update: {},
-      select: { id: true },
-    });
-    const created = await tx.postHashtag
-      .create({ data: { hashtagId: hashtag.id, rmheetId: postId }, select: { id: true } })
-      .then(() => true)
-      .catch(() => false); // unique violation → already linked
-    if (created) {
-      await tx.hashtag.update({
-        where: { id: hashtag.id },
-        data: { postCount: { increment: 1 } },
-      });
-    }
-  }
+
+  // Set-at-a-time, not tag-at-a-time. The previous version issued three serial
+  // queries per tag (upsert + create + update), so a 10-hashtag post ran 30
+  // round trips *while holding the post-create interactive transaction* — the
+  // transaction stayed open for the whole latency of all of them, pinning a pool
+  // connection and blocking the author's response. This is a fixed five
+  // statements regardless of tag count.
+  await tx.hashtag.createMany({ data: tags.map((tag) => ({ tag })), skipDuplicates: true });
+
+  // `tag` is unique, so this is one indexed read for the whole set.
+  const rows = await tx.hashtag.findMany({ where: { tag: { in: tags } }, select: { id: true } });
+  const ids = rows.map((r) => r.id);
+  if (ids.length === 0) return;
+
+  // Only *newly* linked tags may bump postCount. On the create path this is
+  // always empty (the post id is brand new), but the same function is used when
+  // a post's content is re-linked, and double-counting there would permanently
+  // skew trending — so the set difference is computed rather than assumed.
+  const existing = await tx.postHashtag.findMany({
+    where: { rmheetId: postId, hashtagId: { in: ids } },
+    select: { hashtagId: true },
+  });
+  const already = new Set(existing.map((e) => e.hashtagId));
+  const fresh = ids.filter((id) => !already.has(id));
+  if (fresh.length === 0) return;
+
+  await tx.postHashtag.createMany({
+    data: fresh.map((hashtagId) => ({ hashtagId, rmheetId: postId })),
+    skipDuplicates: true,
+  });
+  await tx.hashtag.updateMany({
+    where: { id: { in: fresh } },
+    data: { postCount: { increment: 1 } },
+  });
 }
 
 /**
@@ -73,10 +89,10 @@ export async function unlinkPostHashtags(tx: Tx, postId: string): Promise<void> 
   });
   if (links.length === 0) return;
   await tx.postHashtag.deleteMany({ where: { rmheetId: postId } });
-  for (const { hashtagId } of links) {
-    await tx.hashtag.update({
-      where: { id: hashtagId },
-      data: { postCount: { decrement: 1 } },
-    });
-  }
+  // `@@unique([hashtagId, rmheetId])` means a post links each tag at most once,
+  // so every affected tag decrements by exactly 1 — one statement, not one per tag.
+  await tx.hashtag.updateMany({
+    where: { id: { in: links.map((l) => l.hashtagId) } },
+    data: { postCount: { decrement: 1 } },
+  });
 }

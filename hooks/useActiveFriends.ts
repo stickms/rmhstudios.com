@@ -1,15 +1,19 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSession } from '@/components/Providers';
 import { useIdleReady } from '@/hooks/useIdleReady';
+import { pulseSnapshot, requestPulse, subscribePulse } from '@/lib/pulse';
 import type { ActiveFriend } from '@/lib/presence-types';
 
 /**
- * Fetches the viewer's online mutuals (§9) from /api/friends/active. The GET is
- * 15s-cached server-side, so a light 60s poll keeps the rail fresh without
- * hammering the DB (socket-driven `presence:changed` updates are the follow-up
- * that replaces the poll). Only runs signed-in and after the browser is idle.
+ * The viewer's online mutuals (§9).
+ *
+ * This used to run its own 60s poll against `/api/friends/active`. It now reads
+ * the `activeFriends` section of the shared pulse (`lib/pulse.ts`) — same
+ * server-side 15s cache behind it, but no request of its own, and the section is
+ * only computed while a consumer is actually mounted. Still gated on signed-in +
+ * browser-idle.
  */
 export function useActiveFriends(enabled = true): {
   friends: ActiveFriend[] | null;
@@ -17,26 +21,16 @@ export function useActiveFriends(enabled = true): {
 } {
   const { data: session } = useSession();
   const idle = useIdleReady();
-  const [friends, setFriends] = useState<ActiveFriend[] | null>(null);
-
-  const load = useCallback(async () => {
-    try {
-      const res = await fetch('/api/friends/active', { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        setFriends((data.friends as ActiveFriend[]) ?? []);
-      }
-    } catch {
-      // decorative surface — ignore
-    }
-  }, []);
+  const [friends, setFriends] = useState<ActiveFriend[] | null>(
+    () => pulseSnapshot().activeFriends as ActiveFriend[] | null,
+  );
 
   useEffect(() => {
     if (!enabled || !session?.user || !idle) return;
-    void load();
-    const interval = setInterval(load, 60_000);
-    return () => clearInterval(interval);
-  }, [enabled, session?.user, idle, load]);
+    return subscribePulse(['activeFriends'], (data) =>
+      setFriends(data.activeFriends as ActiveFriend[] | null),
+    );
+  }, [enabled, session?.user, idle]);
 
-  return { friends, refresh: load };
+  return { friends, refresh: requestPulse };
 }

@@ -74,7 +74,13 @@ export async function setPostLike(
       payload: { id: postId, likeCount: updated.likeCount },
       timestamp: new Date().toISOString(),
     });
-    await createNotification({
+    // Fire-and-forget: the recipient learns about this over their own
+    // notification channel, so the liker's response must not wait on it.
+    // Awaiting it added three serial queries (preference read + unread-dedupe
+    // findFirst + create/update) to the site's highest-frequency write, and the
+    // like button is optimistic on the client anyway. `createNotification`
+    // swallows its own errors, so nothing escapes here.
+    void createNotification({
       userId: post.userId,
       actorId: userId,
       type: 'LIKE',
@@ -108,7 +114,8 @@ export async function setPostLike(
     payload: { id: postId, likeCount: updated.likeCount },
     timestamp: new Date().toISOString(),
   });
-  await removeNotification({
+  // Same as the like path — the unlike response does not depend on the retraction.
+  void removeNotification({
     userId: post.userId,
     actorId: userId,
     type: 'LIKE',
@@ -183,56 +190,64 @@ export async function createComment(args: {
     timestamp: new Date().toISOString(),
   });
 
-  // Notifications (best-effort).
-  try {
-    const link = postLink(post.user?.handle, post.userId, postId);
-    let parentAuthorId: string | null = null;
-    if (args.parentId) {
-      const parent = await prisma.rMHarkComment.findUnique({
-        where: { id: args.parentId },
-        select: { userId: true },
-      });
-      if (parent) {
-        parentAuthorId = parent.userId;
+  // Notifications (best-effort) — deferred as a unit. This block is the bulk of
+  // the comment endpoint's cost: a parent-author lookup, up to two notification
+  // chains (each a preference read + unread-dedupe findFirst + insert), and
+  // mention resolution, all serial. Nothing below it reads their results and the
+  // comment is already committed and broadcast on the feed bus above, so the
+  // author's response no longer waits for any of it. Everything it needs is
+  // already in scope, so the closure issues no extra reads of its own.
+  void (async () => {
+    try {
+      const link = postLink(post.user?.handle, post.userId, postId);
+      let parentAuthorId: string | null = null;
+      if (args.parentId) {
+        const parent = await prisma.rMHarkComment.findUnique({
+          where: { id: args.parentId },
+          select: { userId: true },
+        });
+        if (parent) {
+          parentAuthorId = parent.userId;
+          await createNotification({
+            userId: parent.userId,
+            actorId: userId,
+            type: 'REPLY',
+            entityType: 'comment',
+            entityId: comment.id,
+            preview: content,
+            link,
+          });
+        }
+      }
+      if (post.userId !== parentAuthorId) {
         await createNotification({
-          userId: parent.userId,
+          userId: post.userId,
           actorId: userId,
-          type: 'REPLY',
-          entityType: 'comment',
-          entityId: comment.id,
+          type: 'COMMENT',
+          entityType: 'rmhark',
+          entityId: postId,
           preview: content,
           link,
         });
       }
-    }
-    if (post.userId !== parentAuthorId) {
-      await createNotification({
-        userId: post.userId,
-        actorId: userId,
-        type: 'COMMENT',
-        entityType: 'rmhark',
-        entityId: postId,
-        preview: content,
+      await notifyMentions({
+        content: comment.content,
+        author: {
+          id: comment.user.id,
+          name: comment.user.name ?? null,
+          image: comment.user.image ?? null,
+          handle: comment.user.handle ?? null,
+        },
+        postId,
+        entityType: 'comment',
+        entityId: comment.id,
         link,
+        timestamp: comment.createdAt.toISOString(),
       });
+    } catch (e) {
+      console.error('comment notification error:', e);
     }
-    await notifyMentions({
-      content: comment.content,
-      author: {
-        id: comment.user.id,
-        name: comment.user.name ?? null,
-        image: comment.user.image ?? null,
-        handle: comment.user.handle ?? null,
-      },
-      postId,
-      entityType: 'comment',
-      entityId: comment.id,
-      link,
-      timestamp: comment.createdAt.toISOString(),
-    });
-  } catch (e) {
-    console.error('comment notification error:', e);
-  }
+  })();
 
   void enqueueProgression({
     actorId: userId,
@@ -344,7 +359,7 @@ async function applyFollow(args: {
     // The follower's cached follow graph is now stale — drop it so their next
     // feed/sidebar read reflects the new follow immediately.
     invalidateFollowingIds(followerId);
-    await createNotification({
+    void createNotification({
       userId: followingId,
       actorId: followerId,
       type: 'FOLLOW',
@@ -353,17 +368,26 @@ async function applyFollow(args: {
       link: args.followerHandle ? `/u/${args.followerHandle}` : `/profile/${followerId}`,
       dedupeUnread: true,
     });
-    try {
-      await progressAchievement(followingId, 'social.first_follower', {
-        setProgress: followerCount,
-      });
-      await progressAchievement(followingId, 'social.followers_50', { setProgress: followerCount });
-      await progressAchievement(followingId, 'social.followers_500', {
-        setProgress: followerCount,
-      });
-    } catch (e) {
-      console.error('follow achievement error:', e);
-    }
+    // Three serial upserts against the *followed* user's achievement rows. They
+    // are derived state that nothing in the response depends on, so they run
+    // after it instead of in front of it (same treatment as enqueueProgression
+    // below). `followerCount` is already resolved, so the deferred closure needs
+    // no further reads.
+    void (async () => {
+      try {
+        await progressAchievement(followingId, 'social.first_follower', {
+          setProgress: followerCount,
+        });
+        await progressAchievement(followingId, 'social.followers_50', {
+          setProgress: followerCount,
+        });
+        await progressAchievement(followingId, 'social.followers_500', {
+          setProgress: followerCount,
+        });
+      } catch (e) {
+        console.error('follow achievement error:', e);
+      }
+    })();
     void enqueueProgression({
       actorId: followerId,
       xp: 5,
@@ -388,7 +412,7 @@ async function applyFollow(args: {
     }),
   ]);
   invalidateFollowingIds(followerId);
-  await removeNotification({
+  void removeNotification({
     userId: followingId,
     actorId: followerId,
     type: 'FOLLOW',

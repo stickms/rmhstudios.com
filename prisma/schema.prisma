@@ -793,6 +793,10 @@ model SongComment {
 
   song Song @relation(fields: [songId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // The song comment list is `where songId orderBy createdAt desc` and this model
+  // carried no index at all, so every song page scanned and sorted the whole table.
+  @@index([songId, createdAt(sort: Desc)])
 }
 
 model SongLeaderboard {
@@ -1023,6 +1027,11 @@ model RmhTubeRoomMember {
   user User        @relation(fields: [userId], references: [id])
 
   @@unique([roomId, userId])
+  // The social-presence fan-out asks "which of these online users are in a room"
+  // (lib/presence.server.ts) on a per-viewer ~45s poll. `userId` leads no other
+  // index — the unique above is (roomId, userId) — so that was a seq scan of the
+  // whole membership table, twice per poll (this table and the RMHMusic one).
+  @@index([userId, leftAt])
   @@map("rmhtube_room_member")
 }
 
@@ -1889,6 +1898,8 @@ model Prediction {
 
   @@index([status, createdAt(sort: Desc)])
   @@index([resolverKey, status]) // resolver settlement sweeps
+  // Per-author pending-submission cap, counted on every market creation.
+  @@index([creatorId, status])
   @@map("prediction")
 }
 
@@ -2061,6 +2072,8 @@ model RmhMusicRoomMember {
   leftAt   DateTime?
 
   @@unique([roomId, userId])
+  // Same per-viewer presence fan-out as rmhtube_room_member above.
+  @@index([userId, leftAt])
   @@map("rmh_music_room_member")
 }
 
@@ -4129,6 +4142,11 @@ model Notification {
   @@index([userId, read, createdAt(sort: Desc)])
   @@index([userId, createdAt(sort: Desc)])
   @@index([userId, groupKey])
+  // Unread-dedupe lookup + the retraction deleteMany (createNotification /
+  // removeNotification), which run on every like, comment, follow and unlike.
+  // Without this they fell back to (userId, read, createdAt) and scanned every
+  // unread row the recipient has.
+  @@index([userId, read, type, entityId])
   @@map("notification")
 }
 
