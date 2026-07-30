@@ -1,5 +1,5 @@
 /**
- * Creator Studio · Ranked summary.
+ * Create · Ranked summary.
  *
  * A compact panel pinned to the top of the Games tab — replacing the former
  * standalone /ranked sidebar tab. Shows the viewer's ranked standings (or a

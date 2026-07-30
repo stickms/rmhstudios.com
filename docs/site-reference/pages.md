@@ -39,14 +39,14 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/user-builds` | — | admin | `app/routes/_site/admin/user-builds.tsx` |
 | `/admin/users` | — | admin | `app/routes/_site/admin/users.tsx` |
 | `/analytics` | Creator Analytics | public | `app/routes/_site/analytics.tsx` |
-| `/arcade` | Arcade Pass | public | `app/routes/_site/arcade.tsx` |
+| `/arcade` | redirects to `/create?tab=games` (Arcade Pass) | public | `app/routes/_site/arcade.tsx` |
 | `/blog` | redirects to `/library` | public | `app/routes/_site/blog/index.tsx` |
 | `/bookmarks` | Bookmarks | public | `app/routes/_site/bookmarks.tsx` |
 | `/builds` | redirects to `/create` | public | `app/routes/_site/builds/index.tsx` |
 | `/builds/:slug` | Build Not Found | public | `app/routes/_site/builds/$slug.tsx` |
 | `/c/:slug` | — | public | `app/routes/_site/c.$slug.tsx` |
 | `/communities` | Communities | public | `app/routes/_site/communities.tsx` |
-| `/create` | Creator Studio | public | `app/routes/_site/create/index.tsx` |
+| `/create` | Create | public | `app/routes/_site/create/index.tsx` |
 | `/creator-studio` | redirects to `/create` | public | `app/routes/_site/creator-studio.tsx` |
 | `/developer` | Developer API | public | `app/routes/_site/developer/index.tsx` |
 | `/drafts` | Drafts | public | `app/routes/_site/drafts.tsx` |
@@ -64,7 +64,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/homes/saved` | RMHHomes — Saved | public | `app/routes/_site/homes/saved.tsx` |
 | `/homes/submit` | RMHHomes — Post a listing | public | `app/routes/_site/homes/submit.tsx` |
 | `/homes/watches` | RMHHomes — My alerts | public | `app/routes/_site/homes/watches.tsx` |
-| `/leaderboard` | redirects to `/arcade` | public | `app/routes/_site/leaderboard.tsx` |
+| `/leaderboard` | redirects to `/create?tab=games&sub=leaderboard` | public | `app/routes/_site/leaderboard.tsx` |
 | `/library` | Library | public | `app/routes/_site/library/index.tsx` |
 | `/lists` | Lists | public | `app/routes/_site/lists/index.tsx` |
 | `/lists/:id` | List | public | `app/routes/_site/lists/$id.tsx` |
@@ -74,7 +74,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/moments/:id` | — | public | `app/routes/_site/moments.$id.tsx` |
 | `/music-trivia` | Guess the Song | public | `app/routes/_site/music-trivia.tsx` |
 | `/news` | News | public | `app/routes/_site/news/index.tsx` |
-| `/notifications` | Notifications | public | `app/routes/_site/notifications.tsx` |
+| `/notifications` | redirects to `/messages?tab=notifications` | public | `app/routes/_site/notifications.tsx` |
 | `/personas` | redirects to `/create` | public | `app/routes/_site/personas/index.tsx` |
 | `/personas/:id` | Chat | public | `app/routes/_site/personas/$id.tsx` |
 | `/playlists` | redirects to `/library` | public | `app/routes/_site/playlists.tsx` |

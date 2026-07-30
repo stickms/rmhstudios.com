@@ -1,5 +1,5 @@
 /**
- * Creator Studio · Builds surfaces.
+ * Create · Builds surfaces.
  *
  * Curated/Official builds (the RMH-made games + apps, code-defined) and the
  * community submissions are both rendered through the shared Steam-style
@@ -145,7 +145,7 @@ export function CuratedBuildsTab({
 
 /**
  * Community-submitted builds (the former "User builds" half of the Builds tab),
- * now promoted to its own Creator Studio tab. Fetches from /api/user-builds
+ * now promoted to its own Create tab. Fetches from /api/user-builds
  * with search, sort, and lazy infinite-scroll pagination.
  */
 export function UserBuildsTab({ seed }: { seed: number }) {

@@ -107,7 +107,6 @@ export const SIDEBAR_NAV_IDS = [
   '/library',
   '/communities',
   '/store',
-  '/arcade',
   '/predictions',
   '/developer',
   // Both hubs are plain links now (§15.7) — their ids are hrefs, not `group:`
@@ -133,7 +132,6 @@ export const SIDEBAR_HIDEABLE_IDS = [
   '/library',
   '/communities',
   '/store',
-  '/arcade',
   '/predictions',
   '/developer',
 ] as const;

@@ -51,7 +51,7 @@ authoritative on the server. The client renders it; it does not own it.
 | Route | What it is |
 | ----- | ---------- |
 | `/games`, `/apps` | Browse pages, rendered from the catalogs. |
-| `/arcade` | Arcade Pass — per-game daily challenges. |
+| `/create?tab=games` | Arcade Pass — per-game daily challenges (`/arcade` redirects here). |
 | `/saves` | Cross-game saves. |
 | `/replays/:id` | A saved replay. |
 | `/ranked` | The ranked ladder. |

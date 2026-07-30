@@ -23,7 +23,6 @@ import {
   Compass,
   Users,
   Terminal,
-  Gamepad2,
   LayoutGrid,
   Rocket,
   type LucideIcon,
@@ -73,11 +72,13 @@ export const SIDEBAR_NAV: NavItem[] = [
     requiresAuth: true,
     badge: 'inbox',
   },
-  { id: '/create', href: '/create', tKey: 'nav-creator-studio', label: 'Creator Studio', icon: Wand2 },
+  { id: '/create', href: '/create', tKey: 'nav-create', label: 'Create', icon: Wand2 },
   { id: '/library', href: '/library', tKey: 'nav-library', label: 'Library', icon: Library },
   { id: '/communities', href: '/communities', tKey: 'nav-communities', label: 'Communities', icon: Users },
   { id: '/store', href: '/store', tKey: 'nav-store', label: 'Store', icon: ShoppingBag },
-  { id: '/arcade', href: '/arcade', tKey: 'nav-arcade', label: 'Arcade', icon: Gamepad2 },
+  // Arcade is no longer its own wedge: the Arcade Pass (daily challenges + the
+  // player leaderboard) is a section of Create's Games tab, under Ranked.
+  // `/arcade` stays alive as a redirect there, so old links still land.
   { id: '/predictions', href: '/predictions', tKey: 'nav-predictions', label: 'Predictions', icon: TrendingUp },
   { id: '/developer', href: '/developer', tKey: 'nav-developer', label: 'Developer', icon: Terminal },
   // §15.7: Services is a plain link to the /services hub page (the former

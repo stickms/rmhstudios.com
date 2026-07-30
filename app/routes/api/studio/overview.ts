@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { getStudioOverview } from '@/lib/creator/studio.server';
 
-/** GET /api/studio/overview — the caller's Creator Studio dashboard model. */
+/** GET /api/studio/overview — the caller's Create/Earnings dashboard model. */
 export const Route = createFileRoute('/api/studio/overview')({
   server: {
     handlers: {

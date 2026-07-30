@@ -1,14 +1,14 @@
 /**
- * /create — Creator Studio.
+ * /create — Create.
  *
- * The unified creation hub that combines what used to be three separate
- * destinations — Pages (RMHVibe generation), Builds (official + community
- * games/apps), and AI Personas — into a single wide-layout page with a sticky
- * tab bar. The active tab is mirrored into the `?tab=` search param so deep
- * links and back-navigation land on the right surface.
+ * The unified creation hub that combines what used to be separate destinations
+ * — Pages (RMHVibe generation), Builds (official + community games/apps), AI
+ * Personas, and now the Arcade Pass — into a single wide-layout page with a
+ * sticky tab bar. The active tab is mirrored into the `?tab=` search param so
+ * deep links and back-navigation land on the right surface, and the Arcade
+ * block's own sub-tab into `?sub=` (so `/leaderboard` can deep-link the board).
  *
- * (Note: the standalone `/studio` route is a separate music DAW — "RMH Studio".
- * This Creator Studio lives at `/create` to avoid colliding with it.)
+ * (Note: the standalone `/studio` route is a separate music DAW — "RMH Studio".)
  */
 
 import { useCallback, useMemo } from 'react';
@@ -25,6 +25,11 @@ import { listVibePages } from '@/lib/rmhvibe/vibe.server';
 import { PagesTab, type VibeGallery } from '@/components/creator-studio/PagesTab';
 import { CuratedBuildsTab, UserBuildsTab } from '@/components/creator-studio/BuildsTab';
 import { RankedSummary } from '@/components/creator-studio/RankedSummary';
+import {
+  ArcadeSection,
+  ARCADE_SUB_TABS,
+  type ArcadeSubTab,
+} from '@/components/creator-studio/ArcadeSection';
 import { PersonasTab } from '@/components/creator-studio/PersonasTab';
 import { EarningsTab } from '@/components/creator-studio/EarningsTab';
 import { StudioDashboard } from '@/components/creator-studio/StudioDashboard';
@@ -45,16 +50,22 @@ const fetchGallery = createServerFn({ method: 'GET' })
 export const Route = createFileRoute('/_site/create/')({
   head: () => ({
     meta: [
-      { title: 'Creator Studio | RMH Studios' },
+      { title: 'Create | RMH Studios' },
       {
         name: 'description',
-        content: 'Create pages, explore games and apps, and build AI personas — all in one place.',
+        content:
+          'Create pages, play the daily arcade challenges, explore games and apps, and build AI personas — all in one place.',
       },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>): { tab?: StudioTab } => {
-    const tab = search.tab;
-    return STUDIO_TABS.includes(tab as StudioTab) ? { tab: tab as StudioTab } : {};
+  validateSearch: (search: Record<string, unknown>): { tab?: StudioTab; sub?: ArcadeSubTab } => {
+    const { tab, sub } = search;
+    return {
+      ...(STUDIO_TABS.includes(tab as StudioTab) ? { tab: tab as StudioTab } : {}),
+      // `?sub=` is the Games tab's Arcade block; anything else is ignored so a
+      // stray param can't strand the section on a surface that doesn't exist.
+      ...(ARCADE_SUB_TABS.includes(sub as ArcadeSubTab) ? { sub: sub as ArcadeSubTab } : {}),
+    };
   },
   loader: async () => ({
     gallery: await fetchGallery({ data: {} }),
@@ -63,18 +74,27 @@ export const Route = createFileRoute('/_site/create/')({
     // staying deterministic between server render and client hydration.
     seed: Math.floor(Math.random() * 1_000_000) + 1,
   }),
-  component: CreatorStudio,
+  component: CreatePage,
 });
 
-function CreatorStudio() {
+function CreatePage() {
   const { t } = useTranslation('feed');
   const { gallery, curated, seed } = Route.useLoaderData();
-  const { tab = 'pages' } = Route.useSearch();
+  const { tab = 'pages', sub = 'challenges' } = Route.useSearch();
   const navigate = useNavigate();
 
   const setTab = useCallback(
     (next: string) => {
+      // Switching top-level tab drops `?sub=` — it only means anything inside
+      // the Games tab's Arcade block.
       void navigate({ to: '/create', search: { tab: next as StudioTab }, replace: true });
+    },
+    [navigate],
+  );
+
+  const setArcadeSub = useCallback(
+    (next: ArcadeSubTab) => {
+      void navigate({ to: '/create', search: { tab: 'games', sub: next }, replace: true });
     },
     [navigate],
   );
@@ -126,7 +146,7 @@ function CreatorStudio() {
           idBase="cstudio"
           scroll
           iconOnly
-          aria-label={t('creator-studio', { defaultValue: 'Creator Studio' })}
+          aria-label={t('create', { defaultValue: 'Create' })}
         />
 
         {tab === 'pages' && (
@@ -148,6 +168,7 @@ function CreatorStudio() {
           >
             <PartyBar inline />
             <RankedSummary />
+            <ArcadeSection sub={sub} onSubChange={setArcadeSub} />
             <CuratedBuildsTab
               curated={games}
               seed={seed + 1}

@@ -5,13 +5,18 @@
  *
  * Renders the viewer's streak, a live countdown to the next UTC reset, and the
  * three challenge cards (game art, progress, a "Play now" link, and a Claim
- * button once completed). Data is seeded from the page loader; claims POST to
- * `/api/arcade/claim` and then re-pull `/api/arcade/` so the board stays honest.
+ * button once completed). Claims POST to `/api/arcade/claim` and then re-pull
+ * `/api/arcade/` so the board stays honest.
+ *
+ * Its host is `ArcadeSection` (the Arcade Pass block of Create's Games tab),
+ * which mounts it with no `initialState` — the board self-fetches. Nothing seeds
+ * it from a route loader any more, so a refresh here has no loader copy to
+ * invalidate; it owns its own state end to end.
  */
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useRouter } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { m as motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { Check, Clock, Flame, Gamepad2, Gift, Play, Trophy, Zap } from 'lucide-react';
@@ -45,11 +50,10 @@ export function ArcadeHub({
   hideHeader = false,
 }: {
   initialState: ArcadeState | null;
-  /** Hide the built-in desktop header (e.g. when hosted under the /arcade tab bar). */
+  /** Hide the built-in header (the host section already names the surface). */
   hideHeader?: boolean;
 }) {
   const { t } = useTranslation('site');
-  const router = useRouter();
   const [state, setState] = useState<ArcadeState | null>(initialState);
   const [claiming, setClaiming] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<string | null>(null);
@@ -71,11 +75,10 @@ export function ArcadeHub({
     } catch {
       /* best-effort refresh */
     }
-    // Keep the route loader's copy fresh for back-navigation.
-    void router.invalidate();
-  }, [router]);
+  }, []);
 
-  // Rare: signed-in shell rendered before the loader had a server session.
+  // The host mounts us empty, so this first pull is the normal path (not the
+  // exception it was when a route loader seeded the board).
   useEffect(() => {
     if (!initialState) void refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -286,7 +289,12 @@ function ChallengeCard({
             {t('arcade-claimed-label', { defaultValue: 'Claimed' })}
           </span>
         ) : claimable ? (
-          <Button variant="accent" loading={busy} onClick={onClaim} className="w-full gap-1 sm:w-auto">
+          <Button
+            variant="accent"
+            loading={busy}
+            onClick={onClaim}
+            className="w-full gap-1 sm:w-auto"
+          >
             {!busy && <Gift className="h-3.5 w-3.5" aria-hidden />}
             {t('arcade-claim', { defaultValue: 'Claim' })}
           </Button>

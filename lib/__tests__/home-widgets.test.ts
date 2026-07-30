@@ -31,9 +31,22 @@ describe('parseHomeStack', () => {
 
 describe('parseSidebarPref', () => {
   it('keeps only known ids and dedupes', () => {
-    expect(parseSidebarPref({ pinned: ['/store', '/store', '/not-real'], hidden: ['/arcade'] })).toEqual({
+    expect(
+      parseSidebarPref({ pinned: ['/store', '/store', '/not-real'], hidden: ['/predictions'] }),
+    ).toEqual({
       pinned: ['/store'],
-      hidden: ['/arcade'],
+      hidden: ['/predictions'],
+      order: [],
+    });
+  });
+
+  it('drops a retired tab id (forward-safe across nav changes)', () => {
+    // '/arcade' was a nav wedge until the Arcade Pass moved into Create's Games
+    // tab. A pref saved while it existed must still parse — minus that id —
+    // rather than being rejected wholesale.
+    expect(parseSidebarPref({ pinned: ['/store'], hidden: ['/arcade'] })).toEqual({
+      pinned: ['/store'],
+      hidden: [],
       order: [],
     });
   });
@@ -62,9 +75,9 @@ describe('parseSidebarPref', () => {
   });
 
   it('only hides leaves in the hideable set (never Home or a hub page)', () => {
-    expect(parseSidebarPref({ hidden: ['/', '/services', '/arcade'] })).toEqual({
+    expect(parseSidebarPref({ hidden: ['/', '/services', '/predictions'] })).toEqual({
       pinned: [],
-      hidden: ['/arcade'],
+      hidden: ['/predictions'],
       order: [],
     });
   });
