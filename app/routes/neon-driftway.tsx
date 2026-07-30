@@ -13,7 +13,10 @@ function NeonDriftwayPage() {
       className="fixed inset-0 bg-black flex flex-col overflow-hidden"
       style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
     >
-      <div className="absolute top-3 left-3 z-50">
+      <div
+        className="absolute left-3 z-50"
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)' }}
+      >
         <Link to="/builds">
           <Button
             variant="ghost"
@@ -26,7 +29,9 @@ function NeonDriftwayPage() {
         </Link>
       </div>
 
-      <div className="grow relative flex items-center justify-center overflow-hidden">
+      {/* The cockpit fills the viewport at every aspect ratio — the renderer
+          adapts its field of view rather than letterboxing a fixed frame. */}
+      <div className="grow relative overflow-hidden">
         <GameErrorBoundary gameName="Neon Driftway">
           <Suspense fallback={<GameLoadingFallback />}>
             <NeonDriftwayGame />

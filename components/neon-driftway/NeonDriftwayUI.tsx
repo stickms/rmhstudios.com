@@ -3,16 +3,28 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { Play, ArrowLeft, RotateCcw, Trophy, Lock, Users } from 'lucide-react';
+import { Play, ArrowLeft, RotateCcw, Trophy, Lock, Users, Glasses, Compass, Eye } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { useNavigate } from '@tanstack/react-router';
 import { LEVELS } from '@/lib/neon-driftway/constants';
 import type { LevelId, RunStats } from '@/lib/neon-driftway/types';
+import type { GyroStatus } from '@/lib/neon-driftway/gyro';
+import type { ViewMode } from './NeonDriftwayGame';
 
 type LeaderboardEntry = {
   username: string;
   highScore: number;
 };
+
+interface VrProps {
+  viewMode: ViewMode;
+  gyroStatus: GyroStatus;
+  /** False on hardware where a motion sensor is not plausible at all. */
+  canOfferHeadLook: boolean;
+  /** A headset was detected, so the split screen is the sensible default. */
+  headsetDetected: boolean;
+  onSelectMode: (mode: ViewMode) => void;
+}
 
 export function NeonDriftwayUI({
   uiState,
@@ -22,10 +34,13 @@ export function NeonDriftwayUI({
   onGoToMenu,
   onGoToLevelSelect,
   onStartLevel,
-  onResume,
   onContinueEndless,
   onGoToMultiplayer,
-  multiplayerRankings,
+  viewMode,
+  gyroStatus,
+  canOfferHeadLook,
+  headsetDetected,
+  onSelectMode,
 }: {
   uiState: 'menu' | 'levelSelect' | 'playing' | 'gameOver' | 'levelComplete' | 'multiplayerMenu' | 'lobby' | 'multiplayerPlaying' | 'multiplayerGameOver';
   unlockedLevels: Set<LevelId>;
@@ -34,11 +49,9 @@ export function NeonDriftwayUI({
   onGoToMenu: () => void;
   onGoToLevelSelect: () => void;
   onStartLevel: (id: LevelId) => void;
-  onResume: () => void;
   onContinueEndless: () => void;
   onGoToMultiplayer?: () => void;
-  multiplayerRankings?: { id: string; name: string; score: number; rank: number }[];
-}) {
+} & VrProps) {
   const { t } = useTranslation("c-neon-driftway");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
@@ -88,6 +101,89 @@ export function NeonDriftwayUI({
 
   if (uiState === 'playing' || uiState === 'multiplayerPlaying' || uiState === 'multiplayerMenu' || uiState === 'lobby') return null;
 
+  // ── View mode panel ──
+  // Only offered where a motion sensor is plausible. Everywhere else the
+  // static forward camera is simply the game, with nothing to configure.
+  const modes: { id: ViewMode; label: string; hint: string; icon: typeof Eye }[] = [
+    {
+      id: 'gyro',
+      label: t('mode-gyro', { defaultValue: 'Gyro' }),
+      hint: t('mode-gyro-hint', { defaultValue: 'One screen. Move your device to look around as you drive.' }),
+      icon: Compass,
+    },
+    {
+      id: 'vr',
+      label: t('mode-vr', { defaultValue: 'VR' }),
+      hint: t('mode-vr-hint', { defaultValue: 'Split screen for a headset or phone viewer. Hold a screen edge to steer.' }),
+      icon: Glasses,
+    },
+    {
+      id: 'fixed',
+      label: t('mode-fixed', { defaultValue: 'Fixed' }),
+      hint: t('mode-fixed-hint', { defaultValue: 'Camera locked straight ahead. No motion needed.' }),
+      icon: Eye,
+    },
+  ];
+  const activeMode = modes.find((m) => m.id === viewMode) ?? modes[2];
+
+  // Without a motion sensor there is exactly one mode, so there is nothing to
+  // choose — the panel would be a control that does nothing.
+  const viewPanel = canOfferHeadLook ? (
+    <div className="space-y-2 rounded-lg border border-zinc-700 bg-black/60 p-3 text-left">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+          {t('view-mode', { defaultValue: 'View' })}
+        </span>
+        {headsetDetected && (
+          <span className="rounded-full bg-purple-500/25 px-2 py-0.5 text-[10px] font-bold tracking-wider text-purple-200">
+            {t('headset-detected', { defaultValue: 'HEADSET DETECTED' })}
+          </span>
+        )}
+      </div>
+
+      <div role="radiogroup" aria-label={t('view-mode', { defaultValue: 'View' })} className="flex gap-1.5">
+        {modes.map((mode) => {
+          const Icon = mode.icon;
+          const active = mode.id === viewMode;
+          return (
+            <button
+              key={mode.id}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => onSelectMode(mode.id)}
+              className={`flex flex-1 flex-col items-center gap-1 rounded border px-2 py-2 transition-colors ${
+                active
+                  ? 'border-cyan-400 bg-cyan-500/20 text-cyan-200'
+                  : 'border-zinc-700 bg-zinc-900/70 text-zinc-400 hover:border-zinc-500'
+              }`}
+            >
+              <Icon className="h-4 w-4" aria-hidden="true" />
+              <span className="text-xs font-bold">{mode.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="text-[11px] text-zinc-400">{activeMode.hint}</p>
+
+      <p className="flex items-start gap-1.5 text-[11px] text-zinc-500">
+        <Compass className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+        <span>
+          {viewMode === 'fixed'
+            ? t('gyro-off', { defaultValue: 'Head look is off — the camera stays locked forward.' })
+            : gyroStatus === 'active'
+              ? t('gyro-active', { defaultValue: 'Motion sensor live. Press C or tap recenter to face forward again.' })
+              : gyroStatus === 'denied'
+                ? t('gyro-denied', { defaultValue: 'Motion access was declined, so the camera stays locked forward. You can allow it in your browser settings.' })
+                : gyroStatus === 'unavailable'
+                  ? t('gyro-unavailable', { defaultValue: 'No motion sensor here — the camera stays locked forward.' })
+                  : t('gyro-waiting', { defaultValue: 'Waiting for the motion sensor…' })}
+        </span>
+      </p>
+    </div>
+  ) : null;
+
   // ── Main Menu ──
   if (uiState === 'menu') {
     return (
@@ -96,7 +192,7 @@ export function NeonDriftwayUI({
           <h1 className="text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-linear-to-r from-cyan-400 via-white to-red-500 tracking-tighter">
             NEON DRIFTWAY
           </h1>
-          <p className="text-zinc-400 text-xs sm:text-sm">{t("menu-tagline", { defaultValue: "Endless highway survival racer. Dodge traffic, survive hazards, chase the leaderboard." })}</p>
+          <p className="text-zinc-400 text-xs sm:text-sm">{t("menu-tagline", { defaultValue: "First-person highway survival racer. Take the wheel, look around the cockpit as you drive, and chase the leaderboard." })}</p>
 
           <div className="space-y-3">
             {!session.data ? (
@@ -128,6 +224,8 @@ export function NeonDriftwayUI({
             )}
           </div>
 
+          {viewPanel}
+
           {/* Mini leaderboard */}
           {leaderboard.length > 0 && (
             <div className="bg-black/60 border border-zinc-700 rounded-lg p-4 mt-4">
@@ -147,7 +245,7 @@ export function NeonDriftwayUI({
           )}
 
           <div className="text-[10px] sm:text-xs text-zinc-600 space-y-1">
-            <p className="hidden sm:block">{t("keyboard-controls", { defaultValue: "W/↑ accelerate · A/D or ←/→ steer · S/↓ brake · Shift boost · Esc pause" })}</p>
+            <p className="hidden sm:block">{t("keyboard-controls", { defaultValue: "W/↑ accelerate · A/D or ←/→ steer · S/↓ brake · Shift boost · C recenter view · Esc pause" })}</p>
             <p className="sm:hidden">{t("touch-controls-hint", { defaultValue: "Touch controls appear during gameplay" })}</p>
           </div>
         </div>
