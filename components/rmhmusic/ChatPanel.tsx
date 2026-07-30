@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Send, MessageCircle } from 'lucide-react';
 import { useRmhMusicStore, getChatEntries } from '@/lib/rmhmusic/store';
@@ -17,7 +17,13 @@ export default function ChatPanel() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { t } = useTranslation("c-rmhmusic");
-  const entries = getChatEntries(store);
+  // Memoised on the two arrays it reads. `useRmhMusicStore()` subscribes to the
+  // whole store, so this previously re-merged and re-sorted the transcript on
+  // every render — including the frequent playback-state updates.
+  const entries = useMemo(
+    () => getChatEntries(room?.chat, store.systemMessages),
+    [room?.chat, store.systemMessages],
+  );
 
   useEffect(() => {
     if (scrollRef.current) {

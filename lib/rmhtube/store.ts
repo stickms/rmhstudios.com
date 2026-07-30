@@ -72,6 +72,14 @@ const DEFAULT_SETTINGS: RmhTubeUserSettings = {
   layoutDensity: 'comfortable',
 };
 
+/**
+ * Chat messages retained client-side. A watch party can run for hours, so this is
+ * the ceiling on scrollback rather than a page size — deeper history lives
+ * server-side. Chosen to match the `slice(-100)` cap already applied to
+ * `systemMessages`, with headroom because chat is the denser of the two streams.
+ */
+const CHAT_SCROLLBACK = 200;
+
 // ─── Store Interface ─────────────────────────────────────────────
 
 export interface RmhTubeStore {
@@ -318,8 +326,15 @@ export function applyRoomAction(
     case 'CHAT_MESSAGE':
       return {
         ...room,
+        // Bounded scrollback, matching the `systemMessages.slice(-100)` cap this
+        // store already applies. This array was the one unbounded structure in a
+        // long-lived watch party: it grew for the room's entire lifetime, and
+        // because `getChatEntries` merges and re-sorts it on every store change,
+        // and ChatPanel renders every entry, an all-evening room paid for its
+        // whole history on each new message — in memory, in sort cost, and in DOM
+        // nodes. Older messages remain server-side history.
         chat: [
-          ...room.chat,
+          ...room.chat.slice(1 - CHAT_SCROLLBACK),
           {
             id: data.id as string,
             userId: data.userId as string,
@@ -505,8 +520,17 @@ export function applyRoomAction(
 
 // ─── Helper: Get combined chat entries (messages + system) ───────
 
-export function getChatEntries(store: RmhTubeStore): ChatEntry[] {
-  const messages: ChatEntry[] = store.room?.chat ?? [];
-  const system: ChatEntry[] = store.systemMessages;
-  return [...messages, ...system].sort((a, b) => a.createdAt - b.createdAt);
+/**
+ * Merge chat and system messages into one time-ordered list.
+ *
+ * Takes the two arrays rather than the whole store so a caller can memoise on
+ * exactly what this reads. `useRmhTubeStore()` subscribes to the entire store,
+ * which changes on every SYNC_STATE and clock sync, so a store-keyed memo
+ * re-merged and re-sorted the whole transcript on updates unrelated to chat.
+ */
+export function getChatEntries(
+  chat: ChatEntry[] | undefined,
+  systemMessages: ChatEntry[],
+): ChatEntry[] {
+  return [...(chat ?? []), ...systemMessages].sort((a, b) => a.createdAt - b.createdAt);
 }

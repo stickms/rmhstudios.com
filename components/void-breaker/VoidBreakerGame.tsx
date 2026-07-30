@@ -18,6 +18,7 @@ import {
 } from '@/lib/void-breaker/metaProgression';
 import { getCharacter, isCharacterId, type CharacterId } from '@/lib/void-breaker/characters';
 import { getWeapon, isWeaponId, type WeaponId } from '@/lib/void-breaker/weapons';
+import { canvasGlowEnabled } from '@/lib/render/canvas2d-fx';
 import { combineModifiers, isModifierId, type ModifierId } from '@/lib/void-breaker/modifiers';
 import { VoidBreakerUI } from './VoidBreakerUI';
 import { VoidBreakerTouchControls } from './VoidBreakerTouchControls';
@@ -110,8 +111,13 @@ export function VoidBreakerGame() {
     }
     if (localStorage.getItem('vb-render-3d') === 'false') setUse3D(false);
     const storedFx = localStorage.getItem('vb-reduced-fx');
-    const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-    setReducedFx(storedFx !== null ? storedFx === 'true' : prefersReduced);
+    // Default to the cheap path under reduced motion OR on a low-end device.
+    // `canvasGlowEnabled` folds in `html.perf-lite` — the same class that already
+    // disables the glass blur, the aurora parallax and the liquid layer — so this
+    // renderer's blurred shadows and per-frame gradients are gated on the same
+    // signal as the rest of the site instead of on reduced motion alone. An
+    // explicit user choice still wins.
+    setReducedFx(storedFx !== null ? storedFx === 'true' : !canvasGlowEnabled());
     const storedChar = localStorage.getItem('vb-character');
     if (isCharacterId(storedChar)) setCharacterId(storedChar);
     const storedWeapon = localStorage.getItem('vb-weapon');

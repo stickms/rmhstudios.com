@@ -97,6 +97,7 @@ let skipWebGPUThisSession = false;
 let failedThisSession = false;
 let watchdog: ReturnType<typeof setInterval> | null = null;
 let classObserver: MutationObserver | null = null;
+let styleObserver: MutationObserver | null = null;
 let resizeHandler: (() => void) | null = null;
 let visHandler: (() => void) | null = null;
 let unsubRegistry: (() => void) | null = null;
@@ -141,9 +142,13 @@ function applySize(): void {
   rt.renderer.resize(w, h, d);
 }
 
+/**
+ * Signature of the inline scene colours. Called on an inline-`style` mutation,
+ * never per frame — see `styleObserver` in `boot()`. Cheap inline-style reads (no
+ * layout flush); user themes / accents set these inline, so a change here means
+ * the scene colours changed without a class swap.
+ */
 function buildInlineSig(): string {
-  // Cheap inline-style reads (no layout flush) — user themes / accents set these
-  // inline, so a change here means the scene colours changed without a class swap.
   const st = document.documentElement.style;
   return (
     st.getPropertyValue('--site-canvas') +
@@ -182,10 +187,11 @@ function frame(now: number): void {
   // instant it stops proving itself). The happy path is unchanged: no throw
   // means the catch never runs.
   try {
-    // Detect a user-theme / accent change via cheap inline reads; re-parse only then.
-    const sig = buildInlineSig();
-    if (sig !== rt.inlineSig) refreshStatic();
-
+    // No theme check here: a `style` MutationObserver (see boot()) owns it, so the
+    // frame loop allocates nothing. It used to build a signature string every
+    // frame — including on the idle path that then returns without rendering —
+    // which contradicted this module's zero-per-frame-allocation budget and cost
+    // ~1 short-lived string per frame per display refresh on every page.
     readLiveInputs(rt.live);
     const sc = rt.scene;
     sc.mx = rt.live.mx;
@@ -467,6 +473,22 @@ export function initLiquidGL(): () => void {
     attributeFilter: ['class'],
   });
 
+  // Inline scene colours (user themes / accents write these on <html>). This is
+  // why the `style` attribute is watched separately from `class` above: inline
+  // style churns on every pointer move via --light-x/y, so the callback must stay
+  // cheap. It compares the three colour vars and only re-parses when one of them
+  // actually changed — a pointer move fails that comparison and does nothing.
+  // MutationObserver batches into a microtask, so a drag costs one comparison per
+  // batch instead of one per frame, and an idle page costs nothing at all.
+  styleObserver = new MutationObserver(() => {
+    if (!rt) return;
+    if (buildInlineSig() !== rt.inlineSig) refreshStatic();
+  });
+  styleObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['style'],
+  });
+
   resizeHandler = () => applySize();
   window.addEventListener('resize', resizeHandler, { passive: true });
   // Mobile browser chrome changes the visual viewport without consistently
@@ -489,11 +511,13 @@ export function initLiquidGL(): () => void {
 
   return () => {
     if (classObserver) classObserver.disconnect();
+    if (styleObserver) styleObserver.disconnect();
     if (resizeHandler) window.removeEventListener('resize', resizeHandler);
     if (resizeHandler) window.visualViewport?.removeEventListener('resize', resizeHandler);
     if (visHandler) document.removeEventListener('visibilitychange', visHandler);
     if (unsubRegistry) unsubRegistry();
     classObserver = null;
+    styleObserver = null;
     resizeHandler = null;
     visHandler = null;
     unsubRegistry = null;

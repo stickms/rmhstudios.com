@@ -13,9 +13,14 @@ export const Route = createFileRoute('/api/slice-it/songs/$id/comments')({
   GET: async ({ request, params }) => {
     try {
         const { id } = params;
+        // Bounded: a public list with no pagination UI, so without a cap a popular
+        // song's thread grows into the response forever. 200 is far above any real
+        // thread and keeps the newest-first order the client already renders, so
+        // nothing observable changes today.
         const comments = await prisma.songComment.findMany({
             where: { songId: id },
             orderBy: { createdAt: 'desc' },
+            take: 200,
             include: {
                 user: {
                     select: { name: true, username: true, image: true, profile: { select: { displayName: true, customImage: true } } }

@@ -22,6 +22,10 @@ export async function getThread(id: string, viewerId: string | null): Promise<Fe
     },
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     include: rmharkIncludeLite(viewerId),
+    // Defensive only: thread creation caps at MAX_SEGMENTS = 25
+    // (api/rmharks/thread.ts), so this never truncates a thread built through the
+    // composer. It stops a thread assembled another way from loading unbounded.
+    take: 100,
   });
   if (posts.length === 0) return null;
 

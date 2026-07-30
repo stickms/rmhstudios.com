@@ -2,59 +2,25 @@
 
 import { useEffect } from 'react';
 import { useIdleReady } from '@/hooks/useIdleReady';
+import { subscribePulse } from '@/lib/pulse';
 
 /**
- * Sends a presence heartbeat while the tab is visible, so the user shows as
- * "online now". Pings on mount, every 60s, and when the tab regains visibility.
+ * Keeps the user showing as "online now" while the tab is visible.
  *
- * Ref-counted module singleton: the site layout mounts the left sidebar twice
- * (desktop rail + mobile drawer) and both call this — so without sharing, the
- * client sent duplicate heartbeats. One shared interval/listener regardless of
- * how many consumers mount.
+ * There is no longer a dedicated heartbeat request: `POST /api/pulse` marks
+ * presence on every tick, so this hook only has to hold a pulse subscription
+ * open. It subscribes to no sections — it wants the side effect, not the payload
+ * — and the pulse's own visibility gating preserves the previous behaviour of not
+ * pinging a backgrounded tab.
+ *
+ * Still ref-counted (the layout mounts the sidebar twice, desktop rail + mobile
+ * drawer) and still idle-deferred so the first ping doesn't compete with the feed
+ * at hydration.
  */
-
-let subscribers = 0;
-let interval: ReturnType<typeof setInterval> | null = null;
-let visListener: (() => void) | null = null;
-
-function ping() {
-  if (document.visibilityState !== 'visible') return;
-  fetch('/api/presence/heartbeat', { method: 'POST', credentials: 'include' }).catch(() => {});
-}
-
-function start() {
-  if (interval) return;
-  ping();
-  interval = setInterval(ping, 60_000);
-  visListener = ping;
-  document.addEventListener('visibilitychange', visListener);
-}
-
-function stop() {
-  if (interval) {
-    clearInterval(interval);
-    interval = null;
-  }
-  if (visListener) {
-    document.removeEventListener('visibilitychange', visListener);
-    visListener = null;
-  }
-}
-
 export function usePresenceHeartbeat(isLoggedIn: boolean) {
   const idleReady = useIdleReady();
   useEffect(() => {
-    // Defer the first heartbeat until idle so it doesn't compete with the feed
-    // at hydration; the 60s interval + visibility ping behave as before.
     if (!isLoggedIn || !idleReady) return;
-    subscribers++;
-    start();
-    return () => {
-      subscribers--;
-      if (subscribers <= 0) {
-        subscribers = 0;
-        stop();
-      }
-    };
+    return subscribePulse([], () => {});
   }, [isLoggedIn, idleReady]);
 }

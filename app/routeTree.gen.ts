@@ -108,6 +108,7 @@ import { Route as ApiMessagesRouteImport } from './routes/api/messages'
 import { Route as ApiOembedRouteImport } from './routes/api/oembed'
 import { Route as ApiProfileRouteImport } from './routes/api/profile'
 import { Route as ApiProgressRouteImport } from './routes/api/progress'
+import { Route as ApiPulseRouteImport } from './routes/api/pulse'
 import { Route as ApiRecapRouteImport } from './routes/api/recap'
 import { Route as ApiRmharksRouteImport } from './routes/api/rmharks'
 import { Route as ApiRumRouteImport } from './routes/api/rum'
@@ -1213,6 +1214,11 @@ const ApiProfileRoute = ApiProfileRouteImport.update({
 const ApiProgressRoute = ApiProgressRouteImport.update({
   id: '/api/progress',
   path: '/api/progress',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPulseRoute = ApiPulseRouteImport.update({
+  id: '/api/pulse',
+  path: '/api/pulse',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRecapRoute = ApiRecapRouteImport.update({
@@ -4461,6 +4467,7 @@ export interface FileRoutesByFullPath {
   '/api/oembed': typeof ApiOembedRoute
   '/api/profile': typeof ApiProfileRouteWithChildren
   '/api/progress': typeof ApiProgressRoute
+  '/api/pulse': typeof ApiPulseRoute
   '/api/recap': typeof ApiRecapRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/rum': typeof ApiRumRoute
@@ -5147,6 +5154,7 @@ export interface FileRoutesByTo {
   '/api/oembed': typeof ApiOembedRoute
   '/api/profile': typeof ApiProfileRouteWithChildren
   '/api/progress': typeof ApiProgressRoute
+  '/api/pulse': typeof ApiPulseRoute
   '/api/recap': typeof ApiRecapRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/rum': typeof ApiRumRoute
@@ -5858,6 +5866,7 @@ export interface FileRoutesById {
   '/api/oembed': typeof ApiOembedRoute
   '/api/profile': typeof ApiProfileRouteWithChildren
   '/api/progress': typeof ApiProgressRoute
+  '/api/pulse': typeof ApiPulseRoute
   '/api/recap': typeof ApiRecapRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/rum': typeof ApiRumRoute
@@ -6571,6 +6580,7 @@ export interface FileRouteTypes {
     | '/api/oembed'
     | '/api/profile'
     | '/api/progress'
+    | '/api/pulse'
     | '/api/recap'
     | '/api/rmharks'
     | '/api/rum'
@@ -7257,6 +7267,7 @@ export interface FileRouteTypes {
     | '/api/oembed'
     | '/api/profile'
     | '/api/progress'
+    | '/api/pulse'
     | '/api/recap'
     | '/api/rmharks'
     | '/api/rum'
@@ -7967,6 +7978,7 @@ export interface FileRouteTypes {
     | '/api/oembed'
     | '/api/profile'
     | '/api/progress'
+    | '/api/pulse'
     | '/api/recap'
     | '/api/rmharks'
     | '/api/rum'
@@ -8645,6 +8657,7 @@ export interface RootRouteChildren {
   ApiOembedRoute: typeof ApiOembedRoute
   ApiProfileRoute: typeof ApiProfileRouteWithChildren
   ApiProgressRoute: typeof ApiProgressRoute
+  ApiPulseRoute: typeof ApiPulseRoute
   ApiRecapRoute: typeof ApiRecapRoute
   ApiRmharksRoute: typeof ApiRmharksRouteWithChildren
   ApiRumRoute: typeof ApiRumRoute
@@ -9674,6 +9687,13 @@ declare module '@tanstack/react-router' {
       path: '/api/progress'
       fullPath: '/api/progress'
       preLoaderRoute: typeof ApiProgressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/pulse': {
+      id: '/api/pulse'
+      path: '/api/pulse'
+      fullPath: '/api/pulse'
+      preLoaderRoute: typeof ApiPulseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/recap': {
@@ -15419,6 +15439,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOembedRoute: ApiOembedRoute,
   ApiProfileRoute: ApiProfileRouteWithChildren,
   ApiProgressRoute: ApiProgressRoute,
+  ApiPulseRoute: ApiPulseRoute,
   ApiRecapRoute: ApiRecapRoute,
   ApiRmharksRoute: ApiRmharksRouteWithChildren,
   ApiRumRoute: ApiRumRoute,

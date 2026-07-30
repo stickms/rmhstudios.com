@@ -231,6 +231,62 @@ export async function redisGetJSON<T>(key: string): Promise<T | null> {
   }
 }
 
+/**
+ * Get many JSON values in one round trip. Returns null when Redis is off (so the
+ * caller can tell "no Redis" from "all missing"); otherwise an array positionally
+ * matching `keys`, with null for a miss or an unparseable value.
+ *
+ * Exists because the presence reader needs every listed friend's activity at
+ * once: one MGET instead of one GET per friend.
+ */
+export async function redisMGetJSON<T>(keys: string[]): Promise<(T | null)[] | null> {
+  init();
+  if (!publisher) return null;
+  if (keys.length === 0) return [];
+  try {
+    const raws = await publisher.mget(...keys);
+    return raws.map((raw) => {
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw) as T;
+      } catch {
+        return null;
+      }
+    });
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Which of `members` are present in any of `bucketKeys`.
+ *
+ * Null when Redis is off, so a caller can fall back to its database path rather
+ * than mistake an unavailable backplane for "nobody is online". One `SMISMEMBER`
+ * per bucket regardless of how many members are being tested, which is what makes
+ * "is each of these N users online" affordable.
+ */
+export async function redisPresenceFilter(
+  bucketKeys: string[],
+  members: string[],
+): Promise<Set<string> | null> {
+  init();
+  if (!statePublisher) return null;
+  const found = new Set<string>();
+  if (members.length === 0 || bucketKeys.length === 0) return found;
+  try {
+    for (const bucket of bucketKeys) {
+      const flags = await statePublisher.smismember(bucket, ...members);
+      flags.forEach((flag, i) => {
+        if (flag) found.add(members[i]);
+      });
+    }
+    return found;
+  } catch {
+    return null;
+  }
+}
+
 /** Set a JSON value with a TTL (ms). No-op when Redis is off. */
 export async function redisSetJSON(key: string, value: unknown, ttlMs: number): Promise<void> {
   init();

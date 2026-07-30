@@ -103,7 +103,14 @@ export default function ChatPanel() {
 
   // ─── Combined entries (chat + system messages) ─────────────────
 
-  const entries = useMemo(() => getChatEntries(store), [store]);
+  // Keyed on the two arrays it actually reads, not on `store`. `useRmhTubeStore()`
+  // subscribes to the whole store, which changes on every SYNC_STATE and clock
+  // sync — several times a minute in a live watch party — so a store-keyed memo
+  // re-merged and re-sorted the entire transcript on updates unrelated to chat.
+  const entries = useMemo(
+    () => getChatEntries(room?.chat, store.systemMessages),
+    [room?.chat, store.systemMessages],
+  );
 
   // ─── Auto-scroll on new messages ───────────────────────────────
 
