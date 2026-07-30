@@ -5,24 +5,23 @@
  * so the two never drift. Named "sidebar" for the left rail this predates.
  *
  * Each item has a stable `id`: leaves use their href (`/library`), groups use
- * `group:<name>` (`group:services`). The user's saved order + hidden set (see
- * `lib/home-widgets.ts` `SidebarPref` / `SIDEBAR_NAV_IDS`) is validated against
- * these ids, so renaming an id is a data migration — keep them stable.
+ * `group:<name>`. Every destination is a leaf today — Services and Ventures were
+ * the last two groups and are now plain links to their own hub pages — but the
+ * group shape stays supported, since the rail and the hub both still render it.
+ * The user's saved order + hidden set (see `lib/home-widgets.ts` `SidebarPref` /
+ * `SIDEBAR_NAV_IDS`) is validated against these ids, so renaming an id is a data
+ * migration — keep them stable.
  */
 import {
   Home,
   Library,
-  Atom,
-  Brain,
   Wand2,
   ShieldCheck,
   TrendingUp,
   Inbox,
-  Landmark,
   ShoppingBag,
   Compass,
   Users,
-  Shield,
   Terminal,
   Gamepad2,
   LayoutGrid,
@@ -57,10 +56,10 @@ export type NavItem = NavLeaf | NavGroup;
 
 export const isNavGroup = (item: NavItem): item is NavGroup => 'group' in item;
 
-// Top-level nav. Singles stay flat; related destinations are merged into
-// collapsible groups to keep the rail short. "Services" collects our real
-// standalone product verticals (each gets equal billing as a group child);
-// "RMH Ventures" collects the external brand/offering microsites. The order
+// Top-level nav — one entry per destination, each its own wedge on the hub.
+// "Services" (our standalone product verticals) and "RMH Ventures" (the brand
+// microsites) are hub PAGES rather than expanding groups, so a family of related
+// destinations costs the dial one wedge instead of one per member. The order
 // below is the default rail order; users can reorder/hide it (§15).
 export const SIDEBAR_NAV: NavItem[] = [
   { id: '/', href: '/', tKey: 'nav-home', label: 'Home', icon: Home },
@@ -85,32 +84,13 @@ export const SIDEBAR_NAV: NavItem[] = [
   // expanding group died per §12.8). Its verticals (/homes, /rmhladder,
   // /rideshare) live as tabs on that page and stay reachable directly.
   { id: '/services', href: '/services', tKey: 'nav-services', label: 'Services', icon: LayoutGrid },
-  {
-    id: 'group:ventures',
-    group: 'ventures',
-    tKey: 'nav-ventures',
-    label: 'RMH Ventures',
-    icon: Rocket,
-    children: [
-      { id: '/rmh-capital', href: '/rmh-capital', tKey: 'nav-rmh-capital', label: 'RMH Capital', icon: Landmark },
-      { id: '/rmh-pmc', href: '/rmh-pmc', tKey: 'nav-rmh-pmc', label: 'RMH PMC', icon: Shield },
-      {
-        id: '/adaptive-intelligence',
-        href: '/adaptive-intelligence',
-        tKey: 'nav-adaptive-intelligence',
-        label: 'Adaptive Intelligence',
-        icon: Atom,
-      },
-      {
-        id: '/deeplink',
-        href: '/deeplink',
-        tKey: 'nav-rmh-deeplink',
-        label: 'RMH Deeplink',
-        icon: Brain,
-        external: true,
-      },
-    ],
-  },
+  // Ventures follows Services: a plain link to its own hub page rather than a
+  // group. As a group its four children were flattened into four separate wedges
+  // on the radial hub — four of the dial's fourteen destinations spent on one arm
+  // of the company, and the two longest names on the dial ("Adaptive
+  // Intelligence", "RMH Deeplink") pushed into the ring with the least room for
+  // them. The microsites live as tabs on /ventures and stay reachable directly.
+  { id: '/ventures', href: '/ventures', tKey: 'nav-ventures', label: 'RMH Ventures', icon: Rocket },
   // Admin is never reordered/hidden (its id isn't in SIDEBAR_NAV_IDS), so it
   // stays pinned to the bottom of the rail and only renders for admins.
   {

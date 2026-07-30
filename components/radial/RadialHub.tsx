@@ -24,8 +24,10 @@ interface Wedge extends NavLeaf {
   /** Centroid of the visible annulus, in % — where the icon + label sit. */
   cx: number;
   cy: number;
-  /** 0 = inner ring, 1 = outer ring. Drives the label budget and the stagger. */
+  /** 0 = inner ring, 1 = outer ring. Drives the stagger (and the spin direction). */
   ring: 0 | 1;
+  /** Widest the icon+label box may be here, in % of the dial. See `labelBudget`. */
+  labelW: number;
   /** Bloom order across both rings (inner first), for the open stagger. */
   order: number;
 }
@@ -63,6 +65,47 @@ const ART_BLEED_DEG = 0.25;
 const SINGLE_RING_MAX = 6;
 /** Cap on the inner ring — it has the shorter circumference of the two. */
 const INNER_MAX = 6;
+
+/* ── Label fitting ──────────────────────────────────────────────────────────
+   A wedge's icon+label box is an axis-aligned rectangle centred on its sector's
+   centroid, so a box WIDER than the sector is cut by the sector's own clip-path
+   (this is what lopped the tail off "Adaptive Intelligence"), while one too
+   NARROW forces a mid-word break instead ("Communiti/es"). Both shipped at once,
+   because the two rings shared one guess — a pair of fixed rem caps — and the
+   room a ring actually has is not a constant: it is bounded BOTH by the band's
+   depth (a wedge at 3 o'clock spends its width radially) and by the sector's arc
+   (one at 6 o'clock spends it angularly), whichever of the two is tighter.
+
+   So the budget comes from the geometry, and the type then shrinks — down to a
+   floor — until the label's longest WORD fits it. Names therefore wrap between
+   words or not at all, and nothing is sliced mid-glyph.
+
+   Lengths are in the dial's own % units: the dial is square, so 1 unit = 1% of
+   its width = the unit `cx`/`cy` are measured in. */
+
+/** Base label size, and the floor a long name may shrink to (dial %). */
+const LABEL_FS = 2.5;
+const LABEL_FS_MIN = 1.95;
+/**
+ * Mean glyph advance of the label face, in em — how wide `n` characters run.
+ * Measured across the nav's own names, whose widest ("Communities", all round
+ * letterforms) runs 0.58em/char; the estimate sits just above that so a
+ * wide-lettered name is under-sized rather than over-.
+ */
+const LABEL_CHAR_EM = 0.6;
+/** The box's corners carry no ink, so it may sit fractionally over the boundary. */
+const LABEL_SLACK = 0.95;
+
+/**
+ * How wide a label box may be in a band whose sectors span `seg` degrees. The
+ * inner ring's 15%-deep band lands at ~14% — the width its labels have always
+ * had, and read correctly at — while the outer ring's shallower band drops to
+ * ~13%, where the 5.4rem cap had been overrunning the sector by a third.
+ */
+function labelBudget(r0: number, r1: number, rm: number, seg: number): number {
+  const chord = 2 * rm * Math.sin((seg / 2) * DEG);
+  return Math.min(r1 - r0, chord) * LABEL_SLACK;
+}
 // One synchronous motion: the orb, the circular blur, the wedges and the foot all
 // animate together over this long. It also gates how long the overlay stays
 // mounted while closing so the whole thing animates OUT before it hides.
@@ -176,16 +219,20 @@ export function RadialHub() {
       const seg = 360 / n;
       const gap = Math.min(1.4, seg * 0.06);
       const rm = (band.r0 + band.r1) / 2;
+      const labelW = labelBudget(band.r0, band.r1, rm, seg - gap);
       for (let i = 0; i < items.length; i++) {
         const a0 = -90 + i * seg + gap / 2;
         const a1 = -90 + (i + 1) * seg - gap / 2;
         const am = ((a0 + a1) / 2) * DEG;
+        const cx = 50 + rm * Math.cos(am);
+        const cy = 50 + rm * Math.sin(am);
         out.push({
           ...items[i],
           clip: ringSector(a0, a1, band.r0, band.r1),
           clipArt: ringSector(a0 - gap * ART_BLEED_DEG, a1 + gap * ART_BLEED_DEG, band.r0, band.r1),
-          cx: 50 + rm * Math.cos(am),
-          cy: 50 + rm * Math.sin(am),
+          cx,
+          cy,
+          labelW,
           ring,
           order: order++,
         });
@@ -408,7 +455,21 @@ export function RadialHub() {
                 onFocus: () => setHoveredLabel(label),
                 onBlur: () => setHoveredLabel((cur) => (cur === label ? null : cur)),
               };
-              const innerStyle = { left: `${w.cx}%`, top: `${w.cy}%` } as CSSProperties;
+              // Shrink the type until the label's LONGEST WORD fits the box the
+              // sector can hold, so names break between words or not at all.
+              // Translations decide this, not the English label, so it is
+              // computed here rather than baked into the geometry.
+              const longestWord = Math.max(1, ...label.split(/\s+/).map((part) => part.length));
+              const fsFit = w.labelW / (LABEL_CHAR_EM * longestWord);
+              const innerStyle = {
+                left: `${w.cx}%`,
+                top: `${w.cy}%`,
+                '--label-w': `${w.labelW.toFixed(2)}%`,
+                '--label-fs': Math.min(LABEL_FS, Math.max(LABEL_FS_MIN, fsFit)).toFixed(2),
+                // A word too long even at the floor breaks inside its own box
+                // rather than being sliced mid-glyph by the sector's clip-path.
+                '--label-wrap': fsFit < LABEL_FS_MIN ? 'anywhere' : 'normal',
+              } as CSSProperties;
               const inner = (
                 <span className="radial-hub__wedge-inner" data-ring={w.ring} style={innerStyle}>
                   <Icon aria-hidden />

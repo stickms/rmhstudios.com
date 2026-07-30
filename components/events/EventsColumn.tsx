@@ -105,8 +105,10 @@ export function EventsColumn({ embedded = false }: { embedded?: boolean }) {
   return (
     <div className="min-h-screen">
       <ColumnHeader
-        icon={CalendarDays}
-        title={t('events-heading', { defaultValue: 'Events' })}
+        // Embedded on /communities the page title + tab sheet already name this
+        // surface, so the column's own title would be a second copy of it.
+        icon={embedded ? undefined : CalendarDays}
+        title={embedded ? undefined : t('events-heading', { defaultValue: 'Events' })}
         sticky={!embedded}
         actions={
           signedIn && (

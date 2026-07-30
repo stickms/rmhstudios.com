@@ -130,8 +130,12 @@ export function CommunitiesColumn({
   return (
     <div className="min-h-screen">
       <ColumnHeader
-        icon={Users}
-        title={t('communities-heading', { defaultValue: 'Communities' })}
+        // Embedded (a tab on /communities), the page already renders its own
+        // "Communities" title above the tab sheet — repeating it here shipped the
+        // same word twice, in two different faces. Same pattern as
+        // NotificationsColumn / GroupChatsColumn: drop the title when embedded.
+        icon={embedded ? undefined : Users}
+        title={embedded ? undefined : t('communities-heading', { defaultValue: 'Communities' })}
         sticky={!embedded}
         actions={
           session && (

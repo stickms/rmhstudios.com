@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 228 routes. 116 render inside the standard site shell (sidebar, nav, context rail); 112 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 229 routes. 117 render inside the standard site shell (sidebar, nav, context rail); 112 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -129,6 +129,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/user-builds/manage` | — | public | `app/routes/_site/user-builds/manage.tsx` |
 | `/user-builds/submit` | — | public | `app/routes/_site/user-builds/submit.tsx` |
 | `/v` | redirects to `/create` | public | `app/routes/_site/v/index.tsx` |
+| `/ventures` | RMH Ventures | public | `app/routes/_site/ventures.tsx` |
 | `/wager` | Wager Matches | public | `app/routes/_site/wager.index.tsx` |
 | `/wager/:id` | Wager Match | public | `app/routes/_site/wager.$id.tsx` |
 | `/wallet` | redirects to `/predictions` | public | `app/routes/_site/wallet.tsx` |

@@ -94,9 +94,10 @@ export function parseHomeStack(raw: unknown): HomeStackItem[] {
  * The reorderable top-level sidebar tabs (ids), mirroring the top-level nav in
  * `lib/sidebar-nav.ts`. Kept here (client-safe, no icon imports) so the editor,
  * the sidebar, and the sync API all validate against one list; ids not in this
- * set are dropped at read time (forward-safe). Leaf ids are hrefs; group ids are
- * `group:<name>`. Admin is intentionally excluded — it's always pinned to the
- * bottom of the rail, never reordered or hidden.
+ * set are dropped at read time (forward-safe). Leaf ids are hrefs; a group id
+ * would be `group:<name>`, though every destination is a leaf today. Admin is
+ * intentionally excluded — it's always pinned to the bottom of the rail, never
+ * reordered or hidden.
  */
 export const SIDEBAR_NAV_IDS = [
   '/',
@@ -109,16 +110,21 @@ export const SIDEBAR_NAV_IDS = [
   '/arcade',
   '/predictions',
   '/developer',
-  'group:services',
-  'group:ventures',
+  // Both hubs are plain links now (§15.7) — their ids are hrefs, not `group:`
+  // keys. An older saved order still naming the groups simply drops those
+  // entries at read time and the tabs keep their default position.
+  '/services',
+  '/ventures',
 ] as const;
 
 const SIDEBAR_ID_SET = new Set<string>(SIDEBAR_NAV_IDS);
 
 /**
  * Which tabs may be hidden from the rail. Home is always present (never strand
- * the feed) and groups aren't individually hideable — only leaf destinations,
- * which stay reachable via the command palette and their URL when hidden (§2.6).
+ * the feed) and the two hub pages (/services, /ventures) aren't hideable either,
+ * since hiding one would take its whole family of destinations off the rail with
+ * it. Everything here stays reachable via the command palette and its URL when
+ * hidden (§2.6).
  */
 export const SIDEBAR_HIDEABLE_IDS = [
   '/search',

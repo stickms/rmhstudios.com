@@ -120,18 +120,18 @@
 }
 
 /* Toolbars (search/sort/submit) are rendered inside .store — strip their own
-   centering/padding so they align with the hero + mosaic edges. */
-.store .builds-toolbar,
-.store .vibe-gallery__head {
+   centering/padding so they align with the hero + mosaic edges.
+   NB: only a toolbar whose horizontal padding is a PAGE GUTTER belongs here. One
+   that is itself a bordered capsule (`.store-pages__head`) needs that padding as
+   its INNER padding — zeroing it put the title and the search field flush against
+   the capsule's own border. */
+.store .builds-toolbar {
   max-width: none;
-  margin: 0;
+  margin: 0 0 14px;
   padding-left: 0;
   padding-right: 0;
-}
-.store .builds-toolbar {
-  justify-content: flex-end;
   padding-top: 0;
-  margin-bottom: 14px;
+  justify-content: flex-end;
 }
 
 /* ── Hero banner ────────────────────────────────────────────────────────────── */
@@ -592,7 +592,12 @@
    dock is the real hero), so drop the storefront's own top spacing there. */
 .store-pages__head {
   margin-bottom: 16px;
-  border-radius: 14px;
+  /* Its own inner padding, from the site's panel token — NOT the standalone
+     gallery's page gutter (`clamp(16px, 4vw, 40px)`), which reads as a hole at
+     wide viewports. The capsule follows the theme's radius like every other
+     piece of site chrome beside it. */
+  padding: 14px var(--site-panel-padding, 1.25rem);
+  border-radius: var(--site-radius, 14px);
 }
 
 @media (prefers-reduced-motion: reduce) {
