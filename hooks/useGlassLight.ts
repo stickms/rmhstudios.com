@@ -17,6 +17,23 @@ import { useEffect } from 'react';
  * Cost: two `<html>`-level custom-property writes feed the single renderer.
  * 8px quantisation + rAF batching keep updates bounded.
  *
+ * ## Why the hovered element's rect is cached
+ *
+ * This callback runs inside a rAF, *after* other rAF callbacks have already
+ * written styles for the frame — the pointer metaball's loop writes four
+ * transforms and a custom property immediately before it. A
+ * `getBoundingClientRect()` there is a **forced synchronous layout** of the whole
+ * document, every frame the pointer moves, and it scales with the page: on a
+ * 60-card harness at 1920×1080 it took the per-pointer-frame cost from ~0.63ms to
+ * ~1.35ms (p95 1.2ms → 3.0ms), and a real feed route is far bigger than that.
+ *
+ * The rect only changes when the element does, when the page scrolls, or when
+ * the viewport resizes, so it is read once per element and invalidated on those.
+ * A layout shift from something else (an image landing, a feed item streaming in)
+ * can leave it stale for a moment; what that costs is a decorative highlight
+ * sitting a few px off until the next scroll, which is the right trade for
+ * dropping a full layout out of the pointer path.
+ *
  * Gates: fine pointer only (touch keeps the CSS sun), off under `perf-lite`, and
  * static under reduced motion (OS preference OR the `html.reduce-motion` account
  * toggle) — the global light stops tracking and the sun default stands; the
@@ -54,6 +71,10 @@ export function useGlassLight(): void {
     let last: HTMLElement | null = null;
     let lastLx = -1;
     let lastLy = -1;
+    /** The event target `closest()` last ran on — re-entering it skips the walk. */
+    let probed: Element | null = null;
+    /** `last`'s cached box. Null = must be re-read. See the note above. */
+    let rect: DOMRect | null = null;
 
     const clear = (el: HTMLElement | null) => {
       if (!el) return;
@@ -72,16 +93,27 @@ export function useGlassLight(): void {
       if (raf) return;
       raf = requestAnimationFrame(() => {
         raf = 0;
-        const el = (e.target as Element | null)?.closest<HTMLElement>('[data-glass-light]') ?? null;
-        if (last && last !== el) clear(last);
+        const target = (e.target as Element | null) ?? null;
+        // `closest()` walks the whole ancestor chain; re-entering the element it
+        // was last run on cannot produce a different answer.
+        if (target !== probed) {
+          probed = target;
+          const el = target?.closest<HTMLElement>('[data-glass-light]') ?? null;
+          if (el !== last) {
+            clear(last);
+            last = el;
+            rect = null;
+          }
+        }
+        const el = last;
         if (el) {
-          const r = el.getBoundingClientRect();
+          if (!rect) rect = el.getBoundingClientRect();
+          const r = rect;
           if (r.width > 0 && r.height > 0) {
             el.style.setProperty('--glass-px', `${((e.clientX - r.left) / r.width) * 100}%`);
             el.style.setProperty('--glass-py', `${((e.clientY - r.top) / r.height) * 100}%`);
           }
         }
-        last = el;
 
         if (!reducedMotion) {
           const lx = Math.round(e.clientX / Q) * Q;
@@ -99,11 +131,21 @@ export function useGlassLight(): void {
     // Pointer left the document → rest the light at the sun default.
     const onLeave = () => clearLight();
 
+    /** Anything that can move the hovered element under the pointer. Capture, so
+     *  a scroll inside a rail or a modal invalidates it too, not just the page. */
+    const invalidateRect = () => {
+      rect = null;
+    };
+
     document.addEventListener('pointermove', onMove, { passive: true });
     document.addEventListener('pointerleave', onLeave);
+    window.addEventListener('scroll', invalidateRect, { passive: true, capture: true });
+    window.addEventListener('resize', invalidateRect, { passive: true });
     return () => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerleave', onLeave);
+      window.removeEventListener('scroll', invalidateRect, { capture: true });
+      window.removeEventListener('resize', invalidateRect);
       if (raf) cancelAnimationFrame(raf);
       clear(last);
       clearLight();

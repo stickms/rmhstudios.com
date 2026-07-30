@@ -53,6 +53,7 @@ import { apps } from '@/lib/apps';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SITE_STYLES, useThemeStore, type SiteStyle } from '@/stores/themeStore';
 import { useSession } from '@/components/Providers';
+import { useFrostedOverlay } from '@/hooks/useFrostedOverlay';
 import { authClient } from '@/lib/auth-client';
 import { cn } from '@/lib/utils';
 
@@ -290,6 +291,11 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
   // the chunk finishes loading (the triggering keypress can't reach a not-yet-
   // mounted listener). Only seeds the first render.
   const [open, setOpen] = useState(initialOpen);
+  // The `.glass-scrim` backdrop below is a viewport-covering `backdrop-filter`;
+  // nothing may animate above one (Chromium re-blurs the whole layer every
+  // frame that anything does). Stands the pointer metaball down while it is up
+  // — see hooks/useFrostedOverlay.
+  useFrostedOverlay(open);
   const [composeOpen, setComposeOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);

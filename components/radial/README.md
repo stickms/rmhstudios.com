@@ -15,7 +15,7 @@ in `app/globals.css`).
 | `RadialWheel.tsx`    | The feed as a gently-curved column on the **document's own scroll** (no inner scroll region — so mobile Safari collapses its toolbars). Cards flow at natural heights (variable, never overlapping) and a rAF window-scroll pass rakes each onto a shallow cylinder from cached offsets (no layout thrash). Optional non-raked `lead` slot (the compose box). Reduced-motion → plain list. Fires `onEndReached` for lazy loading.                                                                                                                                                                                                                                                                                                |
 | `RadialHub.tsx`      | The persistent navigator, a **phase state machine** (closed → centering → open → closing). Tapping the fixed RMH orb **glides it to the centre of the screen**, then opens the menu as an **expanding circular blur** with translucent clip-path sectors blooming around it. The dial is **double-decked** — two concentric rings of annulus sectors around a hole the orb sits in — because sixteen destinations on one ring gave slivers too narrow to label or hit. The two decks **spin into alignment from opposite directions** as it opens, and a hairline is drawn at every band boundary so the levels are separated by a border rather than by a gap. CSS-only; consumes `lib/sidebar-nav`, honours auth/admin gating. |
 | `LiquidGoo.tsx`      | The **metaball filter bank** — one hidden `<svg><defs>` mounted in the shell holding two goo filters (`#rmh-liquid-sm` / `#rmh-liquid`) that CSS references to fuse clusters of shapes. Blur → steep alpha ramp, so near shapes merge with a smooth neck and a lone shape just rounds off. Used by the hub dial, the orb aura and the loading mark — small, bounded clusters of **opaque** shapes only (see rule 5 below).                                                                                                                                                                                                                                                                                                       |
-| `MetaballCursor.tsx` | The pointer metaball: a gooey drop under the mouse on desktop and under the finger on touch. An SVG **alpha ramp** (never the CSS `blur() contrast()` goo — rule 6 below), delta-time easing so it behaves identically at 60Hz and 240Hz, and a small bounded filter region (168px box, region = the box). Hides the native cursor while it is driving one, narrows to a caret over text fields, and blows up macOS-style when you shake to find it. Portals to `<body>`.                                                                                                                                                                                                                                                        |
+| `MetaballCursor.tsx` | The pointer metaball: a gooey drop under the mouse, **fine pointers only** — it replaces a cursor, so a phone (which has none) never mounts it. An SVG **alpha ramp** (never the CSS `blur() contrast()` goo — rule 6 below), delta-time easing so it behaves identically at 60Hz and 240Hz, and a small bounded filter region (168px box, region = the box). Hides the native cursor while it is driving one, narrows to a caret over text fields, blows up macOS-style when you shake to find it, and **stands down under a full-screen frosted overlay** (rule 7). Portals to `<body>`.                                                                                                                                       |
 | `RadialShell.tsx`    | The application frame for every standard (`_site`) route: fixed parallax ring backdrop, slim utility top bar, the **three-track frame** (nav rail · `<main>` · live rail), the hub, and the pointer metaball. The backdrop layer paints **only** the rings — the aurora canvas comes from the document's own fixed layers (`body::before/::after`), so it drifts and parallaxes and is the one scene every `backdrop-filter` on the page samples.                                                                                                                                                                                                                                                                                |
 | `RadialNavRail.tsx`  | Desktop-only left rail: the same `SIDEBAR_NAV` source of truth as the hub, shown persistently ≥1120px with live inbox/notification/admin badges.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `RadialLiveRail.tsx` | Desktop-only right rail (≥1440px): who's online, the daily loop, friends online, trending tags, who to follow — plus the slot a page's `PageLayout` `rightSidebar` portals into (`rail-slot.tsx`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
@@ -129,6 +129,30 @@ page that renders at 15fps:
    fused silhouette and transparency everywhere else — there is no box to
    reveal, on any path — and no blend mode at all, which also spares the
    per-frame backdrop readback that blending forces.
+7. **Nothing animates above a viewport-covering `backdrop-filter`.** Chromium
+   invalidates a `backdrop-filter` as a **whole element**, not per damaged rect:
+   one moving pixel above it re-runs the blur over its entire area, every frame.
+   Measured headless at 1920×1080 over the open hub (`.radial-hub__blur` is
+   `inset: 0` with `blur(20px) saturate(118%)`), vsync on:
+
+   | above the open menu                        | fps  | p50 frame |
+   | ------------------------------------------ | ---- | --------- |
+   | nothing moving                             | 60.2 | 16.7ms    |
+   | a plain 24px dot wiggling in a 50px arc    | 10.7 | 99.9ms    |
+   | the same dot sweeping the whole screen     | 10.8 | 83.4ms    |
+   | the pointer metaball                       | 10.6 | 100.0ms   |
+   | the pointer metaball, no `backdrop-filter` | 60.1 | 16.7ms    |
+
+   Damage size and position are irrelevant; only the blurred layer's **area** is
+   (the same dot over a 500px frosted disc stays at 60fps). Radius barely matters
+   either — `blur(6px)` still measured 11.9fps — so this is not tunable, and
+   `will-change` / `isolation` / promotion hints do nothing. The pointer drop is
+   the one element guaranteed to move above every overlay, because it IS the
+   cursor, which is why this reads as "the cursor is laggy" rather than "the menu
+   is janky". So anything rendering such a layer (`.glass-scrim`,
+   `.radial-hub__blur`) calls `useFrostedOverlay()` while it is up, and the drop
+   hands the pointer back to the OS. Rules 3–5 and 7 are CI-gated by
+   `lib/__tests__/metaball-perf-budget.test.ts`.
 
 ### Pointer metaball contract
 
@@ -174,9 +198,23 @@ page that renders at 15fps:
 - **It says what it's over.** Swells over interactive elements, narrows to a
   caret over text fields (which is what makes hiding the I-beam acceptable), and
   — like macOS — blows up when you shake the pointer to find it.
-- **Touch.** On a coarse pointer it appears under the finger on press, follows
-  it, and fades on release. It never runs when idle, so a phone pays for it only
-  while it is actually being touched.
+- **It stands down under a full-screen frosted overlay.** Rule 7: a
+  viewport-covering `backdrop-filter` plus a pointer that paints is a standing 6×
+  frame-time regression, and no amount of tuning either side fixes it. While one
+  is up the drop is `display: none` (not a fade — a fade is 250ms of exactly the
+  thing that costs, landing on the overlay's opening transition) and the OS draws
+  the pointer instead, as a **still image of the drop** minted from the live
+  theme's `--site-text` / `--site-bg`. Same mark, drawn by the compositor, no
+  page damage — text fields still get an I-beam, since a blob parked on the
+  insertion point is what the caret morph exists to avoid. Coming back, the
+  springs snap to where the pointer actually is rather than gliding in from where
+  the drop was parked.
+- **Fine pointers only** (`(hover: hover) and (pointer: fine)`, live — plugging a
+  mouse into a tablet turns it on without a reload). It is a cursor replacement;
+  a phone has no cursor to replace, so all it could do there is spend the battery
+  re-running an SVG filter under a finger that is already covering the mark.
+  Touch pointer events are ignored even where the query matches, so a touchscreen
+  laptop keeps the drop for its mouse and a tap never teleports it.
 - **Off entirely** under reduced-motion, forced-colors, reduced-transparency,
   and on devices reporting < 4 GB of memory.
 

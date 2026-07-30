@@ -6,6 +6,7 @@ import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
+import { useFrostedOverlay } from '@/hooks/useFrostedOverlay';
 
 import './dialog.css';
 
@@ -20,14 +21,22 @@ const DialogClose = DialogPrimitive.Close;
 const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Overlay
-    ref={ref}
-    data-slot="dialog-overlay"
-    className={cn('glass-scrim fixed inset-0 z-50', className)}
-    {...props}
-  />
-));
+>(({ className, ...props }, ref) => {
+  // `.glass-scrim` is a viewport-covering `backdrop-filter`, so nothing may
+  // animate above it — Chromium re-blurs the whole layer every frame that
+  // anything does, and the pointer metaball does by definition (~6x the frame
+  // time, measured; see hooks/useFrostedOverlay). This overlay only mounts while
+  // its dialog is open, so claiming for its lifetime is exactly right.
+  useFrostedOverlay();
+  return (
+    <DialogPrimitive.Overlay
+      ref={ref}
+      data-slot="dialog-overlay"
+      className={cn('glass-scrim fixed inset-0 z-50', className)}
+      {...props}
+    />
+  );
+});
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const DialogContent = React.forwardRef<

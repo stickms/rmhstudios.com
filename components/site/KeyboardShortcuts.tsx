@@ -18,6 +18,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useTranslation } from 'react-i18next';
 import { openCommandPalette } from '@/components/site/command-palette-bus';
 import { useSession } from '@/components/Providers';
+import { useFrostedOverlay } from '@/hooks/useFrostedOverlay';
 
 const ComposeModal = lazy(() =>
   import('@/components/feed/ComposeModal').then((m) => ({ default: m.ComposeModal })),
@@ -77,6 +78,11 @@ export function KeyboardShortcuts() {
   const signedIn = !!session?.user;
 
   const [helpOpen, setHelpOpen] = useState(false);
+  // The `.glass-scrim` backdrop below is a viewport-covering `backdrop-filter`;
+  // nothing may animate above one (Chromium re-blurs the whole layer every
+  // frame that anything does). Stands the pointer metaball down while it is up
+  // — see hooks/useFrostedOverlay.
+  useFrostedOverlay(helpOpen);
   const [composeOpen, setComposeOpen] = useState(false);
   const pendingGo = useRef<number | null>(null);
 

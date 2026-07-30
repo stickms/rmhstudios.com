@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useFrostedOverlay } from '@/hooks/useFrostedOverlay';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SIDEBAR_NAV, isNavGroup, type NavLeaf } from '@/lib/sidebar-nav';
 import { RmhLogo } from './RmhLogo';
@@ -166,6 +167,12 @@ export function RadialHub() {
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const menuVisible = phase === 'open' || phase === 'closing';
+  // `.radial-hub__blur` is a viewport-covering `backdrop-filter`, and Chromium
+  // re-blurs one of those IN FULL every frame anything above it moves. The
+  // pointer metaball moves above it by definition, which took the open menu from
+  // 60fps to ~11fps; this hands the pointer back to the OS for as long as the
+  // frost is up. See hooks/useFrostedOverlay for the measurements.
+  useFrostedOverlay(phase !== 'closed');
   useEffect(() => {
     if (phase === 'closed') setHoveredLabel(null);
   }, [phase]);

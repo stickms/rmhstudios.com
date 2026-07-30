@@ -3,10 +3,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { hasFrostedOverlay, subscribeFrostedOverlay } from '@/hooks/useFrostedOverlay';
 
 /**
- * The pointer metaball — a gooey liquid drop that rides under the pointer on
- * desktop and under the finger on touch.
+ * The pointer metaball — a gooey liquid drop that rides under the mouse.
+ *
+ * ## Where it runs
+ *
+ * Fine pointers only ({@link FINE_POINTER}). It is a *cursor*: on a phone there
+ * is nothing to replace, and a drop that chases a finger is a per-frame SVG
+ * filter bought with a phone's battery for a mark the finger is already
+ * covering. Touch pointer events are ignored even on a hybrid machine, so a
+ * touchscreen laptop keeps the drop for its mouse and never teleports it to a
+ * tap.
  *
  * ## Why it paints a shape and nothing else
  *
@@ -53,6 +63,13 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
  *   *per second* (`1 - e^(-λ·dt)`), not per frame. On a 144Hz screen the drop
  *   follows exactly the same curve it does at 60Hz instead of snapping to the
  *   pointer, and a dropped frame doesn't produce a visible jump.
+ * - **It stands down under a full-screen frosted overlay.** See
+ *   {@link subscribeFrostedOverlay} for the measurements: a `backdrop-filter`
+ *   layer is re-blurred *in full* whenever anything above it moves, so the drop
+ *   and a viewport-covering scrim together cost 6× the frame time — which, since
+ *   the drop IS the cursor, is felt as the cursor lagging. While one is up the
+ *   pointer goes back to the OS as {@link stillCursorValue}, a still image of the
+ *   drop: same mark, drawn by the compositor, zero page damage.
  *
  * It renders into `document.body` so it sits outside `.radial-shell`'s isolated
  * stacking context and its z-index can be reasoned about against the page rather
@@ -62,6 +79,14 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
  * fields (which is why hiding the native cursor stays usable), and — like macOS —
  * blows up when you shake the pointer to find it.
  */
+
+/**
+ * The drop is a replacement for a cursor, so it runs exactly where there is one
+ * to replace. `hover: hover` rules out the "coarse pointer that can still
+ * hover" cases (some TV remotes / stylus modes) that `pointer: fine` alone lets
+ * through.
+ */
+const FINE_POINTER = '(hover: hover) and (pointer: fine)';
 
 /**
  * Filter-region size (px). Also the hard bound on how far the tail can lag.
@@ -83,6 +108,12 @@ const HALF = BOX / 2;
 const BLUR_PAD = 20;
 /** Id of this component's own goo filter (it does not share the shell's bank). */
 const GOO_ID = 'rmh-pointer-goo';
+/**
+ * How far the filter's `feMorphology` dilates the fused alpha to draw the halo,
+ * in px. Shared with {@link stillCursorValue} so the still image and the live
+ * drop cannot end up with different rims.
+ */
+const RIM = 2;
 
 /**
  * Blob diameters (px) and their convergence rate λ (per second). The lead blob
@@ -96,9 +127,6 @@ const BLOBS = [
   { d: 11, lambda: 20 },
   { d: 7, lambda: 12 },
 ];
-
-/** Fingers are bigger than pointers — the touch drop scales up to match. */
-const TOUCH_MUL = 1.7;
 
 /**
  * How much the drop grows over an interactive element / while shaking.
@@ -126,8 +154,50 @@ const SHAKE_WINDOW = 700;
 /** How long the enlarged state holds after the last qualifying reversal. */
 const SHAKE_HOLD = 900;
 
+/**
+ * The drop at rest, as a **native cursor image** — the value for a `cursor`
+ * declaration, hotspot included.
+ *
+ * Used while a full-screen frosted overlay is up, where a page-painted pointer
+ * costs the whole viewport's `backdrop-filter` every frame (see
+ * `hooks/useFrostedOverlay`). Handing the same mark to the OS keeps the design's
+ * "the drop IS the cursor" rule — the alternative is the bare arrow reappearing
+ * every time a dialog opens — while the compositor draws it for free.
+ *
+ * The geometry is the live drop's own resting state: the lead blob, plus the
+ * filter's dilated rim in the background colour. The colours are resolved
+ * through a throwaway element rather than by reading the custom properties
+ * directly, because a theme is free to author `--site-text` as a `color-mix()`
+ * of other tokens — cascade resolution collapses that to one concrete colour,
+ * which is what an SVG inside a `data:` URI needs (it cannot see this document's
+ * variables). Verified in Chromium: `oklch()`, `color-mix()` and hex all paint.
+ */
+function stillCursorValue(): string {
+  const probe = document.createElement('span');
+  probe.style.cssText = 'position:fixed;left:-9999px;top:0;width:0;height:0';
+  document.body.appendChild(probe);
+  probe.style.color = 'var(--site-text)';
+  const ink = getComputedStyle(probe).color;
+  probe.style.color = 'var(--site-bg)';
+  const halo = getComputedStyle(probe).color;
+  probe.remove();
+
+  const r = BLOBS[0].d / 2;
+  const rim = r + RIM;
+  const size = Math.ceil(rim * 2) + 2; // 1px of margin so the rim can't clip
+  const c = size / 2;
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">` +
+    `<circle cx="${c}" cy="${c}" r="${rim}" fill="${halo}"/>` +
+    `<circle cx="${c}" cy="${c}" r="${r}" fill="${ink}"/></svg>`;
+  // `auto` is the mandatory keyword fallback — a cursor image the UA refuses
+  // (too large, failed to decode) must not leave the page with no pointer.
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${c} ${c}, auto`;
+}
+
 export function MetaballCursor() {
   const reduced = useReducedMotion();
+  const finePointer = useMediaQuery(FINE_POINTER);
   const [enabled, setEnabled] = useState(false);
   const [mounted, setMounted] = useState(false);
   const boxRef = useRef<HTMLDivElement | null>(null);
@@ -137,7 +207,10 @@ export function MetaballCursor() {
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    if (reduced || typeof window === 'undefined') {
+    // No cursor, no cursor replacement — phones and tablets never mount the
+    // loop, the filter, or the listeners. `useMediaQuery` is live, so plugging a
+    // mouse into a tablet turns the drop on without a reload.
+    if (reduced || !finePointer || typeof window === 'undefined') {
       setEnabled(false);
       return;
     }
@@ -151,7 +224,7 @@ export function MetaballCursor() {
     const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
     if (typeof memory === 'number' && memory > 0 && memory < 4) return;
     setEnabled(true);
-  }, [reduced]);
+  }, [reduced, finePointer]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -164,7 +237,6 @@ export function MetaballCursor() {
     let cy = window.innerHeight / 2;
     const pos = BLOBS.map(() => ({ x: cx, y: cy }));
 
-    let mode: 'mouse' | 'touch' = 'mouse';
     let visible = false;
     let swell = 0;
     let swellTarget = 0;
@@ -173,8 +245,10 @@ export function MetaballCursor() {
     let shake = 0;
     let press = 0;
     let pressTarget = 0;
+    /** True while a viewport-covering frosted layer is up — see `onFrostChange`. */
+    let stoodDown = hasFrostedOverlay();
 
-    // Shake detection state (mouse only).
+    // Shake detection state.
     let vx = 0;
     let vy = 0;
     let lastMoveAt = 0;
@@ -188,10 +262,25 @@ export function MetaballCursor() {
     /** Last element `onOver` probed, so re-entering it skips the selector walks. */
     let overTarget: Element | null = null;
 
-    /** The native cursor is hidden only while the drop is actually driving. */
-    const setNativeCursor = (hidden: boolean) => {
-      if (hidden) root.setAttribute('data-metaball-cursor', 'on');
-      else root.removeAttribute('data-metaball-cursor');
+    /**
+     * Who is drawing the pointer:
+     *   `'on'`    the page is — the live drop, native cursor hidden;
+     *   `'still'` the OS is — a still image of the drop (see `stillCursorValue`),
+     *             which is what a full-screen frosted overlay demands;
+     *   `null`    the OS is, with its own cursors (pointer has left, or the drop
+     *             is torn down — the page must never be left without a pointer).
+     */
+    const setNativeCursor = (by: 'on' | 'still' | null) => {
+      if (by === null) {
+        root.removeAttribute('data-metaball-cursor');
+        root.style.removeProperty('--metaball-still');
+        return;
+      }
+      // Rebuilt per stand-down rather than cached: it costs two style reads at
+      // the moment a menu opens, and a cache would have to be invalidated on
+      // every theme, preset and contrast change to stay honest.
+      if (by === 'still') root.style.setProperty('--metaball-still', stillCursorValue());
+      root.setAttribute('data-metaball-cursor', by);
     };
 
     const tick = (now: number) => {
@@ -203,7 +292,7 @@ export function MetaballCursor() {
       /** Frame-rate independent convergence: the same curve at 60Hz and 240Hz. */
       const ease = (lambda: number) => 1 - Math.exp(-lambda * dt);
 
-      const shakeTarget = mode === 'mouse' && now < shakeUntil ? 1 : 0;
+      const shakeTarget = now < shakeUntil ? 1 : 0;
       swell += (swellTarget - swell) * ease(9);
       caret += (caretTarget - caret) * ease(11);
       press += (pressTarget - press) * ease(16);
@@ -220,8 +309,7 @@ export function MetaballCursor() {
         box.style.setProperty('--metaball-swell', swell.toFixed(3));
       }
 
-      const mul = mode === 'touch' ? TOUCH_MUL : 1;
-      const grow = (1 + swell * SWELL_GAIN + shake * SHAKE_GAIN) * (1 - press * 0.18) * mul;
+      const grow = (1 + swell * SWELL_GAIN + shake * SHAKE_GAIN) * (1 - press * 0.18);
       let moving = false;
 
       for (let i = 0; i < blobs.length; i++) {
@@ -274,7 +362,7 @@ export function MetaballCursor() {
     };
 
     const ensure = () => {
-      if (raf) return;
+      if (raf || stoodDown) return;
       box.style.willChange = 'transform';
       for (const b of blobs) b.style.willChange = 'transform';
       last = performance.now();
@@ -285,13 +373,50 @@ export function MetaballCursor() {
       if (visible) return;
       visible = true;
       box.style.opacity = '1';
-      if (mode === 'mouse') setNativeCursor(true);
+      if (!stoodDown) setNativeCursor('on');
     };
 
     const hide = () => {
       visible = false;
       box.style.opacity = '0';
-      setNativeCursor(false);
+      setNativeCursor(stoodDown ? 'still' : null);
+    };
+
+    /**
+     * A full-screen frosted layer went up or came down.
+     *
+     * Standing down is `display: none`, not a fade: a fade is 250ms of exactly
+     * the moving-pixels-above-a-backdrop-filter that costs the whole viewport's
+     * blur per frame, and it would land on the menu's opening transition — the
+     * most expensive moment there is. The rAF loop stops, but `onMove` keeps
+     * writing `cx`/`cy` (that part is free), so coming back the springs snap to
+     * where the pointer actually is instead of gliding in from where the drop
+     * was parked when the overlay went up.
+     */
+    const onFrostChange = () => {
+      const next = hasFrostedOverlay();
+      if (next === stoodDown) return;
+      stoodDown = next;
+      if (stoodDown) {
+        if (raf) cancelAnimationFrame(raf);
+        raf = 0;
+        box.style.display = 'none';
+        box.style.willChange = 'auto';
+        for (const b of blobs) b.style.willChange = 'auto';
+        setNativeCursor('still');
+        return;
+      }
+      box.style.display = '';
+      for (const p of pos) {
+        p.x = cx;
+        p.y = cy;
+      }
+      // The pointer may have crossed anything at all while the overlay was up.
+      overTarget = null;
+      reversals.length = 0;
+      shakeUntil = 0;
+      setNativeCursor(visible ? 'on' : null);
+      ensure();
     };
 
     /** Feed the shake detector. Returns nothing; updates `shakeUntil`. */
@@ -319,20 +444,16 @@ export function MetaballCursor() {
       if (reversals.length >= SHAKE_REVERSALS) shakeUntil = now + SHAKE_HOLD;
     };
 
+    /**
+     * A hybrid machine (touchscreen laptop, iPad with a trackpad) matches
+     * {@link FINE_POINTER} and still delivers touch events. The drop belongs to
+     * the mouse there — a tap must not teleport it to the finger.
+     */
+    const isTouch = (e: PointerEvent) => e.pointerType === 'touch';
+
     const onMove = (e: PointerEvent) => {
-      const touch = e.pointerType !== 'mouse';
-      // Touch only drives the drop while a finger is down; a hovering pen does
-      // not steal the desktop cursor mode.
-      if (touch && e.buttons === 0 && e.pointerType !== 'pen') return;
-      if (touch !== (mode === 'touch')) {
-        mode = touch ? 'touch' : 'mouse';
-        setNativeCursor(!touch && visible);
-        reversals.length = 0;
-        shakeUntil = 0;
-        overTarget = null;
-      }
-      const now = performance.now();
-      if (!touch) trackShake(e.clientX, e.clientY, now);
+      if (isTouch(e)) return;
+      trackShake(e.clientX, e.clientY, performance.now());
       cx = e.clientX;
       cy = e.clientY;
       show();
@@ -340,7 +461,7 @@ export function MetaballCursor() {
     };
 
     const onOver = (e: PointerEvent) => {
-      if (e.pointerType !== 'mouse') return;
+      if (isTouch(e)) return;
       const target = (e.target as Element | null) ?? null;
       // `pointerover` fires on every element boundary the pointer crosses, and
       // both selectors below are long lists walked up the whole ancestor chain.
@@ -359,30 +480,14 @@ export function MetaballCursor() {
     };
 
     const onDown = (e: PointerEvent) => {
+      if (isTouch(e)) return;
       pressTarget = 1;
-      if (e.pointerType !== 'mouse') {
-        mode = 'touch';
-        setNativeCursor(false);
-        // Jump straight to the finger instead of gliding in from the last spot.
-        cx = e.clientX;
-        cy = e.clientY;
-        for (const p of pos) {
-          p.x = cx;
-          p.y = cy;
-        }
-        swellTarget = 0;
-        caretTarget = 0;
-        // The hover targets were just forced; drop the memo so the next real
-        // mouse `pointerover` re-probes even if it lands on the same element.
-        overTarget = null;
-        show();
-      }
       ensure();
     };
 
-    const onUp = () => {
+    const onUp = (e: PointerEvent) => {
+      if (isTouch(e)) return;
       pressTarget = 0;
-      if (mode === 'touch') hide();
       ensure();
     };
 
@@ -405,6 +510,10 @@ export function MetaballCursor() {
     document.addEventListener('pointerleave', onLeave);
     window.addEventListener('blur', onBlur);
     document.addEventListener('visibilitychange', onVisibility);
+    const unsubscribeFrost = subscribeFrostedOverlay(onFrostChange);
+    // An overlay can already be up when the drop mounts (a route change under an
+    // open dialog); `stoodDown` was seeded from it, so apply that state now.
+    if (stoodDown) box.style.display = 'none';
 
     return () => {
       window.removeEventListener('pointermove', onMove);
@@ -415,9 +524,10 @@ export function MetaballCursor() {
       document.removeEventListener('pointerleave', onLeave);
       window.removeEventListener('blur', onBlur);
       document.removeEventListener('visibilitychange', onVisibility);
+      unsubscribeFrost();
       if (raf) cancelAnimationFrame(raf);
       // Never leave the page without a pointer.
-      root.removeAttribute('data-metaball-cursor');
+      setNativeCursor(null);
     };
   }, [enabled]);
 
