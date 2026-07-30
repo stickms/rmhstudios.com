@@ -54,6 +54,8 @@ import { ConfirmProvider } from '@/components/ui/confirm-dialog';
 import type { Locale } from '@/lib/i18n/config';
 import type { LocaleBundle } from '@/lib/i18n/resources';
 import { recoverViewTransition } from '@/lib/view-transition';
+import { applyPerfTier } from '@/lib/perf-tier';
+import { installScrollbarReveal } from '@/lib/scrollbar-reveal';
 
 // perf audit §4.3: build the QueryClient PER component instance (via useState
 // below), not once at module scope. A module-scope client is shared by every
@@ -396,6 +398,15 @@ export function Providers({
   useEffect(() => {
     document.documentElement.classList.toggle('app-route', isAppRoute);
   }, [isAppRoute]);
+
+  // Resolve the device effect tier once. `html.perf-lite` is read by the aurora
+  // layers, the radial blob field, the GL tier gate, glass-lens, canvas2d-fx and
+  // the liquid morph/pop motions — see lib/perf-tier.ts.
+  useEffect(() => applyPerfTier(), []);
+
+  // Scrollbars reveal on scroll rather than sitting on screen permanently
+  // (lib/scrollbar-reveal.ts + the §Scrollbars block in app/globals.css).
+  useEffect(() => installScrollbarReveal(), []);
 
   // Hydrate style from localStorage on mount. Self-heal legacy values: any
   // retired style still persisted from before a catalog change (e.g. the old

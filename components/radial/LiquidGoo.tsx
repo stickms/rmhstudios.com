@@ -12,14 +12,24 @@
  * *near* each other come out fused by a smooth neck — the metaball look — and a
  * lone shape just gets organically rounded corners.
  *
- * Three radii, so callers can pick how eagerly things merge:
+ * Two radii, so callers can pick how eagerly things merge:
  *  - `rmh-liquid-sm` — tight: rounds corners, fuses only touching shapes.
  *  - `rmh-liquid`    — the default: fuses neighbours a few px apart.
- *  - `rmh-liquid-lg` — wide: distant blobs pull together (backdrop fields).
  *
  * Cost + correctness notes (why this is opt-in per cluster, never global):
  *  - An SVG filter is a real per-frame GPU cost, so `radial.css` only enables
  *    these ≥768px and under `prefers-reduced-motion: no-preference`.
+ *  - **Only on small, bounded clusters.** A filtered subtree whose children
+ *    animate cannot take the compositor fast path, so the whole filter graph is
+ *    re-run every frame over the whole filter region. On a full-viewport layer
+ *    that is catastrophic: the backdrop blob field used to carry a third,
+ *    wide-radius filter (`rmh-liquid-lg`) and it pinned every desktop `_site`
+ *    page at ~15fps. It was removed along with the filter — the field fuses
+ *    itself with soft-edged gradients now (see `radial.css`
+ *    `.radial-backdrop__blob`). Don't reintroduce a wide radius for that job.
+ *  - **Only on opaque shapes.** The ramp maps alpha `a → ramp·a − (ramp−1)/2`,
+ *    so anything below ~50% alpha is clamped away and the filter silently
+ *    becomes a no-op (which is exactly how the field's cost went unnoticed).
  *  - `filter` creates a containing block for `position: fixed` descendants and a
  *    new stacking context — never put one on an ancestor of the fixed chrome.
  *  - The alpha ramp chews up text antialiasing, so a goo group must contain
@@ -54,5 +64,4 @@ export function LiquidGoo() {
 const GOO = [
   { id: 'rmh-liquid-sm', blur: 4, ramp: 15 },
   { id: 'rmh-liquid', blur: 8, ramp: 19 },
-  { id: 'rmh-liquid-lg', blur: 16, ramp: 24 },
 ] as const;

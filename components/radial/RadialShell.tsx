@@ -79,10 +79,13 @@ function RadialBackdrop() {
           <span key={i} className="radial-backdrop__ring" style={{ ['--i' as string]: i }} />
         ))}
       </div>
-      {/* Metaball field: a few slow-drifting blobs under a wide goo filter, so
-          they swell together and pull apart like lava — the liquid substrate the
-          glass surfaces float over. Shapes only (no text), and CSS keeps the
-          whole layer off phones / reduced-motion for paint cost. */}
+      {/* Metaball field: a few slow-drifting blobs that swell together and pull
+          apart like lava — the liquid substrate the glass surfaces float over.
+          The fusing comes from the blobs' own soft-edged gradients, NOT a goo
+          filter: a viewport-sized filter with animating children re-rasterises
+          every frame and cost this page ~4x its frame time (see the cost note in
+          radial.css above the field's media query). CSS still keeps the whole
+          layer off phones / reduced-motion. */}
       <div className="radial-backdrop__field">
         {[0, 1, 2, 3].map((i) => (
           <span key={i} className="radial-backdrop__blob" style={{ ['--i' as string]: i }} />
@@ -291,8 +294,8 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
       {overlays}
       <BackToTop />
       {/* The pointer metaball — the flowy layer over every page. It portals to
-          <body> (see MetaballCursor) so its `difference` blend has the opaque
-          page as its backdrop rather than this shell's isolated group. */}
+          <body> (see MetaballCursor) so it sits outside this shell's isolated
+          stacking context and its z-index reads against the page. */}
       <MetaballCursor />
     </div>
   );

@@ -2807,7 +2807,15 @@ summary {
   }
 }
 
-/* Minimalistic scrollbar (overridden by specific games/apps) */
+/* ══════════════════════════════════════════════════════════════════════════
+   Scrollbars — always present, only VISIBLE while you are scrolling
+   ══════════════════════════════════════════════════════════════════════════
+   Base look first (minimalistic, overridden by specific games/apps), then the
+   reveal. The gutter is reserved either way — `scrollbar-width: thin` and a 6px
+   `::-webkit-scrollbar` still occupy their strip when the thumb is transparent —
+   so revealing a thumb changes paint only and can never reflow the page. This is
+   also why the reveal is done with colour rather than `scrollbar-width: none`,
+   which WOULD reflow every scroller twice per gesture. */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--site-border) transparent;
@@ -2825,10 +2833,56 @@ summary {
 ::-webkit-scrollbar-thumb {
   background: var(--site-border);
   border-radius: 3px;
+  /* Fades out when the scroller goes idle. Neutered by the global
+     reduced-motion reset above, which is the correct behaviour there. */
+  transition: background-color 0.3s ease;
 }
 
+/* Idle — invisible on both engines.
+   `lib/scrollbar-reveal.ts` stamps `data-scrolling` on the element that is
+   actually being scrolled (the root element for document scrolls) and clears it
+   ~900ms after it stops; that attribute is the only thing that paints a thumb.
+
+   WHICH OF THE TWO RULES BELOW ACTUALLY RUNS — verified in Chromium 141:
+   once an element has a standard `scrollbar-width` / `scrollbar-color`, Chromium
+   renders the STANDARD scrollbar and ignores that element's `::-webkit-scrollbar*`
+   rules entirely. The `* { scrollbar-width: thin }` above therefore makes every
+   `::-webkit-scrollbar*` rule in this repo (here, app-theme, altair, rmhtube,
+   temple-of-joy, velum2099, vibe, library …) inert in Chromium — they only still
+   paint in WebKit versions that predate `scrollbar-width` support. So:
+     - `scrollbar-color: transparent transparent` is what hides the scrollbar in
+       Chromium and current Safari/Firefox (measured: gutter kept, thumb gone);
+     - the `::-webkit-scrollbar-*` block after it is the older-WebKit path.
+   Both are kept so the behaviour holds on every engine.
+
+   Why `!important` inside `:where()`: several per-app tiers set their own
+   scrollbar colours at higher specificity, and "scrollbars show on scroll" has to
+   hold for all of them — including ones added later, which a per-theme opt-in
+   would silently miss. `!important` outranks those declarations; wrapping the
+   selector in `:where()` drops its specificity to zero so the one intentional
+   exception below can still outrank IT. */
+:where(*:not([data-scrolling])) {
+  scrollbar-color: transparent transparent !important;
+}
+:where(*:not([data-scrolling]))::-webkit-scrollbar-thumb,
+:where(*:not([data-scrolling]))::-webkit-scrollbar-track,
+:where(*:not([data-scrolling]))::-webkit-scrollbar-corner {
+  background-color: transparent !important;
+}
+
+/* The exception: a thumb directly under the pointer stays visible and grabbable —
+   reaching for the edge of a scroller is how you find it while it is idle, and
+   `:hover` here is on the thumb pseudo-element, meaning the pointer is on the
+   scrollbar itself rather than merely somewhere inside the scroller. Specificity
+   (0,1,0) beats the zero-specificity idle rule, so this wins between the two
+   `!important` declarations.
+
+   Older-WebKit path only, per the engine note above — there is no standard
+   equivalent, so in Chromium an idle scrollbar is found by starting to scroll
+   (wheel, trackpad, keyboard), which reveals it and keeps it up while you drag.
+   App tiers supply their own accent through `--sb-thumb-hover`. */
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--site-border-bright);
+  background-color: var(--sb-thumb-hover, var(--site-border-bright)) !important;
 }
 
 /* Twemoji — consistent cross-platform emoji rendering */
