@@ -52,7 +52,7 @@ export function PageLayout({
           className="page-heading"
           aria-describedby={description ? descriptionId : undefined}
         >
-          <div className="page-heading__meta">
+          <div className="page-heading__meta site-kicker">
             {backTo ? (
               <Link
                 to={backTo}
@@ -73,11 +73,16 @@ export function PageLayout({
 
           <div className="page-heading__content">
             <div className="min-w-0">
-              <h1>
+              {/* The shared display scale (audit SPA-006) — `.site-display-3`
+                  carries size, weight, leading and tracking together, so no page
+                  re-types a clamp and every title matches /design's section-head
+                  scale. `truncate` keeps a long title on one line inside the
+                  header's flex row. */}
+              <h1 className="site-display-3">
                 <span className="min-w-0 truncate">{title}</span>
               </h1>
               {description && (
-                <p id={descriptionId} data-slot="page-description">
+                <p id={descriptionId} data-slot="page-description" className="site-lede">
                   {description}
                 </p>
               )}

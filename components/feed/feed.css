@@ -283,13 +283,14 @@
 
 /* Page headers */
 
+/* ONE page-header language (audit SPA-002). This used to paint a bordered,
+   shadowed surface card, and `radial.css` then unpainted it again on every
+   `_site` route while capping the title at 3.4rem — two rules fighting, with the
+   smaller type winning. The flat treatment was the right call (a title belongs on
+   the backdrop, not in a box), so it is now the BASE rule and the override is
+   gone. Type comes from the shared display scale via `.site-display-3`. */
 .page-heading {
-  margin: 0 0.75rem 0.75rem;
-  padding: 1.15rem;
-  border: 1px solid var(--site-border);
-  border-radius: var(--site-radius);
-  background: var(--site-surface);
-  box-shadow: var(--site-shadow-sm);
+  margin: 0 0 var(--rad-4, 1.5rem);
 }
 
 .page-heading__meta,
@@ -299,15 +300,11 @@
   align-items: center;
 }
 
+/* The eyebrow row. Type/tracking/colour now come from `.site-kicker` (applied in
+   PageLayout) so it tracks the shared kicker tokens; only layout lives here.
+   AUD-001/002 are still honoured by those tokens: 11px floor, muted (not dim). */
 .page-heading__meta {
   min-height: 1.5rem;
-  /* AUD-001/002: 10.9px micro-caps on the decorative token, on every
-     PageLayout page — and the back link inside it was a 57×16px target. */
-  color: var(--site-text-muted);
-  font-size: 0.6875rem;
-  font-weight: 750;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
 }
 
 .page-heading__back {
@@ -342,21 +339,17 @@
   align-items: flex-end;
 }
 
+/* Size/weight/leading/tracking come from `.site-display-3` on the element. Only
+   the wrapping preference is header-specific. */
 .page-heading h1 {
-  font-family: var(--site-font-display);
-  font-size: clamp(1.7rem, 7vw, 3rem);
-  font-weight: 700;
-  line-height: 1.04;
-  letter-spacing: -0.035em;
   text-wrap: balance;
 }
 
+/* `.site-lede` carries size/leading/colour; this widens its measure to the
+   header's, which is wider than a standalone lede's 34rem. */
 .page-heading [data-slot='page-description'] {
   max-width: 42rem;
   margin-top: 0.65rem;
-  color: var(--site-text-muted);
-  font-size: 0.9rem;
-  line-height: 1.55;
 }
 
 /* Feed */
@@ -818,7 +811,6 @@
 
   .page-heading {
     margin-bottom: 1rem;
-    padding: 1.5rem;
   }
 
   .feed-heading {
@@ -850,10 +842,6 @@
 @media (min-width: 1024px) {
   .site-nav__tabs {
     justify-content: center;
-  }
-
-  .page-heading {
-    padding: 1.75rem;
   }
 }
 
