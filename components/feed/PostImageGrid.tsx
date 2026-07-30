@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useId } from'react';
+import { useState, useEffect, useCallback, useId, useRef } from'react';
 import { createPortal } from'react-dom';
 import { X, ChevronLeft, ChevronRight } from'lucide-react';
 import { useTranslation } from'react-i18next';
@@ -199,30 +199,84 @@ function Lightbox({ urls, alts, index, vtName, onIndexChange, onClose }: Lightbo
  onIndexChange((index + 1) % urls.length);
  }, [index, urls.length, onIndexChange]);
 
+ const overlayRef = useRef<HTMLDivElement | null>(null);
+ const labelId = useId();
+
+ // Escape / arrow keys, background-scroll blocking, and the focus trap.
+ //
+ // Background scroll is blocked from the OVERLAY (wheel with `passive: false`
+ // plus the overlay's `touch-action` below), NOT with a document scroll-lock. This
+ // matches RadialHub: `overflow: hidden` on the body clips the document to the
+ // visual viewport, which on iOS strips the content that scrolls under Safari's
+ // floating bottom bar and leaves a stray band of bare page background there.
+ // On desktop it also collapses the scrollbar, shifting the whole page sideways
+ // as the lightbox opens and back again as it closes.
  useEffect(() => {
+ const overlay = overlayRef.current;
+ // The lightbox is a modal, so keep Tab inside it — otherwise focus walks the
+ // page behind a fully-opaque overlay with nothing visible to follow it.
+ const focusables = () =>
+ Array.from(
+ overlay?.querySelectorAll<HTMLElement>('button, [href], [tabindex]:not([tabindex="-1"])') ??
+ [],
+ ).filter((el) => !el.hasAttribute('disabled'));
  const onKey = (e: KeyboardEvent) => {
  if (e.key ==='Escape') onClose();
  else if (e.key ==='ArrowLeft'&& hasMultiple) prev();
  else if (e.key ==='ArrowRight'&& hasMultiple) next();
+ else if (e.key ==='Tab') {
+ const items = focusables();
+ if (items.length === 0) return;
+ const first = items[0];
+ const last = items[items.length - 1];
+ const active = document.activeElement as HTMLElement | null;
+ if (e.shiftKey && (active === first || !overlay?.contains(active))) {
+ e.preventDefault();
+ last.focus();
+ } else if (!e.shiftKey && active === last) {
+ e.preventDefault();
+ first.focus();
+ }
+ }
+ };
+ const onWheel = (e: WheelEvent) => {
+ if (e.cancelable) e.preventDefault();
  };
  window.addEventListener('keydown', onKey);
- // Prevent background scroll while open
- const prevOverflow = document.body.style.overflow;
- document.body.style.overflow ='hidden';
+ overlay?.addEventListener('wheel', onWheel, { passive: false });
  return () => {
  window.removeEventListener('keydown', onKey);
- document.body.style.overflow = prevOverflow;
+ overlay?.removeEventListener('wheel', onWheel);
  };
  }, [onClose, prev, next, hasMultiple]);
 
+ // Move focus into the lightbox on open and hand it back to whatever opened it
+ // on close, so keyboard users are not dropped at the top of the document.
+ useEffect(() => {
+ const opener = document.activeElement as HTMLElement | null;
+ overlayRef.current?.focus();
+ return () => opener?.focus?.();
+ }, []);
+
  return createPortal(
  <div
- className="fixed inset-0 z-100 flex items-center justify-center bg-black/90 p-4"
+ ref={overlayRef}
+ role="dialog"
+ aria-modal="true"
+ aria-labelledby={labelId}
+ tabIndex={-1}
+ // `touch-pinch-zoom` blocks the one-finger pan that would scroll the page
+ // behind the overlay while still allowing the two-finger zoom a photo viewer
+ // should support (plain `touch-none` would take that away too).
+ className="fixed inset-0 z-100 flex touch-pinch-zoom items-center justify-center bg-black/90 p-4 outline-none"
  onClick={(e) => {
  e.stopPropagation();
  onClose();
  }}
  >
+ <span id={labelId} className="sr-only">
+ {t('image-viewer', { defaultValue:'Image viewer'})}
+ </span>
  <button
  type="button"
  onClick={onClose}

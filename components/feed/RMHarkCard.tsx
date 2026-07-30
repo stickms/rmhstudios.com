@@ -218,6 +218,19 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  runLiquidOpen(cardRef.current, liquidVTName('post', actualId), go, () => Promise.resolve());
  };
 
+ // Keyboard equivalent of the card click. Every `<Link>` inside a card points at
+ // a PROFILE — the post itself was reachable only by mouse, so a keyboard user
+ // could not open a thread from the feed at all. Same `role="link"` + Enter/Space
+ // contract the quoted-original block below already uses.
+ const openable = !item.pending && !item.deletedAt;
+ const handleCardKeyDown = (e: React.KeyboardEvent) => {
+ if (e.key !== 'Enter' && e.key !== ' ') return;
+ // Let a focused link/button inside the card handle its own activation.
+ if ((e.target as HTMLElement).closest('a, button, [role="button"]')) return;
+ e.preventDefault();
+ navigate({ to: postHref(item.user, actualId), resetScroll: false });
+ };
+
  return (
  <div
  ref={cardRef}
@@ -225,12 +238,15 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  // The repeated timeline card inherits its surface, border, press, and hover
  // behavior from the social-post primitive in feed.css.
  data-glass-light=""
- className={`social-post relative p-4 ${
+ role={openable ? 'link' : undefined}
+ tabIndex={openable ? 0 : undefined}
+ className={`social-post relative p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent ${
  item.pending
  ?'opacity-60 pointer-events-none select-none'
  :'cursor-pointer'
  }`}
  onClick={item.pending ? undefined : handleCardClick}
+ onKeyDown={openable ? handleCardKeyDown : undefined}
  onMouseEnter={item.pending ? undefined : warmDetail}
  onFocusCapture={item.pending ? undefined : warmDetail}
  aria-busy={item.pending || undefined}
@@ -442,7 +458,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  }
  }}
  onKeyDown={(e) => {
- if ((e.key ==='Enter'|| e.key ==='') && freshOriginalUser && item.original) {
+ if ((e.key === 'Enter' || e.key === ' ') && freshOriginalUser && item.original) {
  e.preventDefault();
  e.stopPropagation();
  navigate({
