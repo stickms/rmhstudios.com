@@ -154,7 +154,7 @@ export function BlackjackControls({ coins }: Props) {
                   max={coins}
                   value={betInput}
                   onChange={(e) => setBetInput(e.target.value)}
-                  className="w-full bg-site-surface border border-site-border rounded-xl px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40"
+                  className="w-full bg-site-surface border border-site-border rounded-site-sm px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40"
                 />
                 <CoinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
               </div>
@@ -163,7 +163,7 @@ export function BlackjackControls({ coins }: Props) {
                   <button
                     key={amt}
                     onClick={() => setQuickBet(amt)}
-                    className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-xl text-site-text-dim hover:text-site-text hover:bg-site-surface-hover active:scale-95 transition-all"
+                    className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-site-sm text-site-text-dim hover:text-site-text hover:bg-site-surface-hover active:scale-95 transition-all"
                   >
                     {amt}
                   </button>
@@ -174,7 +174,7 @@ export function BlackjackControls({ coins }: Props) {
               onClick={handlePlaceBet}
               disabled={coins < 1}
               variant="accent"
-              className="w-full min-h-11 font-bold rounded-xl text-base"
+              className="w-full min-h-11 font-bold rounded-site-sm text-base"
             >
               {t("place-bet", { defaultValue: "Place Bet" })}
             </Button>
@@ -227,13 +227,13 @@ export function BlackjackControls({ coins }: Props) {
               onClick={() => emit(C2S.TAKE_INSURANCE)}
               disabled={!canAffordInsurance}
               variant="accent"
-              className="min-h-11 font-bold rounded-xl"
+              className="min-h-11 font-bold rounded-site-sm"
             >
               {t("take-insurance", { defaultValue: "Take ({{cost}})", cost: insuranceCost })}
             </Button>
             <Button
               onClick={() => emit(C2S.DECLINE_INSURANCE)}
-              className="min-h-11 bg-site-surface-active hover:bg-site-surface-hover text-site-text border border-site-border font-bold rounded-xl"
+              className="min-h-11 bg-site-surface-active hover:bg-site-surface-hover text-site-text border border-site-border font-bold rounded-site-sm"
             >
               {t("no-thanks", { defaultValue: "No Thanks" })}
             </Button>
@@ -256,20 +256,20 @@ export function BlackjackControls({ coins }: Props) {
         <div className={`grid ${gridCols} gap-2`}>
           <Button
             onClick={() => emit(C2S.HIT)}
-            className="min-h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm"
+            className="min-h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-site-sm text-sm"
           >
             {t("hit", { defaultValue: "Hit" })}
           </Button>
           <Button
             onClick={() => emit(C2S.STAND)}
-            className="min-h-12 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm"
+            className="min-h-12 bg-red-600 hover:bg-red-700 text-white font-bold rounded-site-sm text-sm"
           >
             {t("stand", { defaultValue: "Stand" })}
           </Button>
           {canDoubleDown && (
             <Button
               onClick={() => emit(C2S.DOUBLE_DOWN)}
-              className="min-h-12 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-xl text-sm"
+              className="min-h-12 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-site-sm text-sm"
             >
               {t("double", { defaultValue: "Double" })}
             </Button>
@@ -277,7 +277,7 @@ export function BlackjackControls({ coins }: Props) {
           {canSplit && (
             <Button
               onClick={() => emit(C2S.SPLIT)}
-              className="min-h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm"
+              className="min-h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-site-sm text-sm"
             >
               {t("split", { defaultValue: "Split" })}
             </Button>

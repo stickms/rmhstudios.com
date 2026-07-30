@@ -155,7 +155,7 @@ function EditorPreview({
 }) {
  const { t } = useTranslation('feed');
  return (
- <div className="bg-site-surface border border-site-border rounded-2xl shadow-xs overflow-hidden rounded-site shadow-site-sm">
+ <div className="bg-site-surface border border-site-border rounded-site shadow-site-sm overflow-hidden rounded-site shadow-site-sm">
  <div className="relative h-24 overflow-hidden bg-linear-to-br from-site-accent-dim via-site-surface to-site-bg-subtle">
  {banner ? <img src={banner} alt=""className="size-full object-cover"/> : null}
  <div
@@ -625,7 +625,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  <button
  type="button"
  onClick={() => bannerInputRef.current?.click()}
- className="bg-site-surface border border-site-border rounded-2xl shadow-xs glass-interactive group relative block h-32 w-full overflow-hidden rounded-site"
+ className="bg-site-surface border border-site-border rounded-site shadow-site-sm glass-interactive group relative block h-32 w-full overflow-hidden rounded-site"
  data-glass-light=""
  >
  {bannerPreview ? (
@@ -673,7 +673,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  <button
  type="button"
  onClick={() => fileInputRef.current?.click()}
- className="bg-site-surface border border-site-border rounded-2xl shadow-xs glass-interactive group relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-full text-2xl font-bold text-site-text"
+ className="bg-site-surface border border-site-border rounded-site shadow-site-sm glass-interactive group relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-full text-2xl font-bold text-site-text"
  data-glass-light=""
  aria-label={t('change-avatar', { defaultValue:'Change profile photo'})}
  >
@@ -884,7 +884,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  />
  <div className="space-y-3">
  {links.map((link, index) => (
- <div key={index} className="bg-site-surface border border-site-border rounded-2xl shadow-xs rounded-site-sm p-3">
+ <div key={index} className="bg-site-surface border border-site-border rounded-site shadow-site-sm rounded-site-sm p-3">
  <div className="flex items-center gap-2">
  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
  <LinkIcon className="size-4"aria-hidden />
@@ -965,7 +965,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
 
  {section ==='creator'? (
  <div role="tabpanel"className="space-y-5">
- <section className="bg-site-surface border border-site-border rounded-2xl shadow-xs rounded-site p-4">
+ <section className="bg-site-surface border border-site-border rounded-site shadow-site-sm rounded-site p-4">
  <div className="mb-4 flex items-start gap-3">
  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-warning/10 text-site-warning">
  <Coins className="size-4"aria-hidden />
@@ -1033,7 +1033,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  </div>
  </section>
 
- <section className="bg-site-surface border border-site-border rounded-2xl shadow-xs rounded-site p-4">
+ <section className="bg-site-surface border border-site-border rounded-site shadow-site-sm rounded-site p-4">
  <div className="mb-4 flex items-start gap-3">
  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
  <Music2 className="size-4"aria-hidden />
@@ -1052,7 +1052,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  <SpotifySongSearch selected={selectedSong} onSelect={setSelectedSong} />
  </section>
 
- <section className="bg-site-surface border border-site-border rounded-2xl shadow-xs rounded-site p-4">
+ <section className="bg-site-surface border border-site-border rounded-site shadow-site-sm rounded-site p-4">
  <div className="flex items-start gap-3">
  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
  <Palette className="size-4"aria-hidden />
@@ -1105,7 +1105,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
 
  {section ==='privacy'? (
  <div role="tabpanel"className="space-y-4">
- <section className="bg-site-surface border border-site-border rounded-2xl shadow-xs rounded-site p-4">
+ <section className="bg-site-surface border border-site-border rounded-site shadow-site-sm rounded-site p-4">
  <div className="flex items-center justify-between gap-4">
  <div className="flex min-w-0 items-start gap-3">
  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
@@ -1134,7 +1134,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  </div>
  </section>
 
- <section className="bg-site-surface border border-site-border rounded-2xl shadow-xs rounded-site p-4">
+ <section className="bg-site-surface border border-site-border rounded-site shadow-site-sm rounded-site p-4">
  <div className="mb-4 flex items-start gap-3">
  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
  <LockKeyhole className="size-4"aria-hidden />
@@ -1217,7 +1217,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  </div>
  ) : null}
 
- <div className="bg-site-surface border border-site-border rounded-2xl shadow-xs sticky bottom-0 flex items-center justify-between gap-3 border-x-0 border-b-0 px-4 py-3 md:px-6">
+ <div className="bg-site-surface border border-site-border rounded-site shadow-site-sm sticky bottom-0 flex items-center justify-between gap-3 border-x-0 border-b-0 px-4 py-3 md:px-6">
  <p className="hidden text-xs text-site-text-dim sm:block">
  {dirty
  ? t('unsaved-profile-changes', { defaultValue:'You have unsaved changes.'})

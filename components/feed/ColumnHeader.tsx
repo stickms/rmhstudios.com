@@ -59,11 +59,11 @@ export function ColumnHeader({
         // line and pushes the actions to a second row when the space runs out —
         // better than either an unreadable title or unlabelled glyph buttons.
         'flex flex-wrap items-center gap-2 px-4 py-3',
-        // Sticky column headers float as L3 bg-site-surface border border-site-border rounded-2xl shadow-xs capsules inset from the
+        // Sticky column headers float as L3 bg-site-surface border border-site-border rounded-site shadow-site-sm capsules inset from the
         // column edges (§8.2); embedded (sticky={false}) headers stay inline with
-        // a hairline divider. The optics-ring glint comes free from .bg-site-surface border border-site-border rounded-2xl shadow-xs.
+        // a hairline divider. The optics-ring glint comes free from .bg-site-surface border border-site-border rounded-site shadow-site-sm.
         sticky
-          ? 'site-sticky-chrome bg-site-surface border border-site-border rounded-2xl shadow-xs'
+          ? 'site-sticky-chrome bg-site-surface border border-site-border rounded-site shadow-site-sm'
           : 'border-b border-site-border',
         className,
       )}

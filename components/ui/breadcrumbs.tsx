@@ -57,7 +57,7 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
  ) : (
  <Link
  to={item.to}
- className="truncate rounded-2xl transition-colors hover:text-site-text hover:underline"
+ className="truncate rounded-site transition-colors hover:text-site-text hover:underline"
  >
  {item.label}
  </Link>

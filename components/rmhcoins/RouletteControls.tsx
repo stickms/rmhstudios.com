@@ -146,7 +146,7 @@ export function RouletteControls({ coins }: Props) {
                 key={type}
                 onClick={() => handleQuickBet(type)}
                 disabled={selectedChip > coins}
-                className={`min-h-10 px-2 py-2 text-xs font-bold rounded-xl transition-all active:scale-95 ${color} disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`min-h-10 px-2 py-2 text-xs font-bold rounded-site-sm transition-all active:scale-95 ${color} disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {label}
               </button>
@@ -156,7 +156,7 @@ export function RouletteControls({ coins }: Props) {
 
         {/* Current bets summary */}
         {stagedBets.length > 0 && (
-          <div className="flex flex-col gap-1.5 p-2.5 rounded-xl bg-site-surface border border-site-border">
+          <div className="flex flex-col gap-1.5 p-2.5 rounded-site-sm bg-site-surface border border-site-border">
             <div className="flex items-center justify-between">
               <span className="text-xs text-site-text-dim">{t("your-bets", { defaultValue: "Your bets" })}</span>
               <div className="flex items-center gap-1">
@@ -179,7 +179,7 @@ export function RouletteControls({ coins }: Props) {
             <Button
               onClick={handleClearBets}
               variant="outline"
-              className="w-full min-h-10 text-xs rounded-xl"
+              className="w-full min-h-10 text-xs rounded-site-sm"
             >
               {t("clear-all-bets", { defaultValue: "Clear All Bets" })}
             </Button>
@@ -216,7 +216,7 @@ export function RouletteControls({ coins }: Props) {
           <div className="flex flex-col items-center gap-1">
             <span className="text-xs text-site-text-dim uppercase tracking-wider">{t("winning-number", { defaultValue: "Winning Number" })}</span>
             <div
-              className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-xl sm:text-2xl font-bold text-white shadow-lg ${
+              className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-xl sm:text-2xl font-bold text-white shadow-site ${
                 resultColor === 'red' ? 'bg-red-600'
                 : resultColor === 'green' ? 'bg-emerald-600'
                 : 'bg-gray-800'

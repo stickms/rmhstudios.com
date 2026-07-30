@@ -77,7 +77,7 @@ export const AnimatedBlockquote = ({ className, ...props }: any) => (
 export const AnimatedImg = ({ className, alt, ...props }: any) => (
  <motion.div 
  {...animationProps}
- className="my-8 rounded-site overflow-hidden border border-white/10 shadow-2xl bg-black/50"
+ className="my-8 rounded-site overflow-hidden border border-white/10 shadow-site bg-black/50"
  >
  <img 
  className={cn("w-full h-auto transform hover:scale-[1.02] transition-transform duration-500", className)} 

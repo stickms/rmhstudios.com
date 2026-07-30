@@ -405,7 +405,7 @@ export function ComposeBox({
 
  if (!session) {
  return (
- <div className="bg-site-surface border border-site-border rounded-2xl shadow-xs rounded-site mx-3 px-4 py-6 text-center">
+ <div className="bg-site-surface border border-site-border rounded-site shadow-site-sm rounded-site mx-3 px-4 py-6 text-center">
  <p className="text-sm text-site-text-muted mb-2">
  {t('sign-in-prompt', { defaultValue:'Sign in to post RMHarks'})}
  </p>
@@ -459,7 +459,7 @@ export function ComposeBox({
  const CurrentReplyIcon = currentReply.icon;
 
  return (
- // Floating composer slab (§8.3): its own L2 bg-site-surface border border-site-border rounded-2xl shadow-xs over the aurora
+ // Floating composer slab (§8.3): its own L2 bg-site-surface border border-site-border rounded-site shadow-site-sm over the aurora
  // gutter (mx-3), separated from the first post by the feed gap; one L2 per
  // page is in budget. focus-within lifts the pane's hairline while writing,
  // then settles back — an activation cue, not a layout change.
@@ -528,9 +528,9 @@ export function ComposeBox({
  placeholder={t('compose-placeholder', { defaultValue:"What's on your mind?"})}
  rows={3}
  maxLength={MAX_RMHARK_LENGTH}
- // Recessed text well (§8.3): .bg-site-surface border border-site-border rounded-2xl shadow-xs carries the border, radius
+ // Recessed text well (§8.3): .bg-site-surface border border-site-border rounded-site shadow-site-sm carries the border, radius
  // and inner shadow; accent border on focus is the input affordance.
- className="w-full bg-site-surface border border-site-border rounded-2xl shadow-xs text-site-text placeholder:text-site-text-dim text-base resize-none px-3 py-2 outline-none transition-colors focus:border-site-accent"
+ className="w-full bg-site-surface border border-site-border rounded-site shadow-site-sm text-site-text placeholder:text-site-text-dim text-base resize-none px-3 py-2 outline-none transition-colors focus:border-site-accent"
  onKeyDown={(e) => {
  if (e.key ==='Enter'&& (e.metaKey || e.ctrlKey)) {
  handleSubmit();
@@ -891,7 +891,7 @@ export function ComposeBox({
  {menuOpen && (
  <div
  ref={menuPopRef}
- className="absolute bottom-full right-0 mb-1 w-56 bg-site-surface border border-site-border rounded-2xl shadow-xs py-1 z-30"
+ className="absolute bottom-full right-0 mb-1 w-56 bg-site-surface border border-site-border rounded-site shadow-site-sm py-1 z-30"
  >
  {/* Post visibility (audience) — opens a picker modal */}
  <button
@@ -1057,7 +1057,7 @@ export function ComposeBox({
  className="absolute inset-0 bg-black/60"
  onClick={() => setAudienceOpen(false)}
  />
- <div className="relative w-full max-w-xs p-2 bg-site-surface border border-site-border rounded-2xl shadow-xs animate-in zoom-in-95 fade-in duration-150">
+ <div className="relative w-full max-w-xs p-2 bg-site-surface border border-site-border rounded-site shadow-site-sm animate-in zoom-in-95 fade-in duration-150">
  <div className="mb-1 flex items-center justify-between px-1 pt-1">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
  <CurrentAudienceIcon className="h-4 w-4 text-site-text-muted"/>
@@ -1107,7 +1107,7 @@ export function ComposeBox({
  className="absolute inset-0 bg-black/60"
  onClick={() => setReplyOpen(false)}
  />
- <div className="relative w-full max-w-xs p-2 bg-site-surface border border-site-border rounded-2xl shadow-xs animate-in zoom-in-95 fade-in duration-150">
+ <div className="relative w-full max-w-xs p-2 bg-site-surface border border-site-border rounded-site shadow-site-sm animate-in zoom-in-95 fade-in duration-150">
  <div className="mb-1 flex items-center justify-between px-1 pt-1">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
  <CurrentReplyIcon className="h-4 w-4 text-site-text-muted"/>
@@ -1154,7 +1154,7 @@ export function ComposeBox({
  className="absolute inset-0 bg-black/60"
  onClick={() => setShowPriceModal(false)}
  />
- <div className="relative w-full max-w-xs p-4 bg-site-surface border border-site-border rounded-2xl shadow-xs animate-in zoom-in-95 fade-in duration-150">
+ <div className="relative w-full max-w-xs p-4 bg-site-surface border border-site-border rounded-site shadow-site-sm animate-in zoom-in-95 fade-in duration-150">
  <div className="mb-2 flex items-center justify-between">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
  <Lock className="h-4 w-4 text-site-text-muted"/>
@@ -1219,7 +1219,7 @@ export function ComposeBox({
  className="absolute inset-0 bg-black/60"
  onClick={() => setShowCheatSheet(false)}
  />
- <div className="relative w-full max-w-sm p-4 bg-site-surface border border-site-border rounded-2xl shadow-xs animate-in zoom-in-95 fade-in duration-150">
+ <div className="relative w-full max-w-sm p-4 bg-site-surface border border-site-border rounded-site shadow-site-sm animate-in zoom-in-95 fade-in duration-150">
  <div className="mb-3 flex items-center justify-between">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
  <Type className="h-4 w-4 text-site-text-muted"/>
@@ -1298,7 +1298,7 @@ export function ComposeBox({
  className="absolute inset-0 bg-black/60"
  onClick={() => setAltEditIndex(null)}
  />
- <div className="relative w-full max-w-md p-4 bg-site-surface border border-site-border rounded-2xl shadow-xs animate-in zoom-in-95 fade-in duration-150">
+ <div className="relative w-full max-w-md p-4 bg-site-surface border border-site-border rounded-site shadow-site-sm animate-in zoom-in-95 fade-in duration-150">
  <div className="mb-2 flex items-center justify-between">
  <h3 className="text-sm font-semibold text-site-text">
  {t('alt-text-heading', { defaultValue:'Describe this image'})}

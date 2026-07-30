@@ -291,7 +291,7 @@ function PlayModal({
  <div className="fixed inset-0 z-50 flex items-center justify-center p-4"onMouseDown={onClose}>
  <div className="absolute inset-0 bg-black/60"/>
  <div
- className="relative z-10 w-full max-w-md p-5 bg-site-surface border border-site-border rounded-2xl shadow-xs"
+ className="relative z-10 w-full max-w-md p-5 bg-site-surface border border-site-border rounded-site shadow-site-sm"
  onMouseDown={(e) => e.stopPropagation()}
  >
  <div className="mb-3 flex items-center justify-between">

@@ -80,7 +80,7 @@ export function HoldemControls() {
   // Rebuy button for busted players
   const rebuyButton = isBusted ? (
     <Button onClick={() => emit(C2S.REBUY)}
-      className="min-h-11 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-xl text-sm">
+      className="min-h-11 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-site-sm text-sm">
       {t("rebuy-coins", { defaultValue: "Rebuy ({{count}} coins)", count: roomInfo?.buyIn ?? 0 })}
     </Button>
   ) : null;
@@ -88,12 +88,12 @@ export function HoldemControls() {
   // Sit in/out button shown when sitting out or during waiting/results
   const sitButton = myPlayer && isSittingOut && !isBusted ? (
     <Button onClick={() => emit(C2S.SIT_IN)}
-      className="min-h-11 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-xl text-sm">
+      className="min-h-11 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-site-sm text-sm">
       {t("sit-in", { defaultValue: "Sit In" })}
     </Button>
   ) : myPlayer && !isSittingOut && (phase === 'waiting' || phase === 'results') ? (
     <Button onClick={() => emit(C2S.SIT_OUT)} variant="outline"
-      className="min-h-10 rounded-xl text-sm">
+      className="min-h-10 rounded-site-sm text-sm">
       {t("sit-out", { defaultValue: "Sit Out" })}
     </Button>
   ) : null;
@@ -162,15 +162,15 @@ export function HoldemControls() {
                 <p className="text-xs text-site-text-dim">{t("show-your-cards", { defaultValue: "Show your cards?" })}</p>
                 <div className="flex gap-2">
                   <button onClick={() => toggleCard(0)}
-                    className={`min-h-10 px-3 py-1.5 text-xs font-semibold rounded-xl border transition-colors active:scale-95 ${showingCards[0] ? 'bg-site-accent border-site-accent text-site-accent-fg' : 'bg-site-surface border-site-border text-site-text-dim hover:border-site-accent'}`}>
+                    className={`min-h-10 px-3 py-1.5 text-xs font-semibold rounded-site-sm border transition-colors active:scale-95 ${showingCards[0] ? 'bg-site-accent border-site-accent text-site-accent-fg' : 'bg-site-surface border-site-border text-site-text-dim hover:border-site-accent'}`}>
                     {t("card-1", { defaultValue: "Card 1" })}
                   </button>
                   <button onClick={() => toggleCard(1)}
-                    className={`min-h-10 px-3 py-1.5 text-xs font-semibold rounded-xl border transition-colors active:scale-95 ${showingCards[1] ? 'bg-site-accent border-site-accent text-site-accent-fg' : 'bg-site-surface border-site-border text-site-text-dim hover:border-site-accent'}`}>
+                    className={`min-h-10 px-3 py-1.5 text-xs font-semibold rounded-site-sm border transition-colors active:scale-95 ${showingCards[1] ? 'bg-site-accent border-site-accent text-site-accent-fg' : 'bg-site-surface border-site-border text-site-text-dim hover:border-site-accent'}`}>
                     {t("card-2", { defaultValue: "Card 2" })}
                   </button>
                   <button onClick={toggleBoth}
-                    className={`min-h-10 px-3 py-1.5 text-xs font-semibold rounded-xl border transition-colors active:scale-95 ${showingCards[0] && showingCards[1] ? 'bg-site-accent border-site-accent text-site-accent-fg' : 'bg-site-surface border-site-border text-site-text-dim hover:border-site-accent'}`}>
+                    className={`min-h-10 px-3 py-1.5 text-xs font-semibold rounded-site-sm border transition-colors active:scale-95 ${showingCards[0] && showingCards[1] ? 'bg-site-accent border-site-accent text-site-accent-fg' : 'bg-site-surface border-site-border text-site-text-dim hover:border-site-accent'}`}>
                     {t("both", { defaultValue: "Both" })}
                   </button>
                 </div>
@@ -239,24 +239,24 @@ export function HoldemControls() {
       {/* Action buttons — grid for consistent sizing */}
       <div className="grid grid-cols-3 gap-2">
         <Button onClick={() => emit(C2S.FOLD)}
-          className="min-h-12 bg-site-surface-active hover:bg-site-surface-hover text-site-text border border-site-border font-bold rounded-xl text-sm">
+          className="min-h-12 bg-site-surface-active hover:bg-site-surface-hover text-site-text border border-site-border font-bold rounded-site-sm text-sm">
           {t("fold", { defaultValue: "Fold" })}
         </Button>
 
         {canCheck ? (
           <Button onClick={() => emit(C2S.CHECK)}
-            className="min-h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm">
+            className="min-h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-site-sm text-sm">
             {t("check", { defaultValue: "Check" })}
           </Button>
         ) : (
           <Button onClick={() => emit(C2S.CALL)}
-            className="min-h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm">
+            className="min-h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-site-sm text-sm">
             {t("call", { defaultValue: "Call" })} {Math.min(toCall, myChips)}
           </Button>
         )}
 
         <Button onClick={() => emit(C2S.ALL_IN)}
-          className="min-h-12 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm">
+          className="min-h-12 bg-red-600 hover:bg-red-700 text-white font-bold rounded-site-sm text-sm">
           {t("all-in", { defaultValue: "All In" })}
         </Button>
       </div>
@@ -276,12 +276,12 @@ export function HoldemControls() {
               .filter((p) => p.value >= minRaiseTotal && p.value < myChips + (myPlayer?.currentBet ?? 0))
               .map((p) => (
                 <button key={p.label} onClick={() => setRaiseAmount(String(p.value))}
-                  className="min-h-9 px-2.5 py-1 text-xs font-semibold rounded-xl bg-site-surface border border-site-border hover:border-site-accent hover:text-site-accent text-site-text-dim transition-colors active:scale-95">
+                  className="min-h-9 px-2.5 py-1 text-xs font-semibold rounded-site-sm bg-site-surface border border-site-border hover:border-site-accent hover:text-site-accent text-site-text-dim transition-colors active:scale-95">
                   {p.label}
                 </button>
               ))}
             <button onClick={() => setRaiseAmount(String(minRaiseTotal))}
-              className="min-h-9 px-2.5 py-1 text-xs font-semibold rounded-xl bg-site-surface border border-site-border hover:border-site-accent hover:text-site-accent text-site-text-dim transition-colors active:scale-95">
+              className="min-h-9 px-2.5 py-1 text-xs font-semibold rounded-site-sm bg-site-surface border border-site-border hover:border-site-accent hover:text-site-accent text-site-text-dim transition-colors active:scale-95">
               Min
             </button>
           </div>
@@ -292,11 +292,11 @@ export function HoldemControls() {
                 placeholder={t("min-raise-placeholder", { defaultValue: "Min {{min}}", min: minRaiseTotal })}
                 value={raiseAmount}
                 onChange={(e) => setRaiseAmount(e.target.value)}
-                className="w-full bg-site-surface border border-site-border rounded-xl px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40" />
+                className="w-full bg-site-surface border border-site-border rounded-site-sm px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40" />
               <CoinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
             </div>
             <Button onClick={handleRaise} variant="accent"
-              className="min-h-11 font-bold rounded-xl">
+              className="min-h-11 font-bold rounded-site-sm">
               {t("raise", { defaultValue: "Raise" })}
             </Button>
           </div>

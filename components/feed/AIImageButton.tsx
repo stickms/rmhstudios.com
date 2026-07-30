@@ -110,7 +110,7 @@ export function AIImageButton({
  onClick={() => setShowUpgrade(false)}
  >
  <div
- className="relative w-full max-w-sm overflow-hidden rounded-site border border-site-border bg-site-surface text-center shadow-2xl"
+ className="relative w-full max-w-sm overflow-hidden rounded-site border border-site-border bg-site-surface text-center shadow-site"
  onClick={(e) => e.stopPropagation()}
  >
  {/* Decorative gradient header */}

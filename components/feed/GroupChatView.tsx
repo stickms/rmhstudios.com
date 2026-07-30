@@ -462,7 +462,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
 
  return (
  <div className="flex h-screen flex-col">
- <header className="site-sticky-chrome bg-site-surface border border-site-border rounded-2xl shadow-xs flex items-center gap-3 px-4 py-3">
+ <header className="site-sticky-chrome bg-site-surface border border-site-border rounded-site shadow-site-sm flex items-center gap-3 px-4 py-3">
  <Link
  to="/messages"
  search={{ tab:'groups'}}
@@ -636,7 +636,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  {attachOpen && (
  <div
  ref={attachPanelRef}
- className="absolute bottom-full left-0 z-30 mb-1 w-40 bg-site-surface border border-site-border rounded-2xl shadow-xs py-1"
+ className="absolute bottom-full left-0 z-30 mb-1 w-40 bg-site-surface border border-site-border rounded-site shadow-site-sm py-1"
  >
  <button
  type="button"

@@ -222,14 +222,14 @@ export function ShopColumn({
             <div
               key={item.id}
               data-glass-light=""
-              // L1 .bg-site-surface border border-site-border rounded-2xl shadow-xs + .glass-interactive together light the hover glint
+              // L1 .bg-site-surface border border-site-border rounded-site shadow-site-sm + .glass-interactive together light the hover glint
               // ring (the ring selector needs BOTH classes) and the pointer light.
-              className="bg-site-surface border border-site-border rounded-2xl shadow-xs glass-interactive flex items-center gap-3 rounded-site p-3"
+              className="bg-site-surface border border-site-border rounded-site shadow-site-sm glass-interactive flex items-center gap-3 rounded-site p-3"
               // Rarity communicates value through the rim colour (§9.4): a tinted
               // border + a matching inner specular hairline over the base rim.
               style={{
                 borderColor: `${RARITY_COLORS[item.rarity]}55`,
-                boxShadow: `inset 0 1px 0 ${RARITY_COLORS[item.rarity]}55, var(--site-shadow-sm)`,
+                boxShadow: `inset 0 1px 0 ${RARITY_COLORS[item.rarity]}55, var(--site-shadow-site-sm)`,
               }}
             >
               <Preview item={item} />

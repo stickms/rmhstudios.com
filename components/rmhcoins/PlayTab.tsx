@@ -35,7 +35,7 @@ export function PlayTab({ coins, setCoins }: Props) {
           <button
             key={g.value}
             onClick={() => setSelected(g.value)}
-            className={`flex-1 py-2.5 px-3 rounded-lg text-left transition-all border ${
+            className={`flex-1 py-2.5 px-3 rounded-site-sm text-left transition-all border ${
               selected === g.value
                 ? 'border-site-accent/50 bg-site-accent-dim'
                 : 'border-site-border bg-site-surface hover:bg-site-surface-hover'

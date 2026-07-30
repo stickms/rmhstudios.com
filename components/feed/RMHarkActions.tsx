@@ -149,7 +149,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  {repostMenu && (
  <div
  ref={repostPanelRef}
- className="absolute left-0 top-full mt-1 w-40 bg-site-surface border border-site-border rounded-2xl shadow-xs py-1 z-30"
+ className="absolute left-0 top-full mt-1 w-40 bg-site-surface border border-site-border rounded-site shadow-site-sm py-1 z-30"
  onClick={(e) => e.stopPropagation()}
  >
  <button

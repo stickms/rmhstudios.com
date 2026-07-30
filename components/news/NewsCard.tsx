@@ -31,7 +31,7 @@ export function NewsCard({ article, index }: NewsCardProps) {
         >
             <div
                 data-slot="card"
-                className="h-full bg-(--site-surface) border overflow-hidden hover:border-(--site-accent)/50 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98] transition-[transform,border-color,box-shadow] duration-200 group relative flex flex-col"
+                className="h-full bg-(--site-surface) border overflow-hidden hover:border-(--site-accent)/50 hover:-translate-y-0.5 hover:shadow-site active:scale-[0.98] transition-[transform,border-color,box-shadow] duration-200 group relative flex flex-col"
                 style={{
                     borderRadius: 'var(--site-radius)',
                     borderWidth: 'var(--site-border-width)',
@@ -86,7 +86,7 @@ export function NewsCard({ article, index }: NewsCardProps) {
                             {article.tags.slice(0, 3).map((tag) => (
                                 <span
                                     key={tag}
-                                    className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-sm bg-(--site-bg) text-(--site-text-dim) border border-(--site-border)"
+                                    className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-site-sm bg-(--site-bg) text-(--site-text-dim) border border-(--site-border)"
                                 >
                                     {tag}
                                 </span>

@@ -209,7 +209,7 @@ export function SearchColumn({
  inside the sticky block. bg/blur/glint clip to rounded-site on their own.
  (The class list that used to be inlined into this sentence was a stray from
  a find-and-replace over `glass-pane` — prose, not markup.) */}
-      <div className="site-sticky-chrome bg-site-surface border border-site-border rounded-2xl shadow-xs">
+      <div className="site-sticky-chrome bg-site-surface border border-site-border rounded-site shadow-site-sm">
         {/* The search field IS this page's chrome, so there was no heading of any
  kind — the route had no h1 at any viewport. */}
         <h1 className="sr-only">{t('search-title', { defaultValue: 'Search' })}</h1>

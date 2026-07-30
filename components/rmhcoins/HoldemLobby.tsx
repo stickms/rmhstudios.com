@@ -75,26 +75,26 @@ export function HoldemLobby({ coins }: Props) {
           value={joinCodeInput}
           onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
           maxLength={5}
-          className="flex-1 bg-site-surface border border-site-border rounded-lg px-3 py-2 text-site-text text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-site-accent/40"
+          className="flex-1 bg-site-surface border border-site-border rounded-site-sm px-3 py-2 text-site-text text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-site-accent/40"
         />
         <Button
           onClick={handleJoinByCode}
           disabled={!joinCodeInput.trim()}
-          className="bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-lg text-sm"
+          className="bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-site-sm text-sm"
         >
           {t("join", { defaultValue: "Join" })}
         </Button>
       </div>
 
       {showCreate ? (
-        <div className="flex flex-col gap-2 p-3 rounded-lg bg-site-surface border border-site-border">
+        <div className="flex flex-col gap-2 p-3 rounded-site-sm bg-site-surface border border-site-border">
           <input
             type="text"
             placeholder={t("table-name-placeholder", { defaultValue: "Table name (optional)" })}
             value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
             maxLength={30}
-            className="w-full bg-site-bg border border-site-border rounded-lg px-3 py-2 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40"
+            className="w-full bg-site-bg border border-site-border rounded-site-sm px-3 py-2 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40"
           />
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">
@@ -127,10 +127,10 @@ export function HoldemLobby({ coins }: Props) {
           )}
           <div className="flex gap-2">
             <Button onClick={handleCreate} disabled={coins < buyIn}
-              className="flex-1 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-lg text-sm">
+              className="flex-1 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-site-sm text-sm">
               {t("create-table", { defaultValue: "Create Table" })}
             </Button>
-            <Button onClick={() => setShowCreate(false)} variant="outline" className="flex-1 rounded-lg text-sm">
+            <Button onClick={() => setShowCreate(false)} variant="outline" className="flex-1 rounded-site-sm text-sm">
               {t("cancel", { defaultValue: "Cancel" })}
             </Button>
           </div>
@@ -138,11 +138,11 @@ export function HoldemLobby({ coins }: Props) {
       ) : (
         <div className="flex gap-2">
           <Button onClick={() => setShowCreate(true)}
-            className="flex-1 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-lg text-sm">
+            className="flex-1 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-site-sm text-sm">
             <Plus className="w-4 h-4 mr-1" /> {t("create-table", { defaultValue: "Create Table" })}
           </Button>
           <button onClick={handleRefresh}
-            className="p-2 rounded-lg border border-site-border bg-site-surface text-site-text-dim hover:text-site-text transition-colors">
+            className="p-2 rounded-site-sm border border-site-border bg-site-surface text-site-text-dim hover:text-site-text transition-colors">
             <RefreshCw className="w-4 h-4" />
           </button>
         </div>
@@ -157,7 +157,7 @@ export function HoldemLobby({ coins }: Props) {
           {roomList.map((room) => (
             <button key={room.roomId} onClick={() => handleJoin(room.roomId)}
               disabled={room.playerCount >= room.maxPlayers}
-              className="flex items-center justify-between p-3 rounded-lg bg-site-surface border border-site-border hover:bg-site-surface-hover transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed">
+              className="flex items-center justify-between p-3 rounded-site-sm bg-site-surface border border-site-border hover:bg-site-surface-hover transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed">
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm font-bold text-site-text">{room.name}</span>
                 <span className="text-xs text-site-text-dim">

@@ -22,7 +22,7 @@ export function HoldemSessionStats() {
   if (!anyPlayed) return null;
 
   return (
-    <div className="rounded-lg border border-site-border bg-site-surface/50 overflow-hidden">
+    <div className="rounded-site-sm border border-site-border bg-site-surface/50 overflow-hidden">
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-site-text-dim hover:text-site-text transition-colors"

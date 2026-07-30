@@ -204,7 +204,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  role="dialog"
  aria-modal="true"
  aria-label={t('palette-new-post', { defaultValue:'New post'})}
- className="bg-site-surface border border-site-border shadow-xs absolute inset-0 h-dvh max-h-none overflow-y-auto rounded-none pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] animate-in fade-in zoom-in-95 duration-200 sm:inset-x-4 sm:bottom-auto sm:top-[10vh] sm:mx-auto sm:h-auto sm:max-h-[80dvh] sm:max-w-lg sm:rounded-site sm:p-0"
+ className="bg-site-surface border border-site-border shadow-site-sm absolute inset-0 h-dvh max-h-none overflow-y-auto rounded-none pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] animate-in fade-in zoom-in-95 duration-200 sm:inset-x-4 sm:bottom-auto sm:top-[10vh] sm:mx-auto sm:h-auto sm:max-h-[80dvh] sm:max-w-lg sm:rounded-site sm:p-0"
  >
  {/* Header */}
  <div className="flex items-center justify-between px-4 py-3 border-b border-site-border">
@@ -274,7 +274,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  {menuOpen && (
  <div
  ref={menuPopRef}
- className="absolute top-full right-0 mt-1 w-40 bg-site-surface border border-site-border rounded-2xl shadow-xs py-1 z-30"
+ className="absolute top-full right-0 mt-1 w-40 bg-site-surface border border-site-border rounded-site shadow-site-sm py-1 z-30"
  >
  <button
  onClick={() => {
@@ -578,7 +578,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  role="dialog"
  aria-modal="true"
  aria-labelledby="compose-alt-title"
- className="relative w-full max-w-md p-4 bg-site-surface border border-site-border rounded-2xl shadow-xs animate-in zoom-in-95 fade-in duration-150"
+ className="relative w-full max-w-md p-4 bg-site-surface border border-site-border rounded-site shadow-site-sm animate-in zoom-in-95 fade-in duration-150"
  >
  <div className="mb-2 flex items-center justify-between">
  <h3 id="compose-alt-title"className="text-sm font-semibold text-site-text">

@@ -109,11 +109,11 @@ export function HoldemGame({ coins, setCoins }: Props) {
       </div>
 
       <div className="w-full flex flex-col lg:flex-row lg:items-start gap-4">
-        <div className="flex-1 min-w-0 rounded-xl border border-site-border bg-site-surface/30 p-3 sm:p-5">
+        <div className="flex-1 min-w-0 rounded-site-sm border border-site-border bg-site-surface/30 p-3 sm:p-5">
           <HoldemTable />
         </div>
         <div className="w-full lg:w-80 shrink-0 flex flex-col gap-3">
-          <div className="rounded-xl border border-site-border bg-site-surface/30 p-3 sm:p-4">
+          <div className="rounded-site-sm border border-site-border bg-site-surface/30 p-3 sm:p-4">
             <HoldemControls />
           </div>
           <HoldemSessionStats />

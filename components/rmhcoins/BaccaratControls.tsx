@@ -143,7 +143,7 @@ export function BaccaratControls({ coins }: Props) {
               key={opt.type}
               onClick={() => handlePlaceBet(opt.type)}
               disabled={coins - totalBet < chipAmount}
-              className={`flex flex-col items-center justify-center gap-1 min-h-13 p-3 rounded-xl ${opt.color} ${opt.hoverColor} text-white font-bold transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`flex flex-col items-center justify-center gap-1 min-h-13 p-3 rounded-site-sm ${opt.color} ${opt.hoverColor} text-white font-bold transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               <span className="text-sm leading-tight">{opt.label}</span>
               <span className="text-[10px] opacity-75 leading-tight">{opt.payout}</span>
@@ -162,7 +162,7 @@ export function BaccaratControls({ coins }: Props) {
               key={opt.type}
               onClick={() => handlePlaceBet(opt.type)}
               disabled={coins - totalBet < chipAmount}
-              className="flex flex-col items-center justify-center gap-0.5 min-h-11 p-2.5 rounded-xl bg-site-surface border border-site-border text-site-text hover:bg-site-surface-hover active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex flex-col items-center justify-center gap-0.5 min-h-11 p-2.5 rounded-site-sm bg-site-surface border border-site-border text-site-text hover:bg-site-surface-hover active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="text-xs font-bold leading-tight">{opt.label}</span>
               <span className="text-[10px] text-site-text-dim leading-tight">{opt.payout}</span>
@@ -178,7 +178,7 @@ export function BaccaratControls({ coins }: Props) {
               <button
                 key={amt}
                 onClick={() => setChipAmount(amt)}
-                className={`flex-1 min-h-10 text-xs font-bold rounded-xl border transition-colors active:scale-95 ${
+                className={`flex-1 min-h-10 text-xs font-bold rounded-site-sm border transition-colors active:scale-95 ${
                   chipAmount === amt
                     ? 'bg-site-accent border-site-accent text-site-accent-fg'
                     : 'bg-site-surface border-site-border text-site-text-dim hover:text-site-text hover:bg-site-surface-hover'
@@ -192,7 +192,7 @@ export function BaccaratControls({ coins }: Props) {
 
         {/* Current bets summary + clear button */}
         {totalBet > 0 && (
-          <div className="flex flex-col gap-2 p-3 rounded-xl bg-site-surface border border-site-border">
+          <div className="flex flex-col gap-2 p-3 rounded-site-sm bg-site-surface border border-site-border">
             <div className="flex items-center justify-between">
               <span className="text-xs text-site-text-dim">{t("your-bets-this-round", { defaultValue: "Your bets this round:" })}</span>
               <div className="flex items-center gap-1">
@@ -214,7 +214,7 @@ export function BaccaratControls({ coins }: Props) {
             </div>
             <button
               onClick={handleClearBets}
-              className="w-full min-h-10 text-xs font-bold rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 active:scale-[0.98] transition-all"
+              className="w-full min-h-10 text-xs font-bold rounded-site-sm border border-red-500/30 text-red-400 hover:bg-red-500/10 active:scale-[0.98] transition-all"
             >
               {t("clear-all-bets", { defaultValue: "Clear All Bets" })}
             </button>

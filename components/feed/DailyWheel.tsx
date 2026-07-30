@@ -97,7 +97,7 @@ export function DailyWheel() {
  <div className="absolute left-1/2 top-0 z-10 h-0 w-0 -translate-x-1/2 -translate-y-1 border-x-8 border-t-[14px] border-x-transparent border-t-site-accent"/>
  {/* Wheel face */}
  <div
- className="h-56 w-56 rounded-full border-4 border-site-border shadow-xs"
+ className="h-56 w-56 rounded-full border-4 border-site-border shadow-site-sm"
  style={{
  background: `conic-gradient(${gradient})`,
  transform: `rotate(${angle}deg)`,
