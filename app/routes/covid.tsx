@@ -20,7 +20,7 @@ export const Route = createFileRoute('/covid')({
   head: () => ({
     meta: [
       ...buildMeta({ title: TITLE, description: DESC, path: PATH }),
-      { name: 'theme-color', content: '#0A1526' },
+      { name: 'theme-color', content: '#0A1130' },
     ],
     links: [
       buildCanonical(PATH),
@@ -29,7 +29,7 @@ export const Route = createFileRoute('/covid')({
       { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
       {
         rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Public+Sans:wght@300..800&family=JetBrains+Mono:wght@400;500&display=swap',
+        href: 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..700&family=Inter:wght@300..700&family=Great+Vibes&display=swap',
       },
     ],
   }),

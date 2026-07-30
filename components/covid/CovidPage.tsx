@@ -1,41 +1,35 @@
-import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
-import {
-  ArrowRight,
-  BadgeCheck,
-  Bird,
-  ChevronLeft,
-  EyeOff,
-  FileText,
-  FlaskConical,
-  Gauge,
-  Landmark,
-  Lock,
-  Megaphone,
-  type LucideIcon,
-} from 'lucide-react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { ArrowRight, Menu, Search } from 'lucide-react';
 
 /**
  * /covid — "Feature Leak: The True Origins of X".
  *
- * A parody of the confident official information page: an in-universe RMH
- * "Office of Platform Integrity" finding that the product now shipping as X
- * escaped from RMH Studios via nine departing staff. It is satire, and the
- * page says so in three places (the top strip, the FAQ, the footer
- * disclaimer) — no allegation here is a statement of fact, and no real person
- * is named, per docs/people.md §4.
+ * A parody of the single-page federal landing page at
+ * whitehouse.gov/lab-leak-true-origins-of-covid-19: an in-universe RMH "Office
+ * of Platform Integrity" finding that the product shipping as X escaped from
+ * RMH Studios via nine departing engineers.
+ *
+ * The layout deliberately tracks the source page beat for beat — promo ticker,
+ * sticky masthead that inverts on scroll, a giant serif wordmark split around a
+ * central emblem, a blue-ruled box of numbered claims over a faint map, a
+ * full-bleed map plate with blue label chips, and two-column evidence rows.
+ *
+ * It is satire, and says so in three places: the ticker, the FAQ, and the
+ * footer disclaimer. No allegation here is a statement of fact, and no real
+ * person is named or depicted (docs/people.md §4).
  *
  * Design system: `components/covid/covid.css`, scoped under `.cvd-root`, in the
- * same standalone-arm tradition as `/rmh-pmc` and `/rmh-capital` — its own
- * palette and fonts rather than the `--site-*` contract, because the joke is
- * the borrowed federal-document look.
+ * standalone-arm tradition of /rmh-pmc and /rmh-capital — its own palette and
+ * fonts rather than the `--site-*` contract, because the borrowed look is the
+ * joke.
  *
  * Motion is progressive enhancement: the markup renders fully visible on the
- * server, and `data-animate` is only set on mount for visitors who have not
- * asked for reduced motion.
+ * server, `data-animate` is only set on mount for visitors who have not asked
+ * for reduced motion, and the ticker stops under reduced motion.
  */
 
-/* ── The seal. A radial hub inside a hexagon, ringed like a state seal —
-   RMH lineage (the hex mark) plus enough engraving to read as officialdom. ── */
+/* ── The emblem that stands between the two words of the wordmark: a radial
+   hub inside a hexagon, ringed like a state seal. ─────────────────────────── */
 function Seal({ withText = false, sealId }: { withText?: boolean; sealId?: string }) {
   const topArc = `${sealId}-top`;
   const bottomArc = `${sealId}-bottom`;
@@ -84,7 +78,6 @@ function Seal({ withText = false, sealId }: { withText?: boolean; sealId?: strin
         </g>
       ) : null}
 
-      {/* hexagon + radial hub */}
       <polygon
         points="100,52 142,76 142,124 100,148 58,124 58,76"
         fill="none"
@@ -104,65 +97,140 @@ function Seal({ withText = false, sealId }: { withText?: boolean; sealId?: strin
   );
 }
 
-/* ── The numbers block under the hero ─────────────────────────────────────── */
-const FACTS: { figure: string; label: string }[] = [
-  { figure: '01', label: 'index case — a single departing engineer, one Thursday afternoon' },
+/* ── Faint cartographic watermark behind the numbered claims. Abstract
+   region outlines, not a real place. ─────────────────────────────────────── */
+function FrameMap() {
+  return (
+    <svg viewBox="0 0 900 520" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <g fill="none" stroke="currentColor" strokeWidth="1.4">
+        <path d="M120 60 C210 40 280 90 350 80 C430 68 470 30 560 52 C640 72 690 120 780 110" />
+        <path d="M60 180 C150 200 200 150 300 165 C390 178 440 220 530 205 C620 190 700 150 840 175" />
+        <path d="M90 300 C180 285 240 330 330 320 C420 310 470 265 560 285 C650 305 720 350 830 330" />
+        <path d="M140 430 C230 415 290 455 380 445 C470 435 520 395 610 415 C700 435 760 470 860 450" />
+        <path d="M210 40 C230 130 190 210 215 300 C240 390 200 460 220 510" />
+        <path d="M470 30 C490 120 450 200 475 290 C500 380 460 450 480 510" />
+        <path d="M700 45 C720 135 680 215 705 305 C730 395 690 465 710 515" />
+      </g>
+    </svg>
+  );
+}
+
+/* ── The map plate. City blocks + a river, drawn deterministically so the
+   server and client markup match exactly; labels are HTML chips on top so
+   they stay legible at any width. ─────────────────────────────────────────── */
+const BLOCKS: { x: number; y: number; w: number; h: number; o: number }[] = (() => {
+  const out: { x: number; y: number; w: number; h: number; o: number }[] = [];
+  // Fixed-seed LCG rather than Math.random: the SVG is generated at module
+  // scope and rendered on the server, so it has to come out identical on the
+  // client or hydration mismatches.
+  let seed = 20260417;
+  const rnd = () => {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    return seed / 2147483648;
+  };
+  // A coarse grid with gaps, jitter and varied footprints reads as a city;
+  // a uniform grid reads as a checkerboard. Extends past the viewBox because
+  // the whole group is rotated off-axis.
+  for (let col = -2; col < 20; col++) {
+    for (let row = -2; row < 12; row++) {
+      if (rnd() < 0.2) continue; // vacant lot
+      const wide = rnd() < 0.18;
+      const w = wide ? 110 + rnd() * 80 : 34 + rnd() * 62;
+      const h = 24 + rnd() * 66;
+      out.push({
+        x: col * 96 + rnd() * 22,
+        y: row * 78 + rnd() * 20,
+        w,
+        h,
+        o: 0.04 + rnd() * 0.2,
+      });
+    }
+  }
+  return out;
+})();
+
+function MapPlate() {
+  return (
+    <svg
+      className="plate-art"
+      viewBox="0 0 1600 720"
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id="cvd-plate-bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#16203c" />
+          <stop offset="55%" stopColor="#0d1530" />
+          <stop offset="100%" stopColor="#0a1024" />
+        </linearGradient>
+      </defs>
+      <rect width="1600" height="720" fill="#101a34" />
+      <rect width="1600" height="720" fill="url(#cvd-plate-bg)" opacity="0.7" />
+
+      {/* the water */}
+      <path
+        d="M980 -40 C900 140 860 300 900 460 C930 590 1010 660 1060 760 L1600 760 L1600 -40 Z"
+        fill="#16324f"
+        opacity="0.85"
+      />
+      <path
+        d="M980 -40 C900 140 860 300 900 460 C930 590 1010 660 1060 760"
+        fill="none"
+        stroke="#8fc4e8"
+        strokeWidth="2"
+        opacity="0.35"
+      />
+
+      {/* blocks — rotated a few degrees so the street grid isn't axis-aligned */}
+      <g fill="#cddcf0" transform="rotate(-7 800 360)">
+        {BLOCKS.map((b, i) => (
+          <rect key={i} x={b.x} y={b.y} width={b.w} height={b.h} opacity={b.o} />
+        ))}
+      </g>
+
+      {/* the connector between the two sites */}
+      <line x1="416" y1="173" x2="1120" y2="533" stroke="#1560e8" strokeWidth="9" />
+      <circle cx="416" cy="173" r="15" fill="#ffffff" stroke="#1560e8" strokeWidth="6" />
+      <circle cx="1120" cy="533" r="15" fill="#ffffff" stroke="#1560e8" strokeWidth="6" />
+    </svg>
+  );
+}
+
+/* ── Content ───────────────────────────────────────────────────────────────── */
+
+const FIGURES: { figure: string; label: string }[] = [
+  { figure: '01', label: 'index case — one departing engineer, one Thursday afternoon' },
   { figure: '17', label: 'RMH features that surfaced on a rival platform within nine months' },
   { figure: '09', label: 'staff who left for a company that had never heard of us' },
   { figure: '00', label: 'citations, credits, or thank-you notes received to date' },
 ];
 
-/* ── "The Science": the five findings ─────────────────────────────────────── */
-interface Finding {
-  title: string;
-  body: string[];
-  cite: string;
-}
-
-const FINDINGS: Finding[] = [
-  {
-    title: 'The product possesses a design characteristic not found in nature.',
-    body: [
-      'Their timeline rakes its cards onto a shallow cylinder at three degrees and stops the hairline exactly one pixel short of the card edge. No design language arrives at three degrees on its own. Three degrees is a decision a tired person makes at 2 a.m. on a staging server, defends in review the next morning, and never writes down.',
-      'We know this because we are the tired person. The rake is ours, the hairline is ours, and both crossed the street intact.',
-    ],
-    cite: 'Exhibit A — stylesheet diff, 41% custom-property overlap',
-  },
-  {
-    title: 'Every affected feature traces to a single introduction event.',
-    body: [
-      'Independent invention leaves a scatter: teams arrive at similar ideas over years, from different directions, with different mistakes. Ours leaves a point. All seventeen features cluster into one autumn — specifically, into the nine months following a farewell cake in the fourth-floor kitchen.',
-      'Previous copycat episodes in this industry show multiple spillovers across multiple quarters. This one has a date, and the date has a photograph, and the photograph has a cake in it.',
-    ],
-    cite: 'Exhibit B — ship-date ledger, both platforms',
-  },
-  {
-    title: 'Their headquarters is the industry’s foremost engagement laboratory.',
-    body: [
-      'It is a facility with a documented history of gain-of-function retention research conducted at inadequate design-safety levels: features are made deliberately more compulsive for study purposes and then released directly into production, because that building has answered every question that way for fifteen years.',
-      'We are not alleging malice. We are observing that if you keep a copy of somebody else’s design language in a building like that, it will eventually get out.',
-    ],
-    cite: 'Exhibit C — public engineering blog, since edited',
-  },
-  {
-    title: 'Their engineers were shipping RMH-like symptoms months before launch.',
-    body: [
-      'Three of them were observed in the autumn posting build screenshots with our empty-state copy still in frame — “Nothing here yet. That is not a bug, it is an invitation.” — months before any of it was announced.',
-      'The screenshots have since been deleted. We note this without further comment, in the way that people say “without further comment” when they intend the comment to be obvious.',
-    ],
-    cite: 'Exhibit D — four archived posts, timestamps intact',
-  },
-  {
-    title: 'If there were evidence of independent origin, it would have surfaced by now.',
-    body: [
-      'A design that genuinely evolves in the open leaves a trail behind it: abandoned drafts, a directory of dead ends, a bad first version everyone is embarrassed by. Eighteen months of looking has produced none of that.',
-      'There is no bad first version of their timeline. That is the finding. Ours was the bad first version.',
-    ],
-    cite: 'Exhibit E — the absence of a trail, reviewed exhaustively',
-  },
+/* The five numbered claims, in the clipped register of the page being
+   parodied: one assertion each, emphasis in italics. */
+const CASE: ReactNode[] = [
+  <>
+    The product possesses a design characteristic that is <em>not found in nature</em> — a
+    three-degree card rake that no team has ever arrived at on its own.
+  </>,
+  <>
+    Data shows that all seventeen affected features stem from{' '}
+    <em>a single introduction into their codebase</em>. This runs contrary to previous copycat
+    episodes, where there were multiple spillover events.
+  </>,
+  <>
+    <em>San Francisco is home to the industry’s foremost engagement laboratory</em>, which has a
+    history of conducting gain-of-function retention research at inadequate design-safety levels.
+  </>,
+  <>
+    Engineers at that laboratory were <em>shipping RMH-like symptoms in the autumn of last year</em>
+    , months before any of it was announced.
+  </>,
+  <>
+    By nearly all measures of design, if there were evidence of independent origin{' '}
+    <em>it would have already surfaced</em>. But it hasn’t.
+  </>,
 ];
 
-/* ── Chronology of the outbreak ───────────────────────────────────────────── */
 interface Beat {
   day: string;
   title: string;
@@ -202,7 +270,6 @@ const CHRONOLOGY: Beat[] = [
   },
 ];
 
-/* ── The ledger ───────────────────────────────────────────────────────────── */
 interface Row {
   feature: string;
   ours: string;
@@ -227,74 +294,135 @@ const LEDGER: Row[] = [
   },
 ];
 
-/* ── Everything else they got wrong ──────────────────────────────────────── */
-interface Card {
-  icon: LucideIcon;
-  title: string;
-  body: string;
-  tag: string;
+/** Named `Evidence` rather than `Record` so it doesn't shadow the built-in. */
+interface Evidence {
+  term: string;
+  body: ReactNode[];
 }
 
-const FAILURES: Card[] = [
+const RECORD: Evidence[] = [
   {
-    icon: BadgeCheck,
-    title: 'Checkmark mandates',
-    body: 'Verification was quietly reassigned from “who you are” to “whose card is on file”, and the public was told this was democratisation. Ours stays free, unpurchasable, and boring, which is the entire job description of verification.',
-    tag: 'Identity',
+    term: 'Exit interviews',
+    body: [
+      <>
+        Nine of them, each one cordial, each one ending with “I’m not allowed to say where.”
+        Transcripts retained; names withheld, because the people are not the story and never were.
+      </>,
+    ],
   },
   {
-    icon: Gauge,
-    title: 'Rate limits',
-    body: 'Users were instructed to stand six hundred posts apart for their own protection. The measure appeared overnight, had no author, and was withdrawn without explanation — the three reliable properties of a policy nobody modelled.',
-    tag: 'Distancing',
+    term: 'The farewell cake',
+    body: [
+      <>
+        Photographed for morale purposes on the Thursday in question. The photograph is timestamped,
+        and it is the only exhibit in this file we are genuinely proud of.
+      </>,
+    ],
   },
   {
-    icon: Lock,
-    title: 'The API lockdown',
-    body: 'An ecosystem of clients, researchers, and hobby projects was shut in overnight at a price set to make a point. We shipped a scoped developer API instead: keys anyone can request, quotas printed on the page, no negotiation.',
-    tag: 'Closure',
+    term: 'Stylesheet diff',
+    body: [
+      <>
+        Ours and theirs, compared line by line. <b>Forty-one per cent</b> of their custom-property
+        names match ours — including the one we spelled wrong and never fixed, because fixing it
+        would have broken four pages.
+      </>,
+    ],
   },
   {
-    icon: EyeOff,
-    title: 'Algorithmic suppression',
-    body: 'Reach was throttled for posts pointing anywhere else, and the throttle was denied while it was running. Our feed ranks a link away from us exactly as it ranks a link toward us. That is not generosity. It is the floor.',
-    tag: 'Reach',
+    term: 'Deleted screenshots',
+    body: [
+      <>
+        Four build screenshots, posted publicly in the autumn, showing our empty-state copy still in
+        frame: <em>“Nothing here yet. That is not a bug, it is an invitation.”</em>
+      </>,
+      <>
+        All four have since been removed. We note this without further comment, in the way people
+        say “without further comment” when they intend the comment to be obvious.
+      </>,
+    ],
   },
   {
-    icon: Bird,
-    title: 'The rebrand',
-    body: 'A bird with fifteen years of public recognition was retired in favour of a single letter that was already somebody else’s trademark, twice. Our name is four syllables and still says what the thing is.',
-    tag: 'Branding',
+    term: 'The off-by-one',
+    body: [
+      <>
+        Both character counters permit one grapheme more than they advertise, and both fail on the
+        same emoji. A defect is not a good idea that two teams can independently have. It is a
+        fingerprint.
+      </>,
+    ],
   },
   {
-    icon: Megaphone,
-    title: 'Suppression of dissent',
-    body: 'The accounts cataloguing all of this were quote-posted into the ground by the account with the most followers on the platform. This page has no followers. It will simply continue to be here.',
-    tag: 'Dissent',
+    term: 'No litigation',
+    body: [
+      <>
+        We are a personal web platform with a coin economy and eighteen browser games. Litigation is
+        not on the roadmap. A page was on the roadmap. This is the page.
+      </>,
+    ],
   },
 ];
 
-/* ── The record ───────────────────────────────────────────────────────────── */
-const RECORD: { term: string; desc: string }[] = [
+const ELSEWHERE: Evidence[] = [
   {
-    term: 'Nine exit interviews',
-    desc: 'Each one cordial. Each one ending with “I’m not allowed to say where.” Transcripts retained; names withheld, because the people are not the story and never were.',
+    term: 'Checkmark mandates',
+    body: [
+      <>
+        Verification was quietly reassigned from “who you are” to “whose card is on file”, and the
+        public was told this was democratisation. Ours stays free, unpurchasable, and boring — which
+        is the entire job description of verification.
+      </>,
+    ],
   },
   {
-    term: 'One farewell cake',
-    desc: 'Photographed for morale purposes on the Thursday in question. The photograph is timestamped, and it is the only exhibit in this file we are genuinely proud of.',
+    term: 'Rate limits',
+    body: [
+      <>
+        Users were instructed to stand six hundred posts apart for their own protection. The measure
+        appeared overnight, had no author, and was withdrawn without explanation — the three
+        reliable properties of a policy nobody modelled.
+      </>,
+    ],
   },
   {
-    term: 'Seventeen features',
-    desc: 'Documented with ship dates on both sides, cross-referenced against changelogs. Available on request to anybody who asks, which so far is nobody.',
+    term: 'The API lockdown',
+    body: [
+      <>
+        An ecosystem of clients, researchers, and hobby projects was shut in overnight at a price
+        set to make a point. We shipped a scoped developer API instead: keys anyone can request,
+        quotas printed on the page, no negotiation.
+      </>,
+    ],
   },
   {
-    term: 'Two stylesheets',
-    desc: 'Ours and theirs, diffed line by line. Forty-one per cent of their custom-property names match ours, including the one we spelled wrong and never fixed because fixing it would have broken four pages.',
+    term: 'Algorithmic suppression',
+    body: [
+      <>
+        Reach was throttled for posts pointing anywhere else, and the throttle was denied while it
+        was running. Our feed ranks a link away from us exactly as it ranks a link toward us. That
+        is not generosity. It is the floor.
+      </>,
+    ],
   },
   {
-    term: 'Zero lawsuits',
-    desc: 'We are a personal web platform with a coin economy and eighteen browser games. Litigation is not on the roadmap. A page was on the roadmap. This is the page.',
+    term: 'The rebrand',
+    body: [
+      <>
+        A bird with fifteen years of public recognition was retired in favour of a single letter
+        that was already somebody else’s trademark, twice. Our name is four syllables and still says
+        what the thing is.
+      </>,
+    ],
+  },
+  {
+    term: 'Suppression of dissent',
+    body: [
+      <>
+        The accounts cataloguing all of this were quote-posted into the ground by the account with
+        the most followers on the platform. This page has no followers. It will simply continue to
+        be here.
+      </>,
+    ],
   },
 ];
 
@@ -328,7 +456,7 @@ const FAQ: { q: string; a: ReactNode }[] = [
         It is a shot at the format — the confident official page that arranges circumstantial detail
         into a conclusion it had picked before it started, and prints it under a seal. X is the
         pretext, chosen because its product is the one closest to ours. Their engineers have our
-        sympathy; they work in the building described in finding three.
+        sympathy; they work in the building described in claim three.
       </>
     ),
   },
@@ -343,6 +471,15 @@ const FAQ: { q: string; a: ReactNode }[] = [
   },
 ];
 
+const NAV: { href: string; label: string }[] = [
+  { href: '#origin', label: 'The Origin' },
+  { href: '#chronology', label: 'Chronology' },
+  { href: '#ledger', label: 'The Ledger' },
+  { href: '#coverup', label: 'The Cover-Up' },
+  { href: '#record', label: 'The Record' },
+  { href: '#finding', label: 'Findings' },
+];
+
 const FOOT_LINKS: { href: string; label: string }[] = [
   { href: '/', label: 'RMH Studios' },
   { href: '/design', label: 'Design language' },
@@ -351,17 +488,51 @@ const FOOT_LINKS: { href: string; label: string }[] = [
   { href: '/privacy', label: 'Privacy' },
 ];
 
+const TICKER = [
+  'Parody — an RMH Studios satire',
+  'No investigation exists',
+  'No allegation is made against X Corp.',
+  'Not a COVID-19 information page',
+];
+
+const SHARE_URL = 'https://rmhstudios.com/covid';
+const SHARE_TEXT =
+  'Feature Leak: The True Origins of X — a finding from the RMH Office of Platform Integrity';
+
+const SHARE: { label: string; href: string; path: string }[] = [
+  {
+    label: 'Share on Facebook',
+    href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(SHARE_URL)}`,
+    path: 'M13.5 21v-7.2h2.6l.4-3h-3V8.9c0-.9.3-1.5 1.5-1.5h1.6V4.7c-.3 0-1.2-.1-2.3-.1-2.3 0-3.9 1.4-3.9 4v2.2H7.9v3h2.5V21z',
+  },
+  {
+    label: 'Share on X',
+    href: `https://twitter.com/intent/tweet?url=${encodeURIComponent(SHARE_URL)}&text=${encodeURIComponent(SHARE_TEXT)}`,
+    path: 'M18.9 2H22l-7.5 8.6L23 22h-6.8l-5-6.6L5.3 22H2l8-9.2L1.5 2h7l4.5 6zM17 20h1.7L7.1 3.8H5.3z',
+  },
+  {
+    label: 'Share on LinkedIn',
+    href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(SHARE_URL)}`,
+    path: 'M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.78 2.65 4.78 6.1V21H17.4v-5.3c0-1.27-.02-2.9-1.77-2.9s-2.04 1.38-2.04 2.8V21H9z',
+  },
+  {
+    label: 'Share by email',
+    href: `mailto:?subject=${encodeURIComponent('Feature Leak: The True Origins of X')}&body=${encodeURIComponent(`${SHARE_TEXT}\n\n${SHARE_URL}`)}`,
+    path: 'M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm9 8L4.2 7.2v.1L12 13l7.8-5.7v-.1z',
+  },
+];
+
 export function CovidPage() {
   const rootRef = useRef<HTMLDivElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  // Scroll-reveal + the sticky bar's scrolled state. Both are enhancements:
-  // without JS (or with reduced motion) the page is complete and static.
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
 
-    const bar = root.querySelector('.bar');
-    const onScroll = () => bar?.classList.toggle('scrolled', window.scrollY > 12);
+    // The masthead inverts to white once the hero has scrolled under it.
+    const mast = root.querySelector('.mast');
+    const onScroll = () => mast?.classList.toggle('scrolled', window.scrollY > 8);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
 
@@ -382,8 +553,8 @@ export function CovidPage() {
       );
       const vh = window.innerHeight || 0;
       for (const el of root.querySelectorAll<HTMLElement>('.reveal')) {
-        // Anything already above the fold is shown immediately rather than
-        // fading in under the visitor's cursor.
+        // Anything already above the fold shows immediately rather than fading
+        // in under the visitor's cursor.
         if (el.getBoundingClientRect().top < vh * 0.92) el.classList.add('in');
         else observer.observe(el);
       }
@@ -403,138 +574,182 @@ export function CovidPage() {
         Skip to content
       </a>
 
-      {/* ─── The banner every government page has, told the other way ─── */}
-      <div className="strip">
-        <div className="strip-inner">
-          <Landmark aria-hidden="true" />
-          <b>An unofficial page of a fictional office.</b>
-          <span>RMH Studios satire — no investigation exists, and none is planned.</span>
+      {/* ─── Promo ticker, carrying the parody notice ──────────────────── */}
+      <div className="ticker">
+        <p className="sr-only">
+          Notice: this page is a parody published by RMH Studios. No investigation exists, no
+          allegation is made against X Corp., and this is not a COVID-19 information page.
+        </p>
+        <div className="ticker-track" aria-hidden="true">
+          {[0, 1].map((run) => (
+            <div className="ticker-run" key={run}>
+              {TICKER.map((t) => (
+                <span key={t}>{t}</span>
+              ))}
+            </div>
+          ))}
         </div>
       </div>
 
-      <header className="bar">
-        <div className="bar-inner">
-          <a className="back" href="/">
-            <ChevronLeft size={15} strokeWidth={2.2} aria-hidden="true" />
-            <span className="back-label">RMH Studios</span>
-          </a>
-          <div className="bar-brand">
+      {/* ─── Masthead ─────────────────────────────────────────────────── */}
+      <header className="mast">
+        <div className="mast-row">
+          {/* aria-label, not the visible span alone: the span is hidden below
+              560px, which would leave an icon-only control unnamed. */}
+          <button
+            type="button"
+            className="mast-menu"
+            aria-label="Menu"
+            aria-expanded={menuOpen}
+            aria-controls="cvd-nav"
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            <Menu aria-hidden="true" />
+            <span>Menu</span>
+          </button>
+
+          <a className="mast-brand" href="/" aria-label="RMH Studios home">
             <Seal />
-            <span className="bar-brand-text">
-              <b>Feature Leak</b>
-              <span>Office of Platform Integrity</span>
-            </span>
-          </div>
-          <nav className="bar-nav" aria-label="Sections of this finding">
-            <a href="#science">The science</a>
-            <a href="#chronology">Chronology</a>
-            <a href="#ledger">The ledger</a>
-            <a href="#coverup">The cover-up</a>
-            <a href="#finding">Findings</a>
-          </nav>
-          <a className="btn btn--gold btn--sm bar-cta" href="#finding">
-            Read the finding
-            <ArrowRight aria-hidden="true" />
+            <b>RMH Studios</b>
+            <span>Office of Platform Integrity</span>
+          </a>
+
+          <a className="mast-search" href="/search" aria-label="Search RMH Studios">
+            <span>Search</span>
+            <Search aria-hidden="true" />
           </a>
         </div>
+
+        <nav
+          className="mast-nav"
+          id="cvd-nav"
+          data-open={menuOpen ? '' : undefined}
+          aria-label="Sections of this finding"
+        >
+          <div className="mast-nav-inner">
+            {NAV.map((n) => (
+              <a key={n.href} href={n.href} onClick={() => setMenuOpen(false)}>
+                {n.label}
+              </a>
+            ))}
+          </div>
+        </nav>
       </header>
 
+      {/* ─── Fixed share rail ─────────────────────────────────────────── */}
+      <div className="share">
+        {SHARE.map((s) => (
+          <a
+            key={s.label}
+            href={s.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={s.label}
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d={s.path} />
+            </svg>
+          </a>
+        ))}
+      </div>
+
       <main id="cvd-main">
-        {/* ─── Hero ─────────────────────────────────────────────────────── */}
+        {/* ─── Hero ───────────────────────────────────────────────────── */}
         <section className="hero" aria-labelledby="cvd-title">
-          <div className="hero-watermark" aria-hidden="true">
-            <Seal />
-          </div>
           <div className="hero-inner">
-            <div className="hero-head">
-              <Seal withText sealId="cvd-hero-seal" />
-              <p className="hero-office">
-                RMH Studios
-                <span>Office of Platform Integrity</span>
-              </p>
-              <span className="stamp">Parody · Uncontrolled copy</span>
-            </div>
-
-            <h1 id="cvd-title" className="display">
-              <span className="hero-lead">
-                Feature <em>Leak</em>
+            <h1 className="hero-title" id="cvd-title">
+              <span className="hero-word">Feature</span>
+              <span className="hero-mark" aria-hidden="true">
+                <Seal withText sealId="cvd-hero-seal" />
               </span>
-              <span className="hero-sub">The true origins of X</span>
+              <span className="hero-word">Leak</span>
             </h1>
-
-            <p className="hero-lede">
-              After eighteen months of review, the Office of Platform Integrity has concluded that
-              the product now shipping as X did not evolve independently.{' '}
-              <b>It escaped from us — via nine people who knew where everything was.</b>
+            <p className="hero-tagline">
+              <b>The true origins of</b>
+              <span className="hero-script">X</span>
             </p>
-
-            <div className="hero-actions">
-              <a className="btn btn--gold" href="#science">
-                <FlaskConical aria-hidden="true" />
-                The science
-              </a>
-              <a className="btn btn--line" href="#coverup">
-                <FileText aria-hidden="true" />
-                The cover-up
-              </a>
-            </div>
-
-            <dl className="docmeta">
-              <div>
-                <dt>Issued</dt>
-                <dd>30 July 2026</dd>
-              </div>
-              <div>
-                <dt>Case no.</dt>
-                <dd>RMH-OPI-2026-0417</dd>
-              </div>
-              <div>
-                <dt>Classification</dt>
-                <dd>Parody — unclassified</dd>
-              </div>
-              <div>
-                <dt>Peer review</dt>
-                <dd>None sought</dd>
-              </div>
-            </dl>
           </div>
         </section>
 
-        {/* ─── The numbers ──────────────────────────────────────────────── */}
-        <section className="facts" aria-label="Key figures">
-          {FACTS.map((f, i) => (
-            <div className="fact reveal" key={f.figure} style={delay(i * 70)}>
+        {/* ─── Figures ────────────────────────────────────────────────── */}
+        <section className="figures" aria-label="Key figures">
+          {FIGURES.map((f, i) => (
+            <div className="figure reveal" key={f.figure} style={delay(i * 70)}>
               <b>{f.figure}</b>
               <span>{f.label}</span>
             </div>
           ))}
         </section>
 
-        {/* ─── The Science ──────────────────────────────────────────────── */}
-        <section id="science" className="sec paper" aria-labelledby="cvd-science">
-          <div className="container">
-            <div className="sechead">
-              <p className="kicker reveal">Section I — the science</p>
-              <h2 id="cvd-science" className="reveal">
-                Five facts that are difficult to explain any other way.
-              </h2>
-              <p className="lede reveal">
-                Taken individually, each of the following could be coincidence. Taken together, in
-                the order they occurred, they are a <b>design-adjacent incident</b> — and the Office
-                is obliged to say so plainly.
-              </p>
-            </div>
+        {/* ─── The Origin ─────────────────────────────────────────────── */}
+        <section id="origin" className="sec" aria-labelledby="cvd-origin">
+          <div className="wrap">
+            <h2 className="sec-title reveal" id="cvd-origin">
+              The Origin
+            </h2>
+            <p className="sec-intro reveal">
+              The “Convergent Evolution” design review — cited repeatedly by their communications
+              team and the trade press to discredit the leak theory — was commissioned by the
+              platform under review to push the preferred narrative that the resemblance{' '}
+              <em>arose naturally</em>.
+            </p>
 
-            <ol className="ev-list">
-              {FINDINGS.map((f) => (
-                <li className="ev reveal" key={f.title}>
-                  <span className="ev-num" aria-hidden="true" />
-                  <div className="ev-body">
-                    <h3>{f.title}</h3>
-                    {f.body.map((p) => (
-                      <p key={p.slice(0, 24)}>{p}</p>
-                    ))}
-                    <span className="ev-cite">{f.cite}</span>
+            <div className="frame reveal">
+              <div className="frame-map" aria-hidden="true">
+                <FrameMap />
+              </div>
+              <ol className="case">
+                {CASE.map((claim, i) => (
+                  <li key={i}>
+                    <p>{claim}</p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+
+          {/* ─── Map plate — full-bleed, as on the source page ───────────── */}
+          <figure className="plate-figure reveal">
+            <div className="plate">
+              <MapPlate />
+              <span className="plate-brand" aria-hidden="true">
+                RMH Earth
+              </span>
+              <span className="chip" style={{ left: '26%', top: '24%' }}>
+                RMH Studios — 4th floor
+              </span>
+              <span className="chip" style={{ left: '70%', top: '74%' }}>
+                The other platform — 11th floor
+              </span>
+              <span className="chip" style={{ left: '46%', top: '52%' }}>
+                0.4 miles
+              </span>
+            </div>
+            <figcaption className="plate-caption">
+              Exhibit F — proximity of the two offices. The Office notes that this is walking
+              distance, and that people walk.
+            </figcaption>
+          </figure>
+        </section>
+
+        {/* ─── Chronology ─────────────────────────────────────────────── */}
+        <section id="chronology" className="sec sec--hair" aria-labelledby="cvd-chronology">
+          <div className="wrap">
+            <h2 className="sec-title reveal" id="cvd-chronology">
+              The Chronology
+            </h2>
+            <p className="sec-intro reveal">
+              This is not a complaint about a person. People are allowed to leave, and the ones who
+              left were excellent — which is precisely why the transfer took so well. It is a
+              complaint about <b>a timeline</b>.
+            </p>
+            <ol className="chron">
+              {CHRONOLOGY.map((b) => (
+                <li className="reveal" key={b.day}>
+                  <span className="chron-day">{b.day}</span>
+                  <div>
+                    <h3>{b.title}</h3>
+                    <p>{b.body}</p>
                   </div>
                 </li>
               ))}
@@ -542,47 +757,16 @@ export function CovidPage() {
           </div>
         </section>
 
-        {/* ─── Chronology ───────────────────────────────────────────────── */}
-        <section id="chronology" className="sec" aria-labelledby="cvd-chronology">
-          <div className="container">
-            <div className="sechead">
-              <p className="kicker reveal">Section II — chronology</p>
-              <h2 id="cvd-chronology" className="reveal">
-                Patient zero was a very good engineer.
-              </h2>
-              <p className="lede reveal">
-                This is not a complaint about a person. People are allowed to leave, and the ones
-                who left were excellent, which is precisely why the transfer took so well. It is a
-                complaint about a <b>timeline</b>.
-              </p>
-            </div>
-
-            <ol className="chron">
-              {CHRONOLOGY.map((b, i) => (
-                <li className="reveal" key={b.day} style={delay((i % 3) * 60)}>
-                  <span className="chron-day">{b.day}</span>
-                  <h3>{b.title}</h3>
-                  <p>{b.body}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
-
-        {/* ─── The ledger ───────────────────────────────────────────────── */}
-        <section id="ledger" className="sec paper" aria-labelledby="cvd-ledger">
-          <div className="container">
-            <div className="sechead">
-              <p className="kicker reveal">Section III — the ledger</p>
-              <h2 id="cvd-ledger" className="reveal">
-                Seventeen features. We are printing seven.
-              </h2>
-              <p className="lede reveal">
-                Ship dates, both platforms, in the order the Office received them. The full ledger
-                runs to seventeen rows and is available to anyone who asks.
-              </p>
-            </div>
-
+        {/* ─── The ledger ─────────────────────────────────────────────── */}
+        <section id="ledger" className="sec sec--hair" aria-labelledby="cvd-ledger">
+          <div className="wrap">
+            <h2 className="sec-title reveal" id="cvd-ledger">
+              The Ledger
+            </h2>
+            <p className="sec-intro reveal">
+              Ship dates, both platforms, in the order the Office received them. The full ledger
+              runs to seventeen rows and is available to anyone who asks.
+            </p>
             <div
               className="ledger-wrap reveal"
               role="region"
@@ -590,7 +774,10 @@ export function CovidPage() {
               tabIndex={0}
             >
               <table className="ledger">
-                <caption>Exhibit B — ship-date ledger (extract)</caption>
+                <caption>
+                  The Office draws no conclusion from rows one through six. It draws its entire
+                  conclusion from row seven.
+                </caption>
                 <thead>
                   <tr>
                     <th scope="col">Feature</th>
@@ -611,24 +798,15 @@ export function CovidPage() {
                 </tbody>
               </table>
             </div>
-            <p className="table-note reveal">
-              The Office draws no conclusion from rows one through six. The Office draws its entire
-              conclusion from row seven: a defect is not a good idea two teams can independently
-              have.
-            </p>
           </div>
         </section>
 
-        {/* ─── The cover-up ─────────────────────────────────────────────── */}
-        <section id="coverup" className="sec" aria-labelledby="cvd-coverup">
-          <div className="container">
-            <div className="sechead">
-              <p className="kicker reveal">Section IV — the cover-up</p>
-              <h2 id="cvd-coverup" className="reveal">
-                They commissioned a review, and the review agreed with them.
-              </h2>
-            </div>
-
+        {/* ─── The cover-up ───────────────────────────────────────────── */}
+        <section id="coverup" className="sec sec--hair" aria-labelledby="cvd-coverup">
+          <div className="wrap">
+            <h2 className="sec-title reveal" id="cvd-coverup">
+              The Cover-Up
+            </h2>
             <figure className="pull reveal">
               <blockquote>
                 “The resemblance is best understood as convergent evolution: two teams solving the
@@ -639,74 +817,72 @@ export function CovidPage() {
                 in a journal the platform advertises in, written by three authors whose
                 acknowledgements thank the platform.
               </figcaption>
-              <p className="rebuttal">
-                <b>Convergent evolution does not copy the comment.</b> Line 41 of their stylesheet,
-                as shipped, reads <code>/* TODO: ask design why 3deg */</code>. We know why. We
-                wrote the question, we wrote the TODO, and we never answered it either — but at
-                least when we ask design, design is down the hall.
-              </p>
             </figure>
+            <p className="rebuttal reveal">
+              <b>Convergent evolution does not copy the comment.</b> Line 41 of their stylesheet, as
+              shipped, reads <code>/* TODO: ask design why 3deg */</code>. We know why. We wrote the
+              question, we wrote the TODO, and we never answered it either — but at least when we
+              ask design, design is down the hall.
+            </p>
           </div>
         </section>
 
-        {/* ─── Everything else ──────────────────────────────────────────── */}
-        <section className="sec paper" aria-labelledby="cvd-else">
-          <div className="container">
-            <div className="sechead">
-              <p className="kicker reveal">Section V — the wider record</p>
-              <h2 id="cvd-else" className="reveal">
-                And while we have the page open.
-              </h2>
-              <p className="lede reveal">
-                The Office’s remit is the leak. But a finding of this kind is traditionally an
-                opportunity, and we are told it would be strange not to take it.
-              </p>
-            </div>
-
-            <div className="grid">
-              {FAILURES.map((c, i) => {
-                const Icon = c.icon;
-                return (
-                  <article className="card reveal" key={c.title} style={delay((i % 3) * 80)}>
-                    <span className="card-icon">
-                      <Icon aria-hidden="true" />
-                    </span>
-                    <h3>{c.title}</h3>
-                    <p>{c.body}</p>
-                    <span className="card-tag">{c.tag}</span>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* ─── The record ───────────────────────────────────────────────── */}
-        <section className="sec" aria-labelledby="cvd-record">
-          <div className="container">
-            <div className="sechead">
-              <p className="kicker reveal">Section VI — what the file contains</p>
-              <h2 id="cvd-record" className="reveal">
-                The evidence, stated without adjectives.
-              </h2>
-            </div>
-            <div className="rec reveal">
+        {/* ─── The record ─────────────────────────────────────────────── */}
+        <section id="record" className="sec sec--hair" aria-labelledby="cvd-record">
+          <div className="wrap">
+            <h2 className="sec-title reveal" id="cvd-record">
+              The Record
+            </h2>
+            <div className="rows">
               {RECORD.map((r) => (
-                <div className="rec-row" key={r.term}>
-                  <p className="rec-term">{r.term}</p>
-                  <p className="rec-desc">{r.desc}</p>
+                <div className="row reveal" key={r.term}>
+                  <p className="row-term">{r.term}:</p>
+                  <div>
+                    {r.body.map((p, i) => (
+                      <p className="row-body" key={i}>
+                        {p}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ─── The finding ──────────────────────────────────────────────── */}
-        <section id="finding" className="sec sec--tight" aria-labelledby="cvd-conclusion">
-          <div className="container">
-            <div className="finding reveal">
+        {/* ─── Everything else ────────────────────────────────────────── */}
+        <section className="sec sec--hair" aria-labelledby="cvd-else">
+          <div className="wrap">
+            <h2 className="sec-title reveal" id="cvd-else">
+              And Everything Else
+            </h2>
+            <p className="sec-intro reveal">
+              The Office’s remit is the leak. But a finding of this kind is traditionally an
+              opportunity, and we are told it would be strange not to take it.
+            </p>
+            <div className="rows">
+              {ELSEWHERE.map((r) => (
+                <div className="row reveal" key={r.term}>
+                  <p className="row-term">{r.term}:</p>
+                  <div>
+                    {r.body.map((p, i) => (
+                      <p className="row-body" key={i}>
+                        {p}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── The finding ────────────────────────────────────────────── */}
+        <section id="finding" className="finding" aria-labelledby="cvd-conclusion">
+          <div className="wrap">
+            <div className="reveal">
               <Seal withText sealId="cvd-finding-seal" />
-              <h2 id="cvd-conclusion">A lab-adjacent incident remains the most likely origin.</h2>
+              <h2 id="cvd-conclusion">A lab-adjacent incident remains the most likely origin</h2>
               <p>
                 On the balance of the evidence, the Office concludes that the departure of nine
                 people who knew where everything was is the most probable origin of the product now
@@ -718,8 +894,8 @@ export function CovidPage() {
                 the only remedy available to a platform in our position is to keep shipping things
                 worth taking.
               </p>
-              <div className="finding-actions">
-                <a className="btn btn--gold" href="/">
+              <div className="btn-row">
+                <a className="btn btn--red" href="/">
                   See what they copied
                   <ArrowRight aria-hidden="true" />
                 </a>
@@ -727,19 +903,30 @@ export function CovidPage() {
                   Read the design language
                 </a>
               </div>
+              <div className="docmeta">
+                <div>
+                  Issued <b>30 July 2026</b>
+                </div>
+                <div>
+                  Case no. <b>RMH-OPI-2026-0417</b>
+                </div>
+                <div>
+                  Classification <b>Parody — unclassified</b>
+                </div>
+                <div>
+                  Peer review <b>None sought</b>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* ─── FAQ — where the joke stops and the disclosure starts ─────── */}
-        <section className="sec paper" aria-labelledby="cvd-faq">
-          <div className="container">
-            <div className="sechead sechead--center">
-              <p className="kicker kicker--center reveal">Questions the Office anticipates</p>
-              <h2 id="cvd-faq" className="reveal">
-                Straight answers, for once.
-              </h2>
-            </div>
+        {/* ─── FAQ — where the joke stops and the disclosure starts ───── */}
+        <section className="sec sec--hair" aria-labelledby="cvd-faq">
+          <div className="wrap">
+            <h2 className="sec-title reveal" id="cvd-faq">
+              Questions
+            </h2>
             <div className="faq reveal">
               {FAQ.map((f) => (
                 <details key={f.q}>
@@ -753,11 +940,11 @@ export function CovidPage() {
       </main>
 
       <footer className="foot" role="contentinfo">
-        <div className="container">
+        <div className="wrap">
           <div className="foot-top">
             <div className="foot-brand">
               <Seal />
-              <div className="foot-brand-text">
+              <div>
                 <b>Office of Platform Integrity</b>
                 <span>
                   An in-universe office of RMH Studios, alongside RMH Capital and RMH PMC. It has
@@ -779,9 +966,8 @@ export function CovidPage() {
             conducted no investigation, and makes no allegation of any kind against X Corp.,
             Twitter, or any of their staff, past or present. Nothing above is a statement of fact:
             the case number, the dates, the ledger, the exhibits, the nine departures and the cake
-            are invented for the joke, and the visual language is a pastiche of official information
-            pages in general rather than a copy of any particular one. No real person is named or
-            depicted anywhere on this page.{' '}
+            are invented for the joke, and the layout is a deliberate pastiche of a government
+            information page. No real person is named or depicted anywhere on this page.{' '}
             <b>
               If you came here looking for public-health information about COVID-19, this is not
               that page
@@ -802,6 +988,11 @@ export function CovidPage() {
           </p>
         </div>
       </footer>
+
+      <a className="pill" href="/">
+        Join the feed
+        <ArrowRight aria-hidden="true" />
+      </a>
     </div>
   );
 }
