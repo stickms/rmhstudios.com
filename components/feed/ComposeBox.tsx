@@ -131,7 +131,8 @@ export function ComposeBox({
  const { resolved: resolvedUser } = useResolvedUser();
  const remaining = MAX_RMHARK_LENGTH - content.length;
 
- // Close menu on outside click
+ // Close menu on outside click, or on Escape (capture phase, so a panel that
+ // stops keydown propagation can't swallow it — see RMHarkOverflowMenu).
  useEffect(() => {
  if (!menuOpen) return;
  const handleClick = (e: MouseEvent) => {
@@ -139,8 +140,17 @@ export function ComposeBox({
  setMenuOpen(false);
  }
  };
+ const handleKey = (e: KeyboardEvent) => {
+ if (e.key !== 'Escape') return;
+ setMenuOpen(false);
+ menuBtnRef.current?.focus();
+ };
  document.addEventListener('mousedown', handleClick);
- return () => document.removeEventListener('mousedown', handleClick);
+ document.addEventListener('keydown', handleKey, true);
+ return () => {
+ document.removeEventListener('mousedown', handleClick);
+ document.removeEventListener('keydown', handleKey, true);
+ };
  }, [menuOpen]);
 
  const hasPoll =
@@ -881,8 +891,11 @@ export function ComposeBox({
  {menuUnderlay}
  <button
  ref={menuBtnRef}
+ type="button"
  onClick={() => setMenuOpen((v) => !v)}
  aria-label={t('add-to-post-aria', { defaultValue:'Add to post'})}
+ aria-haspopup="menu"
+ aria-expanded={menuOpen}
  className="p-1.5 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors"
  >
  <Plus className="w-4.5 h-4.5"/>
@@ -891,6 +904,8 @@ export function ComposeBox({
  {menuOpen && (
  <div
  ref={menuPopRef}
+ role="menu"
+ tabIndex={-1}
  className="absolute bottom-full right-0 mb-1 w-56 bg-site-surface border border-site-border rounded-site shadow-site-sm py-1 z-30"
  >
  {/* Post visibility (audience) — opens a picker modal */}

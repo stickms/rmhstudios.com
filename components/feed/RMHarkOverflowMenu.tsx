@@ -130,8 +130,22 @@ export function RMHarkOverflowMenu({
  const handleClick = (e: MouseEvent) => {
  if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
  };
+ // Escape closes and hands focus back to the trigger — an open menu was
+ // dismissable only by clicking outside it, which a keyboard user can't do.
+ // CAPTURE phase on purpose: the panel stops keydown propagation, and React
+ // routes that through the native event, so a bubble-phase listener here would
+ // never fire while focus was inside the menu.
+ const handleKey = (e: KeyboardEvent) => {
+ if (e.key !== 'Escape') return;
+ setMenuOpen(false);
+ triggerRef.current?.focus();
+ };
  document.addEventListener('mousedown', handleClick);
- return () => document.removeEventListener('mousedown', handleClick);
+ document.addEventListener('keydown', handleKey, true);
+ return () => {
+ document.removeEventListener('mousedown', handleClick);
+ document.removeEventListener('keydown', handleKey, true);
+ };
  }, [menuOpen]);
 
  const shareUrl =
