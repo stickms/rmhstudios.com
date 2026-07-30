@@ -49,18 +49,20 @@ describe('parseSidebarPref', () => {
   it('parses order: preserves sequence, drops unknown/non-orderable, dedupes', () => {
     expect(
       parseSidebarPref({
-        order: ['/store', 'group:services', '/store', '/admin', '/not-real', '/'],
+        order: ['/store', '/services', '/store', '/admin', '/not-real', '/'],
       }),
     ).toEqual({
       pinned: [],
       hidden: [],
-      // '/admin' isn't orderable and '/not-real' is unknown — both dropped.
-      order: ['/store', 'group:services', '/'],
+      // '/admin' isn't orderable and '/not-real' is unknown — both dropped. A
+      // saved order naming the retired `group:services` / `group:ventures` ids
+      // takes the '/not-real' path: dropped, and the tab keeps its default slot.
+      order: ['/store', '/services', '/'],
     });
   });
 
-  it('only hides leaves in the hideable set (never Home or a group)', () => {
-    expect(parseSidebarPref({ hidden: ['/', 'group:services', '/arcade'] })).toEqual({
+  it('only hides leaves in the hideable set (never Home or a hub page)', () => {
+    expect(parseSidebarPref({ hidden: ['/', '/services', '/arcade'] })).toEqual({
       pinned: [],
       hidden: ['/arcade'],
       order: [],

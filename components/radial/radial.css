@@ -1283,24 +1283,24 @@ html.perf-lite .radial-backdrop__blob {
   width: 1.3rem;
   height: 1.3rem;
 }
-/* Per-ring label budget: the inner ring has the shorter arc, so its labels get
-   less room and clamp to a single line; the outer ring can afford two. */
-/* Narrower than the band is deep, on purpose. These boxes are centred on the
-   sector's centroid, so width spills ANGULARLY — past the sector's clip-path,
-   which cuts it ("Adaptive Intelligence" lost its tail, "Predictions"
-   overflowed the disc). Height spills radially, into the band, where there is
-   room. So: keep the boxes narrow and let long names take another line. */
-.radial-hub__wedge-inner[data-ring='0'] {
-  max-width: 4.1rem;
-}
-.radial-hub__wedge-inner[data-ring='1'] {
-  max-width: 5.4rem;
+/* The box is centred on the sector's centroid, so anything wider than the sector
+   is CUT by its clip-path ("Adaptive Intelligence" lost its tail) — and a cap
+   too narrow forces a mid-word break instead ("Communiti/es"). How much room
+   there actually is depends on the ring's depth, the sector's angle AND where on
+   the dial it sits, so `RadialHub` measures it per wedge and supplies it here
+   (`fitLabelWidth`); the fallback is only for a wedge rendered without it. */
+.radial-hub__wedge-inner {
+  max-width: var(--label-w, 5.4rem);
 }
 /* Mobile-first: icon-only sectors so the destinations never crowd on a phone;
    labels return ≥480px, where the dial is wide enough to carry them. */
 .radial-hub__wedge-label {
   display: none;
-  font-size: 0.6875rem;
+  /* Sized against the DIAL, because the box it has to fit inside is a share of
+     the dial's width — a fixed rem size overflows a small dial and under-fills a
+     large one. `--label-fs` is the per-wedge fit RadialHub computed; the rem
+     bounds keep browser font scaling meaningful at both ends. */
+  font-size: clamp(0.5625rem, calc(var(--label-fs, 2.5) * var(--dial, 440px) / 100), 0.75rem);
   font-weight: 600;
   line-height: 1.1;
   color: inherit;
@@ -1309,8 +1309,14 @@ html.perf-lite .radial-backdrop__blob {
   line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  overflow-wrap: anywhere;
-  hyphens: auto;
+  text-overflow: ellipsis;
+  /* Wrap between words, never inside one — mid-word breaks are what turned
+     "Communities" into "Communiti/es". Only a word that cannot fit even at the
+     size floor is allowed to break (RadialHub flips this to `anywhere`), and
+     then it breaks inside its own box instead of being cut by the clip-path. */
+  overflow-wrap: var(--label-wrap, normal);
+  hyphens: none;
+  text-wrap: balance;
   text-align: center;
 }
 /* Centre caption — the label for the wedge under the pointer/focus, sitting in
@@ -1345,20 +1351,26 @@ html.perf-lite .radial-backdrop__blob {
   .radial-hub__caption {
     display: none;
   }
-  /* The inner band is deep enough for two lines (icon + label ≈ 50px in a ~69px
-     band at the largest dial), so the shorter arc costs width, not lines — a
-     one-line clamp turned "Communities" into "Communi…". */
 }
 .radial-hub__foot {
   position: absolute;
-  left: 50%;
+  /* Centred by auto margins across the full width, NOT by `left: 50%` + a
+     translate. An absolutely positioned shrink-to-fit box may only use the space
+     between its `left` and the container's edge, so `left: 50%` capped this
+     capsule at half the viewport — and since the identity pill is the only
+     flexible item in the row, that cap came straight out of the signed-in user's
+     name, which ellipsed while the row still had room. */
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: max-content;
   /* Same safe-area reasoning as the orb: this pill carries identity, settings,
      sign-out and close, so it cannot sit under the home indicator. */
   bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(1rem, 4vw, 2rem));
   z-index: 2;
   /* Fades + rises in with the rest, and back out on close — one motion. */
   opacity: 0;
-  transform: translateX(-50%) translateY(10px);
+  transform: translateY(10px);
   transition:
     opacity 0.4s ease,
     transform 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
@@ -1382,7 +1394,7 @@ html.perf-lite .radial-backdrop__blob {
 }
 .radial-hub[data-phase='open'] .radial-hub__foot {
   opacity: 1;
-  transform: translateX(-50%);
+  transform: none;
 }
 .radial-hub__identity {
   display: inline-flex;
@@ -1394,7 +1406,8 @@ html.perf-lite .radial-backdrop__blob {
   text-decoration: none;
   font-size: 0.82rem;
   font-weight: 600;
-  max-width: 40vw;
+  /* Room for a real display name before the ellipsis has to do any work. */
+  max-width: min(26rem, 52vw);
   /* The pill is the only flexible item in the foot row, and it has to be able
      to shrink: a flex item's default `min-width: auto` is its CONTENT, so a
      long display name kept the pill at full width and pushed its avatar disc

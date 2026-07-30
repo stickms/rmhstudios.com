@@ -73,7 +73,7 @@ export function ColumnHeader({
  (a tag name, a creator's display name) that would otherwise push the
  actions off the row instead of ellipsing. */}
       {title && (
-        <Heading className="min-w-0 truncate font-serif text-xl font-bold tracking-tight text-site-text sm:text-2xl">
+        <Heading className="min-w-0 truncate font-(family-name:--site-font-display) text-xl font-bold tracking-tight text-site-text sm:text-2xl">
           {title}
         </Heading>
       )}

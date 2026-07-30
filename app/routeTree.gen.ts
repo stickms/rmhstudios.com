@@ -89,6 +89,7 @@ import { Route as SiteSearchRouteImport } from './routes/_site/search'
 import { Route as SiteServicesRouteImport } from './routes/_site/services'
 import { Route as SiteShareRouteImport } from './routes/_site/share'
 import { Route as SiteShopRouteImport } from './routes/_site/shop'
+import { Route as SiteVenturesRouteImport } from './routes/_site/ventures'
 import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
 import { Route as SiteWishlistRouteImport } from './routes/_site/wishlist'
 import { Route as SiteWrappedRouteImport } from './routes/_site/wrapped'
@@ -1119,6 +1120,11 @@ const SiteShareRoute = SiteShareRouteImport.update({
 const SiteShopRoute = SiteShopRouteImport.update({
   id: '/shop',
   path: '/shop',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteVenturesRoute = SiteVenturesRouteImport.update({
+  id: '/ventures',
+  path: '/ventures',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteWalletRoute = SiteWalletRouteImport.update({
@@ -4449,6 +4455,7 @@ export interface FileRoutesByFullPath {
   '/services': typeof SiteServicesRoute
   '/share': typeof SiteShareRoute
   '/shop': typeof SiteShopRoute
+  '/ventures': typeof SiteVenturesRoute
   '/wallet': typeof SiteWalletRoute
   '/wishlist': typeof SiteWishlistRoute
   '/wrapped': typeof SiteWrappedRoute
@@ -5137,6 +5144,7 @@ export interface FileRoutesByTo {
   '/services': typeof SiteServicesRoute
   '/share': typeof SiteShareRoute
   '/shop': typeof SiteShopRoute
+  '/ventures': typeof SiteVenturesRoute
   '/wallet': typeof SiteWalletRoute
   '/wishlist': typeof SiteWishlistRoute
   '/wrapped': typeof SiteWrappedRoute
@@ -5848,6 +5856,7 @@ export interface FileRoutesById {
   '/_site/services': typeof SiteServicesRoute
   '/_site/share': typeof SiteShareRoute
   '/_site/shop': typeof SiteShopRoute
+  '/_site/ventures': typeof SiteVenturesRoute
   '/_site/wallet': typeof SiteWalletRoute
   '/_site/wishlist': typeof SiteWishlistRoute
   '/_site/wrapped': typeof SiteWrappedRoute
@@ -6562,6 +6571,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/share'
     | '/shop'
+    | '/ventures'
     | '/wallet'
     | '/wishlist'
     | '/wrapped'
@@ -7250,6 +7260,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/share'
     | '/shop'
+    | '/ventures'
     | '/wallet'
     | '/wishlist'
     | '/wrapped'
@@ -7960,6 +7971,7 @@ export interface FileRouteTypes {
     | '/_site/services'
     | '/_site/share'
     | '/_site/shop'
+    | '/_site/ventures'
     | '/_site/wallet'
     | '/_site/wishlist'
     | '/_site/wrapped'
@@ -9554,6 +9566,13 @@ declare module '@tanstack/react-router' {
       path: '/shop'
       fullPath: '/shop'
       preLoaderRoute: typeof SiteShopRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/ventures': {
+      id: '/_site/ventures'
+      path: '/ventures'
+      fullPath: '/ventures'
+      preLoaderRoute: typeof SiteVenturesRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/wallet': {
@@ -14096,6 +14115,7 @@ interface SiteRouteChildren {
   SiteServicesRoute: typeof SiteServicesRoute
   SiteShareRoute: typeof SiteShareRoute
   SiteShopRoute: typeof SiteShopRoute
+  SiteVenturesRoute: typeof SiteVenturesRoute
   SiteWalletRoute: typeof SiteWalletRoute
   SiteWishlistRoute: typeof SiteWishlistRoute
   SiteWrappedRoute: typeof SiteWrappedRoute
@@ -14190,6 +14210,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteServicesRoute: SiteServicesRoute,
   SiteShareRoute: SiteShareRoute,
   SiteShopRoute: SiteShopRoute,
+  SiteVenturesRoute: SiteVenturesRoute,
   SiteWalletRoute: SiteWalletRoute,
   SiteWishlistRoute: SiteWishlistRoute,
   SiteWrappedRoute: SiteWrappedRoute,

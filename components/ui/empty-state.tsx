@@ -32,7 +32,11 @@ export function EmptyState({ icon: Icon, title, description, action, className }
  <Icon className="h-5 w-5 text-site-text-dim" aria-hidden />
  </div>
  ) : null}
- {title ? <p className="text-xl font-serif font-medium text-site-text">{title}</p> : null}
+ {title ? (
+ <p className="font-(family-name:--site-font-display) text-xl font-medium text-site-text">
+ {title}
+ </p>
+ ) : null}
  {description ? <p className="max-w-sm text-sm text-site-text-muted">{description}</p> : null}
  {action ? <div className="mt-1">{action}</div> : null}
  </div>

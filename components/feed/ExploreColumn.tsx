@@ -98,7 +98,7 @@ export function ExploreColumn({
  <section className="m-4 rounded-tr-[2.5rem] rounded-bl-[2.5rem] rounded-tl-site rounded-br-site border border-site-border bg-site-surface p-5 shadow-site-sm">
  <label
  htmlFor="ask-feed"
- className="mb-3 flex items-center gap-2 font-serif text-lg font-bold text-site-text"
+ className="mb-3 flex items-center gap-2 font-(family-name:--site-font-display) text-lg font-bold text-site-text"
  >
  <Sparkles className="h-4 w-4 text-site-text"/>{''}
  {t('ask-the-feed', { defaultValue:'Ask the feed'})}
