@@ -5,8 +5,11 @@ import hiAdmin from "@/locales/hi/admin.json";
 import hiBuilds from "@/locales/hi/builds.json";
 import hiCAdmin from "@/locales/hi/c-admin.json";
 import hiCAltair from "@/locales/hi/c-altair.json";
+import hiCAwards from "@/locales/hi/c-awards.json";
 import hiCBlog from "@/locales/hi/c-blog.json";
 import hiCBuilds from "@/locales/hi/c-builds.json";
+import hiCCircle from "@/locales/hi/c-circle.json";
+import hiCCreator from "@/locales/hi/c-creator.json";
 import hiCCursedLogic from "@/locales/hi/c-cursed-logic.json";
 import hiCDailyPuzzles from "@/locales/hi/c-daily-puzzles.json";
 import hiCDoctrine from "@/locales/hi/c-doctrine.json";
@@ -14,19 +17,25 @@ import hiCDreamRift from "@/locales/hi/c-dream-rift.json";
 import hiCEconomy from "@/locales/hi/c-economy.json";
 import hiCForestExplorer from "@/locales/hi/c-forest-explorer.json";
 import hiCGame from "@/locales/hi/c-game.json";
+import hiCHistory from "@/locales/hi/c-history.json";
 import hiCHouseAlwaysWins from "@/locales/hi/c-house-always-wins.json";
 import hiCKowloonKnockout from "@/locales/hi/c-kowloon-knockout.json";
 import hiCLaundrySort from "@/locales/hi/c-laundry-sort.json";
+import hiCLayout from "@/locales/hi/c-layout.json";
 import hiCLibrary from "@/locales/hi/c-library.json";
 import hiCLightsOut from "@/locales/hi/c-lights-out.json";
+import hiCLists from "@/locales/hi/c-lists.json";
 import hiCLockdown from "@/locales/hi/c-lockdown.json";
 import hiCModeration from "@/locales/hi/c-moderation.json";
 import hiCNeonDriftway from "@/locales/hi/c-neon-driftway.json";
 import hiCNews from "@/locales/hi/c-news.json";
+import hiCPredictions from "@/locales/hi/c-predictions.json";
+import hiCProfileModules from "@/locales/hi/c-profile-modules.json";
 import hiCRideshare from "@/locales/hi/c-rideshare.json";
 import hiCRmhCapital from "@/locales/hi/c-rmh-capital.json";
 import hiCRmhPmc from "@/locales/hi/c-rmh-pmc.json";
 import hiCRmhbox from "@/locales/hi/c-rmhbox.json";
+import hiCRmhcalculator from "@/locales/hi/c-rmhcalculator.json";
 import hiCRmhcode from "@/locales/hi/c-rmhcode.json";
 import hiCRmhcoins from "@/locales/hi/c-rmhcoins.json";
 import hiCRmhmusic from "@/locales/hi/c-rmhmusic.json";
@@ -36,17 +45,23 @@ import hiCRmhtube from "@/locales/hi/c-rmhtube.json";
 import hiCRmhtype from "@/locales/hi/c-rmhtype.json";
 import hiCRmhvibe from "@/locales/hi/c-rmhvibe.json";
 import hiCRoadmap from "@/locales/hi/c-roadmap.json";
+import hiCSaves from "@/locales/hi/c-saves.json";
 import hiCSignalForge from "@/locales/hi/c-signal-forge.json";
+import hiCStatus from "@/locales/hi/c-status.json";
 import hiCStudio from "@/locales/hi/c-studio.json";
 import hiCSynapseStorm from "@/locales/hi/c-synapse-storm.json";
 import hiCTempleOfJoy from "@/locales/hi/c-temple-of-joy.json";
+import hiCTournaments from "@/locales/hi/c-tournaments.json";
 import hiCUi from "@/locales/hi/c-ui.json";
 import hiCUserBuilds from "@/locales/hi/c-user-builds.json";
 import hiCVega from "@/locales/hi/c-vega.json";
 import hiCVersecraft from "@/locales/hi/c-versecraft.json";
 import hiCVoidBreaker from "@/locales/hi/c-void-breaker.json";
+import hiCWager from "@/locales/hi/c-wager.json";
+import hiCWishlist from "@/locales/hi/c-wishlist.json";
 import hiCommon from "@/locales/hi/common.json";
 import hiFeed from "@/locales/hi/feed.json";
+import hiGamesHub from "@/locales/hi/games-hub.json";
 import hiGroups from "@/locales/hi/groups.json";
 import hiLibrary from "@/locales/hi/library.json";
 import hiNav from "@/locales/hi/nav.json";
@@ -61,8 +76,13 @@ import hiRSliceIt from "@/locales/hi/r-slice-it.json";
 import hiRStrategies from "@/locales/hi/r-strategies.json";
 import hiRStudio from "@/locales/hi/r-studio.json";
 import hiRideshare from "@/locales/hi/rideshare.json";
+import hiSearch from "@/locales/hi/search.json";
+import hiSettingsAppearance from "@/locales/hi/settings-appearance.json";
+import hiSettingsContent from "@/locales/hi/settings-content.json";
+import hiSettingsNotifications from "@/locales/hi/settings-notifications.json";
 import hiShared from "@/locales/hi/shared.json";
 import hiSite from "@/locales/hi/site.json";
+import hiThemeStudio from "@/locales/hi/theme-studio.json";
 import hiUserBuilds from "@/locales/hi/user-builds.json";
 import hiV from "@/locales/hi/v.json";
 
@@ -71,8 +91,11 @@ const hiResources = {
   "builds": hiBuilds,
   "c-admin": hiCAdmin,
   "c-altair": hiCAltair,
+  "c-awards": hiCAwards,
   "c-blog": hiCBlog,
   "c-builds": hiCBuilds,
+  "c-circle": hiCCircle,
+  "c-creator": hiCCreator,
   "c-cursed-logic": hiCCursedLogic,
   "c-daily-puzzles": hiCDailyPuzzles,
   "c-doctrine": hiCDoctrine,
@@ -80,19 +103,25 @@ const hiResources = {
   "c-economy": hiCEconomy,
   "c-forest-explorer": hiCForestExplorer,
   "c-game": hiCGame,
+  "c-history": hiCHistory,
   "c-house-always-wins": hiCHouseAlwaysWins,
   "c-kowloon-knockout": hiCKowloonKnockout,
   "c-laundry-sort": hiCLaundrySort,
+  "c-layout": hiCLayout,
   "c-library": hiCLibrary,
   "c-lights-out": hiCLightsOut,
+  "c-lists": hiCLists,
   "c-lockdown": hiCLockdown,
   "c-moderation": hiCModeration,
   "c-neon-driftway": hiCNeonDriftway,
   "c-news": hiCNews,
+  "c-predictions": hiCPredictions,
+  "c-profile-modules": hiCProfileModules,
   "c-rideshare": hiCRideshare,
   "c-rmh-capital": hiCRmhCapital,
   "c-rmh-pmc": hiCRmhPmc,
   "c-rmhbox": hiCRmhbox,
+  "c-rmhcalculator": hiCRmhcalculator,
   "c-rmhcode": hiCRmhcode,
   "c-rmhcoins": hiCRmhcoins,
   "c-rmhmusic": hiCRmhmusic,
@@ -102,17 +131,23 @@ const hiResources = {
   "c-rmhtype": hiCRmhtype,
   "c-rmhvibe": hiCRmhvibe,
   "c-roadmap": hiCRoadmap,
+  "c-saves": hiCSaves,
   "c-signal-forge": hiCSignalForge,
+  "c-status": hiCStatus,
   "c-studio": hiCStudio,
   "c-synapse-storm": hiCSynapseStorm,
   "c-temple-of-joy": hiCTempleOfJoy,
+  "c-tournaments": hiCTournaments,
   "c-ui": hiCUi,
   "c-user-builds": hiCUserBuilds,
   "c-vega": hiCVega,
   "c-versecraft": hiCVersecraft,
   "c-void-breaker": hiCVoidBreaker,
+  "c-wager": hiCWager,
+  "c-wishlist": hiCWishlist,
   "common": hiCommon,
   "feed": hiFeed,
+  "games-hub": hiGamesHub,
   "groups": hiGroups,
   "library": hiLibrary,
   "nav": hiNav,
@@ -127,8 +162,13 @@ const hiResources = {
   "r-strategies": hiRStrategies,
   "r-studio": hiRStudio,
   "rideshare": hiRideshare,
+  "search": hiSearch,
+  "settings-appearance": hiSettingsAppearance,
+  "settings-content": hiSettingsContent,
+  "settings-notifications": hiSettingsNotifications,
   "shared": hiShared,
   "site": hiSite,
+  "theme-studio": hiThemeStudio,
   "user-builds": hiUserBuilds,
   "v": hiV,
 } as const;

@@ -45,6 +45,7 @@
   "filter-todo": "To do",
   "find-contradiction": "모순 찾기",
   "five-facts-tagline": "다섯 가지 사실. 그중 두 개는 거짓입니다. 가짜를 찾아보세요.",
+  "found-liar_one": "{{count}}번의 추측{{suffix}}으로 거짓말쟁이를 찾았습니다.",
   "found-liar_other": "{{count}}번의 추측{{suffix}}으로 거짓말쟁이를 찾았습니다.",
   "fun-fact": "재미있는 사실",
   "gave-up-message": "오늘의 퍼즐을 포기하셨습니다.",

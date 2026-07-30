@@ -27,6 +27,7 @@
   "or-divider": "— 또는 —",
   "play": "플레이",
   "play-again": "다시 플레이",
+  "players-count_one": "플레이어 ({{count}}/6)",
   "players-count_other": "플레이어 ({{count}}/6)",
   "race-over": "레이스 종료",
   "race-starting-in": "레이스 시작까지",
