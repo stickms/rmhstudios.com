@@ -6,6 +6,7 @@ import Map, { Marker, Source, Layer, type MapRef } from 'react-map-gl/maplibre';
 import type { StyleSpecification } from 'maplibre-gl';
 import { MapPin, Navigation, Car } from 'lucide-react';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { ensureMaplibreWorker } from '@/lib/maplibre';
 import type { LatLng, RidePlace } from '@/lib/rideshare/geo';
 
 interface RideMapProps {
@@ -46,9 +47,18 @@ export function RideMap({ pickup, dropoff, driverLocation, className }: RideMapP
   const ready = Boolean(pickup && dropoff);
   const mapRef = useRef<MapRef | null>(null);
   const [route, setRoute] = useState<Coord[] | null>(null);
-  // MapLibre needs a browser; only mount the canvas after hydration.
+  // MapLibre needs a browser; only mount the canvas after hydration — and only
+  // once its worker URL is wired up, or the map never loads (see lib/maplibre.ts).
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    let cancelled = false;
+    ensureMaplibreWorker().then(() => {
+      if (!cancelled) setMounted(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Fetch the road geometry whenever the endpoints change. Falls back to a
   // straight line between the two points if routing returns no geometry.

@@ -295,7 +295,11 @@ export default defineConfig({
     hmrPartialAccept: true,
   },
   optimizeDeps: {
-    exclude: ['@resvg/resvg-js', 'satori'],
+    // maplibre-gl v6 resolves its worker at runtime from `import.meta.url` (see
+    // lib/maplibre.ts). The dep optimizer rewrites that to a `.vite/deps` path it
+    // never emits, so the worker 404s and the map never loads; excluding it makes
+    // Vite serve the real ESM, whose worker + shared siblings sit on disk.
+    exclude: ['@resvg/resvg-js', 'satori', 'maplibre-gl'],
     // Vite 8's optimizer otherwise waits for the full static-import crawl to end
     // before committing optimized deps. With 130 eager routes the crawl never
     // settles, so optimized-dep requests (react.js, etc.) are held forever and
