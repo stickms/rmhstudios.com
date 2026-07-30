@@ -8,6 +8,7 @@
   "edit": "编辑",
   "edit-build": "编辑构建",
   "error-loading-build": "加载构建时出错",
+  "like-count_one": "{{count}} 次赞",
   "like-count_other": "{{count}} 次赞",
   "manage-subtitle": "管理您已发布和草稿的构建版本",
   "my-builds": "我的建筑",
@@ -23,5 +24,6 @@
   "submit-a-build": "提交构建",
   "update-build-details": "请在下方更新您的构建详情。",
   "view": "视图",
+  "view-count_one": "{{count}} 次浏览",
   "view-count_other": "{{count}} 次观看"
 }
