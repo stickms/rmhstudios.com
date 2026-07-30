@@ -1,0 +1,545 @@
+<!-- ═══════════════════════════ PART I ═══════════════════════════ -->
+<section class="full-page plain-page">
+  <div class="part">
+    <div class="part__no">Part One</div>
+    <h2 class="part__title" data-level="part" data-toc-text="Part One — The button that wasn't there">The button that wasn't there</h2>
+    <p class="part__blurb">Before the orb, rmhstudios.com had three navigation systems and
+      no home button worth the name. This part is the case for the change: what the control
+      is supposed to do, what the site actually had, what the July audit measured, and the
+      goals the replacement was held to.</p>
+    <div class="part__toc">
+      <div><span>1</span>The job of a home button</div>
+      <div><span>2</span>What the site had instead</div>
+      <div><span>3</span>Evidence: the July 2026 audit</div>
+      <div><span>4</span>Goals, non-goals and constraints</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────── CH 1 ─────────────────────────── -->
+<section data-head-l="Part One · The button that wasn't there" data-head-r="The job of a home button" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter One</p>
+  <h1 class="ch" data-level="h1" data-no="1">The job of a home button</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">A home button is the cheapest promise an interface makes: <em>wherever you
+    are, this returns you to the start.</em> It is also, on almost every website ever built,
+    the least examined control on the page — a logo in the top-left corner, inherited from
+    print mastheads, kept because nobody could think of a reason to move it.</p>
+
+  <p>RMH Studios is not almost every website. The platform is a social feed, eighteen
+    browser games, twelve full-screen applications, a blog and news and library system, a
+    coin economy with paid memberships, and a scoped developer API — all served from one
+    React SSR tier with Node realtime hubs and a Go worker fleet behind it. The navigation
+    catalog in <code>lib/sidebar-nav.ts</code> lists sixteen destinations at the top level
+    alone, several of which are themselves hubs over a dozen sub-surfaces. A logo in the
+    corner is not a navigation system for that. It is a bookmark.</p>
+
+  <p>So the question that produced the redesign was not "where should the logo go". It was:
+    if a platform this wide has exactly <em>one</em> control that is present on every page,
+    at a fixed position, that the user can always reach without scrolling and without
+    remembering where they are — what should that control actually do?</p>
+
+  <h2 data-level="h2">1.1 Three jobs, usually split across three controls</h2>
+
+  <p>Unpack "home button" on a large site and it is doing at least three separate jobs, and
+    conventional layouts hand each to a different piece of chrome.</p>
+
+  <dl>
+    <dt>Return.</dt>
+    <dd>Go to the root. The classic job, and the easiest: one link, one destination. Also
+      the least valuable of the three, because on a signed-in social platform the root is
+      the feed, and the feed is where the user usually already is.</dd>
+    <dt>Orient.</dt>
+    <dd>Answer "where am I in this thing?" Conventionally the job of a breadcrumb, a
+      highlighted rail item, or an active tab underline. It requires the navigation to be
+      <em>visible</em>, which is why it is the first casualty of small screens.</dd>
+    <dt>Traverse.</dt>
+    <dd>Get to any other top-level destination. Conventionally a sidebar on desktop and a
+      hamburger-plus-drawer on mobile — two different implementations of one idea, which
+      is where drift and duplicated logic come from.</dd>
+  </dl>
+
+  <p>The interesting observation is that these three jobs share a natural anchor. Return is
+    a point. Orientation is a position relative to that point. Traversal is movement away
+    from it. Given a single fixed mark on screen, all three can be expressed as
+    relationships to <em>that mark</em> — which is the entire idea the redesign rests on,
+    and the reason it ended up radial rather than rectangular.</p>
+
+  <div class="pull">One control, at one place, that is simultaneously the destination, the
+    origin and the map.</div>
+
+  <h2 data-level="h2">1.2 Why the corner is the wrong place for it</h2>
+
+  <p>The top-left logo is a print inheritance with three properties that were virtues on
+    paper and are liabilities on a phone.</p>
+
+  <p><strong>It is the furthest point from the thumb.</strong> On a 390&times;844 device
+    held one-handed, the top-left corner is the single hardest region of the screen to
+    reach; the bottom-centre is the easiest. A control the user is expected to hit
+    repeatedly belongs where the hand already is, and no amount of visual hierarchy
+    compensates for a stretch.</p>
+
+  <p><strong>It shares the worst real estate on the page.</strong> The top strip is
+    contested by the browser's own chrome — the URL bar, the tab strip, the notch, the
+    dynamic island — and on iOS Safari the top bar collapses and re-expands as you scroll,
+    which means anything anchored there moves relative to the content underneath it.</p>
+
+  <p><strong>It is a scroll casualty or a sticky tax.</strong> Either the masthead scrolls
+    away, in which case the control is not actually always available, or it is pinned, in
+    which case it permanently spends vertical space that a phone does not have. Pinned
+    headers on a 390&times;844 screen cost 7–9% of the viewport before any content is drawn.</p>
+
+  <p>None of that is news. What is unusual is that this platform was willing to act on it,
+    because it had already accepted a much larger premise: that its <em>information
+    architecture</em>, not just its palette, could be radial.</p>
+
+  <h2 data-level="h2">1.3 The radial premise</h2>
+
+  <p>The design language the site adopted is named <strong>Radial Avant-Garde Glass</strong>,
+    and its own reference document states the premise in one sentence:</p>
+
+  <blockquote>The site orbits a central RMH mark; content radiates from the centre.
+    <cite>docs/design-language.md — the design language</cite></blockquote>
+
+  <p>Taken seriously, that sentence has consequences well beyond decoration. If content
+    radiates from a centre, the centre must exist as a real, persistent, interactive thing
+    — not a watermark. And if the centre is real, then navigation is not a list of links
+    somewhere else on the page; it is the immediate neighbourhood of the centre. A menu
+    that opens <em>around</em> the mark is not a stylistic flourish under that premise. It
+    is the only shape consistent with it.</p>
+
+  <p>This is worth stating plainly because radial menus have a bad reputation in web
+    design, and mostly deserve it. They are usually a novelty pinned onto a rectangular
+    application: a circular fan of four icons that exists because it looked good in a
+    dribbble shot, wrapped around a layout that is otherwise a perfectly ordinary grid.
+    Those fail for a predictable reason — the geometry carries no meaning, so the user
+    pays the cost of an unfamiliar shape and receives nothing in exchange.</p>
+
+  <p>The dial documented in this book is trying to earn the shape. Whether it fully
+    succeeds is a live question, and Chapter 30 is honest about where it does not. But the
+    shape is load-bearing: the orb's docked position is the mark, the dial's rings encode
+    priority, the sector under your finger is the destination, the hole in the middle is
+    where the label goes when the sectors are too small to hold one, and the whole thing
+    is the same square of screen the mark already occupied.</p>
+
+  {{fig:glide}}
+  <p class="figcap">Figure 1.1 — The orb's two states. Docked, it is a home button at the
+    easiest point on the screen to reach. Tapped, it glides to the exact centre of the
+    viewport and becomes the hub the dial radiates from. The same element, the same
+    transform property, one 500ms transition.</p>
+
+  <h2 data-level="h2">1.4 What "always available" has to mean</h2>
+
+  <p>A persistent navigator makes a stronger promise than a menu bar, and the promise is
+    only worth making if it holds in the cases where navigation usually breaks. The hub is
+    held to five:</p>
+
+  <ol>
+    <li><strong>Present on every standard page.</strong> Not on the feed only. Every route
+      under the <code>_site</code> layout inherits the shell that mounts it, so there is no
+      page where the navigation is somewhere else. Full-screen surfaces — games, the login
+      page, legal pages — are deliberately outside it, and Chapter 4 explains why that is a
+      feature.</li>
+    <li><strong>Reachable without scrolling.</strong> Fixed position, bottom-centre, above
+      the fold by construction.</li>
+    <li><strong>Reachable with the safe area respected.</strong> On a device with a home
+      indicator, "bottom of the screen" and "bottom of the usable screen" differ by about
+      34 logical pixels, and a control that ignores the difference sits inside the system's
+      own gesture strip. Chapter 26 covers what that cost the first implementation.</li>
+    <li><strong>Never colliding with other floating chrome.</strong> A cookie banner, a
+      mini player, a back-to-top button and a compose button all want the same corner. If
+      the navigator can be buried by a consent bar, it is not always available. This was
+      the single most expensive lesson of the whole project — finding AUD-003, with eight
+      dependent findings.</li>
+    <li><strong>Legible over whatever is behind it.</strong> A fixed control floats over
+      scrolling content, so text passes underneath it. Either the control is opaque enough
+      to win, or the ground fades in behind it. The hub does the second.</li>
+  </ol>
+
+  <p>Each of those five is a sentence in a design document and a week of defects in
+    practice. Part VII is the ledger.</p>
+
+  <h2 data-level="h2">1.5 The claim this record makes</h2>
+
+  <p>Stated as plainly as possible, so it can be argued with: <strong>on a platform with
+    sixteen top-level destinations and a mobile-first mandate, a single fixed mark that
+    expands into a two-deck radial dial is a better navigator than a hamburger drawer,
+    because it collapses three controls into one, puts that one where the thumb already is,
+    and encodes priority in geometry rather than in scroll position.</strong></p>
+
+  <p>The rest of Part I establishes the baseline that claim is measured against.</p>
+</section>
+
+<!-- ─────────────────────────── CH 2 ─────────────────────────── -->
+<section data-head-l="Part One · The button that wasn't there" data-head-r="What the site had instead" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Two</p>
+  <h1 class="ch" data-level="h1" data-no="2">What the site had instead</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">Three navigation systems, each correct in isolation, collectively costing
+    more than they delivered: a desktop left rail, a mobile bottom dock, and a mobile
+    push-drawer that by the end was unreachable code.</p>
+
+  <p>It is worth being precise about the "before", because the temptation in a document like
+    this is to caricature it. The pre-radial navigation was not bad work. It was
+    conventional work, built incrementally, and every piece of it was individually
+    defensible. The problem was the sum.</p>
+
+  <h2 data-level="h2">2.1 The desktop left rail</h2>
+
+  <p>A persistent vertical list of destinations, rendered from <code>SIDEBAR_NAV</code>,
+    with live badges for the inbox and for pending admin review. It is the right answer for
+    a wide viewport and it survives to this day: <code>RadialNavRail</code> is
+    substantially the same component, still driven by the same catalog, still shown from
+    1120px up. Nothing about the redesign argued against a rail on a desktop.</p>
+
+  <p>What it could not do was scale down. Sixteen items with icons and labels needs roughly
+    240 logical pixels of width and 600 of height. Below about 1100px that is a third of the
+    screen spent on chrome, so the rail had to disappear — and something else had to take
+    over, which is where the trouble started.</p>
+
+  <h2 data-level="h2">2.2 The mobile dock</h2>
+
+  <p><code>MobileDock</code> was the phone answer: a fixed bottom bar of four or five
+    primary destinations. This is the industry-standard pattern and it works, for the
+    problem it solves. Its ceiling is arithmetic. A 320px-wide screen divided by a 44px
+    minimum touch target is seven slots, and seven is generous — five is the comfortable
+    maximum with labels. Sixteen destinations do not fit in five slots.</p>
+
+  <p>So the dock became a partial view of the navigation: the four the team guessed were
+    most used, plus a fifth slot that opened the rest. That fifth slot is a hamburger by
+    another name, and it produced the third system.</p>
+
+  <h2 data-level="h2">2.3 The mobile push-drawer</h2>
+
+  <p>A drawer that slid in from the edge, pushing the page sideways, carrying the full
+    sixteen-item list as a scrolling column. It had to block background scroll while open,
+    and the way it did so is the single most valuable piece of engineering to survive the
+    rewrite — so it gets its own chapter later (Chapter 25). The short version: it blocked
+    scroll from its scrim with <code>touch-action</code> rather than locking the document,
+    because locking the document clips the page to the visual viewport on iOS and leaves a
+    band of bare background under Safari's floating bottom bar. That finding was established
+    on a real device, and it is the reason the hub's overlay is built the way it is.</p>
+
+  <p>The drawer's problem was not its scroll handling. It was that by the time the radial
+    work started, <em>the drawer was unreachable</em>. Successive layout changes had
+    removed every path that opened it. It was live code, in the bundle, shipped to every
+    phone, and it could not be opened. Commit <code>0969119</code> is titled, with some
+    weariness, <em>"delete the unreachable mobile push-drawer."</em></p>
+
+  <div class="defect">
+    <h4>The real cost of three systems</h4>
+    <p>Dead navigation code that nobody notices is a symptom, not the disease. The disease
+      is that the same catalog was rendered three times, by three components, with three
+      sets of breakpoints, three notions of "active", and three chances to drift. A
+      destination added to <code>SIDEBAR_NAV</code> appeared in the rail, appeared in the
+      drawer, and silently did not appear in the dock, because the dock's list was a
+      hand-picked subset. Nobody could tell you, from reading one file, what the site's
+      navigation was.</p>
+  </div>
+
+  <h2 data-level="h2">2.4 And no home button at all</h2>
+
+  <p>Amid three navigation systems, the actual "return to start" control was: a logo in the
+    top-left of the shell header on desktop, and a Home entry inside the dock on mobile.
+    Neither was distinguished from its neighbours; neither was the visual anchor of
+    anything. The site's own mark — a six-fold radial spirograph, one of the more distinctive
+    logos on the platform — appeared at roughly 20 logical pixels tall in a corner, where
+    its filigree resolved into a grey smudge.</p>
+
+  <p>That is the honest description of the "before": the brand mark was decoration, the
+    navigation was three overlapping implementations, and the home button was a list item.</p>
+
+  <h2 data-level="h2">2.5 What was kept</h2>
+
+  <p>The redesign is often described internally as a rewrite, and the shell genuinely was
+    one — <code>e5003b1</code>, <em>"radial front-end rewrite"</em>, is a large commit. But
+    three things were deliberately carried across intact, and it matters that they were,
+    because they are the reason a rewrite of the chrome did not become a rewrite of the
+    site.</p>
+
+  <ol>
+    <li><strong>The catalog.</strong> <code>lib/sidebar-nav.ts</code> did not change shape.
+      The dial consumes exactly the same <code>SIDEBAR_NAV</code> array the old rail did,
+      including its stable per-item <code>id</code>s, which are the keys users' saved
+      reorder-and-hide preferences validate against. Renaming one is a data migration; the
+      file says so in a comment, and the rewrite honoured it.</li>
+    <li><strong>The token contract.</strong> Every colour, radius, shadow and duration in
+      the new chrome comes from the same <code>--site-*</code> custom properties every theme
+      redefines. The hub was built monochrome, but it was not built <em>black</em>; it was
+      built out of tokens that happen to resolve to black in the default theme.</li>
+    <li><strong>The scroll-blocking technique.</strong> Inherited wholesale from the drawer,
+      complete with the on-device reasoning, which now lives as a comment block in
+      <code>RadialHub.tsx</code> and in <code>radial.css</code> because the component that
+      learned it was deleted.</li>
+  </ol>
+
+  <p>The shell nav — <code>SiteNavigation</code>, <code>MobileDock</code>,
+    <code>FeedLayout</code> — was removed. <code>SiteShell</code> kept its public
+    <code>children</code>/<code>overlays</code> API and became a delegate to
+    <code>RadialShell</code>, so every route under <code>_site</code> inherited the new
+    chrome without touching a single route file. That is the whole reason a change this
+    visually total was shippable at all.</p>
+</section>
+
+<!-- ─────────────────────────── CH 3 ─────────────────────────── -->
+<section data-head-l="Part One · The button that wasn't there" data-head-r="Evidence: the July 2026 audit" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Three</p>
+  <h1 class="ch" data-level="h1" data-no="3">Evidence: the July 2026 audit</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">Two-thirds of the way through the redesign, the whole site was audited
+    across forty routes, thirteen viewports and three themes. The hub came out of it with a
+    P1 systemic finding and its own multi-part defect. This chapter is what the audit
+    measured, because it is the closest thing to an objective account of the control.</p>
+
+  <p>The audit — <code>docs/ui-audit-2026-07-28.md</code> — is unusual in that it was
+    written to be actionable by a machine as well as a person. Every finding names the
+    routes, the viewport it was observed at, the evidence capture, the suspected source
+    file with line numbers, the design principle violated, and a concrete fix direction. It
+    is quoted here with its identifiers intact so anything in this chapter can be traced
+    back.</p>
+
+  <h2 data-level="h2">3.1 The matrix</h2>
+
+  <table class="compact">
+    <caption>Audit viewport matrix — Tier-A routes got all thirteen</caption>
+    <thead><tr><th>Name</th><th class="num">Size</th><th>Class</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">m320</td><td class="num">320×568</td><td>phone, smallest supported</td></tr>
+      <tr><td class="mono">m375</td><td class="num">375×667</td><td>phone</td></tr>
+      <tr><td class="mono">m390</td><td class="num">390×844</td><td>phone, iPhone 14 class</td></tr>
+      <tr><td class="mono">m412</td><td class="num">412×915</td><td>phone, Pixel class</td></tr>
+      <tr><td class="mono">mland844</td><td class="num">844×390</td><td>phone, landscape</td></tr>
+      <tr><td class="mono">t768</td><td class="num">768×1024</td><td>tablet portrait, touch</td></tr>
+      <tr><td class="mono">t1024</td><td class="num">1024×768</td><td>tablet landscape, touch</td></tr>
+      <tr><td class="mono">l1280</td><td class="num">1280×800</td><td>small laptop</td></tr>
+      <tr><td class="mono">l1366</td><td class="num">1366×768</td><td>common laptop</td></tr>
+      <tr><td class="mono">d1536</td><td class="num">1536×864</td><td>desktop</td></tr>
+      <tr><td class="mono">d1920</td><td class="num">1920×1080</td><td>desktop</td></tr>
+      <tr><td class="mono">d2560</td><td class="num">2560×1440</td><td>large desktop</td></tr>
+      <tr><td class="mono">uw3440</td><td class="num">3440×1440</td><td>ultrawide</td></tr>
+    </tbody>
+  </table>
+
+  <p>Three themes were captured at each: the default (a strict monochrome light palette,
+    referred to in the audit's copy as Daylight), <code>graphite</code>, and
+    <code>high-contrast</code>. Reduced motion was captured separately, as were first-run
+    overlays and a set of scripted interactions — among them, specifically, the hub
+    bloom.</p>
+
+  <h2 data-level="h2">3.2 AUD-003: the orb occludes content and collides with chrome</h2>
+
+  <p>The headline finding against the hub, rated P1, with eight dependent findings that the
+    audit's own remediation order notes are all healed by fixing it once. Its instances are
+    worth listing in full, because together they are a complete taxonomy of what goes wrong
+    when a fixed control is introduced to a page that was not designed to reserve space for
+    one.</p>
+
+  <table class="compact">
+    <caption>AUD-003 instances</caption>
+    <thead><tr><th style="width:64px">Finding</th><th>What was observed</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">AUD-102</td><td>The orb sat on top of the cookie-consent banner's text at every viewport ≥768px, on every <code>_site</code> route. The floating-stack coordination that solves exactly this was wrapped in a <code>max-width: 767.98px</code> media query and never ran on wider screens. Consent copy and its "Learn more" link were behind the orb.</td></tr>
+      <tr><td class="mono">AUD-104</td><td>The orb covered feed-card text and engagement counters on portrait phones. The feed column and the orb share the same centre axis, and no bottom clearance was reserved. The end of the feed left under 40px of clearance after the last card.</td></tr>
+      <tr><td class="mono">AUD-111</td><td>On <code>/pricing</code>, the orb overlapped tier-card feature lists mid-scroll and hid the pinned hero's "Compare tiers" scroll cue entirely — the cue's <code>bottom-8</code> placed it inside the orb's reserved band, so it was never visible at any scroll position.</td></tr>
+      <tr><td class="mono">AUD-203</td><td>On <code>/help</code>, the orb sat permanently on the bottom-pinned concierge suggestion chips. With the cookie banner up, the chips were buried entirely.</td></tr>
+      <tr><td class="mono">AUD-105</td><td>At 844×390 landscape, top bar + cookie bar + orb left roughly 150px of usable content height — about 38% of the viewport.</td></tr>
+      <tr><td class="mono">AUD-313</td><td>Further occlusion instances: the custom-accent hex input at 320px on <code>/settings/appearance</code>; the "Notification channels &amp; quiet hours" row at 1920px on <code>/settings</code>; most of the remaining list area on <code>/messages</code> in landscape.</td></tr>
+      <tr><td class="mono">AUD-322</td><td>On <code>/shop</code> at 390px, the post-hero landing put the category tab strip directly under the orb, hiding "Avatar Frames".</td></tr>
+    </tbody>
+  </table>
+
+  <p>The pattern is uniform: nothing was wrong with the orb's own rendering. Everything was
+    wrong with the assumption that a page could ignore it. A fixed control is a claim on
+    screen real estate, and a claim that is not published in a way layouts can consume is
+    just a collision waiting for a viewport.</p>
+
+  <p>The audit's prescribed fix is the one that shipped, and it is a good template for this
+    class of problem:</p>
+
+  <div class="rule-box">
+    <h4>AUD-003 fix direction, as written</h4>
+    <p>(a) Extend the floating-stack coordination to all widths so banner, FAB and orb never
+      share pixels. (b) Publish the orb's occupied band as a CSS variable — the inset and
+      size tokens already exist — and consume it as bottom clearance in the feed wheel,
+      full-height pages, and pinned-hero cues. (c) Consider a subtle glass scrim behind the
+      orb so text passing beneath it stays legible.</p>
+  </div>
+
+  <p>All three landed. The tokens are <code>--site-hub-orb-size</code> and
+    <code>--site-hub-orb-inset</code>, declared in <code>globals.css</code> rather than in
+    the radial stylesheet precisely so the floating stack's reserve and the orb's geometry
+    cannot drift apart; the derived clearance is <code>--site-floating-reserve</code>; and
+    the scrim is <code>.radial-hub__scrim</code>, a radial gradient of the page background
+    that fades the ground in behind the docked orb and retracts the moment the dial opens.
+    Chapter 26 covers the arithmetic.</p>
+
+  <h2 data-level="h2">3.3 AUD-504: the dial itself</h2>
+
+  <p>The audit re-captured the hub bloom specifically, and reported on the flagship
+    navigation in four parts — with, unusually for this document, an explicit list of what
+    worked.</p>
+
+  <table class="compact">
+    <caption>AUD-504 — hub dial findings from the re-captured bloom</caption>
+    <thead><tr><th style="width:26px"></th><th>Finding</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">a</td><td>The mobile dial was entirely icon-only — <strong>sixteen unlabelled glyphs as the site's sole navigation</strong>. Desktop wedges showed labels; phones did not. The audit's framing: this is recall, not recognition.</td></tr>
+      <tr><td class="mono">b</td><td>The account pill's avatar disc painted over the settings gear beside it, at both viewports.</td></tr>
+      <tr><td class="mono">c</td><td>Long wedge labels broke on desktop: "Adaptive Intelligence" clipped at its wedge edge, "Predictions" overflowed the disc.</td></tr>
+      <tr><td class="mono">+</td><td>Positives, recorded: the bloom is a fast, clean fade-and-scale, fully formed by about 120ms with no tearing; Escape returns cleanly; and glyph auto-contrast works.</td></tr>
+    </tbody>
+  </table>
+
+  <p>Each of (a), (b) and (c) has a chapter of its own later in this record — the centre
+    caption in Chapter 24, the flexbox <code>min-width: auto</code> trap in Chapter 26, and
+    the centroid label-box geometry in Chapter 12 — because each turned out to be a
+    genuinely instructive bug rather than a typo.</p>
+
+  <h2 data-level="h2">3.4 The findings that were not the hub's fault but were its problem</h2>
+
+  <p>Two more audit entries shaped the hub even though neither is about it.</p>
+
+  <p><strong>AUD-503, the metaball cursor.</strong> The pointer drop swelled ×1.85 over
+    interactive elements — largest exactly when it was covering a control's label, so "Play
+    now" read as "▷ ●now". It shares the radial module and the same goo filter bank as the
+    dial, and its repair (cap the swollen diameter around 22px, thin the fill as it swells)
+    is documented here in Chapter 22 because it is the same lesson as the dial's glyph
+    layer: a decorative liquid effect must never be in the same layer as something you have
+    to read.</p>
+
+  <p><strong>AUD-118, the first-run problem.</strong> Filed among the miscellaneous nits,
+    and arguably the most important sentence in the document about the hub:
+    <em>"sub-1120px navigation is a single unlabelled orb with no first-run hint
+    (recognition-over-recall; consider a transient 'Menu' caption)."</em> A control that
+    collapses three systems into one is only a win if the user knows it is there. Chapter 30
+    is about the fact that this one is still open.</p>
+
+  <div class="note">
+    <h4>A harness incident worth recording</h4>
+    <p>The audit's own tooling briefly failed to capture the hub at all: the interact
+      phase's hub captures silently skipped because the orb's live accessible name is "Open
+      menu" — the string in the shipped English catalog — while the code's
+      <code>defaultValue</code> is "Open navigation". The harness was selecting by
+      accessible name. It was re-captured by class selector. The lesson generalises: a
+      translated <code>defaultValue</code> and its catalog entry drifting apart is invisible
+      in the UI and load-bearing for anything that automates against it.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────── CH 4 ─────────────────────────── -->
+<section data-head-l="Part One · The button that wasn't there" data-head-r="Goals, non-goals and constraints" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Four</p>
+  <h1 class="ch" data-level="h1" data-no="4">Goals, non-goals and constraints</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">The brief, reconstructed. Some of it was written down before the work;
+    much of it was discovered during, and is now written down as rules in the module's
+    README so the next person does not rediscover it.</p>
+
+  <h2 data-level="h2">4.1 Goals</h2>
+
+  <ol>
+    <li><strong>One navigation, all widths.</strong> One component, one catalog, one notion
+      of active. A desktop rail may render the same catalog persistently, but it must not be
+      a second implementation of the navigation's logic.</li>
+    <li><strong>Sixteen destinations, reachable in one gesture.</strong> Not four primary
+      plus a drawer for the rest. All of them, at the same cost.</li>
+    <li><strong>Thumb-first.</strong> The trigger sits at the bottom centre, and every
+      target in the opened dial is within the arc a thumb sweeps.</li>
+    <li><strong>The brand mark does real work.</strong> The spirograph becomes the control,
+      at a size where its filigree resolves.</li>
+    <li><strong>Theme-safe by construction.</strong> Three shipped themes, fourteen accent
+      presets, and a marketplace where users author their own token sets. Correctness cannot
+      depend on the author having looked at a particular palette.</li>
+    <li><strong>Cheap on a phone.</strong> Decorative cost gated behind width and
+      motion-preference queries; the interaction itself must run on a low-memory device
+      with no filters at all.</li>
+    <li><strong>Reversible.</strong> Opening and closing are the same motion in two
+      directions, not two animations. This turned out to constrain the implementation more
+      than anything else on this list.</li>
+  </ol>
+
+  <h2 data-level="h2">4.2 Non-goals</h2>
+
+  <ol>
+    <li><strong>Not a gesture menu.</strong> No press-and-drag-to-select, no flick
+      direction. Tap to open, tap to choose. Radial menus in games rely on muscle memory
+      built over hours; a website does not get that budget, and a gesture-only dial would
+      be unusable to anyone arriving for the first time.</li>
+    <li><strong>Not the navigation for full-screen surfaces.</strong> Games and the
+      full-screen apps live at top-level routes outside <code>_site</code> and keep their
+      own chrome, deliberately. A game needs the whole viewport and its own input model; a
+      site navigator floating over it is a liability, not a service.</li>
+    <li><strong>Not a command palette.</strong> One already exists, mounted globally, and it
+      is the right tool for "I know the name of the thing". The dial is for browsing a fixed
+      catalog, and the two do not need to converge.</li>
+    <li><strong>Not sixteen equal destinations.</strong> The two decks exist precisely to
+      encode that the first six matter more than the last ten.</li>
+  </ol>
+
+  <h2 data-level="h2">4.3 Constraints inherited from the platform</h2>
+
+  <p>These were not negotiable, and several of them explain implementation choices that
+    would otherwise look eccentric.</p>
+
+  <dl>
+    <dt>Tokens only.</dt>
+    <dd>No hex, no <code>rounded-lg</code>, no bespoke transition durations. Every value
+      through a <code>--site-*</code> custom property, because a theme the author never
+      opened must still look deliberate. This is the platform's stated definition of done
+      for a UI commit, and it is the reason the dial's fills are
+      <code>color-mix()</code> expressions over tokens rather than colours.</dd>
+    <dt>Ink tracks its surface.</dt>
+    <dd>A filled surface takes its paired foreground token — <code>bg-site-accent</code>
+      implies <code>text-site-accent-fg</code>. Never <code>text-white</code> on a themed
+      surface. Chapter 20 is the story of what happens when a clever alternative is used
+      instead.</dd>
+    <dt>Every string translated.</dt>
+    <dd>Sixteen locales, two of them right-to-left, all user-facing strings through
+      <code>t("key", { defaultValue })</code>. Every wedge label, the orb's accessible
+      name, the dial's accessible name, the foot pill's controls.</dd>
+    <dt>Degradation is central, not per component.</dt>
+    <dd>High contrast, reduced transparency, reduced motion, forced colours and a
+      <code>perf-lite</code> mode are handled by the token layer and the shared glass
+      classes. A component that branches on them by hand is considered a bug. The hub's
+      reduced-motion path is the one sanctioned exception, and even that is expressed as
+      media queries in CSS rather than logic in the component.</dd>
+    <dt>No framer-motion in the hub.</dt>
+    <dd>The rest of the site uses it freely. The hub is CSS transitions and
+      <code>clip-path</code> only, to stay light on mobile — which is why its state machine
+      is three strings and a <code>setTimeout</code> rather than an animation
+      orchestrator.</dd>
+  </dl>
+
+  <h2 data-level="h2">4.4 The constraint that mattered most</h2>
+
+  <p>Of all of them, "reversible" did the most to shape the code. It sounds like a polish
+    requirement and is actually an architectural one.</p>
+
+  <p>The natural way to animate a menu open is a keyframe animation: declare the frames,
+    trigger it on mount, done. But a one-shot keyframe only plays forwards. Closing then
+    needs a second animation, whose frames must mirror the first, and the two drift the
+    moment anybody tunes one of them. Worse, if the user taps the orb again halfway through
+    opening, a keyframe has no notion of "where I currently am" to reverse from — it
+    restarts.</p>
+
+  <p>So every layer of the hub animates on a <em>transition</em> between two declarative
+    states, driven by a single <code>data-phase</code> attribute on the wrapper. The dial's
+    opacity and scale, the wedges' rotation and fade, the level hairlines, the foot pill,
+    the blur's <code>clip-path</code> radius, the orb's transform: all of them are
+    "property A when closed, property B when open", and the browser interpolates in
+    whichever direction the attribute just changed. Interrupt it mid-flight and it reverses
+    from exactly where it was, because that is what transitions do.</p>
+
+  <div class="pull">Reversibility is not a polish requirement. It is the reason the hub is
+    a state machine with three states instead of a pair of keyframe animations.</div>
+
+  <p>The cost is that a couple of effects that would be trivial as keyframes are awkward as
+    transitions — the counter-rotating decks in particular need their rest state to be
+    <em>rotated</em> and their open state to be zero, which is backwards from how one
+    naturally writes it, and which is exactly the trap that produced the black-flash bug in
+    Chapter 16. It was still the right trade.</p>
+</section>

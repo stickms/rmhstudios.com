@@ -1,0 +1,229 @@
+<!-- ═══════════════════════════ PART VII ═══════════════════════════ -->
+<section class="full-page plain-page">
+  <div class="part">
+    <div class="part__no">Part Seven</div>
+    <h2 class="part__title" data-level="part" data-toc-text="Part Seven — The defect ledger">The defect ledger</h2>
+    <p class="part__blurb">Twenty commits in five days, and the record of what each one broke.
+      This is the part worth reading if you have to maintain the thing: every entry is a case
+      where the design was right and the implementation had an undeclared dependency on
+      something else.</p>
+    <div class="part__toc">
+      <div><span>27</span>A chronology</div>
+      <div><span>28</span>Six patterns</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────── CH 27 ─────────────────────────── -->
+<section data-head-l="Part Seven · The defect ledger" data-head-r="A chronology" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Twenty-seven</p>
+  <h1 class="ch" data-level="h1" data-no="27">A chronology</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">Twenty commits between 24 and 28 July 2026. Eight built the thing, five fixed
+    contrast and material failures, three fixed mobile chrome, two rebuilt the motion, and two
+    are the audit remediation passes.</p>
+
+  <table class="compact">
+    <caption>The radial hub, commit by commit</caption>
+    <thead><tr><th style="width:56px">Commit</th><th style="width:52px">Date</th><th>Subject, and what it did to the hub</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">e5003b1</td><td class="mono">07-24</td><td><strong>radial front-end rewrite — monochrome RMH radial UI.</strong> The shell, the wheel feed, the first hub. <code>SiteShell</code> becomes a delegate to <code>RadialShell</code>; the old shell nav and <code>FeedLayout</code> are removed.</td></tr>
+      <tr><td class="mono">ffa3282</td><td class="mono">07-24</td><td>Centre the feed prism, cut mobile load cost, add scroll haptics.</td></tr>
+      <tr><td class="mono">bedf361</td><td class="mono">07-24</td><td><strong>wedge nav, metaball cursor, auto-contrast text, mobile polish.</strong> The dial becomes wedges. The first "auto-contrast" text — the idea that becomes Chapter 20's four-commit family.</td></tr>
+      <tr><td class="mono">f4a510f</td><td class="mono">07-24</td><td><strong>RMH logo mark in the hub orb, with a stroke-draw bloom.</strong> The mark stops being decoration.</td></tr>
+      <tr><td class="mono">a7a7779</td><td class="mono">07-24</td><td>Native-scroll feed: variable heights, document scroll.</td></tr>
+      <tr><td class="mono">d5bda85</td><td class="mono">07-24</td><td>Radialise content pages — flatten page headings, unpin sticky headers site-wide, so every route flows like the feed.</td></tr>
+      <tr><td class="mono">426d1d1</td><td class="mono">07-24</td><td><strong>avant-garde glass hub + document-scroll feed + inline compose.</strong> The hub becomes the expanding circular blur rather than a drawn disc.</td></tr>
+      <tr><td class="mono">20ad098</td><td class="mono">07-24</td><td>A consistent spacing system across the radial UI.</td></tr>
+      <tr><td class="mono">8a20189</td><td class="mono">07-24</td><td><strong>unpile the bottom controls, respect the safe area, drop dead drawer UI.</strong> The safe-area inset arrives on every bottom-anchored fixed element. The floating-bottom stack is defined.</td></tr>
+      <tr><td class="mono">bfd84b6</td><td class="mono">07-24</td><td><strong>hub opens/closes as one synchronous motion.</strong> The pre-centring step is removed; the orb, blur, dial and foot become one 500ms transition. The <code>centering</code> phase is deleted from the state machine.</td></tr>
+      <tr><td class="mono">0969119</td><td class="mono">07-25</td><td><strong>delete the unreachable mobile push-drawer.</strong> Live code, in the bundle, with no path that opened it. Its scroll-blocking technique survives as comments.</td></tr>
+      <tr><td class="mono">4f18b76</td><td class="mono">07-26</td><td>Render the site in the Liquid Glass material — surfaces become translucent tints by token.</td></tr>
+      <tr><td class="mono">1b5c04a</td><td class="mono">07-26</td><td><strong>metaball layer — fuse the radial chrome into liquid.</strong> <code>LiquidGoo</code>, the three-filter bank, the dial's art/hit split, the orb aura.</td></tr>
+      <tr><td class="mono">28e03b2</td><td class="mono">07-26</td><td><strong>radial menu icons were white-on-white.</strong> The blend-mode glyph layer fails. Glyphs move inside their sectors.</td></tr>
+      <tr><td class="mono">454a762</td><td class="mono">07-26</td><td>Auto-contrast the logo mark, and a radial loading mark everywhere. The mark's ink becomes <code>--site-accent-fg</code>.</td></tr>
+      <tr><td class="mono">89496ed</td><td class="mono">07-26</td><td><strong>make text and icons track the surface they sit on, site-wide.</strong> The systemic fix: zero-specificity <code>:where()</code> pairings in <code>globals.css</code>.</td></tr>
+      <tr><td class="mono">c631cb4</td><td class="mono">07-26</td><td><strong>the radial menu was invisible on a light page.</strong> A tint of a tint. Sector fills rebuilt on <code>--site-surface-opaque</code>.</td></tr>
+      <tr><td class="mono">6e6c184</td><td class="mono">07-27</td><td><strong>use the whole desktop window, and make the metaballs behave.</strong> The three-track frame; the pointer drop's blend-mode plate replaced with an SVG alpha ramp.</td></tr>
+      <tr><td class="mono">d308f26</td><td class="mono">07-27</td><td><strong>spin the double-decked dial open, and draw the borders between levels.</strong> Counter-rotation, the light plate, the hairlines. Chapter 16.</td></tr>
+      <tr><td class="mono">4419355</td><td class="mono">07-28</td><td>Audit pass: P0 contrast failures, floating-chrome collisions, SSR drift. AUD-003's coordination extended to all widths.</td></tr>
+      <tr><td class="mono">feeec2c</td><td class="mono">07-28</td><td>Audit pass: the remaining P2/P3 work. The centre caption, the foot pill's <code>min-width: 0</code>, the label budgets, the cursor swell cap.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 data-level="h2">27.1 The shape of the five days</h2>
+
+  <p>Read as a curve, the history has three distinct phases, and the proportions are worth
+    noting because they are typical and rarely admitted.</p>
+
+  <p><strong>Day one: eight commits, the whole design.</strong> Shell, feed, hub, wedges, mark,
+    glass, spacing, safe areas. Everything that this document's Parts I through III describe as
+    the concept and the geometry existed by the end of 24 July.</p>
+
+  <p><strong>Days three and four: seven commits, five of them fixes.</strong> The material
+    landed, and with it the entire class of contrast failures. Four of the five fixes are the
+    same bug wearing different clothes.</p>
+
+  <p><strong>Day five: two commits, both audit remediation.</strong> Neither adds a feature.
+    Both are lists of specific, measured, located defects with fix directions attached.</p>
+
+  <p>The design took a day. Making it correct in three themes, at thirteen viewports, with a
+    home indicator and a cookie banner and a screen reader, took four more — and was not
+    finished. That ratio is the honest summary of what building a control like this
+    costs.</p>
+
+  <h2 data-level="h2">27.2 The commit that removed a state</h2>
+
+  <p>One entry deserves attention because it is a deletion rather than an addition.
+    <code>bfd84b6</code>, <em>"hub opens/closes as one synchronous motion"</em>, removed a phase
+    from the state machine.</p>
+
+  <p>The original design opened in two beats: first the orb glided to the centre
+    (<code>centering</code>), then the menu bloomed around it (<code>open</code>). That is the
+    intuitive reading of the effect — cause, then consequence — and it is what the module's
+    README still describes in one paragraph that was not updated.</p>
+
+  <p>It was worse. Two beats meant the orb arrived and then paused, and the pause read as
+    latency rather than as choreography. It also doubled the state machine's complexity for the
+    reversal case: interrupting during <code>centering</code> and interrupting during
+    <code>open</code> are different situations, and both had to unwind correctly.</p>
+
+  <p>Collapsing them means the blur starts expanding while the orb is still travelling, which
+    on paper is wrong — the menu begins before its origin has arrived — and in practice is much
+    better, because both motions share the same front-loaded curve and therefore complete their
+    visible portion together. The <code>Phase</code> type's comment still records the change:
+    <em>"closed → open (orb glides to centre AS the menu blooms) → closing → closed."</em></p>
+
+  <div class="note">
+    <h4>A note on documentation drift</h4>
+    <p>The README's description of the hub — <em>"tapping the fixed RMH orb glides it to the
+      centre of the screen, then opens the menu"</em> — describes the two-beat version that was
+      removed. It is a small, harmless inaccuracy, and it is a good illustration of why this
+      record leans on the code and the commit messages rather than on prose descriptions: the
+      component's own type comment was updated in the commit that changed the behaviour, and the
+      README was not.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────── CH 28 ─────────────────────────── -->
+<section data-head-l="Part Seven · The defect ledger" data-head-r="Six patterns" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Twenty-eight</p>
+  <h1 class="ch" data-level="h1" data-no="28">Six patterns</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">Every defect in this project is an instance of one of six patterns. None of
+    them is specific to radial menus, and all six are worth carrying to the next component.</p>
+
+  <h2 data-level="h2">28.1 Derived contrast that depends on the layer tree</h2>
+
+  <p><strong>Instances:</strong> AUD-504 precursor (dial glyphs), the logo mark, the pointer
+    drop's plate. <strong>Commits:</strong> <code>28e03b2</code>, <code>454a762</code>,
+    <code>6e6c184</code>.</p>
+
+  <p>Blend modes composite against a stacking context, not against what you see. Any "automatic
+    contrast" built on <code>mix-blend-mode</code> is a bet on a layer tree the compositor is
+    entitled to change — and in the pointer drop's case, a bet that does not fail under software
+    rasterisation, so testing cannot catch it.</p>
+
+  <p><strong>The rule:</strong> name the paired foreground token, and put the ink inside the
+    element that carries the background.</p>
+
+  <h2 data-level="h2">28.2 A tint of a tint</h2>
+
+  <p><strong>Instance:</strong> the whole dial invisible on a light page.
+    <strong>Commit:</strong> <code>c631cb4</code>.</p>
+
+  <p>In a material where surface tokens are <em>already</em> translucent,
+  <code>color-mix(surface 60%, transparent)</code> is 60% of something that was already partly
+    transparent. The expression looks like it produces a visible surface and produces almost
+    nothing.</p>
+
+  <p><strong>The rule:</strong> when a value must be visible against an unknown background, build
+    it on the opaque companion token and mix <em>toward the ink</em> — a direction, not a
+    colour.</p>
+
+  <h2 data-level="h2">28.3 A value whose correctness depends on being covered</h2>
+
+  <p><strong>Instance:</strong> the divider bed flashing black once the decks spun.
+    <strong>Commit:</strong> <code>d308f26</code>.</p>
+
+  <p>The bed was pure black, which was correct while the sectors covered it at every frame.
+    Adding rotation and a sub-1 resting scale uncovered a 23-pixel ring of it for 550
+    milliseconds.</p>
+
+  <p><strong>The rule:</strong> if a layer is only acceptable because something covers it, either
+    write that assumption down at the declaration or make the layer safe to see. Adding motion to
+    a layer changes the requirements of every layer beneath it.</p>
+
+  <h2 data-level="h2">28.4 Chrome that does not publish its footprint</h2>
+
+  <p><strong>Instances:</strong> AUD-003 and its eight dependents — the cookie banner, feed cards,
+    the pricing scroll cue, the help chips, the settings rows, the shop tab strip, landscape
+    viewport height. <strong>Commits:</strong> <code>8a20189</code>,
+    <code>4419355</code>.</p>
+
+  <p>A fixed element is a claim on screen space. If that claim is not published in a form layouts
+    can consume, every layout will eventually collide with it — and the collisions will be found
+    one page at a time, by users.</p>
+
+  <p><strong>The rule:</strong> publish the footprint as tokens
+    (<code>--site-hub-orb-size</code>, <code>--site-hub-orb-inset</code>), derive clearance from
+    those tokens rather than guessing (<code>--site-floating-reserve</code>), coordinate
+    co-located chrome explicitly (the floating-bottom stack), and scope that coordination to the
+    <em>elements</em> involved rather than to the viewport where the problem was first
+    noticed.</p>
+
+  <h2 data-level="h2">28.5 Text boxes that spill in the constrained direction</h2>
+
+  <p><strong>Instance:</strong> AUD-504(c) — "Adaptive Intelligence" clipped, "Predictions"
+    overflowing the disc, then "Communities" truncated by the over-correction.
+    <strong>Commit:</strong> <code>feeec2c</code>.</p>
+
+  <p>An axis-aligned label box inside a wedge grows angularly in width — across the clip — and
+    radially in height, into the band, where there is room. The instinct is to widen the box; the
+    correct move is to narrow it and let the text wrap.</p>
+
+  <p><strong>The rule:</strong> identify which axis is bounded by the clip before choosing which
+    dimension to spend. And when constraining a text box, prefer wrapping to truncation: a
+    truncated label is a label that no longer names its destination.</p>
+
+  <h2 data-level="h2">28.6 Decoration in the same pixels as information</h2>
+
+  <p><strong>Instances:</strong> the goo filter chewing glyphs; the pointer drop swelling
+    largest exactly over a control's label (AUD-503); the feed wheel's rake fading cards to 18%
+    opacity (AUD-118); the full-viewport goo loader replacing the page and producing a 0.21
+    layout shift (AUD-302).</p>
+
+  <p>Four separate effects, one failure: a visual flourish placed where the reader's attention
+    has to be. In each case the flourish was working exactly as designed.</p>
+
+  <p><strong>The rule:</strong> a decorative effect gets its own layer, its own opacity floor, or
+    its own cap. The dial split into art and hit layers; the cursor capped its diameter and thinned
+    its fill; the wheel needed an opacity floor and a print reset; the loader needed skeletons
+    that reserve its space. Same rule, four shapes.</p>
+
+  <div class="pull">Not one of these six is about radial menus. All six are about what happens
+    when a correct value acquires a dependency nobody wrote down.</div>
+
+  <h2 data-level="h2">28.7 What the ledger says about process</h2>
+
+  <p>Three observations, offered as the practical conclusion of this part.</p>
+
+  <p><strong>The audit found what code review did not.</strong> Every one of these defects
+    survived a commit that was written carefully, with comments, by someone who understood the
+    system. What caught them was rendering forty routes at thirteen viewports in three themes and
+    looking at the output. There is no substitute available.</p>
+
+  <p><strong>The comments are the deliverable.</strong> The most valuable artefacts this project
+    produced are not the 521 lines of component; they are the comment blocks explaining why the
+    bed is light, why the glyphs live inside their sectors, why <code>touch-action</code> instead
+    of a scroll lock, and why the pointer drop does not use the cheap CSS goo. Each one is a bug
+    that cannot recur.</p>
+
+  <p><strong>Systemic fixes beat instance fixes.</strong> <code>89496ed</code> — the
+    <code>:where()</code> foreground pairings in <code>globals.css</code> — closed a whole class
+    of contrast bugs site-wide rather than the two instances that had been reported. AUD-003's
+    remediation order is explicit about the same principle: fix the coordination once and eight
+    dependent findings heal.</p>
+</section>

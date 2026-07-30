@@ -1,0 +1,488 @@
+<!-- ═══════════════════════════ PART VIII ═══════════════════════════ -->
+<section class="full-page plain-page">
+  <div class="part">
+    <div class="part__no">Part Eight</div>
+    <h2 class="part__title" data-level="part" data-toc-text="Part Eight — Verification, and what is open">Verification, and what is open</h2>
+    <p class="part__blurb">How the control is checked, what the checks cannot see, and the seven
+      things that are still wrong with it.</p>
+    <div class="part__toc">
+      <div><span>29</span>How it is checked</div>
+      <div><span>30</span>What is still open</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────── CH 29 ─────────────────────────── -->
+<section data-head-l="Part Eight · Verification, and what is open" data-head-r="How it is checked" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Twenty-nine</p>
+  <h1 class="ch" data-level="h1" data-no="29">How it is checked</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">Ten CI workflows, a consistency test that fails the build on hand-rolled tab
+    strips, a nine-point definition of done, and a manual floor of three themes by two widths.
+    None of it would have caught most of Part VII.</p>
+
+  <h2 data-level="h2">29.1 The automated layer</h2>
+
+  <table class="compact">
+    <caption>What runs, and what it can see about the hub</caption>
+    <thead><tr><th>Check</th><th>Catches</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">tsc --noEmit</td><td>The wedge type, the phase union, the props of every primitive the hub composes. Real value: the <code>Phase</code> type made removing the <code>centering</code> state a compile-time exercise.</td></tr>
+      <tr><td class="mono">eslint (jsx-a11y at warn)</td><td>Missing <code>aria-label</code> on icon-only controls, missing <code>aria-hidden</code> on decorative icons. The rule is "add no new warnings relative to base".</td></tr>
+      <tr><td class="mono">vitest — design-consistency</td><td>Hand-rolled tab strips and stray active-underline markers, build-failing. Not about the hub directly; it is the CI expression of the "one grammar" rule.</td></tr>
+      <tr><td class="mono">vitest — i18n coverage</td><td>Namespaces registered, keys present. New English strings must be added to the <code>en</code> catalogs and registered in the suite's known-untranslated allowlist.</td></tr>
+      <tr><td class="mono">prettier</td><td>Formatting only.</td></tr>
+      <tr><td class="mono">synthetic-perf</td><td>Web Vitals over time. This is what would surface something like AUD-302's 0.21 layout shift.</td></tr>
+      <tr><td class="mono">senior-review</td><td>An LLM review gate on the diff.</td></tr>
+      <tr><td class="mono">build</td><td>That the module compiles into the six server bundles and the client build.</td></tr>
+    </tbody>
+  </table>
+
+  <p>Read that table honestly and the conclusion is uncomfortable: <strong>not one of these
+    checks could have caught a single defect in Chapter 28.</strong> White-on-white glyphs are
+    valid CSS. A tint of a tint type-checks. A black plate uncovered by a rotation compiles. A
+    mobile-only media query around the floating-stack coordination is well-formed. A label box
+    clipped by a wedge's <code>clip-path</code> is not a lint error.</p>
+
+  <p>Everything in Part VII was found by rendering the page and looking at it.</p>
+
+  <h2 data-level="h2">29.2 The manual floor</h2>
+
+  <p>Which is why the platform's definition of done ends with a rendering requirement rather
+    than a test. Its ninth point: the change <em>was actually looked at</em> in
+    <code>default</code>, <code>.style-light</code> and <code>.style-high-contrast</code>, at a
+    phone width and a desktop width, and once with reduced motion on. Three themes by two widths
+    is stated as the floor, with the audit's thirteen-viewport matrix as the extended
+    version.</p>
+
+  <p>For this component specifically, the module README adds two of its own: verify the hub bloom
+    and the wheel on a 320-pixel-wide screen when changing geometry, and check that nothing
+    leaves the viewport.</p>
+
+  <h2 data-level="h2">29.3 The audit as an instrument</h2>
+
+  <p>The July audit is the closest thing the project has to a systematic check, and its design is
+    worth describing because it is reusable.</p>
+
+  <p>Forty-plus routes at thirteen viewports in three themes, plus reduced motion, plus first-run
+    overlays, plus scripted interactions — the hub's bloom among them, captured deliberately
+    rather than incidentally. Every finding names the route, the viewport, the evidence capture,
+    the suspected source file with line numbers, the design principle violated, and a fix
+    direction. Findings carry stable identifiers, and a remediation order that groups them by
+    root cause.</p>
+
+  <p>Two properties make it more than a screenshot dump. It is <strong>addressed to
+    agents as well as humans</strong>, which forces every finding to be independently
+    actionable — no "the spacing looks off here". And it records <strong>its own harness
+    incidents</strong>: overlays that blocked captures, seven captures that silently rendered
+    signed-out, and the hub captures that skipped because of the accessible-name drift in Chapter
+    23. An audit that does not report its own failures is an audit whose gaps are invisible.</p>
+
+  <div class="rule-box">
+    <h4>The gap this leaves</h4>
+    <p>An audit is a snapshot. It ran once, on 28 July, and two commits later the findings it
+      produced were substantially fixed — at which point the instrument was spent. Nothing in CI
+      re-renders the hub at thirteen viewports on every pull request. So the class of defect that
+      dominates Part VII is, today, caught by a process that runs when somebody decides to run
+      it. That is the single most consequential open item in this record, and it is not on the
+      list in Chapter 30 because it is not about this control.</p>
+  </div>
+
+  <h2 data-level="h2">29.4 What a real regression suite would need to assert</h2>
+
+  <p>Offered as a specification, since the analysis is already done. A useful automated check on
+    this component would assert, per theme and per viewport:</p>
+
+  <ol class="tight">
+    <li>Every wedge's computed <code>color</code> meets 4.5:1 against its own computed
+      background, in resting, hover, focus and active states.</li>
+    <li>The dial's bed and sector fills differ by a measurable amount, so the dividers are
+      visible.</li>
+    <li>No wedge label's rendered box exceeds its sector's clip bounds.</li>
+    <li>Every wedge's hit region is at least 44 pixels in its smaller dimension — which would
+      currently fail at 320px, correctly.</li>
+    <li>The orb's rect does not intersect the rect of any other floating control, or of any
+      element the page marks as content.</li>
+    <li>Nothing in the shell overflows the viewport horizontally at 320px.</li>
+    <li>With reduced motion, the dial's computed transform at rest equals its computed transform
+      when open.</li>
+    <li>The orb's accessible name equals the shipped catalog string, not the
+      <code>defaultValue</code>.</li>
+  </ol>
+
+  <p>Eight assertions, all mechanically checkable in a headless browser, and between them they
+    cover five of the six patterns in Chapter 28. The sixth — decoration in the same pixels as
+    information — needs a human.</p>
+</section>
+
+<!-- ─────────────────────────── CH 30 ─────────────────────────── -->
+<section data-head-l="Part Eight · Verification, and what is open" data-head-r="What is still open" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Thirty</p>
+  <h1 class="ch" data-level="h1" data-no="30">What is still open</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">Seven things, in rough order of how much they matter. The first is the one that
+    could invalidate the whole design, and it is the one nobody has solved.</p>
+
+  <h2 data-level="h2">30.1 Discovery — no first-run hint</h2>
+
+  <p>Below 1120 pixels, the entire navigation of a platform with sixteen destinations is one
+    unlabelled circular mark. AUD-118 records it; nothing has shipped.</p>
+
+  <p>This is the item that could make the rest of this document moot. Every argument in Part I —
+    thumb reach, collapsed controls, priority encoded as radius — presupposes that the user opens
+    the dial. A user who does not recognise the orb as a menu has a worse experience than they
+    would have had with a hamburger, because at least a hamburger is a learned convention.</p>
+
+  <p>Why it is hard: too quiet and the hint is decoration; too loud and it is an interstitial, on
+    a platform that already has enough first-run overlays that the audit had to suppress several
+    to capture anything. The audit's own suggestion — a transient "Menu" caption below the orb on
+    first visit — is probably right, and the open questions are how long it persists, what
+    dismisses it, and whether it re-appears for a signed-out visitor who has cleared storage.</p>
+
+  <h2 data-level="h2">30.2 Keyboard semantics</h2>
+
+  <p>The dial is <code>role="menu"</code> with <code>menuitem</code> children and no arrow-key
+    handling, no focus trap, and no focus restore on close. Chapter 23 states each gap. The
+    honest position is that it currently behaves like a labelled list of links, which is usable
+    and is not what its own ARIA role promises.</p>
+
+  <p>The design question underneath is real: on a two-deck ring, what should Up and Down do? Move
+    between decks is the obvious answer, and Left/Right rotating within a deck is the other half,
+    but that means Right at the last sector wraps to the first — and a wrapping tab order inside a
+    document that does not wrap is its own confusion.</p>
+
+  <h2 data-level="h2">30.3 Touch targets at 320 pixels</h2>
+
+  <p>Wedges are 41 pixels deep on the inner deck and 38 on the outer at the smallest supported
+    width, against a 44-pixel floor. Chapter 22 gives the mitigating argument — the arc dimension
+    is 55 to 76 pixels, and a miss lands in a drawn gap rather than on a neighbour — and it is a
+    mitigating argument, not compliance.</p>
+
+  <p>The obvious fix is to raise the dial's <code>86vw</code> below 360 pixels. The unresolved
+    part is the foot pill: at 320×568 the dial and the pill already have little room between
+    them, and growing the dial pushes them together. Nobody has worked through whether the pill
+    should shrink, move, or overlap the dial's rim at that width.</p>
+
+  <h2 data-level="h2">30.4 Landscape phones</h2>
+
+  <p>AUD-105: at 844×390, the top bar, cookie bar and orb between them left roughly 150 pixels of
+    usable content height. The audit's note is that this needs a <em>design decision</em> rather
+    than a fix — collapse the orb to a corner under a <code>max-height</code> condition, or shrink
+    the chrome, or accept it.</p>
+
+  <p>The dial itself is fine in landscape; <code>70vh</code> binds and it renders at 273 pixels.
+    It is the docked state that is the problem, and specifically the interaction of three
+    independently-reasonable pieces of fixed chrome on a viewport 390 pixels tall.</p>
+
+  <h2 data-level="h2">30.5 Right-to-left locales</h2>
+
+  <p>Sector order does not mirror in the two RTL locales, and nobody has tested whether it
+    should. Chapter 10's note stands: the correspondence between reading direction and rotational
+    direction is a convention, not a rule, and clocks run clockwise everywhere. But "we did not
+    think about it" and "we decided it was right" are different states, and this is the
+    former.</p>
+
+  <h2 data-level="h2">30.6 The parked lens optic</h2>
+
+  <p>The platform's SVG displacement lens — the effect that bends the backdrop through a height
+    field at a pane's edge — is parked, because current Chromium composites the displacement map
+    into the bevel rather than bending the backdrop through it. The filters and the supporting
+    module still ship; re-enabling is restoring two <code>@supports</code> upgrades and one
+    initialisation call.</p>
+
+  <p>The hub does not use it and would not obviously benefit. It is listed because anyone reading
+    the design language will find <code>.glass-refract</code> documented as live and should know
+    that one optic in it is not.</p>
+
+  <h2 data-level="h2">30.7 A continuous visual check</h2>
+
+  <p>Covered in Chapter 29 and repeated here because it is the item most likely to determine
+    whether the next twenty commits produce another Part VII. The audit was an instrument that
+    ran once. The defects it found were the kind that only a rendered page reveals. There is no
+    per-pull-request equivalent.</p>
+
+  <h2 data-level="h2">30.8 What is not on this list</h2>
+
+  <p>Three things that might be expected and are deliberately absent.</p>
+
+  <p><strong>Performance.</strong> Nothing in the hub is a measured performance problem. The
+    expensive things are gated, the animation is compositor-only, and the one full-viewport
+    <code>backdrop-filter</code> exists for a few seconds when the user asks for it.</p>
+
+  <p><strong>The two-tap cost of going home.</strong> Chapter 5 defends it, and the defence
+    stands: one unambiguous behaviour on the site's only universal control is worth more than one
+    saved tap on a destination the user is usually already at.</p>
+
+  <p><strong>The radial shape itself.</strong> This is the thing a reader might most expect to be
+    hedged, and it is not. The geometry earns its place: it collapses three controls into one, it
+    encodes priority as radius, it costs no layout space, it derives itself from a catalog, and it
+    puts every target inside a thumb's sweep. If the design fails, it will fail on §30.1 —
+    because people did not know it was there — and not because a dial was the wrong shape for what
+    it does.</p>
+
+  <div class="pull">The open questions are about discovery, keyboards and small screens. None of
+    them is about the circle.</div>
+</section>
+
+<!-- ═══════════════════════════ APPENDICES ═══════════════════════════ -->
+<section class="full-page plain-page">
+  <div class="part">
+    <div class="part__no">Appendices</div>
+    <h2 class="part__title" data-level="part" data-toc-text="Appendices">Reference</h2>
+    <p class="part__blurb">The geometry table, the constants, the navigation catalog, the token
+      contract, the commit and finding indexes, and a glossary.</p>
+    <div class="part__toc">
+      <div><span>A</span>Geometry reference</div>
+      <div><span>B</span>Constants and durations</div>
+      <div><span>C</span>The navigation catalog</div>
+      <div><span>D</span>Finding index</div>
+      <div><span>E</span>Glossary</div>
+    </div>
+  </div>
+</section>
+
+<section data-head-l="Appendices" data-head-r="A · Geometry reference" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Appendix A</p>
+  <h1 class="ch" data-level="h1" data-no="A">Geometry reference</h1>
+  <div class="ch-rule"></div>
+
+  <p>Computed by the same port of <code>carve()</code> that draws every figure in this book, for
+    the shipped sixteen-destination dial. Angles are degrees clockwise from twelve o'clock;
+    radii and centroids are percentages of the dial's width.</p>
+
+  {{fig:sectorTable}}
+
+  {{fig:sectorTableSix}}
+
+  {{fig:dial16}}
+</section>
+
+<section data-head-l="Appendices" data-head-r="B · Constants and durations" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Appendix B</p>
+  <h1 class="ch" data-level="h1" data-no="B">Constants and durations</h1>
+  <div class="ch-rule"></div>
+
+  <table class="compact">
+    <caption>Every constant in RadialHub.tsx</caption>
+    <thead><tr><th>Name</th><th class="num">Value</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">RINGS[0]</td><td class="num">19 → 34</td><td>Inner band, as % of dial width.</td></tr>
+      <tr><td class="mono">RINGS[1]</td><td class="num">36 → 50</td><td>Outer band.</td></tr>
+      <tr><td class="mono">SINGLE_RING</td><td class="num">19 → 50</td><td>The one band used at six destinations or fewer.</td></tr>
+      <tr><td class="mono">ART_BLEED_DEG</td><td class="num">0.25</td><td>Fraction of the gap the art layer is widened by, angularly, each side.</td></tr>
+      <tr><td class="mono">SINGLE_RING_MAX</td><td class="num">6</td><td>At or below this, one ring rather than two.</td></tr>
+      <tr><td class="mono">INNER_MAX</td><td class="num">6</td><td>Cap on the inner deck — the shorter circumference.</td></tr>
+      <tr><td class="mono">MOTION_MS</td><td class="num">500</td><td>The one duration, and the unmount gate on close.</td></tr>
+      <tr><td class="mono">DEG</td><td class="num">π/180</td><td>Degrees to radians.</td></tr>
+      <tr><td class="mono">steps</td><td class="num">10</td><td>Arc samples per side in <code>ringSector()</code>.</td></tr>
+      <tr><td class="mono">gap</td><td class="num">min(1.4, seg×0.06)</td><td>Angular divider between sectors.</td></tr>
+    </tbody>
+  </table>
+
+  <table class="compact">
+    <caption>CSS custom properties declared by the dial</caption>
+    <thead><tr><th>Property</th><th class="num">Value</th><th>Consumer</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">--dial</td><td class="num">min(86vw, 70vh, 460px)</td><td>The dial's width and height.</td></tr>
+      <tr><td class="mono">--dial-hole</td><td class="num">calc(38% − level-w)</td><td>The mask's transparent radius. Supplied inline by the component.</td></tr>
+      <tr><td class="mono">--dial-level-w</td><td class="num">2px</td><td>Hairline weight, and the mask's straddle correction.</td></tr>
+      <tr><td class="mono">--dial-level-c</td><td class="num">text @ 55%</td><td>Hairline colour.</td></tr>
+      <tr><td class="mono">--ring-spin</td><td class="num">−55deg / +55deg</td><td>Per-deck resting rotation.</td></tr>
+      <tr><td class="mono">--fade-delay</td><td class="num">calc(i × 20ms)</td><td>Per-wedge opacity stagger, on open only.</td></tr>
+      <tr><td class="mono">--i</td><td class="num">0…15</td><td>Bloom order across both decks, inner first.</td></tr>
+      <tr><td class="mono">--r</td><td class="num">19/34/36/50%</td><td>One per hairline, from <code>bounds</code>.</td></tr>
+      <tr><td class="mono">--orb-bottom</td><td class="num">safe-area + inset</td><td>The docked offset, and a term in the centring transform.</td></tr>
+    </tbody>
+  </table>
+
+  <table class="compact">
+    <caption>Declared transition durations</caption>
+    <thead><tr><th>Layer</th><th class="num">Property</th><th class="num">Duration</th><th>Curve</th></tr></thead>
+    <tbody>
+      <tr><td>orb</td><td class="mono">transform</td><td class="num">500ms</td><td>ease-glass</td></tr>
+      <tr><td>orb</td><td class="mono">box-shadow</td><td class="num">280ms</td><td>ease</td></tr>
+      <tr><td>aura</td><td class="mono">transform</td><td class="num">500ms</td><td>ease-glass</td></tr>
+      <tr><td>docked scrim</td><td class="mono">opacity</td><td class="num">280ms</td><td>ease</td></tr>
+      <tr><td>blur</td><td class="mono">clip-path</td><td class="num">500ms</td><td>ease-glass</td></tr>
+      <tr><td>dial</td><td class="mono">opacity</td><td class="num">400ms</td><td>ease-glass</td></tr>
+      <tr><td>dial</td><td class="mono">transform</td><td class="num">500ms</td><td>ease-glass</td></tr>
+      <tr><td>wedge wrapper</td><td class="mono">opacity</td><td class="num">340ms</td><td>ease + stagger</td></tr>
+      <tr><td>wedge wrapper</td><td class="mono">transform</td><td class="num">550ms</td><td>ease-glass</td></tr>
+      <tr><td>hairline</td><td class="mono">opacity</td><td class="num">340ms</td><td>ease</td></tr>
+      <tr><td>hairline</td><td class="mono">transform</td><td class="num">550ms</td><td>ease-glass</td></tr>
+      <tr><td>wedge link</td><td class="mono">background, color</td><td class="num">180ms</td><td>ease</td></tr>
+      <tr><td>foot</td><td class="mono">opacity</td><td class="num">400ms</td><td>ease</td></tr>
+      <tr><td>foot</td><td class="mono">transform</td><td class="num">500ms</td><td>ease-glass</td></tr>
+      <tr><td>foot button</td><td class="mono">background, transform</td><td class="num">180ms</td><td>ease</td></tr>
+      <tr><td>aura blob</td><td class="mono">orbit keyframe</td><td class="num">7000ms</td><td>ease-in-out, −2.33s stagger</td></tr>
+      <tr><td>logo</td><td class="mono">bloom keyframe</td><td class="num">1050ms</td><td>ease-glass, once on mount</td></tr>
+      <tr><td>logo</td><td class="mono">stroke draw</td><td class="num">1300ms</td><td>ease, once on mount</td></tr>
+    </tbody>
+  </table>
+
+  <p><code>--ease-glass</code> is <code>cubic-bezier(0.16, 1, 0.3, 1)</code>, with that literal
+    as the fallback at every use site.</p>
+</section>
+
+<section data-head-l="Appendices" data-head-r="C · The navigation catalog" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Appendix C</p>
+  <h1 class="ch" data-level="h1" data-no="C">The navigation catalog</h1>
+  <div class="ch-rule"></div>
+
+  <p><code>lib/sidebar-nav.ts</code>, flattened the way the hub flattens it: groups are expanded
+    into their children, then auth and admin gating is applied. The <code>id</code> is the stable
+    customisation key that users' saved order and hidden sets validate against — renaming one is a
+    data migration.</p>
+
+  <table class="compact">
+    <caption>SIDEBAR_NAV, as the dial consumes it</caption>
+    <thead><tr><th class="num">#</th><th>Label</th><th>id / href</th><th>i18n key</th><th>Icon</th><th>Gate</th></tr></thead>
+    <tbody>
+      <tr><td class="num">0</td><td>Home</td><td class="mono">/</td><td class="mono">nav-home</td><td class="mono">Home</td><td>—</td></tr>
+      <tr><td class="num">1</td><td>Explore</td><td class="mono">/search</td><td class="mono">nav-explore</td><td class="mono">Compass</td><td>—</td></tr>
+      <tr><td class="num">2</td><td>Inbox</td><td class="mono">/messages</td><td class="mono">nav-inbox</td><td class="mono">Inbox</td><td>auth · badge</td></tr>
+      <tr><td class="num">3</td><td>Creator Studio</td><td class="mono">/create</td><td class="mono">nav-creator-studio</td><td class="mono">Wand2</td><td>—</td></tr>
+      <tr><td class="num">4</td><td>Library</td><td class="mono">/library</td><td class="mono">nav-library</td><td class="mono">Library</td><td>—</td></tr>
+      <tr><td class="num">5</td><td>Communities</td><td class="mono">/communities</td><td class="mono">nav-communities</td><td class="mono">Users</td><td>—</td></tr>
+      <tr><td class="num">6</td><td>Store</td><td class="mono">/store</td><td class="mono">nav-store</td><td class="mono">ShoppingBag</td><td>—</td></tr>
+      <tr><td class="num">7</td><td>Arcade</td><td class="mono">/arcade</td><td class="mono">nav-arcade</td><td class="mono">Gamepad2</td><td>—</td></tr>
+      <tr><td class="num">8</td><td>Predictions</td><td class="mono">/predictions</td><td class="mono">nav-predictions</td><td class="mono">TrendingUp</td><td>—</td></tr>
+      <tr><td class="num">9</td><td>Developer</td><td class="mono">/developer</td><td class="mono">nav-developer</td><td class="mono">Terminal</td><td>—</td></tr>
+      <tr><td class="num">10</td><td>Services</td><td class="mono">/services</td><td class="mono">nav-services</td><td class="mono">LayoutGrid</td><td>—</td></tr>
+      <tr><td class="num">11</td><td>RMH Capital</td><td class="mono">/rmh-capital</td><td class="mono">nav-rmh-capital</td><td class="mono">Landmark</td><td>group child</td></tr>
+      <tr><td class="num">12</td><td>RMH PMC</td><td class="mono">/rmh-pmc</td><td class="mono">nav-rmh-pmc</td><td class="mono">Shield</td><td>group child</td></tr>
+      <tr><td class="num">13</td><td>Adaptive Intelligence</td><td class="mono">/adaptive-intelligence</td><td class="mono">nav-adaptive-intelligence</td><td class="mono">Atom</td><td>group child</td></tr>
+      <tr><td class="num">14</td><td>RMH Deeplink</td><td class="mono">/deeplink</td><td class="mono">nav-rmh-deeplink</td><td class="mono">Brain</td><td>group child · external</td></tr>
+      <tr><td class="num">15</td><td>Admin</td><td class="mono">/admin</td><td class="mono">nav-admin</td><td class="mono">ShieldCheck</td><td>admin · badge · unorderable</td></tr>
+    </tbody>
+  </table>
+
+  <p>Two structural notes. Items 11–14 are the children of the <code>group:ventures</code> group,
+    which the hub flattens because a dial has no notion of a collapsible section — a group's
+    children become peers on the ring. And Admin's id is deliberately absent from the orderable
+    set, so it always falls to the end of the outer deck and can never be hidden.</p>
+
+  <p>The badges — inbox count, pending admin review — render in the desktop rail and not on the
+    dial. A sector has nowhere to put a count that would not collide with its label's angular
+    budget, which is the one capability the rail has that the dial does not.</p>
+</section>
+
+<section data-head-l="Appendices" data-head-r="D · Finding index" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Appendix D</p>
+  <h1 class="ch" data-level="h1" data-no="D">Finding index</h1>
+  <div class="ch-rule"></div>
+
+  <table class="compact">
+    <caption>Audit findings cited in this record</caption>
+    <thead><tr><th style="width:64px">ID</th><th style="width:26px">P</th><th>Summary</th><th class="num">Ch.</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">AUD-003</td><td class="num">1</td><td>The fixed orb occludes content and collides with other floating chrome. Eight dependents.</td><td class="num">3, 26, 28</td></tr>
+      <tr><td class="mono">AUD-102</td><td class="num">1</td><td>Cookie banner vs orb vs compose FAB at ≥768px, every route. The coordination was mobile-only.</td><td class="num">3, 26</td></tr>
+      <tr><td class="mono">AUD-104</td><td class="num">1</td><td>Orb occludes feed content on portrait phones; &lt;40px clearance after the last card.</td><td class="num">3, 26</td></tr>
+      <tr><td class="mono">AUD-105</td><td class="num">1</td><td>844×390 landscape: floating chrome consumes ~60% of viewport height.</td><td class="num">3, 30</td></tr>
+      <tr><td class="mono">AUD-111</td><td class="num">1</td><td>Pricing hero's "Compare tiers" cue rendered inside the orb's footprint — never visible.</td><td class="num">3</td></tr>
+      <tr><td class="mono">AUD-118</td><td class="num">3</td><td>Sub-1120px navigation is a single unlabelled orb with no first-run hint. Also the wheel's 18% ghost cards.</td><td class="num">3, 24, 28, 30</td></tr>
+      <tr><td class="mono">AUD-203</td><td class="num">1</td><td><code>/help</code>'s bottom-pinned concierge chips sit under the orb permanently.</td><td class="num">3</td></tr>
+      <tr><td class="mono">AUD-302</td><td class="num">1</td><td>Phone loads swap a full-viewport goo loader for the page — CLS 0.13–0.21.</td><td class="num">7, 28</td></tr>
+      <tr><td class="mono">AUD-313</td><td class="num">2</td><td>Further orb occlusion: settings hex input, notification row, messages list.</td><td class="num">3</td></tr>
+      <tr><td class="mono">AUD-315</td><td class="num">2</td><td>Accent swatches: "Ink" indistinguishable from "Theme default" on the default theme.</td><td class="num">21</td></tr>
+      <tr><td class="mono">AUD-322</td><td class="num">1</td><td><code>/shop</code>: category tab strip lands under the orb at 390px.</td><td class="num">3</td></tr>
+      <tr><td class="mono">AUD-503</td><td class="num">2</td><td>The metaball cursor occludes exactly what it points at — swells ×1.85 over labels.</td><td class="num">3, 22, 28</td></tr>
+      <tr><td class="mono">AUD-504</td><td class="num">2</td><td>Hub dial: (a) mobile is sixteen unlabelled glyphs; (b) avatar paints over the settings gear; (c) long labels clip at the wedge edge.</td><td class="num">3, 12, 24, 26</td></tr>
+    </tbody>
+  </table>
+
+  <table class="compact">
+    <caption>Commits cited</caption>
+    <thead><tr><th style="width:64px">Commit</th><th>Subject</th><th class="num">Ch.</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">e5003b1</td><td>radial front-end rewrite — monochrome RMH radial UI</td><td class="num">2, 27</td></tr>
+      <tr><td class="mono">bedf361</td><td>wedge nav, metaball cursor, auto-contrast text, mobile polish</td><td class="num">27</td></tr>
+      <tr><td class="mono">f4a510f</td><td>RMH logo mark in the hub orb, with a stroke-draw bloom</td><td class="num">7, 27</td></tr>
+      <tr><td class="mono">426d1d1</td><td>avant-garde glass hub + document-scroll feed + inline compose</td><td class="num">27</td></tr>
+      <tr><td class="mono">8a20189</td><td>unpile the bottom controls, respect the safe area, drop dead drawer UI</td><td class="num">26, 27, 28</td></tr>
+      <tr><td class="mono">bfd84b6</td><td>hub opens/closes as one synchronous motion</td><td class="num">27</td></tr>
+      <tr><td class="mono">0969119</td><td>delete the unreachable mobile push-drawer</td><td class="num">2, 25, 27</td></tr>
+      <tr><td class="mono">1b5c04a</td><td>metaball layer — fuse the radial chrome into liquid</td><td class="num">19, 27</td></tr>
+      <tr><td class="mono">28e03b2</td><td>radial menu icons were white-on-white</td><td class="num">20, 27, 28</td></tr>
+      <tr><td class="mono">454a762</td><td>auto-contrast the logo mark + a radial loading mark everywhere</td><td class="num">20, 27, 28</td></tr>
+      <tr><td class="mono">89496ed</td><td>make text and icons track the surface they sit on, site-wide</td><td class="num">20, 27, 28</td></tr>
+      <tr><td class="mono">c631cb4</td><td>the radial menu was invisible on a light page</td><td class="num">6, 20, 27, 28</td></tr>
+      <tr><td class="mono">6e6c184</td><td>use the whole desktop window, and make the metaballs behave</td><td class="num">27, 28</td></tr>
+      <tr><td class="mono">d308f26</td><td>spin the double-decked dial open, and draw the borders between levels</td><td class="num">16, 27, 28</td></tr>
+      <tr><td class="mono">4419355</td><td>P0 contrast failures, floating-chrome collisions, SSR/schema drift</td><td class="num">27, 28</td></tr>
+      <tr><td class="mono">feeec2c</td><td>settings, rail, cursor and hub-dial defects</td><td class="num">27, 28</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section data-head-l="Appendices" data-head-r="E · Glossary" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Appendix E</p>
+  <h1 class="ch" data-level="h1" data-no="E">Glossary</h1>
+  <div class="ch-rule"></div>
+
+  <dl>
+    <dt>Annulus sector</dt>
+    <dd>A ring segment: the region between two radii over a span of angles. The dial's target
+      shape, chosen over the pie slice for the four reasons in Chapter 8.</dd>
+    <dt>Art layer</dt>
+    <dd>The decorative, goo-filtered, <code>aria-hidden</code> copy of the sector geometry. Carries
+      the fills and nothing readable.</dd>
+    <dt>Bed</dt>
+    <dd>The dial's own background, visible through the angular gaps between sectors, which is what
+      the dividers are made of.</dd>
+    <dt>Bleed</dt>
+    <dd>The angular widening applied to the art layer to pay back the edge erosion caused by the
+      goo filter's alpha threshold. <code>ART_BLEED_DEG = 0.25</code> of the gap, each side.</dd>
+    <dt>Bloom</dt>
+    <dd>The open animation, collectively. Also, separately, the mark's one-shot mount animation.</dd>
+    <dt>Deck</dt>
+    <dd>One of the dial's two concentric rings. Inner deck = the first six catalog entries.</dd>
+    <dt>Foot pill</dt>
+    <dd>The floating capsule at the bottom of the open overlay: identity, settings, sign-out,
+      close — or a sign-in call to action when signed out.</dd>
+    <dt>Goo</dt>
+    <dd>The metaball effect: blur, then a steep ramp on alpha, then the sharp original blended
+      back. Three radii, in <code>LiquidGoo</code>.</dd>
+    <dt>Hit layer</dt>
+    <dd>The real, unfiltered links — one per destination, each clipped to its exact sector, each
+      containing its own icon and label.</dd>
+    <dt>Hole</dt>
+    <dd>The masked-out centre of the dial, radius 19, which the orb glides into. Also where the
+      centre caption lives below 480px.</dd>
+    <dt>Hub</dt>
+    <dd>The whole control: orb, aura, scrim, overlay, blur, dial and foot pill.</dd>
+    <dt>Level hairline</dt>
+    <dd>One drawn circle per band boundary, so the decks are separated by an edge rather than by
+      an absence of fill.</dd>
+    <dt>Liquid Glass / Radial Avant-Garde Glass</dt>
+    <dd>The platform's material and, with the radial architecture, its design language.</dd>
+    <dt>Orb</dt>
+    <dd>The fixed, bottom-centre disc carrying the RMH mark. The trigger, and the centre the dial
+      radiates from.</dd>
+    <dt>Phase</dt>
+    <dd><code>closed</code> | <code>open</code> | <code>closing</code>. One attribute on the
+      wrapper; the entire animation state.</dd>
+    <dt>Ring / band</dt>
+    <dd>Used interchangeably for a deck's radial extent. <code>RINGS</code> in the source; "deck"
+      in this document where the distinction from a single ring matters.</dd>
+    <dt>Token</dt>
+    <dd>A <code>--site-*</code> CSS custom property that every theme redefines. The contract the
+      hub is built out of.</dd>
+    <dt>Wedge</dt>
+    <dd>One destination's sector, in either layer. Sixteen of them, signed in as an admin.</dd>
+  </dl>
+
+  <div class="note">
+    <h4>Sources</h4>
+    <p><code>components/radial/RadialHub.tsx</code> · <code>components/radial/radial.css</code> ·
+      <code>components/radial/LiquidGoo.tsx</code> ·
+      <code>components/radial/RmhLogo.tsx</code> ·
+      <code>components/radial/README.md</code> · <code>lib/sidebar-nav.ts</code> ·
+      <code>docs/design-language.md</code> · <code>docs/page-consistency.md</code> ·
+      <code>docs/ui-audit-2026-07-28.md</code> · <code>CLAUDE.md</code> and the per-directory
+      guides · commits <code>e5003b1</code> through <code>feeec2c</code>.</p>
+  </div>
+</section>

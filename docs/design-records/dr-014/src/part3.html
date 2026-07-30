@@ -1,0 +1,744 @@
+<!-- ═══════════════════════════ PART III ═══════════════════════════ -->
+<section class="full-page plain-page">
+  <div class="part">
+    <div class="part__no">Part Three</div>
+    <h2 class="part__title" data-level="part" data-toc-text="Part Three — Geometry">Geometry</h2>
+    <p class="part__blurb">Sixteen destinations, one circle, and a 320-pixel-wide phone. This
+      part is the arithmetic: annulus sectors, two decks, a polygon walk, a masked hole, drawn
+      hairlines, an angular bleed, and the label boxes that spill in the one direction there
+      is no room.</p>
+    <div class="part__toc">
+      <div><span>8</span>From pie to annulus</div>
+      <div><span>9</span>The double deck</div>
+      <div><span>10</span>Carving one destination</div>
+      <div><span>11</span>The hole, the mask and the hairlines</div>
+      <div><span>12</span>Labels, centroids and budgets</div>
+      <div><span>13</span>The art bleed</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────── CH 8 ─────────────────────────── -->
+<section data-head-l="Part Three · Geometry" data-head-r="From pie to annulus" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Eight</p>
+  <h1 class="ch" data-level="h1" data-no="8">From pie to annulus</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">A pie slice is the obvious shape for a radial menu and the wrong one. Its
+    area is concentrated at the rim, its point converges on the exact spot the orb needs to
+    occupy, and its centroid drifts outward as the slice narrows. Every one of the dial's
+    geometric decisions follows from replacing the pie with a ring segment.</p>
+
+  <h2 data-level="h2">8.1 Four problems with the pie</h2>
+
+  <p><strong>The point is in the way.</strong> Sixteen pie slices converge on a single point
+    at the centre of the disc, and that point is exactly where the orb parks. Either the orb
+    covers the convergence — hiding the tips of sixteen targets — or the slices are truncated,
+    at which point they are annulus sectors and one may as well say so.</p>
+
+  <p><strong>Area is in the wrong place.</strong> A sector's area grows with the square of
+    the radius, so most of a pie slice's area is in its outer third. The glyph and label, to
+    sit in the visual middle of the slice, have to sit far out toward the rim; the inner
+    two-thirds is a large region that belongs to the target but reads as empty.</p>
+
+  <p><strong>The centroid moves as the count changes.</strong> A pie slice's centroid sits at
+    <code>2r sin(θ/2) / (3·θ/2)</code> from the centre — a function of the slice's angular
+    width. Add a destination, all the slices narrow, and every glyph shifts radially outward
+    for no reason the user can see. A ring segment's radial midpoint is
+    <code>(r₀ + r₁) / 2</code>, which does not depend on the angle at all: glyphs stay on a
+    fixed circle regardless of how many destinations exist.</p>
+
+  <p><strong>You cannot stack pies.</strong> Two concentric decks of pie slices share their
+    inner region, so the inner deck's slices <em>are</em> the inner parts of the outer deck's
+    slices. There is nowhere to put a second level. Two rings of annulus sectors nest
+    naturally, which is the whole reason the double-deck solution in Chapter 9 is available at
+    all.</p>
+
+  {{fig:bands}}
+  <p class="figcap">Figure 8.1 — The dial's radial bands, as percentages of the dial's width.
+    The dial is square, so the rim is at <code>r = 50</code>. These five numbers are the only
+    radial geometry in the component; the hairlines and the centre-hole mask are both derived
+    from them rather than restated.</p>
+
+  <h2 data-level="h2">8.2 The band table</h2>
+
+  <p>The bands are declared once, as a constant, with a comment that draws the ruler in
+    ASCII so the numbers are legible without running anything:</p>
+
+  {{code:components/radial/RadialHub.tsx|35-52|Ring geometry}}
+
+  <table class="compact">
+    <caption>Band dimensions, at the largest dial (460px)</caption>
+    <thead><tr><th>Band</th><th class="num">r₀</th><th class="num">r₁</th><th class="num">Depth</th><th class="num">Depth @460px</th><th class="num">Mid-radius</th></tr></thead>
+    <tbody>
+      <tr><td>hole</td><td class="num">0</td><td class="num">19</td><td class="num">19</td><td class="num">87.4px</td><td class="num">—</td></tr>
+      <tr><td>inner ring</td><td class="num">19</td><td class="num">34</td><td class="num">15</td><td class="num">69.0px</td><td class="num">26.5</td></tr>
+      <tr><td>gap</td><td class="num">34</td><td class="num">36</td><td class="num">2</td><td class="num">9.2px</td><td class="num">—</td></tr>
+      <tr><td>outer ring</td><td class="num">36</td><td class="num">50</td><td class="num">14</td><td class="num">64.4px</td><td class="num">43.0</td></tr>
+      <tr><td colspan="6" style="border:none;padding-top:7px">Single-ring mode: <span class="mono">r₀ = 19, r₁ = 50</span>, depth 31 (142.6px), mid-radius 34.5</td></tr>
+    </tbody>
+  </table>
+
+  <p>Two observations about these numbers. First, the two rings are nearly the same depth —
+    15 and 14 — which is deliberate: a deeper primary ring would read as a hierarchy of
+    <em>importance by size</em>, and the hierarchy is already carried by proximity to the
+    centre. Second, the gap between them is 2, or about 9 pixels at the largest dial. That is
+    wide enough to read as a track and narrow enough not to waste a band.</p>
+
+  <h2 data-level="h2">8.3 The dial's size</h2>
+
+  <p>The dial's outer dimension is a single clamp, and it is doing more work than it
+    looks:</p>
+
+  <pre>--dial: min(86vw, 70vh, 460px);</pre>
+
+  <p><code>86vw</code> keeps a 7% margin on each side at every width, so the dial never
+    touches the screen edge on a phone. <code>70vh</code> is the constraint that actually
+    binds in landscape — on an 844×390 device, 70vh is 273px, which is what stops the dial
+    colliding with the foot pill. And <code>460px</code> caps it on desktop, because a menu
+    the size of a dinner plate on a 27-inch display is not more usable, just louder.</p>
+
+  <table class="compact">
+    <caption>Resolved dial size, and the resulting band depths</caption>
+    <thead><tr><th>Viewport</th><th class="num">Dial</th><th>Binding term</th><th class="num">Inner depth</th><th class="num">Outer depth</th><th class="num">Hole ⌀</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">320×568</td><td class="num">275px</td><td>86vw</td><td class="num">41.3px</td><td class="num">38.5px</td><td class="num">104px</td></tr>
+      <tr><td class="mono">375×667</td><td class="num">323px</td><td>86vw</td><td class="num">48.4px</td><td class="num">45.2px</td><td class="num">123px</td></tr>
+      <tr><td class="mono">390×844</td><td class="num">335px</td><td>86vw</td><td class="num">50.3px</td><td class="num">46.9px</td><td class="num">127px</td></tr>
+      <tr><td class="mono">844×390</td><td class="num">273px</td><td>70vh</td><td class="num">41.0px</td><td class="num">38.2px</td><td class="num">104px</td></tr>
+      <tr><td class="mono">768×1024</td><td class="num">460px</td><td>460px cap</td><td class="num">69.0px</td><td class="num">64.4px</td><td class="num">175px</td></tr>
+      <tr><td class="mono">1920×1080</td><td class="num">460px</td><td>460px cap</td><td class="num">69.0px</td><td class="num">64.4px</td><td class="num">175px</td></tr>
+    </tbody>
+  </table>
+
+  <p>The important row is the first. At 320px — the smallest supported width — the inner band
+    is 41 pixels deep. The platform's touch-target floor is 44. A single sector's <em>radial</em>
+    extent is therefore just under the floor at the smallest size, which is acceptable only
+    because a sector's hit region is two-dimensional: the arc length at the inner deck's
+    mid-radius on a 275px dial is about 76 pixels per sector at six sectors. The target is
+    41×76, not 41×41. Chapter 22 returns to this, because it is the tightest number in the
+    whole design.</p>
+
+  <h2 data-level="h2">8.4 Why percentages, and not pixels</h2>
+
+  <p>All of this geometry is expressed as percentages of the dial's width, and that is not a
+    stylistic preference — it is a requirement of the mechanism. The sectors are carved with
+    <code>clip-path: polygon(…)</code>, and percentage coordinates in a
+    <code>clip-path</code> resolve against the element's own box. So a sector defined in
+    percentages is correct at any dial size, and the single <code>--dial</code> clamp
+    resizes the entire construction — sixteen polygons, five hairlines, one mask — with no
+    recomputation and no JavaScript listening to a resize event.</p>
+
+  <p>It also means the figures in this book, which are drawn in the same percentage space and
+    then scaled, are dimensionally identical to what the browser clips. There is no
+    translation step in which an error could hide.</p>
+
+  <div class="rule-box">
+    <h4>One source of truth for the radii</h4>
+    <p>The module's README states this as a rule for anyone touching the geometry:
+      <code>RINGS</code> defines the bands; the drawn boundary hairlines and the mask that
+      carves the centre hole are both derived from the radii the component actually used and
+      handed to CSS inline. Do not re-type those numbers in <code>radial.css</code> — a
+      hairline sitting where the bands are not is invisible until someone opens the menu.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────── CH 9 ─────────────────────────── -->
+<section data-head-l="Part Three · Geometry" data-head-r="The double deck" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Nine</p>
+  <h1 class="ch" data-level="h1" data-no="9">The double deck</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">Sixteen destinations on one ring gives each 22.5° of arc. At the dial's
+    inner radius on a phone that is a sliver about 20 pixels wide — too narrow to label, too
+    narrow to hit reliably, and too narrow to tell apart from its neighbours. The dial is
+    double-decked because of that number.</p>
+
+  <h2 data-level="h2">9.1 The arithmetic of crowding</h2>
+
+  <p>A ring divided into <em>n</em> sectors gives each <code>360/n</code> degrees. The usable
+    arc length of one sector, at radius <em>r</em>, is <code>2πr/n</code> minus the divider
+    gap. What matters for usability is that arc length at the sector's <em>narrowest</em>
+    point — its inner edge — because that is where the target is thinnest and where two
+    neighbours are closest together.</p>
+
+  <table class="compact">
+    <caption>One ring: sector width at the inner edge, on a 335px dial (390px phone)</caption>
+    <thead><tr><th class="num">n</th><th class="num">Angle</th><th class="num">Arc at r=19</th><th class="num">Arc at r=34</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr><td class="num">4</td><td class="num">90.0°</td><td class="num">100px</td><td class="num">179px</td><td>generous</td></tr>
+      <tr><td class="num">6</td><td class="num">60.0°</td><td class="num">67px</td><td class="num">119px</td><td>comfortable — the single-ring ceiling</td></tr>
+      <tr><td class="num">8</td><td class="num">45.0°</td><td class="num">50px</td><td class="num">89px</td><td>labels start to clamp</td></tr>
+      <tr><td class="num">10</td><td class="num">36.0°</td><td class="num">40px</td><td class="num">72px</td><td>below the 44px floor at the inner edge</td></tr>
+      <tr><td class="num">12</td><td class="num">30.0°</td><td class="num">33px</td><td class="num">60px</td><td>unlabellable</td></tr>
+      <tr><td class="num">16</td><td class="num">22.5°</td><td class="num">25px</td><td class="num">45px</td><td>slivers</td></tr>
+    </tbody>
+  </table>
+
+  <p>The double deck attacks this by dividing each ring independently. With sixteen
+    destinations the split is six inner and ten outer, so the inner ring's sectors are 60°
+    wide and the outer ring's are 36° — and crucially, the outer ring's sectors are 36° at a
+    <em>larger radius</em>, where 36° of arc is 90 pixels at the band's inner edge rather
+    than 40. The longer circumference is doing the work.</p>
+
+  {{fig:slivers}}
+  <p class="figcap">Figure 9.1 — Sector angle against destination count. The solid line is a
+    single ring; the dashed line is the widest ring of the double deck. The deck split
+    changes the shape of the curve: past six destinations, adding one no longer narrows
+    every target.</p>
+
+  <h2 data-level="h2">9.2 The split rule, as code</h2>
+
+  {{code:components/radial/RadialHub.tsx|158-171|Choosing one ring or two}}
+
+  <p>Three constants govern this and each is a judgement rather than a derivation.</p>
+
+  <dl>
+    <dt><code>SINGLE_RING_MAX = 6</code></dt>
+    <dd>Below seven destinations, splitting is pointless: one wide band of 31 depth reads
+      better than two thin ones, and the second deck would carry two or three items on a
+      circle, which looks like an accident. The comment in the source is exactly one line:
+      <em>"With few enough destinations one ring is clearer than two."</em></dd>
+    <dt><code>INNER_MAX = 6</code></dt>
+    <dd>A cap on the inner deck, because it has the shorter circumference. Without it, a
+      naive half-and-half split of, say, twenty-four destinations would put twelve on the
+      inner ring, and twelve at radius 19 is the unlabellable case from the table above. With
+      it, the inner deck never exceeds six and the outer takes the entire tail however long
+      it gets.</dd>
+    <dt><code>Math.ceil(leaves.length / 2)</code></dt>
+    <dd>The nominal split, before the cap. For fourteen or more destinations the cap always
+      wins, so in practice the shipped dial is always six-and-the-rest. The
+      <code>ceil</code> matters only in the seven-to-eleven range, where it biases the
+      <em>inner</em> deck to be the fuller one — correct, because the inner deck holds the
+      higher-priority items and a fuller inner ring means a less crowded outer one.</dd>
+  </dl>
+
+  <table class="compact">
+    <caption>How the split resolves, by destination count</caption>
+    <thead><tr><th class="num">n</th><th>Mode</th><th class="num">Inner</th><th class="num">Outer</th><th class="num">Inner angle</th><th class="num">Outer angle</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1–6</td><td>single ring</td><td class="num">n</td><td class="num">—</td><td class="num">360/n</td><td class="num">—</td></tr>
+      <tr><td class="num">7</td><td>double</td><td class="num">4</td><td class="num">3</td><td class="num">90.0°</td><td class="num">120.0°</td></tr>
+      <tr><td class="num">8</td><td>double</td><td class="num">4</td><td class="num">4</td><td class="num">90.0°</td><td class="num">90.0°</td></tr>
+      <tr><td class="num">10</td><td>double</td><td class="num">5</td><td class="num">5</td><td class="num">72.0°</td><td class="num">72.0°</td></tr>
+      <tr><td class="num">12</td><td>double</td><td class="num">6</td><td class="num">6</td><td class="num">60.0°</td><td class="num">60.0°</td></tr>
+      <tr><td class="num">14</td><td>double</td><td class="num">6</td><td class="num">8</td><td class="num">60.0°</td><td class="num">45.0°</td></tr>
+      <tr><td class="num">15</td><td>double</td><td class="num">6</td><td class="num">9</td><td class="num">60.0°</td><td class="num">40.0°</td></tr>
+      <tr><td class="num">16</td><td>double</td><td class="num">6</td><td class="num">10</td><td class="num">60.0°</td><td class="num">36.0°</td></tr>
+    </tbody>
+  </table>
+
+  <h2 data-level="h2">9.3 The count is not fixed</h2>
+
+  <p>It is easy to read "sixteen destinations" as a constant. It is not — it is the count
+    that survives filtering, and the filter runs on every render:</p>
+
+  {{code:components/radial/RadialHub.tsx|130-141|Auth and admin gating}}
+
+  <p>Signed out, <em>Inbox</em> and <em>Admin</em> both drop, leaving fourteen. Signed in as
+    a non-admin, fifteen. Signed in as an admin, sixteen. And because the geometry is derived
+    from the filtered array rather than from a constant, the dial re-carves itself: fourteen
+    destinations is still six inner and eight outer, at 60° and 45°.</p>
+
+  {{fig:dialSignedOut}}
+
+  <p>This is the property that makes the geometry defensible rather than merely clever. A
+    hand-laid dial would need three layouts maintained in parallel, and would break the day
+    someone added a seventeenth destination. This one has no layout to maintain: it has a
+    catalog and a function.</p>
+
+  <h2 data-level="h2">9.4 Priority, encoded as radius</h2>
+
+  <p>The split takes the first six items in catalog order for the inner deck and the rest for
+    the outer. So the catalog's order is not merely a rendering order — it is the priority
+    hierarchy, and it is visible in the geometry: closer to the centre means more
+    important.</p>
+
+  <p>The default order puts Home, Explore, Inbox, Creator Studio, Library and Communities on
+    the inner deck, and Store, Arcade, Predictions, Developer, Services and the four RMH
+    Ventures microsites plus Admin on the outer. That is a defensible reading of the platform:
+    the social core inside, the destinations and ventures outside.</p>
+
+  <p>It also means users can change it. The platform ships a reorder-and-hide editor for the
+    navigation, validated against the same stable ids, and its saved order is applied through
+    <code>orderNavItems()</code>. A user who lives in the Arcade can promote it to the inner
+    deck, and the dial re-carves. One exception is pinned by construction: Admin's id is
+    deliberately absent from the orderable set, so it always falls to the end of the outer
+    ring and can never be hidden.</p>
+
+  <div class="note">
+    <h4>The forward-safety property</h4>
+    <p><code>orderNavItems()</code> puts items present in the saved order first, in that
+      order, then appends anything not mentioned in its default relative position. So a
+      destination shipped after a user saved their preferences still appears, rather than
+      vanishing because it was not in their list. For a dial whose geometry is derived from
+      the resulting array, that property is load-bearing: a silently dropped item would not
+      just be missing, it would silently change the angle of every remaining sector.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────── CH 10 ─────────────────────────── -->
+<section data-head-l="Part Three · Geometry" data-head-r="Carving one destination" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Ten</p>
+  <h1 class="ch" data-level="h1" data-no="10">Carving one destination</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">One function, thirteen lines, called once per destination per render. It
+    walks out along the outer arc and back along the inner one, sampling ten steps each way,
+    and returns a <code>polygon()</code> string. Everything the dial is — its shape, its hit
+    regions, its dividers — comes out of this.</p>
+
+  {{code:components/radial/RadialHub.tsx|74-94|ringSector()}}
+
+  <h2 data-level="h2">10.1 The walk</h2>
+
+  <p>The polygon is built in two passes. The first walks the outer radius from
+    <code>a0</code> to <code>a1</code> in ten equal steps, emitting eleven points. The second
+    walks the inner radius back from <code>a1</code> to <code>a0</code>, emitting eleven
+    more. Twenty-two points, closed implicitly by <code>polygon()</code>.</p>
+
+  <p>Each point is <code>50 + r·cos(θ)</code>, <code>50 + r·sin(θ)</code> — the centre of the
+    dial is (50%, 50%), and <em>r</em> is a percentage of the width, so the whole thing lands
+    in the coordinate space <code>clip-path</code> expects with no conversion.</p>
+
+  {{fig:sectorWalk}}
+  <p class="figcap">Figure 10.1 — The walk, on an exaggerated 80° sector. Filled dots are the
+    eleven outer samples; hollow dots are the eleven inner samples on the way back. The ring
+    at the centre of the band is the centroid the glyph is positioned at.</p>
+
+  <h2 data-level="h2">10.2 Why ten steps</h2>
+
+  <p><code>steps = 10</code> is the only tuning number in the function, and it is a
+    straightforward accuracy-versus-size trade. A polygon approximates an arc with chords,
+    and the maximum deviation of a chord from its arc — the sagitta — is
+    <code>r(1 − cos(φ/2))</code> for a chord subtending φ.</p>
+
+  <table class="compact">
+    <caption>Chord error at the rim (r = 50% of a 460px dial = 230px)</caption>
+    <thead><tr><th class="num">Sector angle</th><th class="num">φ per step</th><th class="num">Sagitta</th><th>Visible?</th></tr></thead>
+    <tbody>
+      <tr><td class="num">120° (n=3)</td><td class="num">12.0°</td><td class="num">1.26px</td><td>marginal on a hairline edge</td></tr>
+      <tr><td class="num">90° (n=4)</td><td class="num">9.0°</td><td class="num">0.71px</td><td>no</td></tr>
+      <tr><td class="num">60° (n=6, inner deck)</td><td class="num">6.0°</td><td class="num">0.32px</td><td>no</td></tr>
+      <tr><td class="num">36° (n=10, outer deck)</td><td class="num">3.6°</td><td class="num">0.11px</td><td>no</td></tr>
+      <tr><td class="num">22.5° (n=16)</td><td class="num">2.25°</td><td class="num">0.04px</td><td>no</td></tr>
+    </tbody>
+  </table>
+
+  <p>At the shipped counts the error is a fraction of a device pixel, well inside
+    antialiasing. Note the pleasant property that the error <em>falls</em> as the dial gets
+    busier: more sectors means narrower sectors means shorter steps. The worst case is the
+    single-ring mode with very few destinations — and even a three-item dial is off by about
+    a pixel at the rim, on an edge that is itself antialiased against a blurred backdrop.</p>
+
+  <p>The cost side: each point is about 14 characters of inline style, so 22 points is roughly
+    320 characters per sector, times two layers, times sixteen destinations — around 10KB of
+    inline <code>clip-path</code> in the DOM. Doubling the steps to 20 would double that for
+    no perceptible gain. Halving it to 5 would put a 60° sector's error at 1.3px, which on the
+    inner deck's crisp mode is visible as faceting.</p>
+
+  <h2 data-level="h2">10.3 The angular gap</h2>
+
+  <p>Sectors do not touch. Each is inset from its nominal span by half a gap on each
+    side:</p>
+
+  <pre>const seg = 360 / n;
+const gap = Math.min(1.4, seg * 0.06);
+const a0 = -90 + i * seg + gap / 2;
+const a1 = -90 + (i + 1) * seg - gap / 2;</pre>
+
+  <p>The gap is 6% of the segment, capped at 1.4°. The proportional term keeps the dividers
+    visually consistent as the count changes — a fixed 1.4° gap between 22.5° sectors is a
+    much heavier line than between 90° ones. The cap stops the gap becoming absurd when there
+    are very few, very wide sectors: at four destinations, 6% of 90° would be a 5.4° gap, a
+    channel wide enough to read as a missing sector rather than a divider.</p>
+
+  <table class="compact">
+    <caption>Resolved gap, and the divider width it produces at the band's mid-radius</caption>
+    <thead><tr><th class="num">n</th><th class="num">seg</th><th class="num">6% of seg</th><th class="num">gap used</th><th class="num">Divider @ inner mid (460px)</th></tr></thead>
+    <tbody>
+      <tr><td class="num">4</td><td class="num">90.0°</td><td class="num">5.40°</td><td class="num">1.40° (capped)</td><td class="num">3.0px</td></tr>
+      <tr><td class="num">6</td><td class="num">60.0°</td><td class="num">3.60°</td><td class="num">1.40° (capped)</td><td class="num">3.0px</td></tr>
+      <tr><td class="num">10</td><td class="num">36.0°</td><td class="num">2.16°</td><td class="num">1.40° (capped)</td><td class="num">3.0px</td></tr>
+      <tr><td class="num">16</td><td class="num">22.5°</td><td class="num">1.35°</td><td class="num">1.35°</td><td class="num">2.9px</td></tr>
+      <tr><td class="num">24</td><td class="num">15.0°</td><td class="num">0.90°</td><td class="num">0.90°</td><td class="num">1.9px</td></tr>
+    </tbody>
+  </table>
+
+  <p>In practice the cap is what is active at every shipped count, so the dividers are a
+    consistent ~3 pixels. The proportional term is insurance for a future dial with many more
+    destinations, where it degrades gracefully rather than closing the gaps entirely.</p>
+
+  <h2 data-level="h2">10.4 Starting at twelve o'clock</h2>
+
+  <p>The <code>-90</code> in the angle expression is the whole of the dial's orientation
+    logic. CSS angles put 0° at three o'clock and increase clockwise; subtracting 90° puts the
+    first sector's leading edge at twelve. Sectors then proceed clockwise, which is the
+    reading order for every left-to-right language and — more importantly — the direction a
+    right thumb sweeps naturally from the bottom-centre of a phone.</p>
+
+  <div class="note">
+    <h4>An open question about right-to-left locales</h4>
+    <p>The site ships two RTL locales, and the dial's sector order does not mirror in them.
+      Whether it should is genuinely unclear: a dial is not a line of text, and the
+      correspondence between reading direction and rotational direction is a convention
+      rather than a rule — clocks run clockwise in Arabic-speaking countries too. It is listed
+      in Chapter 30 among the things still open, because the honest answer is that nobody has
+      tested it with RTL readers.</p>
+  </div>
+
+  <h2 data-level="h2">10.5 The return value is three things at once</h2>
+
+  <p>The polygon string produced here is used as a <code>clip-path</code>, and that single
+    fact gives it three jobs simultaneously.</p>
+
+  <ol>
+    <li><strong>It is the shape.</strong> The sector's fill is clipped to it, so the visible
+      sector is exactly this polygon.</li>
+    <li><strong>It is the hit region.</strong> A <code>clip-path</code> bounds hit-testing as
+      well as painting. The anchor element is a full-size square overlaying the whole dial;
+      clipped, it only catches pointer events inside its own sector. No hit-testing code
+      exists in the component at all.</li>
+    <li><strong>It is the divider.</strong> The gaps between adjacent polygons are where the
+      bed shows through, so the dividers are defined by the absence of clip rather than by
+      any drawn line.</li>
+  </ol>
+
+  <p>Getting all three from one declaration is the reason this component is 521 lines rather
+    than fifteen hundred. It is also the reason the art layer needs a <em>separate,
+    slightly wider</em> polygon, which is Chapter 13.</p>
+</section>
+
+<!-- ─────────────────────────── CH 11 ─────────────────────────── -->
+<section data-head-l="Part Three · Geometry" data-head-r="The hole, the mask and the hairlines" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Eleven</p>
+  <h1 class="ch" data-level="h1" data-no="11">The hole, the mask and the hairlines</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">Three pieces of derived geometry, all of which exist so that a change to
+    <code>RINGS</code> cannot leave the dial internally inconsistent. Each is computed from
+    the radii the component actually used and handed to CSS as an inline custom property.</p>
+
+  <h2 data-level="h2">11.1 The bounds array</h2>
+
+  <p>After carving the sectors, the component collects the distinct band boundaries it
+    used:</p>
+
+  {{code:components/radial/RadialHub.tsx|194-198|The boundary radii, deduplicated and sorted}}
+
+  <p>For the double deck that yields <code>[19, 34, 36, 50]</code>; for single-ring mode,
+    <code>[19, 50]</code>. Two consumers read it: the hairline elements, one per boundary,
+    and the centre-hole mask, which takes <code>bounds[0]</code>.</p>
+
+  <p>The point of routing both through this array rather than re-typing the numbers is stated
+    as a rule in the module README, and it is the kind of rule that only gets written after
+    somebody has been bitten: a hairline drawn at a radius where no band boundary exists is
+    invisible until someone opens the menu, and then it is a mystery line.</p>
+
+  <h2 data-level="h2">11.2 The hole</h2>
+
+  <p>The dial's divider bed is a full disc, so without intervention the middle of the dial is
+    a solid grey circle behind the orb — a bullseye. The hole is cut with a mask:</p>
+
+  {{code:components/radial/radial.css|1019-1031|Carving the centre out of the bed}}
+
+  <p>And the radius comes from the component:</p>
+
+  {{code:components/radial/RadialHub.tsx|334-343|The hole radius, derived}}
+
+  <p>There are two unit conversions in that one expression, and both are easy to get
+    wrong.</p>
+
+  <p><strong>Radius versus width.</strong> The band radii are fractions of the dial's
+    <em>width</em>. A <code>radial-gradient</code> stop with <code>closest-side</code> on a
+    square element is a fraction of the gradient's <em>radius</em>, which is half the width.
+    So the value has to be doubled: <code>19</code> becomes <code>38%</code>.</p>
+
+  <p><strong>The border straddle.</strong> The innermost hairline is drawn <em>on</em> radius
+    19, centred on it, so half its 2px width falls inside the hole. If the mask cut exactly at
+    19, that half would be masked away and the innermost line would render at half weight —
+    subtly lighter than the other three, for no visible reason. So the mask is pulled inward
+    by the border width: <code>calc(38% - var(--dial-level-w))</code>.</p>
+
+  <p>Both of these are the kind of detail that is invisible when right and inexplicable when
+    wrong, which is precisely why the arithmetic lives in one place with a comment rather than
+    being distributed as magic numbers.</p>
+
+  <h2 data-level="h2">11.3 The hairlines</h2>
+
+  <p>The boundaries between decks are drawn, not implied. Four elements — one per entry in
+    <code>bounds</code> — each a circle with a border:</p>
+
+  {{code:components/radial/radial.css|1118-1149|One hairline per band boundary}}
+
+  <p>Two decisions in there are worth pulling out.</p>
+
+  <p><strong>Real bordered elements, not gradient stops.</strong> The obvious alternative is
+    hard colour stops in the bed's own <code>radial-gradient</code>. It is cheaper and it
+    antialiases badly: a hard stop in a gradient is resolved at whatever resolution the
+    gradient is rasterised at, and at some dial sizes it produces a visibly stepped ring. A
+    bordered element is antialiased by the same path that draws every other rounded box on
+    the page, at any size.</p>
+
+  <p><strong>Width, again, not radius.</strong> <code>--r</code> is a percentage of the dial's
+    width, and the element needs a diameter, so <code>width: calc(var(--r) * 2 +
+    var(--dial-level-w))</code>. The extra border width is the same straddle correction as
+    the mask, from the other side: it centres the line on the boundary rather than placing it
+    just inside.</p>
+
+  <h2 data-level="h2">11.4 Why a drawn edge rather than a wider gap</h2>
+
+  <p>The gap between the decks is only 2 units — about 9 pixels at the largest dial — and an
+    earlier instinct was to widen it instead of drawing a line. The reason that is wrong is
+    stated compactly in the CSS:</p>
+
+  <blockquote>They are what separates the decks: the gap alone reads as a missing fill, a
+    drawn edge reads as structure.
+    <cite>components/radial/radial.css — the level borders</cite></blockquote>
+
+  <p>This is a real perceptual difference and not a matter of taste. An unfilled channel
+    between two rings of sectors is ambiguous — it could be a boundary, or it could be a row
+    of sectors that failed to render. A line is unambiguous: something drew that, on purpose.
+    The dial has two decks, and the line is the sentence that says so.</p>
+
+  <p>It matters more once the decks start moving. During the open animation the two rings
+    counter-rotate into alignment, which means mid-animation the sectors are not where the
+    structure says they should be. The hairlines are the only thing holding the dial's shape
+    together at that moment, which is why they fade in on the same curve as the wedges rather
+    than appearing at the end.</p>
+
+  {{fig:layers}}
+  <p class="figcap">Figure 11.1 — The hub's layer stack, exploded. The hairlines are painted
+    between the two wedge layers: above the goo-filtered art, which would chew them, and
+    below the links, which must keep every pixel of their own sector. They are
+    <code>pointer-events: none</code> regardless.</p>
+</section>
+
+<!-- ─────────────────────────── CH 12 ─────────────────────────── -->
+<section data-head-l="Part Three · Geometry" data-head-r="Labels, centroids and budgets" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Twelve</p>
+  <h1 class="ch" data-level="h1" data-no="12">Labels, centroids and budgets</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">"Adaptive Intelligence" is nineteen characters. It has to fit in a sector
+    that is 36° wide and 64 pixels deep, without escaping a clip-path that will silently cut
+    it in half. This chapter is about the single most fiddly geometry in the dial, and about
+    a bug — AUD-504(c) — that is a small lesson in which direction a text box grows.</p>
+
+  <h2 data-level="h2">12.1 The centroid</h2>
+
+  <p>Each destination's glyph and label are positioned at the centroid of its visible band —
+    the midpoint of its angular span, at the mid-radius of its ring:</p>
+
+  <pre>const rm = (band.r0 + band.r1) / 2;
+const am = ((a0 + a1) / 2) * DEG;
+cx: 50 + rm * Math.cos(am),
+cy: 50 + rm * Math.sin(am),</pre>
+
+  <p>These are handed to the label wrapper as inline <code>left</code> and <code>top</code>
+    percentages, and the wrapper is pulled back by half its own size with
+    <code>transform: translate(-50%, -50%)</code>. So the label box is centred on the
+    centroid, which is the visual centre of the sector.</p>
+
+  <p>As noted in Chapter 8, the annulus form makes this stable: <code>rm</code> does not
+    depend on the sector's angle, so all six inner glyphs sit on one circle at radius 26.5 and
+    all ten outer glyphs on another at radius 43, no matter how the counts change.</p>
+
+  <h2 data-level="h2">12.2 The direction the box grows</h2>
+
+  <p>Here is the bug. A label box centred on a centroid grows in two directions, and they are
+    not equivalent.</p>
+
+  <p><strong>Width grows angularly.</strong> The box is axis-aligned, but the sector is a
+    wedge. Growing the box horizontally pushes its corners across the sector's radial edges —
+    across the <code>clip-path</code> — and the clip cuts them off. Silently. There is no
+    overflow indicator, no ellipsis; the text simply stops at the sector boundary.</p>
+
+  <p><strong>Height grows radially.</strong> Growing the box vertically pushes it into the
+    band's depth, where the inner deck has 69 pixels and the outer 64. There is room
+    there.</p>
+
+  <p>The first implementation set a generous <code>max-width</code> and let long names take
+    one line. The audit's finding is the predictable result: <em>"Adaptive Intelligence"
+    clips at its wedge edge, "Predictions" overflows the disc.</em> Two different failures
+    from the same cause — one name was cut by the clip, the other was long enough to reach
+    past the rim before the clip caught it.</p>
+
+  {{fig:spill}}
+  <p class="figcap">Figure 12.1 — The same label in a 44° outer sector. Above: a wide box,
+    whose corners cross the sector's radial edges and are cut by the clip-path. Below: a
+    narrow box that wraps to two lines, spilling into the band's depth where there is
+    room.</p>
+
+  <p>The fix, therefore, is counter-intuitive: make the boxes <em>narrower</em> than the band
+    is deep, on purpose, and let long names wrap. The comment in the CSS states it plainly:</p>
+
+  {{code:components/radial/radial.css|1222-1234|The per-ring label budget}}
+
+  <h2 data-level="h2">12.3 The budgets, and why they differ</h2>
+
+  <table class="compact">
+    <caption>Label budget per deck</caption>
+    <thead><tr><th>Deck</th><th class="num">max-width</th><th class="num">≈ chars/line</th><th class="num">Band depth</th><th class="num">Lines that fit</th></tr></thead>
+    <tbody>
+      <tr><td>inner (ring 0)</td><td class="num">4.1rem / 66px</td><td class="num">9–11</td><td class="num">69px</td><td class="num">2 + icon</td></tr>
+      <tr><td>outer (ring 1)</td><td class="num">5.4rem / 86px</td><td class="num">12–14</td><td class="num">64px</td><td class="num">2 + icon</td></tr>
+    </tbody>
+  </table>
+
+  <p>The inner deck gets <em>less</em> width despite having wider sectors, which looks
+    backwards until you remember what constrains it: the inner deck sits at a smaller radius,
+    so the same angular span is a shorter arc, and it is arc length that the box's width has
+    to fit inside. Wide angle, small radius, short chord.</p>
+
+  <p>The label itself is clamped to three lines with <code>overflow-wrap: anywhere</code> and
+    <code>hyphens: auto</code>, so a very long single word — a hypothetical destination named
+    something unhelpful — degrades to a hyphenated wrap rather than escaping its box. That
+    clamp is a hard bound: a destination name can never spill across its neighbours, whatever
+    it is, in whatever locale.</p>
+
+  <div class="defect">
+    <h4>AUD-504(c), and the one-line clamp that made it worse</h4>
+    <p>An intermediate fix clamped labels to a single line, which stopped the clipping and
+      introduced a new failure: "Communities" became "Communi…". The comment recording the
+      correction is precise about why two lines are affordable — <em>"the inner band is deep
+      enough for two lines (icon + label ≈ 50px in a ~69px band at the largest dial), so the
+      shorter arc costs width, not lines."</em> Depth was never the scarce resource. Width
+      was.</p>
+  </div>
+
+  {{fig:dialLabels}}
+
+  <h2 data-level="h2">12.4 Icon-only below 480px</h2>
+
+  <p>Under 480 pixels the labels are not rendered at all. The dial at 320px is 275 pixels
+    across; the outer band is 38 pixels deep and its sectors are 36° wide, which at that
+    radius is about 37 pixels of arc. There is no typography that puts "Adaptive Intelligence"
+    in a 37×38 box.</p>
+
+  <p>So the phone dial is sixteen glyphs. The audit's judgement on that was blunt and
+    correct — <em>sixteen unlabelled glyphs as the site's sole navigation</em> is recall, not
+    recognition — and the fix is the centre caption in Chapter 24, which puts the name of the
+    focused destination in the one place on a 320px dial that has room for a word: the hole in
+    the middle.</p>
+
+  <p>The breakpoint itself is <code>480px</code>, registered as the platform's <code>xs</code>
+    breakpoint. Above it, labels appear and the caption is hidden, because each wedge then
+    carries its own name and a caption would be a duplicate. The two mechanisms are exact
+    complements: exactly one of them is showing a label at any width.</p>
+
+  <h2 data-level="h2">12.5 Where the glyph sits inside the box</h2>
+
+  <p>The glyph and label are a two-row grid with a 0.3rem gap, icon above label, both
+    centred. The icon is 1.3rem square; the label is 0.6875rem at weight 600 with 1.1
+    line-height. Total for icon plus two lines of label: about 50 pixels, in a 64-to-69-pixel
+    band. That is the arithmetic quoted in the comment above, and it is the reason the label
+    budget can afford two lines rather than one.</p>
+
+  <p>One detail that matters for input: the whole inner wrapper is
+    <code>pointer-events: none</code>. Clicks fall through the glyph to the clipped anchor
+    underneath. Without that, the label box — an axis-aligned rectangle overlapping several
+    sectors' territory near the dividers — would steal clicks for its own sector from its
+    neighbours, in a region where the user is aiming at a visible boundary. Chapter 22 covers
+    the rest of the hit-testing chain.</p>
+</section>
+
+<!-- ─────────────────────────── CH 13 ─────────────────────────── -->
+<section data-head-l="Part Three · Geometry" data-head-r="The art bleed" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Thirteen</p>
+  <h1 class="ch" data-level="h1" data-no="13">The art bleed</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">One constant, <code>ART_BLEED_DEG = 0.25</code>, and a comment four times
+    its length. It exists because the goo filter eats a couple of pixels off every edge it
+    touches, and because the correct compensation is angular but not radial.</p>
+
+  <h2 data-level="h2">13.1 What the filter does to an edge</h2>
+
+  <p>The goo filter blurs its input and then runs the blurred alpha through a steep contrast
+    ramp, which snaps it back to a hard edge. Chapter 19 covers the mechanism; what matters
+    here is a side effect. The ramp's threshold sits at roughly the halfway point of the
+    blurred alpha gradient, so the recovered edge is not where the original edge was — it is
+    pulled inward, by an amount that depends on the blur radius and on how much of the
+    neighbourhood was filled.</p>
+
+  <p>For a large shape, that inward pull is a couple of pixels and nobody notices. For the
+    3-pixel channel between two sectors, both sides pull inward by a couple of pixels and the
+    channel becomes 7 or 8 — which is no longer a hairline divider but a visible gutter. The
+    dial's careful proportional gap arithmetic from Chapter 10 is undone by the filter that
+    was supposed to make it look liquid.</p>
+
+  <h2 data-level="h2">13.2 The compensation</h2>
+
+  <p>So the decorative layer draws each sector slightly wider than the hit layer, and only in
+    the angular direction:</p>
+
+  {{code:components/radial/RadialHub.tsx|53-62|Why the art layer is bled}}
+
+  <p>The bleed is a fraction of the gap rather than a fixed angle, which keeps it
+    proportional to what it is compensating for. At the shipped counts the gap is capped at
+    1.4°, so the bleed is 0.35° on each side — a 0.7° total widening of a 22.5° sector, or
+    about 3%.</p>
+
+  <table class="compact">
+    <caption>Bleed magnitude, at the mid-radius of each deck on a 460px dial</caption>
+    <thead><tr><th>Deck</th><th class="num">gap</th><th class="num">bleed each side</th><th class="num">px each side</th><th class="num">channel before</th><th class="num">channel after</th></tr></thead>
+    <tbody>
+      <tr><td>inner, n=6</td><td class="num">1.40°</td><td class="num">0.35°</td><td class="num">0.74px</td><td class="num">3.0px</td><td class="num">1.5px</td></tr>
+      <tr><td>outer, n=10</td><td class="num">1.40°</td><td class="num">0.35°</td><td class="num">1.21px</td><td class="num">4.8px</td><td class="num">2.4px</td></tr>
+    </tbody>
+  </table>
+
+  <p>The bleed roughly halves the drawn channel, and the filter's erosion then reopens it to
+    something close to the original width. The numbers are small enough that this reads as
+    tuning rather than as engineering, and that is a fair description — it was arrived at by
+    looking at the dial, which is the only way to arrive at a number whose correct value is
+    "the amount a threshold on a blur removes".</p>
+
+  {{fig:dialBleed}}
+
+  <h2 data-level="h2">13.3 Why not radially</h2>
+
+  <p>The interesting half of the decision is what the bleed deliberately does <em>not</em>
+    do. It is applied to the angles only; the radii passed to <code>ringSector()</code> for
+    the art layer are the band's own, unmodified.</p>
+
+  <p>Radially, the erosion is welcome. The boundaries between decks are meant to be
+    pronounced — that is the entire argument of Chapter 11 — and a filter that pulls the
+    sectors slightly back from those boundaries makes the drawn hairlines sit in a clean
+    channel rather than being crowded by fill on both sides. Compensating there would fight
+    the structure the hairlines are drawing.</p>
+
+  <p>So the same filter artefact is a defect in one axis and a feature in the other, and the
+    constant is named and commented so that the asymmetry looks deliberate rather than
+    forgotten.</p>
+
+  <div class="rule-box">
+    <h4>The invariant the bleed must not break</h4>
+    <p>Hit testing always uses the exact geometry. The bled polygon is only ever applied to
+      the <code>aria-hidden</code> art layer, which is <code>pointer-events: none</code>; the
+      anchors use <code>w.clip</code>, never <code>w.clipArt</code>. So the bleed cannot steal
+      a neighbour's clicks, and a user pressing a pixel that <em>looks</em> like it belongs to
+      one sector but geometrically belongs to another gets the geometric answer. That is a
+      1-pixel discrepancy at the dividers, in exchange for never having a target whose visible
+      extent and clickable extent disagree by more than that.</p>
+  </div>
+
+  <h2 data-level="h2">13.4 What this chapter is really about</h2>
+
+  <p>A quarter of a degree is a preposterous thing to have a constant for. It is in this book
+    because it is a compact example of what building the dial actually consisted of: not the
+    radial idea, which took an afternoon, but a long tail of interactions between a
+    geometric construction and the rendering pipeline it is drawn by.</p>
+
+  <p>The dial's shape is defined by clip paths. Clip paths bound hit-testing. Hit-testing has
+    to be exact. Filters move edges. Filters must not touch text. Text inherits colour from
+    the element it is inside, which must therefore be the sector. Blend modes composite
+    against a stacking context, not against what you see. Masks measure radius where the
+    geometry measures width. Every one of those is a constraint imposed by the platform
+    rather than by the design, and the design's job was to survive all of them without
+    becoming a special case.</p>
+
+  <div class="pull">The radial idea took an afternoon. The quarter of a degree took a
+    week.</div>
+</section>

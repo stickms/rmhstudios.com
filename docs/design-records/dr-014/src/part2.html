@@ -1,0 +1,440 @@
+<!-- ═══════════════════════════ PART II ═══════════════════════════ -->
+<section class="full-page plain-page">
+  <div class="part">
+    <div class="part__no">Part Two</div>
+    <h2 class="part__title" data-level="part" data-toc-text="Part Two — The concept">The concept</h2>
+    <p class="part__blurb">One control doing two jobs, a material that makes the second job
+      legible, and a brand mark that stopped being decoration. This part is the design
+      before the arithmetic.</p>
+    <div class="part__toc">
+      <div><span>5</span>The orb: one control, two jobs</div>
+      <div><span>6</span>The material</div>
+      <div><span>7</span>The mark that became the button</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────── CH 5 ─────────────────────────── -->
+<section data-head-l="Part Two · The concept" data-head-r="The orb: one control, two jobs" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Five</p>
+  <h1 class="ch" data-level="h1" data-no="5">The orb: one control, two jobs</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">Docked, it is a home button. Tapped, it becomes the centre the navigation
+    radiates from. Those are not two components that swap places; they are one element with
+    two declared transforms and a 500ms transition between them, and that identity is the
+    whole trick.</p>
+
+  <p>Most menus are separate from the thing that opens them. A hamburger is a button; the
+    drawer is a panel; the button stays put while the panel arrives from somewhere else. The
+    relationship between them is learned, not seen — you press the icon, something appears
+    elsewhere, and you infer the connection.</p>
+
+  <p>The hub refuses that separation. When you tap the orb, the orb itself travels to the
+    middle of the screen, and the menu grows out of where it lands. There is never a moment
+    when the thing you touched and the thing that opened are two objects. The dial is
+    literally an annulus around the orb; the hole in its middle is the orb's parking space,
+    sized from the orb's own tokens.</p>
+
+  <h2 data-level="h2">5.1 The two states, as declared</h2>
+
+  <p>The orb's docked position is three declarations: fixed, horizontally centred, and
+    lifted off the bottom edge by its own inset plus the device's safe area.</p>
+
+  {{code:components/radial/radial.css|722-742|The docked orb}}
+
+  <p>Its open position is one more rule, and the arithmetic in it is the entire "glide to
+    centre" effect:</p>
+
+  {{code:components/radial/radial.css|801-807|Centred only while open}}
+
+  <p>Read that <code>translateY</code> carefully, because it is doing something slightly
+    clever. The orb is anchored to the bottom of the viewport, so to place its centre at the
+    viewport's centre it needs to move up by (distance from bottom edge to its own centre)
+    minus (half the viewport). <code>--orb-bottom</code> is the gap below it;
+    <code>50%</code> in a transform resolves against the element's own size, so it is half
+    the orb; and <code>50dvh</code> is half the dynamic viewport height. The result is
+    dead centre, with no measurement, no JavaScript, and — critically —
+    <code>dvh</code> rather than <code>vh</code>, so it stays centred as a mobile browser's
+    toolbars collapse and re-expand.</p>
+
+  <div class="note">
+    <h4>Why the centring rule is scoped to <code>open</code> and not <code>closing</code></h4>
+    <p>There is no explicit "return home" transform. The centring rule applies only at
+      <code>[data-phase='open']</code>; the moment the phase flips to
+      <code>closing</code>, that rule stops matching and the base docked transform takes
+      over. The browser transitions from wherever the orb currently is back to the dock. One
+      declaration, both directions — the reversibility constraint from Chapter 4, paying off
+      in three lines of CSS.</p>
+  </div>
+
+  <h2 data-level="h2">5.2 Why the trigger is not also a link</h2>
+
+  <p>An obvious objection: if the orb is the home button, tapping it should go home. It does
+    not — it opens the dial, and <em>Home</em> is the first wedge inside.</p>
+
+  <p>This was a deliberate trade and it is worth defending, because it is the one place the
+    design knowingly costs a user something. Going home became two taps instead of one.</p>
+
+  <p>What it bought: a single, unambiguous interaction contract. A control that navigates on
+    tap and opens a menu on long-press is a control with a hidden mode, and hidden modes on
+    touch surfaces are how people end up somewhere they did not ask to be. The orb has
+    exactly one behaviour, its <code>aria-haspopup="menu"</code> and
+    <code>aria-expanded</code> describe that behaviour accurately, and nothing about it is
+    discovered by holding it down longer than usual.</p>
+
+  <p>It also bought the geometry. If tapping the orb navigated, the dial would need a
+    different trigger, and the "menu grows out of the thing you touched" identity — the
+    reason the shape means anything — would be gone.</p>
+
+  <p>The mitigation is that <em>Home</em> is the first wedge, at twelve o'clock on the inner
+    deck: the largest, closest, most predictable target on the dial. Two taps, both of them
+    in the same place, neither requiring the user to read anything.</p>
+
+  <h2 data-level="h2">5.3 The wrapper that generates no box</h2>
+
+  <p>The component's root element is one of the more unusual lines in the module:</p>
+
+  {{code:components/radial/radial.css|715-719|A wrapper that is only a state carrier}}
+
+  <p><code>display: contents</code> removes the wrapper from the box tree entirely — its
+    children are laid out as though they were children of its parent. That is precisely what
+    is wanted here, because every one of those children is <code>position: fixed</code> and
+    positions itself against the viewport. A real wrapper box would add nothing except a
+    risk: any wrapper that later acquired a <code>filter</code>, a
+    <code>transform</code> or a <code>backdrop-filter</code> would become a containing block
+    for its fixed descendants and quietly break all of them.</p>
+
+  <p>What the wrapper is for is the <code>data-phase</code> attribute. Every animated layer
+    in the hub is selected as a descendant of <code>.radial-hub[data-phase='…']</code>, so
+    one attribute change on one element re-declares the resting state of the orb, the aura,
+    the scrim, the overlay, the blur, the dial, all sixteen wedge wrappers, the hairlines
+    and the foot pill simultaneously. That is a CSS state machine with a single write, and
+    it is why the whole thing animates in lockstep without an orchestrator.</p>
+
+  {{fig:phases}}
+  <p class="figcap">Figure 5.1 — The phase machine. Three states, one attribute, one timer.
+    The <code>closing</code> state exists solely so the overlay stays mounted long enough
+    for every layer to animate out; Chapter 15 covers why a component that unmounts its
+    overlay on close cannot have a close animation at all.</p>
+
+  <h2 data-level="h2">5.4 What sits around the dial</h2>
+
+  <p>The opened hub is not only the dial. Three other pieces share the overlay, and each
+    exists for a specific reason.</p>
+
+  <dl>
+    <dt>The scrim.</dt>
+    <dd>A transparent, full-screen <code>&lt;button&gt;</code> beneath the blur that closes
+      the menu when pressed. It is a button rather than a div with a click handler so it is
+      focusable, nameable and keyboard-operable by default — it carries a translated
+      "Close" label. Because it sits below the blur and the dial in the stack, only genuinely
+      empty regions dismiss.</dd>
+    <dt>The foot pill.</dt>
+    <dd>A floating capsule at the bottom of the overlay holding identity, settings, sign-out
+      and an explicit close button — signed out, it holds a single "Sign in" call to action
+      instead. These are the destinations that are <em>about you</em> rather than about the
+      site, and putting them on the dial as wedges would have implied they are peers of
+      Library and Arcade. It is the one L4 glass surface in the hub: it frosts what passes
+      under it rather than hiding it.</dd>
+    <dt>The aura.</dt>
+    <dd>Purely decorative: a disc the size of the orb plus three orbiting blobs, all in the
+      accent colour, all under the goo filter, so they fuse into one wobbling liquid mass
+      that bulges and necks as the blobs swing. It is a separate fixed layer rather than a
+      pseudo-element on the orb — Chapter 18 explains why putting it on the orb would have
+      destroyed the mark.</dd>
+  </dl>
+
+  <p>The explicit close button in the foot deserves a note. There are already three ways to
+    close the dial: tap the orb again, tap the scrim, press Escape. A fourth, visible,
+    labelled control is redundant for anyone who knows the first three — and it is the only
+    one that is <em>discoverable</em> to someone who does not. It is also the only close
+    affordance that survives on a touch device with no keyboard and no expectation that
+    background taps dismiss. It is filled in the accent colour, which makes it the single
+    most prominent control in the overlay after the dial itself.</p>
+
+  <h2 data-level="h2">5.5 The desktop rail is not a second implementation</h2>
+
+  <p>From 1120px the shell also shows a persistent left rail, and it would be easy to read
+    that as an admission that the dial does not work on desktop. It is not. The rail renders
+    the same <code>SIDEBAR_NAV</code>, applies the same auth and admin gating, and computes
+    active state the same way; it adds only live badge counts, which a dial sector has no
+    room for. The hub remains mounted and functional at every width.</p>
+
+  <p>The reasoning is that a wide screen has spare horizontal space and a mouse, and under
+    those conditions a persistent list is strictly faster than any menu that has to open — no
+    state transition, no motion, no dismissal. The dial's advantage is that it costs no
+    layout space, and layout space is only scarce on small screens. Serving both is not
+    inconsistency; it is the same catalog rendered at the density each viewport can
+    afford.</p>
+
+  {{fig:frame}}
+  <p class="figcap">Figure 5.2 — The shell's frame by track count. Rails appear at the width
+    that affords them, and a rail below its breakpoint is <code>display: none</code>, so it
+    leaves the grid entirely rather than becoming a zero-width track. Track count and visible
+    rails can never disagree.</p>
+</section>
+
+<!-- ─────────────────────────── CH 6 ─────────────────────────── -->
+<section data-head-l="Part Two · The concept" data-head-r="The material" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Six</p>
+  <h1 class="ch" data-level="h1" data-no="6">The material</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">The dial is not drawn on a coloured disc. It is a hole cut in a frosted
+    plate — an expanding circular blur with translucent sectors over it. That choice is what
+    makes a sixteen-sector menu covering most of the screen feel like something that opened
+    rather than something that landed.</p>
+
+  <p>The platform's design language is <strong>Radial Avant-Garde Glass</strong>: Apple's
+    Liquid Glass material, used theatrically rather than literally, draped over a radial
+    information architecture. The material half of that name is a large system in its own
+    right — an elevation ladder of five explicit CSS classes, a specular rim glint that
+    tracks a global scene light, a pointer-tracked diffuse highlight, lens-model edge
+    refraction, an optional chromatic prism, travelling liquid sheens, and a drifting aurora
+    canvas painted on the document body that every <code>backdrop-filter</code> on the page
+    samples.</p>
+
+  <p>The hub uses almost none of it. That restraint is deliberate and worth explaining.</p>
+
+  <h2 data-level="h2">6.1 What the hub takes from the material system</h2>
+
+  <table class="compact">
+    <caption>Glass features, and whether the hub uses them</caption>
+    <thead><tr><th>Feature</th><th style="width:52px">In hub</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Backdrop blur (L4 overlay tier)</td><td>Yes</td><td>The dial's entire surface is an expanding blurred disc; the foot pill is a floating L4 capsule.</td></tr>
+      <tr><td>Translucent tints over the scene</td><td>Yes</td><td>Sector fills are a token mix, not a colour, so the blurred page shows through.</td></tr>
+      <tr><td>Saturation boost</td><td>Yes</td><td><code>saturate(118%)</code> on the blur, so the frosted scene keeps some life.</td></tr>
+      <tr><td>Specular rim glint</td><td>No</td><td>An always-on border-box highlight would draw a lit edge around sixteen sectors — sixteen competing highlights on one disc.</td></tr>
+      <tr><td>Pointer diffuse light</td><td>No</td><td>The wedge's own hover fill already answers "where is my pointer", unambiguously.</td></tr>
+      <tr><td>Edge refraction / prism</td><td>No</td><td>Budgeted at two and one per page respectively, and reserved for hero surfaces. Also currently parked platform-wide: Chromium composites the displacement map into the bevel instead of bending the backdrop through it.</td></tr>
+      <tr><td>Travelling liquid sheen</td><td>No</td><td>Budgeted at three per page; a sheen crossing an open menu is motion the user did not cause.</td></tr>
+      <tr><td>Metaball goo filters</td><td>Yes</td><td>The hub's signature. Chapter 19 is entirely about them.</td></tr>
+    </tbody>
+  </table>
+
+  <p>The pattern: the hub takes the material's <em>depth</em> and its <em>liquidity</em>, and
+    declines every optic whose job is to make a surface look lit. A menu is a temporary
+    thing the user summoned; it should read as an atmospheric change, not as a new physical
+    object with its own lighting.</p>
+
+  <h2 data-level="h2">6.2 The blur is the menu</h2>
+
+  <p>The single most consequential material decision: there is <strong>no drawn disc</strong>
+    behind the dial. The layer that fills the screen when the menu opens is a
+    <code>backdrop-filter</code> with a <code>clip-path</code> circle animating from radius
+    zero to <code>150vmax</code>, and only a whisper of background tint — 20% of the page
+    background mixed with transparency — so it reads as blur rather than as a coloured
+    circle.</p>
+
+  {{code:components/radial/radial.css|972-988|The expanding circular blur}}
+
+  <p>Three things follow from this that would not follow from a drawn disc.</p>
+
+  <p><strong>The page stays visible.</strong> You can see, blurred, where you were. The
+    menu is an overlay in the literal sense — a change in the optical properties of the page,
+    not a replacement for it. Dismiss it and the frost contracts back to a point; nothing
+    was ever hidden.</p>
+
+  <p><strong>The expansion is free.</strong> Animating a <code>clip-path</code> circle's
+    radius is a compositor-friendly operation on one element. A drawn disc growing to cover
+    the viewport would be a large paint region changing size every frame.</p>
+
+  <p><strong>It cannot be the wrong colour.</strong> A drawn disc needs a fill, a fill needs
+    a token, and a token that works on a white page and a near-black page and a
+    yellow-accented high-contrast page is a genuinely hard thing to choose. Blur has no
+    colour of its own. It samples whatever is behind it, in whatever theme, and is correct
+    by construction.</p>
+
+  <div class="pull">The menu's surface is not a colour that had to be chosen. It is the page
+    you were already looking at, out of focus.</div>
+
+  <h2 data-level="h2">6.3 Where translucency had to be walked back</h2>
+
+  <p>Translucency is correct for the blur and wrong for the sectors, and discovering that
+    cost a shipped defect — commit <code>c631cb4</code>, <em>"the radial menu was invisible
+    on a light page."</em></p>
+
+  <p>The sectors were originally filled with <code>color-mix(in srgb, var(--site-surface)
+    60%, transparent)</code>: 60% of the surface token, 40% transparent. Reasonable-looking
+    code. The trap is that <code>--site-surface</code> is <em>itself</em> translucent in this
+    material — the design language is explicit that surfaces are tints over the aurora, not
+    paper. So the expression was a tint of a tint, and over a light page it resolved to
+    very nearly nothing. The sectors disappeared; the dial was a rim and some floating
+    glyphs.</p>
+
+  <p>The repair uses the opaque companion token the material ships for exactly this case,
+    and then does one more thing that is the actually interesting part:</p>
+
+  {{code:components/radial/radial.css|1164-1169|The sector fill}}
+
+  <p>That <code>6%</code> of <code>--site-text</code> is what separates the dial from the
+    page. On the default theme both the page background and the opaque surface token are
+    white; without the mix, the sectors would be white on white and only the rim would show.
+    Mixing toward the ink adapts automatically in a way a fixed colour cannot: a touch
+    darker than a light page, a touch lighter than a dark one, in any theme anyone ever
+    authors, including ones that do not exist yet.</p>
+
+  <div class="rule-box">
+    <h4>The generalisable rule</h4>
+    <p>When a surface must be distinguishable from an unknown background, do not pick a
+      colour — pick a <em>direction</em>. <code>color-mix(surface, text, 6%)</code> says
+      "slightly toward the ink", and every theme's ink is by definition contrasting with
+      every theme's background. A hex value says "this specific grey", which is a bet on a
+      palette.</p>
+  </div>
+
+  <h2 data-level="h2">6.4 The plate under the sectors</h2>
+
+  <p>Beneath the sectors is the dial's own background — the "divider bed". Its job is
+    mundane: the sectors tile the disc with thin angular gaps between them, and the bed is
+    what shows through those gaps as the hairline dividers. It also stops the disc dissolving
+    into a light page.</p>
+
+  <p>Its colour is a shade darker than the sectors that sit on it, built the same way:
+    <code>color-mix(in srgb, var(--site-surface-opaque) 86%, var(--site-text) 14%)</code>.
+    The value 14% versus the sectors' 6% is the entire visual language of the dividers —
+    they are not drawn lines, they are the bed showing through.</p>
+
+  <p>This bed is also the villain of Chapter 16, where a perfectly sensible earlier choice
+    for its colour made the whole dial flash black on open the moment the decks started
+    spinning. It is a good example of a value that is correct until a motion change makes it
+    visible.</p>
+
+  <h2 data-level="h2">6.5 Degradation, and where it is handled</h2>
+
+  <p>The platform's rule is that accessibility and performance degradation happen in the
+    token layer and the shared glass classes, not in components — a component that branches
+    on <code>prefers-reduced-transparency</code> by hand is considered a bug. The hub obeys
+    this, with the consequence that the interesting behaviour is in media queries rather
+    than in TypeScript.</p>
+
+  <table class="compact">
+    <caption>What the hub looks like under each degradation</caption>
+    <thead><tr><th>Condition</th><th>Effect on the hub</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">prefers-reduced-motion</td><td>All goo filters off. The aura is not rendered. The logo bloom and stroke-draw do not run. Every transition is dropped, and the close timer becomes 0ms so the overlay unmounts immediately.</td></tr>
+      <tr><td class="mono">&lt; 768px</td><td>All decorative goo off regardless of motion preference — the filter cost is a phone budget question, not a preference question. Sectors render crisply.</td></tr>
+      <tr><td class="mono">high-contrast theme</td><td>No glass at all: opaque black and white, a yellow accent, 2px borders. The dial becomes flat sectors with firm edges, which is exactly what that theme is for.</td></tr>
+      <tr><td class="mono">reduced-transparency</td><td>Tints resolve to their opaque companions through the token layer. The blur stops being the surface and the plate becomes the surface.</td></tr>
+      <tr><td class="mono">forced-colors</td><td>System colours win. The pointer metaball turns off entirely.</td></tr>
+      <tr><td class="mono">&lt; 4 GB device memory</td><td>The pointer metaball turns off entirely. The dial keeps working; only decoration is dropped.</td></tr>
+    </tbody>
+  </table>
+
+  <p>Note what is <em>not</em> in that table: the interaction. In every degraded mode the
+    dial still opens, still has sixteen labelled targets, still traps focus sensibly, still
+    closes on Escape. The material is the thing that degrades. The navigation is not
+    optional.</p>
+</section>
+
+<!-- ─────────────────────────── CH 7 ─────────────────────────── -->
+<section data-head-l="Part Two · The concept" data-head-r="The mark that became the button" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Seven</p>
+  <h1 class="ch" data-level="h1" data-no="7">The mark that became the button</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">The RMH mark is a six-fold radial spirograph: several hundred overlapping
+    curves in one continuous path. Putting it inside a 44-pixel disc — and keeping it legible
+    there — required deciding what a logo is <em>for</em> when it is also a control.</p>
+
+  <p>The mark predates the redesign. It is an Inkscape-generated spirograph with its path
+    baked, six-fold rotationally symmetric, drawn as line art. At poster size it is
+    genuinely beautiful; at 20 pixels in a header it is a grey smudge, which is roughly what
+    it had been reduced to.</p>
+
+  <p>The radial premise offered a much better job for it. A mark whose own construction is
+    radial, placed at the centre a radial interface orbits, is not decoration — it is a
+    statement of what the geometry means. So the mark went into the orb, at 74% of the orb's
+    size, and the work became: make a few hundred overlapping curves survive being rendered
+    at 44 pixels.</p>
+
+  {{code:components/radial/RmhLogo.tsx|1-9|The mark, as shipped}}
+
+  <h2 data-level="h2">7.1 Hairline weight is not a style choice</h2>
+
+  <p>The controlling problem is stroke weight. The path is dense: at any reasonable weight,
+    overlapping curves bleed into each other and the whole thing fills in as a solid muddy
+    blob. The component's own comment is direct about it:</p>
+
+  {{code:components/radial/radial.css|895-903|Why the stroke is 0.8}}
+
+  <p>The mark is authored in a 150-unit viewBox and rendered into roughly 44 CSS pixels, so
+    it is scaled down by about 3.4×. A stroke width of <code>0.8</code> in that space is a
+    genuinely sub-pixel filigree on screen — which is the point. The result reads as a
+    delicate white tracery rather than a heavy disc, and the six-fold symmetry survives even
+    when individual curves do not fully resolve. What the eye recovers at that size is the
+    <em>rotational structure</em>, and rotational structure is exactly what the interface is
+    about.</p>
+
+  <div class="note">
+    <h4>An implementation detail worth stealing</h4>
+    <p>The path carries <code>pathLength={1}</code>. That normalises its length to one unit,
+      so <code>stroke-dasharray: 1; stroke-dashoffset: 1</code> is a complete, unfilled
+      outline regardless of the path's real length — which for this path is enormous and
+      would otherwise have to be measured. The bloom animation then just runs
+      <code>stroke-dashoffset</code> from 1 to 0 and the mark draws itself, resolution- and
+      geometry-independent. Change the artwork and the animation still works.</p>
+  </div>
+
+  <h2 data-level="h2">7.2 The bloom</h2>
+
+  <p>On mount, the mark scales and rotates out of the orb's core while its stroke draws
+    itself:</p>
+
+  {{code:components/radial/radial.css|904-924|The mount bloom}}
+
+  <p>Two animations, deliberately different lengths — the geometry settles at 1.05s while
+    the stroke finishes drawing at 1.3s, so the mark arrives and then completes rather than
+    doing both at once. Both are wrapped in <code>prefers-reduced-motion:
+    no-preference</code>, so a user who has asked for less motion simply gets the finished
+    mark.</p>
+
+  <p>Worth noting what this animation is <em>not</em>: it is not tied to opening the menu. It
+    runs once, when the shell mounts. It is the site introducing itself, not a response to
+    an interaction — which is why it is a keyframe animation rather than a transition, the
+    one place in the hub where a one-shot is correct, because there is no reverse state to
+    return to.</p>
+
+  <h2 data-level="h2">7.3 The ink problem, and the first version of a mistake</h2>
+
+  <p>The mark sits on the orb's solid accent fill, so the correct ink for it is that
+    surface's paired foreground: <code>--site-accent-fg</code>. Every theme authors that
+    pairing, every accent preset overrides it, and a runtime contrast check —
+    <code>ensureReadableAccent()</code> — refuses to ship a pair that fails. Naming the token
+    makes the mark correct in every theme, including user-authored ones.</p>
+
+  <p>That is the current code. An earlier revision instead used
+    <code>mix-blend-mode: difference</code>, reasoning that white blended in difference mode
+    against any backdrop yields that backdrop's exact inverse, and therefore maximum
+    contrast automatically, for free, in every theme.</p>
+
+  <p>It is a genuinely elegant idea and it is wrong, for a reason that has nothing to do
+    with colour theory: <strong>a blend mode only composites against the backdrop inside the
+    element's own stacking context.</strong> Put the blended element in a stacking context
+    that does not contain the thing you meant to blend against, and it inverts the wrong
+    backdrop — or nothing at all. That is exactly how the dial's glyphs ended up white on
+    white, which is Chapter 20, and it is why the comment explaining the current token-based
+    approach in <code>radial.css</code> ends with a warning about the revision it
+    replaced.</p>
+
+  <div class="pull">"Automatic" contrast that depends on stacking context is not automatic.
+    It is a bet on a layer tree that the compositor is entitled to change.</div>
+
+  <h2 data-level="h2">7.4 The mark as a loading state</h2>
+
+  <p>One more consequence of promoting the mark: it gave the platform a house loading
+    indicator. <code>ui/radial-loader.tsx</code> is the same visual idea — blobs orbiting a
+    pulsing core, fused by the same goo filter — and it is what the shared
+    <code>Spinner</code> primitive renders. So a wait anywhere on the site speaks the same
+    language as the hub.</p>
+
+  <p>This is a small thing that indicates the redesign was working. When a navigation
+    control's visual vocabulary is coherent enough that unrelated parts of the product can
+    borrow it and look native, the vocabulary is real. It is also, per the audit, not free:
+    finding AUD-302 records that on phones the feed swapped a full-viewport goo loader for
+    the whole page and produced a measured layout shift of 0.13–0.21, well past the 0.1
+    threshold. A house style that is applied without a size reservation is still a
+    regression.</p>
+</section>

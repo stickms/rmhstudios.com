@@ -1,0 +1,546 @@
+<!-- ═══════════════════════════ PART IV ═══════════════════════════ -->
+<section class="full-page plain-page">
+  <div class="part">
+    <div class="part__no">Part Four</div>
+    <h2 class="part__title" data-level="part" data-toc-text="Part Four — Motion">Motion</h2>
+    <p class="part__blurb">Nine layers, one duration, one attribute, and no animation library.
+      This part is how the hub opens: the synchronous 500ms, the three-state machine, the two
+      decks that spin in from opposite directions, and the plate that flashed black when they
+      started doing it.</p>
+    <div class="part__toc">
+      <div><span>14</span>One synchronous motion</div>
+      <div><span>15</span>The phase machine</div>
+      <div><span>16</span>Counter-rotation, and the bed that flashed black</div>
+      <div><span>17</span>The blur, and the degradation ladder</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────── CH 14 ─────────────────────────── -->
+<section data-head-l="Part Four · Motion" data-head-r="One synchronous motion" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Fourteen</p>
+  <h1 class="ch" data-level="h1" data-no="14">One synchronous motion</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">The orb glides, the blur expands, the dial scales and fades, two rings of
+    sectors counter-rotate, four hairlines appear, and a capsule rises from the bottom edge.
+    All of it in half a second, all of it on one clock, none of it orchestrated by anything
+    but shared duration constants.</p>
+
+  <h2 data-level="h2">14.1 Why 500ms</h2>
+
+  <p>Half a second is slow for a menu. The conventional range for an overlay is 150–250ms,
+    and anything past 300ms is usually a sign that someone fell in love with an easing
+    curve.</p>
+
+  <p>The hub is long deliberately, because the motion is doing work that a fade cannot. The
+    orb has to travel roughly 40% of the viewport's height, and the user has to be able to
+    <em>follow</em> it — the entire identity claim of Chapter 5, that the menu grows out of
+    the thing you touched, only lands if the eye can track the thing as it moves. Travel that
+    distance in 200ms and the orb does not glide, it teleports, and the connection between
+    the button and the dial becomes an inference again.</p>
+
+  <p>The easing does most of the perceptual work: <code>cubic-bezier(0.16, 1, 0.3, 1)</code>,
+    the platform's <code>--ease-glass</code>. It is aggressively front-loaded — roughly 80% of
+    the distance is covered in the first 40% of the duration — so the motion <em>feels</em>
+    fast while lasting long enough to be followed. The audit's own note confirms the
+    subjective result: the bloom reads as <em>"fully formed by about 120ms"</em>, despite the
+    declared duration being four times that. The tail is settling, not waiting.</p>
+
+  {{fig:timeline}}
+  <p class="figcap">Figure 14.1 — The open motion. Nine animated properties across seven
+    elements, sharing one duration family. <code>MOTION_MS = 500</code> is also the unmount
+    gate: the overlay stays mounted for exactly this long on close, so every layer finishes
+    animating out before it disappears.</p>
+
+  <h2 data-level="h2">14.2 The duration family</h2>
+
+  <p>Not everything is exactly 500ms, and the deviations are deliberate.</p>
+
+  <table class="compact">
+    <caption>Declared durations, and why each differs</caption>
+    <thead><tr><th>Layer</th><th class="num">Duration</th><th>Curve</th><th>Reason</th></tr></thead>
+    <tbody>
+      <tr><td>orb transform</td><td class="num">500ms</td><td>ease-glass</td><td>The reference. Everything else is tuned against it.</td></tr>
+      <tr><td>orb box-shadow</td><td class="num">280ms</td><td>ease</td><td>Shadow is a lighting cue, not a position cue; it should settle before the travel ends.</td></tr>
+      <tr><td>blur clip-path</td><td class="num">500ms</td><td>ease-glass</td><td>Locked to the orb — the frost must arrive with the orb, not after it.</td></tr>
+      <tr><td>dial transform</td><td class="num">500ms</td><td>ease-glass</td><td>Locked to the orb.</td></tr>
+      <tr><td>dial opacity</td><td class="num">400ms</td><td>ease-glass</td><td>Deliberately shorter than its own scale, so the dial is fully opaque slightly before it stops growing. Reaching full opacity last would read as fading in rather than blooming.</td></tr>
+      <tr><td>wedge transform</td><td class="num">550ms</td><td>ease-glass</td><td>Longest in the set. The spin is the largest visual displacement, and it is the last thing to settle — the dial arrives, then locks.</td></tr>
+      <tr><td>wedge opacity</td><td class="num">340ms</td><td>ease</td><td>Plus a 20ms-per-index stagger. Short so that the stagger is perceptible without the last wedge lagging.</td></tr>
+      <tr><td>hairline opacity</td><td class="num">340ms</td><td>ease</td><td>Matches the wedges, so structure and fill arrive together.</td></tr>
+      <tr><td>foot opacity</td><td class="num">400ms</td><td>ease</td><td>Matches the dial's opacity.</td></tr>
+      <tr><td>foot transform</td><td class="num">500ms</td><td>ease-glass</td><td>A 10px rise, locked to the orb.</td></tr>
+      <tr><td>aura transform</td><td class="num">500ms</td><td>ease-glass</td><td>Must match the orb <em>exactly</em>; any mismatch and the liquid mass detaches from the disc it belongs to.</td></tr>
+      <tr><td>scrim opacity</td><td class="num">280ms</td><td>ease</td><td>The legibility scrim under the docked orb retracts quickly — the overlay owns the screen now.</td></tr>
+      <tr><td>wedge hover</td><td class="num">180ms</td><td>ease</td><td>A hover response, on a different clock entirely. It must feel instant.</td></tr>
+    </tbody>
+  </table>
+
+  <p>The rule visible in that table: anything whose job is to communicate <em>position</em> is
+    locked to 500ms and the glass curve; anything whose job is to communicate
+    <em>presence</em> is shorter and on a plain ease. Position must be synchronous or the
+    illusion breaks. Presence can be staggered, and is, because a stagger is what makes
+    sixteen simultaneous arrivals read as a bloom rather than a flash.</p>
+
+  <h2 data-level="h2">14.3 The stagger, and what it is applied to</h2>
+
+  <p>Each wedge wrapper carries its bloom order as a custom property, and the open state turns
+    that into a delay:</p>
+
+  {{code:components/radial/radial.css|1099-1116|The stagger, on opacity only}}
+
+  <p>Two details are load-bearing.</p>
+
+  <p><strong>The stagger is on opacity, not on transform.</strong> Sixteen wedges × 20ms is a
+    320ms spread; applied to the rotation, that would mean each sector arriving at its
+    resting angle at a different moment, and a ring would appear to unwind rather than turn.
+    Applied to opacity, the ring turns as one body while its members fade up in sequence. The
+    comment in the source says exactly this: <em>"the spin is deliberately NOT staggered:
+    every wedge of a ring shares one delay, so the ring turns as a body."</em></p>
+
+  <p><strong>The stagger only applies on open.</strong> The delay lives in the
+    <code>[data-phase='open']</code> block, so on close it reverts to <code>0ms</code> and all
+    sixteen fade together as the blur contracts. Closing a menu should be one gesture, not a
+    reverse choreography — the user has already decided; the interface should get out of the
+    way at once.</p>
+
+  <p>The order itself runs inner deck first, then outer, in catalog order, because
+    <code>order</code> is assigned as the groups are walked. So the bloom radiates outward,
+    which is the same direction the whole design says things move in.</p>
+
+  <h2 data-level="h2">14.4 What is not animated</h2>
+
+  <p>Three absences are worth noting, because each was a decision.</p>
+
+  <p><strong>No motion on the glyphs.</strong> The icons and labels do not scale, rotate or
+    slide; they inherit their sector's opacity and nothing else. Animating text inside a
+    rotating element means animating text through sub-pixel positions, which on most
+    rendering paths means animating text through several different antialiasing decisions —
+    the visible symptom is shimmering type. The glyphs simply fade with their sector.</p>
+
+  <p><strong>No motion on the hairlines' geometry.</strong> They fade, they do not grow. A
+    hairline circle scaling up would sweep its 2px stroke across a range of radii, and a
+    stroked circle at non-integer scale is where antialiasing artefacts live. They are
+    declared with a transform transition — so the property is there if it is ever needed — but
+    the open state changes only opacity.</p>
+
+  <p><strong>No colour transitions during the bloom.</strong> Sector fills are static during
+    open and close; the only colour transitions in the hub are the 180ms hover and focus
+    responses. Animating a <code>color-mix()</code> of two tokens is not something to do
+    sixteen times per frame for aesthetic reasons.</p>
+
+  <div class="rule-box">
+    <h4>The motion contract, stated once</h4>
+    <p><strong>Transform and opacity only.</strong> Every animated property in the hub is one
+      of those two, plus <code>clip-path</code> on the blur — all compositor-friendly, none of
+      them triggering layout. There is no animated width, height, top, left, margin, padding,
+      border-radius or filter anywhere in the module. That is a platform-wide rule, and it is
+      what makes a nine-layer synchronous animation viable on a phone.</p>
+  </div>
+
+  <h2 data-level="h2">14.5 Why there is no animation library here</h2>
+
+  <p>The rest of the site uses framer-motion freely, and the hub deliberately does not. Its
+    docblock says so in one line: <em>"framer-motion-free (CSS transitions/clip-path) to stay
+    light on mobile."</em></p>
+
+  <p>The reasoning is a bundle question and a correctness question. The bundle question is
+    obvious: this component ships on every page of the site, including to phones, and its
+    animation needs are fully expressible in CSS. The correctness question is subtler and
+    more interesting — a JavaScript animation runs on the main thread's clock, which means a
+    busy main thread produces a stuttering menu, and the main thread on a page that has just
+    started rendering a feed is busy. CSS transitions on transform and opacity run on the
+    compositor. The hub opens smoothly while the page behind it is still hydrating, which is
+    exactly the moment a user is most likely to open it.</p>
+
+  <p>The cost is that everything has to be expressible as a declarative state, which is a real
+    constraint — Chapter 16 is a bug that exists precisely because of it. That is a fair
+    price for a menu that does not stutter on a mid-range Android during hydration.</p>
+</section>
+
+<!-- ─────────────────────────── CH 15 ─────────────────────────── -->
+<section data-head-l="Part Four · Motion" data-head-r="The phase machine" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Fifteen</p>
+  <h1 class="ch" data-level="h1" data-no="15">The phase machine</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">Three states, one string, one timer. The interesting one is
+    <code>closing</code>, which exists for a reason that catches out a great many overlay
+    components: a component that unmounts its overlay on close cannot have a close
+    animation.</p>
+
+  {{code:components/radial/RadialHub.tsx|14-18|The phase type}}
+
+  <h2 data-level="h2">15.1 The problem <code>closing</code> solves</h2>
+
+  <p>The naive shape for a menu is a boolean. <code>open ? &lt;Overlay/&gt; : null</code>, or
+    a class that is toggled. Both have the same defect: the moment the state flips to closed,
+    the overlay is gone — either unmounted from the tree or set to
+    <code>visibility: hidden</code> — and a transition on an element that is no longer
+    rendered does not run. The menu vanishes instead of closing.</p>
+
+  <p>The usual workarounds are an animation library that manages exit transitions, or a
+    <code>transitionend</code> listener, or an <code>animation-fill-mode</code> trick. The hub
+    takes the simplest available option: a third state that means "still visible, animating
+    out", and a timer that leaves it.</p>
+
+  {{code:components/radial/RadialHub.tsx|205-220|close() and toggle()}}
+
+  <p>Both handlers clear the pending timer first. That is what makes the machine
+    interruptible: tap the orb three times quickly and you do not accumulate three timers
+    racing to set the phase, you get one timer, restarted, and the CSS transitions reverse
+    from wherever they currently are.</p>
+
+  <h2 data-level="h2">15.2 The CSS side of the same idea</h2>
+
+  <p>The overlay's visibility is keyed to both live phases, not just <code>open</code>:</p>
+
+  {{code:components/radial/radial.css|931-944|The overlay is mounted for open AND closing}}
+
+  <p>And every animated layer has the same shape: a resting declaration, and an override under
+    <code>[data-phase='open']</code>. The <code>closing</code> phase deliberately has almost
+    no rules of its own — it inherits the resting state, which is precisely how the reversal
+    happens. Two exceptions exist, both about stacking: the orb and the aura keep their raised
+    z-index during <code>closing</code>, so the orb stays above the overlay for the whole
+    return journey rather than popping behind the frost halfway home.</p>
+
+  <h2 data-level="h2">15.3 The timer's reduced-motion case</h2>
+
+  <p>Both the close paths use <code>reduced ? 0 : MOTION_MS</code>. Under reduced motion there
+    are no transitions to wait for, so waiting half a second before unmounting would leave an
+    invisible, non-interactive overlay covering the screen — technically
+    <code>pointer-events: auto</code>, technically transparent, and completely
+    indefensible.</p>
+
+  <p>This is one of only two places in the component where a preference is read in JavaScript
+    rather than in CSS, and it is the exception that proves the rule: the platform's guidance
+    is that degradation belongs in the token layer, and the reason this one cannot is that a
+    <code>setTimeout</code> is not a CSS property. A media query cannot shorten a timer.</p>
+
+  <h2 data-level="h2">15.4 Escape, wheel, and the effects that own them</h2>
+
+  {{code:components/radial/RadialHub.tsx|234-249|Keyboard and wheel, while the menu is live}}
+
+  <p>Three things about that effect.</p>
+
+  <p>It is keyed on <code>phase</code> and returns early when closed, so no global listener
+    exists while the menu is shut — a hub on every page of the site must not leave a
+    <code>keydown</code> handler on the window at all times.</p>
+
+  <p>The wheel listener is <code>{ passive: false }</code>, because it calls
+    <code>preventDefault()</code>, and a passive listener may not. It is attached to the
+    overlay rather than the window so it cannot suppress scrolling anywhere else, and it
+    checks <code>e.cancelable</code> first, because a wheel event during an already-started
+    scroll may not be cancellable and calling <code>preventDefault()</code> on it is a console
+    warning for nothing.</p>
+
+  <p>It exists at all because <code>touch-action: none</code> — the technique that blocks
+    touch panning, Chapter 25 — does not cover pointer devices. Two mechanisms, two input
+    classes, one outcome.</p>
+
+  <h2 data-level="h2">15.5 Focus, on the next frame</h2>
+
+  {{code:components/radial/RadialHub.tsx|251-257|Moving focus into the bloomed dial}}
+
+  <p>The <code>requestAnimationFrame</code> is not decoration. On the render that sets the
+    phase to <code>open</code>, the dial's links have just had their <code>tabIndex</code>
+    changed from <code>-1</code> to <code>0</code> and the overlay's visibility has just
+    changed; focusing synchronously in that same commit can land on an element the browser
+    still considers unfocusable. Deferring by one frame puts the focus call after style
+    resolution.</p>
+
+  <p>The query — <code>a[href], [tabindex]</code> — takes the first focusable thing in the
+    dial, which is the first wedge, which is the first catalog entry, which is
+    <em>Home</em>. So a keyboard user's focus lands on the most likely destination without
+    any explicit initial-focus configuration. The cleanup cancels the frame, so a menu opened
+    and closed within a single frame does not steal focus after the fact.</p>
+
+  <div class="note">
+    <h4>What this focus handling does not do</h4>
+    <p>There is no focus trap. Tab from the last wedge and focus leaves the dial for the foot
+      pill, and beyond that for the document. There is also no explicit focus restore to the
+      orb on close. Both are noted in Chapter 30 as gaps: a modal navigation overlay
+      conventionally traps focus and returns it, and this one does neither. What it does have
+      is <code>tabIndex={-1}</code> on every control while closed, so the closed hub is
+      genuinely absent from the tab order rather than being a set of invisible tab stops —
+      which is the more common and more serious version of this bug.</p>
+  </div>
+
+  <h2 data-level="h2">15.6 The whole machine, in one place</h2>
+
+  <table class="compact">
+    <caption>Phase transitions</caption>
+    <thead><tr><th>From</th><th>Trigger</th><th>To</th><th>Side effects</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">closed</td><td>orb click</td><td class="mono">open</td><td>Clear timer. Overlay becomes visible and interactive; all nine layers begin animating in; focus moves to the first wedge on the next frame; the docked scrim retracts.</td></tr>
+      <tr><td class="mono">open</td><td>orb click</td><td class="mono">closing</td><td>Clear timer, set a new one for <code>MOTION_MS</code>.</td></tr>
+      <tr><td class="mono">open</td><td>Escape</td><td class="mono">closing</td><td>As above, via <code>close()</code>.</td></tr>
+      <tr><td class="mono">open</td><td>scrim press</td><td class="mono">closing</td><td>As above.</td></tr>
+      <tr><td class="mono">open</td><td>any menu item</td><td class="mono">closing</td><td>As above; the router navigates in the same tick, so the dial animates out over the incoming page.</td></tr>
+      <tr><td class="mono">open</td><td>foot control</td><td class="mono">closing</td><td>As above. Sign-out additionally awaits the auth client, then navigates and reloads.</td></tr>
+      <tr><td class="mono">closing</td><td>timer</td><td class="mono">closed</td><td>Overlay hidden and non-interactive; hovered-label state cleared by an effect keyed on the phase.</td></tr>
+      <tr><td class="mono">closing</td><td>orb click</td><td class="mono">open</td><td>Clear timer. Every transition reverses from its current interpolated value.</td></tr>
+      <tr><td class="mono">any</td><td>unmount</td><td>—</td><td>Timer cleared by an effect's cleanup, so no <code>setState</code> after unmount.</td></tr>
+    </tbody>
+  </table>
+
+  <p>Nine rows, three states, and one genuinely valuable property: the row that matters most
+    is the last-but-one. A user who taps the orb twice in rapid succession — which people do,
+    constantly, on any control that takes half a second to respond — gets a smooth reversal
+    rather than a queue of animations.</p>
+</section>
+
+<!-- ─────────────────────────── CH 16 ─────────────────────────── -->
+<section data-head-l="Part Four · Motion" data-head-r="Counter-rotation, and the bed that flashed black" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Sixteen</p>
+  <h1 class="ch" data-level="h1" data-no="16">Counter-rotation, and the bed that flashed black</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">The two decks arrive by spinning into alignment from opposite directions —
+    inner anticlockwise, outer clockwise. It is the dial's signature gesture, it cost one line
+    of CSS, and it broke the dial the day it landed, in a way that is a small classic of
+    front-end debugging.</p>
+
+  <h2 data-level="h2">16.1 The gesture</h2>
+
+  {{code:components/radial/radial.css|1106-1116|Two decks, two directions}}
+
+  <p>That is the entire effect. Each wedge wrapper is <code>inset: 0</code> over the whole
+    dial square, so its transform origin is already the dial's centre and a rotation carries
+    its clipped sector around that centre — no <code>transform-origin</code> declaration
+    needed. The resting state is rotated by ±55°; the open state is zero. Every wedge in a
+    ring shares its ring's angle, so the ring turns as a body.</p>
+
+  {{fig:spinFrames}}
+  <p class="figcap">Figure 16.1 — Five frames of the open, from the resting ±55° to
+    alignment. The decks pass through each other's angular territory on the way, which is what
+    makes the two levels read as independent rings rather than as one disc with a line through
+    it — and which is also what uncovers the plate underneath them.</p>
+
+  <p>The reason for opposite directions is legibility of structure. Two rings rotating the
+    same way read as one object turning. Two rings rotating against each other cannot be
+    anything but two objects, and the viewer learns the dial's most important structural fact
+    — that it has two decks — from the motion, before any of the labels have finished fading
+    in.</p>
+
+  <p>Fifty-five degrees is a little more than one inner sector (60°) and a little more than one
+    and a half outer ones (36°). That is deliberate: the rotation is large enough that every
+    sector visibly passes through a neighbour's resting position, so the eye cannot mistake
+    the motion for a settling wobble.</p>
+
+  <h2 data-level="h2">16.2 The bug</h2>
+
+  <p>Commit <code>d308f26</code> added the spin and the hairlines together. It also, without
+    touching it, broke the dial's background.</p>
+
+  <p>The dial's divider bed had been <code>--site-border-bright</code> — which in the default
+    theme is pure black. That was a perfectly reasonable choice for as long as the sectors
+    only <em>scaled</em>: at every frame of a scale animation the sectors cover essentially
+    the whole annulus, so the bed is visible only in the 3-pixel channels between them, where
+    a strong dark line is exactly what is wanted.</p>
+
+  <p>The moment the sectors <em>rotate</em>, that stops being true. A ring rotated by 55°
+    relative to its resting position does not cover the same annulus — it covers a rotated
+    copy of it, and because the sectors are clipped to a fixed dial box, rotating the wrapper
+    sweeps each sector's polygon around while the dial's own circular boundary stays put. Large
+    regions of the bed are uncovered mid-animation. Uncovered black bed, on a white page, for
+    a few hundred milliseconds, sixteen times over: <strong>the whole dial flashed black on
+    open.</strong></p>
+
+  <div class="defect">
+    <h4>The shape of the failure</h4>
+    <p>Nothing in the diff touched the background. The background's value had been correct
+      for the entire life of the component. What changed was the <em>coverage</em> of the
+      layer above it — and a value whose correctness depends on always being covered is a
+      value with an undeclared dependency on the animation. This is a general hazard with
+      "it never shows anyway" reasoning: it is true until a motion change makes it false, and
+      then it is a full-screen flash rather than a subtle regression.</p>
+  </div>
+
+  <h2 data-level="h2">16.3 The fix, and why it is not just a colour change</h2>
+
+  <p>The bed became a light plate — <code>color-mix(in srgb, var(--site-surface-opaque) 86%,
+    var(--site-text) 14%)</code> — a shade darker than the sectors that sit on it rather than
+    an emphatic dark line. The comment recording it is one of the more useful in the
+    codebase:</p>
+
+  {{code:components/radial/radial.css|989-999|The bed, and why it is light}}
+
+  <p>The important clause is the last one: <em>"the level borders below draw the structure
+    that the black bed used to imply, so the plate only has to be a shade darker than the
+    sectors that sit on it."</em></p>
+
+  <p>The two halves of commit <code>d308f26</code> are not independent. The spin uncovered the
+    bed, which forced the bed to become light, which removed the strong dark structure the
+    black bed had been providing, which is why the same commit had to add the drawn hairlines.
+    Adding the spin without the hairlines would have produced a dial that no longer flashed
+    but also no longer read as two decks. The commit's title —
+    <em>"spin the double-decked dial open, and draw the borders between levels"</em> — is two
+    changes because it had to be.</p>
+
+  <div class="pull">A value that is only correct while something covers it is not a value. It
+    is a bet on the animation.</div>
+
+  <h2 data-level="h2">16.4 The uncovered-area arithmetic</h2>
+
+  <p>It is worth quantifying, because the number explains why this was a flash rather than a
+    flicker.</p>
+
+  <p>Each ring's sectors tile their annulus with 1.4° gaps, so at rest they cover about 97%
+    of it. Rotating the ring by 55° does not reduce that coverage — the sectors still tile the
+    annulus, just rotated. What is uncovered is not part of the annulus at all: it is the
+    region where the rotated sector has swung <em>outside</em> the dial's circular clip and
+    been cut off, leaving its former territory empty.</p>
+
+  <p>For the outer ring, whose sectors reach the rim, that loss is small. For the inner ring,
+    at radius 19–34, the rotation carries sectors around a circle entirely inside the dial, so
+    nothing is cut and nothing is uncovered — the inner deck simply turns.</p>
+
+  <p>What actually produced the flash was the combination with <em>scale</em>. The wrappers
+    rest at <code>scale(0.9) rotate(±55deg)</code>. At 0.9 scale, every sector's outer radius
+    is 45 rather than 50, and its inner radius is 17.1 rather than 19 — so the annulus the
+    sectors occupy is smaller than the annulus the bed fills, in both directions, at every
+    frame of the animation. A 5%-wide black band at the rim and a black ring at the hole
+    boundary, growing thinner as the dial scales up. On a white page, that is a flash.</p>
+
+  <table class="compact">
+    <caption>Uncovered bed during the open, per frame (460px dial)</caption>
+    <thead><tr><th class="num">t</th><th class="num">scale</th><th class="num">Sector rim</th><th class="num">Bed rim</th><th class="num">Uncovered band</th></tr></thead>
+    <tbody>
+      <tr><td class="num">0.00</td><td class="num">0.900</td><td class="num">207.0px</td><td class="num">230px</td><td class="num">23.0px</td></tr>
+      <tr><td class="num">0.25</td><td class="num">0.925</td><td class="num">212.8px</td><td class="num">230px</td><td class="num">17.3px</td></tr>
+      <tr><td class="num">0.50</td><td class="num">0.950</td><td class="num">218.5px</td><td class="num">230px</td><td class="num">11.5px</td></tr>
+      <tr><td class="num">0.75</td><td class="num">0.975</td><td class="num">224.3px</td><td class="num">230px</td><td class="num">5.8px</td></tr>
+      <tr><td class="num">1.00</td><td class="num">1.000</td><td class="num">230.0px</td><td class="num">230px</td><td class="num">0.0px</td></tr>
+    </tbody>
+  </table>
+
+  <p>A 23-pixel black ring at the outer edge of a 460-pixel disc, decaying to nothing over
+    550ms. Which, read as a table, is obvious, and which as a bug report reads as "the menu
+    flashes black" — and is why the first instinct was to look at the animation rather than at
+    a background colour that had not changed in weeks.</p>
+
+  <h2 data-level="h2">16.5 What the episode is worth</h2>
+
+  <p>Three transferable observations.</p>
+
+  <ol>
+    <li><strong>Scale-from-below plus a full-size backdrop is a flash waiting to happen.</strong>
+      If a layer rests at <code>scale(&lt;1)</code> and something behind it is full size, the
+      difference is visible for the whole animation. Either scale the backdrop with it, or make
+      the backdrop something that is safe to see.</li>
+    <li><strong>Adding motion to a static layer changes the requirements of every layer
+      beneath it.</strong> The bug was not in the diff; it was in the interaction between the
+      diff and an assumption made elsewhere.</li>
+    <li><strong>"Only visible in the gaps" should be written down.</strong> Had the bed's
+      original declaration carried a comment saying <em>this is only ever seen in the 3px
+      dividers</em>, the person adding the spin would have had a chance to notice the
+      assumption breaking. It now carries a comment several times longer than the
+      declaration.</li>
+  </ol>
+</section>
+
+<!-- ─────────────────────────── CH 17 ─────────────────────────── -->
+<section data-head-l="Part Four · Motion" data-head-r="The blur, and the degradation ladder" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Seventeen</p>
+  <h1 class="ch" data-level="h1" data-no="17">The blur, and the degradation ladder</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">A circle clipped from radius zero to <code>150vmax</code>, and a set of
+    media queries that decide how much of the hub's character survives on a phone, on a
+    low-memory device, or for a user who has asked the operating system for less motion.</p>
+
+  <h2 data-level="h2">17.1 Why <code>150vmax</code></h2>
+
+  <p>The blur's clip circle has to cover the viewport from a centre point that is the middle of
+    the screen. Half the diagonal of the viewport would suffice —
+    <code>sqrt(w² + h²) / 2</code> — but CSS has no diagonal unit, and
+    <code>50vmax</code> is only enough for a square viewport. <code>150vmax</code> is a
+    comfortable over-provision: three times the larger dimension, which covers any aspect
+    ratio anyone will ever hand it, including a 21:9 ultrawide.</p>
+
+  <p>Over-provisioning a clip radius costs nothing. The clipped element is
+    <code>position: absolute; inset: 0</code>, so its box is the viewport regardless; the clip
+    only decides how much of that box paints. A radius larger than the box is simply a
+    fully-painted box. What the animation is actually interpolating is a number that stops
+    mattering once it exceeds the corner distance — which means the visible expansion finishes
+    somewhat before the transition does, and the last portion of the curve is spent
+    invisibly. Given how front-loaded the easing is, that is a feature: the frost reaches the
+    corners early and the tail of the transition is silent.</p>
+
+  <h2 data-level="h2">17.2 What the blur costs</h2>
+
+  <p><code>backdrop-filter: blur(20px) saturate(118%)</code> over a full viewport is the
+    single most expensive thing the hub does. It requires the compositor to read back the
+    content behind the element, blur it, and composite the result — every frame, while the
+    clip radius is changing.</p>
+
+  <p>It is affordable for exactly one reason: <strong>it is transient and modal</strong>. It
+    exists only while the menu is open, which is a few seconds at most, during which nothing
+    else on the page is animating and the user is not scrolling — the overlay has blocked
+    that. Compare this with the platform's standing budget for the material, which is at most
+    eight <code>backdrop-filter</code> elements per viewport and <em>zero</em> on repeated
+    list items. The hub spends one, briefly, when the user asks for it.</p>
+
+  <p>The tint is a deliberate whisper: <code>color-mix(in srgb, var(--site-bg) 20%,
+    transparent)</code>. Twenty percent of the page background, mixed with transparency. Enough
+    to lift contrast for the sectors and glyphs sitting on it; not enough to read as a coloured
+    scrim. The distinction the CSS comment draws is exact — <em>"only a whisper of tint, so it
+    reads as BLUR, not a coloured circle."</em></p>
+
+  <h2 data-level="h2">17.3 The degradation ladder</h2>
+
+  <p>The hub's decorative layers are gated, and it is worth being precise about which gate
+    each one sits behind, because the gates are not the same and the difference reflects a
+    judgement about what kind of thing each gate is measuring.</p>
+
+  <table class="compact">
+    <caption>What is gated, and behind what</caption>
+    <thead><tr><th>Feature</th><th>Gate</th><th>Rationale</th></tr></thead>
+    <tbody>
+      <tr><td>Dial goo filter</td><td class="mono">≥768px AND no-preference</td><td>An SVG filter is per-frame GPU work. Both a device-class question and a preference question, so both gates.</td></tr>
+      <tr><td>Orb aura</td><td class="mono">≥768px AND no-preference</td><td>As above; the aura is <code>display: none</code> below the gate, so it is not merely unanimated but absent.</td></tr>
+      <tr><td>Aura orbit animation</td><td class="mono">≥768px AND no-preference</td><td>Inside the same query as the filter, so a static aura can never appear without its goo.</td></tr>
+      <tr><td>Logo bloom + stroke draw</td><td class="mono">no-preference</td><td>Motion only. A phone can afford a one-shot animation on mount; a user who asked for less motion cannot be given one.</td></tr>
+      <tr><td>Wedge labels</td><td class="mono">≥480px</td><td>Space only. Nothing to do with motion or cost.</td></tr>
+      <tr><td>Centre caption</td><td class="mono">&lt;480px</td><td>The exact complement of the labels.</td></tr>
+      <tr><td>Top bar backdrop blur</td><td class="mono">≥768px</td><td>Paint cost on phones. Below it the bar is fully opaque, because a partly-transparent bar with no blur just ghosts the feed underneath.</td></tr>
+      <tr><td>All hub transitions</td><td class="mono">no-preference</td><td>A single block near the end of <code>radial.css</code> lists the orb, blur, dial, wedge wrappers, hairlines, wedges, foot and aura and drops their transitions together.</td></tr>
+      <tr><td>Pointer metaball</td><td class="mono">no-preference AND no forced-colors AND no reduced-transparency AND ≥4GB</td><td>The most heavily gated thing in the module, and the only one that consults device memory.</td></tr>
+    </tbody>
+  </table>
+
+  <p>The pattern: <strong>cost is gated by width, comfort is gated by preference, and space is
+    gated by width for entirely different reasons.</strong> Conflating those is how components
+    end up with a phone that has no labels because someone reasoned about GPU budget when the
+    actual constraint was arc length.</p>
+
+  <h2 data-level="h2">17.4 What reduced motion actually looks like</h2>
+
+  <p>Worth spelling out, because "respects reduced motion" is often a claim rather than a
+    description.</p>
+
+  <p>Under <code>prefers-reduced-motion: reduce</code>, tapping the orb produces: the overlay
+    becoming visible immediately; the blur at full radius immediately; the dial at full opacity
+    and scale immediately; all sixteen sectors at their resting angles, unrotated, fully
+    opaque; the hairlines drawn; the foot pill in place; the orb at the centre. No aura. No goo
+    — the sectors are crisp-edged, which is arguably a clearer dial than the filtered one. And
+    closing sets the phase to <code>closing</code> and then to <code>closed</code> on a 0ms
+    timer, so the overlay is gone within a frame.</p>
+
+  <p>The important property is that it is the same dial. Not a fallback list, not a different
+    component, not a simplified layout. Every target is in the same place, at the same size,
+    with the same label. A user who has asked for less motion has asked for less motion, not
+    for a different information architecture.</p>
+
+  <div class="note">
+    <h4>The one thing reduced motion changes about the layout</h4>
+    <p>Nothing. Deliberately. The wedges' resting transform includes <code>scale(0.9)</code>,
+      and it is the transition that is dropped, not the transform — so the open state's
+      <code>scale(1) rotate(0deg)</code> still applies, instantly. If the reduced-motion block
+      had dropped the transforms rather than the transitions, the dial would have rendered at
+      90% with its decks rotated, permanently. That is a real trap, and the distinction between
+      "remove the animation" and "remove the animated property" is the whole of it.</p>
+  </div>
+</section>

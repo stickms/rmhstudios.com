@@ -1,0 +1,74 @@
+<!-- ═══════════════════════════ COVER ═══════════════════════════ -->
+<section class="full-page plain-page">
+  <div class="cover">
+    <div class="cover__top">RMH Studios · Design Record · DR-014</div>
+    <div class="cover__mark">{{mark:0.55}}</div>
+    <div>
+      <h1 class="cover__title">Redesigning<br>the Home<br>Button</h1>
+      <p class="cover__sub">How one fixed mark at the bottom of the screen replaced a
+        sidebar, a mobile dock and a push-drawer — and became a two-deck radial dial
+        that carves itself out of the navigation catalog.</p>
+      <div class="cover__rule"></div>
+    </div>
+    <div class="cover__meta">
+      <span>rmhstudios.com</span>
+      <span>Radial Avant-Garde Glass</span>
+      <span>30 July 2026</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ COLOPHON ═══════════════════════════ -->
+<section class="plain-page">
+  <h1 class="ch" data-toc="skip">About this record</h1>
+  <div class="ch-rule"></div>
+  <p class="lede">This is a design record: the reasoning, geometry, motion, material and
+    defect history behind a single control. It documents the RMH hub — the orb docked at
+    the bottom centre of every standard page on rmhstudios.com, and the radial dial that
+    blooms out of it.</p>
+
+  <h4>What it is drawn from</h4>
+  <p>Everything here is reconstructed from the repository, which is the platform's own
+    stated source of truth for conflicting information. The primary sources are
+    <code>components/radial/RadialHub.tsx</code> ({{stat:hubLines}} lines),
+    <code>components/radial/radial.css</code> ({{stat:cssLines}} lines),
+    <code>components/radial/README.md</code>, <code>lib/sidebar-nav.ts</code>,
+    <code>docs/design-language.md</code>, <code>docs/ui-audit-2026-07-28.md</code>, and the
+    fifteen commits between <code>e5003b1</code> and <code>feeec2c</code> that built,
+    broke and repaired the control.</p>
+
+  <h4>How the figures were made</h4>
+  <p>Every dial diagram in this book is drawn by the production geometry, not by hand. The
+    figure generator carries a faithful port of the component's <code>RINGS</code>,
+    <code>SINGLE_RING</code>, <code>INNER_MAX</code>, <code>SINGLE_RING_MAX</code>,
+    <code>ART_BLEED_DEG</code> and <code>ringSector()</code>, and renders the same annulus
+    sectors the browser clips. A figure therefore cannot quietly disagree with the code it
+    illustrates: change the geometry and the figures change with it.</p>
+  <p>Code listings are extracted from the working tree at build time, with their real file
+    paths and line numbers. Nothing in a listing is retyped.</p>
+
+  <h4>A note on the live site</h4>
+  <p>The live production site was not reachable from the environment this record was
+    compiled in — outbound requests to <code>rmhstudios.com</code> were refused by the
+    network policy at the proxy, not by the site. Every observation about rendered
+    behaviour therefore comes from the code, from the shipped CSS, and from the July 2026
+    visual audit, which captured the interface across thirteen viewports and three themes
+    and is quoted throughout with its finding identifiers intact.</p>
+
+  <h4>Reading order</h4>
+  <p>Parts I and II are the argument: what a home button is for, what the site had before,
+    and why a radial dial was the answer rather than a hamburger. Parts III to V are the
+    build: geometry, motion, material. Part VI is input and accessibility. Part VII is the
+    defect log — the most useful part for anyone maintaining the thing. Part VIII is
+    verification and open questions. The appendices are reference: annotated source, a
+    full geometry table, the token contract, the commit index and the audit index.</p>
+
+  <div class="note">
+    <h4>Conventions</h4>
+    <p>Ring radii are always given as a percentage of the <em>dial's width</em>, matching
+      the component, because that is the unit <code>clip-path</code> resolves against. The
+      dial is square, so its radius is 50% and the rim sits at <code>r = 50</code>. Angles
+      run clockwise from twelve o'clock, which in CSS coordinates is
+      <code>−90°</code>.</p>
+  </div>
+</section>

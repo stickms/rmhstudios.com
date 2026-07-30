@@ -1,0 +1,533 @@
+<!-- ═══════════════════════════ PART VI ═══════════════════════════ -->
+<section class="full-page plain-page">
+  <div class="part">
+    <div class="part__no">Part Six</div>
+    <h2 class="part__title" data-level="part" data-toc-text="Part Six — Input and access">Input and access</h2>
+    <p class="part__blurb">Sixteen non-rectangular targets, a keyboard, a screen reader, a
+      thumb, a home indicator, and four other floating controls that want the same corner.</p>
+    <div class="part__toc">
+      <div><span>22</span>Hit testing sixteen wedges</div>
+      <div><span>23</span>Keyboard and screen reader</div>
+      <div><span>24</span>The caption in the hole</div>
+      <div><span>25</span>Blocking scroll without a scroll lock</div>
+      <div><span>26</span>Safe areas and the floating stack</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────── CH 22 ─────────────────────────── -->
+<section data-head-l="Part Six · Input and access" data-head-r="Hit testing sixteen wedges" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Twenty-two</p>
+  <h1 class="ch" data-level="h1" data-no="22">Hit testing sixteen wedges</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">There is no hit-testing code. Sixteen full-size overlapping squares, each
+    clipped to a pie sector, and a browser that already knows a clip bounds pointer events. The
+    only real work is switching the wrappers off so they do not blanket the disc.</p>
+
+  <h2 data-level="h2">22.1 The mechanism</h2>
+
+  <p>Each wedge is a list item filling the whole dial square, containing an anchor that also
+    fills the whole square, clipped to its sector. Sixteen of those, stacked. Without
+    intervention the topmost one in DOM order catches every click on the entire disc.</p>
+
+  {{code:components/radial/radial.css|1077-1086|Why the wrappers are click-transparent}}
+
+  <p>The wrappers are <code>pointer-events: none</code>; the clipped anchors set
+    <code>pointer-events: auto</code>. So a pointer event tests only against the clipped
+    regions, and because the clip is the exact sector polygon, each anchor catches only what is
+    inside its own sector. The sectors tile the annulus with 1.4° gaps — which means a press
+    exactly in a divider hits nothing, by design, rather than being resolved arbitrarily.</p>
+
+  <p>The glyph wrapper inside each anchor is also <code>pointer-events: none</code>, so clicks
+    fall through it to the sector beneath. That matters because the glyph box is an
+    axis-aligned rectangle centred on the sector's centroid, and near the dividers its corners
+    extend into neighbouring territory. Left hit-testable, a label's corner would steal a
+    neighbour's click in exactly the region where the user is aiming at a visible boundary.</p>
+
+  <h2 data-level="h2">22.2 Target sizes, honestly</h2>
+
+  <p>The platform's touch-target floor is 44 pixels, published as
+    <code>--site-touch-target</code>. A wedge is not square, so the question is what "44 pixels"
+    means for an annulus sector.</p>
+
+  <table class="compact">
+    <caption>Wedge target dimensions, by viewport</caption>
+    <thead><tr><th>Viewport</th><th>Deck</th><th class="num">Radial depth</th><th class="num">Arc at inner edge</th><th class="num">Arc at mid</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">320×568</td><td>inner (6)</td><td class="num">41.3px</td><td class="num">54.7px</td><td class="num">76.3px</td><td>depth 3px under floor</td></tr>
+      <tr><td class="mono">320×568</td><td>outer (10)</td><td class="num">38.5px</td><td class="num">62.2px</td><td class="num">74.3px</td><td>depth 5px under floor</td></tr>
+      <tr><td class="mono">390×844</td><td>inner (6)</td><td class="num">50.3px</td><td class="num">66.6px</td><td class="num">92.9px</td><td>over floor</td></tr>
+      <tr><td class="mono">390×844</td><td>outer (10)</td><td class="num">46.9px</td><td class="num">75.8px</td><td class="num">90.5px</td><td>over floor</td></tr>
+      <tr><td class="mono">768×1024</td><td>inner (6)</td><td class="num">69.0px</td><td class="num">91.4px</td><td class="num">127.5px</td><td>generous</td></tr>
+      <tr><td class="mono">768×1024</td><td>outer (10)</td><td class="num">64.4px</td><td class="num">104.0px</td><td class="num">124.2px</td><td>generous</td></tr>
+    </tbody>
+  </table>
+
+  <p>The honest reading: at 320 pixels the wedges are a few pixels short of the floor in the
+    radial direction, and comfortably over it in the angular direction. A 41×55 target is
+    larger in area than a 44×44 one, and the shortfall is in the axis where the neighbour is a
+    <em>different ring</em> separated by a drawn 9-pixel gap rather than an adjacent target. A
+    miss lands in the gap, not on the wrong destination.</p>
+
+  <p>That is a defensible position and it is not the same as meeting the guideline. It is
+    recorded in Chapter 30 among the open items, because the cleanest fix — lifting the dial's
+    <code>86vw</code> to something larger below 360px — has a knock-on effect on the foot pill's
+    clearance that nobody has worked through.</p>
+
+  <h2 data-level="h2">22.3 The pointer metaball, and AUD-503</h2>
+
+  <p>The hub shares the module — and the filter bank — with the site's pointer metaball: a gooey
+    drop that follows the mouse on desktop and the finger on touch, replacing the native cursor
+    while it is driving one.</p>
+
+  <p>Its contract is worth reading as a piece of engineering discipline in its own right.
+    Every spring converges at a fixed rate <em>per second</em> — <code>1 − e^(−λ·dt)</code> —
+    rather than a fixed fraction per frame, so a 144Hz display gets the same curve as a 60Hz
+    one instead of snapping to the pointer, and a dropped frame produces no jump. <code>dt</code>
+    is clamped so returning to a backgrounded tab eases rather than teleports. The filter region
+    is a fixed box with every blob offset clamped inside it, so the tail can stretch but can
+    never enlarge or escape the region being blurred. <code>will-change</code> is toggled by
+    the loop, so a parked pointer holds no compositor layer.</p>
+
+  <p>And it had the most quotable defect in the audit. AUD-503: the drop swelled ×1.85 over
+    interactive elements — <em>largest precisely when covering a control's label</em>. "Play
+    now" read as "▷ ●now". An effect designed to say <em>this is interactive</em> was obscuring
+    the words that said what it was.</p>
+
+  <p>The repair caps the swollen diameter at about 22 pixels and thins the fill as it swells, so
+    text reads through. Which is the same lesson as Chapter 18's two-layer split, arriving from
+    a different direction: <strong>a decorative liquid effect must never occupy the same
+    pixels as something you have to read.</strong> The dial solved it with a layer split; the
+    cursor solved it with an opacity ramp; both are the same rule.</p>
+
+  <div class="note">
+    <h4>Legibility built into the shape</h4>
+    <p>Because the drop uses no blend mode, there is no inversion to rely on for contrast. So it
+      is filled with <code>--site-text</code> and carries a halo in <code>--site-bg</code> —
+      two <code>drop-shadow</code>s chained after the goo, so the rim traces the fused outline
+      rather than each blob. Those tokens are contrast-paired by definition, so it reads in
+      every theme. On the default theme, where the accent <em>is</em> the ink, hovering the
+      compose button turns the whole mark into its own halo and it reads as a ring — a
+      coincidence the code anticipates in a comment.</p>
+  </div>
+
+  <h2 data-level="h2">22.4 What the hub does not do with the pointer</h2>
+
+  <p>No press-and-drag selection. No radial gesture recognition. No angular velocity. The dial
+    is sixteen links and a pointer, and hovering one fills it and names it, and pressing it
+    navigates.</p>
+
+  <p>This is a non-goal from Chapter 4, and the reason bears repeating here where the input
+    model is under discussion: gesture-driven radial menus work in games because the player has
+    hours of muscle memory and a fixed item set. A website's navigation is used by someone who
+    arrived thirty seconds ago from a search engine. Any interaction that must be learned before
+    it can be used is, for that person, a wall.</p>
+</section>
+
+<!-- ─────────────────────────── CH 23 ─────────────────────────── -->
+<section data-head-l="Part Six · Input and access" data-head-r="Keyboard and screen reader" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Twenty-three</p>
+  <h1 class="ch" data-level="h1" data-no="23">Keyboard and screen reader</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">A radial menu is a visual metaphor. To a screen reader it is a list of
+    sixteen links with a name, and to a keyboard it is sixteen tab stops. Both of those are
+    fine, and the parts that are not fine are worth naming precisely.</p>
+
+  <h2 data-level="h2">23.1 The semantics, as shipped</h2>
+
+  <table class="compact">
+    <caption>The accessibility surface</caption>
+    <thead><tr><th>Element</th><th>Semantics</th></tr></thead>
+    <tbody>
+      <tr><td>The orb</td><td><code>&lt;button&gt;</code>, <code>aria-haspopup="menu"</code>, <code>aria-expanded={phase !== 'closed'}</code>, translated <code>aria-label</code>.</td></tr>
+      <tr><td>The overlay</td><td><code>role="presentation"</code>, <code>aria-hidden</code> while the menu is not visible.</td></tr>
+      <tr><td>The scrim</td><td>A real <code>&lt;button&gt;</code> with a translated "Close" label.</td></tr>
+      <tr><td>The dial</td><td><code>role="menu"</code> with a translated <code>aria-label</code> — "Browse RMH Studios".</td></tr>
+      <tr><td>Each wedge</td><td><code>&lt;Link&gt;</code> or <code>&lt;a&gt;</code> with <code>role="menuitem"</code>, a translated <code>aria-label</code>, and <code>aria-current="page"</code> on the active destination.</td></tr>
+      <tr><td>Wedge wrappers</td><td><code>role="none"</code>, so the <code>&lt;li&gt;</code> does not interrupt the menu's required parent-child relationship.</td></tr>
+      <tr><td>Art layer</td><td><code>aria-hidden</code> in its entirety.</td></tr>
+      <tr><td>Hairlines, caption, aura, scrim gradient</td><td><code>aria-hidden</code>.</td></tr>
+      <tr><td>Icons</td><td><code>aria-hidden</code> — every one, including the foot pill's.</td></tr>
+      <tr><td>Foot controls</td><td>Named: identity link, settings, sign-out, close. Icon-only ones carry translated <code>aria-label</code>s.</td></tr>
+      <tr><td>Every control while closed</td><td><code>tabIndex={-1}</code>, so the closed hub is absent from the tab order entirely.</td></tr>
+    </tbody>
+  </table>
+
+  <p>The last row is the one most often got wrong in overlay components, and getting it right
+    matters more than it sounds. A hidden menu whose links remain focusable produces a tab order
+    with sixteen invisible stops in it — a keyboard user tabs from the page's last control into
+    nothing, sixteen times. The hub computes <code>const tab = menuVisible ? 0 : -1</code> once
+    and applies it to every interactive element in the overlay.</p>
+
+  <h2 data-level="h2">23.2 What is missing</h2>
+
+  <p>Three gaps, stated plainly rather than buried.</p>
+
+  <p><strong>No arrow-key navigation.</strong> The ARIA authoring practices for a
+    <code>menu</code> expect arrow keys to move between <code>menuitem</code>s, with Tab moving
+    out of the menu entirely. The hub gives every wedge a real tab stop and no arrow handling, so
+    it behaves like a list of links that happens to be labelled as a menu. For a radial layout
+    the mapping is not obvious — should Right go clockwise, or to the next item, and what do Up
+    and Down mean on a ring? — but "not obvious" is not the same as "not required".</p>
+
+  <p><strong>No focus trap.</strong> Tab past the last wedge and focus continues to the foot
+    pill, and past that into the document behind the overlay — which is
+    <code>aria-hidden</code> and covered, so focus lands somewhere invisible.</p>
+
+  <p><strong>No focus restore.</strong> Closing the dial does not return focus to the orb. A
+    keyboard user who opens the menu and presses Escape is left with focus wherever it was
+    inside a now-unmounted overlay.</p>
+
+  <p>All three are in Chapter 30. None of them prevents the menu from being used with a
+    keyboard; each of them makes it worse than it should be.</p>
+
+  <h2 data-level="h2">23.3 Focus visibility, and the one place it is suppressed</h2>
+
+  <p>A wedge's <code>:focus-visible</code> deliberately removes the outline:</p>
+
+  <pre>.radial-hub__wedge:focus-visible { outline: none; }</pre>
+
+  <p>This is normally a red flag. It is defensible here because the same selector list —
+    <code>:hover, :focus-visible, .is-active</code> — fills the sector with the accent colour and
+    flips its glyph to the accent's contrast ink. The focused wedge is not subtly outlined; it is
+    the one wedge on the dial that is a solid block of accent. An outline on top of that would
+    have to trace the sector's clip path, which it cannot — an <code>outline</code> follows the
+    border box, and the border box here is the whole dial square, so the "focus ring" would be a
+    rectangle around the entire menu.</p>
+
+  <p>The orb, whose border box is its own disc, keeps a real ring:
+    <code>outline: 3px solid var(--site-text); outline-offset: 3px</code>.</p>
+
+  <div class="rule-box">
+    <h4>The test for suppressing a focus ring</h4>
+    <p>Removing <code>outline</code> is acceptable only when the same state produces an
+      indication that is at least as strong and does not depend on colour perception alone.
+      A full-sector fill with an inverted glyph passes: it changes the shape's value, not just
+      its hue. A border brighten on a transparent fill does not — which the audit also caught,
+      as AUD-118, on the outline button variant.</p>
+  </div>
+
+  <h2 data-level="h2">23.4 Translation</h2>
+
+  <p>Every string in the hub goes through <code>t()</code> with an English
+    <code>defaultValue</code>: the orb's label, the dial's label, the scrim's and close
+    button's "Close", "Settings", "Sign out", "Sign in", and each of the sixteen destination
+    names via its catalog <code>tKey</code>. Sixteen locales, two of them right-to-left.</p>
+
+  <p>The audit surfaced a subtle hazard in this arrangement. The orb's shipped English catalog
+    entry is "Open menu"; the code's <code>defaultValue</code> is "Open navigation". Both are
+    fine strings; they are different strings, and the live accessible name is whichever the
+    catalog supplies. The audit's own harness selected the orb by accessible name and silently
+    captured nothing.</p>
+
+  <p>The general form: a <code>defaultValue</code> is a fallback, not documentation. Anything
+    that depends on the accessible name — a test, a screenshot harness, an analytics selector —
+    must read the catalog, not the component. And a drift between the two is invisible in the
+    UI, which is what makes it durable.</p>
+</section>
+
+<!-- ─────────────────────────── CH 24 ─────────────────────────── -->
+<section data-head-l="Part Six · Input and access" data-head-r="The caption in the hole" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Twenty-four</p>
+  <h1 class="ch" data-level="h1" data-no="24">The caption in the hole</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">Below 480 pixels the dial is sixteen unlabelled glyphs, which the audit
+    correctly called recall rather than recognition. There is no room for sixteen labels on a
+    320-pixel dial. There is room for one, in the middle.</p>
+
+  <h2 data-level="h2">24.1 The finding</h2>
+
+  <p>AUD-504(a), rated as part of a P1 group: <em>the mobile dial is entirely icon-only —
+    sixteen unlabelled glyphs as the sole navigation.</em> Desktop wedges showed labels; phones
+    did not. Chapter 12 established that this was not an oversight but arithmetic: the outer
+    band on a 275-pixel dial gives each destination a box of roughly 37×38 pixels, and no
+    typography puts "Adaptive Intelligence" in it.</p>
+
+  <p>So the fix could not be "add the labels back". It had to find room that was not there.</p>
+
+  <h2 data-level="h2">24.2 The hole is the room</h2>
+
+  <p>The dial's centre hole exists to clear the orb — radius 19, which on a 275-pixel dial is a
+    104-pixel-wide circle. The orb itself is 56 pixels. That leaves an annulus of empty space
+    inside the hole, and empty space in the middle of a dial is the one region every sector is
+    equidistant from.</p>
+
+  {{code:components/radial/radial.css|1252-1273|The centre caption}}
+
+  <p>The component tracks which destination the pointer or focus is on, in a single piece of
+    state:</p>
+
+  {{code:components/radial/RadialHub.tsx|113-121|The hovered-label state, and why}}
+
+  <p>Four handlers per wedge set and clear it — <code>onPointerEnter</code>,
+    <code>onPointerLeave</code>, <code>onFocus</code>, <code>onBlur</code> — so it responds to
+    both the pointer and the keyboard. The clear handlers are guarded:
+    <code>setHoveredLabel((cur) =&gt; (cur === label ? null : cur))</code>, so a leave event
+    arriving after the next wedge's enter event cannot blank a label that has already been
+    replaced. That ordering does happen, on touch especially, and without the guard the caption
+    flickers.</p>
+
+  <p>An effect keyed on the phase clears the caption when the menu closes, so reopening never
+    briefly shows the last thing you touched.</p>
+
+  <h2 data-level="h2">24.3 Exact complementarity</h2>
+
+  <p>The caption and the per-wedge labels are exact complements, and both halves are declared in
+    the same media query:</p>
+
+  <pre>.radial-hub__wedge-label { display: none; }        /* base: phones */
+.radial-hub__caption    { /* visible */ }
+
+@media (min-width: 480px) {
+  .radial-hub__wedge-label { display: -webkit-box; }
+  .radial-hub__caption     { display: none; }
+}</pre>
+
+  <p>Exactly one of them is showing a name at any width. That is not merely tidy — it is the
+    thing that makes the mechanism honest. A caption that also appeared on desktop would
+    duplicate the label under the pointer, and the reader would have two sources for the same
+    fact. A caption that appeared on neither would be the original bug.</p>
+
+  <p>The caption's own geometry has one deliberate oddity:
+    <code>padding-top: 2.6rem</code>. It is centred on the dial's midpoint, and the orb is also
+    there — so the padding pushes the text below the orb rather than behind it. It is a
+    single-property solution to what would otherwise be an offset calculation against the orb's
+    size token.</p>
+
+  <h2 data-level="h2">24.4 What it does not fix</h2>
+
+  <p>The caption tells you what you are touching. It does not tell you the menu exists.</p>
+
+  <p>AUD-118 states the remaining problem in one clause: <em>sub-1120px navigation is a single
+    unlabelled orb with no first-run hint.</em> Below the desktop rail's breakpoint, the site's
+    entire navigation is one circular mark with a logo in it. A user who does not tap it never
+    discovers that the site has sixteen destinations.</p>
+
+  <p>The audit's own suggestion — a transient "Menu" caption on first run — has not shipped. It
+    is the single largest open item on this control, and Chapter 30 is direct about why it is
+    hard to do well: a first-run hint that is too quiet is decoration, one that is too loud is
+    an interstitial, and the platform already has enough first-run overlays that the audit had
+    to suppress several to capture anything at all.</p>
+
+  <div class="pull">The caption solved recognition for people already inside the menu. Nothing
+    yet solves discovery for people outside it.</div>
+</section>
+
+<!-- ─────────────────────────── CH 25 ─────────────────────────── -->
+<section data-head-l="Part Six · Input and access" data-head-r="Blocking scroll without a scroll lock" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Twenty-five</p>
+  <h1 class="ch" data-level="h1" data-no="25">Blocking scroll without a scroll lock</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">The most valuable thing the deleted push-drawer left behind. Both standard
+    techniques for locking background scroll clip the document to the visual viewport on iOS,
+    which leaves a band of bare page background under Safari's floating bottom bar. The hub uses
+    neither.</p>
+
+  <h2 data-level="h2">25.1 The two techniques, and what they do</h2>
+
+  <p>The conventional options for stopping the page scrolling behind an overlay are
+    <code>body { overflow: hidden }</code> and the <code>position: fixed</code> body technique
+    (fix the body, offset it by the current scroll position, restore on close).</p>
+
+  <p>Both work. Both have the same side effect on mobile Safari, and it is not obvious from a
+    desktop browser: they clip the document to the <em>visual</em> viewport. Safari's layout
+    viewport extends behind its floating bottom bar, and the page normally scrolls
+    <em>under</em> that bar — that is why content is visible through it. Clip the document to
+    the visual viewport and the content that would have been under the bar is no longer
+    rendered, leaving a strip of bare page background there.</p>
+
+  <p>On a dark page under a translucent bar that is a grey band across the bottom of the screen,
+    appearing the instant a menu opens. It is not a rendering glitch that can be worked around
+    from inside the overlay; it is a consequence of what the technique does to the document.</p>
+
+  <h2 data-level="h2">25.2 What the hub does instead</h2>
+
+  {{code:components/radial/radial.css|958-971|touch-action, not a scroll lock}}
+
+  <p>Two mechanisms, one per input class.</p>
+
+  <p><strong>Touch:</strong> <code>touch-action: none</code> on the overlay. The overlay covers
+    the viewport, so a touch that would have panned the page starts on an element that declines
+    to be panned. The document is never modified — it keeps its scroll position, its full height
+    and its normal relationship to the browser's chrome. Content still flows under Safari's
+    bottom bar exactly as it does when the menu is closed.</p>
+
+  <p><strong>Pointer:</strong> a <code>wheel</code> listener on the overlay with
+    <code>{ passive: false }</code> calling <code>preventDefault()</code>, because
+    <code>touch-action</code> governs touch and pen, not a mouse wheel.</p>
+
+  <p>Taps are unaffected — <code>touch-action</code> suppresses panning gestures, not clicks —
+    so the scrim still dismisses on tap and the wedges still navigate.</p>
+
+  <h2 data-level="h2">25.3 The provenance, and why the comment is so long</h2>
+
+  <p>This was established on a real device, for the mobile push-drawer, which blocked background
+    scroll from its scrim for exactly this reason. That drawer no longer exists — commit
+    <code>0969119</code> deleted it as unreachable code — so the finding survives only as
+    comments, and it is deliberately duplicated in two places: the effect in
+    <code>RadialHub.tsx</code> that installs the wheel guard, and the CSS rule that sets
+    <code>touch-action</code>.</p>
+
+  <p>Duplicating a comment is normally a smell. Here it is insurance. Somebody optimising the
+    stylesheet would see a lone <code>touch-action: none</code> and reasonably wonder why the
+    component does not just lock the body like everything else does; somebody reading the
+    component would see a wheel guard and wonder the same. Both need the answer, and the answer
+    is a device-specific finding that cannot be re-derived by reading either file.</p>
+
+  <div class="rule-box">
+    <h4>The transferable rule</h4>
+    <p>An on-device finding that led you to reject the obvious implementation must be written
+      down <em>at the site of the unobvious one</em>. Otherwise the next person will
+      "simplify" it back, ship the regression, and rediscover the finding on a device they may
+      not have.</p>
+  </div>
+
+  <h2 data-level="h2">25.4 What is deliberately not blocked</h2>
+
+  <p>The page keeps its scroll position, which means the feed is exactly where it was when the
+    menu closes. No restoration logic, no scroll-position bookkeeping, no jump — because nothing
+    was ever moved. This is a real advantage of the technique beyond the iOS bug: the
+    <code>position: fixed</code> body approach has to save and restore a scroll offset, and
+    every implementation of that has an edge case around resize, orientation change, or a page
+    that grew while the overlay was open.</p>
+
+  <p>Scrolling <em>inside</em> the overlay is also not blocked, because there is nothing inside
+    it to scroll. The dial is sized to fit the viewport by construction — <code>min(86vw, 70vh,
+    460px)</code> — and the foot pill is a single row. A radial menu that needed to scroll would
+    be a radial menu with too many destinations, and the answer to that is another deck, not a
+    scrollbar.</p>
+</section>
+
+<!-- ─────────────────────────── CH 26 ─────────────────────────── -->
+<section data-head-l="Part Six · Input and access" data-head-r="Safe areas and the floating stack" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Twenty-six</p>
+  <h1 class="ch" data-level="h1" data-no="26">Safe areas and the floating stack</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">The single largest source of defects in the whole project, and the least
+    glamorous. A fixed control at the bottom centre of every page has to coexist with a home
+    indicator, a cookie banner, a mini player, a back-to-top button, a compose button, and the
+    content scrolling underneath it.</p>
+
+  <h2 data-level="h2">26.1 The safe area</h2>
+
+  <p>The site sets <code>viewport-fit=cover</code>, so the layout extends into the display's
+    rounded corners and behind the home indicator. The body carries safe-area padding — and
+    <strong>that padding does not apply to <code>position: fixed</code> elements</strong>, which
+    position against the viewport rather than against the body's content box.</p>
+
+  <p>So every bottom-anchored fixed element in the module adds the inset itself:</p>
+
+  <pre>--orb-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--site-hub-orb-inset));</pre>
+
+  <p>The orb, the aura, the foot pill and the feed's compose button all do this independently.
+    Skipping it puts the control inside the home-indicator gesture strip, where taps are
+    unreliable because the system claims them — and, visibly, makes it hang lower than the
+    compose button beside it, which was always safe-area-aware. That mismatch is how the bug was
+    noticed.</p>
+
+  <h2 data-level="h2">26.2 The floating-bottom stack</h2>
+
+  <p>The orb is not the only thing that wants the bottom of the screen. The platform defines an
+    explicit stack, and the orb is its bottom member:</p>
+
+  {{fig:stack}}
+  <p class="figcap">Figure 26.1 — The floating-bottom stack. The orb carries
+    <code>data-floating="hub"</code> and everything else lifts above it. Its footprint comes from
+    <code>--site-hub-orb-size</code> and <code>--site-hub-orb-inset</code>, declared in
+    <code>globals.css</code> precisely so that the stack's reserve and the orb's geometry cannot
+    drift apart.</p>
+
+  <p>The coordination is done with <code>:has()</code> in <code>globals.css</code>: the presence
+    of <code>[data-floating="hub"]</code> lifts the cookie bar, the mini player and the
+    back-to-top control clear of it. The compose button shares the orb's row but is shorter, so
+    it sits beside rather than above.</p>
+
+  <p>And the bug — AUD-102, the most-cited instance of AUD-003 — was that this entire mechanism
+    was wrapped in <code>@media (max-width: 767.98px)</code>. It ran on phones and never on
+    anything wider. So at every viewport from 768 pixels up, on every page of the site, the orb
+    sat on top of the cookie banner's text and its "Learn more" link. The fix was to extend the
+    coordination to all widths.</p>
+
+  <div class="defect">
+    <h4>Why a mobile-only media query was the wrong container</h4>
+    <p>The reasoning that put it there is easy to reconstruct: floating controls pile up on
+      phones, so coordinate them on phones. But the orb is fixed at <em>every</em> width — it is
+      not a mobile control — and the cookie banner is full-width at every width. The collision
+      was never about screen size. Scoping a coordination mechanism to the viewport where the
+      problem was first noticed, rather than to the elements that actually participate, is a
+      recurring shape of bug.</p>
+  </div>
+
+  <h2 data-level="h2">26.3 Clearance for content</h2>
+
+  <p>Not colliding with other chrome is half the problem. The other half is that page content
+    scrolls underneath the orb, and a 56-pixel disc floating over a feed covers text.</p>
+
+  <p>Two mechanisms, and they are different in kind.</p>
+
+  <p><strong>Reserve at the end.</strong> <code>--site-floating-reserve</code> is derived from
+    the orb's own size and inset tokens — not a guessed clamp — and every column that ends near
+    the bottom of the page pads by it. Any full-height desktop panel stops
+    <code>--rad-corner-reserve</code> short of the viewport bottom for the same reason. That
+    solves the <em>end</em> of a scroll: the last feed card is not under the orb.</p>
+
+  <p><strong>The legibility scrim.</strong> Nothing can stop text travelling through the orb's
+    band mid-scroll. So the ground fades in behind it:</p>
+
+  {{code:components/radial/radial.css|756-783|The legibility scrim under the docked orb}}
+
+  <p>A radial gradient of the page background, 24rem wide, fading out by 78% of its radius,
+    never hit-testable, and retracting the instant the dial opens because the overlay owns the
+    screen then. Text passing beneath the orb dissolves into the page rather than colliding with
+    a disc. It is the third of the audit's three prescribed fixes for AUD-003, and it is the one
+    that turns an unavoidable overlap into a deliberate one.</p>
+
+  <h2 data-level="h2">26.4 The flexbox trap in the foot pill</h2>
+
+  <p>AUD-504(b): the account pill's avatar disc painted over the settings gear beside it, at
+    both viewports. The cause is one of the most common flexbox mistakes there is, and the fix
+    is one line.</p>
+
+  <p>A flex item's default <code>min-width</code> is <code>auto</code>, which resolves to its
+    <em>content</em> size. The identity pill contains an avatar and a display name; with a long
+    name, its content size exceeded the space available, and because <code>min-width: auto</code>
+    prevented it from shrinking below that, it kept its full width and overflowed onto its
+    neighbour.</p>
+
+  {{code:components/radial/radial.css|1332-1342|min-width: 0, and what ellipses}}
+
+  <p>The fix is <code>min-width: 0</code> on the pill, <code>flex: none</code> on the avatar so
+    it is not what shrinks, and <code>overflow: hidden</code> plus
+    <code>text-overflow: ellipsis</code> on the name so the <em>name</em> is what gives way. The
+    icon buttons beside it also carry <code>flex: none</code>, so they can never be squeezed by
+    the pill.</p>
+
+  <p>Worth stating as a rule, because it generalises well beyond this component: <strong>in any
+    flex row that mixes a fixed element with a text element, the text element needs
+    <code>min-width: 0</code> and the fixed elements need <code>flex: none</code>.</strong>
+    Without the first, nothing shrinks; without the second, the wrong thing does.</p>
+
+  <h2 data-level="h2">26.5 The last-resort guarantee</h2>
+
+  <p>One more line, at the level of the shell:</p>
+
+  <pre>.radial-shell { overflow-x: clip; }</pre>
+
+  <p>Not <code>hidden</code>. <code>clip</code>. The distinction matters:
+    <code>overflow: hidden</code> makes an element a scroll container, and a scroll container
+    breaks <code>position: sticky</code> for its descendants — which would silently unstick the
+    top bar and both rails. <code>overflow-x: clip</code> clips without creating a scroll
+    container.</p>
+
+  <p>It is there as a guarantee of last resort: whatever else goes wrong inside the shell,
+    nothing can scroll the document sideways. The module's overlap-safety section is explicit
+    that this is a backstop rather than a strategy — the real work is grid tracks with
+    <code>minmax(0, …)</code>, <code>min-width: 0</code> on every flex child, line clamps and
+    <code>overflow-wrap: anywhere</code> on every slot that takes user content. Where overlap can
+    be made structurally impossible, it is. This line catches what is left.</p>
+</section>

@@ -1,0 +1,451 @@
+<!-- ═══════════════════════════ PART V ═══════════════════════════ -->
+<section class="full-page plain-page">
+  <div class="part">
+    <div class="part__no">Part Five</div>
+    <h2 class="part__title" data-level="part" data-toc-text="Part Five — Material and colour">Material and colour</h2>
+    <p class="part__blurb">Why the dial is two stacked copies of the same geometry, how the
+      metaball filter works, and the four-commit story of a menu whose icons were white on
+      white.</p>
+    <div class="part__toc">
+      <div><span>18</span>Two layers, art and hit</div>
+      <div><span>19</span>The metaball filter bank</div>
+      <div><span>20</span>White on white</div>
+      <div><span>21</span>Tokens, themes and the accent</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────── CH 18 ─────────────────────────── -->
+<section data-head-l="Part Five · Material and colour" data-head-r="Two layers, art and hit" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Eighteen</p>
+  <h1 class="ch" data-level="h1" data-no="18">Two layers, art and hit</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">The dial renders every sector twice: once as a decorative fill that the goo
+    filter melts, and once as a real link that nothing filters. That duplication is the
+    architectural answer to a hard constraint — the filter that makes the dial liquid destroys
+    text.</p>
+
+  <h2 data-level="h2">18.1 The constraint</h2>
+
+  <p>A goo filter works by blurring its input and then running the blurred alpha through a
+    steep contrast ramp. The ramp is indiscriminate: it operates on alpha, and antialiased
+    glyph edges <em>are</em> alpha. Run a 16-pixel-tall label through a blur and a ×19 alpha
+    multiply and what comes out is not slightly softer text; it is chewed. Strokes fatten
+    unevenly, counters fill in, and hinting is destroyed.</p>
+
+  <p>The module's README states the rule first among three: <strong>a goo group contains shapes
+    only.</strong> Anything readable rides in a sibling layer above the filter.</p>
+
+  <h2 data-level="h2">18.2 The two layers</h2>
+
+  {{code:components/radial/radial.css|1054-1076|The split, and what the filter touches}}
+
+  <p>The art layer is <code>aria-hidden</code>, <code>pointer-events: none</code>, and carries
+    the bled polygon from Chapter 13. It contributes nothing but colour. The hit layer is the
+    real navigation: sixteen anchors, each clipped to its exact sector, each containing its own
+    icon and label.</p>
+
+  <p>Both are absolutely positioned over the same square with the same geometry, generated from
+    the same <code>wedges</code> array in the same render. There is no synchronisation problem
+    because there is nothing to synchronise: one array, two <code>map</code> calls.</p>
+
+  {{fig:dialHit}}
+
+  <h2 data-level="h2">18.3 The property this buys: colour correctness by construction</h2>
+
+  <p>The split's obvious benefit is crisp glyphs. Its more valuable benefit is subtler, and it
+    is the thing that finally solved the white-on-white problem in Chapter 20.</p>
+
+  <p>Because the glyph lives <em>inside</em> its sector's anchor, it inherits that anchor's
+    <code>color</code>. And the anchor's colour is declared alongside its background:</p>
+
+  {{code:components/radial/radial.css|1173-1199|Colour that tracks its own state}}
+
+  <p>Read the chain. At rest the anchor is transparent with <code>color: var(--site-text)</code>
+    — the page's ink, on a sector whose fill comes from the art layer beneath, which is a
+    near-surface tint. On hover, focus or active the anchor fills with
+    <code>var(--site-accent)</code> and its colour becomes <code>var(--site-accent-fg)</code> —
+    that fill's paired foreground. The glyph follows automatically, because it inherits.</p>
+
+  <p>Both of those pairings are contrast-guaranteed by the platform: <code>--site-text</code>
+    against <code>--site-bg</code> is the theme's fundamental contrast pair, and
+    <code>--site-accent-fg</code> against <code>--site-accent</code> is checked at runtime by
+    <code>ensureReadableAccent()</code>, which refuses to install a custom accent whose pair
+    fails. So the glyph cannot be illegible in any theme, on any accent, in any state — not
+    because someone tested it, but because there is no code path that produces an unpaired
+    combination.</p>
+
+  <div class="pull">The glyph is correct because of where it lives, not because of what it was
+    told.</div>
+
+  <h2 data-level="h2">18.4 The active state, on the art layer</h2>
+
+  <p>One asymmetry: the current page's sector is filled on the <em>art</em> layer, not only on
+    the hit layer.</p>
+
+  <pre>.radial-hub__wedge-art.is-active { background: var(--site-accent); }</pre>
+
+  <p>Both layers carry <code>is-active</code>, and the reason the art layer needs it is the
+    filter. If only the unfiltered hit layer painted the active fill, the active sector's
+    colour would sit crisply on top of a goo-melted neighbourhood — a hard-edged wedge in a
+    liquid disc. Filling the art layer puts the active colour <em>inside</em> the filter, so the
+    current destination melts into the dial like every other sector and simply happens to be
+    the accent colour.</p>
+
+  <p>The active glyph's own ink still comes from the hit layer's <code>color</code>, unfiltered.
+    Accent fill, liquid, filtered; contrast ink, crisp, on top.</p>
+
+  <h2 data-level="h2">18.5 Why not one layer with the filter on a pseudo-element</h2>
+
+  <p>The obvious economy is a single set of anchors, each with a <code>::before</code> carrying
+    the filtered fill. It does not work, for a reason that is worth knowing because it recurs
+    throughout this module: <strong><code>filter</code> creates a new stacking context and a
+    containing block for <code>position: fixed</code> descendants.</strong></p>
+
+  <p>A filter on a pseudo-element of the anchor would be fine in isolation. But the goo effect
+    requires the sectors to be filtered <em>as a group</em> — that is the entire mechanism;
+    neighbouring shapes must be in the same filter region to fuse. Sixteen individually
+    filtered pseudo-elements produce sixteen independently rounded sectors and no fusion at
+    all. The filter has to be on a common ancestor, and a common ancestor of the anchors is
+    also an ancestor of their glyphs.</p>
+
+  <p>Hence: two sibling groups, one filtered wholesale, one untouched. It is more DOM — thirty-two
+    list items instead of sixteen — and it is the only arrangement that satisfies both
+    constraints at once.</p>
+
+  <p>The same stacking-context hazard is why the orb's aura is a separate fixed layer rather
+    than a pseudo-element on the orb: filtering the orb would filter the mark, and the mark is
+    hairline line art that the alpha ramp would obliterate. And it is why the README's second
+    rule reads <em>never filter an ancestor of fixed chrome</em>, with the note that nothing
+    filters <code>.radial-shell</code>.</p>
+</section>
+
+<!-- ─────────────────────────── CH 19 ─────────────────────────── -->
+<section data-head-l="Part Five · Material and colour" data-head-r="The metaball filter bank" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Nineteen</p>
+  <h1 class="ch" data-level="h1" data-no="19">The metaball filter bank</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">Three SVG filters in one hidden <code>&lt;defs&gt;</code>, mounted once in the
+    shell. Blur, then a steep ramp on alpha, then the sharp original composited back. Fifty-eight
+    lines of component for the effect that gives the whole design language its name.</p>
+
+  {{code:components/radial/LiquidGoo.tsx|29-58|The whole filter bank}}
+
+  <h2 data-level="h2">19.1 How it works</h2>
+
+  <p>Three primitives, in order.</p>
+
+  <p><strong><code>feGaussianBlur</code></strong> spreads each shape's alpha outward. Two shapes
+    that were near each other now have overlapping alpha halos, and in the region between them
+    the summed alpha is higher than either halo alone.</p>
+
+  <p><strong><code>feColorMatrix</code></strong> multiplies alpha by a large factor and
+    subtracts a constant, which is a steep linear ramp clamped at both ends. Alpha above the
+    threshold snaps to 1; below it, to 0. The blurred halo collapses back to a hard edge — but
+    the <em>position</em> of that edge is now determined by the summed alpha, so the region
+    between two nearby shapes, where alpha was boosted by both, is inside the new silhouette. A
+    smooth neck. Metaballs.</p>
+
+  <p><strong><code>feBlend</code></strong> composites the sharp original back over the fused
+    result, so interior detail — borders, inner highlights — survives rather than being replaced
+    by a flat silhouette.</p>
+
+  <p>The matrix row that does the work is the last one, and it is worth reading as arithmetic:
+    <code>0 0 0 {ramp} -{(ramp-1)/2}</code>. Output alpha is
+    <code>ramp × α − (ramp−1)/2</code>. Set <code>α = 0.5</code> and the output is
+    <code>ramp/2 − ramp/2 + 0.5 = 0.5</code>. So the ramp is <em>pivoted on
+    α = 0.5</em>, for any ramp value: half-alpha stays half-alpha, and everything either side is
+    pushed to the extremes. That is what makes the three filters differ in aggressiveness but
+    not in where they cut.</p>
+
+  {{fig:ramp}}
+  <p class="figcap">Figure 19.1 — The three alpha ramps. All three pivot on α = 0.5; the
+    difference is steepness, and therefore how far apart two shapes can be and still fuse. The
+    blur radius sets the distance at which alpha is still non-negligible; the ramp sets how
+    much of that halo survives.</p>
+
+  <h2 data-level="h2">19.2 The three radii</h2>
+
+  <table class="compact">
+    <caption>The filter bank</caption>
+    <thead><tr><th>Filter</th><th class="num">Blur</th><th class="num">Ramp</th><th class="num">α threshold</th><th>Used by</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">rmh-liquid-sm</td><td class="num">4</td><td class="num">15</td><td class="num">0.467</td><td>Tight: rounds corners, fuses only touching shapes.</td></tr>
+      <tr><td class="mono">rmh-liquid</td><td class="num">8</td><td class="num">19</td><td class="num">0.474</td><td>The default. The hub dial and the orb aura.</td></tr>
+      <tr><td class="mono">rmh-liquid-lg</td><td class="num">16</td><td class="num">24</td><td class="num">0.479</td><td>Wide: distant blobs pull together. The backdrop blob field.</td></tr>
+    </tbody>
+  </table>
+
+  <p>The dial uses the middle one. With <code>stdDeviation = 8</code>, alpha is still meaningful
+    about 16–20 pixels from an edge, which comfortably spans the dial's ~3-pixel dividers — so
+    adjacent sectors fuse across them and the dividers become gooey necks rather than
+    channels. It also, as Chapter 13 documents, erodes a couple of pixels off every edge, which
+    is what the art bleed pays back.</p>
+
+  <h2 data-level="h2">19.3 Where the goo is used, and where it is banned</h2>
+
+  <table class="compact">
+    <caption>The liquid layer, across the module</caption>
+    <thead><tr><th>Surface</th><th>What fuses</th></tr></thead>
+    <tbody>
+      <tr><td>Hub dial</td><td>The clip-path sectors melt into one liquid disc; dividers become necks; the rim corners round off.</td></tr>
+      <tr><td>Orb aura</td><td>Three orbiting blobs stretch and neck in and out of the orb-sized core disc.</td></tr>
+      <tr><td>Backdrop blob field</td><td>Huge faint blobs drift, swell together and pull apart behind everything.</td></tr>
+      <tr><td>Pointer drop</td><td>The pointer's blobs fuse into one trailing drop — mouse and finger alike.</td></tr>
+      <tr><td>Loading mark</td><td>Orbiting blobs melt into a pulsing core, which is what the shared <code>Spinner</code> renders.</td></tr>
+      <tr><td colspan="2" style="border:none;padding-top:8px"><strong>Never:</strong> any group containing text or an icon; any ancestor of fixed chrome; <code>.radial-shell</code> itself.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 data-level="h2">19.4 The trap that is not in the code</h2>
+
+  <p>The README's fourth rule is the longest in the module and describes a technique the code
+    deliberately does not use. It is included here in full because it is the most transferable
+    piece of knowledge the whole project produced.</p>
+
+  <p>There is a cheap, popular way to get a goo effect without an SVG filter: put an opaque
+    plate behind some white blobs, apply <code>blur() contrast()</code> in CSS to threshold
+    them, and add <code>mix-blend-mode: difference</code> to cancel the plate — black being
+    difference's identity element. It works. It looks identical. And it is a landmine.</p>
+
+  <p>It stays invisible only while the compositor blends against the true page backdrop. The
+    moment the layer gets its own render surface — which is a GPU-compositing decision, made by
+    the browser, on criteria the author does not control — the plate stops cancelling and the
+    entire box appears as a bright rectangle trailing the pointer. It does not reproduce under
+    software rasterisation, so it is not a bug you can test your way out of.</p>
+
+  <p>The pointer metaball therefore uses an SVG alpha ramp — blur, then a steep curve on alpha
+    alone — which emits the fused silhouette and transparency everywhere else. There is no box
+    to reveal, on any path, and no blend mode at all, which also spares the per-frame backdrop
+    readback that blending forces.</p>
+
+  <div class="rule-box">
+    <h4>The general form of the lesson</h4>
+    <p>An effect that depends on <em>what a layer is composited against</em> is an effect that
+      depends on a decision the browser makes for performance reasons and can change between
+      versions, between GPUs, and between one scroll position and the next. Alpha is a property
+      of the layer. Blending is a property of the layer's relationship to its surroundings. Prefer
+      alpha.</p>
+  </div>
+
+  <h2 data-level="h2">19.5 Cost, and the gate</h2>
+
+  <p>An always-on SVG filter is continuous GPU work, so every decorative goo layer sits behind
+    <code>@media (min-width: 768px) and (prefers-reduced-motion: no-preference)</code> — the same
+    budget the ring backdrop already respects on phones. Below the gate the sectors render
+    crisply, which is not a degraded dial so much as a different one: sharper, more legible, and
+    arguably better on a small screen where the liquid character is mostly lost anyway.</p>
+
+  <p>The filter bank itself is always mounted — one hidden <code>&lt;svg width="0"
+    height="0"&gt;</code> holding three <code>&lt;filter&gt;</code> definitions. Definitions cost
+    nothing until referenced. Mounting it unconditionally means CSS can reference the filters
+    from inside a media query without the component needing to know which queries matched, which
+    keeps the gating entirely in the stylesheet where the rest of the degradation lives.</p>
+</section>
+
+<!-- ─────────────────────────── CH 20 ─────────────────────────── -->
+<section data-head-l="Part Five · Material and colour" data-head-r="White on white" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Twenty</p>
+  <h1 class="ch" data-level="h1" data-no="20">White on white</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">Four commits, one recurring cause. The dial's icons were invisible, then the
+    dial's sectors were invisible, then the logo mark was invisible. Every instance traces to
+    the same idea: deriving contrast from the backdrop instead of from a token.</p>
+
+  <h2 data-level="h2">20.1 The idea that caused it</h2>
+
+  <p>Sixteen sectors, any of which may be resting, hovered, focused or active, each with a
+    different fill, on a dial that floats over an arbitrary blurred page in an arbitrary theme.
+    What colour should a glyph be?</p>
+
+  <p><code>mix-blend-mode: difference</code> is an extremely attractive answer. White, blended
+    in difference mode, yields the exact inverse of whatever is beneath it. Maximum contrast,
+    automatically, against any backdrop, in any theme, in any state, with no state tracking and
+    no token plumbing. The glyph layer was made a single sibling above the filtered sectors and
+    given difference blending, and it worked in the browser it was built in.</p>
+
+  <p>The failure is not about colour. It is about <em>what "beneath" means</em>. A blend mode
+    composites against the backdrop <strong>within the element's own stacking context</strong> —
+    not against whatever is visually behind it on screen. The glyph layer sat in a stacking
+    context that did not contain the sectors it was meant to invert. So it inverted the
+    context's own backdrop, which was nothing, which is to say it rendered white. On a white
+    page, over a white-tinted dial. Commit <code>28e03b2</code>: <em>"radial menu icons were
+    white-on-white."</em></p>
+
+  <h2 data-level="h2">20.2 The four instances</h2>
+
+  <table class="compact">
+    <caption>The white-on-white family</caption>
+    <thead><tr><th style="width:62px">Commit</th><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">28e03b2</td><td>Dial icons invisible</td><td>Glyph layer used difference blending against a stacking context that did not contain the sectors.</td><td>Move the glyph inside its sector's anchor; inherit <code>color</code>.</td></tr>
+      <tr><td class="mono">c631cb4</td><td>Whole dial invisible on a light page</td><td>Sector fill was <code>color-mix(--site-surface 60%, transparent)</code> — a tint of an already-translucent token.</td><td>Build on <code>--site-surface-opaque</code>, mix 6% toward <code>--site-text</code>.</td></tr>
+      <tr><td class="mono">454a762</td><td>Logo mark invisible on some accents</td><td>Same difference-blending idea, applied to the mark inside the orb.</td><td>Name <code>--site-accent-fg</code>, the orb fill's paired foreground.</td></tr>
+      <tr><td class="mono">89496ed</td><td>Site-wide: text and icons not tracking their surface</td><td>Components setting a background without naming the paired ink.</td><td>Zero-specificity <code>:where()</code> defaults in <code>globals.css</code> supply each pairing automatically.</td></tr>
+    </tbody>
+  </table>
+
+  <p>The fourth is the interesting one, because it is the systemic fix. Rather than auditing
+    every call site, <code>globals.css</code> now declares the pairings as
+    <code>:where()</code> rules — zero specificity, so an element that sets only a background
+    still gets the correct ink, and anything that states its own colour still wins. Since lucide
+    icons paint with <code>currentColor</code>, one mechanism covers text and icons together.</p>
+
+  <h2 data-level="h2">20.3 What replaced the clever idea</h2>
+
+  <p>The final architecture is the least clever available and the only one that is correct by
+    construction. Stated as a rule:</p>
+
+  <div class="rule-box">
+    <h4>Ink comes from the surface's paired token, and lives inside the surface</h4>
+    <p>Do not compute contrast. Do not derive it from the backdrop. Name the foreground token
+      that the theme author paired with the background you used, and put the text inside the
+      element that carries that background so it inherits. Both halves matter: naming the token
+      makes it theme-correct, and living inside the element makes it
+      <em>state</em>-correct — hover, focus and active change the pair together, with no
+      cross-layer coordination.</p>
+  </div>
+
+  <p>The comment left on the logo's colour declaration is the epitaph, and it names the exact
+    mechanism so nobody re-derives the idea:</p>
+
+  <blockquote>An earlier revision used <code>mix-blend-mode: difference</code> here; blending
+    only composites against the backdrop inside the element's OWN stacking context, which is
+    exactly how the hub glyphs ended up white-on-white.
+    <cite>components/radial/radial.css — .radial-hub__logo</cite></blockquote>
+
+  <h2 data-level="h2">20.4 Why this class of bug is so easy to ship</h2>
+
+  <p>Three properties make it uniquely dangerous, and they are worth recognising in the
+    abstract.</p>
+
+  <p><strong>It looks right in development.</strong> The default theme is the one the author has
+    open, and the bug's whole character is that it depends on the resolved palette. An invisible
+    control in a theme nobody opened is a control that ships.</p>
+
+  <p><strong>It is invisible to type checking and to lint.</strong> Nothing is malformed. The
+    CSS is valid, the tokens exist, the blend mode is supported. There is no rule that could
+    have caught it short of rendering the page and looking at it.</p>
+
+  <p><strong>The failure mode is total.</strong> An unreadable label is bad; an <em>invisible</em>
+    one is a control that does not appear to exist. On the mobile dial, where sixteen glyphs are
+    the entire navigation, a white-on-white glyph layer means the site has no navigation at
+    all.</p>
+
+  <p>Which is why the platform's definition of done for a UI commit ends with the requirement
+    that the change was <em>actually looked at</em> in the default, light and high-contrast
+    themes, at a phone width and a desktop width, and once with reduced motion on. Three themes
+    by two widths is stated as the floor. This family of four commits is why.</p>
+</section>
+
+<!-- ─────────────────────────── CH 21 ─────────────────────────── -->
+<section data-head-l="Part Five · Material and colour" data-head-r="Tokens, themes and the accent" data-foot-l="RMH Studios · DR-014">
+  <p class="ch-no">Chapter Twenty-one</p>
+  <h1 class="ch" data-level="h1" data-no="21">Tokens, themes and the accent</h1>
+  <div class="ch-rule"></div>
+
+  <p class="lede">The hub contains no colours. Every fill, edge, shadow and ink is an
+    expression over custom properties that each theme redefines — including themes authored by
+    users and bought with the platform's own currency.</p>
+
+  <h2 data-level="h2">21.1 What the hub consumes</h2>
+
+  <table class="compact">
+    <caption>Every token the hub reads</caption>
+    <thead><tr><th>Token</th><th>Where the hub uses it</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">--site-accent</td><td>The orb's fill; the aura's blobs; a sector's hover / focus / active fill; the foot's close button and sign-in pill.</td></tr>
+      <tr><td class="mono">--site-accent-fg</td><td>The mark inside the orb; a filled sector's glyph and label; the close button's icon.</td></tr>
+      <tr><td class="mono">--site-text</td><td>A resting sector's glyph; the centre caption; the foot's controls; the orb's focus ring; 6% of the sector fill and 14% of the bed; 55% of the hairline colour.</td></tr>
+      <tr><td class="mono">--site-surface-opaque</td><td>The base of the sector fill and of the divider bed — the material's solid companion, for the cases translucency cannot serve.</td></tr>
+      <tr><td class="mono">--site-surface-hover</td><td>The foot pill's controls on hover.</td></tr>
+      <tr><td class="mono">--site-bg</td><td>The blur's 20% tint; the foot pill's 62% tint; the docked orb's legibility scrim gradient.</td></tr>
+      <tr><td class="mono">--site-border</td><td>The dial's 1px outer ring; the foot pill's edge.</td></tr>
+      <tr><td class="mono">--site-border-width</td><td>The foot pill's border width — 1px normally, 2px in high contrast.</td></tr>
+      <tr><td class="mono">--site-shadow</td><td>The foot pill's elevation.</td></tr>
+      <tr><td class="mono">--site-glass-blur-overlay</td><td>The foot pill's blur radius (L4 tier).</td></tr>
+      <tr><td class="mono">--site-glass-saturate</td><td>The foot pill's saturation boost.</td></tr>
+      <tr><td class="mono">--glass-user-tint / --glass-blur-factor</td><td>The user's Glass clarity setting, five stops, scaling the foot pill's tint and blur.</td></tr>
+      <tr><td class="mono">--site-hub-orb-size / -inset</td><td>The orb's footprint. Declared in <code>globals.css</code>, not here, so the floating stack's reserve cannot drift from the orb's geometry.</td></tr>
+      <tr><td class="mono">--ease-glass</td><td>Every position transition, with a literal fallback.</td></tr>
+      <tr><td class="mono">--z-floating / --z-hub-*</td><td>The layer stack.</td></tr>
+    </tbody>
+  </table>
+
+  <p>Sixteen tokens, no hex values. The single number that looks like a colour anywhere in the
+    hub's CSS is the orb's <code>box-shadow</code>, which uses
+    <code>rgba(0, 0, 0, 0.5)</code> — a shadow, which is a darkness rather than a hue, and which
+    the platform treats as a legitimate exception.</p>
+
+  <h2 data-level="h2">21.2 The <code>color-mix</code> discipline</h2>
+
+  <p>Three of the hub's most important values are mixes rather than tokens, and each is doing
+    something a token could not.</p>
+
+  <dl>
+    <dt><code>color-mix(--site-surface-opaque 94%, --site-text 6%)</code> — the sector</dt>
+    <dd>"The solid surface, nudged toward the ink." Distinguishable from any page background in
+      any theme, because every theme's ink contrasts with its own background by definition.</dd>
+    <dt><code>color-mix(--site-surface-opaque 86%, --site-text 14%)</code> — the bed</dt>
+    <dd>The same expression at more than double the strength. The 8-point difference between
+      them <em>is</em> the divider: the sectors sit on the bed and the bed shows through the
+      gaps, so the dividers are a relationship between two mixes rather than a drawn line with a
+      colour of its own.</dd>
+    <dt><code>color-mix(--site-text 55%, transparent)</code> — the hairline</dt>
+    <dd>Firm enough to read as structure, soft enough not to become the loudest thing on the
+      disc. Expressed as a transparency of the ink rather than as a grey, so it darkens on a
+      dark theme and lightens on a light one along with everything else.</dd>
+  </dl>
+
+  <p>The pattern across all three: <strong>express a relationship, not a value.</strong> A
+    designer picking hex values for these would need one set per theme, and would be wrong the
+    first time a user authored a theme nobody anticipated.</p>
+
+  <h2 data-level="h2">21.3 The accent, and where it lands</h2>
+
+  <p>The accent is the loudest decision in the hub: it is the orb's entire fill, and it is what
+    a sector becomes when you point at it. On the default theme the accent is <em>ink</em> — a
+    near-black — so the orb is a black disc with a white filigree mark, and hovering a sector
+    fills it black with white glyphs. On the high-contrast theme the accent is yellow. On a
+    user's purchased theme it is whatever they authored.</p>
+
+  <p>Fourteen curated accent presets ship, applied as inline overrides of the
+    <code>--site-accent*</code> tokens on <code>&lt;html&gt;</code>, keeping everything else from
+    the theme. Custom accents are allowed too — and this is where
+    <code>ensureReadableAccent()</code> earns its place: it contrast-checks the accent against
+    its foreground at runtime and refuses to install an unreadable pair. Without it, a user could
+    give themselves a hub whose glyphs vanish, and the geometry would be flawless and the menu
+    unusable.</p>
+
+  <div class="note">
+    <h4>A subtlety the audit found in a different component</h4>
+    <p>On the default theme the accent <em>is</em> the ink, which means "accent" and "theme
+      default" are visually identical — finding AUD-315 records that the settings page's accent
+      swatches made "Ink" indistinguishable from "Theme default". The hub inherits the same
+      coincidence harmlessly, but it is worth knowing when reading its CSS: on the shipped
+      default, <code>--site-accent</code> and <code>--site-text</code> resolve to nearly the same
+      colour, so several declarations that look like they must differ do not.</p>
+  </div>
+
+  <h2 data-level="h2">21.4 User themes</h2>
+
+  <p>The platform lets members author and publish themes, and other users buy them with coins. A
+    <code>UserTheme</code> is a set of colours plus a few scalar knobs, and
+    <code>themeCssVars()</code> derives the full <code>--site-*</code> and
+    <code>--site-glass-*</code> contract from them.</p>
+
+  <p>This is the strongest argument for the token discipline, and it is not hypothetical. The hub
+    has to look deliberate in themes that did not exist when it was written, authored by people
+    who have never read this document, and it does — because a theme cannot restyle the hub, it
+    can only supply the contract the hub reads. Token maps from an older schema version are
+    upcast on read rather than rejected, so a theme bought a year ago still resolves a complete
+    contract today.</p>
+
+  <p>The corollary is a hard constraint on future work on this component: <strong>any new colour
+    must be an expression over existing tokens, or a new token added to the contract and
+    documented.</strong> A hex value in this file would be a hub that is subtly wrong in a
+    theme somebody paid for.</p>
+</section>
