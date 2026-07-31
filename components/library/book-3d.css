@@ -1,0 +1,352 @@
+/* ─── Book3DViewer ───────────────────────────────────────────────────────────
+   A library book as an actual volume: six CSS-3D faces the viewer can turn over
+   by moving their phone (or dragging). Chrome is all `--site-*` tokens; the
+   boards and spine key off the book's own `--book-hue`, the same data-driven hue
+   `.lib-book__cover` in library.css paints with. */
+
+.b3d {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  display: flex;
+  flex-direction: column;
+  overscroll-behavior: contain;
+}
+
+/* ── Chrome ──────────────────────────────────────────────────────────────── */
+
+.b3d__bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.b3d__heading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+  color: var(--site-text-muted);
+}
+
+.b3d__title {
+  margin: 0;
+  overflow: hidden;
+  color: var(--site-text);
+  font-family: var(--site-font-display);
+  font-size: 0.95rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.b3d__icon-btn {
+  display: inline-flex;
+  min-width: var(--site-touch-target, 44px);
+  min-height: var(--site-touch-target, 44px);
+  margin-inline-start: auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--site-border);
+  border-radius: 999px;
+  background: var(--site-surface);
+  color: var(--site-text);
+  cursor: pointer;
+  transition: background var(--site-transition-speed);
+}
+
+.b3d__icon-btn:hover {
+  background: var(--site-surface-hover);
+}
+
+/* ── Stage ───────────────────────────────────────────────────────────────── */
+
+.b3d__stage {
+  position: relative;
+  flex: 1;
+  display: grid;
+  min-height: 0;
+  place-items: center;
+  perspective: 900px;
+  /* The stage is dragged on: without this a vertical drag scrolls the page
+     underneath instead of turning the book. */
+  touch-action: none;
+  cursor: grab;
+}
+
+.b3d__stage:active {
+  cursor: grabbing;
+}
+
+.b3d__body {
+  --b3d-w: clamp(132px, 42vw, 236px);
+  --b3d-h: calc(var(--b3d-w) * 1.4);
+  position: relative;
+  grid-area: 1 / 1;
+  width: var(--b3d-w);
+  height: var(--b3d-h);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* Keyboard turns arrive in one 12° jump, so they — and only they — get an ease.
+   The sensor and drag paths write a new transform every frame and would smear
+   into treacle behind a transition. */
+.b3d__body.is-stepping {
+  transition: transform 180ms var(--ease-glass, ease-out);
+}
+
+.b3d__face {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  backface-visibility: hidden;
+}
+
+/* The six faces of the box. Standard CSS-cube placement: rotate the face into
+   its plane, then push it out by half the box's extent along that axis. */
+.b3d__face--front {
+  width: var(--b3d-w);
+  height: var(--b3d-h);
+  transform: translate(-50%, -50%) translateZ(calc(var(--b3d-depth, 22px) / 2));
+}
+
+.b3d__face--back {
+  width: var(--b3d-w);
+  height: var(--b3d-h);
+  transform: translate(-50%, -50%) rotateY(180deg) translateZ(calc(var(--b3d-depth, 22px) / 2));
+}
+
+.b3d__face--spine {
+  width: var(--b3d-depth, 22px);
+  height: var(--b3d-h);
+  transform: translate(-50%, -50%) rotateY(-90deg) translateZ(calc(var(--b3d-w) / 2));
+}
+
+.b3d__face--edge {
+  width: var(--b3d-depth, 22px);
+  height: var(--b3d-h);
+  transform: translate(-50%, -50%) rotateY(90deg) translateZ(calc(var(--b3d-w) / 2));
+}
+
+.b3d__face--head {
+  width: var(--b3d-w);
+  height: var(--b3d-depth, 22px);
+  transform: translate(-50%, -50%) rotateX(90deg) translateZ(calc(var(--b3d-h) / 2));
+}
+
+.b3d__face--tail {
+  width: var(--b3d-w);
+  height: var(--b3d-depth, 22px);
+  transform: translate(-50%, -50%) rotateX(-90deg) translateZ(calc(var(--b3d-h) / 2));
+}
+
+/* ── Boards ──────────────────────────────────────────────────────────────── */
+
+.b3d__face--front,
+.b3d__face--back,
+.b3d__face--spine {
+  background: linear-gradient(
+    150deg,
+    hsl(var(--book-hue, 220) 16% 18%),
+    hsl(var(--book-hue, 220) 14% 9%)
+  );
+}
+
+.b3d__face--front {
+  border-radius: 2px 5px 5px 2px;
+}
+
+.b3d__face--back {
+  gap: 10px;
+  flex-direction: column;
+  border-radius: 2px 5px 5px 2px;
+}
+
+.b3d__art {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.b3d__cover-title {
+  padding: 14px 16px;
+  color: #f5f5f7;
+  font-family: var(--site-font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* The hinge groove just inboard of the spine, where a real cover folds. */
+.b3d__hinge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 7px;
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.55),
+    rgba(255, 255, 255, 0.1) 45%,
+    rgba(0, 0, 0, 0.3)
+  );
+}
+
+.b3d__mark,
+.b3d__imprint {
+  color: rgba(245, 245, 247, 0.45);
+  font-family: var(--site-font-mono);
+  letter-spacing: 0.16em;
+}
+
+.b3d__mark {
+  font-size: 0.95rem;
+}
+
+.b3d__imprint {
+  font-size: 0.6rem;
+}
+
+.b3d__spine-text {
+  max-height: calc(var(--b3d-h) - 24px);
+  overflow: hidden;
+  color: rgba(245, 245, 247, 0.88);
+  font-family: var(--site-font-display);
+  font-size: clamp(0.5rem, calc(var(--b3d-depth, 22px) * 0.34), 0.8rem);
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  /* Spines read top-to-bottom. */
+  writing-mode: vertical-rl;
+}
+
+/* ── The page block ──────────────────────────────────────────────────────── */
+
+/* Pages stack front-to-back, so the laminations run ACROSS the thickness: down
+   the fore-edge, across the head and tail. */
+.b3d__face--edge {
+  background: repeating-linear-gradient(
+    to right,
+    rgba(245, 245, 247, 0.94) 0,
+    rgba(245, 245, 247, 0.94) 1px,
+    rgba(120, 120, 125, 0.5) 1px,
+    rgba(120, 120, 125, 0.5) 3px
+  );
+}
+
+.b3d__face--head,
+.b3d__face--tail {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(245, 245, 247, 0.94) 0,
+    rgba(245, 245, 247, 0.94) 1px,
+    rgba(120, 120, 125, 0.5) 1px,
+    rgba(120, 120, 125, 0.5) 3px
+  );
+}
+
+/* Fixed shading, since CSS 3D has no lights: the faces that can only ever be
+   seen obliquely sit a little deeper than the boards facing the viewer. */
+.b3d__face--head::after,
+.b3d__face--tail::after,
+.b3d__face--edge::after,
+.b3d__face--back::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.b3d__face--tail::after {
+  background: rgba(0, 0, 0, 0.38);
+}
+
+/* A soft contact shadow that stays put while the book turns above it — it is
+   the ground, not part of the volume. */
+.b3d__shadow {
+  grid-area: 1 / 1;
+  width: clamp(160px, 50vw, 280px);
+  height: 26px;
+  align-self: end;
+  margin-bottom: clamp(24px, 7vh, 64px);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(2, 10, 28, 0.5), transparent 70%);
+  pointer-events: none;
+}
+
+/* ── Controls ────────────────────────────────────────────────────────────── */
+
+.b3d__controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px calc(14px + env(safe-area-inset-bottom, 0px));
+  text-align: center;
+}
+
+.b3d__hint {
+  margin: 0;
+  color: var(--site-text-muted);
+  font-size: 0.8125rem;
+}
+
+.b3d__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.b3d__btn {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 15px;
+  border: 1px solid var(--site-border);
+  border-radius: 999px;
+  background: var(--site-surface);
+  color: var(--site-text);
+  font-size: 13px;
+  font-weight: 550;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--site-transition-speed),
+    border-color var(--site-transition-speed);
+}
+
+.b3d__btn:hover {
+  border-color: var(--site-border-bright);
+  background: var(--site-surface-hover);
+}
+
+.b3d__btn.is-active {
+  border-color: var(--site-accent);
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+}
+
+.b3d__btn--primary {
+  border-color: var(--site-accent);
+  background: var(--site-accent-dim);
+  color: var(--site-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .b3d__body.is-stepping {
+    transition: none;
+  }
+}

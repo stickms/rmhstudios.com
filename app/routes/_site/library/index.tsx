@@ -31,7 +31,6 @@ import {
   X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -51,10 +50,9 @@ import { ContextRail } from '@/components/feed/ContextRail';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { useSession } from '@/components/Providers';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { useDeviceTilt, type DeviceTilt } from '@/hooks/useDeviceTilt';
-import type { TiltVector } from '@/lib/device-tilt';
 import { suppressNextScrollReset } from '@/hooks/useScrollRestoration';
 import { UploadModal } from '@/components/library/UploadModal';
+import { Book3DViewer } from '@/components/library/Book3DViewer';
 import { BookContextMenu, LibraryEditModal } from '@/components/library/LibraryEditControls';
 import { useContextMenu } from '@/components/library/LibraryContextMenu';
 import { LibraryCollections } from '@/components/library/LibraryCollections';
@@ -144,60 +142,13 @@ export const Route = createFileRoute('/_site/library/')({
   component: Library,
 });
 
-/** Every custom property the orbit writes, so a reset can drop the lot. */
-const ORBIT_PROPS = [
-  '--lib-orbit-x',
-  '--lib-orbit-y',
-  '--lib-orbit-glow-x',
-  '--lib-orbit-glow-y',
-] as const;
-
 function resetLibraryOrbit(element: HTMLElement | null) {
   if (!element) return;
-  // Removed rather than zeroed: the tilt path publishes the same variables on
-  // the playground, and a hard `0deg` here would pin whatever the finger last
-  // touched flat while the rest of the shelf kept leaning with the phone.
-  for (const prop of ORBIT_PROPS) element.style.removeProperty(prop);
+  element.style.setProperty('--lib-orbit-x', '0deg');
+  element.style.setProperty('--lib-orbit-y', '0deg');
+  element.style.setProperty('--lib-orbit-glow-x', '50%');
+  element.style.setProperty('--lib-orbit-glow-y', '50%');
   element.removeAttribute('data-orbit-active');
-}
-
-/** Card rotation at full deflection — the pointer path's numbers, so both inputs agree. */
-const TILT_ROTATE_X = 7;
-const TILT_ROTATE_Y = 8;
-/** How far a cover swings open on its spine at full tilt (the hover spin is 38°). */
-const TILT_SPINE_TURN = 26;
-/** Lift, in px, as the shelf leans — the depth cue hover gets for free. */
-const TILT_LIFT = 5;
-/** Specular hotspot travel from centre, in % of the card, at full deflection. */
-const TILT_GLOW_SPREAD = 42;
-
-/**
- * Publish a tilt reading to the whole playground at once. The orbit variables
- * are declared on `.lib-playground` and inherited, so one write here leans every
- * book, album and playlist tile on the page — no per-card DOM work, no React
- * render, and a finger's inline values still win on the card it is touching.
- */
-function writeLibraryTilt(ground: HTMLElement | null, tilt: TiltVector | null) {
-  if (!ground) return;
-  if (!tilt) {
-    ground.removeAttribute('data-tilt-live');
-    for (const prop of [...ORBIT_PROPS, '--lib-book-spin', '--lib-book-lift']) {
-      ground.style.removeProperty(prop);
-    }
-    return;
-  }
-  const { x, y } = tilt;
-  ground.style.setProperty('--lib-orbit-x', `${(-y * TILT_ROTATE_X).toFixed(2)}deg`);
-  ground.style.setProperty('--lib-orbit-y', `${(x * TILT_ROTATE_Y).toFixed(2)}deg`);
-  ground.style.setProperty('--lib-orbit-glow-x', `${(50 + x * TILT_GLOW_SPREAD).toFixed(1)}%`);
-  ground.style.setProperty('--lib-orbit-glow-y', `${(50 + y * TILT_GLOW_SPREAD).toFixed(1)}%`);
-  // Negative turns the cover toward the reader and reveals the page-block face,
-  // which is the whole point: on a phone nothing else ever opens a book.
-  ground.style.setProperty('--lib-book-spin', `${(-x * TILT_SPINE_TURN).toFixed(2)}deg`);
-  ground.style.setProperty('--lib-book-lift', `${(-y * TILT_LIFT).toFixed(2)}px`);
-  // Set once, not per frame: re-stamping an attribute every frame invalidates
-  // style for the whole subtree, which is the one thing this path must not do.
-  if (!ground.hasAttribute('data-tilt-live')) ground.setAttribute('data-tilt-live', '');
 }
 
 /**
@@ -205,30 +156,14 @@ function writeLibraryTilt(ground: HTMLElement | null, tilt: TiltVector | null) {
  * It writes CSS variables directly (no React renders during pointer movement),
  * works with a fine pointer and a finger while it is down, and leaves scrolling
  * fully native on touch devices.
- *
- * On a phone there is no pointer to follow, so the same variables are driven by
- * the device's gyroscope instead — see `hooks/useDeviceTilt`. The two inputs
- * never overlap: a touch device hands the shelf to the sensor.
  */
-function useLibraryOrbit(groundRef: React.RefObject<HTMLDivElement | null>) {
+function useLibraryOrbit() {
   const active = useRef<HTMLElement | null>(null);
-  const tiltLive = useRef(false);
-
-  const tilt = useDeviceTilt({
-    onTilt: (vector) => {
-      tiltLive.current = true;
-      writeLibraryTilt(groundRef.current, vector);
-    },
-    onRest: () => {
-      tiltLive.current = false;
-      writeLibraryTilt(groundRef.current, null);
-    },
-  });
 
   useEffect(() => () => resetLibraryOrbit(active.current), []);
 
   const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType !== 'mouse' && (event.buttons === 0 || tiltLive.current)) return;
+    if (event.pointerType !== 'mouse' && event.buttons === 0) return;
     const target = (event.target as Element).closest<HTMLElement>('[data-library-orbit]');
     if (!target || !event.currentTarget.contains(target)) {
       resetLibraryOrbit(active.current);
@@ -242,8 +177,8 @@ function useLibraryOrbit(groundRef: React.RefObject<HTMLDivElement | null>) {
     const rect = target.getBoundingClientRect();
     const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
     const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
-    target.style.setProperty('--lib-orbit-x', `${((0.5 - y) * TILT_ROTATE_X).toFixed(2)}deg`);
-    target.style.setProperty('--lib-orbit-y', `${((x - 0.5) * TILT_ROTATE_Y).toFixed(2)}deg`);
+    target.style.setProperty('--lib-orbit-x', `${((0.5 - y) * 7).toFixed(2)}deg`);
+    target.style.setProperty('--lib-orbit-y', `${((x - 0.5) * 8).toFixed(2)}deg`);
     target.style.setProperty('--lib-orbit-glow-x', `${(x * 100).toFixed(1)}%`);
     target.style.setProperty('--lib-orbit-glow-y', `${(y * 100).toFixed(1)}%`);
     target.setAttribute('data-orbit-active', '');
@@ -258,57 +193,7 @@ function useLibraryOrbit(groundRef: React.RefObject<HTMLDivElement | null>) {
     if (event.pointerType !== 'mouse') onPointerLeave();
   };
 
-  return {
-    handlers: { onPointerMove, onPointerLeave, onPointerCancel: onPointerLeave, onPointerUp },
-    tilt,
-  };
-}
-
-/**
- * The gyroscope switch. Renders on nothing but hardware that actually has one
- * (and never under reduced motion), so the header stays exactly as it was on
- * every desktop — this is a control that only exists where it does something.
- *
- * The click is load-bearing on iOS: Safari only honours the motion-permission
- * request from inside a user gesture, which is why the prompt lives behind a
- * button rather than firing on load.
- */
-function TiltToggle({ tilt }: { tilt: DeviceTilt }) {
-  const { t } = useTranslation('library');
-  if (!tilt.supported) return null;
-
-  const label = t('tilt-label', { defaultValue: '3D tilt' });
-  const hint = tilt.enabled
-    ? t('tilt-hint-on', { defaultValue: 'Tilt your phone to look around the shelf.' })
-    : t('tilt-hint-off', { defaultValue: 'Turn on 3D tilt and move your phone to look around.' });
-
-  return (
-    <button
-      type="button"
-      className={`lib-upload__open lib-tilt${tilt.enabled ? ' is-active' : ''}`}
-      onClick={async () => {
-        const next = await tilt.toggle();
-        if (next === 'denied') {
-          toast.info(
-            t('tilt-denied', {
-              defaultValue:
-                'Motion access was declined. You can allow it in your browser settings.',
-            }),
-          );
-        } else if (next === 'waiting') {
-          toast.success(
-            t('tilt-hint-on', { defaultValue: 'Tilt your phone to look around the shelf.' }),
-          );
-        }
-      }}
-      aria-pressed={tilt.enabled}
-      aria-label={label}
-      title={hint}
-    >
-      <Rotate3d size={15} aria-hidden="true" />
-      <span className="lib-upload__open-label">{label}</span>
-    </button>
-  );
+  return { onPointerMove, onPointerLeave, onPointerCancel: onPointerLeave, onPointerUp };
 }
 
 function Library() {
@@ -324,20 +209,18 @@ function Library() {
   const navigate = useNavigate();
   const [view, setActiveView] = useState<LibraryView>(routeView);
   const [hasFiltered, setHasFiltered] = useState(false);
+  const orbit = useLibraryOrbit();
   const reducedMotion = useReducedMotion();
 
   useEffect(() => setActiveView(routeView), [routeView]);
 
-  // The playground is both the surface the orbit/tilt variables are published on
-  // and the element the category swap pins: switching category swaps whole
-  // sections out of the document, so the page can get much shorter than it was —
-  // and a shorter page means the browser clamps the scroll offset, which reads as
-  // the library snapping back to the top. The pin below freezes the old height
-  // across the swap so nothing moves on its own; the settle effect then either
-  // leaves the scroll exactly where it was (the new view is tall enough) or
-  // glides up to the new bottom.
+  // Switching category swaps whole sections out of the document, so the page can
+  // get much shorter than it was — and a shorter page means the browser clamps
+  // the scroll offset, which reads as the library snapping back to the top. The
+  // pin below freezes the old height across the swap so nothing moves on its
+  // own; the settle effect then either leaves the scroll exactly where it was
+  // (the new view is tall enough) or glides up to the new bottom.
   const playgroundRef = useRef<HTMLDivElement | null>(null);
-  const orbit = useLibraryOrbit(playgroundRef);
   const pendingScrollTop = useRef<number | null>(null);
   const releasePin = useRef<(() => void) | null>(null);
 
@@ -465,6 +348,8 @@ function Library() {
   const [query, setQuery] = useState('');
   const [uploadOpen, setUploadOpen] = useState(false);
   const [editing, setEditing] = useState<LibraryBook | null>(null);
+  // The book currently being turned over in the 3D viewer, if any.
+  const [inspecting, setInspecting] = useState<LibraryBook | null>(null);
   const [migrating, setMigrating] = useState(false);
 
   // Admins load the full list (including hidden books) so they can manage
@@ -651,7 +536,7 @@ function Library() {
   return (
     <>
       <AnimatedMain className="vibe-screen lib lib--glass-playground min-h-screen w-full min-w-0 pb-dock">
-        <div className="lib-playground" ref={playgroundRef} {...orbit.handlers}>
+        <div className="lib-playground" ref={playgroundRef} {...orbit}>
           <LibraryRevealProvider instant={hasFiltered}>
             {/* The lightweight title stays above the hero. The explorer below is
               the page's single sticky control group. */}
@@ -662,22 +547,19 @@ function Library() {
                   <BookOpen size={17} aria-hidden="true" />
                   <span>{t('library-heading', { defaultValue: 'Library' })}</span>
                 </div>
-                <div className="lib-head__actions">
-                  <TiltToggle tilt={orbit.tilt} />
-                  {session.data && (
-                    <button
-                      type="button"
-                      className="lib-upload__open"
-                      onClick={() => setUploadOpen(true)}
-                      aria-label={t('upload-label', { defaultValue: 'Upload a PDF' })}
-                    >
-                      <Upload size={15} aria-hidden="true" />
-                      <span className="lib-upload__open-label">
-                        {t('upload-button', { defaultValue: 'Add a book' })}
-                      </span>
-                    </button>
-                  )}
-                </div>
+                {session.data && (
+                  <button
+                    type="button"
+                    className="lib-upload__open"
+                    onClick={() => setUploadOpen(true)}
+                    aria-label={t('upload-label', { defaultValue: 'Upload a PDF' })}
+                  >
+                    <Upload size={15} aria-hidden="true" />
+                    <span className="lib-upload__open-label">
+                      {t('upload-button', { defaultValue: 'Add a book' })}
+                    </span>
+                  </button>
+                )}
               </header>
             </div>
 
@@ -894,6 +776,7 @@ function Library() {
                     books={curated}
                     isAdmin={isAdmin}
                     onEdit={setEditing}
+                    onInspect={setInspecting}
                     onMove={(book, dir) => move(curated, book, dir)}
                     onReorder={(draggedId, targetId) => reorderWithin(curated, draggedId, targetId)}
                     onChanged={refresh}
@@ -903,6 +786,7 @@ function Library() {
                     books={community}
                     isAdmin={isAdmin}
                     onEdit={setEditing}
+                    onInspect={setInspecting}
                     onMove={(book, dir) => move(community, book, dir)}
                     onReorder={(draggedId, targetId) =>
                       reorderWithin(community, draggedId, targetId)
@@ -922,6 +806,7 @@ function Library() {
       {editing && (
         <LibraryEditModal book={editing} onClose={() => setEditing(null)} onSaved={refresh} />
       )}
+      {inspecting && <Book3DViewer book={inspecting} onClose={() => setInspecting(null)} />}
     </>
   );
 }
@@ -943,6 +828,7 @@ function Section({
   books,
   isAdmin,
   onEdit,
+  onInspect,
   onMove,
   onReorder,
   onChanged,
@@ -952,6 +838,7 @@ function Section({
   books: LibraryBook[];
   isAdmin: boolean;
   onEdit: (book: LibraryBook) => void;
+  onInspect: (book: LibraryBook) => void;
   onMove: (book: LibraryBook, dir: -1 | 1) => void;
   onReorder: (draggedId: string, targetId: string) => void;
   onChanged: () => void;
@@ -1008,6 +895,7 @@ function Section({
               canMoveDown={managedIdx >= 0 && managedIdx < managed.length - 1}
               onMove={(dir) => onMove(book, dir)}
               onEdit={() => onEdit(book)}
+              onInspect={() => onInspect(book)}
               onChanged={onChanged}
               dnd={dndFor(book)}
             />
@@ -1026,6 +914,7 @@ function BookSpine({
   canMoveDown,
   onMove,
   onEdit,
+  onInspect,
   onChanged,
   dnd,
 }: {
@@ -1036,6 +925,7 @@ function BookSpine({
   canMoveDown: boolean;
   onMove: (dir: -1 | 1) => void;
   onEdit: () => void;
+  onInspect: () => void;
   onChanged: () => void;
   dnd?: BookDnd;
 }) {
@@ -1154,6 +1044,17 @@ function BookSpine({
           )}
         </div>
       </Link>
+      {/* A sibling of the Link, not a child: a button inside an anchor is
+          invalid, and this has to be reachable on a phone where the card's own
+          hover 3D never fires. */}
+      <button
+        type="button"
+        className="lib-book__inspect"
+        onClick={onInspect}
+        aria-label={t('book3d-open', { title: book.title, defaultValue: 'View {{title}} in 3D' })}
+      >
+        <Rotate3d size={15} aria-hidden="true" />
+      </button>
       {isAdmin && (
         <BookContextMenu
           book={book}
