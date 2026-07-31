@@ -403,7 +403,7 @@ function CongratsModal({
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto"
+            className="fixed inset-0 z-50 bg-black/60 flex items-center-safe justify-center-safe p-4 overflow-y-auto"
         >
             <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -505,7 +505,7 @@ function LeaderboardModal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-60 bg-black/70 flex items-center justify-center p-4 overflow-y-auto"
+            className="fixed inset-0 z-60 bg-black/70 flex items-center-safe justify-center-safe p-4 overflow-y-auto"
             onClick={onClose}
         >
             <motion.div
@@ -577,7 +577,7 @@ function InstructionsModal({ onClose }: { onClose: () => void }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto"
+            className="fixed inset-0 z-50 bg-black/60 flex items-center-safe justify-center-safe p-4 overflow-y-auto"
         >
             <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -1565,7 +1565,7 @@ function RaceResults({
                 </div>
             </div>
 
-            <div className="flex-1 flex flex-col items-center px-4 pb-4 min-h-0 overflow-y-auto">
+            <div className="flex-1 flex flex-col items-center-safe px-4 pb-4 min-h-0 overflow-y-auto">
                 {/* Leaderboard */}
                 <div className="w-full max-w-sm space-y-2 mt-4">
                     {ranked.map((p: LobbyParticipant) => {

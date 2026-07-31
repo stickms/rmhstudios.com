@@ -716,7 +716,7 @@ export function NeonDriftwayGame() {
       )}
 
       {uiState === 'multiplayerGameOver' && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center overflow-y-auto bg-black/80 backdrop-blur-sm">
+        <div className="absolute inset-0 z-40 flex items-center-safe justify-center-safe overflow-y-auto bg-black/80 backdrop-blur-sm">
           <div className="w-full max-w-md space-y-4 px-4 py-6">
             <h2 className="text-center text-4xl font-black tracking-tight text-cyan-400">
               {t('race-over', { defaultValue: 'RACE OVER' })}

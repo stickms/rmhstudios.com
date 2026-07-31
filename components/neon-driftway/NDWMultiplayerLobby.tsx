@@ -109,7 +109,7 @@ export function NDWMultiplayerLobby({ onBack, onGameStart }: NDWMultiplayerLobby
     // Countdown overlay
     if (countdown !== null && countdown > 0) {
         return (
-            <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto bg-black/80 backdrop-blur-sm">
+            <div className="absolute inset-0 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain z-40 pointer-events-auto bg-black/80 backdrop-blur-sm">
                 <div className="text-center space-y-4">
                     <p className="text-zinc-400 text-sm uppercase tracking-wider">{t("race-starting-in", { defaultValue: "Race starting in" })}</p>
                     <div className="text-8xl font-black text-cyan-400 animate-pulse">{countdown}</div>
@@ -121,7 +121,7 @@ export function NDWMultiplayerLobby({ onBack, onGameStart }: NDWMultiplayerLobby
     // Multiplayer Menu
     if (phase === 'menu') {
         return (
-            <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto bg-black/70 backdrop-blur-sm">
+            <div className="absolute inset-0 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain z-40 pointer-events-auto bg-black/70 backdrop-blur-sm">
                 <div className="max-w-md w-full px-4 space-y-4">
                     <button
                         onClick={onBack}
@@ -169,7 +169,7 @@ export function NDWMultiplayerLobby({ onBack, onGameStart }: NDWMultiplayerLobby
 
     // Lobby Screen
     return (
-        <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto bg-black/70 backdrop-blur-sm">
+        <div className="absolute inset-0 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain z-40 pointer-events-auto bg-black/70 backdrop-blur-sm">
             <div className="max-w-lg w-full px-4 space-y-4">
                 <button
                     onClick={handleLeave}

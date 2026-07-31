@@ -318,7 +318,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
         }
         
         return (
-            <div className="absolute inset-0 z-60 flex items-center justify-center overflow-y-auto bg-slice-bg p-4 text-slice-text">
+            <div className="absolute inset-0 z-60 flex items-center-safe justify-center-safe overflow-y-auto bg-slice-bg p-4 text-slice-text">
                  <Card className="w-full max-w-lg bg-slice-bg shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] rounded-[2rem] border-none my-auto">
                     <CardHeader>
                         <div className="flex justify-end items-center gap-2 mb-2 relative">
@@ -624,7 +624,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
     // LIST / JOIN VIEW
     if (isPending) {
          return (
-            <div className="absolute inset-0 z-60 flex items-center justify-center bg-slice-bg p-4 text-slice-text">
+            <div className="absolute inset-0 z-60 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain bg-slice-bg p-4 text-slice-text">
                  <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
             </div>
          );

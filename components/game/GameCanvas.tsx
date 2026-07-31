@@ -1394,7 +1394,7 @@ export function GameCanvas() {
 
           {/* Singleplayer Pause Overlay (with settings) */}
           {isPaused && status === 'PLAYING' && !isMultiplayer && (
-            <div className="absolute inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center overflow-y-auto">
+            <div className="absolute inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center-safe justify-center-safe overflow-y-auto">
               <div className="bg-slice-bg p-6 rounded-[30px] shadow-[9px_9px_16px_var(--slice-shadow-dark),-9px_-9px_16px_var(--slice-shadow-light)] flex flex-col gap-4 items-center w-full max-w-sm mx-4 my-4">
                 <h2 className="text-3xl font-black text-slice-text">
                   {t('paused', { defaultValue: 'PAUSED' })}
