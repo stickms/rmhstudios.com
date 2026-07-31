@@ -26,15 +26,33 @@ export function VUMeter({ level, peak = 0, width = 8, height = 120, horizontal =
       const dpr = window.devicePixelRatio || 1;
       const w = horizontal ? height : width;
       const h = horizontal ? width : height;
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      canvas.style.width = `${w}px`;
-      canvas.style.height = `${h}px`;
+
+      // Only when it actually changed. Assigning `canvas.width` reallocates the
+      // backing store and resets the context — this loop was doing that on every
+      // frame, for every channel strip in the mixer, to arrive at the size it
+      // already had. The transform is re-established either way: a resize clears
+      // it, so it is set there, and otherwise it is reset explicitly before the
+      // scale so repeated frames cannot compound it.
+      const pxW = Math.round(w * dpr);
+      const pxH = Math.round(h * dpr);
+      if (canvas.width !== pxW || canvas.height !== pxH) {
+        canvas.width = pxW;
+        canvas.height = pxH;
+        canvas.style.width = `${w}px`;
+        canvas.style.height = `${h}px`;
+      }
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpr, dpr);
 
       // Smooth falloff
       animLevel.current += (level - animLevel.current) * 0.3;
       const l = Math.max(0, Math.min(1, animLevel.current));
+
+      // Explicit, because the per-frame `canvas.width` write that used to clear
+      // this surface as a side effect is gone. The background below is 40%
+      // black: composited onto the previous frame instead of onto nothing, it
+      // would darken toward opaque over a second or two.
+      ctx.clearRect(0, 0, w, h);
 
       // Background
       ctx.fillStyle = 'rgba(0,0,0,0.4)';

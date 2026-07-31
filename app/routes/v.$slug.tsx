@@ -352,7 +352,7 @@ function VibeViewer() {
       />
 
       {/* Floating toolbar — top-right */}
-      <div className="vibe-toolbar fixed right-3 top-3 z-40">
+      <div className="vibe-toolbar fixed right-[calc(0.75rem+var(--safe-right))] top-[calc(0.75rem+var(--safe-top))] z-40">
         <Link to="/v" aria-label={t("back-to-pages", { defaultValue: "Back to pages" })} className="vibe-toolbar__icon">
           <ArrowLeft size={17} />
         </Link>
@@ -381,7 +381,7 @@ function VibeViewer() {
 
       {/* Banner shown while previewing an earlier variant */}
       {viewingOlder && (
-        <div className="vibe-version-banner fixed left-1/2 top-3 z-40 -translate-x-1/2">
+        <div className="vibe-version-banner fixed left-1/2 top-[calc(0.75rem+var(--safe-top))] z-40 -translate-x-1/2">
           <span>{t("viewing-earlier-version", { defaultValue: "Viewing an earlier version" })}</span>
           <button type="button" onClick={backToLatest} className="vibe-version-banner__btn">
             <RotateCcw size={13} />
@@ -392,7 +392,7 @@ function VibeViewer() {
 
       {/* Version history panel — slides in from the right */}
       <div
-        className={`vibe-history-dock fixed right-0 top-0 z-40 h-full transition-transform duration-300 ease-out ${
+        className={`vibe-history-dock fixed right-0 top-0 z-40 h-full pt-[var(--safe-top)] pb-[var(--safe-bottom)] pr-[var(--safe-right)] transition-transform duration-300 ease-out ${
           historyOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full'
         }`}
       >

@@ -57,7 +57,10 @@ export default function PlayerBar() {
       </div>
 
       <div
-        className="flex items-center gap-4 px-4 py-3 backdrop-blur-xl border-t"
+        // The bar's SURFACE runs to the physical edge (a translucent bar that
+        // stops short of the bottom looks like a mistake); its padding carries
+        // the insets so the controls clear the home indicator.
+        className="flex items-center gap-4 border-t px-4 py-3 pb-[calc(0.75rem+var(--safe-bottom))] pl-[calc(1rem+var(--safe-left))] pr-[calc(1rem+var(--safe-right))] backdrop-blur-xl"
         style={{ background: 'color-mix(in srgb, var(--site-bg) 85%, transparent)', borderColor: 'color-mix(in srgb, var(--site-text) 10%, transparent)' }}
       >
         {/* Track info */}

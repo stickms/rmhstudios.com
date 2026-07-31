@@ -136,7 +136,7 @@ export default function SearchPanel({ onPlay }: SearchPanelProps) {
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: -320, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="fixed left-0 top-0 bottom-[73px] w-80 z-40 flex flex-col overflow-hidden backdrop-blur-xl border-r"
+          className="fixed left-0 top-0 bottom-[calc(73px+var(--safe-bottom))] z-40 flex w-80 max-w-full flex-col overflow-hidden pt-[var(--safe-top)] backdrop-blur-xl border-r"
           style={{ background: 'color-mix(in srgb, var(--site-bg) 90%, transparent)', borderColor: 'color-mix(in srgb, var(--site-text) 10%, transparent)' }}
         >
           {/* Search input */}

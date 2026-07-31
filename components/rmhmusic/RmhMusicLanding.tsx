@@ -48,7 +48,7 @@ export default function RmhMusicPage() {
           none — browser chrome was the only exit. */}
       <Link
         to="/builds"
-        className="absolute top-4 left-4 z-20 flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
+        className="absolute top-[calc(1rem+var(--safe-top))] left-[calc(1rem+var(--safe-left))] z-20 flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
         style={{
           background: 'color-mix(in srgb, var(--app-surface) 80%, transparent)',
           color: 'var(--app-text-muted)',

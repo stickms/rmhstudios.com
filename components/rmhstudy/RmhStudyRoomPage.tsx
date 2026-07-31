@@ -485,7 +485,9 @@ export default function RmhStudyRoom() {
         </div>
 
         {/* Tab bar */}
-        <div className="shrink-0 flex border-t border-(--app-border) bg-(--app-surface)">
+        {/* The bar's surface reaches the physical bottom; the inset keeps its four
+            targets above the home indicator. */}
+        <div className="shrink-0 flex border-t border-(--app-border) bg-(--app-surface) pb-[var(--safe-bottom)] pl-[var(--safe-left)] pr-[var(--safe-right)]">
           <button
             onClick={() => setMobileTab('session')}
             className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${

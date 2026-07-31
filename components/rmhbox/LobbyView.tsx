@@ -122,7 +122,7 @@ export default function LobbyView() {
           </div>
 
           {/* Ready button + host controls — fixed at bottom */}
-          <div className="shrink-0 space-y-3 border-t border-(--app-border) p-4">
+          <div className="shrink-0 space-y-3 border-t border-(--app-border) p-4 pb-[calc(1rem+var(--safe-bottom))]">
             <div className="flex justify-center">
               <ReadyButton
                 isReady={me?.isReady ?? false}
