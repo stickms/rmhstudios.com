@@ -1,48 +1,52 @@
 'use client';
 
 /**
- * useDeviceTilt — gyroscope input for surfaces that would otherwise only
- * respond to a pointer.
+ * useDeviceAttitude — "move the phone to look at the thing".
  *
- * Hover is a desktop luxury: on a phone every pointer-driven depth effect is
- * inert, so a page built around one flattens out on the device most people
- * actually browse from. This hook hands that page the handset's own attitude
- * instead — a smoothed −1…1 vector, delivered on an animation frame, which the
- * caller can write straight into CSS custom properties without re-rendering.
+ * Mount this next to something rendered in 3D and it hands over a smoothed
+ * rotation, once per animation frame, that orbits the object as the viewer moves
+ * around it: turn to your left and its right-hand side comes round to meet you,
+ * raise the phone and you look down over the top. A full quarter turn to the
+ * object's side — or further, round to its back — is expressive rather than a
+ * clamped lean, and the object never rolls; see `lib/device-attitude.ts` for the
+ * model and the maths.
  *
  * What it guarantees so callers don't have to think about it:
  *  - **It never prompts on load.** iOS gates `deviceorientation` behind a user
- *    gesture; {@link DeviceTilt.toggle} is that gesture. Consent is the shared
- *    site-wide `rmh-motion-ok` (Settings → Appearance "Tilt effects"), so a
- *    grant made anywhere counts everywhere, and revoking it there stops this.
- *  - **It only claims support where tilt is the right input** — a touch device
- *    with the event available, with reduced motion honoured (§7: the effect is
- *    decorative, so it simply does not exist for anyone who asked for less
- *    motion) and a watchdog that stands down when no usable sample arrives.
- *  - **It costs one rAF while moving and nothing at rest.** Values are
- *    spring-smoothed toward the live reading and the loop stops once it settles.
+ *    gesture; {@link DeviceAttitude.toggle} is that gesture. Consent is the
+ *    shared site-wide `rmh-motion-ok` (Settings → Appearance "Tilt effects"), so
+ *    a grant made anywhere counts everywhere, and revoking it there stops this.
+ *  - **It only claims support where moving the device is the point** — a touch
+ *    device with the event live, never under reduced motion, and a watchdog that
+ *    stands down when no usable sample arrives (plenty of browsers fire the
+ *    event with null angles).
+ *  - **It costs one rAF while moving and nothing at rest.** The loop stops the
+ *    frame the smoothed rotation reaches the sensor's.
  *
- * The permission/consent plumbing and the angle maths live in
- * `lib/device-tilt.ts`; this file is the React lifecycle around them.
+ * Callers that also want a drag/keyboard path should compose it on top of the
+ * quaternion this emits, so both inputs drive one object — a phone can only be
+ * turned so far before its screen is out of sight.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  IDENTITY,
   MOTION_CONSENT_EVENT,
-  driftNeutral,
+  angleBetween,
+  deviceQuaternion,
+  motionCapableDevice,
   motionPermissionGateExists,
+  nlerp,
+  orbitRotation,
   readMotionConsent,
   requestMotionAccess,
   screenAngle,
-  tiltCapableDevice,
-  tiltVector,
   writeMotionConsent,
-  type TiltSample,
-  type TiltVector,
-} from '@/lib/device-tilt';
+  type Quat,
+} from '@/lib/device-attitude';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
-export type DeviceTiltStatus =
+export type MotionStatus =
   /** No sensor worth using here — render no control at all. */
   | 'unsupported'
   /** Available, but the visitor has it switched off. */
@@ -54,55 +58,55 @@ export type DeviceTiltStatus =
   /** The permission prompt was declined (or blocked). */
   | 'denied';
 
-export interface DeviceTiltOptions {
-  /** Called on an animation frame with the smoothed deflection, −1…1 per axis. */
-  onTilt: (tilt: TiltVector) => void;
-  /** Called when tilt stops driving the surface, so the caller can reset to rest. */
+export interface DeviceAttitudeOptions {
+  /** Called on an animation frame with the smoothed rotation for the object. */
+  onRotate: (rotation: Quat) => void;
+  /** Called when the sensor stops driving the object, so the caller can reset. */
   onRest?: () => void;
-  /** Degrees of tilt that count as full deflection. A wrist's worth by default. */
-  range?: number;
-  /** Fraction of the remaining distance covered per frame; lower = floatier. */
+  /**
+   * How far the object turns per degree of device rotation. Above 1 the back of
+   * the object is reachable without the viewer physically walking round it.
+   */
+  gain?: number;
+  /** Fraction of the remaining rotation covered per frame; lower = floatier. */
   smoothing?: number;
-  /** How fast the neutral pose follows the live one, per sample (see `driftNeutral`). */
-  drift?: number;
 }
 
-export interface DeviceTilt {
+export interface DeviceAttitude {
   /** Whether to offer the control at all. */
   supported: boolean;
-  /** Whether tilt is currently switched on (persisted site-wide). */
+  /** Whether motion is currently switched on (persisted site-wide). */
   enabled: boolean;
-  status: DeviceTiltStatus;
+  status: MotionStatus;
   /** Flip it, prompting for motion access if the platform gates it. */
-  toggle: () => Promise<DeviceTiltStatus>;
-  /** Treat the current pose as level again. */
+  toggle: () => Promise<MotionStatus>;
+  /** Treat the pose the device is in right now as facing the object. */
   recenter: () => void;
 }
 
 /** How long to wait for a usable sample before deciding there is no sensor. */
 const WATCHDOG_MS = 2500;
-/** Below this the spring has arrived; the frame loop stops until the next sample. */
-const SETTLED = 0.0008;
+/** Below this the smoothing has arrived; the frame loop stops until the next sample. */
+const SETTLED = 0.0015; // radians — under a tenth of a degree
 
-export function useDeviceTilt({
-  onTilt,
+export function useDeviceAttitude({
+  onRotate,
   onRest,
-  range = 22,
-  smoothing = 0.16,
-  drift = 0.006,
-}: DeviceTiltOptions): DeviceTilt {
+  gain = 1.5,
+  smoothing = 0.18,
+}: DeviceAttitudeOptions): DeviceAttitude {
   const reducedMotion = useReducedMotion();
   // Both resolve on the client only: the server has no sensor and no
   // localStorage, and a first render that disagreed would hydrate-mismatch.
   const [supported, setSupported] = useState(false);
   const [enabled, setEnabled] = useState(false);
-  const [status, setStatus] = useState<DeviceTiltStatus>('unsupported');
+  const [status, setStatus] = useState<MotionStatus>('unsupported');
 
   // Handlers live in refs so a caller passing inline closures (the normal case)
   // doesn't tear down and re-arm the sensor on every render.
-  const onTiltRef = useRef(onTilt);
+  const onRotateRef = useRef(onRotate);
   const onRestRef = useRef(onRest);
-  onTiltRef.current = onTilt;
+  onRotateRef.current = onRotate;
   onRestRef.current = onRest;
 
   const recenterRef = useRef<(() => void) | null>(null);
@@ -112,13 +116,13 @@ export function useDeviceTilt({
       setSupported(false);
       return;
     }
-    setSupported(tiltCapableDevice());
+    setSupported(motionCapableDevice());
   }, [reducedMotion]);
 
   useEffect(() => {
     const consent = readMotionConsent();
     // Where the platform gates the sensor there must be an explicit grant.
-    // Everywhere else the event fires freely, so tilt is on unless it was
+    // Everywhere else the event fires freely, so motion is on unless it was
     // deliberately switched off — matching the site's aurora tilt (§5.5x C.3).
     setEnabled(motionPermissionGateExists() ? consent === true : consent !== false);
 
@@ -142,25 +146,20 @@ export function useDeviceTilt({
 
     setStatus('waiting');
 
-    // Neutral is learnt from the first usable sample, so however the visitor is
-    // holding the phone when they arrive is "level".
-    let neutral: TiltSample | null = null;
-    let target: TiltVector = { x: 0, y: 0 };
-    const current: TiltVector = { x: 0, y: 0 };
+    // The pose the viewer opened in is "facing the object", so however they are
+    // holding the phone when they arrive is the front view.
+    let neutral: Quat | null = null;
+    let target: Quat = IDENTITY;
+    let current: Quat = IDENTITY;
     let frame = 0;
     let live = false;
 
     const step = () => {
       frame = 0;
-      current.x += (target.x - current.x) * smoothing;
-      current.y += (target.y - current.y) * smoothing;
-      const settled =
-        Math.abs(target.x - current.x) < SETTLED && Math.abs(target.y - current.y) < SETTLED;
-      if (settled) {
-        current.x = target.x;
-        current.y = target.y;
-      }
-      onTiltRef.current({ x: current.x, y: current.y });
+      current = nlerp(current, target, smoothing);
+      const settled = angleBetween(current, target) < SETTLED;
+      if (settled) current = target;
+      onRotateRef.current(current);
       if (!settled) frame = requestAnimationFrame(step);
     };
 
@@ -169,16 +168,15 @@ export function useDeviceTilt({
     };
 
     const onOrientation = (event: DeviceOrientationEvent) => {
-      const { beta, gamma } = event;
+      const { alpha, beta, gamma } = event;
       // A browser that fires the event with nulls has no sensor behind it —
       // leave the watchdog to stand the whole thing down.
-      if (beta === null || gamma === null) return;
+      if (alpha === null || beta === null || gamma === null) return;
 
-      const sample: TiltSample = { beta, gamma };
-      if (!neutral) neutral = sample;
-      else neutral = driftNeutral(neutral, sample, drift);
+      const device = deviceQuaternion(alpha, beta, gamma, screenAngle());
+      if (!neutral) neutral = device;
 
-      target = tiltVector(sample, neutral, screenAngle(), range);
+      target = orbitRotation(device, neutral, gain);
       if (!live) {
         live = true;
         setStatus('active');
@@ -186,17 +184,19 @@ export function useDeviceTilt({
       schedule();
     };
 
-    // Rotating the phone re-maps the axes; re-learn level rather than snapping
-    // the whole shelf to whatever the swapped axes happen to read.
-    const onScreenRotate = () => {
+    // Rotating the screen re-maps the axes mid-flight; take the new pose as the
+    // front view rather than letting the object snap a quarter turn.
+    const onRecenter = () => {
       neutral = null;
+      target = IDENTITY;
+      schedule();
     };
 
-    recenterRef.current = onScreenRotate;
+    recenterRef.current = onRecenter;
 
     window.addEventListener('deviceorientation', onOrientation, { passive: true });
-    window.addEventListener('orientationchange', onScreenRotate, { passive: true });
-    window.screen?.orientation?.addEventListener?.('change', onScreenRotate);
+    window.addEventListener('orientationchange', onRecenter, { passive: true });
+    window.screen?.orientation?.addEventListener?.('change', onRecenter);
 
     const watchdog = window.setTimeout(() => {
       if (!live) setSupported(false);
@@ -207,13 +207,13 @@ export function useDeviceTilt({
       window.clearTimeout(watchdog);
       if (frame) cancelAnimationFrame(frame);
       window.removeEventListener('deviceorientation', onOrientation);
-      window.removeEventListener('orientationchange', onScreenRotate);
-      window.screen?.orientation?.removeEventListener?.('change', onScreenRotate);
+      window.removeEventListener('orientationchange', onRecenter);
+      window.screen?.orientation?.removeEventListener?.('change', onRecenter);
       onRestRef.current?.();
     };
-  }, [supported, enabled, range, smoothing, drift]);
+  }, [supported, enabled, gain, smoothing]);
 
-  const toggle = useCallback(async (): Promise<DeviceTiltStatus> => {
+  const toggle = useCallback(async (): Promise<MotionStatus> => {
     if (enabled) {
       writeMotionConsent(false);
       setEnabled(false);
