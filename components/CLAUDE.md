@@ -16,7 +16,7 @@ feature lives in that feature's directory; genuinely shared primitives live in
 | `ui/`           | **Shared primitives** — Button, Badge, Card, Dialog, Input, Textarea, Select, Label, EmptyState, Skeleton, Spinner, Tooltip, NotificationBadge, UserAvatar, OptimizedImage/BlurImage, AnimatedCount, ViewTransitionLink, NavigationProgress, RoutePending, pagination, slider, resizable, skeletons/. Always check here before writing new UI. Full API notes in `docs/design-language.md` §5.                                                                        |
 | `feed/`         | Feed/timeline plus the **layout system**: `SiteShell.tsx` (site-wide chrome, delegates to `radial/RadialShell`), `PageLayout.tsx` (canonical page wrapper), `ContextRail.tsx` (portals a page's `rightSidebar` into the shell's desktop live rail), `AnimatedMain.tsx`, `ColumnHeader.tsx`, post cards, composer. Also `feed.css`. Navigation lives in `radial/RadialHub` plus the desktop `radial/RadialNavRail`; the old left rail and mobile push-drawer are gone. |
 | `site/`         | Site-level chrome: `CommandPalette` (mounted globally), `LanguageSwitcher`, `PasskeyManager`.                                                                                                                                                                                                                                                                                                                                                                         |
-| `shared/`       | Cross-feature building blocks. **The full-screen app tier lives here**: `app-theme.css` (the `--app-*` token contract + chrome shared by RMHbox/RMHType/RMHStudy/RMHTube/RMHMusic), `AppShell`, `AppHeader`, `AppToaster`, `ConnectionStatus` (reconnect banner + peer-wait overlay). Also `GameLoadingFallback`, `GameErrorBoundary`, ChatPanel, EmojiPicker, ReactionMenu.                                                                                          |
+| `shared/`       | Cross-feature building blocks. **The full-screen app tier lives here**: `app-theme.css` (the `--app-*` token contract + chrome shared by RMHbox/RMHType/RMHStudy/RMHTube/RMHMusic), `AppShell`, `AppHeader`, `AppToaster`, `ConnectionStatus` (reconnect banner + peer-wait overlay), `GameBackLink` (the "leave this game" corner control). Also `GameLoadingFallback`, `GameErrorBoundary`, ChatPanel, EmojiPicker, ReactionMenu.                                     |
 | `errors/`       | `RouteErrorFallback`, `NotFound` — wired as route error/404 components.                                                                                                                                                                                                                                                                                                                                                                                               |
 | `Providers.tsx` | Global provider stack: React Query, session (`useSession`), theme application (style-* class swap + `THEME_BG` map + `THEME_EXCLUDED_ROUTES`), i18n provider, `MotionConfig reducedMotion="user"`, sonner `<Toaster>`, CommandPalette.                                                                                                                                                                                                                                |
 | `i18n/`         | `AppI18nProvider`.                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -53,6 +53,17 @@ feature lives in that feature's directory; genuinely shared primitives live in
   Fetch through API routes, loaders, or server functions.
 - **Accessibility:** jsx-a11y lint runs at warn — don't add new warnings.
   Prefer Radix-based `ui/` primitives over hand-rolled interactive widgets.
+- **Full-screen games/apps:** use the shared viewport primitives in
+  `app/globals.css` — `.app-viewport` (shell root), `.app-screen` (a menu that
+  scrolls instead of clipping), `.app-stage-fit`/`.app-stage` (a fixed-aspect
+  playfield), `.app-hud` (chrome inset by the device safe area). Four rules,
+  each a shipped bug before it was a rule: edge-pinned controls add
+  `var(--safe-*)`; `aspect-ratio` never sits beside a `max-*` clamp; anything
+  that centres AND scrolls uses `items-center-safe`/`justify-center-safe`; a
+  full-screen canvas clamps its DPR (`gameSurfaceDpr()` in 2D,
+  `lib/render/tier.ts` in 3D) and never reallocates itself per frame. Rules 2–4
+  are gated by `lib/__tests__/game-viewport-consistency.test.ts`; the full
+  rationale is [`docs/design-language.md`](../docs/design-language.md) §12.1.
 
 ## Adding UI — decision tree
 

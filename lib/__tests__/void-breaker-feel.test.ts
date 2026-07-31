@@ -30,20 +30,36 @@ describe('feel layer — trauma shake', () => {
   });
 
   it('shake magnitude scales with trauma squared (small trauma ≪ big trauma)', () => {
-    const g = new VoidBreakerEngine();
-    g.startGame();
-    advanceToPlaying(g);
-    g.waveEnemiesAlive = 999;
-    g.player.invincibleUntil = g.elapsedMs + 1e9;
-    g.addTrauma(0.2);
-    g.update(0.016, makeInput());
-    const small = Math.abs(g.shakeX) + Math.abs(g.shakeY);
-    g.trauma = 0; g.shakeX = 0; g.shakeY = 0;
-    g.addTrauma(0.8);
-    g.update(0.016, makeInput());
-    const big = Math.abs(g.shakeX) + Math.abs(g.shakeY);
-    // quadratic curve: 4x trauma → much more than 4x shake (statistically; allow slack)
-    expect(big).toBeGreaterThan(small * 5);
+    // Each offset is `trauma² × TRAUMA_MAX_SHAKE × (random() − 0.5) × 2`, so a
+    // SINGLE frame at each trauma level compares two random draws, not two
+    // magnitudes. The expected ratio is 16×, but the two-sample spread reaches
+    // below 5× often enough to fail a suite run outright — measured here at
+    // roughly one run in a hundred, which is exactly the rate that makes a
+    // flake expensive: rare enough to look like a real regression on somebody
+    // else's pull request. Averaging over many frames measures the curve the
+    // test is actually about, and leaves the assertion far from its threshold.
+    const meanShake = (trauma: number): number => {
+      const g = new VoidBreakerEngine();
+      g.startGame();
+      advanceToPlaying(g);
+      g.waveEnemiesAlive = 999;
+      g.player.invincibleUntil = g.elapsedMs + 1e9;
+      let total = 0;
+      const FRAMES = 400;
+      for (let i = 0; i < FRAMES; i++) {
+        // Re-set rather than add: trauma decays every update, and the point of
+        // the comparison is the response AT a given level.
+        g.trauma = trauma;
+        g.update(0.016, makeInput());
+        total += Math.abs(g.shakeX) + Math.abs(g.shakeY);
+      }
+      return total / FRAMES;
+    };
+
+    // 4× the trauma, so 16× the shake by the quadratic curve. The floor stays
+    // at 5× — comfortably clear of sampling noise now, and still a real failure
+    // if the curve is ever flattened to linear (which would give 4×).
+    expect(meanShake(0.8)).toBeGreaterThan(meanShake(0.2) * 5);
   });
 });
 

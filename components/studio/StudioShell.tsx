@@ -110,7 +110,7 @@ function TransportBar({
 
   if (compact) {
     return (
-      <div className="flex flex-col border-b border-[var(--site-border)] bg-[var(--site-surface)]">
+      <div className="flex flex-col border-b border-[var(--site-border)] bg-[var(--site-surface)] pt-[var(--safe-top)] pl-[var(--safe-left)] pr-[var(--safe-right)]">
         <div className="flex items-center justify-between px-3 py-2">
           {transportButtons}
 
@@ -449,7 +449,9 @@ function MobileTabBar({
   ];
 
   return (
-    <div className="flex border-t border-[var(--site-border)] bg-[var(--site-surface)]">
+    // The bar's surface reaches the physical bottom; its padding keeps the six
+    // targets above the home indicator, which otherwise sits across the labels.
+    <div className="flex border-t border-[var(--site-border)] bg-[var(--site-surface)] pb-[var(--safe-bottom)] pl-[var(--safe-left)] pr-[var(--safe-right)]">
       {tabs.map(({ id, icon: Icon, label }) => {
         const isActive =
           id === 'samples'
@@ -547,7 +549,7 @@ export default function StudioShell() {
   // ─── Mobile Layout ──────────────────────────────────────────────────────
   if (isMobile) {
     return (
-      <div className="flex h-[100dvh] flex-col bg-[var(--site-bg)]">
+      <div className="app-viewport bg-[var(--site-bg)]" data-fluid-press-scope>
         <TransportBar compact onSettingsToggle={() => setSettingsOpen(!settingsOpen)} />
 
         <div className="relative flex-1 overflow-hidden">
@@ -570,7 +572,7 @@ export default function StudioShell() {
 
   // ─── Desktop Layout ─────────────────────────────────────────────────────
   return (
-    <div className="flex h-screen flex-col bg-[var(--site-bg)]">
+    <div className="app-viewport app-safe-x bg-[var(--site-bg)]" data-fluid-press-scope>
       <TransportBar onSettingsToggle={() => setSettingsOpen(!settingsOpen)} />
       <Toolbar />
 

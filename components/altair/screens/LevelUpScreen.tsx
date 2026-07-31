@@ -127,7 +127,7 @@ export default function LevelUpScreen({ onReroll }: LevelUpScreenProps) {
   if (!isActive) return null;
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center altair-overlay overflow-y-auto">
+    <div className="absolute inset-0 z-50 flex items-center-safe justify-center-safe altair-overlay overflow-y-auto">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <div className="relative z-10 w-full max-w-2xl mx-4 my-4 sm:my-0">
         {/* Title */}

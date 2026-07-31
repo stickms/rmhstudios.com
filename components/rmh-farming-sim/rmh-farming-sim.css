@@ -49,13 +49,21 @@
     position: absolute;
     inset: 0;
     display: flex;
+    /* It already scrolls; `safe center` is what makes the scroll usable. With
+       plain `center`, content taller than the menu overflows past both edges and
+       the top of the card sits above the scroll origin, where no amount of
+       scrolling reaches it. */
     align-items: center;
+    align-items: safe center;
     justify-content: center;
+    justify-content: safe center;
     background:
         radial-gradient(circle at 50% 20%, #2b3f1e, #14210d 70%),
         #14210d;
-    padding: 20px;
+    padding: calc(20px + var(--safe-top)) calc(20px + var(--safe-right))
+        calc(20px + var(--safe-bottom)) calc(20px + var(--safe-left));
     overflow-y: auto;
+    overscroll-behavior: contain;
 }
 .rfs-menu-card {
     width: 100%;

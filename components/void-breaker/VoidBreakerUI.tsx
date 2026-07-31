@@ -432,7 +432,7 @@ export function VoidBreakerUI({
   if (uiState === 'menu') {
     return (
       <div className="absolute inset-0 z-40 pointer-events-auto overflow-hidden bg-[#0d0d14]">
-        <div className="relative h-full flex items-center justify-center overflow-y-auto py-8">
+        <div className="relative h-full flex items-center-safe justify-center-safe overflow-y-auto py-8">
           <div className="vb-anim text-center space-y-4 sm:space-y-5 w-full max-w-md px-4 py-6"
             style={{ animation: 'vb-scale-in 0.4s cubic-bezier(0.22,1.2,0.36,1) both' }}>
             <div className="absolute top-4 right-4 flex items-center gap-2">
@@ -637,7 +637,7 @@ export function VoidBreakerUI({
     const secs = Math.floor(runStats.timeSurvivedMs / 1000);
     const timeStr = `${Math.floor(secs / 60)}:${(secs % 60).toString().padStart(2, '0')}`;
     return (
-      <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
+      <div className="absolute inset-0 flex items-center-safe justify-center-safe z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
         <div className="vb-anim max-w-md w-full px-4 space-y-3 py-6"
           style={{ animation: 'vb-scale-in 0.4s cubic-bezier(0.22,1.2,0.36,1) both' }}>
           <div className="text-center space-y-1">

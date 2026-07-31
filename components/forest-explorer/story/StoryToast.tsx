@@ -24,7 +24,7 @@ export function StoryToast() {
     if (!displayMsg) return null;
 
     return (
-        <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-[70] pointer-events-none">
+        <div className="absolute bottom-[calc(8rem+var(--safe-bottom))] left-1/2 -translate-x-1/2 z-[70] pointer-events-none">
             <div
                 className="px-5 py-2.5 rounded-xl bg-green-900/60 backdrop-blur-sm border border-green-600/30 text-center transition-all duration-500"
                 style={{

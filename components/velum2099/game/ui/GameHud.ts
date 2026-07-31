@@ -9,7 +9,14 @@
 const STYLE_ID = 'neurodrive-hud-style';
 const CSS = `
 @keyframes nd-toast-in { from { opacity:0; transform:translateY(-8px) scale(0.96);} to { opacity:1; transform:none;} }
-.nd-hud { position:fixed; inset:0; z-index:300; pointer-events:none;
+/* Inset by the device's safe area rather than \`inset:0\`. Every panel below pins
+   itself to an edge of this layer — credits top-right, speed bottom-right,
+   objective top-centre — and a courier run is driven in landscape, where those
+   are the two edges a phone puts its sensor housing and home indicator on. */
+.nd-hud { position:fixed;
+  top:var(--safe-top); right:var(--safe-right);
+  bottom:var(--safe-bottom); left:var(--safe-left);
+  z-index:300; pointer-events:none;
   font-family:'VT323','Noto Sans SC',monospace; color:#cfe9ff; }
 .nd-hud .nd-panel { position:absolute; background:rgba(4,8,18,0.55);
   border:1px solid rgba(0,255,213,0.35); border-radius:6px; padding:6px 12px;

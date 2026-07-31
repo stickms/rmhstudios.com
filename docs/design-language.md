@@ -141,6 +141,17 @@ construction: `touch-action: manipulation` removes the ~300ms tap delay on
 everything pressable, and hit targets are grown to 44px with insets rather than
 by inflating the drawn control.
 
+**In the full-screen tier**, where controls do not come from `ui/button.tsx`, a
+container claims its subtree instead: `data-fluid-press-scope` makes every
+`button` / `[role=button]` / `summary` inside press, so an app opts in once
+rather than tagging thirty bespoke buttons and forgetting the thirty-first.
+`AppShell` carries it, which reaches RMHbox, RMHType, RMHStudy and RMHTube in
+one line; game shells add it themselves. Opt individual elements back out with
+`data-fluid-press="none"` — and **do** opt out gestures: a joystick, a drag
+handle or a fire button held for thirty seconds is not a tap, and springing it
+reads as lag while promoting a compositor layer during exactly the frames a game
+can least afford one.
+
 Reduced motion stands the whole layer down — the press spring does not run, the
 sheet gesture is not offered, and settles snap. Direct manipulation that remains
 useful (turning the globe) keeps working.
@@ -826,6 +837,72 @@ was. Games with a bespoke visual identity (Temple of Joy, Slice It, Neon
 Driftway) keep their own scoped variable groups in `globals.css`; they are
 exempt from the palette, not from the shared behaviour.
 
+### 12.1 The full-screen viewport contract
+
+The palette is what an app may own. The **viewport** is not: a game that clips
+its own pause menu is broken in the same way whatever its colours are. These
+four primitives live in `app/globals.css` (§"Full-screen app/game layout
+helpers"), deliberately global rather than in `app-theme.css`, so a game with
+its own design system does not have to adopt the app palette just to stop its
+bottom bar hiding under a phone's browser chrome.
+
+| Primitive                    | Use it for                                                                                                                                      |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.app-viewport`              | The root of a non-scrolling app shell. `100vh` then `100dvh` — the fallback pair, not Tailwind's single-declaration `h-dvh`.                     |
+| `.app-screen`                | A menu / results / lobby screen: full height, centred **while it fits**, scrolled when it does not.                                              |
+| `.app-stage-fit` + `.app-stage` | A fixed-aspect playfield. Put the HUD **inside** `.app-stage` when it must track the world, outside when it should use the letterbox.        |
+| `.app-hud` / `.app-hud-fixed`   | A full-bleed chrome layer, inset by the device's safe area. Geometry only — it does not touch `pointer-events`.                              |
+| `.app-safe-top/-bottom/-x/-pad` | Insets on a surface that is itself full-bleed but whose contents are not (a translucent bar, a letterbox gradient).                          |
+| `useKeyboardInset` + `--kb-inset` | The software keyboard's measured height, so a fixed-height shell can end where the keyboard begins. `AppShell` mounts it for the app tier. |
+
+Five rules, each of which was a shipped defect before it was a rule:
+
+1. **The world runs to the edge; the controls do not.** Artwork *should* pass
+   under the notch. A pause button must not. Anything pinned to a viewport edge
+   adds `var(--safe-top|right|bottom|left)` to its offset, or sits in an
+   `.app-hud` layer that already has. Picture **landscape** when you check —
+   that is where the notch takes a long edge, and it is the orientation most of
+   these games are played in. Bottom-only insets are the common half-fix.
+2. **`aspect-ratio` derives only the axis you left `auto`.** So
+   `width: 100%; max-height: 100%; aspect-ratio: W/H` is not a fit — the clamp
+   shortens the box without narrowing it and the playfield skews. Setting both
+   axes definite is worse: the ratio is ignored outright. Use `.app-stage`,
+   which states the fit in container-query units where there is nothing left to
+   clamp.
+3. **Centring an overflowing flex container hides the top of it.** Content
+   taller than the container overflows past *both* edges, and scroll offsets
+   cannot go negative, so the top is unreachable — with or without
+   `overflow-y: auto`. Use `items-center-safe` / `justify-center-safe` (CSS:
+   `align-items: safe center`) on anything that both centres and can scroll.
+4. **A full-screen canvas clamps its device-pixel ratio.** Fill rate scales with
+   the *square* of the ratio: a 3× phone at native asks for nine times the
+   pixels of a 1× screen, sixty times a second. 2D surfaces go through
+   `gameSurfaceDpr()` (`lib/display-scale.ts`, capped at 2); 3D surfaces through
+   the tier system (`lib/render/tier.ts`). Whatever sizes the drawing **buffer**
+   must also be what the render transform uses — clamping one and not the other
+   scales the whole scene. And never reassign `canvas.width` inside a rAF loop:
+   it reallocates the backing store every frame, and if it was also what cleared
+   your surface, add the explicit `clearRect` when you stop.
+
+5. **A shell with text entry subtracts `--kb-inset`.** The same shell that
+   cannot scroll also cannot reveal a focused field when the keyboard covers the
+   bottom 40% of the screen — and `dvh` does not help, because it tracks the
+   browser's toolbars, not the keyboard. So the engine moves the only thing it
+   can, the visual viewport: it pans, and where the field still will not fit, it
+   scales. Players report that as *the app zooming when they try to type*. Size
+   such a surface `calc(100dvh - var(--kb-inset, 0px))` and mount
+   `useKeyboardInset`; the shell then ends where the keyboard begins and there is
+   nothing left to reveal. Two companions on the field itself: don't `autoFocus`
+   on a coarse pointer (it raises the keyboard for something the player didn't
+   ask for), and set `inputMode` so a digits-only field gets the numeric pad
+   rather than a QWERTY that covers a third more of the screen.
+
+Rules 2–4's checkable parts, plus the `dvh` fallback pair, are enforced by
+`lib/__tests__/game-viewport-consistency.test.ts` (§13). Rules 1 and 5 are
+manual — `absolute top-3 right-3` is correct inside a card and wrong on the
+window, and whether a shell ever hosts a text field is a question about its
+subtree, not about the rule that sizes it.
+
 ---
 
 ## 13. What is enforced automatically
@@ -847,6 +924,19 @@ the normal suite (`pnpm exec vitest run`, gated by `web-ci.yml`):
   switcher that marks its active slot some other way (an accent pill, a
   segmented control, a `flex-1` button row with an active tint) still belongs
   on `LiquidTabs`. Reviewers catch those by eye.
+- **`lib/__tests__/game-viewport-consistency.test.ts` — the full-screen
+  viewport contract (§12.1).** A static scan over the thirty game/app
+  directories that fails on: (1) a scrolling flex/grid container that centres on
+  the block axis without the `-safe` variant (the overflow-is-unreachable trap);
+  (2) an `aspectRatio` beside a `maxWidth`/`maxHeight` clamp, or with both axes
+  definite, either of which defeats the ratio; (3) a `height`/`min-height` of
+  `100vh` with no `dvh`/`svh` line after it. Class strings are read from
+  `className=` specifically, not from string literals generally — an apostrophe
+  in prose opens a literal to a naive scanner and produces confident nonsense.
+  Like the tab gate it asserts it scanned >200 files, so a broken walker can't
+  make the rules pass vacuously. Its docstring records the three manual rules:
+  safe-area insets on edge-pinned chrome, DPR clamping on full-screen canvases,
+  and no per-frame canvas reallocation.
 - **`lib/__tests__/appearance-contrast.test.ts`** — `ensureReadableAccent()`
   keeps a custom accent from shipping an unreadable `--site-accent-fg` pair.
 - **`lib/__tests__/i18n-catalogs.test.ts` / `i18n-config.test.ts`** — catalog

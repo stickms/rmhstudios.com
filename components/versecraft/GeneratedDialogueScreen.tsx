@@ -322,7 +322,7 @@ export function GeneratedDialogueScreen() {
       onClick={handleClick}
     >
       {/* Top progress chip */}
-      <div className="absolute top-3 right-3 z-30 pointer-events-none">
+      <div className="absolute top-[calc(0.75rem+var(--safe-top))] right-[calc(0.75rem+var(--safe-right))] z-30 pointer-events-none">
         <span
           className="px-2.5 py-1 rounded-full text-[11px]"
           style={{
@@ -420,7 +420,7 @@ export function GeneratedDialogueScreen() {
       />
 
       {/* Dialogue box */}
-      <div ref={boxRef} className="absolute bottom-0 left-0 right-0 z-20 p-4 md:p-6">
+      <div ref={boxRef} className="absolute bottom-0 left-0 right-0 z-20 p-4 md:p-6 pb-[calc(1rem+var(--safe-bottom))] md:pb-[calc(1.5rem+var(--safe-bottom))] pl-[calc(1rem+var(--safe-left))] pr-[calc(1rem+var(--safe-right))] md:pl-[calc(1.5rem+var(--safe-left))] md:pr-[calc(1.5rem+var(--safe-right))]">
         <motion.div
           className="max-w-4xl mx-auto rounded-lg p-4 md:p-6"
           style={{

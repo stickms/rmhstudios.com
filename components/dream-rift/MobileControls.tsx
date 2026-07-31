@@ -78,12 +78,17 @@ export function MobileControls({ input }: { input: InputManager }) {
     );
 
     return (
-        <div className="pointer-events-none absolute inset-0 z-20 select-none md:hidden">
+        // `app-hud`, not `inset-0`: a danmaku run is played in portrait with the
+        // phone in both hands, so the stick sits exactly where the home
+        // indicator lives and the button cluster reaches the right-hand inset
+        // the moment anyone turns the phone. The 86px lift stays — it clears the
+        // dialogue strip — and the device inset is added on top of it.
+        <div className="app-hud pointer-events-none z-20 select-none md:hidden">
             {/* stick */}
             <div
                 ref={stickRef}
-                className="pointer-events-auto absolute left-6 h-32 w-32 touch-none rounded-full border border-[rgba(231,205,140,0.3)] bg-[rgba(11,7,18,0.4)]"
-                style={{ touchAction: 'none', bottom: 86 }}
+                className="pointer-events-auto absolute bottom-[86px] left-6 h-32 w-32 touch-none rounded-full border border-[rgba(231,205,140,0.3)] bg-[rgba(11,7,18,0.4)]"
+                style={{ touchAction: 'none' }}
             >
                 <div
                     className="absolute left-1/2 top-1/2 h-14 w-14 rounded-full bg-[rgba(231,205,140,0.28)] shadow-lg"
@@ -91,7 +96,7 @@ export function MobileControls({ input }: { input: InputManager }) {
                 />
             </div>
             {/* buttons */}
-            <div className="pointer-events-auto absolute right-5 flex flex-col items-end gap-3" style={{ bottom: 86 }}>
+            <div className="pointer-events-auto absolute bottom-[86px] right-5 flex flex-col items-end gap-3">
                 <div className="flex items-end gap-3">
                     {btn('FOCUS', 'focus', 'h-14 w-14 text-[10px] bg-[rgba(231,205,140,0.22)] border border-[rgba(231,205,140,0.45)]')}
                     {btn('BOMB', 'bomb', 'h-16 w-16 text-xs bg-[rgba(155,107,255,0.22)] border border-[rgba(184,160,255,0.4)]')}

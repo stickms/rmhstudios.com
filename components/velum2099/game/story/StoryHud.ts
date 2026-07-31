@@ -17,7 +17,13 @@ const CSS = `
 @keyframes vs-card-in { from { opacity:0; transform:translateX(-14px);} to { opacity:1; transform:none;} }
 @keyframes vs-flicker { 0%,100%{opacity:1;} 92%{opacity:1;} 94%{opacity:0.55;} 96%{opacity:1;} 97%{opacity:0.7;} }
 @keyframes vs-modal-in { from { opacity:0;} to { opacity:1; } }
-.vs-root { position:fixed; inset:0; z-index:320; pointer-events:none;
+/* Safe-area inset — the mission tracker hugs the right edge and the comms cards
+   the left, so on a notched phone in landscape one of them is always the one
+   under the housing. */
+.vs-root { position:fixed;
+  top:var(--safe-top); right:var(--safe-right);
+  bottom:var(--safe-bottom); left:var(--safe-left);
+  z-index:320; pointer-events:none;
   font-family:'VT323','Noto Sans SC',monospace; color:#cfe9ff; }
 .vs-track { position:absolute; right:12px; top:150px; width:214px; text-align:right;
   background:rgba(4,8,18,0.55); border:1px solid rgba(0,255,213,0.32); border-radius:6px;

@@ -48,7 +48,12 @@ export default function MobileControls({ input }: { input: LocalInputSource }) {
     });
 
     return (
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', touchAction: 'none' }}>
+        // `app-hud` supplies the four device insets. A brawl is fought in
+        // landscape, so the thumbstick at `left: 24` and the punch diamond at
+        // `right: 24` are on precisely the two edges a phone puts its sensor
+        // housing and home indicator on — every offset below is now measured
+        // from the first pixel the hardware leaves alone.
+        <div className="app-hud" style={{ pointerEvents: 'none', touchAction: 'none' }}>
             {/* Movement thumbstick */}
             <div
                 ref={joyBase}
