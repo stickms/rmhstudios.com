@@ -402,6 +402,10 @@ model AppearancePreference {
   customAccent String? @db.VarChar(7) // '#rrggbb'; wins over `accent` preset
   reduceMotion Boolean @default(false)
   glassLevel   Int? // glass clarity slider (§5.46): 0 Opaque · 1 Calm · 2 Default · 3 Airy · 4 Clear; null → 2
+  /// Colour-vision deficiency mode: 'deuteranopia' | 'protanopia' |
+  /// 'tritanopia'; null/'none' → the untouched palette. Retints the semantic
+  /// success/danger/warning tokens only.
+  colorVision  String? @db.VarChar(16)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -2188,9 +2192,41 @@ model DeveloperApiKey {
 
   user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   idempotencyKeys ApiIdempotencyKey[]
+  usage           ApiUsageDaily[]
 
   @@index([userId])
   @@map("developer_api_key")
+}
+
+/// Per-key, per-UTC-day API usage rollup.
+///
+/// The rate limiter's counters live in Redis with a 26-hour TTL, which is right
+/// for enforcement and useless for everything else: a developer could not see
+/// how much of their quota they had consumed, there was no history behind a
+/// spike, and support had nothing to look at. This is a ROLLUP, not a request
+/// log — one row per key per day, written from an in-process buffer so a busy
+/// key costs one write per flush interval rather than one per request.
+model ApiUsageDaily {
+  id  String @id @default(cuid())
+  keyId String
+  /// UTC day as "YYYYMMDD" — the same bucket the rate limiter uses, so the two
+  /// can never disagree about which day a request belongs to.
+  day String @db.VarChar(8)
+  /// Requests served.
+  requests Int @default(0)
+  /// Cost-weighted units drawn against the daily quota (heavy endpoints > 1).
+  units Int @default(0)
+  /// 4xx and 5xx kept apart: a client integrating badly and a server failing
+  /// are different problems and must not sum into one number.
+  clientErrors Int @default(0)
+  serverErrors Int @default(0)
+  updatedAt DateTime @updatedAt
+
+  key DeveloperApiKey @relation(fields: [keyId], references: [id], onDelete: Cascade)
+
+  @@unique([keyId, day])
+  @@index([keyId, day(sort: Desc)])
+  @@map("api_usage_daily")
 }
 
 /// Stores the first response produced for a given (key, Idempotency-Key) so a

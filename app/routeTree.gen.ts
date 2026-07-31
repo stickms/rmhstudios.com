@@ -692,6 +692,7 @@ import { Route as ApiAdminUsersIdStrikeRouteImport } from './routes/api/admin/us
 import { Route as ApiAdminWagerIdResolveRouteImport } from './routes/api/admin/wager/$id/resolve'
 import { Route as ApiCommunitiesSlugAnnouncementsIdRouteImport } from './routes/api/communities/$slug/announcements/$id'
 import { Route as ApiCommunitiesSlugMembersUserIdRouteImport } from './routes/api/communities/$slug/members/$userId'
+import { Route as ApiDeveloperKeysIdUsageRouteImport } from './routes/api/developer/keys/$id/usage'
 import { Route as ApiHomesListingsIdFavoriteRouteImport } from './routes/api/homes/listings.$id.favorite'
 import { Route as ApiLibraryCollectionIdCoverRouteImport } from './routes/api/library/collection/$id/cover'
 import { Route as ApiLibraryCollectionIdItemsRouteImport } from './routes/api/library/collection/$id/items'
@@ -4225,6 +4226,11 @@ const ApiCommunitiesSlugMembersUserIdRoute =
     path: '/$userId',
     getParentRoute: () => ApiCommunitiesSlugMembersRoute,
   } as any)
+const ApiDeveloperKeysIdUsageRoute = ApiDeveloperKeysIdUsageRouteImport.update({
+  id: '/usage',
+  path: '/usage',
+  getParentRoute: () => ApiDeveloperKeysIdRoute,
+} as any)
 const ApiHomesListingsIdFavoriteRoute =
   ApiHomesListingsIdFavoriteRouteImport.update({
     id: '/favorite',
@@ -4981,7 +4987,7 @@ export interface FileRoutesByFullPath {
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
   '/api/communities/$slug/members': typeof ApiCommunitiesSlugMembersRouteWithChildren
   '/api/creators/$id/join': typeof ApiCreatorsIdJoinRoute
-  '/api/developer/keys/$id': typeof ApiDeveloperKeysIdRoute
+  '/api/developer/keys/$id': typeof ApiDeveloperKeysIdRouteWithChildren
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
   '/api/doctrine/admin/incidents': typeof ApiDoctrineAdminIncidentsRoute
   '/api/doctrine/admin/tiers': typeof ApiDoctrineAdminTiersRoute
@@ -5138,6 +5144,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/wager/$id/resolve': typeof ApiAdminWagerIdResolveRoute
   '/api/communities/$slug/announcements/$id': typeof ApiCommunitiesSlugAnnouncementsIdRoute
   '/api/communities/$slug/members/$userId': typeof ApiCommunitiesSlugMembersUserIdRoute
+  '/api/developer/keys/$id/usage': typeof ApiDeveloperKeysIdUsageRoute
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
@@ -5682,7 +5689,7 @@ export interface FileRoutesByTo {
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
   '/api/communities/$slug/members': typeof ApiCommunitiesSlugMembersRouteWithChildren
   '/api/creators/$id/join': typeof ApiCreatorsIdJoinRoute
-  '/api/developer/keys/$id': typeof ApiDeveloperKeysIdRoute
+  '/api/developer/keys/$id': typeof ApiDeveloperKeysIdRouteWithChildren
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
   '/api/doctrine/admin/incidents': typeof ApiDoctrineAdminIncidentsRoute
   '/api/doctrine/admin/tiers': typeof ApiDoctrineAdminTiersRoute
@@ -5839,6 +5846,7 @@ export interface FileRoutesByTo {
   '/api/admin/wager/$id/resolve': typeof ApiAdminWagerIdResolveRoute
   '/api/communities/$slug/announcements/$id': typeof ApiCommunitiesSlugAnnouncementsIdRoute
   '/api/communities/$slug/members/$userId': typeof ApiCommunitiesSlugMembersUserIdRoute
+  '/api/developer/keys/$id/usage': typeof ApiDeveloperKeysIdUsageRoute
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
@@ -6409,7 +6417,7 @@ export interface FileRoutesById {
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
   '/api/communities/$slug/members': typeof ApiCommunitiesSlugMembersRouteWithChildren
   '/api/creators/$id/join': typeof ApiCreatorsIdJoinRoute
-  '/api/developer/keys/$id': typeof ApiDeveloperKeysIdRoute
+  '/api/developer/keys/$id': typeof ApiDeveloperKeysIdRouteWithChildren
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
   '/api/doctrine/admin/incidents': typeof ApiDoctrineAdminIncidentsRoute
   '/api/doctrine/admin/tiers': typeof ApiDoctrineAdminTiersRoute
@@ -6566,6 +6574,7 @@ export interface FileRoutesById {
   '/api/admin/wager/$id/resolve': typeof ApiAdminWagerIdResolveRoute
   '/api/communities/$slug/announcements/$id': typeof ApiCommunitiesSlugAnnouncementsIdRoute
   '/api/communities/$slug/members/$userId': typeof ApiCommunitiesSlugMembersUserIdRoute
+  '/api/developer/keys/$id/usage': typeof ApiDeveloperKeysIdUsageRoute
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
@@ -7293,6 +7302,7 @@ export interface FileRouteTypes {
     | '/api/admin/wager/$id/resolve'
     | '/api/communities/$slug/announcements/$id'
     | '/api/communities/$slug/members/$userId'
+    | '/api/developer/keys/$id/usage'
     | '/api/homes/listings/$id/favorite'
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
@@ -7994,6 +8004,7 @@ export interface FileRouteTypes {
     | '/api/admin/wager/$id/resolve'
     | '/api/communities/$slug/announcements/$id'
     | '/api/communities/$slug/members/$userId'
+    | '/api/developer/keys/$id/usage'
     | '/api/homes/listings/$id/favorite'
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
@@ -8720,6 +8731,7 @@ export interface FileRouteTypes {
     | '/api/admin/wager/$id/resolve'
     | '/api/communities/$slug/announcements/$id'
     | '/api/communities/$slug/members/$userId'
+    | '/api/developer/keys/$id/usage'
     | '/api/homes/listings/$id/favorite'
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
@@ -9075,7 +9087,7 @@ export interface RootRouteChildren {
   ApiCommunitiesSlugJoinRoute: typeof ApiCommunitiesSlugJoinRoute
   ApiCommunitiesSlugMembersRoute: typeof ApiCommunitiesSlugMembersRouteWithChildren
   ApiCreatorsIdJoinRoute: typeof ApiCreatorsIdJoinRoute
-  ApiDeveloperKeysIdRoute: typeof ApiDeveloperKeysIdRoute
+  ApiDeveloperKeysIdRoute: typeof ApiDeveloperKeysIdRouteWithChildren
   ApiDoctrineAdminDisclosuresRoute: typeof ApiDoctrineAdminDisclosuresRoute
   ApiDoctrineAdminIncidentsRoute: typeof ApiDoctrineAdminIncidentsRoute
   ApiDoctrineAdminTiersRoute: typeof ApiDoctrineAdminTiersRoute
@@ -13954,6 +13966,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCommunitiesSlugMembersUserIdRouteImport
       parentRoute: typeof ApiCommunitiesSlugMembersRoute
     }
+    '/api/developer/keys/$id/usage': {
+      id: '/api/developer/keys/$id/usage'
+      path: '/usage'
+      fullPath: '/api/developer/keys/$id/usage'
+      preLoaderRoute: typeof ApiDeveloperKeysIdUsageRouteImport
+      parentRoute: typeof ApiDeveloperKeysIdRoute
+    }
     '/api/homes/listings/$id/favorite': {
       id: '/api/homes/listings/$id/favorite'
       path: '/favorite'
@@ -15600,6 +15619,17 @@ const ApiCommunitiesSlugMembersRouteWithChildren =
     ApiCommunitiesSlugMembersRouteChildren,
   )
 
+interface ApiDeveloperKeysIdRouteChildren {
+  ApiDeveloperKeysIdUsageRoute: typeof ApiDeveloperKeysIdUsageRoute
+}
+
+const ApiDeveloperKeysIdRouteChildren: ApiDeveloperKeysIdRouteChildren = {
+  ApiDeveloperKeysIdUsageRoute: ApiDeveloperKeysIdUsageRoute,
+}
+
+const ApiDeveloperKeysIdRouteWithChildren =
+  ApiDeveloperKeysIdRoute._addFileChildren(ApiDeveloperKeysIdRouteChildren)
+
 interface ApiGroupChatsIdMessagesRouteChildren {
   ApiGroupChatsIdMessagesMessageIdVoteRoute: typeof ApiGroupChatsIdMessagesMessageIdVoteRoute
 }
@@ -15987,7 +16017,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCommunitiesSlugJoinRoute: ApiCommunitiesSlugJoinRoute,
   ApiCommunitiesSlugMembersRoute: ApiCommunitiesSlugMembersRouteWithChildren,
   ApiCreatorsIdJoinRoute: ApiCreatorsIdJoinRoute,
-  ApiDeveloperKeysIdRoute: ApiDeveloperKeysIdRoute,
+  ApiDeveloperKeysIdRoute: ApiDeveloperKeysIdRouteWithChildren,
   ApiDoctrineAdminDisclosuresRoute: ApiDoctrineAdminDisclosuresRoute,
   ApiDoctrineAdminIncidentsRoute: ApiDoctrineAdminIncidentsRoute,
   ApiDoctrineAdminTiersRoute: ApiDoctrineAdminTiersRoute,
