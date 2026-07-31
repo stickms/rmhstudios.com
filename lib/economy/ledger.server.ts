@@ -32,7 +32,7 @@ export type { Db, LedgerOptions, LedgerResult } from '@/lib/economy/ledger-core'
 export function creditCoins(
   userId: string,
   amount: number,
-  opts: LedgerOptions = {}
+  opts: LedgerOptions = {},
 ): Promise<LedgerResult> {
   return creditCoinsOn(prisma, userId, amount, opts);
 }
@@ -41,7 +41,7 @@ export function creditCoins(
 export function debitCoins(
   userId: string,
   amount: number,
-  opts: LedgerOptions = {}
+  opts: LedgerOptions = {},
 ): Promise<LedgerResult> {
   return debitCoinsOn(prisma, userId, amount, opts);
 }
@@ -51,7 +51,7 @@ export function transferCoins(
   fromUserId: string,
   toUserId: string,
   amount: number,
-  opts: LedgerOptions & { fee?: number } = {}
+  opts: LedgerOptions & { fee?: number } = {},
 ): Promise<LedgerResult> {
   return transferCoinsOn(prisma, fromUserId, toUserId, amount, opts);
 }
@@ -95,8 +95,7 @@ export async function reconcileUser(userId: string): Promise<Reconciliation> {
   ]);
 
   const balance = profile?.coins ?? 0;
-  const ledgerBalance =
-    STARTING_BALANCE + (credits._sum.amount ?? 0) - (debits._sum.amount ?? 0);
+  const ledgerBalance = STARTING_BALANCE + (credits._sum.amount ?? 0) - (debits._sum.amount ?? 0);
   const drift = balance - ledgerBalance;
 
   return { userId, balance, ledgerBalance, drift, ok: drift === 0 };

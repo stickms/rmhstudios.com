@@ -84,10 +84,7 @@ export interface AccountStanding {
  * window. Expired strikes stay appealable — the record outlives the penalty and
  * users reasonably want it cleared.
  */
-function appealable(
-  strike: { createdAt: Date; appealStatus: string },
-  now: number
-): boolean {
+function appealable(strike: { createdAt: Date; appealStatus: string }, now: number): boolean {
   if (strike.appealStatus !== 'NONE') return false;
   return now - strike.createdAt.getTime() <= APPEAL_WINDOW_DAYS * 24 * 60 * 60 * 1000;
 }

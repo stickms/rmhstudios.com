@@ -164,6 +164,77 @@ export function breadcrumbSchema(items: Breadcrumb[]): Json {
   };
 }
 
+interface VideoGameInput {
+  name: string;
+  description: string;
+  /** Path to the game's hub page. */
+  path: string;
+  image?: string;
+  /** Genre tags from the catalog. */
+  genres?: string[];
+  /** Aggregate player rating, when the game has enough reviews to have one. */
+  rating?: { value: number; count: number };
+}
+
+/**
+ * A playable game. Emitted on `/games/{id}` hub pages.
+ *
+ * Every hub page previously shared one static title ("Game hub | RMH Studios")
+ * with no description, canonical or structured data — so eighteen distinct
+ * games looked to a crawler like eighteen copies of the same page. This is the
+ * structured half of fixing that.
+ *
+ * `playMode` and `applicationCategory` are fixed because every first-party game
+ * here is a browser game; `aggregateRating` is omitted entirely when there are
+ * no ratings, since a zero-count rating is invalid structured data and gets the
+ * whole block ignored.
+ */
+export function videoGameSchema({
+  name,
+  description,
+  path,
+  image,
+  genres,
+  rating,
+}: VideoGameInput): Json {
+  const url = path.startsWith('http') ? path : `${SITE_URL}${path}`;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'VideoGame',
+    name,
+    description,
+    url,
+    image: image ? (image.startsWith('http') ? image : `${SITE_URL}${image}`) : DEFAULT_IMAGE,
+    applicationCategory: 'Game',
+    gamePlatform: 'Web browser',
+    operatingSystem: 'Any',
+    ...(genres && genres.length > 0 ? { genre: genres } : {}),
+    publisher: {
+      '@type': 'Organization',
+      name: ORG_NAME,
+      url: SITE_URL,
+      logo: { '@type': 'ImageObject', url: LOGO_URL },
+    },
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+      availability: 'https://schema.org/InStock',
+    },
+    ...(rating && rating.count > 0
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: rating.value,
+            ratingCount: rating.count,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
+  };
+}
+
 interface JobPostingInput {
   id: string;
   title: string;

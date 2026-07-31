@@ -68,9 +68,19 @@ export const Route = createFileRoute('/sitemap.xml')({
           if (a.href.startsWith('/')) urls.push({ loc: a.href, changefreq: 'weekly', priority: 0.7 });
         }
 
+        // Game hub pages (/games/{id}) — reviews, guides and leaderboards per
+        // game. These carry per-game meta and VideoGame JSON-LD, so they are the
+        // indexable landing page for a game; the playable route itself is a
+        // full-screen app with little for a crawler to read.
+        for (const g of games) {
+          if (!g.unlisted) {
+            urls.push({ loc: `/games/${g.id}`, changefreq: 'weekly', priority: 0.7 });
+          }
+        }
+
         // DB-backed public content. Failures here shouldn't 500 the sitemap.
         try {
-          const [posts, news, builds, ladderJobs] = await Promise.all([
+          const [posts, news, builds, ladderJobs, libraryDocs, communities, guides] = await Promise.all([
             prisma.blogPost.findMany({ select: { slug: true, updatedAt: true }, take: 1000 }),
             prisma.newsArticle.findMany({
               where: { status: 'PUBLISHED' },
@@ -102,6 +112,25 @@ export const Route = createFileRoute('/sitemap.xml')({
               orderBy: { lastVerifiedAt: 'desc' },
               take: 5000,
             }),
+            // Library documents: a large public corpus that was never listed,
+            // so none of it was discoverable through search.
+            prisma.libraryDocument.findMany({
+              where: { hidden: false, reported: false },
+              select: { slug: true, createdAt: true },
+              take: 5000,
+            }),
+            // Public communities only — private ones must not be enumerated.
+            prisma.community.findMany({
+              where: { isPrivate: false },
+              select: { slug: true, createdAt: true },
+              take: 2000,
+            }),
+            // Published player guides, which live on their own crawlable route.
+            prisma.gameGuide.findMany({
+              where: { published: true },
+              select: { id: true, gameId: true, updatedAt: true },
+              take: 2000,
+            }),
           ]);
 
           for (const p of posts) {
@@ -112,6 +141,15 @@ export const Route = createFileRoute('/sitemap.xml')({
           }
           for (const b of builds) {
             urls.push({ loc: `/user-builds/${b.slug}`, lastmod: b.updatedAt.toISOString(), changefreq: 'weekly', priority: 0.5 });
+          }
+          for (const d of libraryDocs) {
+            urls.push({ loc: `/library/${d.slug}`, lastmod: d.createdAt.toISOString(), changefreq: 'monthly', priority: 0.6 });
+          }
+          for (const c of communities) {
+            urls.push({ loc: `/c/${c.slug}`, lastmod: c.createdAt.toISOString(), changefreq: 'daily', priority: 0.6 });
+          }
+          for (const g of guides) {
+            urls.push({ loc: `/games/${g.gameId}/guides/${g.id}`, lastmod: g.updatedAt.toISOString(), changefreq: 'monthly', priority: 0.5 });
           }
           for (const job of ladderJobs) {
             if (!['verified_active', 'verified_probable'].includes(job.verifications[0]?.status ?? '')) continue;

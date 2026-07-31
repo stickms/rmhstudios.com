@@ -503,6 +503,8 @@ import { Route as StrategiesPuzzlesLeaderboardRouteImport } from './routes/strat
 import { Route as StrategiesSafehouseIndexRouteImport } from './routes/strategies/safehouse/index'
 import { Route as StrategiesSafehouseDropsRouteImport } from './routes/strategies/safehouse/drops'
 import { Route as StrategiesSafehouseRecruitRouteImport } from './routes/strategies/safehouse/recruit'
+import { Route as TagTagRssDotxmlRouteImport } from './routes/tag.$tag.rss[.]xml'
+import { Route as UHandleRssDotxmlRouteImport } from './routes/u.$handle.rss[.]xml'
 import { Route as SiteAdminAlbumsIndexRouteImport } from './routes/_site/admin/albums/index'
 import { Route as SiteAdminAlbumsIdRouteImport } from './routes/_site/admin/albums/$id'
 import { Route as SiteAdminBlogIndexRouteImport } from './routes/_site/admin/blog/index'
@@ -565,8 +567,10 @@ import { Route as ApiEventsIdIcsRouteImport } from './routes/api/events/$id/ics'
 import { Route as ApiEventsIdRsvpRouteImport } from './routes/api/events/$id/rsvp'
 import { Route as ApiFeedImageFilenameRouteImport } from './routes/api/feed/image/$filename'
 import { Route as ApiGamesIdGuidesRouteImport } from './routes/api/games/$id.guides'
+import { Route as ApiGamesIdLeaderboardRouteImport } from './routes/api/games/$id/leaderboard'
 import { Route as ApiGamesIdReviewRouteImport } from './routes/api/games/$id.review'
 import { Route as ApiGamesIdReviewsRouteImport } from './routes/api/games/$id.reviews'
+import { Route as ApiGamesIdScoreRouteImport } from './routes/api/games/$id/score'
 import { Route as ApiGamesSynapseStormLeaderboardRouteImport } from './routes/api/games/synapse-storm/leaderboard'
 import { Route as ApiGamesSynapseStormSaveRouteImport } from './routes/api/games/synapse-storm/save'
 import { Route as ApiGamesSynapseStormScoreRouteImport } from './routes/api/games/synapse-storm/score'
@@ -3227,6 +3231,16 @@ const StrategiesSafehouseRecruitRoute =
     path: '/safehouse/recruit',
     getParentRoute: () => StrategiesRoute,
   } as any)
+const TagTagRssDotxmlRoute = TagTagRssDotxmlRouteImport.update({
+  id: '/tag/$tag/rss.xml',
+  path: '/tag/$tag/rss.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UHandleRssDotxmlRoute = UHandleRssDotxmlRouteImport.update({
+  id: '/u/$handle/rss.xml',
+  path: '/u/$handle/rss.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SiteAdminAlbumsIndexRoute = SiteAdminAlbumsIndexRouteImport.update({
   id: '/albums/',
   path: '/albums/',
@@ -3560,6 +3574,11 @@ const ApiGamesIdGuidesRoute = ApiGamesIdGuidesRouteImport.update({
   path: '/api/games/$id/guides',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGamesIdLeaderboardRoute = ApiGamesIdLeaderboardRouteImport.update({
+  id: '/api/games/$id/leaderboard',
+  path: '/api/games/$id/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGamesIdReviewRoute = ApiGamesIdReviewRouteImport.update({
   id: '/api/games/$id/review',
   path: '/api/games/$id/review',
@@ -3568,6 +3587,11 @@ const ApiGamesIdReviewRoute = ApiGamesIdReviewRouteImport.update({
 const ApiGamesIdReviewsRoute = ApiGamesIdReviewsRouteImport.update({
   id: '/api/games/$id/reviews',
   path: '/api/games/$id/reviews',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGamesIdScoreRoute = ApiGamesIdScoreRouteImport.update({
+  id: '/api/games/$id/score',
+  path: '/api/games/$id/score',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGamesSynapseStormLeaderboardRoute =
@@ -4868,6 +4892,8 @@ export interface FileRoutesByFullPath {
   '/strategies/puzzles/leaderboard': typeof StrategiesPuzzlesLeaderboardRoute
   '/strategies/safehouse/drops': typeof StrategiesSafehouseDropsRoute
   '/strategies/safehouse/recruit': typeof StrategiesSafehouseRecruitRoute
+  '/tag/$tag/rss.xml': typeof TagTagRssDotxmlRoute
+  '/u/$handle/rss.xml': typeof UHandleRssDotxmlRoute
   '/admin/': typeof SiteAdminIndexRoute
   '/blog/': typeof SiteBlogIndexRoute
   '/builds/': typeof SiteBuildsIndexRoute
@@ -4974,8 +5000,10 @@ export interface FileRoutesByFullPath {
   '/api/events/$id/rsvp': typeof ApiEventsIdRsvpRoute
   '/api/feed/image/$filename': typeof ApiFeedImageFilenameRoute
   '/api/games/$id/guides': typeof ApiGamesIdGuidesRoute
+  '/api/games/$id/leaderboard': typeof ApiGamesIdLeaderboardRoute
   '/api/games/$id/review': typeof ApiGamesIdReviewRoute
   '/api/games/$id/reviews': typeof ApiGamesIdReviewsRoute
+  '/api/games/$id/score': typeof ApiGamesIdScoreRoute
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
@@ -5565,6 +5593,8 @@ export interface FileRoutesByTo {
   '/strategies/puzzles/leaderboard': typeof StrategiesPuzzlesLeaderboardRoute
   '/strategies/safehouse/drops': typeof StrategiesSafehouseDropsRoute
   '/strategies/safehouse/recruit': typeof StrategiesSafehouseRecruitRoute
+  '/tag/$tag/rss.xml': typeof TagTagRssDotxmlRoute
+  '/u/$handle/rss.xml': typeof UHandleRssDotxmlRoute
   '/admin': typeof SiteAdminIndexRoute
   '/blog': typeof SiteBlogIndexRoute
   '/builds': typeof SiteBuildsIndexRoute
@@ -5671,8 +5701,10 @@ export interface FileRoutesByTo {
   '/api/events/$id/rsvp': typeof ApiEventsIdRsvpRoute
   '/api/feed/image/$filename': typeof ApiFeedImageFilenameRoute
   '/api/games/$id/guides': typeof ApiGamesIdGuidesRoute
+  '/api/games/$id/leaderboard': typeof ApiGamesIdLeaderboardRoute
   '/api/games/$id/review': typeof ApiGamesIdReviewRoute
   '/api/games/$id/reviews': typeof ApiGamesIdReviewsRoute
+  '/api/games/$id/score': typeof ApiGamesIdScoreRoute
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
@@ -6288,6 +6320,8 @@ export interface FileRoutesById {
   '/strategies/puzzles/leaderboard': typeof StrategiesPuzzlesLeaderboardRoute
   '/strategies/safehouse/drops': typeof StrategiesSafehouseDropsRoute
   '/strategies/safehouse/recruit': typeof StrategiesSafehouseRecruitRoute
+  '/tag/$tag/rss.xml': typeof TagTagRssDotxmlRoute
+  '/u/$handle/rss.xml': typeof UHandleRssDotxmlRoute
   '/_site/admin/': typeof SiteAdminIndexRoute
   '/_site/blog/': typeof SiteBlogIndexRoute
   '/_site/builds/': typeof SiteBuildsIndexRoute
@@ -6394,8 +6428,10 @@ export interface FileRoutesById {
   '/api/events/$id/rsvp': typeof ApiEventsIdRsvpRoute
   '/api/feed/image/$filename': typeof ApiFeedImageFilenameRoute
   '/api/games/$id/guides': typeof ApiGamesIdGuidesRoute
+  '/api/games/$id/leaderboard': typeof ApiGamesIdLeaderboardRoute
   '/api/games/$id/review': typeof ApiGamesIdReviewRoute
   '/api/games/$id/reviews': typeof ApiGamesIdReviewsRoute
+  '/api/games/$id/score': typeof ApiGamesIdScoreRoute
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
@@ -7011,6 +7047,8 @@ export interface FileRouteTypes {
     | '/strategies/puzzles/leaderboard'
     | '/strategies/safehouse/drops'
     | '/strategies/safehouse/recruit'
+    | '/tag/$tag/rss.xml'
+    | '/u/$handle/rss.xml'
     | '/admin/'
     | '/blog/'
     | '/builds/'
@@ -7117,8 +7155,10 @@ export interface FileRouteTypes {
     | '/api/events/$id/rsvp'
     | '/api/feed/image/$filename'
     | '/api/games/$id/guides'
+    | '/api/games/$id/leaderboard'
     | '/api/games/$id/review'
     | '/api/games/$id/reviews'
+    | '/api/games/$id/score'
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
@@ -7708,6 +7748,8 @@ export interface FileRouteTypes {
     | '/strategies/puzzles/leaderboard'
     | '/strategies/safehouse/drops'
     | '/strategies/safehouse/recruit'
+    | '/tag/$tag/rss.xml'
+    | '/u/$handle/rss.xml'
     | '/admin'
     | '/blog'
     | '/builds'
@@ -7814,8 +7856,10 @@ export interface FileRouteTypes {
     | '/api/events/$id/rsvp'
     | '/api/feed/image/$filename'
     | '/api/games/$id/guides'
+    | '/api/games/$id/leaderboard'
     | '/api/games/$id/review'
     | '/api/games/$id/reviews'
+    | '/api/games/$id/score'
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
@@ -8430,6 +8474,8 @@ export interface FileRouteTypes {
     | '/strategies/puzzles/leaderboard'
     | '/strategies/safehouse/drops'
     | '/strategies/safehouse/recruit'
+    | '/tag/$tag/rss.xml'
+    | '/u/$handle/rss.xml'
     | '/_site/admin/'
     | '/_site/blog/'
     | '/_site/builds/'
@@ -8536,8 +8582,10 @@ export interface FileRouteTypes {
     | '/api/events/$id/rsvp'
     | '/api/feed/image/$filename'
     | '/api/games/$id/guides'
+    | '/api/games/$id/leaderboard'
     | '/api/games/$id/review'
     | '/api/games/$id/reviews'
+    | '/api/games/$id/score'
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
@@ -8975,6 +9023,8 @@ export interface RootRouteChildren {
   EmbedPostIdRoute: typeof EmbedPostIdRoute
   EmbedReplayIdRoute: typeof EmbedReplayIdRoute
   LibraryAlbumsAlbumIdRoute: typeof LibraryAlbumsAlbumIdRoute
+  TagTagRssDotxmlRoute: typeof TagTagRssDotxmlRoute
+  UHandleRssDotxmlRoute: typeof UHandleRssDotxmlRoute
   ApiArcadeIndexRoute: typeof ApiArcadeIndexRoute
   ApiAwardsIndexRoute: typeof ApiAwardsIndexRoute
   ApiBattlepassIndexRoute: typeof ApiBattlepassIndexRoute
@@ -9044,8 +9094,10 @@ export interface RootRouteChildren {
   ApiEventsIdRsvpRoute: typeof ApiEventsIdRsvpRoute
   ApiFeedImageFilenameRoute: typeof ApiFeedImageFilenameRoute
   ApiGamesIdGuidesRoute: typeof ApiGamesIdGuidesRoute
+  ApiGamesIdLeaderboardRoute: typeof ApiGamesIdLeaderboardRoute
   ApiGamesIdReviewRoute: typeof ApiGamesIdReviewRoute
   ApiGamesIdReviewsRoute: typeof ApiGamesIdReviewsRoute
+  ApiGamesIdScoreRoute: typeof ApiGamesIdScoreRoute
   ApiGamesSynapseStormLeaderboardRoute: typeof ApiGamesSynapseStormLeaderboardRoute
   ApiGamesSynapseStormSaveRoute: typeof ApiGamesSynapseStormSaveRoute
   ApiGamesSynapseStormScoreRoute: typeof ApiGamesSynapseStormScoreRoute
@@ -12579,6 +12631,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StrategiesSafehouseRecruitRouteImport
       parentRoute: typeof StrategiesRoute
     }
+    '/tag/$tag/rss.xml': {
+      id: '/tag/$tag/rss.xml'
+      path: '/tag/$tag/rss.xml'
+      fullPath: '/tag/$tag/rss.xml'
+      preLoaderRoute: typeof TagTagRssDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/u/$handle/rss.xml': {
+      id: '/u/$handle/rss.xml'
+      path: '/u/$handle/rss.xml'
+      fullPath: '/u/$handle/rss.xml'
+      preLoaderRoute: typeof UHandleRssDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_site/admin/albums/': {
       id: '/_site/admin/albums/'
       path: '/albums'
@@ -13013,6 +13079,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGamesIdGuidesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/games/$id/leaderboard': {
+      id: '/api/games/$id/leaderboard'
+      path: '/api/games/$id/leaderboard'
+      fullPath: '/api/games/$id/leaderboard'
+      preLoaderRoute: typeof ApiGamesIdLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/games/$id/review': {
       id: '/api/games/$id/review'
       path: '/api/games/$id/review'
@@ -13025,6 +13098,13 @@ declare module '@tanstack/react-router' {
       path: '/api/games/$id/reviews'
       fullPath: '/api/games/$id/reviews'
       preLoaderRoute: typeof ApiGamesIdReviewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/games/$id/score': {
+      id: '/api/games/$id/score'
+      path: '/api/games/$id/score'
+      fullPath: '/api/games/$id/score'
+      preLoaderRoute: typeof ApiGamesIdScoreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/games/synapse-storm/leaderboard': {
@@ -15854,6 +15934,8 @@ const rootRouteChildren: RootRouteChildren = {
   EmbedPostIdRoute: EmbedPostIdRoute,
   EmbedReplayIdRoute: EmbedReplayIdRoute,
   LibraryAlbumsAlbumIdRoute: LibraryAlbumsAlbumIdRoute,
+  TagTagRssDotxmlRoute: TagTagRssDotxmlRoute,
+  UHandleRssDotxmlRoute: UHandleRssDotxmlRoute,
   ApiArcadeIndexRoute: ApiArcadeIndexRoute,
   ApiAwardsIndexRoute: ApiAwardsIndexRoute,
   ApiBattlepassIndexRoute: ApiBattlepassIndexRoute,
@@ -15924,8 +16006,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiEventsIdRsvpRoute: ApiEventsIdRsvpRoute,
   ApiFeedImageFilenameRoute: ApiFeedImageFilenameRoute,
   ApiGamesIdGuidesRoute: ApiGamesIdGuidesRoute,
+  ApiGamesIdLeaderboardRoute: ApiGamesIdLeaderboardRoute,
   ApiGamesIdReviewRoute: ApiGamesIdReviewRoute,
   ApiGamesIdReviewsRoute: ApiGamesIdReviewsRoute,
+  ApiGamesIdScoreRoute: ApiGamesIdScoreRoute,
   ApiGamesSynapseStormLeaderboardRoute: ApiGamesSynapseStormLeaderboardRoute,
   ApiGamesSynapseStormSaveRoute: ApiGamesSynapseStormSaveRoute,
   ApiGamesSynapseStormScoreRoute: ApiGamesSynapseStormScoreRoute,

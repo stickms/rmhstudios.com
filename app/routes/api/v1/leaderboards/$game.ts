@@ -1,48 +1,37 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { prisma } from '@/lib/prisma.server';
 import { withDeveloperApi, apiOptions } from '@/lib/api/with-developer-api.server';
+import { getGameAdapter, adapterGameIds } from '@/lib/game/adapters.server';
 
-/** Supported games and the metric each is ranked by. */
-const GAMES = ['vega', 'void-breaker', 'signal-forge', 'neon-driftway', 'laundry', 'slice-it'] as const;
-type Game = (typeof GAMES)[number];
+/**
+ * GET /api/v1/leaderboards/{game} — top scores for a supported game.
+ *
+ * This route used to carry its own hard-coded game list and a switch statement
+ * of Prisma queries — a fourth copy of "which model backs which game", after
+ * the per-game score routes, the per-game leaderboard routes and the site
+ * catalog. It now reads the shared adapters, so a new game appears here the
+ * moment it has one, and a schema change is made in exactly one place.
+ *
+ * The response shape is unchanged: `{ game, metric, data }`. The `laundry`
+ * alias is preserved because published API clients use it.
+ */
 
-interface Entry {
-  rank: number;
-  username: string;
-  score: number;
-  [k: string]: number | string;
+/**
+ * Public API game ids that differ from the internal adapter id. The v1 API
+ * shipped `laundry`; the internal id is `laundry-sort`. Renaming the public one
+ * would break every existing client, so it is mapped instead.
+ */
+const PUBLIC_ALIASES: Record<string, string> = { laundry: 'laundry-sort' };
+
+/** Public ids, in a stable order, for the error message and docs. */
+function supportedIds(): string[] {
+  const internalToPublic = new Map(
+    Object.entries(PUBLIC_ALIASES).map(([pub, internal]) => [internal, pub])
+  );
+  return adapterGameIds()
+    .map((id) => internalToPublic.get(id) ?? id)
+    .sort();
 }
 
-async function fetchLeaderboard(game: Game, limit: number): Promise<{ metric: string; entries: Entry[] }> {
-  switch (game) {
-    case 'vega': {
-      const rows = await prisma.vegaPlayer.findMany({ orderBy: { highestLevel: 'desc' }, take: limit, select: { username: true, highestLevel: true, highestLoop: true, gamesPlayed: true } });
-      return { metric: 'highestLevel', entries: rows.map((r, i) => ({ rank: i + 1, username: r.username, score: r.highestLevel, highestLoop: r.highestLoop, gamesPlayed: r.gamesPlayed })) };
-    }
-    case 'void-breaker': {
-      const rows = await prisma.voidBreakerPlayer.findMany({ orderBy: { highScore: 'desc' }, take: limit, select: { username: true, highScore: true, bestWave: true, totalKills: true, gamesPlayed: true } });
-      return { metric: 'highScore', entries: rows.map((r, i) => ({ rank: i + 1, username: r.username, score: r.highScore, bestWave: r.bestWave, totalKills: r.totalKills, gamesPlayed: r.gamesPlayed })) };
-    }
-    case 'signal-forge': {
-      const rows = await prisma.signalForgePlayer.findMany({ orderBy: { highScore: 'desc' }, take: limit, select: { username: true, highScore: true, floorReached: true, gamesPlayed: true } });
-      return { metric: 'highScore', entries: rows.map((r, i) => ({ rank: i + 1, username: r.username, score: r.highScore, floorReached: r.floorReached, gamesPlayed: r.gamesPlayed })) };
-    }
-    case 'neon-driftway': {
-      const rows = await prisma.neonDriftwayPlayer.findMany({ orderBy: { highScore: 'desc' }, take: limit, select: { username: true, highScore: true, bestDistance: true, bestLevel: true, gamesPlayed: true } });
-      return { metric: 'highScore', entries: rows.map((r, i) => ({ rank: i + 1, username: r.username, score: r.highScore, bestDistance: r.bestDistance, bestLevel: r.bestLevel, gamesPlayed: r.gamesPlayed })) };
-    }
-    case 'laundry': {
-      const rows = await prisma.laundryPlayer.findMany({ orderBy: { highScore: 'desc' }, take: limit, select: { username: true, highScore: true, gamesPlayed: true } });
-      return { metric: 'highScore', entries: rows.map((r, i) => ({ rank: i + 1, username: r.username, score: r.highScore, gamesPlayed: r.gamesPlayed })) };
-    }
-    case 'slice-it': {
-      const rows = await prisma.player.findMany({ orderBy: { totalScore: 'desc' }, take: limit, select: { username: true, totalScore: true, gamesPlayed: true } });
-      return { metric: 'totalScore', entries: rows.map((r, i) => ({ rank: i + 1, username: r.username, score: r.totalScore, gamesPlayed: r.gamesPlayed })) };
-    }
-  }
-}
-
-/** GET /api/v1/leaderboards/{game} — top scores for a supported game. */
 export const Route = createFileRoute('/api/v1/leaderboards/$game')({
   server: {
     handlers: {
@@ -52,15 +41,32 @@ export const Route = createFileRoute('/api/v1/leaderboards/$game')({
         withDeveloperApi(
           request,
           async ({ json, error }) => {
-            const game = params.game as Game;
-            if (!GAMES.includes(game)) {
-              return error('invalid_request', `Unknown game. Supported: ${GAMES.join(', ')}.`, 400);
+            const requested = params.game;
+            const internalId = PUBLIC_ALIASES[requested] ?? requested;
+            const adapter = getGameAdapter(internalId);
+            if (!adapter) {
+              return error(
+                'invalid_request',
+                `Unknown game. Supported: ${supportedIds().join(', ')}.`,
+                400
+              );
             }
+
             const url = new URL(request.url);
             const raw = parseInt(url.searchParams.get('limit') || '25', 10);
             const limit = Math.min(Number.isFinite(raw) && raw > 0 ? raw : 25, 100);
-            const { metric, entries } = await fetchLeaderboard(game, limit);
-            return json({ game, metric, data: entries });
+
+            const entries = await adapter.leaderboard(limit);
+            return json({
+              game: requested,
+              metric: adapter.metric,
+              data: entries.map((e) => ({
+                rank: e.rank,
+                username: e.username,
+                score: e.score,
+                progress: e.progress,
+              })),
+            });
           },
           { scope: 'read:leaderboards' }
         ),

@@ -52,7 +52,7 @@ export class InsufficientFundsError extends Error {
   readonly code = 'INSUFFICIENT_FUNDS';
   constructor(
     readonly userId: string,
-    readonly required: number
+    readonly required: number,
   ) {
     // Message kept as the legacy sentinel so existing `catch` blocks that
     // string-match 'INSUFFICIENT_COINS' keep working.
@@ -163,7 +163,7 @@ async function ensureProfile(db: Db, userId: string): Promise<void> {
 async function execute(
   client: Db & Partial<TxCapable>,
   opts: LedgerOptions,
-  move: (db: Db) => Promise<string>
+  move: (db: Db) => Promise<string>,
 ): Promise<LedgerResult> {
   const key = opts.idempotencyKey;
   const ownsTx = !opts.tx;
@@ -210,7 +210,7 @@ export async function creditCoinsOn(
   client: Db & Partial<TxCapable>,
   userId: string,
   amount: number,
-  opts: LedgerOptions = {}
+  opts: LedgerOptions = {},
 ): Promise<LedgerResult> {
   assertAmount(amount);
 
@@ -230,7 +230,7 @@ function creditInner(
   client: Db & Partial<TxCapable>,
   userId: string,
   amount: number,
-  opts: LedgerOptions
+  opts: LedgerOptions,
 ): Promise<LedgerResult> {
   return execute(client, opts, async (db) => {
     if (opts.onlyIfBalanceBelow !== undefined) {
@@ -280,7 +280,7 @@ export async function debitCoinsOn(
   client: Db & Partial<TxCapable>,
   userId: string,
   amount: number,
-  opts: LedgerOptions = {}
+  opts: LedgerOptions = {},
 ): Promise<LedgerResult> {
   assertAmount(amount);
 
@@ -326,7 +326,7 @@ export async function transferCoinsOn(
   fromUserId: string,
   toUserId: string,
   amount: number,
-  opts: LedgerOptions & { fee?: number } = {}
+  opts: LedgerOptions & { fee?: number } = {},
 ): Promise<LedgerResult> {
   assertAmount(amount);
   if (fromUserId === toUserId) throw new InvalidAmountError(amount);

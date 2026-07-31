@@ -64,8 +64,8 @@ export interface EconomySnapshot {
 export async function getEconomySnapshot(windowDays = 30): Promise<EconomySnapshot> {
   const since = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
 
-  const [faucetRows, sinkRows, transferRows, floatAgg, holders, negatives, top] =
-    await Promise.all([
+  const [faucetRows, sinkRows, transferRows, floatAgg, holders, negatives, top] = await Promise.all(
+    [
       prisma.coinTransaction.groupBy({
         by: ['type'],
         where: { createdAt: { gte: since }, senderId: null },
@@ -98,7 +98,8 @@ export async function getEconomySnapshot(windowDays = 30): Promise<EconomySnapsh
         // and an unbounded scan of every profile is not worth the precision.
         take: 1000,
       }),
-    ]);
+    ],
+  );
 
   const byTypeMap = new Map<string, FlowByType>();
   const bucket = (type: string): FlowByType => {
@@ -114,7 +115,7 @@ export async function getEconomySnapshot(windowDays = 30): Promise<EconomySnapsh
   for (const r of transferRows) bucket(r.type).transfer = r._sum.amount ?? 0;
 
   const byType = [...byTypeMap.values()].sort(
-    (a, b) => b.faucet + b.sink + b.transfer - (a.faucet + a.sink + a.transfer)
+    (a, b) => b.faucet + b.sink + b.transfer - (a.faucet + a.sink + a.transfer),
   );
 
   const faucet = byType.reduce((n, t) => n + t.faucet, 0);

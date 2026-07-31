@@ -123,7 +123,7 @@ describe('coin economy consistency', () => {
     expect(
       offenders,
       `Ledger rows written outside the ledger module — a balance change and its row must be ` +
-        `created together.\n${POINTER}`
+        `created together.\n${POINTER}`,
     ).toEqual([]);
   });
 
@@ -142,7 +142,7 @@ describe('coin economy consistency', () => {
       offenders,
       'Negative ledger amount. Direction is carried by which of senderId/recipientId is null: ' +
         'a SINK is (senderId = user, recipientId = null) with a POSITIVE amount. ' +
-        'The database CHECK constraint rejects negative amounts.'
+        'The database CHECK constraint rejects negative amounts.',
     ).toEqual([]);
   });
 });

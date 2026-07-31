@@ -20,7 +20,18 @@ const fetchTagFeed = createServerFn({ method: 'GET' })
   });
 
 export const Route = createFileRoute('/_site/tag/$tag')({
-  head: ({ params }) => ({ meta: [{ title: `#${params.tag} | RMH Studios` }] }),
+  head: ({ params }) => ({
+    meta: [{ title: `#${params.tag} | RMH Studios` }],
+    // Feed autodiscovery for the hashtag's public posts.
+    links: [
+      {
+        rel: 'alternate',
+        type: 'application/rss+xml',
+        title: `#${params.tag} — posts`,
+        href: `/tag/${params.tag}/rss.xml`,
+      },
+    ],
+  }),
   loader: ({ params }): Promise<{ data: TagFeedResult }> => fetchTagFeed({ data: params.tag }),
   component: TagPage,
 });
