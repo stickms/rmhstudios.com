@@ -1,7 +1,7 @@
 /**
  * Canonical top-level site navigation (client-safe). Single source of truth for
- * both the rendered nav (`components/radial/RadialHub`, which carves one wedge
- * per destination) and the reorder editor (`components/site/SidebarEditMode`),
+ * both the rendered nav (`components/radial/LiquidGlobe`, which pins one
+ * destination per point on the hub's globe) and the reorder editor (`components/site/SidebarEditMode`),
  * so the two never drift. Named "sidebar" for the left rail this predates.
  *
  * Each item has a stable `id`: leaves use their href (`/library`), groups use
@@ -55,10 +55,10 @@ export type NavItem = NavLeaf | NavGroup;
 
 export const isNavGroup = (item: NavItem): item is NavGroup => 'group' in item;
 
-// Top-level nav — one entry per destination, each its own wedge on the hub.
+// Top-level nav — one entry per destination, each its own pin on the hub's globe.
 // "Services" (our standalone product verticals) and "RMH Ventures" (the brand
 // microsites) are hub PAGES rather than expanding groups, so a family of related
-// destinations costs the dial one wedge instead of one per member. The order
+// destinations costs the globe one pin instead of one per member. The order
 // below is the default rail order; users can reorder/hide it (§15).
 export const SIDEBAR_NAV: NavItem[] = [
   { id: '/', href: '/', tKey: 'nav-home', label: 'Home', icon: Home },
@@ -76,7 +76,7 @@ export const SIDEBAR_NAV: NavItem[] = [
   { id: '/library', href: '/library', tKey: 'nav-library', label: 'Library', icon: Library },
   { id: '/communities', href: '/communities', tKey: 'nav-communities', label: 'Communities', icon: Users },
   { id: '/store', href: '/store', tKey: 'nav-store', label: 'Store', icon: ShoppingBag },
-  // Arcade is no longer its own wedge: the Arcade Pass (daily challenges + the
+  // Arcade is no longer its own destination: the Arcade Pass (daily challenges + the
   // player leaderboard) is a section of Create's Games tab, under Ranked.
   // `/arcade` stays alive as a redirect there, so old links still land.
   { id: '/predictions', href: '/predictions', tKey: 'nav-predictions', label: 'Predictions', icon: TrendingUp },
@@ -86,11 +86,10 @@ export const SIDEBAR_NAV: NavItem[] = [
   // /rideshare) live as tabs on that page and stay reachable directly.
   { id: '/services', href: '/services', tKey: 'nav-services', label: 'Services', icon: LayoutGrid },
   // Ventures follows Services: a plain link to its own hub page rather than a
-  // group. As a group its four children were flattened into four separate wedges
-  // on the radial hub — four of the dial's fourteen destinations spent on one arm
-  // of the company, and the two longest names on the dial ("Adaptive
-  // Intelligence", "RMH Deeplink") pushed into the ring with the least room for
-  // them. The microsites live as tabs on /ventures and stay reachable directly.
+  // group. As a group its four children were flattened into four separate
+  // destinations on the hub — four of fourteen spent on one arm of the company,
+  // and the two longest names ("Adaptive Intelligence", "RMH Deeplink") crowding
+  // the nav with labels nothing had room for. The microsites live as tabs on /ventures and stay reachable directly.
   { id: '/ventures', href: '/ventures', tKey: 'nav-ventures', label: 'RMH Ventures', icon: Rocket },
   // Admin is never reordered/hidden (its id isn't in SIDEBAR_NAV_IDS), so it
   // stays pinned to the bottom of the rail and only renders for admins.

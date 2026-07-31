@@ -3,8 +3,10 @@
 The from-scratch radial front end and home of the **Radial Avant-Garde Glass**
 design language (see [`docs/design-language.md`](../../docs/design-language.md)):
 an Apple-Liquid-Glass-inspired, strict black-&-white, mobile-first system built
-around a central **RMH** mark that elements animate radially out of. This module
-is the shell + homepage + motion system; it propagates to the rest of the site
+around a central **RMH** mark that elements animate radially out of — and, since
+the wedge dial gave way to the **liquid globe** (see below), around a sphere you
+turn. This module is the shell + homepage + motion system; it propagates to the
+rest of the site
 through the shared `--site-*` design tokens (retuned to high-contrast monochrome
 in `app/globals.css`).
 
@@ -13,7 +15,8 @@ in `app/globals.css`).
 | File                 | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `RadialWheel.tsx`    | The feed as a gently-curved column on the **document's own scroll** (no inner scroll region — so mobile Safari collapses its toolbars). Cards flow at natural heights (variable, never overlapping) and a rAF window-scroll pass rakes each onto a shallow cylinder from cached offsets (no layout thrash). Optional non-raked `lead` slot (the compose box). Reduced-motion → plain list. Fires `onEndReached` for lazy loading.                                                                                                                                                                                                                                                                                                |
-| `RadialHub.tsx`      | The persistent navigator, a **phase state machine** (closed → centering → open → closing). Tapping the fixed RMH orb **glides it to the centre of the screen**, then opens the menu as an **expanding circular blur** with translucent clip-path sectors blooming around it. The dial is **double-decked** — two concentric rings of annulus sectors around a hole the orb sits in — because sixteen destinations on one ring gave slivers too narrow to label or hit. The two decks **spin into alignment from opposite directions** as it opens, and a hairline is drawn at every band boundary so the levels are separated by a border rather than by a gap. CSS-only; consumes `lib/sidebar-nav`, honours auth/admin gating. |
+| `RadialHub.tsx`      | The persistent navigator's **phase state machine** (closed → open → closing) and chrome. Tapping the fixed RMH orb sends it to the centre of the screen, where it **swells and dissolves into the liquid globe**; an expanding circular **veil** sinks the page behind it, and the foot capsule (identity · settings · sign out · close) rises. Consumes `lib/sidebar-nav`, honours auth/admin gating, owns Escape / outside-tap / focus restoration. The globe is mounted **only** while the menu is up. |
+| `LiquidGlobe.tsx`    | **The navigator itself** — the destinations as pins on a glass sphere you turn to find where you want to go. Drag (pointer or finger) to spin, release to coast; magnetism eases the nearest destination into the **reticle** once the spin settles; **hold** with the pointer down and the reticle's ring fills; **let go once it is full** and you land there. Let go early, or drag away, and the ring drains — nothing navigates without a deliberate hold-and-release. Wireframe = CSS 3D; pins = JS-projected real links (click, Enter and screen readers all work without the gesture). See "The globe" below.                                    |
 | `RadialShell.tsx`    | The application frame for every standard (`_site`) route: fixed parallax ring backdrop, slim utility top bar, the **three-track frame** (nav rail · `<main>` · live rail) and the hub. The backdrop layer paints **only** the rings — the aurora canvas comes from the document's own fixed layers (`body::before/::after`), so it drifts and parallaxes and is the one scene every `backdrop-filter` on the page samples.                                                                                                                                                                                                                                                                                                       |
 | `RadialNavRail.tsx`  | Desktop-only left rail: the same `SIDEBAR_NAV` source of truth as the hub, shown persistently ≥1120px with live inbox/notification/admin badges.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `RadialLiveRail.tsx` | Desktop-only right rail (≥1440px): who's online, the daily loop, friends online, trending tags, who to follow — plus the slot a page's `PageLayout` `rightSidebar` portals into (`rail-slot.tsx`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
@@ -76,7 +79,7 @@ chrome behave like a body of liquid. It is gone, and the whole of it is gone:
 | Where               | What it did                                                                   | Now                                        |
 | ------------------- | ----------------------------------------------------------------------------- | ------------------------------------------ |
 | Pointer             | A gooey drop rode under the mouse **as** the cursor (`MetaballCursor.tsx`).   | The OS cursor, untouched                   |
-| Hub dial            | The clip-path sectors melted into one liquid disc (`#rmh-liquid`).            | Crisp sectors                              |
+| Hub dial            | The clip-path sectors melted into one liquid disc (`#rmh-liquid`).            | The dial itself is gone — see the globe    |
 | Orb aura            | Orbiting blobs stretched and necked in and out of the orb's disc.             | Removed; the orb's own glass material      |
 | Loading mark        | Orbiting blobs melted into a pulsing core (`#rmh-liquid-sm`).                 | Plain discs, same motion                   |
 | Backdrop blob field | Huge faint blobs drift, swell together and pull apart behind everything.      | **Unchanged** — soft gradients, no filter  |
@@ -131,28 +134,69 @@ The rules that survive it, all still live:
 
 Rules 1, 2 and 5 are CI-gated by `lib/__tests__/filter-cost-budget.test.ts`.
 
-One live consequence to keep in mind: a viewport-covering `backdrop-filter`
-(`.glass-scrim`, `.radial-hub__blur`) is still re-blurred in full whenever
-anything above it moves. Nothing moves above them today. Don't be the one who
-puts a continuously-animating element there.
+### The hub's frost is gone too, and for the same reason
 
-## The dial (RadialHub)
+The measurements above were taken over `.radial-hub__blur` — the hub's
+viewport-covering `backdrop-filter`, which was affordable only for as long as
+nothing moved above it. **The liquid globe moves above it, continuously**, which
+is exactly the 10.6fps row of that table. So the layer is now
+`.radial-hub__veil`: the same expanding circular reveal, painted as a radial
+gradient of `--site-bg` instead of blurring the page. The frosted-glass material
+still ships on the hub's **foot capsule**, which is small and sits still.
 
-Two rules that are easy to break when touching its geometry or motion:
+Do not "restore the frost" on `.radial-hub__veil`, and do not add a
+`backdrop-filter` to any layer the globe paints over. Radius does not help — the
+cost tracks the blurred layer's **area**, and `blur(6px)` measured 11.9fps.
 
-- **One source of truth for the radii.** `RINGS` in `RadialHub.tsx` defines the
-  bands; the drawn boundary hairlines and the mask that carves the centre hole
-  are both derived from the radii the component actually used, and handed to CSS
-  inline. Do not re-type those numbers in `radial.css` — a hairline sitting where
-  the bands are not is invisible until someone opens the menu.
-- **The decks spin, so the bed shows.** Opening counter-rotates the two rings
-  into alignment (inner anticlockwise, outer clockwise), which uncovers large
-  wedges of the dial's own background mid-animation. That background must stay a
-  light plate: it used to be `--site-border-bright`, pure black in the default
-  theme, which the sectors covered at every frame while they only scaled — once
-  they rotate, the whole dial flashes black on open. The spin is deliberately
-  un-staggered (every wedge in a ring shares one delay) so a ring turns as a
-  body; the per-wedge stagger stays on opacity alone.
+The same rule stands for every other viewport-covering `backdrop-filter` on the
+site (`.glass-scrim`): it is re-blurred in full whenever anything above it moves.
+Nothing moves above those today. Don't be the one who puts a
+continuously-animating element there.
+
+## The globe (LiquidGlobe)
+
+The wedge dial this replaced carved the disc into annulus sectors — it worked,
+but it was a *list bent into a circle*: every destination visible at once, chosen
+by pointing. The globe is the opposite bet. It is a place you **look around**,
+and choosing is a deliberate physical act rather than a click you can misfire.
+
+**The gesture, end to end.** Press anywhere on the sphere and drag to spin it
+(yaw from horizontal travel, pitch from vertical, tilt clamped so the poles never
+reach the front). Release and it coasts on friction. When the coast is over, any
+destination inside the **snap cone** is eased to dead centre — the magnetism is
+what makes the gesture land on a phone. A pin inside the **reticle** is *locked
+on*: it fills with the accent, the readout under the sphere names it, and while
+the pointer stays **down** the reticle's ring fills over `DWELL_MS`. **Let go
+with the ring full and you navigate.** Let go early, or drag the pin back out,
+and the ring drains and nothing happens. There is no path from a stray touch to a
+page load.
+
+Rules that are easy to break when touching the geometry or the loop:
+
+- **One source of truth for the projection.** `PERSP` and `RETICLE` in
+  `LiquidGlobe.tsx` are handed to CSS inline (`--globe-persp`, `--reticle-d`).
+  The wireframe is drawn by CSS 3D and the pins are projected in JS, so if the
+  two perspectives disagreed the pins would slide off the surface they are meant
+  to be standing on; and the drawn target must be the same circle the hit test
+  locks in. Do not re-type either number in `radial.css`.
+- **Project, then move, then paint — in that order.** The magnetism needs to know
+  which pin is nearest the reticle *and* it moves the globe in response, so the
+  projection runs before it and the single paint after it. Painting inside the
+  projection pass (with the paint gated on the dirty flag) is what made the pins
+  freeze mid-snap while the wireframe kept turning under them.
+- **Pins are links, and the far hemisphere is not clickable.** Every pin carries
+  its own `href` so click / Enter / a screen reader work without the gesture, and
+  a release that has already been spent — on a drag past the slop threshold, or
+  on a completed dwell — is swallowed on the way down so it cannot *also* fire
+  the anchor it happened to start on. Depth drives `pointer-events`, so a pin on
+  the back of the sphere can never take a click meant for the one in front of it.
+- **Keyboard focus turns the globe.** Focusing a pin glides the sphere until that
+  pin faces you, which is why the hub moves focus to the globe's **root** on open
+  rather than to the first pin — that would throw away the "you are here"
+  orientation the moment the menu appeared.
+- **Nothing may sit above a full-viewport `backdrop-filter`.** This is the thing
+  that moves, continuously, and that is precisely the shape of the bug measured
+  below. See the next section.
 
 ## Design rules (same as the rest of the app)
 

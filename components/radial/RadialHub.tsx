@@ -1,148 +1,37 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
-import { LogOut, Settings, X, type LucideIcon } from 'lucide-react';
+import { LogOut, Settings, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SIDEBAR_NAV, isNavGroup, type NavLeaf } from '@/lib/sidebar-nav';
+import { LiquidGlobe } from './LiquidGlobe';
 import { RmhLogo } from './RmhLogo';
 
 type HubUser = { id: string; handle?: string | null; isAdmin?: boolean };
 
-/** closed → open (orb glides to centre AS the menu blooms) → closing → closed. */
+/** closed → open (the orb expands INTO the globe) → closing → closed. */
 type Phase = 'closed' | 'open' | 'closing';
 
-interface Wedge extends NavLeaf {
-  /** clip-path polygon (in % of the square dial) that carves this ring sector. */
-  clip: string;
-  /** The same sector, bled outward, for the goo-filtered decorative layer. */
-  clipArt: string;
-  /** Centroid of the visible annulus, in % — where the icon + label sit. */
-  cx: number;
-  cy: number;
-  /** 0 = inner ring, 1 = outer ring. Drives the stagger (and the spin direction). */
-  ring: 0 | 1;
-  /** Widest the icon+label box may be here, in % of the dial. See `labelBudget`. */
-  labelW: number;
-  /** Bloom order across both rings (inner first), for the open stagger. */
-  order: number;
-}
-
-const DEG = Math.PI / 180;
-
-/**
- * Ring geometry, as a percentage of the dial's width (the dial is a square, so
- * its radius is 50%). The hole in the middle clears the orb, which glides to the
- * exact centre when the menu opens.
- *
- *   0 ──── 19 ─────────────── 34 ── 36 ─────────────── 50
- *    hole        inner ring     gap      outer ring     rim
- *
- * The gap between the decks is deliberately wide enough to read as a track, not
- * a seam — `RadialHub` also renders a hairline at every boundary below, so the
- * two levels are separated by a drawn border rather than by absence of fill.
- */
-const RINGS = [
-  { r0: 19, r1: 34 },
-  { r0: 36, r1: 50 },
-] as const;
-/** With few enough destinations one ring is clearer than two. */
-const SINGLE_RING = { r0: 19, r1: 50 } as const;
-/**
- * The art layer is drawn slightly wider ANGULARLY than the hit layer. The goo
- * filter blurs-then-thresholds each sector, which erodes a couple of pixels off
- * every edge; without the bleed that erosion turns the thin angular dividers
- * inside a ring into wide gaps. It is deliberately NOT applied radially: the
- * boundaries between levels are meant to be pronounced, so the erosion there is
- * welcome and the drawn hairlines sit on top of it. Hit testing always uses the
- * exact geometry, so the bleed can't steal a neighbour's clicks.
- */
-const ART_BLEED_DEG = 0.25;
-const SINGLE_RING_MAX = 6;
-/** Cap on the inner ring — it has the shorter circumference of the two. */
-const INNER_MAX = 6;
-
-/* ── Label fitting ──────────────────────────────────────────────────────────
-   A wedge's icon+label box is an axis-aligned rectangle centred on its sector's
-   centroid, so a box WIDER than the sector is cut by the sector's own clip-path
-   (this is what lopped the tail off "Adaptive Intelligence"), while one too
-   NARROW forces a mid-word break instead ("Communiti/es"). Both shipped at once,
-   because the two rings shared one guess — a pair of fixed rem caps — and the
-   room a ring actually has is not a constant: it is bounded BOTH by the band's
-   depth (a wedge at 3 o'clock spends its width radially) and by the sector's arc
-   (one at 6 o'clock spends it angularly), whichever of the two is tighter.
-
-   So the budget comes from the geometry, and the type then shrinks — down to a
-   floor — until the label's longest WORD fits it. Names therefore wrap between
-   words or not at all, and nothing is sliced mid-glyph.
-
-   Lengths are in the dial's own % units: the dial is square, so 1 unit = 1% of
-   its width = the unit `cx`/`cy` are measured in. */
-
-/** Base label size, and the floor a long name may shrink to (dial %). */
-const LABEL_FS = 2.5;
-const LABEL_FS_MIN = 1.95;
-/**
- * Mean glyph advance of the label face, in em — how wide `n` characters run.
- * Measured across the nav's own names, whose widest ("Communities", all round
- * letterforms) runs 0.58em/char; the estimate sits just above that so a
- * wide-lettered name is under-sized rather than over-.
- */
-const LABEL_CHAR_EM = 0.6;
-/** The box's corners carry no ink, so it may sit fractionally over the boundary. */
-const LABEL_SLACK = 0.95;
-
-/**
- * How wide a label box may be in a band whose sectors span `seg` degrees. The
- * inner ring's 15%-deep band lands at ~14% — the width its labels have always
- * had, and read correctly at — while the outer ring's shallower band drops to
- * ~13%, where the 5.4rem cap had been overrunning the sector by a third.
- */
-function labelBudget(r0: number, r1: number, rm: number, seg: number): number {
-  const chord = 2 * rm * Math.sin((seg / 2) * DEG);
-  return Math.min(r1 - r0, chord) * LABEL_SLACK;
-}
-// One synchronous motion: the orb, the circular blur, the wedges and the foot all
-// animate together over this long. It also gates how long the overlay stays
-// mounted while closing so the whole thing animates OUT before it hides.
+// One synchronous motion: the orb, the veil, the globe and the foot all animate
+// together over this long. It also gates how long the overlay stays mounted while
+// closing so the whole thing animates OUT before it hides.
 const MOTION_MS = 500;
 
-const isActive = (pathname: string, href: string) =>
-  href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
-
 /**
- * An annulus sector — the ring-segment polygon that carves one destination out
- * of a ring: out along the outer arc over [a0,a1], then back along the inner one.
- * Coordinates are percentages of the dial's box, which is what `clip-path`
- * resolves against (and, because a clip bounds hit-testing too, is also exactly
- * the region that catches this destination's clicks).
- */
-function ringSector(a0: number, a1: number, r0: number, r1: number): string {
-  const pts: string[] = [];
-  const steps = 10;
-  const at = (k: number) => (a0 + ((a1 - a0) * k) / steps) * DEG;
-  for (let k = 0; k <= steps; k++) {
-    const t = at(k);
-    pts.push(`${(50 + r1 * Math.cos(t)).toFixed(2)}% ${(50 + r1 * Math.sin(t)).toFixed(2)}%`);
-  }
-  for (let k = steps; k >= 0; k--) {
-    const t = at(k);
-    pts.push(`${(50 + r0 * Math.cos(t)).toFixed(2)}% ${(50 + r0 * Math.sin(t)).toFixed(2)}%`);
-  }
-  return `polygon(${pts.join(', ')})`;
-}
-
-/**
- * The RMH radial navigator. Tapping the fixed RMH orb glides it to the **centre of
- * the screen** while — in the SAME synchronous motion — the backdrop reveals under
- * an expanding **circular blur** and a **pie/wedge menu** blooms around it (no
- * drawn colour disc; just frosted glass growing from the centre). Closing reverses
- * every layer together. framer-motion-free (CSS transitions/clip-path) to stay
- * light on mobile; icon-only wedges under 480px so destinations never crowd.
+ * The RMH navigator. Tapping the fixed RMH orb sends it to the middle of the
+ * screen where it **swells into a liquid globe** — the site's destinations pinned
+ * to a glass sphere you turn to explore. Drag it, bring a place into the reticle,
+ * hold until the ring fills, and let go to land there. The geometry, the gesture
+ * and the dwell logic all live in {@link LiquidGlobe}; this component owns the
+ * phase state machine, the overlay, auth gating and the foot bar.
+ *
+ * The globe is mounted ONLY while the menu is up, which is what bounds its frame
+ * loop — see the note on the loop in `LiquidGlobe.tsx`.
  */
 export function RadialHub() {
   const { t } = useTranslation('feed');
@@ -154,21 +43,18 @@ export function RadialHub() {
   const user = session?.user as HubUser | undefined;
 
   const [phase, setPhase] = useState<Phase>('closed');
-  /**
-   * Name of the wedge the pointer/focus is on. Below 480px the dial is
-   * icon-only — sixteen unlabelled glyphs as the site's whole navigation — and
-   * there is genuinely no room for sixteen labels on a 320px dial. So the label
-   * moves to the one place that has room: the hole in the middle. CSS shows it
-   * only where the per-wedge labels are hidden.
-   */
-  const [hoveredLabel, setHoveredLabel] = useState<string | null>(null);
-  const dialRef = useRef<HTMLDivElement | null>(null);
+  const globeRef = useRef<HTMLDivElement | null>(null);
+  const orbRef = useRef<HTMLButtonElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /**
+   * Whether the close currently in flight was a DISMISSAL (Escape, the X, an
+   * outside tap) rather than a navigation. Only a dismissal returns focus to the
+   * orb — restoring it after a navigation would yank focus off the page the
+   * visitor just landed on, half a second after it rendered.
+   */
+  const restoreFocus = useRef(false);
   const menuVisible = phase === 'open' || phase === 'closing';
-  useEffect(() => {
-    if (phase === 'closed') setHoveredLabel(null);
-  }, [phase]);
 
   const leaves = useMemo<NavLeaf[]>(() => {
     const out: NavLeaf[] = [];
@@ -183,91 +69,38 @@ export function RadialHub() {
     });
   }, [session, user?.isAdmin]);
 
-  // Carve the dial into one sector per destination, starting at the top and
-  // going clockwise, with a thin gap between sectors and the icon + label at the
-  // centroid of each sector's visible band.
-  //
-  // Sixteen destinations on ONE ring gave slivers too narrow to label or to hit
-  // reliably, so the dial is double-decked: the primary destinations take the
-  // inner ring and the rest take the outer one, which — being the longer arc —
-  // comfortably holds the tail. Each ring is divided independently, so neither
-  // one's crowding is inherited from the other. Below SINGLE_RING_MAX the split
-  // is pointless and a single wide ring reads better.
-  //
-  // It also returns the BOUNDARY RADII it used. The drawn borders between levels
-  // and the mask that carves the centre hole are derived from the same numbers
-  // as the sectors themselves, so a change to the geometry can never leave the
-  // hairlines sitting somewhere the bands are not.
-  const { wedges, bounds } = useMemo<{ wedges: Wedge[]; bounds: number[] }>(() => {
-    if (leaves.length === 0) return { wedges: [], bounds: [] };
-
-    const groups: Array<{ items: NavLeaf[]; band: { r0: number; r1: number }; ring: 0 | 1 }> =
-      leaves.length <= SINGLE_RING_MAX
-        ? [{ items: leaves, band: SINGLE_RING, ring: 0 }]
-        : (() => {
-            const innerCount = Math.min(INNER_MAX, Math.ceil(leaves.length / 2));
-            return [
-              { items: leaves.slice(0, innerCount), band: RINGS[0], ring: 0 as const },
-              { items: leaves.slice(innerCount), band: RINGS[1], ring: 1 as const },
-            ];
-          })();
-
-    const out: Wedge[] = [];
-    let order = 0;
-    for (const { items, band, ring } of groups) {
-      const n = Math.max(1, items.length);
-      const seg = 360 / n;
-      const gap = Math.min(1.4, seg * 0.06);
-      const rm = (band.r0 + band.r1) / 2;
-      const labelW = labelBudget(band.r0, band.r1, rm, seg - gap);
-      for (let i = 0; i < items.length; i++) {
-        const a0 = -90 + i * seg + gap / 2;
-        const a1 = -90 + (i + 1) * seg - gap / 2;
-        const am = ((a0 + a1) / 2) * DEG;
-        const cx = 50 + rm * Math.cos(am);
-        const cy = 50 + rm * Math.sin(am);
-        out.push({
-          ...items[i],
-          clip: ringSector(a0, a1, band.r0, band.r1),
-          clipArt: ringSector(a0 - gap * ART_BLEED_DEG, a1 + gap * ART_BLEED_DEG, band.r0, band.r1),
-          cx,
-          cy,
-          labelW,
-          ring,
-          order: order++,
-        });
-      }
-    }
-    const bounds = [...new Set(groups.flatMap(({ band }) => [band.r0, band.r1]))].sort(
-      (a, b) => a - b,
-    );
-    return { wedges: out, bounds };
-  }, [leaves]);
-
   const clearTimer = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = null;
   };
 
-  const close = useCallback(() => {
-    clearTimer();
-    setPhase((p) => (p === 'closed' ? p : 'closing'));
-    // Keep the overlay mounted while every layer animates out, then hide it.
-    timerRef.current = setTimeout(() => setPhase('closed'), reduced ? 0 : MOTION_MS);
-  }, [reduced]);
+  const close = useCallback(
+    (dismissed = false) => {
+      clearTimer();
+      restoreFocus.current = dismissed;
+      setPhase((p) => (p === 'closed' ? p : 'closing'));
+      // Keep the overlay mounted while every layer animates out, then hide it.
+      timerRef.current = setTimeout(() => setPhase('closed'), reduced ? 0 : MOTION_MS);
+    },
+    [reduced],
+  );
+
+  /** Navigation-driven close: the destination page owns focus from here. */
+  const dismissForNavigation = useCallback(() => close(false), [close]);
+  const dismiss = useCallback(() => close(true), [close]);
 
   const toggle = useCallback(() => {
     clearTimer();
     setPhase((p) => {
       // Opening is a single synchronous transition — no pre-centring step.
       if (p === 'closed') return 'open';
+      restoreFocus.current = true;
       timerRef.current = setTimeout(() => setPhase('closed'), reduced ? 0 : MOTION_MS);
       return 'closing';
     });
   }, [reduced]);
 
-  // Block background scroll + wire Escape while the menu is active; move focus
-  // into the dial once it has bloomed.
+  // Block background scroll + wire Escape while the menu is active.
   //
   // Deliberately NOT a CSS scroll-lock on the document. Both `overflow: hidden`
   // and the position:fixed body technique clip the document to the visual
@@ -281,7 +114,7 @@ export function RadialHub() {
   useEffect(() => {
     if (phase === 'closed') return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close();
+      if (e.key === 'Escape') dismiss();
     };
     const onWheel = (e: WheelEvent) => {
       if (e.cancelable) e.preventDefault();
@@ -293,14 +126,23 @@ export function RadialHub() {
       window.removeEventListener('keydown', onKey);
       overlay?.removeEventListener('wheel', onWheel);
     };
-  }, [phase, close]);
+  }, [phase, dismiss]);
 
+  // Focus lands on the GLOBE itself, not on its first pin: focusing a pin turns
+  // the globe to face it, which would immediately discard the "you are here"
+  // orientation the globe just opened with.
   useEffect(() => {
     if (phase !== 'open') return;
-    const raf = requestAnimationFrame(() =>
-      dialRef.current?.querySelector<HTMLElement>('a[href], [tabindex]')?.focus(),
-    );
+    const raf = requestAnimationFrame(() => globeRef.current?.focus());
     return () => cancelAnimationFrame(raf);
+  }, [phase]);
+
+  // The orb leaves the tab order while the menu is up (it has become the globe),
+  // so hand focus back to it when the menu is dismissed rather than navigated.
+  useEffect(() => {
+    if (phase !== 'closed' || !restoreFocus.current) return;
+    restoreFocus.current = false;
+    orbRef.current?.focus();
   }, [phase]);
 
   useEffect(() => () => clearTimer(), []);
@@ -309,13 +151,13 @@ export function RadialHub() {
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
-          close();
+          dismissForNavigation();
           navigate({ to: '/' });
           window.location.reload();
         },
       },
     });
-  }, [navigate, close]);
+  }, [navigate, dismissForNavigation]);
 
   const tab = menuVisible ? 0 : -1;
 
@@ -327,6 +169,7 @@ export function RadialHub() {
       <div className="radial-hub__scrim" aria-hidden />
 
       <button
+        ref={orbRef}
         type="button"
         className="radial-hub__orb"
         // §5.5x A.1: bottom member of the mobile floating-bottom stack. Present on
@@ -337,6 +180,10 @@ export function RadialHub() {
         aria-haspopup="menu"
         aria-expanded={phase !== 'closed'}
         aria-label={t('open-menu', { defaultValue: 'Open navigation' })}
+        // While the menu is up the orb has swelled into the globe and is an
+        // invisible disc sitting on the reticle — it must leave the tab order
+        // along with the pointer events radial.css takes off it.
+        tabIndex={menuVisible ? -1 : 0}
         onClick={toggle}
       >
         <RmhLogo className="radial-hub__logo" />
@@ -351,159 +198,24 @@ export function RadialHub() {
         <button
           type="button"
           className="radial-hub__scrim"
-          onClick={close}
+          onClick={dismiss}
           aria-label={t('close', { defaultValue: 'Close' })}
           tabIndex={tab}
         />
 
-        <div className="radial-hub__blur" aria-hidden />
+        <div className="radial-hub__veil" aria-hidden />
 
-        <div
-          ref={dialRef}
-          className="radial-hub__dial"
-          role="menu"
-          aria-label={t('section-navigation', { defaultValue: 'Browse RMH Studios' })}
-          // The mask that carves the centre hole reads the innermost band's own
-          // radius (doubled: a radial-gradient stop is a fraction of the RADIUS,
-          // and these radii are fractions of the WIDTH).
-          // Pulled in by the border width so the innermost hairline, which
-          // straddles this radius, is not half-eaten by the mask.
-          style={
-            {
-              '--dial-hole': `calc(${(bounds[0] ?? 19) * 2}% - var(--dial-level-w))`,
-            } as CSSProperties
-          }
-        >
-          {/* ART LAYER — decorative sector fills, shapes only, and the only
-              thing the goo filter touches: the clipped sectors swell and fuse
-              into one liquid dial. Nothing readable lives here (the filter's
-              alpha ramp would chew glyph antialiasing), and it never takes a
-              pointer event. */}
-          <ul className="radial-hub__wedges radial-hub__wedges--art" aria-hidden>
-            {wedges.map((w) => {
-              const active = isActive(pathname, w.href);
-              const wrapStyle = { '--i': w.order } as CSSProperties;
-              return (
-                <li
-                  key={w.id}
-                  className="radial-hub__wedge-wrap"
-                  data-ring={w.ring}
-                  style={wrapStyle}
-                >
-                  <span
-                    className={'radial-hub__wedge-art' + (active ? ' is-active' : '')}
-                    style={{ clipPath: w.clipArt }}
-                  />
-                </li>
-              );
-            })}
-          </ul>
-
-          {/* LEVEL BORDERS — a hairline at every band boundary, so the decks are
-              separated by a drawn edge instead of by a gap in the fill. Real
-              circles rather than radial-gradient stops: a bordered element
-              antialiases cleanly at any dial size, hard gradient stops do not.
-              Painted between the two layers — above the goo, which would chew
-              them, and below the links, which must keep every pixel of their
-              own sector (these are `pointer-events: none` regardless). */}
-          <span className="radial-hub__levels" aria-hidden>
-            {bounds.map((r) => (
-              <span
-                key={r}
-                className="radial-hub__level"
-                style={{ '--r': `${r}%` } as CSSProperties}
-              />
-            ))}
-          </span>
-
-          {/* CENTRE CAPTION — names the wedge under the pointer/focus. Only
-              painted where the per-wedge labels are not (see radial.css). */}
-          <span className="radial-hub__caption" aria-hidden>
-            {hoveredLabel}
-          </span>
-
-          {/* HIT LAYER — the real links, unfiltered, with their icon + label
-              inside them. Keeping the glyph inside its own sector is what makes
-              the colour correct by construction: it inherits the sector's
-              `color`, which is the theme's ink on the resting (transparent)
-              sector and the accent's contrast ink once the sector fills on
-              hover/focus/active. No blend modes, no cross-layer state. */}
-          <ul className="radial-hub__wedges radial-hub__wedges--hit">
-            {wedges.map((w) => {
-              const Icon = w.icon as LucideIcon;
-              const active = isActive(pathname, w.href);
-              const label = t(w.tKey, { defaultValue: w.label });
-              const wrapStyle = { '--i': w.order } as CSSProperties;
-              const cls = 'radial-hub__wedge' + (active ? ' is-active' : '');
-              const naming = {
-                onPointerEnter: () => setHoveredLabel(label),
-                onPointerLeave: () => setHoveredLabel((cur) => (cur === label ? null : cur)),
-                onFocus: () => setHoveredLabel(label),
-                onBlur: () => setHoveredLabel((cur) => (cur === label ? null : cur)),
-              };
-              // Shrink the type until the label's LONGEST WORD fits the box the
-              // sector can hold, so names break between words or not at all.
-              // Translations decide this, not the English label, so it is
-              // computed here rather than baked into the geometry.
-              const longestWord = Math.max(1, ...label.split(/\s+/).map((part) => part.length));
-              const fsFit = w.labelW / (LABEL_CHAR_EM * longestWord);
-              const innerStyle = {
-                left: `${w.cx}%`,
-                top: `${w.cy}%`,
-                '--label-w': `${w.labelW.toFixed(2)}%`,
-                '--label-fs': Math.min(LABEL_FS, Math.max(LABEL_FS_MIN, fsFit)).toFixed(2),
-                // A word too long even at the floor breaks inside its own box
-                // rather than being sliced mid-glyph by the sector's clip-path.
-                '--label-wrap': fsFit < LABEL_FS_MIN ? 'anywhere' : 'normal',
-              } as CSSProperties;
-              const inner = (
-                <span className="radial-hub__wedge-inner" data-ring={w.ring} style={innerStyle}>
-                  <Icon aria-hidden />
-                  <span className="radial-hub__wedge-label">{label}</span>
-                </span>
-              );
-              return (
-                <li
-                  key={w.id}
-                  className="radial-hub__wedge-wrap"
-                  data-ring={w.ring}
-                  style={wrapStyle}
-                  role="none"
-                >
-                  {w.external ? (
-                    <a
-                      href={w.href}
-                      className={cls}
-                      style={{ clipPath: w.clip }}
-                      role="menuitem"
-                      onClick={close}
-                      tabIndex={tab}
-                      aria-current={active ? 'page' : undefined}
-                      aria-label={label}
-                      {...naming}
-                    >
-                      {inner}
-                    </a>
-                  ) : (
-                    <Link
-                      to={w.href}
-                      className={cls}
-                      style={{ clipPath: w.clip }}
-                      role="menuitem"
-                      onClick={close}
-                      tabIndex={tab}
-                      aria-current={active ? 'page' : undefined}
-                      aria-label={label}
-                      {...naming}
-                    >
-                      {inner}
-                    </Link>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+        {/* Mounted only while the menu is up — that is what bounds the globe's
+            frame loop, and it means a closed hub costs a page nothing. */}
+        {menuVisible && (
+          <LiquidGlobe
+            rootRef={globeRef}
+            items={leaves}
+            pathname={pathname}
+            onDismiss={dismissForNavigation}
+            tabIndex={tab}
+          />
+        )}
 
         <div className="radial-hub__foot">
           {session && user ? (
@@ -511,7 +223,7 @@ export function RadialHub() {
               <Link
                 to={`/u/${user.handle || user.id}` as string}
                 className="radial-hub__identity"
-                onClick={close}
+                onClick={dismissForNavigation}
                 tabIndex={tab}
               >
                 <UserAvatar
@@ -525,7 +237,7 @@ export function RadialHub() {
               <Link
                 to="/settings"
                 className="radial-hub__foot-btn"
-                onClick={close}
+                onClick={dismissForNavigation}
                 tabIndex={tab}
                 aria-label={t('settings', { defaultValue: 'Settings' })}
               >
@@ -546,7 +258,7 @@ export function RadialHub() {
               to="/login"
               search={{ callbackURL: undefined }}
               className="radial-hub__signin"
-              onClick={close}
+              onClick={dismissForNavigation}
               tabIndex={tab}
             >
               {t('sign-in', { defaultValue: 'Sign in' })}
@@ -555,7 +267,7 @@ export function RadialHub() {
           <button
             type="button"
             className="radial-hub__foot-btn radial-hub__close"
-            onClick={close}
+            onClick={dismiss}
             tabIndex={tab}
             aria-label={t('close', { defaultValue: 'Close' })}
           >

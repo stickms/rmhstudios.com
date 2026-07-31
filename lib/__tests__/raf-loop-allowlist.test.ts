@@ -35,6 +35,15 @@ import { join } from 'node:path';
  *   - components/radial/RadialHub.tsx, components/radial/QuickPanel.tsx —
  *                                       one-shot rAF to move focus after the
  *                                       menu/panel opens; cancelled in cleanup.
+ *   - components/radial/LiquidGlobe.tsx — the navigation globe's spin/dwell loop.
+ *                                       Bounded by MOUNT, like a game's: RadialHub
+ *                                       renders it only while the hub is open, and
+ *                                       the effect cancels the frame on unmount, so
+ *                                       a page at rest (menu closed) has no loop at
+ *                                       all. While it does run it writes only
+ *                                       transform/opacity/custom properties, skips
+ *                                       every write on a frame where nothing moved,
+ *                                       and reads no layout.
  *   - app/routes/_site/library/index.tsx — one-shot rAF that starts the
  *                                       scroll-settle glide after a category
  *                                       switch; cancelled in cleanup and on the
@@ -85,6 +94,7 @@ const ALLOW = new Set<string>([
   'components/library/EpubReader.tsx',
   'components/library/LibraryReveal.tsx',
   'components/library/UploadModal.tsx',
+  'components/radial/LiquidGlobe.tsx',
   'components/neon-driftway/NeonDriftwayGame.tsx',
   'components/news/NewsHero.tsx',
   'components/rmh-capital/ContactPage.tsx',
