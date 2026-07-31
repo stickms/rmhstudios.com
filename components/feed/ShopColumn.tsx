@@ -16,6 +16,7 @@ import {
   type ShopItemKind,
   type Rarity,
 } from '@/lib/shop/catalog';
+import { getPremiumTheme } from '@/lib/shop/themes';
 import { PinnedHero } from './PinnedHero';
 import { ColumnHeader } from './ColumnHeader';
 import { Reveal } from '@/components/motion';
@@ -27,7 +28,7 @@ interface ShopItemView {
   description: string;
   price: number;
   rarity: Rarity;
-  data: { color?: string; gradient?: string; emoji?: string };
+  data: { color?: string; gradient?: string; emoji?: string; themeId?: string };
   requiresTier?: 'starter' | 'pro';
   owned: boolean;
   equipped: boolean;
@@ -63,7 +64,32 @@ function Preview({ item }: { item: ShopItemView }) {
       </div>
     );
   }
-  // BANNER / POST_FLAIR / THEME
+  if (kind === 'THEME') {
+    // What a theme actually sells is its accent — the colour it writes over
+    // `--site-accent*` on the owner's profile. The swatch showed only the
+    // backdrop gradient, so two themes from the same backdrop family read as
+    // the same item; the dot is the accent itself. Legacy theme items carry no
+    // `data.gradient` at all, so the palette supplies the backdrop too (without
+    // that fallback they rendered as an empty surface rectangle).
+    const palette = getPremiumTheme(data.themeId);
+    return (
+      <div
+        className="relative h-12 w-20 rounded-site-sm border border-site-border"
+        style={{
+          background: data.gradient ?? palette?.gradient ?? data.color ?? 'var(--site-surface)',
+        }}
+      >
+        {palette && (
+          <span
+            aria-hidden
+            className="absolute bottom-1 right-1 size-4 rounded-full ring-2 ring-site-bg"
+            style={{ background: palette.accent }}
+          />
+        )}
+      </div>
+    );
+  }
+  // BANNER / POST_FLAIR
   return (
     <div
       className="h-12 w-20 rounded-site-sm"
@@ -78,9 +104,10 @@ export function ShopColumn({
 }: {
   /** Shop payload prefetched by the route loader. */
   initialData?: { coins: number; items: ShopItemView[]; signedIn: boolean } | null;
-  /** Render the pinned scroll hero above the catalog. On the combined /store
-   * page the MembershipPanel already owns the page's one pinned moment, so the
-   * shop section below it opts out. */
+  /** Render the pinned scroll hero above the catalog. Only the standalone
+   * /shop route does. On /store the shop is a tab panel that already sits under
+   * the page's own title and tab strip, and a 1.2-screen pinned hero there
+   * would push the catalog below the fold on every tab switch. */
   showHero?: boolean;
 } = {}) {
   const { t } = useTranslation('feed');

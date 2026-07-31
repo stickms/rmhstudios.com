@@ -3,11 +3,13 @@
  *
  * Merges what used to be three separate destinations — Membership (/pricing),
  * the cosmetics Shop (/shop), and the player-to-player Marketplace (/market) —
- * into a single tabbed page. The "Shop" tab leads with Membership (the reusable
- * `MembershipPanel`) above the coin-purchasable Shop catalog; the "Market" tab
- * hosts the player marketplace. The active tab is mirrored into the `?tab=`
- * search param so deep links (e.g. /store?tab=market) and back-navigation land
- * on the right surface.
+ * into a single tabbed page. One destination per tab: "Membership" is the
+ * reusable `MembershipPanel`, "Shop" is the coin-purchasable cosmetics catalog,
+ * "Market" is the player marketplace. (Membership and the coin shop used to
+ * share the "Shop" tab stacked vertically, which buried the catalog under a
+ * full pinned hero and four pricing cards — the coin shop is its own tab now.)
+ * The active tab is mirrored into the `?tab=` search param so deep links
+ * (e.g. /store?tab=market) and back-navigation land on the right surface.
  *
  * (Note: `/store/$userid` is a separate per-creator storefront route — leave
  * it untouched.)
@@ -17,24 +19,24 @@ import { useTranslation } from 'react-i18next';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { ShoppingBag, Store as StoreIcon } from 'lucide-react';
+import { Sparkles, ShoppingBag, Store as StoreIcon } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { getUserTier, type Tier } from '@/lib/entitlements';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { ShopColumn } from '@/components/feed/ShopColumn';
 import { MarketColumn } from '@/components/market/MarketColumn';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import type { LiquidTab } from '@/components/ui/liquid-tabs';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { getShopData } from '@/lib/shop/list.server';
 import { browse } from '@/lib/market/market.server';
 import type { MarketListingView } from '@/components/market/ListingCard';
 
-const STORE_TABS = ['shop', 'market'] as const;
+const STORE_TABS = ['membership', 'shop', 'market'] as const;
 type StoreTab = (typeof STORE_TABS)[number];
 
-// Membership tier + shop catalog + active marketplace, all server-side so both
-// tabs are present at first paint / prefetched on intent instead of fetching on
+// Membership tier + shop catalog + active marketplace, all server-side so every
+// tab is present at first paint / prefetched on intent instead of fetching on
 // mount.
 const fetchStore = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
@@ -75,7 +77,7 @@ export const Route = createFileRoute('/_site/store/')({
 function Store() {
   const { t } = useTranslation('site');
   const { tier: currentTier, shop, listings, viewerId } = Route.useLoaderData();
-  const { tab = 'shop' } = Route.useSearch();
+  const { tab = 'membership' } = Route.useSearch();
   const navigate = useNavigate();
 
   const setTab = useCallback(
@@ -86,6 +88,11 @@ function Store() {
   );
 
   const tabs: LiquidTab[] = [
+    {
+      id: 'membership',
+      label: t('store-tab-membership', { defaultValue: 'Membership' }),
+      icon: Sparkles,
+    },
     { id: 'shop', label: t('store-tab-shop', { defaultValue: 'Shop' }), icon: ShoppingBag },
     { id: 'market', label: t('store-tab-market', { defaultValue: 'Market' }), icon: StoreIcon },
   ];
@@ -97,7 +104,7 @@ function Store() {
         defaultValue: 'Membership, cosmetics you can buy with coins, and the player marketplace.',
       })}
     >
-      {/* §16.2: Shop/Market as the shared LiquidTabs sheet, below the page title
+      {/* §16.2: Membership/Shop/Market as the shared LiquidTabs sheet, below the page title
           `PageLayout` renders (this page used to draw its own title capsule —
           the whole point of the shared header is that it doesn't have to).
           `?tab=` mirroring, roving nav and the aria-controls tabpanel wiring
@@ -110,17 +117,21 @@ function Store() {
         aria-label={t('store-title', { defaultValue: 'Store' })}
       />
 
-      {tab === 'shop' && (
-        <div role="tabpanel" id="store-panel-shop" aria-labelledby="store-tab-shop">
+      {tab === 'membership' && (
+        <div role="tabpanel" id="store-panel-membership" aria-labelledby="store-tab-membership">
           <MembershipPanel
             currentTier={currentTier}
             headingLevel="h2"
             returnPath="/store"
-            coinShopAnchorId="coins-shop"
+            // The hero's secondary action used to smooth-scroll down this same
+            // panel; the coin shop is a sibling tab now, so it switches tabs.
+            onCoinShop={() => setTab('shop')}
           />
-          <div id="coins-shop" className="scroll-mt-4 border-t border-site-border">
-            <ShopColumn initialData={shop} />
-          </div>
+        </div>
+      )}
+      {tab === 'shop' && (
+        <div role="tabpanel" id="store-panel-shop" aria-labelledby="store-tab-shop">
+          <ShopColumn initialData={shop} />
         </div>
       )}
       {tab === 'market' && (
