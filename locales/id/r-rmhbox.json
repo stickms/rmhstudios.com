@@ -27,6 +27,7 @@
   "pagination-next": "Berikutnya",
   "pagination-previous": "Sebelumnya",
   "pagination-range": "{{from}}–{{to}} dari {{total}}",
+  "player-count_one": "{{count}} pemain",
   "player-count_other": "{{count}} pemain",
   "player-range": "{{minPlayers}}–{{maxPlayers}} pemain",
   "pts": "poin",
