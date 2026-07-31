@@ -19,6 +19,30 @@ import { prefersReducedMotion } from '@/hooks/useReducedMotion';
  * <div data-fluid-press data-fluid-scale="0.9">…</div>  // explicit override
  * ```
  *
+ * ## …and how a whole surface opts in at once
+ *
+ * The site tier gets this free because its controls all come from
+ * `components/ui/button.tsx`. The full-screen tier does not: eighteen games and
+ * twelve apps each ship their own buttons — `.rmhbox-btn`, `.ls-btn`, a hundred
+ * bespoke `<button className="…">` — and tagging every one of them is both a
+ * large diff and a standing invitation to forget the next one.
+ *
+ * So a container may claim its subtree:
+ *
+ * ```tsx
+ * <div data-fluid-press-scope>   // every button/[role=button] inside presses
+ *   <button>Play</button>
+ *   <button data-fluid-press="none">…</button>   // …except where opted out
+ * </div>
+ * ```
+ *
+ * Opting out matters more here than on the site. A virtual joystick, a
+ * fire button held down for thirty seconds, a drag handle — those are gestures,
+ * not taps, and a press spring on them is wrong twice over: it reads as lag, and
+ * it animates a compositor layer during the exact frames a game can least
+ * afford one. Put the scope on menus, HUD chrome and dialogs; leave the twitch
+ * controls out of it, or mark them `none`.
+ *
  * ## Why it is one delegated listener and not a hook per component
  *
  * The behaviour has to reach every control on a ~860-component site, and a hook
@@ -65,6 +89,14 @@ const MODES: Record<string, number> = {
  * smaller than an intentional drag.
  */
 const SCROLL_SLOP = 10;
+
+/**
+ * What a press can begin on. `closest()` takes a selector list and walks the
+ * ancestors once, so adding the scope's candidates costs nothing per press over
+ * the explicit attribute alone — the nearest match wins either way, which is
+ * also the right answer when a tagged card contains an untagged button.
+ */
+const PRESSABLE = '[data-fluid-press],button,[role="button"],summary';
 
 interface Press {
   el: HTMLElement;
@@ -123,8 +155,13 @@ export function useFluidPressLayer(): void {
     const onPointerDown = (e: PointerEvent) => {
       if (e.button > 0) return;
       const target = e.target as Element | null;
-      const el = target?.closest?.<HTMLElement>('[data-fluid-press]');
+      const el = target?.closest?.<HTMLElement>(PRESSABLE);
       if (!el) return;
+      // Tagged elements always press. Untagged ones (a plain <button> in a
+      // game's menu) press only inside a container that claimed its subtree —
+      // otherwise this would silently animate every button on the site,
+      // including the ones deliberately left alone.
+      if (el.dataset.fluidPress === undefined && !el.closest('[data-fluid-press-scope]')) return;
       // A disabled control must not appear to respond. `aria-disabled` counts:
       // plenty of controls here stay focusable and mark themselves that way
       // instead of using the `disabled` attribute.
@@ -134,6 +171,10 @@ export function useFluidPressLayer(): void {
       if (prefersReducedMotion()) return;
 
       const mode = el.dataset.fluidPress ?? '';
+      // The escape hatch a scope needs: gestures (joysticks, drag handles,
+      // held fire buttons) must not spring, and inside a scope that has to be
+      // sayable on the element itself.
+      if (mode === 'none' || mode === 'off') return;
       const override = Number.parseFloat(el.dataset.fluidScale ?? '');
       const scale = Number.isFinite(override) ? override : (MODES[mode] ?? MODES['']);
 

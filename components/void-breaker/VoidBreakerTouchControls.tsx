@@ -26,7 +26,7 @@ export function VoidBreakerTouchControls({ inputRef, onPause, visible }: Props) 
   return (
     <>
       <button
-        className={`fixed top-14 right-3 z-40 w-11 h-11 ${btn} bg-[#1a1a24] border border-[#c9a227]/30 active:bg-[#252530]`}
+        className={`fixed top-[calc(3.5rem+var(--safe-top))] right-[calc(0.75rem+var(--safe-right))] z-40 w-11 h-11 ${btn} bg-[#1a1a24] border border-[#c9a227]/30 active:bg-[#252530]`}
         onTouchStart={(e) => { e.stopPropagation(); onPause(); }}
         style={{ touchAction: 'none' }}
       >
@@ -35,11 +35,15 @@ export function VoidBreakerTouchControls({ inputRef, onPause, visible }: Props) 
         </svg>
       </button>
 
+      {/* `app-hud-fixed` covers all four insets, not just the bottom one. Held
+          sideways — which is how this game is played — the notch is on the LEFT
+          or RIGHT edge, exactly where the d-pad and the action cluster sit; the
+          bottom-only padding this used to have left them half under the housing. */}
       <div
-        className="fixed inset-x-0 bottom-0 z-30 pointer-events-none"
-        style={{ touchAction: 'none', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        className="app-hud-fixed z-30 pointer-events-none"
+        style={{ touchAction: 'none' }}
       >
-        <div className="flex justify-between items-end px-4 pb-4">
+        <div className="absolute inset-x-0 bottom-0 flex justify-between items-end px-4 pb-4">
           {/* D-pad */}
           <div className="pointer-events-auto grid grid-cols-3 gap-1">
             <div />

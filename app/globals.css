@@ -2079,6 +2079,119 @@ html.readable-font body {
     padding-right: env(safe-area-inset-right, 0px);
   }
 
+  /* All four at once, for a surface that is itself full-bleed but whose
+   contents must stay clear of the hardware. */
+  .app-safe-pad {
+    padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+  }
+
+  /* ── `.app-hud` — game chrome that clears the hardware ──────────────────────
+   *
+   * A full-screen game paints its world edge to edge, and that is right: the
+   * artwork SHOULD run under the notch and behind the home indicator. Its
+   * controls must not. The habit across this codebase is an
+   * `absolute inset-0` overlay whose children pin themselves with plain offsets
+   * (`top-3`, `left-3`, `bottom-4`) — which puts a pause button underneath an
+   * iPhone's sensor housing the moment the phone is turned sideways, i.e. in the
+   * orientation these games are actually played in.
+   *
+   * `.app-hud` is that same full-bleed layer inset by the device's own safe
+   * area, so an offset measured from ITS edges is measured from the first pixel
+   * the hardware does not cover. Children keep their ordinary `top-3`; on a
+   * device with no insets every `env()` is `0px` and the layer is byte-for-byte
+   * the old `inset-0`.
+   *
+   * Geometry only — `pointer-events` is left alone deliberately. It is an
+   * INHERITED property, so a layer that declared `none` would silently kill
+   * every control inside markup that never opted back in. Games already manage
+   * that themselves.
+   */
+  .app-hud {
+    position: absolute;
+    top: var(--safe-top);
+    right: var(--safe-right);
+    bottom: var(--safe-bottom);
+    left: var(--safe-left);
+  }
+
+  /* Same layer for chrome that escapes its stacking context and pins to the
+   window instead (touch controls, exit buttons drawn over a WebGL canvas). */
+  .app-hud-fixed {
+    position: fixed;
+    top: var(--safe-top);
+    right: var(--safe-right);
+    bottom: var(--safe-bottom);
+    left: var(--safe-left);
+  }
+
+  /* ── `.app-stage` — a fixed-aspect playfield that fits any viewport ─────────
+   *
+   * A game with a fixed logical resolution has exactly one correct layout at
+   * every window shape: the largest box of its own aspect that fits the
+   * available area, centred, the remainder left as letterbox. Written by hand
+   * that is usually
+   *
+   *     width: 100%; max-height: 100%; aspect-ratio: W / H;
+   *
+   * which is subtly and consequentially wrong. `aspect-ratio` only derives the
+   * axis that is `auto`, so `max-height` shortens the box WITHOUT narrowing it:
+   * the ratio breaks and the playfield is squashed. That is the mechanism behind
+   * Void Breaker flattening on a landscape phone and House Always Wins' 400×256
+   * pixel art stretching to fill a portrait one.
+   *
+   * Container query units state it exactly. `100cqw`/`100cqh` ARE the parent's
+   * inner dimensions, so `min()` of the two candidate sizes is the fit — no
+   * measuring, no JS, no resize listener, and correct on the first paint rather
+   * than one frame later. Both axes are given explicitly, so neither is `auto`
+   * and no clamp can move one without the other.
+   *
+   * Usage — the aspect travels as a custom property, so one pair of classes
+   * serves every game:
+   *
+   *     <div class="app-stage-fit">
+   *       <div class="app-stage" style={{ '--app-stage-ar': '400 / 256' }}>
+   *         <canvas class="absolute inset-0 h-full w-full" />
+   *         <div class="app-hud"> … </div>
+   *       </div>
+   *     </div>
+   *
+   * Putting the HUD INSIDE `.app-stage` is the point of the second element: HUD
+   * coordinates then track the playfield rather than the window, so a marker
+   * over a world position stays over it in the letterboxed case too.
+   *
+   * `--app-stage-ar` accepts either form CSS accepts — `16 / 9` or `1.7778`.
+   *
+   * Caveat worth knowing: `container-type: size` implies size containment, so
+   * `.app-stage-fit` must get its height from its own context (a flex child, a
+   * grid area, `absolute inset-0`) and never from its contents. In auto height
+   * it computes to zero — which is the same constraint the JS measuring version
+   * of this has, only louder.
+   */
+  .app-stage-fit {
+    container-type: size;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .app-stage {
+    --app-stage-ar: 16 / 9;
+    position: relative;
+    /* Pre-container-query fallback: correct on whichever axis binds, and it
+       never overflows. The `@supports` block below makes it exact. */
+    max-width: 100%;
+    max-height: 100%;
+    aspect-ratio: var(--app-stage-ar);
+  }
+
+  @supports (container-type: size) {
+    .app-stage {
+      width: min(100cqw, 100cqh * (var(--app-stage-ar)));
+      height: min(100cqh, 100cqw / (var(--app-stage-ar)));
+    }
+  }
+
   .min-h-screen {
     min-height: 100vh;
     min-height: 100dvh;

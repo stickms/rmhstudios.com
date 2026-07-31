@@ -1,25 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Link } from '@tanstack/react-router'
-import { Button } from '@/components/ui/button'
-import { ArrowLeft, TreePine, BookOpen } from 'lucide-react'
+import { TreePine, BookOpen } from 'lucide-react'
 import { useTranslation } from "react-i18next"
+import { GameBackLink } from '@/components/shared/GameBackLink'
 
 function ForestExplorerPage() {
   const { t } = useTranslation("r-forest-explorer")
   return (
     <main className="fixed inset-0 bg-gradient-to-b from-[#0a1a0e] via-[#0d200f] to-[#071208] flex flex-col overflow-hidden">
-      <div className="absolute top-3 left-3 z-50">
-        <Link to="/builds">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-zinc-500 hover:text-white flex items-center gap-1.5 bg-black/50 backdrop-blur-sm border border-zinc-800 text-xs sm:text-sm"
-          >
-            <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">RMH Studios</span>
-          </Button>
-        </Link>
-      </div>
+      <GameBackLink to="/builds" />
 
       <div className="grow flex flex-col items-center justify-center px-4">
         <div className="text-center mb-10">

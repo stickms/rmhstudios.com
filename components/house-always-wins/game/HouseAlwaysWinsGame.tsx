@@ -1,12 +1,12 @@
 "use client";
 
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState, useCallback, type CSSProperties } from "react";
 import { GameEngine, type StoreAccess } from "@/lib/house-always-wins/engine/GameEngine";
 import { IntroScene } from "@/lib/house-always-wins/scenes/IntroScene";
 import { WorldScene } from "@/lib/house-always-wins/scenes/WorldScene";
 import { useHouseAlwaysWinsStore } from "@/lib/store/houseAlwaysWinsStore";
 import { MusicManager } from "@/lib/house-always-wins/music";
-import { CANVAS_W, CANVAS_H, RENDER_SCALE } from "@/lib/house-always-wins/constants";
+import { CANVAS_W, CANVAS_H } from "@/lib/house-always-wins/constants";
 import type { DialogueData } from "@/lib/house-always-wins/types";
 import { HUD } from "./HUD";
 import { DialogBox } from "./DialogBox";
@@ -116,35 +116,33 @@ export function HouseAlwaysWinsGame() {
     };
   }, []);
 
-  const pxW = CANVAS_W * RENDER_SCALE;
-  const pxH = CANVAS_H * RENDER_SCALE;
-
   return (
-    <div className="relative flex h-full w-full items-center justify-center">
-      <div
-        className="relative max-h-full max-w-full"
-        style={{ width: pxW, height: pxH, aspectRatio: `${pxW} / ${pxH}` }}
-      >
-        <canvas
-          ref={canvasRef}
-          className="block h-full w-full"
-          style={{ imageRendering: "pixelated" }}
-        />
+    // The stage is the game's own 400×256 in whatever size fits — never a
+    // stretch. The previous `width: 1200px; height: 768px; max-*: 100%` gave
+    // BOTH axes definite values, which switches `aspect-ratio` off entirely: a
+    // 390px-wide phone clamped the width to 390 and left the height at 768, so
+    // this pixel art rendered at 0.5:1 instead of 1.5625:1. `.app-stage` states
+    // the fit in container units, where there is nothing left to clamp.
+    <div className="app-stage" style={{ "--app-stage-ar": `${CANVAS_W} / ${CANVAS_H}` } as CSSProperties}>
+      <canvas
+        ref={canvasRef}
+        className="block h-full w-full"
+        style={{ imageRendering: "pixelated" }}
+      />
 
-        <HUD areaLabel={areaLabel} prompt={prompt} />
+      <HUD areaLabel={areaLabel} prompt={prompt} />
 
-        <Toasts items={toasts} />
+      <Toasts items={toasts} />
 
-        {dialogue && (
-          <DialogBox dialogue={dialogue} onChoice={handleChoice} onAdvance={handleAdvance} />
-        )}
+      {dialogue && (
+        <DialogBox dialogue={dialogue} onChoice={handleChoice} onAdvance={handleAdvance} />
+      )}
 
-        <MenuOverlay open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <MenuOverlay open={menuOpen} onClose={() => setMenuOpen(false)} />
 
-        {pokerOpen && <PokerGame onClose={closePoker} />}
+      {pokerOpen && <PokerGame onClose={closePoker} />}
 
-        {ending && <EndingOverlay endingId={ending} />}
-      </div>
+      {ending && <EndingOverlay endingId={ending} />}
     </div>
   );
 }
