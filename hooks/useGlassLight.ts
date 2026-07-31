@@ -19,9 +19,9 @@ import { useEffect } from 'react';
  *
  * ## Why the hovered element's rect is cached
  *
- * This callback runs inside a rAF, *after* other rAF callbacks have already
- * written styles for the frame — the pointer metaball's loop writes four
- * transforms and a custom property immediately before it. A
+ * This callback runs inside a rAF, potentially *after* other rAF callbacks have
+ * already written styles for the frame (the shell's backdrop parallax and the
+ * shared motion tier both do). A
  * `getBoundingClientRect()` there is a **forced synchronous layout** of the whole
  * document, every frame the pointer moves, and it scales with the page: on a
  * 60-card harness at 1920×1080 it took the per-pointer-frame cost from ~0.63ms to

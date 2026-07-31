@@ -10,10 +10,9 @@ import { useCallback } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
+import { useTranslation } from 'react-i18next';
 import { InboxColumn, type InboxTab } from '@/components/feed/InboxColumn';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from '@/components/feed/ContextRail';
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
+import { PageLayout } from '@/components/feed/PageLayout';
 import { auth } from '@/lib/auth';
 import { listConversations } from '@/lib/messages.server';
 
@@ -41,6 +40,7 @@ export const Route = createFileRoute('/_site/messages/')({
 });
 
 function InboxPage() {
+  const { t } = useTranslation('feed');
   const { tab = 'messages' } = Route.useSearch();
   const { messages } = Route.useLoaderData();
   const navigate = useNavigate();
@@ -53,13 +53,13 @@ function InboxPage() {
   );
 
   return (
-    <>
-      <AnimatedMain className="w-full min-w-0 pb-dock">
-        <InboxColumn tab={tab} onTabChange={setTab} initialMessages={messages} />
-      </AnimatedMain>
-
-      {/* Trailing gutter to match the wide layout */}
-      <ContextRail reserve />
-    </>
+    <PageLayout
+      title={t('inbox-title', { defaultValue: 'Inbox' })}
+      description={t('inbox-subtitle', {
+        defaultValue: 'Direct messages, group chats and everything you have been notified about.',
+      })}
+    >
+      <InboxColumn tab={tab} onTabChange={setTab} initialMessages={messages} />
+    </PageLayout>
   );
 }

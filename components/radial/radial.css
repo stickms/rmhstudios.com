@@ -222,8 +222,7 @@
      which clamps everything below 48% alpha to zero — including where two blobs
      overlap (~13%). `feBlend` then composited the sharp SourceGraphic back over
      that empty result, so the output was pixel-identical to no filter at all
-     (verified side-by-side). The goo filters only fuse OPAQUE shapes; that is
-     why the hub dial and the orb aura (solid fills) do work.
+     (verified side-by-side). A goo ramp only fuses OPAQUE shapes.
    - **Not free.** The blobs animate forever, and an animated subtree inside an
      SVG filter cannot take the compositor fast path — Chromium re-ran a σ=16
      Gaussian + colour matrix + blend across the FULL viewport every frame, on
@@ -231,7 +230,7 @@
 
    Rule: never put `filter: url(…)` on a full-viewport layer that has animating
    children, and never expect a goo ramp to fuse near-transparent shapes.
-   `lib/__tests__/metaball-perf-budget.test.ts` fails the build if this returns. */
+   `lib/__tests__/filter-cost-budget.test.ts` fails the build if this returns. */
 @media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
   .radial-backdrop__field {
     display: block;
@@ -613,6 +612,52 @@ html.perf-lite .radial-backdrop__blob {
   background: var(--site-accent-fg);
   color: var(--site-accent);
 }
+/* ── The nav rail must FIT, not scroll ────────────────────────────────────
+   The rail owns its own scroll (see `.rad-rail__scroll`) so it can never push
+   the frame — but for the *navigation* rail that scroll has to stay a last
+   resort, because it is not always usable:
+
+   while a modal is open, every scroll outside it is locked. Radix dialogs wrap
+   their content in react-remove-scroll, which isolates the whole document —
+   wheel and touch over anything that is not the dialog (or a declared shard) is
+   cancelled outright, the rail included. Measured at 1600×700 with 12
+   destinations: the rail clips `Admin`, a wheel over it moves `scrollTop`
+   0 → 63 normally, and 0 → 0 with a dialog up. So on any window shorter than
+   ~765px the last entries were off the end of the rail, and opening a dialog
+   made them unreachable rather than merely out of view — which reads exactly as
+   "the sidebar hides some tabs when a modal pops up".
+
+   Compacting on short viewports is the fix that removes the dependency instead
+   of papering over it: the whole map fits, so nothing has to be scrolled to.
+   Full spacing returns the moment the window is tall enough to afford it.
+   Measured with all 12 destinations (signed-in admin, the tallest the rail
+   gets): every entry is on screen from 560px of viewport height up, where
+   before it needed 765px. Below that the internal scroll is still the fallback.
+   Height-gated only — the rail is already desktop-width-gated, so this never
+   touches phones. */
+@media (max-height: 820px) {
+  .rad-rail--nav .rad-rail__scroll {
+    gap: var(--rad-2);
+    padding-block: var(--rad-2) var(--rad-4);
+  }
+  .rad-rail--nav .rad-rail__item {
+    padding-block: 0.45rem;
+  }
+}
+@media (max-height: 680px) {
+  .rad-rail--nav .rad-rail__scroll {
+    gap: 0.375rem;
+    padding-block: var(--rad-1) var(--rad-3);
+  }
+  .rad-rail--nav .rad-rail__item {
+    padding-block: 0.35rem;
+  }
+  .rad-rail--nav .rad-rail__item svg {
+    width: 1.05rem;
+    height: 1.05rem;
+  }
+}
+
 .rad-rail__group {
   display: flex;
   flex-direction: column;
@@ -851,72 +896,10 @@ html.perf-lite .radial-backdrop__blob {
   outline-offset: 3px;
 }
 
-/* ── Orb metaball aura ───────────────────────────────────────────────────
-   Shapes only, sitting one layer under the orb and tracking its position, so the
-   goo filter fuses the core disc with its orbiting blobs into a single liquid
-   body that bulges and necks as they swing. Purely decorative: hidden on phones
-   and under reduced motion, and never hit-testable. */
-.radial-hub__aura {
-  display: none;
-  position: fixed;
-  left: 50%;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--site-hub-orb-inset));
-  z-index: var(--z-hub-aura);
-  width: var(--site-hub-orb-size);
-  height: var(--site-hub-orb-size);
-  transform: translateX(-50%);
-  pointer-events: none;
-  /* Match the orb's motion exactly so the aura rides with it to centre. */
-  transition: transform 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
-}
-.radial-hub[data-phase='open'] .radial-hub__aura {
-  z-index: var(--z-hub-aura-open);
-  transform: translate(
-    -50%,
-    calc(env(safe-area-inset-bottom, 0px) + var(--site-hub-orb-inset) + 50% - 50dvh)
-  );
-}
-.radial-hub[data-phase='closing'] .radial-hub__aura {
-  z-index: var(--z-hub-aura-open);
-}
-.radial-hub__aura-core,
-.radial-hub__aura-blob {
-  position: absolute;
-  border-radius: 50%;
-  background: var(--site-accent);
-}
-.radial-hub__aura-core {
-  inset: 0;
-}
-.radial-hub__aura-blob {
-  left: 50%;
-  top: 50%;
-  width: 42%;
-  height: 42%;
-  margin: -21% 0 0 -21%;
-  opacity: 0.85;
-}
-@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
-  .radial-hub__aura {
-    display: block;
-    filter: url(#rmh-liquid);
-  }
-  .radial-hub__aura-blob {
-    animation: radial-aura-orbit 7s ease-in-out infinite;
-    animation-delay: calc(var(--i) * -2.33s);
-  }
-}
-/* Each blob swings out and back on its own phase; the goo pulls a stretched neck
-   between blob and core, which is what sells the liquid feel. */
-@keyframes radial-aura-orbit {
-  0%,
-  100% {
-    transform: rotate(0deg) translateX(52%) scale(0.9);
-  }
-  50% {
-    transform: rotate(180deg) translateX(76%) scale(1.1);
-  }
-}
+/* The orb's goo aura (a filtered disc with orbiting blobs fused into it) was
+   removed with the rest of the metaball layer — an always-on SVG filter is
+   continuous GPU work, and this one ran on every `_site` page for decoration
+   alone. The orb carries its own glass material; nothing replaces the aura. */
 
 /* The RMH mark (radial spirograph SVG) drawn in the orb's accent-contrast ink. */
 .radial-hub__logo {
@@ -1116,27 +1099,18 @@ html.perf-lite .radial-backdrop__blob {
   padding: 0;
 }
 /* The dial is TWO stacked layers of the same geometry:
-     --art  decorative sector fills; the only thing the goo filter touches.
-     --hit  the real links, unfiltered, each holding its own icon + label.
-   Splitting them is what keeps the glyphs crisp (the filter's alpha ramp chews
-   antialiasing) while still letting each glyph live INSIDE its sector, so it
-   simply inherits that sector's `color` and is correct by construction in every
-   theme — no blend modes, no cross-layer state tracking. */
+     --art  decorative sector fills;
+     --hit  the real links, each holding its own icon + label.
+   Splitting them lets each glyph live INSIDE its sector, so it simply inherits
+   that sector's `color` and is correct by construction in every theme — no
+   blend modes, no cross-layer state tracking. (The art layer used to carry the
+   goo filter that melted the sectors into one liquid disc; that went with the
+   rest of the metaball layer, and the sectors now render crisply everywhere.) */
 .radial-hub__wedges--art {
   pointer-events: none;
 }
 .radial-hub__wedges--hit {
   z-index: 1;
-}
-/* METABALL DIAL — blur-then-threshold melts the art sectors into ONE liquid
-   disc: the thin dividers become gooey necks, the sharp centre point and rim
-   corners round off, and each sector bulges as it grows in. Filter cost is real,
-   so it is desktop + no-reduced-motion only; elsewhere the sectors render
-   crisply. */
-@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
-  .radial-hub__wedges--art {
-    filter: url(#rmh-liquid);
-  }
 }
 .radial-hub__wedge-wrap {
   position: absolute;
@@ -2199,138 +2173,29 @@ html.perf-lite .radial-backdrop__blob {
   color: var(--site-accent);
 }
 
-/* ── Pointer metaball (mouse cursor + touch drop) ─────────────────────────
-   Rendered into <body> by MetaballCursor (portal), so it sits outside the
-   shell's isolated stacking context and its z-index reads against the page.
+/* ── The pointer, left alone ──────────────────────────────────────────────
+   There is no pointer metaball any more, and nothing here overrides `cursor`.
 
-   The element paints a SHAPE AND NOTHING ELSE. `#rmh-pointer-goo` fuses the
-   blobs by ramping the alpha channel, so everything outside the silhouette is
-   transparent — there is no plate, and therefore no rectangle that a compositing
-   quirk can reveal. (The cheaper CSS goo — an opaque plate + `blur() contrast()`
-   cancelled by `mix-blend-mode: difference` — only stays invisible while the
-   compositor blends against the true page backdrop; when the layer gets its own
-   render surface the plate shows up as a bright box trailing the pointer.)
+   The drop was a gooey liquid blob portalled to <body> that rode under the
+   mouse *as* the cursor, with the native one hidden (`cursor: none` on the whole
+   document, an escape-hatch attribute for anything that needed the real thing,
+   and a data-URI still image handed back to the OS whenever a full-screen
+   frosted layer went up). It was a per-frame SVG filter that, by construction,
+   painted above every overlay on the site — which is the one place Chromium
+   re-runs a `backdrop-filter` over its whole area every frame. That read as the
+   cursor lagging, which is exactly what it was.
 
-   Legibility comes from the shape rather than from inverting the backdrop: the
-   ink fill plus a halo in the background colour, both contrast-paired tokens, so
-   it reads on the page and on an accent-filled control in every theme. */
-.metaball {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: var(--z-cursor);
-  pointer-events: none;
-  opacity: 0;
-  /* ONE `url()` and nothing chained after it. The halo (the rim that carries the
-     drop over a surface its ink matches — on the default theme the accent IS the
-     ink, so on the compose button the halo is the entire mark) is built INSIDE
-     the filter now; see MetaballCursor's `feMorphology` rim.
+   Every visitor now gets their own OS cursor, drawn by the compositor, on every
+   page. Do not reintroduce a page-painted pointer, and do not set `cursor: none`
+   document-wide: the arrow, the I-beam and the hand are the platform's, and they
+   cost nothing. Per-element `cursor` (a `pointer` on a control, `grab` on a drag
+   handle, `text` on an editor) is unaffected and always was. */
 
-     Do not chain CSS filter functions after this. It used to read
-     `url(#rmh-pointer-goo) drop-shadow(…) drop-shadow(…)`, and that chain is what
-     made the cursor feel slow: measured headless with vsync off, the `url()`
-     alone runs at ~0.4ms/frame, while the chained version blocked the main thread
-     so completely that a 1-second `setInterval` did not fire once in 10 seconds.
-     Chaining a shorthand filter function after a `url()` reference drops Chromium
-     off its fast path; the same rim done as filter primitives does not.
-     `lib/__tests__/metaball-perf-budget.test.ts` guards this. */
-  filter: url(#rmh-pointer-goo);
-  transition: opacity 0.25s ease;
-  /* Bounded work: the box can never be asked to lay out anything outside its own
-     fixed size (the JS clamps every blob inside it too). Not `paint`/`strict` —
-     paint containment would clip the halo the filter draws past the border box. */
-  contain: layout size;
-}
-.metaball-defs {
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-.metaball__blob {
-  position: absolute;
-  top: 0;
-  left: 0;
-  border-radius: 50%;
-  background: var(--site-text);
-  /* Thins as the drop swells over an interactive element. An opaque blob at
-     its largest size sat squarely on the label it was pointing at; at ~0.45
-     the text underneath reads through while the halo (chained on the parent's
-     filter) keeps the mark itself legible on any surface. */
-  opacity: calc(1 - var(--metaball-swell, 0) * 0.55);
-  /* `will-change` is toggled by the rAF loop — a parked cursor holds no layer. */
-}
-
-/* While the drop is driving a real mouse it IS the cursor, so the native arrow
-   is hidden — two pointers on screen read as a bug. The attribute is set by
-   MetaballCursor only in mouse mode and is always removed on unmount, so the
-   page can never be left without a pointer.
-
-   `cursor` inherits, but the many elements that declare their own
-   (`cursor: pointer`, `text`, `grab`) would each re-assert it, so the rule has
-   to reach descendants. `:where()` keeps the whole selector at the specificity
-   of the attribute alone, and the `:not()` inside it is the escape hatch:
-   anything that needs the real cursor (a canvas game, a drag handle, a colour
-   picker) marks itself `data-native-cursor` and keeps it, subtree included. */
-:root[data-metaball-cursor='on']
-  :where(body, body *:not([data-native-cursor], [data-native-cursor] *)) {
-  cursor: none !important;
-}
-
-/* ── The drop, stood down ─────────────────────────────────────────────────
-   While a viewport-covering `backdrop-filter` layer is up (`.glass-scrim`, the
-   hub's `.radial-hub__blur`) the drop cannot paint. Chromium re-blurs such a
-   layer IN FULL whenever anything above it moves — measured at 1920×1080, a
-   plain 24px dot wiggling in a 50px arc over the open hub takes the page from
-   60fps to 10.7fps, and the drop is a dot that moves every frame by definition.
-   See hooks/useFrostedOverlay for the table.
-
-   So the OS draws it instead: `--metaball-still` is a data-URI SVG of the drop
-   at rest (ink disc + the filter's dilated rim), minted by MetaballCursor from
-   the live theme's own colours. Same mark, drawn by the compositor, zero page
-   damage — rather than the bare arrow reappearing every time a dialog opens. */
-:root[data-metaball-cursor='still']
-  :where(body, body *:not([data-native-cursor], [data-native-cursor] *)) {
-  cursor: var(--metaball-still, auto) !important;
-}
-/* …except over text. A still blob parked on the insertion point is precisely
-   what the live drop's caret morph exists to avoid, and a dialog is mostly
-   where the text fields are. Same zero specificity, later in source order. */
-:root[data-metaball-cursor='still']
-  :where(
-    textarea,
-    [contenteditable=''],
-    [contenteditable='true'],
-    input:not([type]),
-    input:is(
-      [type='text'],
-      [type='search'],
-      [type='email'],
-      [type='url'],
-      [type='tel'],
-      [type='password'],
-      [type='number'],
-      [type='date'],
-      [type='time'],
-      [type='datetime-local'],
-      [type='month'],
-      [type='week']
-    )
-  ) {
-  cursor: text !important;
-}
-
-/* ── The loading mark, fused ──────────────────────────────────────────────
+/* ── The loading mark ─────────────────────────────────────────────────────
    `.rad-loader` is defined in globals.css (it is used outside this shell too).
-   Inside the shell the goo filter is available, so the orbiting blobs melt into
-   the pulsing core with stretched liquid necks — the same material as the hub
-   dial. Same cost gate as every other goo layer. */
-@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
-  .radial-shell .rad-loader {
-    filter: url(#rmh-liquid-sm);
-  }
-}
+   It used to pick up `filter: url(#rmh-liquid-sm)` inside the shell so its
+   orbiting blobs melted into the core; that goo bank is gone, and the mark
+   animates as plain discs everywhere — same motion, no per-frame filter. */
 
 /* ── Reduced motion: kill all continuous / decorative animation ───────── */
 @media (prefers-reduced-motion: reduce) {
@@ -2349,7 +2214,6 @@ html.perf-lite .radial-backdrop__blob {
   .radial-hub__level,
   .radial-hub__wedge,
   .radial-hub__foot,
-  .radial-hub__aura,
   .rmhark,
   .radial-feed__compose {
     transition-duration: 0.001ms;

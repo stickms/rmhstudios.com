@@ -27,6 +27,7 @@ import {
   STAGE_LABELS,
 } from '@/components/rmhladder/PipelineLadder';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 
 const queriesPrisma = prisma as unknown as QueriesPrisma;
 const actionsPrisma = prisma as unknown as ActionsPrisma;
@@ -36,7 +37,8 @@ type AnyRow = Record<string, unknown>;
 const fetchApplications = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
   const session = await auth.api.getSession({ headers: request.headers });
-  if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/pipeline' } });
+  if (!session?.user)
+    throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/pipeline' } });
   const [applications, resumes] = await Promise.all([
     listApplications(queriesPrisma, session.user.id),
     prisma.ladderResume.findMany({
@@ -51,9 +53,9 @@ const fetchApplications = createServerFn({ method: 'GET' }).handler(async () => 
   ]);
   return {
     applications,
-    resumeVersions: resumes.flatMap((resume) => resume.activeVersion
-      ? [{ ...resume.activeVersion, resumeName: resume.name }]
-      : []),
+    resumeVersions: resumes.flatMap((resume) =>
+      resume.activeVersion ? [{ ...resume.activeVersion, resumeName: resume.name }] : [],
+    ),
   };
 });
 
@@ -68,10 +70,16 @@ const doUpdateApplication = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });
-    if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/pipeline' } });
+    if (!session?.user)
+      throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/pipeline' } });
     try {
       // Actions layer's applicationPatchSchema is the authority; cast here is safe.
-      const row = await updateApplication(actionsPrisma, session.user.id, data.jobId, data.patch as ApplicationPatch);
+      const row = await updateApplication(
+        actionsPrisma,
+        session.user.id,
+        data.jobId,
+        data.patch as ApplicationPatch,
+      );
       return { ok: true as const, row };
     } catch (err) {
       return { ok: false as const, error: err instanceof Error ? err.message : String(err) };
@@ -157,8 +165,8 @@ function PipelinePage() {
       {apps.length === 0 ? (
         <div className="rl-empty-state">
           <p>
-            No applications yet. Mark a job as applied from the Jobs page and it
-            appears on the ladder.
+            No applications yet. Mark a job as applied from the Jobs page and it appears on the
+            ladder.
           </p>
         </div>
       ) : (
@@ -192,7 +200,12 @@ function ApplicationEditor({
   onClose,
 }: {
   app: AnyRow;
-  resumeVersions: Array<{ id: string; filename: string; versionNumber: number; resumeName: string }>;
+  resumeVersions: Array<{
+    id: string;
+    filename: string;
+    versionNumber: number;
+    resumeName: string;
+  }>;
   onPatch: (patch: ApplicationPatch) => void;
   onClose: () => void;
 }) {
@@ -206,13 +219,11 @@ function ApplicationEditor({
     notes: (app.notes as string) ?? '',
   });
   const [interviewDraft, setInterviewDraft] = useState('');
-  const interviewDates = ((app.interviewDates as Array<Date | string> | undefined) ?? []).map((value) => new Date(value));
+  const interviewDates = ((app.interviewDates as Array<Date | string> | undefined) ?? []).map(
+    (value) => new Date(value),
+  );
 
-  function textField(
-    label: string,
-    field: keyof typeof draft,
-    multiline = false,
-  ) {
+  function textField(label: string, field: keyof typeof draft, multiline = false) {
     const shared = {
       id: `rl-app-${field}`,
       value: draft[field],
@@ -244,7 +255,9 @@ function ApplicationEditor({
           <p className="rl-eyebrow">
             {((job?.company as AnyRow | undefined)?.name as string) ?? 'APPLICATION'}
           </p>
-          <h2 className="rl-display rl-app-editor__title">{(job?.title as string) ?? 'Untitled role'}</h2>
+          <h2 className="rl-display rl-app-editor__title">
+            {(job?.title as string) ?? 'Untitled role'}
+          </h2>
         </div>
         <button type="button" className="rl-chip" onClick={onClose} aria-label="Close editor">
           Close
@@ -253,9 +266,9 @@ function ApplicationEditor({
 
       <label className="rl-field" htmlFor="rl-app-status">
         <span className="rl-eyebrow">Stage</span>
-        <select
+        <Select
           id="rl-app-status"
-          className="rl-sort-select"
+          controlSize="sm"
           value={app.status as string}
           onChange={(e) => onPatch({ status: e.target.value as ApplicationPatch['status'] })}
         >
@@ -264,7 +277,7 @@ function ApplicationEditor({
               {STAGE_LABELS[s]}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
 
       <label className="rl-field" htmlFor="rl-app-applied">
@@ -273,7 +286,9 @@ function ApplicationEditor({
           id="rl-app-applied"
           type="date"
           value={dateValue(app.appliedDate)}
-          onChange={(e) => onPatch({ appliedDate: e.target.value ? new Date(e.target.value) : null })}
+          onChange={(e) =>
+            onPatch({ appliedDate: e.target.value ? new Date(e.target.value) : null })
+          }
         />
       </label>
 
@@ -283,21 +298,25 @@ function ApplicationEditor({
           id="rl-app-followup"
           type="date"
           value={dateValue(app.followUpDate)}
-          onChange={(e) => onPatch({ followUpDate: e.target.value ? new Date(e.target.value) : null })}
+          onChange={(e) =>
+            onPatch({ followUpDate: e.target.value ? new Date(e.target.value) : null })
+          }
         />
       </label>
 
       <label className="rl-field" htmlFor="rl-app-resume-version-id">
         <span className="rl-eyebrow">Submitted resume</span>
-        <select
+        <Select
           id="rl-app-resume-version-id"
-          className="rl-sort-select"
+          controlSize="sm"
           value={(app.resumeVersionId as string | null) ?? ''}
           onChange={(event) => {
             const selected = resumeVersions.find((version) => version.id === event.target.value);
             onPatch({
               resumeVersionId: selected?.id ?? null,
-              resumeVersion: selected ? `${selected.resumeName} · v${selected.versionNumber}` : null,
+              resumeVersion: selected
+                ? `${selected.resumeName} · v${selected.versionNumber}`
+                : null,
             });
           }}
         >
@@ -307,7 +326,7 @@ function ApplicationEditor({
               {version.resumeName} · v{version.versionNumber} · {version.filename}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
 
       <div className="rl-field">
@@ -340,7 +359,13 @@ function ApplicationEditor({
               <button
                 type="button"
                 aria-label={`Remove interview ${date.toLocaleString()}`}
-                onClick={() => onPatch({ interviewDates: interviewDates.filter((_, candidateIndex) => candidateIndex !== index) })}
+                onClick={() =>
+                  onPatch({
+                    interviewDates: interviewDates.filter(
+                      (_, candidateIndex) => candidateIndex !== index,
+                    ),
+                  })
+                }
               >
                 ×
               </button>

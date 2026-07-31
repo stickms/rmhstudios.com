@@ -11,6 +11,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Select } from '@/components/ui/select';
 import { ChevronDown, ChevronUp, Search, ArrowUpDown, Filter } from 'lucide-react';
 import RMHboxHeader from '@/components/rmhbox/RMHboxHeader';
 import { MINIGAME_REGISTRY } from '@/lib/rmhbox/minigame-registry';
@@ -311,8 +312,13 @@ function MinigameHistoryPage() {
               >
                 <Filter className="h-3.5 w-3.5 text-(--app-text-muted)" />
                 {selectFields.map((field) => (
-                  <select
+                  <Select
                     key={field.key}
+                    tier="app"
+                    controlSize="sm"
+                    containerClassName="inline-block"
+                    className="w-auto min-w-32 text-xs"
+                    aria-label={field.label}
                     value={activeFilters[field.key] ?? ''}
                     onChange={(e) =>
                       setActiveFilters((prev) => {
@@ -325,7 +331,6 @@ function MinigameHistoryPage() {
                         return next;
                       })
                     }
-                    className="text-xs px-2 py-1.5 rounded-md border border-(--app-border) bg-(--app-bg) text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent)"
                     data-testid={`history-filter-${field.key}`}
                   >
                     <option value="">
@@ -336,7 +341,7 @@ function MinigameHistoryPage() {
                         {field.label}: {opt}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 ))}
               </div>
             );

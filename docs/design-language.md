@@ -14,10 +14,10 @@ architecture. Two ideas, one language:
   document's own scroll) that rake onto a shallow cylinder as they cross the
   focus line, led by an inline compose box; navigation lives in a fixed **RMH
   hub** that, when tapped, first **glides the orb to the middle of the screen**
-  and then **blooms a pie/wedge dial** the orb radiates from. A gooey
-  **metaball** cursor and a soft parallax **ring backdrop** keep the whole
-  surface feeling liquid and continuous. Mobile-first, with a strict
-  **high-contrast monochrome** palette.
+  and then **blooms a pie/wedge dial** the orb radiates from. A soft parallax
+  **ring backdrop** and a drifting blob field keep the whole surface feeling
+  liquid and continuous. Mobile-first, with a strict **high-contrast
+  monochrome** palette.
 - **Avant-garde glass.** The material is Apple's Liquid Glass used
   _theatrically_, not literally: physically-plausible layered translucent glass
   with **live optics** — a specular rim glint that tracks the scene light,
@@ -37,7 +37,7 @@ so any theme (and any accent preset layered on top) restyles the entire site
 without a single component change.
 
 > **What ships today — read this first.** Both layers are live. The **radial**
-> layer (shell, hub, wheel feed, metaball cursor) ships in
+> layer (shell, hub, wheel feed) ships in
 > [`components/radial/`](../components/radial/README.md), and the **Liquid Glass
 > material is rendered on top of it**: the radial shell no longer demotes the
 > glass classes to flat cards, the aurora canvas paints and drifts behind
@@ -381,11 +381,11 @@ Always reach for these before writing new markup. Helper: `cn()` from
 | `Card` + Header/Title/Description/Action/Content/Footer                     | `components/ui/card.tsx`                                 | `bg-site-surface border border-site-border rounded-site shadow-site`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `Dialog` (Radix wrapper)                                                    | `components/ui/dialog.tsx`                               | Centered, viewport-clamped glass content with safe internal spacing and a translated close control. Pass `mobileFullscreen` for complex/wide editors; they consume the phone visual viewport with safe-area padding, then return to a centered dialog from `sm`.                                                                                                                                                                                                                                                                                                                        |
 | `Input`, `Textarea`                                                         | `components/ui/input.tsx`, `textarea.tsx`                | `bg-site-surface`, `rounded-site-sm`, hairline border, accent focus ring.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `Select`                                                                    | `components/ui/select.tsx`                               | Styled **native** `<select>` + lucide chevron (not Radix Select). **§15.6 exemption:** the option list is the OS-rendered native popup — it cannot be glass-styled or given the liquid-pop metaball open/close, so `Select` stays native by deliberate v1 decision (a custom listbox is an a11y-significant rewrite — propose separately).                                                                                                                                                                                                                                              |
+| `Select`                                                                    | `components/ui/select.tsx`                               | Radix Select in a native-`<select>` shim: callers still write `<option>` children and read `e.target.value` off `onChange`, but the **option list is ours** — a `glass-overlay` popup in the theme's own tokens, not the OS picker (the old §15.6 exemption, now closed). `tier="app"` repaints it in the `--app-*` contract and portals into the `.app-theme` shell, for the full-screen apps. `<option value="">` placeholders are supported (mapped around Radix's reserved empty value); multi-select is not.                                                                     |
 | `Label`                                                                     | `components/ui/label.tsx`                                | Radix Label.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `EmptyState`                                                                | `components/ui/empty-state.tsx`                          | Canonical zero-state: `{icon, title, description, action}`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `Skeleton`                                                                  | `components/ui/skeleton.tsx`                             | Canonical loading placeholder. Defaults to a gentle `animate-pulse`; pass **`shimmer`** for a travelling highlight sweep (reduced-motion-safe) — nicer for above-the-fold / hero placeholders.                                                                                                                                                                                                                                                                                                                                                                                          |
-| `Spinner` / `RadialLoader`                                                  | `components/ui/spinner.tsx`, `radial-loader.tsx`         | Canonical loading mark (`role="status"`) for **standalone / section loading** (accent-coloured, centred). It renders the **radial loading mark** — blobs orbiting a pulsing core, fused by the goo filter inside the radial shell — so a wait speaks the same language as the hub. `RadialLoader` is the bare mark (inherits `currentColor`, `decorative` drops the live region); `Spinner` is it in the accent. A bare inline `<Loader2 className="animate-spin" />` inside a button/label is still fine — it inherits `currentColor`, where `<Spinner>` would paint accent-on-accent. |
+| `Spinner` / `RadialLoader`                                                  | `components/ui/spinner.tsx`, `radial-loader.tsx`         | Canonical loading mark (`role="status"`) for **standalone / section loading** (accent-coloured, centred). It renders the **radial loading mark** — blobs orbiting a pulsing core — so a wait speaks the same language as the hub. `RadialLoader` is the bare mark (inherits `currentColor`, `decorative` drops the live region); `Spinner` is it in the accent. A bare inline `<Loader2 className="animate-spin" />` inside a button/label is still fine — it inherits `currentColor`, where `<Spinner>` would paint accent-on-accent. |
 | `Tooltip`                                                                   | `components/ui/Tooltip.tsx`                              | Portal + framer-motion. Shows on **hover and keyboard focus**, dismisses on Escape, wires `aria-describedby`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `IconButton`                                                                | `components/ui/icon-button.tsx`                          | Icon-only `Button` that requires a `label` (becomes `aria-label` **and** a `Tooltip`). Reach for this instead of a bare `<button aria-label>`.                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `CopyButton` / `useClipboard`                                               | `components/ui/copy-button.tsx`, `hooks/useClipboard.ts` | Canonical copy-to-clipboard: icon → check, sonner toast, `execCommand` fallback. Don't hand-roll `navigator.clipboard.writeText` + `useState`.                                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -419,9 +419,8 @@ close-button clearance stay consistent.
 The `_site` layout route delegates to `components/feed/SiteShell.tsx`, which now
 renders the **radial shell** ([`components/radial/RadialShell.tsx`](../components/radial/RadialShell.tsx)):
 a fixed parallax **ring backdrop**, a slim sticky **utility top bar** (brand ·
-search · inbox · avatar), the **frame**, the central **RMH hub** (`RadialHub`),
-and a site-wide gooey **pointer metaball** (fine pointers only — it replaces a
-cursor, so phones never mount it). The single
+search · inbox · avatar), the **frame** and the central **RMH hub**
+(`RadialHub`). The single
 `<main id="main-content">` landmark lives inside the frame; **pages never add
 their own sidebars or page-frame** (and `AnimatedMain` renders a `<div>` — the
 shell's `<main>` is the one landmark).
@@ -505,13 +504,7 @@ gated off there too, via `html.app-route`).
   shallow cylinder on a rAF window-scroll pass with cached offsets (no layout
   thrash — `RadialWheel`), the **hub** glides the orb to centre then blooms the
   wedges under an expanding `clip-path` **circular blur** (CSS-only phase
-  machine), the **pointer metaball** trails on one rAF tick with delta-time
-  easing so it is identical at 60Hz and 240Hz (`MetaballCursor` — mouse only; an
-  SVG alpha ramp fuses it into a shape with no plate and no blend mode, and it
-  replaces the native cursor while a mouse drives it, standing down to a still
-  native cursor image under a full-screen frosted overlay because a
-  `backdrop-filter` is re-blurred in full by anything moving above it),
-  the **ring backdrop** parallaxes to the pointer, and page headers/heroes rise
+  machine), the **ring backdrop** parallaxes to the pointer, and page headers/heroes rise
   in on mount (`radial-page-rise`). All of it is `transform`/`opacity` only and gated off
   under reduced motion; optional scroll **haptics** (`navigator.vibrate`) tick
   as cards cross the focus line.

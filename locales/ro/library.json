@@ -19,8 +19,6 @@
   "album-zoom-in": "Zoom in",
   "album-zoom-out": "Zoom out",
   "archive-description": "Books, photo albums, essays, playlists, field notes, and strange ideas—floating together in one playful archive.",
-  "archive-eyebrow": "A living media library",
-  "archive-title": "Pick something up. Get lost in it.",
   "book-count_one": "{{count}} books",
   "book-count_few": "{{count}} books",
   "book-count_other": "{{count}} books",
@@ -94,6 +92,10 @@
   "section-curated": "Curated",
   "section-music": "Music",
   "sections-label": "Library sections",
+  "tilt-denied": "Motion access was declined. You can allow it in your browser settings.",
+  "tilt-hint-off": "Turn on 3D tilt and move your phone to look around.",
+  "tilt-hint-on": "Tilt your phone to look around the shelf.",
+  "tilt-label": "3D tilt",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

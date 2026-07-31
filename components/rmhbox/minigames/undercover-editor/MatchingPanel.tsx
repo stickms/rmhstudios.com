@@ -22,6 +22,7 @@
 import { useMemo } from 'react';
 import { m as motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { Select } from '@/components/ui/select';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -88,7 +89,7 @@ export default function MatchingPanel({
     [guessableStories, currentGuesses],
   );
 
-  const { t } = useTranslation("c-rmhbox");
+  const { t } = useTranslation('c-rmhbox');
 
   const totalPlayers = players.length;
   const lockedCount = lockedInPlayers.length;
@@ -106,16 +107,24 @@ export default function MatchingPanel({
     >
       {/* Header */}
       <div className="flex flex-col items-center gap-1">
-        <h2 className="text-lg font-bold">{t("match-the-editors", { defaultValue: "Match the Editors" })}</h2>
+        <h2 className="text-lg font-bold">
+          {t('match-the-editors', { defaultValue: 'Match the Editors' })}
+        </h2>
         <p className="text-xs text-(--app-text-muted)">
-          {t("match-the-editors-subtitle", { defaultValue: "For each story, guess which player was its undercover editor" })}
+          {t('match-the-editors-subtitle', {
+            defaultValue: 'For each story, guess which player was its undercover editor',
+          })}
         </p>
       </div>
 
       {/* Lock-in progress */}
       <div className="flex flex-col items-center gap-1 text-xs text-(--app-text-muted)">
         <span>
-          {t("players-locked-in", { lockedCount, totalPlayers, defaultValue: "{{lockedCount}}/{{totalPlayers}} players locked in" })}
+          {t('players-locked-in', {
+            lockedCount,
+            totalPlayers,
+            defaultValue: '{{lockedCount}}/{{totalPlayers}} players locked in',
+          })}
         </span>
         {lockedInPlayers.length > 0 && (
           <div className="flex flex-wrap justify-center gap-1.5 mt-1">
@@ -147,14 +156,17 @@ export default function MatchingPanel({
               {/* Story header — numbered */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold">
-                  {t("story-number", { number: idx + 1, defaultValue: "Story {{number}}" })}
+                  {t('story-number', { number: idx + 1, defaultValue: 'Story {{number}}' })}
                 </span>
               </div>
 
               {/* Full story text with prompt as first sentence */}
               <div className="flex flex-col gap-1 rounded-lg bg-(--app-surface)/60 p-3 text-sm leading-relaxed">
                 <span className="text-(--app-text)">
-                  <span className="opacity-50 text-xs">{t("prompt-label", { defaultValue: "(prompt)" })}</span> {story.prompt}
+                  <span className="opacity-50 text-xs">
+                    {t('prompt-label', { defaultValue: '(prompt)' })}
+                  </span>{' '}
+                  {story.prompt}
                 </span>
                 {story.sentences
                   .slice()
@@ -167,23 +179,23 @@ export default function MatchingPanel({
               {/* Editor guess dropdown — only excludes the guessing player */}
               <label className="flex flex-col gap-1">
                 <span className="text-xs font-medium text-(--app-text-muted)">
-                  {t("who-was-the-editor", { defaultValue: "Who was the editor?" })}
+                  {t('who-was-the-editor', { defaultValue: 'Who was the editor?' })}
                 </span>
-                <select
+                <Select
+                  tier="app"
                   disabled={lockedIn}
                   value={selectedGuess}
-                  onChange={(e) =>
-                    onGuessChange(story.storyId, e.target.value)
-                  }
-                  className="rounded-lg border border-(--app-border) bg-(--app-surface) px-3 py-2 text-sm text-(--app-text) outline-none transition-colors focus:border-(--app-accent) disabled:opacity-50"
+                  onChange={(e) => onGuessChange(story.storyId, e.target.value)}
                 >
-                  <option value="">{t("select-a-player", { defaultValue: "— select a player —" })}</option>
+                  <option value="">
+                    {t('select-a-player', { defaultValue: '— select a player —' })}
+                  </option>
                   {candidates.map((p) => (
                     <option key={p.userId} value={p.userId}>
                       {p.userName}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
             </motion.div>
           );
@@ -199,7 +211,7 @@ export default function MatchingPanel({
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             className="flex items-center gap-1.5 rounded-full bg-(--app-success-dim) px-4 py-1.5 text-sm font-semibold text-(--app-success)"
           >
-            ✓ {t("locked-in", { defaultValue: "Locked In" })}
+            ✓ {t('locked-in', { defaultValue: 'Locked In' })}
           </motion.div>
         ) : (
           <motion.button
@@ -208,13 +220,15 @@ export default function MatchingPanel({
             onClick={onLockIn}
             className="rounded-xl border border-(--app-accent) bg-(--app-accent)/15 px-6 py-2 text-sm font-semibold text-(--app-accent) transition-opacity disabled:opacity-40"
           >
-            {t("lock-in-guesses", { defaultValue: "Lock In Guesses" })}
+            {t('lock-in-guesses', { defaultValue: 'Lock In Guesses' })}
           </motion.button>
         )}
 
         {!lockedIn && !allGuessed && (
           <p className="text-[11px] text-(--app-text-muted)">
-            {t("assign-editor-hint", { defaultValue: "Assign an editor for every story to lock in" })}
+            {t('assign-editor-hint', {
+              defaultValue: 'Assign an editor for every story to lock in',
+            })}
           </p>
         )}
       </div>

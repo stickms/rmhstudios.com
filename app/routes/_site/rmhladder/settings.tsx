@@ -11,6 +11,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
+import { Select } from '@/components/ui/select';
 import { prisma } from '@/lib/prisma.server';
 import { getSettings, type QueriesPrisma } from '@/lib/rmhladder/server/queries';
 import {
@@ -30,7 +31,8 @@ type AnyRow = Record<string, unknown>;
 const fetchSettings = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
   const session = await auth.api.getSession({ headers: request.headers });
-  if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/settings' } });
+  if (!session?.user)
+    throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/settings' } });
   const [settings, companies, savedSearches] = await Promise.all([
     getSettings(queriesPrisma, session.user.id),
     prisma.ladderCompany.findMany({
@@ -77,9 +79,13 @@ const doUpdatePrefs = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });
-    if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/settings' } });
+    if (!session?.user)
+      throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/settings' } });
     try {
-      return { ok: true as const, prefs: await updatePrefs(actionsPrisma, session.user.id, data as PrefsPatch) };
+      return {
+        ok: true as const,
+        prefs: await updatePrefs(actionsPrisma, session.user.id, data as PrefsPatch),
+      };
     } catch (err) {
       return { ok: false as const, error: err instanceof Error ? err.message : String(err) };
     }
@@ -90,11 +96,13 @@ const doKeyword = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });
-    if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/settings' } });
+    if (!session?.user)
+      throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/settings' } });
     if (data.kind === 'upsert') {
       return upsertKeyword(actionsPrisma, session.user.id, data.keyword, data.type, data.weight);
     }
-    if (data.kind === 'delete') return deleteKeyword(actionsPrisma, session.user.id, data.keyword, data.type);
+    if (data.kind === 'delete')
+      return deleteKeyword(actionsPrisma, session.user.id, data.keyword, data.type);
     return toggleWatchlist(actionsPrisma, session.user.id, data.companyId, data.on);
   });
 
@@ -105,8 +113,16 @@ export const Route = createFileRoute('/_site/rmhladder/settings')({
 
 const DIGESTS = ['immediate', 'daily', 'weekly'] as const;
 const PROGRAM_TYPES = [
-  'internship', 'summer_analyst', 'summer_associate', 'analyst_program', 'rotational_program',
-  'new_grad', 'leadership_development', 'entry_level', 'mba', 'other',
+  'internship',
+  'summer_analyst',
+  'summer_associate',
+  'analyst_program',
+  'rotational_program',
+  'new_grad',
+  'leadership_development',
+  'entry_level',
+  'mba',
+  'other',
 ] as const;
 
 function SettingsPage() {
@@ -116,8 +132,14 @@ function SettingsPage() {
   const [prefs, setPrefs] = useState<AnyRow>(loaded.prefs as AnyRow);
   const [keywords, setKeywords] = useState<AnyRow[]>(loaded.keywords as AnyRow[]);
   const [error, setError] = useState<string | null>(null);
-  const [newKeyword, setNewKeyword] = useState({ text: '', type: 'boost' as 'boost' | 'block', weight: 10 });
-  const [watchlistCompanyIds, setWatchlistCompanyIds] = useState<string[]>(loaded.watchlistCompanyIds);
+  const [newKeyword, setNewKeyword] = useState({
+    text: '',
+    type: 'boost' as 'boost' | 'block',
+    weight: 10,
+  });
+  const [watchlistCompanyIds, setWatchlistCompanyIds] = useState<string[]>(
+    loaded.watchlistCompanyIds,
+  );
   const [watchlistChoice, setWatchlistChoice] = useState('');
   const [savedSearches, setSavedSearches] = useState<AnyRow[]>(loaded.savedSearches as AnyRow[]);
 
@@ -142,7 +164,9 @@ function SettingsPage() {
       { id: `tmp-${keyword}`, keyword, type: newKeyword.type, weight: newKeyword.weight },
     ]);
     setNewKeyword((k) => ({ ...k, text: '' }));
-    await doKeyword({ data: { kind: 'upsert', keyword, type: newKeyword.type, weight: newKeyword.weight } });
+    await doKeyword({
+      data: { kind: 'upsert', keyword, type: newKeyword.type, weight: newKeyword.weight },
+    });
     await router.invalidate();
   }
 
@@ -154,9 +178,9 @@ function SettingsPage() {
 
   async function setWatchlist(companyId: string, on: boolean) {
     if (!companyId) return;
-    setWatchlistCompanyIds((current) => on
-      ? [...new Set([...current, companyId])]
-      : current.filter((id) => id !== companyId));
+    setWatchlistCompanyIds((current) =>
+      on ? [...new Set([...current, companyId])] : current.filter((id) => id !== companyId),
+    );
     await doKeyword({ data: { kind: 'watchlist', companyId, on } });
     setWatchlistChoice('');
     await router.invalidate();
@@ -177,11 +201,15 @@ function SettingsPage() {
       setError('Could not update saved search');
       return;
     }
-    setSavedSearches((rows) => rows.map((row) => row.id === search.id ? { ...row, alertsOn } : row));
+    setSavedSearches((rows) =>
+      rows.map((row) => (row.id === search.id ? { ...row, alertsOn } : row)),
+    );
   }
 
   async function deleteSavedSearch(id: string) {
-    const response = await fetch(`/api/rmhladder/searches?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    const response = await fetch(`/api/rmhladder/searches?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
     if (!response.ok) {
       setError('Could not delete saved search');
       return;
@@ -211,11 +239,14 @@ function SettingsPage() {
               min={0}
               max={100}
               value={threshold}
-              onChange={(e) => setPrefs((p) => ({ ...p, relevanceThreshold: Number(e.target.value) }))}
+              onChange={(e) =>
+                setPrefs((p) => ({ ...p, relevanceThreshold: Number(e.target.value) }))
+              }
               onMouseUp={() => void patchPrefs({ relevanceThreshold: threshold })}
               onTouchEnd={() => void patchPrefs({ relevanceThreshold: threshold })}
               onKeyUp={(e) => {
-                if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') void patchPrefs({ relevanceThreshold: threshold });
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowRight')
+                  void patchPrefs({ relevanceThreshold: threshold });
               }}
             />
           </label>
@@ -270,34 +301,52 @@ function SettingsPage() {
               type="text"
               defaultValue={(prefs.timezone as string) ?? 'America/New_York'}
               placeholder="America/New_York"
-              onBlur={(e) => void patchPrefs({ timezone: e.target.value.trim() || 'America/New_York' })}
+              onBlur={(e) =>
+                void patchPrefs({ timezone: e.target.value.trim() || 'America/New_York' })
+              }
             />
           </label>
 
           <div className="grid grid-cols-2 gap-3">
             <label className="rl-field" htmlFor="rl-quiet-start">
               <span className="rl-eyebrow">Quiet hours start</span>
-              <select
+              <Select
                 id="rl-quiet-start"
-                className="rl-sort-select"
+                controlSize="sm"
                 value={prefs.quietHoursStart == null ? '' : String(prefs.quietHoursStart)}
-                onChange={(e) => void patchPrefs({ quietHoursStart: e.target.value === '' ? null : Number(e.target.value) })}
+                onChange={(e) =>
+                  void patchPrefs({
+                    quietHoursStart: e.target.value === '' ? null : Number(e.target.value),
+                  })
+                }
               >
                 <option value="">Off</option>
-                {Array.from({ length: 24 }, (_, hour) => <option key={hour} value={hour}>{String(hour).padStart(2, '0')}:00</option>)}
-              </select>
+                {Array.from({ length: 24 }, (_, hour) => (
+                  <option key={hour} value={hour}>
+                    {String(hour).padStart(2, '0')}:00
+                  </option>
+                ))}
+              </Select>
             </label>
             <label className="rl-field" htmlFor="rl-quiet-end">
               <span className="rl-eyebrow">Quiet hours end</span>
-              <select
+              <Select
                 id="rl-quiet-end"
-                className="rl-sort-select"
+                controlSize="sm"
                 value={prefs.quietHoursEnd == null ? '' : String(prefs.quietHoursEnd)}
-                onChange={(e) => void patchPrefs({ quietHoursEnd: e.target.value === '' ? null : Number(e.target.value) })}
+                onChange={(e) =>
+                  void patchPrefs({
+                    quietHoursEnd: e.target.value === '' ? null : Number(e.target.value),
+                  })
+                }
               >
                 <option value="">Off</option>
-                {Array.from({ length: 24 }, (_, hour) => <option key={hour} value={hour}>{String(hour).padStart(2, '0')}:00</option>)}
-              </select>
+                {Array.from({ length: 24 }, (_, hour) => (
+                  <option key={hour} value={hour}>
+                    {String(hour).padStart(2, '0')}:00
+                  </option>
+                ))}
+              </Select>
             </label>
           </div>
 
@@ -310,8 +359,17 @@ function SettingsPage() {
               max={100}
               value={prefs.resumeMatchThreshold == null ? '' : Number(prefs.resumeMatchThreshold)}
               placeholder="Any match"
-              onChange={(e) => setPrefs((value) => ({ ...value, resumeMatchThreshold: e.target.value === '' ? null : Number(e.target.value) }))}
-              onBlur={(e) => void patchPrefs({ resumeMatchThreshold: e.target.value === '' ? null : Number(e.target.value) })}
+              onChange={(e) =>
+                setPrefs((value) => ({
+                  ...value,
+                  resumeMatchThreshold: e.target.value === '' ? null : Number(e.target.value),
+                }))
+              }
+              onBlur={(e) =>
+                void patchPrefs({
+                  resumeMatchThreshold: e.target.value === '' ? null : Number(e.target.value),
+                })
+              }
             />
           </label>
         </section>
@@ -339,11 +397,13 @@ function SettingsPage() {
           <fieldset className="rl-field">
             <legend className="rl-eyebrow">Channels</legend>
             <div className="rl-chip-row">
-              {([
-                ['channelInApp', 'In-app'],
-                ['channelEmail', 'Email'],
-                ['channelDiscord', 'Discord'],
-              ] as const).map(([key, label]) => {
+              {(
+                [
+                  ['channelInApp', 'In-app'],
+                  ['channelEmail', 'Email'],
+                  ['channelDiscord', 'Discord'],
+                ] as const
+              ).map(([key, label]) => {
                 const on = prefs[key] === true;
                 return (
                   <button
@@ -361,7 +421,8 @@ function SettingsPage() {
           </fieldset>
 
           <p className="rl-quicklist__empty">
-            Discord alerts use the Discord account linked to your RMH Studios sign-in; arbitrary user IDs are never messaged.
+            Discord alerts use the Discord account linked to your RMH Studios sign-in; arbitrary
+            user IDs are never messaged.
           </p>
 
           <p className="rl-quicklist__empty">
@@ -383,15 +444,17 @@ function SettingsPage() {
                 if (e.key === 'Enter') void addKeyword();
               }}
             />
-            <select
+            <Select
               aria-label="Keyword type"
-              className="rl-sort-select"
+              controlSize="sm"
               value={newKeyword.type}
-              onChange={(e) => setNewKeyword((k) => ({ ...k, type: e.target.value as 'boost' | 'block' }))}
+              onChange={(e) =>
+                setNewKeyword((k) => ({ ...k, type: e.target.value as 'boost' | 'block' }))
+              }
             >
               <option value="boost">boost</option>
               <option value="block">block</option>
-            </select>
+            </Select>
             <input
               type="number"
               aria-label="Keyword weight"
@@ -417,34 +480,49 @@ function SettingsPage() {
                 <button
                   type="button"
                   aria-label={`Remove keyword ${k.keyword as string}`}
-                  onClick={() => void removeKeyword(k.keyword as string, k.type as 'boost' | 'block')}
+                  onClick={() =>
+                    void removeKeyword(k.keyword as string, k.type as 'boost' | 'block')
+                  }
                 >
                   ×
                 </button>
               </span>
             ))}
             {keywords.length === 0 && (
-              <p className="rl-quicklist__empty">No keywords yet. Boosts raise a match's score; blocks hide it.</p>
+              <p className="rl-quicklist__empty">
+                No keywords yet. Boosts raise a match's score; blocks hide it.
+              </p>
             )}
           </div>
         </section>
 
         <section className="rl-settings-section rl-settings-section--wide">
           <h2 className="rl-eyebrow">Company watchlist</h2>
-          <p className="rl-quicklist__empty">Watchlisted companies receive a ranking boost in your job feed.</p>
+          <p className="rl-quicklist__empty">
+            Watchlisted companies receive a ranking boost in your job feed.
+          </p>
           <div className="rl-keyword-add">
-            <select
+            <Select
               aria-label="Choose a company to watch"
-              className="rl-sort-select"
+              controlSize="sm"
               value={watchlistChoice}
               onChange={(event) => setWatchlistChoice(event.target.value)}
             >
               <option value="">Choose a company…</option>
               {loaded.companies
                 .filter((company) => !watchlistCompanyIds.includes(company.id))
-                .map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}
-            </select>
-            <button type="button" className="rl-chip" disabled={!watchlistChoice} onClick={() => void setWatchlist(watchlistChoice, true)}>
+                .map((company) => (
+                  <option key={company.id} value={company.id}>
+                    {company.name}
+                  </option>
+                ))}
+            </Select>
+            <button
+              type="button"
+              className="rl-chip"
+              disabled={!watchlistChoice}
+              onClick={() => void setWatchlist(watchlistChoice, true)}
+            >
               Watch
             </button>
           </div>
@@ -454,7 +532,13 @@ function SettingsPage() {
               return (
                 <span key={companyId} className="rl-keyword-chip">
                   {company?.name ?? 'Company'}
-                  <button type="button" aria-label={`Stop watching ${company?.name ?? 'company'}`} onClick={() => void setWatchlist(companyId, false)}>×</button>
+                  <button
+                    type="button"
+                    aria-label={`Stop watching ${company?.name ?? 'company'}`}
+                    onClick={() => void setWatchlist(companyId, false)}
+                  >
+                    ×
+                  </button>
                 </span>
               );
             })}
@@ -464,11 +548,16 @@ function SettingsPage() {
         <section className="rl-settings-section rl-settings-section--wide">
           <h2 className="rl-eyebrow">Saved searches</h2>
           {savedSearches.length === 0 ? (
-            <p className="rl-quicklist__empty">Save filters from the Jobs page to manage their alerts here.</p>
+            <p className="rl-quicklist__empty">
+              Save filters from the Jobs page to manage their alerts here.
+            </p>
           ) : (
             <div className="space-y-2">
               {savedSearches.map((search) => (
-                <div key={search.id as string} className="flex min-h-14 flex-wrap items-center gap-3 rounded-site-sm border border-site-border p-3">
+                <div
+                  key={search.id as string}
+                  className="flex min-h-14 flex-wrap items-center gap-3 rounded-site-sm border border-site-border p-3"
+                >
                   <span className="mr-auto font-medium">{search.name as string}</span>
                   <button
                     type="button"
@@ -478,7 +567,11 @@ function SettingsPage() {
                   >
                     Alerts {search.alertsOn ? 'on' : 'off'}
                   </button>
-                  <button type="button" className="rl-chip" onClick={() => void deleteSavedSearch(search.id as string)}>
+                  <button
+                    type="button"
+                    className="rl-chip"
+                    onClick={() => void deleteSavedSearch(search.id as string)}
+                  >
                     Delete
                   </button>
                 </div>

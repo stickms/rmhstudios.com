@@ -7,7 +7,6 @@ import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { useFrostedOverlay } from '@/hooks/useFrostedOverlay';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SIDEBAR_NAV, isNavGroup, type NavLeaf } from '@/lib/sidebar-nav';
 import { RmhLogo } from './RmhLogo';
@@ -167,12 +166,6 @@ export function RadialHub() {
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const menuVisible = phase === 'open' || phase === 'closing';
-  // `.radial-hub__blur` is a viewport-covering `backdrop-filter`, and Chromium
-  // re-blurs one of those IN FULL every frame anything above it moves. The
-  // pointer metaball moves above it by definition, which took the open menu from
-  // 60fps to ~11fps; this hands the pointer back to the OS for as long as the
-  // frost is up. See hooks/useFrostedOverlay for the measurements.
-  useFrostedOverlay(phase !== 'closed');
   useEffect(() => {
     if (phase === 'closed') setHoveredLabel(null);
   }, [phase]);
@@ -328,24 +321,10 @@ export function RadialHub() {
 
   return (
     <div className="radial-hub" data-phase={phase}>
-      {/* Metaball aura — a decorative layer BEHIND the orb holding a disc the
-          orb's size plus a few orbiting blobs, all under the goo filter so they
-          stretch and fuse into one wobbling liquid mass around it. It is its own
-          layer (not a pseudo-element on the orb) because filtering the orb would
-          also chew the RMH mark's hairline strokes. It tracks the orb's docked /
-          centred position from the same tokens, and carries no `data-floating`
-          so it never joins the mobile floating-bottom stack. */}
       {/* Legibility scrim — fades the page ground in behind the docked orb so
           content scrolling through its band dissolves instead of colliding
-          with it (see radial.css). Paints under the aura and the orb. */}
+          with it (see radial.css). Paints under the orb. */}
       <div className="radial-hub__scrim" aria-hidden />
-
-      <div className="radial-hub__aura" aria-hidden>
-        <span className="radial-hub__aura-core" />
-        {[0, 1, 2].map((i) => (
-          <span key={i} className="radial-hub__aura-blob" style={{ ['--i' as string]: i }} />
-        ))}
-      </div>
 
       <button
         type="button"

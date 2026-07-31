@@ -17,6 +17,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Select } from '@/components/ui/select';
 import { RotateCcw, Minus, Plus } from 'lucide-react';
 import type { GameSettingDef, GameSettingsSchema, GameSettingValues } from '@/lib/rmhbox/types';
 
@@ -242,18 +243,21 @@ function SelectSetting({
 }) {
   const options = def.options ?? [];
   return (
-    <select
+    <Select
+      tier="app"
+      controlSize="sm"
+      containerClassName="inline-block"
+      className="w-auto min-w-28 disabled:opacity-60"
       value={value}
       disabled={!editable}
       onChange={(e) => onChange(e.target.value)}
-      className="rounded bg-(--app-bg) px-2 py-1 text-sm text-(--app-text) border border-(--app-border) disabled:opacity-60 disabled:cursor-not-allowed"
     >
       {options.map((opt) => (
         <option key={opt} value={opt}>
           {opt.charAt(0).toUpperCase() + opt.slice(1)}
         </option>
       ))}
-    </select>
+    </Select>
   );
 }
 
@@ -280,16 +284,36 @@ function SettingRow({
       </div>
       <div className="shrink-0">
         {def.type === 'boolean' && (
-          <BooleanSetting def={def} value={value as boolean} editable={editable} onChange={handleChange} />
+          <BooleanSetting
+            def={def}
+            value={value as boolean}
+            editable={editable}
+            onChange={handleChange}
+          />
         )}
         {def.type === 'integer' && (
-          <IntegerSetting def={def} value={value as number} editable={editable} onChange={handleChange} />
+          <IntegerSetting
+            def={def}
+            value={value as number}
+            editable={editable}
+            onChange={handleChange}
+          />
         )}
         {def.type === 'float' && (
-          <FloatSetting def={def} value={value as number} editable={editable} onChange={handleChange} />
+          <FloatSetting
+            def={def}
+            value={value as number}
+            editable={editable}
+            onChange={handleChange}
+          />
         )}
         {def.type === 'select' && (
-          <SelectSetting def={def} value={value as string} editable={editable} onChange={handleChange} />
+          <SelectSetting
+            def={def}
+            value={value as string}
+            editable={editable}
+            onChange={handleChange}
+          />
         )}
       </div>
     </div>
@@ -305,7 +329,7 @@ export default function GameSettingsForm({
   onSettingChange,
   onReset,
 }: GameSettingsFormProps) {
-  const { t } = useTranslation("c-rmhbox");
+  const { t } = useTranslation('c-rmhbox');
   return (
     <div className="space-y-1 divide-y divide-(--app-border)">
       {schema.map((def) => (
@@ -326,7 +350,7 @@ export default function GameSettingsForm({
             className="flex items-center gap-1.5 text-xs font-medium text-(--app-text-muted) hover:text-(--app-text) transition-colors"
           >
             <RotateCcw className="h-3 w-3" />
-            {t("reset-to-defaults", { defaultValue: "Reset to Defaults" })}
+            {t('reset-to-defaults', { defaultValue: 'Reset to Defaults' })}
           </button>
         </div>
       )}
