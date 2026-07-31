@@ -77,8 +77,10 @@ export function StoryNarration() {
 
     return (
         <div className="absolute inset-x-0 bottom-0 z-[60] pointer-events-none">
-            {/* Letterbox gradient */}
-            <div className="bg-gradient-to-t from-black/85 via-black/50 to-transparent pt-16 pb-8 px-6">
+            {/* Letterbox gradient. The wash itself runs to the physical edge —
+                that is the point of a letterbox — while its padding carries the
+                insets so the narration text clears the home indicator. */}
+            <div className="bg-gradient-to-t from-black/85 via-black/50 to-transparent pt-16 pb-[calc(2rem+var(--safe-bottom))] pl-[calc(1.5rem+var(--safe-left))] pr-[calc(1.5rem+var(--safe-right))]">
                 <div
                     className="max-w-xl mx-auto text-center transition-opacity duration-700"
                     style={{ opacity: visible ? 1 : 0 }}

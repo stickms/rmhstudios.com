@@ -713,7 +713,7 @@ export class App {
     _updateRadioHud(mode) {
         if (!this._radioHud) {
             this._radioHud = document.createElement('div');
-            this._radioHud.style.cssText = 'position:fixed;top:8px;right:12px;font-family:"VT323",monospace;font-size:16px;color:#0ff;letter-spacing:2px;z-index:200;pointer-events:none;text-shadow:0 0 6px rgba(0,255,255,0.4),1px 0 0 rgba(255,40,40,0.3),-1px 0 0 rgba(40,40,255,0.2);opacity:0.85;white-space:pre;';
+            this._radioHud.style.cssText = 'position:fixed;top:calc(8px + var(--safe-top));right:calc(12px + var(--safe-right));font-family:"VT323",monospace;font-size:16px;color:#0ff;letter-spacing:2px;z-index:200;pointer-events:none;text-shadow:0 0 6px rgba(0,255,255,0.4),1px 0 0 rgba(255,40,40,0.3),-1px 0 0 rgba(40,40,255,0.2);opacity:0.85;white-space:pre;';
             this._container.appendChild(this._radioHud);
         }
         if (mode === 'lofi') {

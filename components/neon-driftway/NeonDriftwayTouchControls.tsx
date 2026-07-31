@@ -96,7 +96,13 @@ export function NeonDriftwayTouchControls({
       {/* Utility row, clear of the notch and the back button */}
       <div
         className="pointer-events-none absolute z-40 flex gap-2"
-        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 0.65rem)', right: '0.65rem' }}
+        style={{
+          top: 'calc(var(--safe-top) + 0.65rem)',
+          // A racer is held sideways, so the RIGHT inset is the one that matters
+          // most here and was the one missing: the pause button sat under the
+          // sensor housing on whichever way round the phone was turned.
+          right: 'calc(var(--safe-right) + 0.65rem)',
+        }}
       >
         {showRecenter && (
           <button
@@ -121,7 +127,12 @@ export function NeonDriftwayTouchControls({
       {/* Driving pad */}
       <div
         className="pointer-events-none absolute inset-x-0 bottom-0 z-30"
-        style={{ touchAction: 'none', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)' }}
+        style={{
+          touchAction: 'none',
+          paddingBottom: 'calc(var(--safe-bottom) + 0.75rem)',
+          paddingLeft: 'var(--safe-left)',
+          paddingRight: 'var(--safe-right)',
+        }}
       >
         <div className="flex items-end justify-between px-4">
           {/* Steering */}
