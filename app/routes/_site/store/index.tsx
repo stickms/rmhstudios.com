@@ -25,6 +25,7 @@ import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { ShopColumn } from '@/components/feed/ShopColumn';
 import { MarketColumn } from '@/components/market/MarketColumn';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { PageTabs } from '@/components/feed/PageTabs';
 import { getShopData } from '@/lib/shop/list.server';
 import { browse } from '@/lib/market/market.server';
 import type { MarketListingView } from '@/components/market/ListingCard';
@@ -101,17 +102,13 @@ function Store() {
           the whole point of the shared header is that it doesn't have to).
           `?tab=` mirroring, roving nav and the aria-controls tabpanel wiring
           (idBase="store" → `store-tab-*` / `store-panel-*`) are unchanged. */}
-      <div className="my-3 px-2 md:px-3">
-        <LiquidTabs
-          tabs={tabs}
-          value={tab}
-          onChange={setTab}
-          idBase="store"
-          fullWidth
-          scroll
-          aria-label={t('store-title', { defaultValue: 'Store' })}
-        />
-      </div>
+      <PageTabs
+        tabs={tabs}
+        value={tab}
+        onChange={setTab}
+        idBase="store"
+        aria-label={t('store-title', { defaultValue: 'Store' })}
+      />
 
       {tab === 'shop' && (
         <div role="tabpanel" id="store-panel-shop" aria-labelledby="store-tab-shop">

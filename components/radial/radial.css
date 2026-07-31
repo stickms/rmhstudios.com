@@ -2281,8 +2281,6 @@ html.perf-lite .radial-backdrop__blob {
     .site-sticky-secondary,
     [data-slot='context-rail'],
     .lib-explorer,
-    .lib-topbar,
-    .cstudio-tabs,
     .tab-sheet-scroll
   ),
 .radial-shell__main .sticky {

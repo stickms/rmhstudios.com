@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowRight, Building2, Briefcase, Car, Check, type LucideIcon } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { PageTabs } from '@/components/feed/PageTabs';
 import { Button } from '@/components/ui/button';
 import { buildMeta, buildCanonical } from '@/lib/seo';
 
@@ -139,24 +140,23 @@ function ServicesPage() {
         defaultValue: 'Housing, career, and transportation tools built around the community.',
       })}
     >
-      <div className="px-4 pt-3 pb-12">
-        {/* §5.45 tab sheet — its own glass pill, below the title. */}
-        <LiquidTabs
-          tabs={tabs}
-          value={tab}
-          onChange={setTab}
-          idBase="services"
-          fullWidth
-          scroll
-          aria-label={t('nav-services', { ns: 'feed', defaultValue: 'Services' })}
-        />
+      {/* §5.45 tab sheet — its own glass pill, below the title. `PageTabs` owns
+          the gutter so this strip lines up with every other page's. */}
+      <PageTabs
+        tabs={tabs}
+        value={tab}
+        onChange={setTab}
+        idBase="services"
+        aria-label={t('nav-services', { ns: 'feed', defaultValue: 'Services' })}
+      />
 
+      <div className="px-4 pb-12">
         {/* Active service summary panel (?tab=). */}
         <section
           id={`services-panel-${active.id}`}
           role="tabpanel"
           aria-labelledby={`services-tab-${active.id}`}
-          className="glass-pane rounded-site mt-4 p-6 sm:p-8"
+          className="glass-pane rounded-site p-6 sm:p-8"
         >
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
             <div className="glass-fill glass-bevel-sm flex size-16 shrink-0 items-center justify-center rounded-site text-site-accent">

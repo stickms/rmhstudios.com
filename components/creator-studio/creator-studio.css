@@ -68,14 +68,6 @@
    anything." hero at a top offset that clears the floating header/mobile bar;
    LiquidTabs' `scroll` prop keeps the inner horizontal overflow decoupled from
    this sticky element (the mobile-Safari sticky+overflow bug). */
-.cstudio-tabs {
-  position: sticky;
-  top: var(--site-sticky-edge);
-  z-index: 30;
-  max-width: calc(100% - var(--studio-gutter) - var(--studio-gutter));
-  margin: clamp(20px, 4vw, 32px) var(--studio-gutter) var(--site-section-gap);
-}
-
 /* ── Tab body ────────────────────────────────────────────────────────────── */
 .cstudio-body {
   padding: clamp(16px, 3vw, 28px) var(--studio-gutter) clamp(56px, 9vw, 112px);

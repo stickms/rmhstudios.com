@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Users, CalendarDays, Radio } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { PageTabs } from '@/components/feed/PageTabs';
 import { CommunitiesColumn } from '@/components/feed/CommunitiesColumn';
 import { CommunitiesSkeleton } from '@/components/feed/CommunitiesSkeleton';
 import { EventsColumn } from '@/components/events/EventsColumn';
@@ -95,16 +96,13 @@ function CommunitiesTabs({ active }: { active: CommunitiesTab }) {
   );
 
   return (
-    <div className="my-3 px-2 md:px-3">
-      <LiquidTabs
-        tabs={tabs}
-        value={active}
-        onChange={setTab}
-        idBase="communities"
-        scroll
-        aria-label={t('communities-sections', { defaultValue: 'Community sections' })}
-      />
-    </div>
+    <PageTabs
+      tabs={tabs}
+      value={active}
+      onChange={setTab}
+      idBase="communities"
+      aria-label={t('communities-sections', { defaultValue: 'Community sections' })}
+    />
   );
 }
 

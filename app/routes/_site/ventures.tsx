@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowRight, Atom, Brain, Check, Landmark, Shield, type LucideIcon } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { PageTabs } from '@/components/feed/PageTabs';
 import { Button } from '@/components/ui/button';
 import { buildMeta, buildCanonical } from '@/lib/seo';
 
@@ -162,24 +163,23 @@ function VenturesPage() {
         defaultValue: 'The brands and programmes built around RMH Studios.',
       })}
     >
-      <div className="px-4 pt-3 pb-12">
-        {/* §5.45 tab sheet — its own glass pill, below the title. */}
-        <LiquidTabs
-          tabs={tabs}
-          value={tab}
-          onChange={setTab}
-          idBase="ventures"
-          fullWidth
-          scroll
-          aria-label={t('nav-ventures', { ns: 'feed', defaultValue: 'RMH Ventures' })}
-        />
+      {/* §5.45 tab sheet — its own glass pill, below the title. `PageTabs` owns
+          the gutter so this strip lines up with every other page's. */}
+      <PageTabs
+        tabs={tabs}
+        value={tab}
+        onChange={setTab}
+        idBase="ventures"
+        aria-label={t('nav-ventures', { ns: 'feed', defaultValue: 'RMH Ventures' })}
+      />
 
+      <div className="px-4 pb-12">
         {/* Active venture summary panel (?tab=). */}
         <section
           id={`ventures-panel-${active.id}`}
           role="tabpanel"
           aria-labelledby={`ventures-tab-${active.id}`}
-          className="glass-pane rounded-site mt-4 p-6 sm:p-8"
+          className="glass-pane rounded-site p-6 sm:p-8"
         >
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
             <div className="glass-fill glass-bevel-sm flex size-16 shrink-0 items-center justify-center rounded-site text-site-accent">

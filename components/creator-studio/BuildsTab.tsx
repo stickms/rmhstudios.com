@@ -12,8 +12,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SearchField } from '@/components/ui/search-field';
 import { Link } from '@tanstack/react-router';
-import { Search, Plus, Heart } from 'lucide-react';
+import { Plus, Heart } from 'lucide-react';
 import type { CuratedBuild } from '@/lib/builds/curated';
 import { Storefront, type StoreItem } from '@/components/creator-studio/storefront';
 import { Select } from '@/components/ui/select';
@@ -99,20 +100,16 @@ export function CuratedBuildsTab({
   const toolbar = (
     <div className="builds-toolbar">
       <div className="builds-toolbar__right">
-        <div className="vibe-search">
-          <Search size={16} className="vibe-search__icon" aria-hidden="true" />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={
-              searchPlaceholder ??
-              t('search-builds-placeholder', { defaultValue: 'Search builds...' })
-            }
-            aria-label={t('search-builds-label', { defaultValue: 'Search builds' })}
-            className="vibe-search__input"
-          />
-        </div>
+        <SearchField
+          containerClassName="ml-auto w-[min(320px,48vw)]"
+          value={query}
+          onValueChange={setQuery}
+          placeholder={
+            searchPlaceholder ??
+            t('search-builds-placeholder', { defaultValue: 'Search builds...' })
+          }
+          aria-label={t('search-builds-label', { defaultValue: 'Search builds' })}
+        />
         <label className="builds-sort">
           <span className="sr-only">{t('sort-label', { defaultValue: 'Sort' })}</span>
           <Select
@@ -242,19 +239,15 @@ export function UserBuildsTab({ seed }: { seed: number }) {
   const toolbar = (
     <div className="builds-toolbar">
       <div className="builds-toolbar__right">
-        <div className="vibe-search">
-          <Search size={16} className="vibe-search__icon" aria-hidden="true" />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('search-user-builds-placeholder', {
-              defaultValue: 'Search user builds...',
-            })}
-            aria-label={t('search-builds-label', { defaultValue: 'Search builds' })}
-            className="vibe-search__input"
-          />
-        </div>
+        <SearchField
+          containerClassName="ml-auto w-[min(320px,48vw)]"
+          value={query}
+          onValueChange={setQuery}
+          placeholder={t('search-user-builds-placeholder', {
+            defaultValue: 'Search user builds...',
+          })}
+          aria-label={t('search-builds-label', { defaultValue: 'Search builds' })}
+        />
         <Link to="/user-builds/submit" className="builds-submit">
           <Plus size={15} />
           <span>{t('submit', { defaultValue: 'Submit' })}</span>

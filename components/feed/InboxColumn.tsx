@@ -3,7 +3,7 @@
 import { MessageCircle, Users, Bell } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { PageTabs } from './PageTabs';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
 import { MessagesColumn } from './MessagesColumn';
@@ -69,15 +69,12 @@ export function InboxColumn({
 
           §15.1/§5.45: inbox sections as a unified sheet + flowing-capsule strip,
           standalone below that header (was a flat-pill row inside it). */}
-      <div className="my-4 px-2 md:px-3">
-        <LiquidTabs
-          size="sm"
-          aria-label={t('inbox-sections-label', { defaultValue: 'Inbox sections' })}
-          value={tab}
-          onChange={(id) => onTabChange(id as InboxTab)}
-          tabs={tabs}
-        />
-      </div>
+      <PageTabs
+        aria-label={t('inbox-sections-label', { defaultValue: 'Inbox sections' })}
+        value={tab}
+        onChange={(id) => onTabChange(id as InboxTab)}
+        tabs={tabs}
+      />
 
       {/* Active section */}
       <div className="flex-1 min-h-0">
