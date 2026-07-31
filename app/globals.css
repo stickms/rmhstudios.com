@@ -2050,6 +2050,48 @@ html.readable-font body {
     overflow: hidden;
   }
 
+  /* ── `.app-page` — a full-screen screen that is a DOCUMENT ─────────────────
+   *
+   * `.app-viewport` is right for a surface that never scrolls — a game world, a
+   * video room, a running typing test — where pinning to the live viewport is
+   * what keeps the bottom chrome out from under the browser's toolbars. It is
+   * wrong for the app tier's landings, lobbies and results screens, which are
+   * documents: a column of cards you read top to bottom. Those were built as a
+   * viewport-height shell with a `flex-1 overflow-y-auto` body, and the cost of
+   * that is invisible on a desktop and expensive on a phone — the DOCUMENT then
+   * never scrolls, and mobile Safari only collapses its address/tab bars for
+   * document scroll. The bars stayed at full height for the whole page, so every
+   * one of these screens ran ~110px shorter than the feed, which gives that
+   * space back on the first swipe. (The feed's own note is in
+   * `components/radial/radial.css` §The feed.)
+   *
+   * So: no fixed height, and no inner scroller. `svh` — the SMALLEST viewport —
+   * is the floor, so a screen shorter than the window still fills it with the
+   * toolbars showing and never invents a scrollbar; anything longer just makes
+   * the document taller, which is exactly what the feed does.
+   *
+   * Column layout is part of the contract: these screens are a header plus a
+   * body that takes the rest, and the body keeps its `flex-1` so a short one
+   * still reaches the bottom of the window instead of floating in the middle.
+   *
+   * The bottom padding is `.pb-dock`'s reasoning for the app tier: with
+   * `viewport-fit=cover` the document runs edge-to-edge, so the last row of a
+   * page needs the home-indicator inset (which `env()` reports once Safari's bar
+   * collapses) plus a calm gutter, or it ends flush against the screen edge.
+   */
+  .app-page {
+    min-height: 100vh;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: calc(var(--safe-bottom) + var(--site-mobile-content-end));
+  }
+  @media (min-width: 768px) {
+    .app-page {
+      padding-bottom: var(--safe-bottom);
+    }
+  }
+
   /* A page ground that fills the window without overshooting it: `svh` is the
    SMALLEST viewport, so no phantom scroll while the toolbars are showing. */
   .app-ground {
@@ -2738,6 +2780,17 @@ html {
 
 /* Reserve scrollbar space on main UI pages to prevent layout shift */
 html:not(.app-route) {
+  scrollbar-gutter: stable;
+}
+
+/* App/game routes are excluded above because they do not scroll the document —
+   reserving a gutter there would just take a scrollbar's width off a game for
+   nothing. `.app-page` is the exception: it is a full-screen screen that IS a
+   document (see §"Full-screen app/game layout helpers"), so it scrolls the
+   document and wants the same reservation every other reading page gets. It
+   replaces the `scrollbar-gutter: stable both-edges` those screens used to set
+   on the inner scroller they no longer have. */
+html.app-route:has(.app-page) {
   scrollbar-gutter: stable;
 }
 

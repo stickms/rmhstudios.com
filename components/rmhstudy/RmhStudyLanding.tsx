@@ -110,13 +110,10 @@ export default function RmhStudyLanding() {
   }, [joinCode]);
 
   return (
-    <div className="app-viewport">
+    <div className="app-page">
       <RmhStudyHeader backLabel="Builds" backHref="/builds" />
 
-      <div
-        className="flex-1 overflow-y-auto p-4 md:p-8"
-        style={{ scrollbarGutter: 'stable both-edges' }}
-      >
+      <div className="flex-1 p-4 md:p-8">
         <div className="max-w-4xl mx-auto space-y-8">
           {/* Hero */}
           <div className="text-center py-8">

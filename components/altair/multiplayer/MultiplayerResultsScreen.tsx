@@ -28,8 +28,8 @@ export default function MultiplayerResultsScreen({
   const isVictory = results.victory;
 
   return (
-    <div className="app-viewport">
-      <div className="flex-1 overflow-y-auto p-4 md:p-8" style={{ scrollbarGutter: 'stable both-edges' }}>
+    <div className="app-page">
+      <div className="flex-1 p-4 md:p-8">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Title */}
           <div className="text-center py-6">

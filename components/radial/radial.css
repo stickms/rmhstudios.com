@@ -988,8 +988,26 @@ html.perf-lite .radial-backdrop__blob {
   pointer-events: auto;
 }
 /* Transparent full-screen click-catcher (closes on an outside tap); sits below
-   the veil + globe so only empty regions dismiss the menu. */
-.radial-hub__scrim {
+   the veil + globe so only empty regions dismiss the menu.
+
+   Its own class, and that is the whole point of this block. It used to share
+   `.radial-hub__scrim` with the decorative fade under the docked orb, which is
+   a different element in a different part of the tree wanting the opposite
+   geometry — and two single-class rules on one class name do not coexist, they
+   overwrite each other. Both surfaces lost:
+
+     • This one inherited the fade's `width: min(24rem, 92vw)`, its ~92px height
+       and its `translateX(-50%)`, so the "full-screen" catcher was really a
+       359x92 box hanging half off the left edge (measured headless at 390x844).
+       Every tap outside the globe missed it and landed on the overlay, which
+       has no handler — so the documented way out (RadialHub: "Escape, the
+       foot's X and an outside tap") silently had only two doors.
+     • The fade inherited this one's `position: absolute`, `inset: 0` and
+       `background: transparent`, which is the entire rule that draws it — so
+       the legibility fade behind the orb painted nothing at all.
+
+   Separate names, separate rules, both work. */
+.radial-hub__catcher {
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -998,7 +1016,15 @@ html.perf-lite .radial-backdrop__blob {
   margin: 0;
   appearance: none;
   background: transparent;
-  cursor: default;
+  /* `inset: 0` is not enough on its own, and the reason is easy to miss: the
+     overlay is `display: grid; place-items: center`, and an absolutely
+     positioned grid child still takes its container's alignment. `center`
+     replaces the stretch `inset: 0` would otherwise resolve to, which would
+     shrink-wrap this box all over again even with the class collision gone. */
+  place-self: stretch;
+  /* Empty space around the globe reads as a handle, because it is one — the
+     globe's gesture claims this surface (LiquidGlobe, `data-globe-surface`). */
+  cursor: grab;
 }
 /* Background scroll is blocked by the OVERLAY, not by a CSS scroll-lock on the
    document. Both overflow:hidden and the position:fixed body technique clip the
@@ -1013,6 +1039,18 @@ html.perf-lite .radial-backdrop__blob {
 .radial-hub[data-phase='open'] .radial-hub__overlay,
 .radial-hub[data-phase='closing'] .radial-hub__overlay {
   touch-action: none;
+  /* The whole overlay turns the globe (LiquidGlobe's surface listener), not
+     just the sphere — so the guarantees the stage has always given the gesture
+     have to hold across all of it: a drag that crosses the foot capsule must
+     not start selecting the visitor's own display name, and a press on empty
+     space must not flash a tap highlight on a surface whose job is to be
+     dragged. `touch-action` above is the third, and was already here. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.radial-hub__overlay:has(.radial-globe__stage[data-grabbing='true']) .radial-hub__catcher {
+  cursor: grabbing;
 }
 /* The expanding circular VEIL — the menu's "surface". A disc grows from the
    centre (where the orb now sits) out to the viewport corners, sinking the page
