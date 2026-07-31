@@ -40,7 +40,7 @@
   "mode-gyro": "Gyro",
   "mode-gyro-hint": "One screen. Move your device to look around as you drive.",
   "mode-vr": "VR",
-  "mode-vr-hint": "Split screen for a headset or phone viewer. Hold a screen edge to steer.",
+  "mode-vr-hint": "Split screen for a headset or phone viewer. Turn your head to steer; tap to boost.",
   "multiplayer": "Mehrspieler",
   "not-ready": "NICHT BEREIT",
   "or-divider": "— oder —",
