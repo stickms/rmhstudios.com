@@ -131,7 +131,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  aria-label={t('comment', { defaultValue:'Comment'})}
  className="group flex min-h-11 min-w-11 items-center justify-self-start rounded-full text-site-text-muted hover:text-site-accent transition-colors duration-150"
  >
- <span className={`${engagementPill} h-9 gap-1 px-2.5 group-hover:bg-site-accent-dim/50 group-active:scale-95`}>
+ <span className={`${engagementPill} h-9 gap-0.5 px-2 sm:gap-1 sm:px-2.5 group-hover:bg-site-accent-dim/50 group-active:scale-95`}>
  <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform"aria-hidden />
  <EngagementCount value={item.commentCount} />
  </span>
@@ -162,7 +162,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  >
  <span
  ref={repostIconRef}
- className={`${engagementPill} h-9 gap-1 px-2.5 group-hover:bg-site-success/10 group-active:scale-95`}
+ className={`${engagementPill} h-9 gap-0.5 px-2 sm:gap-1 sm:px-2.5 group-hover:bg-site-success/10 group-active:scale-95`}
  >
  <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform"aria-hidden />
  <EngagementCount value={item.repostCount} />
@@ -234,7 +234,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  : t('like', { defaultValue:'Like'})
  }
  >
- <span className={`${engagementPill} h-9 gap-1 px-2.5 group-hover:bg-site-danger/10 group-active:scale-95`}>
+ <span className={`${engagementPill} h-9 gap-0.5 px-2 sm:gap-1 sm:px-2.5 group-hover:bg-site-danger/10 group-active:scale-95`}>
  <Heart
  className={`w-4 h-4 group-hover:scale-110 transition-transform ${item.liked ?'fill-current':''}`}
  aria-hidden
@@ -243,9 +243,13 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  </span>
  </button>
 
- {/* Views */}
- <div className="flex min-h-11 items-center justify-self-start text-site-text-dim">
- <span className={`${engagementPill} h-9 gap-1 px-2.5`}>
+ {/* Views — pinned to the row's RIGHT edge rather than its column's left.
+ The pills hug their counts and the view count is the largest number on
+ the row ("18.4K"), so a left-pinned last column let this pill grow out
+ past the end of the row on a 320px screen. Nothing the viewer taps
+ changes this count, so anchoring the far side costs no stability. */}
+ <div className="flex min-h-11 items-center justify-self-end text-site-text-dim">
+ <span className={`${engagementPill} h-9 gap-0.5 px-2 sm:gap-1 sm:px-2.5`}>
  <Eye className="w-4 h-4"/>
  <EngagementCount value={item.viewCount} />
  </span>
