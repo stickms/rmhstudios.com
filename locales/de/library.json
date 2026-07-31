@@ -36,7 +36,7 @@
   "collection-by": "von {{who}}",
   "collection-delete-confirm": "Diese Sammlung löschen? Die Bücher werden nicht gelöscht.",
   "collection-desc-placeholder": "Optional",
-  "collection-empty": "No books yet.",
+  "collection-empty": "Noch keine Bücher.",
   "collection-rename-prompt": "Sammlungsname",
   "collection-title-placeholder": "z. B. Meine Leseliste",
   "collections-community": "Reader collections",
@@ -81,7 +81,7 @@
   "result-count_one": "{{count}} things to explore",
   "result-count_other": "{{count}} things to explore",
   "search-label": "Bibliothek durchsuchen",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "Bücher, Alben, Playlists und Reads suchen…",
   "search-your-books": "Deine Bücher durchsuchen…",
   "section-albums": "Alben",
   "section-blog": "Blog",
@@ -94,6 +94,6 @@
   "tilt-hint-off": "Schalte die 3D-Neigung ein und bewege dein Handy, um dich umzusehen.",
   "tilt-hint-on": "Neige dein Handy, um dich im Regal umzusehen.",
   "tilt-label": "3D-Neigung",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "Buch hinzufügen",
+  "upload-label": "PDF hochladen"
 }
