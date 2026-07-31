@@ -33,7 +33,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 
 import type { NeonDriftwayEngine } from './game';
 import type { GyroSample } from './gyro';
-import { LookController } from './camera';
+import { LookController, yawOf } from './camera';
 import type { LevelConfig } from './types';
 import {
   CAR_LENGTH, CAR_WIDTH, EYE_HEIGHT, EYE_X, EYE_Z,
@@ -280,7 +280,7 @@ export class NeonDriftwayRenderer3D {
     if (v.sun) {
       (this.sun.material as THREE.MeshBasicMaterial).color.set(v.sun.color);
       this.sun.scale.setScalar(v.sun.size);
-      this.sun.position.set(0, v.sun.height * 2600, 2600);
+      this.sun.position.set(0, v.sun.height * 2600, -2600);
     }
     this.stars.visible = v.stars;
 
@@ -359,6 +359,14 @@ export class NeonDriftwayRenderer3D {
   /** Whether head look is being driven by real sensor data. */
   get headLookLive(): boolean {
     return this.look.isLive;
+  }
+
+  /**
+   * Where the driver is looking, in radians off the recentred forward.
+   * Positive is a look to the left. Zero whenever head look is not live.
+   */
+  get headYaw(): number {
+    return this.look.isLive ? yawOf(this.look.quaternion) : 0;
   }
 
   draw(game: NeonDriftwayEngine, dt: number, gyro: GyroSample | null): void {
@@ -527,7 +535,7 @@ export class NeonDriftwayRenderer3D {
       const z = (firstPost + i) * POST_SPACING - worldZ;
       for (const side of [-1, 1]) {
         if (index >= postCapacity) break;
-        dummy.position.set(side * half, 0, z);
+        dummy.position.set(side * half, 0, -z);
         dummy.rotation.set(0, 0, 0);
         dummy.scale.set(0.12, GUARDRAIL_HEIGHT, 0.12);
         dummy.updateMatrix();
@@ -547,19 +555,19 @@ export class NeonDriftwayRenderer3D {
       const z = slot * LAMP_SPACING - worldZ;
       const side = slot % 2 === 0 ? -1 : 1;
       if (index >= lampCapacity) break;
-      dummy.position.set(side * (half + 1.6), 0, z);
+      dummy.position.set(side * (half + 1.6), 0, -z);
       dummy.rotation.set(0, 0, 0);
       dummy.scale.set(0.16, 8.5, 0.16);
       dummy.updateMatrix();
       this.lampPoles.setMatrixAt(index, dummy.matrix);
 
-      dummy.position.set(side * (half + 0.7), 8.2, z);
+      dummy.position.set(side * (half + 0.7), 8.2, -z);
       dummy.scale.set(1.7, 0.22, 0.5);
       dummy.updateMatrix();
       this.lampHeads.setMatrixAt(index, dummy.matrix);
 
       // Halo billboard, turned to face down the road (good enough at this size).
-      dummy.position.set(side * (half + 0.7), 8.2, z + 0.4);
+      dummy.position.set(side * (half + 0.7), 8.2, -z - 0.4);
       dummy.rotation.set(0, 0, 0);
       dummy.scale.set(6, 6, 1);
       dummy.updateMatrix();
@@ -583,7 +591,7 @@ export class NeonDriftwayRenderer3D {
     for (let i = 0; i < archCount; i++) {
       const slot = firstArch + i;
       const z = slot * ARCH_SPACING - worldZ;
-      dummy.position.set(0, 0, z);
+      dummy.position.set(0, 0, -z);
       dummy.rotation.set(0, 0, 0);
       dummy.scale.set(archRadius, archRadius * 0.55, archRadius);
       dummy.updateMatrix();
@@ -613,7 +621,7 @@ export class NeonDriftwayRenderer3D {
         const seed = hash01(slot * 2 + (side > 0 ? 1 : 0));
         const height = 6 + seed * tall;
         const offset = 24 + hash01(slot * 7 + side) * 46;
-        dummy.position.set(side * (half + offset), 0, z);
+        dummy.position.set(side * (half + offset), 0, -z);
         dummy.rotation.set(0, seed * 0.4, 0);
         dummy.scale.set(8 + seed * 12, height, 8 + hash01(slot + side * 3) * 14);
         dummy.updateMatrix();
@@ -638,10 +646,12 @@ export class NeonDriftwayRenderer3D {
 
     for (const o of game.obstacles) {
       if (!o.active) continue;
+      // The simulation measures distance ahead as +Z; the camera looks down -Z.
+      const oz = -o.z;
 
       switch (o.type) {
         case 'cone':
-          dummy.position.set(o.x, 0, o.z);
+          dummy.position.set(o.x, 0, oz);
           dummy.rotation.set(0, 0, 0);
           dummy.scale.set(o.width, o.height, o.width);
           dummy.updateMatrix();
@@ -649,7 +659,7 @@ export class NeonDriftwayRenderer3D {
           break;
 
         case 'barrier':
-          dummy.position.set(o.x, 0, o.z);
+          dummy.position.set(o.x, 0, oz);
           dummy.rotation.set(0, o.yaw, 0);
           dummy.scale.set(o.width, o.height, o.length);
           dummy.updateMatrix();
@@ -657,7 +667,7 @@ export class NeonDriftwayRenderer3D {
           break;
 
         case 'debris':
-          dummy.position.set(o.x, o.height * 0.45, o.z);
+          dummy.position.set(o.x, o.height * 0.45, oz);
           dummy.rotation.set(o.yaw * 0.7, o.yaw, o.yaw * 0.4);
           dummy.scale.set(o.width, o.height, o.length);
           dummy.updateMatrix();
@@ -666,7 +676,7 @@ export class NeonDriftwayRenderer3D {
 
         case 'puddle':
         case 'hydro_strip':
-          dummy.position.set(o.x, 0.015, o.z);
+          dummy.position.set(o.x, 0.015, oz);
           dummy.rotation.set(0, 0, 0);
           dummy.scale.set(o.width, 1, o.length);
           dummy.updateMatrix();
@@ -674,19 +684,19 @@ export class NeonDriftwayRenderer3D {
           break;
 
         case 'boost_pad':
-          dummy.position.set(o.x, 0.02, o.z);
+          dummy.position.set(o.x, 0.02, oz);
           dummy.rotation.set(0, 0, 0);
           dummy.scale.set(o.width, 1, o.length);
           dummy.updateMatrix();
           this.boostPads.setMatrixAt(boosts, dummy.matrix);
-          dummy.position.set(o.x, 1.6, o.z);
+          dummy.position.set(o.x, 1.6, oz);
           dummy.scale.set(o.width * 0.8, 3.2, o.width * 0.8);
           dummy.updateMatrix();
           this.boostBeams.setMatrixAt(boosts++, dummy.matrix);
           break;
 
         case 'ability_slowdown':
-          dummy.position.set(o.x, 1.1 + Math.sin(this.time * 3 + o.id) * 0.18, o.z);
+          dummy.position.set(o.x, 1.1 + Math.sin(this.time * 3 + o.id) * 0.18, oz);
           dummy.rotation.set(this.time * 0.8, this.time * 1.3, 0);
           dummy.scale.setScalar(o.width);
           dummy.updateMatrix();
@@ -698,7 +708,7 @@ export class NeonDriftwayRenderer3D {
           const isTruck = o.type === 'traffic_truck';
           const bodyHeight = isTruck ? o.height * 0.78 : o.height * 0.62;
 
-          dummy.position.set(o.x, 0, o.z);
+          dummy.position.set(o.x, 0, oz);
           dummy.rotation.set(0, o.yaw, 0);
           dummy.scale.set(o.width, bodyHeight, o.length);
           dummy.updateMatrix();
@@ -707,24 +717,24 @@ export class NeonDriftwayRenderer3D {
 
           if (isTruck) {
             // Cab sits ahead of the trailer rather than on top of it.
-            dummy.position.set(o.x, 0, o.z + o.length * 0.42);
+            dummy.position.set(o.x, 0, oz - o.length * 0.42);
             dummy.scale.set(o.width * 0.96, o.height, o.length * 0.22);
           } else {
-            dummy.position.set(o.x, bodyHeight, o.z - o.length * 0.05);
+            dummy.position.set(o.x, bodyHeight, oz + o.length * 0.05);
             dummy.scale.set(o.width * 0.88, o.height - bodyHeight, o.length * 0.46);
           }
           dummy.updateMatrix();
           this.vehicleCabins.setMatrixAt(vehicles, dummy.matrix);
 
           // Tail lights face the player: traffic drives away from us.
-          dummy.position.set(o.x, bodyHeight * 0.6, o.z - o.length / 2 - 0.02);
+          dummy.position.set(o.x, bodyHeight * 0.6, oz + o.length / 2 + 0.02);
           dummy.rotation.set(0, o.yaw, 0);
           dummy.scale.set(o.width * 0.82, 0.16, 0.06);
           dummy.updateMatrix();
           this.vehicleTails.setMatrixAt(vehicles, dummy.matrix);
 
           // Underglow pool on the tarmac — the cue that reads furthest away.
-          dummy.position.set(o.x, 0.03, o.z);
+          dummy.position.set(o.x, 0.03, oz);
           dummy.rotation.set(0, o.yaw, 0);
           dummy.scale.set(o.width * 1.5, 1, o.length * 1.2);
           dummy.updateMatrix();
@@ -733,7 +743,7 @@ export class NeonDriftwayRenderer3D {
 
           if (o.signaling && blink) {
             const side = o.targetLane > o.lane ? 1 : -1;
-            dummy.position.set(o.x + side * o.width * 0.5, bodyHeight * 0.62, o.z - o.length * 0.3);
+            dummy.position.set(o.x + side * o.width * 0.5, bodyHeight * 0.62, oz + o.length * 0.3);
             dummy.rotation.set(0, o.yaw, 0);
             dummy.scale.set(0.1, 0.16, 0.5);
             dummy.updateMatrix();
@@ -783,7 +793,7 @@ export class NeonDriftwayRenderer3D {
       const rawZ = (distance - game.distance) * METRES_PER_DISTANCE;
       // Runs diverge fast; park runaway ghosts at the edge of vision instead of
       // culling them, so you can still see who is ahead.
-      const z = clamp(rawZ, -90, 260);
+      const z = -clamp(rawZ, -90, 260);
 
       ghost.group.visible = true;
       ghost.group.position.set(x, 0, z);
@@ -807,7 +817,7 @@ export class NeonDriftwayRenderer3D {
       const i3 = n * 3;
       this.sparkPositions[i3] = p.x;
       this.sparkPositions[i3 + 1] = p.y;
-      this.sparkPositions[i3 + 2] = p.z;
+      this.sparkPositions[i3 + 2] = -p.z;
       scratchColor.set(p.color);
       const fade = p.maxLife > 0 ? p.life / p.maxLife : 0;
       this.sparkColors[i3] = scratchColor.r * fade;
@@ -832,10 +842,10 @@ export class NeonDriftwayRenderer3D {
       for (let i = 0; i < RAIN_COUNT; i++) {
         const i6 = i * 6;
         let y = this.rainPositions[i6 + 1] - fall * dt;
-        let z = this.rainPositions[i6 + 2] - drift * dt;
-        if (y < -1 || z < -12) {
+        let z = this.rainPositions[i6 + 2] + drift * dt;
+        if (y < -1 || z > 12) {
           y = 11 + this.rainSeeds[i] * 8;
-          z = 4 + this.rainSeeds[i] * 46;
+          z = -(4 + this.rainSeeds[i] * 46);
           this.rainPositions[i6] = carX + (this.rainSeeds[i] - 0.5) * 32;
           this.rainPositions[i6 + 3] = this.rainPositions[i6];
         }
@@ -843,7 +853,7 @@ export class NeonDriftwayRenderer3D {
         this.rainPositions[i6 + 1] = y;
         this.rainPositions[i6 + 2] = z;
         this.rainPositions[i6 + 4] = y - length;
-        this.rainPositions[i6 + 5] = z - length * 0.55;
+        this.rainPositions[i6 + 5] = z + length * 0.55;
       }
       (this.rain.geometry.getAttribute('position') as THREE.BufferAttribute).needsUpdate = true;
     }
@@ -856,9 +866,9 @@ export class NeonDriftwayRenderer3D {
       const rush = 60 + streakStrength * 190;
       for (let i = 0; i < STREAK_COUNT; i++) {
         const i6 = i * 6;
-        let z = this.streakPositions[i6 + 2] - rush * dt;
-        if (z < -6) {
-          z = 40 + this.streakSeeds[i * 2] * 60;
+        let z = this.streakPositions[i6 + 2] + rush * dt;
+        if (z > 6) {
+          z = -(40 + this.streakSeeds[i * 2] * 60);
           const angle = this.streakSeeds[i * 2 + 1] * Math.PI * 2;
           const radius = 2.5 + this.streakSeeds[i * 2] * 9;
           this.streakPositions[i6] = carX + Math.cos(angle) * radius;
@@ -903,7 +913,7 @@ export class NeonDriftwayRenderer3D {
     const sinceHit = game.car.invincibleUntil - game.elapsedMs;
     const flash = clamp(sinceHit / 600, 0, 1);
     this.impactLight.intensity = flash * 260;
-    this.impactLight.position.set(game.car.x, 1.4, 2.5);
+    this.impactLight.position.set(game.car.x, 1.4, -2.5);
 
     if (this.bloomPass) {
       const boosting = game.car.speed > V_MAX_NORMAL;
@@ -975,8 +985,8 @@ export class NeonDriftwayRenderer3D {
     for (let i = 0; i < 2; i++) {
       const side = i === 0 ? -1 : 1;
       const light = new THREE.SpotLight(0xfff2d0, HEADLIGHT_INTENSITY, 240, 0.44, 0.6, 1.4);
-      light.position.set(side * 0.68, 0.62, CAR_LENGTH / 2);
-      light.target.position.set(side * 2.2, 0, 95);
+      light.position.set(side * 0.68, 0.62, -CAR_LENGTH / 2);
+      light.target.position.set(side * 2.2, 0, -95);
       this.carRig.add(light);
       this.carRig.add(light.target);
       this.headlights.push(light);
@@ -1064,7 +1074,7 @@ export class NeonDriftwayRenderer3D {
       groundGeometry,
       new THREE.MeshStandardMaterial({ color: 0x3a3038, roughness: 1, metalness: 0 }),
     );
-    this.ground.position.set(0, -0.06, ROAD_LENGTH / 2 - ROAD_BEHIND);
+    this.ground.position.set(0, -0.06, ROAD_BEHIND - ROAD_LENGTH / 2);
     this.world.add(this.ground);
 
     // Road surface. Width is set per level by applyRoadWidth().
@@ -1083,7 +1093,7 @@ export class NeonDriftwayRenderer3D {
         metalness: 0.1,
       }),
     );
-    this.road.position.set(0, 0, ROAD_LENGTH / 2 - ROAD_BEHIND);
+    this.road.position.set(0, 0, ROAD_BEHIND - ROAD_LENGTH / 2);
     this.world.add(this.road);
 
     // Guardrails: one long box a side, plus streamed posts.
@@ -1091,7 +1101,7 @@ export class NeonDriftwayRenderer3D {
     const railMaterial = new THREE.MeshStandardMaterial({ color: 0x9a9aa5, roughness: 0.5, metalness: 0.65 });
     for (const side of [-1, 1]) {
       const rail = new THREE.Mesh(railGeometry, railMaterial);
-      rail.position.set(side, GUARDRAIL_HEIGHT, ROAD_LENGTH / 2 - ROAD_BEHIND);
+      rail.position.set(side, GUARDRAIL_HEIGHT, ROAD_BEHIND - ROAD_LENGTH / 2);
       this.world.add(rail);
       this.rails.push(rail);
     }
@@ -1105,7 +1115,7 @@ export class NeonDriftwayRenderer3D {
         neonGeometry,
         new THREE.MeshBasicMaterial({ color: 0xff9ecb, toneMapped: false }),
       );
-      strip.position.set(side, 0.16, ROAD_LENGTH / 2 - ROAD_BEHIND);
+      strip.position.set(side, 0.16, ROAD_BEHIND - ROAD_LENGTH / 2);
       this.world.add(strip);
       this.neonRails.push(strip);
     }
@@ -1514,14 +1524,14 @@ export class NeonDriftwayRenderer3D {
       this.rainSeeds[i] = seed;
       const x = (Math.random() - 0.5) * 32;
       const y = Math.random() * 14;
-      const z = Math.random() * 52 - 6;
+      const z = -(Math.random() * 52 - 6);
       const i6 = i * 6;
       this.rainPositions[i6] = x;
       this.rainPositions[i6 + 1] = y;
       this.rainPositions[i6 + 2] = z;
       this.rainPositions[i6 + 3] = x;
       this.rainPositions[i6 + 4] = y - 1;
-      this.rainPositions[i6 + 5] = z - 0.5;
+      this.rainPositions[i6 + 5] = z + 0.5;
     }
     const rainGeometry = new THREE.BufferGeometry();
     rainGeometry.setAttribute('position', new THREE.BufferAttribute(this.rainPositions, 3));
@@ -1543,7 +1553,7 @@ export class NeonDriftwayRenderer3D {
       const i6 = i * 6;
       this.streakPositions[i6] = Math.cos(angle) * radius;
       this.streakPositions[i6 + 1] = 1.2 + Math.sin(angle) * radius * 0.5;
-      this.streakPositions[i6 + 2] = Math.random() * 90;
+      this.streakPositions[i6 + 2] = -Math.random() * 90;
       this.streakPositions[i6 + 3] = this.streakPositions[i6];
       this.streakPositions[i6 + 4] = this.streakPositions[i6 + 1];
       this.streakPositions[i6 + 5] = this.streakPositions[i6 + 2] + 6;
@@ -1589,63 +1599,63 @@ export class NeonDriftwayRenderer3D {
 
     // Roof — front edge at z = 0.6, which puts it ~25° above the eye line and
     // leaves the road, not the headlining, filling the screen.
-    const roof = panel(2.05, 3.1, shell);
+    const roof = panel(2.25, 3.1, shell);
     roof.rotation.x = Math.PI / 2;
-    roof.position.set(0, ROOF_Y, -0.95);
+    roof.position.set(0, ROOF_Y, 0.95);
     this.cockpit.add(roof);
 
     // Door cards stop at the window sill, so the side windows are open.
     for (const side of [-1, 1]) {
       const door = panel(3.2, SILL_Y - 0.12, shell);
       door.rotation.y = (side * Math.PI) / 2;
-      door.position.set(side * 1.0, (SILL_Y + 0.18) / 2, -0.6);
+      door.position.set(side * 1.08, (SILL_Y + 0.18) / 2, 0.6);
       this.cockpit.add(door);
 
       const sill = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.07, 3.2), trim);
-      sill.position.set(side * 1.0, SILL_Y, -0.6);
+      sill.position.set(side * 1.08, SILL_Y, 0.6);
       this.cockpit.add(sill);
 
       // Door mirror on a stalk — visible when you glance sideways.
       const stalk = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.03, 0.03), trim);
-      stalk.position.set(side * 1.1, SILL_Y + 0.12, 1.0);
+      stalk.position.set(side * 1.18, SILL_Y + 0.12, -1.0);
       this.cockpit.add(stalk);
       const mirror = new THREE.Mesh(
         new THREE.BoxGeometry(0.05, 0.15, 0.26),
         new THREE.MeshStandardMaterial({ color: 0x8fa6c0, roughness: 0.15, metalness: 0.9 }),
       );
-      mirror.position.set(side * 1.2, SILL_Y + 0.14, 1.0);
+      mirror.position.set(side * 1.3, SILL_Y + 0.14, -1.0);
       this.cockpit.add(mirror);
 
       // A-pillar, raked back from the sill to the roof edge.
-      const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.95, 0.1), trim);
-      pillar.position.set(side * 0.94, (SILL_Y + ROOF_Y) / 2 + 0.02, 0.88);
-      pillar.rotation.x = -0.36;
+      const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.95, 0.09), trim);
+      pillar.position.set(side * 1.02, (SILL_Y + ROOF_Y) / 2 + 0.02, -1.05);
+      pillar.rotation.x = 0.24;
       this.cockpit.add(pillar);
 
       // Rear pillar, so the roof is not floating when you look back.
       const cPillar = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.7, 0.12), trim);
-      cPillar.position.set(side * 0.94, (SILL_Y + ROOF_Y) / 2, -2.2);
-      cPillar.rotation.x = 0.35;
+      cPillar.position.set(side * 1.02, (SILL_Y + ROOF_Y) / 2, 2.2);
+      cPillar.rotation.x = -0.35;
       this.cockpit.add(cPillar);
     }
 
     // Rear bulkhead + parcel shelf — low enough to see over when looking back.
-    const rear = panel(2.0, 0.85, shell);
-    rear.position.set(0, 0.55, -2.35);
+    const rear = panel(2.2, 0.85, shell);
+    rear.position.set(0, 0.55, 2.35);
     this.cockpit.add(rear);
-    const shelf = panel(2.0, 0.8, shell);
+    const shelf = panel(2.2, 0.8, shell);
     shelf.rotation.x = -Math.PI / 2;
-    shelf.position.set(0, 0.97, -1.95);
+    shelf.position.set(0, 0.97, 1.95);
     this.cockpit.add(shelf);
 
-    const floor = panel(2.0, 4.6, shell);
+    const floor = panel(2.2, 4.6, shell);
     floor.rotation.x = -Math.PI / 2;
-    floor.position.set(0, 0.18, 0.15);
+    floor.position.set(0, 0.18, -0.15);
     this.cockpit.add(floor);
 
     // Windscreen header.
-    const header = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.1, 0.18), trim);
-    header.position.set(0, ROOF_Y - 0.04, 0.6);
+    const header = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 0.18), trim);
+    header.position.set(0, ROOF_Y - 0.04, -0.78);
     this.cockpit.add(header);
 
     // Rear-view mirror, offset so it does not sit in the middle of the road.
@@ -1653,18 +1663,18 @@ export class NeonDriftwayRenderer3D {
       new THREE.BoxGeometry(0.42, 0.1, 0.04),
       new THREE.MeshStandardMaterial({ color: 0x2a3542, roughness: 0.2, metalness: 0.8 }),
     );
-    rearView.position.set(0.2, ROOF_Y - 0.18, 0.5);
+    rearView.position.set(EYE_X + 0.12, ROOF_Y - 0.14, -0.72);
     this.cockpit.add(rearView);
 
     // Dashboard, sitting below the sight line, with a lit strip along its edge.
-    const dash = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.74, 0.78), trim);
-    dash.position.set(0, 0.53, 1.05);
+    const dash = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.74, 0.78), trim);
+    dash.position.set(0, 0.53, -1.05);
     this.cockpit.add(dash);
     const glow = new THREE.Mesh(
-      new THREE.BoxGeometry(1.9, 0.02, 0.05),
+      new THREE.BoxGeometry(2.1, 0.02, 0.05),
       new THREE.MeshBasicMaterial({ color: 0x8fe3ff, toneMapped: false }),
     );
-    glow.position.set(0, 0.875, 0.68);
+    glow.position.set(0, 0.875, -0.68);
     this.cockpit.add(glow);
 
     // Bonnet — the single biggest cue that you are inside a car. Its far edge
@@ -1673,8 +1683,8 @@ export class NeonDriftwayRenderer3D {
       new THREE.BoxGeometry(1.94, 0.07, 1.15),
       new THREE.MeshStandardMaterial({ color: 0x00c8ff, roughness: 0.32, metalness: 0.55 }),
     );
-    this.hood.position.set(0, 0.9, 1.78);
-    this.hood.rotation.x = 0.05;
+    this.hood.position.set(0, 0.9, -1.78);
+    this.hood.rotation.x = -0.05;
     this.cockpit.add(this.hood);
 
     // Steering wheel, in its own group so it can spin about its own axis.
@@ -1690,10 +1700,10 @@ export class NeonDriftwayRenderer3D {
       new THREE.CircleGeometry(0.052, 16),
       new THREE.MeshBasicMaterial({ color: 0x00d5ff }),
     );
-    boss.position.z = 0.014;
+    boss.position.z = -0.014;
     this.steeringWheel.add(boss);
-    this.steeringWheel.position.set(EYE_X, 0.72, 0.72);
-    this.steeringWheel.rotation.x = -1.1;
+    this.steeringWheel.position.set(EYE_X, 0.72, -0.72);
+    this.steeringWheel.rotation.x = 1.1;
     this.cockpit.add(this.steeringWheel);
 
     // Rain on the glass, on the car rather than on the head.
@@ -1706,8 +1716,8 @@ export class NeonDriftwayRenderer3D {
         depthWrite: false,
       }),
     );
-    this.windshield.position.set(0, 1.22, 0.98);
-    this.windshield.rotation.x = -0.4;
+    this.windshield.position.set(0, 1.22, -0.98);
+    this.windshield.rotation.x = 0.4;
     this.windshield.visible = false;
     this.cockpit.add(this.windshield);
   }

@@ -146,10 +146,6 @@
      cover swings to reveal when it spins on hover. */
   transform-style: preserve-3d;
   transform-origin: left center;
-  /* Identity at rest — the variables are 0 everywhere except under a live
-     gyroscope, where they turn the book on its spine as the phone moves. The
-     hover/press rules below are more specific and still win outright. */
-  transform: translateY(var(--lib-book-lift, 0px)) rotateY(var(--lib-book-spin, 0deg));
   transition:
     transform 420ms cubic-bezier(0.34, 1.2, 0.4, 1),
     box-shadow 420ms ease;
@@ -1629,6 +1625,43 @@
 .lib-book__wrap {
   position: relative;
 }
+
+/* Per-book entry point into the 3D viewer (components/library/Book3DViewer).
+   A sibling of the cover's <Link>, pinned to the cover's top corner. It is
+   always visible rather than hover-revealed: the device this exists for has no
+   hover, and the shelf's own 3D flourishes never fire there. */
+.lib-book__inspect {
+  position: absolute;
+  z-index: 3;
+  top: 16px;
+  right: 16px;
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--site-glass-rim-soft, var(--site-border));
+  border-radius: 999px;
+  background: var(--site-glass-tint-strong, var(--site-surface));
+  color: var(--site-text);
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(var(--site-glass-blur-chrome));
+  backdrop-filter: blur(var(--site-glass-blur-chrome));
+  transition:
+    background var(--site-transition-speed),
+    transform 0.15s ease;
+}
+.lib-book__inspect:hover {
+  background: var(--site-surface-hover);
+}
+.lib-book__inspect:active {
+  transform: scale(0.92);
+}
+@media (prefers-reduced-motion: reduce) {
+  .lib-book__inspect:active {
+    transform: none;
+  }
+}
 .lib-book__wrap.is-hidden-book {
   opacity: 0.45;
 }
@@ -2055,84 +2088,6 @@
     color-mix(in srgb, var(--site-accent, #9b7ad8) 17%, transparent),
     transparent 31rem
   );
-}
-
-/* Structural header rules. Material and placement come from the shared
-   `.glass-chrome` class and the catalog-scoped playground layer below. */
-.lib-head {
-  display: flex;
-  align-items: center;
-  min-height: 58px;
-  gap: 12px;
-  padding: max(8px, env(safe-area-inset-top)) clamp(16px, 4vw, 44px) 8px;
-}
-
-.lib-head__brand {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  gap: 9px;
-  color: var(--site-text, #f5f5f7);
-  font-size: 0.92rem;
-  font-weight: 650;
-  letter-spacing: -0.015em;
-}
-
-.lib-head__brand svg {
-  color: var(--site-text-muted, #8f8f96);
-}
-/* Header controls sit as one group on the trailing edge: the gyroscope toggle
-   (phones only) next to the upload button (signed in only), either of which can
-   be absent. */
-.lib-head__actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-inline-start: auto;
-}
-
-.lib-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: end;
-  gap: clamp(38px, 7vw, 112px);
-  max-width: 1400px;
-  /* Floats as a glass slab (§8.4): a block gap opens the aurora above/below;
-     .glass-pane owns the frost/border/radius, .glass-refract the edge lens. */
-  margin: clamp(14px, 2.5vw, 24px) auto;
-  padding: clamp(56px, 8vw, 118px) clamp(20px, 5vw, 72px) clamp(48px, 6vw, 74px);
-}
-
-.lib-hero__copy {
-  max-width: 820px;
-}
-.lib-hero__eyebrow {
-  margin: 0 0 14px;
-  color: var(--site-text-dim, #77777f);
-  font-size: 0.67rem;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-}
-
-.lib-hero h1 {
-  max-width: 820px;
-  margin: 0;
-  color: var(--site-text, #f7f7f9);
-  font-size: clamp(3rem, 7.2vw, 7.2rem);
-  font-weight: 650;
-  line-height: 0.94;
-  letter-spacing: -0.065em;
-  text-wrap: balance;
-}
-
-.lib-hero__lede {
-  max-width: 700px;
-  margin: clamp(24px, 4vw, 38px) 0 0;
-  color: var(--site-text-muted, #9a9aa2);
-  font-size: clamp(1rem, 1.7vw, 1.25rem);
-  line-height: 1.55;
-  text-wrap: pretty;
 }
 
 .lib-search {
@@ -2636,14 +2591,6 @@
 }
 
 @media (max-width: 800px) {
-  .lib-hero {
-    grid-template-columns: 1fr;
-    gap: 38px;
-    padding-block: 66px 54px;
-  }
-  .lib-hero h1 {
-    font-size: clamp(3rem, 13.5vw, 5.2rem);
-  }
   .lib-search {
     margin-top: 0;
   }
@@ -2676,15 +2623,6 @@
 }
 
 @media (max-width: 560px) {
-  .lib-head {
-    padding-inline: 10px 14px;
-  }
-  .lib-head__brand svg {
-    display: none;
-  }
-  .lib-hero {
-    padding-inline: 20px;
-  }
   .lib__shelf--catalog {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 34px 12px;
@@ -2756,13 +2694,6 @@
 }
 
 .lib-playground {
-  /* Rest pose for every orbiting object below. Declared on the container so a
-     single write here (the gyroscope path) leans the whole shelf through
-     inheritance; the pointer path writes the same names inline on one card. */
-  --lib-orbit-x: 0deg;
-  --lib-orbit-y: 0deg;
-  --lib-book-spin: 0deg;
-  --lib-book-lift: 0px;
   min-height: 100vh;
   /* `100vh` on mobile is the LARGEST viewport, so this ground is taller than
      the visible page whenever the browser toolbars are showing — the page
@@ -2772,92 +2703,6 @@
   min-height: 100svh;
   padding-inline: var(--lib-gutter);
   perspective: 1200px;
-}
-
-/* The title is a floating capsule, not a full-width app-frame bar. */
-.lib--glass-playground .lib-topbar {
-  position: relative;
-  inset: auto;
-  z-index: 20;
-  max-width: var(--lib-content);
-  margin-inline: auto;
-  padding-top: clamp(8px, 1.5vw, 14px);
-}
-
-.lib--glass-playground .lib-head {
-  min-height: 50px;
-  padding: 6px 8px 6px 14px;
-  border: 1px solid transparent;
-  border-radius: 999px;
-}
-
-.lib--glass-playground .lib-head__brand {
-  gap: 8px;
-  font-family: var(--site-font-display);
-  font-size: 0.88rem;
-}
-
-.lib--glass-playground .lib-upload__open {
-  min-height: 36px;
-  border-color: transparent;
-  background: var(--site-accent-dim);
-  color: var(--site-accent);
-}
-
-.lib--glass-playground .lib-upload__open:hover {
-  border-color: var(--site-border-bright);
-  background: var(--site-surface-hover);
-}
-
-/* The gyroscope toggle borrows the header button's shape and differs only in
-   state: quiet while off, a filled accent while the shelf is following the
-   phone, so the switch reads at a glance on the device it exists for. */
-.lib--glass-playground .lib-tilt {
-  border-color: var(--site-border);
-  background: var(--site-surface);
-  color: var(--site-text-muted);
-}
-
-.lib--glass-playground .lib-tilt.is-active {
-  border-color: var(--site-accent);
-  background: var(--site-accent);
-  color: var(--site-accent-fg);
-}
-
-.lib--glass-playground .lib-tilt.is-active:hover {
-  border-color: var(--site-accent);
-  background: var(--site-accent-hover);
-}
-
-/* Hero: a compact editorial statement, and nothing competing with it. */
-.lib--glass-playground .lib-hero {
-  grid-template-columns: minmax(0, 1fr);
-  align-items: center;
-  gap: clamp(28px, 6vw, 84px);
-  max-width: var(--lib-content);
-  margin: 12px auto;
-  padding: clamp(40px, 6vw, 78px) clamp(20px, 5vw, 68px);
-  overflow: visible;
-  border-radius: calc(var(--site-radius) * 1.35);
-}
-
-.lib--glass-playground .lib-hero__copy {
-  position: relative;
-  z-index: 1;
-  max-width: 800px;
-}
-
-.lib--glass-playground .lib-hero h1 {
-  max-width: 760px;
-  font-size: clamp(2.75rem, 6vw, 5.9rem);
-  line-height: 0.96;
-  letter-spacing: -0.06em;
-}
-
-.lib--glass-playground .lib-hero__lede {
-  max-width: 620px;
-  margin-top: clamp(18px, 3vw, 30px);
-  font-size: clamp(0.98rem, 1.45vw, 1.16rem);
 }
 
 /* The explorer is the only sticky group: search, result feedback, and tabs
@@ -3023,14 +2868,11 @@
   font-size: 0.6875rem;
 }
 
-/* Universal media bubbles. JS supplies the two rotation variables — by delegated
-   pointer events on a desktop, by the device gyroscope on a phone — and the
-   regular glass system supplies the tracked light hotspot.
-   The rest values are declared on `.lib-playground` (above) rather than here, so
-   the gyroscope can lean the WHOLE shelf with a single write on the container
-   and let inheritance do the rest; a pointer still overrides its own card with
-   inline values, which beat anything inherited. */
+/* Universal media bubbles. JS supplies the two rotation variables by delegated
+   pointer events; the regular glass system supplies the tracked light hotspot. */
 .lib-playground [data-library-orbit] {
+  --lib-orbit-x: 0deg;
+  --lib-orbit-y: 0deg;
   --lib-orbit-lift: 0px;
   transform: perspective(900px) translateY(var(--lib-orbit-lift)) rotateX(var(--lib-orbit-x))
     rotateY(var(--lib-orbit-y));
@@ -3047,27 +2889,6 @@
     transform 70ms linear,
     box-shadow var(--site-transition-speed),
     background-color var(--site-transition-speed);
-}
-
-/* ─── Gyroscopic 3D (phones) ────────────────────────────────────────────────
-   `data-tilt-live` is set on the playground while the device's own orientation
-   is driving the shelf. The sensor already arrives spring-smoothed from
-   `useDeviceTilt`, so the transition here is only long enough to hide the gaps
-   between samples — the 0.38s settle would smear a live stream into treacle. */
-.lib-playground[data-tilt-live] [data-library-orbit] {
-  transition:
-    transform 90ms linear,
-    box-shadow var(--site-transition-speed),
-    background-color var(--site-transition-speed);
-}
-
-/* The books' own turn. A cover pivots on its spine (`transform-origin: left
-   center`) to reveal the page-block face — the same move hover makes on a
-   desktop, which on a phone nothing could otherwise trigger. */
-.lib-playground[data-tilt-live] .lib-book__cover {
-  transition:
-    transform 110ms linear,
-    box-shadow 420ms ease;
 }
 
 .lib-playground [data-library-orbit]:hover,
@@ -3159,30 +2980,9 @@
   background: var(--site-surface);
 }
 
-@media (max-width: 800px) {
-  .lib--glass-playground .lib-hero {
-    grid-template-columns: 1fr;
-    gap: 30px;
-    padding-block: 46px 38px;
-  }
-}
-
 @media (max-width: 560px) {
   .lib--glass-playground {
     --lib-gutter: 8px;
-  }
-
-  .lib--glass-playground .lib-head {
-    padding-inline: 6px;
-  }
-
-  .lib--glass-playground .lib-hero {
-    margin-top: 8px;
-    padding: 34px 18px 28px;
-  }
-
-  .lib--glass-playground .lib-hero h1 {
-    font-size: clamp(2.55rem, 13vw, 4rem);
   }
 
   .lib-explorer {
@@ -3225,45 +3025,20 @@
   }
 }
 
-/* Reduced motion kills both inputs. `useDeviceTilt` already reports the sensor
-   as unsupported here (so the toggle never even renders), and these keep the
-   rest pose flat if the attribute somehow survives a preference change. */
 @media (prefers-reduced-motion: reduce) {
-  /* `!important` beats the inline values the tilt path writes here, whatever
-     the specificity — the same lever the orbit rotations below use. */
-  .lib-playground {
-    --lib-book-spin: 0deg !important;
-    --lib-book-lift: 0px !important;
-  }
-
   .lib-playground [data-library-orbit],
-  .lib-playground [data-library-orbit][data-orbit-active],
-  .lib-playground[data-tilt-live] [data-library-orbit] {
+  .lib-playground [data-library-orbit][data-orbit-active] {
     --lib-orbit-x: 0deg !important;
     --lib-orbit-y: 0deg !important;
     transform: translateY(var(--lib-orbit-lift));
     transition: none;
   }
-
-  .lib-playground[data-tilt-live] .lib-book__cover {
-    transition: none;
-  }
 }
 
-html.reduce-motion .lib-playground {
-  --lib-book-spin: 0deg !important;
-  --lib-book-lift: 0px !important;
-}
-
-html.reduce-motion .lib-playground [data-library-orbit],
-html.reduce-motion .lib-playground[data-tilt-live] [data-library-orbit] {
+html.reduce-motion .lib-playground [data-library-orbit] {
   --lib-orbit-x: 0deg !important;
   --lib-orbit-y: 0deg !important;
   transform: translateY(var(--lib-orbit-lift));
-  transition: none;
-}
-
-html.reduce-motion .lib-playground[data-tilt-live] .lib-book__cover {
   transition: none;
 }
 

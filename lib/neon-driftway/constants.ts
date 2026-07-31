@@ -50,8 +50,8 @@ export const CAR_LENGTH = 4.5;
 export const CAR_HEIGHT = 1.32;
 /** Driver's eye, relative to the car's origin (road surface, car centre). */
 export const EYE_HEIGHT = 1.16;
-export const EYE_X = -0.36;
-export const EYE_Z = -0.3;
+export const EYE_X = -0.22;
+export const EYE_Z = 0.3;
 export const CAR_BODY_COLOR = '#00c8ff';
 
 // ── Simulation band ─────────────────────────────────────────────────────────

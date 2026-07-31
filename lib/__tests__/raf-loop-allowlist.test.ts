@@ -44,12 +44,12 @@ import { join } from 'node:path';
  *                                       overlay 60× a second. Starts only while a
  *                                       round is running and cancels on unmount and
  *                                       whenever the round stops.
- *   - hooks/useDeviceTilt.ts          — gyroscope lerp: a frame is scheduled only
- *                                       while the smoothed value is still short of
- *                                       the latest sensor reading, and the loop
+ *   - hooks/useDeviceAttitude.ts      — gyroscope lerp: a frame is scheduled only
+ *                                       while the smoothed rotation is still short
+ *                                       of the latest sensor reading, and the loop
  *                                       stops the frame it arrives; the effect
- *                                       cancels it when tilt is switched off, when
- *                                       the sensor is absent, and on unmount.
+ *                                       cancels it when motion is switched off,
+ *                                       when the sensor is absent, and on unmount.
  *   - hooks/useParallax.ts            — pointer lerp stops once it settles at target.
  *   - hooks/useSpatialParallax.ts     — pointer-event throttle; cancels on unmount.
  *   - hooks/useScrollRestoration.ts, hooks/useCardSheen.ts, hooks/useCelebration.ts,
@@ -117,7 +117,7 @@ const ALLOW = new Set<string>([
   'components/void-breaker/VoidBreakerGame.tsx',
   'hooks/useCardSheen.ts',
   'hooks/useCelebration.ts',
-  'hooks/useDeviceTilt.ts',
+  'hooks/useDeviceAttitude.ts',
   'hooks/useGlassLight.ts',
   'hooks/useLiquidBackground.ts',
   'hooks/useParallax.ts',

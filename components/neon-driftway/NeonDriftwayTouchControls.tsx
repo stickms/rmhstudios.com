@@ -9,16 +9,19 @@
  *    the right, boost in the middle. Buttons are sized in `vmin` so they stay
  *    thumb-sized on a 4" phone and don't turn into slabs on a tablet.
  *  - **Viewer (stereo)** — the phone is in a headset and the screen cannot be
- *    read, so there are no visible buttons at all. The two halves of the panel
- *    become steering zones, the throttle is held open for you, and a two-finger
- *    touch fires boost. This is the only scheme that works when you cannot see
- *    your hands.
+ *    read, so there are no visible buttons at all. Steering comes from head
+ *    yaw and the throttle is held open, which leaves boost as the only manual
+ *    input; the whole panel is that one button, because a full-screen target
+ *    is the only thing you can reliably hit without looking.
  */
 
 import type { MutableRefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pause, RotateCcw } from 'lucide-react';
 import type { InputState } from '@/lib/neon-driftway/types';
+
+/** The button-shaped inputs — `steer` is an axis and is driven by head yaw. */
+type ButtonInput = Exclude<keyof InputState, 'steer'>;
 
 interface Props {
   inputRef: MutableRefObject<InputState>;
@@ -41,7 +44,7 @@ export function NeonDriftwayTouchControls({
   const { t } = useTranslation('c-neon-driftway');
   if (!visible) return null;
 
-  const bind = (key: keyof InputState) => ({
+  const bind = (key: ButtonInput) => ({
     onPointerDown: (e: React.PointerEvent) => {
       e.stopPropagation();
       e.currentTarget.setPointerCapture?.(e.pointerId);
@@ -59,41 +62,24 @@ export function NeonDriftwayTouchControls({
     },
   });
 
-  // ── Viewer mode: invisible half-screen steering, throttle held open ──
+  // ── Viewer mode ──
+  // Head yaw steers and the throttle is held open, so the only thing left for
+  // a hand that cannot see the screen is boost. The whole panel is that
+  // button, which is the one target you can always hit blind.
   if (stereo) {
-    const steer = (key: 'left' | 'right') => ({
-      onPointerDown: (e: React.PointerEvent) => {
-        e.stopPropagation();
-        inputRef.current[key] = true;
-        // A second finger anywhere means boost — reachable without looking.
-        if (e.isPrimary === false) inputRef.current.boost = true;
-      },
-      onPointerUp: (e: React.PointerEvent) => {
-        e.stopPropagation();
-        inputRef.current[key] = false;
-        inputRef.current.boost = false;
-      },
-      onPointerCancel: () => {
-        inputRef.current[key] = false;
-        inputRef.current.boost = false;
-      },
-    });
-
     return (
-      <div className="absolute inset-0 z-20 flex" style={{ touchAction: 'none' }}>
-        <button
-          type="button"
-          className="h-full w-1/2 bg-transparent"
-          aria-label={t('steer-left', { defaultValue: 'Steer left' })}
-          {...steer('left')}
-        />
-        <button
-          type="button"
-          className="h-full w-1/2 bg-transparent"
-          aria-label={t('steer-right', { defaultValue: 'Steer right' })}
-          {...steer('right')}
-        />
-      </div>
+      <button
+        type="button"
+        className="absolute inset-0 z-20 bg-transparent"
+        style={{ touchAction: 'none' }}
+        aria-label={t('boost', { defaultValue: 'BOOST' })}
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          inputRef.current.boost = true;
+        }}
+        onPointerUp={() => { inputRef.current.boost = false; }}
+        onPointerCancel={() => { inputRef.current.boost = false; }}
+      />
     );
   }
 
