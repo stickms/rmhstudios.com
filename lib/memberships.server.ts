@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
+import { transferCoins } from '@/lib/economy/ledger.server';
 
 const PERIOD_DAYS = 30;
 
@@ -69,31 +70,11 @@ export async function joinOrRenewMembership(
   try {
     const now = new Date();
     const expiresAt = await prisma.$transaction(async (tx) => {
-      await tx.userProfile.upsert({
-        where: { userId: supporterId },
-        create: { userId: supporterId, coins: 10 },
-        update: {},
-      });
-      const debit = await tx.userProfile.updateMany({
-        where: { userId: supporterId, coins: { gte: price } },
-        data: { coins: { decrement: price } },
-      });
-      if (debit.count === 0) throw new Error('INSUFFICIENT_COINS');
-
-      await tx.userProfile.upsert({
-        where: { userId: creatorId },
-        create: { userId: creatorId, coins: 10 + price },
-        update: { coins: { increment: price } },
-      });
-      await tx.coinTransaction.create({
-        data: {
-          senderId: supporterId,
-          recipientId: creatorId,
-          amount: price,
-          type: 'MEMBERSHIP',
-          entityType: 'profile',
-          entityId: creatorId,
-        },
+      await transferCoins(supporterId, creatorId, price, {
+        tx,
+        type: 'MEMBERSHIP',
+        entityType: 'profile',
+        entityId: creatorId,
       });
 
       // Extend from the later of now / current expiry, so renewing early stacks.

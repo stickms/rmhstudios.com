@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
+import { debitCoins } from '@/lib/economy/ledger.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { CURRENT_SEASON } from '@/lib/battlepass/season';
 
@@ -35,19 +36,16 @@ export const Route = createFileRoute('/api/battlepass/unlock')({
             });
             if (flip.count === 0) throw new Error('ALREADY_PREMIUM');
 
-            await tx.userProfile.upsert({
-              where: { userId },
-              create: { userId, coins: 10 },
-              update: {},
-            });
-            // Atomic conditional debit; if it fails the premium flip above rolls back.
-            const debit = await tx.userProfile.updateMany({
-              where: { userId, coins: { gte: price } },
-              data: { coins: { decrement: price } },
-            });
-            if (debit.count === 0) throw new Error('INSUFFICIENT_COINS');
-            await tx.coinTransaction.create({
-              data: { recipientId: userId, amount: -price, type: 'PURCHASE', entityType: 'battlepass', entityId: CURRENT_SEASON.id, note: 'Premium pass' },
+            // Pure SINK; if the debit fails the premium flip above rolls back.
+            await debitCoins(userId, price, {
+              tx,
+              type: 'PURCHASE',
+              entityType: 'battlepass',
+              entityId: CURRENT_SEASON.id,
+              note: 'Premium pass',
+              // One premium pass per user per season — a stable dedupe key, so
+              // a retried unlock cannot charge twice.
+              idempotencyKey: `battlepass:${userId}:${CURRENT_SEASON.id}`,
             });
           });
 

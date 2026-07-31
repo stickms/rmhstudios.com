@@ -89,6 +89,35 @@ function AdminDashboardPage() {
           </Link>
 
           <Link
+            to="/admin/economy"
+            className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
+            data-glass-light=""
+          >
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("economy-title", { defaultValue: "Coin Economy" })}</h2>
+            <p className="text-site-text-muted text-sm mt-2">
+              {t("economy-card-description", { defaultValue: "Coins created versus destroyed, total float, and holder concentration. Watch the sink ratio for inflation." })}
+            </p>
+          </Link>
+
+          <Link
+            to="/admin/appeals"
+            className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
+            data-glass-light=""
+          >
+            <h2 className="flex items-center gap-2 text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">
+              {t("appeals-title", { defaultValue: "Strike Appeals" })}
+              {counts.appeals > 0 && (
+                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-site-danger px-1.5 py-0.5 text-xs font-bold text-white">
+                  {counts.appeals}
+                </span>
+              )}
+            </h2>
+            <p className="text-site-text-muted text-sm mt-2">
+              {t("appeals-description", { defaultValue: "Users contesting a strike. Overturn to void the strike and lift any ban it triggered, or uphold it with a note." })}
+            </p>
+          </Link>
+
+          <Link
             to="/admin/security-reports"
             className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
             data-glass-light=""

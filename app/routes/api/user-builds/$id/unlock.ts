@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { transferCoins } from '@/lib/economy/ledger.server';
 import { createNotification } from '@/lib/notifications.server';
 import { grantAchievement } from '@/lib/achievements/engine.server';
 
@@ -70,27 +71,25 @@ async function doUnlock(
   if (already) return Response.json({ success: true, ...reveal, alreadyUnlocked: true });
 
   const fee = Math.floor(price * FEE_RATE);
-  const payout = price - fee;
 
   await prisma.$transaction(async (tx) => {
-    const buyer = await tx.userProfile.upsert({
-      where: { userId },
-      create: { userId, coins: 10 },
-      update: {},
-      select: { coins: true },
-    });
-    if (buyer.coins < price) throw new Error('INSUFFICIENT_COINS');
-
-    await tx.userProfile.update({ where: { userId }, data: { coins: { decrement: price } } });
-    await tx.userProfile.upsert({
-      where: { userId: build.userId },
-      create: { userId: build.userId, coins: 10 + payout },
-      update: { coins: { increment: payout } },
+    // Was a read-then-decrement (racy: two concurrent unlocks could both pass
+    // the balance check and overdraw) that also recorded only the seller's
+    // payout — the platform fee left circulation with no ledger row, so the
+    // ledger could never be reconciled against balances. transferCoins does
+    // both halves atomically and writes the fee as its own sink row.
+    await transferCoins(userId, build.userId, price, {
+      tx,
+      fee,
+      type: 'PURCHASE',
+      entityType: 'build',
+      entityId: build.id,
+      note: 'Build unlock',
+      // A build can only be unlocked once, so the pair is a natural dedupe key:
+      // a double-clicked unlock charges exactly once.
+      idempotencyKey: `build-unlock:${userId}:${build.id}`,
     });
     await tx.buildUnlock.create({ data: { userId, buildId: build.id, pricePaid: price } });
-    await tx.coinTransaction.create({
-      data: { senderId: userId, recipientId: build.userId, amount: payout, type: 'PURCHASE', entityType: 'build', entityId: build.id, note: 'Build unlock' },
-    });
   });
 
   await createNotification({

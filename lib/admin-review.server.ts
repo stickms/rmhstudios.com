@@ -6,6 +6,8 @@ export interface AdminReviewCounts {
   reports: number;
   /** Creator redemption requests awaiting review. */
   redemptions: number;
+  /** Strike appeals awaiting a decision. */
+  appeals: number;
   /** Total items needing admin attention (sum of the categories above). */
   total: number;
 }
@@ -13,14 +15,15 @@ export interface AdminReviewCounts {
 /**
  * Counts of things needing admin review, grouped by type. Powers the badge over
  * the Admin nav entry and the grouped breakdown on the dashboard. Extend the
- * object as more review queues are added (build submissions, appeals, etc.).
+ * object as more review queues are added (build submissions, …).
  */
 export async function getAdminReviewCounts(): Promise<AdminReviewCounts> {
-  const [reports, redemptions] = await Promise.all([
+  const [reports, redemptions, appeals] = await Promise.all([
     prisma.contentReport.count({ where: { status: 'PENDING' } }),
     prisma.redemptionRequest.count({ where: { status: 'PENDING' } }),
+    prisma.userStrike.count({ where: { appealStatus: 'PENDING' } }),
   ]);
-  return { reports, redemptions, total: reports + redemptions };
+  return { reports, redemptions, appeals, total: reports + redemptions + appeals };
 }
 
 /**

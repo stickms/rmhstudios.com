@@ -14,7 +14,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { debitCoins, creditCoins, EscrowError } from '@/lib/wager/escrow.server';
+import { transferCoins, InsufficientFundsError } from '@/lib/economy/ledger.server';
 import { createNotification } from '@/lib/notifications.server';
 
 export const GIFT_MIN = 10;
@@ -91,24 +91,15 @@ export async function sendCoinGift(params: SendCoinGiftParams): Promise<{ ok: tr
   if (sentToday >= GIFT_DAILY_CAP) throw new CoinGiftError('CAP');
 
   try {
-    await prisma.$transaction(async (tx) => {
-      // Conditional debit guards overdraft under concurrency (see escrow.server).
-      await debitCoins(tx, gifterId, amount);
-      await creditCoins(tx, recipientId, amount);
-      await tx.coinTransaction.create({
-        data: {
-          senderId: gifterId,
-          recipientId,
-          amount,
-          type: 'GIFT',
-          note: note ?? null,
-          entityType: 'gift',
-          entityId: params.public ? 'public' : 'private',
-        },
-      });
+    // Debit, credit and ledger row as one atomic transfer.
+    await transferCoins(gifterId, recipientId, amount, {
+      type: 'GIFT',
+      note: note ?? undefined,
+      entityType: 'gift',
+      entityId: params.public ? 'public' : 'private',
     });
   } catch (err) {
-    if (err instanceof EscrowError && err.code === 'INSUFFICIENT_COINS') {
+    if (err instanceof InsufficientFundsError) {
       throw new CoinGiftError('INSUFFICIENT_COINS');
     }
     throw err;

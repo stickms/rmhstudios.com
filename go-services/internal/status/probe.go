@@ -3,9 +3,11 @@
 package status
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"sync"
@@ -41,6 +43,23 @@ type Target struct {
 	Name        string
 	URL         string
 	Description string
+	// Group buckets the target on the dashboard ("Core", "Realtime", …). Targets
+	// with an empty Group render in a leading unlabelled section, so callers
+	// that set no group keep the original flat list.
+	Group string
+	// Expect, when non-empty, requires the response body to CONTAIN this string.
+	// A 2xx whose body is missing it is `degraded`, not `up`.
+	//
+	// This is the difference between probing a port and probing a product. The
+	// web app happily returns 200 with a valid HTML shell when its data layer is
+	// broken; asserting on a marker inside the rendered page is what makes the
+	// dashboard reflect what a visitor would actually see.
+	Expect string
+	// DegradedAfter, when > 0, downgrades an otherwise-healthy response to
+	// `degraded` if it took longer than this. A service answering in eight
+	// seconds is not "operational" — reporting that as green is how a status
+	// page ends up disagreeing with every user looking at it.
+	DegradedAfter time.Duration
 	// Probe, when set, replaces the HTTP GET with a custom health check.
 	Probe func(ctx context.Context) ProbeResult
 }
@@ -56,6 +75,7 @@ type Target struct {
 type ServiceStatus struct {
 	Name        string   `json:"name"`
 	Description string   `json:"description,omitempty"`
+	Group       string   `json:"group,omitempty"`
 	Status      Status   `json:"status"`
 	LatencyMs   *int64   `json:"latencyMs"`
 	Detail      string   `json:"detail"`
@@ -138,6 +158,7 @@ func NewProber(targets []Target) *Prober {
 			last: ServiceStatus{
 				Name:        t.Name,
 				Description: t.Description,
+				Group:       t.Group,
 				Status:      StatusUnknown,
 				Detail:      "Not checked yet",
 				CheckedAt:   epochSentinel,
@@ -257,6 +278,7 @@ func probe(ctx context.Context, client *http.Client, t Target) ServiceStatus {
 	ss := ServiceStatus{
 		Name:        t.Name,
 		Description: t.Description,
+		Group:       t.Group,
 		Status:      StatusUnknown,
 		Detail:      "",
 		CheckedAt:   time.Now().UTC().Format("2006-01-02T15:04:05.000Z07:00"),
@@ -271,6 +293,11 @@ func probe(ctx context.Context, client *http.Client, t Target) ServiceStatus {
 		ss.Detail = "request build error: " + err.Error()
 		return ss
 	}
+	// Identify the prober in access logs, and ask for uncached responses — a
+	// status page reading a CDN cache entry is reporting on the CDN, not on the
+	// service behind it.
+	req.Header.Set("User-Agent", "rmh-status-probe/1.0")
+	req.Header.Set("Cache-Control", "no-cache")
 
 	start := time.Now()
 	resp, err := client.Do(req)
@@ -287,6 +314,14 @@ func probe(ctx context.Context, client *http.Client, t Target) ServiceStatus {
 		}
 		return ss
 	}
+
+	// Read the body only when a target asserts on it, and cap the read so a
+	// large or hung response can't balloon the prober's memory. Always drain a
+	// little and close so the connection can be reused.
+	var body []byte
+	if t.Expect != "" {
+		body, _ = io.ReadAll(io.LimitReader(resp.Body, maxProbeBodyBytes))
+	}
 	resp.Body.Close()
 
 	code := resp.StatusCode
@@ -298,6 +333,20 @@ func probe(ctx context.Context, client *http.Client, t Target) ServiceStatus {
 		ss.Status = StatusUp
 		ss.Up = true
 		ss.LatencyMs = &latency
+
+		// Content assertion: the endpoint answered, but with the wrong thing.
+		// Degraded rather than down — something is serving, just not correctly.
+		if t.Expect != "" && !bytes.Contains(body, []byte(t.Expect)) {
+			ss.Status = StatusDegraded
+			ss.Up = false
+			ss.Detail = fmt.Sprintf("HTTP %d, unexpected content", code)
+		} else if t.DegradedAfter > 0 && latency > t.DegradedAfter.Milliseconds() {
+			// Answering, but too slowly to call operational. Latency is kept
+			// here (unlike the error paths) because the number IS the finding.
+			ss.Status = StatusDegraded
+			ss.Up = false
+			ss.Detail = fmt.Sprintf("HTTP %d, slow (%dms)", code, latency)
+		}
 	} else {
 		// Node: 4xx/5xx => degraded, latencyMs null (omitted from the measured
 		// value) — leave ss.LatencyMs nil so the JSON emits `null`.
@@ -307,12 +356,17 @@ func probe(ctx context.Context, client *http.Client, t Target) ServiceStatus {
 	return ss
 }
 
+// maxProbeBodyBytes caps how much of a response body a content-asserting probe
+// reads. Markers live in the head of a document, so 64 KiB is generous.
+const maxProbeBodyBytes = 64 << 10
+
 // customProbe runs a Target's injected Probe (e.g. the Database SELECT 1 check)
 // and maps the ProbeResult onto a ServiceStatus.
 func customProbe(ctx context.Context, t Target) ServiceStatus {
 	ss := ServiceStatus{
 		Name:        t.Name,
 		Description: t.Description,
+		Group:       t.Group,
 		Status:      StatusUnknown,
 		CheckedAt:   time.Now().UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 	}

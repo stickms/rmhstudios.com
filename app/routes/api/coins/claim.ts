@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
+import { creditCoins, getBalance } from "@/lib/economy/ledger.server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const Route = createFileRoute('/api/coins/claim')({
@@ -29,24 +30,21 @@ export const Route = createFileRoute('/api/coins/claim')({
 
     const userId = session.user.id;
 
-    // Ensure the profile row exists (new users start at 10, i.e. not claimable),
-    // then top up atomically. The `coins < 10` guard lives in the WHERE clause so
-    // two concurrent claims can't both read a stale sub-10 balance and each add 10.
-    await prisma.userProfile.upsert({
-      where: { userId },
-      create: { userId, coins: 10 },
-      update: {},
+    // Top-up safety net for a user who has run dry. `onlyIfBalanceBelow` keeps
+    // the `coins < 10` guard inside the UPDATE's WHERE clause, so two concurrent
+    // claims can't both observe a stale sub-10 balance and each add 10 — and the
+    // grant is now recorded in the ledger like every other faucet.
+    const claim = await creditCoins(userId, 10, {
+      type: 'REWARD',
+      entityType: 'daily-claim',
+      note: 'Low-balance top-up',
+      onlyIfBalanceBelow: 10,
     });
-    const claim = await prisma.userProfile.updateMany({
-      where: { userId, coins: { lt: 10 } },
-      data: { coins: { increment: 10 } },
-    });
-    if (claim.count === 0) {
+    if (!claim.applied) {
       throw new Error("COINS_TOO_HIGH");
     }
-    const result = await prisma.userProfile.findUnique({ where: { userId }, select: { coins: true } });
 
-    return Response.json({ newBalance: result?.coins ?? 0 });
+    return Response.json({ newBalance: await getBalance(userId) });
   } catch (error) {
     if (error instanceof Error && error.message === "COINS_TOO_HIGH") {
       return Response.json(

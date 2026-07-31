@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
+import { creditCoins, getBalance } from '@/lib/economy/ledger.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { WHEEL_SEGMENTS, pickSegment, wheelDateKey } from '@/lib/wheel/wheel';
 import { awardXp } from '@/lib/xp/engine.server';
@@ -29,23 +30,18 @@ export const Route = createFileRoute('/api/wheel/spin')({
           try {
             const result = await prisma.$transaction(async (tx) => {
               await tx.dailyWheelSpin.create({ data: { userId, dateKey, reward, segment } });
-              const profile = await tx.userProfile.upsert({
-                where: { userId },
-                create: { userId, coins: 10 + reward },
-                update: { coins: { increment: reward } },
-                select: { coins: true },
+              // The unique [userId, dateKey] insert above is the once-per-day
+              // guard; the dateKey doubles as the ledger idempotency key so a
+              // retried spin cannot pay out twice.
+              await creditCoins(userId, reward, {
+                tx,
+                type: 'REWARD',
+                entityType: 'wheel',
+                entityId: dateKey,
+                note: 'Daily wheel',
+                idempotencyKey: `wheel:${userId}:${dateKey}`,
               });
-              await tx.coinTransaction.create({
-                data: {
-                  recipientId: userId,
-                  amount: reward,
-                  type: 'REWARD',
-                  entityType: 'wheel',
-                  entityId: dateKey,
-                  note: 'Daily wheel spin',
-                },
-              });
-              return profile.coins;
+              return getBalance(userId, tx);
             });
 
             await awardXp(userId, 10);

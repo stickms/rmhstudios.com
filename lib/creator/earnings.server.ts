@@ -1,5 +1,6 @@
 import type { Prisma, PrismaClient, RedemptionRequest } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
+import { creditCoinsOn, debitCoinsOn, InsufficientFundsError } from '@/lib/economy/ledger-core';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { notifyAdminsOfReview } from '@/lib/admin-review.server';
 import { createNotification } from '@/lib/notifications.server';
@@ -107,24 +108,25 @@ export async function requestRedemption(
     const request = await db.$transaction(async (tx) => {
       // Burn the coins now (immediate sink) so they can't be double-spent while
       // the request is pending. Refunded if an admin rejects it.
-      const debit = await tx.userProfile.updateMany({
-        where: { userId: opts.userId, coins: { gte: cost } },
-        data: { coins: { decrement: cost } },
-      });
-      if (debit.count === 0) {
-        throw new RedemptionError('Not enough coins', 'INSUFFICIENT_COINS');
-      }
-      // Audit row (excluded from the earned filter by its entityType).
-      await tx.coinTransaction.create({
-        data: {
-          senderId: opts.userId,
-          recipientId: opts.userId,
-          amount: cost,
+      // Burn the coins now (immediate sink) so they can't be double-spent
+      // while the request is pending. Refunded if an admin rejects it.
+      //
+      // The audit row used to name the user as BOTH sender and recipient — a
+      // self-transfer that nets to zero over the ledger even though the balance
+      // really dropped by `cost`. As a sink it reconciles.
+      try {
+        await debitCoinsOn(tx, opts.userId, cost, {
+          tx,
           type: 'PURCHASE',
           entityType: 'redemption',
           note: `Redemption requested (${opts.input.kind})`,
-        },
-      });
+        });
+      } catch (err) {
+        if (err instanceof InsufficientFundsError) {
+          throw new RedemptionError('Not enough coins', 'INSUFFICIENT_COINS');
+        }
+        throw err;
+      }
       return tx.redemptionRequest.create({
         data: {
           userId: opts.userId,
@@ -217,20 +219,14 @@ export async function reviewRedemption(
 
     if (opts.action === 'reject') {
       // Refund the burned coins.
-      await tx.userProfile.upsert({
-        where: { userId: req.userId },
-        create: { userId: req.userId, coins: 10 + req.amountCoins },
-        update: { coins: { increment: req.amountCoins } },
-      });
-      await tx.coinTransaction.create({
-        data: {
-          senderId: null,
-          recipientId: req.userId,
-          amount: req.amountCoins,
-          type: 'REWARD',
-          entityType: 'redemption',
-          note: 'Redemption rejected refund',
-        },
+      // Refund the burned coins. Keyed on the request id so a retried
+      // rejection cannot refund twice.
+      await creditCoinsOn(tx, req.userId, req.amountCoins, {
+        tx,
+        type: 'REWARD',
+        entityType: 'redemption',
+        note: 'Redemption rejected refund',
+        idempotencyKey: `redemption-refund:${req.id}`,
       });
       await tx.redemptionRequest.update({
         where: { id: req.id },

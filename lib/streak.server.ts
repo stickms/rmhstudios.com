@@ -10,6 +10,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { creditCoins, debitCoins, getBalance } from '@/lib/economy/ledger.server';
 import { grantAchievement } from '@/lib/achievements/engine.server';
 import { awardXp } from '@/lib/xp/engine.server';
 import { progressQuests } from '@/lib/quests/engine.server';
@@ -122,10 +123,13 @@ export async function checkIn(userId: string): Promise<StreakState> {
       },
     });
     if (applied.count === 0) return false;
-    await tx.userProfile.upsert({
-      where: { userId },
-      create: { userId, coins: 10 + reward },
-      update: { coins: { increment: reward } },
+    // `applied.count === 0` above already rejects a duplicate check-in, so this
+    // grant happens once per day per user.
+    await creditCoins(userId, reward, {
+      tx,
+      type: 'REWARD',
+      entityType: 'streak',
+      note: 'Daily streak reward',
     });
     return true;
   });
@@ -178,34 +182,25 @@ export async function buyFreeze(
     });
     if ((streak?.freezeTokens ?? 0) >= MAX_FREEZE_TOKENS) throw new Error('MAX_FREEZES');
 
-    const profile = await tx.userProfile.upsert({
-      where: { userId },
-      create: { userId, coins: 10 },
-      update: {},
-      select: { coins: true },
+    // Was a read-then-decrement: `SELECT coins` → `if (coins < COST) throw` →
+    // `UPDATE ... decrement`. Under READ COMMITTED two concurrent buys both read
+    // the same balance, both pass the check, and both decrement — one freeze
+    // paid for, two delivered, balance negative. debitCoins folds the check into
+    // the UPDATE's WHERE clause so only one can win.
+    await debitCoins(userId, FREEZE_COST, {
+      tx,
+      type: 'PURCHASE',
+      entityType: 'streak-freeze',
+      note: 'Streak freeze',
     });
-    if (profile.coins < FREEZE_COST) throw new Error('INSUFFICIENT_COINS');
 
-    const updatedProfile = await tx.userProfile.update({
-      where: { userId },
-      data: { coins: { decrement: FREEZE_COST } },
-      select: { coins: true },
-    });
     const updated = await tx.dailyStreak.upsert({
       where: { userId },
       create: { userId, freezeTokens: 1 },
       update: { freezeTokens: { increment: 1 } },
       select: { freezeTokens: true },
     });
-    await tx.coinTransaction.create({
-      data: {
-        recipientId: userId,
-        amount: -FREEZE_COST,
-        type: 'PURCHASE',
-        entityType: 'streak-freeze',
-        note: 'Streak freeze',
-      },
-    });
-    return { freezeTokens: updated.freezeTokens, newBalance: updatedProfile.coins };
+    const newBalance = await getBalance(userId, tx);
+    return { freezeTokens: updated.freezeTokens, newBalance };
   });
 }

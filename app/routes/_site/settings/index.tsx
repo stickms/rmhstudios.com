@@ -19,6 +19,7 @@ import {
   Sparkles,
   LayoutDashboard,
   SlidersHorizontal,
+  Gavel,
   type LucideIcon,
 } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -262,6 +263,14 @@ function SettingsPage() {
                 label={t('settings-account-privacy', { defaultValue: 'Privacy & data' })}
                 hint={t('settings-account-privacy-hint', {
                   defaultValue: 'Export or delete your data',
+                })}
+              />
+              <AccountLink
+                to="/settings/account-status"
+                icon={Gavel}
+                label={t('settings-account-status', { defaultValue: 'Account status' })}
+                hint={t('settings-account-status-hint', {
+                  defaultValue: 'Standing, strikes, and appeals',
                 })}
               />
               <AccountLink

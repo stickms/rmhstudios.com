@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
+import { transferCoins } from '@/lib/economy/ledger.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { createNotification } from '@/lib/notifications.server';
@@ -44,40 +45,14 @@ export const Route = createFileRoute('/api/coins/tip')({
           const recipient = await prisma.user.findUnique({ where: { id: recipientId }, select: { id: true, handle: true } });
           if (!recipient) return Response.json({ error: 'Recipient not found' }, { status: 404 });
 
-          await prisma.$transaction(async (tx) => {
-            // Ensure the sender's profile row exists, then debit atomically.
-            await tx.userProfile.upsert({
-              where: { userId: senderId },
-              create: { userId: senderId, coins: 10 },
-              update: {},
-            });
-            // Conditional atomic decrement: the `coins >= amount` guard lives in the
-            // WHERE clause so concurrent tips cannot both pass a stale balance read and
-            // overdraft the account (which would mint coins into the recipient). Under
-            // READ COMMITTED, Postgres re-evaluates the predicate against the freshly
-            // committed row, so only debits that still fit succeed.
-            const debit = await tx.userProfile.updateMany({
-              where: { userId: senderId, coins: { gte: amount } },
-              data: { coins: { decrement: amount } },
-            });
-            if (debit.count === 0) throw new Error('INSUFFICIENT_COINS');
-
-            await tx.userProfile.upsert({
-              where: { userId: recipientId },
-              create: { userId: recipientId, coins: 10 + amount },
-              update: { coins: { increment: amount } },
-            });
-            await tx.coinTransaction.create({
-              data: {
-                senderId,
-                recipientId,
-                amount,
-                type: 'TIP',
-                note: note?.trim() || null,
-                entityType: entityType ?? null,
-                entityId: entityId ?? null,
-              },
-            });
+          // Debit, credit and ledger row in one atomic transfer. The balance
+          // guard lives inside the UPDATE, so concurrent tips can't both pass a
+          // stale read and overdraft (which would mint coins into the recipient).
+          await transferCoins(senderId, recipientId, amount, {
+            type: 'TIP',
+            note: note?.trim() || undefined,
+            entityType: entityType ?? undefined,
+            entityId: entityId ?? undefined,
           });
 
           // Notify the recipient + achievements (best-effort).

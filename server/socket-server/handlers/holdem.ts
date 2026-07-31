@@ -7,6 +7,7 @@
 
 import type { Server, Socket } from 'socket.io';
 import { getPrismaClient } from '../prisma-client';
+import { debitCoinsOn, creditCoinsOn, getBalanceOn } from '@/lib/economy/ledger-core';
 import { checkRateLimit } from '../rate-limit';
 import { logger } from '../logger';
 import {
@@ -799,14 +800,18 @@ async function cashOutPlayer(room: HoldemRoom, player: PlayerSeat) {
   if (player.totalChips > 0) {
     try {
       const prisma = getPrismaClient();
-      const updated = await prisma.userProfile.update({
-        where: { userId: player.userId },
-        data: { coins: { increment: player.totalChips } },
-        select: { coins: true },
+      // Chips returning to the wallet: a faucet, paired with the WAGER sink
+      // that took the buy-in, so a table's net coin creation is measurable.
+      await creditCoinsOn(prisma, player.userId, player.totalChips, {
+        type: 'WAGER',
+        entityType: 'holdem',
+        entityId: room.roomId,
+        note: "Hold'em cash out",
       });
+      const coins = await getBalanceOn(prisma, player.userId);
       player.sessionStats.totalCashOut = player.totalChips;
       const sock = ioRef.sockets.sockets.get(player.socketId);
-      if (sock) sock.emit(S2C.BALANCE_UPDATE, { coins: updated.coins });
+      if (sock) sock.emit(S2C.BALANCE_UPDATE, { coins });
     } catch (err) {
       logger.error({ event: 'holdem_cashout_error', userId: player.userId, error: String(err) });
     }
@@ -1023,22 +1028,19 @@ async function joinRoom(room: HoldemRoom, socket: Socket) {
   try {
     const prisma = getPrismaClient();
     const result = await prisma.$transaction(async (tx: any) => {
-      const profile = await tx.userProfile.findUnique({
-        where: { userId },
-        select: { coins: true },
+      // The buy-in leaves circulation. Was read-then-decrement: two joins
+      // arriving together both read the same balance, both passed the check and
+      // both decremented — a double-spend at a poker table, where spamming the
+      // action is the whole attack. debitCoinsOn puts the balance guard inside
+      // the UPDATE, so the loser matches zero rows and throws.
+      await debitCoinsOn(tx, userId, room.buyIn, {
+        tx,
+        type: 'WAGER',
+        entityType: 'holdem',
+        entityId: room.roomId,
+        note: "Hold'em buy-in",
       });
-
-      if (!profile || profile.coins < room.buyIn) {
-        throw new Error('INSUFFICIENT_COINS');
-      }
-
-      const updated = await tx.userProfile.update({
-        where: { userId },
-        data: { coins: { decrement: room.buyIn } },
-        select: { coins: true },
-      });
-
-      return updated.coins;
+      return getBalanceOn(tx, userId);
     });
 
     const player: PlayerSeat = {
@@ -1555,19 +1557,15 @@ export function registerHoldemHandlers(io: Server, socket: Socket): void {
     try {
       const prisma = getPrismaClient();
       const result = await prisma.$transaction(async (tx) => {
-        const profile = await tx.userProfile.findUnique({
-          where: { userId },
-          select: { coins: true },
+        // Same conditional-debit guard as the initial buy-in above.
+        await debitCoinsOn(tx, userId, room.buyIn, {
+          tx,
+          type: 'WAGER',
+          entityType: 'holdem',
+          entityId: room.roomId,
+          note: "Hold'em rebuy",
         });
-        if (!profile || profile.coins < room.buyIn) {
-          throw new Error('INSUFFICIENT_COINS');
-        }
-        const updated = await tx.userProfile.update({
-          where: { userId },
-          data: { coins: { decrement: room.buyIn } },
-          select: { coins: true },
-        });
-        return updated.coins;
+        return getBalanceOn(tx, userId);
       });
 
       player.totalChips = room.buyIn;

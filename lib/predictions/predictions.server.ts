@@ -11,6 +11,7 @@
 
 import type { Prediction, PredictionPosition, PredictionStatus, PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
+import { creditCoins, debitCoins, getBalance, InsufficientFundsError } from '@/lib/economy/ledger.server';
 import { priceYes, sharesForBudget, costToBuyShares, type Side } from './lmsr';
 
 /**
@@ -128,15 +129,21 @@ export async function placeTrade(
     // `coins >= amount` in the WHERE clause serializes concurrent trades so they
     // cannot all deduct one stake yet each record a position (coin minting on
     // resolution). Prisma returns the updated row so we read the fresh balance.
-    const debit = await tx.userProfile.updateMany({
-      where: { userId, coins: { gte: amount } },
-      data: { coins: { decrement: amount } },
-    });
-    if (debit.count === 0) {
-      throw new PredictionError('Insufficient coins', 'INSUFFICIENT_COINS');
+    try {
+      await debitCoins(userId, amount, {
+        tx,
+        type: 'WAGER',
+        entityType: 'prediction',
+        entityId: predictionId,
+        note: `${side} position`,
+      });
+    } catch (err) {
+      if (err instanceof InsufficientFundsError) {
+        throw new PredictionError('Insufficient coins', 'INSUFFICIENT_COINS');
+      }
+      throw err;
     }
-    const debited = await tx.userProfile.findUnique({ where: { userId }, select: { coins: true } });
-    const newBalance = debited?.coins ?? 0;
+    const newBalance = await getBalance(userId, tx);
 
     await tx.prediction.update({
       where: { id: predictionId },
@@ -213,10 +220,15 @@ export async function resolvePrediction(
       const payout = Math.round(winningShares);
       if (payout > 0) {
         totalPayout += payout;
-        await tx.userProfile.upsert({
-          where: { userId: pos.userId },
-          create: { userId: pos.userId, coins: 10 + payout },
-          update: { coins: { increment: payout } },
+        // A market resolves once, so (position, outcome) is a stable dedupe
+        // key — a retried resolution can never pay a winner twice.
+        await creditCoins(pos.userId, payout, {
+          tx,
+          type: 'WAGER',
+          entityType: 'prediction',
+          entityId: predictionId,
+          note: 'Prediction payout',
+          idempotencyKey: `prediction-payout:${pos.id}`,
         });
       }
       await tx.predictionPosition.update({ where: { id: pos.id }, data: { settled: true } });

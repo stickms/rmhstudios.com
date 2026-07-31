@@ -11,20 +11,19 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { creditCoins } from '@/lib/economy/ledger.server';
 import { getAchievement } from '@/lib/achievements/catalog';
 import { createNotification } from '@/lib/notifications.server';
 import { maybeRewardReferral } from '@/lib/referrals.server';
 
 async function rewardUnlock(userId: string, achievementId: string, name: string, coinReward: number) {
   if (coinReward > 0) {
-    await prisma.userProfile
-      .upsert({
-        where: { userId },
-        create: { userId, coins: 10 + coinReward },
-        update: { coins: { increment: coinReward } },
-        select: { userId: true },
-      })
-      .catch((e) => console.error('[achievements] coin reward failed:', e));
+    await creditCoins(userId, coinReward, {
+      type: 'REWARD',
+      entityType: 'achievement',
+      entityId: achievementId,
+      note: name,
+    }).catch((e) => console.error('[achievements] coin reward failed:', e));
   }
   await createNotification({
     userId,

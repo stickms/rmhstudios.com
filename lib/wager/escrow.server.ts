@@ -60,15 +60,24 @@ export async function creditCoins(tx: Tx, userId: string, amount: number): Promi
 }
 
 /**
- * Write a WAGER ledger row so every escrow movement is auditable. `senderId`
- * null denotes a payout from the pot (system → user); a real senderId denotes a
- * transfer between users. Mirrors the CoinTransaction shape used by tips.
+ * Write a WAGER ledger row so every escrow movement is auditable, using the
+ * ledger's three-shape convention (see `CoinTransaction` in the schema):
+ *
+ *   - **Hold** (stake/entry fee into escrow): `senderId` = user,
+ *     `recipientId` = null. Coins left the user's balance for the pot.
+ *   - **Payout / refund** (pot → user): `senderId` = null, `recipientId` = user.
+ *   - **Transfer**: both set.
+ *
+ * Holds used to be written as a SELF-transfer (`senderId` and `recipientId` both
+ * the staking user), which nets to zero in any sum over the ledger even though
+ * the balance really did go down — so escrow silently broke reconciliation for
+ * every wager and tournament. `recipientId` is nullable here for that reason.
  */
 export async function recordWagerTxn(
   tx: Tx,
   opts: {
     senderId?: string | null;
-    recipientId: string;
+    recipientId: string | null;
     amount: number;
     entityType: 'wager' | 'tournament';
     entityId: string;

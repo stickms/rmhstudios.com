@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
+import { debitCoins, getBalance } from "@/lib/economy/ledger.server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { purchaseSchema } from "@/lib/coins-schema";
 
@@ -55,25 +56,26 @@ export const Route = createFileRoute('/api/coins/purchase')({
         throw new Error("ALREADY_OWNED");
       }
 
-      // Atomic conditional debit + grant: the `coins >= price` (and, for the pet,
-      // `hasProfilePet: false`) guards live in the WHERE clause so concurrent
-      // purchases can't overdraft a stale balance or grant the item twice.
-      const purchase = await tx.userProfile.updateMany({
-        where: {
-          userId,
-          coins: { gte: price },
-          ...(item === "profile-pet" ? { hasProfilePet: false } : {}),
-        },
-        data: {
-          coins: { decrement: price },
-          ...(item === "profile-pet" ? { hasProfilePet: true } : {}),
-        },
-      });
-      if (purchase.count === 0) {
-        throw new Error("INSUFFICIENT_COINS");
+      // Two guards, both conditional updates, both inside one transaction:
+      // the grant flip claims the item exactly once, and the debit rejects an
+      // overdraft. If the debit fails, the flip rolls back with it — so a user
+      // can never end up owning the pet without having paid.
+      if (item === "profile-pet") {
+        const claim = await tx.userProfile.updateMany({
+          where: { userId, hasProfilePet: false },
+          data: { hasProfilePet: true },
+        });
+        if (claim.count === 0) throw new Error("ALREADY_OWNED");
       }
+      await debitCoins(userId, price, {
+        tx,
+        type: 'PURCHASE',
+        entityType: 'profile-item',
+        entityId: item,
+        note: item,
+      });
 
-      return tx.userProfile.findUnique({ where: { userId }, select: { coins: true } });
+      return { coins: await getBalance(userId, tx) };
     });
 
     return Response.json({

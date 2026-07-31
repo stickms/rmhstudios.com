@@ -228,7 +228,26 @@ func renderHTML(snap Snapshot, p *Prober) string {
 	span := formatSpan(p.bucketDur, p.maxBuckets)
 
 	var cards strings.Builder
+	// Group heading is emitted whenever the group changes. Targets arrive in the
+	// order cmd/status built them, which already groups them — so this needs no
+	// sorting and preserves the author's intended ordering within a group.
+	lastGroup := ""
+	first := true
 	for _, ss := range snap.Services {
+		if ss.Group != lastGroup {
+			lastGroup = ss.Group
+			if ss.Group != "" {
+				cls := "group-head"
+				if first {
+					cls += " group-head-first"
+				}
+				cards.WriteString(fmt.Sprintf(
+					`<li class="%s" role="presentation">%s</li>`,
+					cls, html.EscapeString(ss.Group),
+				))
+			}
+		}
+		first = false
 		m := statusMetaMap[ss.Status]
 		latency := "—"
 		if ss.LatencyMs != nil {
@@ -350,6 +369,15 @@ func renderHTML(snap Snapshot, p *Prober) string {
       margin-top: 8px; color: var(--site-text-dim); font-size: .72rem;
     }
     .uptime { color: var(--site-text-muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+    /* Section label above each tier of services. Matches the site's kicker
+       treatment (uppercase, tracked-out, dim) rather than inventing a heading
+       style the rest of rmhstudios.com doesn't use. */
+    .group-head {
+      color: var(--site-text-dim); font-size: .7rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .12em;
+      margin: 18px 0 -2px; padding-left: 2px;
+    }
+    .group-head-first { margin-top: 0; }
     footer { margin-top: 22px; color: var(--site-text-dim); font-size: .76rem; text-align: center; }
     footer a { color: var(--site-accent); text-decoration: none; }
     footer a:hover { text-decoration: underline; }

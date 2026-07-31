@@ -4,6 +4,7 @@
  * awards for content, and lets a recipient hide an award.
  */
 import { prisma } from '@/lib/prisma.server';
+import { transferCoins, InsufficientFundsError } from '@/lib/economy/ledger.server';
 import { dispatch } from '@/lib/notify/dispatch.server';
 import {
   getAward,
@@ -55,23 +56,23 @@ export async function giveAward(
   const share = recipientShare(def);
 
   const result = await prisma.$transaction(async (tx) => {
-    await tx.userProfile.upsert({
-      where: { userId: giverId },
-      create: { userId: giverId, coins: 10 },
-      update: {},
-    });
-    const debit = await tx.userProfile.updateMany({
-      where: { userId: giverId, coins: { gte: def.priceCoins } },
-      data: { coins: { decrement: def.priceCoins } },
-    });
-    if (debit.count === 0) throw new AwardError('INSUFFICIENT_COINS');
+    // The giver pays `priceCoins`; the recipient receives `share`; the
+    // difference is the platform cut and is destroyed. Typed as TIP so it keeps
+    // counting toward creator earnings, exactly as the old recipient row did.
+    try {
+      await transferCoins(giverId, recipientId, def.priceCoins, {
+        tx,
+        fee: def.priceCoins - share,
+        type: 'TIP',
+        entityType: input.entityType,
+        entityId: input.entityId,
+        note: `Award: ${def.name}`,
+      });
+    } catch (err) {
+      if (err instanceof InsufficientFundsError) throw new AwardError('INSUFFICIENT_COINS');
+      throw err;
+    }
     const giver = await tx.userProfile.findUnique({ where: { userId: giverId }, select: { coins: true } });
-
-    await tx.userProfile.upsert({
-      where: { userId: recipientId },
-      create: { userId: recipientId, coins: 10 + share },
-      update: { coins: { increment: share } },
-    });
 
     await tx.contentAward.create({
       data: {
@@ -81,30 +82,6 @@ export async function giveAward(
         entityType: input.entityType,
         entityId: input.entityId,
       },
-    });
-
-    await tx.coinTransaction.createMany({
-      data: [
-        // Recipient share is a TIP so it counts toward creator earnings.
-        {
-          senderId: giverId,
-          recipientId,
-          amount: share,
-          type: 'TIP',
-          entityType: input.entityType,
-          entityId: input.entityId,
-          note: `Award: ${def.name}`,
-        },
-        // Giver spend (negative); the platform cut is price - share (implicit).
-        {
-          recipientId: giverId,
-          amount: -def.priceCoins,
-          type: 'PURCHASE',
-          entityType: 'award',
-          entityId: input.entityId,
-          note: `Award: ${def.name}`,
-        },
-      ],
     });
 
     return { balance: giver?.coins ?? 0 };

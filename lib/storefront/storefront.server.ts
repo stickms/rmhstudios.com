@@ -5,6 +5,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { transferCoins, InsufficientFundsError } from '@/lib/economy/ledger.server';
 
 export const STOREFRONT_FEE_RATE = 0.1; // 10% burned
 
@@ -38,22 +39,26 @@ export async function buyProduct(
     const fee = Math.floor(product.price * STOREFRONT_FEE_RATE);
     const payout = product.price - fee;
 
-    // Debit buyer atomically (the `coins >= price` guard in the WHERE clause
-    // blocks concurrent purchases from overdrafting a stale balance), then credit
-    // creator (minus fee) and record the sale.
-    const debit = await tx.userProfile.updateMany({
-      where: { userId: buyerId, coins: { gte: product.price } },
-      data: { coins: { decrement: product.price } },
-    });
-    if (debit.count === 0) throw new StorefrontError('INSUFFICIENT_COINS');
+    // Buyer pays `price`, creator receives `payout`, the fee is destroyed —
+    // all in one atomic transfer that also writes the ledger rows. The previous
+    // pair of rows double-counted the buyer (sender of `payout` AND recipient
+    // of `-price`), so the ledger could not be summed against balances.
+    try {
+      await transferCoins(buyerId, product.creatorId, product.price, {
+        tx,
+        fee: product.price - payout,
+        type: 'PURCHASE',
+        entityType: 'storefront',
+        entityId: productId,
+        note: 'Storefront sale',
+      });
+    } catch (err) {
+      if (err instanceof InsufficientFundsError) throw new StorefrontError('INSUFFICIENT_COINS');
+      throw err;
+    }
     const updatedBuyer = await tx.userProfile.findUnique({
       where: { userId: buyerId },
       select: { coins: true },
-    });
-    await tx.userProfile.upsert({
-      where: { userId: product.creatorId },
-      create: { userId: product.creatorId, coins: 10 + payout },
-      update: { coins: { increment: payout } },
     });
 
     await tx.storefrontPurchase.create({
@@ -62,14 +67,6 @@ export async function buyProduct(
     await tx.storefrontProduct.update({
       where: { id: productId },
       data: { salesCount: { increment: 1 } },
-    });
-
-    // Ledger: buyer purchase + creator earning.
-    await tx.coinTransaction.createMany({
-      data: [
-        { senderId: buyerId, recipientId: product.creatorId, amount: payout, type: 'PURCHASE', entityType: 'storefront', entityId: productId, note: 'Storefront sale' },
-        { recipientId: buyerId, amount: -product.price, type: 'PURCHASE', entityType: 'storefront', entityId: productId, note: 'Storefront purchase' },
-      ],
     });
 
     return { deliverable: product.deliverable, balance: updatedBuyer?.coins ?? 0, creatorId: product.creatorId };

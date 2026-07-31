@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
+import { creditCoins } from '@/lib/economy/ledger.server';
 import { z } from 'zod';
 import { CURRENT_SEASON, tierForXp } from '@/lib/battlepass/season';
 import { awardXp } from '@/lib/xp/engine.server';
@@ -67,10 +68,14 @@ export const Route = createFileRoute('/api/battlepass/claim')({
               });
 
               if (reward.type === 'coins' && reward.amount) {
-                await tx.userProfile.upsert({
-                  where: { userId },
-                  create: { userId, coins: 10 + reward.amount },
-                  update: { coins: { increment: reward.amount } },
+                // The claimed-tier list is written first (above), so a
+                // concurrent claim aborts before reaching this grant.
+                await creditCoins(userId, reward.amount, {
+                  tx,
+                  type: 'REWARD',
+                  entityType: 'battlepass',
+                  entityId: `${CURRENT_SEASON.id}:${track}:${tier}`,
+                  note: 'Battle pass reward',
                 });
               } else if (reward.type === 'item' && reward.itemId) {
                 const item = getShopItem(reward.itemId);

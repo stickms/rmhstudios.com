@@ -1,11 +1,18 @@
 /**
- * Shared coin-award helper. The codebase historically mutated
- * UserProfile.coins inline at each call site and only tips/gifts wrote ledger
- * rows; new features should award through here instead so every system grant
- * lands in the CoinTransaction ledger.
+ * Shared coin-award helper — now a thin shim over the ledger.
+ *
+ * This function predates `lib/economy/ledger.server.ts` and is imported all
+ * over the reward pipeline, so it keeps its signature and its best-effort
+ * contract (returns false instead of throwing). What changed is what it does
+ * underneath: `creditCoins` owns the balance write and the ledger row, so a
+ * grant made through here is indistinguishable from any other movement and
+ * shows up in supply reporting as a faucet.
+ *
+ * New code should call `creditCoins` directly — it exposes idempotency keys and
+ * propagates errors, both of which this shim deliberately swallows.
  */
 
-import { prisma } from '@/lib/prisma.server';
+import { creditCoins, type LedgerOptions } from '@/lib/economy/ledger.server';
 import type { CoinTxnType } from '@prisma/client';
 
 export interface AwardCoinsOptions {
@@ -15,8 +22,17 @@ export interface AwardCoinsOptions {
   note?: string;
   entityType?: string;
   entityId?: string;
-  /** Sending user for peer-to-peer grants; omit for system rewards. */
+  /**
+   * Sending user for peer-to-peer grants; omit for system rewards.
+   *
+   * @deprecated A grant with a sender is a TRANSFER, and routing one through
+   * here credits the recipient without debiting the sender — inventing coins.
+   * Call `transferCoins` instead. The parameter is retained so existing callers
+   * still compile; it is ignored.
+   */
   senderId?: string | null;
+  /** Dedupe token — a repeat with the same key does not grant twice. */
+  idempotencyKey?: string;
 }
 
 /**
@@ -31,27 +47,15 @@ export async function awardCoins(
 ): Promise<boolean> {
   if (!Number.isFinite(amount) || amount <= 0) return false;
   try {
-    await prisma.$transaction([
-      prisma.userProfile.upsert({
-        where: { userId },
-        // New profiles start at 10 coins — keep that baseline when seeding.
-        create: { userId, coins: 10 + amount },
-        update: { coins: { increment: amount } },
-        select: { userId: true },
-      }),
-      prisma.coinTransaction.create({
-        data: {
-          senderId: opts.senderId ?? null,
-          recipientId: userId,
-          amount,
-          type: opts.type ?? 'REWARD',
-          note: opts.note?.slice(0, 280) ?? null,
-          entityType: opts.entityType ?? null,
-          entityId: opts.entityId ?? null,
-        },
-      }),
-    ]);
-    return true;
+    const options: LedgerOptions = {
+      type: opts.type ?? 'REWARD',
+      note: opts.note,
+      entityType: opts.entityType,
+      entityId: opts.entityId,
+      idempotencyKey: opts.idempotencyKey,
+    };
+    const result = await creditCoins(userId, Math.floor(amount), options);
+    return result.applied || result.replayed;
   } catch (err) {
     console.error('[coins] award failed:', err);
     return false;

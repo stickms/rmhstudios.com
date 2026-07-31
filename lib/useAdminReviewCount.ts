@@ -4,10 +4,12 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 
 export interface AdminReviewCounts {
   reports: number;
+  /** Strike appeals awaiting a decision. */
+  appeals: number;
   total: number;
 }
 
-const EMPTY: AdminReviewCounts = { reports: 0, total: 0 };
+const EMPTY: AdminReviewCounts = { reports: 0, appeals: 0, total: 0 };
 
 /**
  * Polls the count of items needing admin review (open reports, …) so the Admin
@@ -24,7 +26,11 @@ export function useAdminReviewCount(isAdmin: boolean, intervalMs = 60_000) {
       if (!res.ok) return;
       const data = await res.json();
       if (!cancelled.current && typeof data.total === 'number') {
-        setCounts({ reports: data.reports ?? 0, total: data.total });
+        setCounts({
+          reports: data.reports ?? 0,
+          appeals: data.appeals ?? 0,
+          total: data.total,
+        });
       }
     } catch {
       // Network hiccup — keep the last known value.
