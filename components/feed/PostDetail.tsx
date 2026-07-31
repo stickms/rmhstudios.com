@@ -424,7 +424,7 @@ export function PostDetail({ postId }: PostDetailProps) {
  value={post.repostCount ?? 0}
  format={(n) => n.toLocaleString()}
  className="font-bold text-site-text"
- />{''}
+ />{' '}
  <span className="text-site-text-dim">
  {t('rermharks', { defaultValue:'reRMHarks'})}
  </span>
@@ -434,7 +434,7 @@ export function PostDetail({ postId }: PostDetailProps) {
  value={post.likeCount ?? 0}
  format={(n) => n.toLocaleString()}
  className="font-bold text-site-text"
- />{''}
+ />{' '}
  <span className="text-site-text-dim">{t('likes', { defaultValue:'Likes'})}</span>
  </span>
  <span>
@@ -442,7 +442,7 @@ export function PostDetail({ postId }: PostDetailProps) {
  value={post.viewCount ?? 0}
  format={(n) => n.toLocaleString()}
  className="font-bold text-site-text"
- />{''}
+ />{' '}
  <span className="text-site-text-dim">{t('views', { defaultValue:'Views'})}</span>
  </span>
  </div>

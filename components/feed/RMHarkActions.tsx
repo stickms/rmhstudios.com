@@ -14,19 +14,13 @@ const ComposeModal = lazy(() =>
 );
 import { useTranslation } from'react-i18next';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';
-import { AnimatedCount } from'@/components/ui/AnimatedCount';
+import { useSignInPrompt } from'@/hooks/useSignInPrompt';
+import { EngagementCount } from'./EngagementCount';
 import { useLiquidPop } from'@/components/ui/liquid-pop';
 
 interface RMHarkActionsProps {
  item: FeedItem;
  onUpdate?: (id: string, updates: Partial<FeedItem>) => void;
-}
-
-function formatCount(n: number | undefined): string {
- if (!n) return'';
- if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
- if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
- return String(n);
 }
 
 export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
@@ -53,6 +47,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  });
  const { run: runLike } = useOptimisticAction();
  const { run: runRepost } = useOptimisticAction();
+ const promptSignIn = useSignInPrompt();
 
  useEffect(() => {
  if (!repostMenu) return;
@@ -84,7 +79,10 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
 
  const toggleLike = (e: React.MouseEvent) => {
  e.stopPropagation();
- if (!session) return;
+ if (!session) {
+ promptSignIn(t('like-sign-in', { defaultValue:'Sign in to like RMHarks.'}));
+ return;
+ }
  const wasLiked = item.liked;
  const prevCount = item.likeCount;
  runLike({
@@ -100,7 +98,10 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
 
  const toggleRepost = (e?: React.MouseEvent) => {
  e?.stopPropagation();
- if (!session) return;
+ if (!session) {
+ promptSignIn(t('rermhark-sign-in', { defaultValue:'Sign in to reRMHark.'}));
+ return;
+ }
  const wasReposted = item.reposted;
  const prevCount = item.repostCount;
  runRepost({
@@ -121,15 +122,10 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  onClick={handleCommentClick}
  title={t('comment', { defaultValue:'Comment'})}
  aria-label={t('comment', { defaultValue:'Comment'})}
- className="flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-2.5 py-1 rounded-full text-site-text-muted hover:text-site-accent hover:bg-site-accent-dim/50 transition-[color,background-color,transform] duration-150 group active:scale-95"
+ className="flex min-h-11 min-w-11 items-center justify-start gap-1.5 px-2.5 py-1 rounded-full text-site-text-muted hover:text-site-accent hover:bg-site-accent-dim/50 transition-[color,background-color,transform] duration-150 group active:scale-95"
  >
- <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform"aria-hidden />
- <AnimatedCount
- value={item.commentCount}
- format={formatCount}
- hideZero
- className="text-xs"
- />
+ <MessageCircle className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform"aria-hidden />
+ <EngagementCount value={item.commentCount} />
  </button>
 
  {/* reRMHark */}
@@ -139,9 +135,15 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  ref={repostBtnRef}
  onClick={(e) => {
  e.stopPropagation();
+ // Every item in this menu needs an account, so a signed-out visitor gets
+ // the prompt at the trigger instead of a menu that dead-ends.
+ if (!session) {
+ promptSignIn(t('rermhark-sign-in', { defaultValue:'Sign in to reRMHark.'}));
+ return;
+ }
  setRepostMenu((v) => !v);
  }}
- className={`flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-2.5 py-1 rounded-full transition-[color,background-color,transform] duration-150 group active:scale-95 ${
+ className={`flex min-h-11 min-w-11 items-center justify-start gap-1.5 px-2.5 py-1 rounded-full transition-[color,background-color,transform] duration-150 group active:scale-95 ${
  item.reposted
  ?'text-site-success'
  :'text-site-text-muted hover:text-site-success hover:bg-site-success/10'
@@ -151,13 +153,8 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  aria-haspopup="menu"
  aria-expanded={repostMenu}
  >
- <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform"aria-hidden />
- <AnimatedCount
- value={item.repostCount}
- format={formatCount}
- hideZero
- className="text-xs"
- />
+ <Repeat2 className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform"aria-hidden />
+ <EngagementCount value={item.repostCount} />
  </button>
  {repostMenu && (
  <div
@@ -210,25 +207,34 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  {/* Like */}
  <button
  onClick={toggleLike}
- className={`flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-2.5 py-1 rounded-full transition-[color,background-color,transform] duration-150 group active:scale-95 ${
+ aria-pressed={!!item.liked}
+ className={`flex min-h-11 min-w-11 items-center justify-start gap-1.5 px-2.5 py-1 rounded-full transition-[color,background-color,transform] duration-150 group active:scale-95 ${
  item.liked
  ?'text-site-danger'
  :'text-site-text-muted hover:text-site-danger hover:bg-site-danger/10'
  }`}
- title={t('like', { defaultValue:'Like'})}
- aria-label={t('like', { defaultValue:'Like'})}
+ title={
+ item.liked
+ ? t('unlike', { defaultValue:'Unlike'})
+ : t('like', { defaultValue:'Like'})
+ }
+ aria-label={
+ item.liked
+ ? t('unlike', { defaultValue:'Unlike'})
+ : t('like', { defaultValue:'Like'})
+ }
  >
  <Heart
- className={`w-4 h-4 group-hover:scale-110 transition-transform ${item.liked ?'fill-current':''}`}
+ className={`w-4 h-4 shrink-0 group-hover:scale-110 transition-transform ${item.liked ?'fill-current':''}`}
  aria-hidden
  />
- <AnimatedCount value={item.likeCount} format={formatCount} hideZero className="text-xs"/>
+ <EngagementCount value={item.likeCount} />
  </button>
 
  {/* Views */}
- <div className="flex items-center gap-1.5 px-2 py-1 text-site-text-dim">
- <Eye className="w-4 h-4"/>
- <AnimatedCount value={item.viewCount} format={formatCount} hideZero className="text-xs"/>
+ <div className="flex min-h-11 items-center justify-start gap-1.5 px-2.5 py-1 text-site-text-dim">
+ <Eye className="w-4 h-4 shrink-0"/>
+ <EngagementCount value={item.viewCount} />
  </div>
  </div>
  );
