@@ -15,6 +15,7 @@ export default defineConfig({
       'lib/rmhark-ai/__tests__/**/*.test.ts',
       'lib/rmhladder/**/*.test.ts',
       'lib/homes/**/*.test.ts',
+      'lib/isleworks/__tests__/**/*.test.ts',
       'lib/personas/__tests__/**/*.test.ts',
       'lib/predictions/__tests__/**/*.test.ts',
       'lib/tournaments/__tests__/**/*.test.ts',
