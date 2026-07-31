@@ -5,8 +5,11 @@ import ptAdmin from "@/locales/pt/admin.json";
 import ptBuilds from "@/locales/pt/builds.json";
 import ptCAdmin from "@/locales/pt/c-admin.json";
 import ptCAltair from "@/locales/pt/c-altair.json";
+import ptCAwards from "@/locales/pt/c-awards.json";
 import ptCBlog from "@/locales/pt/c-blog.json";
 import ptCBuilds from "@/locales/pt/c-builds.json";
+import ptCCircle from "@/locales/pt/c-circle.json";
+import ptCCreator from "@/locales/pt/c-creator.json";
 import ptCCursedLogic from "@/locales/pt/c-cursed-logic.json";
 import ptCDailyPuzzles from "@/locales/pt/c-daily-puzzles.json";
 import ptCDoctrine from "@/locales/pt/c-doctrine.json";
@@ -14,19 +17,25 @@ import ptCDreamRift from "@/locales/pt/c-dream-rift.json";
 import ptCEconomy from "@/locales/pt/c-economy.json";
 import ptCForestExplorer from "@/locales/pt/c-forest-explorer.json";
 import ptCGame from "@/locales/pt/c-game.json";
+import ptCHistory from "@/locales/pt/c-history.json";
 import ptCHouseAlwaysWins from "@/locales/pt/c-house-always-wins.json";
 import ptCKowloonKnockout from "@/locales/pt/c-kowloon-knockout.json";
 import ptCLaundrySort from "@/locales/pt/c-laundry-sort.json";
+import ptCLayout from "@/locales/pt/c-layout.json";
 import ptCLibrary from "@/locales/pt/c-library.json";
 import ptCLightsOut from "@/locales/pt/c-lights-out.json";
+import ptCLists from "@/locales/pt/c-lists.json";
 import ptCLockdown from "@/locales/pt/c-lockdown.json";
 import ptCModeration from "@/locales/pt/c-moderation.json";
 import ptCNeonDriftway from "@/locales/pt/c-neon-driftway.json";
 import ptCNews from "@/locales/pt/c-news.json";
+import ptCPredictions from "@/locales/pt/c-predictions.json";
+import ptCProfileModules from "@/locales/pt/c-profile-modules.json";
 import ptCRideshare from "@/locales/pt/c-rideshare.json";
 import ptCRmhCapital from "@/locales/pt/c-rmh-capital.json";
 import ptCRmhPmc from "@/locales/pt/c-rmh-pmc.json";
 import ptCRmhbox from "@/locales/pt/c-rmhbox.json";
+import ptCRmhcalculator from "@/locales/pt/c-rmhcalculator.json";
 import ptCRmhcode from "@/locales/pt/c-rmhcode.json";
 import ptCRmhcoins from "@/locales/pt/c-rmhcoins.json";
 import ptCRmhmusic from "@/locales/pt/c-rmhmusic.json";
@@ -36,17 +45,23 @@ import ptCRmhtube from "@/locales/pt/c-rmhtube.json";
 import ptCRmhtype from "@/locales/pt/c-rmhtype.json";
 import ptCRmhvibe from "@/locales/pt/c-rmhvibe.json";
 import ptCRoadmap from "@/locales/pt/c-roadmap.json";
+import ptCSaves from "@/locales/pt/c-saves.json";
 import ptCSignalForge from "@/locales/pt/c-signal-forge.json";
+import ptCStatus from "@/locales/pt/c-status.json";
 import ptCStudio from "@/locales/pt/c-studio.json";
 import ptCSynapseStorm from "@/locales/pt/c-synapse-storm.json";
 import ptCTempleOfJoy from "@/locales/pt/c-temple-of-joy.json";
+import ptCTournaments from "@/locales/pt/c-tournaments.json";
 import ptCUi from "@/locales/pt/c-ui.json";
 import ptCUserBuilds from "@/locales/pt/c-user-builds.json";
 import ptCVega from "@/locales/pt/c-vega.json";
 import ptCVersecraft from "@/locales/pt/c-versecraft.json";
 import ptCVoidBreaker from "@/locales/pt/c-void-breaker.json";
+import ptCWager from "@/locales/pt/c-wager.json";
+import ptCWishlist from "@/locales/pt/c-wishlist.json";
 import ptCommon from "@/locales/pt/common.json";
 import ptFeed from "@/locales/pt/feed.json";
+import ptGamesHub from "@/locales/pt/games-hub.json";
 import ptGroups from "@/locales/pt/groups.json";
 import ptLibrary from "@/locales/pt/library.json";
 import ptNav from "@/locales/pt/nav.json";
@@ -61,8 +76,13 @@ import ptRSliceIt from "@/locales/pt/r-slice-it.json";
 import ptRStrategies from "@/locales/pt/r-strategies.json";
 import ptRStudio from "@/locales/pt/r-studio.json";
 import ptRideshare from "@/locales/pt/rideshare.json";
+import ptSearch from "@/locales/pt/search.json";
+import ptSettingsAppearance from "@/locales/pt/settings-appearance.json";
+import ptSettingsContent from "@/locales/pt/settings-content.json";
+import ptSettingsNotifications from "@/locales/pt/settings-notifications.json";
 import ptShared from "@/locales/pt/shared.json";
 import ptSite from "@/locales/pt/site.json";
+import ptThemeStudio from "@/locales/pt/theme-studio.json";
 import ptUserBuilds from "@/locales/pt/user-builds.json";
 import ptV from "@/locales/pt/v.json";
 
@@ -71,8 +91,11 @@ const ptResources = {
   "builds": ptBuilds,
   "c-admin": ptCAdmin,
   "c-altair": ptCAltair,
+  "c-awards": ptCAwards,
   "c-blog": ptCBlog,
   "c-builds": ptCBuilds,
+  "c-circle": ptCCircle,
+  "c-creator": ptCCreator,
   "c-cursed-logic": ptCCursedLogic,
   "c-daily-puzzles": ptCDailyPuzzles,
   "c-doctrine": ptCDoctrine,
@@ -80,19 +103,25 @@ const ptResources = {
   "c-economy": ptCEconomy,
   "c-forest-explorer": ptCForestExplorer,
   "c-game": ptCGame,
+  "c-history": ptCHistory,
   "c-house-always-wins": ptCHouseAlwaysWins,
   "c-kowloon-knockout": ptCKowloonKnockout,
   "c-laundry-sort": ptCLaundrySort,
+  "c-layout": ptCLayout,
   "c-library": ptCLibrary,
   "c-lights-out": ptCLightsOut,
+  "c-lists": ptCLists,
   "c-lockdown": ptCLockdown,
   "c-moderation": ptCModeration,
   "c-neon-driftway": ptCNeonDriftway,
   "c-news": ptCNews,
+  "c-predictions": ptCPredictions,
+  "c-profile-modules": ptCProfileModules,
   "c-rideshare": ptCRideshare,
   "c-rmh-capital": ptCRmhCapital,
   "c-rmh-pmc": ptCRmhPmc,
   "c-rmhbox": ptCRmhbox,
+  "c-rmhcalculator": ptCRmhcalculator,
   "c-rmhcode": ptCRmhcode,
   "c-rmhcoins": ptCRmhcoins,
   "c-rmhmusic": ptCRmhmusic,
@@ -102,17 +131,23 @@ const ptResources = {
   "c-rmhtype": ptCRmhtype,
   "c-rmhvibe": ptCRmhvibe,
   "c-roadmap": ptCRoadmap,
+  "c-saves": ptCSaves,
   "c-signal-forge": ptCSignalForge,
+  "c-status": ptCStatus,
   "c-studio": ptCStudio,
   "c-synapse-storm": ptCSynapseStorm,
   "c-temple-of-joy": ptCTempleOfJoy,
+  "c-tournaments": ptCTournaments,
   "c-ui": ptCUi,
   "c-user-builds": ptCUserBuilds,
   "c-vega": ptCVega,
   "c-versecraft": ptCVersecraft,
   "c-void-breaker": ptCVoidBreaker,
+  "c-wager": ptCWager,
+  "c-wishlist": ptCWishlist,
   "common": ptCommon,
   "feed": ptFeed,
+  "games-hub": ptGamesHub,
   "groups": ptGroups,
   "library": ptLibrary,
   "nav": ptNav,
@@ -127,8 +162,13 @@ const ptResources = {
   "r-strategies": ptRStrategies,
   "r-studio": ptRStudio,
   "rideshare": ptRideshare,
+  "search": ptSearch,
+  "settings-appearance": ptSettingsAppearance,
+  "settings-content": ptSettingsContent,
+  "settings-notifications": ptSettingsNotifications,
   "shared": ptShared,
   "site": ptSite,
+  "theme-studio": ptThemeStudio,
   "user-builds": ptUserBuilds,
   "v": ptV,
 } as const;
