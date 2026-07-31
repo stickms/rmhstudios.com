@@ -5,8 +5,11 @@ import itAdmin from "@/locales/it/admin.json";
 import itBuilds from "@/locales/it/builds.json";
 import itCAdmin from "@/locales/it/c-admin.json";
 import itCAltair from "@/locales/it/c-altair.json";
+import itCAwards from "@/locales/it/c-awards.json";
 import itCBlog from "@/locales/it/c-blog.json";
 import itCBuilds from "@/locales/it/c-builds.json";
+import itCCircle from "@/locales/it/c-circle.json";
+import itCCreator from "@/locales/it/c-creator.json";
 import itCCursedLogic from "@/locales/it/c-cursed-logic.json";
 import itCDailyPuzzles from "@/locales/it/c-daily-puzzles.json";
 import itCDoctrine from "@/locales/it/c-doctrine.json";
@@ -14,19 +17,25 @@ import itCDreamRift from "@/locales/it/c-dream-rift.json";
 import itCEconomy from "@/locales/it/c-economy.json";
 import itCForestExplorer from "@/locales/it/c-forest-explorer.json";
 import itCGame from "@/locales/it/c-game.json";
+import itCHistory from "@/locales/it/c-history.json";
 import itCHouseAlwaysWins from "@/locales/it/c-house-always-wins.json";
 import itCKowloonKnockout from "@/locales/it/c-kowloon-knockout.json";
 import itCLaundrySort from "@/locales/it/c-laundry-sort.json";
+import itCLayout from "@/locales/it/c-layout.json";
 import itCLibrary from "@/locales/it/c-library.json";
 import itCLightsOut from "@/locales/it/c-lights-out.json";
+import itCLists from "@/locales/it/c-lists.json";
 import itCLockdown from "@/locales/it/c-lockdown.json";
 import itCModeration from "@/locales/it/c-moderation.json";
 import itCNeonDriftway from "@/locales/it/c-neon-driftway.json";
 import itCNews from "@/locales/it/c-news.json";
+import itCPredictions from "@/locales/it/c-predictions.json";
+import itCProfileModules from "@/locales/it/c-profile-modules.json";
 import itCRideshare from "@/locales/it/c-rideshare.json";
 import itCRmhCapital from "@/locales/it/c-rmh-capital.json";
 import itCRmhPmc from "@/locales/it/c-rmh-pmc.json";
 import itCRmhbox from "@/locales/it/c-rmhbox.json";
+import itCRmhcalculator from "@/locales/it/c-rmhcalculator.json";
 import itCRmhcode from "@/locales/it/c-rmhcode.json";
 import itCRmhcoins from "@/locales/it/c-rmhcoins.json";
 import itCRmhmusic from "@/locales/it/c-rmhmusic.json";
@@ -36,17 +45,23 @@ import itCRmhtube from "@/locales/it/c-rmhtube.json";
 import itCRmhtype from "@/locales/it/c-rmhtype.json";
 import itCRmhvibe from "@/locales/it/c-rmhvibe.json";
 import itCRoadmap from "@/locales/it/c-roadmap.json";
+import itCSaves from "@/locales/it/c-saves.json";
 import itCSignalForge from "@/locales/it/c-signal-forge.json";
+import itCStatus from "@/locales/it/c-status.json";
 import itCStudio from "@/locales/it/c-studio.json";
 import itCSynapseStorm from "@/locales/it/c-synapse-storm.json";
 import itCTempleOfJoy from "@/locales/it/c-temple-of-joy.json";
+import itCTournaments from "@/locales/it/c-tournaments.json";
 import itCUi from "@/locales/it/c-ui.json";
 import itCUserBuilds from "@/locales/it/c-user-builds.json";
 import itCVega from "@/locales/it/c-vega.json";
 import itCVersecraft from "@/locales/it/c-versecraft.json";
 import itCVoidBreaker from "@/locales/it/c-void-breaker.json";
+import itCWager from "@/locales/it/c-wager.json";
+import itCWishlist from "@/locales/it/c-wishlist.json";
 import itCommon from "@/locales/it/common.json";
 import itFeed from "@/locales/it/feed.json";
+import itGamesHub from "@/locales/it/games-hub.json";
 import itGroups from "@/locales/it/groups.json";
 import itLibrary from "@/locales/it/library.json";
 import itNav from "@/locales/it/nav.json";
@@ -61,8 +76,13 @@ import itRSliceIt from "@/locales/it/r-slice-it.json";
 import itRStrategies from "@/locales/it/r-strategies.json";
 import itRStudio from "@/locales/it/r-studio.json";
 import itRideshare from "@/locales/it/rideshare.json";
+import itSearch from "@/locales/it/search.json";
+import itSettingsAppearance from "@/locales/it/settings-appearance.json";
+import itSettingsContent from "@/locales/it/settings-content.json";
+import itSettingsNotifications from "@/locales/it/settings-notifications.json";
 import itShared from "@/locales/it/shared.json";
 import itSite from "@/locales/it/site.json";
+import itThemeStudio from "@/locales/it/theme-studio.json";
 import itUserBuilds from "@/locales/it/user-builds.json";
 import itV from "@/locales/it/v.json";
 
@@ -71,8 +91,11 @@ const itResources = {
   "builds": itBuilds,
   "c-admin": itCAdmin,
   "c-altair": itCAltair,
+  "c-awards": itCAwards,
   "c-blog": itCBlog,
   "c-builds": itCBuilds,
+  "c-circle": itCCircle,
+  "c-creator": itCCreator,
   "c-cursed-logic": itCCursedLogic,
   "c-daily-puzzles": itCDailyPuzzles,
   "c-doctrine": itCDoctrine,
@@ -80,19 +103,25 @@ const itResources = {
   "c-economy": itCEconomy,
   "c-forest-explorer": itCForestExplorer,
   "c-game": itCGame,
+  "c-history": itCHistory,
   "c-house-always-wins": itCHouseAlwaysWins,
   "c-kowloon-knockout": itCKowloonKnockout,
   "c-laundry-sort": itCLaundrySort,
+  "c-layout": itCLayout,
   "c-library": itCLibrary,
   "c-lights-out": itCLightsOut,
+  "c-lists": itCLists,
   "c-lockdown": itCLockdown,
   "c-moderation": itCModeration,
   "c-neon-driftway": itCNeonDriftway,
   "c-news": itCNews,
+  "c-predictions": itCPredictions,
+  "c-profile-modules": itCProfileModules,
   "c-rideshare": itCRideshare,
   "c-rmh-capital": itCRmhCapital,
   "c-rmh-pmc": itCRmhPmc,
   "c-rmhbox": itCRmhbox,
+  "c-rmhcalculator": itCRmhcalculator,
   "c-rmhcode": itCRmhcode,
   "c-rmhcoins": itCRmhcoins,
   "c-rmhmusic": itCRmhmusic,
@@ -102,17 +131,23 @@ const itResources = {
   "c-rmhtype": itCRmhtype,
   "c-rmhvibe": itCRmhvibe,
   "c-roadmap": itCRoadmap,
+  "c-saves": itCSaves,
   "c-signal-forge": itCSignalForge,
+  "c-status": itCStatus,
   "c-studio": itCStudio,
   "c-synapse-storm": itCSynapseStorm,
   "c-temple-of-joy": itCTempleOfJoy,
+  "c-tournaments": itCTournaments,
   "c-ui": itCUi,
   "c-user-builds": itCUserBuilds,
   "c-vega": itCVega,
   "c-versecraft": itCVersecraft,
   "c-void-breaker": itCVoidBreaker,
+  "c-wager": itCWager,
+  "c-wishlist": itCWishlist,
   "common": itCommon,
   "feed": itFeed,
+  "games-hub": itGamesHub,
   "groups": itGroups,
   "library": itLibrary,
   "nav": itNav,
@@ -127,8 +162,13 @@ const itResources = {
   "r-strategies": itRStrategies,
   "r-studio": itRStudio,
   "rideshare": itRideshare,
+  "search": itSearch,
+  "settings-appearance": itSettingsAppearance,
+  "settings-content": itSettingsContent,
+  "settings-notifications": itSettingsNotifications,
   "shared": itShared,
   "site": itSite,
+  "theme-studio": itThemeStudio,
   "user-builds": itUserBuilds,
   "v": itV,
 } as const;
