@@ -25,7 +25,6 @@ import {
  MAX_IMAGE_ALT_LENGTH,
 } from'@/lib/rmhark-schema';
 import { clearComposeDraft, useComposeDraftAutosave } from'@/hooks/useComposeDraft';
-import { useFrostedOverlay } from'@/hooks/useFrostedOverlay';
 
 const MAX_IMAGES = 4;
 
@@ -54,9 +53,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  const { t } = useTranslation('feed');
  // Both `.glass-scrim` backdrops here are viewport-covering `backdrop-filter`
  // layers, and nothing may animate above one — Chromium re-blurs the whole
- // layer every frame that anything does. Stands the pointer metaball down while
- // the composer is up (see hooks/useFrostedOverlay).
- useFrostedOverlay(open);
+ // layer every frame that anything does.
  const [content, setContent] = useState(initialContent);
  const [submitting, setSubmitting] = useState(false);
  const [attachment, setAttachment] = useState<Attachment>(null);

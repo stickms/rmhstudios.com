@@ -1,10 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
+import { useTranslation } from 'react-i18next';
 import { SearchColumn } from '@/components/feed/SearchColumn';
 import { SavedSearches } from '@/components/search/SavedSearches';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { PageLayout } from '@/components/feed/PageLayout';
 import { RightSidebar } from '@/components/feed/RightSidebar';
-import { ContextRail } from '@/components/feed/ContextRail';
 import { getSidebarData } from '@/lib/sidebar-data';
 
 const fetchSidebarData = createServerFn({ method: 'GET' }).handler(async () => {
@@ -25,31 +25,33 @@ export const Route = createFileRoute('/_site/search')({
 });
 
 function SearchPage() {
+  const { t } = useTranslation('site');
   const { q, tab } = Route.useSearch();
   const { officialBuilds, userBuilds, recommendedUsers, blogPosts } = Route.useLoaderData();
 
   return (
-    <>
-      <AnimatedMain className="w-full min-w-0 pb-dock">
-        <SavedSearches currentQuery={q} />
-        <SearchColumn
-          initialQuery={q}
-          initialTab={tab}
-          officialBuilds={officialBuilds}
-          userBuilds={userBuilds}
-          blogPosts={blogPosts}
-        />
-      </AnimatedMain>
-
-      {/* Right Sidebar — mirrors the feed's ContextRail (xl+, symmetric rail width) */}
-      <ContextRail>
+    <PageLayout
+      title={t('explore-title', { defaultValue: 'Explore' })}
+      description={t('explore-subtitle', {
+        defaultValue: 'Search people, posts, builds and writing across RMH Studios.',
+      })}
+      rightSidebar={
         <RightSidebar
           officialBuilds={officialBuilds}
           userBuilds={userBuilds}
           recommendedUsers={recommendedUsers}
           blogPosts={blogPosts}
         />
-      </ContextRail>
-    </>
+      }
+    >
+      <SavedSearches currentQuery={q} />
+      <SearchColumn
+        initialQuery={q}
+        initialTab={tab}
+        officialBuilds={officialBuilds}
+        userBuilds={userBuilds}
+        blogPosts={blogPosts}
+      />
+    </PageLayout>
   );
 }

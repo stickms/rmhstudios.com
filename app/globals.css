@@ -293,17 +293,13 @@
      Everything here paints inside `.radial-shell`, which sets `isolation:
      isolate` — that caps the whole scale below any positioned body-level sibling
      (dialogs, sheets and the toaster all portal out to `<body>` at z-50+), which
-     is what keeps a modal above the chrome no matter what these say.
-     `--z-cursor` is the exception: the pointer metaball portals to <body> too and
-     must sit above literally everything, because it replaces the OS cursor. */
+     is what keeps a modal above the chrome no matter what these say. */
   --z-backdrop: 0;
   --z-content: 1;
   --z-rail: 2;
   --z-topbar: 60;
-  --z-hub-aura: 79;
   --z-floating: 80;
   --z-hub-overlay: 90;
-  --z-hub-aura-open: 94;
   --z-hub-orb-open: 95;
   /* Body-level, not shell-level: the top bar's quick panels portal out of the
      shell (the bar's `backdrop-filter` would otherwise be their containing
@@ -312,9 +308,8 @@
   --z-quickpanel: 40;
   --z-skip: 200;
   /* Tooltips portal to <body> and must clear the z-50 dialogs/sheets they can
-     be triggered from inside, so they sit above the whole stack bar the cursor. */
+     be triggered from inside, so they sit above the whole stack. */
   --z-tooltip: 9999;
-  --z-cursor: 2147483000;
 
   /* Width of the shell's desktop rails. `--site-rail-width` is the historical
      name the layout constants in lib/layout-width.ts reference; it was never

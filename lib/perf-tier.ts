@@ -30,8 +30,6 @@
  *
  * - `deviceMemory < 4` — under 4GB of RAM. Chromium-only and quantised by the
  *   spec (0.25/0.5/1/2/4/8); absent means unknown, which is treated as capable.
- *   This is the same signal and threshold `MetaballCursor` already uses to
- *   refuse to run at all.
  * - `hardwareConcurrency <= 2` — a dual-core (or single-core) CPU. Every
  *   compositor-thread animation on the site competes with the main thread there.
  *

@@ -34,7 +34,6 @@ import { useTranslation } from 'react-i18next';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
 import { type LibraryBook } from '@/lib/library/library';
 import { listAllBooks } from '@/lib/library/library.server';
 import { listAlbums } from '@/lib/albums.server';
@@ -45,9 +44,7 @@ import { getAllPosts, type Post } from '@/lib/blog';
 import { PlaylistsColumn } from '@/components/feed/PlaylistsColumn';
 import { LibraryBlogRow } from '@/components/library/LibraryBlogRow';
 import { LibraryRevealProvider, useReveal } from '@/components/library/LibraryReveal';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from '@/components/feed/ContextRail';
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
+import { PageLayout } from '@/components/feed/PageLayout';
 import { useSession } from '@/components/Providers';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { suppressNextScrollReset } from '@/hooks/useScrollRestoration';
@@ -534,58 +531,37 @@ function Library() {
   const hasUnmigrated = useMemo(() => books.some((b) => !b.id), [books]);
 
   return (
-    <>
-      <AnimatedMain className="vibe-screen lib lib--glass-playground min-h-screen w-full min-w-0 pb-dock">
+    <PageLayout
+      title={t('library-heading', { defaultValue: 'Library' })}
+      description={t('archive-description', {
+        defaultValue:
+          'Books, photo albums, essays, playlists, field notes, and strange ideas—floating together in one playful archive.',
+      })}
+      headerRight={
+        // The page's one control, in the shared header's action slot. It used to
+        // sit in a bespoke `.lib-head` bar above a full-width hero slab; the bar
+        // and the hero are gone so this page opens exactly like every other one.
+        // The playground, the explorer and the shelves below are untouched — and
+        // so is the per-book 3D inspect button, which is where turning a volume
+        // over with the phone lives now.
+        session.data ? (
+          <button
+            type="button"
+            className="lib-upload__open"
+            onClick={() => setUploadOpen(true)}
+            aria-label={t('upload-label', { defaultValue: 'Upload a PDF' })}
+          >
+            <Upload size={15} aria-hidden="true" />
+            <span className="lib-upload__open-label">
+              {t('upload-button', { defaultValue: 'Add a book' })}
+            </span>
+          </button>
+        ) : undefined
+      }
+    >
+      <div className="vibe-screen lib lib--glass-playground min-h-screen">
         <div className="lib-playground" ref={playgroundRef} {...orbit}>
           <LibraryRevealProvider instant={hasFiltered}>
-            {/* The lightweight title stays above the hero. The explorer below is
-              the page's single sticky control group. */}
-            <div className="lib-topbar">
-              <header className="lib-head glass-chrome glass-bevel-sm">
-                <div className="lib-head__brand">
-                  <MobileBrandPrefix />
-                  <BookOpen size={17} aria-hidden="true" />
-                  <span>{t('library-heading', { defaultValue: 'Library' })}</span>
-                </div>
-                {session.data && (
-                  <button
-                    type="button"
-                    className="lib-upload__open"
-                    onClick={() => setUploadOpen(true)}
-                    aria-label={t('upload-label', { defaultValue: 'Upload a PDF' })}
-                  >
-                    <Upload size={15} aria-hidden="true" />
-                    <span className="lib-upload__open-label">
-                      {t('upload-button', { defaultValue: 'Add a book' })}
-                    </span>
-                  </button>
-                )}
-              </header>
-            </div>
-
-            <section
-              // Flagship hero → floating L2 glass slab with edge refraction (§8.4):
-              // the library page's one refract slot (+ per-element lens).
-              className="lib-hero glass-pane glass-refract glass-liquid"
-              data-glass-lens=""
-              aria-labelledby="library-title"
-            >
-              <div className="lib-hero__copy">
-                <p className="lib-hero__eyebrow">
-                  {t('archive-eyebrow', { defaultValue: 'A living media library' })}
-                </p>
-                <h1 id="library-title">
-                  {t('archive-title', { defaultValue: 'Pick something up. Get lost in it.' })}
-                </h1>
-                <p className="lib-hero__lede">
-                  {t('archive-description', {
-                    defaultValue:
-                      'Books, photo albums, essays, playlists, field notes, and strange ideas—floating together in one playful archive.',
-                  })}
-                </p>
-              </div>
-            </section>
-
             <div
               className="lib-explorer glass-chrome glass-refract"
               data-glass-lens=""
@@ -798,8 +774,7 @@ function Library() {
               ))}
           </LibraryRevealProvider>
         </div>
-      </AnimatedMain>
-      <ContextRail reserve />
+      </div>
       {uploadOpen && (
         <UploadModal isAdmin={isAdmin} onClose={() => setUploadOpen(false)} onUploaded={refresh} />
       )}
@@ -807,7 +782,7 @@ function Library() {
         <LibraryEditModal book={editing} onClose={() => setEditing(null)} onSaved={refresh} />
       )}
       {inspecting && <Book3DViewer book={inspecting} onClose={() => setInspecting(null)} />}
-    </>
+    </PageLayout>
   );
 }
 

@@ -17,9 +17,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { FileText, Gamepad2, AppWindow, Boxes, Bot, Coins } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from '@/components/feed/ContextRail';
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
+import { PageLayout } from '@/components/feed/PageLayout';
 import { listCuratedBuilds } from '@/lib/builds/curated';
 import { listVibePages } from '@/lib/rmhvibe/vibe.server';
 import { PagesTab, type VibeGallery } from '@/components/creator-studio/PagesTab';
@@ -116,20 +114,19 @@ function CreatePage() {
   ];
 
   return (
-    <>
-      <AnimatedMain className="cstudio-screen vibe-screen min-h-screen w-full min-w-0 pb-dock">
-        <header className="cstudio-head">
-          <h1 className="cstudio-title">
-            {t('studio-headline', { defaultValue: 'Make anything.' })}
-          </h1>
-          <p className="cstudio-sub">
-            {t('studio-sub', {
-              defaultValue:
-                'Generate shareable pages, dive into our games and apps, and craft AI personas — your whole creative toolkit in one place.',
-            })}
-          </p>
-        </header>
-
+    <PageLayout
+      title={t('create', { defaultValue: 'Create' })}
+      description={t('studio-sub', {
+        defaultValue:
+          'Generate shareable pages, dive into our games and apps, and craft AI personas — your whole creative toolkit in one place.',
+      })}
+    >
+      {/* `.cstudio-screen` stays as the wrapper: it declares `--studio-gutter`
+          and the sticky-group height every `.cstudio-*` descendant reads. What
+          it no longer carries is a bespoke hero — the page title is the shared
+          `PageLayout` header now, the same one /predictions and /developer use,
+          so Create stops being the one page with its own headline scale. */}
+      <div className="cstudio-screen vibe-screen min-h-screen">
         {/* §16.2: the top-level tabs are now the shared LiquidTabs sheet (was
             bespoke `.cstudio-tab*` markup). `.cstudio-tabs` positions the sheet
             only (sticky below the hero, gutter margins, column max-width — the
@@ -223,9 +220,7 @@ function CreatePage() {
             <EarningsTab />
           </div>
         )}
-      </AnimatedMain>
-      {/* Trailing gutter to match the feed/blog layout */}
-      <ContextRail reserve />
-    </>
+      </div>
+    </PageLayout>
   );
 }

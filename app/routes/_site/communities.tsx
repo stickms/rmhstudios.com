@@ -4,10 +4,8 @@ import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { useTranslation } from 'react-i18next';
 import { Users, CalendarDays, Radio } from 'lucide-react';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from "@/components/feed/ContextRail";
+import { PageLayout } from '@/components/feed/PageLayout';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { CommunitiesColumn } from '@/components/feed/CommunitiesColumn';
 import { CommunitiesSkeleton } from '@/components/feed/CommunitiesSkeleton';
 import { EventsColumn } from '@/components/events/EventsColumn';
@@ -48,24 +46,28 @@ export const Route = createFileRoute('/_site/communities')({
 });
 
 function CommunitiesShell({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation('site');
   return (
-    <>
-      <AnimatedMain className="w-full min-w-0 pb-dock">
-        {children}
-      </AnimatedMain>
-      <ContextRail reserve />
-    </>
+    <PageLayout
+      title={t('communities-title', { defaultValue: 'Communities' })}
+      description={t('communities-subtitle', {
+        defaultValue: 'Groups to join, events to RSVP to, and live rooms to drop into.',
+      })}
+    >
+      {children}
+    </PageLayout>
   );
 }
 
 /**
- * Top-of-page section switcher between the three surfaces. §16.2: this is now
- * the shared `LiquidTabs` sheet+capsule grammar (was a bare tab row buried in a
+ * Top-of-page section switcher between the three surfaces. §16.2: this is the
+ * shared `LiquidTabs` sheet+capsule grammar (was a bare tab row buried in a
  * `glass-chrome border-b` header — the §5.45 "never in header chrome" violation
  * the owner flagged). It sits BELOW the page title, on its own floating pill,
- * exactly like /store. `?tab=` mirroring + the aria-controls tabpanel wiring
- * (idBase="communities" → `communities-tab-*` / `communities-panel-*`) are
- * byte-identical to the old markup; each embedded column stays header-less.
+ * exactly like /store and /services. The title itself comes from `PageLayout`
+ * now rather than a capsule this page drew for itself. `?tab=` mirroring + the
+ * aria-controls tabpanel wiring (idBase="communities" → `communities-tab-*` /
+ * `communities-panel-*`) are unchanged; each embedded column stays header-less.
  */
 function CommunitiesTabs({ active }: { active: CommunitiesTab }) {
   const { t } = useTranslation('site');
@@ -93,25 +95,16 @@ function CommunitiesTabs({ active }: { active: CommunitiesTab }) {
   );
 
   return (
-    <>
-      {/* §5.45: floating "Communities" page-title capsule on desktop, then the
-          tab sheet below it. On mobile the tab sheet is the page's own chrome. */}
-      <div className="mx-2 mt-2 hidden rounded-site glass-chrome px-4 py-3 shadow-site-sm md:mx-3 md:mt-3 md:block">
-        <h1 className="font-(family-name:--site-font-display) text-2xl font-semibold tracking-[-0.022em] text-site-text">
-          {t('communities-title', { defaultValue: 'Communities' })}
-        </h1>
-      </div>
-      <div className="my-3 px-2 md:px-3">
-        <LiquidTabs
-          tabs={tabs}
-          value={active}
-          onChange={setTab}
-          idBase="communities"
-          scroll
-          aria-label={t('communities-sections', { defaultValue: 'Community sections' })}
-        />
-      </div>
-    </>
+    <div className="my-3 px-2 md:px-3">
+      <LiquidTabs
+        tabs={tabs}
+        value={active}
+        onChange={setTab}
+        idBase="communities"
+        scroll
+        aria-label={t('communities-sections', { defaultValue: 'Community sections' })}
+      />
+    </div>
   );
 }
 

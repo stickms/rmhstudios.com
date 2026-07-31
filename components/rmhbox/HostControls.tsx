@@ -16,6 +16,7 @@
 
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Select } from '@/components/ui/select';
 import { Gamepad2, Settings, SlidersHorizontal } from 'lucide-react';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
@@ -49,17 +50,23 @@ export default function HostControls({
   const [showSettings, setShowSettings] = useState(true);
   const [showGameSettings, setShowGameSettings] = useState(false);
 
-  const { t } = useTranslation("c-rmhbox");
+  const { t } = useTranslation('c-rmhbox');
   const gameSettingsState = useRMHboxStore((s) => s.gameSettingsState);
 
-  const handleUpdateSettings = useCallback((partial: Partial<LobbySettings>) => {
-    emit(C2S.LOBBY_UPDATE_SETTINGS, { lobbyId, settings: partial });
-    onSettingsChange?.(partial);
-  }, [lobbyId, onSettingsChange]);
+  const handleUpdateSettings = useCallback(
+    (partial: Partial<LobbySettings>) => {
+      emit(C2S.LOBBY_UPDATE_SETTINGS, { lobbyId, settings: partial });
+      onSettingsChange?.(partial);
+    },
+    [lobbyId, onSettingsChange],
+  );
 
-  const handleGameSettingChange = useCallback((key: string, value: boolean | number | string) => {
-    emit(C2S.GAME_UPDATE_SETTINGS, { lobbyId, settings: { [key]: value } });
-  }, [lobbyId]);
+  const handleGameSettingChange = useCallback(
+    (key: string, value: boolean | number | string) => {
+      emit(C2S.GAME_UPDATE_SETTINGS, { lobbyId, settings: { [key]: value } });
+    },
+    [lobbyId],
+  );
 
   const handleGameSettingsReset = useCallback(() => {
     emit(C2S.GAME_RESET_SETTINGS, { lobbyId });
@@ -72,7 +79,7 @@ export default function HostControls({
   return (
     <div className="flex flex-col gap-3">
       <span className="w-full text-xs font-semibold uppercase tracking-wider text-(--app-text-muted)">
-        {t("host-controls", { defaultValue: "Host Controls" })}
+        {t('host-controls', { defaultValue: 'Host Controls' })}
       </span>
 
       <div className="flex flex-wrap justify-center gap-3">
@@ -81,7 +88,7 @@ export default function HostControls({
           disabled={!isWaiting}
           className="flex items-center gap-2 rounded-lg bg-(--app-accent) px-4 py-2 text-sm font-semibold text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover) disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          <Gamepad2 className="h-4 w-4" /> {t("pick-game", { defaultValue: "Pick Game" })}
+          <Gamepad2 className="h-4 w-4" /> {t('pick-game', { defaultValue: 'Pick Game' })}
         </button>
 
         {/* Game Settings — only when a game with settings is selected */}
@@ -90,7 +97,8 @@ export default function HostControls({
             onClick={() => setShowGameSettings(true)}
             className="flex items-center gap-2 rounded-lg bg-(--app-surface-hover) px-4 py-2 text-sm font-semibold text-(--app-text) transition-colors hover:brightness-110"
           >
-            <SlidersHorizontal className="h-4 w-4" /> {t("game-settings", { defaultValue: "Game Settings" })}
+            <SlidersHorizontal className="h-4 w-4" />{' '}
+            {t('game-settings', { defaultValue: 'Game Settings' })}
           </button>
         )}
 
@@ -98,7 +106,7 @@ export default function HostControls({
           onClick={() => setShowSettings(!showSettings)}
           className="flex items-center gap-2 rounded-lg bg-(--app-surface-hover) px-4 py-2 text-sm font-semibold text-(--app-text) transition-colors hover:brightness-110"
         >
-          <Settings className="h-4 w-4" /> {t("lobby-settings", { defaultValue: "Lobby Settings" })}
+          <Settings className="h-4 w-4" /> {t('lobby-settings', { defaultValue: 'Lobby Settings' })}
         </button>
       </div>
 
@@ -129,7 +137,9 @@ export default function HostControls({
       {showSettings && settings && (
         <div className="mt-2 rounded-lg border border-(--app-border) bg-(--app-bg) p-3 space-y-3">
           <label className="flex items-center justify-between text-sm cursor-pointer">
-            <span className="text-(--app-text)">{t("public-lobby", { defaultValue: "Public lobby" })}</span>
+            <span className="text-(--app-text)">
+              {t('public-lobby', { defaultValue: 'Public lobby' })}
+            </span>
             <button
               type="button"
               role="switch"
@@ -137,23 +147,34 @@ export default function HostControls({
               onClick={() => handleUpdateSettings({ isPublic: !settings.isPublic })}
               className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${settings.isPublic ? 'bg-(--app-accent)' : 'bg-(--app-border)'}`}
             >
-              <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${settings.isPublic ? 'translate-x-4.5' : 'translate-x-0.5'}`} />
+              <span
+                className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${settings.isPublic ? 'translate-x-4.5' : 'translate-x-0.5'}`}
+              />
             </button>
           </label>
           <label className="flex items-center justify-between text-sm">
-            <span className="text-(--app-text)">{t("max-players", { defaultValue: "Max players" })}</span>
-            <select
-              value={settings.maxPlayers}
+            <span className="text-(--app-text)">
+              {t('max-players', { defaultValue: 'Max players' })}
+            </span>
+            <Select
+              tier="app"
+              controlSize="sm"
+              containerClassName="inline-block"
+              className="w-auto min-w-20"
+              value={String(settings.maxPlayers)}
               onChange={(e) => handleUpdateSettings({ maxPlayers: Number(e.target.value) })}
-              className="rounded bg-(--app-surface) px-2 py-1 text-(--app-text) border border-(--app-border)"
             >
               {Array.from({ length: 15 }, (_, i) => i + 2).map((n) => (
-                <option key={n} value={n}>{n}</option>
+                <option key={n} value={n}>
+                  {n}
+                </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="flex items-center justify-between text-sm cursor-pointer">
-            <span className="text-(--app-text)">{t("allow-mid-game-join", { defaultValue: "Allow mid-game join" })}</span>
+            <span className="text-(--app-text)">
+              {t('allow-mid-game-join', { defaultValue: 'Allow mid-game join' })}
+            </span>
             <button
               type="button"
               role="switch"
@@ -161,19 +182,27 @@ export default function HostControls({
               onClick={() => handleUpdateSettings({ allowMidGameJoin: !settings.allowMidGameJoin })}
               className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${settings.allowMidGameJoin ? 'bg-(--app-accent)' : 'bg-(--app-border)'}`}
             >
-              <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${settings.allowMidGameJoin ? 'translate-x-4.5' : 'translate-x-0.5'}`} />
+              <span
+                className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${settings.allowMidGameJoin ? 'translate-x-4.5' : 'translate-x-0.5'}`}
+              />
             </button>
           </label>
           <label className="flex items-center justify-between text-sm cursor-pointer">
-            <span className="text-(--app-text)">{t("allow-spectator-promotion", { defaultValue: "Allow spectator promotion" })}</span>
+            <span className="text-(--app-text)">
+              {t('allow-spectator-promotion', { defaultValue: 'Allow spectator promotion' })}
+            </span>
             <button
               type="button"
               role="switch"
               aria-checked={settings.allowSpectatorPromotion}
-              onClick={() => handleUpdateSettings({ allowSpectatorPromotion: !settings.allowSpectatorPromotion })}
+              onClick={() =>
+                handleUpdateSettings({ allowSpectatorPromotion: !settings.allowSpectatorPromotion })
+              }
               className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${settings.allowSpectatorPromotion ? 'bg-(--app-accent)' : 'bg-(--app-border)'}`}
             >
-              <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${settings.allowSpectatorPromotion ? 'translate-x-4.5' : 'translate-x-0.5'}`} />
+              <span
+                className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${settings.allowSpectatorPromotion ? 'translate-x-4.5' : 'translate-x-0.5'}`}
+              />
             </button>
           </label>
         </div>

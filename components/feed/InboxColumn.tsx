@@ -2,7 +2,6 @@
 
 import { MessageCircle, Users, Bell } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { MobileBrandPrefix } from './MobileHeader';
 import { useSession } from '@/components/Providers';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { useUnreadCount } from '@/lib/useUnreadCount';
@@ -63,18 +62,13 @@ export function InboxColumn({
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Shared header + tab switcher */}
-      <div className="site-sticky-chrome bg-site-surface border border-site-border rounded-site shadow-site-sm">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 min-w-0">
-            <MobileBrandPrefix />
-            {t('inbox-title', { defaultValue: 'Inbox' })}
-          </h1>
-        </div>
-      </div>
+      {/* No title here: the route wraps this column in `PageLayout`, which owns
+          the one h1 for the page (the same header /predictions and /developer
+          use). This used to draw its own sticky "Inbox" chrome, which is what
+          made the inbox look like a different product from the rest of the site.
 
-      {/* §15.1/§5.45: inbox sections as a unified sheet + flowing-capsule strip,
-          standalone below the title chrome (was a flat-pill row inside it). */}
+          §15.1/§5.45: inbox sections as a unified sheet + flowing-capsule strip,
+          standalone below that header (was a flat-pill row inside it). */}
       <div className="my-4 px-2 md:px-3">
         <LiquidTabs
           size="sm"

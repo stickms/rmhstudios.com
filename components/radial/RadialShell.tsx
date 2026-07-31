@@ -11,8 +11,6 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
 import { RadialHub } from './RadialHub';
-import { MetaballCursor } from './MetaballCursor';
-import { LiquidGoo } from './LiquidGoo';
 import { RadialNavRail } from './RadialNavRail';
 import { RadialLiveRail } from './RadialLiveRail';
 import { RailSlotContext } from './rail-slot';
@@ -79,10 +77,10 @@ function RadialBackdrop() {
           <span key={i} className="radial-backdrop__ring" style={{ ['--i' as string]: i }} />
         ))}
       </div>
-      {/* Metaball field: a few slow-drifting blobs that swell together and pull
+      {/* Blob field: a few slow-drifting blobs that swell together and pull
           apart like lava — the liquid substrate the glass surfaces float over.
-          The fusing comes from the blobs' own soft-edged gradients, NOT a goo
-          filter: a viewport-sized filter with animating children re-rasterises
+          The fusing comes from the blobs' own soft-edged gradients, and always
+          did: a viewport-sized SVG filter with animating children re-rasterises
           every frame and cost this page ~4x its frame time (see the cost note in
           radial.css above the field's media query). CSS still keeps the whole
           layer off phones / reduced-motion. */}
@@ -269,9 +267,6 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
         {t('skipToContent', { defaultValue: 'Skip to content' })}
       </a>
 
-      {/* The metaball filter bank every liquid surface references from CSS. */}
-      <LiquidGoo />
-
       <RadialBackdrop />
       <RadialTopBar />
 
@@ -293,10 +288,6 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
 
       {overlays}
       <BackToTop />
-      {/* The pointer metaball — the flowy layer over every page. It portals to
-          <body> (see MetaballCursor) so it sits outside this shell's isolated
-          stacking context and its z-index reads against the page. */}
-      <MetaballCursor />
     </div>
   );
 }

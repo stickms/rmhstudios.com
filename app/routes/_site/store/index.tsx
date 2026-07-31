@@ -20,13 +20,11 @@ import { getRequest } from '@tanstack/react-start/server';
 import { ShoppingBag, Store as StoreIcon } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { getUserTier, type Tier } from '@/lib/entitlements';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from '@/components/feed/ContextRail';
+import { PageLayout } from '@/components/feed/PageLayout';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { ShopColumn } from '@/components/feed/ShopColumn';
 import { MarketColumn } from '@/components/market/MarketColumn';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { getShopData } from '@/lib/shop/list.server';
 import { browse } from '@/lib/market/market.server';
 import type { MarketListingView } from '@/components/market/ListingCard';
@@ -92,60 +90,47 @@ function Store() {
   ];
 
   return (
-    <>
-      <AnimatedMain className="relative isolate min-h-screen w-full min-w-0 pb-dock">
-        {/* §15.1: a proper floating "Store" page-title capsule (PageLayout-style)
-            on desktop — the store previously had no title above the tabs. It is
-            NON-sticky on purpose: the Shop/Market panels each own a sticky section
-            header (ColumnHeader top-2), so a sticky page title here would stack on
-            top of them (§15.5 one-sticky-group rule).
+    <PageLayout
+      title={t('store-title', { defaultValue: 'Store' })}
+      description={t('store-subtitle', {
+        defaultValue: 'Membership, cosmetics you can buy with coins, and the player marketplace.',
+      })}
+    >
+      {/* §16.2: Shop/Market as the shared LiquidTabs sheet, below the page title
+          `PageLayout` renders (this page used to draw its own title capsule —
+          the whole point of the shared header is that it doesn't have to).
+          `?tab=` mirroring, roving nav and the aria-controls tabpanel wiring
+          (idBase="store" → `store-tab-*` / `store-panel-*`) are unchanged. */}
+      <div className="my-3 px-2 md:px-3">
+        <LiquidTabs
+          tabs={tabs}
+          value={tab}
+          onChange={setTab}
+          idBase="store"
+          fullWidth
+          scroll
+          aria-label={t('store-title', { defaultValue: 'Store' })}
+        />
+      </div>
 
-            ONE h1 at every width. This used to be a `hidden md:block` capsule
-            stacked over embedded columns whose ColumnHeaders were also h1 —
-            three h1s at md+ ("Store" / "Membership" / "Shop") and a different
-            outline below md. Below md the same element is screen-reader-only
-            (the visible title there is the tab strip's own label). */}
-        <h1 className="sr-only md:not-sr-only md:mx-3 md:mt-3 md:block md:rounded-site md:glass-chrome md:px-4 md:py-3 md:font-(family-name:--site-font-display) md:text-2xl md:font-semibold md:tracking-[-0.022em] md:text-site-text md:shadow-site-sm">
-          {t('store-title', { defaultValue: 'Store' })}
-        </h1>
-
-        {/* §16.2: Shop/Market as the shared LiquidTabs sheet, placed BELOW the
-            page-title capsule (was bespoke tablist markup). `?tab=` mirroring,
-            roving nav and the aria-controls tabpanel wiring (idBase="store" →
-            `store-tab-*` / `store-panel-*`) are byte-identical to before. */}
-        <div className="my-3 px-2 md:px-3">
-          <LiquidTabs
-            tabs={tabs}
-            value={tab}
-            onChange={setTab}
-            idBase="store"
-            fullWidth
-            scroll
-            aria-label={t('store-title', { defaultValue: 'Store' })}
+      {tab === 'shop' && (
+        <div role="tabpanel" id="store-panel-shop" aria-labelledby="store-tab-shop">
+          <MembershipPanel
+            currentTier={currentTier}
+            headingLevel="h2"
+            returnPath="/store"
+            coinShopAnchorId="coins-shop"
           />
+          <div id="coins-shop" className="scroll-mt-4 border-t border-site-border">
+            <ShopColumn initialData={shop} />
+          </div>
         </div>
-
-        {tab === 'shop' && (
-          <div role="tabpanel" id="store-panel-shop" aria-labelledby="store-tab-shop">
-            <MembershipPanel
-              currentTier={currentTier}
-              headingLevel="h2"
-              returnPath="/store"
-              coinShopAnchorId="coins-shop"
-            />
-            <div id="coins-shop" className="scroll-mt-4 border-t border-site-border">
-              <ShopColumn initialData={shop} />
-            </div>
-          </div>
-        )}
-        {tab === 'market' && (
-          <div role="tabpanel" id="store-panel-market" aria-labelledby="store-tab-market">
-            <MarketColumn initialListings={listings} viewerId={viewerId} />
-          </div>
-        )}
-      </AnimatedMain>
-      {/* Trailing gutter to match the blog/library layout */}
-      <ContextRail reserve />
-    </>
+      )}
+      {tab === 'market' && (
+        <div role="tabpanel" id="store-panel-market" aria-labelledby="store-tab-market">
+          <MarketColumn initialListings={listings} viewerId={viewerId} />
+        </div>
+      )}
+    </PageLayout>
   );
 }

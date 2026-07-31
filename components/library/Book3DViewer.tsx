@@ -34,7 +34,6 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { IDENTITY, fromAxisAngle, multiply, toCssMatrix3d, type Quat } from '@/lib/device-attitude';
 import { useDeviceAttitude } from '@/hooks/useDeviceAttitude';
-import { useFrostedOverlay } from '@/hooks/useFrostedOverlay';
 import type { LibraryBook } from '@/lib/library/library';
 import './book-3d.css';
 
@@ -72,10 +71,14 @@ export function Book3DViewer({ book, onClose }: { book: LibraryBook; onClose: ()
   const bodyRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
 
-  // The scrim is a viewport-covering backdrop-filter, and this component turns a
-  // book above it every frame. Without standing the pointer drop down, the
-  // compositor re-blurs the whole scrim per frame (§7 of useFrostedOverlay).
-  useFrostedOverlay();
+  // The scrim is a viewport-covering backdrop-filter and this component turns a
+  // book above it every frame, which makes Chromium re-blur the whole scrim per
+  // frame. That used to need `useFrostedOverlay()` to stand the pointer metaball
+  // down — the drop was the *other* thing moving above the scrim, and the two
+  // together were a standing 6x frame-time cost. The metaball layer is gone (see
+  // components/radial/README.md), so the book is the only thing turning up
+  // there now and the hook went with it. Keep it that way: nothing else should
+  // animate above this scrim.
 
   // The two inputs, kept out of React state: they change up to 60×/second and
   // the only thing that has to happen is one style write.
