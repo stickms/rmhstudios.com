@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Search, Package, BookOpen, Sparkles } from 'lucide-react';
+import { Package, BookOpen, Sparkles } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Spinner } from '@/components/ui/spinner';
@@ -15,8 +15,8 @@ import {
   type DiscoveryUserBuild,
   type DiscoveryBlogPost,
 } from './ExploreRecommendations';
-import { ColumnHeader } from './ColumnHeader';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { PageTabs } from './PageTabs';
+import { SearchField } from '@/components/ui/search-field';
 
 interface SearchUser {
   id: string;
@@ -204,65 +204,36 @@ export function SearchColumn({
 
   return (
     <div className="min-h-screen">
-      {/* The search field is the header (its own sticky surface capsule, §8.2); the
- category tabs are a standalone sheet BELOW the search well (§5.45), never
- inside the sticky block. bg/blur/glint clip to rounded-site on their own.
- (The class list that used to be inlined into this sentence was a stray from
- a find-and-replace over `glass-pane` — prose, not markup.) */}
-      <div className="site-sticky-chrome bg-site-surface border border-site-border rounded-site shadow-site-sm">
-        {/* The search field IS this page's chrome, so there was no heading of any
- kind — the route had no h1 at any viewport. */}
-        <h1 className="sr-only">{t('search-title', { defaultValue: 'Search' })}</h1>
-        <ColumnHeader sticky={false} className="border-b-0">
-          {/* ONE ring around the field, not three. This used to nest a bordered
- `rounded-full` wrapper INSIDE the sticky capsule above and put a bare
- `<input>` inside that — and a bare input (no `data-slot`) also picks up
- the themed border from the global input rule in globals.css §base, so
- the field rendered as three concentric rounded rectangles. The pill
- belongs ON the input, with the icon absolutely positioned over it and
- padding making room — the same idiom MessagesColumn and GroupChatsColumn
- already use for their search fields. */}
-          <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-muted" />
-            <input
-              autoFocus
-              type="search"
-              aria-label={t('search-input-aria-label', {
-                defaultValue: 'Search people, posts, builds, and blog',
-              })}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t('search-placeholder', {
-                defaultValue: 'Search people, posts, builds…',
-              })}
-              className="w-full rounded-full border border-site-border bg-site-surface py-2 pl-9 pr-9 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none"
-            />
-            {loading && (
-              <Spinner
-                size={16}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-site-text-muted"
-              />
-            )}
-          </div>
-        </ColumnHeader>
-      </div>
-      {/* Result-type tabs → shared LiquidTabs sheet (§5.4/§5.45), below the search
- well. setTab keeps mirroring the selection to the URL. Labels are
- pre-translated before handoff. The w-fit pill scrolls in the shared
- tab-sheet track (overflow + edge fade, §5.5x A.4). */}
-      <div className="my-4 px-2 md:px-3">
-        <LiquidTabs
-          tabs={TABS.map((tab_item) => ({
-            id: tab_item.id,
-            label: t(`tab-${tab_item.id}`, { defaultValue: tab_item.label }),
-          }))}
-          value={tab}
-          onChange={(id) => setTab(id as Tab)}
-          size="sm"
-          scroll
-          aria-label={t('search-categories-aria-label', { defaultValue: 'Search categories' })}
-        />
-      </div>
+      {/* Tabs first, then the field — the shared page order (`PageTabs`). This
+ page used to invert it: the field sat above the tabs inside a sticky
+ surface capsule that read as the page's header, which is why Explore was
+ the one destination whose first row under the title was an input while its
+ neighbours all showed tabs. The title is `PageLayout`'s now, so the capsule
+ has nothing left to be, and the field is an ordinary control that filters
+ within whichever tab is selected. */}
+      <PageTabs
+        tabs={TABS.map((tab_item) => ({
+          id: tab_item.id,
+          label: t(`tab-${tab_item.id}`, { defaultValue: tab_item.label }),
+        }))}
+        value={tab}
+        onChange={(id) => setTab(id as Tab)}
+        aria-label={t('search-categories-aria-label', { defaultValue: 'Search categories' })}
+        search={
+          <SearchField
+            autoFocus
+            value={query}
+            onValueChange={setQuery}
+            aria-label={t('search-input-aria-label', {
+              defaultValue: 'Search people, posts, builds, and blog',
+            })}
+            placeholder={t('search-placeholder', {
+              defaultValue: 'Search people, posts, builds…',
+            })}
+            trailing={loading ? <Spinner size={16} className="text-site-text-dim" /> : undefined}
+          />
+        }
+      />
 
       {query.trim().length >= 2 && <AISearchPanel query={query.trim()} />}
 

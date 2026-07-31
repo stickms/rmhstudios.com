@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useRef, useCallback } from'react';
 import { useTranslation } from'react-i18next';
-import { Loader2, MessageCircle, CheckCheck, Plus, Search, X } from'lucide-react';
+import { Loader2, MessageCircle, CheckCheck, Plus, Search } from'lucide-react';
 import { Spinner } from'@/components/ui/spinner';
+import { SearchField } from'@/components/ui/search-field';
 import { UserAvatar } from'@/components/ui/UserAvatar';
 import { Reveal } from'@/components/motion';
 import { Link, useNavigate } from'@tanstack/react-router';
@@ -287,29 +288,15 @@ export function MessagesColumn({
  )}
  {/* Search + actions share a single row; the actions are icon-only. */}
  <div className="flex items-center gap-2 px-4 py-3">
- <div className="relative flex-1 min-w-0">
- <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-dim"/>
- <input
- type="search"
+ <SearchField
+ containerClassName="flex-1"
  value={query}
- onChange={(e) => setQuery(e.target.value)}
+ onValueChange={setQuery}
  placeholder={t('search-messages-placeholder', {
  defaultValue:'Search people or chats…',
  })}
  aria-label={t('search-messages', { defaultValue:'Search messages'})}
- className="w-full rounded-full border border-site-border bg-site-surface py-2 pl-9 pr-9 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
  />
- {query && (
- <button
- type="button"
- onClick={() => setQuery('')}
- className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-site-text-dim hover:text-site-text"
- aria-label={t('clear-search', { defaultValue:'Clear search'})}
- >
- <X className="h-4 w-4"/>
- </button>
- )}
- </div>
  <button
  type="button"
  onClick={() => setNewChatOpen(true)}

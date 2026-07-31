@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from'react';
 import { Link, useNavigate } from'@tanstack/react-router';
-import { Loader2, Users, Plus, X, Search } from'lucide-react';
+import { Loader2, Users, Plus, X } from'lucide-react';
 import { Button } from'@/components/ui/button';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
@@ -10,6 +10,7 @@ import { Reveal } from'@/components/motion';
 import { HandleInput } from'./HandleInput';
 import { ColumnHeader } from'./ColumnHeader';
 import { useTranslation } from'react-i18next';
+import { SearchField } from'@/components/ui/search-field';
 
 interface GroupRow {
  id: string;
@@ -147,27 +148,12 @@ export function GroupChatsColumn({
  }
  >
  {/* Search + new-group action share a single row; the action is icon-only. */}
- <div className="relative min-w-0">
- <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-dim"/>
- <input
- type="search"
+ <SearchField
  value={query}
- onChange={(e) => setQuery(e.target.value)}
+ onValueChange={setQuery}
  placeholder={t('search-groups-placeholder', { defaultValue:'Search groups…'})}
  aria-label={t('search-groups', { defaultValue:'Search groups'})}
- className="w-full rounded-full border border-site-border bg-site-surface py-2 pl-9 pr-9 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
  />
- {query && (
- <button
- type="button"
- onClick={() => setQuery('')}
- className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-site-text-dim hover:text-site-text"
- aria-label={t('clear-search', { defaultValue:'Clear search'})}
- >
- <X className="h-4 w-4"/>
- </button>
- )}
- </div>
  </ColumnHeader>
 
  {showForm && (

@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SearchField } from '@/components/ui/search-field';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Users, Plus, MessageSquare, Search } from 'lucide-react';
+import { Users, Plus, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RevealGroup, RevealItem } from '@/components/motion';
 import { CommunityListSkeleton } from '@/components/feed/CommunitiesSkeleton';
@@ -147,17 +148,12 @@ export function CommunitiesColumn({
       />
 
       <div className="border-b border-site-border p-3">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-muted" />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('search-communities', { defaultValue: 'Search communities…' })}
-            aria-label={t('search-communities', { defaultValue: 'Search communities' })}
-            className="w-full rounded-site-sm border border-site-border bg-site-bg py-2 pl-9 pr-3 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
-          />
-        </div>
+        <SearchField
+          value={query}
+          onValueChange={setQuery}
+          placeholder={t('search-communities', { defaultValue: 'Search communities…' })}
+          aria-label={t('search-communities', { defaultValue: 'Search communities' })}
+        />
       </div>
 
       {loading && items.length === 0 ? (

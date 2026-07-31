@@ -26,12 +26,12 @@ import {
   ListMusic,
   Newspaper,
   Rotate3d,
-  Search,
   Upload,
-  X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { type LiquidTab } from '@/components/ui/liquid-tabs';
+import { PageTabs } from '@/components/feed/PageTabs';
+import { SearchField } from '@/components/ui/search-field';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { type LibraryBook } from '@/lib/library/library';
@@ -560,104 +560,83 @@ function Library() {
       }
     >
       <div className="vibe-screen lib lib--glass-playground min-h-screen">
+        {/* The strip sits OUTSIDE `.lib-playground`. The playground is the 3D
+            stage for the shelf — it owns the perspective, the orbit handlers and
+            its own `--lib-gutter` inset — and page chrome inside it inherited
+            that inset, which is what still left this strip 710px wide against
+            everyone else's 766px after the explorer card was gone. */}
+        {/* Tabs, then the field — the shared order every tabbed page uses
+                (`PageTabs`). This was a single `.lib-explorer` glass card that
+                held the search ABOVE the strip and gave both its own padding,
+                which is why the library's strip was 694px wide where its
+                neighbours' were 766px and why its search sat where their tabs
+                did. The category counts still ride on the tabs themselves. */}
+        <PageTabs
+          tabs={
+            [
+              {
+                id: 'all',
+                label: t('cat-all', { defaultValue: 'Everything' }),
+                icon: LayoutGrid,
+                count: totalMatches,
+              },
+              {
+                id: 'books',
+                label: t('cat-books', { defaultValue: 'Books' }),
+                icon: BookOpen,
+                count: filtered.length,
+              },
+              {
+                id: 'albums',
+                label: t('cat-albums', { defaultValue: 'Albums' }),
+                icon: Disc3,
+                count: matchingAlbums,
+              },
+              {
+                id: 'music',
+                label: t('cat-music', { defaultValue: 'Music' }),
+                icon: ListMusic,
+                count: matchingPlaylists,
+              },
+              {
+                id: 'collections',
+                label: t('cat-collections', { defaultValue: 'Collections' }),
+                icon: Layers,
+                count: matchingCollections,
+              },
+              {
+                id: 'reads',
+                label: t('cat-reads', { defaultValue: 'Reads' }),
+                icon: Newspaper,
+                count: matchingReads,
+              },
+            ] as LiquidTab[]
+          }
+          value={view}
+          onChange={(next) => setView(next as LibraryView)}
+          aria-label={t('sections-label', { defaultValue: 'Library sections' })}
+          search={
+            <>
+              <SearchField
+                value={query}
+                onValueChange={setQuery}
+                aria-label={t('search-label', { defaultValue: 'Search the library' })}
+                placeholder={t('search-placeholder', {
+                  defaultValue: 'Search books, albums, playlists, and reads…',
+                })}
+              />
+              <p className="mt-1.5 px-3 text-xs text-site-text-dim" aria-live="polite">
+                {t('result-count', {
+                  count: totalMatches,
+                  defaultValue: '{{count}} things to explore',
+                })}
+              </p>
+            </>
+          }
+        />
+
         <div className="lib-playground" ref={playgroundRef} {...orbit}>
           <LibraryRevealProvider instant={hasFiltered}>
-            <div
-              className="lib-explorer glass-chrome glass-refract"
-              data-glass-lens=""
-              role="region"
-              aria-label={t('explore-library', { defaultValue: 'Explore the library' })}
-            >
-              <div className="lib-explorer__search-row">
-                <label className="lib-search glass-inset">
-                  <Search size={18} aria-hidden="true" />
-                  <span className="sr-only">
-                    {t('search-label', { defaultValue: 'Search the library' })}
-                  </span>
-                  <input
-                    type="search"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder={t('search-placeholder', {
-                      defaultValue: 'Search books, albums, playlists, and reads…',
-                    })}
-                  />
-                  {query && (
-                    <button
-                      type="button"
-                      onClick={() => setQuery('')}
-                      aria-label={t('clear-search', { defaultValue: 'Clear search' })}
-                    >
-                      <X size={16} />
-                    </button>
-                  )}
-                </label>
-                <p className="lib-explorer__result" aria-live="polite">
-                  {t('result-count', {
-                    count: totalMatches,
-                    defaultValue: '{{count}} things to explore',
-                  })}
-                </p>
-              </div>
-
-              {/* Search and tabs intentionally share one sticky glass group: one
-              control surface, no competing sticky offsets. */}
-              <LiquidTabs
-                className="lib-nav"
-                // Glyphs below md only — LiquidTabs restores the labels at md,
-                // where the strip has room (it used to be abstract glyphs at
-                // every width). `scroll` below already puts the overflow in the
-                // canonical tab-sheet track rather than orphan-wrapping the
-                // sixth tab onto its own row.
-                iconOnly
-                tabs={
-                  [
-                    {
-                      id: 'all',
-                      label: t('cat-all', { defaultValue: 'Everything' }),
-                      icon: LayoutGrid,
-                      count: totalMatches,
-                    },
-                    {
-                      id: 'books',
-                      label: t('cat-books', { defaultValue: 'Books' }),
-                      icon: BookOpen,
-                      count: filtered.length,
-                    },
-                    {
-                      id: 'albums',
-                      label: t('cat-albums', { defaultValue: 'Albums' }),
-                      icon: Disc3,
-                      count: matchingAlbums,
-                    },
-                    {
-                      id: 'music',
-                      label: t('cat-music', { defaultValue: 'Music' }),
-                      icon: ListMusic,
-                      count: matchingPlaylists,
-                    },
-                    {
-                      id: 'collections',
-                      label: t('cat-collections', { defaultValue: 'Collections' }),
-                      icon: Layers,
-                      count: matchingCollections,
-                    },
-                    {
-                      id: 'reads',
-                      label: t('cat-reads', { defaultValue: 'Reads' }),
-                      icon: Newspaper,
-                      count: matchingReads,
-                    },
-                  ] as LiquidTab[]
-                }
-                value={view}
-                onChange={(next) => setView(next as LibraryView)}
-                sheet={false}
-                scroll
-                aria-label={t('sections-label', { defaultValue: 'Library sections' })}
-              />
-            </div>
-
             {shows('reads') && <LibraryBlogRow posts={blogPosts} query={query} />}
 
             {shows('books') && isAdmin && hasUnmigrated && (

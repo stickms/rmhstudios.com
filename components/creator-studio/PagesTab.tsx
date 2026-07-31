@@ -10,8 +10,9 @@
 
 import { type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { ArrowRight, CloudUpload, Search } from 'lucide-react';
+import { ArrowRight, CloudUpload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { SearchField } from '@/components/ui/search-field';
 import { useSession } from '@/components/Providers';
 import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
 import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
@@ -180,17 +181,13 @@ export function PagesTab({
   const toolbar = (
     <header className="vibe-gallery__head store-pages__head glass-chrome">
       <h3 className="vibe-gallery__title">{t('pages-title', { defaultValue: 'Pages' })}</h3>
-      <div className="vibe-search">
-        <Search size={16} className="vibe-search__icon" aria-hidden="true" />
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t('search-placeholder', { defaultValue: 'Search pages...' })}
-          aria-label={t('search-aria-label', { defaultValue: 'Search pages' })}
-          className="vibe-search__input"
-        />
-      </div>
+      <SearchField
+        containerClassName="ml-auto w-[min(320px,48vw)]"
+        value={query}
+        onValueChange={setQuery}
+        placeholder={t('search-placeholder', { defaultValue: 'Search pages...' })}
+        aria-label={t('search-aria-label', { defaultValue: 'Search pages' })}
+      />
       {isAdmin && (
         <button
           type="button"

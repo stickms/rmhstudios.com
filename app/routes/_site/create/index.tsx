@@ -16,7 +16,8 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { FileText, Gamepad2, AppWindow, Boxes, Bot, Coins } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { type LiquidTab } from '@/components/ui/liquid-tabs';
+import { PageTabs } from '@/components/feed/PageTabs';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { listCuratedBuilds } from '@/lib/builds/curated';
 import { listVibePages } from '@/lib/rmhvibe/vibe.server';
@@ -127,22 +128,19 @@ function CreatePage() {
           `PageLayout` header now, the same one /predictions and /developer use,
           so Create stops being the one page with its own headline scale. */}
       <div className="cstudio-screen vibe-screen min-h-screen">
-        {/* §16.2: the top-level tabs are now the shared LiquidTabs sheet (was
-            bespoke `.cstudio-tab*` markup). `.cstudio-tabs` positions the sheet
-            only (sticky below the hero, gutter margins, column max-width — the
-            glass pill look comes from LiquidTabs); `scroll` decouples the inner
-            horizontal overflow from the sticky sheet (the mobile-Safari sticky +
-            overflow bug the old `__scroll` split guarded against). `?tab=`
-            mirroring, roving nav and the aria-controls wiring (idBase="cstudio" →
-            `cstudio-tab-*` / `cstudio-panel-*`) are byte-identical. */}
-        <LiquidTabs
-          className="cstudio-tabs"
+        {/* §16.2: the top-level tabs are the shared strip, in the shared
+            position. This used to add `.cstudio-tabs` — its own 40px gutter and
+            a sticky offset — so Create's strip was 710px wide where every other
+            page's was 766px, and it was the only one that followed you down the
+            page. It also passed `iconOnly`, which is why two of its six labels
+            read "User B…" and "AI Pers…". `?tab=` mirroring, roving nav and the
+            aria-controls wiring (idBase="cstudio" → `cstudio-tab-*` /
+            `cstudio-panel-*`) are unchanged. */}
+        <PageTabs
           tabs={tabs}
           value={tab}
           onChange={setTab}
           idBase="cstudio"
-          scroll
-          iconOnly
           aria-label={t('create', { defaultValue: 'Create' })}
         />
 
