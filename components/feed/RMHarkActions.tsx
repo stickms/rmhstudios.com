@@ -15,7 +15,7 @@ const ComposeModal = lazy(() =>
 import { useTranslation } from'react-i18next';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';
 import { useSignInPrompt } from'@/hooks/useSignInPrompt';
-import { EngagementCount } from'./EngagementCount';
+import { EngagementCount, engagementPill } from'./EngagementCount';
 import { useLiquidPop } from'@/components/ui/liquid-pop';
 
 interface RMHarkActionsProps {
@@ -38,10 +38,13 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  quoteMounted.current ||= quoteOpen;
  const repostRef = useRef<HTMLDivElement>(null);
  const repostBtnRef = useRef<HTMLButtonElement>(null);
+ // The button also spans the count slot, so the menu buds off the round icon
+ // surface instead — that circle is what reads as the trigger on screen.
+ const repostIconRef = useRef<HTMLSpanElement>(null);
  const repostPanelRef = useRef<HTMLDivElement>(null);
  // §15.6 liquid pop — the reRMHark menu buds out of its trigger.
  const { underlay: repostUnderlay } = useLiquidPop({
- triggerRef: repostBtnRef,
+ triggerRef: repostIconRef,
  panelRef: repostPanelRef,
  open: repostMenu,
  });
@@ -116,20 +119,26 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  };
 
  return (
- <div className="flex items-center justify-between mt-3 -ml-2 max-w-md">
+ // §15.4 — fixed columns rather than `justify-between`, so each control's
+ // left edge is pinned. The pills hug their contents, so their widths change
+ // as counts appear and grow; spacing them by distributing free space would
+ // let that ripple sideways into every other icon in the row.
+ <div className="grid grid-cols-4 items-center mt-3 -ml-2 max-w-md">
  {/* Comment */}
  <button
  onClick={handleCommentClick}
  title={t('comment', { defaultValue:'Comment'})}
  aria-label={t('comment', { defaultValue:'Comment'})}
- className="flex min-h-11 min-w-11 items-center justify-start gap-1.5 px-2.5 py-1 rounded-full text-site-text-muted hover:text-site-accent hover:bg-site-accent-dim/50 transition-[color,background-color,transform] duration-150 group active:scale-95"
+ className="group flex min-h-11 min-w-11 items-center justify-self-start rounded-full text-site-text-muted hover:text-site-accent transition-colors duration-150"
  >
- <MessageCircle className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform"aria-hidden />
+ <span className={`${engagementPill} h-9 gap-1 px-2.5 group-hover:bg-site-accent-dim/50 group-active:scale-95`}>
+ <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform"aria-hidden />
  <EngagementCount value={item.commentCount} />
+ </span>
  </button>
 
  {/* reRMHark */}
- <div className="relative"ref={repostRef}>
+ <div className="relative justify-self-start"ref={repostRef}>
  {repostUnderlay}
  <button
  ref={repostBtnRef}
@@ -143,18 +152,21 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  }
  setRepostMenu((v) => !v);
  }}
- className={`flex min-h-11 min-w-11 items-center justify-start gap-1.5 px-2.5 py-1 rounded-full transition-[color,background-color,transform] duration-150 group active:scale-95 ${
- item.reposted
- ?'text-site-success'
- :'text-site-text-muted hover:text-site-success hover:bg-site-success/10'
+ className={`group flex min-h-11 min-w-11 items-center rounded-full transition-colors duration-150 ${
+ item.reposted ?'text-site-success':'text-site-text-muted hover:text-site-success'
  }`}
  title="reRMHark"
  aria-label="reRMHark"
  aria-haspopup="menu"
  aria-expanded={repostMenu}
  >
- <Repeat2 className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform"aria-hidden />
+ <span
+ ref={repostIconRef}
+ className={`${engagementPill} h-9 gap-1 px-2.5 group-hover:bg-site-success/10 group-active:scale-95`}
+ >
+ <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform"aria-hidden />
  <EngagementCount value={item.repostCount} />
+ </span>
  </button>
  {repostMenu && (
  <div
@@ -208,10 +220,8 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  <button
  onClick={toggleLike}
  aria-pressed={!!item.liked}
- className={`flex min-h-11 min-w-11 items-center justify-start gap-1.5 px-2.5 py-1 rounded-full transition-[color,background-color,transform] duration-150 group active:scale-95 ${
- item.liked
- ?'text-site-danger'
- :'text-site-text-muted hover:text-site-danger hover:bg-site-danger/10'
+ className={`group flex min-h-11 min-w-11 items-center justify-self-start rounded-full transition-colors duration-150 ${
+ item.liked ?'text-site-danger':'text-site-text-muted hover:text-site-danger'
  }`}
  title={
  item.liked
@@ -224,17 +234,21 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  : t('like', { defaultValue:'Like'})
  }
  >
+ <span className={`${engagementPill} h-9 gap-1 px-2.5 group-hover:bg-site-danger/10 group-active:scale-95`}>
  <Heart
- className={`w-4 h-4 shrink-0 group-hover:scale-110 transition-transform ${item.liked ?'fill-current':''}`}
+ className={`w-4 h-4 group-hover:scale-110 transition-transform ${item.liked ?'fill-current':''}`}
  aria-hidden
  />
  <EngagementCount value={item.likeCount} />
+ </span>
  </button>
 
  {/* Views */}
- <div className="flex min-h-11 items-center justify-start gap-1.5 px-2.5 py-1 text-site-text-dim">
- <Eye className="w-4 h-4 shrink-0"/>
+ <div className="flex min-h-11 items-center justify-self-start text-site-text-dim">
+ <span className={`${engagementPill} h-9 gap-1 px-2.5`}>
+ <Eye className="w-4 h-4"/>
  <EngagementCount value={item.viewCount} />
+ </span>
  </div>
  </div>
  );
