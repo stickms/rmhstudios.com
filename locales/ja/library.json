@@ -86,6 +86,10 @@
   "section-curated": "厳選",
   "section-music": "Music",
   "sections-label": "Library sections",
+  "tilt-denied": "モーションへのアクセスが拒否されました。ブラウザの設定で許可できます。",
+  "tilt-hint-off": "3D傾きをオンにして、スマホを動かすと見渡せます。",
+  "tilt-hint-on": "スマホを傾けると棚を見渡せます。",
+  "tilt-label": "3D傾き",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

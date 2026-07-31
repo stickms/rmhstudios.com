@@ -86,6 +86,10 @@
   "section-curated": "엄선",
   "section-music": "Music",
   "sections-label": "Library sections",
+  "tilt-denied": "모션 접근이 거부되었습니다. 브라우저 설정에서 허용할 수 있습니다.",
+  "tilt-hint-off": "3D 기울기를 켜고 휴대폰을 움직여 둘러보세요.",
+  "tilt-hint-on": "휴대폰을 기울여 책장을 둘러보세요.",
+  "tilt-label": "3D 기울기",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

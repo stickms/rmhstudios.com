@@ -146,6 +146,10 @@
      cover swings to reveal when it spins on hover. */
   transform-style: preserve-3d;
   transform-origin: left center;
+  /* Identity at rest — the variables are 0 everywhere except under a live
+     gyroscope, where they turn the book on its spine as the phone moves. The
+     hover/press rules below are more specific and still win outright. */
+  transform: translateY(var(--lib-book-lift, 0px)) rotateY(var(--lib-book-spin, 0deg));
   transition:
     transform 420ms cubic-bezier(0.34, 1.2, 0.4, 1),
     box-shadow 420ms ease;
@@ -2077,7 +2081,13 @@
 .lib-head__brand svg {
   color: var(--site-text-muted, #8f8f96);
 }
-.lib-head .lib-upload__open {
+/* Header controls sit as one group on the trailing edge: the gyroscope toggle
+   (phones only) next to the upload button (signed in only), either of which can
+   be absent. */
+.lib-head__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin-inline-start: auto;
 }
 
@@ -2746,6 +2756,13 @@
 }
 
 .lib-playground {
+  /* Rest pose for every orbiting object below. Declared on the container so a
+     single write here (the gyroscope path) leans the whole shelf through
+     inheritance; the pointer path writes the same names inline on one card. */
+  --lib-orbit-x: 0deg;
+  --lib-orbit-y: 0deg;
+  --lib-book-spin: 0deg;
+  --lib-book-lift: 0px;
   min-height: 100vh;
   /* `100vh` on mobile is the LARGEST viewport, so this ground is taller than
      the visible page whenever the browser toolbars are showing — the page
@@ -2790,6 +2807,26 @@
 .lib--glass-playground .lib-upload__open:hover {
   border-color: var(--site-border-bright);
   background: var(--site-surface-hover);
+}
+
+/* The gyroscope toggle borrows the header button's shape and differs only in
+   state: quiet while off, a filled accent while the shelf is following the
+   phone, so the switch reads at a glance on the device it exists for. */
+.lib--glass-playground .lib-tilt {
+  border-color: var(--site-border);
+  background: var(--site-surface);
+  color: var(--site-text-muted);
+}
+
+.lib--glass-playground .lib-tilt.is-active {
+  border-color: var(--site-accent);
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+}
+
+.lib--glass-playground .lib-tilt.is-active:hover {
+  border-color: var(--site-accent);
+  background: var(--site-accent-hover);
 }
 
 /* Hero: a compact editorial statement, and nothing competing with it. */
@@ -2986,11 +3023,14 @@
   font-size: 0.6875rem;
 }
 
-/* Universal media bubbles. JS supplies the two rotation variables by delegated
-   pointer events; the regular glass system supplies the tracked light hotspot. */
+/* Universal media bubbles. JS supplies the two rotation variables — by delegated
+   pointer events on a desktop, by the device gyroscope on a phone — and the
+   regular glass system supplies the tracked light hotspot.
+   The rest values are declared on `.lib-playground` (above) rather than here, so
+   the gyroscope can lean the WHOLE shelf with a single write on the container
+   and let inheritance do the rest; a pointer still overrides its own card with
+   inline values, which beat anything inherited. */
 .lib-playground [data-library-orbit] {
-  --lib-orbit-x: 0deg;
-  --lib-orbit-y: 0deg;
   --lib-orbit-lift: 0px;
   transform: perspective(900px) translateY(var(--lib-orbit-lift)) rotateX(var(--lib-orbit-x))
     rotateY(var(--lib-orbit-y));
@@ -3007,6 +3047,27 @@
     transform 70ms linear,
     box-shadow var(--site-transition-speed),
     background-color var(--site-transition-speed);
+}
+
+/* ─── Gyroscopic 3D (phones) ────────────────────────────────────────────────
+   `data-tilt-live` is set on the playground while the device's own orientation
+   is driving the shelf. The sensor already arrives spring-smoothed from
+   `useDeviceTilt`, so the transition here is only long enough to hide the gaps
+   between samples — the 0.38s settle would smear a live stream into treacle. */
+.lib-playground[data-tilt-live] [data-library-orbit] {
+  transition:
+    transform 90ms linear,
+    box-shadow var(--site-transition-speed),
+    background-color var(--site-transition-speed);
+}
+
+/* The books' own turn. A cover pivots on its spine (`transform-origin: left
+   center`) to reveal the page-block face — the same move hover makes on a
+   desktop, which on a phone nothing could otherwise trigger. */
+.lib-playground[data-tilt-live] .lib-book__cover {
+  transition:
+    transform 110ms linear,
+    box-shadow 420ms ease;
 }
 
 .lib-playground [data-library-orbit]:hover,
@@ -3164,20 +3225,45 @@
   }
 }
 
+/* Reduced motion kills both inputs. `useDeviceTilt` already reports the sensor
+   as unsupported here (so the toggle never even renders), and these keep the
+   rest pose flat if the attribute somehow survives a preference change. */
 @media (prefers-reduced-motion: reduce) {
+  /* `!important` beats the inline values the tilt path writes here, whatever
+     the specificity — the same lever the orbit rotations below use. */
+  .lib-playground {
+    --lib-book-spin: 0deg !important;
+    --lib-book-lift: 0px !important;
+  }
+
   .lib-playground [data-library-orbit],
-  .lib-playground [data-library-orbit][data-orbit-active] {
+  .lib-playground [data-library-orbit][data-orbit-active],
+  .lib-playground[data-tilt-live] [data-library-orbit] {
     --lib-orbit-x: 0deg !important;
     --lib-orbit-y: 0deg !important;
     transform: translateY(var(--lib-orbit-lift));
     transition: none;
   }
+
+  .lib-playground[data-tilt-live] .lib-book__cover {
+    transition: none;
+  }
 }
 
-html.reduce-motion .lib-playground [data-library-orbit] {
+html.reduce-motion .lib-playground {
+  --lib-book-spin: 0deg !important;
+  --lib-book-lift: 0px !important;
+}
+
+html.reduce-motion .lib-playground [data-library-orbit],
+html.reduce-motion .lib-playground[data-tilt-live] [data-library-orbit] {
   --lib-orbit-x: 0deg !important;
   --lib-orbit-y: 0deg !important;
   transform: translateY(var(--lib-orbit-lift));
+  transition: none;
+}
+
+html.reduce-motion .lib-playground[data-tilt-live] .lib-book__cover {
   transition: none;
 }
 

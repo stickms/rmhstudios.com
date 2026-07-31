@@ -90,6 +90,10 @@
   "section-curated": "Kuratiert",
   "section-music": "Music",
   "sections-label": "Library sections",
+  "tilt-denied": "Der Zugriff auf Bewegungsdaten wurde abgelehnt. Du kannst ihn in den Browsereinstellungen erlauben.",
+  "tilt-hint-off": "Schalte die 3D-Neigung ein und bewege dein Handy, um dich umzusehen.",
+  "tilt-hint-on": "Neige dein Handy, um dich im Regal umzusehen.",
+  "tilt-label": "3D-Neigung",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

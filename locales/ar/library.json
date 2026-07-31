@@ -106,6 +106,10 @@
   "section-curated": "مختارة",
   "section-music": "Music",
   "sections-label": "Library sections",
+  "tilt-denied": "تم رفض الوصول إلى الحركة. يمكنك السماح به من إعدادات المتصفح.",
+  "tilt-hint-off": "شغّل الإمالة ثلاثية الأبعاد وحرّك هاتفك للنظر حولك.",
+  "tilt-hint-on": "أمِل هاتفك لتتجول بنظرك في الرف.",
+  "tilt-label": "إمالة ثلاثية الأبعاد",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

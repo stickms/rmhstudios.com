@@ -86,6 +86,10 @@
   "section-curated": "Kurasi",
   "section-music": "Music",
   "sections-label": "Library sections",
+  "tilt-denied": "Akses gerak ditolak. Anda bisa mengizinkannya di pengaturan browser.",
+  "tilt-hint-off": "Aktifkan kemiringan 3D lalu gerakkan ponsel untuk melihat sekeliling.",
+  "tilt-hint-on": "Miringkan ponsel untuk melihat-lihat rak.",
+  "tilt-label": "Kemiringan 3D",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

@@ -90,6 +90,10 @@
   "section-curated": "منتخب شدہ",
   "section-music": "Music",
   "sections-label": "Library sections",
+  "tilt-denied": "موشن تک رسائی مسترد کر دی گئی۔ آپ اسے اپنے براؤزر کی سیٹنگز میں اجازت دے سکتے ہیں۔",
+  "tilt-hint-off": "تھری ڈی جھکاؤ آن کریں اور ارد گرد دیکھنے کے لیے اپنا فون ہلائیں۔",
+  "tilt-hint-on": "شیلف کے چاروں طرف دیکھنے کے لیے اپنا فون جھکائیں۔",
+  "tilt-label": "تھری ڈی جھکاؤ",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }
