@@ -31,7 +31,31 @@
     font-family: var(--font-body);
     background: var(--bg-primary);
     color: var(--text-primary);
-    height: 100dvh;
+    /**
+     * Height, and the keyboard.
+     *
+     * `100vh` is the fallback pair for engines without `dvh`. The `--kb-inset`
+     * subtraction is what stops the game magnifying itself when a puzzle is
+     * typed into.
+     *
+     * Several puzzle types take typed answers, so a software keyboard can cover
+     * the bottom 40% of the screen at any point in a run. This shell is exactly
+     * viewport-height and `overflow: hidden`, and `dvh` tracks the browser's own
+     * toolbars rather than the keyboard — so the engine, asked to reveal a
+     * focused field it believes is hidden, has nowhere to scroll and moves the
+     * only thing it can: the visual viewport. It pans, and where the field still
+     * will not fit, it scales. From the player's seat the whole playfield jumps
+     * and zooms mid-run and the other cards slide off screen.
+     *
+     * `--kb-inset` (hooks/useKeyboardInset, mounted by SynapseStormGame) is the
+     * keyboard's measured height, so the shell simply ENDS where the keyboard
+     * begins. The field is then already on screen, the engine has nothing to
+     * reveal, and it neither pans nor scales. The property is absent at rest, so
+     * the `0px` fallback makes this byte-for-byte the old rule on desktop and
+     * whenever no keyboard is up.
+     */
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
     width: 100%;
     position: relative;
     overflow: hidden;
@@ -43,7 +67,8 @@
 
 /* ---- GLOBAL APP ---- */
 .app-container {
-    height: 100dvh;
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
     width: 100%;
     position: relative;
     background: var(--bg-primary);
@@ -72,7 +97,8 @@
    MAIN MENU
    ============================================ */
 .main-menu {
-    height: 100dvh;
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
     display: flex;
     justify-content: center;
     align-items: center;
@@ -427,7 +453,8 @@
    GAME BOARD
    ============================================ */
 .game-board {
-    height: 100dvh;
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
     display: flex;
     flex-direction: column;
     transition: box-shadow 0.3s ease;
@@ -1212,7 +1239,8 @@
    GAME OVER
    ============================================ */
 .game-over {
-    height: 100dvh;
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1310,7 +1338,8 @@
    MULTIPLAYER MENU
    ============================================ */
 .ss-mp-menu {
-    height: 100dvh;
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1484,7 +1513,8 @@
    LOBBY
    ============================================ */
 .ss-lobby {
-    height: 100dvh;
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1672,7 +1702,8 @@
    ============================================ */
 .ss-mp-game-layout {
     display: flex;
-    height: 100dvh;
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
     width: 100%;
 }
 

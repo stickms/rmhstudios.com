@@ -145,11 +145,18 @@
 /* ─── Typing view sizing ─────────────────────────────────────────── */
 
 /* The typing view is a fixed-height flex column: the passage scrolls, the
-   input is pinned. `dvh` keeps the input above a phone's software keyboard
-   instead of behind it; `vh` is the fallback for engines without it. */
+   input is pinned. `vh` is the fallback for engines without the newer units.
+
+   The `--kb-inset` subtraction matters more here than anywhere — this is a
+   typing game, so on a phone the keyboard is up for the entire round. `dvh`
+   alone tracks the browser's toolbars, not the keyboard, so the view stayed
+   full height and the engine panned and scaled to keep the input visible.
+   Repeating the same expression as `.app-viewport` (which this element also
+   carries) rather than inheriting it: both rules are single class selectors, so
+   whichever sheet loads last would otherwise win. */
 .rmhtype-typing-view {
   height: 100vh;
-  height: 100dvh;
+  height: calc(100dvh - var(--kb-inset, 0px));
 }
 
 /* Keyboard up on a phone leaves ~300px of usable height. Drop the stats

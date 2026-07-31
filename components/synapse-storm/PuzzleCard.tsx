@@ -27,6 +27,25 @@ interface PuzzleCardProps {
     onSkipPhase?: (id: string) => void;
 }
 
+/**
+ * Whether a card may focus its own input as it spawns.
+ *
+ * On a pointer device autofocus is free — the field is ready, nothing moves.
+ * On a touch device it is not: focus raises the software keyboard, which covers
+ * half the playfield, and cards spawn continuously during a run. Autofocusing
+ * each one means the keyboard flies up for puzzles the player never chose to
+ * answer, over and over, while the clock runs. Touch players tap the field when
+ * they mean to type, which is one extra tap in exchange for the keyboard only
+ * ever appearing on purpose.
+ *
+ * Read at spawn rather than through a subscription: a card lives a few seconds
+ * and a device does not grow a mouse inside one.
+ */
+function canAutoFocus(): boolean {
+    if (typeof window === 'undefined') return false;
+    return !window.matchMedia?.('(hover: none) and (pointer: coarse)').matches;
+}
+
 function computeMetaAnswerAndOptions(variant: MetaPuzzleData['variant'], state: GameState): { answer: number; options: number[] } {
     const shuffleArr = <T,>(arr: T[]): T[] => {
         const a = [...arr];
@@ -281,7 +300,15 @@ const LanguageRenderer: React.FC<{
                     placeholder={data.variant === 'spelling' ? t("letter-placeholder", { defaultValue: "Letter..." }) : t("type-here-placeholder", { defaultValue: "Type here..." })}
                     className="puzzle-text-input"
                     maxLength={data.variant === 'spelling' ? 1 : 20}
-                    autoFocus={data.variant === 'spelling'}
+                    autoFocus={data.variant === 'spelling' && canAutoFocus()}
+                    // The answer is a specific word or letter, so autocorrect
+                    // and autocapitalise can only ever damage it — and turning
+                    // them off drops the suggestion strip, which is another
+                    // ~44px of screen the keyboard was taking.
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    autoComplete="off"
+                    spellCheck={false}
                 />
                 <button type="submit" className="submit-btn">
                     ✓
@@ -404,13 +431,22 @@ const MemoryRenderer: React.FC<{
                 {data.variant === 'numbers' ? (
                     <input
                         type="text"
-                        autoFocus
+                        autoFocus={canAutoFocus()}
                         value={input}
                         onChange={(e) => setInput(e.target.value.replace(/[^0-9]/g, ''))}
                         placeholder={t("numbers-placeholder", { defaultValue: "e.g. 385" })}
                         className="puzzle-text-input"
                         maxLength={data.sequence.length + 2}
-                        style={{ width: '100%', textAlign: 'center', fontSize: '1.2rem', marginBottom: '8px' }}
+                        // The onChange already strips everything but digits, so
+                        // a QWERTY keyboard here is three rows of keys that
+                        // cannot produce a valid character. `inputMode` asks for
+                        // the numeric pad instead: bigger targets, faster entry,
+                        // and roughly a third less of the screen covered. Kept
+                        // as `type="text"` deliberately — `type="number"` brings
+                        // spinners, a locale-dependent value and a field that
+                        // silently reports empty for anything it cannot parse.
+                        inputMode="numeric"
+                        autoComplete="off"
                     />
                 ) : data.variant === 'shapes' ? (
                     <div className="shape-input-controls">

@@ -853,8 +853,9 @@ bottom bar hiding under a phone's browser chrome.
 | `.app-stage-fit` + `.app-stage` | A fixed-aspect playfield. Put the HUD **inside** `.app-stage` when it must track the world, outside when it should use the letterbox.        |
 | `.app-hud` / `.app-hud-fixed`   | A full-bleed chrome layer, inset by the device's safe area. Geometry only — it does not touch `pointer-events`.                              |
 | `.app-safe-top/-bottom/-x/-pad` | Insets on a surface that is itself full-bleed but whose contents are not (a translucent bar, a letterbox gradient).                          |
+| `useKeyboardInset` + `--kb-inset` | The software keyboard's measured height, so a fixed-height shell can end where the keyboard begins. `AppShell` mounts it for the app tier. |
 
-Four rules, each of which was a shipped defect before it was a rule:
+Five rules, each of which was a shipped defect before it was a rule:
 
 1. **The world runs to the edge; the controls do not.** Artwork *should* pass
    under the notch. A pause button must not. Anything pinned to a viewport edge
@@ -883,10 +884,24 @@ Four rules, each of which was a shipped defect before it was a rule:
    it reallocates the backing store every frame, and if it was also what cleared
    your surface, add the explicit `clearRect` when you stop.
 
+5. **A shell with text entry subtracts `--kb-inset`.** The same shell that
+   cannot scroll also cannot reveal a focused field when the keyboard covers the
+   bottom 40% of the screen — and `dvh` does not help, because it tracks the
+   browser's toolbars, not the keyboard. So the engine moves the only thing it
+   can, the visual viewport: it pans, and where the field still will not fit, it
+   scales. Players report that as *the app zooming when they try to type*. Size
+   such a surface `calc(100dvh - var(--kb-inset, 0px))` and mount
+   `useKeyboardInset`; the shell then ends where the keyboard begins and there is
+   nothing left to reveal. Two companions on the field itself: don't `autoFocus`
+   on a coarse pointer (it raises the keyboard for something the player didn't
+   ask for), and set `inputMode` so a digits-only field gets the numeric pad
+   rather than a QWERTY that covers a third more of the screen.
+
 Rules 2–4's checkable parts, plus the `dvh` fallback pair, are enforced by
-`lib/__tests__/game-viewport-consistency.test.ts` (§13). Rule 1 is manual —
-`absolute top-3 right-3` is correct inside a card and wrong on the window, and
-the class string cannot tell you which it is.
+`lib/__tests__/game-viewport-consistency.test.ts` (§13). Rules 1 and 5 are
+manual — `absolute top-3 right-3` is correct inside a card and wrong on the
+window, and whether a shell ever hosts a text field is a question about its
+subtree, not about the rule that sizes it.
 
 ---
 

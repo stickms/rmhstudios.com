@@ -290,13 +290,15 @@ function viewportUnitViolations(): Violation[] {
     const src = readFileSync(join(ROOT, file), 'utf8');
     const lines = src.split('\n');
     lines.forEach((line, i) => {
-      const m = /(min-height|max-height|height)\s*:\s*100vh/.exec(line);
+      const m = /(min-height|max-height|height)\s*:\s*100vh\s*;/.exec(line);
       if (!m) return;
       // The convention is the fallback PAIR: this `vh` line, then the same
       // property in `dvh`/`svh` immediately after. Look a few lines ahead so an
-      // explanatory comment between the two is allowed.
+      // explanatory comment between the two is allowed, and match the unit
+      // anywhere in the value — the live-viewport line is often an expression
+      // (`calc(100dvh - var(--kb-inset, 0px))`), not a bare length.
       const ahead = lines.slice(i + 1, i + 8).join('\n');
-      if (new RegExp(`${m[1]}\\s*:\\s*100(dvh|svh|lvh)`).test(ahead)) return;
+      if (new RegExp(`${m[1]}\\s*:[^;]*100(dvh|svh|lvh)`).test(ahead)) return;
       out.push({
         file,
         line: i + 1,
@@ -356,4 +358,14 @@ describe('full-screen viewport contract — games and apps', () => {
  *     reallocates the backing store; inside a rAF loop that is a per-frame cost
  *     paid to reach the size it already had. Resize on change only — and add the
  *     explicit `clearRect` the assignment used to be doing for you.
+ *
+ *  4. **A shell with text entry subtracts `--kb-inset`.** A surface that is
+ *     exactly viewport-height and cannot scroll gives the engine no way to
+ *     reveal a focused field, so it pans and scales the page instead — which
+ *     players report as the app zooming when they try to type. Any full-screen
+ *     surface a keyboard can appear over sizes itself
+ *     `calc(100dvh - var(--kb-inset, 0px))` and mounts `useKeyboardInset`
+ *     (`AppShell` already does, for the whole app tier). Not checkable: whether
+ *     a given shell ever hosts a text field is a question about its subtree, not
+ *     about the rule that sizes it.
  */

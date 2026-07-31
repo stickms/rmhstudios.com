@@ -2032,9 +2032,19 @@ html.readable-font body {
  * Tailwind's `h-dvh` (one declaration, no fallback).
  */
 
+  /* The `--kb-inset` subtraction is the software keyboard. A shell this size
+   cannot scroll, and `dvh` tracks the browser's toolbars rather than the
+   keyboard — so when a field is focused the engine has no legitimate way to
+   reveal it and moves the visual viewport instead, panning and, where the field
+   still will not fit, scaling. Players read that as the app zooming when they
+   try to type. `hooks/useKeyboardInset` publishes the keyboard's measured
+   height (AppShell mounts it for the app tier; games mount it themselves), so
+   the shell simply ENDS where the keyboard begins and there is nothing left to
+   reveal. The property is absent at rest, so the `0px` fallback keeps this
+   identical to the plain `dvh` rule everywhere else. */
   .app-viewport {
     height: 100vh;
-    height: 100dvh;
+    height: calc(100dvh - var(--kb-inset, 0px));
     display: flex;
     flex-direction: column;
     overflow: hidden;
