@@ -10,7 +10,7 @@
 const STYLE_ID = 'neurodrive-minimap-style';
 const POS_KEY = 'neurodrive_minimap_pos';
 const CSS = `
-.nd-map { position:fixed; left:14px; top:48px; z-index:300; pointer-events:none;
+.nd-map { position:fixed; left:calc(14px + var(--safe-left)); top:calc(48px + var(--safe-top)); z-index:300; pointer-events:none;
   border:2px solid rgba(0,255,213,0.45); border-radius:10px; overflow:hidden;
   box-shadow:0 0 16px rgba(0,255,213,0.25), inset 0 0 22px rgba(0,0,0,0.6);
   background:rgba(4,8,18,0.55); }

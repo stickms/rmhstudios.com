@@ -86,7 +86,7 @@ function RoomPage() {
     <div className="relative min-h-screen" style={{ background: 'var(--site-bg)' }}>
       <Suspense fallback={null}><Visualizer /></Suspense>
       {room && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-20">
+        <div className="fixed top-[calc(1rem+var(--safe-top))] left-1/2 -translate-x-1/2 z-20">
           <div className="flex items-center gap-3 px-4 py-2 rounded-full backdrop-blur-xl" style={{ background: 'color-mix(in srgb, var(--site-bg) 70%, transparent)' }}>
             <span className="text-sm font-medium" style={{ color: 'var(--site-text)' }}>{room.name}</span>
             <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ background: 'var(--site-surface)', color: 'var(--site-accent)' }}>{room.code}</span>

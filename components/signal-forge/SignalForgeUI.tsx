@@ -322,7 +322,7 @@ export function SignalForgeUI(props: SignalForgeUIProps) {
     <div className="w-full h-full pointer-events-none">
       <button
         onClick={() => setShowCollection(true)}
-        className="fixed bottom-6 left-6 pointer-events-auto bg-linear-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-2 px-4 rounded-lg border border-cyan-400 shadow-lg transition-all"
+        className="fixed bottom-[calc(1.5rem+var(--safe-bottom))] left-[calc(1.5rem+var(--safe-left))] pointer-events-auto bg-linear-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-2 px-4 rounded-lg border border-cyan-400 shadow-lg transition-all"
       >
         📚 {t("collection", { defaultValue: "Collection" })}
       </button>

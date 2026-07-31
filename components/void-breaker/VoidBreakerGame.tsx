@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef, useEffect, useCallback, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { asset } from '@/lib/storage/asset';
 import { VoidBreakerEngine } from '@/lib/void-breaker/game';
@@ -731,24 +731,31 @@ export function VoidBreakerGame() {
       {/* Background music — loops during gameplay */}
       <audio ref={audioRef} src={MUSIC_SRC} loop preload="auto" />
 
-      <canvas
-        ref={canvasRef}
-        width={CANVAS_WIDTH}
-        height={CANVAS_HEIGHT}
-        className="border border-[#00f5ff]/20"
-        onTouchEnd={handleCanvasTouch}
-        style={{
-          width: '100%',
-          maxWidth: `${CANVAS_WIDTH}px`,
-          maxHeight: '100%',
-          aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}`,
-          touchAction: 'none',
-        }}
-      />
+      {/* The arena, letterboxed. It used to be sized `width: 100%` +
+          `maxHeight: 100%` + `aspectRatio`, which looks like a fit and is not:
+          `aspect-ratio` only derives the axis left `auto`, so on a landscape
+          phone `maxHeight` cropped the height while the width stayed at 100% and
+          the arena rendered visibly squashed. `.app-stage` states both axes in
+          container units, so there is nothing left for a clamp to skew. */}
+      <div className="app-stage-fit absolute inset-0">
+        <div className="app-stage" style={{ '--app-stage-ar': `${CANVAS_WIDTH} / ${CANVAS_HEIGHT}` } as CSSProperties}>
+          <canvas
+            ref={canvasRef}
+            width={CANVAS_WIDTH}
+            height={CANVAS_HEIGHT}
+            className="block h-full w-full border border-[#00f5ff]/20"
+            onTouchEnd={handleCanvasTouch}
+            style={{ touchAction: 'none' }}
+          />
+        </div>
+      </div>
 
-      {/* ── HUD Overlay ─────────────────────────────────────────────────── */}
+      {/* ── HUD Overlay ─────────────────────────────────────────────────────
+          `app-hud`, not `inset-0`: this bar reaches the window's own edges, so
+          on a phone held sideways the score sits under the sensor housing and
+          the wave counter under the home indicator. */}
       {showGame && (
-        <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-2 sm:p-3">
+        <div className="app-hud pointer-events-none flex flex-col justify-between p-2 sm:p-3">
           {/* Top bar */}
           <div className="flex justify-between items-start">
             {/* Score + multiplier */}
@@ -976,7 +983,7 @@ export function VoidBreakerGame() {
 
       {/* ── Ally HP bar ─────────────────────────────────────────────────── */}
       {showGame && hud.allyActive && (
-        <div className="absolute top-14 right-2 sm:right-3 pointer-events-none">
+        <div className="absolute top-[calc(3.5rem+var(--safe-top))] right-[calc(0.5rem+var(--safe-right))] sm:right-[calc(0.75rem+var(--safe-right))] pointer-events-none">
           <div className="bg-black/70 border border-[#00ff88]/30 rounded px-2 py-1 backdrop-blur-sm min-w-[80px]">
             <div className="text-[9px] font-mono text-[#00ff88]/70 mb-0.5">
               LIN {hud.allyDowned ? t('ally-down', { defaultValue: '— DOWN' }) : ''}
@@ -1058,7 +1065,7 @@ export function VoidBreakerGame() {
       {/* Narrative Dialogue Overlay */}
 
       {showGame && hud.dialogue && (
-        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 pointer-events-none max-w-sm w-full px-4">
+        <div className="absolute bottom-[calc(6rem+var(--safe-bottom))] left-1/2 -translate-x-1/2 pointer-events-none max-w-sm w-full px-4">
           <div className="bg-black/85 border border-[#00f5ff]/30 rounded-lg px-4 py-3 backdrop-blur-md"
             style={{ boxShadow: '0 0 20px rgba(0,245,255,0.15)' }}>
             <div className="text-[#ff00cc] font-mono text-[10px] font-bold uppercase tracking-widest mb-1">
@@ -1109,7 +1116,7 @@ export function VoidBreakerGame() {
 
       {/* ── Roguelite Upgrade Cards ─────────────────────────────────────── */}
       {showGame && hud.pendingUpgrades.length > 0 && (
-        <div className="vb-anim absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md z-50 pointer-events-auto px-3"
+        <div className="vb-anim absolute inset-0 flex flex-col items-center-safe justify-center-safe overflow-y-auto overscroll-contain bg-black/80 backdrop-blur-md z-50 pointer-events-auto px-3"
           style={{ animation: 'vb-fade-in 0.25s ease-out both' }}>
           <div className="vb-anim text-center mb-5" style={{ animation: 'vb-scale-in 0.35s cubic-bezier(0.22,1.2,0.36,1) both' }}>
             <div className={`text-[10px] font-mono tracking-[0.3em] uppercase mb-1 ${hud.upgradeIsBossReward ? 'text-[#ffd700]' : 'text-zinc-500'}`}>
@@ -1193,7 +1200,7 @@ export function VoidBreakerGame() {
 
       {/* ── ESC Pause Menu ──────────────────────────────────────────────── */}
       {showGame && showPauseMenu && (
-        <div className="vb-anim absolute inset-0 flex items-center justify-center bg-black/85 backdrop-blur-md z-50 pointer-events-auto"
+        <div className="vb-anim absolute inset-0 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain bg-black/85 backdrop-blur-md z-50 pointer-events-auto"
           style={{ animation: 'vb-fade-in 0.22s ease-out both' }}>
           <div className="vb-anim text-center space-y-4 bg-black/40 border border-[#00f5ff]/20 rounded-xl p-8 max-w-xs w-full mx-4"
             style={{ boxShadow: '0 0 40px rgba(0,245,255,0.1)', animation: 'vb-scale-in 0.3s cubic-bezier(0.22,1.2,0.36,1) both' }}>

@@ -26,7 +26,7 @@ export function CompletionScreen() {
   const closestLvl = closest ? (affinity[closest.id]?.level ?? 0) : 0;
 
   return (
-    <div className="min-h-[100dvh] overflow-y-auto flex flex-col items-center justify-center px-4 py-10"
+    <div className="min-h-[100dvh] overflow-y-auto flex flex-col items-center-safe justify-center-safe px-4 py-10"
       style={{ background: `radial-gradient(ellipse at center, ${closest?.color ?? '#4A3B6B'}22, #13101a 70%)` }}>
       <motion.div className="w-full max-w-lg text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
         <div className="text-xs tracking-[0.4em] uppercase mb-3" style={{ color: '#c4a35a' }}>Your story ends</div>

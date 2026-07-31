@@ -13,7 +13,7 @@
  */
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Loader2, ArrowUpRight, ChevronDown, X } from 'lucide-react';
+import { Check, Loader2, ArrowUpRight, ArrowRight, X } from 'lucide-react';
 import type { Tier } from '@/lib/entitlements';
 import { authClient } from '@/lib/auth-client';
 import { PinnedHero } from '@/components/feed/PinnedHero';
@@ -25,38 +25,6 @@ import { cn } from '@/lib/utils';
 // Local display-only ordering (do NOT import the server-side TIER_RANK — it
 // pulls the prisma client into the client bundle).
 const RANK: Record<Tier, number> = { free: 0, starter: 1, pro: 2, enterprise: 3 };
-
-// Nearest scrollable ancestor of an element (the element that actually scrolls
-// when its content overflows). Used so the "jump to shop" button can target the
-// right scroller whether the page scrolls the document (the case everywhere
-// today) or sits inside a custom `overflow-y-auto` container.
-function getScrollParent(node: HTMLElement): HTMLElement | null {
-  let el = node.parentElement;
-  while (el) {
-    const oy = getComputedStyle(el).overflowY;
-    if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight) return el;
-    el = el.parentElement;
-  }
-  return null;
-}
-
-// Smooth-scroll an anchor into view. `el.scrollIntoView({ behavior: 'smooth' })`
-// is unreliable inside a nested (non-document) scroll container on mobile Safari,
-// so when the anchor lives in a custom scroller we scroll that container directly.
-function scrollToAnchor(id: string) {
-  const target = document.getElementById(id);
-  if (!target) return;
-  const scroller = getScrollParent(target);
-  if (scroller) {
-    const top =
-      target.getBoundingClientRect().top -
-      scroller.getBoundingClientRect().top +
-      scroller.scrollTop;
-    scroller.scrollTo({ top, behavior: 'smooth' });
-  } else {
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-}
 
 /**
  * Structure only — the words live in `planCopy()` below. Prices stay literal:
@@ -142,15 +110,16 @@ function planCopy(t: (key: string, opts: { defaultValue: string }) => string) {
 export function MembershipPanel({
   currentTier,
   returnPath = '/pricing',
-  coinShopAnchorId,
+  onCoinShop,
   headingLevel = 'h1',
 }: {
   /** `null` = signed out. Distinct from 'free', which is a real membership. */
   currentTier: Tier | null;
   returnPath?: string;
-  /** When set, shows a ghost button beside the heading that smooth-scrolls to
-   *  the element with this id (the coins shop further down the /store page). */
-  coinShopAnchorId?: string;
+  /** When set, shows a ghost button in the hero that opens the RMH Coins shop
+   *  (on /store, the sibling "Shop" tab). Omit it where there is no shop to
+   *  send the visitor to — /pricing renders this panel standalone. */
+  onCoinShop?: () => void;
   /** Pass 'h2' when the embedding page already renders its own h1 (/store). */
   headingLevel?: 'h1' | 'h2';
 }) {
@@ -247,14 +216,14 @@ export function MembershipPanel({
                 {t('manage-billing', { defaultValue: 'Manage billing' })}
               </button>
             )}
-            {coinShopAnchorId && (
+            {onCoinShop && (
               <button
                 type="button"
-                onClick={() => scrollToAnchor(coinShopAnchorId)}
+                onClick={onCoinShop}
                 className="group inline-flex items-center gap-2 rounded-full border border-site-border bg-site-surface/40 px-5 py-2.5 text-sm font-semibold text-site-text transition-colors hover:bg-site-surface-hover"
               >
                 {t('coins-shop-jump', { defaultValue: 'RMH Coins shop' })}
-                <ChevronDown className="h-4 w-4 transition-transform group-hover:translate-y-0.5" />
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </button>
             )}
           </>

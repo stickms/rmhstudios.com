@@ -158,7 +158,7 @@ export function ExploreGame() {
 
             {/* Garden toast */}
             {locked && gardenToast && (
-                <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+                <div className="absolute bottom-[calc(6rem+var(--safe-bottom))] left-1/2 -translate-x-1/2 z-50 pointer-events-none">
                     <div className="px-4 py-2 rounded-xl bg-green-950/70 backdrop-blur-sm border border-green-600/30 text-green-200 text-sm">
                         {gardenToast}
                     </div>
@@ -167,7 +167,7 @@ export function ExploreGame() {
 
             {/* Garden counter */}
             {locked && plants.length > 0 && (
-                <div className="absolute top-3 left-14 z-50">
+                <div className="absolute top-[calc(0.75rem+var(--safe-top))] left-[calc(3.5rem+var(--safe-left))] z-50">
                     <span className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-black/50 backdrop-blur-sm border border-green-700/30 text-green-300/80">
                         🌼 {t("garden-chip", { defaultValue: "{{count}} planted · {{blooms}} blooming", count: plants.length, blooms: bloomCount })}
                     </span>
@@ -175,7 +175,7 @@ export function ExploreGame() {
             )}
 
             {locked && (
-                <div className="absolute top-3 right-3 z-50 flex items-center gap-2">
+                <div className="absolute top-[calc(0.75rem+var(--safe-top))] right-[calc(0.75rem+var(--safe-right))] z-50 flex items-center gap-2">
                     {night && (
                         <span
                             className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border backdrop-blur-sm transition-colors ${
@@ -212,7 +212,10 @@ export function ExploreGame() {
             )}
 
             {locked && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/30 text-xs tracking-widest whitespace-nowrap">
+                // `whitespace-nowrap` on a ~70-character keybind list ran off both
+                // edges of any window narrower than about 560px, with no way to
+                // scroll to the rest. It wraps and centres instead.
+                <div className="absolute bottom-[calc(1rem+var(--safe-bottom))] left-1/2 max-w-[min(90vw,44rem)] -translate-x-1/2 text-balance px-3 text-center text-xs tracking-widest text-white/30">
                     {night
                         ? t("locked-hint-night-v2", { defaultValue: "WASD · SHIFT run · SPACE jump · F flashlight · G plant · E water · ESC pause" })
                         : t("locked-hint-day-v2", { defaultValue: "WASD · SHIFT run · SPACE jump · G plant · E water · ESC pause" })}

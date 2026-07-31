@@ -9,7 +9,15 @@
 
 const STYLE_ID = 'neurodrive-mc-style';
 const CSS = `
-.nd-mc { position:fixed; inset:0; z-index:320; pointer-events:none;
+/* Safe-area inset, not \`inset:0\`: drift, gas and fire all pin to the right edge
+   and the exit button to the top-right — the corner a landscape phone hides
+   under its sensor housing. The steering ZONE deliberately still starts at the
+   layer's own left/bottom, because a thumb sliding onto the bezel should keep
+   steering rather than fall off a control. */
+.nd-mc { position:fixed;
+  top:var(--safe-top); right:var(--safe-right);
+  bottom:var(--safe-bottom); left:var(--safe-left);
+  z-index:320; pointer-events:none;
   font-family:'VT323',monospace; touch-action:none; }
 .nd-mc .zone { position:absolute; bottom:0; left:0; width:55%; height:65%; pointer-events:auto; }
 .nd-mc .base { position:absolute; width:140px; height:140px; margin:-70px 0 0 -70px;

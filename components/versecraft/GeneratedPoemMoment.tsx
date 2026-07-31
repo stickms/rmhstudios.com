@@ -53,7 +53,7 @@ export function GeneratedPoemMoment() {
   };
 
   return (
-    <div className="relative min-h-[100dvh] flex flex-col items-center px-4 py-10 overflow-y-auto"
+    <div className="relative min-h-[100dvh] flex flex-col items-center-safe px-4 py-10 overflow-y-auto"
       style={{ background: `radial-gradient(ellipse at top, ${accent}18, #13101a 70%)` }}>
       <div className="w-full max-w-2xl">
         {sprite && (

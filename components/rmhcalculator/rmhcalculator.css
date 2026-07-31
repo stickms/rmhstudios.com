@@ -14,7 +14,13 @@
     radial-gradient(1200px 600px at 15% -10%, var(--site-accent-dim, transparent), transparent 60%),
     var(--site-bg);
   color: var(--site-text);
-  padding: clamp(0.75rem, 2vw, 1.75rem);
+  /* The gradient ground fills the window; the padding adds the device insets to
+     the layout rhythm so the header's brand link and the keypad's outer column
+     clear the notch and the home indicator. */
+  padding: calc(clamp(0.75rem, 2vw, 1.75rem) + var(--safe-top))
+    calc(clamp(0.75rem, 2vw, 1.75rem) + var(--safe-right))
+    calc(clamp(0.75rem, 2vw, 1.75rem) + var(--safe-bottom))
+    calc(clamp(0.75rem, 2vw, 1.75rem) + var(--safe-left));
   gap: clamp(0.75rem, 1.5vw, 1.25rem);
 }
 

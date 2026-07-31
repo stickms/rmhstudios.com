@@ -66,7 +66,7 @@ export function GameOver({ onRetry }: GameOverProps) {
                        'text-slice-text-muted';
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-slice-bg/80 backdrop-blur-sm p-4">
+    <div className="absolute inset-0 z-50 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain bg-slice-bg/80 backdrop-blur-sm p-4">
       <Card className="w-full max-w-md bg-slice-bg text-slice-text shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] border-none rounded-[2rem] overflow-hidden">
         
         <CardHeader className="text-center pb-2 pt-8">

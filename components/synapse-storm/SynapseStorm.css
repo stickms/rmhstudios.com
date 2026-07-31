@@ -31,7 +31,31 @@
     font-family: var(--font-body);
     background: var(--bg-primary);
     color: var(--text-primary);
-    height: 100dvh;
+    /**
+     * Height, and the keyboard.
+     *
+     * `100vh` is the fallback pair for engines without `dvh`. The `--kb-inset`
+     * subtraction is what stops the game magnifying itself when a puzzle is
+     * typed into.
+     *
+     * Several puzzle types take typed answers, so a software keyboard can cover
+     * the bottom 40% of the screen at any point in a run. This shell is exactly
+     * viewport-height and `overflow: hidden`, and `dvh` tracks the browser's own
+     * toolbars rather than the keyboard — so the engine, asked to reveal a
+     * focused field it believes is hidden, has nowhere to scroll and moves the
+     * only thing it can: the visual viewport. It pans, and where the field still
+     * will not fit, it scales. From the player's seat the whole playfield jumps
+     * and zooms mid-run and the other cards slide off screen.
+     *
+     * `--kb-inset` (hooks/useKeyboardInset, mounted by SynapseStormGame) is the
+     * keyboard's measured height, so the shell simply ENDS where the keyboard
+     * begins. The field is then already on screen, the engine has nothing to
+     * reveal, and it neither pans nor scales. The property is absent at rest, so
+     * the `0px` fallback makes this byte-for-byte the old rule on desktop and
+     * whenever no keyboard is up.
+     */
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
     width: 100%;
     position: relative;
     overflow: hidden;
@@ -43,7 +67,8 @@
 
 /* ---- GLOBAL APP ---- */
 .app-container {
-    height: 100dvh;
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
     width: 100%;
     position: relative;
     background: var(--bg-primary);
@@ -72,12 +97,23 @@
    MAIN MENU
    ============================================ */
 .main-menu {
-    height: 100dvh;
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
+    align-items: safe center;
     position: relative;
-    overflow: hidden;
+    /* Scroll rather than clip. A landscape handset is ~340px tall and this
+       screen carries a logo, a title, a tagline, a feature list, the start
+       button, a settings panel and an instructions block — and `align-items:
+       center` on an overflowing flex container puts the top of that stack above
+       the scroll origin, where it cannot be reached at all. `safe center`
+       centres while it fits and falls back to start alignment when it does not. */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-block: calc(var(--safe-top)) calc(var(--safe-bottom));
+    padding-inline: var(--safe-left) var(--safe-right);
 }
 
 .menu-bg-effect {
@@ -108,6 +144,52 @@
     text-align: center;
     max-width: 600px;
     padding: 2rem;
+}
+
+/**
+ * Short viewports — a handset turned sideways is ~340px tall, and so is a
+ * half-height desktop window. Scrolling (see `.main-menu`) already guarantees
+ * the start button is reachable; this makes it reachable without scrolling at
+ * all, by shrinking the furniture around it rather than the action itself.
+ */
+@media (max-height: 34rem) {
+    .menu-content {
+        padding: 1rem 1.5rem;
+    }
+
+    .logo-icon {
+        font-size: 2.25rem;
+        margin-bottom: 0.15rem;
+    }
+
+    .menu-logo {
+        margin-bottom: 0.6rem;
+    }
+
+    .menu-title {
+        font-size: 2rem;
+    }
+
+    .menu-tagline {
+        font-size: 0.9rem;
+        margin-bottom: 0.9rem;
+    }
+
+    /* Reference material, not a decision the player makes here. */
+    .menu-features,
+    .menu-instructions {
+        display: none;
+    }
+
+    .start-button {
+        padding: 0.7rem 2.25rem;
+        font-size: 1.05rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .menu-settings-section {
+        margin-bottom: 0.5rem;
+    }
 }
 
 .menu-logo {
@@ -371,7 +453,8 @@
    GAME BOARD
    ============================================ */
 .game-board {
-    height: 100dvh;
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
     display: flex;
     flex-direction: column;
     transition: box-shadow 0.3s ease;
@@ -472,11 +555,23 @@
 /* ============================================
    HUD
    ============================================ */
+/**
+ * The HUD reflows rather than running off the side.
+ *
+ * It was a single non-wrapping row of six to seven readouts whose `min-width`s
+ * alone came to 440px, plus five 24px gaps and 48px of padding — a 608px floor
+ * inside an ancestor with `overflow: hidden`. On a 390px phone that put a third
+ * of the HUD (time survived, solved, best streak) permanently off screen with
+ * no way to scroll to it. `flex-wrap` lets it become two rows instead, and the
+ * phone block below tightens the metrics so two rows is all it ever needs.
+ */
 .hud {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 1.5rem;
-    padding: 0.75rem 1.5rem;
+    gap: 0.5rem 1.5rem;
+    padding: calc(0.75rem + var(--safe-top)) calc(1.5rem + var(--safe-right)) 0.75rem
+        calc(1.5rem + var(--safe-left));
     background: rgba(10, 10, 26, 0.95);
     border-bottom: 1px solid var(--border-color);
     -webkit-backdrop-filter: blur(20px);
@@ -490,6 +585,43 @@
     flex-direction: column;
     align-items: center;
     min-width: 60px;
+}
+
+/* Phones: shed the fixed floors and the wide gaps so the whole HUD fits in two
+   compact rows, and drop the type a step so the values still read at a glance. */
+@media (max-width: 640px) {
+    .hud {
+        gap: 0.35rem 0.75rem;
+        padding: calc(0.5rem + var(--safe-top)) calc(0.75rem + var(--safe-right)) 0.5rem
+            calc(0.75rem + var(--safe-left));
+    }
+
+    .hud-section,
+    .hud-score,
+    .hud-difficulty {
+        min-width: 0;
+    }
+
+    .hud-value {
+        font-size: 0.95rem;
+    }
+
+    .score-value {
+        font-size: 1.05rem;
+    }
+
+    .hud-difficulty {
+        /* The intensity meter is the one readout that needs real width to mean
+           anything; give it what is left of the row rather than a fixed 100px. */
+        flex: 1 1 5rem;
+    }
+
+    /* `margin-left: auto` pushed best-streak to the far end of a row that no
+       longer has one end — once the HUD wraps it would strand itself alone on a
+       third line. */
+    .hud-best-streak {
+        margin-left: 0;
+    }
 }
 
 .hud-label {
@@ -583,9 +715,34 @@
 /* ============================================
    PUZZLE CARD
    ============================================ */
+/**
+ * Cards are placed inside the playfield, not merely near it.
+ *
+ * This was `position: absolute; width: 280px; left: x%` with x spawning up to
+ * 76 (`findNonOverlappingPosition` in `lib/synapse-storm/engine.ts`). A
+ * percentage `left` positions the card's LEFT edge, so on a ~358px-wide phone
+ * playfield a card at 76% started at 272px and ran to 552px — nearly 200px past
+ * the edge, clipped away by `.playfield { overflow: hidden }`, taking its answer
+ * buttons with it. The puzzle was unanswerable and the run was lost to a miss
+ * the player never had a chance at.
+ *
+ * The offsets now scale the spawn coordinate across the FREE space (the track
+ * the card can travel without any part of it leaving), so 0 is flush left, 100
+ * is flush right, and every value between is fully visible at every width. The
+ * vertical clamp uses the card's max-height rather than its real height —
+ * conservative on purpose, since CSS cannot know the latter, and erring toward
+ * "too far up" only ever keeps more of the card on screen.
+ */
 .puzzle-card {
+    --card-w: min(280px, calc(100% - 1rem));
+    --card-h-cap: min(22rem, calc(100% - 1rem));
     position: absolute;
-    width: 280px;
+    width: var(--card-w);
+    max-height: var(--card-h-cap);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    left: calc((100% - var(--card-w)) * var(--card-x, 0) / 100);
+    top: calc((100% - var(--card-h-cap)) * var(--card-y, 0) / 100);
     background: var(--bg-card);
     border: 1px solid var(--card-color, var(--border-color));
     border-radius: var(--radius-md);
@@ -1082,11 +1239,17 @@
    GAME OVER
    ============================================ */
 .game-over {
-    height: 100dvh;
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
+    align-items: safe center;
     position: relative;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-block: calc(var(--safe-top)) calc(var(--safe-bottom));
+    padding-inline: var(--safe-left) var(--safe-right);
 }
 
 .go-content {
@@ -1175,11 +1338,17 @@
    MULTIPLAYER MENU
    ============================================ */
 .ss-mp-menu {
-    height: 100dvh;
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
+    align-items: safe center;
     position: relative;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-block: calc(var(--safe-top)) calc(var(--safe-bottom));
+    padding-inline: var(--safe-left) var(--safe-right);
 }
 
 .ss-mp-menu-content {
@@ -1344,11 +1513,17 @@
    LOBBY
    ============================================ */
 .ss-lobby {
-    height: 100dvh;
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
+    align-items: safe center;
     position: relative;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-block: calc(var(--safe-top)) calc(var(--safe-bottom));
+    padding-inline: var(--safe-left) var(--safe-right);
 }
 
 .ss-lobby-content {
@@ -1527,7 +1702,8 @@
    ============================================ */
 .ss-mp-game-layout {
     display: flex;
-    height: 100dvh;
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
     width: 100%;
 }
 

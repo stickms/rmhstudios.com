@@ -187,7 +187,7 @@ export function NeonDriftwayUI({
   // ── Main Menu ──
   if (uiState === 'menu') {
     return (
-      <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto bg-black/70 backdrop-blur-sm overflow-y-auto">
+      <div className="absolute inset-0 flex items-center-safe justify-center-safe z-40 pointer-events-auto bg-black/70 backdrop-blur-sm overflow-y-auto">
         <div className="text-center space-y-4 sm:space-y-6 max-w-md px-4 py-6">
           <h1 className="text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-linear-to-r from-cyan-400 via-white to-red-500 tracking-tighter">
             NEON DRIFTWAY
@@ -257,7 +257,7 @@ export function NeonDriftwayUI({
   if (uiState === 'levelSelect') {
     const levelIds: LevelId[] = [1, 2, 3];
     return (
-      <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto bg-black/70 backdrop-blur-sm overflow-y-auto">
+      <div className="absolute inset-0 flex items-center-safe justify-center-safe z-40 pointer-events-auto bg-black/70 backdrop-blur-sm overflow-y-auto">
         <div className="max-w-lg w-full px-4 space-y-3 sm:space-y-4 py-6">
           <button
             onClick={onGoToMenu}
@@ -318,7 +318,7 @@ export function NeonDriftwayUI({
     const timeStr = `${Math.floor(timeSec / 60)}:${(timeSec % 60).toString().padStart(2, '0')}`;
 
     return (
-      <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto bg-black/80 backdrop-blur-sm overflow-y-auto">
+      <div className="absolute inset-0 flex items-center-safe justify-center-safe z-40 pointer-events-auto bg-black/80 backdrop-blur-sm overflow-y-auto">
         <div className="max-w-md w-full px-4 space-y-3 sm:space-y-4 py-6">
           <h2 className="text-3xl sm:text-4xl font-black text-red-500 text-center tracking-tight">{t("crashed", { defaultValue: "CRASHED" })}</h2>
 
@@ -411,7 +411,7 @@ export function NeonDriftwayUI({
     const timeStr = `${Math.floor(timeSec / 60)}:${(timeSec % 60).toString().padStart(2, '0')}`;
 
     return (
-      <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto bg-black/80 backdrop-blur-sm overflow-y-auto">
+      <div className="absolute inset-0 flex items-center-safe justify-center-safe z-40 pointer-events-auto bg-black/80 backdrop-blur-sm overflow-y-auto">
         <div className="max-w-md w-full px-4 space-y-3 sm:space-y-4 py-6">
           <h2 className="text-3xl sm:text-4xl font-black text-green-400 text-center tracking-tight">{t("level-complete", { defaultValue: "LEVEL COMPLETE!" })}</h2>
 

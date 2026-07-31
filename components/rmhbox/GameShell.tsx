@@ -77,7 +77,7 @@ export default function GameShell({
       </main>
 
       {/* Footer */}
-      <footer className="relative flex shrink-0 items-center border-t border-(--app-border) px-4 py-1.5 text-sm">
+      <footer className="relative flex shrink-0 items-center border-t border-(--app-border) px-4 py-1.5 pb-[calc(0.375rem+var(--safe-bottom))] pl-[calc(1rem+var(--safe-left))] pr-[calc(1rem+var(--safe-right))] text-sm">
         <span className="font-mono font-semibold">
           {t("score-label", { defaultValue: "Score:" })} <span className="text-(--app-accent)">{displayScore}</span>
         </span>

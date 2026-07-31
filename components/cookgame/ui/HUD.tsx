@@ -38,7 +38,7 @@ export function HUD() {
   return (
     <div className="pointer-events-none absolute inset-0 z-20 select-none text-white">
       {/* Top-left: cash + rank */}
-      <div className="absolute left-4 top-4 flex flex-col gap-2">
+      <div className="absolute left-[calc(1rem+var(--safe-left))] top-[calc(1rem+var(--safe-top))] flex flex-col gap-2">
         <div className="rounded-md border border-neutral-700 bg-neutral-900/80 px-3 py-2">
           <div className="font-mono text-2xl font-bold text-lime-400">${cash}</div>
           <div className="font-mono text-[11px] uppercase tracking-widest text-neutral-400">
@@ -101,7 +101,7 @@ export function HUD() {
       </div>
 
       {/* Top-right: heat meter */}
-      <div className="absolute right-4 top-4 w-44 rounded-md border border-neutral-700 bg-neutral-900/80 px-3 py-2">
+      <div className="absolute right-[calc(1rem+var(--safe-right))] top-[calc(1rem+var(--safe-top))] w-44 rounded-md border border-neutral-700 bg-neutral-900/80 px-3 py-2">
         <div className="mb-1 flex items-center justify-between font-mono text-[11px] uppercase tracking-widest text-neutral-400">
           <span>Heat</span>
           <span className={hot ? 'text-red-400' : 'text-neutral-300'}>{Math.round(heat)}</span>

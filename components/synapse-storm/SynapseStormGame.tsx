@@ -7,6 +7,7 @@ import { GameOver } from './GameOver';
 import { MultiplayerGame } from './MultiplayerGame';
 import { MultiplayerProvider } from '../../lib/synapse-storm/MultiplayerProvider';
 import type { ScoreSaveData } from '../../lib/synapse-storm/persistence';
+import { useKeyboardInset } from '@/hooks/useKeyboardInset';
 import './SynapseStorm.css';
 
 interface SynapseStormGameProps {
@@ -20,6 +21,12 @@ export const SynapseStormGame: React.FC<SynapseStormGameProps> = ({ onSaveScore,
     const [topView, setTopView] = useState<TopLevelView>('main');
     const [scoreSaved, setScoreSaved] = useState(false);
     const { state, startGame, solvePuzzle, skipMemoryPhase, returnToMenu } = useGameEngine();
+
+    // Several puzzle types are typed, so a keyboard can be up at any moment
+    // during a run. Publishing its height lets the shell end where the keyboard
+    // begins — which is what stops the browser magnifying the playfield to
+    // reveal a field it thinks is hidden. See `hooks/useKeyboardInset`.
+    useKeyboardInset();
 
     useEffect(() => {
         if (state.status === 'gameover' && onSaveScore) {

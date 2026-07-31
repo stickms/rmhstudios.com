@@ -17,6 +17,7 @@
 import type { ReactNode } from 'react';
 import AppToaster from './AppToaster';
 import { ConnectionBanner, PeerWaitOverlay } from './ConnectionStatus';
+import { useKeyboardInset } from '@/hooks/useKeyboardInset';
 import type { RealtimeStatus, PeerWaitState } from '@/lib/shared/realtime/types';
 
 export type AppAppearance = 'dark' | 'light' | 'high-contrast';
@@ -71,6 +72,15 @@ export default function AppShell({
   realtime,
   className,
 }: AppShellProps) {
+  // Every app in this tier types into something — a chat composer, a lobby
+  // code, a passage, a minigame answer — inside a shell that is exactly
+  // viewport-height and cannot scroll. Publishing the keyboard's height lets
+  // `.app-viewport` end where the keyboard begins, which is what stops the
+  // engine panning and scaling the app to reveal the focused field. Costs one
+  // `visualViewport` listener and nothing at all on a device without a
+  // software keyboard. See `hooks/useKeyboardInset`.
+  useKeyboardInset();
+
   // A persisted preference from an older build (or a hand-edited localStorage
   // value) shouldn't strand the app in an undefined palette.
   const appearance: AppAppearance = theme === 'light' || theme === 'high-contrast' ? theme : 'dark';
@@ -87,6 +97,13 @@ export default function AppShell({
         .filter(Boolean)
         .join(' ')}
       data-app-theme={appearance}
+      // Claims the whole app subtree for the site's press layer (WWDC 2018 §803
+      // principle 1: a surface acknowledges the finger the instant it lands).
+      // The site tier gets this free because its controls all come from
+      // `ui/button.tsx`; the app tier ships its own buttons in every app, so the
+      // shell claims them collectively rather than each app remembering to.
+      // Individual gesture surfaces opt back out with `data-fluid-press="none"`.
+      data-fluid-press-scope
     >
       {toaster && <AppToaster />}
       {realtime && <ConnectionBanner status={realtime.status} onRetry={realtime.onRetry} />}

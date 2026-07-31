@@ -46,8 +46,9 @@ export function StoryHUD() {
 
     return (
         <>
-            {/* Act indicator + objective */}
-            <div className="absolute top-3 left-14 z-40 flex items-center gap-3">
+            {/* Act indicator + objective. The `left-14` clears the back link;
+                the inset clears the hardware. */}
+            <div className="absolute top-[calc(0.75rem+var(--safe-top))] left-[calc(3.5rem+var(--safe-left))] z-40 flex items-center gap-3">
                 <div className="px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10">
                     <p className="text-white/70 text-xs font-medium">{actConfig.name}</p>
                     <p className="text-white/40 text-[10px]">
@@ -58,7 +59,7 @@ export function StoryHUD() {
             </div>
 
             {/* Right side controls */}
-            <div className="absolute top-3 right-3 z-40 flex items-center gap-2">
+            <div className="absolute top-[calc(0.75rem+var(--safe-top))] right-[calc(0.75rem+var(--safe-right))] z-40 flex items-center gap-2">
                 <span
                     className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border backdrop-blur-sm transition-colors ${
                         flashlightOn
@@ -70,8 +71,10 @@ export function StoryHUD() {
                 </span>
             </div>
 
-            {/* Controls hint */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/30 text-xs tracking-widest whitespace-nowrap z-40">
+            {/* Controls hint. Wraps rather than `whitespace-nowrap` — eighty
+                characters of keybinds at wide tracking ran off both edges of any
+                window under ~640px, with nothing to scroll to reach the rest. */}
+            <div className="absolute bottom-[calc(1rem+var(--safe-bottom))] left-1/2 z-40 max-w-[min(90vw,48rem)] -translate-x-1/2 text-balance px-3 text-center text-xs tracking-widest text-white/30">
                 {t("controls-hint", { defaultValue: "WASD · SHIFT run · SPACE jump · F flashlight · E interact · TAB journal · ESC pause" })}
             </div>
 

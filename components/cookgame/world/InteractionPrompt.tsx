@@ -26,7 +26,7 @@ export function InteractionPrompt() {
   const overlay = useCookgameStore((s) => s.activeOverlay);
   if (!near || overlay) return null;
   return (
-    <div className="absolute bottom-24 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded bg-black/70 text-white text-sm font-mono pointer-events-none">
+    <div className="absolute bottom-[calc(6rem+var(--safe-bottom))] left-1/2 -translate-x-1/2 px-3 py-1.5 rounded bg-black/70 text-white text-sm font-mono pointer-events-none">
       Press <span className="text-lime-400">E</span> — {LABELS[near] ?? near}
     </div>
   );

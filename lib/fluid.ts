@@ -344,6 +344,35 @@ export function resolveDetent(
   return best;
 }
 
+/** Smooth 0→1 ramp across `[a, b]`, flat outside it. */
+export function smoothstep(a: number, b: number, v: number): number {
+  if (b === a) return v >= b ? 1 : 0;
+  const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+}
+
+/**
+ * How confident a gesture was, from how fast it was moving: 0 = browsing,
+ * 1 = decisive.
+ *
+ * The talk's "accelerate decisions" idea, generalised. Speed is evidence about
+ * intent, and an interface that already measures it has no excuse for asking a
+ * hurried user to confirm as slowly as a hesitant one. Somebody who flicks
+ * straight to a target has told you they know where they are going; somebody
+ * creeping around has told you they are still deciding. Use it to shorten a
+ * confirmation, not to skip one — the floor still has to be long enough to
+ * abandon.
+ *
+ * @param speed magnitude of the gesture's velocity, in whatever unit the caller
+ *   measures (px/s, deg/s — only the thresholds have to agree with it).
+ * @param browsing at or below this, treat the gesture as exploratory.
+ * @param decisive at or above this, treat it as certain.
+ */
+export function gestureConfidence(speed: number, browsing: number, decisive: number): number {
+  if (!Number.isFinite(speed)) return 0;
+  return smoothstep(browsing, decisive, Math.abs(speed));
+}
+
 /**
  * Should a dismissable surface go away when released here at this speed?
  *

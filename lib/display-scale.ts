@@ -54,6 +54,23 @@ export const DISPLAY_SCALE_STEPS = 4;
 /** Enough slack to absorb float error in `scale * STEPS` before rounding up. */
 const EPSILON = 1e-6;
 
+/**
+ * Ceiling for a full-screen **game** surface, as opposed to a document one.
+ *
+ * The reader's zoom is worth following on a page of text, where the cost is a
+ * one-off raster. A game re-rasterises its whole surface sixty times a second,
+ * and fill rate scales with the SQUARE of the ratio: a phone reporting 3 is
+ * asking for 9× the pixels of a 1× screen, every frame, on the hardware least
+ * able to supply them. Two is the point past which a moving image stops looking
+ * meaningfully sharper — and a game that holds 60fps at 2 reads as far crisper
+ * than one that stutters at 3.
+ *
+ * The 3D games reach the same ceiling through `lib/render/tier.ts`, which also
+ * factors in the GPU probe. This is the 2D equivalent, for canvases with no tier
+ * system of their own.
+ */
+export const MAX_GAME_DPR = 2;
+
 /** The parts of `window` a display scale is read from — narrowed so it can be faked. */
 export type DisplayScaleSource = {
   devicePixelRatio?: number;
@@ -88,6 +105,22 @@ export function readDisplayScale(source: DisplayScaleSource): number {
 export function quantiseDisplayScale(scale: number): number {
   if (!Number.isFinite(scale) || scale <= 0) return 1;
   return Math.ceil(scale * DISPLAY_SCALE_STEPS - EPSILON) / DISPLAY_SCALE_STEPS;
+}
+
+/**
+ * The device-pixel ratio a full-screen game canvas should size its drawing buffer at:
+ * the display's own ratio, held to {@link MAX_GAME_DPR} and never below 1.
+ *
+ * Deliberately ignores pinch magnification, unlike {@link readDisplayScale}. A player
+ * pinching mid-run is not asking for a sharper render, and reallocating a full-screen
+ * drawing buffer during a gesture is the one moment it costs the most.
+ *
+ * Whatever this returns must be used for BOTH the buffer size and the render
+ * transform. Sizing the buffer from a clamped ratio while drawing at the raw one
+ * silently scales the whole scene.
+ */
+export function gameSurfaceDpr(source: DisplayScaleSource): number {
+  return Math.min(positive(source.devicePixelRatio), MAX_GAME_DPR);
 }
 
 /**

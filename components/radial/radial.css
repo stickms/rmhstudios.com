@@ -1041,10 +1041,10 @@ html.perf-lite .radial-backdrop__blob {
      rather than on a flat plate. Every stop is the theme's own ground. */
   background: radial-gradient(
     circle farthest-corner at 50% 50%,
-    color-mix(in srgb, var(--site-bg) 70%, transparent) 0%,
-    color-mix(in srgb, var(--site-bg) 86%, transparent) 42%,
-    color-mix(in srgb, var(--site-bg) 95%, transparent) 76%,
-    color-mix(in srgb, var(--site-bg) 99%, transparent) 100%
+    color-mix(in srgb, var(--site-bg) 82%, transparent) 0%,
+    color-mix(in srgb, var(--site-bg) 92%, transparent) 42%,
+    color-mix(in srgb, var(--site-bg) 98%, transparent) 76%,
+    var(--site-bg) 100%
   );
   /* The disc only ever has to reach the farthest CORNER — half the viewport
      diagonal, which at any aspect ratio is at most 0.708vmax*100. This used to
@@ -1075,6 +1075,65 @@ html.perf-lite .radial-backdrop__blob {
     clip-path 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
     opacity 0.12s ease;
 }
+/* ── Sinking the page behind the globe ─────────────────────────────────────
+   The veil alone dims the page but leaves it legible, so the globe reads as
+   sitting ON the page rather than in front of it. This blurs the page itself.
+
+   It is `filter` on the PAGE, not `backdrop-filter` on the overlay, and the
+   difference is the whole reason this is affordable. A backdrop-filter must
+   re-sample everything behind it whenever anything above it moves — and the
+   globe above it moves continuously, which is the ~10fps measurement recorded
+   over `.radial-hub__veil`. A `filter` on a subtree that is ITSELF static
+   rasterises once and is then just a cached texture the compositor reuses; the
+   globe animating in a layer above never invalidates it. Same visual, opposite
+   cost curve.
+
+   Applied to the three shell siblings rather than to `.radial-shell`, because
+   the hub is also a child of the shell and must stay sharp.
+
+   `filter` establishes a containing block for fixed-position descendants, and
+   `.radial-frame` has exactly one — the feed's compose FAB — which would be
+   re-anchored to the frame (i.e. thrown to the bottom of the document) for as
+   long as the filter is live. It sits under the overlay and is invisible the
+   whole time anyway, so it is hidden rather than left to slide about behind the
+   veil. This is also why the resting state is `filter: none` and not
+   `blur(0)`: a zero-radius blur still creates the containing block. */
+.radial-shell:has(.radial-hub[data-phase='open']) .radial-backdrop,
+.radial-shell:has(.radial-hub[data-phase='open']) .radial-topbar,
+.radial-shell:has(.radial-hub[data-phase='open']) .radial-frame {
+  filter: blur(var(--hub-page-blur, 20px));
+}
+.radial-shell:has(.radial-hub:not([data-phase='closed'])) .radial-feed__compose {
+  visibility: hidden;
+}
+.radial-backdrop,
+.radial-topbar,
+.radial-frame {
+  filter: none;
+  /* Shorter than the veil's 0.5s: every frame of a blur transition is a fresh
+     rasterisation of the page, so this is the one part of the open that should
+     not linger. */
+  transition: filter 0.32s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+/* The degradation tiers opt out and lean on the veil, which is already opaque
+   enough to carry the separation on its own: `perf-lite` because a full-page
+   rasterisation is exactly what that tier exists to avoid, and
+   `reduce-transparency` because a visitor who asked for less see-through
+   material did not ask for a blurrier one. */
+html.perf-lite .radial-shell:has(.radial-hub[data-phase='open']) .radial-backdrop,
+html.perf-lite .radial-shell:has(.radial-hub[data-phase='open']) .radial-topbar,
+html.perf-lite .radial-shell:has(.radial-hub[data-phase='open']) .radial-frame,
+html.reduce-transparency .radial-shell:has(.radial-hub[data-phase='open']) .radial-backdrop,
+html.reduce-transparency .radial-shell:has(.radial-hub[data-phase='open']) .radial-topbar,
+html.reduce-transparency .radial-shell:has(.radial-hub[data-phase='open']) .radial-frame {
+  filter: none;
+}
+html.reduce-transparency .radial-hub__veil,
+html.perf-lite .radial-hub__veil {
+  background: var(--site-bg);
+}
+
 /* ── The liquid globe navigator ────────────────────────────────────────────
    The navigator itself: a glass sphere with one pin per destination, which you
    TURN to find where you want to go. Bring a place into the reticle at the front
