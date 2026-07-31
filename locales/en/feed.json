@@ -196,7 +196,6 @@
   "creator-member-summary_one": "{{count}} members · {{price}} coins/month",
   "creator-member-summary_other": "{{count}} members · {{price}} coins/month",
   "creator-membership": "Creator membership",
-  "creator-studio": "Creator Studio",
   "creator-support": "Creator support",
   "creator-support-hint": "Set optional goals and membership pricing for supporters.",
   "creators-store": "{{name}}'s store",

@@ -202,6 +202,11 @@ export interface InputState {
   down: boolean;
   left: boolean;
   right: boolean;
+  /**
+   * Analog steering, -1 (full left) … 1 (full right), summed with the
+   * left/right buttons. Used by VR head-steering; 0 everywhere else.
+   */
+  steer: number;
   boost: boolean;
   pause: boolean;
   restart: boolean;
