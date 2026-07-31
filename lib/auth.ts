@@ -5,7 +5,7 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { prisma } from '@/lib/prisma.server';
-import { generateHandle } from '@/lib/handle';
+import { generateHandle } from '@/lib/handle.server';
 import Stripe from 'stripe';
 import { stripe } from '@better-auth/stripe';
 import { customSession } from 'better-auth/plugins';
@@ -175,8 +175,9 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
-          // Auto-assign a handle to new users if they don't have one
-          if (!user.handle) {
+          // Auto-assign a handle to new users if they don't have one.
+          if (user.handle) return;
+          try {
             const handle = await generateHandle(
               (user as { username?: string }).username || user.name,
             );
@@ -184,6 +185,12 @@ export const auth = betterAuth({
               where: { id: user.id },
               data: { handle },
             });
+          } catch (error) {
+            // Two accounts racing for the same candidate lose the unique index
+            // here. Signing up matters more than the handle, so swallow it —
+            // `backfillMissingHandles` (pnpm handles:backfill) sweeps up anyone
+            // left without one.
+            console.error('Auto-handle assignment failed:', error);
           }
         },
       },

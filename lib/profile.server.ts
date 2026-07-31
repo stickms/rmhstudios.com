@@ -29,6 +29,7 @@ const profileSelect = {
   image: true,
   isVerified: true,
   isAdmin: true,
+  isBot: true,
   createdAt: true,
   lastSeenAt: true,
   profile: {
@@ -82,6 +83,8 @@ export interface ProfilePayload {
   image: string;
   isVerified: boolean;
   isAdmin: boolean;
+  /** Synthetic account posted by the bot-worker, not a person. */
+  isBot: boolean;
   createdAt: string;
   bio: string | null;
   location: string | null;
@@ -180,6 +183,7 @@ export async function getProfile(
     image: resolved.image || '/images/social/default_avatar.png',
     isVerified: user.isVerified,
     isAdmin: user.isAdmin,
+    isBot: user.isBot,
     createdAt: user.createdAt.toISOString(),
     bio: user.profile?.bio ?? null,
     location: user.profile?.location ?? null,

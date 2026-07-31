@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import type { Prisma } from '@prisma/client';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { handleSchema } from '@/lib/handle';
@@ -21,14 +22,23 @@ export const Route = createFileRoute('/api/admin/users')({
         const cursor = searchParams.get('cursor');
         const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
 
-        const whereClause = search ? {
-            OR: [
-                { name: { contains: search, mode: 'insensitive' as const } },
-                { username: { contains: search, mode: 'insensitive' as const } },
-                { handle: { contains: search, mode: 'insensitive' as const } },
-                { email: { contains: search, mode: 'insensitive' as const } }
-            ]
-        } : {};
+        // Bot accounts are ordinary `user` rows created by the Go bot-worker.
+        // They're indistinguishable from people in a flat list, so let the
+        // dashboard narrow to one population or the other.
+        const accounts = searchParams.get('accounts');
+
+        const whereClause: Prisma.UserWhereInput = {
+            ...(search ? {
+                OR: [
+                    { name: { contains: search, mode: 'insensitive' as const } },
+                    { username: { contains: search, mode: 'insensitive' as const } },
+                    { handle: { contains: search, mode: 'insensitive' as const } },
+                    { email: { contains: search, mode: 'insensitive' as const } }
+                ]
+            } : {}),
+            ...(accounts === 'bots' ? { isBot: true } : {}),
+            ...(accounts === 'people' ? { isBot: false } : {}),
+        };
 
         let orderBy: any = { createdAt: 'desc' };
 
@@ -40,7 +50,7 @@ export const Route = createFileRoute('/api/admin/users')({
 
             if (cursorUser) {
                 // For descending order, we want items strictly older than the cursor
-                (whereClause as any).createdAt = { lt: cursorUser.createdAt };
+                whereClause.createdAt = { lt: cursorUser.createdAt };
             }
         }
 
@@ -56,6 +66,7 @@ export const Route = createFileRoute('/api/admin/users')({
                 image: true,
                 isAdmin: true,
                 isVerified: true,
+                isBot: true,
                 createdAt: true,
                 profile: { select: { coins: true } },
                 _count: {

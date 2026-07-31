@@ -31,8 +31,12 @@ export const APP_THEME_BG = '#0b0b0b';
 
 /**
  * Theme → document background color, derived from SITE_STYLES. Used to paint the
- * body/theme-color synchronously (before CSS resolves) so there is no flash and
- * Safari derives its bar tint correctly on the first frame.
+ * document synchronously (before CSS resolves) so there is no flash, and — off
+ * iOS — to tint the browser's own chrome via `<meta name="theme-color">`.
+ *
+ * iOS is excluded deliberately: Safari fills the strip behind its floating
+ * bottom tab bar with that colour, flat, on top of the aurora the page paints
+ * edge to edge there. See the note above `themeScript` in app/routes/__root.tsx.
  */
 export const THEME_BG: Record<SiteStyle, string> = Object.fromEntries(
   SITE_STYLES.map((s) => [s.id, s.bg]),

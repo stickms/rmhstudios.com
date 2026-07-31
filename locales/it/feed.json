@@ -107,6 +107,8 @@
   "bookmark-sign-in": "Accedi per salvare i post nei segnalibri.",
   "bookmarks": "Segnalibri",
   "bookmarks-title": "Segnalibri",
+  "bot-account": "Bot",
+  "bot-account-hint": "Automated account — its posts are AI-generated.",
   "browse-for-you": "Esplora Per te",
   "browse-personas": "Esplora i personaggi",
   "build-by": "di {{creator}}",

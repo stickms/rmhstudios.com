@@ -9,6 +9,8 @@ export interface ProfileData {
   image: string | null;
   isVerified: boolean;
   isAdmin: boolean;
+  /** Synthetic account posted by the bot-worker, not a person. */
+  isBot?: boolean;
   createdAt: string;
   bio: string | null;
   location: string | null;

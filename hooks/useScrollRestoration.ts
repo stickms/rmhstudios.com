@@ -174,14 +174,20 @@ export function useScrollRestoration() {
 
     // Remember this location's offset as the user scrolls, so leaving in any
     // direction captures the latest position.
-    let ticking = false;
+    //
+    // Read in the scroll EVENT, not in a `requestAnimationFrame` after it.
+    // `window.scrollY` forces style and layout up to date, and rAF callbacks run
+    // in registration order — so this one landed after the feed's rake pass had
+    // written a transform to every card on screen, and paid for a synchronous
+    // re-layout of the page on every frame of every scroll. Sampled during a
+    // feed scroll it was 40% of all JavaScript time on the page.
+    //
+    // At scroll-event time the layout is the one the browser just scrolled and
+    // nothing has dirtied it yet, so the same read is free. The rAF was never
+    // buying throttling either: browsers already coalesce scroll events to one
+    // per frame, and all this does with the value is write it to a Map.
     const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        remember(key, topOf(s));
-        ticking = false;
-      });
+      remember(key, topOf(s));
     };
     const scrollTarget: Window | HTMLElement = s.win ? window : s.el;
     scrollTarget.addEventListener('scroll', onScroll, { passive: true });

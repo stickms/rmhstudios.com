@@ -173,6 +173,18 @@ export default function RmhTypeRoom() {
     emit(C2S.ROOM_CHAT, { roomCode, message });
   }, [roomCode]);
 
+  // A room is two different kinds of surface. Lobby, countdown and results are
+  // DOCUMENTS — they scroll the page, which is the only kind of scroll mobile
+  // Safari collapses its bars for. A running race is a fixed viewport: the
+  // passage scrolls inside itself and the input stays pinned above the keyboard.
+  // Reset the document scroll across the switch, or a lobby that was scrolled
+  // down hands the fixed view a scroll offset it has no way to undo — the
+  // passage would open somewhere above the top of the window.
+  const racing = room?.status === 'TYPING';
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [racing]);
+
   if (!room) {
     return (
       <div className="app-viewport">
@@ -195,7 +207,7 @@ export default function RmhTypeRoom() {
   const isTyping = room.status === 'TYPING';
 
   return (
-    <div className={`app-viewport ${isTyping ? 'rmhtype-typing-view' : ''}`}>
+    <div className={isTyping ? 'app-viewport rmhtype-typing-view' : 'app-page'}>
       <RmhTypeHeader
         backLabel={t("leave", { defaultValue: "Leave" })}
         onBack={handleLeave}
@@ -203,7 +215,7 @@ export default function RmhTypeRoom() {
         onCopyCode={handleCopyCode}
       />
 
-      <div className={`flex-1 ${isTyping ? 'min-h-0 flex flex-col' : 'overflow-y-auto'} p-4 md:p-6`} style={isTyping ? undefined : { scrollbarGutter: 'stable both-edges' }}>
+      <div className={`flex-1 ${isTyping ? 'min-h-0 flex flex-col' : ''} p-4 md:p-6`}>
         <div className={`${isTyping ? 'max-w-3xl flex-1 min-h-0 flex flex-col gap-4 rmhtype-typing-area' : 'max-w-5xl space-y-6'} mx-auto w-full`}>
 
           {/* WAITING — Lobby */}

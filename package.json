@@ -34,6 +34,7 @@
     "ladder:status": "pnpm exec tsx scripts/ladder-status.ts",
     "feed:reconcile-counts": "pnpm exec tsx scripts/reconcile-feed-counts.ts",
     "social:reconcile-counts": "pnpm exec tsx scripts/reconcile-social-counts.ts",
+    "handles:backfill": "pnpm exec tsx scripts/backfill-handles.ts",
     "backfill-vibe-thumbs": "pnpm exec tsx scripts/backfill-vibe-thumbs.ts",
     "library:metadata": "pnpm exec tsx scripts/generate-library-metadata.ts",
     "docs:api": "pnpm exec tsx scripts/generate-api-docs.ts",
