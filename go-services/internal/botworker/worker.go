@@ -455,7 +455,27 @@ func buildAvatarURL(handle string) string {
 	return fmt.Sprintf("https://api.dicebear.com/7.x/avataaars/svg?seed=%s", handle)
 }
 
-// sanitizeHandle lowercases and strips non-alphanumeric chars.
+// reservedHandles mirrors RESERVED_HANDLES in lib/handle.ts. A bot that grabs
+// one of these takes it away from every human forever, since nothing else in
+// the system can reclaim a handle.
+var reservedHandles = map[string]bool{
+	"admin": true, "api": true, "auth": true, "login": true, "signup": true,
+	"register": true, "settings": true, "profile": true, "post": true,
+	"messages": true, "notifications": true, "search": true, "explore": true,
+	"help": true, "about": true, "terms": true, "privacy": true, "support": true,
+	"feedback": true, "rmh": true, "rmhstudios": true, "mod": true,
+	"moderator": true, "system": true, "null": true, "undefined": true,
+	"home": true, "feed": true, "builds": true, "games": true, "blog": true,
+	"research": true, "news": true,
+}
+
+// sanitizeHandle lowercases and strips non-alphanumeric chars, then forces the
+// result to satisfy HANDLE_REGEX in lib/handle.ts (`^[a-z][a-z0-9_]{2,19}$`).
+//
+// The model is asked for a plain alphanumeric handle but happily returns things
+// like "42coffee" or "admin". Those used to be inserted verbatim, producing bot
+// accounts whose handle no validator would accept — an admin editing one in the
+// dashboard could not save it back, and a bot could squat a reserved route name.
 func sanitizeHandle(h string) string {
 	var sb strings.Builder
 	for _, r := range strings.ToLower(h) {
@@ -464,11 +484,21 @@ func sanitizeHandle(h string) string {
 		}
 	}
 	result := sb.String()
+
+	// Must start with a letter — mirrors deriveHandleBase's `u` prefix.
+	if result == "" || result[0] < 'a' || result[0] > 'z' {
+		result = "u" + result
+	}
 	if len(result) > 16 {
 		result = result[:16]
 	}
 	if len(result) < 4 {
 		result = result + "user"
+	}
+	// Reserved names fall through to uniqueHandle's numeric suffix, which is
+	// enough to clear the collision ("admin" -> "admin417").
+	if reservedHandles[result] {
+		result = result + "bot"
 	}
 	return result
 }

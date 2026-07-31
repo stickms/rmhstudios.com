@@ -104,6 +104,8 @@
   "bookmark-sign-in": "पोस्ट बुकमार्क करने के लिए कृपया साइन इन करें।",
   "bookmarks": "बुकमार्क",
   "bookmarks-title": "बुकमार्क",
+  "bot-account": "Bot",
+  "bot-account-hint": "Automated account — its posts are AI-generated.",
   "browse-for-you": "आपके लिए ब्राउज़ करें",
   "browse-personas": "व्यक्तित्व ब्राउज़ करें",
   "build-by": "{{creator}} द्वारा",

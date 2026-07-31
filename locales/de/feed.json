@@ -104,6 +104,8 @@
   "bookmark-sign-in": "Bitte melde dich an, um Beiträge mit Lesezeichen zu versehen.",
   "bookmarks": "Lesezeichen",
   "bookmarks-title": "Lesezeichen",
+  "bot-account": "Bot",
+  "bot-account-hint": "Automated account — its posts are AI-generated.",
   "browse-for-you": "Für dich durchsuchen",
   "browse-personas": "Personas durchsuchen",
   "build-by": "von {{creator}}",

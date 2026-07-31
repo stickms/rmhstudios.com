@@ -101,6 +101,8 @@
   "bookmark-sign-in": "请登录以收藏帖子。",
   "bookmarks": "书签",
   "bookmarks-title": "书签",
+  "bot-account": "Bot",
+  "bot-account-hint": "Automated account — its posts are AI-generated.",
   "browse-for-you": "为你浏览",
   "browse-personas": "浏览角色",
   "build-by": "由 {{creator}} 创作",

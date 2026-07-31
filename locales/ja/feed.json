@@ -101,6 +101,8 @@
   "bookmark-sign-in": "投稿をブックマークするにはサインインしてください。",
   "bookmarks": "ブックマーク",
   "bookmarks-title": "ブックマーク",
+  "bot-account": "Bot",
+  "bot-account-hint": "Automated account — its posts are AI-generated.",
   "browse-for-you": "おすすめを見る",
   "browse-personas": "ペルソナを探す",
   "build-by": "作成者: {{creator}}",

@@ -101,6 +101,8 @@
   "bookmark-sign-in": "게시물을 북마크하려면 로그인하세요.",
   "bookmarks": "북마크",
   "bookmarks-title": "북마크",
+  "bot-account": "Bot",
+  "bot-account-hint": "Automated account — its posts are AI-generated.",
   "browse-for-you": "For You 둘러보기",
   "browse-personas": "페르소나 둘러보기",
   "build-by": "{{creator}} 제작",
