@@ -8,6 +8,10 @@
  * keys / on-screen arrows / a hold-to-flip repeat trigger an animated turn. Two-page
  * spread on desktop, single page on mobile.
  *
+ * The stage renders at the display's real resolution, browser zoom included: page zoom
+ * and pinch zoom both feed one pixel ratio into the WebGL surface, which RasterSizer
+ * then passes on so the page rasters sharpen to match rather than being magnified.
+ *
  * Page textures are supplied ready-to-draw by the parent's PageStore via `getTex`:
  * they are already-decoded GPU textures, so this component never waits on an async
  * image decode at draw time — which is what lets a turn settle without the
@@ -20,6 +24,8 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import * as THREE from 'three';
+import { surfaceDprFor } from '@/lib/display-scale';
+import { useDisplayScale } from '@/hooks/useDisplayScale';
 
 const PI = Math.PI;
 
@@ -102,6 +108,36 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, zoom 
     media.addEventListener('change', apply);
     return () => media.removeEventListener('change', apply);
   }, []);
+
+  // ─── Zoom-aware resolution ───────────────────────────────────────────────────
+  // Whatever the browser is doing to magnify the page has to reach the drawing buffer,
+  // or zooming in on a book just enlarges the pixels of the raster that was already
+  // there. `useDisplayScale` reports both kinds of zoom as one ratio (page zoom moves
+  // devicePixelRatio, pinch moves visualViewport.scale — see lib/display-scale.ts), and
+  // the stage's own CSS size — which the in-app zoom control also changes — bounds how
+  // many pixels that ratio is allowed to ask for. r3f applies `dpr` to the renderer, so
+  // the surface re-sizes and `viewport.dpr` carries the new resolution into RasterSizer,
+  // which re-rasterises the pages themselves to match.
+  const displayScale = useDisplayScale();
+  const [stage, setStage] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const box = entries[0]?.contentRect;
+      if (!box) return;
+      // Sub-pixel churn (a scrollbar appearing, a fractional zoom step) must not
+      // reallocate the buffer; a real resize always clears a pixel.
+      setStage((prev) =>
+        Math.abs(prev.width - box.width) < 1 && Math.abs(prev.height - box.height) < 1
+          ? prev
+          : { width: box.width, height: box.height },
+      );
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  const dpr = surfaceDprFor(displayScale, stage.width, stage.height);
 
   const maxK = single ? Math.max(0, numPages - 1) : Math.max(0, Math.floor(numPages / 2));
   const view = useCallback(
@@ -428,7 +464,7 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, zoom 
       <Canvas
         flat
         orthographic
-        dpr={[1, 2]}
+        dpr={dpr}
         gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
         camera={{ position: [0, 0, 6], zoom: 120, near: 0.1, far: 100 }}
       >
@@ -488,8 +524,8 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, zoom 
  * Reports a single page's on-screen width in *device* pixels (its CSS width × the WebGL
  * surface's pixel ratio) so the parent's raster pipeline can size page textures to the
  * display — DPR- and zoom-aware — instead of a fixed width. Lives inside <Canvas> so it
- * can read the live surface size and renderer. The value is quantised to 128px steps so
- * a few pixels of resize never thrash a re-raster, and only reported when it changes.
+ * can read the live surface size and pixel ratio. The value is quantised to 128px steps
+ * so a few pixels of resize never thrash a re-raster, and only reported when it changes.
  */
 function RasterSizer({
   aspect,
@@ -503,23 +539,26 @@ function RasterSizer({
   onRasterWidth?: (deviceWidthPx: number) => void;
 }) {
   const size = useThree((s) => s.size);
-  const gl = useThree((s) => s.gl);
+  // The store's dpr rather than gl.getPixelRatio(): it is reactive, and a pinch zoom
+  // raises the ratio without moving a single CSS dimension — so the surface size alone
+  // would never tell us the pages now need re-rasterising sharper.
+  const dpr = useThree((s) => s.viewport.dpr);
   const last = useRef(0);
   useEffect(() => {
     if (!onRasterWidth) return;
     // Mirror Fit's camera zoom (fit the book to whichever axis binds). A single page's
     // on-screen CSS width is then aspect × that zoom; scale by the surface's pixel ratio
-    // (r3f clamps it to [1, 2]) to get the width the page actually occupies in device
-    // pixels — the resolution a raster needs to be pixel-crisp rather than upscaled.
+    // to get the width the page actually occupies in device pixels — the resolution a
+    // raster needs to be pixel-crisp rather than upscaled.
     const camZoom = Math.min(size.width / contentW, size.height / contentH) * 0.995;
-    const deviceWidth = aspect * camZoom * gl.getPixelRatio();
+    const deviceWidth = aspect * camZoom * dpr;
     if (!Number.isFinite(deviceWidth) || deviceWidth <= 0) return;
     const quantised = Math.ceil(deviceWidth / 128) * 128;
     if (quantised !== last.current) {
       last.current = quantised;
       onRasterWidth(quantised);
     }
-  }, [size.width, size.height, aspect, contentW, contentH, gl, onRasterWidth]);
+  }, [size.width, size.height, aspect, contentW, contentH, dpr, onRasterWidth]);
   return null;
 }
 
