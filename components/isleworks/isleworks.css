@@ -1,0 +1,798 @@
+/**
+ * Isleworks — the interface.
+ *
+ * The city is pastel and bright, so the HUD is the opposite: deep navy glass,
+ * white text, one accent per meaning. Panels float over the diorama rather than
+ * framing it — nothing here has a hard edge against the canvas, because the
+ * moment the UI draws a border the toy stops looking like a toy.
+ *
+ * Three rules the whole sheet follows:
+ *
+ *  1. **Nothing is opaque.** Every surface is navy at 78–88% with a blur, so the
+ *     island is always visible behind the panel you are reading.
+ *  2. **Colour means one thing.** Green is good, amber is a warning, red is
+ *     broken, and the eight category hues are the categories — used nowhere else.
+ *  3. **Every control clears the hardware.** Edge-pinned chrome adds the device
+ *     safe-area inset, because this is played on phones held sideways.
+ *
+ * Everything is scoped under `.isw` so it cannot leak into the site shell, and
+ * the whole motion layer collapses under `prefers-reduced-motion`.
+ */
+
+.isw {
+  /* Ground */
+  --isw-panel: rgb(18 27 48 / 82%);
+  --isw-panel-solid: rgb(15 23 42 / 96%);
+  --isw-panel-raised: rgb(30 41 68 / 88%);
+  --isw-rule: rgb(255 255 255 / 12%);
+  --isw-rule-strong: rgb(255 255 255 / 24%);
+
+  /* Ink */
+  --isw-ink: #f4f8ff;
+  --isw-ink-soft: rgb(226 236 255 / 72%);
+  --isw-ink-faint: rgb(200 214 240 / 48%);
+
+  /* Meaning */
+  --isw-good: #5ecfa2;
+  --isw-warn: #f9a45c;
+  --isw-bad: #ef7370;
+  --isw-cash: #ffd76b;
+  --isw-cool: #6fc6f0;
+
+  --isw-radius: 16px;
+  --isw-radius-sm: 10px;
+  --isw-shadow: 0 10px 30px rgb(8 14 30 / 38%);
+
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: linear-gradient(180deg, #cdeafa 0%, #8ecbe8 100%);
+  color: var(--isw-ink);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.isw-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+/* The HUD is a click-through layer; only its panels take pointer events. */
+.isw-hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.isw-hud > * {
+  pointer-events: none;
+}
+
+.isw-panel {
+  pointer-events: auto;
+  background: var(--isw-panel);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: var(--isw-radius);
+  box-shadow: var(--isw-shadow);
+  border: 1px solid var(--isw-rule);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Top bar — the six numbers that decide what you build next
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.isw-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  /* The left inset clears `GameBackLink`, which the route pins to the top-left
+     corner outside this layer. It is wider once the "RMH Studios" label appears
+     at `sm`. */
+  padding: calc(8px + var(--safe-top)) calc(8px + var(--safe-right)) 0 calc(58px + var(--safe-left));
+  flex-wrap: wrap;
+}
+
+@media (min-width: 640px) {
+  .isw-top {
+    padding-left: calc(152px + var(--safe-left));
+  }
+}
+
+.isw-stats {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 6px;
+  flex-wrap: wrap;
+}
+
+.isw-stat {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 11px;
+  border-radius: var(--isw-radius-sm);
+  min-width: 0;
+}
+
+.isw-stat + .isw-stat {
+  box-shadow: inset 1px 0 0 var(--isw-rule);
+}
+
+.isw-stat-icon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 10%);
+  flex: none;
+}
+
+.isw-stat-body {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  min-width: 0;
+}
+
+.isw-stat-value {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.isw-stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--isw-ink-faint);
+  white-space: nowrap;
+}
+
+.isw-stat--good .isw-stat-value {
+  color: var(--isw-good);
+}
+.isw-stat--warn .isw-stat-value {
+  color: var(--isw-warn);
+}
+.isw-stat--bad .isw-stat-value {
+  color: var(--isw-bad);
+}
+.isw-stat--cash .isw-stat-value {
+  color: var(--isw-cash);
+}
+
+/* A month's income, flying up out of the treasury as it lands. */
+.isw-cash-pop {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 700;
+  pointer-events: none;
+  animation: isw-float 1.5s ease-out forwards;
+  white-space: nowrap;
+}
+
+@keyframes isw-float {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 6px) scale(0.9);
+  }
+  22% {
+    opacity: 1;
+    transform: translate(-50%, -2px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -26px) scale(1);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Buttons
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.isw-btn {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: var(--isw-radius-sm);
+  border: 1px solid transparent;
+  background: rgb(255 255 255 / 8%);
+  color: var(--isw-ink);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    transform 140ms ease,
+    border-color 140ms ease;
+}
+
+.isw-btn:hover {
+  background: rgb(255 255 255 / 16%);
+}
+
+.isw-btn:active {
+  transform: scale(0.95);
+}
+
+.isw-btn[aria-pressed='true'],
+.isw-btn.is-active {
+  background: rgb(111 198 240 / 26%);
+  border-color: rgb(111 198 240 / 55%);
+}
+
+.isw-btn--primary {
+  background: var(--isw-good);
+  color: #08301f;
+}
+
+.isw-btn--primary:hover {
+  background: #74dcb2;
+}
+
+.isw-btn--danger[aria-pressed='true'] {
+  background: rgb(239 115 112 / 30%);
+  border-color: rgb(239 115 112 / 65%);
+}
+
+.isw-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.isw-cluster {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Clock
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.isw-clock {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 11px 6px 7px;
+}
+
+.isw-clock-dial {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.isw-clock-dial::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: var(--isw-panel-solid);
+}
+
+.isw-clock-dial > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Build palette — the dock and its drawer
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.isw-build {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 calc(8px + var(--safe-right)) calc(8px + var(--safe-bottom))
+    calc(8px + var(--safe-left));
+  align-items: flex-start;
+}
+
+.isw-drawer {
+  width: min(100%, 720px);
+  max-height: min(46vh, 320px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 7px;
+}
+
+.isw-card {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 9px;
+  border-radius: var(--isw-radius-sm);
+  background: rgb(255 255 255 / 6%);
+  border: 1px solid transparent;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    transform 140ms ease;
+}
+
+.isw-card:hover {
+  background: rgb(255 255 255 / 13%);
+}
+
+.isw-card:active {
+  transform: scale(0.98);
+}
+
+.isw-card.is-active {
+  border-color: var(--isw-cool);
+  background: rgb(111 198 240 / 20%);
+}
+
+.isw-card:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.isw-card-swatch {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  flex: none;
+  color: #10182c;
+}
+
+.isw-card-name {
+  font-size: 12.5px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.isw-card-meta {
+  font-size: 11px;
+  color: var(--isw-ink-faint);
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.isw-card-cost {
+  color: var(--isw-cash);
+  font-weight: 600;
+}
+
+.isw-dock {
+  display: flex;
+  gap: 3px;
+  padding: 5px;
+  flex-wrap: wrap;
+}
+
+.isw-dock-btn {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 58px;
+  padding: 7px 4px;
+  border-radius: var(--isw-radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--isw-ink-soft);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.isw-dock-btn:hover {
+  background: rgb(255 255 255 / 10%);
+  color: var(--isw-ink);
+}
+
+.isw-dock-btn.is-active {
+  background: rgb(255 255 255 / 14%);
+  color: var(--isw-ink);
+}
+
+.isw-dock-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  color: #10182c;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Right rail — objectives, events, inspector
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.isw-rail {
+  position: absolute;
+  top: calc(64px + var(--safe-top));
+  right: calc(8px + var(--safe-right));
+  bottom: calc(8px + var(--safe-bottom));
+  width: min(300px, 42vw);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: none;
+  padding-bottom: 2px;
+}
+
+.isw-rail > * {
+  pointer-events: auto;
+  flex: none;
+}
+
+.isw-section {
+  padding: 11px 12px;
+}
+
+.isw-section-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--isw-ink-faint);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.isw-objective {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 0;
+}
+
+.isw-objective + .isw-objective {
+  border-top: 1px solid var(--isw-rule);
+}
+
+.isw-objective-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.isw-objective-title {
+  font-size: 12.5px;
+  font-weight: 650;
+}
+
+.isw-objective-hint {
+  font-size: 11px;
+  color: var(--isw-ink-soft);
+  line-height: 1.35;
+}
+
+.isw-bar {
+  height: 5px;
+  border-radius: 3px;
+  background: rgb(255 255 255 / 12%);
+  overflow: hidden;
+}
+
+.isw-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--isw-cool);
+  transition: width 400ms ease;
+}
+
+.isw-bar-fill--good {
+  background: var(--isw-good);
+}
+.isw-bar-fill--warn {
+  background: var(--isw-warn);
+}
+.isw-bar-fill--bad {
+  background: var(--isw-bad);
+}
+
+.isw-event {
+  display: flex;
+  gap: 9px;
+  padding: 8px 0;
+  align-items: flex-start;
+}
+
+.isw-event + .isw-event {
+  border-top: 1px solid var(--isw-rule);
+}
+
+.isw-event-body {
+  font-size: 11px;
+  color: var(--isw-ink-soft);
+  line-height: 1.4;
+}
+
+.isw-event-title {
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--isw-ink);
+}
+
+.isw-kv {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  padding: 3px 0;
+}
+
+.isw-kv dt {
+  color: var(--isw-ink-soft);
+}
+
+.isw-kv dd {
+  font-weight: 650;
+}
+
+.isw-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 650;
+  background: rgb(255 255 255 / 10%);
+}
+
+.isw-chip--bad {
+  background: rgb(239 115 112 / 22%);
+  color: #ffc9c7;
+}
+
+.isw-chip--good {
+  background: rgb(94 207 162 / 20%);
+  color: #b9f0da;
+}
+
+.isw-chip--warn {
+  background: rgb(249 164 92 / 22%);
+  color: #ffd9b6;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Toasts
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.isw-toasts {
+  position: absolute;
+  left: 50%;
+  bottom: calc(96px + var(--safe-bottom));
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+  width: max-content;
+  max-width: min(90vw, 420px);
+}
+
+.isw-toast {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--isw-panel-solid);
+  border: 1px solid var(--isw-rule);
+  font-size: 12.5px;
+  font-weight: 600;
+  box-shadow: var(--isw-shadow);
+  animation: isw-rise 220ms ease-out;
+}
+
+.isw-toast--bad {
+  color: #ffc9c7;
+  border-color: rgb(239 115 112 / 45%);
+}
+
+.isw-toast--good {
+  color: #b9f0da;
+  border-color: rgb(94 207 162 / 45%);
+}
+
+@keyframes isw-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Title screen
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.isw-title {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  /* Safe centring: on a short landscape phone the card is taller than the
+     viewport, and plain `center` would push its top above the scroll origin
+     where it can never be reached. */
+  align-items: safe center;
+  justify-items: center;
+  padding: 24px;
+  background: radial-gradient(circle at 50% 30%, rgb(18 27 48 / 55%), rgb(10 16 32 / 88%));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+}
+
+.isw-title-card {
+  width: min(560px, 100%);
+  padding: 26px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.isw-title-name {
+  font-size: clamp(30px, 7vw, 46px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.isw-title-tag {
+  font-size: 14px;
+  color: var(--isw-ink-soft);
+  line-height: 1.5;
+}
+
+.isw-title-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.isw-keys {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 6px 14px;
+  text-align: left;
+  font-size: 11.5px;
+  color: var(--isw-ink-soft);
+}
+
+.isw-key {
+  display: inline-block;
+  min-width: 20px;
+  padding: 1px 6px;
+  margin-right: 6px;
+  border-radius: 5px;
+  background: rgb(255 255 255 / 12%);
+  border-bottom: 2px solid rgb(255 255 255 / 12%);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--isw-ink);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Narrow screens — the rail becomes a strip, the drawer a sheet
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * Short OR narrow viewports get the compact layout.
+ *
+ * The height half of that condition is the one that matters most: a phone in
+ * landscape is 932px WIDE and 430px tall, so a width-only query left it on the
+ * desktop layout, where the right rail runs from under the status bar to the
+ * bottom of the screen and covers the city it is describing.
+ */
+@media (max-width: 780px), (max-height: 560px) {
+  /* The rail becomes a short horizontal strip in the middle of the screen. The
+     cap is the point: as a full-height column it covered the island, which on a
+     phone is most of the game. Each panel scrolls inside its own box. */
+  .isw-rail {
+    position: static;
+    width: auto;
+    max-height: min(168px, 34vh);
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 calc(8px + var(--safe-right)) 0 calc(8px + var(--safe-left));
+    gap: 8px;
+  }
+
+  .isw-rail > * {
+    min-width: 236px;
+    max-width: 236px;
+    max-height: min(168px, 34vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .isw-drawer {
+    max-height: 26vh;
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  }
+
+  /* One scrolling row of tools rather than two stacked rows of chrome. */
+  .isw-dock {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior: contain;
+    max-width: 100%;
+  }
+
+  .isw-dock-btn {
+    width: 52px;
+    flex: none;
+  }
+
+  .isw-btn {
+    height: 30px;
+    min-width: 30px;
+    padding: 0 8px;
+  }
+
+  .isw-stat-label {
+    display: none;
+  }
+
+  .isw-stat {
+    padding: 5px 8px;
+  }
+
+  .isw-toasts {
+    bottom: calc(78px + var(--safe-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .isw *,
+  .isw *::before,
+  .isw *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

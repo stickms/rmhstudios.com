@@ -62,6 +62,7 @@ const FULLSCREEN_DIRS = [
   'forest-explorer',
   'game', // Slice It
   'house-always-wins',
+  'isleworks',
   'kowloon-knockout',
   'laundry-sort',
   'lights-out',
