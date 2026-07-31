@@ -597,14 +597,33 @@ export function Providers({
     // style class. Mirrors the pre-paint themeScript in app/routes/__root.tsx.
     html.style.colorScheme = colorSchemeForBackground(bg);
 
-    // Also update theme-color meta for older Safari / other browsers.
-    const metas = document.querySelectorAll('meta[name="theme-color"]');
-    if (metas.length > 0) {
-      metas.forEach((m) => m.setAttribute('content', bg));
+    // Keep the browser-chrome tint in step with the theme — but NOT on iOS, and
+    // only ever our own tag. Both halves of that are explained above the
+    // pre-paint `themeScript` in app/routes/__root.tsx: iOS Safari fills the
+    // strip behind its floating tab bar with this colour, flat, over the aurora
+    // the page paints there, and a route that sets its own `theme-color` in
+    // `head()` means it (this used to overwrite those too, because it wrote to
+    // every matching tag on the page).
+    //
+    // Ours is still appended when a route already has one, rather than skipped:
+    // the browser uses the FIRST applicable `theme-color` in document order, so
+    // the route's — which the framework emits in the head before this appends —
+    // wins for as long as that route is mounted, and ours is already in place
+    // for when the framework removes it on the way out. Skipping instead would
+    // leave the site with no tag at all after such a navigation, because this
+    // effect does not re-run on every pathname change.
+    const marked = document.querySelector<HTMLMetaElement>(
+      'meta[name="theme-color"][data-rmh-theme]',
+    );
+    if (html.classList.contains('ios-webkit')) {
+      marked?.remove();
+    } else if (marked) {
+      marked.content = bg;
     } else {
       const meta = document.createElement('meta');
       meta.name = 'theme-color';
       meta.content = bg;
+      meta.setAttribute('data-rmh-theme', '');
       document.head.appendChild(meta);
     }
   }, [
