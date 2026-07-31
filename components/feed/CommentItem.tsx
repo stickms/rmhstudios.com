@@ -22,7 +22,8 @@ import { useTranslation } from'react-i18next';
 import { useLocaleStore } from'@/stores/localeStore';
 import { LOCALE_TO_LANGUAGE_NAME } from'@/lib/i18n/config';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';
-import { AnimatedCount } from'@/components/ui/AnimatedCount';
+import { useSignInPrompt } from'@/hooks/useSignInPrompt';
+import { EngagementCount } from'./EngagementCount';
 import type { ReactionSummary } from'@/lib/social/reactions';
 import { applyReactionToggle } from'@/lib/social/reactions';
 import { ReactionMenu } from'@/components/shared/ReactionMenu';
@@ -53,13 +54,6 @@ interface SessionUser {
  id?: string;
  name?: string | null;
  image?: string | null;
-}
-
-function formatCount(n: number | undefined): string {
- if (!n) return'';
- if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
- if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
- return String(n);
 }
 
 // How many levels of replies to indent before collapsing the rest behind a
@@ -101,6 +95,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  const [viewCount, setViewCount] = useState(comment.viewCount ?? 0);
  const { run: runLike } = useOptimisticAction();
  const { run: runRepost } = useOptimisticAction();
+ const promptSignIn = useSignInPrompt();
  const [reactions, setReactions] = useState<ReactionSummary[]>(comment.reactions ?? []);
  const [reactionMenu, setReactionMenu] = useState<{ x: number; y: number } | null>(null);
  const reactionTrigger = useReactionTrigger((x, y) => setReactionMenu({ x, y }));
@@ -179,7 +174,10 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  }, [postId, comment.id]);
 
  const toggleLike = () => {
- if (!sessionUser) return;
+ if (!sessionUser) {
+ promptSignIn(t('like-reply-sign-in', { defaultValue:'Sign in to like replies.'}));
+ return;
+ }
  const wasLiked = liked;
  const prevCount = likeCount;
  runLike({
@@ -196,7 +194,10 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  };
 
  const toggleRepost = () => {
- if (!sessionUser) return;
+ if (!sessionUser) {
+ promptSignIn(t('rermhark-reply-sign-in', { defaultValue:'Sign in to reRMHark replies.'}));
+ return;
+ }
  const wasReposted = reposted;
  const prevCount = repostCount;
  runRepost({
@@ -213,6 +214,10 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  };
 
  const toggleReaction = async (emoji: string) => {
+ if (!sessionUser) {
+ promptSignIn(t('react-sign-in', { defaultValue:'Sign in to react.'}));
+ return;
+ }
  const prev = reactions;
  setReactions(applyReactionToggle(prev, emoji));
  try {
@@ -377,38 +382,37 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  </button>
  )}
 
- {/* reRMHark */}
- <div className={`flex items-center rounded-full transition-colors ${
- reposted ?'text-site-success':'text-site-text-dim'
- }`}>
+ {/* reRMHark — icon AND count are one button, so the count is part of the
+ hit area instead of dead space next to it. */}
  <button
  onClick={toggleRepost}
- className="p-1 rounded-full hover:bg-site-success/10 transition-[background-color,transform] duration-150 group active:scale-95"
- title="reRMHark"
+ aria-pressed={reposted}
+ className={`flex items-center gap-1 px-1.5 py-1 rounded-full hover:bg-site-success/10 transition-[color,background-color,transform] duration-150 group active:scale-95 ${
+ reposted ?'text-site-success':'text-site-text-dim'
+ }`}
+ title={reposted ? t('undo-rermhark', { defaultValue:'Undo reRMHark'}) :'reRMHark'}
  >
- <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform"/>
+ <Repeat2 className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform"/>
+ <EngagementCount value={repostCount} />
  </button>
- <AnimatedCount value={repostCount} format={formatCount} hideZero className="text-xs pr-0.5"/>
- </div>
 
  {/* Like */}
- <div className={`flex items-center rounded-full transition-colors ${
- liked ?'text-site-danger':'text-site-text-dim'
- }`}>
  <button
  onClick={toggleLike}
- className="p-1 rounded-full hover:bg-site-danger/10 transition-[background-color,transform] duration-150 group active:scale-95"
- title="Like"
+ aria-pressed={liked}
+ className={`flex items-center gap-1 px-1.5 py-1 rounded-full hover:bg-site-danger/10 transition-[color,background-color,transform] duration-150 group active:scale-95 ${
+ liked ?'text-site-danger':'text-site-text-dim'
+ }`}
+ title={liked ? t('unlike', { defaultValue:'Unlike'}) : t('like', { defaultValue:'Like'})}
  >
- <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${liked ?'fill-current':''}`} />
+ <Heart className={`w-4 h-4 shrink-0 group-hover:scale-110 transition-transform ${liked ?'fill-current':''}`} />
+ <EngagementCount value={likeCount} />
  </button>
- <AnimatedCount value={likeCount} format={formatCount} hideZero className="text-xs pr-0.5"/>
- </div>
 
  {/* Views */}
  <div className="flex items-center gap-1 px-1.5 py-1 text-site-text-dim">
- <Eye className="w-4 h-4"/>
- <AnimatedCount value={viewCount} format={formatCount} hideZero className="text-xs"/>
+ <Eye className="w-4 h-4 shrink-0"/>
+ <EngagementCount value={viewCount} />
  </div>
  </div>
  )}
