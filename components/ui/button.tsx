@@ -15,6 +15,11 @@ const buttonVariants = cva(
           'bg-site-danger text-site-danger-fg hover:opacity-85 focus-visible:ring-site-danger/40',
         danger:
           'bg-site-danger text-site-danger-fg hover:opacity-85 focus-visible:ring-site-danger/40',
+        // The featured-tier fill (/pricing, /store). Existed only as an inline
+        // `style={{ background: 'var(--site-warning)' }}` on a hand-rolled
+        // button, which is exactly the local copy §5.2 exists to prevent.
+        warning:
+          'bg-site-warning text-site-warning-fg hover:opacity-85 focus-visible:ring-site-warning/40',
         // Hover was border-brighten-only, which on a transparent fill is close
         // to imperceptible — the outline button reads as inert until clicked.
         // A surface tint gives it the same feedback every other variant has.
