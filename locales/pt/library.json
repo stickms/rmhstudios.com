@@ -94,6 +94,10 @@
   "section-curated": "Selecionados",
   "section-music": "Music",
   "sections-label": "Library sections",
+  "tilt-denied": "O acesso ao movimento foi negado. Você pode permitir nas configurações do navegador.",
+  "tilt-hint-off": "Ative a inclinação 3D e mova o celular para olhar em volta.",
+  "tilt-hint-on": "Incline o celular para percorrer a estante.",
+  "tilt-label": "Inclinação 3D",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

@@ -86,6 +86,10 @@
   "section-curated": "Tuyển chọn",
   "section-music": "Music",
   "sections-label": "Library sections",
+  "tilt-denied": "Quyền truy cập chuyển động đã bị từ chối. Bạn có thể cho phép trong cài đặt trình duyệt.",
+  "tilt-hint-off": "Bật nghiêng 3D và di chuyển điện thoại để nhìn quanh.",
+  "tilt-hint-on": "Nghiêng điện thoại để nhìn quanh kệ sách.",
+  "tilt-label": "Nghiêng 3D",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

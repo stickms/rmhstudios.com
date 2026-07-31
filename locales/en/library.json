@@ -90,6 +90,10 @@
   "section-curated": "Curated",
   "section-music": "Music",
   "sections-label": "Library sections",
+  "tilt-denied": "Motion access was declined. You can allow it in your browser settings.",
+  "tilt-hint-off": "Turn on 3D tilt and move your phone to look around.",
+  "tilt-hint-on": "Tilt your phone to look around the shelf.",
+  "tilt-label": "3D tilt",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

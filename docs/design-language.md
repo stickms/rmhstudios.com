@@ -577,6 +577,18 @@ gated off there too, via `html.app-route`).
   (opt-in on iOS via Settings → Appearance). The aurora follows that input,
   while coarse-pointer rim glints stay element-anchored; fixed backgrounds can
   otherwise composite a frame behind their scrolling parent on mobile.
+- **Gyroscopic 3D (phones):** where a surface's depth is built around hover, the
+  handset's own attitude is the touch-device substitute for a pointer.
+  `hooks/useDeviceTilt.ts` (maths + consent in `lib/device-tilt.ts`) hands a
+  caller a spring-smoothed −1…1 vector on an animation frame; it claims support
+  only on a coarse pointer with the event present, learns "level" from the first
+  sample and drifts back to it, and shares the site-wide `rmh-motion-ok` consent
+  (so an iOS grant made in Settings → Appearance counts here, and this page's
+  toggle counts there). Reduced motion removes it entirely — the control does not
+  even render. The library shelf is the first consumer: it publishes the reading
+  as inherited custom properties on one container element (`data-tilt-live` on
+  `.lib-playground`), so a single write per frame leans every card and turns every
+  book cover on its spine, with no per-card DOM work and no React render.
 - **Shader/DOM synchronization:** liquid bodies unregister in layout-effect
   cleanup and re-sample before paint on route/tab commits. Scroll, nested scroll,
   elastic touch movement, `visualViewport` changes, page resume, and layout-shift

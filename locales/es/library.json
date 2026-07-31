@@ -94,6 +94,10 @@
   "section-curated": "Seleccionados",
   "section-music": "Music",
   "sections-label": "Library sections",
+  "tilt-denied": "Se denegó el acceso al movimiento. Puedes permitirlo en los ajustes del navegador.",
+  "tilt-hint-off": "Activa la inclinación 3D y mueve el teléfono para mirar alrededor.",
+  "tilt-hint-on": "Inclina el teléfono para recorrer la estantería.",
+  "tilt-label": "Inclinación 3D",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

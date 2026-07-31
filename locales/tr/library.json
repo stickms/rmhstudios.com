@@ -90,6 +90,10 @@
   "section-curated": "Seçilmiş",
   "section-music": "Music",
   "sections-label": "Library sections",
+  "tilt-denied": "Hareket erişimi reddedildi. Tarayıcı ayarlarından izin verebilirsiniz.",
+  "tilt-hint-off": "3B eğimi açın ve etrafa bakmak için telefonunuzu hareket ettirin.",
+  "tilt-hint-on": "Rafta gezinmek için telefonunuzu eğin.",
+  "tilt-label": "3B eğim",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

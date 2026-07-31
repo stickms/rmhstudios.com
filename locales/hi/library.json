@@ -90,6 +90,10 @@
   "section-curated": "क्यूरेटेड",
   "section-music": "Music",
   "sections-label": "Library sections",
+  "tilt-denied": "मोशन एक्सेस अस्वीकार कर दिया गया। आप इसे अपने ब्राउज़र की सेटिंग में अनुमति दे सकते हैं।",
+  "tilt-hint-off": "3D झुकाव चालू करें और चारों ओर देखने के लिए अपना फ़ोन हिलाएँ।",
+  "tilt-hint-on": "शेल्फ़ को चारों ओर से देखने के लिए अपना फ़ोन झुकाएँ।",
+  "tilt-label": "3D झुकाव",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

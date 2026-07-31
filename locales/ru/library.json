@@ -98,6 +98,10 @@
   "section-curated": "Подборка",
   "section-music": "Music",
   "sections-label": "Library sections",
+  "tilt-denied": "Доступ к датчикам движения отклонён. Его можно разрешить в настройках браузера.",
+  "tilt-hint-off": "Включите 3D-наклон и двигайте телефон, чтобы осмотреться.",
+  "tilt-hint-on": "Наклоняйте телефон, чтобы осмотреть полку.",
+  "tilt-label": "3D-наклон",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }

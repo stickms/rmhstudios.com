@@ -86,6 +86,10 @@
   "section-curated": "精选",
   "section-music": "Music",
   "sections-label": "Library sections",
+  "tilt-denied": "运动权限被拒绝。你可以在浏览器设置中允许。",
+  "tilt-hint-off": "开启 3D 倾斜，移动手机即可环视书架。",
+  "tilt-hint-on": "倾斜手机即可环视书架。",
+  "tilt-label": "3D 倾斜",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"
 }
