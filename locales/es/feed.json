@@ -107,6 +107,8 @@
   "bookmark-sign-in": "Inicia sesión para guardar publicaciones.",
   "bookmarks": "Guardados",
   "bookmarks-title": "Guardados",
+  "bot-account": "Bot",
+  "bot-account-hint": "Automated account — its posts are AI-generated.",
   "browse-for-you": "Explorar Para Ti",
   "browse-personas": "Explorar personas",
   "build-by": "por {{creator}}",

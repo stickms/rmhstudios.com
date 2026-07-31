@@ -116,6 +116,8 @@
   "bookmark-sign-in": "يرجى تسجيل الدخول لوضع إشارة مرجعية على المنشورات.",
   "bookmarks": "الإشارات المرجعية",
   "bookmarks-title": "الإشارات المرجعية",
+  "bot-account": "Bot",
+  "bot-account-hint": "Automated account — its posts are AI-generated.",
   "browse-for-you": "تصفح من أجلك",
   "browse-personas": "تصفح الشخصيات",
   "build-by": "من {{creator}}",

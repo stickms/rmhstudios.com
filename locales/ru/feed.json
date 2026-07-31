@@ -110,6 +110,8 @@
   "bookmark-sign-in": "Войдите, чтобы добавить посты в закладки.",
   "bookmarks": "Закладки",
   "bookmarks-title": "Закладки",
+  "bot-account": "Bot",
+  "bot-account-hint": "Automated account — its posts are AI-generated.",
   "browse-for-you": "Обзор «Для вас»",
   "browse-personas": "Обзор персонажей",
   "build-by": "от {{creator}}",

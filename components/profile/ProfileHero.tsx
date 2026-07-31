@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import {
   BadgeCheck,
   BarChart3,
+  Bot,
   Calendar,
   Coins,
   Gift,
@@ -115,6 +116,17 @@ function IdentityBadges({ profile }: { profile: ProfileData }) {
           className="size-5 shrink-0 text-site-accent"
           aria-label={t('admin', { defaultValue: 'Admin' })}
         />
+      ) : null}
+      {profile.isBot ? (
+        <span
+          className="inline-flex shrink-0 items-center gap-1 rounded-full bg-site-accent/10 px-2 py-0.5 text-xs font-semibold text-site-accent"
+          title={t('bot-account-hint', {
+            defaultValue: 'Automated account — its posts are AI-generated.',
+          })}
+        >
+          <Bot className="size-3.5" aria-hidden />
+          {t('bot-account', { defaultValue: 'Bot' })}
+        </span>
       ) : null}
     </>
   );

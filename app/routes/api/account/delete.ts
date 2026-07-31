@@ -17,12 +17,17 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { deleteObject } from '@/lib/storage/s3.server';
+import {
+  DELETED_ACCOUNT_BAN_REASON,
+  DELETED_ACCOUNT_LOCK_UNTIL,
+} from '@/lib/account-lifecycle';
 
 const schema = z.object({ confirm: z.string().min(1).max(120) });
 
 // Sentinel far-future ban keeps the (now credential-less) account locked as
-// defense-in-depth against any lingering session.
-const LOCK_UNTIL = new Date('9999-12-31T00:00:00.000Z');
+// defense-in-depth against any lingering session. Shared with the handle
+// backfill, which uses the same marker to leave tombstoned rows alone.
+const LOCK_UNTIL = DELETED_ACCOUNT_LOCK_UNTIL;
 
 export const Route = createFileRoute('/api/account/delete')({
   server: {
@@ -131,7 +136,7 @@ export const Route = createFileRoute('/api/account/delete')({
                 referralCode: null,
                 botPersona: null,
                 bannedUntil: LOCK_UNTIL,
-                banReason: 'account_deleted',
+                banReason: DELETED_ACCOUNT_BAN_REASON,
               },
             }),
           ]);

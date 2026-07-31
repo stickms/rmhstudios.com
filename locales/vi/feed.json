@@ -101,6 +101,8 @@
   "bookmark-sign-in": "Vui lòng đăng nhập để đánh dấu bài viết.",
   "bookmarks": "Dấu trang",
   "bookmarks-title": "Dấu trang",
+  "bot-account": "Bot",
+  "bot-account-hint": "Automated account — its posts are AI-generated.",
   "browse-for-you": "Duyệt Dành cho bạn",
   "browse-personas": "Duyệt nhân vật",
   "build-by": "bởi {{creator}}",

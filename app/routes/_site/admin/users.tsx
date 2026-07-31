@@ -7,22 +7,27 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { Loader2, Search, CheckCircle, Shield, Pencil, Check, X, Crown, Coins } from 'lucide-react';
+import { Loader2, Search, CheckCircle, Shield, Pencil, Check, X, Crown, Coins, Bot, User as UserIcon, Users } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { Input } from '@/components/ui/input';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useSession } from '@/components/Providers';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+
+type AccountFilter = 'all' | 'people' | 'bots';
 
 interface User {
   id: string;
   name: string;
   username: string;
   handle: string | null;
-  email: string;
+  /** Null for bot accounts — the bot-worker inserts them without one. */
+  email: string | null;
   image: string | null;
   isAdmin: boolean;
   isVerified: boolean;
+  isBot: boolean;
   createdAt: string;
   profile: { coins: number } | null;
   _count: { userBuilds: number; rmharks: number };
@@ -47,6 +52,18 @@ function AdminUsersPage() {
   const [editingHandle, setEditingHandle] = useState<string | null>(null);
   const [handleInput, setHandleInput] = useState('');
   const [handleError, setHandleError] = useState<string | null>(null);
+  // Bot accounts are ordinary user rows, so they're impossible to pick out of a
+  // flat list — this narrows the table to one population or the other.
+  const [accounts, setAccounts] = useState<AccountFilter>('all');
+
+  const listUrl = useCallback((cursor?: string | null) => {
+    const params = new URLSearchParams();
+    if (search) params.set('q', search);
+    if (accounts !== 'all') params.set('accounts', accounts);
+    if (cursor) params.set('cursor', cursor);
+    const qs = params.toString();
+    return qs ? `/api/admin/users?${qs}` : '/api/admin/users';
+  }, [search, accounts]);
 
   const observer = useRef<IntersectionObserver | null>(null);
   const lastUserElementRef = useCallback((node: HTMLDivElement) => {
@@ -66,21 +83,19 @@ function AdminUsersPage() {
     const fetchUsers = async () => {
       setLoading(true);
       try {
-        const url = search ? `/api/admin/users?q=${encodeURIComponent(search)}` : '/api/admin/users';
-        const res = await fetch(url);
+        const res = await fetch(listUrl());
         if (res.ok) { const data = await res.json(); setUsers(data.items || []); setNextCursor(data.nextCursor); setHasMore(data.hasMore); }
       } catch (error) { console.error("Failed to fetch users", error); } finally { setLoading(false); }
     };
     const timeoutId = setTimeout(() => fetchUsers(), 500);
     return () => clearTimeout(timeoutId);
-  }, [search]);
+  }, [listUrl]);
 
   const loadMore = async () => {
     if (!nextCursor || loadingMore) return;
     setLoadingMore(true);
     try {
-      const url = search ? `/api/admin/users?q=${encodeURIComponent(search)}&cursor=${nextCursor}` : `/api/admin/users?cursor=${nextCursor}`;
-      const res = await fetch(url);
+      const res = await fetch(listUrl(nextCursor));
       if (res.ok) { const data = await res.json(); setUsers(prev => [...prev, ...(data.items || [])]); setNextCursor(data.nextCursor); setHasMore(data.hasMore); }
     } catch (error) { console.error("Failed to fetch more users", error); } finally { setLoadingMore(false); }
   };
@@ -174,6 +189,17 @@ function AdminUsersPage() {
           <Input type="text" placeholder={t("search-placeholder", { defaultValue: "Search by name, handle, or email..." })} value={search} onChange={(e) => setSearch(e.target.value)} className="h-12 pl-10" />
         </div>
 
+        <LiquidTabs
+          aria-label={t("filter-accounts", { defaultValue: "Filter accounts" })}
+          value={accounts}
+          onChange={(id) => setAccounts(id as AccountFilter)}
+          tabs={[
+            { id: 'all', label: t("filter-all", { defaultValue: "All" }), icon: Users },
+            { id: 'people', label: t("filter-people", { defaultValue: "People" }), icon: UserIcon },
+            { id: 'bots', label: t("filter-bots", { defaultValue: "Bots" }), icon: Bot },
+          ]}
+        />
+
         <div className="glass-fill rounded-site overflow-x-auto min-h-[400px]">
           {/* min-w keeps the header and rows column-aligned; the container scrolls
               horizontally on narrow screens instead of crushing the name column. */}
@@ -202,6 +228,10 @@ function AdminUsersPage() {
             {users.map((user, index) => {
               const isLast = index === users.length - 1;
               const isEditingThis = editingHandle === user.id;
+              // Bot accounts are inserted by the bot-worker without an email,
+              // so the secondary line would otherwise trail a lone bullet.
+              const secondaryLine =
+                user.email ?? (user.isBot ? t("bot-no-email", { defaultValue: "Automated account" }) : null);
               return (
                 <div key={user.id} ref={isLast ? lastUserElementRef : null} className="p-4 flex items-center gap-4 hover:bg-site-surface-hover transition-colors">
                   <div className="flex-1 flex items-center gap-4 min-w-0">
@@ -219,6 +249,12 @@ function AdminUsersPage() {
                         <Link to={`/u/${user.handle || user.id}` as string} className="font-semibold text-site-text hover:text-site-accent truncate">{user.name || user.handle || user.username}</Link>
                         {user.isVerified && <CheckCircle className="w-3.5 h-3.5 text-site-accent shrink-0" />}
                         {user.isAdmin && <Shield className="w-3.5 h-3.5 text-site-danger shrink-0" />}
+                        {user.isBot && (
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-site-accent/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-site-accent">
+                            <Bot className="w-3 h-3" aria-hidden />
+                            {t("badge-bot", { defaultValue: "Bot" })}
+                          </span>
+                        )}
                       </div>
                       <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 text-sm text-site-text-dim">
                         {isEditingThis ? (
@@ -239,8 +275,12 @@ function AdminUsersPage() {
                             )}
                           </span>
                         )}
-                        <span className="hidden sm:inline">&bull;</span>
-                        <span className="truncate">{user.email}</span>
+                        {secondaryLine && (
+                          <>
+                            <span className="hidden sm:inline">&bull;</span>
+                            <span className="truncate">{secondaryLine}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

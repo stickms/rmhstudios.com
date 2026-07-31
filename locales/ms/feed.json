@@ -101,6 +101,8 @@
   "bookmark-sign-in": "Please sign in to bookmark posts.",
   "bookmarks": "Bookmarks",
   "bookmarks-title": "Bookmarks",
+  "bot-account": "Bot",
+  "bot-account-hint": "Automated account — its posts are AI-generated.",
   "browse-for-you": "Browse For You",
   "browse-personas": "Browse personas",
   "build-by": "by {{creator}}",
