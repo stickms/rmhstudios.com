@@ -6,8 +6,23 @@ import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
+import { useFluidDrag, useFluidDragEnabled } from '@/hooks/useFluidDrag';
 
 import './dialog.css';
+
+/**
+ * Fan one element out to several refs. Needed here because the sheet gesture has
+ * to measure and translate the content element that `DialogContent` also
+ * forwards to its caller.
+ */
+function mergeRefs<T>(...refs: Array<React.Ref<T> | undefined>): React.RefCallback<T> {
+  return (value) => {
+    for (const ref of refs) {
+      if (typeof ref === 'function') ref(value);
+      else if (ref) (ref as React.MutableRefObject<T | null>).current = value;
+    }
+  };
+}
 
 const Dialog = DialogPrimitive.Root;
 
@@ -35,6 +50,14 @@ const DialogOverlay = React.forwardRef<
 });
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
+/**
+ * How far down the sheet must be *projected* to travel before the gesture counts
+ * as "get rid of this" — half its own height, the platform convention.
+ */
+const SHEET_DISMISS_AT = 0.5;
+/** Only phone-width touch sheets get the gesture; see `useFluidDragEnabled`. */
+const SHEET_QUERY = '(max-width: 639px) and (pointer: coarse)';
+
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
@@ -43,11 +66,49 @@ const DialogContent = React.forwardRef<
   }
 >(({ className, children, mobileFullscreen = false, ...props }, ref) => {
   const { t } = useTranslation('c-ui');
+  const contentRef = React.useRef<HTMLDivElement | null>(null);
+  const overlayRef = React.useRef<HTMLDivElement | null>(null);
+  const closeRef = React.useRef<HTMLButtonElement | null>(null);
+
+  /**
+   * Drag-to-dismiss, but only where it is a real gesture: a phone-width sheet on
+   * a touch device. `mobileFullscreen` dialogs are the ones that present as
+   * full-height sheets there, and on iOS a sheet that cannot be pushed away reads
+   * as broken. The drag starts on the grab handle only — never on the body —
+   * so it can never race the content's own vertical scrolling.
+   */
+  const sheet = useFluidDragEnabled(SHEET_QUERY) && mobileFullscreen;
+
+  const drag = useFluidDrag({
+    disabled: !sheet,
+    dimension: () => contentRef.current?.offsetHeight ?? 0,
+    min: 0,
+    dismissAt: SHEET_DISMISS_AT,
+    onUpdate: (y) => {
+      const el = contentRef.current;
+      if (!el) return;
+      // The independent `translate` property, so this composes with the
+      // positioning `transform` the class list already owns at every breakpoint.
+      el.style.translate = `0 ${y.toFixed(2)}px`;
+      // The scrim lightens as the sheet leaves — the backdrop stays coupled to
+      // the finger instead of hanging at full strength until the sheet is gone.
+      const overlay = overlayRef.current;
+      const height = el.offsetHeight || 1;
+      if (overlay) overlay.style.opacity = Math.max(0, 1 - (y / height) * 1.1).toFixed(3);
+    },
+    onDismiss: () => closeRef.current?.click(),
+    onSettle: () => {
+      // Sprung back: hand both elements to the stylesheet again.
+      if (contentRef.current) contentRef.current.style.translate = '';
+      if (overlayRef.current) overlayRef.current.style.opacity = '';
+    },
+  });
+
   return (
     <DialogPortal>
-      <DialogOverlay />
+      <DialogOverlay ref={overlayRef} />
       <DialogPrimitive.Content
-        ref={ref}
+        ref={mergeRefs(ref, contentRef)}
         data-slot="dialog-content"
         data-mobile-fullscreen={mobileFullscreen || undefined}
         className={cn(
@@ -58,12 +119,26 @@ const DialogContent = React.forwardRef<
         )}
         {...props}
       >
+        {sheet && (
+          // The grab handle. Decorative and pointer-only — the close button below
+          // is the accessible, keyboard-operable way out, and this never becomes
+          // the only route to dismissal.
+          <div
+            className="absolute inset-x-0 top-0 z-10 flex h-9 cursor-grab items-end justify-center pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] active:cursor-grabbing"
+            aria-hidden
+            {...drag.handleProps}
+          >
+            <span className="h-1 w-9 rounded-full bg-site-text-muted/45" />
+          </div>
+        )}
         {children}
         <DialogPrimitive.Close
+          ref={closeRef}
           className={cn(
             'absolute right-3 inline-flex size-11 items-center justify-center rounded-[var(--site-control-radius)] text-site-text-muted opacity-80 transition-opacity hover:opacity-100 hover:bg-site-surface-hover outline-none focus-visible:ring-2 focus-visible:ring-site-accent/50 disabled:pointer-events-none sm:right-4 sm:top-4',
             mobileFullscreen ? 'top-[max(1rem,env(safe-area-inset-top))]' : 'top-4',
           )}
+          data-fluid-press=""
         >
           <X className="h-4 w-4" aria-hidden />
           <span className="sr-only">{t('close', { defaultValue: 'Close' })}</span>

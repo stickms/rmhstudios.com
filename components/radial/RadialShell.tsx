@@ -145,6 +145,7 @@ function RadialTopBar() {
           type="button"
           ref={searchRef}
           className="radial-topbar__btn"
+          data-fluid-press=""
           onClick={() => toggle('search')}
           aria-haspopup="dialog"
           aria-expanded={panel === 'search'}
@@ -160,6 +161,7 @@ function RadialTopBar() {
               type="button"
               ref={messagesRef}
               className="radial-topbar__btn max-sm:hidden"
+              data-fluid-press=""
               onClick={() => toggle('messages')}
               aria-haspopup="dialog"
               aria-expanded={panel === 'messages'}
@@ -174,6 +176,7 @@ function RadialTopBar() {
               type="button"
               ref={bellRef}
               className="radial-topbar__btn"
+              data-fluid-press=""
               onClick={() => toggle('notifications')}
               aria-haspopup="dialog"
               aria-expanded={panel === 'notifications'}
@@ -192,6 +195,7 @@ function RadialTopBar() {
               type="button"
               ref={avatarRef}
               className="radial-topbar__avatar"
+              data-fluid-press=""
               onClick={() => toggle('profile')}
               aria-haspopup="dialog"
               aria-expanded={panel === 'profile'}
@@ -218,7 +222,12 @@ function RadialTopBar() {
             role="status"
           />
         ) : (
-          <Link to="/login" search={{ callbackURL: undefined }} className="radial-topbar__signin">
+          <Link
+            to="/login"
+            search={{ callbackURL: undefined }}
+            className="radial-topbar__signin"
+            data-fluid-press=""
+          >
             {t('sign-in', { defaultValue: 'Sign in' })}
           </Link>
         )}

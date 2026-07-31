@@ -25,7 +25,21 @@ interface PageLayoutProps {
   breadcrumbs?: BreadcrumbItem[];
 }
 
-/** Compact, mobile-first title block shared by standard routes. */
+/**
+ * Compact, mobile-first title block shared by standard routes.
+ *
+ * The kicker above the title uses the key `rmh-studios-presents`. It replaced
+ * `rmh-digital-space` under a NEW key rather than by editing that key's
+ * `defaultValue`, because `defaultValue` is only consulted when a key is
+ * MISSING from the catalog — all 16 shipped locales already carried a
+ * translation for the old key, so an in-place edit would have changed the
+ * wording in English and nowhere else.
+ *
+ * Do not put a `{/* … *\/}` comment immediately before a `t()` call in this
+ * file's JSX: `i18next-parser` silently skips the call that follows one, the key
+ * never reaches `locales/`, and every non-English locale quietly falls back to
+ * the English `defaultValue`. Explanations go here instead.
+ */
 export function PageLayout({
   title,
   description,
@@ -63,7 +77,7 @@ export function PageLayout({
                 <span>{backLabel ?? t('back', { defaultValue: 'Back' })}</span>
               </Link>
             ) : (
-              <span>{t('rmh-digital-space', { defaultValue: 'RMH Studios' })}</span>
+              <span>{t('rmh-studios-presents', { defaultValue: 'RMH Studios Presents' })}</span>
             )}
           </div>
 

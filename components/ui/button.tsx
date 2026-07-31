@@ -79,6 +79,13 @@ function Button({
       data-variant={variant}
       data-size={size}
       data-loading={loading ? '' : undefined}
+      // Opt into the site-wide fluid press layer (hooks/useFluidPress): a spring
+      // that starts on pointerdown, is interruptible, releases more slowly than
+      // it presses, and cancels itself if the gesture turns into a scroll. The
+      // `active:scale-[0.98]` in the variants above stays as the fallback for
+      // reduced motion and for the frame before the spring's first tick — the
+      // inline `scale` the layer writes wins over it while a finger is down.
+      data-fluid-press=""
       className={cn(buttonVariants({ variant, size, className }))}
       disabled={asChild ? disabled : disabled || loading}
       aria-busy={loading || undefined}

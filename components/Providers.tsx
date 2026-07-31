@@ -38,6 +38,7 @@ import {
   applyGlassLevel,
 } from '@/lib/appearance/prefs';
 import { useSpatialParallax } from '@/hooks/useSpatialParallax';
+import { useFluidPressLayer } from '@/hooks/useFluidPress';
 import { useGlassLight } from '@/hooks/useGlassLight';
 import { useLiquidBackground } from '@/hooks/useLiquidBackground';
 import { useIdleReady } from '@/hooks/useIdleReady';
@@ -260,6 +261,12 @@ export function Providers({
   //    desktop, opt-in device tilt on touch).
   useGlassLight();
   useLiquidBackground();
+
+  // The fluid-interfaces press layer (WWDC 2018 §803 principle 1: instantaneous,
+  // interruptible response to touch). One delegated pointerdown listener springs
+  // any element carrying `data-fluid-press`; it is idle at rest, self-gates on
+  // reduced motion, and releases the press if the gesture turns into a scroll.
+  useFluidPressLayer();
 
   // Sync the locale store to the SSR-resolved locale and reconcile <html lang/dir>
   // so a user whose locale was resolved via Accept-Language (no cookie yet) gets

@@ -16,6 +16,14 @@ import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { vibrate } from '@/lib/shared/platform';
+import {
+  DECELERATION,
+  VelocityTracker,
+  projectDistance,
+  rubberBandClamp,
+  spring,
+  springStep,
+} from '@/lib/fluid';
 import type { NavLeaf } from '@/lib/sidebar-nav';
 
 /**
@@ -55,13 +63,20 @@ const DEG = Math.PI / 180;
 const ROT_PER_PX = 0.45;
 /** How far the globe may be tilted, so the poles never come to the reticle. */
 const PITCH_LIMIT = 62;
-/** Inertia half-life: velocity decays by `e^(-DAMP·dt)` once you let go. */
-const DAMP = 3.4;
-/** Below this angular speed (deg/s) the coast is over and the snap takes over. */
-const SNAP_SPEED = 34;
-/** Exponential approach rate of the snap / keyboard glide. */
-const EASE_RATE = 9;
-/** Idle drift (deg/s) — only while nothing is locked on and nothing is held. */
+/**
+ * Rubber-band scale for tilt past `PITCH_LIMIT`, in degrees. Pulling past the
+ * limit keeps moving the globe, asymptotically — it resists instead of hitting a
+ * wall, which is what tells you there is nothing further up there without the
+ * surface going dead under your finger (`lib/fluid` §rubberBand).
+ */
+const PITCH_RUBBER = 24;
+/**
+ * The spring that carries every settle: the release throw, the magnet, and the
+ * keyboard glide. Duration + bounce rather than stiffness, so it reads the same
+ * whether it is closing a 3° gap or a 300° flick (`lib/fluid` §spring).
+ */
+const SETTLE_SPRING = spring(0.62, 0.1);
+/** Idle drift (deg/s) — only until the visitor first takes hold. */
 const IDLE_SPIN = 5.5;
 /** How long a locked-on pin must be held before the ring is full. */
 const DWELL_MS = 620;
@@ -195,7 +210,25 @@ export function LiquidGlobe({ items, pathname, onDismiss, tabIndex, rootRef }: L
   const rot = useRef({ yaw: 0, pitch: 0, vYaw: 0, vPitch: 0 });
   const drag = useRef({ active: false, id: -1, x: 0, y: 0, moved: 0, held: false });
   const lastMoveAt = useRef(0);
-  const glide = useRef<{ yaw: number; pitch: number } | null>(null);
+  /**
+   * Where the globe is springing to, or null while it is under the finger / idle.
+   * One mechanism serves the release throw, the magnet and the keyboard glide, so
+   * all three are interruptible by the next touch in exactly the same way.
+   */
+  const settle = useRef<{ yaw: number; pitch: number } | null>(null);
+  /**
+   * Un-rubber-banded tilt. The globe DRAWS a damped version of this past the
+   * limit, but the gesture has to keep accumulating the real value or dragging
+   * back from an over-tilt would feel dead until it caught up.
+   */
+  const rawPitch = useRef(0);
+  /**
+   * Windowed velocity, not last-frame delta. A finger that pauses for 80ms before
+   * lifting has a last-frame velocity of zero, and every deliberate re-aim would
+   * otherwise land as a dead release (`lib/fluid` §VelocityTracker).
+   */
+  const yawV = useRef(new VelocityTracker());
+  const pitchV = useRef(new VelocityTracker());
   const fill = useRef(0);
   const lockRef = useRef(-1);
   const readyRef = useRef(false);
@@ -367,31 +400,53 @@ export function LiquidGlobe({ items, pathname, onDismiss, tabIndex, rootRef }: L
 
       // 1. Motion. Dragging writes the rotation directly (in the pointer handler);
       //    everything here is what happens when you are NOT dragging.
-      if (!drag.current.active) {
-        if (glide.current) {
-          const k = reduced ? 1 : 1 - Math.exp(-EASE_RATE * dt);
-          const gy = shortestAngle(r.yaw, glide.current.yaw);
-          r.yaw += (gy - r.yaw) * k;
-          r.pitch += (glide.current.pitch - r.pitch) * k;
-          if (Math.abs(gy - r.yaw) < 0.15 && Math.abs(glide.current.pitch - r.pitch) < 0.15) {
-            r.yaw = gy;
-            r.pitch = glide.current.pitch;
-            glide.current = null;
-          }
-          dirty.current = true;
+      //
+      //    A SPRING carrying the release velocity, not a decay curve: the throw,
+      //    the magnet and the keyboard glide all run through it, so any of them
+      //    can be grabbed mid-flight and retargeted from wherever the globe is
+      //    and however fast it is going. That is the whole of "interruptible and
+      //    redirectable" (`lib/fluid` §springStep).
+      if (!drag.current.active && settle.current) {
+        if (reduced) {
+          r.yaw = settle.current.yaw;
+          r.pitch = settle.current.pitch;
+          r.vYaw = 0;
+          r.vPitch = 0;
+          settle.current = null;
         } else {
-          const decay = Math.exp(-DAMP * dt);
-          r.vYaw *= decay;
-          r.vPitch *= decay;
-          if (Math.abs(r.vYaw) > 1 || Math.abs(r.vPitch) > 1) {
-            r.yaw += r.vYaw * dt;
-            r.pitch = clamp(r.pitch + r.vPitch * dt, -PITCH_LIMIT, PITCH_LIMIT);
-            dirty.current = true;
-          } else {
+          const y = springStep(
+            { value: r.yaw, velocity: r.vYaw },
+            settle.current.yaw,
+            SETTLE_SPRING,
+            dt,
+          );
+          const p = springStep(
+            { value: r.pitch, velocity: r.vPitch },
+            settle.current.pitch,
+            SETTLE_SPRING,
+            dt,
+          );
+          r.yaw = y.value;
+          r.vYaw = y.velocity;
+          r.pitch = p.value;
+          r.vPitch = p.velocity;
+          // Arrived when BOTH axes have: a spring passing through its target at
+          // speed is at zero displacement but is not finished.
+          if (
+            Math.abs(y.value - settle.current.yaw) < 0.05 &&
+            Math.abs(p.value - settle.current.pitch) < 0.05 &&
+            Math.abs(y.velocity) < 2 &&
+            Math.abs(p.velocity) < 2
+          ) {
+            r.yaw = settle.current.yaw;
+            r.pitch = settle.current.pitch;
             r.vYaw = 0;
             r.vPitch = 0;
+            settle.current = null;
           }
         }
+        rawPitch.current = r.pitch;
+        dirty.current = true;
       }
 
       // 2. Where everything is now, and what the reticle is holding.
@@ -401,20 +456,19 @@ export function LiquidGlobe({ items, pathname, onDismiss, tabIndex, rootRef }: L
       //    to dead centre — including while you hold still with the pointer down,
       //    which is what makes "hold to fill" land reliably on a phone.
       let moved = false;
-      if (
-        touched.current &&
-        !glide.current &&
-        stationary &&
-        Math.abs(r.vYaw) < SNAP_SPEED &&
-        snapIdx >= 0
-      ) {
+      if (touched.current && !settle.current && stationary && drag.current.held && snapIdx >= 0) {
+        // Magnetism, but only while the finger is DOWN and still: it is what makes
+        // "press, hold, let go" land on a phone. Once the finger is up the release
+        // throw has already chosen a target, and pulling on the globe afterwards
+        // would be the interface moving without being asked.
         const n = nodes[snapIdx];
-        const k = reduced ? 1 : 1 - Math.exp(-EASE_RATE * dt);
         const ty = shortestAngle(r.yaw, -n.lon);
         const tp = clamp(-n.lat, -PITCH_LIMIT, PITCH_LIMIT);
         if (Math.abs(ty - r.yaw) > 0.05 || Math.abs(tp - r.pitch) > 0.05) {
+          const k = reduced ? 1 : 1 - Math.exp(-9 * dt);
           r.yaw += (ty - r.yaw) * k;
           r.pitch += (tp - r.pitch) * k;
+          rawPitch.current = r.pitch;
           moved = true;
         }
       } else if (!touched.current && !reduced) {
@@ -485,12 +539,20 @@ export function LiquidGlobe({ items, pathname, onDismiss, tabIndex, rootRef }: L
       moved: 0,
       held: true,
     };
+    // Taking hold of a globe that is still springing is not a special case — it
+    // is the point. Cancel the settle and keep whatever rotation it had reached.
     rot.current.vYaw = 0;
     rot.current.vPitch = 0;
-    glide.current = null;
+    settle.current = null;
+    rawPitch.current = rot.current.pitch;
     touched.current = true;
     swallowClick.current = false;
-    lastMoveAt.current = performance.now();
+    const now = performance.now();
+    lastMoveAt.current = now;
+    yawV.current.reset();
+    pitchV.current.reset();
+    yawV.current.add(rot.current.yaw, now);
+    pitchV.current.add(rot.current.pitch, now);
     setGrabbing(true);
   }, []);
 
@@ -506,16 +568,17 @@ export function LiquidGlobe({ items, pathname, onDismiss, tabIndex, rootRef }: L
       if (d.moved > DRAG_SLOP) swallowClick.current = true;
 
       const now = performance.now();
-      const span = Math.max(8, now - lastMoveAt.current) / 1000;
       lastMoveAt.current = now;
 
-      const dYaw = dx * ROT_PER_PX;
-      const dPitch = -dy * ROT_PER_PX;
       const r = rot.current;
-      r.yaw += dYaw;
-      r.pitch = clamp(r.pitch + dPitch, -PITCH_LIMIT, PITCH_LIMIT);
-      r.vYaw = clamp(dYaw / span, -MAX_SPIN, MAX_SPIN);
-      r.vPitch = clamp(dPitch / span, -MAX_SPIN, MAX_SPIN);
+      r.yaw += dx * ROT_PER_PX;
+      // Tilt tracks the finger 1:1 inside the limit and resists asymptotically
+      // past it, so the globe never goes rigid under a drag that has run out of
+      // room — it just stops keeping up.
+      rawPitch.current -= dy * ROT_PER_PX;
+      r.pitch = rubberBandClamp(rawPitch.current, -PITCH_LIMIT, PITCH_LIMIT, PITCH_RUBBER);
+      yawV.current.add(r.yaw, now);
+      pitchV.current.add(r.pitch, now);
       dirty.current = true;
     };
 
@@ -527,7 +590,42 @@ export function LiquidGlobe({ items, pathname, onDismiss, tabIndex, rootRef }: L
       setGrabbing(false);
       // The whole gesture, in one line: a full ring at the moment you let go is
       // the navigation. Anything else just leaves the globe where you put it.
-      if (commit && readyRef.current && lockRef.current >= 0) go(nodes[lockRef.current]);
+      if (commit && readyRef.current && lockRef.current >= 0) {
+        go(nodes[lockRef.current]);
+        return;
+      }
+
+      // Momentum, and then intent. The velocity the finger left with is projected
+      // through the platform's own deceleration model to ask "where would this
+      // throw come to rest?", and the destination nearest THAT is what the globe
+      // springs to — carrying the release velocity into the spring, so the throw
+      // and the settle are one continuous motion rather than a coast followed by
+      // a snap. A gentle release projects nowhere and lands on what is already in
+      // front of you; a hard flick spins visibly around the sphere and arrives
+      // somewhere new. (`lib/fluid` §projectDistance, §resolveDetent.)
+      const r = rot.current;
+      r.vYaw = clamp(yawV.current.get(), -MAX_SPIN, MAX_SPIN);
+      r.vPitch = clamp(pitchV.current.get(), -MAX_SPIN, MAX_SPIN);
+      const projectedYaw = r.yaw + projectDistance(r.vYaw, DECELERATION.normal);
+      const projectedPitch = clamp(
+        r.pitch + projectDistance(r.vPitch, DECELERATION.normal),
+        -PITCH_LIMIT,
+        PITCH_LIMIT,
+      );
+
+      let best: { yaw: number; pitch: number } | null = null;
+      let bestDistance = Infinity;
+      for (const n of nodes) {
+        const targetYaw = shortestAngle(projectedYaw, -n.lon);
+        const targetPitch = clamp(-n.lat, -PITCH_LIMIT, PITCH_LIMIT);
+        const distance = Math.hypot(targetYaw - projectedYaw, targetPitch - projectedPitch);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          best = { yaw: targetYaw, pitch: targetPitch };
+        }
+      }
+      settle.current = best;
+      dirty.current = true;
     };
 
     const onUp = (e: PointerEvent) => finish(e, true);
@@ -561,7 +659,10 @@ export function LiquidGlobe({ items, pathname, onDismiss, tabIndex, rootRef }: L
    * focus ring is sitting on back off the front of the sphere.
    */
   const faceNode = useCallback((n: GlobeNode) => {
-    glide.current = { yaw: -n.lon, pitch: clamp(-n.lat, -PITCH_LIMIT, PITCH_LIMIT) };
+    settle.current = {
+      yaw: shortestAngle(rot.current.yaw, -n.lon),
+      pitch: clamp(-n.lat, -PITCH_LIMIT, PITCH_LIMIT),
+    };
     rot.current.vYaw = 0;
     rot.current.vPitch = 0;
     touched.current = true;
@@ -570,7 +671,6 @@ export function LiquidGlobe({ items, pathname, onDismiss, tabIndex, rootRef }: L
 
   const locked = lock >= 0 ? nodes[lock] : null;
   const lockedLabel = locked ? t(locked.tKey, { defaultValue: locked.label }) : null;
-  const LockedIcon = locked?.icon as LucideIcon | undefined;
 
   return (
     <div
@@ -647,6 +747,12 @@ export function LiquidGlobe({ items, pathname, onDismiss, tabIndex, rootRef }: L
               role: 'menuitem' as const,
               tabIndex,
               draggable: false,
+              // A pin is an object on a surface, so it rises to meet the finger
+              // rather than sinking. The press layer releases itself as soon as
+              // the pointer travels past its slop, which is exactly right here:
+              // start turning the globe and the pin you happened to touch lets go
+              // instead of staying stuck in a pressed state for the whole drag.
+              'data-fluid-press': 'lift',
               'aria-label': label,
               onFocus: () => faceNode(n),
               onClick: onDismiss,
@@ -687,23 +793,26 @@ export function LiquidGlobe({ items, pathname, onDismiss, tabIndex, rootRef }: L
         </div>
       </div>
 
-      {/* READOUT — what is locked on, and what to do about it. Polite-live so the
-          lock is announced without interrupting. */}
-      <div className="radial-globe__readout" aria-live="polite">
-        <p className="radial-globe__name">
-          {LockedIcon && <LockedIcon aria-hidden />}
-          <span>
-            {lockedLabel ?? t('globe-idle', { defaultValue: 'Turn the globe to explore' })}
-          </span>
+      {/* TITLE — a fixed billing card, not a running commentary. The destination
+          under the reticle names itself AT the pin (radial.css keeps the locked
+          pin's label even at the widths where the rest are hidden), which is
+          where the eye already is, so this space is free to be the marquee. */}
+      <div className="radial-globe__title">
+        <p className="radial-globe__presents">
+          {t('globe-presents', { defaultValue: 'RMH Presents' })}
         </p>
-        <p className="radial-globe__hint">
-          {locked
-            ? ready
-              ? t('globe-release', { defaultValue: 'Let go to open' })
-              : t('globe-hold', { defaultValue: 'Hold to lock on' })
-            : t('globe-drag', { defaultValue: 'Drag to spin · hold on a place · let go' })}
+        <p className="radial-globe__wordmark">
+          {t('globe-wordmark', { defaultValue: 'The Liquid Globe' })}
         </p>
       </div>
+
+      {/* The lock, for screen readers only. It used to be announced by the
+          visible readout; that is now the title card, so the live region has to
+          exist in its own right or a non-sighted visitor loses the one signal
+          that says which destination the gesture is currently pointed at. */}
+      <span className="sr-only" aria-live="polite">
+        {lockedLabel ?? ''}
+      </span>
     </div>
   );
 }
