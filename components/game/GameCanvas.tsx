@@ -17,6 +17,7 @@ import { MatchResults } from './MatchResults';
 import { MultiplayerFactory } from '@/lib/game/MultiplayerFactory';
 import { authClient } from '@/lib/auth-client';
 import { canvasGlowEnabled } from '@/lib/render/canvas2d-fx';
+import { gameSurfaceDpr } from '@/lib/display-scale';
 
 // Neumorphic Palette (dark-mode-aware colors are read from CSS vars at render time)
 const COLORS = {
@@ -58,6 +59,8 @@ const GAMEPAD_PAUSE_BUTTON = 9; // Start/Menu
 export function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  /** Device-pixel ratio the drawing buffer was last sized with. */
+  const dprRef = useRef(1);
   const [engine, setEngine] = useState<GameEngine | null>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -182,17 +185,34 @@ export function GameCanvas() {
     const canvas = canvasRef.current;
     if (!wrapper || !canvas) return;
 
+    // Clamped, and remembered, for two separate reasons. Clamped because this is
+    // a full-screen surface redrawn every frame and fill rate goes with the
+    // SQUARE of the ratio — a 3x phone was being asked for nine times the pixels
+    // of a 1x screen, sixty times a second, on the hardware least able to give
+    // them. Remembered because `render()` needs the SAME number: sizing the
+    // buffer from a clamped ratio while drawing at the raw one scales the whole
+    // playfield.
     const sync = () => {
       const { width, height } = wrapper.getBoundingClientRect();
       if (width > 0 && height > 0) {
-        canvas.width = Math.round(width * window.devicePixelRatio);
-        canvas.height = Math.round(height * window.devicePixelRatio);
+        const dpr = gameSurfaceDpr(window);
+        dprRef.current = dpr;
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
       }
     };
     sync();
     const ro = new ResizeObserver(sync);
     ro.observe(wrapper);
-    return () => ro.disconnect();
+    // Page zoom and a move to a different-density monitor both change the ratio
+    // without resizing the wrapper, so the ResizeObserver alone would leave the
+    // buffer at the old resolution.
+    const ratioQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
+    ratioQuery.addEventListener('change', sync);
+    return () => {
+      ro.disconnect();
+      ratioQuery.removeEventListener('change', sync);
+    };
   }, []);
 
   // ── Detect portrait orientation ─────────────────────────────────────────────
@@ -712,7 +732,8 @@ export function GameCanvas() {
   ) => {
     const W = ctx.canvas.width;
     const H = ctx.canvas.height;
-    const dpr = window.devicePixelRatio || 1;
+    // The same ratio the drawing buffer was sized with — see `sync()` above.
+    const dpr = dprRef.current;
 
     // Reset & Clear — theme colours come from the per-theme cache, never from a
     // per-frame getComputedStyle (see themeRef).
@@ -1269,13 +1290,23 @@ export function GameCanvas() {
 
   return (
     <div className="flex w-full h-full bg-slice-bg">
-      {/* Game Area Container - Flex Grow */}
+      {/* Game Area Container - Flex Grow.
+          Landscape used `aspect-video` capped at `min(1400px, (100vh - 6rem) * 16/9)`
+          — a hand-derived fit with two problems. `100vh` on a phone is the
+          LARGEST viewport (the height the page only has once the toolbars have
+          scrolled away), so the cap was computed against space that is not on
+          screen and the 16:9 box overran the visible area; and the `6rem` was a
+          guess at this container's own chrome that no longer had to match it.
+          `.app-stage-fit` measures the real box instead, and the 1400px ceiling
+          moves to the container so it can't clamp one axis of the ratio. */}
       <div
-        className={`flex-1 flex items-center justify-center min-w-0 bg-slice-shadow-dark/30 ${isPortrait ? 'p-1' : 'p-4'}`}
+        className={`min-w-0 flex-1 bg-slice-shadow-dark/30 ${
+          isPortrait ? 'flex items-center justify-center p-1' : 'app-stage-fit mx-auto max-w-[1400px] p-4'
+        }`}
       >
         <div
           ref={wrapperRef}
-          className={`relative w-full bg-slice-bg overflow-hidden border-4 border-slice-shadow-light/40 shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] ${isPortrait ? 'h-full rounded-2xl' : 'aspect-video rounded-[2rem] max-w-[min(1400px,calc((100vh-6rem)*16/9))]'}`}
+          className={`relative bg-slice-bg overflow-hidden border-4 border-slice-shadow-light/40 shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] ${isPortrait ? 'h-full w-full rounded-2xl' : 'app-stage rounded-[2rem]'}`}
         >
           <canvas ref={canvasRef} className="w-full h-full cursor-pointer block" />
 

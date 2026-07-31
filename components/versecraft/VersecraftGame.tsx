@@ -157,7 +157,7 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
       {screen === 'menu' && (
         <Link
           to="/builds"
-          className="absolute top-4 left-4 z-50 flex items-center gap-1.5 px-3 py-2 rounded text-xs transition-all hover:brightness-125"
+          className="absolute top-[calc(1rem+var(--safe-top))] left-[calc(1rem+var(--safe-left))] z-50 flex items-center gap-1.5 px-3 py-2 rounded text-xs transition-all hover:brightness-125"
           style={{
             backgroundColor: 'rgba(26, 21, 32, 0.8)',
             border: '1px solid rgba(196, 163, 90, 0.15)',

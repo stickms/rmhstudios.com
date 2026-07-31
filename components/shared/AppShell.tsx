@@ -87,6 +87,13 @@ export default function AppShell({
         .filter(Boolean)
         .join(' ')}
       data-app-theme={appearance}
+      // Claims the whole app subtree for the site's press layer (WWDC 2018 §803
+      // principle 1: a surface acknowledges the finger the instant it lands).
+      // The site tier gets this free because its controls all come from
+      // `ui/button.tsx`; the app tier ships its own buttons in every app, so the
+      // shell claims them collectively rather than each app remembering to.
+      // Individual gesture surfaces opt back out with `data-fluid-press="none"`.
+      data-fluid-press-scope
     >
       {toaster && <AppToaster />}
       {realtime && <ConnectionBanner status={realtime.status} onRetry={realtime.onRetry} />}

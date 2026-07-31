@@ -2047,6 +2047,39 @@ html.readable-font body {
     min-height: 100svh;
   }
 
+  /* ── `.app-screen` — a menu/results screen that survives a short viewport ───
+   *
+   * The pattern under every game's front screen is "fill the window, centre the
+   * content": `height: 100dvh; display: flex; align-items: center`. It is right
+   * until the content is taller than the window — a landscape handset is ~340px
+   * tall, and a title, a blurb, a feature list, a start button and a settings
+   * panel are not — and then it fails twice over. The parent clips (games set
+   * `overflow: hidden` so the world can't be scrolled away), and even without
+   * that, `align-items: center` on an overflowing flex container pushes the
+   * content off BOTH ends, and the part above the top is unreachable because
+   * scroll offsets cannot go negative. The primary action ends up somewhere the
+   * player cannot get to.
+   *
+   * `safe center` is the one-word answer: centre while it fits, fall back to
+   * start alignment the moment it does not, so everything stays reachable. The
+   * plain `center` line before it is the fallback for engines that drop the
+   * keyword — those get the old behaviour, not a broken one.
+   */
+  .app-screen {
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    justify-content: safe center;
+    align-items: center;
+    align-items: safe center;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: calc(1rem + var(--safe-top)) calc(1rem + var(--safe-right))
+      calc(1rem + var(--safe-bottom)) calc(1rem + var(--safe-left));
+  }
+
   /* A scroll region that behaves on touch: momentum on older iOS, no scroll
    chaining into whatever is behind it, and a stable gutter so content doesn't
    shift sideways by the scrollbar width when one appears. */

@@ -1084,8 +1084,13 @@ export const PuzzleCard: React.FC<PuzzleCardProps> = ({ puzzle, gameState, onSol
             style={
                 {
                     '--card-color': status === 'correct' ? '#76ff03' : (status === 'wrong' ? '#ff5252' : color),
-                    left: `${puzzle.position.x}%`,
-                    top: `${puzzle.position.y}%`,
+                    // Handed to the stylesheet as bare numbers rather than as
+                    // `left`/`top` percentages: the spawn coordinate names a
+                    // point on the track the card can occupy while staying
+                    // wholly on screen, which is not the same as a percentage of
+                    // the playfield. See `.puzzle-card` in SynapseStorm.css.
+                    '--card-x': puzzle.position.x,
+                    '--card-y': puzzle.position.y,
                     transition: isDragging ? 'none' : 'box-shadow 0.2s ease-out, background 0.2s ease-out',
                     transform: `translate(${dragOffset.x}px, ${dragOffset.y}px) ${status === 'correct' ? 'scale(1.05)' : (status === 'wrong' ? 'translateX(5px)' : '')}`,
                     cursor: isDragging ? 'grabbing' : 'grab',

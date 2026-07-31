@@ -242,6 +242,11 @@
   height: 100%;
   padding-top: var(--toj-safe-top);
   padding-bottom: var(--toj-safe-bottom);
+  /* Turned sideways — which an idle game left running on a propped-up phone
+     often is — the notch takes a LONG edge, and the desktop layout this breakpoint
+     reaches at 62rem puts the whole dock against it. */
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
 }
 
 .toj-body {

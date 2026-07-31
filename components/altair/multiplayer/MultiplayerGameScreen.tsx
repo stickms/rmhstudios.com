@@ -33,7 +33,7 @@ export default function MultiplayerGameScreen({ lobbyId }: MultiplayerGameScreen
       />
 
       {/* Temporary overlay showing game is running */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-3 px-4 py-2 rounded-lg bg-black/60 backdrop-blur-sm">
+      <div className="absolute top-[calc(1rem+var(--safe-top))] left-1/2 -translate-x-1/2 flex items-center gap-3 px-4 py-2 rounded-lg bg-black/60 backdrop-blur-sm">
         <div className="w-2 h-2 rounded-full bg-(--altair-success) animate-pulse" />
         <span className="text-sm text-white font-mono">
           {isHost ? t("role-host", { defaultValue: "HOST" }) : t("role-client", { defaultValue: "CLIENT" })} — {t("lobby-label", { defaultValue: "Lobby" })} {lobbyId}

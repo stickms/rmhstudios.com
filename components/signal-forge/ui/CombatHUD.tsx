@@ -36,7 +36,7 @@ export function CombatHUD({
 }: Props) {
   const { t } = useTranslation("c-signal-forge");
   return (
-    <div className="fixed bottom-2 left-2 flex gap-2 z-30">
+    <div className="fixed bottom-[calc(0.5rem+var(--safe-bottom))] left-[calc(0.5rem+var(--safe-left))] flex gap-2 z-30">
       {onToggleViewPile && (
         <>
           <button

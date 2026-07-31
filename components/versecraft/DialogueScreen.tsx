@@ -380,7 +380,7 @@ export function DialogueScreen() {
       </div>
 
       {/* Dialogue box — z-20, always above sprites */}
-      <div ref={dialogueBoxRef} className="absolute bottom-0 left-0 right-0 z-20 p-4 md:p-6">
+      <div ref={dialogueBoxRef} className="absolute bottom-0 left-0 right-0 z-20 p-4 md:p-6 pb-[calc(1rem+var(--safe-bottom))] md:pb-[calc(1.5rem+var(--safe-bottom))] pl-[calc(1rem+var(--safe-left))] pr-[calc(1rem+var(--safe-right))] md:pl-[calc(1.5rem+var(--safe-left))] md:pr-[calc(1.5rem+var(--safe-right))]">
         <motion.div
           className="max-w-4xl mx-auto rounded-lg p-4 md:p-6"
           style={{
