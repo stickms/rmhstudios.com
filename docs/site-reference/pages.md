@@ -39,18 +39,18 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/user-builds` | — | admin | `app/routes/_site/admin/user-builds.tsx` |
 | `/admin/users` | — | admin | `app/routes/_site/admin/users.tsx` |
 | `/analytics` | Creator Analytics | public | `app/routes/_site/analytics.tsx` |
-| `/arcade` | redirects to `/create?tab=games` (Arcade Pass) | public | `app/routes/_site/arcade.tsx` |
+| `/arcade` | redirects to `/create?tab=games` | public | `app/routes/_site/arcade.tsx` |
 | `/blog` | redirects to `/library` | public | `app/routes/_site/blog/index.tsx` |
 | `/bookmarks` | Bookmarks | public | `app/routes/_site/bookmarks.tsx` |
-| `/builds` | redirects to `/create` | public | `app/routes/_site/builds/index.tsx` |
+| `/builds` | redirects to `/create?tab=games` | public | `app/routes/_site/builds/index.tsx` |
 | `/builds/:slug` | Build Not Found | public | `app/routes/_site/builds/$slug.tsx` |
 | `/c/:slug` | — | public | `app/routes/_site/c.$slug.tsx` |
 | `/communities` | Communities | public | `app/routes/_site/communities.tsx` |
 | `/create` | Create | public | `app/routes/_site/create/index.tsx` |
-| `/creator-studio` | redirects to `/create` | public | `app/routes/_site/creator-studio.tsx` |
+| `/creator-studio` | redirects to `/create?tab=earnings` | public | `app/routes/_site/creator-studio.tsx` |
 | `/developer` | Developer API | public | `app/routes/_site/developer/index.tsx` |
 | `/drafts` | Drafts | public | `app/routes/_site/drafts.tsx` |
-| `/events` | redirects to `/communities` | public | `app/routes/_site/events.tsx` |
+| `/events` | redirects to `/communities?tab=events` | public | `app/routes/_site/events.tsx` |
 | `/explore` | Explore | public | `app/routes/_site/explore.tsx` |
 | `/games/:gameId` | Game hub | public | `app/routes/_site/games/$gameId.tsx` |
 | `/games/:gameId/guides/:guideId` | Guide | public | `app/routes/_site/games/$gameId_.guides.$guideId.tsx` |
@@ -68,16 +68,16 @@ Standard pages, rendered inside the sidebar shell.
 | `/library` | Library | public | `app/routes/_site/library/index.tsx` |
 | `/lists` | Lists | public | `app/routes/_site/lists/index.tsx` |
 | `/lists/:id` | List | public | `app/routes/_site/lists/$id.tsx` |
-| `/market` | redirects to `/store` | public | `app/routes/_site/market.tsx` |
+| `/market` | redirects to `/store?tab=market` | public | `app/routes/_site/market.tsx` |
 | `/messages` | Inbox | public | `app/routes/_site/messages/index.tsx` |
 | `/messages/:conversationId` | — | public | `app/routes/_site/messages/$conversationId.tsx` |
 | `/moments/:id` | — | public | `app/routes/_site/moments.$id.tsx` |
 | `/music-trivia` | Guess the Song | public | `app/routes/_site/music-trivia.tsx` |
 | `/news` | News | public | `app/routes/_site/news/index.tsx` |
 | `/notifications` | redirects to `/messages?tab=notifications` | public | `app/routes/_site/notifications.tsx` |
-| `/personas` | redirects to `/create` | public | `app/routes/_site/personas/index.tsx` |
+| `/personas` | redirects to `/create?tab=personas` | public | `app/routes/_site/personas/index.tsx` |
 | `/personas/:id` | Chat | public | `app/routes/_site/personas/$id.tsx` |
-| `/playlists` | redirects to `/library` | public | `app/routes/_site/playlists.tsx` |
+| `/playlists` | redirects to `/library?view=music` | public | `app/routes/_site/playlists.tsx` |
 | `/predictions` | Predictions | public | `app/routes/_site/predictions.tsx` |
 | `/pricing` | Membership — RMH Studios | public | `app/routes/_site/pricing.tsx` |
 | `/profile/:id` | User Not Found \| RMH | public | `app/routes/_site/profile/$id.tsx` |
@@ -112,7 +112,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/settings/security` | Security | public | `app/routes/_site/settings/security.tsx` |
 | `/share` | Share to RMH Studios | public | `app/routes/_site/share.tsx` |
 | `/shop` | Shop | public | `app/routes/_site/shop.tsx` |
-| `/spaces` | redirects to `/communities` | public | `app/routes/_site/spaces.index.tsx` |
+| `/spaces` | redirects to `/communities?tab=spaces` | public | `app/routes/_site/spaces.index.tsx` |
 | `/spaces/:id` | — | public | `app/routes/_site/spaces.$id.tsx` |
 | `/store` | Store — RMH Studios | public | `app/routes/_site/store/index.tsx` |
 | `/store/:userid` | Store | public | `app/routes/_site/store/$userid.tsx` |
@@ -130,7 +130,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/user-builds/:slug` | — | public | `app/routes/_site/user-builds/$slug.tsx` |
 | `/user-builds/manage` | — | public | `app/routes/_site/user-builds/manage.tsx` |
 | `/user-builds/submit` | — | public | `app/routes/_site/user-builds/submit.tsx` |
-| `/v` | redirects to `/create` | public | `app/routes/_site/v/index.tsx` |
+| `/v` | redirects to `/create?tab=pages` | public | `app/routes/_site/v/index.tsx` |
 | `/ventures` | RMH Ventures | public | `app/routes/_site/ventures.tsx` |
 | `/wager` | Wager Matches | public | `app/routes/_site/wager.index.tsx` |
 | `/wager/:id` | Wager Match | public | `app/routes/_site/wager.$id.tsx` |

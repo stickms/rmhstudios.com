@@ -20,7 +20,7 @@ Generated from `lib/games.ts`, the single source of truth every card on the site
 | **VELUM2099** | [`/velum2099`](https://rmhstudios.com/velum2099) | — | — | `Simulation` `Driving` `3D` `Cyberpunk` |
 | **Synapse Storm** | [`/synapse-storm`](https://rmhstudios.com/synapse-storm) | — | required | `Action` `Puzzle` `Fast-paced` |
 | **Temple of Joy** | [`/temple-of-joy`](https://rmhstudios.com/temple-of-joy) | — | required | `Idle` `Clicker` `Prestige` `Minigames` |
-| **Neon Driftway** | [`/neon-driftway`](https://rmhstudios.com/neon-driftway) | Playable Demo | required | `Arcade` `Racing` `Endless` |
+| **Neon Driftway** | [`/neon-driftway`](https://rmhstudios.com/neon-driftway) | Playable Demo | required | `Arcade` `Racing` `3D` `VR` |
 | **Laundry Sort** | [`/laundry-sort`](https://rmhstudios.com/laundry-sort) | Playable | required | `Multiplayer` `Physics` `3D` |
 | **Forest Explorer** | [`/forest-explorer`](https://rmhstudios.com/forest-explorer) | — | — | `Exploration` `3D` `Relaxing` |
 | **Void Breaker** | [`/void-breaker`](https://rmhstudios.com/void-breaker) | — | required | `Arcade` `Shooter` `3D` `Survival` |
@@ -83,7 +83,7 @@ Twenty-four sources of joy, four hundred trophies, and four minigames that keep 
 
 ### Neon Driftway
 
-Push your car to the limit across three distinct levels: Sunset Freeway, Rainline, and Night Circuit. Rack up multipliers with daring close calls, manage grip in the rain, and dodge aggressive traffic in a neon-soaked endless racer.
+Drive from inside the cockpit across three levels: Sunset Freeway, Rainline, and Night Circuit. On a phone the gyroscope moves the camera in real time, so you can glance into a bend or check the lane beside you while you drive — and there is a side-by-side mode for a Cardboard-style viewer. Without a motion sensor the camera stays locked forward and the game plays exactly the same. Rack up multipliers with daring close calls, manage grip in the rain, and dodge aggressive traffic.
 
 **Route:** `/neon-driftway` · **Catalog id:** `neon-driftway` · **Status:** Playable Demo · **Sign-in:** required
 

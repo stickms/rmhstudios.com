@@ -147,7 +147,10 @@ function gateOf(file: string): Gate {
   // The admin gate bounces non-admins to `/`, not to `/login`, so keying on
   // the login path alone would report every admin page as public.
   if (redirects && /isAdmin/.test(source)) return 'admin';
-  if (/redirect\(\{[^}]*to:\s*['"]\/login/.test(source) || /requireSession|requireUser/.test(source)) {
+  if (
+    /redirect\(\{[^}]*to:\s*['"]\/login/.test(source) ||
+    /requireSession|requireUser/.test(source)
+  ) {
     return 'required';
   }
   return null;
@@ -179,12 +182,54 @@ function effectiveGate(id: string, byId: Map<string, RouteFile>): Gate {
  * Where a pure redirect route sends visitors. Some URLs exist only to keep an
  * old link alive (`/wallet` → `/predictions`); listing them as ordinary pages
  * would imply they render something.
+ *
+ * The search params are part of the destination, not decoration: several of
+ * these routes exist precisely to land on one *tab* of a merged page
+ * (`/notifications` → the Inbox's notifications tab, `/leaderboard` → the
+ * Arcade board inside Create). Reporting the bare path made two of those read
+ * as if they dropped you at the top of a page they do not drop you at — and
+ * because that detail was hand-written into the generated file instead, the
+ * check drifted out of sync the moment anyone re-ran the generator.
+ *
+ * Only literal, unconditional params are read. A spread or a ternary
+ * (`...(x ? { sub } : {})`) depends on the incoming URL, so there is no single
+ * answer to print and the extras are left off rather than guessed at.
  */
 function redirectTarget(file: string): string | null {
   const source = readFileSync(join(ROOT, file), 'utf8');
   if (/getSession|isAdmin/.test(source)) return null; // conditional, not a pure redirect
   const match = source.match(/throw redirect\(\{\s*to:\s*['"]([^'"]+)['"]/);
-  return match ? match[1] : null;
+  if (!match) return null;
+
+  const to = match[1];
+  const search = searchObjectAfter(source, match.index! + match[0].length);
+  if (search === null) return to;
+
+  // Drop conditional spreads before reading the literals: `/arcade` passes
+  // `tab: 'games'` always and `sub` only when it was itself asked for that
+  // board, so the spread is not part of "where this URL sends you".
+  const literals = search.replace(/\.\.\.\([\s\S]*?\)\s*,?/g, '');
+  const params = [...literals.matchAll(/(\w+)\s*:\s*['"]([^'"]+)['"]/g)]
+    .map(([, key, value]) => `${key}=${value}`)
+    .join('&');
+  return params ? `${to}?${params}` : to;
+}
+
+/**
+ * The body of the `search: { … }` object following a redirect's `to:`, or null
+ * when the redirect carries no search. Brace-counted rather than matched with a
+ * regex because these objects nest (a conditional spread is itself an object).
+ */
+function searchObjectAfter(source: string, from: number): string | null {
+  const key = source.slice(from).match(/^\s*,\s*search:\s*\{/);
+  if (!key) return null;
+  const open = from + key[0].length; // first char inside the `{`
+  let depth = 1;
+  for (let i = open; i < source.length; i++) {
+    if (source[i] === '{') depth++;
+    else if (source[i] === '}' && --depth === 0) return source.slice(open, i);
+  }
+  return null; // unbalanced — treat as no search rather than guessing
 }
 
 /** The page's title, taken from its `head()` meta if present. */
@@ -289,7 +334,7 @@ function renderApi(routes: RouteFile[]): string {
   );
   out.push('');
   out.push(
-    'Methods are read from each file\'s `server.handlers` block. A route with no methods listed ' +
+    "Methods are read from each file's `server.handlers` block. A route with no methods listed " +
       'exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).',
   );
   out.push('');
@@ -303,7 +348,9 @@ function renderApi(routes: RouteFile[]): string {
     out.push('| Route | Methods | Source |');
     out.push('| ----- | ------- | ------ |');
     for (const r of rows) {
-      out.push(`| \`${r.url}\` | ${r.methods.length ? r.methods.map((m) => `\`${m}\``).join(' ') : '—'} | \`${r.file}\` |`);
+      out.push(
+        `| \`${r.url}\` | ${r.methods.length ? r.methods.map((m) => `\`${m}\``).join(' ') : '—'} | \`${r.file}\` |`,
+      );
     }
     out.push('');
   }
@@ -338,7 +385,9 @@ function renderCatalog(
   out.push('');
   out.push(blurb);
   out.push('');
-  out.push(`Generated from \`${source}\`, the single source of truth every card on the site reads from.`);
+  out.push(
+    `Generated from \`${source}\`, the single source of truth every card on the site reads from.`,
+  );
   out.push('');
 
   out.push('| | Route | Status | Auth | Tags |');
@@ -386,7 +435,12 @@ function renderCatalog(
     out.push('');
   }
 
-  return out.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd() + '\n';
+  return (
+    out
+      .join('\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trimEnd() + '\n'
+  );
 }
 
 /* ── main ────────────────────────────────────────────────────────────────── */
@@ -425,5 +479,6 @@ const apiCount = routes.filter((r) => r.isApi).length;
 process.stdout.write(
   (CHECK
     ? 'Site reference is up to date.'
-    : `Wrote site reference: ${pageCount} page route files, ${apiCount} API route files, ${games.length} games, ${apps.length} apps.`) + '\n',
+    : `Wrote site reference: ${pageCount} page route files, ${apiCount} API route files, ${games.length} games, ${apps.length} apps.`) +
+    '\n',
 );
