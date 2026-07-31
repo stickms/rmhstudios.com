@@ -416,10 +416,13 @@ export function PostDetail({ postId }: PostDetailProps) {
  {/* Full timestamp */}
  <p className="text-sm text-site-text-dim mb-3">{formatFullDate(post.createdAt)}</p>
 
- {/* Engagement stats bar */}
+ {/* Engagement stats bar. `flex-wrap` + `whitespace-nowrap` per stat: on a
+ 320px screen this row used to break INSIDE a stat, stranding "reRMHarks"
+ on its own line under its number. Each figure now stays glued to its
+ label and the row wraps between stats instead. */}
  {!post.deletedAt && (
- <div className="flex items-center gap-4 py-3 border-t border-site-border text-sm">
- <span>
+ <div className="flex flex-wrap items-center gap-x-4 gap-y-1 py-3 border-t border-site-border text-sm">
+ <span className="whitespace-nowrap">
  <AnimatedCount
  value={post.repostCount ?? 0}
  format={(n) => n.toLocaleString()}
@@ -429,7 +432,7 @@ export function PostDetail({ postId }: PostDetailProps) {
  {t('rermharks', { defaultValue:'reRMHarks'})}
  </span>
  </span>
- <span>
+ <span className="whitespace-nowrap">
  <AnimatedCount
  value={post.likeCount ?? 0}
  format={(n) => n.toLocaleString()}
@@ -437,7 +440,7 @@ export function PostDetail({ postId }: PostDetailProps) {
  />{' '}
  <span className="text-site-text-dim">{t('likes', { defaultValue:'Likes'})}</span>
  </span>
- <span>
+ <span className="whitespace-nowrap">
  <AnimatedCount
  value={post.viewCount ?? 0}
  format={(n) => n.toLocaleString()}

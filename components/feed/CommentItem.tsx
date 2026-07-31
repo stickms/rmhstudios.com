@@ -23,7 +23,7 @@ import { useLocaleStore } from'@/stores/localeStore';
 import { LOCALE_TO_LANGUAGE_NAME } from'@/lib/i18n/config';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';
 import { useSignInPrompt } from'@/hooks/useSignInPrompt';
-import { EngagementCount } from'./EngagementCount';
+import { EngagementCount, engagementPill } from'./EngagementCount';
 import type { ReactionSummary } from'@/lib/social/reactions';
 import { applyReactionToggle } from'@/lib/social/reactions';
 import { ReactionMenu } from'@/components/shared/ReactionMenu';
@@ -376,9 +376,11 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  {sessionUser && (
  <button
  onClick={() => setReplyOpen((v) => !v)}
- className="flex items-center gap-1.5 px-1.5 py-1 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent-dim/50 transition-[color,background-color,transform] duration-150 group active:scale-95"
+ className="group flex items-center rounded-full text-site-text-dim hover:text-site-accent transition-colors duration-150"
  >
+ <span className={`${engagementPill} h-6 gap-1 px-1 group-hover:bg-site-accent-dim/50 group-active:scale-95`}>
  <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform"/>
+ </span>
  </button>
  )}
 
@@ -387,32 +389,38 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  <button
  onClick={toggleRepost}
  aria-pressed={reposted}
- className={`flex items-center gap-1 px-1.5 py-1 rounded-full hover:bg-site-success/10 transition-[color,background-color,transform] duration-150 group active:scale-95 ${
+ className={`group flex min-w-11 items-center rounded-full transition-colors duration-150 ${
  reposted ?'text-site-success':'text-site-text-dim'
  }`}
  title={reposted ? t('undo-rermhark', { defaultValue:'Undo reRMHark'}) :'reRMHark'}
  >
- <Repeat2 className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform"/>
+ <span className={`${engagementPill} h-6 gap-1 px-1 group-hover:bg-site-success/10 group-active:scale-95`}>
+ <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform"/>
  <EngagementCount value={repostCount} />
+ </span>
  </button>
 
  {/* Like */}
  <button
  onClick={toggleLike}
  aria-pressed={liked}
- className={`flex items-center gap-1 px-1.5 py-1 rounded-full hover:bg-site-danger/10 transition-[color,background-color,transform] duration-150 group active:scale-95 ${
+ className={`group flex min-w-11 items-center rounded-full transition-colors duration-150 ${
  liked ?'text-site-danger':'text-site-text-dim'
  }`}
  title={liked ? t('unlike', { defaultValue:'Unlike'}) : t('like', { defaultValue:'Like'})}
  >
- <Heart className={`w-4 h-4 shrink-0 group-hover:scale-110 transition-transform ${liked ?'fill-current':''}`} />
+ <span className={`${engagementPill} h-6 gap-1 px-1 group-hover:bg-site-danger/10 group-active:scale-95`}>
+ <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${liked ?'fill-current':''}`} />
  <EngagementCount value={likeCount} />
+ </span>
  </button>
 
  {/* Views */}
- <div className="flex items-center gap-1 px-1.5 py-1 text-site-text-dim">
- <Eye className="w-4 h-4 shrink-0"/>
+ <div className="flex min-w-11 items-center text-site-text-dim">
+ <span className={`${engagementPill} h-6 gap-1 px-1`}>
+ <Eye className="w-4 h-4"/>
  <EngagementCount value={viewCount} />
+ </span>
  </div>
  </div>
  )}

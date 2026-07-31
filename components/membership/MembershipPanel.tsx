@@ -18,71 +18,94 @@ import type { Tier } from '@/lib/entitlements';
 import { authClient } from '@/lib/auth-client';
 import { PinnedHero } from '@/components/feed/PinnedHero';
 import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 // Local display-only ordering (do NOT import the server-side TIER_RANK — it
 // pulls the prisma client into the client bundle).
 const RANK: Record<Tier, number> = { free: 0, starter: 1, pro: 2, enterprise: 3 };
 
+/**
+ * Structure only — the words live in `planCopy()` below. Prices stay literal:
+ * a currency amount is not a translatable string, but the period suffix
+ * ("/mo") is.
+ */
 type Plan = {
   tier: Tier;
-  name: string;
   price: string;
-  period: string;
-  tagline: string;
-  features: string[];
   cta: 'current' | 'subscribe' | 'contact';
   featured?: boolean;
 };
 
 const PLANS: Plan[] = [
-  {
-    tier: 'free',
-    name: 'Free',
-    price: '$0',
-    period: '/forever',
-    tagline: 'A feel for the studio.',
-    features: ['Community feed & profiles', 'Public Pages, Builds & Library', 'Standard support'],
-    cta: 'current',
-  },
-  {
-    tier: 'starter',
-    name: 'Starter',
-    price: '$20',
-    period: '/mo',
-    tagline: 'Everything unlocked — and the keys.',
-    features: ['Everything in Free', 'All premium features', 'RMH API access', 'Priority support'],
-    cta: 'subscribe',
-  },
-  {
-    tier: 'pro',
-    name: 'Pro',
-    price: '$100',
-    period: '/mo',
-    tagline: 'For power users who want the badge.',
-    features: [
-      'Everything in Starter',
-      'Verified profile badge',
-      'Early access to new tools',
-      'Dedicated support',
-    ],
-    cta: 'subscribe',
-    featured: true,
-  },
-  {
-    tier: 'enterprise',
-    name: 'Enterprise',
-    price: 'Custom',
-    period: '',
-    tagline: 'Pro, scaled to your whole company.',
-    features: [
-      'Everything in Pro',
-      'Seats for your team',
-      'Custom contract & invoicing',
-      'SLA & onboarding',
-    ],
-    cta: 'contact',
-  },
+  { tier: 'free', price: '$0', cta: 'current' },
+  { tier: 'starter', price: '$20', cta: 'subscribe' },
+  { tier: 'pro', price: '$100', cta: 'subscribe', featured: true },
+  { tier: 'enterprise', price: 'Custom', cta: 'contact' },
 ];
+
+/**
+ * Plan copy, per tier.
+ *
+ * Names, taglines and feature bullets used to be literal English in the `PLANS`
+ * table and rendered raw, so every locale got English (§10 — every user-facing
+ * string goes through `t()`). Every key here is spelled out literally rather
+ * than built from the tier id: `pnpm i18n:extract` parses the source
+ * statically, so a computed key like `plan-${tier}-name` is invisible to it and
+ * would never reach a translator.
+ */
+function planCopy(t: (key: string, opts: { defaultValue: string }) => string) {
+  return {
+    free: {
+      name: t('plan-free-name', { defaultValue: 'Free' }),
+      period: t('plan-free-period', { defaultValue: '/forever' }),
+      tagline: t('plan-free-tagline', { defaultValue: 'A feel for the studio.' }),
+      features: [
+        t('plan-free-feature-1', { defaultValue: 'Community feed & profiles' }),
+        t('plan-free-feature-2', { defaultValue: 'Public Pages, Builds & Library' }),
+        t('plan-free-feature-3', { defaultValue: 'Standard support' }),
+      ],
+    },
+    starter: {
+      name: t('plan-starter-name', { defaultValue: 'Starter' }),
+      period: t('plan-starter-period', { defaultValue: '/mo' }),
+      tagline: t('plan-starter-tagline', {
+        defaultValue: 'Everything unlocked — and the keys.',
+      }),
+      features: [
+        t('plan-starter-feature-1', { defaultValue: 'Everything in Free' }),
+        t('plan-starter-feature-2', { defaultValue: 'All premium features' }),
+        t('plan-starter-feature-3', { defaultValue: 'RMH API access' }),
+        t('plan-starter-feature-4', { defaultValue: 'Priority support' }),
+      ],
+    },
+    pro: {
+      name: t('plan-pro-name', { defaultValue: 'Pro' }),
+      period: t('plan-pro-period', { defaultValue: '/mo' }),
+      tagline: t('plan-pro-tagline', { defaultValue: 'For power users who want the badge.' }),
+      features: [
+        t('plan-pro-feature-1', { defaultValue: 'Everything in Starter' }),
+        t('plan-pro-feature-2', { defaultValue: 'Verified profile badge' }),
+        t('plan-pro-feature-3', { defaultValue: 'Early access to new tools' }),
+        t('plan-pro-feature-4', { defaultValue: 'Dedicated support' }),
+      ],
+    },
+    enterprise: {
+      name: t('plan-enterprise-name', { defaultValue: 'Enterprise' }),
+      period: '',
+      tagline: t('plan-enterprise-tagline', {
+        defaultValue: 'Pro, scaled to your whole company.',
+      }),
+      features: [
+        t('plan-enterprise-feature-1', { defaultValue: 'Everything in Pro' }),
+        t('plan-enterprise-feature-2', { defaultValue: 'Seats for your team' }),
+        t('plan-enterprise-feature-3', { defaultValue: 'Custom contract & invoicing' }),
+        t('plan-enterprise-feature-4', { defaultValue: 'SLA & onboarding' }),
+      ],
+    },
+  } satisfies Record<Tier, { name: string; period: string; tagline: string; features: string[] }>;
+}
 
 export function MembershipPanel({
   currentTier,
@@ -105,6 +128,7 @@ export function MembershipPanel({
   const tier: Tier = currentTier ?? 'free';
   const [busy, setBusy] = useState<string | null>(null);
   const [status, setStatus] = useState<'success' | 'cancelled' | null>(null);
+  const COPY = planCopy(t);
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get('status');
@@ -238,152 +262,179 @@ export function MembershipPanel({
           </Reveal>
         )}
 
-        {/* ── Plan grid ──────────────────────────────────────── */}
-        <RevealGroup className="grid items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          {PLANS.map((plan) => {
-            const isCurrent = !signedOut && tier === plan.tier;
-            const owned = !signedOut && RANK[tier] > RANK[plan.tier];
-            return (
-              <RevealItem key={plan.tier} className="flex">
-                {/* Card is a plain <article> so its CSS hover/featured transforms
-                    aren't clobbered by the RevealItem motion node's inline
-                    transform. */}
-                <article
-                  // Floating L2 slabs (§8.4): .glass-pane owns the frost/tint/
-                  // border/ring; the featured tier additionally takes the page's
-                  // one prism refract slot + ambient sheen + per-element lens.
-                  data-glass-lens={plan.featured ? '' : undefined}
-                  className={`pricing-card group relative flex w-full flex-col glass-pane rounded-site p-6 ${
-                    plan.featured
-                      ? 'pricing-card--featured glass-refract glass-refract--prism glass-liquid'
-                      : ''
-                  }`}
-                >
-                  {plan.featured && (
-                    <span className="pricing-ribbon">
-                      {t('most-popular', { defaultValue: 'Most popular' })}
-                    </span>
-                  )}
-                  {isCurrent && (
-                    <span className="absolute right-5 top-6 rounded-full border border-site-accent/40 bg-site-accent-dim px-2.5 py-0.5 font-mono text-[11px] uppercase tracking-widest text-site-accent">
-                      {t('current-badge', { defaultValue: 'Current' })}
-                    </span>
-                  )}
-
-                  <h2
-                    className="pricing-display text-2xl text-site-text"
-                    style={plan.featured ? { color: 'var(--site-warning)' } : undefined}
-                  >
-                    {plan.name}
-                  </h2>
-                  <p className="mt-1 min-h-10 text-sm leading-snug text-site-text-muted">
-                    {plan.tagline}
-                  </p>
-
-                  <div className="mt-5 flex items-baseline gap-1">
-                    <span className="pricing-price text-4xl text-site-text">{plan.price}</span>
-                    {plan.period && (
-                      <span className="font-mono text-xs text-site-text-muted">{plan.period}</span>
+        {/* ── Plan grid ──────────────────────────────────────────
+            Sized off the CONTAINER, not the viewport. This panel renders inside
+            the site's centre column, which stays ~640px however wide the screen
+            gets, so the old `xl:grid-cols-4` viewport breakpoint put four cards
+            in 640px — 148px each, which wrapped every tagline into three ragged
+            lines and pushed "Custom" and the CTA labels past their own borders.
+            Container queries make the card count answer to the space that
+            actually exists: two up in the centre column, four only when a host
+            genuinely has room for them. */}
+        <div className="@container">
+          <RevealGroup className="grid items-stretch gap-4 @md:grid-cols-2 @5xl:grid-cols-4">
+            {PLANS.map((plan) => {
+              const isCurrent = !signedOut && tier === plan.tier;
+              const owned = !signedOut && RANK[tier] > RANK[plan.tier];
+              const copy = COPY[plan.tier];
+              const cta =
+                RANK[tier] < RANK[plan.tier] && tier !== 'free'
+                  ? t('upgrade', { defaultValue: 'Upgrade' })
+                  : t('subscribe', { defaultValue: 'Subscribe' });
+              return (
+                <RevealItem key={plan.tier} className="flex">
+                  {/* Card is a plain <article> so its CSS hover/featured
+                      transforms aren't clobbered by the RevealItem motion node's
+                      inline transform. */}
+                  <article
+                    // Floating L2 slabs (§8.4): .glass-pane owns the frost/tint/
+                    // border/ring; the featured tier additionally takes the page's
+                    // one prism refract slot + ambient sheen + per-element lens.
+                    data-glass-lens={plan.featured ? '' : undefined}
+                    className={cn(
+                      'pricing-card group relative flex w-full flex-col glass-pane rounded-site p-5',
+                      // Clearance for the ribbon that straddles the top edge.
+                      plan.featured &&
+                        'pricing-card--featured glass-refract glass-refract--prism glass-liquid pt-7',
                     )}
-                  </div>
+                  >
+                    {plan.featured && (
+                      <span className="pricing-ribbon">
+                        {t('most-popular', { defaultValue: 'Most popular' })}
+                      </span>
+                    )}
 
-                  <div className="my-6 h-px w-full bg-gradient-to-r from-site-border to-transparent" />
-
-                  <ul className="flex flex-1 flex-col gap-3">
-                    {plan.features.map((f) => (
-                      <li key={f} className="flex items-start gap-2.5 text-sm text-site-text">
-                        <span
-                          className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
-                          style={{
-                            backgroundColor: plan.featured
-                              ? 'color-mix(in srgb, var(--site-warning) 20%, transparent)'
-                              : 'var(--site-accent-dim)',
-                          }}
+                    {/* Name and status sit in ONE flow row. The "Current" chip
+                        used to be absolutely positioned over the top-right
+                        corner, where it landed on top of the tier name. */}
+                    <div className="flex items-start justify-between gap-2">
+                      <h3
+                        className={cn(
+                          'font-(family-name:--site-font-display) text-2xl font-bold leading-tight tracking-tight',
+                          plan.featured ? 'text-site-warning' : 'text-site-text',
+                        )}
+                      >
+                        {copy.name}
+                      </h3>
+                      {isCurrent && (
+                        <Badge
+                          variant="accent"
+                          size="sm"
+                          className="mt-1 font-mono uppercase tracking-widest"
                         >
-                          <Check
-                            className="h-2.5 w-2.5"
-                            style={{
-                              color: plan.featured ? 'var(--site-warning)' : 'var(--site-accent)',
-                            }}
-                          />
+                          {t('current-badge', { defaultValue: 'Current' })}
+                        </Badge>
+                      )}
+                    </div>
+
+                    <p className="mt-1.5 min-h-10 text-sm leading-snug text-site-text-muted">
+                      {copy.tagline}
+                    </p>
+
+                    {/* `flex-wrap` + `break-words`: a long localised price or a
+                        word like "Custom" now wraps inside the card instead of
+                        running out through its right border. */}
+                    <p className="mt-4 flex flex-wrap items-baseline gap-x-1.5">
+                      <span className="font-mono text-3xl font-semibold tracking-tight text-site-text tabular-nums break-words">
+                        {plan.price}
+                      </span>
+                      {copy.period && (
+                        <span className="font-mono text-xs text-site-text-muted">
+                          {copy.period}
                         </span>
-                        <span className="leading-snug">{f}</span>
-                      </li>
-                    ))}
-                  </ul>
+                      )}
+                    </p>
 
-                  <div className="mt-7">
-                    {plan.cta === 'current' &&
-                      (signedOut ? (
-                        <a
-                          href="/login"
-                          className="pricing-btn flex h-11 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-all"
-                          style={{
-                            background: 'var(--site-accent)',
-                            color: 'var(--site-accent-fg)',
-                          }}
-                        >
-                          {t('get-started-free', { defaultValue: 'Get started — free' })}
-                          <ArrowUpRight className="h-4 w-4" />
-                        </a>
-                      ) : (
-                        <div className="flex h-11 items-center justify-center rounded-full border border-dashed border-site-border text-sm font-medium text-site-text-muted">
+                    <div className="my-5 h-px w-full bg-gradient-to-r from-site-border to-transparent" />
+
+                    <ul className="flex flex-1 flex-col gap-2.5">
+                      {copy.features.map((f) => (
+                        <li key={f} className="flex items-start gap-2.5 text-sm text-site-text">
+                          {/* Token utilities — this was an inline `style` with a
+                              hand-written color-mix, invisible to the themes. */}
+                          <span
+                            className={cn(
+                              'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full',
+                              plan.featured ? 'bg-site-warning/20' : 'bg-site-accent-dim',
+                            )}
+                          >
+                            <Check
+                              className={cn(
+                                'h-2.5 w-2.5',
+                                plan.featured ? 'text-site-warning' : 'text-site-accent',
+                              )}
+                              aria-hidden
+                            />
+                          </span>
+                          <span className="leading-snug">{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* CTAs are the shared `Button` primitive (§5.2) rather than
+                        three hand-rolled pills with inline background styles.
+                        `h-auto min-h-11` + `whitespace-normal` override the
+                        primitive's fixed height and nowrap so a two-word label —
+                        or a longer translation of one — grows the button instead
+                        of spilling over its own border. */}
+                    <div className="mt-6">
+                      {/* A tier you already hold has nothing to click, so it gets
+                          the quiet dashed status pill rather than a disabled
+                          fill. A greyed-out `bg-site-accent` button reads as a
+                          heavy slab that still looks pressable, and it competed
+                          with the one real call to action on the page. */}
+                      {isCurrent || owned || (plan.cta === 'current' && !signedOut) ? (
+                        <p className="flex min-h-11 items-center justify-center rounded-[var(--site-control-radius)] border border-dashed border-site-border px-3 py-2.5 text-center text-sm font-medium text-site-text-muted">
                           {isCurrent
                             ? t('your-current-plan', { defaultValue: 'Your current plan' })
                             : owned
                               ? t('included', { defaultValue: 'Included' })
                               : t('free-forever', { defaultValue: 'Free forever' })}
-                        </div>
-                      ))}
-
-                    {plan.cta === 'subscribe' && (
-                      <button
-                        type="button"
-                        onClick={() => subscribe(plan.tier as 'starter' | 'pro')}
-                        disabled={isCurrent || owned || busy === plan.tier}
-                        className="pricing-btn flex h-11 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50"
-                        style={{
-                          background: plan.featured ? 'var(--site-warning)' : 'var(--site-accent)',
-                          // Ink tracks its surface: each fill's own paired
-                          // foreground token. Starter used to be special-cased to
-                          // dark ink while painting --site-accent, which on the
-                          // default theme (accent #000) rendered the site's main
-                          // purchase CTA black-on-black.
-                          color: plan.featured ? 'var(--site-warning-fg)' : 'var(--site-accent-fg)',
-                        }}
-                      >
-                        {busy === plan.tier ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : isCurrent ? (
-                          t('current-plan', { defaultValue: 'Current plan' })
-                        ) : owned ? (
-                          t('included', { defaultValue: 'Included' })
-                        ) : (
-                          <>
-                            {RANK[tier] < RANK[plan.tier] && tier !== 'free'
-                              ? t('upgrade', { defaultValue: 'Upgrade' })
-                              : t('subscribe', { defaultValue: 'Subscribe' })}
-                            <ArrowUpRight className="h-4 w-4" />
-                          </>
-                        )}
-                      </button>
-                    )}
-
-                    {plan.cta === 'contact' && (
-                      <a
-                        href="mailto:team@rmhstudios.com?subject=Enterprise%20plan"
-                        className="flex h-11 w-full items-center justify-center gap-2 rounded-full border border-site-border-bright text-sm font-bold text-site-text transition-colors hover:bg-site-surface-hover"
-                      >
-                        {t('contact-team', { defaultValue: 'Contact team' })}
-                        <ArrowUpRight className="h-4 w-4" />
-                      </a>
-                    )}
-                  </div>
-                </article>
-              </RevealItem>
-            );
-          })}
-        </RevealGroup>
+                        </p>
+                      ) : plan.cta === 'current' ? (
+                        <Button
+                          asChild
+                          variant="accent"
+                          className="h-auto min-h-11 w-full whitespace-normal py-2.5 text-center"
+                        >
+                          <a href="/login">
+                            {t('get-started-free', { defaultValue: 'Get started — free' })}
+                            <ArrowUpRight aria-hidden />
+                          </a>
+                        </Button>
+                      ) : plan.cta === 'subscribe' ? (
+                        <Button
+                          type="button"
+                          onClick={() => subscribe(plan.tier as 'starter' | 'pro')}
+                          loading={busy === plan.tier}
+                          // Ink tracks its surface: each variant carries its own
+                          // paired foreground token, so neither fill can end up
+                          // painting its label in the other's colour.
+                          variant={plan.featured ? 'warning' : 'accent'}
+                          className="h-auto min-h-11 w-full whitespace-normal py-2.5 text-center"
+                        >
+                          {cta}
+                          <ArrowUpRight aria-hidden />
+                        </Button>
+                      ) : (
+                        <Button
+                          asChild
+                          variant="outline"
+                          className="h-auto min-h-11 w-full whitespace-normal py-2.5 text-center"
+                        >
+                          <a href="mailto:team@rmhstudios.com?subject=Enterprise%20plan">
+                            {t('contact-team', { defaultValue: 'Contact team' })}
+                            <ArrowUpRight aria-hidden />
+                          </a>
+                        </Button>
+                      )}
+                    </div>
+                  </article>
+                </RevealItem>
+              );
+            })}
+          </RevealGroup>
+        </div>
 
         {/* ── Footnote ───────────────────────────────────────── */}
         <Reveal as="p" className="mt-12 text-center font-mono text-xs text-site-text-muted">
@@ -400,18 +451,19 @@ export function MembershipPanel({
 function PricingStyles() {
   return (
     <style>{`
-      .pricing-display { font-family: var(--font-playfair); font-weight: 700; letter-spacing: -0.02em; }
-      .pricing-price { font-family: var(--font-jetbrains-mono); font-weight: 600; letter-spacing: -0.04em; }
-
       /* The pricing panel sits directly on the aurora canvas — no opaque slab
-         (the old panel background was deleted with the glass redesign). */
+         (the old panel background was deleted with the glass redesign).
 
-      /* Cards — the . class owns the frost/tint/border/blur now (§8.4);
-         this only layers the hover-lift + featured gold glow on top. */
-      .pricing-card {
-        transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
-      }
-      .pricing-card:hover { transform: translateY(-4px); border-color: var(--site-border-bright); }
+         Type comes from the token contract now (--site-font-display /
+         --site-font-mono via the font utilities), not from local
+         .pricing-display/.pricing-price rules that named --font-playfair and
+         --font-jetbrains-mono directly and so ignored any theme that re-points
+         those tokens. Card hover is likewise the shared .glass-* behaviour.
+         What is left here is the one thing the system has no token for: the
+         featured tier's gold ring and glow. */
+      .pricing-card { transition: border-color 220ms ease, box-shadow 220ms ease; }
+      .pricing-card:hover { border-color: var(--site-border-bright); }
+
       .pricing-card--featured {
         box-shadow:
           0 0 0 1px color-mix(in srgb, var(--site-warning) 45%, transparent),
@@ -422,25 +474,17 @@ function PricingStyles() {
           0 0 0 1px color-mix(in srgb, var(--site-warning) 70%, transparent),
           0 30px 70px -18px color-mix(in srgb, var(--site-warning) 45%, transparent);
       }
-      @media (min-width: 1024px) { .pricing-card--featured { transform: translateY(-10px); } .pricing-card--featured:hover { transform: translateY(-14px); } }
 
+      /* Straddles the card's top edge. The max-width keeps a long translation
+         inside the card rather than out over its neighbour. */
       .pricing-ribbon {
         position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%);
-        border-radius: 9999px; padding: 4px 14px;
-        font-family: var(--font-jetbrains-mono); font-size: 11px; font-weight: 600;
-        text-transform: uppercase; letter-spacing: 0.18em; white-space: nowrap;
+        border-radius: 9999px; padding: 4px 12px; max-width: calc(100% - 1.5rem);
+        font-family: var(--site-font-mono); font-size: 10px; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.16em; white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis;
         color: var(--site-warning-fg); background: var(--site-warning);
         box-shadow: 0 6px 20px -6px color-mix(in srgb, var(--site-warning) 60%, transparent);
-      }
-
-      /* Buttons — base colors are set inline (guaranteed to paint across
-         themes / style blocks); hover only adjusts brightness + lift so it
-         doesn't fight the inline background. */
-      .pricing-btn:not(:disabled):hover { filter: brightness(1.08); transform: translateY(-1px); }
-
-      @media (prefers-reduced-motion: reduce) {
-        .pricing-card:hover { transform: none; }
-        .pricing-card--featured, .pricing-card--featured:hover { transform: none; }
       }
     `}</style>
   );
