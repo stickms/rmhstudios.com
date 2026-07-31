@@ -394,8 +394,12 @@ export class NeonDriftwayEngine {
     if (this.isSlowed) maxSpeed = V_MAX_NORMAL * 0.6;
     car.speed = clamp(car.speed, V_MIN, maxSpeed);
 
-    // Steering
-    const steerInput = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+    // Steering — buttons and the analog axis add, so head-steering in VR and
+    // a thumb on the screen edge cooperate rather than fight. The axis is
+    // sanitised because a single non-finite value here would poison `car.x`
+    // for the rest of the run with no way back.
+    const axis = Number.isFinite(input.steer) ? input.steer : 0;
+    const steerInput = clamp((input.right ? 1 : 0) - (input.left ? 1 : 0) + axis, -1, 1);
     const speedNorm = (car.speed - V_MIN) / (V_MAX_BOOST - V_MIN);
     const steerScale = 1 - speedNorm * 0.25;
     const effectiveGrip = this.level.gripEnabled ? this.grip : 1;

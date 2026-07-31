@@ -18,9 +18,10 @@
  *    time so you can check your mirrors and look into a bend as you drive.
  *    **This is the default on any device with a motion sensor.**
  *  - **vr** — head look plus side-by-side stereo for a headset or a
- *    Cardboard-style holder, with the throttle held open and screen-half
- *    steering. Only the default when a headset is actually detected, because
- *    a split screen on a bare phone is just a broken-looking game.
+ *    Cardboard-style holder. The throttle is held open and the car steers
+ *    from head yaw, so nothing needs a button you cannot see. Only the
+ *    default when a headset is actually detected, because a split screen on
+ *    a bare phone is just a broken-looking game.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -83,6 +84,25 @@ function saveViewMode(mode: ViewMode): void {
   } catch { /* ignore */ }
 }
 
+/** Head yaw inside this many radians of forward does not steer at all. */
+const HEAD_STEER_DEADZONE = 0.10;
+/** Yaw at which head-steering is at full lock. */
+const HEAD_STEER_FULL = 0.5;
+
+/**
+ * Head yaw → steering axis for VR.
+ *
+ * `headYaw` is positive to the left, while the steering axis is positive to
+ * the right, hence the negation. The deadzone matters more than it looks:
+ * without it the car wanders with every small head movement, which in a
+ * headset reads as the car being broken rather than the player being still.
+ */
+function headSteer(headYaw: number): number {
+  const magnitude = (Math.abs(headYaw) - HEAD_STEER_DEADZONE) / (HEAD_STEER_FULL - HEAD_STEER_DEADZONE);
+  if (magnitude <= 0) return 0;
+  return -Math.sign(headYaw) * Math.min(magnitude, 1);
+}
+
 /** Best guess at whether this device is worth offering head look to at all. */
 function motionPlausible(): boolean {
   if (typeof window === 'undefined') return false;
@@ -102,7 +122,7 @@ export function NeonDriftwayGame() {
   const hudRef = useRef<HudHandle>(null);
   const trackerRef = useRef<GyroTracker | null>(null);
   const inputRef = useRef<InputState>({
-    up: false, down: false, left: false, right: false,
+    up: false, down: false, left: false, right: false, steer: 0,
     boost: false, pause: false, restart: false, ability: false,
   });
 
@@ -390,6 +410,7 @@ export function NeonDriftwayGame() {
     const blur = () => {
       const input = inputRef.current;
       input.up = input.down = input.left = input.right = input.boost = input.pause = input.restart = input.ability = false;
+      input.steer = 0;
       if (gameRef.current?.state === 'playing' && !gameRef.current.isMultiplayer) {
         gameRef.current.state = 'paused' as GameState;
       }
@@ -434,8 +455,15 @@ export function NeonDriftwayGame() {
       const live = state === 'playing' || state === 'paused' || state === 'countdown';
 
       if (live) {
-        // In a viewer there is no reachable throttle, so hold it open.
-        if (stereoRef.current && state === 'playing') inputRef.current.up = true;
+        // In a viewer there is no reachable throttle, so hold it open, and
+        // steering comes from where the driver is looking — hands stay on the
+        // headset, not hunting for a button they cannot see.
+        if (stereoRef.current && state === 'playing') {
+          inputRef.current.up = true;
+          inputRef.current.steer = headSteer(renderer.headYaw);
+        } else if (inputRef.current.steer !== 0) {
+          inputRef.current.steer = 0;
+        }
 
         game.update(dt, inputRef.current);
         renderer.draw(game, dt, sample);

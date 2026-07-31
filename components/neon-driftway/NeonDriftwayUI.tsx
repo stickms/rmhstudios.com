@@ -114,7 +114,7 @@ export function NeonDriftwayUI({
     {
       id: 'vr',
       label: t('mode-vr', { defaultValue: 'VR' }),
-      hint: t('mode-vr-hint', { defaultValue: 'Split screen for a headset or phone viewer. Hold a screen edge to steer.' }),
+      hint: t('mode-vr-hint', { defaultValue: 'Split screen for a headset or phone viewer. Turn your head to steer; tap to boost.' }),
       icon: Glasses,
     },
     {
