@@ -250,8 +250,11 @@ export function Providers({
   }, [pathname]);
 
   // A single rAF-throttled listener gives the monochrome spatial backdrop its
-  // restrained depth response. It automatically stands down for reduced motion.
-  useSpatialParallax();
+  // restrained depth response. It automatically stands down for reduced motion,
+  // and — because it publishes an inherited custom property on <html>, which
+  // invalidates the whole document's style on every write — it attaches nothing
+  // at all on a page with no consumer for it. `pathname` re-runs that check.
+  useSpatialParallax(pathname);
 
   // The Liquid Glass optics runtime, two single-listener hooks (each rAF-throttled
   // and self-gating on reduced motion / perf tier):

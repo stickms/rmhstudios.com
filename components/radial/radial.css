@@ -68,9 +68,9 @@
      compose button). Every full-height desktop panel stops this far short of the
      viewport bottom, so a floating control can never land on top of one. */
   --rad-corner-reserve: 6.5rem;
-  /* Reserved footprint of the compose FAB, used to lift the back-to-top button
-     clear of it on desktop (on mobile the §5.5x A.1 stack already does this). */
-  --rad-compose-lift: 3.5rem;
+  /* (`--rad-compose-lift` lived here: the compose FAB's reserved height, used to
+     float back-to-top above it on desktop. The two share one row now — see
+     §A.1 — so nothing lifts and nothing needs the number.) */
   /* Where every sticky shell panel (both rails, the home deck) pins to. Shared
      so their heights can be derived from it — see .rad-rail. */
   --rad-rail-top: calc(var(--rad-topbar-h) + var(--rad-3));
@@ -1271,42 +1271,62 @@ html.perf-lite .radial-hub__veil {
   cursor: grabbing;
 }
 
-/* ── The wireframe cage ──────────────────────────────────────────────────── */
-.radial-globe__sphere {
+/* ── The wireframe cage ────────────────────────────────────────────────────
+   One canvas, stroked by LiquidGlobe every frame. It used to be a
+   `preserve-3d` div holding thirteen `border-radius: 50%` elements, each turned
+   into place by its own 3D transform — six meridians by `rotateY(--a)`, seven
+   parallels by `translateY(--ty) rotateX(90deg) scale(--s)`.
+
+   That drew the right picture and cost half the frame rate of the whole
+   gesture. A rotated 3D transform is the slow path for an antialiased
+   elliptical border: nothing can be reused between frames, because every frame
+   projects every ring differently, so thirteen of them were re-rasterised
+   individually inside a 3D sorting context at device pixel ratio. Measured on a
+   6x-throttled phone profile, interleaved and repeated: a drag ran at a 33.3ms
+   median frame with this cage and 16.7ms without it — while hiding the glass
+   disc, hiding the pins, dropping the `color-mix` from the borders and
+   promoting each ring to its own layer all changed nothing at all.
+
+   The geometry moved to `LiquidGlobe.tsx` unchanged — the same circles, through
+   the same perspective as the pins — so the only thing that is different is
+   what rasterises it. The colours stay here, where every theme can own them.
+   They are registered as `<color>` so their COMPUTED value is a resolved colour
+   the canvas can take; an unregistered custom property would hand it the
+   literal text `color-mix(in srgb, …)`. */
+@property --cage-minor {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --cage-parallel {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --cage-major {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+.radial-globe__cage {
   position: absolute;
   inset: 0;
-  transform-style: preserve-3d;
-  /* Written every frame by LiquidGlobe as `rotateX(pitch) rotateY(yaw)` — the
-     same order, and the same two angles, its projection applies to the pins. */
-  transform: rotateX(0deg) rotateY(0deg);
-  will-change: transform;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
-}
-.radial-globe__ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: var(--site-border-width, 1px) solid color-mix(in srgb, var(--site-text) 20%, transparent);
-  /* Both faces of every ring are meant to be seen — the see-through cage IS the
-     globe, and it is what tells you there is more sphere behind the one you are
-     looking at. */
-  backface-visibility: visible;
-}
-.radial-globe__ring--meridian {
-  transform: rotateY(var(--a));
-}
-/* A parallel is that same circle laid flat and lifted along the globe's own Y.
-   `--ty` is a percentage of the ring's own box, and the box is `inset: 0` on a
-   square stage — so 1% is 1% of the globe's width, and the cage needs no
-   measuring to stay in proportion at any viewport. */
-.radial-globe__ring--parallel {
-  transform: translateY(var(--ty)) rotateX(90deg) scale(var(--s));
-  border-color: color-mix(in srgb, var(--site-text) 13%, transparent);
-}
-/* The equator and the prime meridian are the globe's horizon: drawn firmer, so
-   there is always something to read the current tilt and spin against. */
-.radial-globe__ring--major {
-  border-color: color-mix(in srgb, var(--site-text) 34%, transparent);
+  /* Never painted (a canvas has no text) — it is the cage's ink, resolved, as
+     the fallback the drawing code mixes its own colours from on an engine that
+     does not register the custom properties below. */
+  color: var(--site-text);
+  /* Both faces of every ring are drawn, as they always were — the see-through
+     cage IS the globe, and it is what tells you there is more sphere behind the
+     one you are looking at. */
+  --cage-minor: color-mix(in srgb, var(--site-text) 20%, transparent);
+  --cage-parallel: color-mix(in srgb, var(--site-text) 13%, transparent);
+  /* The equator and the prime meridian are the globe's horizon: drawn firmer, so
+     there is always something to read the current tilt and spin against. */
+  --cage-major: color-mix(in srgb, var(--site-text) 34%, transparent);
+  --cage-width: var(--site-border-width, 1px);
 }
 
 /* ── The glass body ──────────────────────────────────────────────────────── */
@@ -1484,14 +1504,21 @@ html.perf-lite .radial-hub__veil {
 .radial-globe__pin:focus-visible .radial-globe__pin-name {
   opacity: 1;
 }
-/* Locked on: the pin the reticle holds, and the one a full ring will open. */
-.radial-globe__pin.is-locked .radial-globe__pin-dot {
+/* Locked on: the pin the reticle holds, and the one a full ring will open.
+   Keyed on the WRAPPER, not on the link. The lock changes several times during
+   a single turn of the globe, and while it was a React prop on the link every
+   one of those changes re-rendered all twelve pins — twelve `<Link>`s, each
+   re-resolving its router props — in the middle of the one gesture that has to
+   stay at frame rate. The frame loop already owns this element (it writes its
+   transform); toggling one class on it from there costs a class change on one
+   node and no render at all. */
+.radial-globe__pin-wrap.is-locked .radial-globe__pin-dot {
   background: var(--site-accent);
   color: var(--site-accent-fg);
   transform: scale(1.1);
   box-shadow: 0 10px 26px -12px rgba(0, 0, 0, 0.7);
 }
-.radial-globe__pin.is-locked .radial-globe__pin-name {
+.radial-globe__pin-wrap.is-locked .radial-globe__pin-name {
   opacity: 1;
 }
 /* Below 420px the sphere is too small to carry a dozen names at once; the readout
@@ -1505,7 +1532,7 @@ html.perf-lite .radial-hub__veil {
      card under the sphere is fixed branding rather than a live readout, this is
      now the ONLY place a destination is named on a phone. Focus gets the same
      treatment so the keyboard path is never left unlabelled either. */
-  .radial-globe__pin.is-locked .radial-globe__pin-name,
+  .radial-globe__pin-wrap.is-locked .radial-globe__pin-name,
   .radial-globe__pin:focus-visible .radial-globe__pin-name {
     display: block;
   }
@@ -1784,8 +1811,11 @@ html.perf-lite .radial-hub__veil {
    the centre RMH orb, lifted above the mobile safe area. */
 .radial-feed__compose {
   position: fixed;
-  right: clamp(0.9rem, 4vw, 1.5rem);
-  bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(1rem, 4vw, 1.75rem));
+  /* The shared bottom-right lane (globals.css §5.5x A.1). Same numbers this rule
+     always used, now expressed once so back-to-top can sit on the row beside it
+     without a second copy of the clamps to keep in step. */
+  right: var(--site-fab-row-right);
+  bottom: calc(var(--safe-bottom) + var(--site-fab-row-bottom));
   z-index: var(--z-floating);
   display: inline-flex;
   align-items: center;
@@ -2611,15 +2641,12 @@ html.perf-lite .radial-hub__veil {
    ========================================================================== */
 
 /* A.1 — The bottom-right corner holds two floating controls on a feed page: the
-   compose button and back-to-top. On mobile the §5.5x A.1 stack in globals.css
-   already separates them; that stack stops at 768px, so above it they landed on
-   each other. Lift back-to-top by the compose button's reserved height, and only
-   on the pages that actually render one. */
-@media (min-width: 768px) {
-  .radial-shell:has(.radial-feed__compose) [data-floating='backtotop'] {
-    bottom: calc(1.5rem + var(--rad-compose-lift));
-  }
-}
+   compose button and back-to-top. They now share ONE ROW at every width — the
+   FAB lane in globals.css §5.5x A.1 — with back-to-top stepping left by the
+   measured width of the compose button (`--float-fab-lane`, published by
+   RadialFeed) instead of floating above it. So there is no breakpoint-specific
+   lift left to declare here: the old `bottom: 1.5rem + --rad-compose-lift` rule
+   solved the ≥768px half of a stacking problem that no longer exists. */
 
 /* A.2 — The compose FAB (bottom-right) and the hub orb (bottom-centre) share a
    row. They cannot meet at any real viewport width, but bound it anyway: the FAB

@@ -34,6 +34,18 @@ const VISIBLE = 2.2; // |t| beyond which a card is off the focus band (flat, no 
  */
 const MIN_OPACITY = 0.4;
 
+/** First index whose value is >= `target`, in a sorted array. */
+function lowerBound(values: number[], target: number): number {
+  let lo = 0;
+  let hi = values.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (values[mid] < target) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
 /**
  * The feed as a gently curved column on the **document's own scroll** — no inner
  * scroll container. That is what lets mobile Safari collapse its address/tab bars
@@ -61,6 +73,10 @@ export function RadialWheel({
   const centersRef = useRef<number[]>([]);
   const rafRef = useRef<number | null>(null);
   const focusRef = useRef(-1);
+  /** Per-slot raked/flat flag, so a style is written only when it changes. */
+  const stateRef = useRef<Uint8Array>(new Uint8Array(0));
+  /** The window of slots raked last pass — the only ones that can need resetting. */
+  const bandRef = useRef({ lo: 0, hi: -1 });
 
   // Cache each card's document-absolute centre. Transforms shift getBoundingClientRect,
   // so clear them first, measure the true layout position, then the scroll pass
@@ -76,8 +92,33 @@ export function RadialWheel({
       const r = el.getBoundingClientRect();
       return r.top + scrollY + r.height / 2;
     });
+    // The rake's bookkeeping describes the OLD element list, and the transforms
+    // it was tracking have just been cleared above — so both are reset here or
+    // the next pass would skip a write believing it had already made it.
+    stateRef.current = new Uint8Array(els.length);
+    bandRef.current = { lo: 0, hi: -1 };
   }, []);
 
+  /**
+   * Rake the cards in the focus band onto the cylinder.
+   *
+   * Two rules keep this affordable, and both were learned the expensive way.
+   *
+   * **Only touch cards in the band.** This used to walk every slot in the feed
+   * on every scroll frame, which is a loop that grows as the feed lazy-loads
+   * more pages — and the cards outside the band, which is nearly all of them,
+   * still took three style writes each to be told they are still flat. The
+   * centres are in document order, so the band is a contiguous window: find it,
+   * rake it, and reset only the cards that have just left it (`bandLo/bandHi`
+   * remember the last one).
+   *
+   * **Never write a style that is not changing.** An inline style assignment
+   * invalidates the element's computed style whether or not the value differs,
+   * and `will-change` is the worst of them — it creates and destroys a
+   * compositor layer, and this wrote it on every card on every frame. It now
+   * flips exactly twice per card per pass through the band, and the transform
+   * and opacity strings are compared before they are assigned.
+   */
   const apply = useCallback(() => {
     if (typeof window === 'undefined') return;
     const half = window.innerHeight / 2;
@@ -85,11 +126,41 @@ export function RadialWheel({
     const viewCenter = window.scrollY + half;
     const els = slotsRef.current;
     const centers = centersRef.current;
+    const state = stateRef.current;
+
+    /** Flatten a card that has left the band (or is leaving because of `reduced`). */
+    const flatten = (i: number) => {
+      if (!state[i]) return;
+      state[i] = 0;
+      const el = els[i];
+      el.style.transform = '';
+      el.style.opacity = '';
+      el.style.willChange = 'auto';
+    };
+
+    // The band, as a window into the (document-ordered) centres. `reduced`
+    // collapses it to nothing, which flattens everything and writes no more.
+    const reach = VISIBLE * half;
+    let lo = 0;
+    let hi = -1;
+    if (!reduced) {
+      lo = lowerBound(centers, viewCenter - reach);
+      hi = lowerBound(centers, viewCenter + reach) - 1;
+    }
+
+    // Anything that was raked and is no longer in the window goes flat. Only the
+    // edges can have changed, so this is a handful of indices, not a sweep.
+    for (let i = bandRef.current.lo; i <= bandRef.current.hi; i++) {
+      if (i < lo || i > hi) flatten(i);
+    }
+    bandRef.current = { lo, hi };
+
     let nearest = -1;
     let nearestDist = Infinity;
 
-    for (let i = 0; i < els.length; i++) {
+    for (let i = lo; i <= hi; i++) {
       const el = els[i];
+      if (!el) continue;
       const dy = centers[i] - viewCenter;
       const ad = Math.abs(dy);
       if (ad < nearestDist) {
@@ -98,10 +169,8 @@ export function RadialWheel({
       }
       const t = dy / half;
       const at = Math.abs(t);
-      if (reduced || at > VISIBLE) {
-        el.style.transform = '';
-        el.style.opacity = '1';
-        el.style.willChange = 'auto';
+      if (at > VISIBLE) {
+        flatten(i);
         continue;
       }
       const rot = Math.max(-MAX_TILT, Math.min(MAX_TILT, -t * MAX_TILT));
@@ -112,13 +181,23 @@ export function RadialWheel({
         MIN_OPACITY,
         1 - Math.min(1, Math.max(0, at - FADE_START) / (VISIBLE - FADE_START)) * 0.82,
       );
+      // `will-change` on entry only — a layer that is created and thrown away
+      // every frame is worse than no layer at all.
+      if (!state[i]) {
+        state[i] = 1;
+        el.style.willChange = 'transform';
+      }
       // Per-card perspective() (rather than perspective on a container) keeps the
       // projection self-contained across browsers.
-      el.style.transform = `perspective(1500px) translateZ(${tz.toFixed(1)}px) rotateX(${rot.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
-      el.style.opacity = op.toFixed(3);
-      el.style.willChange = 'transform';
+      const transform = `perspective(1500px) translateZ(${tz.toFixed(1)}px) rotateX(${rot.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+      if (transform !== el.style.transform) el.style.transform = transform;
+      const opacity = op.toFixed(3);
+      if (opacity !== el.style.opacity) el.style.opacity = opacity;
     }
 
+    // The nearest card drives the haptic tick. When the band is empty (reduced
+    // motion, or a scroll position with nothing near the centre) there is no
+    // focus to report, and `-1` is already the "none" value.
     if (nearest !== focusRef.current) {
       const prev = focusRef.current;
       focusRef.current = nearest;
@@ -170,9 +249,13 @@ export function RadialWheel({
     const flatten = () => {
       for (const el of slotsRef.current) {
         el.style.transform = '';
-        el.style.opacity = '1';
+        el.style.opacity = '';
         el.style.willChange = 'auto';
       }
+      // `apply` skips writes it believes it has already made, so the state it
+      // skips against has to say "flat" after this or the restore is a no-op.
+      stateRef.current.fill(0);
+      bandRef.current = { lo: 0, hi: -1 };
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onResize);

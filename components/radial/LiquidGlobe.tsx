@@ -186,9 +186,48 @@ function place(items: NavLeaf[]): GlobeNode[] {
   });
 }
 
-/** Meridians and parallels of the drawn wireframe (degrees). */
+/* ── The wireframe cage ──────────────────────────────────────────────────────
+   Meridians and parallels, in degrees — the same six great circles and seven
+   latitude rings the cage has always been drawn from.
+
+   They are STROKED ONTO A CANVAS rather than rendered as thirteen
+   `border-radius: 50%` elements inside a `preserve-3d` parent, and that is the
+   single biggest thing standing between this gesture and a smooth one. Measured
+   on a 6x-throttled phone profile, interleaved A/B, four repetitions, perfectly
+   consistent: with the element cage present a drag ran at a 33.3ms median
+   frame; with it hidden, 16.7ms — exactly double the frame rate, and nothing
+   else in the scene came close to mattering (the glass disc, the pins, the
+   translucent `color-mix` borders and layer-promoting the rings each made no
+   measurable difference at all).
+
+   The reason is that a rotated 3D transform is the slow path for an antialiased
+   elliptical border: the browser cannot reuse a rasterisation across frames,
+   because every frame projects each ring differently — so it re-rasterises
+   thirteen of them, individually, in a 3D sorting context, at device pixel
+   ratio. A canvas is one element and one raster, and thirteen polylines is
+   nothing to draw.
+
+   The geometry is not an approximation of the old cage, it is the same cage:
+   each ring is sampled around its circle, each sample goes through the exact
+   projection the PINS already use (same rotation order, same `PERSP`), and the
+   result is stroked. Same circles, same perspective, same colours (read from
+   the CSS tokens below), same 1px hairlines. */
 const MERIDIANS = [0, 30, 60, 90, 120, 150];
 const PARALLELS = [-60, -40, -20, 0, 20, 40, 60];
+/**
+ * Samples per ring. A projected circle is a conic section, so a polyline
+ * approximates it — at 72 segments the largest chord error on a 480px globe is
+ * a fraction of the 1px stroke, i.e. invisible, and the whole cage is still
+ * under a thousand line segments a frame.
+ */
+const RING_SAMPLES = 72;
+/**
+ * Device-pixel ceiling for the cage, matching the site's convention for
+ * full-screen canvases (`gameSurfaceDpr`, design-language §12.1 rule 4): fill
+ * rate scales with the SQUARE of the ratio, and a hairline wireframe gains
+ * nothing visible from a 3x buffer that costs 2.25x the pixels of a 2x one.
+ */
+const CAGE_MAX_DPR = 2;
 
 interface LiquidGlobeProps {
   /** Destinations, already filtered for auth/admin by the hub. */
@@ -229,9 +268,37 @@ export function LiquidGlobe({
   const nodes = useMemo(() => place(items), [items]);
 
   const stageRef = useRef<HTMLDivElement | null>(null);
-  const sphereRef = useRef<HTMLDivElement | null>(null);
+  const cageRef = useRef<HTMLCanvasElement | null>(null);
+  const cageCtx = useRef<CanvasRenderingContext2D | null>(null);
+  /**
+   * The cage's stroke colours, resolved once. They are authored in CSS (so every
+   * theme keeps its own ink) and registered with `@property syntax: '<color>'`,
+   * which is what makes the computed value a real colour string a canvas can use
+   * rather than the unresolved `color-mix(…)` token stream.
+   */
+  const cagePaint = useRef({ minor: '', parallel: '', major: '', width: 1 });
   const reticleRef = useRef<HTMLDivElement | null>(null);
   const pinRefs = useRef<Array<HTMLLIElement | null>>([]);
+  /**
+   * The label inside each pin. `--near` is written HERE rather than on the pin
+   * wrapper, and that is a performance decision, not a tidiness one: custom
+   * properties inherit, so setting one on the wrapper invalidates the computed
+   * style of the wrapper AND its whole subtree — the link, the dot, the icon,
+   * the label — twelve times a frame. Written on the leaf that actually reads
+   * it, the invalidation is the leaf. The cascade is unchanged: the `is-locked`
+   * and `:focus-visible` rules set `opacity` directly and still outrank the
+   * `opacity: var(--near)` declaration this feeds.
+   */
+  const labelRefs = useRef<Array<HTMLElement | null>>([]);
+  /**
+   * Last value written per pin, per property. An inline style assignment
+   * invalidates style whether or not the value differs, so the loop compares
+   * first: `pointer-events` and `z-index` then change a few times a gesture
+   * instead of twelve times a frame.
+   */
+  const painted = useRef<
+    Array<{ transform: string; opacity: string; near: string; z: number; hit: boolean }>
+  >([]);
 
   // Everything the frame loop touches lives in refs: a 60Hz React render for a
   // rotation nobody reads in JSX would be the whole cost of this component.
@@ -327,7 +394,53 @@ export function LiquidGlobe({
     // opening bloom, and a rect would report the mid-animation scaled width and
     // wedge every pin at whatever radius that frame happened to have.
     const read = () => {
-      sizeRef.current = el.offsetWidth || 320;
+      const size = el.offsetWidth || 320;
+      sizeRef.current = size;
+
+      // Size the cage's backing store to match. Done HERE and nowhere else:
+      // assigning `canvas.width` reallocates the backing store and clears it, so
+      // a frame loop must never do it (design-language §12.1 rule 4) — this runs
+      // on mount and on a real resize, which is exactly when the size changed.
+      const canvas = cageRef.current;
+      if (canvas) {
+        const dpr = Math.min(window.devicePixelRatio || 1, CAGE_MAX_DPR);
+        const px = Math.round(size * dpr);
+        if (canvas.width !== px) {
+          canvas.width = px;
+          canvas.height = px;
+        }
+        const ctx = canvas.getContext('2d');
+        cageCtx.current = ctx;
+        if (ctx) {
+          // One transform for the whole cage: device pixels out, and the origin
+          // at the middle of the globe, which is where the projection puts 0,0.
+          ctx.setTransform(dpr, 0, 0, dpr, (size * dpr) / 2, (size * dpr) / 2);
+          ctx.lineJoin = 'round';
+        }
+        // Resolved once per size change rather than per frame: reading a computed
+        // style is a style flush, and these only change with the theme (and the
+        // globe is mounted afresh every time the menu opens).
+        const cs = getComputedStyle(canvas);
+        // The `--cage-*` tokens are registered `<color>` (radial.css), so their
+        // COMPUTED value is a real colour a canvas can take. On an engine that
+        // does not implement `@property` the computed value is the literal
+        // `color-mix(…)` text instead, and assigning that to `strokeStyle` is a
+        // no-op — which would leave the cage drawn in the default BLACK. So each
+        // one is checked, and the fallback is mixed here from the same ink at the
+        // same alphas, off the element's own resolved `color`.
+        const ink = cs.color || 'rgb(0 0 0)';
+        const token = (name: string, alpha: number) => {
+          const value = cs.getPropertyValue(name).trim();
+          if (/^(rgb|rgba|#|color\()/i.test(value)) return value;
+          return `color-mix(in srgb, ${ink} ${alpha * 100}%, transparent)`;
+        };
+        cagePaint.current = {
+          minor: token('--cage-minor', 0.2),
+          parallel: token('--cage-parallel', 0.13),
+          major: token('--cage-major', 0.34),
+          width: parseFloat(cs.getPropertyValue('--cage-width')) || 1,
+        };
+      }
       dirty.current = true;
     };
     read();
@@ -369,8 +482,20 @@ export function LiquidGlobe({
     const px = new Float64Array(count);
     const py = new Float64Array(count);
     const pz = new Float64Array(count);
+    /** Pin indices, re-sorted by depth each paint to derive the z-index rank. */
+    const order = new Array<number>(count);
     let lockIdx = -1;
     let snapIdx = -1;
+
+    // What the last paint wrote, per pin. Seeded with values no first frame can
+    // produce, so every property is written once on open and then only on change.
+    painted.current = Array.from({ length: count }, () => ({
+      transform: '',
+      opacity: '',
+      near: '',
+      z: -1,
+      hit: true,
+    }));
 
     /** Screen-space position + depth of every pin, and what the reticle holds. */
     const project = () => {
@@ -406,29 +531,180 @@ export function LiquidGlobe({
       }
     };
 
+    /* ── The cage ─────────────────────────────────────────────────────────
+       Thirteen rings, stroked as polylines through the SAME projection the pins
+       go through, so the wireframe and the pins standing on it can never drift
+       apart (they used to be two independent implementations of one sphere —
+       CSS 3D for the cage, JS for the pins — held in agreement only by both
+       reading `PERSP`).
+
+       Points are generated on the unit sphere exactly as the CSS transforms
+       placed them:
+         • a meridian was a circle in the element's XY plane turned by
+           `rotateY(a)` → (cosθ·cos a, sinθ, −cosθ·sin a)
+         • a parallel was that circle scaled by cos(lat), laid flat by
+           `rotateX(90deg)` and lifted by −sin(lat) → (cos(lat)·cosθ, −sin(lat),
+           cos(lat)·sinθ), which is just the latitude circle
+       then rotated by the globe's yaw and pitch and divided by the same
+       perspective. Both faces of every ring are drawn, as before — the
+       see-through cage IS the globe. */
+    const drawCage = () => {
+      const ctx = cageCtx.current;
+      const canvas = cageRef.current;
+      if (!ctx || !canvas) return;
+      const size = sizeRef.current;
+      const R = size / 2;
+      const r = rot.current;
+      const cy = Math.cos(r.yaw * DEG);
+      const sy = Math.sin(r.yaw * DEG);
+      const cp = Math.cos(r.pitch * DEG);
+      const sp = Math.sin(r.pitch * DEG);
+      const paint = cagePaint.current;
+
+      ctx.clearRect(-R, -R, size, size);
+
+      /**
+       * How wide this ring's hairline is on screen.
+       *
+       * A CSS border is 1px in its ELEMENT's coordinates, so a ring turned away
+       * from the viewer had its stroke foreshortened along with everything else
+       * — which is a real depth cue, and a constant screen-space hairline reads
+       * heavier and flatter than the cage used to. `nz` is the ring plane's
+       * normal after the globe's rotation, so |nz| is 1 face-on and 0 edge-on;
+       * a circle seen at that tilt has its radial (i.e. stroke-width) direction
+       * compressed between |nz| and 1 around its circumference, averaging the
+       * midpoint of the two. The floor keeps an edge-on ring from thinning into
+       * nothing, exactly as the browser kept drawing one.
+       */
+      const widthFor = (nx: number, ny: number, nz: number) => {
+        // Only the depth component of the rotated normal is needed, so the two
+        // screen components are never computed.
+        const z1 = -nx * sy + nz * cy;
+        const face = Math.abs(ny * sp + z1 * cp);
+        return paint.width * Math.max(0.42, (1 + face) / 2);
+      };
+
+      /** Stroke one ring, given a function from angle to a point on the sphere. */
+      const ring = (
+        stroke: string,
+        width: number,
+        at: (theta: number) => [number, number, number],
+      ) => {
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = width;
+        ctx.beginPath();
+        for (let s = 0; s <= RING_SAMPLES; s++) {
+          const theta = (s / RING_SAMPLES) * Math.PI * 2;
+          const [bx, by, bz] = at(theta);
+          const x1 = bx * cy + bz * sy;
+          const z1 = -bx * sy + bz * cy;
+          const y2 = by * cp - z1 * sp;
+          const z2 = by * sp + z1 * cp;
+          const k = kAt(z2);
+          if (s === 0) ctx.moveTo(x1 * R * k, y2 * R * k);
+          else ctx.lineTo(x1 * R * k, y2 * R * k);
+        }
+        ctx.stroke();
+      };
+
+      for (const a of MERIDIANS) {
+        const ca = Math.cos(a * DEG);
+        const sa = Math.sin(a * DEG);
+        // A meridian spans (cos a, 0, −sin a) and (0, 1, 0); its plane normal is
+        // the cross product of the two.
+        ring(a === 0 ? paint.major : paint.minor, widthFor(sa, 0, ca), (theta) => {
+          const ct = Math.cos(theta);
+          return [ct * ca, Math.sin(theta), -ct * sa];
+        });
+      }
+      for (const latitude of PARALLELS) {
+        const cl = Math.cos(latitude * DEG);
+        const yl = -Math.sin(latitude * DEG);
+        // Every parallel lies flat, so they all share the globe's polar axis.
+        ring(latitude === 0 ? paint.major : paint.parallel, widthFor(0, 1, 0), (theta) => [
+          cl * Math.cos(theta),
+          yl,
+          cl * Math.sin(theta),
+        ]);
+      }
+    };
+
+    /* ── The paint ────────────────────────────────────────────────────────
+       Compositor-only properties and nothing else, and — just as important —
+       as few STYLE INVALIDATIONS as the frame actually needs.
+
+       Turning the globe measured ~14ms a frame of `UpdateLayoutTree` (style
+       recalculation) on a 6x-throttled phone profile, against well under 1ms of
+       JavaScript and a trivial paint: the gesture was not drawing too much, it
+       was invalidating too much. Three causes, all in this loop:
+
+         • `--near` was set on the pin WRAPPER. Custom properties inherit, so
+           each write invalidated that pin's whole subtree. It is written on the
+           label that reads it now (see `labelRefs`).
+         • `z-index` was `200 + round(z * 180)` — a value that changes for every
+           pin on every frame of a turn, which re-sorts paint order 12 times a
+           frame to express an ordering that only changes when two pins actually
+           cross in depth. It is the depth RANK now, so it survives most frames
+           untouched.
+         • `pointer-events` and the rest were assigned unconditionally, and an
+           inline assignment invalidates whether or not the value differs.
+           Everything here is compared against what was last written.
+
+       Only `transform` genuinely changes every frame, which is the one write
+       that is free — it never leaves the compositor. */
     const paint = () => {
       const R = sizeRef.current / 2;
-      for (let i = 0; i < count; i++) {
+      // Depth rank, so `z-index` expresses the ORDER rather than the depth.
+      for (let i = 0; i < count; i++) order[i] = i;
+      order.sort((a, b) => pz[a] - pz[b]);
+
+      for (let rank = 0; rank < count; rank++) {
+        const i = order[rank];
         const el = pinRefs.current[i];
         if (!el) continue;
+        const last = painted.current[i];
         const z = pz[i];
         const k = kAt(z);
-        el.style.transform =
+
+        const transform =
           `translate3d(${(px[i] * R * k).toFixed(2)}px, ${(py[i] * R * k).toFixed(2)}px, 0)` +
           ` scale(${k.toFixed(3)})`;
+        if (transform !== last.transform) {
+          last.transform = transform;
+          el.style.transform = transform;
+        }
+
         // The far hemisphere stays faintly visible — it is what tells you there is
         // more globe to turn to — but it never takes a click.
-        el.style.opacity = (0.12 + 0.88 * smoothstep(-0.5, 0.45, z)).toFixed(3);
-        el.style.zIndex = String(200 + Math.round(z * 180));
-        el.style.pointerEvents = z > 0.02 ? 'auto' : 'none';
+        const opacity = (0.12 + 0.88 * smoothstep(-0.5, 0.45, z)).toFixed(3);
+        if (opacity !== last.opacity) {
+          last.opacity = opacity;
+          el.style.opacity = opacity;
+        }
+
+        if (rank !== last.z) {
+          last.z = rank;
+          el.style.zIndex = String(200 + rank);
+        }
+
+        const hit = z > 0.02;
+        if (hit !== last.hit) {
+          last.hit = hit;
+          el.style.pointerEvents = hit ? 'auto' : 'none';
+        }
+
         // Labels resolve only for the handful of pins actually facing you, so a
-        // dozen names never pile up in the middle of the sphere.
-        el.style.setProperty('--near', smoothstep(0.34, 0.78, z).toFixed(3));
+        // dozen names never pile up in the middle of the sphere. Quantised to
+        // two places: the extra precision was invisible and it made the value
+        // differ — and therefore get written — on nearly every frame.
+        const near = smoothstep(0.34, 0.78, z).toFixed(2);
+        if (near !== last.near) {
+          last.near = near;
+          labelRefs.current[i]?.style.setProperty('--near', near);
+        }
       }
-      const r = rot.current;
-      if (sphereRef.current) {
-        sphereRef.current.style.transform = `rotateX(${r.pitch.toFixed(2)}deg) rotateY(${r.yaw.toFixed(2)}deg)`;
-      }
+
+      drawCage();
     };
 
     let raf = 0;
@@ -542,6 +818,13 @@ export function LiquidGlobe({
       if (speed > peakSpeed.current) peakSpeed.current = speed;
 
       if (lockIdx !== lockRef.current) {
+        // The highlight is a class on the pin the loop already owns, not a React
+        // prop — see the `.is-locked` note in radial.css. This is the frame the
+        // lock changes on, which is exactly when it should be written.
+        if (lockRef.current >= 0) {
+          pinRefs.current[lockRef.current]?.classList.remove('is-locked');
+        }
+        if (lockIdx >= 0) pinRefs.current[lockIdx]?.classList.add('is-locked');
         lockRef.current = lockIdx;
         fill.current = 0;
         if (lockIdx >= 0) {
@@ -804,6 +1087,98 @@ export function LiquidGlobe({
   const locked = lock >= 0 ? nodes[lock] : null;
   const lockedLabel = locked ? t(locked.tKey, { defaultValue: locked.label }) : null;
 
+  // Stable per-index ref callbacks. An inline arrow is a NEW function on every
+  // render, which React answers by detaching and re-attaching that ref (null,
+  // then the node) — and this component re-renders on every lock change, i.e.
+  // repeatedly during a gesture. Cached per index, they are attached once.
+  const refSetters = useRef<{
+    pin: Array<(el: HTMLLIElement | null) => void>;
+    label: Array<(el: HTMLElement | null) => void>;
+  }>({ pin: [], label: [] });
+  const setPinRef = useCallback((i: number) => {
+    refSetters.current.pin[i] ??= (el: HTMLLIElement | null) => {
+      pinRefs.current[i] = el;
+    };
+    return refSetters.current.pin[i];
+  }, []);
+  const setLabelRef = useCallback((i: number) => {
+    refSetters.current.label[i] ??= (el: HTMLElement | null) => {
+      labelRefs.current[i] = el;
+    };
+    return refSetters.current.label[i];
+  }, []);
+
+  /**
+   * The pins, built once per destination list.
+   *
+   * Memoised because this component re-renders during a GESTURE: the lock, the
+   * ready flag and the grab state are all React state, and the lock in
+   * particular changes several times per turn. Without this, each of those
+   * re-rendered a dozen `<Link>`s — every one of them re-resolving its router
+   * props — in the middle of the frame budget the drag is trying to hold. None
+   * of what changes is visible in this markup any more (the highlight is a
+   * class the frame loop toggles), so nothing here needs to be rebuilt for it.
+   */
+  const pins = useMemo(
+    () => (
+      <ul
+        className="radial-globe__pins"
+        role="menu"
+        aria-label={t('section-navigation', { defaultValue: 'Browse RMH Studios' })}
+      >
+        {nodes.map((n, i) => {
+          const Icon = n.icon as LucideIcon;
+          const label = t(n.tKey, { defaultValue: n.label });
+          const shared = {
+            className: 'radial-globe__pin',
+            role: 'menuitem' as const,
+            tabIndex,
+            draggable: false,
+            // A pin is an object on a surface, so it rises to meet the finger
+            // rather than sinking. The press layer releases itself as soon as
+            // the pointer travels past its slop, which is exactly right here:
+            // start turning the globe and the pin you happened to touch lets go
+            // instead of staying stuck in a pressed state for the whole drag.
+            'data-fluid-press': 'lift',
+            'aria-label': label,
+            onFocus: () => faceNode(n),
+            onClick: onDismiss,
+          };
+          return (
+            <li
+              key={n.id}
+              role="none"
+              className="radial-globe__pin-wrap"
+              style={{ '--i': i } as CSSProperties}
+              ref={setPinRef(i)}
+            >
+              {n.external ? (
+                <a href={n.href} {...shared}>
+                  <span className="radial-globe__pin-dot">
+                    <Icon aria-hidden />
+                  </span>
+                  <span className="radial-globe__pin-name" ref={setLabelRef(i)}>
+                    {label}
+                  </span>
+                </a>
+              ) : (
+                <Link to={n.href} {...shared}>
+                  <span className="radial-globe__pin-dot">
+                    <Icon aria-hidden />
+                  </span>
+                  <span className="radial-globe__pin-name" ref={setLabelRef(i)}>
+                    {label}
+                  </span>
+                </Link>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    ),
+    [nodes, t, tabIndex, faceNode, onDismiss, setPinRef, setLabelRef],
+  );
+
   return (
     <div
       ref={rootRef}
@@ -825,37 +1200,11 @@ export function LiquidGlobe({
         onPointerDown={onPointerDown}
         onClickCapture={onClickCapture}
       >
-        {/* WIREFRAME — a real CSS 3D sphere: meridians are circles turned about Y,
-            parallels are circles laid flat and lifted along it. One transform on
-            the parent turns the whole cage, so the cage costs one style write a
-            frame no matter how many rings it has. */}
-        <div ref={sphereRef} className="radial-globe__sphere" aria-hidden>
-          {MERIDIANS.map((a) => (
-            <span
-              key={`m${a}`}
-              className={
-                'radial-globe__ring radial-globe__ring--meridian' +
-                (a === 0 ? ' radial-globe__ring--major' : '')
-              }
-              style={{ '--a': `${a}deg` } as CSSProperties}
-            />
-          ))}
-          {PARALLELS.map((latitude) => (
-            <span
-              key={`p${latitude}`}
-              className={
-                'radial-globe__ring radial-globe__ring--parallel' +
-                (latitude === 0 ? ' radial-globe__ring--major' : '')
-              }
-              style={
-                {
-                  '--ty': `${(-Math.sin(latitude * DEG) * 50).toFixed(3)}%`,
-                  '--s': Math.cos(latitude * DEG).toFixed(4),
-                } as CSSProperties
-              }
-            />
-          ))}
-        </div>
+        {/* WIREFRAME — the meridians and parallels, stroked onto one canvas.
+            It used to be thirteen `border-radius: 50%` elements inside a
+            `preserve-3d` parent; see the note above MERIDIANS for the measured
+            reason it is not any more. The geometry is unchanged. */}
+        <canvas ref={cageRef} className="radial-globe__cage" aria-hidden />
 
         {/* The glass body itself: a flat disc of shading over the cage, so the
             wireframe reads as structure suspended INSIDE a liquid ball rather
@@ -864,60 +1213,7 @@ export function LiquidGlobe({
 
         {/* PINS — projected here rather than placed in the 3D cage, so their type
             stays flat, crisp and billboarded instead of skewing with the sphere. */}
-        <ul
-          className="radial-globe__pins"
-          role="menu"
-          aria-label={t('section-navigation', { defaultValue: 'Browse RMH Studios' })}
-        >
-          {nodes.map((n, i) => {
-            const Icon = n.icon as LucideIcon;
-            const label = t(n.tKey, { defaultValue: n.label });
-            const isLocked = lock === i;
-            const cls = 'radial-globe__pin' + (isLocked ? ' is-locked' : '');
-            const shared = {
-              className: cls,
-              role: 'menuitem' as const,
-              tabIndex,
-              draggable: false,
-              // A pin is an object on a surface, so it rises to meet the finger
-              // rather than sinking. The press layer releases itself as soon as
-              // the pointer travels past its slop, which is exactly right here:
-              // start turning the globe and the pin you happened to touch lets go
-              // instead of staying stuck in a pressed state for the whole drag.
-              'data-fluid-press': 'lift',
-              'aria-label': label,
-              onFocus: () => faceNode(n),
-              onClick: onDismiss,
-            };
-            return (
-              <li
-                key={n.id}
-                role="none"
-                className="radial-globe__pin-wrap"
-                style={{ '--i': i } as CSSProperties}
-                ref={(el) => {
-                  pinRefs.current[i] = el;
-                }}
-              >
-                {n.external ? (
-                  <a href={n.href} {...shared}>
-                    <span className="radial-globe__pin-dot">
-                      <Icon aria-hidden />
-                    </span>
-                    <span className="radial-globe__pin-name">{label}</span>
-                  </a>
-                ) : (
-                  <Link to={n.href} {...shared}>
-                    <span className="radial-globe__pin-dot">
-                      <Icon aria-hidden />
-                    </span>
-                    <span className="radial-globe__pin-name">{label}</span>
-                  </Link>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+        {pins}
 
         {/* RETICLE — the target, and the dwell ring that fills inside it. */}
         <div ref={reticleRef} className="radial-globe__reticle" aria-hidden>

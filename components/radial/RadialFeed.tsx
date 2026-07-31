@@ -172,6 +172,34 @@ export function RadialFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed>
   const { t } = useTranslation('feed');
   const [composeOpen, setComposeOpen] = useState(false);
   const openCompose = useCallback(() => setComposeOpen(true), []);
+  const composeRef = useRef<HTMLButtonElement | null>(null);
+
+  // Publish the compose button's footprint so back-to-top can sit on the row
+  // BESIDE it rather than floating above it (globals.css §5.5x A.1,
+  // `.floating-fab-lane`). CSS cannot derive this number: the FAB is icon-only
+  // below 560px, gains a label above it, and that label is translated — so the
+  // width depends on the active locale. Measured instead, on the element that
+  // knows: one ResizeObserver, which fires on breakpoint and locale changes and
+  // at no other time. Cleared on unmount, so every page without a compose FAB
+  // falls back to the `0px` default and back-to-top keeps the right edge.
+  useEffect(() => {
+    const el = composeRef.current;
+    const root = document.documentElement;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const publish = () => {
+      root.style.setProperty(
+        '--float-fab-lane',
+        `calc(${el.offsetWidth}px + var(--site-fab-row-gap))`,
+      );
+    };
+    publish();
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.style.removeProperty('--float-fab-lane');
+    };
+  }, []);
 
   return (
     <section className="radial-feed" aria-label={t('feed', { defaultValue: 'Feed' })}>
@@ -192,6 +220,7 @@ export function RadialFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed>
       </div>
 
       <button
+        ref={composeRef}
         type="button"
         className="radial-feed__compose"
         onClick={openCompose}
