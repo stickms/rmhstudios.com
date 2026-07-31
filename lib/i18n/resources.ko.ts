@@ -5,8 +5,11 @@ import koAdmin from "@/locales/ko/admin.json";
 import koBuilds from "@/locales/ko/builds.json";
 import koCAdmin from "@/locales/ko/c-admin.json";
 import koCAltair from "@/locales/ko/c-altair.json";
+import koCAwards from "@/locales/ko/c-awards.json";
 import koCBlog from "@/locales/ko/c-blog.json";
 import koCBuilds from "@/locales/ko/c-builds.json";
+import koCCircle from "@/locales/ko/c-circle.json";
+import koCCreator from "@/locales/ko/c-creator.json";
 import koCCursedLogic from "@/locales/ko/c-cursed-logic.json";
 import koCDailyPuzzles from "@/locales/ko/c-daily-puzzles.json";
 import koCDoctrine from "@/locales/ko/c-doctrine.json";
@@ -14,19 +17,25 @@ import koCDreamRift from "@/locales/ko/c-dream-rift.json";
 import koCEconomy from "@/locales/ko/c-economy.json";
 import koCForestExplorer from "@/locales/ko/c-forest-explorer.json";
 import koCGame from "@/locales/ko/c-game.json";
+import koCHistory from "@/locales/ko/c-history.json";
 import koCHouseAlwaysWins from "@/locales/ko/c-house-always-wins.json";
 import koCKowloonKnockout from "@/locales/ko/c-kowloon-knockout.json";
 import koCLaundrySort from "@/locales/ko/c-laundry-sort.json";
+import koCLayout from "@/locales/ko/c-layout.json";
 import koCLibrary from "@/locales/ko/c-library.json";
 import koCLightsOut from "@/locales/ko/c-lights-out.json";
+import koCLists from "@/locales/ko/c-lists.json";
 import koCLockdown from "@/locales/ko/c-lockdown.json";
 import koCModeration from "@/locales/ko/c-moderation.json";
 import koCNeonDriftway from "@/locales/ko/c-neon-driftway.json";
 import koCNews from "@/locales/ko/c-news.json";
+import koCPredictions from "@/locales/ko/c-predictions.json";
+import koCProfileModules from "@/locales/ko/c-profile-modules.json";
 import koCRideshare from "@/locales/ko/c-rideshare.json";
 import koCRmhCapital from "@/locales/ko/c-rmh-capital.json";
 import koCRmhPmc from "@/locales/ko/c-rmh-pmc.json";
 import koCRmhbox from "@/locales/ko/c-rmhbox.json";
+import koCRmhcalculator from "@/locales/ko/c-rmhcalculator.json";
 import koCRmhcode from "@/locales/ko/c-rmhcode.json";
 import koCRmhcoins from "@/locales/ko/c-rmhcoins.json";
 import koCRmhmusic from "@/locales/ko/c-rmhmusic.json";
@@ -36,17 +45,23 @@ import koCRmhtube from "@/locales/ko/c-rmhtube.json";
 import koCRmhtype from "@/locales/ko/c-rmhtype.json";
 import koCRmhvibe from "@/locales/ko/c-rmhvibe.json";
 import koCRoadmap from "@/locales/ko/c-roadmap.json";
+import koCSaves from "@/locales/ko/c-saves.json";
 import koCSignalForge from "@/locales/ko/c-signal-forge.json";
+import koCStatus from "@/locales/ko/c-status.json";
 import koCStudio from "@/locales/ko/c-studio.json";
 import koCSynapseStorm from "@/locales/ko/c-synapse-storm.json";
 import koCTempleOfJoy from "@/locales/ko/c-temple-of-joy.json";
+import koCTournaments from "@/locales/ko/c-tournaments.json";
 import koCUi from "@/locales/ko/c-ui.json";
 import koCUserBuilds from "@/locales/ko/c-user-builds.json";
 import koCVega from "@/locales/ko/c-vega.json";
 import koCVersecraft from "@/locales/ko/c-versecraft.json";
 import koCVoidBreaker from "@/locales/ko/c-void-breaker.json";
+import koCWager from "@/locales/ko/c-wager.json";
+import koCWishlist from "@/locales/ko/c-wishlist.json";
 import koCommon from "@/locales/ko/common.json";
 import koFeed from "@/locales/ko/feed.json";
+import koGamesHub from "@/locales/ko/games-hub.json";
 import koGroups from "@/locales/ko/groups.json";
 import koLibrary from "@/locales/ko/library.json";
 import koNav from "@/locales/ko/nav.json";
@@ -61,8 +76,13 @@ import koRSliceIt from "@/locales/ko/r-slice-it.json";
 import koRStrategies from "@/locales/ko/r-strategies.json";
 import koRStudio from "@/locales/ko/r-studio.json";
 import koRideshare from "@/locales/ko/rideshare.json";
+import koSearch from "@/locales/ko/search.json";
+import koSettingsAppearance from "@/locales/ko/settings-appearance.json";
+import koSettingsContent from "@/locales/ko/settings-content.json";
+import koSettingsNotifications from "@/locales/ko/settings-notifications.json";
 import koShared from "@/locales/ko/shared.json";
 import koSite from "@/locales/ko/site.json";
+import koThemeStudio from "@/locales/ko/theme-studio.json";
 import koUserBuilds from "@/locales/ko/user-builds.json";
 import koV from "@/locales/ko/v.json";
 
@@ -71,8 +91,11 @@ const koResources = {
   "builds": koBuilds,
   "c-admin": koCAdmin,
   "c-altair": koCAltair,
+  "c-awards": koCAwards,
   "c-blog": koCBlog,
   "c-builds": koCBuilds,
+  "c-circle": koCCircle,
+  "c-creator": koCCreator,
   "c-cursed-logic": koCCursedLogic,
   "c-daily-puzzles": koCDailyPuzzles,
   "c-doctrine": koCDoctrine,
@@ -80,19 +103,25 @@ const koResources = {
   "c-economy": koCEconomy,
   "c-forest-explorer": koCForestExplorer,
   "c-game": koCGame,
+  "c-history": koCHistory,
   "c-house-always-wins": koCHouseAlwaysWins,
   "c-kowloon-knockout": koCKowloonKnockout,
   "c-laundry-sort": koCLaundrySort,
+  "c-layout": koCLayout,
   "c-library": koCLibrary,
   "c-lights-out": koCLightsOut,
+  "c-lists": koCLists,
   "c-lockdown": koCLockdown,
   "c-moderation": koCModeration,
   "c-neon-driftway": koCNeonDriftway,
   "c-news": koCNews,
+  "c-predictions": koCPredictions,
+  "c-profile-modules": koCProfileModules,
   "c-rideshare": koCRideshare,
   "c-rmh-capital": koCRmhCapital,
   "c-rmh-pmc": koCRmhPmc,
   "c-rmhbox": koCRmhbox,
+  "c-rmhcalculator": koCRmhcalculator,
   "c-rmhcode": koCRmhcode,
   "c-rmhcoins": koCRmhcoins,
   "c-rmhmusic": koCRmhmusic,
@@ -102,17 +131,23 @@ const koResources = {
   "c-rmhtype": koCRmhtype,
   "c-rmhvibe": koCRmhvibe,
   "c-roadmap": koCRoadmap,
+  "c-saves": koCSaves,
   "c-signal-forge": koCSignalForge,
+  "c-status": koCStatus,
   "c-studio": koCStudio,
   "c-synapse-storm": koCSynapseStorm,
   "c-temple-of-joy": koCTempleOfJoy,
+  "c-tournaments": koCTournaments,
   "c-ui": koCUi,
   "c-user-builds": koCUserBuilds,
   "c-vega": koCVega,
   "c-versecraft": koCVersecraft,
   "c-void-breaker": koCVoidBreaker,
+  "c-wager": koCWager,
+  "c-wishlist": koCWishlist,
   "common": koCommon,
   "feed": koFeed,
+  "games-hub": koGamesHub,
   "groups": koGroups,
   "library": koLibrary,
   "nav": koNav,
@@ -127,8 +162,13 @@ const koResources = {
   "r-strategies": koRStrategies,
   "r-studio": koRStudio,
   "rideshare": koRideshare,
+  "search": koSearch,
+  "settings-appearance": koSettingsAppearance,
+  "settings-content": koSettingsContent,
+  "settings-notifications": koSettingsNotifications,
   "shared": koShared,
   "site": koSite,
+  "theme-studio": koThemeStudio,
   "user-builds": koUserBuilds,
   "v": koV,
 } as const;

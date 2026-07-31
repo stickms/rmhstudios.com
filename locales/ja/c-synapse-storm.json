@@ -53,6 +53,7 @@
   "music": "音楽",
   "neural-collapse": "ニューラルコラプス",
   "neural-lobby": "ニューラルロビー",
+  "neural-operatives_one": "ニューラル・オペラティブ ({{count}}/{{max}})",
   "neural-operatives_other": "ニューラルオペレーティブ ({{count}}/{{max}})",
   "no-scores-yet": "まだスコアがありません。最初に挑戦しよう！",
   "not-ranked": "まだランクインしていません。プレイしてみよう！",
