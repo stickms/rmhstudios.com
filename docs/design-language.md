@@ -13,8 +13,9 @@ architecture. Two ideas, one language:
   centre. The home feed is a vertically-scrolling **wheel** of cards (on the
   document's own scroll) that rake onto a shallow cylinder as they cross the
   focus line, led by an inline compose box; navigation lives in a fixed **RMH
-  hub** that, when tapped, first **glides the orb to the middle of the screen**
-  and then **blooms a pie/wedge dial** the orb radiates from. A soft parallax
+  hub** that, when tapped, sends the orb to the middle of the screen and swells
+  it into a **liquid globe** — the destinations pinned to a glass sphere you
+  turn, hold and let go of to travel. A soft parallax
   **ring backdrop** and a drifting blob field keep the whole surface feeling
   liquid and continuous. Mobile-first, with a strict **high-contrast
   monochrome** palette.
@@ -24,8 +25,8 @@ architecture. Two ideas, one language:
   lens-model edge refraction (with an optional chromatic **prism** on one
   flagship surface), a depth-parallaxing aurora canvas, a pointer-tracked
   diffuse light, and travelling liquid sheens — deployed for signature radial
-  moments (the menu is an **expanding circular blur** growing from the centre,
-  not a drawn disc; the wedges are translucent frosted sectors over it). It is
+  moments (the menu is an **expanding circular veil** growing from the centre,
+  not a drawn disc, with a glass sphere suspended in it). It is
   expressed as an **elevation system of explicit CSS classes** (`.glass-fill` /
   `.glass-pane` / `.glass-chrome` / `.glass-overlay` / `.glass-inset`, plus the
   modifiers in §5.1) placed _on_ components.
@@ -436,15 +437,25 @@ it with content, not stretching one reading column across a 34-inch display. See
 [`components/radial/README.md`](../components/radial/README.md) for the width
 table and the overlap-bound rules.
 
-The hub is a phase state machine: tapping the fixed orb **glides it to the
-centre of the screen** (`centering`), then opens the menu (`open`) as an
-**expanding circular blur** grows from the centre and translucent sectors bloom
-around the orb — no drawn colour disc. The dial is **double-decked**: two
-concentric rings of annulus sectors around a hole the orb settles into, because
-sixteen destinations on a single ring gave slivers too narrow to label or hit.
-Closing reverses it (the blur contracts, then the orb glides home). The hub
-remains the navigator on mobile and the fast full-screen switcher on desktop,
-where the nav rail shows the same map without a click.
+The hub is a phase state machine: tapping the fixed orb sends it to the **centre
+of the screen**, where it swells and dissolves into the **liquid globe**
+([`LiquidGlobe`](../components/radial/LiquidGlobe.tsx)) while an expanding
+circular **veil** sinks the page behind it. The globe is the navigation: every
+destination is a pin on a glass sphere, and you **turn it** to find where you
+want to go — drag to spin, let it coast, and the nearest destination is eased
+into the reticle at the front. **Hold** it there and the reticle's ring fills;
+**let go once it is full** and you land on that page. Let go early, or turn away,
+and the ring drains. Closing reverses the whole motion (the globe collapses, the
+veil contracts, the orb re-condenses and glides home). The hub remains the
+navigator on mobile and the fast full-screen switcher on desktop, where the nav
+rail shows the same map without a gesture.
+
+One hard constraint comes with it: **the globe animates continuously above the
+overlay**, so the overlay is a painted veil rather than a `backdrop-filter`.
+Chromium re-blurs a viewport-covering backdrop-filter *in full* whenever anything
+above it moves — measured in this exact stack at ~10fps. The frosted material
+still ships on the hub's small, stationary foot capsule. See
+[`components/radial/README.md`](../components/radial/README.md) for the numbers.
 
 **Every top-bar control previews before it navigates.** Search drops a live
 result list, the bell the latest notifications, the inbox recent threads, the
@@ -502,9 +513,10 @@ gated off there too, via `html.app-route`).
 - **Radial motion (the shipped layer).** The radial UI is CSS/rAF-driven and
   framer-motion-free for the shell: the feed **wheel** rakes each card onto a
   shallow cylinder on a rAF window-scroll pass with cached offsets (no layout
-  thrash — `RadialWheel`), the **hub** glides the orb to centre then blooms the
-  wedges under an expanding `clip-path` **circular blur** (CSS-only phase
-  machine), the **ring backdrop** parallaxes to the pointer, and page headers/heroes rise
+  thrash — `RadialWheel`), the **hub** glides the orb to centre and blooms the
+  **liquid globe** under an expanding `clip-path` **circular veil** (CSS phase
+  machine + one mount-bounded rAF loop for the sphere's spin and dwell), the
+  **ring backdrop** parallaxes to the pointer, and page headers/heroes rise
   in on mount (`radial-page-rise`). All of it is `transform`/`opacity` only and gated off
   under reduced motion; optional scroll **haptics** (`navigator.vibrate`) tick
   as cards cross the focus line.

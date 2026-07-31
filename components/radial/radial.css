@@ -832,11 +832,13 @@ html.perf-lite .radial-backdrop__blob {
   box-shadow:
     0 10px 30px -8px rgba(0, 0, 0, 0.5),
     0 2px 8px rgba(0, 0, 0, 0.25);
-  will-change: transform;
-  /* 0.5s matches the blur / dial / wedge motion so the whole thing rises and
-     falls as ONE synchronous animation. */
+  opacity: 1;
+  will-change: transform, opacity;
+  /* 0.5s matches the veil / globe motion so the whole thing rises and falls as
+     ONE synchronous animation. */
   transition:
     transform 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
+    opacity 0.34s ease,
     box-shadow 0.28s ease;
 }
 /* Legibility scrim under the docked orb. The orb is fixed bottom-centre over
@@ -884,12 +886,21 @@ html.perf-lite .radial-backdrop__blob {
 .radial-hub[data-phase='closing'] .radial-hub__orb {
   z-index: var(--z-hub-orb-open);
 }
-/* Centre only while OPEN — it becomes the hub the wedges radiate from. On
-   'closing' the base (docked) transform takes over, so the orb glides home in
-   sync with the blur contracting. translateY = (bottom + half orb) − half
-   viewport → dead-centre. */
+/* Centre only while OPEN — and then it BECOMES the globe: it glides to the middle
+   of the screen while swelling past the globe's own opening scale and dissolving,
+   so the orb reads as the thing that expanded into the sphere rather than as a
+   disc that got covered by one. On 'closing' the base (docked) transform takes
+   over, so it re-condenses and glides home in sync with the veil contracting.
+   translateY = (bottom + half orb) − half viewport → dead-centre.
+
+   It also stops taking clicks and leaves the tab order (RadialHub sets its
+   tabindex), because for the whole of `open` it is an invisible disc sitting
+   exactly on top of the reticle. Escape, the foot's X and an outside tap are the
+   ways out, and a dismissal hands focus back here. */
 .radial-hub[data-phase='open'] .radial-hub__orb {
-  transform: translate(-50%, calc(var(--orb-bottom) + 50% - 50dvh));
+  transform: translate(-50%, calc(var(--orb-bottom) + 50% - 50dvh)) scale(2.6);
+  opacity: 0;
+  pointer-events: none;
 }
 .radial-hub__orb:focus-visible {
   outline: 3px solid var(--site-text);
@@ -950,8 +961,9 @@ html.perf-lite .radial-backdrop__blob {
 /* ── Radial navigation overlay ────────────────────────────────────────── */
 /* Driven by the phase on `.radial-hub`: hidden when `closed`; `open`/`closing`
    keep it mounted so every layer can animate IN and OUT. There is NO drawn
-   colour disc — an expanding CIRCULAR BLUR grows from the centre and the wedges
-   bloom over it, all in sync with the orb gliding to the middle. */
+   colour disc — an expanding CIRCULAR VEIL grows from the centre and the liquid
+   globe blooms over it, all in sync with the orb gliding to the middle and
+   swelling into the sphere. */
 .radial-hub__overlay {
   position: fixed;
   inset: 0;
@@ -967,7 +979,7 @@ html.perf-lite .radial-backdrop__blob {
   pointer-events: auto;
 }
 /* Transparent full-screen click-catcher (closes on an outside tap); sits below
-   the blur + wedges so only empty regions dismiss the menu. */
+   the veil + globe so only empty regions dismiss the menu. */
 .radial-hub__scrim {
   position: absolute;
   inset: 0;
@@ -993,17 +1005,38 @@ html.perf-lite .radial-backdrop__blob {
 .radial-hub[data-phase='closing'] .radial-hub__overlay {
   touch-action: none;
 }
-/* The expanding circular blur — the menu's "surface". A frosted disc grows from
-   the centre (where the orb now sits) out to the viewport corners; only a
-   whisper of tint, so it reads as BLUR, not a coloured circle. */
-.radial-hub__blur {
+/* The expanding circular VEIL — the menu's "surface". A disc grows from the
+   centre (where the orb now sits) out to the viewport corners, sinking the page
+   behind it as it goes.
+
+   It is NOT a `backdrop-filter`, and must not become one again. It used to be
+   (`.radial-hub__blur`, `blur(20px) saturate(118%)`), which was affordable only
+   because nothing ever moved above it. The liquid globe moves above it
+   continuously, and Chromium invalidates a backdrop-filter as a WHOLE ELEMENT
+   rather than per damaged rect — so a viewport-covering blur under an animating
+   element re-blurs the entire viewport every frame. Measured in this exact stack
+   at 1920x1080, vsync on: 60fps with nothing moving above the blurred layer,
+   ~10.7fps with a single 24px dot wiggling above it, and 60fps again with the
+   backdrop-filter removed. Radius barely mattered (blur(6px) still measured
+   11.9fps); only the blurred layer's AREA did. See components/radial/README.md.
+
+   A painted veil gets the same "the page sinks away" read for free, and the
+   frosted-glass material still ships on the foot capsule, which is small and
+   sits still. */
+.radial-hub__veil {
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background: color-mix(in srgb, var(--site-bg) 20%, transparent);
-  -webkit-backdrop-filter: blur(20px) saturate(118%);
-  backdrop-filter: blur(20px) saturate(118%);
+  /* Denser toward the rim than the middle, so the globe sits in a pool of light
+     rather than on a flat plate. Every stop is the theme's own ground. */
+  background: radial-gradient(
+    circle farthest-corner at 50% 50%,
+    color-mix(in srgb, var(--site-bg) 70%, transparent) 0%,
+    color-mix(in srgb, var(--site-bg) 86%, transparent) 42%,
+    color-mix(in srgb, var(--site-bg) 95%, transparent) 76%,
+    color-mix(in srgb, var(--site-bg) 99%, transparent) 100%
+  );
   /* The disc only ever has to reach the farthest CORNER — half the viewport
      diagonal, which at any aspect ratio is at most 0.708vmax*100. This used to
      open to 150vmax, better than twice what it needs, and that overshoot is free
@@ -1013,7 +1046,7 @@ html.perf-lite .radial-backdrop__blob {
      the shrink then plays out in its slow tail. The orb was home while a blurred
      blob was still dissolving in the middle of the screen. Sized to the corner,
      every frame of the transition is a frame that reads. */
-  --blur-r: 72vmax;
+  --veil-r: 72vmax;
   clip-path: circle(0 at 50% 50%);
   opacity: 0;
   /* CLOSING — the base state is what a closing hub transitions back to. The
@@ -1024,307 +1057,443 @@ html.perf-lite .radial-backdrop__blob {
     clip-path 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
     opacity 0.3s ease-in;
 }
-.radial-hub[data-phase='open'] .radial-hub__blur {
-  clip-path: circle(var(--blur-r) at 50% 50%);
+.radial-hub[data-phase='open'] .radial-hub__veil {
+  clip-path: circle(var(--veil-r) at 50% 50%);
   opacity: 1;
-  /* OPENING — the frost is at full strength from the first frame, so only the
+  /* OPENING — the veil is at full strength from the first frame, so only the
      circle animates and the reveal stays a wipe rather than a cross-fade. */
   transition:
     clip-path 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
     opacity 0.12s ease;
 }
-/* ── Wedge (ring) navigation dial ──────────────────────────────────────── */
-/* The dial is also the DIVIDER BED: the sectors tile it with thin angular gaps,
-   so this background is what shows through them as the hairlines between
-   wedges, and it stops the disc dissolving into a light page.
+/* ── The liquid globe navigator ────────────────────────────────────────────
+   The navigator itself: a glass sphere with one pin per destination, which you
+   TURN to find where you want to go. Bring a place into the reticle at the front
+   of the sphere, hold, and the reticle's ring fills; let go once it is full and
+   you land there. Geometry, projection and the dwell gesture live in
+   `LiquidGlobe.tsx` — everything DRAWN is here.
 
-   It is a light plate, NOT `--site-border-bright` (which is pure black in the
-   default theme). That was fine while the sectors only scaled — they covered the
-   bed at every frame — but they now SPIN in from opposite angles, which uncovers
-   large wedges of bed mid-animation and made the whole dial flash black on open.
-   The level borders below draw the structure that the black bed used to imply,
-   so the plate only has to be a shade darker than the sectors that sit on it. */
-.radial-hub__dial {
+   Three layers, in paint order:
+     __sphere  a real CSS 3D wireframe cage. Meridians are circles turned about Y;
+               parallels are the same circle laid flat and lifted along it. ONE
+               transform on the parent turns the whole cage, so the cage costs one
+               style write a frame however many rings it carries.
+     __glass   a flat disc of shading over the cage, so the wireframe reads as
+               structure suspended INSIDE a liquid ball rather than a drawing on
+               top of one. It is flat on purpose: a sphere's silhouette does not
+               change as it spins, so nothing here needs to be in the 3D cage.
+     __pins    the destinations, projected in JS and billboarded — flat, crisp
+               type that never skews with the sphere, and real links, so click,
+               Enter and a screen reader all work without the gesture.
+
+   NOTHING here may take a `backdrop-filter`, and nothing beneath it may either:
+   this layer animates continuously, and a viewport-covering backdrop-filter under
+   an animating element re-blurs in full every frame. The measurements are in the
+   note above `.radial-hub__veil`. */
+.radial-globe {
   position: relative;
   z-index: 2;
-  width: var(--dial);
-  height: var(--dial);
-  --dial: min(86vw, 70vh, 460px);
-  /* The hole the ring sectors are cut around. Supplied inline by RadialHub from
-     the innermost band's own radius, so it cannot drift from the geometry; the
-     fallback here is only for a dial rendered without it. It is a fraction of
-     the dial's RADIUS (`closest-side` makes the gradient radius exactly half the
-     square's width), which is why the component doubles the value. The orb
-     glides into this hole, so it must stay wider than --site-hub-orb-size / 2. */
-  --dial-hole: 38%;
-  /* The drawn boundary between levels. Firm enough to read as structure at a
-     glance — this is the line that tells you the dial has two decks. */
-  --dial-level-w: 2px;
-  --dial-level-c: color-mix(in srgb, var(--site-text) 55%, transparent);
+  display: grid;
+  justify-items: center;
+  gap: clamp(0.6rem, 2.5vw, 1rem);
+  /* The stage is square. Its size is the one number the rest of the globe is
+     drawn against; `--globe-persp` and `--reticle-d` are supplied INLINE by
+     LiquidGlobe from the same constants its projection and hit test use, so the
+     circle you aim at is exactly the circle that locks, and the pins stay glued
+     to the wireframe they are supposed to be standing on. */
+  --globe-size: min(86vw, 48dvh, 30rem);
+  /* Clears the foot capsule, which is absolutely positioned at the overlay's
+     bottom edge. The overlay centres this element's MARGIN box, so the globe
+     rides up by half of this rather than being pushed off the top — enough to
+     keep the readout clear of the capsule on a 320px-tall-ish phone, and not so
+     much that the sphere ends up stranded in the top third of the screen. */
+  margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 3rem);
+  /* Focus lands here when the menu opens (see RadialHub) — programmatic focus on
+     a container should not draw a ring around the whole globe. */
+  outline: none;
+}
+/* Blooms out of the orb and collapses back into it. KEYFRAMES, not a transition:
+   the globe is mounted only while the menu is up, and an element that is created
+   already in its open state has no previous style to transition FROM. */
+.radial-hub[data-phase='open'] .radial-globe {
+  animation: globe-in 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)) both;
+}
+.radial-hub[data-phase='closing'] .radial-globe {
+  animation: globe-out 0.42s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)) both;
+}
+@keyframes globe-in {
+  from {
+    opacity: 0;
+    transform: scale(0.24);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes globe-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.24);
+  }
+}
+
+.radial-globe__stage {
+  position: relative;
+  width: var(--globe-size);
+  height: var(--globe-size);
+  /* The globe owns every gesture inside it: the browser must not pan, scroll,
+     select or long-press-select while the sphere is being turned. */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: grab;
+  perspective: calc(var(--globe-size) * var(--globe-persp, 3.1));
+  perspective-origin: 50% 50%;
+}
+.radial-globe__stage[data-grabbing='true'] {
+  cursor: grabbing;
+}
+
+/* ── The wireframe cage ──────────────────────────────────────────────────── */
+.radial-globe__sphere {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  /* Written every frame by LiquidGlobe as `rotateX(pitch) rotateY(yaw)` — the
+     same order, and the same two angles, its projection applies to the pins. */
+  transform: rotateX(0deg) rotateY(0deg);
+  will-change: transform;
+  pointer-events: none;
+}
+.radial-globe__ring {
+  position: absolute;
+  inset: 0;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--site-surface-opaque) 86%, var(--site-text) 14%);
-  /* Carve the centre out of the divider bed, so the double-decked dial reads as
-     two rings around the orb instead of a bullseye with a solid grey core. The
-     mask applies to the sectors too, but they are already annuli — no change. */
-  -webkit-mask: radial-gradient(
-    circle closest-side at 50% 50%,
-    transparent 0 var(--dial-hole),
-    #000 var(--dial-hole)
-  );
-  mask: radial-gradient(
-    circle closest-side at 50% 50%,
-    transparent 0 var(--dial-hole),
-    #000 var(--dial-hole)
-  );
+  border: var(--site-border-width, 1px) solid color-mix(in srgb, var(--site-text) 20%, transparent);
+  /* Both faces of every ring are meant to be seen — the see-through cage IS the
+     globe, and it is what tells you there is more sphere behind the one you are
+     looking at. */
+  backface-visibility: visible;
+}
+.radial-globe__ring--meridian {
+  transform: rotateY(var(--a));
+}
+/* A parallel is that same circle laid flat and lifted along the globe's own Y.
+   `--ty` is a percentage of the ring's own box, and the box is `inset: 0` on a
+   square stage — so 1% is 1% of the globe's width, and the cage needs no
+   measuring to stay in proportion at any viewport. */
+.radial-globe__ring--parallel {
+  transform: translateY(var(--ty)) rotateX(90deg) scale(var(--s));
+  border-color: color-mix(in srgb, var(--site-text) 13%, transparent);
+}
+/* The equator and the prime meridian are the globe's horizon: drawn firmer, so
+   there is always something to read the current tilt and spin against. */
+.radial-globe__ring--major {
+  border-color: color-mix(in srgb, var(--site-text) 34%, transparent);
+}
+
+/* ── The glass body ──────────────────────────────────────────────────────── */
+.radial-globe__glass {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  /* Liquid Glass, held still: a specular bloom up-left, a thickening toward the
+     limb where a sphere's glass is deepest, and a bright rim where it turns away.
+     Every stop is mixed from the theme's own ink, so it resolves on a light theme
+     and a dark one without a second set of values. */
+  background:
+    radial-gradient(
+      68% 68% at 30% 26%,
+      color-mix(in srgb, var(--site-text) 9%, transparent) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      circle closest-side at 50% 50%,
+      transparent 52%,
+      color-mix(in srgb, var(--site-text) 8%, transparent) 88%,
+      color-mix(in srgb, var(--site-text) 17%, transparent) 100%
+    );
   box-shadow:
-    0 0 0 1px var(--site-border),
-    0 24px 70px -24px rgba(0, 0, 0, 0.45);
-  /* Blooms in / collapses out via TRANSITION (not a one-shot keyframe), so it
-     animates both ways and stays in sync with the blur + orb. */
-  opacity: 0;
-  transform: scale(0.82);
-  transition:
-    opacity 0.4s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
-    transform 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+    inset 0 0 0 var(--site-border-width, 1px) var(--site-border),
+    inset 0 -14% 26% -18% color-mix(in srgb, var(--site-text) 16%, transparent),
+    0 30px 70px -34px rgba(0, 0, 0, 0.5);
 }
-.radial-hub[data-phase='open'] .radial-hub__dial {
-  opacity: 1;
-  transform: scale(1);
+/* The travelling highlight — the one part of the material that moves by itself.
+   Transform-only on a small element, so it composites; there is deliberately no
+   filter on it, and nothing below it to re-blur. */
+.radial-globe__glass::after {
+  content: '';
+  position: absolute;
+  left: 12%;
+  top: 8%;
+  width: 44%;
+  height: 30%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--site-text) 12%, transparent),
+    transparent
+  );
 }
-.radial-hub__wedges {
+@media (prefers-reduced-motion: no-preference) {
+  .radial-globe__glass::after {
+    animation: globe-sheen 11s ease-in-out infinite alternate;
+  }
+}
+@keyframes globe-sheen {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(22%, 16%, 0) scale(1.18);
+  }
+}
+
+/* ── Pins ────────────────────────────────────────────────────────────────── */
+.radial-globe__pins {
   position: absolute;
   inset: 0;
   list-style: none;
   margin: 0;
   padding: 0;
 }
-/* The dial is TWO stacked layers of the same geometry:
-     --art  decorative sector fills;
-     --hit  the real links, each holding its own icon + label.
-   Splitting them lets each glyph live INSIDE its sector, so it simply inherits
-   that sector's `color` and is correct by construction in every theme — no
-   blend modes, no cross-layer state tracking. (The art layer used to carry the
-   goo filter that melted the sectors into one liquid disc; that went with the
-   rest of the metaball layer, and the sectors now render crisply everywhere.) */
-.radial-hub__wedges--art {
-  pointer-events: none;
-}
-.radial-hub__wedges--hit {
-  z-index: 1;
-}
-.radial-hub__wedge-wrap {
-  position: absolute;
-  inset: 0;
-  /* Each wrapper fills the whole dial square (only its child <a> is clipped to a
-     slice), so a wrapper with hit-testing on would blanket the disc and steal
-     every click for whichever wedge sits last in the DOM. Make the wrappers
-     click-transparent; the clipped anchors below re-enable it, so each slice
-     only catches clicks inside its own pie sector. */
-  pointer-events: none;
-}
-/* Wedges bloom out from the centre and collapse back on TRANSITIONS (both ways).
-   The two decks arrive by SPINNING into alignment from opposite directions —
-   inner anticlockwise, outer clockwise — which is what makes the dial read as
-   two independent rings rather than one disc with a line through it. Closing
-   reverses it, because this is a transition and not a one-shot keyframe.
-
-   Each wrapper is `inset: 0` over the whole dial, so its transform origin is
-   already the dial's centre and a rotation carries the clipped sector around it.
-   The spin is deliberately NOT staggered: every wedge of a ring shares one
-   delay, so the ring turns as a body. The per-wedge stagger stays on `opacity`
-   alone (hence the split delays), and only on open — on close they fade together
-   as the blur contracts, one synchronous motion. */
-.radial-hub__wedge-wrap {
-  opacity: 0;
-  transform: scale(0.9) rotate(var(--ring-spin, 0deg));
-  transition:
-    opacity 0.34s ease var(--fade-delay, 0ms),
-    transform 0.55s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)) 0ms;
-}
-.radial-hub__wedge-wrap[data-ring='0'] {
-  --ring-spin: -55deg;
-}
-.radial-hub__wedge-wrap[data-ring='1'] {
-  --ring-spin: 55deg;
-}
-.radial-hub[data-phase='open'] .radial-hub__wedge-wrap {
-  opacity: 1;
-  transform: scale(1) rotate(0deg);
-  --fade-delay: calc(var(--i) * 20ms);
-}
-
-/* ── Level borders ────────────────────────────────────────────────────────
-   One hairline circle per band boundary (radii supplied by RadialHub from the
-   same geometry that carves the sectors). They are what separates the decks:
-   the gap alone reads as a missing fill, a drawn edge reads as structure. */
-.radial-hub__levels {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-.radial-hub__level {
+/* A ZERO-SIZE anchor point that JS moves. The link inside centres itself on it,
+   so a single `translate3d(…) scale(…)` per frame both positions the pin and
+   foreshortens it — no layout, no percentage arithmetic against a box whose size
+   depends on its own label. Depth also drives `opacity`, `z-index` and whether
+   the pin takes a click at all (the far hemisphere never does). */
+.radial-globe__pin-wrap {
   position: absolute;
   left: 50%;
   top: 50%;
-  /* `--r` is a fraction of the dial's WIDTH, so the diameter is twice it. The
-     extra border-width straddles the line ON the boundary instead of just
-     inside it, which matters for the innermost one: the dial's mask clears
-     everything within the hole, and a border drawn wholly inside that radius
-     would be masked away. */
-  width: calc(var(--r) * 2 + var(--dial-level-w));
-  height: calc(var(--r) * 2 + var(--dial-level-w));
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  border: var(--dial-level-w) solid var(--dial-level-c);
-  /* Spins in with the decks so the borders never look pasted over the motion. */
-  opacity: 0;
-  transition:
-    opacity 0.34s ease,
-    transform 0.55s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+  width: 0;
+  height: 0;
+  will-change: transform, opacity;
 }
-.radial-hub[data-phase='open'] .radial-hub__level {
-  opacity: 1;
-}
-/* Art sector: the visible resting fill.
-   `--site-surface` is itself a TRANSLUCENT tint (the Liquid Glass material), so
-   the old `color-mix(surface 60%, transparent)` was a tint of a tint — over a
-   light page it resolved to very nearly nothing and the sectors disappeared.
-   Build the fill on `--site-surface-opaque` (the solid companion the material
-   already ships for exactly these "translucency won't do" cases) and keep only a
-   little transparency, so the sector still samples the blurred backdrop but
-   always reads as a distinct surface.
-
-   The few percent of `--site-text` mixed in is what separates the dial from the
-   PAGE: on the default theme both the page and the solid surface are white, so
-   without it the sectors would still be white-on-white and only the rim would
-   show. Mixing toward the ink adapts automatically — a touch darker than a light
-   page, a touch lighter than a dark one. */
-.radial-hub__wedge-art {
+.radial-globe__pin {
   position: absolute;
-  inset: 0;
-  display: block;
-  background: color-mix(in srgb, var(--site-surface-opaque) 94%, var(--site-text) 6%);
-}
-.radial-hub__wedge-art.is-active {
-  background: var(--site-accent);
-}
-.radial-hub__wedge {
-  position: absolute;
-  inset: 0;
-  display: block;
-  /* Re-enable hit-testing that the wrapper switched off. The inline clip-path
-     carves this element down to one pie slice — and the clip bounds both paint
-     AND hit-testing, so each wedge only catches clicks inside its own sector and
-     the sectors tile the disc with no gaps for a click to slip through. */
-  pointer-events: auto;
-  /* Transparent at rest: the art layer beneath supplies the fill. What matters
-     here is `color` — the glyph inside inherits it, so the icon + label are the
-     theme's ink on the resting sector and flip to the accent's contrast ink the
-     moment the sector fills below. Both tokens are contrast-checked against the
-     surface they sit on, so this can never land white-on-white. */
-  background: transparent;
-  color: var(--site-text);
-  text-decoration: none;
-  transition:
-    background-color 0.18s ease,
-    color 0.18s ease;
-}
-.radial-hub__wedge:hover,
-.radial-hub__wedge:focus-visible,
-.radial-hub__wedge.is-active {
-  background: var(--site-accent);
-  color: var(--site-accent-fg);
-}
-.radial-hub__wedge:focus-visible {
-  outline: none;
-}
-/* The glyph rides inside its own sector on the unfiltered hit layer, so it stays
-   razor sharp while the art behind it flows — and inherits the sector's `color`,
-   which is what makes the contrast correct in every theme and state. */
-.radial-hub__wedge-inner {
-  position: absolute;
+  left: 0;
+  top: 0;
   transform: translate(-50%, -50%);
   display: grid;
   justify-items: center;
-  gap: 0.3rem;
+  gap: 0.32rem;
   width: max-content;
+  max-width: calc(var(--globe-size) * 0.44);
   text-align: center;
+  text-decoration: none;
+  color: var(--site-text);
+  -webkit-user-drag: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* Pins arrive after the sphere, one after another, so the globe reads as
+     something that assembles rather than something that pops. */
+  .radial-hub[data-phase='open'] .radial-globe__pin {
+    animation: globe-pin-in 0.42s ease both calc(140ms + var(--i, 0) * 26ms);
+  }
+}
+@keyframes globe-pin-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+}
+.radial-globe__pin-dot {
+  display: grid;
+  place-items: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 999px;
+  /* `--site-surface` is itself a translucent tint, so a tint of it would vanish
+     over a light page. Built on the solid companion and mixed a few percent
+     toward the ink, which separates the pin from the globe on every theme. */
+  background: color-mix(in srgb, var(--site-surface-opaque) 90%, var(--site-text) 10%);
+  border: var(--site-border-width, 1px) solid var(--site-border);
+  box-shadow: 0 6px 16px -10px rgba(0, 0, 0, 0.6);
   color: inherit;
-  /* Clicks fall through the glyph to the clipped sector link underneath. */
-  pointer-events: none;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
 }
-.radial-hub__wedge-inner svg {
-  width: 1.3rem;
-  height: 1.3rem;
+.radial-globe__pin-dot svg {
+  width: 1.15rem;
+  height: 1.15rem;
 }
-/* The box is centred on the sector's centroid, so anything wider than the sector
-   is CUT by its clip-path ("Adaptive Intelligence" lost its tail) — and a cap
-   too narrow forces a mid-word break instead ("Communiti/es"). How much room
-   there actually is depends on the ring's depth, the sector's angle AND where on
-   the dial it sits, so `RadialHub` measures it per wedge and supplies it here
-   (`fitLabelWidth`); the fallback is only for a wedge rendered without it. */
-.radial-hub__wedge-inner {
-  max-width: var(--label-w, 5.4rem);
-}
-/* Mobile-first: icon-only sectors so the destinations never crowd on a phone;
-   labels return ≥480px, where the dial is wide enough to carry them. */
-.radial-hub__wedge-label {
-  display: none;
-  /* Sized against the DIAL, because the box it has to fit inside is a share of
-     the dial's width — a fixed rem size overflows a small dial and under-fills a
-     large one. `--label-fs` is the per-wedge fit RadialHub computed; the rem
-     bounds keep browser font scaling meaningful at both ends. */
-  font-size: clamp(0.5625rem, calc(var(--label-fs, 2.5) * var(--dial, 440px) / 100), 0.75rem);
-  font-weight: 600;
-  line-height: 1.1;
-  color: inherit;
-  /* Bounded: a long destination name can never spill across its neighbours. */
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  /* Wrap between words, never inside one — mid-word breaks are what turned
-     "Communities" into "Communiti/es". Only a word that cannot fit even at the
-     size floor is allowed to break (RadialHub flips this to `anywhere`), and
-     then it breaks inside its own box instead of being cut by the clip-path. */
-  overflow-wrap: var(--label-wrap, normal);
-  hyphens: none;
+/* The name resolves only for the pins actually facing you — `--near` is written
+   per frame from the pin's depth — so a dozen labels never pile up in the middle
+   of the sphere. */
+.radial-globe__pin-name {
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  color: var(--site-text);
+  opacity: var(--near, 0);
   text-wrap: balance;
-  text-align: center;
+  overflow-wrap: anywhere;
+  hyphens: none;
 }
-/* Centre caption — the label for the wedge under the pointer/focus, sitting in
-   the dial's hole. It exists ONLY where the per-wedge labels don't: below
-   480px the dial is sixteen unlabelled glyphs, which is recall, not
-   recognition, for the site's entire navigation. The hole is the one place on
-   a 320px dial with room for a word. */
-.radial-hub__caption {
+.radial-globe__pin:hover .radial-globe__pin-dot {
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+}
+.radial-globe__pin:focus-visible {
+  outline: none;
+}
+.radial-globe__pin:focus-visible .radial-globe__pin-dot {
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  outline: 3px solid var(--site-text);
+  outline-offset: 3px;
+}
+.radial-globe__pin:focus-visible .radial-globe__pin-name {
+  opacity: 1;
+}
+/* Locked on: the pin the reticle holds, and the one a full ring will open. */
+.radial-globe__pin.is-locked .radial-globe__pin-dot {
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  transform: scale(1.1);
+  box-shadow: 0 10px 26px -12px rgba(0, 0, 0, 0.7);
+}
+.radial-globe__pin.is-locked .radial-globe__pin-name {
+  opacity: 1;
+}
+/* Below 420px the sphere is too small to carry a dozen names at once; the readout
+   under it names whatever is locked on, which is the only one that matters. */
+@media (max-width: 419px) {
+  .radial-globe__pin-name {
+    display: none;
+  }
+  .radial-globe__pin-dot {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+  .radial-globe__pin-dot svg {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+/* ── Reticle ──────────────────────────────────────────────────────────────
+   The target at the front of the globe, and the ring that fills while a
+   destination is held in it. `--reticle-d` is derived by LiquidGlobe from the very
+   constant its hit test uses, so the drawn circle and the locking circle cannot
+   drift apart; `--fill` is the dwell fraction, written per frame. */
+.radial-globe__reticle {
   position: absolute;
   left: 50%;
   top: 50%;
+  width: var(--reticle-d, 31%);
+  height: var(--reticle-d, 31%);
   transform: translate(-50%, -50%);
-  z-index: 2;
-  max-width: 8rem;
-  padding-top: 2.6rem;
-  text-align: center;
-  font-size: 0.75rem;
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: 0.01em;
-  color: var(--site-text);
-  text-wrap: balance;
+  border-radius: 50%;
   pointer-events: none;
+  z-index: 400;
+  --fill: 0;
+}
+/* Resting: a faint dashed target that firms up the moment something locks in. */
+.radial-globe__reticle::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: var(--site-border-width, 1px) dashed color-mix(in srgb, var(--site-text) 34%, transparent);
+  transition:
+    border-color 0.2s ease,
+    border-style 0.2s ease;
+}
+.radial-globe[data-locked='true'] .radial-globe__reticle::before {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--site-text) 58%, transparent);
+}
+.radial-globe[data-ready='true'] .radial-globe__reticle::before {
+  border-color: var(--site-accent);
+  border-width: 2px;
+}
+/* The dwell ring: a conic sweep masked down to a hairline annulus just OUTSIDE
+   the target, so the progress never covers the pin it is describing. */
+.radial-globe__reticle-ring {
+  position: absolute;
+  inset: -9%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from -90deg,
+    var(--site-accent) 0deg calc(var(--fill) * 360deg),
+    transparent calc(var(--fill) * 360deg) 360deg
+  );
+  -webkit-mask: radial-gradient(
+    circle closest-side,
+    transparent calc(100% - 3px),
+    #000 calc(100% - 3px)
+  );
+  mask: radial-gradient(circle closest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+}
+/* Armed — the ring is full, and letting go opens the page. */
+@media (prefers-reduced-motion: no-preference) {
+  .radial-globe[data-ready='true'] .radial-globe__reticle {
+    animation: globe-armed 0.9s ease-in-out infinite alternate;
+  }
+}
+@keyframes globe-armed {
+  from {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1.06);
+  }
 }
 
-@media (min-width: 480px) {
-  .radial-hub__wedge-label {
-    display: -webkit-box;
-  }
-  /* Each wedge carries its own name from here up, so the caption would be a
-     duplicate. */
-  .radial-hub__caption {
-    display: none;
-  }
+/* ── Readout ──────────────────────────────────────────────────────────────
+   What is locked on, and what to do about it. On a phone the pins are icon-only,
+   so this is the ONLY place a destination is named — which is why it sits in the
+   flow under the sphere rather than inside it, and why it reserves its height so
+   the globe never jumps as names change. */
+.radial-globe__readout {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 0.15rem;
+  min-height: 3.2rem;
+  max-width: min(22rem, 88vw);
+  text-align: center;
+}
+.radial-globe__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: clamp(1rem, 4.4vw, 1.25rem);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--site-text);
+  text-wrap: balance;
+}
+.radial-globe__name svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: none;
+}
+.radial-globe__hint {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--site-text-muted);
+}
+.radial-globe[data-ready='true'] .radial-globe__hint {
+  color: var(--site-text);
+  font-weight: 800;
 }
 .radial-hub__foot {
   position: absolute;
@@ -2208,15 +2377,22 @@ html.perf-lite .radial-backdrop__blob {
   .radial-skip,
   .radial-topbar__btn,
   .radial-hub__orb,
-  .radial-hub__blur,
-  .radial-hub__dial,
-  .radial-hub__wedge-wrap,
-  .radial-hub__level,
-  .radial-hub__wedge,
+  .radial-hub__veil,
   .radial-hub__foot,
+  .radial-globe__pin-dot,
+  .radial-globe__reticle::before,
   .rmhark,
   .radial-feed__compose {
     transition-duration: 0.001ms;
+  }
+  /* The globe blooms on KEYFRAMES (it is mounted only while the menu is up, so
+     there is no previous style for a transition to run from), which a
+     `transition-duration` override cannot reach. Collapse the animations too, so
+     the hub still snaps open and shut rather than fading. The decorative ones —
+     the travelling sheen, the pin stagger, the armed pulse — are already inside
+     `prefers-reduced-motion: no-preference` blocks and never start here. */
+  .radial-globe {
+    animation-duration: 0.001ms !important;
   }
 }
 

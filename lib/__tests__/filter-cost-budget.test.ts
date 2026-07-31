@@ -66,7 +66,17 @@ const VIEWPORT_LAYERS = [
   '.radial-backdrop__field',
   '.radial-backdrop__rings',
   '.radial-hub__overlay',
+  // The hub's expanding disc, under its current name and its old one. The old
+  // name is kept deliberately: the guard should still fire if anyone brings
+  // `.radial-hub__blur` back rather than silently going unenforced.
+  '.radial-hub__veil',
   '.radial-hub__blur',
+  // The liquid globe is the thing that MOVES over the hub's overlay, which is
+  // what makes a filter on any of these layers ruinous rather than merely
+  // expensive — see the note above `.radial-hub__veil` in radial.css.
+  '.radial-globe',
+  '.radial-globe__stage',
+  '.radial-globe__glass',
 ];
 
 /** Every `selector { … }` block in a stylesheet, flattened to one string each. */
