@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   DECELERATION,
   RUBBER_BAND_C,
+  gestureConfidence,
+  smoothstep,
   SPRINGS,
   VelocityTracker,
   projectDistance,
@@ -287,6 +289,54 @@ describe('resolveDetent', () => {
   it('is order-independent and degenerate-safe', () => {
     expect(resolveDetent(10, 700, [300, 0])).toBe(300);
     expect(resolveDetent(42, 0, [])).toBe(42);
+  });
+});
+
+describe('gestureConfidence', () => {
+  it('reads a slow approach as browsing and a fast one as certainty', () => {
+    expect(gestureConfidence(80, 150, 620)).toBe(0);
+    expect(gestureConfidence(150, 150, 620)).toBe(0);
+    expect(gestureConfidence(620, 150, 620)).toBe(1);
+    expect(gestureConfidence(2000, 150, 620)).toBe(1);
+  });
+
+  it('rises smoothly in between, with no step at either threshold', () => {
+    let previous = -1;
+    for (let s = 100; s <= 700; s += 10) {
+      const c = gestureConfidence(s, 150, 620);
+      expect(c).toBeGreaterThanOrEqual(previous);
+      previous = c;
+    }
+    expect(gestureConfidence(385, 150, 620)).toBeCloseTo(0.5, 1);
+  });
+
+  it('ignores direction and rubbish input', () => {
+    expect(gestureConfidence(-700, 150, 620)).toBe(1);
+    expect(gestureConfidence(Number.NaN, 150, 620)).toBe(0);
+  });
+
+  it('shortens a dwell without ever removing it', () => {
+    // The globe's mapping: a confident flick must still leave a hold long enough
+    // to notice and abandon.
+    const dwell = (speed: number) => 620 + (260 - 620) * gestureConfidence(speed, 150, 620);
+    expect(dwell(0)).toBe(620);
+    expect(dwell(1e6)).toBe(260);
+    expect(dwell(400)).toBeLessThan(620);
+    expect(dwell(400)).toBeGreaterThan(260);
+  });
+});
+
+describe('smoothstep', () => {
+  it('clamps outside the range and is symmetric about the midpoint', () => {
+    expect(smoothstep(0, 10, -5)).toBe(0);
+    expect(smoothstep(0, 10, 15)).toBe(1);
+    expect(smoothstep(0, 10, 5)).toBeCloseTo(0.5, 10);
+    expect(smoothstep(0, 10, 2) + smoothstep(0, 10, 8)).toBeCloseTo(1, 10);
+  });
+
+  it('does not divide by zero on a degenerate range', () => {
+    expect(smoothstep(5, 5, 4)).toBe(0);
+    expect(smoothstep(5, 5, 5)).toBe(1);
   });
 });
 

@@ -22,7 +22,7 @@ presets, 32 locales) alongside real-time multiplayer.
 -   **Apps**: RMHTube (watch videos in sync), RMHMusic (Spotify listening rooms), RMHType (typing races), RMHStudy (synced Pomodoro rooms), RMHCode (installable coding CLI + tokens), RMHLadder (early-career job board), plus the RMHVibe / Creator Studio AI page builder.
 -   **Social & Economy**: Social feed (RMHarks), messaging & group chats, communities, profiles, achievements/quests, a coin economy (wallet, shop, market, staking, battle pass, tips), tournaments/ranked/wager, and Stripe-backed memberships.
 -   **Authentication (RMH Auth)**: Secure login powered by Better Auth — Discord, Google, and GitHub OAuth plus passkeys.
--   **Developer API**: A scoped, versioned public API (`/api/v1`), documented at [rmhstudios.readthedocs.io](https://rmhstudios.readthedocs.io/en/latest/developer-api/index.html) with an OpenAPI 3.1 spec at `/api/v1/openapi.json`.
+-   **Developer API**: A scoped, versioned public API (`/api/v1`), documented at [docs.rmhstudios.com](https://docs.rmhstudios.com/en/latest/developer-api/index.html) with an OpenAPI 3.1 spec at `/api/v1/openapi.json`.
 -   **Modern UI/UX**: Built with **Tailwind CSS v4** and **Framer Motion** for smooth animations, complex transitions, and a premium aesthetic (`liquid-glass` is the default theme).
 -   **Immersive Audio & 3D**: Games powered by `howler`/`tone` for audio and `@react-three/fiber` / `@react-three/rapier` for 3D physics.
 -   **Blog / News / Library**: Blog, news, and a document library (DB-backed, covers served from R2).

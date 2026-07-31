@@ -19,8 +19,10 @@ import { vibrate } from '@/lib/shared/platform';
 import {
   DECELERATION,
   VelocityTracker,
+  gestureConfidence,
   projectDistance,
   rubberBandClamp,
+  smoothstep,
   spring,
   springStep,
 } from '@/lib/fluid';
@@ -78,8 +80,25 @@ const PITCH_RUBBER = 24;
 const SETTLE_SPRING = spring(0.62, 0.1);
 /** Idle drift (deg/s) — only until the visitor first takes hold. */
 const IDLE_SPIN = 5.5;
-/** How long a locked-on pin must be held before the ring is full. */
+/* ── Dwell: how long you have to hold ───────────────────────────────────────
+   Not a constant. The gesture that chose a destination is itself evidence about
+   how sure you were, and the site already measures it — so somebody who flicks
+   straight to a place confirms quickly, and somebody creeping around the sphere
+   still gets the full, unhurried hold. (`lib/fluid` §gestureConfidence; the same
+   "accelerate decisions" idea as the sheet's flick-to-dismiss.)
+
+   The floor is a floor, not zero: a confirmation you cannot abandon is not a
+   confirmation. At 260ms the ring is still visibly filling and letting go early
+   still cancels — you just aren't made to wait out a deliberation you have
+   already finished. */
+/** Hold required after an exploratory, low-speed approach. */
 const DWELL_MS = 620;
+/** Hold required after a decisive flick. Never goes below this. */
+const DWELL_MIN_MS = 260;
+/** Angular speed (deg/s) at or under which an approach reads as browsing. */
+const BROWSING_SPEED = 150;
+/** Angular speed (deg/s) at or over which it reads as certainty. */
+const DECISIVE_SPEED = 620;
 /** The ring drains faster than it fills, so a mis-lock costs nothing. */
 const DRAIN_SCALE = 0.42;
 /** Total pointer travel (px) past which a release is a drag, not a click. */
@@ -127,11 +146,6 @@ const GOLDEN_DEG = 180 * (3 - Math.sqrt(5));
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 const clamp01 = (v: number) => clamp(v, 0, 1);
-/** Smooth 0→1 ramp across [a, b]. */
-const smoothstep = (a: number, b: number, v: number) => {
-  const t = clamp01((v - a) / (b - a));
-  return t * t * (3 - 2 * t);
-};
 /** The nearest angle equivalent to `to`, measured from `from` — no long way round. */
 const shortestAngle = (from: number, to: number) =>
   from + ((((to - from) % 360) + 540) % 360) - 180;
@@ -229,6 +243,22 @@ export function LiquidGlobe({ items, pathname, onDismiss, tabIndex, rootRef }: L
    */
   const yawV = useRef(new VelocityTracker());
   const pitchV = useRef(new VelocityTracker());
+  /**
+   * Fastest the globe has been moving since the last lock was established — the
+   * evidence the dwell length is read from. Peak rather than instantaneous,
+   * because the speed *at* the moment a pin enters the reticle is arbitrary (the
+   * settle spring is decelerating into its target by then); what characterises
+   * the approach is how hard it was thrown.
+   *
+   * Resetting it at each lock is what keeps it honest over a messy gesture: a
+   * flick that overshoots past several pins establishes and clears a lock at each
+   * one, so by the time you creep back to the one you wanted, the peak only
+   * describes that last careful correction — and you get the full dwell, which is
+   * the right answer for a correction.
+   */
+  const peakSpeed = useRef(0);
+  /** Dwell for the CURRENT lock, frozen when it was established. */
+  const dwellRef = useRef(DWELL_MS);
   const fill = useRef(0);
   const lockRef = useRef(-1);
   const readyRef = useRef(false);
@@ -491,9 +521,25 @@ export function LiquidGlobe({ items, pathname, onDismiss, tabIndex, rootRef }: L
       // 5. The dwell ring. It only fills while the pointer is DOWN on a locked-on
       //    pin, so nothing can ever navigate without a deliberate hold-and-release
       //    — drag away, or let go early, and it drains.
+      // Peak speed over the approach. The settle spring carries the throw's
+      // velocity, so sampling here covers a released flick; the pointer handler
+      // covers the finger still being down.
+      const speed = Math.hypot(r.vYaw, r.vPitch);
+      if (speed > peakSpeed.current) peakSpeed.current = speed;
+
       if (lockIdx !== lockRef.current) {
         lockRef.current = lockIdx;
         fill.current = 0;
+        if (lockIdx >= 0) {
+          // Freeze the dwell for this lock from the approach that produced it.
+          // The evidence is NOT spent here: a hard flick sweeps several pins
+          // through the reticle on its way, and consuming the peak at the first
+          // of them would leave the destination it actually lands on judged on
+          // the tail of the deceleration — a fast approach that reads as a slow
+          // one. It is cleared when a fresh aim starts instead (see onPointerDown).
+          const confidence = gestureConfidence(peakSpeed.current, BROWSING_SPEED, DECISIVE_SPEED);
+          dwellRef.current = DWELL_MS + (DWELL_MIN_MS - DWELL_MS) * confidence;
+        }
         setLock(lockIdx);
         if (readyRef.current) {
           readyRef.current = false;
@@ -501,10 +547,13 @@ export function LiquidGlobe({ items, pathname, onDismiss, tabIndex, rootRef }: L
         }
         if (lockIdx >= 0) vibrate(6);
       }
+      // Both rates ride the frozen dwell, so a confident lock also drains
+      // proportionally fast — the ring keeps one consistent sense of "how much
+      // of this decision is left".
       const holding = drag.current.held && lockIdx >= 0;
       const next = holding
-        ? fill.current + (dt * 1000) / DWELL_MS
-        : fill.current - (dt * 1000) / (DWELL_MS * DRAIN_SCALE);
+        ? fill.current + (dt * 1000) / dwellRef.current
+        : fill.current - (dt * 1000) / (dwellRef.current * DRAIN_SCALE);
       const clamped = clamp01(next);
       if (clamped !== fill.current) {
         fill.current = clamped;
@@ -541,6 +590,10 @@ export function LiquidGlobe({ items, pathname, onDismiss, tabIndex, rootRef }: L
     };
     // Taking hold of a globe that is still springing is not a special case — it
     // is the point. Cancel the settle and keep whatever rotation it had reached.
+    // A press that lands on a globe already at rest starts a FRESH aim, so the
+    // previous gesture's speed stops counting. A press that interrupts a settle
+    // is a continuation of the throw already in flight, and keeps it.
+    if (!settle.current) peakSpeed.current = 0;
     rot.current.vYaw = 0;
     rot.current.vPitch = 0;
     settle.current = null;
@@ -579,6 +632,11 @@ export function LiquidGlobe({ items, pathname, onDismiss, tabIndex, rootRef }: L
       r.pitch = rubberBandClamp(rawPitch.current, -PITCH_LIMIT, PITCH_LIMIT, PITCH_RUBBER);
       yawV.current.add(r.yaw, now);
       pitchV.current.add(r.pitch, now);
+      // Peak speed while the finger is still down — this is the half of the
+      // approach the frame loop cannot see, and it is the one that matters for a
+      // single-gesture "flick, hold, release".
+      const speed = Math.hypot(yawV.current.get(), pitchV.current.get());
+      if (speed > peakSpeed.current) peakSpeed.current = speed;
       dirty.current = true;
     };
 
