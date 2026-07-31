@@ -1246,13 +1246,23 @@ html.app-route {
     transition:
       background-color var(--site-transition-speed),
       box-shadow var(--site-transition-speed),
-      transform var(--site-press-duration, 180ms) var(--ease-glass);
+      scale var(--site-press-duration, 180ms) var(--ease-glass);
   }
   .glass-interactive:hover {
     background-color: var(--site-glass-tint-strong);
   }
+  /* The press cue is the independent `scale` property, NOT `transform: scale()`.
+     Two reasons, both structural:
+       1. `scale` composes with whatever `transform` the element already carries
+          (a layout utility, a framer-motion animation) instead of erasing it.
+       2. The fluid press layer (hooks/useFluidPress) drives the same property
+          inline, so its spring simply wins while a finger is down and hands the
+          element back to this rule afterwards. With `transform` here the two
+          would MULTIPLY and every press would double-squish.
+     This rule stays as the fallback for reduced motion and for the frame before
+     the layer's first tick — it is not dead code. */
   .glass-interactive:active {
-    transform: scale(0.97);
+    scale: 0.97;
   }
   /* The pointer light is your light, not the sun's — hover only, fine-pointer
      only, so touch devices never pay for it (§5.1). The hook writes
@@ -2850,6 +2860,45 @@ summary:active {
   opacity: 0.6;
   transition: opacity 60ms ease;
 }
+
+/* ── Fluid interfaces: instantaneous response ──────────────────────────────
+   WWDC 2018 §803 opens on the point that a fluid interface responds the moment
+   you touch it. On the web the default is the opposite: a browser that may still
+   be waiting to see whether a tap is a double-tap-to-zoom holds the click for up
+   to ~300ms, and the platform paints a grey flash over whatever feedback the
+   surface wanted to give.
+
+   `touch-action: manipulation` tells the browser there is no double-tap gesture
+   to wait for, so the tap resolves immediately; it deliberately keeps pan and
+   pinch-zoom, so page scrolling and accessibility zoom are untouched. It is
+   scoped to things that are actually pressable, not to `*` — an element that
+   owns its own gesture (the navigation globe, a canvas, a slider) sets its own
+   `touch-action`, and a blanket rule here would silently fight it.
+
+   The tap highlight goes with it: the press layer's spring IS the feedback, and
+   a platform-drawn rectangle over the top of it just looks like a bug. */
+a[href],
+button,
+summary,
+label,
+[role='button'],
+[role='tab'],
+[role='menuitem'],
+[role='option'],
+[role='switch'],
+input:not([type='range']),
+select,
+textarea,
+[data-fluid-press] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* NB: there is deliberately no `will-change` rule for `[data-fluid-press]` here.
+   A page carries hundreds of pressable elements, and a standing `will-change`
+   would promote every one of them to its own compositor layer for a scale that
+   is not happening. The press layer sets it on the element it is actually
+   animating and clears it on settle, which is what the property is for. */
 
 /* Native form controls (checkbox, radio, range, progress) adopt the accent. */
 :root {

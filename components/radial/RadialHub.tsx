@@ -177,6 +177,7 @@ export function RadialHub() {
         // back-to-top clear of it (and of the feed's compose FAB, which shares
         // this row but is shorter).
         data-floating="hub"
+        data-fluid-press=""
         aria-haspopup="menu"
         aria-expanded={phase !== 'closed'}
         aria-label={t('open-menu', { defaultValue: 'Open navigation' })}
@@ -223,6 +224,7 @@ export function RadialHub() {
               <Link
                 to={`/u/${user.handle || user.id}` as string}
                 className="radial-hub__identity"
+                data-fluid-press="firm"
                 onClick={dismissForNavigation}
                 tabIndex={tab}
               >
@@ -237,6 +239,7 @@ export function RadialHub() {
               <Link
                 to="/settings"
                 className="radial-hub__foot-btn"
+                data-fluid-press=""
                 onClick={dismissForNavigation}
                 tabIndex={tab}
                 aria-label={t('settings', { defaultValue: 'Settings' })}
@@ -246,6 +249,7 @@ export function RadialHub() {
               <button
                 type="button"
                 className="radial-hub__foot-btn"
+                data-fluid-press=""
                 onClick={signOut}
                 tabIndex={tab}
                 aria-label={t('sign-out', { defaultValue: 'Sign out' })}
@@ -267,6 +271,7 @@ export function RadialHub() {
           <button
             type="button"
             className="radial-hub__foot-btn radial-hub__close"
+            data-fluid-press=""
             onClick={dismiss}
             tabIndex={tab}
             aria-label={t('close', { defaultValue: 'Close' })}

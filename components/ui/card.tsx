@@ -27,6 +27,12 @@ function Card({
     <div
       data-slot="card"
       data-glass-light={interactive ? '' : undefined}
+      // `firm` rather than the default: a card is a large surface, and the 4%
+      // that reads as a crisp press on a button reads as a wobble on something
+      // the width of the column. `.glass-interactive:active` remains the
+      // reduced-motion fallback (both drive the same `scale` property, so the
+      // spring simply wins while it is running — see globals.css §glass).
+      data-fluid-press={interactive ? 'firm' : undefined}
       className={cn(
         'flex flex-col gap-5 py-5 text-site-text sm:gap-6 sm:py-6',
         pane ? 'glass-pane' : 'glass-fill',

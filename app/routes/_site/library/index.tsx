@@ -403,52 +403,6 @@ function Library() {
     });
   }, [books, query, collectedSlugs]);
 
-  const normalizedQuery = query.trim().toLowerCase();
-  const matchingAlbums = useMemo(
-    () =>
-      albums.filter(
-        (album) =>
-          !normalizedQuery ||
-          album.title.toLowerCase().includes(normalizedQuery) ||
-          album.description.toLowerCase().includes(normalizedQuery) ||
-          album.slides.some((slide) => slide.alt.toLowerCase().includes(normalizedQuery)),
-      ).length,
-    [albums, normalizedQuery],
-  );
-  const matchingCollections = useMemo(
-    () =>
-      collections.filter(
-        (collection) =>
-          !normalizedQuery ||
-          collection.title.toLowerCase().includes(normalizedQuery) ||
-          collection.description.toLowerCase().includes(normalizedQuery) ||
-          collection.books.some((book) => book.title.toLowerCase().includes(normalizedQuery)),
-      ).length,
-    [collections, normalizedQuery],
-  );
-  const matchingReads = useMemo(
-    () =>
-      blogPosts.filter(
-        (post) =>
-          !normalizedQuery ||
-          post.title?.toLowerCase().includes(normalizedQuery) ||
-          post.description?.toLowerCase().includes(normalizedQuery) ||
-          post.tags?.some((tag) => tag.toLowerCase().includes(normalizedQuery)),
-      ).length,
-    [blogPosts, normalizedQuery],
-  );
-  const matchingPlaylists = useMemo(
-    () =>
-      playlists?.filter(
-        (playlist) =>
-          !normalizedQuery ||
-          playlist.name.toLowerCase().includes(normalizedQuery) ||
-          playlist.kind.toLowerCase().includes(normalizedQuery),
-      ).length ?? 0,
-    [playlists, normalizedQuery],
-  );
-  const totalMatches =
-    filtered.length + matchingAlbums + matchingCollections + matchingReads + matchingPlaylists;
 
   // Sections render in manual order (position), title as a stable tiebreak — so
   // admin reordering (arrows + drag) actually takes effect.
@@ -578,37 +532,31 @@ function Library() {
                 id: 'all',
                 label: t('cat-all', { defaultValue: 'Everything' }),
                 icon: LayoutGrid,
-                count: totalMatches,
               },
               {
                 id: 'books',
                 label: t('cat-books', { defaultValue: 'Books' }),
                 icon: BookOpen,
-                count: filtered.length,
               },
               {
                 id: 'albums',
                 label: t('cat-albums', { defaultValue: 'Albums' }),
                 icon: Disc3,
-                count: matchingAlbums,
               },
               {
                 id: 'music',
                 label: t('cat-music', { defaultValue: 'Music' }),
                 icon: ListMusic,
-                count: matchingPlaylists,
               },
               {
                 id: 'collections',
                 label: t('cat-collections', { defaultValue: 'Collections' }),
                 icon: Layers,
-                count: matchingCollections,
               },
               {
                 id: 'reads',
                 label: t('cat-reads', { defaultValue: 'Reads' }),
                 icon: Newspaper,
-                count: matchingReads,
               },
             ] as LiquidTab[]
           }
@@ -616,22 +564,14 @@ function Library() {
           onChange={(next) => setView(next as LibraryView)}
           aria-label={t('sections-label', { defaultValue: 'Library sections' })}
           search={
-            <>
-              <SearchField
-                value={query}
-                onValueChange={setQuery}
-                aria-label={t('search-label', { defaultValue: 'Search the library' })}
-                placeholder={t('search-placeholder', {
-                  defaultValue: 'Search books, albums, playlists, and reads…',
-                })}
-              />
-              <p className="mt-1.5 px-3 text-xs text-site-text-dim" aria-live="polite">
-                {t('result-count', {
-                  count: totalMatches,
-                  defaultValue: '{{count}} things to explore',
-                })}
-              </p>
-            </>
+            <SearchField
+              value={query}
+              onValueChange={setQuery}
+              aria-label={t('search-label', { defaultValue: 'Search the library' })}
+              placeholder={t('search-placeholder', {
+                defaultValue: 'Search books, albums, playlists, and reads…',
+              })}
+            />
           }
         />
 

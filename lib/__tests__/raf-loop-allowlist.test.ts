@@ -59,6 +59,17 @@ import { join } from 'node:path';
  *                                       stops the frame it arrives; the effect
  *                                       cancels it when motion is switched off,
  *                                       when the sensor is absent, and on unmount.
+ *   - hooks/useFluidPress.ts          — the site-wide press layer's spring loop.
+ *                                       Idle-at-rest by construction: the loop is
+ *                                       started by a pointerdown on a
+ *                                       [data-fluid-press] element and returns 0
+ *                                       from its own rAF call the frame the last
+ *                                       press finishes springing, so a page at
+ *                                       rest runs no loop. Cancelled on unmount.
+ *   - hooks/useFluidDrag.ts           — one settle-spring loop per mounted drag
+ *                                       surface. Runs only between a release and
+ *                                       the spring arriving; stops itself on
+ *                                       settle and cancels on unmount.
  *   - hooks/useParallax.ts            — pointer lerp stops once it settles at target.
  *   - hooks/useSpatialParallax.ts     — pointer-event throttle; cancels on unmount.
  *   - hooks/useScrollRestoration.ts, hooks/useCardSheen.ts, hooks/useCelebration.ts,
@@ -128,6 +139,8 @@ const ALLOW = new Set<string>([
   'hooks/useCardSheen.ts',
   'hooks/useCelebration.ts',
   'hooks/useDeviceAttitude.ts',
+  'hooks/useFluidDrag.ts',
+  'hooks/useFluidPress.ts',
   'hooks/useGlassLight.ts',
   'hooks/useLiquidBackground.ts',
   'hooks/useParallax.ts',

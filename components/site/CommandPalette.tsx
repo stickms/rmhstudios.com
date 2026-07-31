@@ -596,19 +596,28 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
       <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 z-[90] glass-scrim data-[state=open]:animate-in data-[state=open]:fade-in-0" />
-          {/* The sanctioned prism overlay (§3.4 / §7): the flagship refracting
-              surface. Mirrors the login card's glass-refract glass-refract--prism
-              + data-glass-lens; the ≤1-prism-per-page budget is spent here while
-              the palette is open. */}
+          {/* Plain `glass-overlay` — no `glass-refract`/`--prism` here any more.
+              The displacement lens those classes exist to carry is PARKED (see
+              the note in globals.css §3.3–3.6), so all they contributed was
+              `.glass-refract::before`: a 12px frosted bevel band inset around the
+              whole panel. With nothing bending through it, that band rendered as
+              a thick pale ring around the palette — the chunkiest border on the
+              site, on its most-used surface. The prism budget is better left
+              unspent than spent on an artifact. */}
           <DialogPrimitive.Content
-            data-glass-lens=""
-            className="glass-overlay glass-refract glass-refract--prism fixed left-1/2 top-[12dvh] z-[91] w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+            className="glass-overlay fixed left-1/2 top-[12dvh] z-[91] w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
             aria-describedby={undefined}
           >
             <DialogPrimitive.Title className="sr-only">
               {t('palette-title', { defaultValue: 'Command palette' })}
             </DialogPrimitive.Title>
-            <div className="glass-inset m-2 flex items-center gap-2 px-3">
+            {/* The search row is the panel's HEADER, not a field floating on it.
+                It used to be a `.glass-inset` well with its own margin, radius
+                and dark inset shadow — a light box sitting on a darker sheet,
+                which is why the palette read as two mismatched surfaces stacked
+                rather than one. Flush to the edges with a single hairline under
+                it, the row and the results below it are one panel. */}
+            <div className="flex items-center gap-3 border-b border-site-border px-4">
               <Search className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
               <input
                 ref={inputRef}
@@ -629,9 +638,9 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
                 placeholder={t('palette-placeholder', {
                   defaultValue: 'Search pages, people, posts, games…',
                 })}
-                className="w-full bg-transparent py-3.5 text-sm text-site-text placeholder:text-site-text-dim focus:outline-none"
+                className="w-full bg-transparent py-4 text-[0.9375rem] text-site-text placeholder:text-site-text-dim focus:outline-none"
               />
-              <kbd className="hidden shrink-0 rounded border border-site-border px-1.5 py-0.5 text-[10px] text-site-text-dim sm:block">
+              <kbd className="hidden shrink-0 rounded-[var(--site-radius-sm)] border border-site-border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-site-text-dim sm:block">
                 esc
               </kbd>
             </div>

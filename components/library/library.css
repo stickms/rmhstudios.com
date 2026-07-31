@@ -2752,16 +2752,6 @@
   font-size: 1rem;
 }
 
-.lib-explorer__result {
-  margin: 0;
-  padding-inline: 8px;
-  color: var(--site-text-dim);
-  font-family: var(--site-font-mono);
-  font-size: 0.68rem;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
 .lib--glass-playground .lib-nav {
   width: 100%;
   max-width: none;
@@ -2993,10 +2983,6 @@
   .lib-explorer__search-row {
     grid-template-columns: 1fr;
     gap: 3px;
-  }
-
-  .lib-explorer__result {
-    display: none;
   }
 
   .lib--glass-playground .lib-nav [role='tab'] {

@@ -85,8 +85,6 @@
   "regenerate-cover": "Regenerate cover",
   "rename": "Rename",
   "reported": "Reported",
-  "result-count_one": "{{count}} things to explore",
-  "result-count_other": "{{count}} things to explore",
   "search-label": "Search the library",
   "search-placeholder": "Search books, albums, playlists, and reads…",
   "search-your-books": "Search your books…",

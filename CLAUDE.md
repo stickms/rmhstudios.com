@@ -85,7 +85,14 @@ status 7008 · assets 7007. Env: see `.env.example`; minimum is
    CI-enforced — `lib/__tests__/design-consistency.test.ts` fails the build on
    hand-rolled tab strips and stray active-underline markers.
 5. **i18n:** all user-facing strings through `t("key", { defaultValue })`;
-   then `pnpm i18n:extract`. English is authoritative. A **new namespace must
+   then `pnpm i18n:extract`. English is authoritative. Two silent failure modes
+   to know: **(a)** `defaultValue` is only used when a key is MISSING, so
+   changing the wording of a shipped string means a NEW key — editing the
+   default in place changes English and nothing else; **(b)** a `{/* … */}` JSX
+   comment placed immediately before a `t()` call makes `i18next-parser` skip
+   that call, so the key never lands in `locales/` and every non-English locale
+   silently serves the English default. Put the explanation above the component
+   instead, and check `locales/en/<ns>.json` after adding a string. A **new namespace must
    be added to `NAMESPACES` in `lib/i18n/config.ts`** — a JSON file dropped
    into `locales/en/` without that entry is never loaded, and the UI silently
    falls back to its `defaultValue`s.
