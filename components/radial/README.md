@@ -160,9 +160,10 @@ but it was a _list bent into a circle_: every destination visible at once, chose
 by pointing. The globe is the opposite bet. It is a place you **look around**,
 and choosing is a deliberate physical act rather than a click you can misfire.
 
-**The gesture, end to end.** Press anywhere on the sphere and drag to spin it
-(yaw from horizontal travel, pitch from vertical, tilt clamped so the poles never
-reach the front). Release and it coasts on friction. When the coast is over, any
+**The gesture, end to end.** Press anywhere on the **screen** — not just on the
+sphere — and drag to spin it (yaw from horizontal travel, pitch from vertical,
+tilt clamped so the poles never reach the front). Release and it coasts on
+friction. When the coast is over, any
 destination inside the **snap cone** is eased to dead centre — the magnetism is
 what makes the gesture land on a phone. A pin inside the **reticle** is _locked
 on_: it fills with the accent, the readout under the sphere names it, and while
@@ -173,6 +174,17 @@ page load.
 
 Rules that are easy to break when touching the geometry or the loop:
 
+- **The control surface is the whole overlay, not the sphere.** The sphere is one
+  disc in the middle of a screen the menu owns entirely, and the band around it —
+  the title card, the empty space beside the globe, the foot capsule a thumb
+  naturally rests on — is most of the reachable half of a phone. `LiquidGlobe`
+  takes `surfaceRef` (the hub's overlay) and starts a drag from anywhere on it
+  **except a control**: any `a`/`button`/field keeps its own press, so the foot's
+  identity link, settings, sign-out and close still behave, and so will anything
+  added there later. The one opt-back-in is `data-globe-surface` on the overlay's
+  click-catcher, which is a `<button>` only so an outside tap dismisses. A drag
+  that started on it is swallowed on the way up (`swallowClick`), so turning the
+  globe never also closes the menu, while a plain tap still does.
 - **One source of truth for the projection.** `PERSP` and `RETICLE` in
   `LiquidGlobe.tsx` are handed to CSS inline (`--globe-persp`, `--reticle-d`).
   The wireframe is drawn by CSS 3D and the pins are projected in JS, so if the
@@ -269,6 +281,18 @@ the flow, so `radial.css` ends with a section of explicit arithmetic guarantees:
   bare page background there. This was an on-device finding from the mobile
   push-drawer the hub replaced, which blocked background scroll from its scrim
   for the same reason; the drawer is gone, so the note lives here now.
+- **`__scrim` and `__catcher` are two different elements.** The decorative fade
+  under the docked orb (`.radial-hub__scrim`, fixed, bottom-centre, a gradient of
+  the page ground) and the overlay's transparent dismiss surface
+  (`.radial-hub__catcher`, absolute, filling the overlay) shared one class name,
+  and two single-class rules on one name overwrite each other rather than
+  coexist: the catcher inherited the fade's `min(24rem, 92vw)` width, ~92px
+  height and `translateX(-50%)` — a 359×92 box half off the left edge, which no
+  outside tap could hit — while the fade inherited the catcher's
+  `background: transparent` and painted nothing. Keep the names distinct. The
+  catcher also needs `place-self: stretch`: the overlay is a
+  `place-items: center` grid, and an absolutely positioned grid child still takes
+  its container's alignment, so `inset: 0` alone shrink-wraps it.
 - **Translucency needs a blur behind it.** The top bar drops `backdrop-filter` on
   phones for paint cost, so it is fully opaque there — a partly-transparent bar
   with no blur just ghosts the feed scrolling underneath it. Frosted glass

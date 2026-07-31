@@ -198,10 +198,17 @@ export function RadialHub() {
       >
         <button
           type="button"
-          className="radial-hub__scrim"
+          className="radial-hub__catcher"
           onClick={dismiss}
           aria-label={t('close', { defaultValue: 'Close' })}
           tabIndex={tab}
+          // The one control on the overlay that is also a DRAG surface. It is a
+          // button so an outside tap dismisses, but it is also every empty pixel
+          // around the globe — the part of the screen a thumb can actually reach
+          // — so the globe's gesture claims it (LiquidGlobe's surface listener
+          // skips controls unless they carry this). A drag on it turns the globe
+          // and its dismiss is swallowed; a tap still closes the menu.
+          data-globe-surface=""
         />
 
         <div className="radial-hub__veil" aria-hidden />
@@ -215,6 +222,9 @@ export function RadialHub() {
             pathname={pathname}
             onDismiss={dismissForNavigation}
             tabIndex={tab}
+            // The globe's gesture is not confined to the sphere: the whole
+            // overlay turns it, except where a real control lives.
+            surfaceRef={overlayRef}
           />
         )}
 

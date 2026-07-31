@@ -849,13 +849,14 @@ bottom bar hiding under a phone's browser chrome.
 | Primitive                    | Use it for                                                                                                                                      |
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `.app-viewport`              | The root of a non-scrolling app shell. `100vh` then `100dvh` — the fallback pair, not Tailwind's single-declaration `h-dvh`.                     |
+| `.app-page`                  | The root of a full-screen screen that is a **document** — a landing, a lobby, a results card. Scrolls the page, not a box inside it. See rule 6. |
 | `.app-screen`                | A menu / results / lobby screen: full height, centred **while it fits**, scrolled when it does not.                                              |
 | `.app-stage-fit` + `.app-stage` | A fixed-aspect playfield. Put the HUD **inside** `.app-stage` when it must track the world, outside when it should use the letterbox.        |
 | `.app-hud` / `.app-hud-fixed`   | A full-bleed chrome layer, inset by the device's safe area. Geometry only — it does not touch `pointer-events`.                              |
 | `.app-safe-top/-bottom/-x/-pad` | Insets on a surface that is itself full-bleed but whose contents are not (a translucent bar, a letterbox gradient).                          |
 | `useKeyboardInset` + `--kb-inset` | The software keyboard's measured height, so a fixed-height shell can end where the keyboard begins. `AppShell` mounts it for the app tier. |
 
-Five rules, each of which was a shipped defect before it was a rule:
+Six rules, each of which was a shipped defect before it was a rule:
 
 1. **The world runs to the edge; the controls do not.** Artwork *should* pass
    under the notch. A pause button must not. Anything pinned to a viewport edge
@@ -896,6 +897,20 @@ Five rules, each of which was a shipped defect before it was a rule:
    on a coarse pointer (it raises the keyboard for something the player didn't
    ask for), and set `inputMode` so a digits-only field gets the numeric pad
    rather than a QWERTY that covers a third more of the screen.
+
+6. **A screen that is a document scrolls the DOCUMENT.** `.app-viewport` is for
+   a surface that never scrolls; reaching for it on a landing, a lobby or a
+   results card and then putting a `flex-1 overflow-y-auto` box inside costs a
+   phone about 110px of screen, permanently. Mobile Safari collapses its
+   address/tab bars **only** for document scroll — an inner scroller leaves them
+   at full height for the whole visit, which is why the feed, which flows in the
+   document, feels taller than an app screen on the same phone. Use `.app-page`:
+   `min-height: 100svh`, a flex column, no inner scroller, and the safe-area
+   gutter at the end. The rule of thumb is what the screen *is*, not where it
+   lives: if the content is a column you read top to bottom, it is a document,
+   even inside a game. RMHType's room is both in turn — `.app-page` as a lobby,
+   `.app-viewport` once the race starts — and resets `window.scrollY` across the
+   switch, because a fixed viewport cannot undo a scroll offset it inherits.
 
 Rules 2–4's checkable parts, plus the `dvh` fallback pair, are enforced by
 `lib/__tests__/game-viewport-consistency.test.ts` (§13). Rules 1 and 5 are

@@ -150,10 +150,10 @@ export default function RmhTypeSolo() {
   // Settings screen (shown on fresh load / refresh)
   if (!started) {
     return (
-      <div className="app-viewport">
+      <div className="app-page">
         <RmhTypeHeader backLabel="RMH Type" backHref="/rmhtype" />
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-8" style={{ scrollbarGutter: 'stable both-edges' }}>
+        <div className="flex-1 p-4 md:p-8">
           <div className="max-w-lg mx-auto">
             <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
               <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
@@ -232,9 +232,9 @@ export default function RmhTypeSolo() {
   // Results state
   if (soloResult) {
     return (
-      <div className="app-viewport">
+      <div className="app-page">
         <RmhTypeHeader backLabel="Back" onBack={handleBackToSettings} />
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+        <div className="flex-1 p-4 md:p-8">
           <div className="max-w-lg mx-auto">
             <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-8 text-center">
               <Trophy className="h-12 w-12 mx-auto mb-4 text-(--app-accent)" />

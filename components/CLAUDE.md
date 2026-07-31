@@ -54,16 +54,21 @@ feature lives in that feature's directory; genuinely shared primitives live in
 - **Accessibility:** jsx-a11y lint runs at warn — don't add new warnings.
   Prefer Radix-based `ui/` primitives over hand-rolled interactive widgets.
 - **Full-screen games/apps:** use the shared viewport primitives in
-  `app/globals.css` — `.app-viewport` (shell root), `.app-screen` (a menu that
-  scrolls instead of clipping), `.app-stage-fit`/`.app-stage` (a fixed-aspect
-  playfield), `.app-hud` (chrome inset by the device safe area). Four rules,
-  each a shipped bug before it was a rule: edge-pinned controls add
-  `var(--safe-*)`; `aspect-ratio` never sits beside a `max-*` clamp; anything
-  that centres AND scrolls uses `items-center-safe`/`justify-center-safe`; a
-  full-screen canvas clamps its DPR (`gameSurfaceDpr()` in 2D,
-  `lib/render/tier.ts` in 3D) and never reallocates itself per frame. Rules 2–4
-  are gated by `lib/__tests__/game-viewport-consistency.test.ts`; the full
-  rationale is [`docs/design-language.md`](../docs/design-language.md) §12.1.
+  `app/globals.css` — `.app-viewport` (a shell that never scrolls), `.app-page`
+  (a full-screen screen that IS a document — landing, lobby, results),
+  `.app-screen` (a menu that scrolls instead of clipping),
+  `.app-stage-fit`/`.app-stage` (a fixed-aspect playfield), `.app-hud` (chrome
+  inset by the device safe area). Five rules, each a shipped bug before it was a
+  rule: edge-pinned controls add `var(--safe-*)`; `aspect-ratio` never sits
+  beside a `max-*` clamp; anything that centres AND scrolls uses
+  `items-center-safe`/`justify-center-safe`; a full-screen canvas clamps its DPR
+  (`gameSurfaceDpr()` in 2D, `lib/render/tier.ts` in 3D) and never reallocates
+  itself per frame; and a screen whose content is a column you read top to
+  bottom scrolls the DOCUMENT (`.app-page`), never a `flex-1 overflow-y-auto`
+  box inside a viewport-height shell — mobile Safari only collapses its
+  address/tab bars for document scroll. Rules 2–4 are gated by
+  `lib/__tests__/game-viewport-consistency.test.ts`; the full rationale is
+  [`docs/design-language.md`](../docs/design-language.md) §12.1.
 
 ## Adding UI — decision tree
 

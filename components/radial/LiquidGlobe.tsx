@@ -10,6 +10,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type MouseEvent as ReactMouseEvent,
   type Ref,
+  type RefObject,
 } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import type { LucideIcon } from 'lucide-react';
@@ -205,9 +206,22 @@ interface LiquidGlobeProps {
    * menu opened.
    */
   rootRef?: Ref<HTMLDivElement>;
+  /**
+   * The element whose whole area turns the globe — in practice the hub's
+   * overlay, i.e. the entire screen the menu covers. Everything on it that is
+   * not a control is a drag surface; see the listener that consumes this.
+   */
+  surfaceRef?: RefObject<HTMLElement | null>;
 }
 
-export function LiquidGlobe({ items, pathname, onDismiss, tabIndex, rootRef }: LiquidGlobeProps) {
+export function LiquidGlobe({
+  items,
+  pathname,
+  onDismiss,
+  tabIndex,
+  rootRef,
+  surfaceRef,
+}: LiquidGlobeProps) {
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
   const reduced = useReducedMotion();
@@ -575,10 +589,12 @@ export function LiquidGlobe({ items, pathname, onDismiss, tabIndex, rootRef }: L
 
   /* ── Pointer ──────────────────────────────────────────────────────────────
      `pointerdown` is taken on the stage (so a press that lands on a pin still
-     grabs the globe); move/up ride WINDOW listeners rather than pointer capture,
-     which would retarget the release away from the pin the press started on and
-     break plain clicking. */
-  const onPointerDown = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
+     grabs the globe) and on the overlay around it (see the surface listener
+     below); move/up ride WINDOW listeners rather than pointer capture, which
+     would retarget the release away from the pin the press started on and break
+     plain clicking. */
+  /** Take hold of the globe. Shared by every surface that can start a drag. */
+  const beginDrag = useCallback((e: PointerEvent | ReactPointerEvent<HTMLElement>) => {
     if (e.button > 0) return;
     drag.current = {
       active: true,
@@ -608,6 +624,60 @@ export function LiquidGlobe({ items, pathname, onDismiss, tabIndex, rootRef }: L
     pitchV.current.add(rot.current.pitch, now);
     setGrabbing(true);
   }, []);
+
+  const onPointerDown = useCallback(
+    (e: ReactPointerEvent<HTMLDivElement>) => beginDrag(e),
+    [beginDrag],
+  );
+
+  /* ── The whole overlay is the control surface ──────────────────────────────
+     The sphere is one disc in the middle of a screen the menu owns entirely,
+     and the band around it — the title card, the empty space beside the globe,
+     the foot capsule a thumb naturally rests on — was dead to the gesture the
+     whole menu is built around. On a phone that is most of the reachable half
+     of the screen.
+
+     So the overlay takes the press too, and turns the globe from anywhere that
+     is not a CONTROL: the foot's identity link, settings, sign-out, sign-in and
+     close all keep their own press, as does anything added there later. The
+     dismiss catcher is the exception to that rule — it is a `<button>` only so
+     an outside TAP closes the menu, and it is also every empty pixel around the
+     globe, which is where most of this gesture happens, so it opts back in with
+     `data-globe-surface`. A drag that started on it is swallowed on the way up,
+     so turning the globe never also closes the menu; a plain tap still passes
+     through and dismisses.
+
+     Presses inside the stage are left to its own React handler. This listener
+     sees them (they bubble), and returns early, so exactly one of the two ever
+     takes a given gesture. */
+  useEffect(() => {
+    const surface = surfaceRef?.current;
+    if (!surface) return;
+
+    const onDown = (e: PointerEvent) => {
+      const target = e.target as Element | null;
+      if (!target || target.closest('.radial-globe__stage')) return;
+      const control = target.closest('a, button, input, select, textarea, [role="button"]');
+      if (control && !control.hasAttribute('data-globe-surface')) return;
+      beginDrag(e);
+    };
+    // Capture, so a spent release is stopped before it reaches the catcher's
+    // dismiss or a pin's link — the same job the stage's `onClickCapture` does
+    // for the sphere itself.
+    const onClickCapture = (e: MouseEvent) => {
+      if (!swallowClick.current) return;
+      swallowClick.current = false;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    surface.addEventListener('pointerdown', onDown);
+    surface.addEventListener('click', onClickCapture, true);
+    return () => {
+      surface.removeEventListener('pointerdown', onDown);
+      surface.removeEventListener('click', onClickCapture, true);
+    };
+  }, [beginDrag, surfaceRef]);
 
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
@@ -652,6 +722,10 @@ export function LiquidGlobe({ items, pathname, onDismiss, tabIndex, rootRef }: L
         go(nodes[lockRef.current]);
         return;
       }
+      // A CANCELLED pointer (a system gesture taking over, a context menu) never
+      // produces the click a released one does, so a swallow the drag armed
+      // would sit there and eat the next real tap instead of its own.
+      if (!commit) swallowClick.current = false;
 
       // Momentum, and then intent. The velocity the finger left with is projected
       // through the platform's own deceleration model to ask "where would this
