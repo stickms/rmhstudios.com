@@ -14,6 +14,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { transferCoins } from '@/lib/economy/ledger.server';
 import { debitCoins, creditCoins, EscrowError } from '@/lib/wager/escrow.server';
 import { createNotification } from '@/lib/notifications.server';
 import type { CreatorTier, Prisma } from '@prisma/client';
@@ -221,18 +222,12 @@ export async function joinTier(
   const now = new Date();
   try {
     const expiresAt = await prisma.$transaction(async (tx) => {
-      await debitCoins(tx, supporterId, price);
-      await creditCoins(tx, creatorId, price);
-      await tx.coinTransaction.create({
-        data: {
-          senderId: supporterId,
-          recipientId: creatorId,
-          amount: price,
-          type: 'MEMBERSHIP',
-          entityType: 'membership',
-          entityId: creatorId,
-          note: `Joined ${tier.name}`.slice(0, 280),
-        },
+      await transferCoins(supporterId, creatorId, price, {
+        tx,
+        type: 'MEMBERSHIP',
+        entityType: 'membership',
+        entityId: creatorId,
+        note: `Joined ${tier.name}`.slice(0, 280),
       });
 
       const existing = await tx.creatorMembership.findUnique({

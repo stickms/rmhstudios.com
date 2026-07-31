@@ -7,6 +7,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { creditCoins } from '@/lib/economy/ledger.server';
 import { QUESTS, getQuest, periodKeyFor, type QuestType } from '@/lib/quests/catalog';
 import { awardXp } from '@/lib/xp/engine.server';
 import { grantAchievement, progressAchievement } from '@/lib/achievements/engine.server';
@@ -152,10 +153,13 @@ export async function claimQuest(userId: string, questId: string): Promise<{ xp:
   if (claim.count === 0) return null;
 
   if (def.coins > 0) {
-    await prisma.userProfile.upsert({
-      where: { userId },
-      create: { userId, coins: 10 + def.coins },
-      update: { coins: { increment: def.coins } },
+    // The claim flip above is the idempotency guard (only one request flips
+    // `claimed`), so the grant here runs at most once per quest period.
+    await creditCoins(userId, def.coins, {
+      type: 'REWARD',
+      entityType: 'quest',
+      entityId: questId,
+      note: def.name,
     });
   }
   if (def.xp > 0) await awardXp(userId, def.xp);

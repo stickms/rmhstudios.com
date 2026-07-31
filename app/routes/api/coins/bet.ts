@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
+import { creditCoins, debitCoins, getBalance } from "@/lib/economy/ledger.server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { betSchema } from "@/lib/coins-schema";
 import { simulatePlinko } from "@/lib/plinko";
@@ -51,22 +52,28 @@ export const Route = createFileRoute('/api/coins/bet')({
       // `coins >= amount` in the WHERE clause enforces "must hold the full stake"
       // and prevents both the overdraft and the lost-update that an absolute
       // `coins: newBalance` write allowed against any concurrent balance change.
-      await tx.userProfile.upsert({
-        where: { userId },
-        create: { userId, coins: 10 },
-        update: {},
+      // Settle as the two movements it actually is: the stake always leaves
+      // circulation, and a win pays 2× back from the house. Net is −amount on a
+      // loss and +amount on a win, exactly as before — but now the wager and
+      // the payout are separate ledger rows, so the game's coin creation and
+      // destruction are both visible to supply reporting instead of netting out
+      // into a single unexplained balance change.
+      await debitCoins(userId, amount, {
+        tx,
+        type: 'WAGER',
+        entityType: 'plinko',
+        note: 'Plinko stake',
       });
-
-      const settle = await tx.userProfile.updateMany({
-        where: { userId, coins: { gte: amount } },
-        data: won ? { coins: { increment: amount } } : { coins: { decrement: amount } },
-      });
-      if (settle.count === 0) {
-        throw new Error("INSUFFICIENT_COINS");
+      if (won) {
+        await creditCoins(userId, amount * 2, {
+          tx,
+          type: 'WAGER',
+          entityType: 'plinko',
+          note: 'Plinko payout',
+        });
       }
 
-      const updated = await tx.userProfile.findUnique({ where: { userId }, select: { coins: true } });
-      return { newBalance: updated?.coins ?? 0 };
+      return { newBalance: await getBalance(userId, tx) };
     });
 
     return Response.json({

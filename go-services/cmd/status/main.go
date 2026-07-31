@@ -33,9 +33,7 @@ func main() {
 	// public probe (prod → rmhstudios.com, staging → its own host). The edge
 	// exposes each realtime hub's health under its existing WS prefix
 	// (/socket/health, /rmhbox-ws/health, /rmhtube-ws/health) — Apache rewrites
-	// it to the service's /health on the VPS; the Go gateway passes the prefixed
-	// path straight through to the hub under k3s — so the same public URL works
-	// in both topologies.
+	// it to the service's /health on the VPS.
 	websiteURL := config.GetString("STATUS_WEBSITE_URL", "https://rmhstudios.com/")
 	publicOrigin := config.GetString("STATUS_PUBLIC_ORIGIN", "")
 	if publicOrigin == "" {
@@ -44,30 +42,28 @@ func main() {
 
 	// Internal-only services have no public route by design — the background
 	// workers (supervisor) face nothing user-facing, and the Go assets origin
-	// sits behind the CDN — so they are probed on their internal /health. Those
-	// internal hostnames are compose DNS names by default and get a STATUS_<svc>_
-	// URL override under k3s (where Services render as {release}-<svc>).
+	// sits behind the CDN — so they are probed on their internal /health, at
+	// compose DNS names by default with a STATUS_<svc>_URL override.
 	//
-	// Gateway and RMHmusic are part of the k3s/Helm Go topology but do NOT run
-	// under docker-compose (where web/socket are still the Node services, and the
-	// edge has no /rmhmusic-ws or gateway route). They are probed only when their
-	// STATUS_<svc>_URL is explicitly set — the same "configure to enable" pattern
-	// the Database probe uses for DATABASE_URL — so compose never shows a false
-	// "down" (or, worse, a false "up" from the web catch-all) for a service it
-	// doesn't run.
+	// The Gateway and standalone-RMHmusic probes are GONE. They described the
+	// k3s/Helm Go realtime topology, which was deleted in the rewrite (design
+	// §5.2): there is no Go gateway, and RMHmusic is a namespace inside the Node
+	// socket-server rather than its own service, so both are covered by the
+	// Website and Realtime probes respectively. Probing them was either dead
+	// configuration or — worse — a green tile for a service that does not exist.
 	urls := probeURLs{
 		Website:    websiteURL,
-		Gateway:    config.GetString("STATUS_GATEWAY_URL", ""),
+		Ready:      config.GetString("STATUS_READY_URL", publicOrigin+"/api/ready"),
+		Feed:       config.GetString("STATUS_FEED_URL", publicOrigin+"/blog.rss.xml"),
+		Sitemap:    config.GetString("STATUS_SITEMAP_URL", publicOrigin+"/sitemap.xml"),
 		Socket:     config.GetString("STATUS_SOCKET_URL", publicOrigin+"/socket/health"),
-		RMHMusic:   config.GetString("STATUS_RMHMUSIC_URL", ""),
 		RMHBox:     config.GetString("STATUS_RMHBOX_URL", publicOrigin+"/rmhbox-ws/health"),
 		RMHTube:    config.GetString("STATUS_RMHTUBE_URL", publicOrigin+"/rmhtube-ws/health"),
 		Assets:     config.GetString("STATUS_ASSETS_URL", fmt.Sprintf("http://assets:%s/health", portAssets)),
 		// The five background workers (recap, discord-bot, doctrine, vibe,
-		// bot-worker) are consolidated as goroutines inside the supervisor
-		// process, which serves /health on its METRICS_ADDR (default :9090).
-		// There is no standalone recap:7004 in the Go topology, so probe the
-		// supervisor instead.
+		// bot-worker) plus streak-saver are consolidated as goroutines inside the
+		// supervisor process, which serves /health on its METRICS_ADDR
+		// (default :9090). There is no standalone recap:7004.
 		Supervisor: config.GetString("STATUS_SUPERVISOR_URL", "http://supervisor:9090/health"),
 	}
 
@@ -97,65 +93,149 @@ func main() {
 	}
 }
 
-// probeURLs holds the resolved /health URLs for every HTTP probe target. Each
-// is resolved by main() from a compose-DNS default plus a STATUS_<svc>_URL
-// override, so the same binary probes the right hosts under both compose and
-// k3s. Website is the public origin (DNS → edge → active container). Gateway
-// and RMHMusic are empty unless explicitly configured (k3s-only services).
+// probeURLs holds the resolved URL for every HTTP probe target. Each is
+// resolved by main() from a default plus a STATUS_<svc>_URL override. The
+// user-facing ones point at the PUBLIC origin (DNS → edge → active container);
+// the internal-only ones (assets, supervisor) at compose DNS names.
+//
+// Ready/Feed/Sitemap are FUNCTIONAL probes, not liveness ones: they exercise
+// the database, the render path and the SEO surface through the same route a
+// visitor takes, so the dashboard can tell "the process is up" apart from "the
+// website works".
+//
+// Every functional probe target must be reachable ANONYMOUSLY. That rules out
+// the obvious candidates — /api/pulse and /api/search both require a session
+// and would pin a probe at HTTP 401 (a permanent false "degraded") — which is
+// why the content probe is the public blog feed rather than the search API.
 type probeURLs struct {
 	Website    string
-	Gateway    string
+	Ready      string
+	Feed       string
+	Sitemap    string
 	Socket     string
-	RMHMusic   string
 	RMHBox     string
 	RMHTube    string
 	Assets     string
 	Supervisor string
 }
 
-// buildTargets assembles the probe target list covering the Go-service
-// topology. It always probes the core HTTP services (the web app via its PUBLIC
-// origin; the realtime hubs by their resolved URLs; the Go assets CDN; the
-// consolidated background workers via the supervisor's shared /health). The
-// gateway edge and the RMHmusic hub are k3s-only and are appended only when
-// their URL is configured (Gateway/RMHMusic non-empty). When DATABASE_URL is
-// set the Database probe (Node's `kind: 'database'` service, same SELECT 1
-// check) is appended too; with it unset the Database target is omitted so
-// cmd/status starts cleanly without a DB. Every URL is resolved by the caller
-// (compose DNS default, STATUS_<svc>_URL override) so the same binary works
-// under both compose and k3s.
+// Latency budgets. Past these a target is reported `degraded` even though it
+// answered: an SSR page that takes 4s or a hub health check that takes 2s is a
+// user-visible problem, and a status page that calls it "Operational" is the
+// one telling the lie. Values are deliberately generous — they mark
+// pathological slowness, not a missed performance target (docs/performance-slo.md
+// owns those).
+const (
+	websiteBudget = 4 * time.Second
+	apiBudget     = 2500 * time.Millisecond
+	hubBudget     = 1500 * time.Millisecond
+)
+
+// buildTargets assembles the probe target list for the topology that actually
+// runs (docker-compose on the VPS behind Apache/Cloudflare):
+//
+//   - Core: the SSR web app, its readiness endpoint, and Postgres. These probe
+//     the real user path through the public origin, and assert on CONTENT — a
+//     200 with an empty shell is degraded, not up.
+//   - Realtime: the three Node hubs, via their edge-exposed health prefixes.
+//   - Content: the public feed + sitemap, which prove the DB-backed render and
+//     the SEO surface still work. These break independently of the homepage and
+//     used to fail silently.
+//   - Platform: the Go assets origin and the supervisor running the six
+//     background workers, both internal-only.
+//
+// When DATABASE_URL is set the Database probe (same SELECT 1 check) is
+// appended; unset, it is omitted so cmd/status starts cleanly without a DB.
 func buildTargets(u probeURLs, probeTimeout time.Duration) []status.Target {
 	targets := []status.Target{
-		{Name: "Website", Description: "Main rmhstudios.com web app", URL: u.Website},
+		{
+			Name:        "Website",
+			Description: "Main rmhstudios.com web app (server-rendered)",
+			Group:       "Core",
+			URL:         u.Website,
+			// The site shell's skip-link target. Present in every server-rendered
+			// page under the site layout, absent from an error page or a blank
+			// shell — so this is the cheapest honest "did the app render?" check.
+			Expect:        `id="main-content"`,
+			DegradedAfter: websiteBudget,
+		},
+		{
+			Name:        "App readiness",
+			Description: "Web tier's dependencies: database connectivity and client/schema agreement",
+			Group:       "Core",
+			URL:         u.Ready,
+			// /api/ready reports its own aggregate; anything but "ok" (slow
+			// component, unreachable dependency) fails the assertion and lands
+			// here as degraded.
+			Expect:        `"status":"ok"`,
+			DegradedAfter: apiBudget,
+		},
 	}
-	// Gateway edge sits in front of the web app — list it right after Website
-	// when it's part of the deployment (k3s).
-	if u.Gateway != "" {
-		targets = append(targets, status.Target{Name: "Gateway", Description: "Edge ingress / reverse proxy (Go)", URL: u.Gateway})
-	}
-	targets = append(targets,
-		status.Target{Name: "Realtime / Games", Description: "Gamehub WebSocket server (multiplayer + live apps)", URL: u.Socket},
-	)
-	if u.RMHMusic != "" {
-		targets = append(targets, status.Target{Name: "RMHmusic", Description: "Collaborative music WebSocket server (Go)", URL: u.RMHMusic})
-	}
-	targets = append(targets,
-		status.Target{Name: "RMHbox", Description: "Party-game WebSocket server", URL: u.RMHBox},
-		status.Target{Name: "RMHtube", Description: "Watch-together WebSocket server", URL: u.RMHTube},
-		status.Target{Name: "Assets", Description: "Media CDN: library / music / models / sprites (Go)", URL: u.Assets},
-		// Background workers run as goroutines inside the supervisor process
-		// (recap, discord-bot, doctrine, vibe, bot-worker) — probe its shared
-		// /health (2xx = up, same as the other HTTP probes).
-		status.Target{Name: "Background workers", Description: "Supervisor: discord-bot, recap, doctrine, vibe, bot-worker", URL: u.Supervisor},
-	)
 
 	if dsn := os.Getenv("DATABASE_URL"); dsn != "" {
 		targets = append(targets, status.Target{
 			Name:        "Database",
-			Description: "PostgreSQL (via Prisma)",
+			Description: "PostgreSQL (direct connection, SELECT 1)",
+			Group:       "Core",
 			Probe:       newDBProbe(dsn, probeTimeout),
 		})
 	}
+
+	targets = append(targets,
+		status.Target{
+			Name:          "Realtime / Games",
+			Description:   "Socket server: multiplayer games, presence, RMHmusic",
+			Group:         "Realtime",
+			URL:           u.Socket,
+			DegradedAfter: hubBudget,
+		},
+		status.Target{
+			Name:          "RMHbox",
+			Description:   "Party-game WebSocket server",
+			Group:         "Realtime",
+			URL:           u.RMHBox,
+			DegradedAfter: hubBudget,
+		},
+		status.Target{
+			Name:          "RMHtube",
+			Description:   "Watch-together WebSocket server",
+			Group:         "Realtime",
+			URL:           u.RMHTube,
+			DegradedAfter: hubBudget,
+		},
+
+		status.Target{
+			Name:          "Content feed",
+			Description:   "Public blog RSS — proves the database-backed render path",
+			Group:         "Content",
+			URL:           u.Feed,
+			Expect:        "<rss",
+			DegradedAfter: apiBudget,
+		},
+		status.Target{
+			Name:          "Sitemap",
+			Description:   "Generated sitemap.xml — the discovery surface search engines read",
+			Group:         "Content",
+			URL:           u.Sitemap,
+			Expect:        "<urlset",
+			DegradedAfter: apiBudget,
+		},
+
+		status.Target{
+			Name:        "Assets",
+			Description: "Media origin: library / music / models / sprites (Go)",
+			Group:       "Platform",
+			URL:         u.Assets,
+		},
+		// The six background workers run as goroutines inside the supervisor
+		// process — probe its shared /health.
+		status.Target{
+			Name:        "Background workers",
+			Description: "Supervisor: discord-bot, recap, doctrine, vibe, bot-worker, streak-saver",
+			Group:       "Platform",
+			URL:         u.Supervisor,
+		},
+	)
 
 	return targets
 }

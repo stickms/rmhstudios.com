@@ -57,6 +57,7 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             customAccent: row?.customAccent ?? null,
             reduceMotion: row?.reduceMotion ?? false,
             glassLevel: row?.glassLevel ?? null,
+            colorVision: row?.colorVision ?? null,
           });
         } catch (error) {
           console.error('Appearance prefs fetch error:', error);
@@ -97,6 +98,7 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             readableFont,
             reduceMotion,
             glassLevel,
+            colorVision,
           } = parsed.data;
           // Custom accent is normalized/nudged through the contrast guard so the
           // stored value is guaranteed to carry a legible label (AA).
@@ -110,6 +112,10 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             ...(customAccent !== undefined ? { customAccent } : {}),
             ...(reduceMotion !== undefined ? { reduceMotion } : {}),
             ...(glassLevel !== undefined ? { glassLevel } : {}),
+            // 'none' is stored as null so the column means "no override".
+            ...(colorVision !== undefined
+              ? { colorVision: colorVision === 'none' ? null : colorVision }
+              : {}),
           };
           const row = await prisma.appearancePreference.upsert({
             where: { userId: session.user.id },

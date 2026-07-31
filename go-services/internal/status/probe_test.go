@@ -4,7 +4,9 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 )
 
 // TestInitialServiceState asserts a freshly-constructed Prober reports the Node
@@ -90,5 +92,119 @@ func TestCustomProbe(t *testing.T) {
 	got := snap.Service("Database")
 	if got == nil || !got.Up || got.Detail != "SELECT 1 ok" || got.LatencyMs == nil || *got.LatencyMs != 7 {
 		t.Fatalf("custom probe result wrong: %+v", got)
+	}
+}
+
+// TestExpectContentDegradesOn200WithWrongBody is the check that separates
+// "the port answered" from "the website works": a 200 whose body is missing the
+// expected marker is degraded, not up. This is the exact failure mode a
+// liveness-only status page misses — an SSR container serving a valid empty
+// shell while its data layer is broken.
+func TestExpectContentDegradesOn200WithWrongBody(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte("<html><body>error</body></html>"))
+	}))
+	defer srv.Close()
+
+	p := NewProber([]Target{{Name: "web", URL: srv.URL, Expect: `id="main-content"`}})
+	p.ProbeOnce(context.Background())
+
+	snap := p.Snapshot()
+	got := snap.Service("web")
+	if got.Status != StatusDegraded {
+		t.Fatalf("expected degraded for 200-with-wrong-body, got %q", got.Status)
+	}
+	if got.Up {
+		t.Fatal("Up must be false when the content assertion fails")
+	}
+	if !strings.Contains(got.Detail, "unexpected content") {
+		t.Fatalf("detail should explain the content mismatch, got %q", got.Detail)
+	}
+}
+
+// TestExpectContentPassesWhenBodyMatches asserts the happy path still reports
+// up (with latency) when the marker is present.
+func TestExpectContentPassesWhenBodyMatches(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte(`<html><main id="main-content">hi</main></html>`))
+	}))
+	defer srv.Close()
+
+	p := NewProber([]Target{{Name: "web", URL: srv.URL, Expect: `id="main-content"`}})
+	p.ProbeOnce(context.Background())
+
+	snap := p.Snapshot()
+	got := snap.Service("web")
+	if got.Status != StatusUp || !got.Up {
+		t.Fatalf("expected up, got %q", got.Status)
+	}
+	if got.LatencyMs == nil {
+		t.Fatal("expected a measured latency on a passing content probe")
+	}
+}
+
+// TestDegradedAfterBudget asserts a response that arrives but blows its latency
+// budget is reported degraded — a status page calling an 8-second page
+// "Operational" is the one disagreeing with every user looking at it.
+func TestDegradedAfterBudget(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(60 * time.Millisecond)
+		w.WriteHeader(200)
+	}))
+	defer srv.Close()
+
+	p := NewProber([]Target{{Name: "slow", URL: srv.URL, DegradedAfter: 10 * time.Millisecond}})
+	p.ProbeOnce(context.Background())
+
+	snap := p.Snapshot()
+	got := snap.Service("slow")
+	if got.Status != StatusDegraded {
+		t.Fatalf("expected degraded for over-budget response, got %q", got.Status)
+	}
+	// Unlike the error paths, latency is retained here — the number is the finding.
+	if got.LatencyMs == nil {
+		t.Fatal("expected latency to be retained on a slow-but-answering probe")
+	}
+	if !strings.Contains(got.Detail, "slow") {
+		t.Fatalf("detail should mention slowness, got %q", got.Detail)
+	}
+}
+
+// TestNoBudgetMeansNoSlowDowngrade asserts targets without a budget keep the
+// original behaviour (any 2xx is up), so existing probes are unaffected.
+func TestNoBudgetMeansNoSlowDowngrade(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(30 * time.Millisecond)
+		w.WriteHeader(200)
+	}))
+	defer srv.Close()
+
+	p := NewProber([]Target{{Name: "nobudget", URL: srv.URL}})
+	p.ProbeOnce(context.Background())
+
+	snap := p.Snapshot()
+	if got := snap.Service("nobudget"); got.Status != StatusUp {
+		t.Fatalf("expected up without a budget, got %q", got.Status)
+	}
+}
+
+// TestGroupPropagatesToServiceStatus asserts a target's Group reaches the
+// snapshot both before the first probe and after it, since the dashboard's
+// section headings read it from there.
+func TestGroupPropagatesToServiceStatus(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(200) }))
+	defer srv.Close()
+
+	p := NewProber([]Target{{Name: "web", URL: srv.URL, Group: "Core"}})
+	before := p.Snapshot()
+	if got := before.Service("web"); got.Group != "Core" {
+		t.Fatalf("group missing before first probe: %q", got.Group)
+	}
+	p.ProbeOnce(context.Background())
+	after := p.Snapshot()
+	if got := after.Service("web"); got.Group != "Core" {
+		t.Fatalf("group missing after probe: %q", got.Group)
 	}
 }

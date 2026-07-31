@@ -14,10 +14,11 @@
  *     (see `lib/wager/escrow.server.ts`): a losing concurrent buyer's `count`
  *     comes back 0 and is rejected.
  *  3. Coins are conserved with a 10% burn. Buyer pays `price`; seller is
- *     credited `proceeds` (90%); `fee` (10%) is credited to nobody — it is a
- *     pure sink. The buyer's `PURCHASE` ledger row records the full debit and
- *     notes the burn; the seller's `MARKET` credit records the proceeds. Summing
- *     market debits minus market credits over the ledger yields the total burned.
+ *     credited `proceeds` (90%); `fee` (10%) is destroyed. Both movements go
+ *     through `transferCoins`, which writes a `MARKET` transfer row plus a
+ *     separate fee SINK row — so the burn is an actual recorded movement rather
+ *     than a number mentioned in a note, and summing the ledger reproduces
+ *     every balance involved.
  *  4. Market proceeds are NOT creator earnings. The seller credit is typed
  *     `MARKET`, which `lib/creator/earnings.server.ts` deliberately excludes from
  *     its "earned" derivation — closing the coins→cash redemption laundering path.
@@ -25,7 +26,8 @@
 
 import type { Prisma, MarketListing } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
-import { debitCoins, creditCoins, EscrowError } from '@/lib/wager/escrow.server';
+import { EscrowError } from '@/lib/wager/escrow.server';
+import { transferCoins, InsufficientFundsError } from '@/lib/economy/ledger.server';
 import { getShopItem, type ShopItem } from '@/lib/shop/catalog';
 import { levelFromXp } from '@/lib/xp/levels';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
@@ -258,38 +260,32 @@ export async function buyListing({
 
     const { fee, proceeds } = marketFee(listing.priceCoins);
 
-    // Move coins: debit the buyer the full price (throws INSUFFICIENT_COINS →
-    // rolls back the claim), credit the seller their proceeds. The fee is burned.
-    await debitCoins(tx, buyerId, listing.priceCoins);
-    await creditCoins(tx, listing.sellerId, proceeds);
-
-    // Ledger rows (inside the tx). Buyer PURCHASE debit records the full outflow
-    // and the burn; seller MARKET credit records the proceeds (excluded from
-    // creator "earned").
+    // Buyer pays the full price, seller receives the proceeds, the fee is
+    // burned — one atomic transfer that writes its own ledger rows (a MARKET
+    // transfer plus a separate fee sink).
+    //
+    // This replaces a debit/credit pair plus two hand-written rows that
+    // together double-counted the buyer: one row recorded them as RECIPIENT of
+    // `-price`, the other as SENDER of `proceeds`, so summing the ledger
+    // overstated their spend by the proceeds on every sale. The fee was also
+    // only described in a note, never recorded as a movement.
     const item = getShopItem(listing.itemId);
     const label = item?.name ?? listing.itemId;
-    await tx.coinTransaction.create({
-      data: {
-        senderId: null,
-        recipientId: buyerId,
-        amount: -listing.priceCoins,
-        type: 'PURCHASE',
-        entityType: 'market',
-        entityId: listing.id,
-        note: `Bought ${label} · ${fee} coin fee burned`.slice(0, 280),
-      },
-    });
-    await tx.coinTransaction.create({
-      data: {
-        senderId: buyerId,
-        recipientId: listing.sellerId,
-        amount: proceeds,
+    try {
+      await transferCoins(buyerId, listing.sellerId, listing.priceCoins, {
+        tx,
+        fee,
         type: 'MARKET',
         entityType: 'market',
         entityId: listing.id,
-        note: `Sold ${label}`.slice(0, 280),
-      },
-    });
+        note: `${label} · ${fee} coin fee burned`.slice(0, 280),
+      });
+    } catch (err) {
+      if (err instanceof InsufficientFundsError) {
+        throw new EscrowError('Insufficient coins', 'INSUFFICIENT_COINS');
+      }
+      throw err;
+    }
 
     // Re-parent the escrowed inventory row to the buyer (same row id → no
     // duplication). Reset equip state + acquisition time for the new owner.

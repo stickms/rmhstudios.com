@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
+import { debitCoins } from '@/lib/economy/ledger.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { getShopItem } from '@/lib/shop/catalog';
@@ -46,22 +47,18 @@ export const Route = createFileRoute('/api/shop/purchase')({
             });
             if (existing) throw new Error('ALREADY_OWNED');
 
-            await tx.userProfile.upsert({
-              where: { userId },
-              create: { userId, coins: 10 },
-              update: {},
+            // A shop purchase is a pure SINK: the coins leave circulation
+            // entirely. debitCoins keeps the balance guard inside the UPDATE
+            // and writes the matching ledger row, so the spend is visible to
+            // supply reporting instead of vanishing.
+            await debitCoins(userId, item.price, {
+              tx,
+              type: 'PURCHASE',
+              entityType: 'shop',
+              entityId: item.id,
+              note: item.name,
             });
-            // Atomic conditional debit — the `coins >= price` guard in the WHERE
-            // clause stops concurrent purchases overdrafting on a stale balance.
-            const debit = await tx.userProfile.updateMany({
-              where: { userId, coins: { gte: item.price } },
-              data: { coins: { decrement: item.price } },
-            });
-            if (debit.count === 0) throw new Error('INSUFFICIENT_COINS');
             await tx.userInventory.create({ data: { userId, itemId: item.id, kind: item.kind } });
-            await tx.coinTransaction.create({
-              data: { recipientId: userId, amount: -item.price, type: 'PURCHASE', entityType: 'shop', entityId: item.id, note: item.name },
-            });
           });
 
           await grantAchievement(userId, 'economy.first_purchase');

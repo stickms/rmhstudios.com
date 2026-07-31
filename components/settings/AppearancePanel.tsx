@@ -10,7 +10,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { useThemeStore } from '@/stores/themeStore';
-import { FONT_SCALES, HEX_RE, type FontScale } from '@/lib/appearance/prefs';
+import {
+  FONT_SCALES,
+  HEX_RE,
+  COLOR_VISION_MODES,
+  COLOR_VISION_LABELS,
+  COLOR_VISION_HINTS,
+  type FontScale,
+  type ColorVisionMode,
+} from '@/lib/appearance/prefs';
 import { ensureReadableAccent } from '@/lib/appearance/contrast';
 import { TiltEffectsRow } from '@/components/settings/TiltEffectsRow';
 
@@ -56,6 +64,10 @@ export function AppearancePanel() {
   function setReduceMotion(value: boolean) {
     store.setReduceMotion(value);
     void persist({ reduceMotion: value });
+  }
+  function setColorVision(value: ColorVisionMode) {
+    store.setColorVision(value);
+    void persist({ colorVision: value });
   }
   function applyCustomAccent(hex: string) {
     if (!HEX_RE.test(hex)) return;
@@ -168,6 +180,63 @@ export function AppearancePanel() {
             })}
           </p>
         ) : null}
+      </Section>
+
+      {/* Colour vision */}
+      <Section
+        title={t('color-vision', { defaultValue: 'Colour vision' })}
+        description={t('color-vision-desc', {
+          defaultValue:
+            'Retint success, warning and danger colours so they stay distinguishable. Status labels also carry their own icon, so nothing depends on colour alone.',
+        })}
+      >
+        <div
+          role="radiogroup"
+          aria-label={t('color-vision', { defaultValue: 'Colour vision' })}
+          className="grid gap-2 sm:grid-cols-2"
+        >
+          {COLOR_VISION_MODES.map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              role="radio"
+              aria-checked={store.colorVision === mode}
+              onClick={() => setColorVision(mode)}
+              className={cn(
+                'rounded-site-sm px-3 py-2 text-left transition-colors',
+                store.colorVision === mode
+                  ? 'bg-site-accent text-site-accent-fg'
+                  : 'border border-site-border bg-site-surface text-site-text hover:border-site-text/40',
+              )}
+            >
+              <span className="block text-sm font-medium">
+                {t(`color-vision-${mode}`, { defaultValue: COLOR_VISION_LABELS[mode] })}
+              </span>
+              <span
+                className={cn(
+                  'block text-xs',
+                  store.colorVision === mode ? 'opacity-80' : 'text-site-text-muted',
+                )}
+              >
+                {t(`color-vision-${mode}-hint`, { defaultValue: COLOR_VISION_HINTS[mode] })}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* A live swatch row: the three semantic colours as they will actually
+            render, so the choice can be judged instead of guessed. */}
+        <div className="mt-3 flex flex-wrap gap-2" aria-hidden>
+          <span className="rounded-site-sm border border-site-success/20 bg-site-success/10 px-2.5 py-1 text-xs font-semibold text-site-success">
+            ✓ {t('color-vision-sample-success', { defaultValue: 'Success' })}
+          </span>
+          <span className="rounded-site-sm border border-site-warning/20 bg-site-warning/10 px-2.5 py-1 text-xs font-semibold text-site-warning">
+            ⚠ {t('color-vision-sample-warning', { defaultValue: 'Warning' })}
+          </span>
+          <span className="rounded-site-sm border border-site-danger/20 bg-site-danger/10 px-2.5 py-1 text-xs font-semibold text-site-danger">
+            ✕ {t('color-vision-sample-danger', { defaultValue: 'Danger' })}
+          </span>
+        </div>
       </Section>
 
       {/* Comfort toggles */}

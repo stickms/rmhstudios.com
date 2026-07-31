@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { AppliedUserTheme, AppliedUserThemePreview } from '@/lib/themes/tokens';
+import { DEFAULT_COLOR_VISION, type ColorVisionMode } from '@/lib/appearance/prefs';
 
 // Each theme carries its document background color (`bg`) alongside its catalog
 // metadata so there is ONE source of truth for the theme→background map. Both the
@@ -91,6 +92,14 @@ interface ThemeStore {
   /** Account-level reduce-motion, OR-ed with the OS media query. */
   reduceMotion: boolean;
   setReduceMotion: (value: boolean) => void;
+  /**
+   * Colour-vision deficiency mode. Retints the three semantic tokens
+   * (success/danger/warning) to a palette that stays separable under that
+   * deficiency; 'none' leaves the theme untouched. Persisted and
+   * account-synced like `style`.
+   */
+  colorVision: ColorVisionMode;
+  setColorVision: (value: ColorVisionMode) => void;
 
   // ── Marketplace user themes (§14) ────────────────────────────────────────
   /**
@@ -133,6 +142,8 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   setCustomAccent: (customAccent) => set({ customAccent }),
   reduceMotion: false,
   setReduceMotion: (reduceMotion) => set({ reduceMotion }),
+  colorVision: DEFAULT_COLOR_VISION,
+  setColorVision: (colorVision) => set({ colorVision }),
   userTheme: null,
   // Applying/removing an owned theme also clears any transient preview.
   setUserTheme: (userTheme) => set({ userTheme, userThemePreview: null }),

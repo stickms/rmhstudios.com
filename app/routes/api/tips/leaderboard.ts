@@ -13,13 +13,23 @@ export const Route = createFileRoute('/api/tips/leaderboard')({
 
           const grouped = await prisma.coinTransaction.groupBy({
             by: ['recipientId'],
-            where: { type: 'TIP', amount: { gt: 0 }, ...(since ? { createdAt: { gte: since } } : {}) },
+            where: {
+              type: 'TIP',
+              amount: { gt: 0 },
+              // A TIP row with no recipient is a fee SINK (coins destroyed),
+              // not a tip anyone received — excluding it keeps the leaderboard
+              // measuring what its name says.
+              recipientId: { not: null },
+              ...(since ? { createdAt: { gte: since } } : {}),
+            },
             _sum: { amount: true },
             orderBy: { _sum: { amount: 'desc' } },
             take: 20,
           });
 
-          const ids = grouped.map((g) => g.recipientId);
+          const ids = grouped
+            .map((g) => g.recipientId)
+            .filter((id): id is string => id !== null);
           const users = ids.length
             ? await prisma.user.findMany({ where: { id: { in: ids } }, select: userDisplaySelect })
             : [];
@@ -27,7 +37,7 @@ export const Route = createFileRoute('/api/tips/leaderboard')({
 
           const leaders = grouped
             .map((g) => {
-              const u = byId.get(g.recipientId);
+              const u = g.recipientId ? byId.get(g.recipientId) : undefined;
               if (!u) return null;
               return { user: resolveUser(u), total: g._sum.amount ?? 0 };
             })

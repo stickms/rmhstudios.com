@@ -8,6 +8,7 @@
  * uses (`getUserTier` !== 'free'). Buying stays open to anyone with coins.
  */
 import { prisma } from '@/lib/prisma.server';
+import { transferCoins, InsufficientFundsError } from '@/lib/economy/ledger.server';
 import {
   themeTokensSchema,
   canPublish,
@@ -164,45 +165,30 @@ export async function buyTheme(buyerId: string, id: string): Promise<BuyResult> 
   const payout = price - Math.floor(price * FEE_RATE);
 
   return prisma.$transaction(async (tx) => {
-    await tx.userProfile.upsert({ where: { userId: buyerId }, create: { userId: buyerId, coins: 10 }, update: {} });
-    const debit = await tx.userProfile.updateMany({
-      where: { userId: buyerId, coins: { gte: price } },
-      data: { coins: { decrement: price } },
-    });
-    if (debit.count === 0) throw new ThemeError('INSUFFICIENT_COINS');
+    // One transfer replaces the debit/credit pair AND the two ledger rows it
+    // used to write. Those rows double-counted the buyer: they recorded the
+    // buyer as sender of `payout` *and* as recipient of `-price`, so summing
+    // the ledger overstated the spend by the payout every time.
+    try {
+      await transferCoins(buyerId, theme.authorId, price, {
+        tx,
+        fee: price - payout,
+        type: 'PURCHASE',
+        entityType: 'user_theme',
+        entityId: id,
+        note: `Theme: ${theme.name}`,
+      });
+    } catch (err) {
+      if (err instanceof InsufficientFundsError) throw new ThemeError('INSUFFICIENT_COINS');
+      throw err;
+    }
     const buyer = await tx.userProfile.findUnique({ where: { userId: buyerId }, select: { coins: true } });
-    await tx.userProfile.upsert({
-      where: { userId: theme.authorId },
-      create: { userId: theme.authorId, coins: 10 + payout },
-      update: { coins: { increment: payout } },
-    });
     await tx.userInventory.upsert({
       where: { userId_itemId: { userId: buyerId, itemId: inventoryItemId(id) } },
       create: { userId: buyerId, itemId: inventoryItemId(id), kind: 'THEME' },
       update: {},
     });
     await tx.userTheme.update({ where: { id }, data: { sales: { increment: 1 } } });
-    await tx.coinTransaction.createMany({
-      data: [
-        {
-          senderId: buyerId,
-          recipientId: theme.authorId,
-          amount: payout,
-          type: 'PURCHASE',
-          entityType: 'user_theme',
-          entityId: id,
-          note: `Theme: ${theme.name}`,
-        },
-        {
-          recipientId: buyerId,
-          amount: -price,
-          type: 'PURCHASE',
-          entityType: 'user_theme',
-          entityId: id,
-          note: `Theme: ${theme.name}`,
-        },
-      ],
-    });
     return { balance: buyer?.coins ?? 0 };
   });
 }

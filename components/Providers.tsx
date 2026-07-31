@@ -34,8 +34,11 @@ import {
   CUSTOM_ACCENT_KEY,
   REDUCE_MOTION_KEY,
   GLASS_LEVEL_KEY,
+  COLOR_VISION_KEY,
   isGlassLevel,
   applyGlassLevel,
+  isColorVisionMode,
+  applyColorVision,
 } from '@/lib/appearance/prefs';
 import { useSpatialParallax } from '@/hooks/useSpatialParallax';
 import { useFluidPressLayer } from '@/hooks/useFluidPress';
@@ -235,6 +238,7 @@ export function Providers({
   const readableFont = useThemeStore((s) => s.readableFont);
   const customAccent = useThemeStore((s) => s.customAccent);
   const reduceMotion = useThemeStore((s) => s.reduceMotion);
+  const colorVision = useThemeStore((s) => s.colorVision);
   const userTheme = useThemeStore((s) => s.userTheme);
   const userThemePreview = useThemeStore((s) => s.userThemePreview);
   const { pathname } = useLocation();
@@ -465,6 +469,8 @@ export function Providers({
     if (localStorage.getItem(REDUCE_MOTION_KEY) === '1') st.setReduceMotion(true);
     const ca = localStorage.getItem(CUSTOM_ACCENT_KEY);
     if (ca && HEX_RE.test(ca)) st.setCustomAccent(ca);
+    const cv = localStorage.getItem(COLOR_VISION_KEY);
+    if (isColorVisionMode(cv)) st.setColorVision(cv);
     // Marketplace user theme (§14): the no-flash script already painted it; hydrate
     // the store so the runtime effect keeps it applied and can clear it on removal.
     try {
@@ -569,6 +575,14 @@ export function Providers({
     html.classList.toggle('reduce-motion', reduceMotion);
     if (reduceMotion) localStorage.setItem(REDUCE_MOTION_KEY, '1');
     else localStorage.removeItem(REDUCE_MOTION_KEY);
+    // Colour-vision mode retints the semantic tokens via a data attribute the
+    // theme cascade reads (see globals.css). Cached in localStorage so the
+    // no-flash script in __root.tsx can apply it before first paint — without
+    // that, a viewer who can't distinguish the default palette would see the
+    // wrong status colours for a frame on every navigation.
+    applyColorVision(html, colorVision);
+    if (colorVision !== 'none') localStorage.setItem(COLOR_VISION_KEY, colorVision);
+    else localStorage.removeItem(COLOR_VISION_KEY);
     // Custom accent (raw hex) overrides the preset accent applied just above.
     if (customAccent && HEX_RE.test(customAccent) && !isAppRoute) {
       const { hex, fg } = ensureReadableAccent(customAccent);
@@ -637,6 +651,7 @@ export function Providers({
     readableFont,
     customAccent,
     reduceMotion,
+    colorVision,
     userTheme,
     userThemePreview,
   ]);
@@ -745,6 +760,7 @@ export function Providers({
             customAccent?: string | null;
             reduceMotion?: boolean | null;
             glassLevel?: number | null;
+            colorVision?: string | null;
           };
           if ([875, 1000, 1125, 1250].includes(Number(r.fontScale)))
             store.setFontScale(Number(r.fontScale));
@@ -753,6 +769,7 @@ export function Providers({
           if (typeof r.reduceMotion === 'boolean') store.setReduceMotion(r.reduceMotion);
           if (typeof r.customAccent === 'string' && HEX_RE.test(r.customAccent))
             store.setCustomAccent(r.customAccent);
+          if (isColorVisionMode(r.colorVision)) store.setColorVision(r.colorVision);
           // Glass clarity (§5.46): the account stop wins; otherwise map a legacy
           // reduce-transparency flag to stop 0 (Opaque). glassLevel is authoritative
           // for the reduce-transparency class going forward.

@@ -19,6 +19,7 @@
 
 import OpenAI from 'openai';
 import type { PrismaClient } from '@prisma/client';
+import { creditCoinsOn } from '@/lib/economy/ledger-core';
 import { placeTrade, resolvePrediction } from './predictions.server';
 import type { Side } from './lmsr';
 
@@ -199,10 +200,20 @@ export async function placeNoiseBets(
 
     try {
       // Ensure the bot can afford it (bots may have no profile yet).
+      // Bots get a small stipend so the book keeps moving. Seeded richer than
+      // a human on first sight, then topped up through the ledger like any
+      // other faucet, so synthetic liquidity shows up in supply reporting
+      // instead of hiding inside the market's volume.
       await prisma.userProfile.upsert({
         where: { userId: bot.id },
         create: { userId: bot.id, coins: 500 },
-        update: { coins: { increment: 50 } },
+        update: {},
+      });
+      await creditCoinsOn(prisma, bot.id, 50, {
+        type: 'REWARD',
+        entityType: 'prediction-bot',
+        entityId: market.id,
+        note: 'Bot liquidity stipend',
       });
       await placeTrade({ userId: bot.id, predictionId: market.id, side, amount: stake }, prisma);
       placed++;

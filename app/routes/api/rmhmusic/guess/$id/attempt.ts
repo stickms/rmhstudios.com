@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
+import { creditCoins } from '@/lib/economy/ledger.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { awardXp } from '@/lib/xp/engine.server';
@@ -52,15 +53,25 @@ export const Route = createFileRoute('/api/rmhmusic/guess/$id/attempt')({
 
           // Solve: record attempt, bump counters, reward (fewer hints = more XP).
           const reward = Math.max(5, 30 - parsed.data.hintsUsed * 5);
-          await prisma.$transaction([
-            prisma.musicGuessAttempt.upsert({
+          // Interactive (not array) transaction so the coin grant can join it:
+          // the reward and the solve record commit together or not at all. The
+          // puzzle/user pair is the idempotency key — a puzzle pays out once.
+          await prisma.$transaction(async (tx) => {
+            await tx.musicGuessAttempt.upsert({
               where: { puzzleId_userId: { puzzleId: puzzle.id, userId } },
               create: { puzzleId: puzzle.id, userId, solved: true, hintsUsed: parsed.data.hintsUsed },
               update: { solved: true, hintsUsed: parsed.data.hintsUsed },
-            }),
-            prisma.musicGuessPuzzle.update({ where: { id: puzzle.id }, data: { plays: { increment: 1 }, solves: { increment: 1 } } }),
-            prisma.userProfile.upsert({ where: { userId }, create: { userId, coins: 10 + reward }, update: { coins: { increment: reward } } }),
-          ]);
+            });
+            await tx.musicGuessPuzzle.update({ where: { id: puzzle.id }, data: { plays: { increment: 1 }, solves: { increment: 1 } } });
+            await creditCoins(userId, reward, {
+              tx,
+              type: 'REWARD',
+              entityType: 'music-guess',
+              entityId: puzzle.id,
+              note: 'Music guess solved',
+              idempotencyKey: `music-guess:${userId}:${puzzle.id}`,
+            });
+          });
           await awardXp(userId, reward);
           await recordGamePlay(userId);
           await grantAchievement(userId, 'game.first_music_guess').catch(() => {});

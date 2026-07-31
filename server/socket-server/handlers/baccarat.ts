@@ -9,6 +9,7 @@
 
 import type { Server, Socket } from 'socket.io';
 import { getPrismaClient } from '../prisma-client';
+import { debitCoinsOn, creditCoinsOn, getBalanceOn } from '@/lib/economy/ledger-core';
 import { checkRateLimit } from '../rate-limit';
 import { logger } from '../logger';
 import {
@@ -475,19 +476,18 @@ async function resolveRound(room: BaccaratRoom) {
     await prisma.$transaction(async (tx: any) => {
       for (const update of payoutUpdates) {
         if (update.totalPayout > 0) {
-          const updated = await tx.userProfile.update({
-            where: { userId: update.userId },
-            data: { coins: { increment: update.totalPayout } },
-            select: { coins: true },
+          // Payout from the house: a faucet, recorded so the table's coin
+          // creation shows up in supply reporting instead of appearing as an
+          // unexplained balance jump.
+          await creditCoinsOn(tx, update.userId, update.totalPayout, {
+            tx,
+            type: 'WAGER',
+            entityType: 'baccarat',
+            entityId: room.roomId,
+            note: 'Baccarat payout',
           });
-          balanceMap.set(update.userId, updated.coins);
-        } else {
-          const profile = await tx.userProfile.findUnique({
-            where: { userId: update.userId },
-            select: { coins: true },
-          });
-          balanceMap.set(update.userId, profile?.coins ?? 0);
         }
+        balanceMap.set(update.userId, await getBalanceOn(tx, update.userId));
       }
     });
 
@@ -940,22 +940,19 @@ async function onPlaceBet(socket: Socket, payload: unknown) {
   try {
     const prisma = getPrismaClient();
     const result = await prisma.$transaction(async (tx: any) => {
-      const profile = await tx.userProfile.findUnique({
-        where: { userId },
-        select: { coins: true },
+      // The stake leaves circulation. Was read-then-decrement: two actions
+      // arriving together both read the same balance, both passed the check and
+      // both decremented — a double-spend at a gambling table, where spamming
+      // the action is the whole attack. debitCoinsOn puts the balance guard
+      // inside the UPDATE, so the loser matches zero rows and throws.
+      await debitCoinsOn(tx, userId, amount, {
+        tx,
+        type: 'WAGER',
+        entityType: 'baccarat',
+        entityId: room.roomId,
+        note: 'Baccarat bet',
       });
-
-      if (!profile || profile.coins < amount) {
-        throw new Error('INSUFFICIENT_COINS');
-      }
-
-      const updated = await tx.userProfile.update({
-        where: { userId },
-        data: { coins: { decrement: amount } },
-        select: { coins: true },
-      });
-
-      return updated.coins;
+      return getBalanceOn(tx, userId);
     });
 
     // Add to the specific bet type
@@ -1004,12 +1001,16 @@ async function onClearBets(socket: Socket) {
   try {
     const prisma = getPrismaClient();
     const result = await prisma.$transaction(async (tx: any) => {
-      const updated = await tx.userProfile.update({
-        where: { userId },
-        data: { coins: { increment: refundAmount } },
-        select: { coins: true },
+      // Returning an un-resolved stake: a faucet back to the player, paired
+      // with the WAGER sink that took it.
+      await creditCoinsOn(tx, userId, refundAmount, {
+        tx,
+        type: 'WAGER',
+        entityType: 'baccarat',
+        entityId: room.roomId,
+        note: 'Baccarat bet cleared',
       });
-      return updated.coins;
+      return getBalanceOn(tx, userId);
     });
 
     player.bets = emptyBets();

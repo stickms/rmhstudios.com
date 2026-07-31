@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
+import { transferCoins } from '@/lib/economy/ledger.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { createNotification } from '@/lib/notifications.server';
 
@@ -45,24 +46,19 @@ export const Route = createFileRoute('/api/rmharks/$id/unlock')({
 
           const price = post.unlockPrice;
           await prisma.$transaction(async (tx) => {
-            const buyer = await tx.userProfile.upsert({
-              where: { userId },
-              create: { userId, coins: 10 },
-              update: {},
-              select: { coins: true },
-            });
-            if (buyer.coins < price) throw new Error('INSUFFICIENT_COINS');
-
-            await tx.userProfile.update({ where: { userId }, data: { coins: { decrement: price } } });
-            await tx.userProfile.upsert({
-              where: { userId: post.userId },
-              create: { userId: post.userId, coins: 10 + price },
-              update: { coins: { increment: price } },
+            // Was read-then-decrement: two concurrent unlocks could both read
+            // the same balance, both pass the check and both decrement. The
+            // guard now lives inside the UPDATE. A post unlocks once per user,
+            // so that pair is a natural idempotency key.
+            await transferCoins(userId, post.userId, price, {
+              tx,
+              type: 'PURCHASE',
+              entityType: 'rmhark',
+              entityId: id,
+              note: 'Post unlock',
+              idempotencyKey: `post-unlock:${userId}:${id}`,
             });
             await tx.postUnlock.create({ data: { userId, rmheetId: id, pricePaid: price } });
-            await tx.coinTransaction.create({
-              data: { senderId: userId, recipientId: post.userId, amount: price, type: 'PURCHASE', entityType: 'rmhark', entityId: id, note: 'Post unlock' },
-            });
           });
 
           await createNotification({

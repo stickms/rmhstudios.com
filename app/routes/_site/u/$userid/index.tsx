@@ -86,7 +86,21 @@ export const Route = createFileRoute('/_site/u/$userid/')({
         ? [{ name: 'twitter:image', content: loaderData.meta.ogImage }]
         : []),
     ],
-    links: loaderData?.meta.ogUrl ? [{ rel: 'canonical', href: loaderData.meta.ogUrl }] : [],
+    links: [
+      ...(loaderData?.meta.ogUrl ? [{ rel: 'canonical', href: loaderData.meta.ogUrl }] : []),
+      // Feed autodiscovery: without this the RSS endpoint exists but no reader
+      // can find it, which is most of the value of having one.
+      ...(loaderData?.meta.handle
+        ? [
+            {
+              rel: 'alternate',
+              type: 'application/rss+xml',
+              title: `${loaderData.meta.name ?? loaderData.meta.handle} — posts`,
+              href: `/u/${loaderData.meta.handle}/rss.xml`,
+            },
+          ]
+        : []),
+    ],
     scripts: loaderData?.meta.name
       ? [
           jsonLdScript(

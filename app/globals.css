@@ -819,6 +819,64 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
+   COLOUR-VISION MODES
+   Retints the three SEMANTIC tokens for viewers with a colour-vision
+   deficiency. Everything else (accent, surfaces, text) is untouched — this is
+   about the colours that CARRY MEANING, not about repainting the site.
+
+   Placed after every `.style-*` block on purpose. `html[data-color-vision=…]`
+   is specificity (0,1,1), which beats a theme class (0,1,0), so one rule per
+   mode wins under any theme instead of needing a variant per theme pairing.
+   The dark themes still get their own block because a hue that reads correctly
+   on white is usually too dark on black.
+
+   Palette basis: Okabe–Ito, the standard colour-vision-safe qualitative set.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Red–green deficiencies. Green and red collapse toward each other, so success
+   moves to BLUE; danger stays a warm vermillion and warning a light amber, so
+   the three separate by hue and by lightness rather than by a red/green
+   difference the viewer cannot perceive. */
+html[data-color-vision='deuteranopia'],
+html[data-color-vision='protanopia'] {
+  --site-success: #005f9e;
+  --site-danger: #b03000;
+  --site-danger-fg: #ffffff;
+  --site-warning: #7a5600;
+  --site-warning-fg: #ffffff;
+}
+
+/* Same hues lifted for dark surfaces: the light-theme values fall below the
+   contrast floor on a near-black background. */
+html[data-color-vision='deuteranopia']:is(.style-graphite, .style-high-contrast, .style-nocturne, .style-ultra),
+html[data-color-vision='protanopia']:is(.style-graphite, .style-high-contrast, .style-nocturne, .style-ultra) {
+  --site-success: #56b4e9;
+  --site-danger: #ff9a6b;
+  --site-danger-fg: #1a0800;
+  --site-warning: #f0e442;
+  --site-warning-fg: #1a1500;
+}
+
+/* Blue–yellow deficiency. Red and green are seen normally, so success/danger
+   keep their conventional hues; the YELLOW warning is what collapses, so it
+   becomes magenta. */
+html[data-color-vision='tritanopia'] {
+  --site-success: #167d3a;
+  --site-danger: #c40016;
+  --site-danger-fg: #ffffff;
+  --site-warning: #a01f7a;
+  --site-warning-fg: #ffffff;
+}
+
+html[data-color-vision='tritanopia']:is(.style-graphite, .style-high-contrast, .style-nocturne, .style-ultra) {
+  --site-success: #4ade80;
+  --site-danger: #ff8080;
+  --site-danger-fg: #1a0000;
+  --site-warning: #ff8ad8;
+  --site-warning-fg: #1a0014;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
    LIQUID GLASS MATERIAL SYSTEM
    The former `.style-liquid-glass` theme is now the site default (:root above).
    Glass is expressed as explicit, opt-in elevation classes placed ON components

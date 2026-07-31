@@ -8,14 +8,16 @@ import (
 	"github.com/rmhstudios/rmh-go/internal/status"
 )
 
-// default*URL mirror the corresponding env defaults in main(): the user-facing
-// realtime hubs are probed through the PUBLIC origin (each hub's health under
-// its WS prefix), while the internal-only services use Service/compose DNS.
+// default*URL mirror the corresponding env defaults in main(): everything a
+// user touches is probed through the PUBLIC origin (so the probe traverses DNS
+// → CDN → Apache → container, the same path a visitor takes), while the
+// internal-only services use compose DNS names.
 const (
 	publicOrigin         = "https://rmhstudios.com"
-	defaultGatewayURL    = publicOrigin + "/health"
+	defaultReadyURL      = publicOrigin + "/api/ready"
+	defaultFeedURL       = publicOrigin + "/blog.rss.xml"
+	defaultSitemapURL    = publicOrigin + "/sitemap.xml"
 	defaultSocketURL     = publicOrigin + "/socket/health"
-	defaultRMHMusicURL   = publicOrigin + "/rmhmusic-ws/health"
 	defaultRMHBoxURL     = publicOrigin + "/rmhbox-ws/health"
 	defaultRMHTubeURL    = publicOrigin + "/rmhtube-ws/health"
 	defaultAssetsURL     = "http://assets:7007/health"
@@ -27,9 +29,10 @@ const (
 func defaultURLs() probeURLs {
 	return probeURLs{
 		Website:    publicOrigin + "/",
-		Gateway:    defaultGatewayURL,
+		Ready:      defaultReadyURL,
+		Feed:       defaultFeedURL,
+		Sitemap:    defaultSitemapURL,
 		Socket:     defaultSocketURL,
-		RMHMusic:   defaultRMHMusicURL,
 		RMHBox:     defaultRMHBoxURL,
 		RMHTube:    defaultRMHTubeURL,
 		Assets:     defaultAssetsURL,
@@ -39,8 +42,8 @@ func defaultURLs() probeURLs {
 
 // httpTargetNames are every HTTP (non-Database) target buildTargets emits.
 var httpTargetNames = []string{
-	"Website", "Gateway", "Realtime / Games", "RMHmusic",
-	"RMHbox", "RMHtube", "Assets", "Background workers",
+	"Website", "App readiness", "Realtime / Games", "RMHbox", "RMHtube",
+	"Content feed", "Sitemap", "Assets", "Background workers",
 }
 
 // TestBuildTargetsOmitsDatabaseWithoutDSN asserts that with DATABASE_URL unset
@@ -64,8 +67,8 @@ func TestBuildTargetsOmitsDatabaseWithoutDSN(t *testing.T) {
 }
 
 // TestBuildTargetsIncludesDatabaseWithDSN asserts that with DATABASE_URL set the
-// Database probe target is appended (under Node's exact name + description) with
-// an injected Probe func, and HTTP targets carry no Probe func.
+// Database probe target is appended with an injected Probe func, and that HTTP
+// targets carry no Probe func.
 func TestBuildTargetsIncludesDatabaseWithDSN(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/db")
 
@@ -82,10 +85,9 @@ func TestBuildTargetsIncludesDatabaseWithDSN(t *testing.T) {
 	if db.Probe == nil {
 		t.Fatal("Database target must have an injected Probe func")
 	}
-	if db.Description != "PostgreSQL (via Prisma)" {
-		t.Fatalf("Database description mismatch: %q", db.Description)
+	if db.Group != "Core" {
+		t.Fatalf("Database target group = %q, want Core", db.Group)
 	}
-	// HTTP targets must not have a Probe func.
 	for _, name := range httpTargetNames {
 		if tg := findTarget(targets, name); tg != nil && tg.Probe != nil {
 			t.Fatalf("HTTP target %q unexpectedly has a Probe func", name)
@@ -93,31 +95,83 @@ func TestBuildTargetsIncludesDatabaseWithDSN(t *testing.T) {
 	}
 }
 
-// TestBuildTargetsProbesSupervisorNotRecap asserts the collapsed-topology fix:
-// there is a "Background workers" target pointing at the supervisor /health URL,
-// and NO standalone recap:7004 target remains.
-func TestBuildTargetsProbesSupervisorNotRecap(t *testing.T) {
+// TestRemovedTopologyTargetsAreGone is the regression guard for the reason this
+// service was retargeted: it used to probe a Go `gateway` and a standalone
+// `RMHmusic` hub, both DELETED with the Go realtime topology (rewrite §5.2).
+// A probe for a service that does not exist is either dead config or a green
+// tile for nothing — neither belongs on a status page.
+func TestRemovedTopologyTargetsAreGone(t *testing.T) {
 	t.Setenv("DATABASE_URL", "")
 
 	targets := buildTargets(defaultURLs(), 4*time.Second)
 
-	bg := findTarget(targets, "Background workers")
-	if bg == nil {
-		t.Fatal("missing 'Background workers' (supervisor) target")
-	}
-	if bg.URL != defaultSupervisorURL {
-		t.Fatalf("supervisor target URL = %q, want %q", bg.URL, defaultSupervisorURL)
-	}
-	if bg.Description != "Supervisor: discord-bot, recap, doctrine, vibe, bot-worker" {
-		t.Fatalf("supervisor target description mismatch: %q", bg.Description)
-	}
-	// No standalone recap target / recap:7004 URL anywhere.
-	if findTarget(targets, "Recap runner") != nil {
-		t.Fatal("'Recap runner' target must be removed in the Go topology")
+	for _, gone := range []string{"Gateway", "RMHmusic", "Recap runner"} {
+		if findTarget(targets, gone) != nil {
+			t.Fatalf("target %q belongs to the removed Go realtime topology and must not be probed", gone)
+		}
 	}
 	for _, tg := range targets {
-		if strings.Contains(tg.URL, "recap") || strings.Contains(tg.URL, ":7004") {
-			t.Fatalf("target %q still points at the collapsed recap service: %q", tg.Name, tg.URL)
+		for _, dead := range []string{"gateway", "rmhmusic-ws", "recap", ":7004", ":7002"} {
+			if strings.Contains(tg.URL, dead) {
+				t.Fatalf("target %q still points at removed infrastructure: %q", tg.Name, tg.URL)
+			}
+		}
+	}
+}
+
+// TestFunctionalProbesAssertContent is the core of the "actually test the
+// website" change: the user-path targets must assert on RESPONSE BODY, not just
+// on a status code. Without these, a web container serving a 200 empty shell
+// with a dead database reads as fully operational.
+func TestFunctionalProbesAssertContent(t *testing.T) {
+	t.Setenv("DATABASE_URL", "")
+
+	targets := buildTargets(defaultURLs(), 4*time.Second)
+
+	for _, c := range []struct{ name, want string }{
+		{"Website", `id="main-content"`},
+		{"App readiness", `"status":"ok"`},
+		{"Content feed", "<rss"},
+		{"Sitemap", "<urlset"},
+	} {
+		tg := findTarget(targets, c.name)
+		if tg == nil {
+			t.Fatalf("missing functional target %q", c.name)
+		}
+		if tg.Expect != c.want {
+			t.Fatalf("%q Expect = %q, want %q", c.name, tg.Expect, c.want)
+		}
+	}
+}
+
+// TestLatencyBudgetsSet asserts every HTTP target on the user path carries a
+// DegradedAfter budget, so a service that answers but crawls is reported
+// degraded rather than green. The two internal-only targets are exempt.
+func TestLatencyBudgetsSet(t *testing.T) {
+	t.Setenv("DATABASE_URL", "")
+
+	targets := buildTargets(defaultURLs(), 4*time.Second)
+	exempt := map[string]bool{"Assets": true, "Background workers": true}
+
+	for _, tg := range targets {
+		if tg.Probe != nil || exempt[tg.Name] {
+			continue
+		}
+		if tg.DegradedAfter <= 0 {
+			t.Fatalf("user-path target %q has no latency budget", tg.Name)
+		}
+	}
+}
+
+// TestEveryTargetIsGrouped asserts the dashboard's section headings have data
+// to work with — an ungrouped target would silently render in the wrong block.
+func TestEveryTargetIsGrouped(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/db")
+
+	valid := map[string]bool{"Core": true, "Realtime": true, "Content": true, "Platform": true}
+	for _, tg := range buildTargets(defaultURLs(), 4*time.Second) {
+		if !valid[tg.Group] {
+			t.Fatalf("target %q has unexpected group %q", tg.Name, tg.Group)
 		}
 	}
 }
@@ -138,20 +192,20 @@ func TestBuildTargetsSupervisorURLOverride(t *testing.T) {
 	}
 }
 
-// TestBuildTargetsGoServiceURLs asserts every Go-service target carries the
-// resolved URL passed in (compose DNS default → STATUS_<svc>_URL override), so
-// the same binary probes the right hosts under both compose and k3s.
-func TestBuildTargetsGoServiceURLs(t *testing.T) {
+// TestBuildTargetsURLsFlowThrough asserts every target carries the resolved URL
+// passed in (default → STATUS_<svc>_URL override) unchanged.
+func TestBuildTargetsURLsFlowThrough(t *testing.T) {
 	t.Setenv("DATABASE_URL", "")
 
-	// Defaults (compose DNS) flow through unchanged.
 	targets := buildTargets(defaultURLs(), 4*time.Second)
 	for _, c := range []struct{ name, want string }{
-		{"Gateway", defaultGatewayURL},
+		{"Website", publicOrigin + "/"},
+		{"App readiness", defaultReadyURL},
 		{"Realtime / Games", defaultSocketURL},
-		{"RMHmusic", defaultRMHMusicURL},
 		{"RMHbox", defaultRMHBoxURL},
 		{"RMHtube", defaultRMHTubeURL},
+		{"Content feed", defaultFeedURL},
+		{"Sitemap", defaultSitemapURL},
 		{"Assets", defaultAssetsURL},
 	} {
 		if tg := findTarget(targets, c.name); tg == nil || tg.URL != c.want {
@@ -159,52 +213,26 @@ func TestBuildTargetsGoServiceURLs(t *testing.T) {
 		}
 	}
 
-	// Overrides (k3s service names) flow through unchanged.
+	// Overrides (e.g. probing a staging origin) flow through unchanged.
 	overridden := buildTargets(probeURLs{
-		Website:    "https://rmhstudios.com/",
-		Gateway:    "http://rmhstudios-go-gateway:7005/health",
-		Socket:     "http://rmhstudios-go-gamehub:7001/health",
-		RMHMusic:   "http://rmhstudios-go-rmhmusic:7002/health",
-		RMHBox:     "http://rmhstudios-go-rmhbox:7676/health",
-		RMHTube:    "http://rmhstudios-go-rmhtube:7003/health",
-		Assets:     "http://rmhstudios-go-assets:7007/health",
+		Website:    "https://staging.rmhstudios.com/",
+		Ready:      "https://staging.rmhstudios.com/api/ready",
+		Feed:       "https://staging.rmhstudios.com/blog.rss.xml",
+		Sitemap:    "https://staging.rmhstudios.com/sitemap.xml",
+		Socket:     "http://socket-server:7001/health",
+		RMHBox:     "http://rmhbox:7676/health",
+		RMHTube:    "http://rmhtube:7003/health",
+		Assets:     defaultAssetsURL,
 		Supervisor: defaultSupervisorURL,
 	}, 4*time.Second)
 	for _, c := range []struct{ name, want string }{
-		{"Gateway", "http://rmhstudios-go-gateway:7005/health"},
-		{"Realtime / Games", "http://rmhstudios-go-gamehub:7001/health"},
-		{"RMHmusic", "http://rmhstudios-go-rmhmusic:7002/health"},
-		{"RMHbox", "http://rmhstudios-go-rmhbox:7676/health"},
-		{"RMHtube", "http://rmhstudios-go-rmhtube:7003/health"},
-		{"Assets", "http://rmhstudios-go-assets:7007/health"},
+		{"Website", "https://staging.rmhstudios.com/"},
+		{"Realtime / Games", "http://socket-server:7001/health"},
+		{"RMHbox", "http://rmhbox:7676/health"},
+		{"RMHtube", "http://rmhtube:7003/health"},
 	} {
 		if tg := findTarget(overridden, c.name); tg == nil || tg.URL != c.want {
 			t.Fatalf("override %q URL = %+v, want %q", c.name, tg, c.want)
-		}
-	}
-}
-
-// TestBuildTargetsOmitsK3sOnlyServicesWhenUnset asserts that Gateway and
-// RMHmusic — the k3s-only services that don't run under docker-compose — are
-// omitted when their URL is empty, so compose never shows a false "down".
-func TestBuildTargetsOmitsK3sOnlyServicesWhenUnset(t *testing.T) {
-	t.Setenv("DATABASE_URL", "")
-
-	urls := defaultURLs()
-	urls.Gateway = ""
-	urls.RMHMusic = ""
-	targets := buildTargets(urls, 4*time.Second)
-
-	if findTarget(targets, "Gateway") != nil {
-		t.Fatal("Gateway target must be omitted when STATUS_GATEWAY_URL is unset")
-	}
-	if findTarget(targets, "RMHmusic") != nil {
-		t.Fatal("RMHmusic target must be omitted when STATUS_RMHMUSIC_URL is unset")
-	}
-	// The always-on core services remain.
-	for _, name := range []string{"Website", "Realtime / Games", "RMHbox", "RMHtube", "Assets", "Background workers"} {
-		if findTarget(targets, name) == nil {
-			t.Fatalf("always-on target %q must remain present", name)
 		}
 	}
 }

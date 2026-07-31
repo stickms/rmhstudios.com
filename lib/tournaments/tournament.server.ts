@@ -67,7 +67,8 @@ export async function createTournament(
       if (seed > 0) {
         await recordWagerTxn(tx, {
           senderId: opts.createdById,
-          recipientId: opts.createdById,
+          // Hold: the seed leaves the creator's balance for the prize pot.
+          recipientId: null,
           amount: seed,
           entityType: 'tournament',
           entityId: t.id,
@@ -117,7 +118,8 @@ export async function registerForTournament(
         });
         await recordWagerTxn(tx, {
           senderId: opts.userId,
-          recipientId: opts.userId,
+          // Hold: the entry fee leaves the entrant's balance for the pot.
+          recipientId: null,
           amount: t.entryFeeCoins,
           entityType: 'tournament',
           entityId: t.id,

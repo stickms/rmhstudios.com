@@ -26,9 +26,17 @@ vi.mock('@/lib/notifications.server', () => ({
 import { debitCoins, creditCoins, EscrowError, type Tx } from '@/lib/wager/escrow.server';
 import { sendCoinGift, GIFT_MIN, GIFT_DAILY_CAP } from '@/lib/gifting/coin-gift.server';
 
-/** A tx whose userProfile.updateMany enforces the same atomic guard as Postgres. */
-function makeWallet(balance: number) {
-  const state = { coins: balance };
+/**
+ * A tx whose userProfile.updateMany enforces the same atomic guard as Postgres.
+ *
+ * Balances are per-user because gifting is now a real TRANSFER (one debit + one
+ * credit in the same transaction), so the recipient's side has to be modelled
+ * too. `state.coins` reports `primary`'s balance — the account each assertion
+ * is actually about.
+ */
+function makeWallet(balance: number, primary = 'u') {
+  const balances = new Map<string, number>();
+  const get = (id: string) => (balances.has(id) ? (balances.get(id) as number) : balance);
   const tx = {
     userProfile: {
       upsert: vi.fn(async () => ({})),
@@ -38,19 +46,41 @@ function makeWallet(balance: number) {
           where,
           data,
         }: {
-          where: { coins?: { gte: number } };
+          where: { userId: string; coins?: { gte: number } };
           data: { coins: { decrement: number } };
         }) => {
           const need = where.coins?.gte ?? 0;
-          if (state.coins >= need) {
-            state.coins -= data.coins.decrement;
+          const have = get(where.userId);
+          if (have >= need) {
+            balances.set(where.userId, have - data.coins.decrement);
             return { count: 1 };
           }
           return { count: 0 };
         },
       ),
+      // Unconditional credit — the counterparty half of a transfer.
+      update: vi.fn(
+        async ({
+          where,
+          data,
+        }: {
+          where: { userId: string };
+          data: { coins: { increment: number } };
+        }) => {
+          balances.set(where.userId, get(where.userId) + data.coins.increment);
+          return {};
+        },
+      ),
     },
-    coinTransaction: { create: vi.fn(async () => ({})) },
+    coinTransaction: {
+      create: vi.fn(async () => ({ id: 't1' })),
+      findUnique: vi.fn(async () => null),
+    },
+  };
+  const state = {
+    get coins() {
+      return get(primary);
+    },
   };
   return { tx: tx as unknown as Tx, state, raw: tx };
 }
@@ -156,7 +186,7 @@ describe('sendCoinGift', () => {
 
   it('surfaces an overdraft as INSUFFICIENT_COINS', async () => {
     stubRecipient(true);
-    const wallet = makeWallet(50); // less than the 100 gift
+    const wallet = makeWallet(50, 'a'); // less than the 100 gift
     prismaMock.$transaction.mockImplementation(async (cb: (tx: Tx) => Promise<unknown>) =>
       cb(wallet.tx),
     );
@@ -168,7 +198,7 @@ describe('sendCoinGift', () => {
 
   it('settles a valid gift: debits the sender and writes one GIFT ledger row', async () => {
     stubRecipient(true);
-    const wallet = makeWallet(500);
+    const wallet = makeWallet(500, 'a');
     prismaMock.$transaction.mockImplementation(async (cb: (tx: Tx) => Promise<unknown>) =>
       cb(wallet.tx),
     );

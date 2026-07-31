@@ -41,7 +41,8 @@ interface State {
   users: Map<string, { id: string; createdAt: Date }>;
   ledger: Array<{
     senderId: string | null;
-    recipientId: string;
+    // Nullable: a sink row (fee burn) has no recipient.
+    recipientId: string | null;
     amount: number;
     type: string;
     entityType: string | null;
@@ -186,6 +187,16 @@ const db: any = {
       if (data.coins?.increment) p.coins += data.coins.increment;
       return { count: 1 };
     },
+    // The ledger's transferCoins credits the counterparty with `update` after
+    // `ensureProfile` has guaranteed the row exists.
+    update: async ({ where, data }: any) => {
+      const s = store.state;
+      const p = s.profiles.get(where.userId);
+      if (!p) throw new Error(`no profile for ${where.userId}`);
+      if (data.coins?.decrement) p.coins -= data.coins.decrement;
+      if (data.coins?.increment) p.coins += data.coins.increment;
+      return clone(p);
+    },
   },
   user: {
     findUnique: async ({ where }: any) => clone(store.state.users.get(where.id)) ?? null,
@@ -194,7 +205,7 @@ const db: any = {
     create: async ({ data }: any) => {
       store.state.ledger.push({
         senderId: data.senderId ?? null,
-        recipientId: data.recipientId,
+        recipientId: data.recipientId ?? null,
         amount: data.amount,
         type: data.type,
         entityType: data.entityType ?? null,
@@ -323,19 +334,26 @@ describe('buyListing', () => {
     const l = s.listings.get('L1')!;
     expect(l.status).toBe('SOLD');
     expect(l.buyerId).toBe(BUYER);
-    // Ledger: buyer PURCHASE debit (−1000, entityType market) + seller MARKET credit (+900).
-    const purchase = s.ledger.find((t) => t.type === 'PURCHASE');
-    const marketCredit = s.ledger.find((t) => t.type === 'MARKET');
-    expect(purchase).toMatchObject({ recipientId: BUYER, amount: -1000, entityType: 'market' });
-    expect(marketCredit).toMatchObject({
-      recipientId: SELLER,
-      senderId: BUYER,
-      amount: 900,
-      type: 'MARKET',
-    });
-    // The burn: total market debits − credits = 100.
-    const net = s.ledger.filter((t) => t.entityType === 'market').reduce((a, t) => a + t.amount, 0);
-    expect(net).toBe(-100);
+    // Ledger, in the canonical encoding: a MARKET transfer of the proceeds
+    // (buyer → seller) plus a separate fee SINK (buyer → nobody). Amounts are
+    // always positive; direction is carried by which party is null.
+    const marketRows = s.ledger.filter((t) => t.entityType === 'market');
+    const transfer = marketRows.find((t) => t.recipientId === SELLER);
+    const burn = marketRows.find((t) => t.recipientId === null);
+    expect(transfer).toMatchObject({ senderId: BUYER, amount: 900, type: 'MARKET' });
+    expect(burn).toMatchObject({ senderId: BUYER, amount: 100, type: 'MARKET' });
+
+    // Reconciliation: what the buyer parted with equals what the seller
+    // received plus what was destroyed — the identity the old two-row encoding
+    // could not satisfy, because it recorded the buyer on both sides.
+    const buyerOut = marketRows
+      .filter((t) => t.senderId === BUYER)
+      .reduce((a, t) => a + t.amount, 0);
+    const sellerIn = marketRows
+      .filter((t) => t.recipientId === SELLER)
+      .reduce((a, t) => a + t.amount, 0);
+    expect(buyerOut).toBe(1000);
+    expect(buyerOut - sellerIn).toBe(100); // the burn
   });
 
   it('(b) rejects insufficient coins with NO state change (rolls back)', async () => {

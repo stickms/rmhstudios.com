@@ -21,6 +21,7 @@ import { hasScope } from '@/lib/api/scopes';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { redisRateLimit, redisIncrBy } from '@/lib/redis.server';
 import { prisma } from '@/lib/prisma.server';
+import { recordUsage } from '@/lib/api/usage.server';
 import type { Tier } from '@/lib/entitlements';
 
 interface LimitResult {
@@ -222,6 +223,7 @@ export async function withDeveloperApi(
 
   // 4. Scope enforcement.
   if (options.scope && !hasScope(auth.scopes, options.scope)) {
+    recordUsage(auth.keyId, cost, 403);
     return res.error(
       'insufficient_scope',
       `This endpoint requires the "${options.scope}" scope, which this key does not have.`,
@@ -284,8 +286,13 @@ export async function withDeveloperApi(
     response = await handler(ctx);
   } catch (err) {
     console.error(`[dev-api] handler error (req ${requestId}):`, err);
+    recordUsage(auth.keyId, cost, 500);
     return res.error('internal_error', 'Something went wrong handling the request.', 500);
   }
+
+  // Durable usage rollup, alongside the Redis quota counter. Buffered in
+  // memory and flushed periodically, so this adds no write to the hot path.
+  recordUsage(auth.keyId, cost, response.status);
 
   // 7. Persist a successful idempotent response for future replays (best-effort).
   if (idemKey && response.status >= 200 && response.status < 300) {

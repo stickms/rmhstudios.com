@@ -2,7 +2,16 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { KeyRound, Plus, Trash2, ShieldCheck, RefreshCw, X, BookOpen } from 'lucide-react';
+import {
+  KeyRound,
+  Plus,
+  Trash2,
+  ShieldCheck,
+  RefreshCw,
+  X,
+  BookOpen,
+  Activity,
+} from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
@@ -10,6 +19,7 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { SCOPES, DEFAULT_SCOPES, scopesByGroup } from '@/lib/api/scopes';
 import { DEVELOPER_DOCS_URL } from '@/lib/docs-site';
+import { KeyUsage } from '@/components/developer/KeyUsage';
 
 interface ApiKey {
   id: string;
@@ -37,6 +47,8 @@ export function KeysManager() {
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
   const [scopes, setScopes] = useState<string[]>([...DEFAULT_SCOPES]);
+  /** Which key's usage panel is expanded, if any. */
+  const [usageFor, setUsageFor] = useState<string | null>(null);
   const [expiryDays, setExpiryDays] = useState(0);
   const [newKey, setNewKey] = useState<string | null>(null);
 
@@ -291,6 +303,15 @@ export function KeysManager() {
                     </p>
                   </div>
                   <button
+                    onClick={() => setUsageFor((cur) => (cur === k.id ? null : k.id))}
+                    className="text-site-text-dim hover:text-site-accent"
+                    aria-label={usageFor === k.id ? 'Hide usage' : 'Show usage'}
+                    aria-expanded={usageFor === k.id}
+                    title="Usage"
+                  >
+                    <Activity className="h-4 w-4" />
+                  </button>
+                  <button
                     onClick={() => rotate(k.id)}
                     className="text-site-text-dim hover:text-site-accent"
                     aria-label="Rotate key"
@@ -307,6 +328,7 @@ export function KeysManager() {
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
+                {usageFor === k.id && <KeyUsage keyId={k.id} />}
                 {k.scopes.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {k.scopes.map((s) => (

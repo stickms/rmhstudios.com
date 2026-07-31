@@ -129,7 +129,8 @@ export async function createWager(
       });
       await recordWagerTxn(tx, {
         senderId: opts.challengerId,
-        recipientId: opts.challengerId,
+        // Hold: the stake leaves the challenger's balance for escrow.
+        recipientId: null,
         amount: opts.stakeCoins,
         entityType: 'wager',
         entityId: created.id,
@@ -200,7 +201,8 @@ export async function acceptWager(
       }
       await recordWagerTxn(tx, {
         senderId: opts.userId,
-        recipientId: opts.userId,
+        // Hold: the stake leaves the joining player's balance for escrow.
+        recipientId: null,
         amount: match.stakeCoins,
         entityType: 'wager',
         entityId: match.id,

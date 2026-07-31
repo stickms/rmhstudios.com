@@ -5,6 +5,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { creditCoins, debitCoins, getBalance } from '@/lib/economy/ledger.server';
 
 export const STAKING_APR = 0.12; // 12% annual, simple interest on principal
 const MS_PER_YEAR = 365 * 24 * 60 * 60 * 1000;
@@ -36,18 +37,16 @@ export async function deposit(userId: string, amount: number): Promise<StakeView
   // below into a credit (coin minting), so reject it here regardless of the route.
   if (!Number.isInteger(amount) || amount <= 0) throw new Error('INVALID_AMOUNT');
   return prisma.$transaction(async (tx) => {
-    await tx.userProfile.upsert({
-      where: { userId },
-      create: { userId, coins: 10 },
-      update: {},
+    // Deposit: coins leave the wallet for the vault. Recorded as a sink so the
+    // withdrawal faucet on the other side has a matching entry and the vault's
+    // net effect on supply is measurable.
+    await debitCoins(userId, amount, {
+      tx,
+      type: 'REWARD',
+      entityType: 'staking',
+      entityId: 'deposit',
+      note: 'Staking deposit',
     });
-    // Atomic conditional debit — `coins >= amount` in the WHERE clause blocks
-    // concurrent deposits from overdrafting a stale balance.
-    const debit = await tx.userProfile.updateMany({
-      where: { userId, coins: { gte: amount } },
-      data: { coins: { decrement: amount } },
-    });
-    if (debit.count === 0) throw new Error('INSUFFICIENT_COINS');
 
     const existing = await tx.coinStake.findUnique({ where: { userId } });
     const now = new Date();
@@ -82,33 +81,24 @@ export async function withdraw(
     const paidOut = rolled + amount; // all interest + requested principal
     const remainingPrincipal = existing.principal - amount;
 
-    const profile = await tx.userProfile.upsert({
-      where: { userId },
-      create: { userId, coins: 10 + paidOut },
-      update: { coins: { increment: paidOut } },
-      select: { coins: true },
-    });
+    if (paidOut > 0) {
+      await creditCoins(userId, paidOut, {
+        tx,
+        type: 'REWARD',
+        entityType: 'staking',
+        entityId: 'withdraw',
+        note: 'Staking withdrawal',
+      });
+    }
+    const balance = await getBalance(userId, tx);
 
     const stake = await tx.coinStake.update({
       where: { userId },
       data: { principal: remainingPrincipal, accrued: 0, lastAccrued: now },
     });
 
-    if (paidOut > 0) {
-      await tx.coinTransaction.create({
-        data: {
-          recipientId: userId,
-          amount: paidOut,
-          type: 'REWARD',
-          entityType: 'staking',
-          entityId: 'withdraw',
-          note: 'Staking withdrawal',
-        },
-      });
-    }
-
     return {
-      balance: profile.coins,
+      balance,
       stake: { principal: stake.principal, accrued: stake.accrued, apr: STAKING_APR },
       paidOut,
     };

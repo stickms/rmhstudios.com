@@ -5,6 +5,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { debitCoins, InsufficientFundsError } from '@/lib/economy/ledger.server';
 import { invalidateUserTier, type Tier } from '@/lib/entitlements';
 
 export type GiftableTier = 'starter' | 'pro';
@@ -51,18 +52,23 @@ export async function giftMembership(params: {
   const cost = GIFT_PRICES[tier] * months;
 
   const result = await prisma.$transaction(async (tx) => {
-    await tx.userProfile.upsert({
-      where: { userId: gifterId },
-      create: { userId: gifterId, coins: 10 },
-      update: {},
-    });
-    // Atomic conditional debit — `coins >= cost` in the WHERE clause prevents
-    // concurrent gifts from overdrafting a stale balance.
-    const debit = await tx.userProfile.updateMany({
-      where: { userId: gifterId, coins: { gte: cost } },
-      data: { coins: { decrement: cost } },
-    });
-    if (debit.count === 0) throw new GiftError('INSUFFICIENT_COINS');
+    // A gifted membership is a SINK, not a transfer: the recipient receives
+    // membership time, not coins, so the coins leave circulation. The old code
+    // wrote a ledger row naming the recipient as the receiver of `cost` coins
+    // they never got — which inflated their apparent income and broke the
+    // reconciliation identity for both parties.
+    try {
+      await debitCoins(gifterId, cost, {
+        tx,
+        type: 'GIFT',
+        entityType: 'membership',
+        entityId: tier,
+        note: `Gifted ${months}mo ${tier}`,
+      });
+    } catch (err) {
+      if (err instanceof InsufficientFundsError) throw new GiftError('INSUFFICIENT_COINS');
+      throw err;
+    }
 
     // Extend an existing future grant of the same tier, else start from now.
     const existing = await tx.giftMembership.findFirst({
@@ -77,10 +83,6 @@ export async function giftMembership(params: {
     } else {
       await tx.giftMembership.create({ data: { userId: recipientId, gifterId, tier, expiresAt } });
     }
-
-    await tx.coinTransaction.create({
-      data: { senderId: gifterId, recipientId, amount: cost, type: 'GIFT', entityType: 'membership', entityId: tier, note: `Gifted ${months}mo ${tier}` },
-    });
 
     return { expiresAt, cost };
   });
