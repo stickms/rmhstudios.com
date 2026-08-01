@@ -6,6 +6,7 @@ import { Link } from '@tanstack/react-router';
 import { BadgeCheck, Heart, MessageCircle, Repeat2 } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { RelativeTime } from '@/components/ui/RelativeTime';
+import { RmharkMedia } from './RmharkMedia';
 import type { FeedItem } from '@/lib/feed-types';
 
 /**
@@ -92,6 +93,15 @@ export const RmharkCard = memo(function RmharkCard({ item }: { item: FeedItem })
       {clamped ? (
         <span className="rmhark__more">{t('read-more', { defaultValue: 'Read more' })}</span>
       ) : null}
+      {/* A post's photos are most of what it says, and the wheel card used to
+          drop them entirely — an image post read as a caption with nothing under
+          it, and the only way to see the picture was to open the post. */}
+      <RmharkMedia
+        imageUrls={item.imageUrls}
+        imageAlts={item.imageAlts}
+        gifUrl={item.gifUrl}
+        sensitive={item.isSensitive}
+      />
     </>
   ) : (
     <>

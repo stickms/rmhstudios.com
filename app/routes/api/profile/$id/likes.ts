@@ -126,6 +126,8 @@ export const Route = createFileRoute('/api/profile/$id/likes')({
         poll: mapPoll(r.poll),
         gifUrl: r.gifUrl ?? undefined,
         imageUrls: r.imageUrls ?? undefined,
+        imageAlts: r.imageAlts ?? undefined,
+        isSensitive: r.isSensitive ?? false,
         reactions: groupReactions(r.reactions ?? [], viewerId),
         original: r.original
           ? {

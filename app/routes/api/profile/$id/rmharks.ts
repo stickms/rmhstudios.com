@@ -69,9 +69,18 @@ function mapOriginal(
     commentCount: number;
     repostCount: number;
     viewCount: number;
+    gifUrl?: string | null;
+    imageUrls?: string[];
+    imageAlts?: string[];
+    unlockPrice?: number | null;
+    audience?: string;
   } | null,
 ): FeedItem | undefined {
   if (!original) return undefined;
+  // Same rule as the timeline's mapOriginal: only a free, public original shows
+  // its media inside a quote card — paid or followers-only content must not leak
+  // through someone else's quote.
+  const showMedia = (original.unlockPrice ?? 0) === 0 && original.audience === 'PUBLIC';
   return {
     id: original.id,
     type: 'rmhark' as const,
@@ -82,6 +91,9 @@ function mapOriginal(
     commentCount: original.commentCount,
     repostCount: original.repostCount,
     viewCount: original.viewCount,
+    gifUrl: showMedia ? (original.gifUrl ?? undefined) : undefined,
+    imageUrls: showMedia ? original.imageUrls : undefined,
+    imageAlts: showMedia ? original.imageAlts : undefined,
   };
 }
 
@@ -178,6 +190,8 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
                 poll: mapPoll(r.poll),
                 gifUrl: r.gifUrl ?? undefined,
                 imageUrls: r.imageUrls ?? undefined,
+                imageAlts: r.imageAlts ?? undefined,
+                isSensitive: r.isSensitive ?? false,
                 reactions: reactionSummaries.get(r.id) ?? [],
               },
               r,
@@ -207,6 +221,8 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
                 poll: mapPoll(r.poll),
                 gifUrl: r.gifUrl ?? undefined,
                 imageUrls: r.imageUrls ?? undefined,
+                imageAlts: r.imageAlts ?? undefined,
+                isSensitive: r.isSensitive ?? false,
                 reactions: reactionSummaries.get(r.id) ?? [],
               },
               r,
@@ -251,6 +267,8 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
                   poll: mapPoll(p.poll),
                   gifUrl: p.gifUrl ?? undefined,
                   imageUrls: p.imageUrls ?? undefined,
+                  imageAlts: p.imageAlts ?? undefined,
+                  isSensitive: p.isSensitive ?? false,
                   reactions: pinnedSummaries.get(p.id) ?? [],
                 },
                 p,
