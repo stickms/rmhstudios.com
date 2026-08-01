@@ -36,8 +36,10 @@ RMH mark is that centre, and it is always on screen.
   screen, swells, and dissolves into a glass sphere with every destination
   pinned to it. You _turn_ it to find where you want to go, hold on a
   destination, and let go to travel.
-- Behind everything, a parallaxing **ring backdrop** and a drifting field of soft
-  blobs keep the surface feeling continuous — one scene, not a stack of screens.
+- Behind everything, a fixed **ring backdrop**, a drifting field of soft blobs
+  and a slowly-breathing **aurora canvas** keep the surface feeling continuous —
+  one scene, not a stack of screens. It moves on its own, ambiently; it does not
+  follow you (§3).
 
 The consequence worth internalising: **navigating is a physical act here.** That
 raises the bar on the physics (§4) and it means chrome is never allowed to be
@@ -46,9 +48,9 @@ inert.
 ### Avant-garde glass — surfaces are a material, not a colour
 
 The material is Apple's Liquid Glass, used _theatrically_ rather than literally:
-layered translucent glass with **live optics** — a specular rim glint that tracks
-the scene's light, frosted edge bevels, a pointer-tracked diffuse highlight, a
-depth-parallaxing aurora canvas, travelling sheens.
+layered translucent glass with **live optics** — a specular rim glint on every
+tier, frosted edge bevels, micro-noise, a slowly drifting aurora canvas, and
+travelling sheens that ride the compositor.
 
 The distinction that matters: a surface here is **translucent over a shared
 scene**, not an opaque card with a shadow. Every pane samples the same drifting
@@ -114,11 +116,24 @@ are **signature moments, not defaults**.
 
 Three properties of this system are load-bearing:
 
-**Every surface answers the light.** One scene light — the pointer, or a resting
-"sun" when there isn't one — is broadcast to every glass surface at once, and
-each paints a specular rim glint that responds to it. This includes L1: the tier
-the site is mostly _made_ of rests at an ambient glint strength that hover raises
-to full. Glass that does not answer the light is just tinted paper.
+**Every surface answers the light.** One scene light — a fixed "sun" above the
+page — lights every glass surface at once, and each paints a specular rim glint
+in its own border ring. This includes L1: the tier the site is mostly _made_ of
+rests at an ambient glint strength that hover raises to full. Glass that does not
+answer the light is just tinted paper.
+
+**The light does not follow the cursor, and neither does anything else.** Every
+pointer-tracked effect the site once had — the diffuse hotspot on hovered glass,
+the aurora's pointer parallax, the ring backdrop's, the per-card sheens and
+tilts — was retired in one pass, because gradient position and background
+position are _paint_ properties: moving them repaints the whole element, at
+pointer rate, during exactly the gestures with a frame budget to defend. Hover is
+now a **state**, not a coordinate. If a cursor-tracked specular is ever wanted
+back it belongs on a compositor-friendly carrier (a transform-translated child
+layer), behind the same tier switches as the rest of the optics. Two things
+survive, because neither is a cursor: the opt-in device-tilt aurora on touch, and
+the device-attitude "inspect this object" control, which also has a drag and
+keyboard path.
 
 **A tier class is not decoration you can inline.** `bg-site-surface border
 border-site-border rounded-site shadow-site-sm` renders the same _box_ as
@@ -189,9 +204,17 @@ it is written — none of which looked like a performance bug in the source:
    layout** of the whole document, every frame. Read them in the scroll _event_,
    where the layout is still clean — or don't read them at all.
 3. **Writing an inherited custom property to `<html>` invalidates the computed
-   style of the entire document.**
+   style of the entire document.** Custom properties have no invalidation sets,
+   and this site declares ~250 tokens on `:root`, so one such write per frame is
+   a whole-document restyle per frame. It was the single largest cost the site
+   ever had — globe drag measured 4.4fps and 624ms of input latency against
+   2.8ms of work inside the globe's own loop. Write to the element that _reads_
+   the value, never to the root.
 4. **Writing a style that is not changing still invalidates it.** Compare before
    you write.
+5. **A gradient's position is paint, not composite.** Nothing slides a gradient;
+   moving one re-rasterises the whole box. Travelling light is a fixed layer
+   moved by `transform`.
 
 **Reduced motion stands the whole layer down** — presses don't spring, settles
 snap, ambient drift stops, the globe doesn't ripple. Direct manipulation that
@@ -277,6 +300,17 @@ makes the accessible variants work.
   reduced motion, reduced transparency, high contrast, forced colors, plus a
   `perf-lite` tier derived from conservative device facts (not a measured-fps
   probe, which would restyle the page under the user for reasons they can't see).
+- **Comfort is a settings suite, not a theme.** On top of whichever theme is
+  active, a visitor sets text size, density, a dyslexia-friendly face, an
+  in-account reduced-motion switch, glass clarity, tilt effects, and a
+  **colour-vision mode**. Each is one more layer of the same token contract, so
+  no component knows it happened.
+- **Colour is never the only carrier of meaning.** Roughly 8% of men have some
+  colour-vision deficiency, and on this site colour _is_ state — win/loss,
+  up/down, rarity, health, moderation status. The colour-vision modes retint the
+  three semantic tokens to a palette that stays separable under each deficiency,
+  and status badges pair every variant with a distinct glyph. The retint alone
+  would not be enough.
 - **Test in at least three themes at two widths, once with reduced motion on.**
   That is the floor.
 
@@ -308,12 +342,25 @@ Most of this language is convention. A slice of it executes in CI:
 - **One tab-strip grammar.** Tab strips are the shared renderer — no hand-rolled
   `role="tablist"`, no private `layoutId` capsule, no active-state underline. A
   source scan fails the build on each of those shapes.
+- **The token contract, on the site tier.** No raw Tailwind palette colour
+  (`bg-red-600`), no hardcoded radius (`rounded-lg`/`-xl`/`-2xl`). A
+  domain-fixed palette — a playing card, a roulette pocket — gets its own scoped
+  variable group instead. Games and the `--app-*` apps are exempt by design.
+- **Floating UI is L4.** A positioned, stacked, edge-anchored element carrying a
+  tier below `.glass-overlay` is a dropdown with no backdrop blur, and fails.
+- **Motion that exists.** No `transition-all` anywhere (it animates layout
+  properties nobody asked for), and no `tailwindcss-animate` class — that plugin
+  is not installed, so `animate-in`/`fade-in-0`/`zoom-in-95` compile to zero
+  rules and the element simply never animates. Both run over the whole tree,
+  games included: neither is a palette question.
 - **The full-screen viewport contract** (the four static rules above).
 - **Filter-cost rules** (no full-viewport `url()` filters, no filter chained
   after a `url()` reference, no painted cursor).
 - **rAF-loop ownership** — frame loops belong to a sanctioned set of owners, not
   one per feature.
-- **Accent contrast**, **i18n catalog integrity**, and **no new lint warnings
+- **Accent contrast**, **user-theme token integrity**, **colour-vision mode
+  integrity** (a mode with no CSS block is a setting that appears to work and
+  changes nothing), **i18n catalog integrity**, and **no new lint warnings
   against the base branch**.
 
 A green suite means you did not regress the enforced rules. **It does not mean
@@ -332,8 +379,10 @@ If you remember six things:
    shared is the most common defect in this repo's history.
 3. **Glass is a material with a budget.** Pick the tier by role. Nothing
    continuously animating may sit above a full-viewport blur.
-4. **Motion is shared physics.** Springs with velocity, intent read from
-   projection, response on pointer-down. The formulas live in one file.
+4. **Motion is shared physics, and it composites.** Springs with velocity,
+   intent read from projection, response on pointer-down; the formulas live in
+   one file. `transform`/`opacity` only — nothing tracks the pointer, and
+   nothing writes a custom property to `<html>` per frame.
 5. **Degrade centrally.** High contrast, reduced motion, reduced transparency and
    `perf-lite` are the token layer's job — and legibility may never depend on an
    optic.

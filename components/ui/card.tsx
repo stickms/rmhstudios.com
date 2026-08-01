@@ -8,7 +8,9 @@ import { cn } from '@/lib/utils';
  * Default is the L1 `.glass-fill` tier (tint + rim, no backdrop blur) because
  * cards are the most repeated surface on the site; `pane` promotes a singular
  * panel to L2 `.glass-pane` (blur + noise), and `interactive` adds the hover
- * tint-raise, press flex and pointer-tracked specular. The classes carry the
+ * tint-raise, the press flex, and the rim glint raised from its L1 ambient rest
+ * to full on hover (the pointer-tracked hotspot this used to add went with the
+ * rest of the site's cursor reactivity — globals.css §5.1). The classes carry the
  * material — themes and the degradation tiers (high-contrast, reduced
  * transparency, perf-lite) restyle them centrally in `app/globals.css`.
  */
@@ -20,7 +22,7 @@ function Card({
 }: React.ComponentProps<'div'> & {
   /** Use the L2 `.glass-pane` (blur + noise) instead of the default L1 fill. */
   pane?: boolean;
-  /** Add hover tint-raise + press flex + pointer specular highlight. */
+  /** Add hover tint-raise + press flex + the hover-raised rim glint. */
   interactive?: boolean;
 }) {
   return (
