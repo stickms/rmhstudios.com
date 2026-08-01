@@ -121,7 +121,7 @@ export function GameOver({ onRetry }: GameOverProps) {
 
           <div className="flex gap-4">
             <Button 
-                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-black uppercase tracking-widest text-sm h-14 rounded-xl shadow-lg transition-all border-none flex items-center justify-center gap-2 group"
+                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-black uppercase tracking-widest text-sm h-14 rounded-xl shadow-lg transition-colors border-none flex items-center justify-center gap-2 group"
                 onClick={onRetry}
             >
                 <RotateCcw className="w-4 h-4 group-hover:rotate-[-120deg] transition-transform" />
@@ -129,7 +129,7 @@ export function GameOver({ onRetry }: GameOverProps) {
             </Button>
             <Button
                 variant="ghost"
-                className="flex-1 bg-slice-bg hover:bg-slice-shadow-dark/20 text-slice-text-muted font-bold uppercase tracking-widest text-sm h-14 rounded-xl shadow-[4px_4px_10px_var(--slice-shadow-dark),-4px_-4px_10px_var(--slice-shadow-light)] active:shadow-inner transition-all border-none flex items-center justify-center gap-2"
+                className="flex-1 bg-slice-bg hover:bg-slice-shadow-dark/20 text-slice-text-muted font-bold uppercase tracking-widest text-sm h-14 rounded-xl shadow-[4px_4px_10px_var(--slice-shadow-dark),-4px_-4px_10px_var(--slice-shadow-light)] active:shadow-inner transition-colors border-none flex items-center justify-center gap-2"
                 onClick={reset}
             >
                 <Home className="w-4 h-4" />

@@ -834,7 +834,7 @@ export function VoidBreakerGame() {
               </div>
               <div className="h-2.5 bg-zinc-900/80 rounded-full overflow-hidden border border-red-900/50">
                 <div
-                  className={`h-full transition-all duration-150 rounded-full ${hud.bossPhase === 3 ? 'bg-linear-to-r from-[#ff0033] to-[#ff00cc]' :
+                  className={`h-full transition-colors duration-150 rounded-full ${hud.bossPhase === 3 ? 'bg-linear-to-r from-[#ff0033] to-[#ff00cc]' :
                     hud.bossPhase === 2 ? 'bg-linear-to-r from-red-600 to-orange-400' :
                       'bg-linear-to-r from-red-700 to-red-500'
                     }`}
@@ -857,7 +857,7 @@ export function VoidBreakerGame() {
               </div>
               <div className="w-28 sm:w-36 h-1.5 bg-zinc-800/80 rounded-full overflow-hidden relative">
                 <div
-                  className={`h-full rounded-full transition-all duration-150 ${hud.detonateReady
+                  className={`h-full rounded-full transition-colors duration-150 ${hud.detonateReady
                     ? 'bg-[#00f5ff] shadow-[0_0_8px_rgba(0,245,255,0.8)]'
                     : 'bg-zinc-600'
                     }`}
@@ -990,7 +990,7 @@ export function VoidBreakerGame() {
             </div>
             <div className="w-20 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all ${hud.allyDowned ? 'bg-zinc-600 animate-pulse' : 'bg-[#00ff88]'}`}
+                className={`h-full rounded-full transition-colors ${hud.allyDowned ? 'bg-zinc-600 animate-pulse' : 'bg-[#00ff88]'}`}
                 style={{ width: `${(hud.allyHp / hud.allyMaxHp) * 100}%` }}
               />
             </div>
@@ -1143,7 +1143,7 @@ export function VoidBreakerGame() {
                 <button
                   key={u.id}
                   onClick={() => handlePickUpgrade(u.id)}
-                  className="vb-anim group relative w-40 sm:w-44 rounded-xl border bg-black/70 px-4 pt-5 pb-4 text-center transition-all duration-150 hover:-translate-y-1 hover:bg-black/90 focus:outline-none"
+                  className="vb-anim group relative w-40 sm:w-44 rounded-xl border bg-black/70 px-4 pt-5 pb-4 text-center transition-transform duration-150 hover:-translate-y-1 hover:bg-black/90 focus:outline-none"
                   style={{
                     borderColor: boss ? '#ffd700' + (isRare ? 'cc' : '88') : u.color + (isRare ? 'cc' : '66'),
                     boxShadow: boss
@@ -1212,13 +1212,13 @@ export function VoidBreakerGame() {
             <div className="space-y-2 pt-2">
               <button
                 onClick={handleResume}
-                className="w-full py-3 px-6 rounded-lg bg-[#00f5ff]/10 hover:bg-[#00f5ff]/20 border border-[#00f5ff]/40 text-[#00f5ff] font-bold font-mono tracking-wider transition-all duration-200 hover:shadow-[0_0_20px_rgba(0,245,255,0.3)]"
+                className="w-full py-3 px-6 rounded-lg bg-[#00f5ff]/10 hover:bg-[#00f5ff]/20 border border-[#00f5ff]/40 text-[#00f5ff] font-bold font-mono tracking-wider transition-colors duration-200 hover:shadow-[0_0_20px_rgba(0,245,255,0.3)]"
               >
                 {t('resume', { defaultValue: '▶ RESUME' })}
               </button>
               <button
                 onClick={handleSaveAndQuit}
-                className="w-full py-3 px-6 rounded-lg bg-[#ff00cc]/10 hover:bg-[#ff00cc]/20 border border-[#ff00cc]/40 text-[#ff00cc] font-bold font-mono tracking-wider transition-all duration-200 hover:shadow-[0_0_20px_rgba(255,0,204,0.3)]"
+                className="w-full py-3 px-6 rounded-lg bg-[#ff00cc]/10 hover:bg-[#ff00cc]/20 border border-[#ff00cc]/40 text-[#ff00cc] font-bold font-mono tracking-wider transition-colors duration-200 hover:shadow-[0_0_20px_rgba(255,0,204,0.3)]"
               >
                 {t('save-and-quit', { defaultValue: '💾 SAVE & QUIT' })}
               </button>

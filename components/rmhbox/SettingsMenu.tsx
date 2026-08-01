@@ -42,7 +42,7 @@ export default function SettingsMenu({ theme, onToggleTheme }: SettingsMenuProps
       {/* Trigger button — static circle for header placement */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex h-10 w-10 items-center justify-center rounded-full transition-all hover:scale-110 active:scale-95"
+        className="flex h-10 w-10 items-center justify-center rounded-full transition-transform hover:scale-110 active:scale-95"
         style={{
           backgroundColor: 'var(--app-surface)',
           border: '1px solid var(--app-border)',

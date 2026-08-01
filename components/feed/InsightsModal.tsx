@@ -121,9 +121,15 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  {data.likeTrend.map((d) => (
  <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
  <div className="flex w-full flex-1 items-end">
+ {/* `scaleY` from the baseline rather than `height` — a column chart animating
+ height relayouts the whole row of bars each frame. */}
  <div
- className="w-full rounded-t bg-site-accent/70 transition-all"
- style={{ height: `${(d.count / maxTrend) * 100}%`, minHeight: d.count > 0 ? 4 : 0 }}
+ className="w-full origin-bottom rounded-t bg-site-accent/70 transition-transform duration-site-slow"
+ style={{
+ height: '100%',
+ transform: `scaleY(${maxTrend > 0 ? d.count / maxTrend : 0})`,
+ minHeight: d.count > 0 ? 4 : 0,
+ }}
  title={t('bar-likes-count', { count: d.count, defaultValue:'{{count}} likes'})}
  />
  </div>

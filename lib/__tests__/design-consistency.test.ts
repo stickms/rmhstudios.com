@@ -138,7 +138,7 @@ function enclosingTag(src: string, idx: number): string {
 }
 
 /**
- * Rules 5–7 scan the SITE tier only. The full-screen games and the `--app-*`
+ * Rules 5–8 scan the SITE tier only. The full-screen games and the `--app-*`
  * apps are exempt from the `--site-*` palette by design (design-language.md §12
  * and the "games with a bespoke visual identity" note in §12) — Temple of Joy is
  * SUPPOSED to be candlelit, and forcing it onto site tokens would make it look
@@ -256,6 +256,7 @@ function scanAll(): {
   rawColor: Violation[];
   rawRadius: Violation[];
   floatingTier: Violation[];
+  transitionAll: Violation[];
 } {
   const tablist: Violation[] = [];
   const underline: Violation[] = [];
@@ -264,6 +265,7 @@ function scanAll(): {
   const rawColor: Violation[] = [];
   const rawRadius: Violation[] = [];
   const floatingTier: Violation[] = [];
+  const transitionAll: Violation[] = [];
 
   // A bottom-border marker (border-b / -2 / -4 / -[..]) but NOT border-b-0.
   const borderBottom = /\bborder-b(?!-0)(?:-(?:2|4|\[[^\]]*\]))?(?![\w-])/;
@@ -343,6 +345,7 @@ function scanAll(): {
     /(?<![\w-])(?:top-full|bottom-full|mt-\d|mb-\d|left-0|right-0|inset-x-0)(?![\w-])/;
   const lowerTier = /(?<![\w-])(?:glass-(?:fill|pane|chrome))(?![\w-])|(?<![\w-])bg-site-surface(?![\w-])/;
   const l4Tier = /(?<![\w-])glass-(?:overlay|scrim)(?![\w-])/;
+  const transitionAllRe = /(?<![\w-])transition-all(?![\w-])/g;
 
   for (const file of SITE_FILES) {
     const src = readFileSync(join(ROOT, file), 'utf8');
@@ -366,6 +369,11 @@ function scanAll(): {
         rawRadius.push({ file, line, detail: `hardcoded radius \`${r[0]}\`` });
       }
 
+      transitionAllRe.lastIndex = 0;
+      if (transitionAllRe.test(value)) {
+        transitionAll.push({ file, line, detail: '`transition-all`' });
+      }
+
       if (
         positioned.test(value) &&
         stacked.test(value) &&
@@ -382,7 +390,7 @@ function scanAll(): {
     }
   }
 
-  return { tablist, underline, layoutId, accentBar, rawColor, rawRadius, floatingTier };
+  return { tablist, underline, layoutId, accentBar, rawColor, rawRadius, floatingTier, transitionAll };
 }
 
 function report(label: string, v: Violation[]): string {
@@ -394,7 +402,8 @@ function report(label: string, v: Violation[]): string {
 }
 
 describe('design consistency — one tab-strip grammar (§16.2)', () => {
-  const { tablist, underline, layoutId, accentBar, rawColor, rawRadius, floatingTier } = scanAll();
+  const { tablist, underline, layoutId, accentBar, rawColor, rawRadius, floatingTier, transitionAll } =
+    scanAll();
 
   it('scans a non-trivial set of production sources', () => {
     // Guards the walker itself — a broken path would make every rule vacuously pass.
@@ -447,6 +456,23 @@ describe('design consistency — one tab-strip grammar (§16.2)', () => {
           "ignores each theme's --site-radius (high-contrast squares its corners; " +
           'the hardcoded ones stay round). rounded-full and rounded-none are fine — ' +
           'a pill and a square corner are shapes, not radii.',
+      ),
+    ).toEqual([]);
+  });
+
+  it('site-tier UI names the properties it transitions', () => {
+    expect(
+      transitionAll,
+      report('`transition-all` in site UI', transitionAll).replace(
+        POINTER,
+        'Name the properties instead: `transition-colors`, `transition-transform`, ' +
+          '`transition-opacity`, a `transition-[a,b]` list, or plain `transition` ' +
+          '(every visual property, no layout ones). `all` makes the engine watch ' +
+          'EVERY animatable property including width/height/top/margin, so a class ' +
+          'change that happens to touch layout animates a reflow. If a layout ' +
+          'property is genuinely what you want to animate, it is almost always ' +
+          'cheaper as a transform — a progress bar is `scaleX` on a full-width ' +
+          'fill, not an animated `width` (see components/onboarding/FirstWeekCard).',
       ),
     ).toEqual([]);
   });

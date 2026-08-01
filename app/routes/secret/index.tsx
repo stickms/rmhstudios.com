@@ -45,7 +45,7 @@ function ItemCard({ item }: { item: SecretItem }) {
   return (
     <Link
       to={item.href}
-      className="group relative overflow-hidden rounded-xl border border-white/6 bg-white/3 p-6 transition-all duration-300 hover:border-white/12 hover:bg-white/6"
+      className="group relative overflow-hidden rounded-xl border border-white/6 bg-white/3 p-6 transition-colors duration-300 hover:border-white/12 hover:bg-white/6"
     >
       <div
         className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"

@@ -38,7 +38,7 @@ export function AccentPicker() {
           onClick={() => setAccent(null)}
           title={defaultLabel}
           className={cn(
-            'flex h-11 w-11 items-center justify-center rounded-full border-2 border-dashed bg-site-surface transition-all',
+            'flex h-11 w-11 items-center justify-center rounded-full border-2 border-dashed bg-site-surface transition-colors',
             accent === null
               ? 'border-site-accent ring-2 ring-site-accent'
               : 'border-site-border hover:border-site-text/40',
@@ -63,7 +63,7 @@ export function AccentPicker() {
               onClick={() => setAccent(preset.id)}
               title={preset.label}
               className={cn(
-                'flex h-11 w-11 items-center justify-center rounded-full border-2 transition-all',
+                'flex h-11 w-11 items-center justify-center rounded-full border-2 transition-transform',
                 active
                   ? 'border-site-text ring-2 ring-site-text/40'
                   : 'border-site-border hover:scale-110',

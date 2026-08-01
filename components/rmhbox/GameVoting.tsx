@@ -113,7 +113,7 @@ export default function GameVoting({ candidates, durationSeconds, endsAt, onVote
             <button
               key={c.minigameId}
               onClick={() => handleVote(c.minigameId)}
-              className={`relative overflow-hidden rounded-xl border p-4 text-left transition-all ${
+              className={`relative overflow-hidden rounded-xl border p-4 text-left transition-colors ${
                 isSelected
                   ? 'border-(--app-accent) bg-(--app-accent)/10 ring-2 ring-(--app-accent)'
                   : 'border-(--app-border) bg-(--app-surface) hover:bg-(--app-surface-hover)'

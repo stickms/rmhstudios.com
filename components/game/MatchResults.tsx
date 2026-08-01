@@ -162,7 +162,7 @@ export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; 
                     {sorted.map((p, i) => (
                         <div
                             key={p.id}
-                            className={`flex items-center gap-3 p-4 rounded-xl transition-all duration-300
+                            className={`flex items-center gap-3 p-4 rounded-xl transition-colors duration-300
                                 ${p.isLocal
                                     ? 'bg-blue-500/10 shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] border-2 border-blue-500/30'
                                     : 'bg-slice-bg shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]'
@@ -238,7 +238,7 @@ export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; 
                 <div className="px-6 py-5">
                     {isHost ? (
                         <Button
-                            className="w-full py-5 bg-slice-bg hover:bg-slice-shadow-dark/20 text-blue-500 font-black uppercase tracking-widest text-base rounded-xl shadow-[6px_6px_12px_var(--slice-shadow-dark),-6px_-6px_12px_var(--slice-shadow-light)] active:shadow-[inset_6px_6px_12px_var(--slice-shadow-dark),inset_-6px_-6px_12px_var(--slice-shadow-light)] transition-all border-none"
+                            className="w-full py-5 bg-slice-bg hover:bg-slice-shadow-dark/20 text-blue-500 font-black uppercase tracking-widest text-base rounded-xl shadow-[6px_6px_12px_var(--slice-shadow-dark),-6px_-6px_12px_var(--slice-shadow-light)] active:shadow-[inset_6px_6px_12px_var(--slice-shadow-dark),inset_-6px_-6px_12px_var(--slice-shadow-light)] transition-colors border-none"
                             onClick={() => {
                                 if (lobbyId) {
                                     mp.returnToLobby(lobbyId);

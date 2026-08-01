@@ -108,7 +108,7 @@ export function HUD() {
         </div>
         <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-700">
           <div
-            className={`h-full rounded-full transition-all ${hot ? 'bg-red-500' : 'bg-lime-400'}`}
+            className={`h-full rounded-full transition-colors ${hot ? 'bg-red-500' : 'bg-lime-400'}`}
             style={{ width: `${heatPct}%` }}
           />
         </div>

@@ -319,7 +319,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
                   <button
                     key={movie.title}
                     onClick={() => handleSelectMovie(movie.title)}
-                    className="p-4 rounded-xl bg-(--app-surface) border border-(--app-border) hover:border-(--app-accent) hover:bg-(--app-border) transition-all text-left"
+                    className="p-4 rounded-xl bg-(--app-surface) border border-(--app-border) hover:border-(--app-accent) hover:bg-(--app-border) transition-colors text-left"
                   >
                     <div className="font-semibold text-(--app-text)">{movie.title} ({movie.year})</div>
                     <div className="text-xs text-(--app-text-muted) mt-1">

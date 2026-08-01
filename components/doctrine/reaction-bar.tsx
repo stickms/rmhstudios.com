@@ -58,7 +58,7 @@ export function ReactionBar({ reactions, userReaction, targetType, targetId, onR
             whileTap={{ scale: 0.9 }}
             onClick={() => handleReact(r.key)}
             disabled={submitting}
-            className={`inline-flex items-center gap-1 px-2.5 py-2 md:px-2 md:py-1 rounded-full text-xs transition-all min-h-[44px] md:min-h-0 ${
+            className={`inline-flex items-center gap-1 px-2.5 py-2 md:px-2 md:py-1 rounded-full text-xs transition-colors min-h-[44px] md:min-h-0 ${
               isSelected
                 ? 'ring-1 ring-white/30 bg-white/10'
                 : 'bg-white/5 hover:bg-white/10'

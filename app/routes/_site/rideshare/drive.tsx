@@ -112,7 +112,7 @@ function DrivePage() {
           <Link
             to="/login"
             search={{ callbackURL: '/rideshare/drive' }}
-            className="mt-5 inline-flex items-center gap-2 rounded-site bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-all hover:scale-105"
+            className="mt-5 inline-flex items-center gap-2 rounded-site bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-transform hover:scale-105"
           >
             <LogIn className="h-4 w-4" /> {t('sign-in', { defaultValue: 'Sign in' })}
           </Link>
@@ -283,7 +283,7 @@ function ApplicationForm({
               key={cls.id}
               type="button"
               onClick={() => setVehicleClass(cls.id)}
-              className={`rounded-site-sm border px-3 py-2 text-sm font-medium transition-all ${
+              className={`rounded-site-sm border px-3 py-2 text-sm font-medium transition-colors ${
                 vehicleClass === cls.id
                   ? 'border-site-accent bg-site-accent/10 text-site-accent'
                   : 'border-site-border bg-site-surface text-site-text hover:border-site-border-bright'
@@ -298,7 +298,7 @@ function ApplicationForm({
       <button
         type="submit"
         disabled={submitting}
-        className="flex w-full items-center justify-center gap-2 rounded-site bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-all hover:bg-(--site-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-site bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-colors hover:bg-(--site-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
       >
         {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
         {t('submit-application', { defaultValue: 'Submit application' })}

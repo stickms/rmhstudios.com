@@ -119,7 +119,7 @@ export function ChapterSummary() {
         <div className="flex gap-3 justify-center">
           <button
             onClick={handleMainMenu}
-            className="px-6 py-2.5 rounded text-sm font-semibold transition-all hover:brightness-125"
+            className="px-6 py-2.5 rounded text-sm font-semibold transition hover:brightness-125"
             style={{
               backgroundColor: 'rgba(196, 163, 90, 0.15)',
               border: '1px solid rgba(196, 163, 90, 0.3)',
@@ -131,7 +131,7 @@ export function ChapterSummary() {
           {hasNextChapter ? (
             <button
               onClick={handleNextChapter}
-              className="px-6 py-2.5 rounded text-sm font-semibold transition-all hover:brightness-125"
+              className="px-6 py-2.5 rounded text-sm font-semibold transition hover:brightness-125"
               style={{
                 backgroundColor: 'rgba(196, 163, 90, 0.25)',
                 border: '1px solid rgba(196, 163, 90, 0.5)',

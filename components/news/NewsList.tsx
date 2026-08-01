@@ -200,7 +200,7 @@ export function NewsList({
               <input
                 type="text"
                 placeholder={t('search-placeholder', { defaultValue: 'Search articles...' })}
-                className="w-full bg-(--site-bg) border border-(--site-border) rounded-site-sm py-2 pl-9 pr-9 text-sm text-(--site-text) placeholder-(--site-text-dim) focus:outline-none focus:border-(--site-accent) focus:ring-1 focus:ring-(--site-accent) transition-all"
+                className="w-full bg-(--site-bg) border border-(--site-border) rounded-site-sm py-2 pl-9 pr-9 text-sm text-(--site-text) placeholder-(--site-text-dim) focus:outline-none focus:border-(--site-accent) focus:ring-1 focus:ring-(--site-accent) transition"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
               />

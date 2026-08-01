@@ -91,7 +91,7 @@ export function RecruitForm() {
       <button
         onClick={handleGenerate}
         disabled={!message.trim() || loading}
-        className="w-full py-3 md:py-2 text-base md:text-sm font-medium rounded-lg transition-all disabled:opacity-40 min-h-[44px]"
+        className="w-full py-3 md:py-2 text-base md:text-sm font-medium rounded-lg transition disabled:opacity-40 min-h-[44px]"
         style={{ background: 'var(--doctrine-accent, #F97316)', color: '#000' }}
       >
         {loading ? t("generating", { defaultValue: "Generating..." }) : t("generate-recruitment-code", { defaultValue: "Generate Recruitment Code" })}

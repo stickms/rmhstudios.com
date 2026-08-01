@@ -76,7 +76,7 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
   };
 
   return (
-    <div className={`flex flex-col items-center gap-1 p-2 rounded-site-sm transition-all shrink-0 min-w-0 ${
+    <div className={`flex flex-col items-center gap-1 p-2 rounded-site-sm transition shrink-0 min-w-0 ${
       isCurrentTurn ? 'ring-2 ring-site-accent bg-site-accent-dim animate-pulse' : ''
     } ${player.folded || player.sittingOut ? 'opacity-40' : ''} ${isMe ? 'bg-site-surface/50' : ''}`}>
       {/* Name + position badges */}

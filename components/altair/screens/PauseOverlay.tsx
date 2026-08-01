@@ -36,21 +36,21 @@ export default function PauseOverlay({ onResume, onSettings, onQuit }: PauseOver
         <div className="flex flex-col gap-3 w-56 sm:w-48">
           <button
             onClick={onResume}
-            className={`py-3 bg-(--altair-accent) hover:bg-(--altair-accent-hover) text-white font-bold rounded-lg tracking-widest uppercase transition-all ${focusClass(0)}`}
+            className={`py-3 bg-(--altair-accent) hover:bg-(--altair-accent-hover) text-white font-bold rounded-lg tracking-widest uppercase transition-colors ${focusClass(0)}`}
           >
             {t("resume", { defaultValue: "Resume" })}
           </button>
           <button
             onClick={onSettings}
             data-altair-sfx="menu_open"
-            className={`py-3 bg-(--altair-surface-hover) hover:bg-(--altair-surface) border border-(--altair-border) text-(--altair-text) font-bold rounded-lg tracking-widest uppercase transition-all ${focusClass(1)}`}
+            className={`py-3 bg-(--altair-surface-hover) hover:bg-(--altair-surface) border border-(--altair-border) text-(--altair-text) font-bold rounded-lg tracking-widest uppercase transition-colors ${focusClass(1)}`}
           >
             {t("settings", { defaultValue: "Settings" })}
           </button>
           <button
             onClick={onQuit}
             data-altair-sfx="menu_back"
-            className={`py-3 bg-(--altair-surface-hover) hover:bg-(--altair-surface) border border-(--altair-border) text-(--altair-text-muted) hover:text-(--altair-text) font-bold rounded-lg tracking-widest uppercase transition-all text-sm ${focusClass(2)}`}
+            className={`py-3 bg-(--altair-surface-hover) hover:bg-(--altair-surface) border border-(--altair-border) text-(--altair-text-muted) hover:text-(--altair-text) font-bold rounded-lg tracking-widest uppercase transition-colors text-sm ${focusClass(2)}`}
           >
             {t("quit-to-menu", { defaultValue: "Quit to Menu" })}
           </button>

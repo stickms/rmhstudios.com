@@ -162,7 +162,7 @@ export function BaccaratControls({ coins }: Props) {
               key={opt.type}
               onClick={() => handlePlaceBet(opt.type)}
               disabled={coins - totalBet < chipAmount}
-              className="flex flex-col items-center justify-center gap-0.5 min-h-11 p-2.5 rounded-site-sm bg-site-surface border border-site-border text-site-text hover:bg-site-surface-hover active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex flex-col items-center justify-center gap-0.5 min-h-11 p-2.5 rounded-site-sm bg-site-surface border border-site-border text-site-text hover:bg-site-surface-hover active:scale-95 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="text-xs font-bold leading-tight">{opt.label}</span>
               <span className="text-[10px] text-site-text-dim leading-tight">{opt.payout}</span>
@@ -214,7 +214,7 @@ export function BaccaratControls({ coins }: Props) {
             </div>
             <button
               onClick={handleClearBets}
-              className="w-full min-h-10 text-xs font-bold rounded-site-sm border border-site-danger/30 text-site-danger hover:bg-casino-red-hover/10 active:scale-[0.98] transition-all"
+              className="w-full min-h-10 text-xs font-bold rounded-site-sm border border-site-danger/30 text-site-danger hover:bg-casino-red-hover/10 active:scale-[0.98] transition-colors"
             >
               {t("clear-all-bets", { defaultValue: "Clear All Bets" })}
             </button>

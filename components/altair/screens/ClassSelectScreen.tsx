@@ -99,7 +99,7 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
               key={cls.id}
               onClick={() => isUnlocked && setSelectedId(cls.id)}
               disabled={!isUnlocked}
-              className={`relative p-4 rounded-xl border text-left transition-all ${
+              className={`relative p-4 rounded-xl border text-left transition-colors ${
                 isSelected
                   ? 'border-2 scale-[1.02] shadow-lg'
                   : isFocused

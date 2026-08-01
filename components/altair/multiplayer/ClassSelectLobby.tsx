@@ -134,7 +134,7 @@ export default function ClassSelectLobby({ lobbyId }: ClassSelectLobbyProps) {
               key={cls.id}
               onClick={() => isUnlocked && handleSelect(cls.id)}
               disabled={!isUnlocked}
-              className={`relative p-4 rounded-xl border text-left transition-all ${
+              className={`relative p-4 rounded-xl border text-left transition-colors ${
                 isMySelection
                   ? 'border-2 scale-[1.02] shadow-lg'
                   : isUnlocked

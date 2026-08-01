@@ -505,7 +505,7 @@ export function DialogueScreen() {
                 e.stopPropagation();
                 setScreen(action.key);
               }}
-              className="text-xs px-3 py-1 rounded transition-all hover:brightness-125"
+              className="text-xs px-3 py-1 rounded transition hover:brightness-125"
               style={{
                 backgroundColor: 'rgba(26, 21, 32, 0.7)',
                 border: '1px solid rgba(196, 163, 90, 0.1)',

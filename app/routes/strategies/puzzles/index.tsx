@@ -60,7 +60,7 @@ function PuzzlesIndex() {
             <a
               key={puzzle.id}
               href={`/strategies/puzzles/${puzzle.mode.toLowerCase()}`}
-              className="block rounded-lg p-5 space-y-2 transition-all hover:scale-[1.01] active:scale-[0.99]"
+              className="block rounded-lg p-5 space-y-2 transition-transform hover:scale-[1.01] active:scale-[0.99]"
               style={{
                 background: 'var(--doctrine-bg-secondary)',
                 border: `1px solid ${info.color}20`,

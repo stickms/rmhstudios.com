@@ -407,7 +407,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
               key={i}
               onClick={() => isIdle && setSelectedBin(i)}
               disabled={!isIdle}
-              className={`flex-1 min-h-10 py-2 rounded-site text-sm font-bold transition-all active:scale-95 ${
+              className={`flex-1 min-h-10 py-2 rounded-site text-sm font-bold transition active:scale-95 ${
                 selectedBin === i
                   ? 'ring-2 ring-site-accent text-casino-ink scale-105'
                   : 'text-site-text-dim hover:text-site-text'
@@ -445,7 +445,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
                 key={amt}
                 onClick={() => isIdle && setQuickBet(amt)}
                 disabled={!isIdle}
-                className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-site text-site-text-dim hover:text-site-text hover:bg-site-surface-hover disabled:opacity-50 active:scale-95 transition-all"
+                className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-site text-site-text-dim hover:text-site-text hover:bg-site-surface-hover disabled:opacity-50 active:scale-95 transition-colors"
               >
                 {amt}
               </button>
@@ -453,7 +453,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
             <button
               onClick={() => isIdle && setQuickBet(coins)}
               disabled={!isIdle}
-              className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-site text-site-accent hover:bg-site-surface-hover disabled:opacity-50 active:scale-95 transition-all"
+              className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-site text-site-accent hover:bg-site-surface-hover disabled:opacity-50 active:scale-95 transition-colors"
             >
               {t('bet-all', { defaultValue: 'All' })}
             </button>

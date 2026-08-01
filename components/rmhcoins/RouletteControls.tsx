@@ -124,7 +124,7 @@ export function RouletteControls({ coins }: Props) {
                 key={val}
                 onClick={() => setSelectedChip(val)}
                 disabled={val > coins}
-                className={`relative w-10 h-10 sm:w-11 sm:h-11 rounded-full font-bold text-xs shrink-0 transition-all active:scale-90 ${
+                className={`relative w-10 h-10 sm:w-11 sm:h-11 rounded-full font-bold text-xs shrink-0 transition active:scale-90 ${
                   selectedChip === val
                     ? 'bg-site-accent text-site-accent-fg ring-2 ring-site-accent ring-offset-1 ring-offset-site-bg'
                     : 'bg-site-surface border-2 border-site-border text-site-text hover:border-site-accent/50'
@@ -146,7 +146,7 @@ export function RouletteControls({ coins }: Props) {
                 key={type}
                 onClick={() => handleQuickBet(type)}
                 disabled={selectedChip > coins}
-                className={`min-h-10 px-2 py-2 text-xs font-bold rounded-site-sm transition-all active:scale-95 ${color} disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`min-h-10 px-2 py-2 text-xs font-bold rounded-site-sm transition-transform active:scale-95 ${color} disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {label}
               </button>

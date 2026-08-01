@@ -819,6 +819,19 @@ gated off there too, via `html.app-route`).
   cleared after; the detail's secondary content (comments, metadata, related
   lists) then staggers in via `staggerContainer`/`fadeRise`. No-VT browsers get
   instant nav + the stagger.
+- **Never `transition-all`, and never animate a layout property.** `all` makes
+  the engine watch every animatable property on the element, so a class change
+  that happens to touch `width`/`padding`/`gap` animates a reflow nobody asked
+  for. Name what changes: `transition-colors`, `transition-transform`,
+  `transition-opacity`, a `transition-[a,b]` list, or plain `transition` (every
+  visual property, no layout ones). CI-enforced for site UI (§13 rule 8).
+
+  When a layout property is genuinely the thing you want to move, it is almost
+  always cheaper as a transform, because layout animation relayouts the element
+  **and its siblings** every frame. A progress bar is a full-width fill with
+  `origin-left` + `transform: scaleX(p)`, not an animated `width`; a column chart
+  is `origin-bottom` + `scaleY`. See `components/onboarding/FirstWeekCard.tsx`,
+  `components/feed/PollDisplay.tsx` and `components/feed/InsightsModal.tsx`.
 - `hooks/useReducedMotion.ts` — SSR-safe boolean for JS animations CSS can't
   reach; `prefersReducedMotion()` for imperative checks.
 - `hooks/useCelebration.ts` — confetti/fireworks; lazy-loads canvas-confetti,
@@ -1107,7 +1120,7 @@ the normal suite (`pnpm exec vitest run`, gated by `web-ci.yml`):
   segmented control, a `flex-1` button row with an active tint) still belongs
   on `LiquidTabs`. Reviewers catch those by eye.
 
-  The same file carries three **site-tier** rules added 2026-08-01 (games and
+  The same file carries four **site-tier** rules added 2026-08-01 (games and
   the `--app-*` apps are exempt, by design — Temple of Joy is supposed to be
   candlelit): **(5)** no raw Tailwind palette colour (`bg-red-600`,
   `text-zinc-500`, …) in site UI — a domain-fixed colour gets a scoped variable
@@ -1115,8 +1128,9 @@ the normal suite (`pnpm exec vitest run`, gated by `web-ci.yml`):
   (`rounded-lg`/`-xl`/`-2xl`) — `rounded-full` and `rounded-none` are shapes,
   not radii, and stay allowed; **(7)** no floating surface below L4 — an element
   that is positioned + stacked + edge-anchored and carries `.glass-fill` /
-  `.glass-pane` / `bg-site-surface` is a dropdown with no backdrop blur. The
-  only allowlist entry is `/login`, for the third-party provider brand marks.
+  `.glass-pane` / `bg-site-surface` is a dropdown with no backdrop blur;
+  **(8)** no `transition-all` — name the properties. The only allowlist entry
+  across all four is `/login`, for the third-party provider brand marks.
 - **`lib/__tests__/game-viewport-consistency.test.ts` — the full-screen
   viewport contract (§12.1).** A static scan over the thirty game/app
   directories that fails on: (1) a scrolling flex/grid container that centres on

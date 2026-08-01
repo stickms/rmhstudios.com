@@ -174,7 +174,7 @@ export default function RmhTypeLanding() {
 
           <div className="grid md:grid-cols-2 gap-6">
             <Link to="/rmhtype/solo"
-              className="rounded-xl border border-(--app-border) bg-(--app-surface) p-8 text-left transition-all hover:border-(--app-accent) hover:bg-(--app-surface-hover)"
+              className="rounded-xl border border-(--app-border) bg-(--app-surface) p-8 text-left transition-colors hover:border-(--app-accent) hover:bg-(--app-surface-hover)"
             >
               <User className="h-8 w-8 mb-4 text-(--app-accent)" />
               <h3 className="text-xl font-semibold mb-2">{t("solo-title", { defaultValue: "Solo Practice" })}</h3>
@@ -184,7 +184,7 @@ export default function RmhTypeLanding() {
             </Link>
 
             <Link to="/rmhtype/multiplayer"
-              className="rounded-xl border border-(--app-border) bg-(--app-surface) p-8 text-left transition-all hover:border-(--app-accent) hover:bg-(--app-surface-hover)"
+              className="rounded-xl border border-(--app-border) bg-(--app-surface) p-8 text-left transition-colors hover:border-(--app-accent) hover:bg-(--app-surface-hover)"
             >
               <Users className="h-8 w-8 mb-4 text-(--app-accent)" />
               <h3 className="text-xl font-semibold mb-2">{t("multiplayer-title", { defaultValue: "Multiplayer Race" })}</h3>

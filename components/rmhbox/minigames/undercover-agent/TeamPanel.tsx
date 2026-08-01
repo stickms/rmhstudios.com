@@ -46,7 +46,7 @@ export default function TeamPanel({ team, isActive, getPlayerName, currentUserId
       {/* Agent progress bar */}
       <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-(--app-border)">
         <div
-          className={`h-full rounded-full transition-all duration-500 ${isRed ? 'bg-red-500' : 'bg-blue-500'}`}
+          className={`h-full rounded-full transition-colors duration-500 ${isRed ? 'bg-red-500' : 'bg-blue-500'}`}
           style={{ width: `${(team.agentsRevealed / team.agentsTotal) * 100}%` }}
         />
       </div>

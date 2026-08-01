@@ -45,7 +45,7 @@ function PlayingCard({
     <button
       onClick={onClick}
       disabled={!onClick}
-      className={`relative flex h-24 w-16 flex-col justify-between rounded-md border bg-[#f4efe4] p-1.5 shadow-md transition-all ${
+      className={`relative flex h-24 w-16 flex-col justify-between rounded-md border bg-[#f4efe4] p-1.5 shadow-md transition-transform ${
         onClick ? "cursor-pointer hover:-translate-y-1" : "cursor-default"
       } ${held ? "-translate-y-2 border-[#d4a054] ring-2 ring-[#d4a054]" : "border-neutral-400"}`}
     >

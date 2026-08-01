@@ -512,7 +512,7 @@ export function CursedLogicGame() {
           )}
           <div
             key={`player-${animationKey}`}
-            className={`w-16 h-16 rounded-full border-2 flex items-center justify-center font-mono text-xs transition-all duration-300 relative z-0
+            className={`w-16 h-16 rounded-full border-2 flex items-center justify-center font-mono text-xs transition duration-300 relative z-0
               ${playerHit ? 'animate-[cursed-damage_0.5s_ease-out] border-red-500/80 bg-red-500/20' : ''}
               ${playerBlocked && phase === 'resolved' ? 'border-cyan-400 bg-cyan-500/20' : ''}
               ${playerPrepared && phase === 'commit' ? 'animate-[cursed-prepare_1.5s_ease-in-out_infinite] border-cyan-400 bg-cyan-500/10' : ''}
@@ -581,7 +581,7 @@ export function CursedLogicGame() {
           )}
           <div
             key={`protocol-${animationKey}`}
-            className={`w-16 h-16 border-2 flex items-center justify-center font-mono text-[10px] transition-all duration-300 relative z-0
+            className={`w-16 h-16 border-2 flex items-center justify-center font-mono text-[10px] transition duration-300 relative z-0
               ${protocolHit ? 'animate-[cursed-damage_0.5s_ease-out] border-red-500/80 bg-red-500/20' : ''}
               ${protocolBlocked && phase === 'resolved' ? 'border-amber-400 bg-amber-500/20' : ''}
               ${protocolPrepared && phase === 'commit' ? 'animate-[cursed-prepare_1.5s_ease-in-out_infinite] border-amber-400 bg-amber-500/10' : ''}

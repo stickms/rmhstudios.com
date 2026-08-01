@@ -24,7 +24,7 @@ function ForestExplorerPage() {
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full max-w-xl">
           {/* Explore Mode Card */}
           <Link to="/forest-explorer/explore" className="flex-1 group">
-            <div className="relative p-6 rounded-2xl border border-green-700/30 bg-green-950/30 hover:bg-green-900/30 hover:border-green-600/50 transition-all duration-300 cursor-pointer h-full">
+            <div className="relative p-6 rounded-2xl border border-green-700/30 bg-green-950/30 hover:bg-green-900/30 hover:border-green-600/50 transition-colors duration-300 cursor-pointer h-full">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-xl bg-green-800/50 flex items-center justify-center group-hover:bg-green-700/50 transition-colors">
                   <TreePine className="w-5 h-5 text-green-300" />
@@ -42,7 +42,7 @@ function ForestExplorerPage() {
 
           {/* Story Mode Card */}
           <Link to="/forest-explorer/story" className="flex-1 group">
-            <div className="relative p-6 rounded-2xl border border-amber-700/30 bg-amber-950/20 hover:bg-amber-900/20 hover:border-amber-600/50 transition-all duration-300 cursor-pointer h-full">
+            <div className="relative p-6 rounded-2xl border border-amber-700/30 bg-amber-950/20 hover:bg-amber-900/20 hover:border-amber-600/50 transition-colors duration-300 cursor-pointer h-full">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-xl bg-amber-800/40 flex items-center justify-center group-hover:bg-amber-700/40 transition-colors">
                   <BookOpen className="w-5 h-5 text-amber-300" />

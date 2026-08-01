@@ -120,7 +120,7 @@ export function ThemeGallery() {
                   onFocus={() => previewNow(s.id)}
                   onBlur={() => previewNow(null)}
                   className={cn(
-                    'overflow-hidden rounded-site border text-left transition-all',
+                    'overflow-hidden rounded-site border text-left transition-colors',
                     active
                       ? 'border-site-accent ring-2 ring-site-accent'
                       : 'border-site-border hover:border-site-text/40'

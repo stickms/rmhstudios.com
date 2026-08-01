@@ -44,7 +44,7 @@ function SortableLine({ line, index }: { line: PoemLine; index: number }) {
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <motion.div
-        className="flex items-center gap-3 px-4 py-3 rounded cursor-grab active:cursor-grabbing mb-2 transition-all"
+        className="flex items-center gap-3 px-4 py-3 rounded cursor-grab active:cursor-grabbing mb-2 transition"
         style={{
           backgroundColor: isDragging ? 'rgba(196, 163, 90, 0.2)' : 'rgba(42, 34, 53, 0.7)',
           border: `1px solid ${isDragging ? 'rgba(196, 163, 90, 0.5)' : 'rgba(196, 163, 90, 0.15)'}`,

@@ -73,7 +73,7 @@ export default function ReadyButton({
         <button
           onClick={handleStartClick}
           disabled={!hasGamePicked}
-          className={`relative flex flex-col items-center rounded-xl px-8 py-3 font-bold transition-all duration-200 ${
+          className={`relative flex flex-col items-center rounded-xl px-8 py-3 font-bold transition duration-200 ${
             !hasGamePicked
               ? 'bg-(--app-surface) text-(--app-text-muted) opacity-50 cursor-not-allowed'
               : canStart
@@ -117,7 +117,7 @@ export default function ReadyButton({
     <button
       onClick={disabled ? undefined : onToggle}
       disabled={disabled}
-      className={`relative flex flex-col items-center rounded-xl px-8 py-3 font-bold transition-all duration-200 ${
+      className={`relative flex flex-col items-center rounded-xl px-8 py-3 font-bold transition duration-200 ${
         disabled
           ? 'bg-(--app-surface) text-(--app-text-muted) opacity-50 cursor-not-allowed'
           : isReady

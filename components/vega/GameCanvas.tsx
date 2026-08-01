@@ -185,13 +185,13 @@ export default function GameCanvas() {
                   <h2 className="text-2xl font-bold text-white tracking-widest mb-4">{t("system-paused", { defaultValue: "SYSTEM PAUSED" })}</h2>
                   <button
                     onClick={() => useGameStore.getState().setPaused(false)}
-                    className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded font-bold uppercase tracking-wide transition-all"
+                    className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded font-bold uppercase tracking-wide transition-colors"
                   >
                       {t("resume", { defaultValue: "Resume" })}
                   </button>
                   <button
                     onClick={() => window.location.href = '/'}
-                    className="w-full py-3 bg-slate-700 hover:bg-red-500/20 hover:text-red-200 text-slate-300 rounded font-bold uppercase tracking-wide transition-all"
+                    className="w-full py-3 bg-slate-700 hover:bg-red-500/20 hover:text-red-200 text-slate-300 rounded font-bold uppercase tracking-wide transition-colors"
                   >
                       {t("main-menu", { defaultValue: "Main Menu" })}
                   </button>
@@ -241,7 +241,7 @@ export default function GameCanvas() {
                         setShowTutorial(false);
                         if (audioRef.current?.paused) audioRef.current?.play().catch(e => console.log('Audio play failed', e));
                     }}
-                    className="w-full mt-8 bg-blue-600 hover:bg-blue-500 text-white py-3 font-bold transition-all rounded-lg uppercase tracking-widest shadow-lg"
+                    className="w-full mt-8 bg-blue-600 hover:bg-blue-500 text-white py-3 font-bold transition-colors rounded-lg uppercase tracking-widest shadow-lg"
                   >
                       {t("close-manual", { defaultValue: "Close Manual" })}
                   </button>
@@ -341,7 +341,7 @@ const UpgradeUtils = ({ selectedEntity, focus, onSell }: any) => {
         <div className="mt-4 pt-4 border-t border-white/10">
             <button
                 onClick={onSell}
-                className="w-full py-2 bg-red-900/30 hover:bg-red-900/50 border border-red-500/30 text-red-300 text-xs font-bold rounded uppercase transition-all flex justify-between px-4"
+                className="w-full py-2 bg-red-900/30 hover:bg-red-900/50 border border-red-500/30 text-red-300 text-xs font-bold rounded uppercase transition-colors flex justify-between px-4"
             >
                 <span>{t("sell-system", { defaultValue: "SELL SYSTEM" })}</span>
                 <span>+{typeof selectedEntity.getSellValue === 'function' ? selectedEntity.getSellValue() : Math.floor((selectedEntity.totalInvested || 0) * 0.7)} F</span>
@@ -380,7 +380,7 @@ const ShopButtons = ({ towers, unlockedTowers, selectedTower, setSelectedTower }
                     onClick={() => isUnlocked && setSelectedTower(selectedTower === twr.type ? null : twr.type)}
                     disabled={!isUnlocked}
                     className={`
-                        flex flex-col items-center justify-center px-4 py-2 border rounded-lg transition-all min-w-[80px] md:min-w-[100px] backdrop-blur-sm
+                        flex flex-col items-center justify-center px-4 py-2 border rounded-lg transition-colors min-w-[80px] md:min-w-[100px] backdrop-blur-sm
                         ${!isUnlocked ? 'opacity-50 grayscale cursor-not-allowed bg-slate-900 border-slate-800' :
                           selectedTower === twr.type
                             ? 'bg-blue-500/30 border-blue-300 text-white shadow-[0_0_15px_rgba(56,189,248,0.4)] scale-105'
@@ -487,7 +487,7 @@ function GameOverScreen() {
 
                   <button 
                     onClick={resetGame}
-                    className="w-full py-4 bg-red-600 hover:bg-red-500 text-white rounded font-bold uppercase tracking-[0.2em] transition-all shadow-lg hover:shadow-red-500/20"
+                    className="w-full py-4 bg-red-600 hover:bg-red-500 text-white rounded font-bold uppercase tracking-[0.2em] transition-colors shadow-lg hover:shadow-red-500/20"
                   >
                       {t("reboot-system", { defaultValue: "Reboot System" })}
                   </button>

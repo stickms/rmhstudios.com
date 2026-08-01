@@ -75,7 +75,7 @@ function CharCard({ id, selected, onClick }: { id: PlayerId; selected: boolean; 
         <button
             type="button"
             onClick={onClick}
-            className="group relative flex flex-col items-center rounded-sm border p-3 transition-all duration-150 hover:-translate-y-0.5"
+            className="group relative flex flex-col items-center rounded-sm border p-3 transition-transform duration-150 hover:-translate-y-0.5"
             style={{
                 borderColor: selected ? c.accent : 'rgba(231,205,140,0.2)',
                 background: selected ? `${c.accent}1f` : 'rgba(11,7,18,0.5)',

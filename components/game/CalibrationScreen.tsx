@@ -128,9 +128,9 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
                         {t("listen-instruction", { defaultValue: "Listen to the beat and tap SPACE or the button exactly when you hear it." })}
                     </p>
                     
-                    <div className={`bg-slice-bg p-8 rounded-full w-48 h-48 mx-auto flex items-center justify-center transition-all duration-75 ${beatFlash ? 'shadow-[0_0_30px_rgba(59,130,246,0.8),inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]' : 'shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]'}`}>
+                    <div className={`bg-slice-bg p-8 rounded-full w-48 h-48 mx-auto flex items-center justify-center transition duration-75 ${beatFlash ? 'shadow-[0_0_30px_rgba(59,130,246,0.8),inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]' : 'shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]'}`}>
                          <Button 
-                            className={`w-32 h-32 rounded-full font-bold text-xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] transition-all ${isPlaying ? 'bg-blue-500 text-white' : 'bg-slice-bg text-slice-text-muted'} ${beatFlash ? 'scale-95' : 'scale-100'}`}
+                            className={`w-32 h-32 rounded-full font-bold text-xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] transition ${isPlaying ? 'bg-blue-500 text-white' : 'bg-slice-bg text-slice-text-muted'} ${beatFlash ? 'scale-95' : 'scale-100'}`}
                             onClick={isPlaying ? handleTap : startMetronome}
                         >
                             {isPlaying ? t("tap", { defaultValue: "TAP!" }) : t("start", { defaultValue: "START" })}

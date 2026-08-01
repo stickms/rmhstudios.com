@@ -1476,7 +1476,7 @@ export function GameCanvas() {
                           {t('lane-n', { defaultValue: 'Lane {{n}}', n: i + 1 })}
                         </span>
                         <button
-                          className={`px-3 py-1.5 rounded-lg text-xs font-black font-mono transition-all ${
+                          className={`px-3 py-1.5 rounded-lg text-xs font-black font-mono transition-colors ${
                             listeningForKey === lane
                               ? 'bg-blue-500 text-white shadow-[inset_3px_3px_6px_rgba(0,0,0,0.2)] animate-pulse'
                               : 'bg-slice-bg text-slice-text shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]'
@@ -1634,7 +1634,7 @@ export function GameCanvas() {
                           {t('lane-n', { defaultValue: 'Lane {{n}}', n: i + 1 })}
                         </span>
                         <button
-                          className={`px-2 py-1 rounded-md text-[10px] font-black font-mono transition-all ${
+                          className={`px-2 py-1 rounded-md text-[10px] font-black font-mono transition-colors ${
                             listeningForKey === lane
                               ? 'bg-blue-500 text-white shadow-[inset_3px_3px_6px_rgba(0,0,0,0.2)] animate-pulse'
                               : 'bg-slice-bg text-slice-text shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]'

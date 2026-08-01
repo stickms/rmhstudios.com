@@ -258,7 +258,7 @@ export function BaccaratTable() {
       )}
 
       {/* Hands — responsive gap and padding */}
-      <div className={`flex items-start justify-center gap-4 sm:gap-10 p-3 sm:p-5 rounded-site bg-site-bg-subtle border border-site-border min-h-28 sm:min-h-32 w-full transition-all ${
+      <div className={`flex items-start justify-center gap-4 sm:gap-10 p-3 sm:p-5 rounded-site bg-site-bg-subtle border border-site-border min-h-28 sm:min-h-32 w-full transition ${
         tablePhase === 'dealing' || tablePhase === 'drawing' ? 'ring-1 ring-site-accent/40' : ''
       }`}>
         <HandDisplay

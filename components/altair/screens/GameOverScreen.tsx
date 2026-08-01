@@ -182,21 +182,21 @@ export default function GameOverScreen({ onPlayAgain, onMetaShop, onMenu }: Game
           <button
             onClick={onPlayAgain}
             data-altair-sfx="ui_confirm"
-            className={`py-3 rounded-xl font-bold text-white bg-(--altair-accent) hover:bg-(--altair-accent-hover) transition-all ${focusClass(0)}`}
+            className={`py-3 rounded-xl font-bold text-white bg-(--altair-accent) hover:bg-(--altair-accent-hover) transition-colors ${focusClass(0)}`}
           >
             {t("play-again", { defaultValue: "Play Again" })}
           </button>
           <button
             onClick={onMetaShop}
             data-altair-sfx="menu_open"
-            className={`py-2.5 rounded-xl font-semibold text-(--altair-text) bg-(--altair-surface-hover) border border-(--altair-border) hover:bg-(--altair-surface-active) transition-all ${focusClass(1)}`}
+            className={`py-2.5 rounded-xl font-semibold text-(--altair-text) bg-(--altair-surface-hover) border border-(--altair-border) hover:bg-(--altair-surface-active) transition-colors ${focusClass(1)}`}
           >
             {t("meta-shop", { defaultValue: "Meta Shop" })}
           </button>
           <button
             onClick={onMenu}
             data-altair-sfx="menu_back"
-            className={`py-2 rounded-xl font-medium text-(--altair-text-muted) hover:text-(--altair-text) transition-all text-sm ${focusClass(2)}`}
+            className={`py-2 rounded-xl font-medium text-(--altair-text-muted) hover:text-(--altair-text) transition-colors text-sm ${focusClass(2)}`}
           >
             {t("main-menu", { defaultValue: "Main Menu" })}
           </button>

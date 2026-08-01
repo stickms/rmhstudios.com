@@ -163,7 +163,7 @@ export function BlackjackControls({ coins }: Props) {
                   <button
                     key={amt}
                     onClick={() => setQuickBet(amt)}
-                    className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-site-sm text-site-text-dim hover:text-site-text hover:bg-site-surface-hover active:scale-95 transition-all"
+                    className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-site-sm text-site-text-dim hover:text-site-text hover:bg-site-surface-hover active:scale-95 transition-colors"
                   >
                     {amt}
                   </button>

@@ -327,7 +327,7 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
                     <button
                         onClick={handleLockIn}
                         disabled={selectedStatements.size !== remainingToFind}
-                        className="px-6 py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 enabled:hover:scale-[1.02]"
+                        className="px-6 py-3 rounded-xl font-semibold text-sm transition disabled:opacity-30 disabled:cursor-not-allowed bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 enabled:hover:scale-[1.02]"
                     >
                         {t("lock-in-guess", { defaultValue: "Lock In Guess" })}
                     </button>
@@ -360,7 +360,7 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
                         <div className="flex items-center justify-center gap-3">
                             <button
                                 onClick={handleShare}
-                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-site-surface border border-site-border hover:border-site-text-muted/50 text-site-text transition-all"
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-site-surface border border-site-border hover:border-site-text-muted/50 text-site-text transition-colors"
                             >
                                 {copied ? (
                                     <>
@@ -376,7 +376,7 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
                             </button>
                             <Link
                                 to="/daily"
-                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-site-surface border border-site-border hover:border-site-text-muted/50 text-site-text transition-all"
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-site-surface border border-site-border hover:border-site-text-muted/50 text-site-text transition-colors"
                             >
                                 <ArrowLeft className="w-4 h-4" />
                                 {t("all-puzzles", { defaultValue: "All Puzzles" })}

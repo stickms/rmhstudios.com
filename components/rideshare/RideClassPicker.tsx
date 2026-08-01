@@ -34,7 +34,7 @@ export function RideClassPicker({ value, onChange, fareLabels }: RideClassPicker
             type="button"
             onClick={() => onChange(cls.id)}
             aria-pressed={selected}
-            className={`flex w-full items-center gap-3 rounded-site border p-3 text-left transition-all ${
+            className={`flex w-full items-center gap-3 rounded-site border p-3 text-left transition-colors ${
               selected
                 ? 'border-site-accent bg-site-accent/10'
                 : 'border-site-border bg-site-surface hover:border-site-border-bright'

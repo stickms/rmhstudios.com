@@ -166,9 +166,13 @@ export function FirstWeekCard({ status, onDismiss, className }: FirstWeekCardPro
 
       <div className="flex items-center gap-3">
         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-site-surface">
+          {/* Progress fills with `scaleX`, not `width`. Animating width relayouts
+              the bar (and its flex row) every frame; a transform is composited.
+              The track is the sized element, so the fill is always 100% wide and
+              scales from its left edge. */}
           <div
-            className="h-full rounded-full bg-site-accent transition-all"
-            style={{ width: `${(doneCount / total) * 100}%` }}
+            className="h-full w-full origin-left rounded-full bg-site-accent transition-transform duration-site-slow"
+            style={{ transform: `scaleX(${total > 0 ? doneCount / total : 0})` }}
           />
         </div>
         <span className="shrink-0 text-xs text-site-text-muted">

@@ -80,7 +80,7 @@ export function GeneratedPoemMoment() {
                 const on = selected.includes(w.id);
                 return (
                   <button key={w.id} onClick={() => toggle(w.id)}
-                    className="px-3.5 py-2 rounded text-sm transition-all active:scale-95"
+                    className="px-3.5 py-2 rounded text-sm transition-transform active:scale-95"
                     style={{ minHeight: 40,
                       backgroundColor: on ? `${accent}30` : 'rgba(42,34,53,0.6)',
                       border: `1px solid ${on ? accent : 'rgba(196,163,90,0.15)'}`,

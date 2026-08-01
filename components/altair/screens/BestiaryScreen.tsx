@@ -258,7 +258,7 @@ function EnemyCard({
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all ${
+      className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition ${
         selected
           ? 'border-(--altair-accent) bg-(--altair-accent)/10'
           : discovered
@@ -392,7 +392,7 @@ function BossCard({
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border transition-all ${
+      className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border transition ${
         selected
           ? 'border-(--altair-accent) bg-(--altair-accent)/10'
           : discovered

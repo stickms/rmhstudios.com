@@ -288,6 +288,13 @@ These are the mistakes that make a page feel "off" — reviewers will flag them:
    `.glass-overlay`. L1 has **no backdrop blur** — it is the tier for repeated
    cards — so a menu built on it is transparent over whatever it opened on top
    of. CI-enforced (§13 rule 7).
+2b2. `transition-all`. It makes the engine watch every animatable property
+   including the layout ones, so a state change that touches `width` or `gap`
+   animates a reflow. Name what moves (`transition-colors`,
+   `transition-transform`, `transition-[a,b]`, or plain `transition`).
+   CI-enforced (§13 rule 8). And if a layout property IS what you want to
+   animate, reach for a transform first — a progress bar is `scaleX` on a
+   full-width fill, not an animated `width`.
 2c. A bare `duration-200` / `duration-300` instead of `duration-site` /
    `duration-site-fast` / `duration-site-slow`, which follow the theme's
    `--site-transition-speed`. Anything the user *drags* is a spring

@@ -124,11 +124,13 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  className="w-full text-left relative overflow-hidden rounded-site-sm border border-site-border transition-colors hover:border-site-accent/50 disabled:opacity-70"
  >
  {/* Progress bar background */}
+ {/* `scaleX`, not `width`: the bar sits behind live text, so animating its
+ width relayouts the option row on every frame of every result reveal. */}
  <div
- className={`absolute inset-0 transition-all duration-site-slow ${
+ className={`absolute inset-0 origin-left transition-[transform,background-color] duration-site-slow ${
  isSelected ?'bg-site-accent/20':'bg-site-surface/50'
  }`}
- style={{ width: `${pct}%`}}
+ style={{ transform: `scaleX(${pct / 100})`}}
  />
  <div className="relative flex items-center justify-between px-3 py-2">
  <span className="flex items-center gap-2 text-sm text-site-text">

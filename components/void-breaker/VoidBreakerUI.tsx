@@ -472,7 +472,7 @@ export function VoidBreakerUI({
                   return (
                     <button key={c.id} onClick={() => onSelectCharacter(c.id)}
                       title={unlocked ? c.name : `${c.name} — ◈${c.unlockCost}`}
-                      className={`relative flex-1 rounded-lg py-2 border flex flex-col items-center gap-0.5 transition-all ${sel ? '' : 'opacity-60 hover:opacity-100'}`}
+                      className={`relative flex-1 rounded-lg py-2 border flex flex-col items-center gap-0.5 transition ${sel ? '' : 'opacity-60 hover:opacity-100'}`}
                       style={{ borderColor: sel ? c.color : '#2a2a3a', background: sel ? c.color + '18' : 'transparent' }}>
                       <span className="text-lg leading-none" style={{ color: unlocked ? c.color : '#555' }}>{c.icon}</span>
                       {unlocked ? (
@@ -502,7 +502,7 @@ export function VoidBreakerUI({
                   return (
                     <button key={w.id} onClick={() => onSelectWeapon(w.id)}
                       title={unlocked ? `${w.name} — ${w.title}` : `${w.name} — ◈${w.unlockCost}`}
-                      className={`relative flex-1 rounded-lg py-2 border flex flex-col items-center gap-0.5 transition-all ${sel ? '' : 'opacity-60 hover:opacity-100'}`}
+                      className={`relative flex-1 rounded-lg py-2 border flex flex-col items-center gap-0.5 transition ${sel ? '' : 'opacity-60 hover:opacity-100'}`}
                       style={{ borderColor: sel ? w.color : '#2a2a3a', background: sel ? w.color + '18' : 'transparent' }}>
                       <span className="text-lg leading-none" style={{ color: unlocked ? w.color : '#555' }}>{w.icon}</span>
                       {unlocked ? (
@@ -534,7 +534,7 @@ export function VoidBreakerUI({
                   const on = activeMods.includes(m.id);
                   return (
                     <button key={m.id} onClick={() => onToggleModifier(m.id)} title={m.description}
-                      className={`text-[10px] font-mono px-2 py-1 rounded border transition-all ${on ? '' : 'opacity-50 hover:opacity-90'}`}
+                      className={`text-[10px] font-mono px-2 py-1 rounded border transition ${on ? '' : 'opacity-50 hover:opacity-90'}`}
                       style={{ borderColor: on ? m.color : '#2a2a3a', background: on ? m.color + '18' : 'transparent', color: on ? m.color : '#888' }}>
                       {m.icon} {m.name} <span className="opacity-70">+{Math.round(m.coreBonus * 100)}%</span>
                     </button>

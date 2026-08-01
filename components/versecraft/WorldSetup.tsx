@@ -187,7 +187,7 @@ export function WorldSetup() {
                 <button
                   key={ex}
                   onClick={() => setPrompt(ex)}
-                  className="text-xs px-2 py-1 rounded transition-all hover:brightness-125"
+                  className="text-xs px-2 py-1 rounded transition hover:brightness-125"
                   style={{ backgroundColor: 'rgba(42, 34, 53, 0.5)', border: '1px solid rgba(196, 163, 90, 0.12)', color: '#a89888' }}
                 >
                   {ex.length > 38 ? ex.slice(0, 36) + '…' : ex}
@@ -253,7 +253,7 @@ export function WorldSetup() {
           </div>
 
           <button
-            className="w-full text-center text-xs mt-2 transition-all hover:brightness-125"
+            className="w-full text-center text-xs mt-2 transition hover:brightness-125"
             style={{ color: '#777' }}
             onClick={() => setScreen('menu')}
           >

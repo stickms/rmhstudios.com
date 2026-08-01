@@ -101,7 +101,7 @@ export function ResultCard({ mode, correct, score, timeMs, attempts, difficulty,
       {/* Share Button */}
       <button
         onClick={handleShare}
-        className="w-full py-3 md:py-2.5 rounded-lg text-base md:text-sm font-medium flex items-center justify-center gap-2 transition-all hover:brightness-110 min-h-11"
+        className="w-full py-3 md:py-2.5 rounded-lg text-base md:text-sm font-medium flex items-center justify-center gap-2 transition hover:brightness-110 min-h-11"
         style={{ background: color, color: '#000' }}
       >
         <Share2 size={14} />

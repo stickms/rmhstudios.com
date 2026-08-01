@@ -510,7 +510,7 @@ function ClassPicker({
                   onSelect(cls.id);
                   setExpanded(false);
                 }}
-                className={`flex items-center gap-2 p-2.5 rounded-lg text-left transition-all border ${
+                className={`flex items-center gap-2 p-2.5 rounded-lg text-left transition-colors border ${
                   isActive
                     ? 'border-2 shadow-md'
                     : isUnlocked

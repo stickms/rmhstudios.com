@@ -84,7 +84,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
       <div className="flex flex-col gap-3 w-full max-w-xs">
         <button
           onClick={onPlay}
-          className={`flex items-center justify-center gap-2 py-4 rounded-lg font-bold text-white text-lg tracking-wider bg-(--altair-accent) hover:bg-(--altair-accent-hover) transition-all shadow-lg ${focusClass(0)}`}
+          className={`flex items-center justify-center gap-2 py-4 rounded-lg font-bold text-white text-lg tracking-wider bg-(--altair-accent) hover:bg-(--altair-accent-hover) transition-colors shadow-lg ${focusClass(0)}`}
         >
           <Play size={20} />
           {t("play", { defaultValue: "PLAY" })}
@@ -92,7 +92,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
 
         <button
           onClick={onMultiplayer}
-          className={`flex items-center justify-center gap-2 py-3 rounded-lg font-bold text-white tracking-wider bg-(--altair-info) hover:brightness-110 transition-all shadow-md ${focusClass(1)}`}
+          className={`flex items-center justify-center gap-2 py-3 rounded-lg font-bold text-white tracking-wider bg-(--altair-info) hover:brightness-110 transition shadow-md ${focusClass(1)}`}
         >
           <Users size={18} />
           {t("multiplayer", { defaultValue: "MULTIPLAYER" })}
@@ -100,7 +100,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
 
         <button
           onClick={onMetaShop}
-          className={`flex items-center gap-2 px-4 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-all ${focusClass(2)}`}
+          className={`flex items-center gap-2 px-4 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-colors ${focusClass(2)}`}
         >
           <ShoppingBag size={18} />
           {t("meta-shop", { defaultValue: "Meta Shop" })}
@@ -109,7 +109,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
 
         <button
           onClick={onSettings}
-          className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-all ${focusClass(3)}`}
+          className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-colors ${focusClass(3)}`}
         >
           <Settings size={18} />
           {t("settings", { defaultValue: "Settings" })}
@@ -117,7 +117,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
 
         <button
           onClick={handleToggleLeaderboard}
-          className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-all ${focusClass(4)}`}
+          className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-colors ${focusClass(4)}`}
         >
           <Trophy size={18} />
           {t("leaderboard", { defaultValue: "Leaderboard" })}
@@ -125,7 +125,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
 
         <button
           onClick={onBestiary}
-          className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-all ${focusClass(5)}`}
+          className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-colors ${focusClass(5)}`}
         >
           <Book size={18} />
           {t("bestiary", { defaultValue: "Bestiary" })}
@@ -133,7 +133,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
 
         <button
           onClick={handleOpenPatchnotes}
-          className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-all ${focusClass(6)}`}
+          className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-colors ${focusClass(6)}`}
         >
           <ScrollText size={18} />
           {t("patch-notes", { defaultValue: "Patch Notes" })}

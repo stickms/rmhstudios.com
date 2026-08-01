@@ -176,7 +176,7 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
 
   return (
     <div
-      className={`flex flex-col items-center gap-1 p-2 rounded-site-sm transition-all min-w-0 shrink-0 ${
+      className={`flex flex-col items-center gap-1 p-2 rounded-site-sm transition min-w-0 shrink-0 ${
         isCurrentTurn ? 'ring-2 ring-site-accent bg-site-accent-dim animate-pulse' : ''
       } ${isMe ? 'bg-site-surface/50' : ''}`}
     >
@@ -282,7 +282,7 @@ export function BlackjackTable() {
   return (
     <div className="flex flex-col items-center gap-3 sm:gap-4">
       {/* Dealer area */}
-      <div className={`flex flex-col items-center gap-1 p-2.5 sm:p-3 rounded-site bg-site-bg-subtle border border-site-border min-h-18 sm:min-h-20 w-full transition-all ${
+      <div className={`flex flex-col items-center gap-1 p-2.5 sm:p-3 rounded-site bg-site-bg-subtle border border-site-border min-h-18 sm:min-h-20 w-full transition ${
         tablePhase === 'dealer_turn' ? 'ring-2 ring-site-accent/50' : ''
       }`}>
         <span className="text-[10px] sm:text-xs text-site-text-dim font-bold uppercase tracking-wider">{t("dealer", { defaultValue: "Dealer" })}</span>

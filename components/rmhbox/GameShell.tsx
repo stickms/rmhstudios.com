@@ -86,7 +86,7 @@ export default function GameShell({
           {showNextButton ? (
             <button
               onClick={handleNext}
-              className="flex items-center gap-1 rounded-full px-4 py-1 text-xs font-semibold text-white transition-all hover:brightness-110 active:scale-95 animate-pulse"
+              className="flex items-center gap-1 rounded-full px-4 py-1 text-xs font-semibold text-white transition hover:brightness-110 active:scale-95 animate-pulse"
               style={{ backgroundColor: 'var(--app-accent)' }}
             >
               {t("next", { defaultValue: "Next" })}

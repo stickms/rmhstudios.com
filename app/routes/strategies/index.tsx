@@ -141,7 +141,7 @@ function QuickAction({ to, icon: Icon, label, count, countLabel, color, pulse }:
   return (
     <a
       href={to}
-      className={`rounded-lg p-3 md:p-4 flex flex-col items-center gap-2 text-center transition-all hover:bg-white/[0.02] min-h-[44px] ${pulse ? 'animate-pulse' : ''}`}
+      className={`rounded-lg p-3 md:p-4 flex flex-col items-center gap-2 text-center transition-colors hover:bg-white/[0.02] min-h-[44px] ${pulse ? 'animate-pulse' : ''}`}
       style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}
     >
       <Icon size={20} style={{ color }} />
