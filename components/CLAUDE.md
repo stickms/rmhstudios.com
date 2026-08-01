@@ -13,7 +13,7 @@ feature lives in that feature's directory; genuinely shared primitives live in
 
 | Directory       | Contents                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ui/`           | **Shared primitives** — Button, Badge, Card, Dialog, Input, Textarea, Select, Label, EmptyState, Skeleton, Spinner, Tooltip, NotificationBadge, UserAvatar, OptimizedImage/BlurImage, AnimatedCount, ViewTransitionLink, NavigationProgress, RoutePending, pagination, slider, resizable, skeletons/. Always check here before writing new UI. Full API notes in `docs/design-language.md` §5.                                                                        |
+| `ui/`           | **Shared primitives** — Button, Badge, Card, Dialog, Input, Textarea, Select, Label, EmptyState, Skeleton, Spinner/RadialLoader, Tooltip, IconButton, CopyButton, ConfirmDialog, Breadcrumbs, BackToTop, NotificationBadge, UserAvatar, OptimizedImage/BlurImage, AnimatedCount, ViewTransitionLink, NavigationProgress, RoutePending, pagination, slider, resizable, skeletons/. Also the glass layer: `liquid-glass` (GlassPane + the global GlassFilter host), `liquid-tabs` (the **only** sanctioned tab strip), `liquid-morph`, `liquid-pop`. Always check here before writing new UI. Full API notes in `docs/design-language.md` §5. |
 | `feed/`         | Feed/timeline plus the **layout system**: `SiteShell.tsx` (site-wide chrome, delegates to `radial/RadialShell`), `PageLayout.tsx` (canonical page wrapper), `ContextRail.tsx` (portals a page's `rightSidebar` into the shell's desktop live rail), `AnimatedMain.tsx`, `ColumnHeader.tsx`, post cards, composer. Also `feed.css`. Navigation lives in `radial/RadialHub` plus the desktop `radial/RadialNavRail`; the old left rail and mobile push-drawer are gone. |
 | `site/`         | Site-level chrome: `CommandPalette` (mounted globally), `LanguageSwitcher`, `PasskeyManager`.                                                                                                                                                                                                                                                                                                                                                                         |
 | `shared/`       | Cross-feature building blocks. **The full-screen app tier lives here**: `app-theme.css` (the `--app-*` token contract + chrome shared by RMHbox/RMHType/RMHStudy/RMHTube/RMHMusic), `AppShell`, `AppHeader`, `AppToaster`, `ConnectionStatus` (reconnect banner + peer-wait overlay), `GameBackLink` (the "leave this game" corner control). Also `GameLoadingFallback`, `GameErrorBoundary`, ChatPanel, EmojiPicker, ReactionMenu.                                     |
@@ -29,7 +29,24 @@ feature lives in that feature's directory; genuinely shared primitives live in
 - **Styling:** only `--site-*` token utilities (`bg-site-surface`,
   `text-site-text-muted`, `rounded-site`, `shadow-site`, …). Merge classes
   with `cn()` from `@/lib/utils`. No hardcoded colors, radii, or fonts —
-  the theme system depends on it.
+  the theme system depends on it, and raw palette classes plus
+  `rounded-lg`/`-xl`/`-2xl` fail CI on the site tier.
+- **Surfaces take a glass elevation class by role**, not an equivalent box:
+  `.glass-fill` for repeated content (cards, rows, tiles — no backdrop blur,
+  unlimited), `.glass-pane` for singular panels, `.glass-chrome` for sticky
+  chrome, `.glass-overlay` for anything floating (dialogs, popovers, menus,
+  toasts — CI-enforced, because L1 has no blur and a menu on it ghosts),
+  `.glass-inset` for fields. `bg-site-surface border border-site-border
+  rounded-site shadow-site-sm` renders the same *box* and none of the
+  *material* — no noise, no rim glint, and nothing for high-contrast / reduced
+  transparency / `perf-lite` to switch off. Budget: ≤8 blurred surfaces per
+  viewport, **zero** on repeated list items.
+- **Nothing reacts to pointer position.** No `pointermove` listeners, no
+  cursor-following gradients, no per-card sheen or tilt — the whole class was
+  retired on 2026-08-01 (`docs/design-language.md` §5.1.1) because moving a
+  gradient repaints the element at pointer rate. Hover is a state. Likewise,
+  never write an inherited custom property to `<html>` in a frame loop: it
+  restyles the entire document each time.
 - **Variants:** use `class-variance-authority` for components with variant
   APIs (see `ui/button.tsx`, `ui/badge.tsx`). Set a `data-slot="..."`
   attribute on new primitives — themes restyle components through
