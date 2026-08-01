@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Aperture, Droplets, Layers, MousePointerClick, Sparkles, Waves, Wind } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buildMeta, buildCanonical } from '@/lib/seo';
@@ -16,8 +16,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { useThemeStore } from '@/stores/themeStore';
-import { getLiquidTier, isForcingCss, setForceCss, subscribeLiquidActive } from '@/lib/liquid-gl';
-import type { LiquidTier } from '@/lib/liquid-gl/types';
 
 // §5.46: read-only indicator of the active glass clarity stop (no i18n in the lab).
 const CLARITY_LABELS = ['Opaque', 'Calm', 'Default', 'Airy', 'Clear'];
@@ -30,69 +28,36 @@ function ClarityIndicator() {
   );
 }
 
-// §16.1 shader-liquid demo — tier indicator + a live LiquidTabs capsule morph on
-// the GL path + a force-CSS toggle for A/B comparison against the SVG-goo tier.
-const SHADER_TABS = [
+const MORPH_TABS = [
   { id: 'for-you', label: 'For You' },
   { id: 'following', label: 'Following' },
   { id: 'trending', label: 'Trending' },
   { id: 'latest', label: 'Latest' },
 ];
 
-function tierLabel(active: boolean, tier: LiquidTier): string {
-  if (!active) return 'CSS / SVG fallback';
-  return tier === 'webgpu' ? 'WebGPU · WGSL' : 'WebGL2 · GLSL';
-}
-
-function ShaderLiquidDemo() {
-  const [active, setActive] = useState(false);
-  const [tier, setTier] = useState<LiquidTier>('none');
-  const [forceCss, setForce] = useState(false);
+// The capsule morph demo. This section used to lead with a tier indicator and a
+// "force CSS fallback" A/B switch, because the morph had two renderers: a
+// WebGPU/WebGL2 shader that drew the metaball merge as SDF bodies, and the
+// SVG-goo path. The shader tier is deleted — `initLiquidGL()` had no caller
+// anywhere, so it never ran once and the badge read "CSS / SVG fallback"
+// permanently — and the goo path it fell back to is simply the renderer now.
+function LiquidMorphDemo() {
   const [tab, setTab] = useState('for-you');
-
-  useEffect(() => {
-    setForce(isForcingCss());
-    const unsub = subscribeLiquidActive((a) => {
-      setActive(a);
-      setTier(getLiquidTier());
-    });
-    return unsub;
-  }, []);
-
-  const onForce = (on: boolean) => {
-    setForce(on);
-    setForceCss(on);
-  };
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-site-text-muted">Active tier</span>
-          <Badge variant={active ? 'accent' : 'outline'}>{tierLabel(active, tier)}</Badge>
-        </div>
-        <span className="flex items-center gap-2 text-sm text-site-text-muted">
-          Force CSS fallback
-          <Switch
-            checked={forceCss}
-            onCheckedChange={onForce}
-            aria-label="Force the CSS/SVG fallback tier"
-          />
-        </span>
-      </div>
       <p className="text-sm text-site-text-muted">
-        Switch tabs and watch the active capsule: on the GL path the shader draws the metaball merge
-        — the capsule and its trailing droplet fuse into a stretching teardrop — behind the DOM
-        capsule, refracting the real aurora with fresnel specular from the scene light. Toggle{' '}
-        <Mono>Force CSS fallback</Mono> to compare against the SVG-goo path: same geometry, a
-        different renderer.
+        Switch tabs and watch the active capsule: the capsule and its trailing droplet fuse into a
+        stretching teardrop, drawn as an SVG metaball underlay (<Mono>#glass-goo</Mono>) beneath the
+        DOM capsule. Velocity drives the squash and stretch; reduced motion, perf-lite and
+        high-contrast strip the underlay and leave the plain capsule slide.
       </p>
       <div className="flex justify-center py-4">
         <LiquidTabs
-          tabs={SHADER_TABS}
+          tabs={MORPH_TABS}
           value={tab}
           onChange={setTab}
-          aria-label="Shader liquid demo tabs"
+          aria-label="Liquid morph demo tabs"
         />
       </div>
     </div>
@@ -503,22 +468,25 @@ function LiquidGlassLab() {
         </Section>
 
         {/* ── 7 · GlassPane gallery ── */}
-        {/* ── Shader liquid (§16.1) ── */}
+        {/* ── Liquid morph (§5.47) ── */}
         <Section
-          id="shader-liquid"
-          eyebrow="§16.1"
-          title="Shader liquid"
+          id="liquid-morph"
+          eyebrow="§5.47"
+          title="Liquid morph"
           description={
             <>
-              The marquee layer: one fixed <Mono>#liquid-layer</Mono> canvas (
-              <Mono>lib/liquid-gl</Mono>) renders the aurora itself and the registered liquid bodies
-              as SDF metaballs with smooth-min merging, edge-band refraction, chromatic dispersion
-              and fresnel specular — WebGPU (WGSL) → WebGL2 (GLSL) → the untouched CSS/SVG fallback.
-              Bodies respond to the pointer, press and tilt.
+              The active tab capsule does not slide, it <em>flows</em>: a <Mono>layoutId</Mono>{' '}
+              spring carries the capsule while an SVG metaball underlay (<Mono>#glass-goo</Mono>,{' '}
+              <Mono>components/ui/liquid-morph.tsx</Mono>) fuses it with a trailing droplet into a
+              stretching teardrop. Velocity drives the squash and stretch.
+              {' '}
+              There was a second renderer here — a WebGPU/WebGL2 canvas drawing the same merge as
+              SDF bodies. It is deleted: its entry point had no caller anywhere in the repo, so it
+              never ran, and the SVG path below was always what shipped.
             </>
           }
         >
-          <ShaderLiquidDemo />
+          <LiquidMorphDemo />
         </Section>
 
         <Section

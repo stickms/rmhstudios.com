@@ -1156,40 +1156,6 @@ html.style-high-contrast .site-aurora::after {
   will-change: auto;
 }
 
-/* §16.1 — the shader-grade liquid layer. When a GL tier initialises,
-   lib/liquid-gl sets `html.liquid-gl` and mounts the fixed `#liquid-layer` canvas
-   (z-index:-1). The shader RENDERS the aurora itself (scene colours from the theme
-   tokens) and the liquid bodies (tab/nav capsules + trail droplets, the liquid-pop
-   bud) as SDF metaballs, so the CSS aurora layers and the SVG-goo underlays must
-   hide — never double-render the same effect. Every glass surface still composites
-   over the canvas. When GL is off (unsupported, or perf-lite / reduced-motion /
-   high-contrast / reduce-transparency), this class is absent and the CSS/SVG stack
-   below renders unchanged — it IS the fallback tier. */
-html.liquid-gl .site-aurora::before,
-html.liquid-gl .site-aurora::after {
-  display: none;
-}
-html.liquid-gl .lg-goo {
-  display: none;
-}
-/* The #liquid-layer canvas sits at z-index:-1 as a body child, so it paints in
-   the root stacking context BELOW the body box — an opaque body background (the
-   inline THEME_BG the appearance runtime sets for overscroll/no-flash) would hide
-   it. Under html.liquid-gl the canvas paints the full opaque aurora itself, so the
-   body background is made transparent to reveal it; <html> keeps its opaque
-   THEME_BG as the pre-init / overscroll backstop. !important beats the inline
-   body background-color. Gated to non-app routes exactly like the CSS aurora
-   (games/apps own their background) — see the .site-aurora gate above. */
-html.liquid-gl:not(.app-route) body {
-  background-color: transparent !important;
-}
-/* On app/game routes the canvas must not show (those pages own their backdrop);
-   the body stays opaque there, but hide the canvas outright so it costs no
-   compositing. The render loop still idle-damps to 30fps with zero bodies. */
-html.liquid-gl.app-route #liquid-layer {
-  display: none;
-}
-
 /* Page canvas show-through: elements that use bg-site-bg as the page ground let
    the aurora read through (cheap — no blur). Full-screen fixed takeovers (admin
    MDX editor) and the mobile drawer's sliding panel stay opaque. High-contrast
@@ -1666,36 +1632,100 @@ html.app-route {
      upgrades here and the initGlassLens() call in hooks/useGlassLight.ts. */
 
   /* ── Liquid sheen (§5.2) — a slow diagonal specular that drifts across a
-     surface like light over wet glass. PSEUDO-FREE in v2: the sheen is a
-     background layer over the noise/tint, so it composes with .glass-refract
-     (::before) and .glass-interactive (::after) on the same element. SIGNATURE
-     surfaces only — ration like .glass-refract (≤3 ambient per page); NOT for
-     list items. The band rests off-pane (150%) so a stopped animation is never
-     stuck mid-sweep; `screen` blend keeps it a highlight. The 2nd layer is the
-     shared noise (harmless where a host has no noise of its own). */
+     surface like light over wet glass. SIGNATURE surfaces only — ration like
+     .glass-refract (≤3 ambient per page); NOT for list items.
+
+     ## The band travels on the compositor, not through paint (v3)
+
+     Through v2 this was one element with an animated `background-position`.
+     Background position is a PAINT property: there is no transform that slides
+     a gradient, so every frame of the sweep re-rasterised the host's entire box
+     — forever, since the animation is `infinite`. On a 120Hz panel that is 120
+     full-element repaints a second for an ambient decoration, on a surface that
+     is by definition one of the largest on the page (a login card, a pricing
+     slab). It was the last standing per-frame paint on the site.
+
+     The band is now its own layer on `::after` — a fixed gradient, moved with
+     `translate3d`. Transform is a compositor property: the layer is rasterised
+     ONCE and then transformed by the GPU, so the sweep costs no main-thread
+     work and no repaint at all after the first frame. `::after` is available
+     because the pointer hotspot that used to own it is retired (§5.1.1); this
+     is the one thing that took its place, and it is static.
+
+     Three details are load-bearing:
+
+       1. **The host clips** (`overflow: clip`). A moving layer has to leave the
+          pane, and nothing else can stop it being visible outside — a
+          `clip-path` or `mask` on the layer itself is applied BEFORE its
+          transform, so it travels with the band instead of holding still.
+          `clip` rather than `hidden`: it creates no scroll container and no
+          containing block for absolute descendants, so it cannot turn a pane
+          into a scroll port or re-parent a popover.
+       2. **A host with a deliberately overflowing child opts into a bleed**
+          via `--glass-sheen-bleed` (see `.pricing-card--featured`, whose ribbon
+          straddles the top edge). Default 0 = the sheen is clipped exactly at
+          the edge.
+       3. **`z-index: -1`** puts the layer above the host's own background and
+          below every piece of its content — the same place the background layer
+          used to occupy. It needs the host to be a stacking context, which
+          `isolation: isolate` guarantees rather than relying on the tier class
+          happening to carry a `backdrop-filter`. Isolation also scopes the
+          `screen` blend to the host's own background, which is exactly what
+          `background-blend-mode: screen` did.
+
+     The band rests fully off-pane at both ends of the keyframe, so a stopped
+     animation (perf-lite, reduced motion) is never frozen mid-sweep. */
   .glass-liquid {
-    background-image:
-      linear-gradient(
-        115deg,
-        transparent 30%,
-        color-mix(in srgb, var(--site-glass-rim) 60%, transparent) 46%,
-        color-mix(in srgb, var(--site-glass-light) 85%, transparent) 50%,
-        color-mix(in srgb, var(--site-glass-rim) 60%, transparent) 54%,
-        transparent 70%
-      ),
-      var(--site-glass-noise);
-    background-size:
-      260% 100%,
-      auto;
-    background-repeat: no-repeat, repeat;
-    background-blend-mode: screen, normal;
-    background-position:
-      150% 0,
-      0 0;
-    animation: glass-sheen 9s ease-in-out infinite;
+    background-image: var(--site-glass-noise);
+    isolation: isolate;
+    overflow: clip;
+    overflow-clip-margin: var(--glass-sheen-bleed, 0px);
   }
-  html.perf-lite .glass-liquid {
-    animation: none; /* band rests off-pane at 150% — nothing stuck mid-sweep */
+  .glass-liquid::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: -1;
+    pointer-events: none;
+    /* ── Geometry: the v2 background layer, one for one ────────────────────
+       The gradient, its 260% width and its travel are the v2 values converted
+       from background-position to translate, so the output is pixel-identical
+       and only the mechanism changed. Do not "simplify" these numbers — the
+       first attempt used a narrower band with rounder stops and it showed hard
+       vertical seams, because at 115deg a gradient's stops run along the TILTED
+       axis: `transparent 0%` is a corner, not an edge, so the band's own box
+       edges cut through mid-gradient colour. At 260% those seams sit outside
+       the clip for the whole travel.
+
+       The translate percentages are of the band's own width (2.6 × host), and
+       they are the algebra of the v2 keyframe. A background-position of P% on a
+       layer wider than its box resolves to `P × (box − image)` = `P × −1.6W`:
+         150%  → −2.40W  ÷ 2.6W = −92.3%   (rest, band clear to the left)
+         −60%  → +0.96W  ÷ 2.6W = +36.9%   (clear to the right)
+       So the sweep runs left→right, which is the direction it always ran. */
+    width: 260%;
+    background-image: linear-gradient(
+      115deg,
+      transparent 30%,
+      color-mix(in srgb, var(--site-glass-rim) 60%, transparent) 46%,
+      color-mix(in srgb, var(--site-glass-light) 85%, transparent) 50%,
+      color-mix(in srgb, var(--site-glass-rim) 60%, transparent) 54%,
+      transparent 70%
+    );
+    mix-blend-mode: screen;
+    transform: translate3d(-92.3%, 0, 0);
+    animation: glass-sheen 9s ease-in-out infinite;
+    /* Promotes the band to its own composited layer up front, so the first
+       frame of a sweep does not stall waiting for a raster. Safe here in a way
+       it is not on `[data-fluid-press]` (see the note in §Interaction): this is
+       ≤3 elements per page, by contract, not several hundred. */
+    will-change: transform;
+  }
+  html.perf-lite .glass-liquid::after {
+    animation: none; /* band rests off-pane — nothing stuck mid-sweep */
+    will-change: auto;
   }
 
   /* One-shot hover sweep for signature CTAs (§5.2/§5.3) — buttons + tab capsules.
@@ -1791,19 +1821,18 @@ html.app-route {
 }
 
 /* The travelling light band for the ambient .glass-liquid sheen. Long dwells at
-   each off-pane end keep the sweep occasional and calm rather than a strobe. */
+   each off-pane end keep the sweep occasional and calm rather than a strobe —
+   and mean the band is stationary (so the compositor has nothing to do at all)
+   for ~62% of every cycle. Percentages are of the BAND's own width; see the
+   geometry note on `.glass-liquid::after`. */
 @keyframes glass-sheen {
   0%,
   22% {
-    background-position:
-      150% 0,
-      0 0;
+    transform: translate3d(-92.3%, 0, 0);
   }
   60%,
   100% {
-    background-position:
-      -60% 0,
-      0 0;
+    transform: translate3d(36.9%, 0, 0);
   }
 }
 /* One pass of the same band for .glass-sheen-hover (single background layer). */
@@ -1883,9 +1912,8 @@ html.style-high-contrast .lg-goo {
 .style-high-contrast .site-aurora::after {
   display: none;
 }
-.style-high-contrast .glass-liquid {
-  background-image: none;
-  animation: none;
+.style-high-contrast .glass-liquid::after {
+  display: none;
 }
 
 /* The casino table group is deliberately theme-independent (a playing card is a
@@ -1941,9 +1969,8 @@ html.style-high-contrast .lg-goo {
   .glass-refract::before {
     display: none;
   }
-  .glass-liquid {
-    background-image: none;
-    animation: none;
+  .glass-liquid::after {
+    display: none;
   }
 }
 html.reduce-transparency
@@ -1962,9 +1989,8 @@ html.reduce-transparency .glass-chrome--aside::before,
 html.reduce-transparency .glass-refract::before {
   display: none;
 }
-html.reduce-transparency .glass-liquid {
-  background-image: none;
-  animation: none;
+html.reduce-transparency .glass-liquid::after {
+  display: none;
 }
 
 /* Device tiering (§6.4/§10): low-end devices keep chrome/overlay blur (few, carry
@@ -2024,9 +2050,8 @@ html.ios-webkit .glass-refract::before,
 html.ios-webkit .lg-goo {
   display: none;
 }
-html.ios-webkit .glass-liquid {
-  animation: none;
-  background-image: var(--site-glass-noise);
+html.ios-webkit .glass-liquid::after {
+  display: none;
 }
 
 /* iOS 26 Safari derives the material behind its status bar and floating toolbar
@@ -2080,8 +2105,8 @@ html.ios-webkit .glass-liquid {
   .site-aurora::after {
     background: none;
   }
-  .glass-liquid {
-    background-image: none;
+  .glass-liquid::after {
+    display: none;
   }
 }
 
@@ -3981,188 +4006,6 @@ img.emoji {
 .doctrine-streak-lost {
   animation: doctrine-streak-loss 0.6s ease-out;
 }
-/* ─── Coming Soon Gate ───────────────────────────────────────────────────── */
-.coming-soon-gate {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: #09090b;
-  overflow: hidden;
-}
-
-.coming-soon-noise {
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-  pointer-events: none;
-}
-
-.coming-soon-vignette {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.7) 100%);
-  pointer-events: none;
-}
-
-.coming-soon-shapes {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.coming-soon-shape {
-  position: absolute;
-  border-radius: 50%;
-  opacity: 0.06;
-  animation: coming-soon-drift linear infinite;
-}
-
-.coming-soon-shape-a {
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, #6366f1, transparent 70%);
-  top: -100px;
-  left: -100px;
-  animation-duration: 22s;
-}
-.coming-soon-shape-b {
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(circle, #8b5cf6, transparent 70%);
-  bottom: -80px;
-  right: -80px;
-  animation-duration: 28s;
-  animation-direction: reverse;
-}
-.coming-soon-shape-c {
-  width: 200px;
-  height: 200px;
-  background: radial-gradient(circle, #a78bfa, transparent 70%);
-  top: 30%;
-  left: 60%;
-  animation-duration: 18s;
-}
-.coming-soon-shape-d {
-  width: 250px;
-  height: 250px;
-  background: radial-gradient(circle, #4f46e5, transparent 70%);
-  top: 60%;
-  left: 20%;
-  animation-duration: 25s;
-  animation-direction: reverse;
-}
-.coming-soon-shape-e {
-  width: 180px;
-  height: 180px;
-  background: radial-gradient(circle, #7c3aed, transparent 70%);
-  top: 10%;
-  right: 25%;
-  animation-duration: 20s;
-}
-
-@keyframes coming-soon-drift {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(40px, -30px) scale(1.1);
-  }
-  66% {
-    transform: translate(-20px, 40px) scale(0.95);
-  }
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-}
-
-.coming-soon-center {
-  position: relative;
-  text-align: center;
-  margin-bottom: 3rem;
-}
-
-.coming-soon-kicker {
-  font-size: 0.75rem;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: rgba(139, 92, 246, 0.8);
-  margin-bottom: 0.75rem;
-}
-
-.coming-soon-center h1 {
-  font-size: clamp(3rem, 10vw, 7rem);
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  color: #fff;
-  line-height: 1;
-}
-
-.coming-soon-form {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.coming-soon-input-shell {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0 1rem;
-  height: 2.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.4);
-  transition: border-color 0.2s;
-}
-
-.coming-soon-input-shell:focus-within {
-  border-color: rgba(139, 92, 246, 0.5);
-  color: rgba(139, 92, 246, 0.8);
-}
-
-.coming-soon-input-shell input {
-  background: transparent;
-  border: none;
-  outline: none;
-  color: #fff;
-  /* 16px (1rem) avoids iOS focus-zoom; this rule out-specifies the global
-     phone floor above, so it must carry the >=16px value itself. */
-  font-size: 1rem;
-  width: 16rem;
-}
-
-.coming-soon-input-shell input::placeholder {
-  color: rgba(255, 255, 255, 0.25);
-}
-
-.coming-soon-input-shell button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: inherit;
-  display: flex;
-  align-items: center;
-  padding: 0;
-  transition: color 0.2s;
-}
-
-.coming-soon-input-shell button:hover {
-  color: rgba(139, 92, 246, 1);
-}
-
-.coming-soon-message {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.4);
-  min-height: 1.2em;
-}
-
 /* ─── Number inputs ──────────────────────────────────────────────────────
  * The native up/down spinners render with the OS theme and clash with the
  * site's dark UI. Hide them globally so number fields match every other
@@ -5428,8 +5271,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .u-reveal,
   .u-reveal-soft,
-  .u-parallax,
-  .hover-lift {
+  .u-parallax {
     animation: none !important;
     transform: none !important;
     opacity: 1 !important;

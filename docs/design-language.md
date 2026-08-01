@@ -467,6 +467,35 @@ compositor-friendly carrier — a transform-translated child layer — never on 
 animated gradient position, and it must sit behind the same tier switches as the
 rest of the optics.
 
+### 5.1.2 The sheen travels on the compositor (v3)
+
+`.glass-liquid` used to animate `background-position`. That is a **paint**
+property — no transform slides a gradient — so every frame of the sweep
+re-rasterised the host's entire box, on an `infinite` animation, on surfaces
+that are by definition among the largest on the page. Measured over 3s inside
+the active sweep, three panes, 4× CPU throttle:
+
+| Renderer work         | animated `background-position` | transform on `::after` |
+| --------------------- | ------------------------------ | ---------------------- |
+| `Paint` events        | 720                            | **0**                  |
+| `RasterTask`          | 2,700 (1,300ms)                | 12 (8.9ms, one-time)   |
+| Area repainted        | 737 Mpx                        | **0 Mpx**              |
+| **Total render time** | **1,453ms**                    | **8.9ms**              |
+
+Three things make it work, and the middle one is the reason it could not have
+been done before §5.1.1:
+
+1. **The host clips.** A moving layer has to leave the pane, and a `clip-path`
+   or `mask` on the layer itself is applied *before* its transform, so it travels
+   with the band. `overflow: clip` (not `hidden`) creates no scroll container
+   and no containing block for absolute descendants.
+2. **`::after` was free**, because the pointer hotspot that owned it is retired.
+3. **The geometry is the old one converted, not redesigned.** At `115deg` a
+   gradient's stops run along the tilted axis, so `transparent 0%` is a corner,
+   not an edge — a narrower band with rounder stops shows hard vertical seams
+   where its box cuts through mid-gradient colour. Keep the 260% width and the
+   original stops.
+
 **The rim glint comes free** (v2, §4.35): `.glass-pane`/`.glass-overlay`/`.glass-chrome`
 (and the `--aside` variant) paint an always-on specular as a **border-box
 background layer** — it lives in the 1px border ring while the structural border

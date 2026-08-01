@@ -20,17 +20,14 @@ import { join } from 'node:path';
  * The shared MOTION-TIER files below are the freeze-relevant ones (they mount on
  * every page); each is verified idle-at-rest / one-shot:
  *   - components/ui/liquid-morph.tsx  — idle sampler, stops after SETTLE_FRAMES.
- *   - components/ui/liquid-pop.tsx    — rAF runs ONLY while the pop is animating.
  *   - components/ui/liquid-tabs.tsx   — one-shot rAF to move focus after a tab key.
- *   - lib/liquid-gl/index.ts          — render loop: idle-damped, paused on hide,
- *                                       torn down on teardown (no layout reads).
- *   - lib/liquid-gl/renderer-webgl2.ts — one-shot shader-compile polling; stops
- *                                       when compilation completes or context is lost.
- *   - hooks/useLiquidBackground.ts, lib/glass-lens.ts — rAF used as a per-event
- *                                       THROTTLE (one-shot). `useGlassLight.ts` and
- *                                       `useCardSheen.ts` were here too; both were
- *                                       cursor-tracking effects and both are deleted
- *                                       (see the §5.1 note in app/globals.css).
+ *   - hooks/useLiquidBackground.ts    — rAF used as a per-event THROTTLE
+ *                                       (one-shot). `useGlassLight.ts`,
+ *                                       `useCardSheen.ts` and `useParallax.ts` were
+ *                                       here too; all were cursor-tracking effects
+ *                                       and all are deleted (§5.1.1). So was
+ *                                       `lib/glass-lens.ts`, whose rAF belonged to
+ *                                       a generator with no caller.
  *   - components/radial/RadialWheel.tsx — rAF used as a SCROLL THROTTLE (one
  *                                       frame per scroll burst); cancels on unmount.
  *   - components/radial/RadialHub.tsx, components/radial/QuickPanel.tsx —
@@ -131,7 +128,6 @@ const ALLOW = new Set<string>([
   'components/ui/TwemojiProvider.tsx',
   'components/ui/back-to-top.tsx',
   'components/ui/liquid-morph.tsx',
-  'components/ui/liquid-pop.tsx',
   'components/ui/liquid-tabs.tsx',
   'components/velum2099/game/main.ts',
   'components/void-breaker/VoidBreakerGame.tsx',
@@ -146,13 +142,10 @@ const ALLOW = new Set<string>([
   'lib/dream-rift/net/session.ts',
   'lib/emoji/use-emoji-insert.ts',
   'lib/emoji/use-emoji-shortcodes.tsx',
-  'lib/glass-lens.ts',
   'lib/house-always-wins/engine/GameEngine.ts',
   'lib/kowloon-knockout/net/session.ts',
   'lib/library/epub-raster.ts',
   'lib/library/page-store.ts',
-  'lib/liquid-gl/index.ts',
-  'lib/liquid-gl/renderer-webgl2.ts',
   'lib/rmhmusic/spotify-player.ts',
   'lib/rmhvibe/vibe.server.ts',
   'lib/vega/VegaGame.ts',
