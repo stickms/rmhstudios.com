@@ -489,7 +489,14 @@ export function LiquidGlobe({
   const peakSpeed = useRef(0);
   /** Dwell for the CURRENT lock, frozen when it was established. */
   const dwellRef = useRef(DWELL_MS);
+  /** How much of the dwell ring is drawn, 0–1. Only ever moved by `setFill`. */
   const fill = useRef(0);
+  /**
+   * The `--fill` string the reticle was last WRITTEN. The ring is that custom
+   * property, not the number above it, and the two used to be able to disagree
+   * — see `setFill` in the frame loop for the reset this exists to make visible.
+   */
+  const paintedFill = useRef('');
   const lockRef = useRef(-1);
   const readyRef = useRef(false);
   const sizeRef = useRef(320);
@@ -1123,6 +1130,33 @@ export function LiquidGlobe({
       drawCage(now);
     };
 
+    /**
+     * Move the dwell ring, and make the reticle say so.
+     *
+     * EVERY change to the fill goes through here, including the reset when the
+     * reticle takes a new pin, because the ring the visitor sees is the custom
+     * property and not the number behind it. Those two used to be able to
+     * disagree, and did: the reset assigned `fill.current = 0` on its own, and
+     * the write underneath it was guarded on `clamped !== fill.current` — which
+     * the reset had just made false. So the number said empty, nothing was
+     * written, and the ring kept whatever arc it had reached: let go of a
+     * half-held destination, or turn the globe away from one, and the progress
+     * toward a page you were no longer asking for stayed on screen.
+     *
+     * Comparing against what was last PAINTED rather than against the value
+     * being replaced is what makes that state unrepresentable — a reset is a
+     * write like any other. Still one write per changed frame: the drain
+     * settles to exactly 0 and then compares equal, so a globe at rest goes
+     * back to touching nothing.
+     */
+    const setFill = (value: number) => {
+      fill.current = value;
+      const text = value.toFixed(3);
+      if (text === paintedFill.current) return;
+      paintedFill.current = text;
+      reticleRef.current?.style.setProperty('--fill', text);
+    };
+
     let raf = 0;
     let last = 0;
 
@@ -1288,8 +1322,15 @@ export function LiquidGlobe({
         }
         if (lockIdx >= 0) pinRefs.current[lockIdx]?.classList.add('is-locked');
         lockRef.current = lockIdx;
-        fill.current = 0;
         if (lockIdx >= 0) {
+          // A destination arriving in the reticle always starts from empty: the
+          // ring measures how long you have held THIS place, so a ring still
+          // draining from the last one can never be credited to it. Losing the
+          // lock is the other half of that rule and deliberately NOT a reset —
+          // that leaves the ring to DRAIN below, which is what the faster drain
+          // rate exists for, and what makes turning away from a destination read
+          // as the gesture being let go of rather than as the ring blinking out.
+          setFill(0);
           // Freeze the dwell for this lock from the approach that produced it.
           // The evidence is NOT spent here: a hard flick sweeps several pins
           // through the reticle on its way, and consuming the peak at the first
@@ -1314,10 +1355,7 @@ export function LiquidGlobe({
         ? fill.current + (dt * 1000) / dwellRef.current
         : fill.current - (dt * 1000) / (dwellRef.current * DRAIN_SCALE);
       const clamped = clamp01(next);
-      if (clamped !== fill.current) {
-        fill.current = clamped;
-        reticleRef.current?.style.setProperty('--fill', clamped.toFixed(3));
-      }
+      if (clamped !== fill.current) setFill(clamped);
       if (clamped >= 1 && !readyRef.current) {
         readyRef.current = true;
         setReady(true);
@@ -1597,13 +1635,44 @@ export function LiquidGlobe({
     const onUp = (e: PointerEvent) => finish(e, true);
     const onCancel = (e: PointerEvent) => finish(e, false);
 
+    /**
+     * A hold has to be able to end without its own release.
+     *
+     * `pointerup` and `pointercancel` are how a pointer normally finishes and
+     * NEITHER is guaranteed to arrive: a mouse pressed here and released over
+     * another window, an OS gesture, a tab switch or an alt-tab mid-press all
+     * leave the button up in the world and DOWN in `drag.current`. The globe
+     * then goes on believing it is held — the ring fills the rest of the way and
+     * sits there armed, waiting for a release that is never coming, while the
+     * visitor is not touching anything.
+     *
+     * Losing the window is the signal we DO get, and it means the same thing
+     * every time, so it ends the hold: the ring drains from wherever it had
+     * reached, exactly as letting go early does. It deliberately does not throw
+     * the globe — there was no release to take a velocity from, and a settle
+     * fired here would be the interface moving while nobody is looking at it.
+     */
+    const onLeave = () => {
+      const d = drag.current;
+      if (!d.active && !d.held) return;
+      d.active = false;
+      d.held = false;
+      d.id = -1;
+      // The release this drag armed a swallow for is not coming either, so
+      // clearing it here stops it eating the next real tap on the way back in.
+      swallowClick.current = false;
+      setGrabbing(false);
+    };
+
     window.addEventListener('pointermove', onMove, { passive: true });
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onCancel);
+    window.addEventListener('blur', onLeave);
     return () => {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onCancel);
+      window.removeEventListener('blur', onLeave);
     };
   }, [go, nodes]);
 
