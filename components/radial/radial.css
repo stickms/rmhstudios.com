@@ -2112,6 +2112,84 @@ html.perf-lite .radial-hub__veil {
   text-underline-offset: 3px;
 }
 
+/* ── Card media ───────────────────────────────────────────────────────────
+   Photos and GIFs on a wheel card. Every tile RESERVES its box before the
+   image decodes (`aspect-ratio`, from the URL-tagged intrinsic size where there
+   is one) — the wheel caches each card's document centre and rebuilds that
+   cache on any content resize, so an unreserved image costs a re-measure of
+   every mounted slot on top of its own layout shift.
+   Nothing here is interactive: the card is one link (see RmharkMedia). */
+.rmhark__media {
+  position: relative;
+  /* The card is a flex column with a `gap`, so the media needs no margin of its
+     own — but it must not be squeezed by a tall neighbour. */
+  flex: none;
+}
+.rmhark__media-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  border-radius: var(--site-radius-sm, 12px);
+  overflow: hidden;
+}
+.rmhark__media-grid--single {
+  grid-template-columns: 1fr;
+}
+.rmhark__media-tile {
+  position: relative;
+  aspect-ratio: 1;
+  background: var(--site-surface);
+  overflow: hidden;
+}
+.rmhark__media-grid--single .rmhark__media-tile {
+  aspect-ratio: var(--rmhark-media-ratio, 1.6);
+}
+/* An odd third tile takes the full row rather than leaving a hole beside it. */
+.rmhark__media-tile:nth-child(3):last-child {
+  grid-column: span 2;
+  aspect-ratio: 2.4;
+}
+/* "+2" when a post carries more images than the card shows. */
+.rmhark__media-more {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  background: color-mix(in srgb, var(--site-bg) 62%, transparent);
+  color: var(--site-text);
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+/* Author-flagged sensitive media: mounted (so the card is the height it will be
+   once revealed) but blurred behind a static label. The reveal control lives on
+   the post page — the card is a link to it, and cannot nest a button. */
+.rmhark__media--sensitive {
+  border-radius: var(--site-radius-sm, 12px);
+  overflow: hidden;
+}
+.rmhark__media-blur {
+  filter: blur(24px);
+  transform: scale(1.06);
+  pointer-events: none;
+}
+.rmhark__media-cover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  background: color-mix(in srgb, var(--site-bg) 55%, transparent);
+  color: var(--site-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.rmhark__media-cover svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
 .rmhark__kicker {
   font-size: 0.6875rem;
   font-weight: 700;

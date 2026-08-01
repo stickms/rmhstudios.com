@@ -21,7 +21,14 @@ export function SensitiveMedia({
  const { t } = useTranslation('feed');
  const [revealed, setRevealed] = useState(false);
 
- if (!sensitive || revealed) return <>{children}</>;
+ // The pass-through case still has to WEAR the caller's className. It used to
+ // return a bare fragment, which silently dropped it — and since callers pass
+ // the media block's gutter here (`mt-2`in the feed card,`mb-3`on the post
+ // page), every non-sensitive post — i.e. nearly all of them — rendered its
+ // image flush against the text below it.
+ if (!sensitive || revealed) {
+ return className ? <div className={className}>{children}</div> : <>{children}</>;
+ }
 
  return (
  <div className={`relative overflow-hidden rounded-site-sm ${className}`}>

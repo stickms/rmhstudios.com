@@ -10,6 +10,10 @@
  * suite, pass `pnpm build` — and then fail the image build on main, after the
  * PR has already merged. That is exactly how it failed once.
  *
+ * Worse than a failed build is one that succeeds: an `@/…` import of an
+ * uncopied module doesn't stop esbuild, it becomes a literal
+ * `require("@/lib/…")` that throws on load. See `resolveImport` below.
+ *
  * So this walks the real import graph from the Dockerfile's own entrypoints
  * and asserts every `lib/` file it reaches is covered by a COPY in that stage.
  * It reads the entrypoints and the COPY list out of the Dockerfile rather than
@@ -65,20 +69,32 @@ const EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js'];
  * Resolve a specifier the way the image build's esbuild does, or `null` when
  * the import never enters the bundle.
  *
- * Relative specifiers are bundled. Everything else is not — including `@/…`:
- * neither tsconfig declares a `baseUrl`, so esbuild does not apply the `paths`
- * map and treats `@/lib/x` as a bare package name, which `--packages=external`
- * then leaves as a literal `require("@/lib/x")` in the output. Following those
- * here would flag modules the bundle never actually pulls in.
+ * Relative specifiers are bundled, and so are `@/…` ones: esbuild applies the
+ * `paths` map in `tsconfig.server.json` (it no longer needs a `baseUrl` for
+ * that), so `@/lib/x` resolves to `lib/x.ts` and gets pulled in exactly like
+ * `../../lib/x` would.
  *
- * (That externalisation is its own, older problem — those requires would throw
- * if the code path ran — but it is not what this test is guarding, and
- * modelling it any other way would make this check disagree with the build it
- * is supposed to predict.)
+ * Following `@/…` here is the whole point of this check rather than a detail of
+ * it. When the file is missing from the build context, esbuild does not fail:
+ * the path map misses, the specifier falls back to looking like a package name,
+ * and `--packages=external` emits a literal `require("@/lib/x")` into the
+ * bundle. Nothing is reported at build time; the module throws
+ * `MODULE_NOT_FOUND` the moment it is loaded, which for a top-level import is
+ * the instant the service starts. That is how the whole socket hub — every
+ * casino table, every multiplayer game — shipped dead: `@/lib/economy/ledger-core`
+ * with no matching COPY.
+ *
+ * A relative specifier fails loudly instead ("Could not resolve"), which is why
+ * server code should prefer one. But the graph has to be walked either way,
+ * because a single `@/…` hop hides everything below it too.
  */
 function resolveImport(fromFile: string, specifier: string): string | null {
-  if (!specifier.startsWith('.')) return null;
-  const base = resolve(dirname(fromFile), specifier);
+  const base = specifier.startsWith('@/')
+    ? join(ROOT, specifier.slice(2))
+    : specifier.startsWith('.')
+      ? resolve(dirname(fromFile), specifier)
+      : null;
+  if (base === null) return null;
 
   for (const ext of EXTENSIONS) {
     if (existsSync(base + ext)) return base + ext;

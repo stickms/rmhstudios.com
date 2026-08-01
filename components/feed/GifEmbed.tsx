@@ -115,9 +115,16 @@ function useTenorResolve(url: string | null): { src: string | null; loading: boo
 interface GifEmbedProps {
  url: string;
  className?: string;
+ /**
+ * Wrap the GIF in a link to its source (the default). Set false when the
+ * embed already sits inside a link — the radial feed card is one big `<Link>`,
+ * and an anchor nested in an anchor is invalid HTML that browsers un-nest,
+ * which breaks the card's own hit area.
+ */
+ linked?: boolean;
 }
 
-export function GifEmbed({ url, className =''}: GifEmbedProps) {
+export function GifEmbed({ url, className ='', linked = true }: GifEmbedProps) {
  const { t } = useTranslation("feed");
  const info = parseGifUrl(url);
  const needsResolve = !!info?.needsResolve;
@@ -155,13 +162,7 @@ export function GifEmbed({ url, className =''}: GifEmbedProps) {
  return null;
  }
 
- return (
- <a
- href={info.originalUrl}
- target="_blank"
- rel="noopener noreferrer"
- className={`block rounded-site overflow-hidden border border-site-border ${className}`}
- >
+ const media = (
  <img
  src={src}
  alt={t("embedded-image-alt", { defaultValue:"Embedded image"})}
@@ -169,6 +170,19 @@ export function GifEmbed({ url, className =''}: GifEmbedProps) {
  onError={() => setError(true)}
  className="w-full max-h-72 object-contain"
  />
+ );
+ const wrapperClass = `block rounded-site overflow-hidden border border-site-border ${className}`;
+
+ return linked ? (
+ <a
+ href={info.originalUrl}
+ target="_blank"
+ rel="noopener noreferrer"
+ className={wrapperClass}
+ >
+ {media}
  </a>
+ ) : (
+ <div className={wrapperClass}>{media}</div>
  );
 }

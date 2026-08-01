@@ -196,6 +196,23 @@ Rules that are easy to break when touching the geometry or the loop:
   projection runs before it and the single paint after it. Painting inside the
   projection pass (with the paint gated on the dirty flag) is what made the pins
   freeze mid-snap while the wireframe kept turning under them.
+- **The dwell ring is the custom property, not the counter.** The progress the
+  visitor sees is `--fill` on the reticle; `fill.current` is only the number
+  behind it, and the two can disagree, so `setFill` is the one thing allowed to
+  move either. Writing the counter directly is what stranded the ring: the reset
+  on a lock change assigned `fill.current = 0` on its own, the write below it was
+  guarded on "did the value change" — which the reset had just made false — and a
+  globe you had stopped holding, or turned away from, went on showing the arc it
+  had reached. Losing the lock is deliberately **not** a reset: the ring is left
+  to _drain_, which is the whole reason the drain rate is faster than the fill.
+  Only a destination _arriving_ in the reticle starts from empty, so time spent
+  on one place is never credited to the next.
+- **A hold also ends when the window does.** `pointerup` and `pointercancel` are
+  not guaranteed to arrive — a mouse released over another window, an alt-tab
+  mid-press — and a hold that never ends fills the ring and arms it while nobody
+  is touching anything. `blur` ends it, so the ring drains exactly as an early
+  release makes it; it does not throw the globe, because there was no release to
+  take a velocity from.
 - **Pins are links, and the far hemisphere is not clickable.** Every pin carries
   its own `href` so click / Enter / a screen reader work without the gesture, and
   a release that has already been spent — on a drag past the slop threshold, or

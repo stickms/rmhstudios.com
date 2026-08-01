@@ -24,26 +24,34 @@ func main() {
 	ctx, cancel := httpx.SignalContext()
 	defer cancel()
 
-	portAssets := config.GetString("ASSETS_PORT", "7007")
-
-	// The user-facing services are probed through the PUBLIC origin so the status
+	// The WEB-FACING surfaces are probed through the PUBLIC origin so the status
 	// reflects the real user path (DNS → CDN → edge proxy → service), not just
 	// internal container reachability. STATUS_PUBLIC_ORIGIN names that origin;
 	// unset, it's derived from STATUS_WEBSITE_URL so a single env configures every
-	// public probe (prod → rmhstudios.com, staging → its own host). The edge
-	// exposes each realtime hub's health under its existing WS prefix
-	// (/socket/health, /rmhbox-ws/health, /rmhtube-ws/health) — Apache rewrites
-	// it to the service's /health on the VPS.
+	// public probe (prod → rmhstudios.com, staging → its own host).
 	websiteURL := config.GetString("STATUS_WEBSITE_URL", "https://rmhstudios.com/")
 	publicOrigin := config.GetString("STATUS_PUBLIC_ORIGIN", "")
 	if publicOrigin == "" {
 		publicOrigin = originOf(websiteURL)
 	}
 
-	// Internal-only services have no public route by design — the background
-	// workers (supervisor) face nothing user-facing, and the Go assets origin
-	// sits behind the CDN — so they are probed on their internal /health, at
-	// compose DNS names by default with a STATUS_<svc>_URL override.
+	// Everything else is probed on internal compose DNS. That includes the three
+	// realtime hubs, which USED to be probed at <origin>/socket/health,
+	// /rmhbox-ws/health and /rmhtube-ws/health — public paths that only resolve
+	// once the health rewrites in deploy/apache/rmhstudios.conf are installed on
+	// the VPS. The Apache vhost is hand-installed (deploy.sh never touches
+	// /etc/apache2), so those three paths fell through to the web app's catch-all
+	// proxy and answered HTTP 404 on every cycle: three permanently "Degraded"
+	// tiles, and 0.00% uptime, for three hubs that were serving traffic the whole
+	// time. A status page that reports an outage nobody is having is worse than no
+	// status page.
+	//
+	// The edge is still covered — Website, App readiness, Content feed and Sitemap
+	// all traverse the same DNS → Cloudflare → Apache → container path, so an edge
+	// failure still turns the board red. What the hub rows answer now is the
+	// question they were added for: is the hub process itself healthy. Point them
+	// back at the public paths with STATUS_SOCKET_URL / STATUS_RMHBOX_URL /
+	// STATUS_RMHTUBE_URL once the rewrites are live.
 	//
 	// The Gateway and standalone-RMHmusic probes are GONE. They described the
 	// k3s/Helm Go realtime topology, which was deleted in the rewrite (design
@@ -51,15 +59,22 @@ func main() {
 	// socket-server rather than its own service, so both are covered by the
 	// Website and Realtime probes respectively. Probing them was either dead
 	// configuration or — worse — a green tile for a service that does not exist.
+	// The Go `assets` origin left for the same reason: heavy media moved to
+	// Cloudflare R2 behind cdn.rmhstudios.com (lib/storage/asset.ts), so under
+	// compose that container is a dev/smoke-test convenience on no user's path.
 	urls := probeURLs{
-		Website:    websiteURL,
-		Ready:      config.GetString("STATUS_READY_URL", publicOrigin+"/api/ready"),
-		Feed:       config.GetString("STATUS_FEED_URL", publicOrigin+"/blog.rss.xml"),
-		Sitemap:    config.GetString("STATUS_SITEMAP_URL", publicOrigin+"/sitemap.xml"),
-		Socket:     config.GetString("STATUS_SOCKET_URL", publicOrigin+"/socket/health"),
-		RMHBox:     config.GetString("STATUS_RMHBOX_URL", publicOrigin+"/rmhbox-ws/health"),
-		RMHTube:    config.GetString("STATUS_RMHTUBE_URL", publicOrigin+"/rmhtube-ws/health"),
-		Assets:     config.GetString("STATUS_ASSETS_URL", fmt.Sprintf("http://assets:%s/health", portAssets)),
+		Website: websiteURL,
+		Ready:   config.GetString("STATUS_READY_URL", publicOrigin+"/api/ready"),
+		// /blog/rss.xml, NOT /blog.rss.xml. The route file is named
+		// `blog.rss[.]xml.ts`, where the FIRST dot is a path separator and only the
+		// bracketed one is a literal — so the served path has a slash in it
+		// (app/routeTree.gen.ts: path '/blog/rss.xml'). The old spelling 404'd,
+		// which is the other half of the permanent-degradation bug above.
+		Feed:    config.GetString("STATUS_FEED_URL", publicOrigin+"/blog/rss.xml"),
+		Sitemap: config.GetString("STATUS_SITEMAP_URL", publicOrigin+"/sitemap.xml"),
+		Socket:  config.GetString("STATUS_SOCKET_URL", hubHealthURL("socket", "SOCKET_PORT", "7001")),
+		RMHBox:  config.GetString("STATUS_RMHBOX_URL", hubHealthURL("rmhbox", "RMHBOX_PORT", "7676")),
+		RMHTube: config.GetString("STATUS_RMHTUBE_URL", hubHealthURL("rmhtube", "RMHTUBE_PORT", "7003")),
 		// The five background workers (recap, discord-bot, doctrine, vibe,
 		// bot-worker) plus streak-saver are consolidated as goroutines inside the
 		// supervisor process, which serves /health on its METRICS_ADDR
@@ -95,8 +110,8 @@ func main() {
 
 // probeURLs holds the resolved URL for every HTTP probe target. Each is
 // resolved by main() from a default plus a STATUS_<svc>_URL override. The
-// user-facing ones point at the PUBLIC origin (DNS → edge → active container);
-// the internal-only ones (assets, supervisor) at compose DNS names.
+// web-facing ones point at the PUBLIC origin (DNS → edge → active container);
+// the rest (the three hubs, supervisor) at compose DNS names.
 //
 // Ready/Feed/Sitemap are FUNCTIONAL probes, not liveness ones: they exercise
 // the database, the render path and the SEO surface through the same route a
@@ -115,8 +130,20 @@ type probeURLs struct {
 	Socket     string
 	RMHBox     string
 	RMHTube    string
-	Assets     string
 	Supervisor string
+}
+
+// hubHealthURL builds a realtime hub's internal health URL from its compose
+// service name and the env var that carries its port, so the probe and the
+// container it points at can't drift apart when a port is remapped
+// (docker-compose.yml passes the same PORT_* values into both).
+//
+// All three Node hubs serve `{"status":"ok","uptime":N}` at the ROOT /health of
+// their own listener (server/socket-server, server/rmhbox, server/rmhtube) — the
+// public /<prefix>/health paths are an Apache rewrite ONTO this one, not a
+// second endpoint.
+func hubHealthURL(service, portEnv, defaultPort string) string {
+	return fmt.Sprintf("http://%s:%s/health", service, config.GetString(portEnv, defaultPort))
 }
 
 // Latency budgets. Past these a target is reported `degraded` even though it
@@ -128,7 +155,11 @@ type probeURLs struct {
 const (
 	websiteBudget = 4 * time.Second
 	apiBudget     = 2500 * time.Millisecond
-	hubBudget     = 1500 * time.Millisecond
+	// The hubs are probed container-to-container over the compose network, where
+	// a healthy answer is single-digit milliseconds. 1500ms is still the right
+	// number: it is not a performance target, it is the point past which a hub is
+	// so busy (or so swapped) that a WebSocket handshake is failing for someone.
+	hubBudget = 1500 * time.Millisecond
 )
 
 // buildTargets assembles the probe target list for the topology that actually
@@ -137,12 +168,11 @@ const (
 //   - Core: the SSR web app, its readiness endpoint, and Postgres. These probe
 //     the real user path through the public origin, and assert on CONTENT — a
 //     200 with an empty shell is degraded, not up.
-//   - Realtime: the three Node hubs, via their edge-exposed health prefixes.
+//   - Realtime: the three Node hubs, on their own /health over compose DNS.
 //   - Content: the public feed + sitemap, which prove the DB-backed render and
 //     the SEO surface still work. These break independently of the homepage and
 //     used to fail silently.
-//   - Platform: the Go assets origin and the supervisor running the six
-//     background workers, both internal-only.
+//   - Platform: the supervisor running the six background workers, internal-only.
 //
 // When DATABASE_URL is set the Database probe (same SELECT 1 check) is
 // appended; unset, it is omitted so cmd/status starts cleanly without a DB.
@@ -221,12 +251,6 @@ func buildTargets(u probeURLs, probeTimeout time.Duration) []status.Target {
 			DegradedAfter: apiBudget,
 		},
 
-		status.Target{
-			Name:        "Assets",
-			Description: "Media origin: library / music / models / sprites (Go)",
-			Group:       "Platform",
-			URL:         u.Assets,
-		},
 		// The six background workers run as goroutines inside the supervisor
 		// process — probe its shared /health.
 		status.Target{

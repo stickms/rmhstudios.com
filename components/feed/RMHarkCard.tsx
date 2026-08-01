@@ -425,7 +425,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
  {/* Image / GIF — hidden behind a content warning when marked sensitive */}
  {(item.gifUrl || (item.imageUrls && item.imageUrls.length > 0)) && (
- <SensitiveMedia sensitive={item.isSensitive} className="mt-2">
+ <SensitiveMedia sensitive={item.isSensitive} className="mt-3">
  {item.gifUrl && <GifEmbed url={item.gifUrl} className="mt-1"/>}
  {item.imageUrls && item.imageUrls.length > 0 && (
  <PostImageGrid

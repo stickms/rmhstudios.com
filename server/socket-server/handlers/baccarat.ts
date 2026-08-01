@@ -9,7 +9,7 @@
 
 import type { Server, Socket } from 'socket.io';
 import { getPrismaClient } from '../prisma-client';
-import { debitCoinsOn, creditCoinsOn, getBalanceOn } from '@/lib/economy/ledger-core';
+import { debitCoinsOn, creditCoinsOn, getBalanceOn } from '../../../lib/economy/ledger-core';
 import { checkRateLimit } from '../rate-limit';
 import { logger } from '../logger';
 import {

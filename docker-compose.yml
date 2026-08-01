@@ -356,22 +356,31 @@ services:
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - STATUS_PORT=${PORT_STATUS:-7008}
-      # Public origin every user-facing probe goes through (DNS → Cloudflare →
-      # Apache → service), so the dashboard reflects real reachability rather than
-      # internal container health. The website row hits "/" here; the realtime
-      # hubs are probed at <origin>/socket/health, /rmhbox-ws/health and
-      # /rmhtube-ws/health — Apache rewrites those to each service's /health (see
-      # deploy/apache/rmhstudios.conf). cmd/status derives the origin from
-      # STATUS_WEBSITE_URL, so this one value configures them all (e.g. point it
-      # at the staging host on the staging stack).
+      # Public origin the WEB-FACING probes go through (DNS → Cloudflare → Apache
+      # → service), so the dashboard reflects real reachability rather than
+      # internal container health: the website row hits "/" here, and /api/ready,
+      # /blog/rss.xml and /sitemap.xml exercise the database, the render path and
+      # the SEO surface through the same route a visitor takes. cmd/status derives
+      # the origin from this one value (e.g. point it at the staging host on the
+      # staging stack).
       - STATUS_WEBSITE_URL=${STATUS_WEBSITE_URL:-https://rmhstudios.com/}
-      # The Go assets origin runs under compose (service `assets` below) but sits
-      # behind the public CDN, so it has no public path — probe it on internal
-      # compose DNS. Keep the port in sync with the assets service.
-      - ASSETS_PORT=${PORT_ASSETS:-7007}
-      # Gateway and RMHmusic are k3s-only (not run under compose), so their
-      # STATUS_*_URL is intentionally left unset — cmd/status omits those rows
-      # rather than probing a service that isn't here.
+      # The three realtime hubs are probed on their OWN /health over compose DNS,
+      # not at the public /socket/health · /rmhbox-ws/health · /rmhtube-ws/health
+      # paths. Those exist only as rewrites in deploy/apache/rmhstudios.conf — a
+      # file the deploy never installs (it is hand-copied to /etc/apache2 on the
+      # VPS) — so probing them reported a permanent 404 outage for three hubs that
+      # were serving traffic fine. The edge is still covered by the four public
+      # probes above, which traverse exactly the same path. These ports must match
+      # the socket / rmhbox / rmhtube services above; STATUS_SOCKET_URL,
+      # STATUS_RMHBOX_URL and STATUS_RMHTUBE_URL move the probes back to the public
+      # paths once the Apache rewrites are live.
+      - SOCKET_PORT=${PORT_SOCKET:-7001}
+      - RMHBOX_PORT=${PORT_RMHBOX:-7676}
+      - RMHTUBE_PORT=${PORT_RMHTUBE:-7003}
+      # Gateway, RMHmusic and the Go `assets` origin are not probed: the first two
+      # were deleted with the Go realtime topology, and the media `assets` was
+      # written to serve now lives in Cloudflare R2 behind cdn.rmhstudios.com
+      # (lib/storage/asset.ts), so no visitor request reaches that container.
       # Uptime history persists to the shared db/ volume (mounted at /app/db).
       - STATUS_DATA_DIR=/app/db
     command: ['/app/bin/status']

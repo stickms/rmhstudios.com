@@ -367,9 +367,12 @@ export function PostDetail({ postId }: PostDetailProps) {
  </div>
  )}
 
- {/* Image / GIF — hidden behind a content warning when marked sensitive */}
+ {/* Image / GIF — hidden behind a content warning when marked sensitive.
+ The gutter is `mb-5`, not the `mb-3` the text blocks above use: a photo's
+ edge is a hard rectangle, so the gap that reads as a paragraph break under
+ text reads as the timestamp sitting ON the image. */}
  {(post.gifUrl || (post.imageUrls && post.imageUrls.length > 0)) && (
- <SensitiveMedia sensitive={post.isSensitive} className="mb-3">
+ <SensitiveMedia sensitive={post.isSensitive} className="mb-5">
  {post.gifUrl && <GifEmbed url={post.gifUrl} className="mb-1"/>}
  {post.imageUrls && post.imageUrls.length > 0 && (
  <PostImageGrid
