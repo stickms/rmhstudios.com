@@ -232,7 +232,7 @@ class):
 | Layout rhythm     | `--site-page-gutter`, `--site-section-gap`, `--site-panel-padding`, `--site-shell-gap`, `--site-sticky-edge`, `--site-sticky-primary-height`, `--site-sticky-secondary-top`, `--site-touch-target`, `--site-page-bottom-space`                              |
 | Typography        | `--site-font-display`, `--site-font-body`, `--site-font-mono`                                                                                                                                                                                               |
 | Motion / flourish | `--site-transition-speed` (200ms default), `--site-press-duration`, `--site-card-transform`, `--site-glow`, `--site-text-shadow`, `--site-letter-spacing`, `--site-heading-transform`                                                                       |
-| Media overlays    | `--site-media-scrim`, `--site-media-scrim-strong`, `--site-media-scrim-hover`, `--site-media-veil`, `--site-media-ink` — ink and backings for chips/controls that sit **on a photograph**, where theme-tracking ink would be wrong                          |
+| Media overlays    | `--site-media-scrim`, `--site-media-scrim-strong`, `--site-media-scrim-hover`, `--site-media-veil`, `--site-media-ink` — for anything that sits **on a photograph**, where theme-tracking ink would be wrong. Two shapes read them: the chip/control backings (`bg-site-media-*`), and the layer utilities `.media-scrim` / `.media-scrim-full` / `.text-on-media` |
 | Podium            | `--site-podium-gold`, `--site-podium-silver`, `--site-podium-bronze`                                                                                                                                                                                        |
 
 ### Tailwind utilities — use these, never raw hex/oklch
@@ -819,11 +819,35 @@ gated off there too, via `html.app-route`).
   cleared after; the detail's secondary content (comments, metadata, related
   lists) then staggers in via `staggerContainer`/`fadeRise`. No-VT browsers get
   instant nav + the stagger.
-- **The animation vocabulary is framer-motion + `lib/motion.ts`, plus the CSS
-  enters that exist (`.page-enter`, `radial-page-rise`, `.feed-item-enter`).**
-  `animate-in` / `fade-in` / `zoom-in-*` / `slide-in-from-*` are NOT available —
-  they belong to `tailwindcss-animate`, which is not installed. Writing them
-  produces no CSS at all. CI-enforced (§13 rule 9).
+- **The animation vocabulary has exactly two halves.** `animate-in` /
+  `fade-in` / `zoom-in-*` / `slide-in-from-*` are NOT part of it — they belong
+  to `tailwindcss-animate`, which is not installed, so writing them produces no
+  CSS at all (CI-enforced, §13 rule 9). Reach for:
+
+  **1. framer-motion + `lib/motion.ts`**, for anything React controls the
+  mounting of. `fade`, `fadeRise`, `fadeDown`, `scaleIn`, `popIn`, `overlay`,
+  `modalContent`, and `staggerContainer`/`staggerItem` for a sequence:
+
+  ```tsx
+  <motion.div variants={modalContent} initial="initial" animate="animate" />
+  ```
+
+  **2. `data-motion`**, for a **Radix** surface, whose unmount is Radix's to
+  schedule — animating one with framer means `forceMount` + `AnimatePresence`
+  threaded through every consumer, so the exit rides Radix's own `data-state`
+  instead. Three values, matching the variants above:
+
+  | attribute            | for                                | matches      |
+  | -------------------- | ---------------------------------- | ------------ |
+  | `data-motion="fade"` | a scrim / backdrop                 | `overlay`    |
+  | `data-motion="pop"`  | a popover, menu, select, hover card | `scaleIn`    |
+  | `data-motion="rise"` | modal / dialog content             | `modalContent` |
+
+  Both halves run on one clock: the `--motion-*` tokens in `globals.css` §7.1
+  mirror `DURATION.slow` / `DURATION.fast` / `EASE.emphasized`. `Dialog` and
+  `Sheet` keep their own bespoke keyframes (a sheet slides from an edge, which
+  none of the three shapes covers) but were retimed onto the same tokens — they
+  used to hardcode three different answers between them.
 - **Never `transition-all`, and never animate a layout property.** `all` makes
   the engine watch every animatable property on the element, so a class change
   that happens to touch `width`/`padding`/`gap` animates a reflow nobody asked
@@ -1134,14 +1158,16 @@ the normal suite (`pnpm exec vitest run`, gated by `web-ci.yml`):
   not radii, and stay allowed; **(7)** no floating surface below L4 — an element
   that is positioned + stacked + edge-anchored and carries `.glass-fill` /
   `.glass-pane` / `bg-site-surface` is a dropdown with no backdrop blur;
-  **(8)** no `transition-all` — name the properties. The only allowlist entry
-  across those four is `/login`, for the third-party provider brand marks.
+  Plus two that run over the **whole tree**, because neither is a palette
+  question — a game has no more claim to an exemption than a settings page:
+  **(8)** no `transition-all` anywhere — name the properties;
   **(9)** no `tailwindcss-animate` class (`animate-in`, `fade-in-0`,
   `zoom-in-95`, `slide-in-from-*`, `fill-mode-*`): that plugin is a Tailwind v3
   thing this project does not have, so they compile to **zero rules** and the
   element never animates. 103 of them were in the source, on the command
-  palette, the composer and every Radix open/close pair. This rule scans the
-  **whole tree** — a class that produces no CSS is dead in a game too.
+  palette, the composer and every Radix open/close pair.
+  The only allowlist entry across rules 5–9 is `/login`, for the third-party
+  provider brand marks.
 - **`lib/__tests__/game-viewport-consistency.test.ts` — the full-screen
   viewport contract (§12.1).** A static scan over the thirty game/app
   directories that fails on: (1) a scrolling flex/grid container that centres on

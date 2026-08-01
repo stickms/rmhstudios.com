@@ -31,7 +31,7 @@ export default function TeamPanel({ team, isActive, getPlayerName, currentUserId
 
   return (
     <div
-      className={`flex-1 rounded-xl border ${borderColor} bg-(--app-surface) p-3 ${activeGlow} transition-all`}
+      className={`flex-1 rounded-xl border ${borderColor} bg-(--app-surface) p-3 ${activeGlow} transition`}
     >
       {/* Team header */}
       <div className="flex items-center justify-between">

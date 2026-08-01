@@ -9,6 +9,8 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
+import { fade } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
@@ -291,7 +293,11 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
   switch (phase) {
     case 'PRODUCER_ASSIGNMENT':
       return (
-        <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
+        <motion.div className="flex flex-col items-center justify-center gap-4 p-8 text-center"
+          variants={fade}
+          initial="initial"
+          animate="animate"
+        >
           <span className="text-5xl">🎬</span>
           <h2 className="text-2xl font-bold text-(--app-text)">
             {isProducer ? t("youre-the-producer", { defaultValue: "You're the Producer!" }) : t("someone-is-the-producer", { defaultValue: "{{name}} is the Producer", name: producerName || 'Someone' })}
@@ -301,12 +307,16 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
               ? t("producer-instruction", { defaultValue: "You will pick a movie to describe with emojis" })
               : t("audience-instruction-assignment", { defaultValue: "Get ready to guess the movie from emojis" })}
           </p>
-        </div>
+        </motion.div>
       );
 
     case 'MOVIE_SELECTION':
       return (
-        <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
+        <motion.div className="flex flex-col items-center justify-center gap-4 p-8 text-center"
+          variants={fade}
+          initial="initial"
+          animate="animate"
+        >
           {isProducer ? (
             <>
               <span className="text-4xl">🎥</span>
@@ -341,7 +351,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
               <p className="text-sm text-(--app-text-muted)">{t("get-ready-to-guess", { defaultValue: "Get ready to guess!" })}</p>
             </>
           )}
-        </div>
+        </motion.div>
       );
 
     case 'EMOJI_CONSTRUCTION':
@@ -389,7 +399,11 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
 
     case 'ROUND_RESULTS':
       return noEmojisSkipped ? (
-        <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
+        <motion.div className="flex flex-col items-center justify-center gap-4 p-8 text-center"
+          variants={fade}
+          initial="initial"
+          animate="animate"
+        >
           <span className="text-5xl">⏭️</span>
           <h2 className="text-xl font-bold text-(--app-text)">{t("round-skipped", { defaultValue: "Round Skipped" })}</h2>
           <p className="text-sm text-(--app-text-muted)">
@@ -398,7 +412,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           <p className="text-lg font-semibold text-(--app-accent)">
             🎬 {resultsMovieTitle}
           </p>
-        </div>
+        </motion.div>
       ) : (
         <RoundResults
           movieTitle={resultsMovieTitle}
@@ -412,10 +426,14 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
 
     case 'TRANSITION':
       return (
-        <div className="flex flex-col items-center justify-center gap-3 p-8 text-center">
+        <motion.div className="flex flex-col items-center justify-center gap-3 p-8 text-center"
+          variants={fade}
+          initial="initial"
+          animate="animate"
+        >
           <span className="text-4xl animate-bounce">🎬</span>
           <p className="text-sm text-(--app-text-muted)">{t("next-round-starting", { defaultValue: "Next round starting…" })}</p>
-        </div>
+        </motion.div>
       );
 
     default:

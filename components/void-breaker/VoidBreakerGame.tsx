@@ -1028,7 +1028,7 @@ export function VoidBreakerGame() {
               <div className="flex items-center justify-center gap-1.5 mt-1.5">
                 {[1, 2, 3].map((p) => (
                   <span key={p}
-                    className="h-1.5 rounded-full transition-all duration-300"
+                    className="h-1.5 rounded-full transition-[width,background,box-shadow] duration-300"
                     style={{
                       width: p === bossIntro.phase ? '18px' : '8px',
                       background: p <= bossIntro.phase ? '#ff2244' : '#3a1a22',

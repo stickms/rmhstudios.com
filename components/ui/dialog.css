@@ -1,24 +1,28 @@
-/* Dialog enter/exit animation, driven by Radix's data-state.
+/* Dialog enter/exit, driven by Radix's data-state.
  *
- * The tailwindcss-animate plugin is not installed in this repo, so utilities
- * like `animate-in` / `slide-in-from-bottom-2` are inert; the sheet-like enter
- * is hand-rolled here instead. Transform/opacity only. Centering uses Tailwind
- * v4's native `translate` property, which the `transform` animated below
- * composes with rather than overrides. Gated on no-preference so reduced-motion
- * users get an instant appearance (the global reduce rule also neutralizes it).
- */
+ * `tailwindcss-animate` is not installed here, so `animate-in` and friends are
+ * inert — this is hand-rolled instead. Transform/opacity only. Centring uses
+ * Tailwind v4's `translate` longhand, which the animated `transform` composes
+ * with rather than overrides. Gated on no-preference (the global reduce rule
+ * also neutralises it).
+ *
+ * The timings come from the shared `--motion-*` tokens (globals.css §7.1), which
+ * mirror `lib/motion.ts`. They used to be hardcoded here — 0.3s ease-out and
+ * 0.32s cubic-bezier(0.22,1,0.36,1) — while sheet.css hardcoded a third set, so
+ * the two canonical surfaces of the site disagreed about how a modal enters.
+ * The shapes stay per-surface; only the clock is shared. */
 @media (prefers-reduced-motion: no-preference) {
   [data-slot='dialog-overlay'][data-state='open'] {
-    animation: ui-dialog-overlay-in 0.3s ease-out;
+    animation: ui-dialog-overlay-in var(--motion-in) var(--motion-ease-in);
   }
   [data-slot='dialog-overlay'][data-state='closed'] {
-    animation: ui-dialog-overlay-out 0.2s ease-in forwards;
+    animation: ui-dialog-overlay-out var(--motion-out) var(--motion-ease-out) forwards;
   }
   [data-slot='dialog-content'][data-state='open'] {
-    animation: ui-dialog-content-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    animation: ui-dialog-content-in var(--motion-in) var(--motion-ease-in);
   }
   [data-slot='dialog-content'][data-state='closed'] {
-    animation: ui-dialog-content-out 0.15s ease-in forwards;
+    animation: ui-dialog-content-out var(--motion-out) var(--motion-ease-out) forwards;
   }
 }
 

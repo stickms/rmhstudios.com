@@ -3,10 +3,16 @@ import { useEffect } from 'react';
 /**
  * Every selector that reads the variables this hook publishes. Kept next to the
  * writer on purpose: they are consumed by a handful of page roots (the marketing
- * pages and the two `.spatial-*` story pages) and by nothing else, and the hook
- * has to know whether the page it is on is one of them — see the gate below.
+ * pages and the `.spatial-design-hero` story page) and by nothing else, and the
+ * hook has to know whether the page it is on is one of them — see the gate below.
+ *
+ * `.spatial-feed-intro` used to be in this list. Nothing ever carried the class —
+ * it was the CSS half of a feed redesign that did not land — so the hook was
+ * querying for an element that could not exist. Its rules are deleted; so is the
+ * gate entry, because a selector that never matches is a slower `querySelector`
+ * and a false suggestion that the surface exists.
  */
-const CONSUMERS = '.rmhp-root, .rmhc-root, .rmht, .spatial-feed-intro, .spatial-design-hero';
+const CONSUMERS = '.rmhp-root, .rmhc-root, .rmht, .spatial-design-hero';
 
 /**
  * Drives the restrained background parallax used by the spatial-minimal shell.

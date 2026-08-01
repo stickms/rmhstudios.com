@@ -34,10 +34,12 @@ export function NeumorphicModal({
     return (
         <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogPrimitive.Portal>
-                <DialogPrimitive.Overlay 
-                    className="fixed inset-0 z-100 bg-black/40 backdrop-blur-sm" 
+                <DialogPrimitive.Overlay
+                    data-motion="fade"
+                    className="fixed inset-0 z-100 bg-black/40 backdrop-blur-sm"
                 />
                 <DialogPrimitive.Content
+                    data-motion="rise"
                     className={cn(
                         "fixed left-[50%] top-[50%] z-101 w-[90%] max-w-md translate-x-[-50%] translate-y-[-50%] p-8 outline-none",
                         "bg-slice-bg rounded-[2.5rem]",

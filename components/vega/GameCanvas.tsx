@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
+import { scaleIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 import { VegaGame } from '@/lib/vega/VegaGame';
 import { asset } from '@/lib/storage/asset';
@@ -140,7 +142,7 @@ export default function GameCanvas() {
       {/* Upgrade Menu - Smart Positioning (Desktop) */}
       {selectedEntity && (
         <div 
-            className={`hidden md:block absolute top-1/2 -translate-y-1/2 bg-slate-900/90 backdrop-blur-md p-4 rounded-xl border border-blue-500/30 w-64 z-30 shadow-2xl transition-all
+            className={`hidden md:block absolute top-1/2 -translate-y-1/2 bg-slate-900/90 backdrop-blur-md p-4 rounded-xl border border-blue-500/30 w-64 z-30 shadow-2xl transition
                 ${selectedEntity.x > 15 ? 'left-4' : 'right-4'} 
             `}
         >
@@ -446,7 +448,11 @@ function GameOverScreen() {
 
     return (
         <div className="absolute inset-0 z-50 bg-red-950/90 backdrop-blur-md flex items-center justify-center p-4">
-              <div className="bg-slate-900 border-2 border-red-500/50 p-8 rounded-xl shadow-2xl text-center space-y-6 w-full max-w-md duration-300">
+              <motion.div className="bg-slate-900 border-2 border-red-500/50 p-8 rounded-xl shadow-2xl text-center space-y-6 w-full max-w-md duration-300"
+      variants={scaleIn}
+      initial="initial"
+      animate="animate"
+    >
                   <div className="space-y-2">
                     <h2 className="text-4xl font-bold text-red-500 tracking-[0.2em] glitch-text">{t("system-failure", { defaultValue: "SYSTEM FAILURE" })}</h2>
                     <p className="text-slate-400 text-sm">{t("sanity-depleted", { defaultValue: "SANITY DEPLETED" })}</p>
@@ -491,7 +497,7 @@ function GameOverScreen() {
                   >
                       {t("reboot-system", { defaultValue: "Reboot System" })}
                   </button>
-              </div>
+              </motion.div>
         </div>
     );
 }

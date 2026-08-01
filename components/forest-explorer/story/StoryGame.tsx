@@ -2,6 +2,8 @@
 
 import { Canvas } from '@react-three/fiber';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { scaleIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 import { useStoryStore } from '@/lib/forest-explorer/store';
 import { actMaps } from '@/lib/forest-explorer/actMaps';
@@ -327,7 +329,11 @@ export function StoryGame() {
             {/* Game completion screen (Act 3 finale) */}
             {showCompletion && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/90 backdrop-blur-md z-[90]">
-                    <div className="text-center text-white px-10 py-12 rounded-2xl bg-black/40 border border-green-700/20 max-w-md w-full space-y-6 duration-1000">
+                    <motion.div className="text-center text-white px-10 py-12 rounded-2xl bg-black/40 border border-green-700/20 max-w-md w-full space-y-6 duration-1000"
+      variants={scaleIn}
+      initial="initial"
+      animate="animate"
+    >
                         <div className="text-6xl">🌅</div>
                         <h1 className="text-3xl font-bold tracking-wide text-green-200">{t("completion-title", { defaultValue: "The Forest Remembers" })}</h1>
                         <p className="text-white/60 text-sm leading-relaxed">
@@ -346,7 +352,7 @@ export function StoryGame() {
                         >
                             {t("return-to-menu", { defaultValue: "Return to Menu" })}
                         </button>
-                    </div>
+                    </motion.div>
                 </div>
             )}
         </div>

@@ -50,7 +50,9 @@ const ModifierToggle = ({ label, active, onClick, color }: { label: string, acti
             className={`w-10 h-5 rounded-full transition-colors relative ${active ? '' : 'bg-slice-shadow-dark'}`}
             style={{backgroundColor: active ? color : undefined}}
         >
-            <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${active ? 'left-5' : 'left-0.5'}`} />
+            <div
+                className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${active ? 'translate-x-[18px]' : ''}`}
+            />
         </div>
     </div>
 );

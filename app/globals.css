@@ -79,27 +79,6 @@
   transition-duration: calc(var(--site-transition-speed, 200ms) * 1.5);
 }
 
-/* Dream Rift floating particle animation */
-@keyframes dreamrift-float {
-  0%,
-  100% {
-    transform: translateY(0) translateX(0);
-    opacity: 0.2;
-  }
-  25% {
-    transform: translateY(-20px) translateX(5px);
-    opacity: 0.5;
-  }
-  50% {
-    transform: translateY(-8px) translateX(-3px);
-    opacity: 0.3;
-  }
-  75% {
-    transform: translateY(-25px) translateX(8px);
-    opacity: 0.6;
-  }
-}
-
 :root {
   /* Pin the UA colour scheme to the active theme so native controls (form
      widgets, <select> option popups, scrollbars, date pickers, autofill) are
@@ -2062,33 +2041,7 @@ html.ios-webkit .glass-liquid::after {
    A transparent target alone is insufficient: WebKit samples through it and
    still finds the opaque drawer. A real, minimal backdrop filter makes WebKit
    preserve its translucent browser material. Five pixels reaches both edge
-   probes, and the maximum practical z-index keeps app overlays from winning. */
-.safari-chrome-sampler {
-  display: none;
-}
-
-@media (max-width: 47.999rem) {
-  html.ios-webkit .safari-chrome-sampler {
-    position: fixed;
-    right: 0;
-    left: 0;
-    z-index: 2147483647;
-    display: block;
-    height: 5px;
-    pointer-events: none;
-    background-color: transparent;
-    -webkit-backdrop-filter: blur(1px);
-    backdrop-filter: blur(1px);
-  }
-
-  html.ios-webkit .safari-chrome-sampler--top {
-    top: 0;
-  }
-
-  html.ios-webkit .safari-chrome-sampler--bottom {
-    bottom: 0;
-  }
-}
+   probes, and the maximum practical z-index keeps app overlays from winning. *
 
 /* Forced colors / Windows High Contrast strips backgrounds — keep structural
    borders so panes retain their shape; make sure the v2 optics pseudos paint
@@ -2710,7 +2663,14 @@ html.readable-font body {
          even wash for centred overlays). Pointer events pass through.
        • .text-on-media — force a light ink + shadow halo on the text itself, so
          it stays legible even where the scrim is thin. Use together for belt-
-         and-suspenders contrast on any overlay. */
+         and-suspenders contrast on any overlay.
+
+     These are the LAYER half of the media-overlay contract; the `--site-media-*`
+     tokens in `:root` are the CHIP half (the backing behind a control that sits
+     on media). They were written separately and each hardcoded its own blacks —
+     which is exactly the thing the contract exists to prevent, since neither was
+     then reachable by high-contrast. They read the same tokens now: change the
+     scrim once and a chip, a lightbox veil and this wash all move together. */
   .media-scrim,
   .media-scrim-full {
     position: absolute;
@@ -2722,25 +2682,25 @@ html.readable-font body {
   .media-scrim {
     background: linear-gradient(
       to top,
-      rgba(0, 0, 0, 0.72) 0%,
-      rgba(0, 0, 0, 0.36) 34%,
-      rgba(0, 0, 0, 0) 64%
+      var(--site-media-scrim-hover) 0%,
+      var(--site-media-scrim) 34%,
+      transparent 64%
     );
   }
 
   .media-scrim-full {
-    background: rgba(0, 0, 0, 0.45);
+    background: var(--site-media-scrim);
   }
 
   .text-on-media {
-    color: #fff;
+    color: var(--site-media-ink);
     text-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.7),
-      0 2px 10px rgba(0, 0, 0, 0.45);
+      0 1px 2px var(--site-media-scrim-hover),
+      0 2px 10px var(--site-media-scrim);
   }
 
   .text-on-media :is(svg, img) {
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
+    filter: drop-shadow(0 1px 2px var(--site-media-scrim-strong));
   }
 
   /* Fixed floating UI shares one safe, visually consistent viewport edge. */
@@ -3070,24 +3030,7 @@ html.readable-font body {
     0 0 40px currentColor;
 }
 
-/* Grid background - MORE VISIBLE */
-.grid-bg {
-  background-image:
-    linear-gradient(rgba(255, 0, 255, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 0, 255, 0.08) 1px, transparent 1px);
-  background-size: 40px 40px;
-  animation: grid-move 20s linear infinite;
-}
-
-@keyframes grid-move {
-  0% {
-    background-position: 0 0;
-  }
-
-  100% {
-    background-position: 40px 40px;
-  }
-}
+/* Grid background - MORE VISIBLE *
 
 /* Neon border glow */
 .neon-border {
@@ -3176,10 +3119,6 @@ html.readable-font body {
   .rainbow-text {
     background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan), var(--neon-purple));
     background-size: 100% 100%;
-  }
-
-  .grid-bg {
-    animation: none !important;
   }
 
   .neon-glow {
@@ -3841,44 +3780,6 @@ img.emoji {
   }
 }
 
-/* News carousel progress fill */
-@keyframes progress-fill {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
-/* Radix Popover Animations */
-@keyframes radix-popover-content-show {
-  from {
-    opacity: 0;
-    transform: translateY(-4px) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-@keyframes radix-popover-content-hide {
-  from {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(-4px) scale(0.96);
-  }
-}
-.radix-popover-animate[data-state='open'] {
-  animation: radix-popover-content-show 150ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-.radix-popover-animate[data-state='closed'] {
-  animation: radix-popover-content-hide 150ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
 /* ═══════════════════════════════════════════════════════════════════════════
    DOCTRINE ENGINE (RMH Strategies) — Theme Tokens & Overrides
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -3988,24 +3889,6 @@ img.emoji {
 }
 
 /* ─── Streak loss animation ──────────────────────────────────────────────── */
-@keyframes doctrine-streak-loss {
-  0% {
-    filter: none;
-  }
-  15% {
-    filter: brightness(2) saturate(0);
-  }
-  30% {
-    filter: brightness(0.5);
-  }
-  100% {
-    filter: none;
-  }
-}
-
-.doctrine-streak-lost {
-  animation: doctrine-streak-loss 0.6s ease-out;
-}
 /* ─── Number inputs ──────────────────────────────────────────────────────
  * The native up/down spinners render with the OS theme and clash with the
  * site's dark UI. Hide them globally so number fields match every other
@@ -4246,6 +4129,103 @@ input[type='number'] {
 .page-root > [data-route-pending] {
   animation: none !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   §7.1 — `data-motion`: the enter/exit vocabulary for Radix surfaces
+   ==========================================================================
+   framer-motion is the site's animation library, and `lib/motion.ts` holds the
+   variants — but a Radix popover/dialog/menu unmounts on its own schedule, so
+   animating one with framer means `forceMount` + `AnimatePresence` threaded
+   through every consumer. The established alternative here is Radix's own
+   `data-state` attribute driving CSS keyframes: `components/ui/dialog.css` and
+   `sheet.css` both already did exactly that, each with a note explaining that
+   `tailwindcss-animate` is not installed.
+
+   The problem was that they were the ONLY two, they hardcoded their own timings
+   (0.3s ease-out, 0.32s cubic-bezier(0.22,1,0.36,1), 0.3s cubic-bezier(0.16,1,0.3,1)
+   — three different answers), and every other Radix surface on the site was left
+   writing `data-[state=open]:animate-in`, which compiles to nothing. So: one
+   vocabulary, opted into with `data-motion`, timed from the same tokens
+   `lib/motion.ts` uses, and dialog/sheet retimed onto it.
+
+     data-motion="fade"  a scrim, a backdrop — opacity only
+     data-motion="pop"   a popover, menu, hover card — the `scaleIn` variant
+     data-motion="rise"  modal content — the `modalContent` variant
+
+   Mirrors of `lib/motion.ts`: `--motion-in` = DURATION.slow (0.22s),
+   `--motion-out` = DURATION.fast (0.1s), the enter curve = EASE.emphasized,
+   the exit = a plain ease-in so dismissals feel immediate. Keep them in step —
+   if one moves, move the other.
+
+   Transform and opacity only; never the blur. `forwards` on the exits so the
+   element stays gone while Radix runs its unmount. Gated on no-preference, and
+   the global reduce rule in §REDUCED MOTION collapses them anyway. */
+:root {
+  --motion-in: 0.22s;
+  --motion-out: 0.1s;
+  --motion-ease-in: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-out: ease-in;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-motion='fade'][data-state='open'] {
+    animation: motion-fade-in var(--motion-in) var(--motion-ease-in);
+  }
+  [data-motion='fade'][data-state='closed'] {
+    animation: motion-fade-out var(--motion-out) var(--motion-ease-out) forwards;
+  }
+  [data-motion='pop'][data-state='open'] {
+    animation: motion-pop-in var(--motion-in) var(--motion-ease-in);
+  }
+  [data-motion='pop'][data-state='closed'] {
+    animation: motion-pop-out var(--motion-out) var(--motion-ease-out) forwards;
+  }
+  [data-motion='rise'][data-state='open'] {
+    animation: motion-rise-in var(--motion-in) var(--motion-ease-in);
+  }
+  [data-motion='rise'][data-state='closed'] {
+    animation: motion-rise-out var(--motion-out) var(--motion-ease-out) forwards;
+  }
+}
+
+/* The keyframes only ever state the FROM (enter) or TO (exit) frame, so they
+   compose with whatever centring `translate` the element already carries —
+   Tailwind v4 centres with the `translate` longhand, which `transform` does not
+   overwrite. A keyframe that spelled out both ends would erase it. */
+@keyframes motion-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes motion-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes motion-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@keyframes motion-pop-out {
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@keyframes motion-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
+@keyframes motion-rise-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .page-root > * {
     animation: none;
@@ -4469,122 +4449,6 @@ body {
   margin-inline: var(--site-page-gutter);
 }
 
-.spatial-page-header {
-  overflow: hidden;
-}
-
-.spatial-page-header[data-scrolled] {
-  background: var(--site-surface);
-  box-shadow: var(--site-shadow-sm);
-}
-
-.spatial-feed-intro {
-  position: relative;
-  min-height: clamp(24rem, 58vh, 36rem);
-  display: flex;
-  align-items: flex-end;
-  padding: clamp(2rem, 6vw, 4.5rem);
-  border: 1px solid var(--site-border);
-  border-radius: var(--site-radius);
-  background: var(--site-surface);
-  box-shadow: var(--site-shadow-sm);
-  isolation: isolate;
-}
-
-.spatial-feed-intro::after {
-  content: '';
-  position: absolute;
-  z-index: 1;
-  inset: 34% 24% 0 0;
-  border-radius: inherit;
-  background: linear-gradient(135deg, var(--site-surface) 28%, transparent 84%);
-  pointer-events: none;
-}
-
-.spatial-feed-intro__copy {
-  position: relative;
-  z-index: 2;
-  max-width: min(70%, 32rem);
-}
-
-.spatial-feed-intro__field {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  border-radius: inherit;
-}
-
-.spatial-feed-intro__orb {
-  position: absolute;
-  width: clamp(17rem, 60vw, 32rem);
-  aspect-ratio: 1;
-  top: -20%;
-  right: -18%;
-  border-radius: 45% 55% 62% 38% / 42% 42% 58% 58%;
-  background: var(--site-text);
-  opacity: 0.94;
-  transform: translate3d(
-      calc(var(--spatial-parallax-x, 0) * 0.7),
-      calc(var(--spatial-parallax-y, 0px) * 0.7 + var(--spatial-scroll-y, 0px) * 0.055),
-      0
-    )
-    rotate(12deg);
-  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.spatial-feed-intro__grid {
-  position: absolute;
-  width: 46%;
-  aspect-ratio: 1;
-  top: 14%;
-  right: 14%;
-  background-image: radial-gradient(circle, var(--site-accent-fg) 1px, transparent 1.25px);
-  background-size: 11px 11px;
-  opacity: 0.68;
-  transform: translate3d(
-    calc(var(--spatial-parallax-x, 0) * -0.35),
-    calc(var(--spatial-parallax-y, 0px) * -0.35 + var(--spatial-scroll-y, 0px) * -0.025),
-    0
-  );
-  transition: transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.spatial-feed-search {
-  overflow: hidden;
-}
-
-.spatial-modal-art {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.spatial-modal-art::before {
-  content: '';
-  position: absolute;
-  width: 17rem;
-  aspect-ratio: 1;
-  right: -5rem;
-  top: -8rem;
-  border-radius: 46% 54% 38% 62%;
-  background: var(--site-text);
-  opacity: 0.055;
-  transform: rotate(18deg);
-}
-
-.spatial-modal-art span {
-  position: absolute;
-  width: 10rem;
-  aspect-ratio: 1;
-  right: 2.25rem;
-  top: 1.5rem;
-  background-image: radial-gradient(circle, var(--site-text) 1px, transparent 1.2px);
-  background-size: 10px 10px;
-  mask-image: radial-gradient(circle, black, transparent 72%);
-  opacity: 0.18;
-}
-
 [data-slot='card'],
 .feed-card-cv > :first-child {
   transition:
@@ -4596,31 +4460,6 @@ body {
 @media (max-width: 767px) {
   .site-sticky-chrome {
     top: calc(var(--safe-top) + var(--site-sticky-edge));
-  }
-
-  .spatial-feed-intro {
-    min-height: clamp(18rem, 72svh, 22rem);
-    padding: clamp(1.5rem, 6vw, 2rem);
-  }
-
-  .spatial-feed-intro__orb {
-    width: 19rem;
-    top: -34%;
-    right: -42%;
-  }
-
-  .spatial-feed-intro__grid {
-    width: 9rem;
-    right: 7%;
-  }
-
-  .spatial-feed-intro::after {
-    inset: 42% 0 0;
-    background: linear-gradient(to top, var(--site-surface) 55%, transparent);
-  }
-
-  .spatial-feed-intro__copy {
-    max-width: 100%;
   }
 
   [data-slot='page-content'] {
@@ -4635,14 +4474,6 @@ body {
     padding-inline: 0;
     gap: 0;
     font-size: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .spatial-feed-intro__orb,
-  .spatial-feed-intro__grid {
-    transform: none;
-    transition: none;
   }
 }
 
@@ -4891,15 +4722,6 @@ body {
   max-width: min(64%, 58rem);
 }
 
-.spatial-design-kicker {
-  margin-bottom: 1.25rem;
-  font-size: 0.625rem;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--site-text-dim);
-}
-
 .spatial-design-hero h1 {
   max-width: 9ch;
   font-family: var(--site-font-display);
@@ -4936,10 +4758,6 @@ body {
   align-items: flex-end;
   padding-bottom: clamp(2rem, 5vw, 4rem);
   border-bottom: 1px solid var(--site-border);
-}
-
-.spatial-design-section-head .spatial-design-kicker {
-  margin: 0;
 }
 
 .spatial-design-section-head h2 {
@@ -4988,10 +4806,6 @@ body {
 .spatial-design-cta.site-inverse {
   background: var(--site-inverse-bg);
   color: var(--site-inverse-text);
-}
-
-.spatial-design-cta .spatial-design-kicker {
-  color: color-mix(in srgb, var(--site-accent-fg) 58%, transparent);
 }
 
 .spatial-design-cta h2 {
@@ -5145,12 +4959,9 @@ body {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .spatial-design-hero__art::before,
-  .spatial-design-hero__art span,
-  .spatial-feed-intro__orb,
-  .spatial-feed-intro__grid,
-  [data-animate] [data-spatial-reveal] {
+@media (prefers-reduced-motion: reduce) {.spatial-design-hero__art::before,
+.spatial-design-hero__art span,
+[data-animate] [data-spatial-reveal] {
     opacity: 1;
     transform: none;
     transition: none;
@@ -5182,14 +4993,6 @@ body {
   line-height: 1.03;
   text-wrap: balance;
   font-size: clamp(2.5rem, 7vw, 5.5rem);
-}
-.display-title {
-  font-family: var(--site-font-display);
-  font-weight: 700;
-  letter-spacing: -0.028em;
-  line-height: 1.08;
-  text-wrap: balance;
-  font-size: clamp(1.75rem, 4.5vw, 3rem);
 }
 
 /* ── Scroll-driven reveal (native, zero-JS) ──────────────────────────────────

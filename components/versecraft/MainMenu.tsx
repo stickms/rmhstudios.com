@@ -79,7 +79,7 @@ export function MainMenu() {
     );
   }
 
-  const tile = 'group rounded-xl px-4 py-3.5 text-left transition-all active:scale-[0.98] flex items-center gap-3';
+  const tile = 'group rounded-xl px-4 py-3.5 text-left transition active:scale-[0.98] flex items-center gap-3';
   const tileStyle = { backgroundColor: 'rgba(26,21,32,0.66)', border: '1px solid rgba(196,163,90,0.16)', color: '#e8e0d0', minHeight: 56 } as const;
 
   return (

@@ -265,9 +265,11 @@ function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
           }}
         />
         <div
-          className="absolute top-1 bottom-1 w-2 rounded-full bg-amber-400 transition-all duration-75"
-          style={{ left: `calc(${position * 100}% - 4px)` }}
-        />
+          className="pointer-events-none absolute inset-y-1 left-0 w-full transition-transform duration-75"
+          style={{ transform: `translateX(${position * 100}%)` }}
+        >
+          <div className="absolute inset-y-0 -ml-1 w-2 rounded-full bg-amber-400" />
+        </div>
       </div>
       <div className="flex gap-3 items-center">
         <button

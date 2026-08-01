@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from'react';
+import { motion } from 'framer-motion';
+import { modalContent } from '@/lib/motion';
 import {
  Plus,
  BarChart3,
@@ -1072,7 +1074,12 @@ export function ComposeBox({
  className="absolute inset-0 bg-site-media-scrim-strong"
  onClick={() => setAudienceOpen(false)}
  />
- <div className="relative w-full max-w-xs p-2 glass-fill duration-150">
+ <motion.div
+          variants={modalContent}
+          initial="initial"
+          animate="animate"
+          className="relative w-full max-w-xs p-2 glass-overlay"
+        >
  <div className="mb-1 flex items-center justify-between px-1 pt-1">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
  <CurrentAudienceIcon className="h-4 w-4 text-site-text-muted"/>
@@ -1108,7 +1115,7 @@ export function ComposeBox({
  </button>
  ))}
  </div>
- </div>
+ </motion.div>
  </div>
  )}
 
@@ -1122,7 +1129,12 @@ export function ComposeBox({
  className="absolute inset-0 bg-site-media-scrim-strong"
  onClick={() => setReplyOpen(false)}
  />
- <div className="relative w-full max-w-xs p-2 glass-fill duration-150">
+ <motion.div
+          variants={modalContent}
+          initial="initial"
+          animate="animate"
+          className="relative w-full max-w-xs p-2 glass-overlay"
+        >
  <div className="mb-1 flex items-center justify-between px-1 pt-1">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
  <CurrentReplyIcon className="h-4 w-4 text-site-text-muted"/>
@@ -1158,7 +1170,7 @@ export function ComposeBox({
  </button>
  ))}
  </div>
- </div>
+ </motion.div>
  </div>
  )}
 
@@ -1169,7 +1181,12 @@ export function ComposeBox({
  className="absolute inset-0 bg-site-media-scrim-strong"
  onClick={() => setShowPriceModal(false)}
  />
- <div className="relative w-full max-w-xs p-4 glass-fill duration-150">
+ <motion.div
+          variants={modalContent}
+          initial="initial"
+          animate="animate"
+          className="relative w-full max-w-xs p-4 glass-overlay"
+        >
  <div className="mb-2 flex items-center justify-between">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
  <Lock className="h-4 w-4 text-site-text-muted"/>
@@ -1223,7 +1240,7 @@ export function ComposeBox({
  {t('done', { defaultValue:'Done'})}
  </Button>
  </div>
- </div>
+ </motion.div>
  </div>
  )}
 
@@ -1234,7 +1251,12 @@ export function ComposeBox({
  className="absolute inset-0 bg-site-media-scrim-strong"
  onClick={() => setShowCheatSheet(false)}
  />
- <div className="relative w-full max-w-sm p-4 glass-fill duration-150">
+ <motion.div
+          variants={modalContent}
+          initial="initial"
+          animate="animate"
+          className="relative w-full max-w-sm p-4 glass-overlay"
+        >
  <div className="mb-3 flex items-center justify-between">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
  <Type className="h-4 w-4 text-site-text-muted"/>
@@ -1302,7 +1324,7 @@ export function ComposeBox({
  ))}
  </tbody>
  </table>
- </div>
+ </motion.div>
  </div>
  )}
 
@@ -1313,7 +1335,12 @@ export function ComposeBox({
  className="absolute inset-0 bg-site-media-scrim-strong"
  onClick={() => setAltEditIndex(null)}
  />
- <div className="relative w-full max-w-md p-4 glass-fill duration-150">
+ <motion.div
+          variants={modalContent}
+          initial="initial"
+          animate="animate"
+          className="relative w-full max-w-md p-4 glass-overlay"
+        >
  <div className="mb-2 flex items-center justify-between">
  <h3 className="text-sm font-semibold text-site-text">
  {t('alt-text-heading', { defaultValue:'Describe this image'})}
@@ -1371,7 +1398,7 @@ export function ComposeBox({
  {t('done', { defaultValue:'Done'})}
  </Button>
  </div>
- </div>
+ </motion.div>
  </div>
  )}
  </div>

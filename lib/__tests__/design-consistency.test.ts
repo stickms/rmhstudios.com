@@ -138,7 +138,8 @@ function enclosingTag(src: string, idx: number): string {
 }
 
 /**
- * Rules 5–8 scan the SITE tier only. The full-screen games and the `--app-*`
+ * Rules 5–7 scan the SITE tier only (rules 8 and 9 run over the whole tree —
+ * see their notes below). The full-screen games and the `--app-*`
  * apps are exempt from the `--site-*` palette by design (design-language.md §12
  * and the "games with a bespoke visual identity" note in §12) — Temple of Joy is
  * SUPPOSED to be candlelit, and forcing it onto site tokens would make it look
@@ -390,11 +391,6 @@ function scanAll(): {
         rawRadius.push({ file, line, detail: `hardcoded radius \`${r[0]}\`` });
       }
 
-      transitionAllRe.lastIndex = 0;
-      if (transitionAllRe.test(value)) {
-        transitionAll.push({ file, line, detail: '`transition-all`' });
-      }
-
       if (
         positioned.test(value) &&
         stacked.test(value) &&
@@ -411,7 +407,10 @@ function scanAll(): {
     }
   }
 
-  // Rule 9 runs over EVERY file, not just the site tier — see its note above.
+  // Rules 8 and 9 run over EVERY file, not just the site tier. Neither is a
+  // palette question — one is a rendering cost and the other is a class that
+  // produces no CSS — so a game has no more claim to an exemption than a
+  // settings page does.
   for (const file of FILES) {
     const src = readFileSync(join(ROOT, file), 'utf8');
     classAttr.lastIndex = 0;
@@ -426,6 +425,11 @@ function scanAll(): {
           line: lineAt(src, m.index),
           detail: `\`${da[0]}\` compiles to nothing`,
         });
+      }
+
+      transitionAllRe.lastIndex = 0;
+      if (transitionAllRe.test(value)) {
+        transitionAll.push({ file, line: lineAt(src, m.index), detail: '`transition-all`' });
       }
     }
   }
@@ -519,10 +523,10 @@ describe('design consistency — one tab-strip grammar (§16.2)', () => {
     ).toEqual([]);
   });
 
-  it('site-tier UI names the properties it transitions', () => {
+  it('nothing uses `transition-all`', () => {
     expect(
       transitionAll,
-      report('`transition-all` in site UI', transitionAll).replace(
+      report('`transition-all`', transitionAll).replace(
         POINTER,
         'Name the properties instead: `transition-colors`, `transition-transform`, ' +
           '`transition-opacity`, a `transition-[a,b]` list, or plain `transition` ' +
