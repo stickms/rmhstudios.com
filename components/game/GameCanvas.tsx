@@ -1549,7 +1549,7 @@ export function GameCanvas() {
           {showSettings && status === 'PLAYING' && isMultiplayer && (
             <div
               data-settings-panel
-              className="absolute top-14 right-3 z-50 w-72 bg-slice-bg rounded-[20px] shadow-[9px_9px_16px_var(--slice-shadow-dark),-9px_-9px_16px_var(--slice-shadow-light)] flex flex-col gap-3 p-4 animate-in slide-in-from-top-2 fade-in duration-200"
+              className="absolute top-14 right-3 z-50 w-72 bg-slice-bg rounded-[20px] shadow-[9px_9px_16px_var(--slice-shadow-dark),-9px_-9px_16px_var(--slice-shadow-light)] flex flex-col gap-3 p-4 duration-200"
               onMouseDown={(e) => e.stopPropagation()}
               onTouchStart={(e) => e.stopPropagation()}
             >
@@ -1685,8 +1685,8 @@ export function GameCanvas() {
                 </div>
                 <div className="h-4 bg-slice-bg rounded-full shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)] p-1">
                   <div
-                    className="h-full bg-linear-to-r from-blue-500 to-pink-500 rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(59,130,246,0.5)]"
-                    style={{ width: `${loadingProgress}%` }}
+                    className="h-full bg-linear-to-r from-blue-500 to-pink-500 w-full origin-left transition-transform duration-300 shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+                    style={{ transform: `scaleX(${(loadingProgress) / 100})` }}
                   />
                 </div>
 
@@ -1699,9 +1699,9 @@ export function GameCanvas() {
                     {/* Overall bar: X / total loaded */}
                     <div className="h-2 bg-slice-bg rounded-full shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] overflow-hidden">
                       <div
-                        className="h-full bg-green-400 rounded-full transition-all duration-500"
+                        className="h-full bg-green-400 w-full origin-left transition-transform duration-500"
                         style={{
-                          width: `${loadingPlayers.length === 0 ? 0 : (loadingPlayers.filter((p) => p.loaded).length / loadingPlayers.length) * 100}%`,
+                          transform: `scaleX(${(loadingPlayers.length === 0 ? 0 : (loadingPlayers.filter((p) => p.loaded).length / loadingPlayers.length) * 100) / 100})`,
                         }}
                       />
                     </div>
@@ -1742,7 +1742,7 @@ export function GameCanvas() {
           {/* Countdown Overlay */}
           {status === 'PLAYING' && countdown > 0 && (
             <div className="absolute inset-0 z-70 flex items-center justify-center pointer-events-none">
-              <div key={countdown} className="animate-in zoom-in-150 fade-in duration-500 ease-out">
+              <div key={countdown} className="duration-500 ease-out">
                 <span className="text-[12rem] font-black italic text-slice-text soft-glow-text drop-shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
                   {countdown}
                 </span>
@@ -1789,7 +1789,7 @@ export function GameCanvas() {
 
           {/* No input device warning */}
           {!hasKeyboard && !hasGamepad && !hasTouch && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-90 max-w-md w-[90%] animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-90 max-w-md w-[90%] duration-500">
               <div className="bg-amber-50 border-2 border-amber-400 rounded-2xl px-5 py-4 shadow-lg flex items-start gap-3">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -1824,7 +1824,7 @@ export function GameCanvas() {
 
           {/* Gamepad connected indicator (brief) */}
           {hasGamepad && !hasKeyboard && !hasTouch && status === 'MENU' && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-90 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-90 duration-500">
               <div className="bg-green-50 border-2 border-green-400 rounded-2xl px-5 py-3 shadow-lg flex items-center gap-3">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

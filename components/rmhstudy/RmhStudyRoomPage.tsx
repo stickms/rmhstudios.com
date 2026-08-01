@@ -204,9 +204,9 @@ export default function RmhStudyRoom() {
         {timer.phase !== 'idle' && timer.totalMs > 0 && (
           <div className="mt-4 h-2 rounded-full bg-(--app-bg) overflow-hidden">
             <div
-              className="h-full rounded-full transition-all duration-1000"
+              className="h-full w-full origin-left transition-[transform,background-color] duration-1000"
               style={{
-                width: `${((timer.totalMs - timer.remainingMs) / timer.totalMs) * 100}%`,
+                transform: `scaleX(${(((timer.totalMs - timer.remainingMs) / timer.totalMs) * 100) / 100})`,
                 backgroundColor: timer.phase === 'working'
                   ? 'var(--rmhstudy-work)'
                   : timer.phase === 'short_break'

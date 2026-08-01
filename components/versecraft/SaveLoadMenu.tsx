@@ -91,7 +91,7 @@ export function SaveLoadMenu({ mode }: { mode: 'save' | 'load' }) {
             <button
               key={i}
               onClick={() => handleSlotClick(i)}
-              className="w-full flex items-center justify-between px-4 py-3 rounded transition-all text-left"
+              className="w-full flex items-center justify-between px-4 py-3 rounded transition-colors text-left"
               style={{
                 backgroundColor: save ? 'rgba(42, 34, 53, 0.6)' : 'rgba(26, 21, 32, 0.4)',
                 border: `1px solid ${save ? 'rgba(196, 163, 90, 0.2)' : 'rgba(196, 163, 90, 0.08)'}`,

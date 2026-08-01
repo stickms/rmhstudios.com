@@ -86,14 +86,14 @@ function NewsArticlePage() {
       <div className="container mx-auto max-w-3xl relative z-10">
         <Link
           to="/news"
-          className="inline-flex items-center gap-2 text-(--site-text-dim) hover:text-(--site-text) mb-8 transition-colors animate-in fade-in slide-in-from-left-4 duration-700"
+          className="inline-flex items-center gap-2 text-(--site-text-dim) hover:text-(--site-text) mb-8 transition-colors duration-site"
         >
           <ArrowLeft className="w-4 h-4" /> {t('back-to-news', { defaultValue: 'Back to News' })}
         </Link>
 
         {/* §5.48 liquid-open hero — the news card morphs into this header. */}
         <header className="mb-12" style={{ viewTransitionName: liquidVTName('news', slug) }}>
-          <div className="flex flex-wrap items-center gap-3 mb-4 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both">
+          <div className="flex flex-wrap items-center gap-3 mb-4">
             <span
               className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${categoryColor.bg} ${categoryColor.text} ${categoryColor.border} border`}
             >
@@ -107,18 +107,18 @@ function NewsArticlePage() {
           </div>
 
           <h1
-            className="text-3xl md:text-5xl font-black text-(--site-text) mb-6 tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 fill-mode-both font-display"
+            className="text-3xl md:text-5xl font-black text-(--site-text) mb-6 tracking-tight leading-tight font-display"
           >
             {article.title}
           </h1>
 
-          <p className="text-xl text-(--site-text-muted) leading-relaxed border-l-4 border-(--site-accent) pl-6 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-300 fill-mode-both">
+          <p className="text-xl text-(--site-text-muted) leading-relaxed border-l-4 border-(--site-accent) pl-6">
             {article.description}
           </p>
         </header>
 
         {article.sourceUrl && (
-          <div className="mb-10 p-6 rounded-site border border-(--site-border) bg-(--site-surface) animate-in fade-in slide-in-from-bottom-4 duration-700 delay-450 fill-mode-both">
+          <div className="mb-10 p-6 rounded-site border border-(--site-border) bg-(--site-surface)">
             <p className="text-xs font-semibold uppercase tracking-widest text-(--site-accent) mb-2">
               {t('original-source', { defaultValue: 'Original Source' })}
             </p>

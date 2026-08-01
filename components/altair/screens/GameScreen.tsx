@@ -433,8 +433,8 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
         </p>
         <div className="w-48 h-2 bg-(--altair-surface) rounded-full overflow-hidden">
           <div
-            className="h-full bg-(--altair-accent) transition-all duration-150"
-            style={{ width: `${pct}%` }}
+            className="h-full bg-(--altair-accent) w-full origin-left transition-transform duration-150"
+            style={{ transform: `scaleX(${(pct) / 100})` }}
           />
         </div>
       </div>

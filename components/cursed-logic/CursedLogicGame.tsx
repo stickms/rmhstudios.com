@@ -424,7 +424,7 @@ export function CursedLogicGame() {
             aria-hidden
           >
             <div
-              className="h-2 w-full max-w-[55%] rounded-full origin-left"
+              className="h-2 w-full max-w-[55%] origin-left"
               style={{
                 background: 'linear-gradient(90deg, rgba(34,211,238,0.9) 0%, rgba(34,211,238,0.4) 60%, transparent 100%)',
                 boxShadow: '0 0 20px 4px rgba(34,211,238,0.6)',
@@ -523,8 +523,8 @@ export function CursedLogicGame() {
           </div>
           <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
             <div
-              className="h-full bg-cyan-500/80 rounded-full transition-all duration-500"
-              style={{ width: `${(integrity / MAX_INTEGRITY_DISPLAY) * 100}%` }}
+              className="h-full bg-cyan-500/80 w-full origin-left transition-transform duration-500"
+              style={{ transform: `scaleX(${((integrity / MAX_INTEGRITY_DISPLAY) * 100) / 100})` }}
             />
           </div>
           {playerPrepared && phase === 'commit' && (
@@ -598,8 +598,8 @@ export function CursedLogicGame() {
           )}
           <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
             <div
-              className="h-full bg-amber-500/80 rounded-full transition-all duration-500"
-              style={{ width: `${(protocolHealth / PROTOCOL_MAX_DISPLAY) * 100}%` }}
+              className="h-full bg-amber-500/80 w-full origin-left transition-transform duration-500"
+              style={{ transform: `scaleX(${((protocolHealth / PROTOCOL_MAX_DISPLAY) * 100) / 100})` }}
             />
           </div>
           {protocolPrepared && phase === 'commit' && (

@@ -595,7 +595,7 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
       )}
       <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
         <DialogPrimitive.Portal>
-          <DialogPrimitive.Overlay className="fixed inset-0 z-[90] glass-scrim data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+          <DialogPrimitive.Overlay className="fixed inset-0 z-[90] glass-scrim" />
           {/* Plain `glass-overlay` — no `glass-refract`/`--prism` here any more.
               The displacement lens those classes exist to carry is PARKED (see
               the note in globals.css §3.3–3.6), so all they contributed was
@@ -605,7 +605,7 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
               site, on its most-used surface. The prism budget is better left
               unspent than spent on an artifact. */}
           <DialogPrimitive.Content
-            className="glass-overlay fixed left-1/2 top-[12dvh] z-[91] w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+            className="glass-overlay fixed left-1/2 top-[12dvh] z-[91] w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 overflow-hidden"
             aria-describedby={undefined}
           >
             <DialogPrimitive.Title className="sr-only">

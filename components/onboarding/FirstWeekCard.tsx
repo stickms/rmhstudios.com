@@ -171,7 +171,7 @@ export function FirstWeekCard({ status, onDismiss, className }: FirstWeekCardPro
               The track is the sized element, so the fill is always 100% wide and
               scales from its left edge. */}
           <div
-            className="h-full w-full origin-left rounded-full bg-site-accent transition-transform duration-site-slow"
+            className="h-full w-full origin-left bg-site-accent transition-transform duration-site-slow"
             style={{ transform: `scaleX(${total > 0 ? doneCount / total : 0})` }}
           />
         </div>

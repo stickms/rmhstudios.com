@@ -35,7 +35,7 @@ export function NeumorphicModal({
         <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogPrimitive.Portal>
                 <DialogPrimitive.Overlay 
-                    className="fixed inset-0 z-100 bg-black/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" 
+                    className="fixed inset-0 z-100 bg-black/40 backdrop-blur-sm" 
                 />
                 <DialogPrimitive.Content
                     className={cn(
@@ -43,7 +43,6 @@ export function NeumorphicModal({
                         "bg-slice-bg rounded-[2.5rem]",
                         "shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)]",
                         "border border-slice-shadow-light/20",
-                        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] duration-300"
                     )}
                 >
                     <div className="flex flex-col items-center text-center space-y-6">

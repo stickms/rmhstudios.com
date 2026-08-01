@@ -446,7 +446,7 @@ function GameOverScreen() {
 
     return (
         <div className="absolute inset-0 z-50 bg-red-950/90 backdrop-blur-md flex items-center justify-center p-4">
-              <div className="bg-slate-900 border-2 border-red-500/50 p-8 rounded-xl shadow-2xl text-center space-y-6 w-full max-w-md animate-in fade-in zoom-in duration-300">
+              <div className="bg-slate-900 border-2 border-red-500/50 p-8 rounded-xl shadow-2xl text-center space-y-6 w-full max-w-md duration-300">
                   <div className="space-y-2">
                     <h2 className="text-4xl font-bold text-red-500 tracking-[0.2em] glitch-text">{t("system-failure", { defaultValue: "SYSTEM FAILURE" })}</h2>
                     <p className="text-slate-400 text-sm">{t("sanity-depleted", { defaultValue: "SANITY DEPLETED" })}</p>

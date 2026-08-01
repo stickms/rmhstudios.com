@@ -85,7 +85,7 @@ export function StoryNarration() {
                     className="max-w-xl mx-auto text-center transition-opacity duration-700"
                     style={{ opacity: visible ? 1 : 0 }}
                 >
-                    <p key={lineIdx} className="text-green-100/90 text-base italic leading-relaxed animate-in fade-in duration-700">
+                    <p key={lineIdx} className="text-green-100/90 text-base italic leading-relaxed duration-700">
                         {lines[lineIdx]}
                     </p>
                     <p className="text-white/25 text-[10px] mt-3 tracking-widest uppercase">

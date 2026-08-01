@@ -1078,8 +1078,8 @@ export function VoidBreakerGame() {
             {/* Life bar */}
             <div className="mt-2 h-0.5 bg-zinc-800 rounded-full">
               <div
-                className="h-full bg-[#00f5ff]/40 rounded-full transition-all"
-                style={{ width: `${hud.dialogue.timerFraction * 100}%` }}
+                className="h-full bg-[#00f5ff]/40 w-full origin-left transition-transform"
+                style={{ transform: `scaleX(${(hud.dialogue.timerFraction * 100) / 100})` }}
               />
             </div>
           </div>

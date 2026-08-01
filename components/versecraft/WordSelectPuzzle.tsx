@@ -34,7 +34,7 @@ function WordTile({ word, isSelected, onToggle, disabled }: {
 
   return (
     <motion.button
-      className="px-3 py-2 rounded text-sm md:text-base transition-all relative"
+      className="px-3 py-2 rounded text-sm md:text-base transition relative"
       style={{
         backgroundColor: isSelected
           ? `${hintColor}30`
@@ -130,7 +130,7 @@ function PoemTutorial({ onDismiss, presentations }: {
           {TUTORIAL_STEPS.map((_, i) => (
             <div
               key={i}
-              className="h-1 flex-1 rounded-full transition-all duration-300"
+              className="h-1 flex-1 rounded-full transition-colors duration-300"
               style={{
                 backgroundColor: i <= step ? '#c4a35a' : 'rgba(196, 163, 90, 0.15)',
               }}
@@ -248,7 +248,7 @@ function PoemTutorial({ onDismiss, presentations }: {
           {step > 0 ? (
             <button
               onClick={() => setStep(s => s - 1)}
-              className="text-sm px-4 py-2 rounded transition-all"
+              className="text-sm px-4 py-2 rounded transition-colors"
               style={{ color: '#a89888', border: '1px solid rgba(196, 163, 90, 0.15)' }}
             >
               {t("back", { defaultValue: "Back" })}
@@ -256,7 +256,7 @@ function PoemTutorial({ onDismiss, presentations }: {
           ) : (
             <button
               onClick={onDismiss}
-              className="text-sm px-4 py-2 rounded transition-all"
+              className="text-sm px-4 py-2 rounded transition-colors"
               style={{ color: '#666' }}
             >
               {t("skip", { defaultValue: "Skip" })}
@@ -265,7 +265,7 @@ function PoemTutorial({ onDismiss, presentations }: {
 
           <button
             onClick={isLast ? onDismiss : () => setStep(s => s + 1)}
-            className="text-sm px-6 py-2 rounded font-semibold transition-all"
+            className="text-sm px-6 py-2 rounded font-semibold transition-colors"
             style={{
               backgroundColor: 'rgba(196, 163, 90, 0.25)',
               border: '1px solid rgba(196, 163, 90, 0.5)',
@@ -438,7 +438,7 @@ export function WordSelectPuzzle() {
             <div className="flex gap-2">
               <button
                 onClick={clearSelectedWords}
-                className="px-4 py-2 rounded text-sm transition-all"
+                className="px-4 py-2 rounded text-sm transition-colors"
                 style={{
                   backgroundColor: 'rgba(42, 34, 53, 0.6)',
                   border: '1px solid rgba(196, 163, 90, 0.15)',
@@ -450,7 +450,7 @@ export function WordSelectPuzzle() {
               <button
                 onClick={handleSubmit}
                 disabled={!canSubmit}
-                className="px-6 py-2 rounded text-sm font-semibold transition-all"
+                className="px-6 py-2 rounded text-sm font-semibold transition-colors"
                 style={{
                   backgroundColor: canSubmit ? 'rgba(196, 163, 90, 0.3)' : 'rgba(42, 34, 53, 0.3)',
                   border: `1px solid ${canSubmit ? 'rgba(196, 163, 90, 0.6)' : 'rgba(196, 163, 90, 0.1)'}`,

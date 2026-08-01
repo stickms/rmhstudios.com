@@ -110,7 +110,7 @@ export function WorldSetup() {
                   <button
                     key={p}
                     onClick={() => { setCustomOn(false); setPronouns(p); }}
-                    className="flex-1 px-3 py-2 rounded text-sm transition-all"
+                    className="flex-1 px-3 py-2 rounded text-sm transition-colors"
                     style={{
                       backgroundColor: active ? 'rgba(196, 163, 90, 0.2)' : 'rgba(42, 34, 53, 0.6)',
                       border: `1px solid ${active ? 'rgba(196, 163, 90, 0.5)' : 'rgba(196, 163, 90, 0.15)'}`,
@@ -123,7 +123,7 @@ export function WorldSetup() {
               })}
               <button
                 onClick={() => setCustomOn(true)}
-                className="px-3 py-2 rounded text-sm transition-all"
+                className="px-3 py-2 rounded text-sm transition-colors"
                 style={{
                   backgroundColor: customOn ? 'rgba(196, 163, 90, 0.2)' : 'rgba(42, 34, 53, 0.6)',
                   border: `1px solid ${customOn ? 'rgba(196, 163, 90, 0.5)' : 'rgba(196, 163, 90, 0.15)'}`,
@@ -156,7 +156,7 @@ export function WorldSetup() {
                   <button
                     key={v}
                     onClick={() => setAttraction(v)}
-                    className="flex-1 px-3 py-2 rounded text-sm transition-all whitespace-nowrap"
+                    className="flex-1 px-3 py-2 rounded text-sm transition-colors whitespace-nowrap"
                     style={{
                       backgroundColor: active ? 'rgba(196, 163, 90, 0.2)' : 'rgba(42, 34, 53, 0.6)',
                       border: `1px solid ${active ? 'rgba(196, 163, 90, 0.5)' : 'rgba(196, 163, 90, 0.15)'}`,
@@ -198,7 +198,7 @@ export function WorldSetup() {
 
           <button
             onClick={() => setIntense(v => !v)}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-all"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-colors"
             style={{ backgroundColor: 'rgba(42, 34, 53, 0.5)', border: '1px solid rgba(196, 163, 90, 0.15)' }}
           >
             <span

@@ -365,7 +365,7 @@ export function GeneratedDialogueScreen() {
       </AnimatePresence>
       {/* Background */}
       <div
-        className="absolute inset-0 z-0 transition-all duration-1000"
+        className="absolute inset-0 z-0 transition-colors duration-1000"
         style={{ backgroundColor: '#1a1520', filter }}
       >
         <img

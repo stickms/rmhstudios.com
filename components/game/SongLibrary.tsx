@@ -380,8 +380,8 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                                     </div>
                                     <div className="w-full h-3 bg-slice-shadow-dark rounded-full overflow-hidden">
                                         <div 
-                                            className="h-full bg-blue-500 rounded-full transition-all duration-300 ease-out"
-                                            style={{ width: `${Math.max(10, uploadProgress)}%` }} // Give a little visual progress even when analyzing
+                                            className="h-full bg-blue-500 w-full origin-left transition-transform duration-300 ease-out"
+                                            style={{ transform: `scaleX(${(Math.max(10, uploadProgress)) / 100})` }} // Give a little visual progress even when analyzing
                                         />
                                     </div>
                                 </div>

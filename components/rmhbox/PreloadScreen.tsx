@@ -45,8 +45,8 @@ export default function PreloadScreen({ players, lobbyId }: PreloadScreenProps) 
       {/* Progress bar */}
       <div className="h-2 w-full overflow-hidden rounded-full bg-(--app-border)">
         <div
-          className="h-full rounded-full bg-(--app-accent) transition-all duration-500"
-          style={{ width: `${progress}%` }}
+          className="h-full bg-(--app-accent) w-full origin-left transition-transform duration-500"
+          style={{ transform: `scaleX(${(progress) / 100})` }}
         />
       </div>
       <span className="text-sm text-(--app-text-muted)">

@@ -30,9 +30,9 @@ export function XpBar({ totalXp }: XpBarProps) {
       </div>
       <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--doctrine-bg-tertiary, #1C1C20)' }}>
         <div
-          className="h-full rounded-full transition-all duration-500"
+          className="h-full w-full origin-left transition-[transform,background-color] duration-500"
           style={{
-            width: `${Math.min(100, progress)}%`,
+            transform: `scaleX(${(Math.min(100, progress)) / 100})`,
             background: `linear-gradient(90deg, var(--doctrine-accent, #F97316), var(--doctrine-accent, #F97316)88)`,
           }}
         />

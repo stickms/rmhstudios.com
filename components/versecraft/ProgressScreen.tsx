@@ -94,7 +94,7 @@ export function ProgressScreen() {
             </h1>
             <button
               onClick={() => setScreen('menu')}
-              className="px-4 py-2 text-sm rounded transition-all"
+              className="px-4 py-2 text-sm rounded transition-colors"
               style={{
                 backgroundColor: 'rgba(42, 34, 53, 0.6)',
                 border: '1px solid rgba(196, 163, 90, 0.2)',

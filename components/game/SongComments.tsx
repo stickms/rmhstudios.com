@@ -99,7 +99,7 @@ export function SongComments({ songId }: SongCommentsProps) {
                     </div>
                 ) : (
                     comments.map(comment => (
-                        <div key={comment.id} className="flex gap-2 animate-in slide-in-from-bottom-2">
+                        <div key={comment.id} className="flex gap-2">
                             <div className="w-6 h-6 rounded-full bg-linear-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-[10px] shrink-0 shadow-sm mt-1">
                                 {comment.user.name?.[0] || "?"}
                             </div>

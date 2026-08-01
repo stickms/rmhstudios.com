@@ -292,8 +292,8 @@ function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
       {progress > 0 && progress < 1 && !failed && (
         <div className="w-48 h-1.5 rounded-full bg-white/10 overflow-hidden">
           <div
-            className="h-full bg-cyan-500/80 rounded-full transition-all duration-100"
-            style={{ width: `${progress * 100}%` }}
+            className="h-full bg-cyan-500/80 w-full origin-left transition-transform duration-100"
+            style={{ transform: `scaleX(${(progress * 100) / 100})` }}
           />
         </div>
       )}

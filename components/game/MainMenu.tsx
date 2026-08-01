@@ -490,7 +490,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 {/* Auth Overlay */}
                 {!session.data && !session.isPending && (
                     <div className="absolute inset-0 z-60 bg-slice-bg/90 flex items-center justify-center p-8 backdrop-blur-xl rounded-[4rem] shadow-[inset_15px_15px_40px_var(--slice-shadow-dark),inset_-15px_-15px_40px_var(--slice-shadow-light)]">
-                        <div className="w-full max-w-md space-y-10 text-center animate-in fade-in zoom-in duration-700">
+                        <div className="w-full max-w-md space-y-10 text-center duration-700">
                              <h3 className="text-3xl sm:text-5xl font-black tracking-tighter uppercase italic text-slice-text">{t("connect-to-start", { defaultValue: "Connect to Start" })}</h3>
                              <p className="text-slice-text-muted font-bold uppercase text-xs tracking-[0.5em] opacity-60">{t("auth-required", { defaultValue: "Authentication is required for leaderboard ranking" })}</p>
                              <div className="space-y-6">
@@ -520,12 +520,12 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                     <>
                         {/* Backdrop */}
                         <div
-                            className="absolute inset-0 bg-black/20 z-65 animate-in fade-in duration-200"
+                            className="absolute inset-0 bg-black/20 z-65 duration-200"
                             onClick={() => setSelectedSong(null)}
                         />
 
                         {/* Sidebar Panel */}
-                        <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-70 animate-in slide-in-from-right duration-300 flex flex-col overflow-hidden">
+                        <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-70 duration-300 flex flex-col overflow-hidden">
                             {/* Sidebar Header */}
                             <div className="flex items-center justify-between p-4 border-b border-slice-shadow-dark/50 bg-slice-shadow-dark/20">
                                 <h2 className="text-lg font-black text-slice-text">{t("song-details", { defaultValue: "Song Details" })}</h2>
@@ -556,7 +556,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             
             {/* Settings Overlay remains as a full-screen drawer */}
             {showSettings && (
-                <div className="absolute inset-0 z-80 bg-slice-bg p-5 sm:p-12 flex flex-col animate-in slide-in-from-right-10 overflow-y-auto">
+                <div className="absolute inset-0 z-80 bg-slice-bg p-5 sm:p-12 flex flex-col overflow-y-auto">
                     <div className="flex items-center justify-between mb-5 sm:mb-12">
                         <h2 className="text-2xl sm:text-5xl font-black text-slice-text tracking-tighter uppercase italic">{t("system-configuration", { defaultValue: "System Configuration" })}</h2>
                         <Button 

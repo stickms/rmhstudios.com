@@ -88,9 +88,9 @@ export default function RhymeTimeInput({
         {/* Timer bar */}
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-(--app-border)">
           <div
-            className="h-full rounded-full transition-all duration-1000 ease-linear"
+            className="h-full w-full origin-left transition-[transform,background-color] duration-1000 ease-linear"
             style={{
-              width: `${timerRatio * 100}%`,
+              transform: `scaleX(${(timerRatio * 100) / 100})`,
               backgroundColor: timeRemaining <= 10 ? 'var(--app-danger)' : 'var(--app-accent)',
             }}
           />

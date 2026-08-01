@@ -622,7 +622,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  role="dialog"
  aria-modal="true"
  aria-labelledby="compose-alt-title"
- className="relative w-full max-w-md p-4 glass-overlay animate-in zoom-in-95 fade-in duration-150"
+ className="relative w-full max-w-md p-4 glass-overlay duration-150"
  >
  <div className="mb-2 flex items-center justify-between">
  <h3 id="compose-alt-title"className="text-sm font-semibold text-site-text">

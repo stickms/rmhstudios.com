@@ -87,7 +87,7 @@ export function GameOver({ onRetry }: GameOverProps) {
             <div className="text-6xl font-bold text-slice-text relative inline-block">
               {score.toLocaleString()}
               {isNewBest && (
-                <div className="absolute -top-6 -right-12 rotate-12 animate-in zoom-in duration-500">
+                <div className="absolute -top-6 -right-12 rotate-12 duration-500">
                   <div className="bg-yellow-400 text-black text-[10px] font-black px-2 py-1 rounded-md shadow-lg flex items-center gap-1">
                     <Trophy className="w-3 h-3" />
                     {t("new-best", { defaultValue: "NEW BEST!" })}

@@ -51,8 +51,8 @@ export default function InstructionsScreen({
       {/* Timer bar — synced with server timer, respects pauses */}
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-(--app-border)">
         <div
-          className={`h-full rounded-full ${paused ? 'bg-(--app-warning)' : 'bg-(--app-accent)'} ${paused ? '' : 'transition-all duration-1000 ease-linear'}`}
-          style={{ width: `${(Math.max(0, remaining) / (total || 1)) * 100}%` }}
+          className={`h-full w-full origin-left ${paused ? 'bg-(--app-warning)' : 'bg-(--app-accent)'} ${paused ? '' : 'transition-transform duration-1000 ease-linear'}`}
+          style={{ transform: `scaleX(${((Math.max(0, remaining) / (total || 1)) * 100) / 100})` }}
         />
       </div>
 

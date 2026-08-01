@@ -16,9 +16,9 @@ export default function StrokeCounter({ current, max }: StrokeCounterProps) {
     <div className="flex items-center gap-2">
       <div className="w-24 h-2 rounded-full bg-(--app-border) overflow-hidden">
         <div
-          className="h-full rounded-full transition-all duration-200"
+          className="h-full w-full origin-left transition-[transform,background-color] duration-200"
           style={{
-            width: `${pct}%`,
+            transform: `scaleX(${(pct) / 100})`,
             backgroundColor: remaining <= 1 ? 'var(--app-danger)' : 'var(--app-accent)',
           }}
         />

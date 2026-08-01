@@ -372,7 +372,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
   switch (phase) {
     case 'PROMPT_REVEAL':
       return (
-        <div className="flex flex-col items-center justify-center gap-4 p-8 text-center animate-in fade-in">
+        <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
           <h2 className="text-2xl font-bold text-(--app-text)">{t("draw-label", { defaultValue: "Draw:" })}</h2>
           <p className="text-xl text-(--app-accent)">{prompt || t("get-ready", { defaultValue: "Get ready..." })}</p>
         </div>

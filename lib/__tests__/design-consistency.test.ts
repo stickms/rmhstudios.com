@@ -257,6 +257,7 @@ function scanAll(): {
   rawRadius: Violation[];
   floatingTier: Violation[];
   transitionAll: Violation[];
+  deadAnimate: Violation[];
 } {
   const tablist: Violation[] = [];
   const underline: Violation[] = [];
@@ -266,6 +267,7 @@ function scanAll(): {
   const rawRadius: Violation[] = [];
   const floatingTier: Violation[] = [];
   const transitionAll: Violation[] = [];
+  const deadAnimate: Violation[] = [];
 
   // A bottom-border marker (border-b / -2 / -4 / -[..]) but NOT border-b-0.
   const borderBottom = /\bborder-b(?!-0)(?:-(?:2|4|\[[^\]]*\]))?(?![\w-])/;
@@ -346,6 +348,25 @@ function scanAll(): {
   const lowerTier = /(?<![\w-])(?:glass-(?:fill|pane|chrome))(?![\w-])|(?<![\w-])bg-site-surface(?![\w-])/;
   const l4Tier = /(?<![\w-])glass-(?:overlay|scrim)(?![\w-])/;
   const transitionAllRe = /(?<![\w-])transition-all(?![\w-])/g;
+  /**
+   * Rule 9 — the `tailwindcss-animate` vocabulary, which this project does not
+   * have. It was a Tailwind v3 plugin; the v3→v4 migration dropped it and
+   * nothing replaced it, so `animate-in`, `fade-in-0`, `zoom-in-95` and friends
+   * compile to **zero rules**. 103 of them were sitting in the source across 18
+   * files — including the command palette, the composer and every Radix
+   * `data-[state=open]:` pair — describing motion that has never once run.
+   *
+   * That is worse than no animation: it reads as intent, so nobody adds the
+   * real thing. If these are wanted back, the fix is `lib/motion.ts`'s
+   * `scaleIn` / `popIn` / `modalContent` variants (the animation system this
+   * project actually documents, design-language.md §7), not a fourth one.
+   *
+   * This scans the whole tree, not just the site tier: a class that produces no
+   * CSS is dead everywhere, and a game's palette exemption has nothing to say
+   * about it.
+   */
+  const deadAnimateRe =
+    /(?<![\w:./-])(?:[\w-]+(?:\[[^\]]*\])?:)*(?:animate-(?:in|out)|fade-(?:in|out)|zoom-(?:in|out)|slide-(?:in-from|out-to)-(?:top|bottom|left|right)|fill-mode-(?:both|forwards|backwards|none))(?:-(?:\d+(?:\/\d+)?|\[[^\]]*\]))?(?![\w./-])/g;
 
   for (const file of SITE_FILES) {
     const src = readFileSync(join(ROOT, file), 'utf8');
@@ -390,7 +411,36 @@ function scanAll(): {
     }
   }
 
-  return { tablist, underline, layoutId, accentBar, rawColor, rawRadius, floatingTier, transitionAll };
+  // Rule 9 runs over EVERY file, not just the site tier — see its note above.
+  for (const file of FILES) {
+    const src = readFileSync(join(ROOT, file), 'utf8');
+    classAttr.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = classAttr.exec(src))) {
+      const value = m[1] ?? m[2] ?? m[3] ?? m[4] ?? '';
+      deadAnimateRe.lastIndex = 0;
+      let da: RegExpExecArray | null;
+      while ((da = deadAnimateRe.exec(value))) {
+        deadAnimate.push({
+          file,
+          line: lineAt(src, m.index),
+          detail: `\`${da[0]}\` compiles to nothing`,
+        });
+      }
+    }
+  }
+
+  return {
+    tablist,
+    underline,
+    layoutId,
+    accentBar,
+    rawColor,
+    rawRadius,
+    floatingTier,
+    transitionAll,
+    deadAnimate,
+  };
 }
 
 function report(label: string, v: Violation[]): string {
@@ -402,8 +452,17 @@ function report(label: string, v: Violation[]): string {
 }
 
 describe('design consistency — one tab-strip grammar (§16.2)', () => {
-  const { tablist, underline, layoutId, accentBar, rawColor, rawRadius, floatingTier, transitionAll } =
-    scanAll();
+  const {
+    tablist,
+    underline,
+    layoutId,
+    accentBar,
+    rawColor,
+    rawRadius,
+    floatingTier,
+    transitionAll,
+    deadAnimate,
+  } = scanAll();
 
   it('scans a non-trivial set of production sources', () => {
     // Guards the walker itself — a broken path would make every rule vacuously pass.
@@ -473,6 +532,22 @@ describe('design consistency — one tab-strip grammar (§16.2)', () => {
           'property is genuinely what you want to animate, it is almost always ' +
           'cheaper as a transform — a progress bar is `scaleX` on a full-width ' +
           'fill, not an animated `width` (see components/onboarding/FirstWeekCard).',
+      ),
+    ).toEqual([]);
+  });
+
+  it('no `tailwindcss-animate` classes — the plugin is not installed', () => {
+    expect(
+      deadAnimate,
+      report('Class that compiles to no CSS', deadAnimate).replace(
+        POINTER,
+        '`animate-in` / `fade-in-0` / `zoom-in-95` / `slide-in-from-*` / ' +
+          '`fill-mode-*` come from `tailwindcss-animate`, a Tailwind v3 plugin ' +
+          'this project does not have — they produce ZERO rules, so the element ' +
+          'never animates. Use the documented motion system instead: framer-motion ' +
+          'with `lib/motion.ts` (`scaleIn`, `popIn`, `overlay`, `modalContent`), or ' +
+          'the CSS enters that do exist (`.page-enter`, `radial-page-rise`, ' +
+          '`.feed-item-enter`). See design-language.md §7.',
       ),
     ).toEqual([]);
   });

@@ -1072,7 +1072,7 @@ export function ComposeBox({
  className="absolute inset-0 bg-site-media-scrim-strong"
  onClick={() => setAudienceOpen(false)}
  />
- <div className="relative w-full max-w-xs p-2 glass-fill animate-in zoom-in-95 fade-in duration-150">
+ <div className="relative w-full max-w-xs p-2 glass-fill duration-150">
  <div className="mb-1 flex items-center justify-between px-1 pt-1">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
  <CurrentAudienceIcon className="h-4 w-4 text-site-text-muted"/>
@@ -1122,7 +1122,7 @@ export function ComposeBox({
  className="absolute inset-0 bg-site-media-scrim-strong"
  onClick={() => setReplyOpen(false)}
  />
- <div className="relative w-full max-w-xs p-2 glass-fill animate-in zoom-in-95 fade-in duration-150">
+ <div className="relative w-full max-w-xs p-2 glass-fill duration-150">
  <div className="mb-1 flex items-center justify-between px-1 pt-1">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
  <CurrentReplyIcon className="h-4 w-4 text-site-text-muted"/>
@@ -1169,7 +1169,7 @@ export function ComposeBox({
  className="absolute inset-0 bg-site-media-scrim-strong"
  onClick={() => setShowPriceModal(false)}
  />
- <div className="relative w-full max-w-xs p-4 glass-fill animate-in zoom-in-95 fade-in duration-150">
+ <div className="relative w-full max-w-xs p-4 glass-fill duration-150">
  <div className="mb-2 flex items-center justify-between">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
  <Lock className="h-4 w-4 text-site-text-muted"/>
@@ -1234,7 +1234,7 @@ export function ComposeBox({
  className="absolute inset-0 bg-site-media-scrim-strong"
  onClick={() => setShowCheatSheet(false)}
  />
- <div className="relative w-full max-w-sm p-4 glass-fill animate-in zoom-in-95 fade-in duration-150">
+ <div className="relative w-full max-w-sm p-4 glass-fill duration-150">
  <div className="mb-3 flex items-center justify-between">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
  <Type className="h-4 w-4 text-site-text-muted"/>
@@ -1313,7 +1313,7 @@ export function ComposeBox({
  className="absolute inset-0 bg-site-media-scrim-strong"
  onClick={() => setAltEditIndex(null)}
  />
- <div className="relative w-full max-w-md p-4 glass-fill animate-in zoom-in-95 fade-in duration-150">
+ <div className="relative w-full max-w-md p-4 glass-fill duration-150">
  <div className="mb-2 flex items-center justify-between">
  <h3 className="text-sm font-semibold text-site-text">
  {t('alt-text-heading', { defaultValue:'Describe this image'})}

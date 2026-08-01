@@ -289,10 +289,10 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                         {browsedSong && (
                             <>
                                 <div
-                                    className="absolute inset-0 bg-black/20 z-65 animate-in fade-in duration-200"
+                                    className="absolute inset-0 bg-black/20 z-65 duration-200"
                                     onClick={() => setBrowsedSong(null)}
                                 />
-                                <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-70 animate-in slide-in-from-right duration-300 flex flex-col overflow-hidden">
+                                <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-70 duration-300 flex flex-col overflow-hidden">
                                     <div className="flex items-center justify-between p-4 border-b border-slice-shadow-dark/50 bg-slice-shadow-dark/20">
                                         <h2 className="text-lg font-black text-slice-text">{t("song-details", { defaultValue: "Song Details" })}</h2>
                                         <Button variant="ghost" size="icon" className="h-8 w-8 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark rounded-lg"

@@ -189,7 +189,7 @@ export function LineArrangePuzzle() {
         <div className="max-w-2xl mx-auto flex justify-end">
           <button
             onClick={handleSubmit}
-            className="px-8 py-2.5 rounded text-base font-semibold transition-all"
+            className="px-8 py-2.5 rounded text-base font-semibold transition-colors"
             style={{
               backgroundColor: 'rgba(196, 163, 90, 0.3)',
               border: '1px solid rgba(196, 163, 90, 0.6)',
