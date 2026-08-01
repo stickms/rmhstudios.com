@@ -171,14 +171,21 @@ history if a rollback ever needs it.
 6. `tsconfig.server.json` includes more than gets bundled — esbuild's 6
    entrypoints (socket-server, rmhbox, rmhtube, ladder-worker, homes-worker,
    jobs) are the truth.
-7. **Server code imports `lib/` RELATIVELY, never through `@/`.** Neither
-   tsconfig sets a `baseUrl`, so esbuild ignores the `paths` map and treats
-   `@/lib/x` as a bare package name — `--packages=external` then emits a
-   literal `require("@/lib/x")` that throws at runtime if the line ever runs.
-   Relative specifiers are the ones actually bundled.
+7. **Server code imports `lib/` RELATIVELY, never through `@/`.** esbuild does
+   apply the `paths` map in `tsconfig.server.json`, so `@/lib/x` resolves —
+   right up until the file isn't in the image's build context (gotcha 8). Then
+   the map misses, the specifier falls back to looking like a package name, and
+   `--packages=external` emits a literal `require("@/lib/x")` with no error at
+   all. It throws `MODULE_NOT_FOUND` on load, which for a top-level import means
+   the service dies on start. That is how the whole socket hub shipped dead once
+   — every casino table and multiplayer game unreachable — off one
+   `@/lib/economy/ledger-core`. A relative specifier fails loudly at build time
+   instead, which is the entire reason for this rule.
 8. **A new `lib/` import needs a matching `COPY` in the Dockerfile.** The
    `server-builder` stage copies a curated subset of `lib/` so unrelated edits
    don't bust its layer cache, which means `pnpm build` (whole working tree)
-   can pass while the image build fails with "Could not resolve".
+   can pass while the image build fails with "Could not resolve" — or, via
+   gotcha 7, doesn't fail at all and ships a bundle that crashes on boot.
    `lib/__tests__/server-bundle-copies.test.ts` walks the real import graph
-   and catches this in `web-ci`, before it reaches main.
+   (following `@/…` as well as relative specifiers) and catches this in
+   `web-ci`, before it reaches main.
