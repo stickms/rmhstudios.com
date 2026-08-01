@@ -1286,9 +1286,15 @@ html.app-route {
     overflow-y: auto;
     overscroll-behavior: contain;
     /* §4.35: single glint layer, tint fills to border-box, transparent border. */
+    /* 62% did not deliver on this tier's own promise ("more opaque so text never
+       ghosts through"): over a busy or high-contrast page — a photo, a dark
+       feature panel — menu labels sat on whatever was behind them and the
+       30px blur alone was not enough separation. 80% still reads as glass and
+       still samples the scene, but a popover is the one surface you have to be
+       able to READ instantly, so it gets the benefit of the doubt. */
     background-color: color-mix(
       in srgb,
-      var(--site-bg) calc(62% * var(--glass-user-tint, 1)),
+      var(--site-bg) calc(80% * var(--glass-user-tint, 1)),
       transparent
     );
     background-image: var(--glass-glint-layer);

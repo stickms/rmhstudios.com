@@ -68,7 +68,16 @@
   color: var(--site-text-dim);
 }
 
-/* ─── Input dock (pill) ─────────────────────────────────────────────────────── */
+/* ─── Input dock (pill) ─────────────────────────────────────────────────────────
+ * The site's L2 glass surface, expressed in the `--site-*` token contract rather
+ * than hand-rolled beside it. It used to carry its own material: a 28px radius, a
+ * 0.5px border, a `blur(48px)` (the pane token is 18px), a white inset highlight
+ * and a `0 24px 64px rgba(0,0,0,0.55)` drop shadow. All five were authored
+ * against one dark theme, so on the light themes the dock read as a bright slab
+ * under a heavy grey halo, with corners and a rim that matched nothing else on
+ * the page — the site has sixteen themes and this surface answered to none of
+ * them. Every value below now comes from the theme, so it does.
+ */
 .vibe-dock {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -77,24 +86,24 @@
   width: min(540px, calc(100vw - 48px));
   padding: 7px 7px 7px 22px;
   background: var(--site-surface);
-  backdrop-filter: saturate(180%) blur(48px);
-  -webkit-backdrop-filter: saturate(180%) blur(48px);
-  border-radius: 28px;
-  border: 0.5px solid var(--site-border);
+  backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
+  -webkit-backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
+  border-radius: var(--site-radius);
+  border: var(--site-border-width) solid var(--site-border);
   border-top-color: var(--site-border-bright);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.07) inset,
-    0 24px 64px rgba(0, 0, 0, 0.55);
+  box-shadow: var(--site-shadow);
   transition:
-    border-color 200ms ease,
-    box-shadow 200ms ease;
+    border-color var(--site-transition-speed) ease,
+    box-shadow var(--site-transition-speed) ease;
 }
 
+/* Focus reads as the rim brightening, the way every other focusable glass surface
+   on the site does. The shadow is deliberately NOT changed: there are only two
+   shadow tokens (`--site-shadow` and `--site-shadow-sm`), and the high-contrast
+   theme defines both as a plain white ring — so animating between them would
+   flicker a hairline rather than lift anything. */
 .vibe-dock:focus-within {
-  border-color: var(--site-border);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.1) inset,
-    0 24px 64px rgba(0, 0, 0, 0.65);
+  border-color: var(--site-border-bright);
 }
 
 .vibe-dock__input {
@@ -120,7 +129,10 @@
   align-items: stretch;
   gap: 10px;
   min-height: 0;
-  border-radius: 10px;
+  /* The taller dock keeps the site's own radius rather than the 10px it used to
+     hardcode — at this size that read as a plain rounded rectangle next to a
+     page whose every other surface is a 22px slab. */
+  border-radius: var(--site-radius);
   padding: 14px 14px 12px 20px;
   width: min(620px, calc(100vw - 48px));
 }
@@ -133,9 +145,10 @@
   gap: 10px;
 }
 
-/* squared-off submit inside the textarea dock */
+/* Squared-off submit inside the textarea dock — the site's small radius, so it
+   matches the other square-ish controls instead of picking its own 9px. */
 .vibe-dock--area .vibe-dock__submit {
-  border-radius: 9px;
+  border-radius: var(--site-radius-sm);
 }
 
 .vibe-dock__textarea {
@@ -155,23 +168,29 @@
   color: var(--site-text-dim);
 }
 
+/* The one primary action on this surface, so it takes the ACCENT — the same
+   fill every other primary button on the site takes, with its paired foreground
+   token so the ink can never end up the wrong colour on it.
+   It was `--site-text` on `--site-bg`, which looks right on exactly one theme:
+   the default, whose accent happens to also be black. On every themed palette
+   (the purple default-dark, the marketplace themes) it stayed a black slab while
+   the rest of the page was accented. */
 .vibe-dock__submit {
   display: inline-grid;
   place-items: center;
   width: 42px;
   height: 42px;
   border: 0;
-  border-radius: 50%;
-  background: var(--site-text);
-  color: var(--site-bg);
+  border-radius: var(--site-control-radius);
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
   cursor: pointer;
   transition:
-    background 160ms ease,
-    transform 160ms ease;
+    background var(--site-transition-speed) ease,
+    transform var(--site-transition-speed) ease;
 }
 
 .vibe-dock__submit:hover {
-  background: var(--site-text);
   transform: scale(1.06);
 }
 
@@ -182,7 +201,6 @@
 
 .vibe-dock__submit:disabled:hover {
   transform: none;
-  background: var(--site-text);
 }
 
 /* ─── Viewer toolbar ────────────────────────────────────────────────────────── */
@@ -970,18 +988,21 @@
   gap: 6px;
   height: 28px;
   padding: 0 10px 0 13px;
-  border-radius: 9999px;
+  /* Token radius and border width, like every other control on the site. The
+     0.5px rim rendered as a sub-pixel hairline that some engines dropped
+     entirely and others aliased, so the pill's edge did not match the dock's. */
+  border-radius: var(--site-control-radius);
   background: var(--site-surface);
-  border: 0.5px solid var(--site-border);
+  border: var(--site-border-width) solid var(--site-border);
   color: var(--site-text);
   font: inherit;
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   transition:
-    background 160ms ease,
-    color 160ms ease,
-    border-color 160ms ease;
+    background var(--site-transition-speed) ease,
+    color var(--site-transition-speed) ease,
+    border-color var(--site-transition-speed) ease;
 }
 
 .vibe-model-select__button:hover:not(:disabled),

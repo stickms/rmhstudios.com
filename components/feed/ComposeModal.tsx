@@ -318,7 +318,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  {menuOpen && (
  <div
  ref={menuPopRef}
- className="absolute top-full right-0 mt-1 w-40 glass-fill py-1 z-30"
+ className="absolute top-full right-0 mt-1 w-40 glass-overlay py-1 z-50"
  >
  <button
  onClick={() => {

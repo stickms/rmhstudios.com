@@ -167,8 +167,14 @@ const TIER_CLASSES = {
   site: {
     trigger:
       'rounded-[var(--site-control-radius)] border border-site-border bg-site-surface text-site-text shadow-site-sm hover:border-site-text/40 font-mono text-xs font-bold uppercase tracking-wider focus-visible:border-site-accent focus-visible:ring-2 focus-visible:ring-site-accent',
-    content: 'glass-overlay rounded-[var(--site-control-radius)] text-site-text',
-    item: 'rounded-[calc(var(--site-control-radius)*0.75)] font-mono text-xs font-bold uppercase tracking-wider text-site-text data-[highlighted]:bg-site-surface-hover data-[state=checked]:text-site-accent',
+    // `--site-radius`, NOT `--site-control-radius`. The trigger is a control and
+    // takes the pill; the POPUP is a panel — a stack of rows — and a 9999px
+    // radius on it does not read as "very rounded", it reads as a lozenge, with
+    // the first and last rows sliced by the curve and a bulge of empty material
+    // at each end. Same mistake one level down: the items were a pill inside a
+    // pill. Panel takes the panel radius, rows take the small one.
+    content: 'glass-overlay rounded-[var(--site-radius)] text-site-text',
+    item: 'rounded-[var(--site-radius-sm)] font-mono text-xs font-bold uppercase tracking-wider text-site-text data-[highlighted]:bg-site-surface-hover data-[state=checked]:text-site-accent',
     label: 'text-site-text-dim',
     scrollButton: 'text-site-text-dim',
     chevron: 'text-site-text-dim',
