@@ -286,7 +286,7 @@ function ModeMenu({ discord, onSelect }: { discord: DiscordContext; onSelect: (m
 
 // ─── Shared Grid Renderer ────────────────────────────────────────────
 
-const cellBase = 'rounded-xl transition-all duration-150 touch-manipulation select-none';
+const cellBase = 'rounded-xl transition duration-150 touch-manipulation select-none';
 const cellOn = 'bg-amber-400 text-amber-950 shadow-lg shadow-amber-400/30';
 const cellOff = 'bg-[#1e1f22] border border-[#3f4147]';
 

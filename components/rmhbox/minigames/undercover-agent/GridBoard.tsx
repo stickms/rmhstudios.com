@@ -137,7 +137,7 @@ export default function GridBoard({ grid, canGuess, isSpymaster, highlightCounts
             whileTap={clickable ? { scale: 0.95 } : undefined}
             className={`
               relative flex items-center justify-center rounded-lg border-2 box-border px-1 py-3 font-semibold
-              transition-all duration-200 sm:py-4
+              transition duration-200 sm:py-4
               ${getWordSizeClass(tile.word)}
               ${
                 isRevealed

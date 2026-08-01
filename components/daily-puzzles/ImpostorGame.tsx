@@ -262,7 +262,7 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
                         transition={{ delay: i * 0.06 }}
                         onClick={() => toggleStatement(i)}
                         disabled={completed || confirmedReal.has(i) || foundFakes.includes(puzzle.statements[i].text)}
-                        className={`relative w-full text-left p-4 rounded-xl border transition-all ${getCardClasses(i)}`}
+                        className={`relative w-full text-left p-4 rounded-xl border transition-colors ${getCardClasses(i)}`}
                     >
                         <div className="flex items-start gap-3">
                             <span className="text-site-text-muted text-xs font-mono mt-0.5 shrink-0">

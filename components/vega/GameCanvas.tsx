@@ -142,7 +142,7 @@ export default function GameCanvas() {
       {/* Upgrade Menu - Smart Positioning (Desktop) */}
       {selectedEntity && (
         <div 
-            className={`hidden md:block absolute top-1/2 -translate-y-1/2 bg-slate-900/90 backdrop-blur-md p-4 rounded-xl border border-blue-500/30 w-64 z-30 shadow-2xl transition-all
+            className={`hidden md:block absolute top-1/2 -translate-y-1/2 bg-slate-900/90 backdrop-blur-md p-4 rounded-xl border border-blue-500/30 w-64 z-30 shadow-2xl transition
                 ${selectedEntity.x > 15 ? 'left-4' : 'right-4'} 
             `}
         >

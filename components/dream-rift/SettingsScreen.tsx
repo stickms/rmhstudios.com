@@ -142,7 +142,10 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
                 className="relative h-6 w-11 rounded-full transition"
                 style={{ background: checked ? 'var(--dr-crimson)' : 'rgba(231,205,140,0.18)' }}
             >
-                <span className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all" style={{ left: checked ? '22px' : '2px' }} />
+                <span
+                    className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white transition-transform"
+                    style={{ transform: `translateX(${checked ? 20 : 0}px)` }}
+                />
             </button>
         </label>
     );
