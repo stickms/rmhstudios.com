@@ -305,7 +305,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  {isOpen && position && (
  <div
  ref={popPanelRef}
- className="absolute z-50 w-64 max-h-64 overflow-y-auto bg-site-surface border border-site-border rounded-site shadow-site-sm py-1"
+ className="absolute z-50 w-64 max-h-64 overflow-y-auto glass-fill py-1"
  style={{ top: position.top, left: Math.max(0, position.left) }}
  // Keep focus in the textarea when clicking a row.
  onMouseDown={(e) => e.preventDefault()}

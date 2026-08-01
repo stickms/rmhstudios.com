@@ -1308,6 +1308,17 @@ html.perf-lite .radial-hub__veil {
   inherits: true;
   initial-value: transparent;
 }
+/* The ripple crest — the light on a wave crossing the glass. Registered as a
+   `<color>` for the same reason the cage ink is: the canvas needs a RESOLVED
+   colour, and an unregistered custom property hands it the literal
+   `color-mix(in srgb, …)` text, which `strokeStyle` silently ignores (leaving
+   the crest black). LiquidGlobe reads it once per size change and mixes its own
+   fallback from the element's `color` if the engine does not register it. */
+@property --cage-ripple {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
 .radial-globe__cage {
   position: absolute;
   inset: 0;
@@ -1326,6 +1337,11 @@ html.perf-lite .radial-hub__veil {
   /* The equator and the prime meridian are the globe's horizon: drawn firmer, so
      there is always something to read the current tilt and spin against. */
   --cage-major: color-mix(in srgb, var(--site-text) 34%, transparent);
+  /* Brighter than anything else on the sphere — a specular, not structure — but
+     it is also the only thing here that moves on its own, so it stops well
+     short of competing with the reticle for the eye. Its opacity is faded down
+     over the wave's life by the renderer; this is its full strength. */
+  --cage-ripple: color-mix(in srgb, var(--site-text) 50%, transparent);
   --cage-width: var(--site-border-width, 1px);
 }
 

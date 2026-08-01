@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   DECELERATION,
+  RIPPLE,
   RUBBER_BAND_C,
   gestureConfidence,
   smoothstep,
@@ -9,12 +10,16 @@ import {
   projectDistance,
   projectPosition,
   resolveDetent,
+  rippleFront,
+  rippleWave,
   rubberBand,
   rubberBandClamp,
   shouldDismiss,
   spring,
   springSettled,
   springStep,
+  unprojectSphere,
+  unrotateSphere,
   type SpringState,
 } from '../fluid';
 
@@ -355,5 +360,197 @@ describe('shouldDismiss', () => {
 
   it('keeps a surface thrown decisively back, however far it had travelled', () => {
     expect(shouldDismiss({ position: 400, velocity: -900, threshold: 200 })).toBe(false);
+  });
+});
+
+describe('rippleWave', () => {
+  /** Where the crest is at `age`, so a test can sample exactly on it. */
+  const crest = (age: number) => RIPPLE.speed * age;
+
+  it('peaks on the crest and travels outward over time', () => {
+    const early = rippleWave({ age: 0.15, distance: crest(0.15) });
+    const later = rippleWave({ age: 0.35, distance: crest(0.35) });
+    expect(early).toBeCloseTo(RIPPLE.amplitude * (1 - 0.15 / RIPPLE.life) ** 2, 6);
+    expect(later).toBeGreaterThan(0);
+    // Same point on the surface, two moments: the crest has moved past it.
+    const fixed = crest(0.15);
+    expect(rippleWave({ age: 0.15, distance: fixed })).toBeGreaterThan(
+      rippleWave({ age: 0.35, distance: fixed }),
+    );
+  });
+
+  it('dips below rest on both flanks — a ripple, not a shockwave', () => {
+    const age = 0.2;
+    const behind = rippleWave({ age, distance: crest(age) - RIPPLE.width * Math.SQRT2 });
+    const ahead = rippleWave({ age, distance: crest(age) + RIPPLE.width * Math.SQRT2 });
+    expect(behind).toBeLessThan(0);
+    expect(ahead).toBeLessThan(0);
+    // The troughs are shallower than the crest, as the wavelet's shape requires.
+    expect(Math.abs(behind)).toBeLessThan(rippleWave({ age, distance: crest(age) }));
+  });
+
+  it('fades to nothing and stays there', () => {
+    const peakAt = (age: number) => rippleWave({ age, distance: crest(age) });
+    expect(peakAt(0.1)).toBeGreaterThan(peakAt(0.6));
+    expect(peakAt(0.6)).toBeGreaterThan(peakAt(1.0));
+    expect(peakAt(RIPPLE.life)).toBe(0);
+    expect(peakAt(RIPPLE.life + 5)).toBe(0);
+    expect(rippleWave({ age: -0.2, distance: 0 })).toBe(0);
+  });
+
+  it('leaves the far side of the surface undisturbed until the wave arrives', () => {
+    // The antipode is π away; at 0.05s the crest has gone ~0.17rad.
+    expect(rippleWave({ age: 0.05, distance: Math.PI })).toBe(0);
+    // …and by the time the crest is there, it is not.
+    expect(Math.abs(rippleWave({ age: Math.PI / RIPPLE.speed, distance: Math.PI }))).toBeGreaterThan(
+      0,
+    );
+  });
+
+  it('honours an overridden shape', () => {
+    const twiceAsFast = { speed: RIPPLE.speed * 2 };
+    expect(rippleWave({ age: 0.1, distance: crest(0.2) }, twiceAsFast)).toBeCloseTo(
+      rippleWave({ age: 0.2, distance: crest(0.2) }) *
+        // Same point on the packet, but the envelope is read at half the age.
+        ((1 - 0.1 / RIPPLE.life) / (1 - 0.2 / RIPPLE.life)) ** 2,
+      6,
+    );
+  });
+});
+
+describe('rippleFront', () => {
+  it('advances linearly and never runs backwards', () => {
+    expect(rippleFront(0)).toBe(0);
+    expect(rippleFront(0.5)).toBeCloseTo(RIPPLE.speed * 0.5, 10);
+    expect(rippleFront(-1)).toBe(0);
+  });
+});
+
+describe('unprojectSphere', () => {
+  const P = 3.1; // the globe's perspective
+
+  it('puts the centre of the disc on the near pole', () => {
+    const hit = unprojectSphere(0, 0, P);
+    expect(hit).not.toBeNull();
+    expect(hit!.x).toBeCloseTo(0, 10);
+    expect(hit!.y).toBeCloseTo(0, 10);
+    expect(hit!.z).toBeCloseTo(1, 10);
+  });
+
+  it('always lands on the unit sphere', () => {
+    for (const [x, y] of [
+      [0.3, 0],
+      [0, -0.6],
+      [0.5, 0.5],
+      [-0.72, 0.12],
+      [0.99, 0],
+    ] as const) {
+      const hit = unprojectSphere(x, y, P);
+      expect(hit).not.toBeNull();
+      expect(Math.hypot(hit!.x, hit!.y, hit!.z)).toBeCloseTo(1, 6);
+    }
+  });
+
+  it('round-trips through the projection it inverts', () => {
+    // Forward: a point at depth z is drawn at (x, y) · k(z).
+    for (const [sx, sy] of [
+      [0.25, -0.4],
+      [-0.6, 0.15],
+      [0.05, 0.9],
+    ] as const) {
+      const hit = unprojectSphere(sx, sy, P)!;
+      const k = P / (P - hit.z * 0.5);
+      expect(hit.x * k).toBeCloseTo(sx, 6);
+      expect(hit.y * k).toBeCloseTo(sy, 6);
+    }
+  });
+
+  it('chooses the NEAR face, so a poke never lands behind the sphere', () => {
+    expect(unprojectSphere(0.4, 0.4, P)!.z).toBeGreaterThan(0);
+  });
+
+  it('reports a miss off the disc', () => {
+    expect(unprojectSphere(1.4, 0, P)).toBeNull();
+    expect(unprojectSphere(0.8, 0.8, P)).toBeNull();
+  });
+});
+
+describe('unrotateSphere', () => {
+  /** The forward rotation it inverts: yaw about Y, then pitch about X. */
+  const rotate = (v: { x: number; y: number; z: number }, yaw: number, pitch: number) => {
+    const d = Math.PI / 180;
+    const cy = Math.cos(yaw * d);
+    const sy = Math.sin(yaw * d);
+    const cp = Math.cos(pitch * d);
+    const sp = Math.sin(pitch * d);
+    const x1 = v.x * cy + v.z * sy;
+    const z1 = -v.x * sy + v.z * cy;
+    return { x: x1, y: v.y * cp - z1 * sp, z: v.y * sp + z1 * cp };
+  };
+
+  it('is the exact inverse of the renderer rotation', () => {
+    const body = { x: 0.4, y: -0.5, z: Math.sqrt(1 - 0.16 - 0.25) };
+    for (const [yaw, pitch] of [
+      [0, 0],
+      [37, -12],
+      [-214, 48],
+      [999, -61],
+    ] as const) {
+      const back = unrotateSphere(rotate(body, yaw, pitch), yaw, pitch);
+      expect(back.x).toBeCloseTo(body.x, 10);
+      expect(back.y).toBeCloseTo(body.y, 10);
+      expect(back.z).toBeCloseTo(body.z, 10);
+    }
+  });
+
+  it('leaves a point alone when nothing is rotated', () => {
+    const v = { x: 0.1, y: 0.2, z: 0.3 };
+    expect(unrotateSphere(v, 0, 0)).toEqual(v);
+  });
+
+  it('preserves length, so an impact stays on the surface', () => {
+    const hit = unprojectSphere(0.55, -0.3, 3.1)!;
+    const body = unrotateSphere(hit, 128, -33);
+    expect(Math.hypot(body.x, body.y, body.z)).toBeCloseTo(1, 12);
+  });
+});
+
+describe('a poke lands where it was aimed, whatever the globe is doing', () => {
+  const P = 3.1;
+
+  /**
+   * The whole impact path, end to end: a press at a point on the drawn disc,
+   * carried back through the projection and the rotation into the sphere's own
+   * coordinates — then forward again, to check it comes out where it went in.
+   * This is what stops a ripple from appearing somewhere other than under the
+   * finger the moment the globe is turned away from its home orientation.
+   */
+  it('round-trips a screen point through body space and back', () => {
+    const d = Math.PI / 180;
+    for (const [sx, sy, yaw, pitch] of [
+      [0, 0, 0, 0],
+      [0.3, -0.45, 61, -18],
+      [-0.7, 0.2, -137, 42],
+      [0.12, 0.86, 305, 9],
+    ] as const) {
+      const hit = unprojectSphere(sx, sy, P)!;
+      const body = unrotateSphere(hit, yaw, pitch);
+
+      // Forward: rotate, then project — exactly what LiquidGlobe's frame loop
+      // does to every point it draws.
+      const cy = Math.cos(yaw * d);
+      const sYaw = Math.sin(yaw * d);
+      const cp = Math.cos(pitch * d);
+      const sp = Math.sin(pitch * d);
+      const x1 = body.x * cy + body.z * sYaw;
+      const z1 = -body.x * sYaw + body.z * cy;
+      const y2 = body.y * cp - z1 * sp;
+      const z2 = body.y * sp + z1 * cp;
+      const k = P / (P - z2 * 0.5);
+
+      expect(x1 * k).toBeCloseTo(sx, 6);
+      expect(y2 * k).toBeCloseTo(sy, 6);
+      expect(z2).toBeGreaterThan(0); // still on the face you can see
+    }
   });
 });

@@ -27,8 +27,8 @@ export function EmptyState({ icon: Icon, title, description, action, className }
  >
  {Icon ? (
  // Etched glass medallion — the icon sits "sandblasted into" a recessed
- // bg-site-surface border border-site-border shadow-site-sm disc (§7.2).
- <div className="bg-site-surface border border-site-border shadow-site-sm flex h-12 w-12 items-center justify-center rounded-full">
+ // L1 .glass-fill disc (§7.2).
+ <div className="glass-fill flex h-12 w-12 items-center justify-center rounded-full">
  <Icon className="h-5 w-5 text-site-text-dim" aria-hidden />
  </div>
  ) : null}

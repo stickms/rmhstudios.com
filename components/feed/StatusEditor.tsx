@@ -156,7 +156,7 @@ export function StatusEditor({ initial }: { initial: UserStatus | null }) {
  setEmoji(p.emoji);
  setText(t(p.key, { defaultValue: p.text }));
  }}
- className="bg-site-surface border border-site-border rounded-site shadow-site-sm inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm text-site-text hover:border-site-text/40"
+ className="glass-fill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm text-site-text hover:border-site-text/40"
  >
  <span aria-hidden>{p.emoji}</span>
  {t(p.key, { defaultValue: p.text })}
@@ -179,7 +179,7 @@ export function StatusEditor({ initial }: { initial: UserStatus | null }) {
 'rounded-full px-3 py-1.5 text-sm transition-colors',
  expiresIn === o.value
  ?'bg-site-accent text-site-accent-fg'
- :'bg-site-surface border border-site-border rounded-site shadow-site-sm text-site-text-muted hover:border-site-text/40',
+ :'glass-fill text-site-text-muted hover:border-site-text/40',
  )}
  >
  {t(o.key, { defaultValue: o.label })}

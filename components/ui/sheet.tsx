@@ -14,7 +14,7 @@ import './sheet.css';
  * `docs/plans/2026-07-20-parity-qol-customization-design.md`. It is a Radix
  * Dialog (focus-trapped, Escape/backdrop close, portalled) that renders as a
  * **bottom sheet on mobile** (< 768px) and a **centered dialog on desktop**,
- * both on the L4 `.bg-site-surface border border-site-border shadow-site` material over a `.bg-black/50` backdrop — the
+ * both on the L4 `.glass-overlay` material over a `.glass-scrim` backdrop — the
  * exact glass Dialog uses. On mobile it also gets a drag handle and
  * swipe-down-to-dismiss, and pads the iOS home-indicator safe area.
  *
@@ -40,7 +40,7 @@ const SheetOverlay = React.forwardRef<
  <DialogPrimitive.Overlay
  ref={ref}
  data-slot="sheet-overlay"
- className={cn('fixed inset-0 z-50 bg-black/50', className)}
+ className={cn('glass-scrim fixed inset-0 z-50', className)}
  {...props}
  />
 ));
@@ -87,8 +87,9 @@ const SheetContent = React.forwardRef<
  data-mobile-fullscreen={mobileFullscreen || undefined}
  style={dragY ? { transform: `translateY(${dragY}px)`, transition: 'none' } : undefined}
  className={cn(
- // L4 bg-site-surface border border-site-border shadow-site for both layouts.
- 'bg-site-surface border border-site-border shadow-site fixed z-50 flex flex-col text-site-text',
+ // L4 .glass-overlay for both layouts — it owns the tint, the blur, the rim
+ // glint and the (transparent) border, exactly as it does for Dialog.
+ 'glass-overlay fixed z-50 flex flex-col text-site-text',
  // Mobile: a horizontally-centered floating bottom sheet by default;
  // complex editors can opt into the full visual viewport instead.
  mobileFullscreen

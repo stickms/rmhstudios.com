@@ -7,7 +7,7 @@
  *
  * Two-act structure (the §5.47 hard constraint: a `` element must
  * NEVER sit inside a `filter: url(#glass-goo)` subtree — it re-rasterizes and
- * breaks backdrop sampling; `.bg-site-surface border border-site-border shadow-site` panels blur their backdrop, so the
+ * breaks backdrop sampling; `.glass-overlay` panels blur their backdrop, so the
  * panel itself can never be goo-filtered):
  *
  * 1. Act 1 — the bud (goo, ~200ms): a portal-rendered, fixed, goo-filtered
@@ -18,7 +18,7 @@
  * so the panel visibly buds out of the trigger with a liquid neck that pinches
  * off as separation completes.
  * 2. Act 2 — the settle (glass, overlapping last frames): the REAL
- * `.bg-site-surface border border-site-border shadow-site` panel crossfades in on top and shares the bud's progress:
+ * `.glass-overlay` panel crossfades in on top and shares the bud's progress:
  * it stretches away from the trigger, overshoots, squashes, and rebounds into
  * its final rect while the blob layer fades out. Content rides the real panel
  * only — never goo.
@@ -28,7 +28,7 @@
  * reabsorb runs against the LAST-KNOWN panel rect (cached on open).
  *
  * Contract: `useLiquidPop({ triggerRef, panelRef, open })` → `{ underlay }`. The
- * consumer keeps its existing open state, trigger button, and `.bg-site-surface border border-site-border shadow-site`
+ * consumer keeps its existing open state, trigger button, and `.glass-overlay`
  * panel; it only wires the two refs and renders `{underlay}` anywhere (it is a
  * body portal, position-independent). The hook drives the panel's opacity via its
  * ref — no per-adopter opacity plumbing.
@@ -105,7 +105,7 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 export interface LiquidPopOptions {
  /** The trigger button the panel buds out of. */
  triggerRef: RefObject<HTMLElement | null>;
- /** The floating `.bg-site-surface border border-site-border shadow-site` panel (mounted while `open`). */
+ /** The floating `.glass-overlay` panel (mounted while `open`). */
  panelRef: RefObject<HTMLElement | null>;
  /** The consumer's open state. */
  open: boolean;

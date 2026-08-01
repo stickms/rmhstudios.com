@@ -402,3 +402,168 @@ export function shouldDismiss({
   if (velocity >= escapeVelocity) return true;
   return projectPosition(position, velocity, rate) >= threshold;
 }
+
+/* ── Ripples ──────────────────────────────────────────────────────────────── */
+
+/**
+ * Default shape of a ripple, in the units {@link rippleWave} works in: radians
+ * of arc for the geometry, seconds for time, and a peak displacement expressed
+ * as a fraction of the surface's radius.
+ *
+ * `speed` is chosen against `life`: at 3.4 rad/s a crest crosses a hemisphere
+ * (π/2) in ~0.46s and reaches the antipode (π) in ~0.92s, so it has just about
+ * run out of sphere by the time the envelope has faded it out. A wave that dies
+ * while still visibly mid-surface reads as a glitch; one that is still going
+ * when it reconverges at the far pole reads as a bug.
+ */
+export interface RippleShape {
+  /** How fast the crest travels outward, in radians of arc per second. */
+  speed: number;
+  /** Half-width of the wave packet, in radians. ~0.34 ≈ a 19° crest. */
+  width: number;
+  /** Peak outward displacement, as a fraction of the surface's radius. */
+  amplitude: number;
+  /** Total life, in seconds. Past this a ripple contributes exactly nothing. */
+  life: number;
+}
+
+export const RIPPLE: RippleShape = {
+  speed: 3.4,
+  width: 0.34,
+  amplitude: 0.055,
+  life: 1.15,
+};
+
+/** One live ripple: where it was struck, and when. */
+export interface RippleSource {
+  /** Age of the ripple in seconds. Negative or past `life` contributes 0. */
+  age: number;
+  /** Arc distance from the impact point to the sample, in radians (0…π). */
+  distance: number;
+}
+
+/**
+ * Displacement of a point on a rippling surface, as a fraction of its radius.
+ *
+ * The packet is a **Ricker wavelet** — the negated second derivative of a
+ * Gaussian, `(1 − q²)·e^(−q²/2)` where `q` is how far the sample sits ahead of
+ * or behind the crest, in packet widths. That shape is chosen rather than a
+ * plain Gaussian bump because a bump is a shockwave: one lump of surface pushed
+ * outward and nothing else. The wavelet peaks at +1 on the crest and dips to
+ * ≈−0.45 on either side of it, so the surface it passes over rises, falls back
+ * *below* where it started, and settles — which is what water does, and what the
+ * eye recognises as a ripple rather than a pulse.
+ *
+ * The envelope is quadratic (`(1 − age/life)²`) rather than linear so the wave
+ * loses its energy fastest at the start, like a real one, and lands on exactly
+ * zero at the end of its life instead of being cut off mid-amplitude.
+ *
+ * Pure, and unaware of spheres: the caller supplies the arc distance, so the
+ * same function serves a ripple travelling over a ball, along a strip, or across
+ * a flat pane.
+ *
+ * @returns 0 outside the ripple's life, so a caller can sum sources freely.
+ */
+export function rippleWave(
+  { age, distance }: RippleSource,
+  {
+    speed = RIPPLE.speed,
+    width = RIPPLE.width,
+    amplitude = RIPPLE.amplitude,
+    life = RIPPLE.life,
+  }: Partial<RippleShape> = {},
+): number {
+  if (!(age >= 0) || age >= life || !Number.isFinite(distance)) return 0;
+  const q = (distance - speed * age) / width;
+  // Beyond ~4 packet widths the wavelet is under 0.1% of its peak; skipping the
+  // exponential there is what keeps a per-sample call cheap in a frame loop,
+  // where the overwhelming majority of samples are nowhere near the crest.
+  if (q > 4 || q < -4) return 0;
+  const decay = 1 - age / life;
+  return amplitude * (1 - q * q) * Math.exp(-0.5 * q * q) * decay * decay;
+}
+
+/** How far a ripple's crest has travelled, in radians of arc. */
+export function rippleFront(age: number, speed: number = RIPPLE.speed): number {
+  return Math.max(0, age) * speed;
+}
+
+/**
+ * Invert a perspective projection of the unit sphere: given a point on the
+ * projected disc, which point on the sphere's NEAR face is under it?
+ *
+ * A point at depth `z` is drawn at `(x, y) · k(z)` where `k(z) = p / (p − z/2)`
+ * is the foreshortening the renderer applies — so recovering `(x, y, z)` from a
+ * screen position means solving for a `z` that is consistent with the `k` used
+ * to place it. There is no closed form worth writing, but the map is a strong
+ * contraction (`k` only ranges over ~1…1.19 for a perspective of 3.1), so a
+ * handful of fixed-point iterations converge to well under a pixel — cheaper and
+ * shorter than the quartic.
+ *
+ * Coordinates are in radii: `(0, 0)` is the centre of the disc and `1` is its
+ * edge, x right, y **down** (screen-handed, matching CSS 3D). The returned
+ * vector is a unit vector with `z` toward the viewer.
+ *
+ * @returns `null` when the point is off the sphere — the caller decides whether
+ *   that is a miss or should clamp to the limb.
+ */
+export function unprojectSphere(
+  x: number,
+  y: number,
+  perspective: number,
+  iterations = 8,
+): { x: number; y: number; z: number } | null {
+  const r2 = x * x + y * y;
+  // The drawn limb sits a little past r = 1 (perspective lets you see slightly
+  // over the horizon), but the sliver between the two is ~1% of the radius and
+  // treating it as a miss avoids a sqrt of a negative for no visible cost.
+  if (!(r2 <= 1) || !Number.isFinite(perspective)) return null;
+  let z = Math.sqrt(1 - r2);
+  let px = x;
+  let py = y;
+  for (let i = 0; i < iterations; i++) {
+    const k = perspective / (perspective - z * 0.5);
+    px = x / k;
+    py = y / k;
+    const planar = px * px + py * py;
+    if (planar >= 1) return null;
+    z = Math.sqrt(1 - planar);
+  }
+  // Returned from the SAME iterate, so the triple is a unit vector by
+  // construction however far the fixed point has converged. Taking `z` from one
+  // pass and re-deriving `x`/`y` from the next leaves the two disagreeing by the
+  // step's remaining error, which is nothing on screen but is enough to bias the
+  // `acos` a caller measures arc distance with.
+  return { x: px, y: py, z };
+}
+
+/**
+ * Turn a point in a rotated sphere's VIEW space back into the sphere's own body
+ * space — the inverse of "yaw about Y, then pitch about X", the rotation order a
+ * renderer applies to get from the model to the screen.
+ *
+ * This is what makes a mark on a spinning ball stay a mark on the ball. A
+ * gesture arrives in view space (where the viewer is looking), but everything
+ * the renderer samples — a point on a wireframe ring, the direction of a pin —
+ * is defined in body space, so an impact has to be carried back across the
+ * rotation once, at the moment it lands, rather than the whole surface being
+ * carried forward across it on every frame.
+ *
+ * Angles in degrees, to match the rotations they undo. Screen-handed like
+ * {@link unprojectSphere}: x right, y down, z toward the viewer.
+ */
+export function unrotateSphere(
+  v: { x: number; y: number; z: number },
+  yawDeg: number,
+  pitchDeg: number,
+): { x: number; y: number; z: number } {
+  const d = Math.PI / 180;
+  const cy = Math.cos(yawDeg * d);
+  const sy = Math.sin(yawDeg * d);
+  const cp = Math.cos(pitchDeg * d);
+  const sp = Math.sin(pitchDeg * d);
+  // Undo the pitch first (it was applied last), then the yaw.
+  const y1 = v.y * cp + v.z * sp;
+  const z1 = -v.y * sp + v.z * cp;
+  return { x: v.x * cy - z1 * sy, y: y1, z: v.x * sy + z1 * cy };
+}

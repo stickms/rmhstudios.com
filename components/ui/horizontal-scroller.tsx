@@ -107,7 +107,7 @@ export function HorizontalScroller({
  type="button"
  onClick={() => scrollByPage(-1)}
  aria-label={t('scroll-back', { defaultValue: 'Scroll left' })}
- className="bg-site-surface border border-site-border shadow-site absolute left-2 top-1/2 z-2 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full text-site-text opacity-0 transition-opacity hover:text-site-accent focus-visible:opacity-100 group-hover/scroll:opacity-100 sm:flex"
+ className="glass-fill shadow-site absolute left-2 top-1/2 z-2 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full text-site-text opacity-0 transition-opacity hover:text-site-accent focus-visible:opacity-100 group-hover/scroll:opacity-100 sm:flex"
  >
  <ChevronLeft className="size-4" aria-hidden />
  </button>
@@ -117,7 +117,7 @@ export function HorizontalScroller({
  type="button"
  onClick={() => scrollByPage(1)}
  aria-label={t('scroll-forward', { defaultValue: 'Scroll right' })}
- className="bg-site-surface border border-site-border shadow-site absolute right-2 top-1/2 z-2 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full text-site-text opacity-0 transition-opacity hover:text-site-accent focus-visible:opacity-100 group-hover/scroll:opacity-100 sm:flex"
+ className="glass-fill shadow-site absolute right-2 top-1/2 z-2 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full text-site-text opacity-0 transition-opacity hover:text-site-accent focus-visible:opacity-100 group-hover/scroll:opacity-100 sm:flex"
  >
  <ChevronRight className="size-4" aria-hidden />
  </button>

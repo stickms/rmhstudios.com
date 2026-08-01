@@ -588,13 +588,16 @@
   color: var(--site-accent);
 }
 
+/* The two most-seen surfaces on the whole site, and the two that were still
+   hand-rolling the material as a flat tint + hairline: the composer is a
+   singular L2 slab (§8.3) and a post is the repeated L1 fill. Both carry their
+   TIER CLASS in the markup now (`.glass-pane` / `.glass-fill`), so the border,
+   radius, tint, rim and — the part that was missing — the glint all come from
+   the one place that knows how to degrade them. What is left here is the only
+   thing the tier does not own: the aurora gutter these float in. */
 .social-composer,
 .social-post {
   margin-inline: 0.75rem;
-  border: 1px solid var(--site-border);
-  border-radius: var(--site-radius);
-  background: var(--site-surface);
-  box-shadow: var(--site-shadow-sm);
 }
 
 .social-composer {
@@ -610,10 +613,19 @@
 
 .social-post {
   overflow: hidden;
+  /* `.glass-fill.glass-interactive` zeroes the border so the lit edge IS the
+     border (§4.35). That reads right on a card floating by itself; a TIMELINE of
+     them needs a resting hairline, or consecutive posts fuse into one grey
+     column and the reading rhythm goes. So the rest state keeps the token
+     border and the glint rides inside it. */
+  border-color: var(--site-border);
   transition:
     border-color 160ms ease,
     background-color 160ms ease,
-    transform 140ms var(--ease-out);
+    /* `scale`, not `transform`: the press cue is the independent property now
+       (`.glass-interactive:active`, globals.css) so it composes with whatever
+       transform the card carries instead of erasing it. */ scale 140ms
+      var(--ease-out);
 }
 
 .social-feed-row {
@@ -637,16 +649,22 @@
 
   .social-post:hover {
     border-color: var(--site-border-bright);
-    background: var(--site-surface-hover);
+    /* background-COLOR, not the shorthand: a post is `.glass-fill` now, and the
+       shorthand would drop its noise + glint layers for as long as the pointer
+       was on it — the one moment the surface should look MORE like glass. */
+    background-color: var(--site-surface-hover);
   }
 }
 
+/* `.social-post` is deliberately NOT in this list: it is `.glass-interactive`
+   now, and that rule presses it with the independent `scale` property. Leaving
+   it here would apply BOTH, and a `transform: scale()` multiplied by a `scale`
+   is a 0.94 double-squish (globals.css §glass-interactive:active). */
 .site-nav__utility:active,
 .site-nav__profile:active,
 .site-nav__tab:active,
 .mobile-dock__link:active,
-.feed-tabs button:active,
-.social-post:active {
+.feed-tabs button:active {
   transform: scale(0.97);
 }
 
@@ -883,6 +901,10 @@
   .feed-tabs button,
   .social-post {
     transform: none !important;
+    /* The post's press moved from `transform` to the independent `scale`
+       property when it became `.glass-interactive`; without this line the
+       reduced-motion opt-out silently stopped covering it. */
+    scale: none !important;
     transition-duration: 1ms;
   }
 }

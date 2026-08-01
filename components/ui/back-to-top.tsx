@@ -109,9 +109,9 @@ export function BackToTop({ threshold = 600 }: { threshold?: number }) {
               'floating-fab-lane fixed z-40',
               'flex size-11 items-center justify-center rounded-full',
               // Floating L4 glass disc; the always-on optics-ring glint comes free
-              // from .bg-site-surface border border-site-border shadow-site. thins the ring (6px) so it fits
-              // this small disc instead of the 12px pane default.
-              'bg-site-surface border border-site-border shadow-site text-site-text',
+              // from .glass-overlay, and .glass-bevel-sm thins the ring (6px) so it
+              // fits this small disc instead of the 12px pane default.
+              'glass-overlay glass-bevel-sm text-site-text',
               'hover:border-site-accent',
               'active:scale-95',
             )}

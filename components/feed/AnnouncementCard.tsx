@@ -47,7 +47,7 @@ export function AnnouncementCard({ item, variant }: AnnouncementCardProps) {
  const typeLabel = getTypeLabel(item.type);
 
  return (
- <article className="social-post social-announcement px-4 py-3">
+ <article className="glass-fill social-post social-announcement px-4 py-3">
  {/* System badge */}
  <div className="flex items-center gap-1.5 text-xs text-site-text-dim mb-2 pl-[52px]">
  <TypeIcon type={item.type} className="w-3.5 h-3.5"/>

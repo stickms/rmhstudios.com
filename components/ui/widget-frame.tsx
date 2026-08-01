@@ -14,7 +14,7 @@ import { AsyncReveal } from '@/components/motion';
  * the profile showcase modules (§12) and the home dashboard widgets (§15) in
  * `docs/plans/2026-07-20-parity-qol-customization-design.md`.
  *
- * It is a single L1 `.bg-site-surface border border-site-border` `Card` (cheap, unlimited per page — these
+ * It is a single L1 `.glass-fill` `Card` (cheap, unlimited per page — these
  * blocks repeat) with a consistent header, loading skeleton, and
  * `EmptyState`-backed zero state, so every modular block across the site shares
  * one glass material, one empty state, and one skeleton instead of each feature

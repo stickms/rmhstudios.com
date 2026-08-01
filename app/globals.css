@@ -147,6 +147,12 @@
   --glass-bevel: 12px;
   --glass-glint-size: 320px;
   --glass-glint-opacity: 0.4;
+  /* Resting strength of the glint on the L1 tier, as a multiplier of
+     --glass-glint-opacity. L1 is the repeated tier — dozens of surfaces answer
+     the light at once — so it sits well under the 1.0 an always-on pane or a
+     hovered fill uses: enough that a card reads as a lit sheet, not so much that
+     a list of them turns into a field of hotspots. */
+  --glass-glint-rest: 0.45;
   --site-glass-glint: var(--site-glass-rim);
   --site-aurora-far-1: rgba(17, 17, 17, 0.02);
   --site-aurora-far-2: rgba(17, 17, 17, 0.03);
@@ -703,6 +709,14 @@
   --site-warning-fg: #100b00;
   --site-glass-tint: rgba(150, 185, 255, 0.09);
   --site-glass-tint-strong: rgba(150, 185, 255, 0.15);
+  /* Nocturne declared the whole glass contract EXCEPT this one, so it fell
+     through to the light theme's `rgba(255, 255, 255, 0.9)` at :root — and
+     `.glass-inset` is `background: var(--site-glass-ink)`, which made every
+     recessed well on this theme a white slab carrying near-white text: every
+     Input, every Textarea, the Select trigger, the profile progress track. A
+     well is a hole in the sheet, so like the other dark themes it is a darkened
+     cut of this theme's own ground (#0a1424), not a lightened one. */
+  --site-glass-ink: rgba(4, 10, 22, 0.58);
   --site-glass-rim: rgba(200, 220, 255, 0.28);
   --site-glass-rim-soft: rgba(200, 220, 255, 0.1);
   --site-glass-light: rgba(180, 210, 255, 0.14);
@@ -1074,9 +1088,34 @@ html.app-route {
 @layer components {
   /* ── L1 · glass-fill ── repeated content (feed cards, rows, tiles). Tint + rim
      via shadow-site-sm. NO blur — cheap, unlimited per page; the canvas provides
-     the colour variance underneath so the tint reads as glass (§4.4). */
+     the colour variance underneath so the tint reads as glass (§4.4).
+
+     L1 ANSWERS THE LIGHT TOO. v2 §4 promised "one light, every surface answers
+     it", but only L2+ ever carried the glint layer — and L1 is the tier the site
+     is mostly MADE of, so on a typical page the great majority of the glass was
+     optically dead and the material read as flat paper with a hairline. Two
+     things were in the way, both fixed here:
+
+       • the tint was set with the `background` SHORTHAND, which resets
+         `background-image` — so L1 structurally could not carry a layer. It is
+         `background-color` now.
+       • the glint's strength is `--glass-glint-opacity × --glass-glint-hover`,
+         and the only rule that ever set the hover multiplier was the interactive
+         one, which rests it at 0. L1 rests at `--glass-glint-rest` instead, so
+         the specular is always present but AMBIENT — a quiet gradient of light
+         falling across the surface, well below the hover hotspot it rises to.
+
+     Both layers clip to padding-box, unlike L2+: L1 keeps its visible hairline
+     (the edge is what separates one repeated row from the next), and a border-box
+     layer under an opaque border is painted over anyway. Cost is two background
+     layers and no filter, so the tier is still unlimited per page. */
   .glass-fill {
-    background: var(--site-glass-tint);
+    --glass-glint-hover: var(--glass-glint-rest, 0.45);
+    background-color: var(--site-glass-tint);
+    background-image: var(--site-glass-noise), var(--glass-glint-layer);
+    background-clip: padding-box;
+    background-origin: padding-box;
+    background-attachment: scroll, var(--glass-glint-attach, scroll);
     box-shadow: var(--site-shadow-sm);
     border: var(--site-border-width) solid var(--site-border);
     border-radius: var(--site-radius);
@@ -1368,16 +1407,20 @@ html.app-route {
          ring is deleted — it now glints from its own background.
      Never add a third pseudo owner. */
 
-  /* Hover-gated glint for repeated interactive fills (cards, tiles): the same
-     border-box glint layer as the always-on surfaces, but --glass-glint-hover
-     multiplies its opacity from 0 (rest) to 1 (hover) so at most one fill lights
-     at a time. Transparent border → on hover the lit edge IS the border (§4.35). */
+  /* Hover-raised glint for repeated interactive fills (cards, tiles): the same
+     border-box glint layer as the always-on surfaces, with --glass-glint-hover
+     multiplying its opacity from the L1 ambient rest up to 1 (hover), so the
+     hovered fill is still unmistakably the one that is lit. It used to rest at
+     0, which — combined with the transparent border below — left an interactive
+     card with no edge and no light at all until the pointer arrived; on touch,
+     where there is no hover, that was its permanent state. Transparent border →
+     the lit edge IS the border (§4.35), now at rest as well as on hover. */
   .glass-fill.glass-interactive {
-    --glass-glint-hover: 0;
-    background-image: var(--glass-glint-layer);
-    background-clip: border-box;
-    background-origin: border-box;
-    background-attachment: var(--glass-glint-attach, scroll);
+    --glass-glint-hover: var(--glass-glint-rest, 0.45);
+    background-image: var(--site-glass-noise), var(--glass-glint-layer);
+    background-clip: padding-box, border-box;
+    background-origin: padding-box, border-box;
+    background-attachment: scroll, var(--glass-glint-attach, scroll);
     border-color: transparent;
     transition:
       background-color var(--site-transition-speed),
@@ -1503,8 +1546,11 @@ html.app-route {
      the aside blur carrier. Keep the material translucent, but never so clear
      that page content competes with navigation, headers, cards, or menus. */
   @media (max-width: 767.98px) {
+    /* background-COLOR, never the shorthand: the shorthand would reset the
+       noise + glint layers L1 carries (see the .glass-fill note above) and
+       silently strip the material back to a flat tint on phones only. */
     .glass-fill {
-      background: color-mix(
+      background-color: color-mix(
         in srgb,
         var(--site-surface-opaque) clamp(24%, calc(34% * var(--glass-user-tint, 1)), 46%),
         var(--site-glass-tint)
