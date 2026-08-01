@@ -3296,6 +3296,128 @@ textarea,
    is not happening. The press layer sets it on the element it is actually
    animating and clears it on settle, which is what the property is for. */
 
+/* ── Selection: a gesture is not a text selection ──────────────────────────
+   The rule above tells the browser a tap is only ever a tap. This one tells it
+   a PRESS is only ever a press — the other half of the same problem, and the
+   half that only shows up on a phone.
+
+   On touch there is exactly one way to begin a selection: hold still for about
+   half a second. That is also, on this site, the length of a gesture. The
+   globe's dwell is 260–620ms, the reaction menu's long-press is 500ms, a
+   hold-to-repeat control starts repeating in the same window. So the platform's
+   selection timer and the site's own hold timers fire on the same finger at the
+   same instant, and the visitor gets both: the thing they meant, wearing a blue
+   highlight and a callout bubble they never asked for.
+
+   Two properties, and they are NOT interchangeable:
+
+     • `user-select: none` stops the selection itself — the highlight, the drag
+       handles, the magnifying loupe.
+     • `-webkit-touch-callout: none` stops iOS's long-press menu, which is a
+       SEPARATE mechanism: it fires over links and images whether or not the
+       text under them can be selected. An `<a>` with `user-select: none` still
+       pops "Open in New Tab / Copy Link" after ~500ms. Every hold gesture that
+       ends on a link needs this line as well as the one above — and the
+       flagship one does, because the globe's pins are real anchors (that is
+       what makes them keyboard- and screen-reader-navigable).
+
+   Everything below is scoped to CHROME. Prose, post bodies, code blocks and
+   article links are content: they keep their selection and they keep their
+   callout, because copying them is the whole point. And it all sits in
+   `@layer base`, so a `select-text` utility still wins wherever a surface needs
+   to hand a piece of itself back. */
+@layer base {
+  /* A control's label is not a document. Nobody drags across a button to copy
+     the word "Save", and on a phone the only thing that gesture can produce is
+     a highlight sitting on top of the press animation. */
+  button,
+  summary,
+  [role='button'],
+  [role='tab'],
+  [role='menuitem'],
+  [role='menuitemcheckbox'],
+  [role='menuitemradio'],
+  [role='option'],
+  [role='switch'],
+  [data-slot='button'] {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Chrome links — navigation, menus, tab strips, and anything the press layer
+     has already claimed (`data-fluid-press` is the site's own marker for "this
+     is pressable": it is on every Button, every interactive Card, and every pin
+     on the globe). Deliberately NOT `a[href]` at large: a link inside an
+     article is content, and holding one to copy its address is something people
+     do on purpose. */
+  nav a[href],
+  [role='menu'] a[href],
+  [role='menubar'] a[href],
+  [role='tablist'] a[href],
+  [role='listbox'] a[href],
+  a[href][data-fluid-press],
+  [data-fluid-press-scope] a[href] {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Icons and control artwork. An icon carries no text to copy, and the two
+     things a press on one CAN produce by default both land mid-gesture: a drag
+     ghost on desktop, a "Save Image" sheet on iOS. Content images are left
+     alone — a post's photo still long-presses to save and share. */
+  svg[aria-hidden='true'],
+  button img,
+  [role='button'] img,
+  a[href][data-fluid-press] img,
+  [data-slot='avatar'] img {
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* ── `data-gesture` — "this element owns the pointer" ────────────────────
+     The opt-in for a surface whose entire job is to be held, dragged or spun:
+     the globe's stage, a sheet's drag handle, a joystick, a hold-to-confirm
+     control, a card you throw, a canvas you draw on. Nothing inside one is
+     text the visitor is reading, so nothing inside one should select, pop a
+     callout, flash a tap highlight, or peel off as a drag ghost.
+
+     It is an attribute rather than a class because these surfaces are spread
+     across eighteen games and twelve apps with their own stylesheets, and an
+     attribute is the one thing all of them can spell the same way. Elements
+     that already own their gesture in their own CSS (the globe, the touch
+     controls) do not need it; it exists so the next one does not have to
+     rediscover this list. */
+  [data-gesture]:not([data-gesture='hold']) {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* `data-gesture="hold"` — a hold IS an action here, but the element also
+     wraps content worth copying: a post body, a chat bubble. Both halves of
+     that are true at once, so this variant takes the noise and leaves the
+     selection: no callout, no tap highlight, but the words underneath still
+     select, because a long-press is the only way to copy a message on a phone
+     and the reaction menu has nowhere to put a Copy item today.
+
+     Kept OUT of the rule above rather than overridden by a `user-select: text`
+     on the children, because an inherited `-webkit-user-select: none` has a
+     long history of not being reversible further down the tree in WebKit —
+     "don't set it in the first place" is the version that actually works. */
+  [data-gesture='hold'] {
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  [data-gesture] img,
+  [data-gesture] svg,
+  [data-gesture] canvas {
+    -webkit-user-drag: none;
+  }
+}
+
 /* Native form controls (checkbox, radio, range, progress) adopt the accent. */
 :root {
   accent-color: var(--site-accent);

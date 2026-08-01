@@ -86,7 +86,27 @@ function useSharedReactionTrigger(onOpen: (x: number, y: number) => void) {
     clear();
   };
 
-  return { onContextMenu, onTouchStart, onTouchMove, onTouchEnd };
+  return {
+    onContextMenu,
+    onTouchStart,
+    onTouchMove,
+    onTouchEnd,
+    /**
+     * Holding here means something, so the platform must not also mean
+     * something by it. `LONG_PRESS_MS` is 500 and iOS decides to show its
+     * long-press callout at about the same moment, on the same finger — so
+     * without this the reaction menu opens *underneath* an "Open in New Tab /
+     * Copy / Share" bubble aimed at whichever link or avatar the press landed
+     * on, and the tap highlight flashes across the whole card behind both.
+     *
+     * The `"hold"` variant deliberately leaves text selection alone
+     * (`app/globals.css` §Selection): this attribute goes on the element
+     * WRAPPING a post or a message, and a long-press is the only way to copy
+     * one on a phone. Change it to a bare `data-gesture` if the menu ever
+     * grows a Copy item — that swap is the whole migration.
+     */
+    'data-gesture': 'hold' as const,
+  };
 }
 
 /**
@@ -122,6 +142,9 @@ export function useItemReactionTrigger(onOpen: (x: number, y: number, id: string
     },
     onTouchMove,
     onTouchEnd,
+    // Same reasoning as the single-item hook above — every row that can be
+    // held is a row the platform must not claim the hold on.
+    'data-gesture': 'hold' as const,
   });
 
   return handlersFor;

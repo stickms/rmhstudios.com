@@ -146,6 +146,32 @@ construction: `touch-action: manipulation` removes the ~300ms tap delay on
 everything pressable, and hit targets are grown to 44px with insets rather than
 by inflating the drawn control.
 
+**A gesture is not a text selection.** On touch there is exactly one way to
+begin a selection — hold still for about half a second — and that is also the
+length of a gesture here: the globe's dwell is 260–620ms, the reaction menu's
+long-press is 500ms, a hold-to-repeat control starts repeating inside the same
+window. Left alone, the platform's timer and the site's fire on the same finger
+at the same instant and the visitor gets the thing they meant wearing a
+highlight and a callout bubble. The `§Selection` block in `globals.css` is the
+central answer, and it turns on a distinction worth knowing: **`user-select:
+none` and `-webkit-touch-callout: none` are not the same property.** The first
+stops the highlight; the second stops iOS's long-press menu, which is a separate
+mechanism that fires over links and images whether or not the text under them
+can be selected. A link with `user-select: none` still offers "Open in New Tab"
+after ~500ms — which is why the globe, whose pins are real anchors, needs both.
+
+Controls, chrome links, icons and avatars are covered site-wide already; content
+is deliberately untouched, because copying a post, a code block or an article
+link is the point. A surface that owns the pointer outright — a drag handle, a
+joystick, a hold-to-confirm control, a card you throw, a canvas you draw on —
+opts in with **`data-gesture`**: nothing inside it selects, pops a callout,
+flashes a tap highlight or peels off as a drag ghost. Its one variant,
+`data-gesture="hold"`, is for an element that is both at once (a post card, a
+chat bubble: holding it opens the reaction menu, but its words are still worth
+copying) — that takes the noise and leaves the selection. `useFluidDrag`'s
+`handleProps` carries the same guarantees inline, so every sheet and drawer gets
+them without asking.
+
 **In the full-screen tier**, where controls do not come from `ui/button.tsx`, a
 container claims its subtree instead: `data-fluid-press-scope` makes every
 `button` / `[role=button]` / `summary` inside press, so an app opts in once
@@ -749,6 +775,14 @@ Global (in `globals.css`):
   `scrollbar-width`/`scrollbar-color` (Gecko) and `::-webkit-scrollbar`
   (WebKit/Blink).
 - Tap highlight removed; active press feedback is `opacity: 0.6`.
+- **Chrome does not select.** Buttons, `[role]` controls, navigation/menu/tab
+  links, decorative icons and avatars carry `user-select: none` plus
+  `-webkit-touch-callout: none` (§Selection in `globals.css`), so a press that
+  lingers cannot leave a highlight or an iOS long-press menu on top of a
+  gesture. Content — prose, post bodies, code blocks, article links — keeps
+  both. Surfaces that own the pointer opt in with `data-gesture`; see §0.5. All
+  of it lives in `@layer base`, so a `select-text` utility still wins where a
+  surface needs to hand a piece of itself back.
 - Inputs hold a 16px font floor below 640px (prevents iOS zoom).
 
 ---

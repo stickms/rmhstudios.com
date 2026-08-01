@@ -456,6 +456,13 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, zoom 
       ref={wrapRef}
       className="lib-canvas-wrap"
       style={{ width: `${zoom * 100}%`, height: `${zoom * 100}%` }}
+      // The page is turned by dragging it and by holding the arrows, so every
+      // way to use this surface is a slow press — which is the same gesture the
+      // browser reads as "start selecting" and iOS reads as "offer to save this
+      // image". Neither belongs on a book you are reading. (globals.css
+      // §Selection; the page TEXT is drawn into the canvas, so nothing
+      // selectable is lost here.)
+      data-gesture=""
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}

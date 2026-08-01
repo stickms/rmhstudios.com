@@ -1046,9 +1046,19 @@ html.perf-lite .radial-backdrop__blob {
      have to hold across all of it: a drag that crosses the foot capsule must
      not start selecting the visitor's own display name, and a press on empty
      space must not flash a tap highlight on a surface whose job is to be
-     dragged. `touch-action` above is the third, and was already here. */
+     dragged. `touch-action` above is the third, and was already here.
+
+     `-webkit-touch-callout` is the fourth, and it is not a duplicate of the
+     `user-select` under it: iOS's long-press menu is a separate mechanism that
+     fires over links and images no matter what the selection is set to. The
+     menu is up for one gesture — hold on a destination and let go — and that
+     hold is exactly the ~500ms iOS spends deciding to offer "Open in New Tab"
+     over whichever pin, avatar or foot link the finger came down on. Set here,
+     on the overlay, because the property inherits: one declaration covers the
+     sphere, the pins, the title card and the foot. */
   -webkit-user-select: none;
   user-select: none;
+  -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
 }
 .radial-hub__overlay:has(.radial-globe__stage[data-grabbing='true']) .radial-hub__catcher {
@@ -1289,10 +1299,15 @@ html.perf-lite .radial-hub__veil {
   width: var(--globe-size);
   height: var(--globe-size);
   /* The globe owns every gesture inside it: the browser must not pan, scroll,
-     select or long-press-select while the sphere is being turned. */
+     select, long-press-select or offer a link menu while the sphere is being
+     turned. The overlay above sets the same four (it is the whole drag
+     surface); they are repeated here because the stage is the part that is
+     unconditionally the globe — the overlay's copy is gated on the hub's
+     phase, and the sphere must not depend on that to stay un-highlightable. */
   touch-action: none;
   -webkit-user-select: none;
   user-select: none;
+  -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
   cursor: grab;
   perspective: calc(var(--globe-size) * var(--globe-persp, 3.1));
@@ -1487,7 +1502,16 @@ html.perf-lite .radial-hub__veil {
   text-align: center;
   text-decoration: none;
   color: var(--site-text);
+  /* A pin is an anchor — that is what makes it clickable, focusable and
+     readable by a screen reader — and an anchor is the one element iOS will
+     interrupt a hold on. The overlay's inherited `-webkit-touch-callout` covers
+     it; this is the belt to that braces, stated at the element the gesture
+     actually ends on so a future refactor that moves the pins out of the
+     overlay cannot silently hand the link menu back. */
   -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 @media (prefers-reduced-motion: no-preference) {
   /* Pins arrive after the sphere, one after another, so the globe reads as

@@ -247,7 +247,14 @@ function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
   }, [holding, failed, handleNudge]);
 
   return (
-    <div className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-6 bg-black/70 backdrop-blur-sm">
+    // `HOLD_MS` is 1200: this minigame is one press held for over a second,
+    // which is twice as long as the browser needs to decide that press was a
+    // text selection instead. Without this the hint line and the button label
+    // come up highlighted partway through every attempt. (globals.css §Selection)
+    <div
+      data-gesture=""
+      className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-6 bg-black/70 backdrop-blur-sm"
+    >
       <p className="text-cyan-300 text-sm font-mono">{t("hold-hint", { defaultValue: "Hold — Brace to correct drift" })}</p>
       <div className="w-full max-w-xs h-12 rounded-lg bg-white/10 border border-cyan-500/40 relative overflow-hidden">
         <div
