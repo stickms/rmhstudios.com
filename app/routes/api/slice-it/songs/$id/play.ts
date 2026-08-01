@@ -1,53 +1,36 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { prisma } from "@/lib/prisma.server";
-import { auth } from "@/lib/auth";
-import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { defineHandler } from '@/lib/api/handler.server';
+import { prisma } from '@/lib/prisma.server';
+import { auth } from '@/lib/auth';
 
 export const Route = createFileRoute('/api/slice-it/songs/$id/play')({
   server: {
     handlers: {
-  POST: async ({ request, params }) => {
-    try {
-        const ip = getClientIp(request);
-        const { allowed, retryAfter } = rateLimit(ip, {
-            limit: 5,
-            windowMs: 60_000,
-            prefix: "slice-play",
-        });
+      POST: defineHandler(
+        { auth: 'none', rateLimit: { limit: 5, windowMs: 60_000, prefix: 'slice-play' } },
+        async ({ request, params }) => {
+          const { id } = params;
 
-        if (!allowed) {
-            return Response.json(
-                { error: "Too many requests" },
-                { status: 429, headers: { "Retry-After": String(retryAfter) } }
-            );
-        }
+          const session = await auth.api.getSession({ headers: request.headers });
+          const userId = session?.user?.id;
 
-        const { id } = params;
-
-        const session = await auth.api.getSession({ headers: request.headers });
-        const userId = session?.user?.id;
-
-        const [song] = await Promise.all([
+          const [song] = await Promise.all([
             prisma.song.update({
-                where: { id },
-                data: { plays: { increment: 1 } }
+              where: { id },
+              data: { plays: { increment: 1 } },
             }),
             userId
-                ? prisma.songPlay.upsert({
-                    where: { songId_userId: { songId: id, userId } },
-                    create: { songId: id, userId, count: 1, lastPlayedAt: new Date() },
-                    update: { count: { increment: 1 }, lastPlayedAt: new Date() }
+              ? prisma.songPlay.upsert({
+                  where: { songId_userId: { songId: id, userId } },
+                  create: { songId: id, userId, count: 1, lastPlayedAt: new Date() },
+                  update: { count: { increment: 1 }, lastPlayedAt: new Date() },
                 })
-                : Promise.resolve(null)
-        ]);
+              : Promise.resolve(null),
+          ]);
 
-        return Response.json({ success: true, plays: song.plays });
-
-    } catch (error) {
-        console.error("Increment play error:", error);
-        return Response.json({ error: "Internal Server Error" }, { status: 500 });
-    }
-},
+          return Response.json({ success: true, plays: song.plays });
+        },
+      ),
     },
   },
 });

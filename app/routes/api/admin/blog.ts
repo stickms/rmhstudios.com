@@ -1,18 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma.server";
-import { logAdminAction } from "@/lib/admin-audit.server";
+import { defineHandler } from '@/lib/api/handler.server';
+import { prisma } from '@/lib/prisma.server';
+import { logAdminAction } from '@/lib/admin-audit.server';
 
 export const Route = createFileRoute('/api/admin/blog')({
   server: {
     handlers: {
-  POST: async ({ request }) => {
-    try {
-        const session = await auth.api.getSession({ headers: request.headers });
+      POST: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
         const user = session?.user as any;
 
-        if (!user || (!user.isAdmin)) {
-            return Response.json({ error: "Unauthorized" }, { status: 401 });
+        if (!user || !user.isAdmin) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const body = await request.json();
@@ -21,97 +19,92 @@ export const Route = createFileRoute('/api/admin/blog')({
         console.log(`Saving blog post (${isEdit ? 'EDIT' : 'NEW'}):`, body);
 
         if (!title || !slug || !date || !description || !content) {
-            return Response.json({ error: "Missing required fields" }, { status: 400 });
+          return Response.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
         // Validate slug format
         if (!/^[a-z0-9-]+$/.test(slug)) {
-            return Response.json({ error: "Invalid slug format. Use lowercase letters, numbers, and hyphens." }, { status: 400 });
+          return Response.json(
+            { error: 'Invalid slug format. Use lowercase letters, numbers, and hyphens.' },
+            { status: 400 },
+          );
         }
 
         // Check if file already exists ONLY if we aren't editing
         if (!isEdit) {
-            const existingPost = await prisma.blogPost.findUnique({ where: { slug } });
-            if (existingPost) {
-                return Response.json({ error: "A post with this slug already exists" }, { status: 409 });
-            }
+          const existingPost = await prisma.blogPost.findUnique({ where: { slug } });
+          if (existingPost) {
+            return Response.json(
+              { error: 'A post with this slug already exists' },
+              { status: 409 },
+            );
+          }
         }
 
         let formattedTags: string[] = [];
         if (tags && Array.isArray(tags)) {
-           formattedTags = tags;
+          formattedTags = tags;
         } else if (typeof tags === 'string' && tags.trim() !== '') {
-           formattedTags = [tags];
+          formattedTags = [tags];
         }
 
         await prisma.blogPost.upsert({
-            where: { slug },
-            update: {
-                title,
-                date,
-                description,
-                image: image || null,
-                tags: formattedTags,
-                content
-            },
-            create: {
-                slug,
-                title,
-                date,
-                description,
-                image: image || null,
-                tags: formattedTags,
-                content
-            }
+          where: { slug },
+          update: {
+            title,
+            date,
+            description,
+            image: image || null,
+            tags: formattedTags,
+            content,
+          },
+          create: {
+            slug,
+            title,
+            date,
+            description,
+            image: image || null,
+            tags: formattedTags,
+            content,
+          },
         });
 
         await logAdminAction(user.id, isEdit ? 'blog.edit' : 'blog.create', {
-            targetType: 'BlogPost',
-            targetId: slug,
-            detail: title,
+          targetType: 'BlogPost',
+          targetId: slug,
+          detail: title,
         });
 
         return Response.json({ success: true, slug });
-
-    } catch (error: any) {
-        console.error("Error creating/editing blog post", error);
-        return Response.json({ error: "Failed to save blog post" }, { status: 500 });
-    }
-},
-  DELETE: async ({ request }) => {
-    try {
-        const session = await auth.api.getSession({ headers: request.headers });
+      }),
+      DELETE: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
         const user = session?.user as any;
 
-        if (!user || (!user.isAdmin)) {
-            return Response.json({ error: "Unauthorized" }, { status: 401 });
+        if (!user || !user.isAdmin) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const { searchParams } = new URL(request.url);
-        const slug = searchParams.get("slug");
+        const slug = searchParams.get('slug');
 
         if (!slug) {
-            return Response.json({ error: "Slug is required" }, { status: 400 });
+          return Response.json({ error: 'Slug is required' }, { status: 400 });
         }
 
         try {
-            await prisma.blogPost.delete({ where: { slug } });
+          await prisma.blogPost.delete({ where: { slug } });
         } catch (e: any) {
-            if (e.code === 'P2025') { // Prisma error code for record not found
-                return Response.json({ error: "Post not found" }, { status: 404 });
-            }
-            throw e;
+          if (e.code === 'P2025') {
+            // Prisma error code for record not found
+            return Response.json({ error: 'Post not found' }, { status: 404 });
+          }
+          throw e;
         }
 
         await logAdminAction(user.id, 'blog.delete', { targetType: 'BlogPost', targetId: slug });
 
         return Response.json({ success: true });
-
-    } catch (error: any) {
-        console.error("Error deleting blog post", error);
-        return Response.json({ error: "Failed to delete blog post" }, { status: 500 });
-    }
-},
+      }),
     },
   },
 });

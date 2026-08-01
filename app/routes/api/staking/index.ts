@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { getStake } from '@/lib/staking/staking.server';
 
@@ -7,21 +7,16 @@ import { getStake } from '@/lib/staking/staking.server';
 export const Route = createFileRoute('/api/staking/')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const [stake, profile] = await Promise.all([
-            getStake(session.user.id),
-            prisma.userProfile.findUnique({ where: { userId: session.user.id }, select: { coins: true } }),
-          ]);
-          return Response.json({ ...stake, balance: profile?.coins ?? 0 });
-        } catch (error) {
-          console.error('Staking status error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+      GET: defineHandler({}, async ({ session }) => {
+        const [stake, profile] = await Promise.all([
+          getStake(session.user.id),
+          prisma.userProfile.findUnique({
+            where: { userId: session.user.id },
+            select: { coins: true },
+          }),
+        ]);
+        return Response.json({ ...stake, balance: profile?.coins ?? 0 });
+      }),
     },
   },
 });

@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { getMusicGuessList } from '@/lib/music-guess.server';
 
@@ -19,23 +18,20 @@ const createSchema = z.object({
 export const Route = createFileRoute('/api/rmhmusic/guess/')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+      GET: defineHandler({ auth: 'optional' }, async ({ session }) => {
         return Response.json(await getMusicGuessList(session?.user.id ?? null));
-      },
+      }),
 
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const ip = getClientIp(request);
-          const { allowed } = rateLimit(ip, { limit: 15, windowMs: 60_000, prefix: 'music-guess-create' });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
+      POST: defineHandler(
+        { rateLimit: { limit: 15, windowMs: 60_000, prefix: 'music-guess-create' } },
+        async ({ request, session }) => {
           const body = await request.json().catch(() => ({}));
           const parsed = createSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message ?? 'Invalid input' }, { status: 400 });
+          if (!parsed.success)
+            return Response.json(
+              { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
+              { status: 400 },
+            );
 
           // Always accept the canonical title; merge any extra accepted answers.
           const accepted = new Set<string>([parsed.data.title.toLowerCase().trim()]);
@@ -52,11 +48,8 @@ export const Route = createFileRoute('/api/rmhmusic/guess/')({
             select: { id: true },
           });
           return Response.json({ success: true, id: puzzle.id }, { status: 201 });
-        } catch (error) {
-          console.error('Music puzzle create error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

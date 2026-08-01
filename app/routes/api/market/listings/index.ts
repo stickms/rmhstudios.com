@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -25,16 +26,9 @@ const SORTS: BrowseSort[] = ['price_asc', 'price_desc', 'recent'];
 export const Route = createFileRoute('/api/market/listings/')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const ip = getClientIp(request);
-          const { allowed } = rateLimit(ip, {
-            limit: 60,
-            windowMs: 60_000,
-            prefix: 'market-browse',
-          });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
+      GET: defineHandler(
+        { auth: 'none', rateLimit: { limit: 60, windowMs: 60_000, prefix: 'market-browse' } },
+        async ({ request }) => {
           const url = new URL(request.url);
           const item = url.searchParams.get('item');
           const sortParam = url.searchParams.get('sort');
@@ -49,11 +43,8 @@ export const Route = createFileRoute('/api/market/listings/')({
             itemId ? priceHistory(itemId) : Promise.resolve(null),
           ]);
           return Response.json({ listings, history });
-        } catch (error) {
-          console.error('market browse error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
 
       POST: async ({ request }) => {
         try {

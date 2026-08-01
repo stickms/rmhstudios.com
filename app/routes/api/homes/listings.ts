@@ -7,6 +7,7 @@
  *   POST /api/homes/listings                              → create a listing
  */
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -92,19 +93,16 @@ export const Route = createFileRoute('/api/homes/listings')({
         }
       },
 
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const ip = getClientIp(request);
-          const { allowed } = rateLimit(ip, {
+      POST: defineHandler(
+        {
+          rateLimit: {
             limit: 20,
             windowMs: 60_000,
             prefix: 'homes-create',
-          });
-          if (!allowed) return Response.json({ error: 'Too many requests.' }, { status: 429 });
-
+            message: 'Too many requests.',
+          },
+        },
+        async ({ request, session }) => {
           const parsed = listingInputSchema.safeParse(await request.json());
           if (!parsed.success) {
             return Response.json({ error: 'Please check the listing details.' }, { status: 400 });
@@ -131,11 +129,8 @@ export const Route = createFileRoute('/api/homes/listings')({
 
           const { id } = await createListing(session.user.id, input);
           return Response.json({ ok: true, id });
-        } catch (error) {
-          console.error('Homes listings POST error:', error);
-          return Response.json({ error: 'Could not create listing.' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

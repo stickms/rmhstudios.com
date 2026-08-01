@@ -1,8 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { HISTORY_ENTITY_TYPES, type HistoryEntityType } from '@/lib/history/constants';
 import { listHistory, clearHistory } from '@/lib/history/history.server';
 
@@ -16,56 +15,33 @@ const pauseSchema = z.object({ paused: z.boolean() });
 export const Route = createFileRoute('/api/history/')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      GET: defineHandler({}, async ({ request, session }) => {
+        const url = new URL(request.url);
+        const typeParam = url.searchParams.get('type');
+        const type =
+          typeParam && (HISTORY_ENTITY_TYPES as readonly string[]).includes(typeParam)
+            ? (typeParam as HistoryEntityType)
+            : undefined;
+        const cursor = url.searchParams.get('cursor') ?? undefined;
 
-          const url = new URL(request.url);
-          const typeParam = url.searchParams.get('type');
-          const type =
-            typeParam && (HISTORY_ENTITY_TYPES as readonly string[]).includes(typeParam)
-              ? (typeParam as HistoryEntityType)
-              : undefined;
-          const cursor = url.searchParams.get('cursor') ?? undefined;
+        const [result, profile] = await Promise.all([
+          listHistory(session.user.id, { type, cursor }),
+          prisma.userProfile.findUnique({
+            where: { userId: session.user.id },
+            select: { historyPaused: true },
+          }),
+        ]);
+        return Response.json({ ...result, paused: profile?.historyPaused ?? false });
+      }),
 
-          const [result, profile] = await Promise.all([
-            listHistory(session.user.id, { type, cursor }),
-            prisma.userProfile.findUnique({
-              where: { userId: session.user.id },
-              select: { historyPaused: true },
-            }),
-          ]);
-          return Response.json({ ...result, paused: profile?.historyPaused ?? false });
-        } catch (error) {
-          console.error('History list error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+      DELETE: defineHandler({}, async ({ session }) => {
+        await clearHistory(session.user.id);
+        return Response.json({ ok: true });
+      }),
 
-      DELETE: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          await clearHistory(session.user.id);
-          return Response.json({ ok: true });
-        } catch (error) {
-          console.error('History clear error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
-
-      PUT: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          const { allowed } = rateLimit(getClientIp(request), {
-            limit: 20,
-            windowMs: 60_000,
-            prefix: 'history-settings',
-          });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
+      PUT: defineHandler(
+        { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'history-settings' } },
+        async ({ request, session }) => {
           const body = await request.json().catch(() => null);
           const parsed = pauseSchema.safeParse(body);
           if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
@@ -76,11 +52,8 @@ export const Route = createFileRoute('/api/history/')({
             update: { historyPaused: parsed.data.paused },
           });
           return Response.json({ paused: parsed.data.paused });
-        } catch (error) {
-          console.error('History settings error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { getStreak, todayKey } from '@/lib/streak.server';
 import { QUESTS, dailyKey } from '@/lib/quests/catalog';
 
@@ -16,15 +15,9 @@ const PUZZLE_MODES = ['lights-out', 'alibi', 'spectrum', 'outcast', 'chainlink',
 export const Route = createFileRoute('/api/today')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const ip = getClientIp(request);
-          const { allowed } = rateLimit(ip, { limit: 30, windowMs: 60_000, prefix: 'today' });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
+      GET: defineHandler(
+        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'today' } },
+        async ({ session }) => {
           const userId = session.user.id;
           const dateKey = todayKey();
           const questKey = dailyKey();
@@ -65,11 +58,8 @@ export const Route = createFileRoute('/api/today')({
               claimable: claimableQuests,
             },
           });
-        } catch (error) {
-          console.error('Today summary error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

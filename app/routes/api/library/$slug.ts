@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { deleteObject } from '@/lib/storage/s3.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
@@ -14,11 +14,7 @@ import { logAdminAction } from '@/lib/admin-audit.server';
 export const Route = createFileRoute('/api/library/$slug')({
   server: {
     handlers: {
-      DELETE: async ({ request, params }) => {
-        const session = await auth.api.getSession({ headers: request.headers });
-        if (!session) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+      DELETE: defineHandler({}, async ({ params, session }) => {
         const doc = await prisma.libraryDocument.findUnique({ where: { slug: params.slug } });
         if (!doc) {
           return Response.json({ error: 'Not found.' }, { status: 404 });
@@ -40,13 +36,9 @@ export const Route = createFileRoute('/api/library/$slug')({
           });
         }
         return Response.json({ ok: true });
-      },
+      }),
 
-      POST: async ({ request, params }) => {
-        const session = await auth.api.getSession({ headers: request.headers });
-        if (!session) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+      POST: defineHandler({}, async ({ params }) => {
         const doc = await prisma.libraryDocument.findUnique({
           where: { slug: params.slug },
           select: { id: true },
@@ -56,7 +48,7 @@ export const Route = createFileRoute('/api/library/$slug')({
         }
         await prisma.libraryDocument.update({ where: { id: doc.id }, data: { reported: true } });
         return Response.json({ ok: true });
-      },
+      }),
     },
   },
 });

@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { presencePrivacySchema, DEFAULT_PRESENCE_VISIBILITY } from '@/lib/presence-types';
 
 /**
@@ -15,30 +14,19 @@ import { presencePrivacySchema, DEFAULT_PRESENCE_VISIBILITY } from '@/lib/presen
 export const Route = createFileRoute('/api/preferences/presence')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          const row = await prisma.userProfile.findUnique({
-            where: { userId: session.user.id },
-            select: { presenceVisibility: true, presenceDetail: true },
-          });
-          return Response.json({
-            presenceVisibility: row?.presenceVisibility ?? DEFAULT_PRESENCE_VISIBILITY,
-            presenceDetail: row?.presenceDetail ?? true,
-          });
-        } catch (error) {
-          console.error('Presence prefs fetch error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
-      PUT: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          const { allowed } = rateLimit(getClientIp(request), { limit: 20, windowMs: 60_000, prefix: 'presence-prefs' });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
+      GET: defineHandler({}, async ({ session }) => {
+        const row = await prisma.userProfile.findUnique({
+          where: { userId: session.user.id },
+          select: { presenceVisibility: true, presenceDetail: true },
+        });
+        return Response.json({
+          presenceVisibility: row?.presenceVisibility ?? DEFAULT_PRESENCE_VISIBILITY,
+          presenceDetail: row?.presenceDetail ?? true,
+        });
+      }),
+      PUT: defineHandler(
+        { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'presence-prefs' } },
+        async ({ request, session }) => {
           const body = await request.json().catch(() => null);
           const parsed = presencePrivacySchema.safeParse(body);
           if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
@@ -47,7 +35,9 @@ export const Route = createFileRoute('/api/preferences/presence')({
             ...(parsed.data.presenceVisibility !== undefined
               ? { presenceVisibility: parsed.data.presenceVisibility }
               : {}),
-            ...(parsed.data.presenceDetail !== undefined ? { presenceDetail: parsed.data.presenceDetail } : {}),
+            ...(parsed.data.presenceDetail !== undefined
+              ? { presenceDetail: parsed.data.presenceDetail }
+              : {}),
           };
           const row = await prisma.userProfile.upsert({
             where: { userId: session.user.id },
@@ -59,11 +49,8 @@ export const Route = createFileRoute('/api/preferences/presence')({
             presenceVisibility: row.presenceVisibility,
             presenceDetail: row.presenceDetail,
           });
-        } catch (error) {
-          console.error('Presence prefs save error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

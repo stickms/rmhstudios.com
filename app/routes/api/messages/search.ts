@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { resolveUserDisplay } from '@/lib/user-display';
 
 /**
@@ -14,15 +13,9 @@ import { resolveUserDisplay } from '@/lib/user-display';
 export const Route = createFileRoute('/api/messages/search')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const ip = getClientIp(request);
-          const { allowed } = rateLimit(ip, { limit: 30, windowMs: 60_000, prefix: 'messages-search' });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
+      GET: defineHandler(
+        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'messages-search' } },
+        async ({ request, session }) => {
           const userId = session.user.id;
           const q = new URL(request.url).searchParams.get('q')?.trim();
           if (!q) return Response.json({ conversations: [] });
@@ -41,22 +34,47 @@ export const Route = createFileRoute('/api/messages/search')({
               OR: [
                 { participantOneId: userId, participantTwo: nameMatch },
                 { participantTwoId: userId, participantOne: nameMatch },
-                { AND: [{ OR: mine }, { messages: { some: { content: { contains: q, mode: 'insensitive' } } } }] },
+                {
+                  AND: [
+                    { OR: mine },
+                    { messages: { some: { content: { contains: q, mode: 'insensitive' } } } },
+                  ],
+                },
               ],
             },
             orderBy: { lastMessageAt: 'desc' },
             take: 30,
             include: {
               participantOne: {
-                select: { id: true, name: true, image: true, username: true, profile: { select: { displayName: true, customImage: true } } },
+                select: {
+                  id: true,
+                  name: true,
+                  image: true,
+                  username: true,
+                  profile: { select: { displayName: true, customImage: true } },
+                },
               },
               participantTwo: {
-                select: { id: true, name: true, image: true, username: true, profile: { select: { displayName: true, customImage: true } } },
+                select: {
+                  id: true,
+                  name: true,
+                  image: true,
+                  username: true,
+                  profile: { select: { displayName: true, customImage: true } },
+                },
               },
               messages: {
                 orderBy: { createdAt: 'desc' },
                 take: 1,
-                select: { id: true, content: true, senderId: true, read: true, createdAt: true, gifUrl: true, imageUrls: true },
+                select: {
+                  id: true,
+                  content: true,
+                  senderId: true,
+                  read: true,
+                  createdAt: true,
+                  gifUrl: true,
+                  imageUrls: true,
+                },
               },
             },
           });
@@ -65,7 +83,10 @@ export const Route = createFileRoute('/api/messages/search')({
           const ids = conversations.map((c) => c.id);
           const matches = ids.length
             ? await prisma.directMessage.findMany({
-                where: { conversationId: { in: ids }, content: { contains: q, mode: 'insensitive' } },
+                where: {
+                  conversationId: { in: ids },
+                  content: { contains: q, mode: 'insensitive' },
+                },
                 orderBy: { createdAt: 'desc' },
                 distinct: ['conversationId'],
                 select: { conversationId: true, content: true },
@@ -74,12 +95,18 @@ export const Route = createFileRoute('/api/messages/search')({
           const snippetMap = new Map(matches.map((m) => [m.conversationId, m.content]));
 
           const result = conversations.map((conv) => {
-            const otherUser = conv.participantOneId === userId ? conv.participantTwo : conv.participantOne;
+            const otherUser =
+              conv.participantOneId === userId ? conv.participantTwo : conv.participantOne;
             const resolved = resolveUserDisplay(otherUser);
             const lastMessage = conv.messages[0] ?? null;
             return {
               id: conv.id,
-              otherUser: { id: otherUser.id, name: resolved.name, image: resolved.image, username: otherUser.username },
+              otherUser: {
+                id: otherUser.id,
+                name: resolved.name,
+                image: resolved.image,
+                username: otherUser.username,
+              },
               lastMessage: lastMessage
                 ? {
                     id: lastMessage.id,
@@ -98,11 +125,8 @@ export const Route = createFileRoute('/api/messages/search')({
           });
 
           return Response.json({ conversations: result });
-        } catch (error) {
-          console.error('Message search error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

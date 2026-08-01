@@ -7,32 +7,24 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { withRateLimit } from '@/lib/rate-limit';
 import { getAccountStanding } from '@/lib/moderation/standing.server';
 
 export const Route = createFileRoute('/api/account/standing')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      GET: defineHandler({}, async ({ request, session }) => {
+        const limited = withRateLimit(request, 'read', { scope: session.user.id });
+        if (limited) return limited;
 
-          const limited = withRateLimit(request, 'read', { scope: session.user.id });
-          if (limited) return limited;
-
-          const standing = await getAccountStanding(session.user.id);
-          return Response.json(standing, {
-            // A moderation record is per-user and changes the moment a
-            // moderator acts — never let a shared cache hold it.
-            headers: { 'Cache-Control': 'private, no-store' },
-          });
-        } catch (error) {
-          console.error('account standing error:', error);
-          return Response.json({ error: 'Internal server error' }, { status: 500 });
-        }
-      },
+        const standing = await getAccountStanding(session.user.id);
+        return Response.json(standing, {
+          // A moderation record is per-user and changes the moment a
+          // moderator acts — never let a shared cache hold it.
+          headers: { 'Cache-Control': 'private, no-store' },
+        });
+      }),
     },
   },
 });

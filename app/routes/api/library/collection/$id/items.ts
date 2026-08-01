@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { auth } from '@/lib/auth';
 import { addItem, removeItem, reorderItems, type Viewer } from '@/lib/library/collections.server';
 import { isSafeLibraryId } from '@/lib/library/keys';
@@ -24,51 +25,42 @@ function bookSlugFrom(body: unknown): string {
 export const Route = createFileRoute('/api/library/collection/$id/items')({
   server: {
     handlers: {
-      POST: async ({ request, params }) => {
-        try {
-          if (!isSafeLibraryId(params.id)) return Response.json({ error: 'Not found.' }, { status: 404 });
-          const viewer = await getViewer(request);
-          const slug = bookSlugFrom(await request.json().catch(() => ({})));
-          if (!slug) return Response.json({ error: 'No book specified.' }, { status: 400 });
-          const result = await addItem(viewer, params.id, slug);
-          if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
-          return Response.json({ ok: true });
-        } catch (error) {
-          console.error('Library collection add-item error:', error);
-          return Response.json({ error: 'Failed to add book.' }, { status: 500 });
-        }
-      },
+      POST: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+        if (!isSafeLibraryId(params.id))
+          return Response.json({ error: 'Not found.' }, { status: 404 });
+        const viewer = await getViewer(request);
+        const slug = bookSlugFrom(await request.json().catch(() => ({})));
+        if (!slug) return Response.json({ error: 'No book specified.' }, { status: 400 });
+        const result = await addItem(viewer, params.id, slug);
+        if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+        return Response.json({ ok: true });
+      }),
 
-      DELETE: async ({ request, params }) => {
-        try {
-          if (!isSafeLibraryId(params.id)) return Response.json({ error: 'Not found.' }, { status: 404 });
-          const viewer = await getViewer(request);
-          const slug = bookSlugFrom(await request.json().catch(() => ({})));
-          if (!slug) return Response.json({ error: 'No book specified.' }, { status: 400 });
-          const result = await removeItem(viewer, params.id, slug);
-          if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
-          return Response.json({ ok: true });
-        } catch (error) {
-          console.error('Library collection remove-item error:', error);
-          return Response.json({ error: 'Failed to remove book.' }, { status: 500 });
-        }
-      },
+      DELETE: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+        if (!isSafeLibraryId(params.id))
+          return Response.json({ error: 'Not found.' }, { status: 404 });
+        const viewer = await getViewer(request);
+        const slug = bookSlugFrom(await request.json().catch(() => ({})));
+        if (!slug) return Response.json({ error: 'No book specified.' }, { status: 400 });
+        const result = await removeItem(viewer, params.id, slug);
+        if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+        return Response.json({ ok: true });
+      }),
 
-      PATCH: async ({ request, params }) => {
-        try {
-          if (!isSafeLibraryId(params.id)) return Response.json({ error: 'Not found.' }, { status: 404 });
-          const viewer = await getViewer(request);
-          const body = (await request.json().catch(() => ({}))) as { slugs?: unknown };
-          const slugs = Array.isArray(body.slugs) ? body.slugs.filter((s): s is string => typeof s === 'string') : [];
-          if (slugs.length === 0 || slugs.length > 5000) return Response.json({ error: 'Invalid order.' }, { status: 400 });
-          const result = await reorderItems(viewer, params.id, slugs);
-          if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
-          return Response.json({ ok: true });
-        } catch (error) {
-          console.error('Library collection reorder error:', error);
-          return Response.json({ error: 'Failed to reorder.' }, { status: 500 });
-        }
-      },
+      PATCH: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+        if (!isSafeLibraryId(params.id))
+          return Response.json({ error: 'Not found.' }, { status: 404 });
+        const viewer = await getViewer(request);
+        const body = (await request.json().catch(() => ({}))) as { slugs?: unknown };
+        const slugs = Array.isArray(body.slugs)
+          ? body.slugs.filter((s): s is string => typeof s === 'string')
+          : [];
+        if (slugs.length === 0 || slugs.length > 5000)
+          return Response.json({ error: 'Invalid order.' }, { status: 400 });
+        const result = await reorderItems(viewer, params.id, slugs);
+        if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+        return Response.json({ ok: true });
+      }),
     },
   },
 });

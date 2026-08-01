@@ -1,107 +1,92 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma.server";
-import { feedbackSchema } from "@/lib/feedback-schema";
-import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { defineHandler } from '@/lib/api/handler.server';
+import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma.server';
+import { feedbackSchema } from '@/lib/feedback-schema';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 export const Route = createFileRoute('/api/feedback')({
   server: {
     handlers: {
-  GET: async () => {
-  try {
-    const feedbacks = await prisma.feedback.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {
-        user: {
-          select: { name: true, username: true, image: true },
-        },
-      },
-    });
+      GET: defineHandler({ auth: 'none' }, async () => {
+        const feedbacks = await prisma.feedback.findMany({
+          orderBy: { createdAt: 'desc' },
+          include: {
+            user: {
+              select: { name: true, username: true, image: true },
+            },
+          },
+        });
 
-    const formatted = feedbacks.map((f: any) => ({
-      id: f.id,
-      category: f.category,
-      message: f.message,
-      createdAt: f.createdAt,
-      user: {
-        name: f.user.name || f.user.username || "Unknown",
-        image: f.user.image,
-      },
-    }));
+        const formatted = feedbacks.map((f: any) => ({
+          id: f.id,
+          category: f.category,
+          message: f.message,
+          createdAt: f.createdAt,
+          user: {
+            name: f.user.name || f.user.username || 'Unknown',
+            image: f.user.image,
+          },
+        }));
 
-    return Response.json(formatted);
-  } catch (error) {
-    console.error("Fetch feedback error:", error);
-    return Response.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
-},
-  POST: async ({ request }) => {
-  try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
+        return Response.json(formatted);
+      }),
+      POST: defineHandler({ auth: 'none' }, async ({ request }) => {
+        const session = await auth.api.getSession({
+          headers: request.headers,
+        });
 
-    if (!session) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
+        if (!session) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
-    const ip = getClientIp(request);
-    const { allowed, retryAfter } = rateLimit(ip, {
-      limit: 3,
-      windowMs: 10 * 60_000,
-      prefix: "feedback",
-    });
-    if (!allowed) {
-      return Response.json(
-        { error: "Too many submissions. Please try again later." },
-        { status: 429, headers: { "Retry-After": String(retryAfter) } }
-      );
-    }
+        const ip = getClientIp(request);
+        const { allowed, retryAfter } = rateLimit(ip, {
+          limit: 3,
+          windowMs: 10 * 60_000,
+          prefix: 'feedback',
+        });
+        if (!allowed) {
+          return Response.json(
+            { error: 'Too many submissions. Please try again later.' },
+            { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+          );
+        }
 
-    const body = await request.json();
-    const result = feedbackSchema.safeParse(body);
+        const body = await request.json();
+        const result = feedbackSchema.safeParse(body);
 
-    if (!result.success) {
-      const firstError = result.error.issues[0]?.message ?? "Invalid input";
-      return Response.json({ error: firstError }, { status: 400 });
-    }
+        if (!result.success) {
+          const firstError = result.error.issues[0]?.message ?? 'Invalid input';
+          return Response.json({ error: firstError }, { status: 400 });
+        }
 
-    const { category, message } = result.data;
+        const { category, message } = result.data;
 
-    const feedback = await prisma.feedback.create({
-      data: {
-        category,
-        message,
-        userId: session.user.id,
-      },
-      include: {
-        user: {
-          select: { name: true, username: true, image: true },
-        },
-      },
-    });
+        const feedback = await prisma.feedback.create({
+          data: {
+            category,
+            message,
+            userId: session.user.id,
+          },
+          include: {
+            user: {
+              select: { name: true, username: true, image: true },
+            },
+          },
+        });
 
-    return Response.json({
-      id: feedback.id,
-      category: feedback.category,
-      message: feedback.message,
-      createdAt: feedback.createdAt,
-      user: {
-        name: feedback.user.name || feedback.user.username || "Unknown",
-        image: feedback.user.image,
-      },
-    });
-  } catch (error) {
-    console.error("Post feedback error:", error);
-    return Response.json(
-      { error: "Something went wrong. Please try again." },
-      { status: 500 }
-    );
-  }
-},
+        return Response.json({
+          id: feedback.id,
+          category: feedback.category,
+          message: feedback.message,
+          createdAt: feedback.createdAt,
+          user: {
+            name: feedback.user.name || feedback.user.username || 'Unknown',
+            image: feedback.user.image,
+          },
+        });
+      }),
     },
   },
 });

@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { createTournamentSchema } from '@/lib/tournaments/tournament-schema';
@@ -11,20 +12,15 @@ import {
 export const Route = createFileRoute('/api/tournaments/')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const status = new URL(request.url).searchParams.get('status');
-          const valid =
-            status === 'REGISTRATION' || status === 'LIVE' || status === 'COMPLETE'
-              ? status
-              : undefined;
-          const tournaments = await listTournaments({ status: valid });
-          return Response.json({ tournaments });
-        } catch (error) {
-          console.error('Tournament list error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+      GET: defineHandler({ auth: 'none' }, async ({ request }) => {
+        const status = new URL(request.url).searchParams.get('status');
+        const valid =
+          status === 'REGISTRATION' || status === 'LIVE' || status === 'COMPLETE'
+            ? status
+            : undefined;
+        const tournaments = await listTournaments({ status: valid });
+        return Response.json({ tournaments });
+      }),
       POST: async ({ request }) => {
         try {
           const session = await auth.api.getSession({ headers: request.headers });

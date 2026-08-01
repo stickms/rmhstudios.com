@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { classifyRumRoute, getRumRouteLabel, getRumThreshold } from '@/lib/rum-slo';
 
 /**
@@ -24,52 +24,51 @@ const MetricSchema = z.object({
 export const Route = createFileRoute('/api/rum')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        const ip = getClientIp(request);
-        const { allowed } = rateLimit(ip, { limit: 60, windowMs: 60_000, prefix: 'rum' });
-        if (!allowed) return new Response(null, { status: 429 });
+      POST: defineHandler(
+        { auth: 'none', rateLimit: { limit: 60, windowMs: 60_000, prefix: 'rum' } },
+        async ({ request }) => {
+          let body: unknown;
+          try {
+            body = await request.json();
+          } catch {
+            return new Response(null, { status: 400 });
+          }
 
-        let body: unknown;
-        try {
-          body = await request.json();
-        } catch {
-          return new Response(null, { status: 400 });
-        }
+          const parsed = MetricSchema.safeParse(body);
+          if (!parsed.success) return new Response(null, { status: 400 });
 
-        const parsed = MetricSchema.safeParse(body);
-        if (!parsed.success) return new Response(null, { status: 400 });
+          const m = parsed.data;
+          const routeClass = classifyRumRoute(m.path);
+          const threshold = getRumThreshold(routeClass, m.name);
+          const sloBreach = threshold != null && m.value > threshold;
+          const metric = {
+            name: m.name,
+            value: m.value,
+            rating: m.rating,
+            threshold,
+            sloBreach,
+            route: getRumRouteLabel(m.path),
+            routeClass,
+            navigationType: m.navigationType,
+            clientTs: m.ts,
+            receivedAt: new Date().toISOString(),
+          };
 
-        const m = parsed.data;
-        const routeClass = classifyRumRoute(m.path);
-        const threshold = getRumThreshold(routeClass, m.name);
-        const sloBreach = threshold != null && m.value > threshold;
-        const metric = {
-          name: m.name,
-          value: m.value,
-          rating: m.rating,
-          threshold,
-          sloBreach,
-          route: getRumRouteLabel(m.path),
-          routeClass,
-          navigationType: m.navigationType,
-          clientTs: m.ts,
-          receivedAt: new Date().toISOString(),
-        };
+          // Every valid sample is emitted so the log pipeline can calculate p75
+          // and p95 by route class. Warning events remain easy to alert on without
+          // treating a single slow navigation as an aggregate percentile.
+          // eslint-disable-next-line no-console -- normal metrics are informational, not warnings
+          console.info('[rum:metric]', JSON.stringify(metric));
+          if (m.rating === 'poor') {
+            console.warn('[rum:poor]', JSON.stringify(metric));
+          }
+          if (sloBreach) {
+            console.warn('[rum:slo-breach]', JSON.stringify(metric));
+          }
 
-        // Every valid sample is emitted so the log pipeline can calculate p75
-        // and p95 by route class. Warning events remain easy to alert on without
-        // treating a single slow navigation as an aggregate percentile.
-        // eslint-disable-next-line no-console -- normal metrics are informational, not warnings
-        console.info('[rum:metric]', JSON.stringify(metric));
-        if (m.rating === 'poor') {
-          console.warn('[rum:poor]', JSON.stringify(metric));
-        }
-        if (sloBreach) {
-          console.warn('[rum:slo-breach]', JSON.stringify(metric));
-        }
-
-        return new Response(null, { status: 204 });
-      },
+          return new Response(null, { status: 204 });
+        },
+      ),
     },
   },
 });

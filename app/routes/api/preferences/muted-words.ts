@@ -1,8 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { invalidateMutedWords } from '@/lib/feed/timeline';
 
 /**
@@ -37,39 +36,17 @@ function normalize(words: string[]): string[] {
 export const Route = createFileRoute('/api/preferences/muted-words')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
-          const row = await prisma.userProfile.findUnique({
-            where: { userId: session.user.id },
-            select: { mutedWords: true },
-          });
-          return Response.json({ words: row?.mutedWords ?? [] });
-        } catch (error) {
-          console.error('Muted words fetch error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+      GET: defineHandler({}, async ({ session }) => {
+        const row = await prisma.userProfile.findUnique({
+          where: { userId: session.user.id },
+          select: { mutedWords: true },
+        });
+        return Response.json({ words: row?.mutedWords ?? [] });
+      }),
 
-      PUT: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
-
-          const { allowed } = rateLimit(getClientIp(request), {
-            limit: 30,
-            windowMs: 60_000,
-            prefix: 'muted-words',
-          });
-          if (!allowed) {
-            return Response.json({ error: 'Too many requests' }, { status: 429 });
-          }
-
+      PUT: defineHandler(
+        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'muted-words' } },
+        async ({ request, session }) => {
           const body = await request.json().catch(() => null);
           const parsed = schema.safeParse(body);
           if (!parsed.success) {
@@ -85,11 +62,8 @@ export const Route = createFileRoute('/api/preferences/muted-words')({
           // The feed read caches this list — drop it so the new set applies at once.
           invalidateMutedWords(session.user.id);
           return Response.json({ words });
-        } catch (error) {
-          console.error('Muted words save error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

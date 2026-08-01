@@ -1,87 +1,76 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 export const Route = createFileRoute('/api/discord/token')({
-    server: {
-        handlers: {
-            POST: async ({ request }) => {
-                const ip = getClientIp(request);
-                const { allowed, retryAfter } = rateLimit(ip, {
-                    limit: 10,
-                    windowMs: 60_000,
-                    prefix: 'discord-token',
-                });
+  server: {
+    handlers: {
+      POST: defineHandler(
+        { auth: 'none', rateLimit: { limit: 10, windowMs: 60_000, prefix: 'discord-token' } },
+        async ({ request }) => {
+          try {
+            const { code } = await request.json();
+            if (!code || typeof code !== 'string') {
+              return Response.json({ error: 'Missing code' }, { status: 400 });
+            }
 
-                if (!allowed) {
-                    return Response.json(
-                        { error: 'Too many requests' },
-                        { status: 429, headers: { 'Retry-After': String(retryAfter) } }
-                    );
-                }
+            const clientId = process.env.DISCORD_ACTIVITY_CLIENT_ID;
+            const clientSecret = process.env.DISCORD_ACTIVITY_CLIENT_SECRET;
 
-                try {
-                    const { code } = await request.json();
-                    if (!code || typeof code !== 'string') {
-                        return Response.json({ error: 'Missing code' }, { status: 400 });
-                    }
+            if (!clientId || !clientSecret) {
+              return Response.json({ error: 'Server misconfigured' }, { status: 500 });
+            }
 
-                    const clientId = process.env.DISCORD_ACTIVITY_CLIENT_ID;
-                    const clientSecret = process.env.DISCORD_ACTIVITY_CLIENT_SECRET;
+            // Exchange the authorization code for an access token
+            const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: new URLSearchParams({
+                client_id: clientId,
+                client_secret: clientSecret,
+                grant_type: 'authorization_code',
+                code,
+              }),
+            });
 
-                    if (!clientId || !clientSecret) {
-                        return Response.json({ error: 'Server misconfigured' }, { status: 500 });
-                    }
+            if (!tokenRes.ok) {
+              const errBody = await tokenRes.text();
+              console.error('Discord token exchange failed:', errBody);
+              return Response.json({ error: 'Token exchange failed' }, { status: 502 });
+            }
 
-                    // Exchange the authorization code for an access token
-                    const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: new URLSearchParams({
-                            client_id: clientId,
-                            client_secret: clientSecret,
-                            grant_type: 'authorization_code',
-                            code,
-                        }),
-                    });
+            const { access_token } = await tokenRes.json();
 
-                    if (!tokenRes.ok) {
-                        const errBody = await tokenRes.text();
-                        console.error('Discord token exchange failed:', errBody);
-                        return Response.json({ error: 'Token exchange failed' }, { status: 502 });
-                    }
+            // Fetch the Discord user to get their ID
+            const userRes = await fetch('https://discord.com/api/v10/users/@me', {
+              headers: { Authorization: `Bearer ${access_token}` },
+            });
 
-                    const { access_token } = await tokenRes.json();
+            let linkedUserId: string | null = null;
 
-                    // Fetch the Discord user to get their ID
-                    const userRes = await fetch('https://discord.com/api/v10/users/@me', {
-                        headers: { Authorization: `Bearer ${access_token}` },
-                    });
+            if (userRes.ok) {
+              const discordUser = await userRes.json();
+              const discordId = discordUser.id;
 
-                    let linkedUserId: string | null = null;
+              // Check if this Discord account is linked to an rmhstudios account
+              const account = await prisma.account.findFirst({
+                where: {
+                  providerId: 'discord',
+                  accountId: discordId,
+                },
+                select: { userId: true },
+              });
 
-                    if (userRes.ok) {
-                        const discordUser = await userRes.json();
-                        const discordId = discordUser.id;
+              linkedUserId = account?.userId ?? null;
+            }
 
-                        // Check if this Discord account is linked to an rmhstudios account
-                        const account = await prisma.account.findFirst({
-                            where: {
-                                providerId: 'discord',
-                                accountId: discordId,
-                            },
-                            select: { userId: true },
-                        });
-
-                        linkedUserId = account?.userId ?? null;
-                    }
-
-                    return Response.json({ access_token, linkedUserId });
-                } catch (e) {
-                    console.error('Discord token endpoint error:', e);
-                    return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-                }
-            },
+            return Response.json({ access_token, linkedUserId });
+          } catch (e) {
+            console.error('Discord token endpoint error:', e);
+            return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+          }
         },
+      ),
     },
+  },
 });

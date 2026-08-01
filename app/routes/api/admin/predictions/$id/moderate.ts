@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { moderateSchema } from '@/lib/predictions/predictions-schema';
 import { moderatePrediction, PredictionError } from '@/lib/predictions/predictions.server';
@@ -8,8 +8,7 @@ import { moderatePrediction, PredictionError } from '@/lib/predictions/predictio
 export const Route = createFileRoute('/api/admin/predictions/$id/moderate')({
   server: {
     handlers: {
-      POST: async ({ request, params }) => {
-        const session = await auth.api.getSession({ headers: request.headers });
+      POST: defineHandler({ auth: 'optional' }, async ({ request, params, session }) => {
         if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
           return Response.json({ error: 'Forbidden' }, { status: 403 });
         }
@@ -20,11 +19,15 @@ export const Route = createFileRoute('/api/admin/predictions/$id/moderate')({
           }
           const approve = parsed.data.action === 'approve';
           const market = await moderatePrediction({ predictionId: params.id, approve });
-          await logAdminAction(session.user.id, approve ? 'prediction.approve' : 'prediction.deny', {
-            targetType: 'prediction',
-            targetId: params.id,
-            detail: market.title,
-          });
+          await logAdminAction(
+            session.user.id,
+            approve ? 'prediction.approve' : 'prediction.deny',
+            {
+              targetType: 'prediction',
+              targetId: params.id,
+              detail: market.title,
+            },
+          );
           return Response.json({ ok: true, status: market.status });
         } catch (error) {
           if (error instanceof PredictionError) {
@@ -33,7 +36,7 @@ export const Route = createFileRoute('/api/admin/predictions/$id/moderate')({
           console.error('Prediction moderate error:', error);
           return Response.json({ error: 'Internal Server Error' }, { status: 500 });
         }
-      },
+      }),
     },
   },
 });

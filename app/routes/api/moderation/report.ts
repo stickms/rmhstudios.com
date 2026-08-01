@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { notifyAdminsOfReview } from '@/lib/admin-review.server';
 import { z } from 'zod';
 
@@ -13,8 +12,15 @@ const reportSchema = z.object({
   entityType: z.enum(['rmhark', 'comment', 'user', 'build', 'dm']),
   entityId: z.string().min(1).max(64),
   reason: z.enum([
-    'SPAM', 'HARASSMENT', 'HATE', 'VIOLENCE', 'SEXUAL',
-    'SELF_HARM', 'MISINFORMATION', 'ILLEGAL', 'OTHER',
+    'SPAM',
+    'HARASSMENT',
+    'HATE',
+    'VIOLENCE',
+    'SEXUAL',
+    'SELF_HARM',
+    'MISINFORMATION',
+    'ILLEGAL',
+    'OTHER',
   ]),
   details: z.string().max(1000).optional(),
 });
@@ -24,15 +30,24 @@ async function resolveTargetUser(entityType: string, entityId: string): Promise<
   try {
     switch (entityType) {
       case 'rmhark': {
-        const r = await prisma.rMHark.findUnique({ where: { id: entityId }, select: { userId: true } });
+        const r = await prisma.rMHark.findUnique({
+          where: { id: entityId },
+          select: { userId: true },
+        });
         return r?.userId ?? null;
       }
       case 'comment': {
-        const c = await prisma.rMHarkComment.findUnique({ where: { id: entityId }, select: { userId: true } });
+        const c = await prisma.rMHarkComment.findUnique({
+          where: { id: entityId },
+          select: { userId: true },
+        });
         return c?.userId ?? null;
       }
       case 'build': {
-        const b = await prisma.userBuild.findUnique({ where: { id: entityId }, select: { userId: true } });
+        const b = await prisma.userBuild.findUnique({
+          where: { id: entityId },
+          select: { userId: true },
+        });
         return b?.userId ?? null;
       }
       case 'user':
@@ -48,32 +63,22 @@ async function resolveTargetUser(entityType: string, entityId: string): Promise<
 export const Route = createFileRoute('/api/moderation/report')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
-
-          const ip = getClientIp(request);
-          const { allowed, retryAfter } = rateLimit(ip, {
+      POST: defineHandler(
+        {
+          rateLimit: {
             limit: 10,
             windowMs: 60_000,
             prefix: 'moderation-report',
-          });
-          if (!allowed) {
-            return Response.json(
-              { error: 'Too many reports. Please slow down.' },
-              { status: 429, headers: { 'Retry-After': String(retryAfter) } }
-            );
-          }
-
+            message: 'Too many reports. Please slow down.',
+          },
+        },
+        async ({ request, session }) => {
           const body = await request.json().catch(() => ({}));
           const parsed = reportSchema.safeParse(body);
           if (!parsed.success) {
             return Response.json(
               { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-              { status: 400 }
+              { status: 400 },
             );
           }
 
@@ -114,11 +119,8 @@ export const Route = createFileRoute('/api/moderation/report')({
           });
 
           return Response.json({ success: true });
-        } catch (error) {
-          console.error('File report error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

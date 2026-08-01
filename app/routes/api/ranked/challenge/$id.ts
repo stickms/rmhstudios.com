@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
@@ -20,74 +20,76 @@ const schema = z.discriminatedUnion('action', [
 export const Route = createFileRoute('/api/ranked/challenge/$id')({
   server: {
     handlers: {
-      POST: async ({ request, params }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          const userId = session.user.id;
+      POST: defineHandler({}, async ({ request, params, session }) => {
+        const userId = session.user.id;
 
-          const ip = getClientIp(request);
-          const { allowed } = rateLimit(ip, { limit: 30, windowMs: 60_000, prefix: 'ranked-act' });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
+        const ip = getClientIp(request);
+        const { allowed } = rateLimit(ip, { limit: 30, windowMs: 60_000, prefix: 'ranked-act' });
+        if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
-          const body = await request.json().catch(() => ({}));
-          const parsed = schema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
+        const body = await request.json().catch(() => ({}));
+        const parsed = schema.safeParse(body);
+        if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
 
-          const challenge = await prisma.rankedChallenge.findUnique({ where: { id: params.id } });
-          if (!challenge) return Response.json({ error: 'Not found' }, { status: 404 });
+        const challenge = await prisma.rankedChallenge.findUnique({ where: { id: params.id } });
+        if (!challenge) return Response.json({ error: 'Not found' }, { status: 404 });
 
-          const isOpponent = challenge.opponentId === userId;
-          const isChallenger = challenge.challengerId === userId;
-          if (!isOpponent && !isChallenger) return Response.json({ error: 'Not your challenge' }, { status: 403 });
+        const isOpponent = challenge.opponentId === userId;
+        const isChallenger = challenge.challengerId === userId;
+        if (!isOpponent && !isChallenger)
+          return Response.json({ error: 'Not your challenge' }, { status: 403 });
 
-          if (parsed.data.action === 'accept' || parsed.data.action === 'decline') {
-            if (!isOpponent) return Response.json({ error: 'Only the challenged player can respond' }, { status: 403 });
-            if (challenge.status !== 'pending') return Response.json({ error: 'Already responded' }, { status: 409 });
-            await prisma.rankedChallenge.update({
-              where: { id: challenge.id },
-              data: { status: parsed.data.action === 'accept' ? 'accepted' : 'declined', ...(parsed.data.action === 'decline' ? { resolvedAt: new Date() } : {}) },
-            });
-            return Response.json({ success: true });
-          }
-
-          // report
-          if (challenge.status !== 'accepted') {
-            return Response.json({ error: 'Challenge must be accepted first' }, { status: 409 });
-          }
-          // Map the reporter's result to an absolute winnerId (null = draw).
-          let winnerId: string | null;
-          if (parsed.data.result === 'draw') winnerId = null;
-          else if (parsed.data.result === 'win') winnerId = userId;
-          else winnerId = isChallenger ? challenge.opponentId : challenge.challengerId;
-
-          // Atomically claim the accepted→done transition. Without this, two
-          // concurrent reports both passed the status check and applied the ELO
-          // result twice. Only the request that actually flips the row proceeds.
-          // NOTE: this still trusts a single reporter ("first report wins"); true
-          // integrity requires two-sided confirmation or server-authoritative match
-          // results — tracked as a follow-up.
-          const claimed = await prisma.rankedChallenge.updateMany({
-            where: { id: challenge.id, status: 'accepted' },
-            data: { status: 'done', winnerId, resolvedAt: new Date() },
+        if (parsed.data.action === 'accept' || parsed.data.action === 'decline') {
+          if (!isOpponent)
+            return Response.json(
+              { error: 'Only the challenged player can respond' },
+              { status: 403 },
+            );
+          if (challenge.status !== 'pending')
+            return Response.json({ error: 'Already responded' }, { status: 409 });
+          await prisma.rankedChallenge.update({
+            where: { id: challenge.id },
+            data: {
+              status: parsed.data.action === 'accept' ? 'accepted' : 'declined',
+              ...(parsed.data.action === 'decline' ? { resolvedAt: new Date() } : {}),
+            },
           });
-          if (claimed.count === 0) {
-            return Response.json({ error: 'Challenge already resolved' }, { status: 409 });
-          }
-
-          const result = await applyChallengeResult({
-            game: challenge.game,
-            challengerId: challenge.challengerId,
-            opponentId: challenge.opponentId,
-            winnerId,
-          });
-
-          return Response.json({ success: true, ...result });
-        } catch (error) {
-          console.error('Ranked act error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+          return Response.json({ success: true });
         }
-      },
+
+        // report
+        if (challenge.status !== 'accepted') {
+          return Response.json({ error: 'Challenge must be accepted first' }, { status: 409 });
+        }
+        // Map the reporter's result to an absolute winnerId (null = draw).
+        let winnerId: string | null;
+        if (parsed.data.result === 'draw') winnerId = null;
+        else if (parsed.data.result === 'win') winnerId = userId;
+        else winnerId = isChallenger ? challenge.opponentId : challenge.challengerId;
+
+        // Atomically claim the accepted→done transition. Without this, two
+        // concurrent reports both passed the status check and applied the ELO
+        // result twice. Only the request that actually flips the row proceeds.
+        // NOTE: this still trusts a single reporter ("first report wins"); true
+        // integrity requires two-sided confirmation or server-authoritative match
+        // results — tracked as a follow-up.
+        const claimed = await prisma.rankedChallenge.updateMany({
+          where: { id: challenge.id, status: 'accepted' },
+          data: { status: 'done', winnerId, resolvedAt: new Date() },
+        });
+        if (claimed.count === 0) {
+          return Response.json({ error: 'Challenge already resolved' }, { status: 409 });
+        }
+
+        const result = await applyChallengeResult({
+          game: challenge.game,
+          challengerId: challenge.challengerId,
+          opponentId: challenge.opponentId,
+          winnerId,
+        });
+
+        return Response.json({ success: true, ...result });
+      }),
     },
   },
 });

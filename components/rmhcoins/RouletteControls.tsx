@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from "react-i18next";
+import { useBettingCountdown, BettingCountdown } from './BettingCountdown';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from './CoinIcon';
 import { useRouletteStore } from '@/lib/roulette/store';
@@ -44,31 +45,12 @@ export function RouletteControls({ coins }: Props) {
   const { t } = useTranslation("c-rmhcoins");
 
   const [selectedChip, setSelectedChip] = useState(5);
-  const [countdown, setCountdown] = useState<number | null>(null);
+  const countdown = useBettingCountdown(tablePhase, bettingCountdown);
 
   // Keep the shared chip value in sync
   useEffect(() => {
     setSelectedChipValue(selectedChip);
   }, [selectedChip]);
-
-  // Betting countdown timer
-  useEffect(() => {
-    if (tablePhase === 'betting' && bettingCountdown !== null) {
-      setCountdown(bettingCountdown);
-      const interval = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev === null || prev <= 0) {
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(interval);
-    } else {
-      setCountdown(null);
-    }
-  }, [tablePhase, bettingCountdown]);
 
   // Only use staged bets for total — server bets are the same ones echoed back
   const totalBet = stagedBets.reduce((sum, b) => sum + b.amount, 0);
@@ -102,18 +84,9 @@ export function RouletteControls({ coins }: Props) {
 
   // Betting phase
   if (tablePhase === 'betting') {
-    const isLow = countdown !== null && countdown <= 5;
-
     return (
       <div className="flex flex-col gap-2.5">
-        {countdown !== null && (
-          <div className="text-center">
-            <span className="text-sm text-site-text-dim">{t("betting-closes-in", { defaultValue: "Betting closes in " })}</span>
-            <span className={`font-bold text-lg tabular-nums ${isLow ? 'text-site-danger animate-pulse' : 'text-site-accent'}`}>
-              {countdown}s
-            </span>
-          </div>
-        )}
+        <BettingCountdown countdown={countdown} />
 
         {/* Chip selector — circular chips, scrollable on tiny screens */}
         <div className="flex flex-col gap-1">

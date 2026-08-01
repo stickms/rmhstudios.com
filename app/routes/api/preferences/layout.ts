@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { layoutPrefsSchema, parseLayoutPref } from '@/lib/home-widgets';
 
 /**
@@ -16,27 +15,16 @@ import { layoutPrefsSchema, parseLayoutPref } from '@/lib/home-widgets';
 export const Route = createFileRoute('/api/preferences/layout')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          const row = await prisma.layoutPreference.findUnique({
-            where: { userId: session.user.id },
-            select: { sidebar: true, homeStack: true },
-          });
-          return Response.json(parseLayoutPref(row));
-        } catch (error) {
-          console.error('Layout prefs fetch error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
-      PUT: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          const { allowed } = rateLimit(getClientIp(request), { limit: 30, windowMs: 60_000, prefix: 'layout' });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
+      GET: defineHandler({}, async ({ session }) => {
+        const row = await prisma.layoutPreference.findUnique({
+          where: { userId: session.user.id },
+          select: { sidebar: true, homeStack: true },
+        });
+        return Response.json(parseLayoutPref(row));
+      }),
+      PUT: defineHandler(
+        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'layout' } },
+        async ({ request, session }) => {
           const body = await request.json().catch(() => null);
           const parsed = layoutPrefsSchema.safeParse(body);
           if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
@@ -51,11 +39,8 @@ export const Route = createFileRoute('/api/preferences/layout')({
             update: data,
           });
           return Response.json(parseLayoutPref(row));
-        } catch (error) {
-          console.error('Layout prefs save error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { adjudicateWagerSchema } from '@/lib/wager/wager-schema';
 import { adjudicateWager, WagerError } from '@/lib/wager/wager.server';
@@ -7,8 +7,7 @@ import { adjudicateWager, WagerError } from '@/lib/wager/wager.server';
 export const Route = createFileRoute('/api/admin/wager/$id/resolve')({
   server: {
     handlers: {
-      POST: async ({ request, params }) => {
-        const session = await auth.api.getSession({ headers: request.headers });
+      POST: defineHandler({ auth: 'optional' }, async ({ request, params, session }) => {
         if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
           return Response.json({ error: 'Forbidden' }, { status: 403 });
         }
@@ -35,7 +34,7 @@ export const Route = createFileRoute('/api/admin/wager/$id/resolve')({
           console.error('Wager adjudicate error:', error);
           return Response.json({ error: 'Internal Server Error' }, { status: 500 });
         }
-      },
+      }),
     },
   },
 });

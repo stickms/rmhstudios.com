@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
@@ -11,7 +12,11 @@ const currentYear = new Date().getFullYear();
 const applicationSchema = z.object({
   vehicleMake: z.string().trim().min(1).max(60),
   vehicleModel: z.string().trim().min(1).max(60),
-  vehicleYear: z.coerce.number().int().min(1980).max(currentYear + 2),
+  vehicleYear: z.coerce
+    .number()
+    .int()
+    .min(1980)
+    .max(currentYear + 2),
   vehicleColor: z.string().trim().min(1).max(30),
   licensePlate: z.string().trim().min(1).max(16),
   licenseNumber: z.string().trim().min(1).max(40),
@@ -75,29 +80,20 @@ export const Route = createFileRoute('/api/rideshare/driver')({
       },
 
       // Toggle availability (online/offline) for approved drivers.
-      PATCH: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
-          const body = await request.json().catch(() => ({}));
-          if (typeof body.isOnline !== 'boolean') {
-            return Response.json({ error: 'isOnline boolean required' }, { status: 400 });
-          }
-          const result = await prisma.rideshareDriver.updateMany({
-            where: { userId: session.user.id, status: 'APPROVED' },
-            data: { isOnline: body.isOnline },
-          });
-          if (result.count === 0) {
-            return Response.json({ error: 'Not an approved driver.' }, { status: 403 });
-          }
-          return Response.json({ isOnline: body.isOnline });
-        } catch (error) {
-          console.error('Rideshare availability error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+      PATCH: defineHandler({}, async ({ request, session }) => {
+        const body = await request.json().catch(() => ({}));
+        if (typeof body.isOnline !== 'boolean') {
+          return Response.json({ error: 'isOnline boolean required' }, { status: 400 });
         }
-      },
+        const result = await prisma.rideshareDriver.updateMany({
+          where: { userId: session.user.id, status: 'APPROVED' },
+          data: { isOnline: body.isOnline },
+        });
+        if (result.count === 0) {
+          return Response.json({ error: 'Not an approved driver.' }, { status: 403 });
+        }
+        return Response.json({ isOnline: body.isOnline });
+      }),
 
       POST: async ({ request }) => {
         try {

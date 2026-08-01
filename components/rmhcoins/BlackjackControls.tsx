@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBettingCountdown, BettingCountdown } from './BettingCountdown';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from './CoinIcon';
 import { useBlackjackStore } from '@/lib/blackjack/store';
@@ -25,7 +26,7 @@ export function BlackjackControls({ coins }: Props) {
   } = useBlackjackStore();
 
   const [betInput, setBetInput] = useState('5');
-  const [countdown, setCountdown] = useState<number | null>(null);
+  const countdown = useBettingCountdown(tablePhase, bettingCountdown);
   const [insCountdown, setInsCountdown] = useState<number | null>(null);
 
   const { t } = useTranslation("c-rmhcoins");
@@ -58,25 +59,6 @@ export function BlackjackControls({ coins }: Props) {
     && activeCards[0] && activeCards[1]
     && rankVal(activeCards[0].rank) === rankVal(activeCards[1].rank)
     && coins >= activeBet);
-
-  // Betting countdown timer
-  useEffect(() => {
-    if (tablePhase === 'betting' && bettingCountdown !== null) {
-      setCountdown(bettingCountdown);
-      const interval = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev === null || prev <= 0) {
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(interval);
-    } else {
-      setCountdown(null);
-    }
-  }, [tablePhase, bettingCountdown]);
 
   // Insurance countdown timer
   useEffect(() => {
@@ -123,18 +105,9 @@ export function BlackjackControls({ coins }: Props) {
 
   // Betting phase
   if (tablePhase === 'betting') {
-    const isLow = countdown !== null && countdown <= 5;
-
     return (
       <div className="flex flex-col gap-3">
-        {countdown !== null && (
-          <div className="text-center">
-            <span className="text-sm text-site-text-dim">{t("betting-closes-in", { defaultValue: "Betting closes in " })}</span>
-            <span className={`font-bold text-lg tabular-nums ${isLow ? 'text-site-danger animate-pulse' : 'text-site-accent'}`}>
-              {countdown}s
-            </span>
-          </div>
-        )}
+        <BettingCountdown countdown={countdown} />
 
         {hasBet ? (
           <div className="text-center py-2">

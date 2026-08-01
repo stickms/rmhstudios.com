@@ -6,9 +6,8 @@
  *   DELETE /api/homes/listings/$id   → delete (owner only)
  */
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import {
   getListing,
   updateListing,
@@ -48,31 +47,22 @@ const statusSchema = z.object({
 export const Route = createFileRoute('/api/homes/listings/$id')({
   server: {
     handlers: {
-      GET: async ({ request, params }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          const listing = await getListing(params.id, session?.user.id ?? null);
-          if (!listing) return Response.json({ error: 'Listing not found' }, { status: 404 });
-          return Response.json({ listing });
-        } catch (error) {
-          console.error('Homes listing GET error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+      GET: defineHandler({ auth: 'optional' }, async ({ params, session }) => {
+        const listing = await getListing(params.id, session?.user.id ?? null);
+        if (!listing) return Response.json({ error: 'Listing not found' }, { status: 404 });
+        return Response.json({ listing });
+      }),
 
-      PATCH: async ({ request, params }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const ip = getClientIp(request);
-          const { allowed } = rateLimit(ip, {
+      PATCH: defineHandler(
+        {
+          rateLimit: {
             limit: 30,
             windowMs: 60_000,
             prefix: 'homes-edit',
-          });
-          if (!allowed) return Response.json({ error: 'Too many requests.' }, { status: 429 });
-
+            message: 'Too many requests.',
+          },
+        },
+        async ({ request, params, session }) => {
           const body = await request.json();
 
           // Status-only change (mark rented/sold/active/removed).
@@ -115,24 +105,14 @@ export const Route = createFileRoute('/api/homes/listings/$id')({
           const ok = await updateListing(params.id, session.user.id, input);
           if (!ok) return Response.json({ error: 'Not found' }, { status: 404 });
           return Response.json({ ok: true });
-        } catch (error) {
-          console.error('Homes listing PATCH error:', error);
-          return Response.json({ error: 'Could not update listing.' }, { status: 500 });
-        }
-      },
+        },
+      ),
 
-      DELETE: async ({ request, params }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          const ok = await deleteListing(params.id, session.user.id);
-          if (!ok) return Response.json({ error: 'Not found' }, { status: 404 });
-          return Response.json({ ok: true });
-        } catch (error) {
-          console.error('Homes listing DELETE error:', error);
-          return Response.json({ error: 'Could not delete listing.' }, { status: 500 });
-        }
-      },
+      DELETE: defineHandler({}, async ({ params, session }) => {
+        const ok = await deleteListing(params.id, session.user.id);
+        if (!ok) return Response.json({ error: 'Not found' }, { status: 404 });
+        return Response.json({ ok: true });
+      }),
     },
   },
 });

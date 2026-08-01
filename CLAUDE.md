@@ -70,10 +70,15 @@ status 7008 · assets 7007. Env: see `.env.example`; minimum is
    `routeTree.gen.ts`.
 2. **Server-only code:** `lib/**/*.server.ts` is stubbed out of the client
    bundle by a Vite plugin. Never import `.server` modules from client code.
-3. **API routes:** `.ts` files with `server.handlers.{GET,POST,...}`. Order:
-   session check (`auth.api.getSession({ headers: request.headers })`) →
-   `rateLimit(getClientIp(request), …)` → zod `safeParse` →
-   `Response.json(...)`. Admin = `(session.user as any).isAdmin`.
+3. **API routes:** `.ts` files with `server.handlers.{GET,POST,...}`. Wrap every
+   handler in `defineHandler` from `@/lib/api/handler.server` — it performs the
+   session check → rate limit → zod `safeParse` → try/catch order for you and is
+   the only place that order is written down in code:
+   `POST: defineHandler({ rateLimit: 'write', body: schema }, async ({ userId, body }) => …)`.
+   `auth` defaults to `'required'`; pass `'admin'` / `'optional'` / `'none'` to
+   opt out. Admin routes get `auth: 'admin'` instead of a hand-rolled
+   `isAdmin` check. The `/api/v1/**` developer API keeps its own richer wrapper
+   (`withDeveloperApi`) because it speaks a different error envelope.
 4. **Design language:** every color/radius/shadow/font via `--site-*` token
    utilities (`bg-site-surface`, `rounded-site`, …) so every theme works;
    full-screen apps use the parallel `--app-*` contract in

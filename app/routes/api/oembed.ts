@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { defineHandler } from '@/lib/api/handler.server';
 import { safeFetch, SsrfError } from '@/lib/ssrf-guard.server';
 /**
  * /api/oembed — Resolve media URLs and extract OpenGraph metadata.
@@ -13,13 +13,13 @@ const CACHE_TTL = 60 * 60 * 24; // 24h
 function extractMetaContent(html: string, property: string): string | null {
   // Try property="..." content="..."
   const propMatch = html.match(
-    new RegExp(`<meta\\s[^>]*(?:property|name)="${property}"\\s[^>]*content="([^"]*)"`, 'i')
+    new RegExp(`<meta\\s[^>]*(?:property|name)="${property}"\\s[^>]*content="([^"]*)"`, 'i'),
   );
   if (propMatch) return propMatch[1];
 
   // Try content="..." property="..."
   const altMatch = html.match(
-    new RegExp(`<meta\\s[^>]*content="([^"]*)"[^>]*(?:property|name)="${property}"`, 'i')
+    new RegExp(`<meta\\s[^>]*content="([^"]*)"[^>]*(?:property|name)="${property}"`, 'i'),
   );
   return altMatch ? altMatch[1] : null;
 }
@@ -32,118 +32,128 @@ function extractTagContent(html: string, tag: string): string | null {
 export const Route = createFileRoute('/api/oembed')({
   server: {
     handlers: {
-  GET: async ({ request }) => {
-  const ip = getClientIp(request);
-  const { allowed } = rateLimit(ip, { limit: 30, windowMs: 60_000, prefix: "oembed" });
-  if (!allowed) return new Response(JSON.stringify({ error: "Rate limited" }), { status: 429 });
-
-  const url = new URL(request.url).searchParams.get('url');
-  const type = new URL(request.url).searchParams.get('type') || 'tenor';
-
-  if (!url) {
-    return Response.json({ error: 'Missing url parameter' }, { status: 400 });
-  }
-
-  // Validate URL
-  try {
-    new URL(url);
-  } catch {
-    return Response.json({ error: 'Invalid URL' }, { status: 400 });
-  }
-
-  // ── Tenor resolution ──────────────────────────────────────────
-  if (type === 'tenor') {
-    try {
-      const res = await safeFetch(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RmhBot/1.0)' },
-        allowedHosts: ['tenor.com'],
-      });
-
-      if (!res.ok) {
-        return Response.json({ error: 'Failed to fetch page' }, { status: 502 });
-      }
-
-      const html = await res.text();
-
-      const ogImageMatch = html.match(/<meta\s[^>]*property="og:image"\s[^>]*content="([^"]+)"/);
-      const ogImageAlt = html.match(/<meta\s[^>]*content="([^"]+)"[^>]*property="og:image"/);
-      const ogVideoMatch = html.match(/<meta\s[^>]*property="og:video"\s[^>]*content="([^"]+)"/);
-      const ogVideoAlt = html.match(/<meta\s[^>]*content="([^"]+)"[^>]*property="og:video"/);
-
-      const gifUrl = ogImageMatch?.[1] ?? ogImageAlt?.[1] ?? null;
-
-      if (!gifUrl) {
-        return Response.json({ error: 'No media found' }, { status: 404 });
-      }
-
-      return Response.json(
-        { gifUrl, videoUrl: ogVideoMatch?.[1] ?? ogVideoAlt?.[1] ?? null },
+      GET: defineHandler(
         {
-          headers: {
-            'Cache-Control': `public, max-age=${CACHE_TTL}, stale-while-revalidate=86400`,
-          },
+          auth: 'none',
+          rateLimit: { limit: 30, windowMs: 60_000, prefix: 'oembed', message: 'Rate limited' },
         },
-      );
-    } catch (e) {
-      if (e instanceof SsrfError) return Response.json({ error: 'Disallowed URL' }, { status: 400 });
-      return Response.json({ error: 'Fetch failed' }, { status: 502 });
-    }
-  }
+        async ({ request }) => {
+          const url = new URL(request.url).searchParams.get('url');
+          const type = new URL(request.url).searchParams.get('type') || 'tenor';
 
-  // ── OpenGraph metadata extraction ─────────────────────────────
-  if (type === 'og') {
-    try {
-      const res = await safeFetch(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RmhBot/1.0)' },
-        timeoutMs: 5000,
-      });
+          if (!url) {
+            return Response.json({ error: 'Missing url parameter' }, { status: 400 });
+          }
 
-      if (!res.ok) {
-        return Response.json({ error: 'Failed to fetch page' }, { status: 502 });
-      }
+          // Validate URL
+          try {
+            new URL(url);
+          } catch {
+            return Response.json({ error: 'Invalid URL' }, { status: 400 });
+          }
 
-      const html = await res.text();
-      const head = html.slice(0, 50_000); // Only parse the head section
+          // ── Tenor resolution ──────────────────────────────────────────
+          if (type === 'tenor') {
+            try {
+              const res = await safeFetch(url, {
+                headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RmhBot/1.0)' },
+                allowedHosts: ['tenor.com'],
+              });
 
-      const title =
-        extractMetaContent(head, 'og:title') ||
-        extractMetaContent(head, 'twitter:title') ||
-        extractTagContent(head, 'title');
-      const description =
-        extractMetaContent(head, 'og:description') ||
-        extractMetaContent(head, 'twitter:description') ||
-        extractMetaContent(head, 'description');
-      const image =
-        extractMetaContent(head, 'og:image') ||
-        extractMetaContent(head, 'twitter:image');
-      const siteName =
-        extractMetaContent(head, 'og:site_name');
+              if (!res.ok) {
+                return Response.json({ error: 'Failed to fetch page' }, { status: 502 });
+              }
 
-      if (!title && !description) {
-        return Response.json({ error: 'No metadata found' }, { status: 404 });
-      }
+              const html = await res.text();
 
-      return Response.json(
-        {
-          title: title || null,
-          description: description || null,
-          image: image || null,
-          siteName: siteName || new URL(url).hostname,
+              const ogImageMatch = html.match(
+                /<meta\s[^>]*property="og:image"\s[^>]*content="([^"]+)"/,
+              );
+              const ogImageAlt = html.match(
+                /<meta\s[^>]*content="([^"]+)"[^>]*property="og:image"/,
+              );
+              const ogVideoMatch = html.match(
+                /<meta\s[^>]*property="og:video"\s[^>]*content="([^"]+)"/,
+              );
+              const ogVideoAlt = html.match(
+                /<meta\s[^>]*content="([^"]+)"[^>]*property="og:video"/,
+              );
+
+              const gifUrl = ogImageMatch?.[1] ?? ogImageAlt?.[1] ?? null;
+
+              if (!gifUrl) {
+                return Response.json({ error: 'No media found' }, { status: 404 });
+              }
+
+              return Response.json(
+                { gifUrl, videoUrl: ogVideoMatch?.[1] ?? ogVideoAlt?.[1] ?? null },
+                {
+                  headers: {
+                    'Cache-Control': `public, max-age=${CACHE_TTL}, stale-while-revalidate=86400`,
+                  },
+                },
+              );
+            } catch (e) {
+              if (e instanceof SsrfError)
+                return Response.json({ error: 'Disallowed URL' }, { status: 400 });
+              return Response.json({ error: 'Fetch failed' }, { status: 502 });
+            }
+          }
+
+          // ── OpenGraph metadata extraction ─────────────────────────────
+          if (type === 'og') {
+            try {
+              const res = await safeFetch(url, {
+                headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RmhBot/1.0)' },
+                timeoutMs: 5000,
+              });
+
+              if (!res.ok) {
+                return Response.json({ error: 'Failed to fetch page' }, { status: 502 });
+              }
+
+              const html = await res.text();
+              const head = html.slice(0, 50_000); // Only parse the head section
+
+              const title =
+                extractMetaContent(head, 'og:title') ||
+                extractMetaContent(head, 'twitter:title') ||
+                extractTagContent(head, 'title');
+              const description =
+                extractMetaContent(head, 'og:description') ||
+                extractMetaContent(head, 'twitter:description') ||
+                extractMetaContent(head, 'description');
+              const image =
+                extractMetaContent(head, 'og:image') || extractMetaContent(head, 'twitter:image');
+              const siteName = extractMetaContent(head, 'og:site_name');
+
+              if (!title && !description) {
+                return Response.json({ error: 'No metadata found' }, { status: 404 });
+              }
+
+              return Response.json(
+                {
+                  title: title || null,
+                  description: description || null,
+                  image: image || null,
+                  siteName: siteName || new URL(url).hostname,
+                },
+                {
+                  headers: {
+                    'Cache-Control': `public, max-age=${CACHE_TTL}, stale-while-revalidate=86400`,
+                  },
+                },
+              );
+            } catch (e) {
+              if (e instanceof SsrfError)
+                return Response.json({ error: 'Disallowed URL' }, { status: 400 });
+              return Response.json({ error: 'Fetch failed' }, { status: 502 });
+            }
+          }
+
+          return Response.json({ error: 'Invalid type parameter' }, { status: 400 });
         },
-        {
-          headers: {
-            'Cache-Control': `public, max-age=${CACHE_TTL}, stale-while-revalidate=86400`,
-          },
-        },
-      );
-    } catch (e) {
-      if (e instanceof SsrfError) return Response.json({ error: 'Disallowed URL' }, { status: 400 });
-      return Response.json({ error: 'Fetch failed' }, { status: 502 });
-    }
-  }
-
-  return Response.json({ error: 'Invalid type parameter' }, { status: 400 });
-},
+      ),
     },
   },
 });

@@ -1,13 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { reviewRedemptionSchema } from '@/lib/creator/redemption-schema';
 import { reviewRedemption, RedemptionError } from '@/lib/creator/earnings.server';
 
 export const Route = createFileRoute('/api/admin/redemptions/$id')({
   server: {
     handlers: {
-      POST: async ({ request, params }) => {
-        const session = await auth.api.getSession({ headers: request.headers });
+      POST: defineHandler({ auth: 'optional' }, async ({ request, params, session }) => {
         if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
           return Response.json({ error: 'Forbidden' }, { status: 403 });
         }
@@ -30,7 +29,7 @@ export const Route = createFileRoute('/api/admin/redemptions/$id')({
           console.error('Admin redemption review error:', error);
           return Response.json({ error: 'Internal Server Error' }, { status: 500 });
         }
-      },
+      }),
     },
   },
 });

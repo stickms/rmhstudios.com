@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { answerQuestion } from '@/lib/assistant/assistant.server';
 
 /**
@@ -23,23 +22,16 @@ const schema = z.object({
 export const Route = createFileRoute('/api/assistant')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const { allowed, retryAfter } = rateLimit(getClientIp(request), {
+      POST: defineHandler(
+        {
+          rateLimit: {
             limit: 20,
             windowMs: 60_000,
             prefix: 'assistant',
-          });
-          if (!allowed) {
-            return Response.json(
-              { error: 'Slow down a moment' },
-              { status: 429, headers: { 'Retry-After': String(retryAfter) } },
-            );
-          }
-
+            message: 'Slow down a moment',
+          },
+        },
+        async ({ request, session }) => {
           const body = await request.json().catch(() => ({}));
           const parsed = schema.safeParse(body);
           if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
@@ -51,11 +43,8 @@ export const Route = createFileRoute('/api/assistant')({
           });
 
           return Response.json(result);
-        } catch (error) {
-          console.error('assistant error:', error);
-          return Response.json({ error: 'Internal server error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { requestRedemptionSchema } from '@/lib/creator/redemption-schema';
@@ -12,22 +13,13 @@ import {
 export const Route = createFileRoute('/api/creator/redeem/')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session?.user?.id) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
-          const [earnings, requests] = await Promise.all([
-            getCreatorEarnings(session.user.id),
-            listMyRedemptions(session.user.id),
-          ]);
-          return Response.json({ earnings, requests });
-        } catch (error) {
-          console.error('Creator earnings error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+      GET: defineHandler({}, async ({ session }) => {
+        const [earnings, requests] = await Promise.all([
+          getCreatorEarnings(session.user.id),
+          listMyRedemptions(session.user.id),
+        ]);
+        return Response.json({ earnings, requests });
+      }),
       POST: async ({ request }) => {
         try {
           const session = await auth.api.getSession({ headers: request.headers });

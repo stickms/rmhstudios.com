@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { getClientIp, rateLimit } from '@/lib/rate-limit';
@@ -16,16 +17,9 @@ const resumePrisma = prisma as unknown as ResumePrisma;
 export const Route = createFileRoute('/api/rmhladder/resume/')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session?.user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          return Response.json({ resumes: await listUserResumes(resumePrisma, session.user.id) });
-        } catch (error) {
-          console.error('[rmhladder-resume] list failed:', error);
-          return Response.json({ error: 'Could not load resumes.' }, { status: 500 });
-        }
-      },
+      GET: defineHandler({}, async ({ session }) => {
+        return Response.json({ resumes: await listUserResumes(resumePrisma, session.user.id) });
+      }),
 
       POST: async ({ request }) => {
         try {

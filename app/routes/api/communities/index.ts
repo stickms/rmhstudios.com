@@ -1,8 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { listCommunities } from '@/lib/communities.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
 
 /**
@@ -28,25 +27,28 @@ function slugify(name: string): string {
 export const Route = createFileRoute('/api/communities/')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+      GET: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
         const q = new URL(request.url).searchParams.get('q');
         const communities = await listCommunities({ userId: session?.user.id ?? null, q });
         return Response.json({ communities });
-      },
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const ip = getClientIp(request);
-          const { allowed } = rateLimit(ip, { limit: 5, windowMs: 60 * 60 * 1000, prefix: 'community-create' });
-          if (!allowed) return Response.json({ error: 'Too many communities created. Try later.' }, { status: 429 });
-
+      }),
+      POST: defineHandler(
+        {
+          rateLimit: {
+            limit: 5,
+            windowMs: 60 * 60 * 1000,
+            prefix: 'community-create',
+            message: 'Too many communities created. Try later.',
+          },
+        },
+        async ({ request, session }) => {
           const body = await request.json().catch(() => ({}));
           const parsed = createSchema.safeParse(body);
           if (!parsed.success) {
-            return Response.json({ error: parsed.error.issues[0]?.message ?? 'Invalid input' }, { status: 400 });
+            return Response.json(
+              { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
+              { status: 400 },
+            );
           }
 
           let slug = slugify(parsed.data.name);
@@ -69,11 +71,8 @@ export const Route = createFileRoute('/api/communities/')({
             },
           });
           return Response.json({ success: true, slug: community.slug }, { status: 201 });
-        } catch (error) {
-          console.error('Create community error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

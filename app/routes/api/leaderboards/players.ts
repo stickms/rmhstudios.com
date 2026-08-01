@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { getLeaderboard, type LeaderboardScope } from '@/lib/leaderboard.server';
 
 /**
@@ -10,18 +10,13 @@ import { getLeaderboard, type LeaderboardScope } from '@/lib/leaderboard.server'
 export const Route = createFileRoute('/api/leaderboards/players')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
-          const url = new URL(request.url);
-          const scope: LeaderboardScope = url.searchParams.get('scope') === 'friends' ? 'friends' : 'global';
-          const result = await getLeaderboard(session?.user?.id ?? null, scope);
-          return Response.json(result);
-        } catch (error) {
-          console.error('Leaderboard fetch error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+      GET: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
+        const url = new URL(request.url);
+        const scope: LeaderboardScope =
+          url.searchParams.get('scope') === 'friends' ? 'friends' : 'global';
+        const result = await getLeaderboard(session?.user?.id ?? null, scope);
+        return Response.json(result);
+      }),
     },
   },
 });

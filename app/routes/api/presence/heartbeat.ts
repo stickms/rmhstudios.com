@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { markPresence } from '@/lib/hot-counters.server';
 
@@ -10,8 +10,7 @@ import { markPresence } from '@/lib/hot-counters.server';
 export const Route = createFileRoute('/api/presence/heartbeat')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        const session = await auth.api.getSession({ headers: request.headers });
+      POST: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
         if (!session) return Response.json({ ok: false }, { status: 401 });
 
         const ip = getClientIp(request);
@@ -24,7 +23,7 @@ export const Route = createFileRoute('/api/presence/heartbeat')({
         // direct write when Redis is unavailable).
         await markPresence(session.user.id);
         return Response.json({ ok: true });
-      },
+      }),
     },
   },
 });
