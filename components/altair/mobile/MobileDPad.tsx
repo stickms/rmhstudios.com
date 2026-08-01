@@ -70,6 +70,12 @@ export default function MobileDPad({ onChange, side = 'left' }: MobileDPadProps)
     >
       <div
         ref={padRef}
+        // A thumbstick is a press that is held and dragged for the whole length
+        // of a play session — both halves of what the platform reads as "select
+        // from here to there", on the one control a player never lets go of.
+        // `touch-none` below already refused the pan; this refuses the rest.
+        // (globals.css §Selection)
+        data-gesture=""
         className="w-32 h-32 rounded-full border-2 border-white/20 bg-black/30 backdrop-blur-sm flex items-center justify-center touch-none"
         onTouchStart={handleTouch}
         onTouchMove={handleTouch}

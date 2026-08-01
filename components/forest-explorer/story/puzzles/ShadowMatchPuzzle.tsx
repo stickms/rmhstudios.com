@@ -122,6 +122,11 @@ export function ShadowMatchPuzzle({ config, onSolve, onAttempt }: PuzzleComponen
                 <svg
                     viewBox="0 0 400 380"
                     className="w-full h-auto cursor-default"
+                    /* "Drag the totems to match the shadow silhouettes" is the
+                       instruction directly above this board — so every press on it
+                       is a drag, and none of them should leave a highlight behind.
+                       (globals.css §Selection) */
+                    data-gesture=""
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}

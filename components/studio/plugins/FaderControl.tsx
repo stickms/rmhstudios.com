@@ -63,6 +63,11 @@ export function FaderControl({
     <div className="flex flex-col items-center gap-1">
       <div
         ref={trackRef}
+        // Pressed and then moved, which is the literal shape of a text
+        // selection — and this one sits in a mixer strip surrounded by track
+        // names and dB readouts for it to sweep across. (globals.css §Selection;
+        // its sibling `KnobControl` says the same thing.)
+        data-gesture=""
         className="relative cursor-ns-resize rounded-sm bg-black/40"
         style={{ width, height }}
         onPointerDown={handlePointerDown}

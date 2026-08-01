@@ -3298,16 +3298,31 @@ textarea,
 
 /* ── Selection: a gesture is not a text selection ──────────────────────────
    The rule above tells the browser a tap is only ever a tap. This one tells it
-   a PRESS is only ever a press — the other half of the same problem, and the
-   half that only shows up on a phone.
+   the same about the two gestures a tap is not: a press that LINGERS, and a
+   press that MOVES.
 
-   On touch there is exactly one way to begin a selection: hold still for about
-   half a second. That is also, on this site, the length of a gesture. The
-   globe's dwell is 260–620ms, the reaction menu's long-press is 500ms, a
-   hold-to-repeat control starts repeating in the same window. So the platform's
-   selection timer and the site's own hold timers fire on the same finger at the
-   same instant, and the visitor gets both: the thing they meant, wearing a blue
-   highlight and a callout bubble they never asked for.
+   Both collide with the platform's idea of what a pointer is for, at opposite
+   ends of the same gesture and on opposite devices.
+
+   **Holding.** On touch there is exactly one way to begin a selection: hold
+   still for about half a second. That is also, on this site, the length of a
+   gesture. The globe's dwell is 260–620ms, the reaction menu's long-press is
+   500ms, a hold-to-repeat control starts repeating in the same window. So the
+   platform's selection timer and the site's own hold timers fire on the same
+   finger at the same instant, and the visitor gets both: the thing they meant,
+   wearing a blue highlight and a callout bubble they never asked for.
+
+   **Dragging.** A mouse needs no timer at all — press and move IS "select", from
+   the very first pixel. So every drag this site owns (a sheet thrown down, the
+   globe spun, a fader pushed, a panel resized, a card carried across a track,
+   a world panned under a finger) is read as a sweep across whatever text the
+   gesture happens to pass over, and the highlight then sits there for the rest
+   of the drag. Same on touch for the surfaces that begin gently, since a drag
+   that starts slowly has already spent its first moments looking exactly like a
+   hold. And an element marked `draggable` has a third failure on top: if its
+   own label can be selected, the browser drags the TEXT rather than the object,
+   so the reorder never begins and a ghost of the words follows the cursor
+   instead.
 
    Two properties, and they are NOT interchangeable:
 
@@ -3329,7 +3344,9 @@ textarea,
 @layer base {
   /* A control's label is not a document. Nobody drags across a button to copy
      the word "Save", and on a phone the only thing that gesture can produce is
-     a highlight sitting on top of the press animation. */
+     a highlight sitting on top of the press animation. `[role=slider]` is in
+     the list because a slider is the pure drag case: the thumb is pressed and
+     then moved, which is the exact shape of "select from here to there". */
   button,
   summary,
   [role='button'],
@@ -3339,7 +3356,32 @@ textarea,
   [role='menuitemradio'],
   [role='option'],
   [role='switch'],
+  [role='slider'],
   [data-slot='button'] {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* A canvas is never text. Nothing inside one can be selected in the first
+     place — its markup content is fallback for engines that cannot draw it — but
+     a press that LANDS on one still anchors a selection, which the next few
+     pixels of a drag then sweep across whatever is behind and beside it. That is
+     every WebGL and 2D game on the site: the world is a canvas, dragging it is
+     how you play, and the highlight lands on the HUD. */
+  canvas {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* An element the author marked `draggable` is meant to be dragged as an
+     OBJECT — a sample onto a track, a book into a new position in a shelf. If
+     its own label is selectable the browser prefers the other reading and drags
+     the TEXT instead: the reorder never starts, and what follows the cursor is a
+     ghost of the words. `draggable="false"` is excluded on purpose — that is the
+     opposite instruction, and it is how images opt out of being dragged at all. */
+  [draggable='true'] {
     -webkit-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;

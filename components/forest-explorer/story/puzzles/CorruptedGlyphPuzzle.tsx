@@ -196,6 +196,12 @@ export function CorruptedGlyphPuzzle({ config, onSolve, onAttempt }: PuzzleCompo
                 <svg
                     viewBox="0 0 400 380"
                     className="w-full h-auto cursor-default"
+                    /* The board is solved by dragging fragments around it, so the
+                       press-and-move that carries a fragment must not also sweep a
+                       selection over the board's own labels. Marked on the <svg>
+                       rather than each <g>: the drag is tracked here, and this is
+                       where a stray one starts. (globals.css §Selection) */
+                    data-gesture=""
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}
