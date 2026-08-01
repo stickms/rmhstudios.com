@@ -4,6 +4,11 @@
 > looks and feels, and how to build UI that is visually native to it. For the
 > step-by-step "build a page that fits" checklist, see
 > [`docs/page-consistency.md`](./page-consistency.md).
+>
+> For the *statement* of the language — what the design is, why it is that way,
+> and the laws behind these rules, without the values that move — see
+> [`design.md`](../design.md) at the repo root. **This file is the authority**
+> whenever the two disagree.
 
 The design language is **Radial Avant-Garde Glass** — a bold, experimental take
 on **Apple's Liquid Glass** material, draped over a **radial** information

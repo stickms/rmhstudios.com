@@ -190,4 +190,4 @@ port flip (`deploy/hotswap-web.sh`). Full pipeline details:
 
 - **Coding agents / contributors start here:** [`CLAUDE.md`](CLAUDE.md) (or [`AGENTS.md`](AGENTS.md)) — repo-wide conventions, plus per-directory guides in `app/`, `components/`, `lib/`, `server/`, and `go-services/`.
 - **Docs index:** [`docs/README.md`](docs/README.md) — reference docs, runbooks, design docs, and known-stale docs.
-- **Design language:** [`docs/design-language.md`](docs/design-language.md) · **Page consistency:** [`docs/page-consistency.md`](docs/page-consistency.md) · **Runtime & deploy:** [`docs/architecture.md`](docs/architecture.md)
+- **Design language:** [`design.md`](design.md) — what the design *is* and why (start here) · [`docs/design-language.md`](docs/design-language.md) — the build contract: tokens, primitives, definition of done · **Page consistency:** [`docs/page-consistency.md`](docs/page-consistency.md) · **Runtime & deploy:** [`docs/architecture.md`](docs/architecture.md)
