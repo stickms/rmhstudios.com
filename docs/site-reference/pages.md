@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 230 routes. 119 render inside the standard site shell (sidebar, nav, context rail); 111 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 235 routes. 122 render inside the standard site shell (sidebar, nav, context rail); 113 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -25,10 +25,12 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/albums/:id` | Manage Album \| Admin | admin | `app/routes/_site/admin/albums/$id.tsx` |
 | `/admin/analytics` | Analytics | admin | `app/routes/_site/admin/analytics.tsx` |
 | `/admin/announcements` | Announcements | admin | `app/routes/_site/admin/announcements.tsx` |
+| `/admin/appeals` | Strike Appeals | admin | `app/routes/_site/admin/appeals.tsx` |
 | `/admin/audit` | Audit Log | admin | `app/routes/_site/admin/audit.tsx` |
 | `/admin/blog` | Manage Blog Posts \| Admin | admin | `app/routes/_site/admin/blog/index.tsx` |
 | `/admin/blog/:slug/edit` | Edit Blog Post \| Admin | admin | `app/routes/_site/admin/blog/$slug/edit.tsx` |
 | `/admin/blog/new` | Create Blog Post \| Admin | admin | `app/routes/_site/admin/blog/new.tsx` |
+| `/admin/economy` | Coin Economy | admin | `app/routes/_site/admin/economy.tsx` |
 | `/admin/library-quota` | Library Upload Appeals | admin | `app/routes/_site/admin/library-quota.tsx` |
 | `/admin/library-storage` | Library Storage Health | admin | `app/routes/_site/admin/library-storage.tsx` |
 | `/admin/predictions` | Prediction Markets \| Admin | admin | `app/routes/_site/admin/predictions.tsx` |
@@ -52,7 +54,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/drafts` | Drafts | public | `app/routes/_site/drafts.tsx` |
 | `/events` | redirects to `/communities?tab=events` | public | `app/routes/_site/events.tsx` |
 | `/explore` | Explore | public | `app/routes/_site/explore.tsx` |
-| `/games/:gameId` | Game hub | public | `app/routes/_site/games/$gameId.tsx` |
+| `/games/:gameId` | — | public | `app/routes/_site/games/$gameId.tsx` |
 | `/games/:gameId/guides/:guideId` | Guide | public | `app/routes/_site/games/$gameId_.guides.$guideId.tsx` |
 | `/groups` | Group Chats | public | `app/routes/_site/groups/index.tsx` |
 | `/groups/:id` | Group Chat | public | `app/routes/_site/groups/$id.tsx` |
@@ -102,6 +104,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/search` | Search | public | `app/routes/_site/search.tsx` |
 | `/services` | Services | public | `app/routes/_site/services.tsx` |
 | `/settings` | Settings | public | `app/routes/_site/settings/index.tsx` |
+| `/settings/account-status` | Account status | public | `app/routes/_site/settings/account-status.tsx` |
 | `/settings/appearance` | Appearance | public | `app/routes/_site/settings/appearance.tsx` |
 | `/settings/circle` | Close Friends | public | `app/routes/_site/settings/circle.tsx` |
 | `/settings/content` | Content preferences | public | `app/routes/_site/settings/content.tsx` |
@@ -248,8 +251,10 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/strategies/sahur` | — | public | `app/routes/strategies/sahur.tsx` |
 | `/studio` | — | sign-in | `app/routes/studio/index.tsx` |
 | `/synapse-storm` | — | public | `app/routes/synapse-storm.tsx` |
+| `/tag/:tag/rss.xml` | — | public | `app/routes/tag.$tag.rss[.]xml.ts` |
 | `/temple-of-joy` | — | public | `app/routes/temple-of-joy/index.tsx` |
 | `/terms` | Terms of Use | public | `app/routes/terms.tsx` |
+| `/u/:handle/rss.xml` | — | public | `app/routes/u.$handle.rss[.]xml.ts` |
 | `/v/:slug` | — | public | `app/routes/v.$slug.tsx` |
 | `/v/new` | redirects to `/v` | public | `app/routes/v.new.tsx` |
 | `/velum2099` | — | public | `app/routes/velum2099.tsx` |
