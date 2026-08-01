@@ -66,7 +66,12 @@ export interface FluidDragHandle {
   /** Spread onto the element that should receive the gesture. */
   handleProps: {
     onPointerDown: (e: React.PointerEvent) => void;
-    style: { touchAction: string };
+    style: {
+      touchAction: string;
+      userSelect: 'none';
+      WebkitUserSelect: 'none';
+      WebkitTouchCallout: 'none';
+    };
   };
   /** Imperatively spring back to rest — e.g. after a cancelled dismissal. */
   reset: () => void;
@@ -212,7 +217,21 @@ export function useFluidDrag(options: FluidDragOptions): FluidDragHandle {
       // The handle owns its axis; the browser must not also try to scroll with
       // it. Reduced motion keeps the gesture (it is direct manipulation, not
       // decoration) but the spring settle collapses to a snap via the tokens.
-      style: { touchAction: (options.axis ?? 'y') === 'y' ? 'pan-x' : 'pan-y' },
+      //
+      // The other three say the same thing about the OTHER default the browser
+      // would apply to a slow press on this element. A drag that starts gently
+      // — a sheet eased down rather than flicked — spends its first moments
+      // stationary under the finger, which is precisely the gesture iOS reads
+      // as "select this" and desktop reads as "drag this text". Both leave a
+      // highlight stuck across the handle for the rest of the gesture. Set
+      // inline rather than in CSS because the handle is whatever element the
+      // caller spreads these onto, and there is no class to hang them off.
+      style: {
+        touchAction: (options.axis ?? 'y') === 'y' ? 'pan-x' : 'pan-y',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none',
+      },
     },
     reset,
   };

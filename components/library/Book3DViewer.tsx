@@ -250,6 +250,11 @@ export function Book3DViewer({ book, onClose }: { book: LibraryBook; onClose: ()
           title: book.title,
           defaultValue: '3D model of {{title}}. Drag or use the arrow keys to turn it.',
         })}
+        // Its own label says "Drag … to turn it", which is the whole argument:
+        // the surface is turned by pressing and moving, and the cover art it
+        // turns must not be swept into a selection on the way round.
+        // (globals.css §Selection)
+        data-gesture=""
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}

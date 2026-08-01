@@ -451,6 +451,11 @@ export function AlbumViewer({ album }: { album: Album }) {
         ref={stageRef}
         className="av__stage"
         style={{ viewTransitionName: albumCoverVTName(album.id) }}
+        // The stage is swiped between slides and double-tapped to zoom, so a
+        // press here is always going somewhere — and the one thing it must not
+        // do is start selecting the caption it is being dragged across.
+        // (globals.css §Selection)
+        data-gesture=""
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}

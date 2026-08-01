@@ -146,6 +146,51 @@ construction: `touch-action: manipulation` removes the ~300ms tap delay on
 everything pressable, and hit targets are grown to 44px with insets rather than
 by inflating the drawn control.
 
+**A gesture is not a text selection.** The two gestures a tap is not — a press
+that lingers and a press that moves — both collide with what the platform
+assumes a pointer is for, at opposite ends of the same gesture.
+
+_Holding._ On touch there is exactly one way to begin a selection: hold still
+for about half a second. That is also the length of a gesture here — the globe's
+dwell is 260–620ms, the reaction menu's long-press is 500ms, a hold-to-repeat
+control starts repeating inside the same window — so the platform's timer and
+the site's fire on the same finger at the same instant, and the visitor gets the
+thing they meant wearing a highlight and a callout bubble.
+
+_Dragging._ A mouse needs no timer: press-and-move **is** "select", from the
+first pixel. Every drag the site owns (a sheet thrown down, the globe spun, a
+fader pushed, a panel resized, a card carried across a track, a world panned)
+otherwise sweeps a highlight across whatever it passes over and leaves it there
+for the rest of the gesture — and on touch the same is true of any drag that
+starts gently, because a slow start has already spent its first moments looking
+exactly like a hold. An element marked `draggable` fails a third way: if its own
+label is selectable the browser drags the _text_ instead of the object, so the
+reorder never begins.
+
+The `§Selection` block in `globals.css` is the central answer, and it turns on a
+distinction worth knowing: **`user-select: none` and `-webkit-touch-callout:
+none` are not the same property.** The first stops the highlight; the second
+stops iOS's long-press menu, which is a separate mechanism that fires over links
+and images whether or not the text under them can be selected. A link with
+`user-select: none` still offers "Open in New Tab" after ~500ms — which is why
+the globe, whose pins are real anchors, needs both.
+
+Covered site-wide already: controls (including `[role=slider]`, the pure drag
+case), chrome links, icons and avatars, every `<canvas>` (a press that lands on
+one still anchors a selection that the next few pixels sweep across the HUD),
+and every `[draggable="true"]`. Content is deliberately untouched, because
+copying a post, a code block or an article link is the point.
+
+A surface that owns the pointer outright — a drag handle, a thumbstick, a
+resize separator, a hold-to-confirm control, a card you throw, a board you drag
+pieces around — opts in with **`data-gesture`**: nothing inside it selects, pops
+a callout, flashes a tap highlight or peels off as a drag ghost. Its one
+variant, `data-gesture="hold"`, is for an element that is both at once (a post
+card, a chat bubble: holding it opens the reaction menu, but its words are still
+worth copying) — that takes the noise and leaves the selection. `useFluidDrag`'s
+`handleProps` carries the same guarantees inline, so every sheet and drawer gets
+them without asking.
+
 **In the full-screen tier**, where controls do not come from `ui/button.tsx`, a
 container claims its subtree instead: `data-fluid-press-scope` makes every
 `button` / `[role=button]` / `summary` inside press, so an app opts in once
@@ -749,6 +794,16 @@ Global (in `globals.css`):
   `scrollbar-width`/`scrollbar-color` (Gecko) and `::-webkit-scrollbar`
   (WebKit/Blink).
 - Tap highlight removed; active press feedback is `opacity: 0.6`.
+- **Chrome does not select.** Buttons, `[role]` controls (sliders included),
+  navigation/menu/tab links, decorative icons, avatars, every `<canvas>` and
+  every `[draggable="true"]` carry `user-select: none` plus
+  `-webkit-touch-callout: none` (§Selection in `globals.css`), so a press that
+  lingers — or one that moves, which on a mouse is "select" from the first pixel
+  — cannot leave a highlight or an iOS long-press menu on top of a gesture.
+  Content — prose, post bodies, code blocks, article links — keeps both.
+  Surfaces that own the pointer opt in with `data-gesture`; see §0.5. All of it
+  lives in `@layer base`, so a `select-text` utility still wins where a surface
+  needs to hand a piece of itself back.
 - Inputs hold a 16px font floor below 640px (prevents iOS zoom).
 
 ---

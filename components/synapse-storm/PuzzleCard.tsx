@@ -1113,6 +1113,11 @@ export const PuzzleCard: React.FC<PuzzleCardProps> = ({ puzzle, gameState, onSol
             ref={cardRef}
             className={`puzzle-card ${isUrgent ? 'urgent' : ''} ${isExpired || status === 'wrong' ? 'expired' : ''} ${puzzle.isPriority ? 'priority' : ''
                 } ${status === 'correct' ? 'solve-effect' : ''} ${isDragging ? 'dragging' : ''}`}
+            // The card is thrown, not read: it is dragged around the track and
+            // its power-ups are held down. Both are slow presses, and a slow
+            // press over the card's own label is a text selection unless the
+            // surface says otherwise. (globals.css §Selection)
+            data-gesture=""
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}

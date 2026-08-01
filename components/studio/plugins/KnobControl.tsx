@@ -88,6 +88,12 @@ export function KnobControl({
     <div className="flex flex-col items-center gap-0.5">
       <div
         ref={knobRef}
+        // A knob is turned by pressing, holding still, then moving — the
+        // `select-none` here has always covered the highlight; `data-gesture`
+        // adds what it could not, which is the tap highlight the platform
+        // paints over the dial for the first moments of every turn.
+        // (globals.css §Selection)
+        data-gesture=""
         className="cursor-ns-resize select-none"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
