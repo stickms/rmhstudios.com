@@ -26,10 +26,11 @@ import { join } from 'node:path';
  *                                       torn down on teardown (no layout reads).
  *   - lib/liquid-gl/renderer-webgl2.ts — one-shot shader-compile polling; stops
  *                                       when compilation completes or context is lost.
- *   - hooks/useGlassLight.ts, hooks/useLiquidBackground.ts, lib/glass-lens.ts —
- *                                       rAF used as a per-event THROTTLE (one-shot).
- *   - components/radial/RadialShell.tsx — backdrop pointer-parallax lerp; stops
- *                                       when it settles, cancels on unmount.
+ *   - hooks/useLiquidBackground.ts, lib/glass-lens.ts — rAF used as a per-event
+ *                                       THROTTLE (one-shot). `useGlassLight.ts` and
+ *                                       `useCardSheen.ts` were here too; both were
+ *                                       cursor-tracking effects and both are deleted
+ *                                       (see the §5.1 note in app/globals.css).
  *   - components/radial/RadialWheel.tsx — rAF used as a SCROLL THROTTLE (one
  *                                       frame per scroll burst); cancels on unmount.
  *   - components/radial/RadialHub.tsx, components/radial/QuickPanel.tsx —
@@ -70,9 +71,8 @@ import { join } from 'node:path';
  *                                       surface. Runs only between a release and
  *                                       the spring arriving; stops itself on
  *                                       settle and cancels on unmount.
- *   - hooks/useParallax.ts            — pointer lerp stops once it settles at target.
  *   - hooks/useSpatialParallax.ts     — pointer-event throttle; cancels on unmount.
- *   - hooks/useScrollRestoration.ts, hooks/useCardSheen.ts, hooks/useCelebration.ts,
+ *   - hooks/useScrollRestoration.ts, hooks/useCelebration.ts,
  *     components/ui/back-to-top.tsx, components/ui/AnimatedCount.tsx,
  *     components/ui/TwemojiProvider.tsx — one-shot / self-terminating.
  * Everything else is a self-contained game/app or media widget whose loop is
@@ -116,7 +116,6 @@ const ALLOW = new Set<string>([
   'components/rmhcoins/PlinkoGame.tsx',
   'components/radial/QuickPanel.tsx',
   'components/radial/RadialHub.tsx',
-  'components/radial/RadialShell.tsx',
   'components/radial/RadialWheel.tsx',
   'components/rmhtech/RmhtechLanding.tsx',
   'components/signal-forge/SignalForgeGame.tsx',
@@ -136,14 +135,11 @@ const ALLOW = new Set<string>([
   'components/ui/liquid-tabs.tsx',
   'components/velum2099/game/main.ts',
   'components/void-breaker/VoidBreakerGame.tsx',
-  'hooks/useCardSheen.ts',
   'hooks/useCelebration.ts',
   'hooks/useDeviceAttitude.ts',
   'hooks/useFluidDrag.ts',
   'hooks/useFluidPress.ts',
-  'hooks/useGlassLight.ts',
   'hooks/useLiquidBackground.ts',
-  'hooks/useParallax.ts',
   'hooks/useScrollRestoration.ts',
   'hooks/useSpatialParallax.ts',
   'lib/altair/engine/game-loop.ts',

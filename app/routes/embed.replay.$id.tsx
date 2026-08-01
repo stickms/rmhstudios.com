@@ -40,7 +40,7 @@ function EmbedReplay() {
   if (!replay) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-site-bg p-4">
-        <div className="rounded-xl border border-site-border bg-site-surface px-5 py-4 text-sm text-site-text-muted">
+        <div className="rounded-site border border-site-border bg-site-surface px-5 py-4 text-sm text-site-text-muted">
           {t('replay-not-embeddable', { defaultValue: 'This replay isn’t available to embed.' })}
         </div>
       </div>
@@ -49,7 +49,7 @@ function EmbedReplay() {
 
   return (
     <div className="bg-site-bg p-3">
-      <div className="mx-auto max-w-xl rounded-2xl border border-site-border bg-site-surface p-4">
+      <div className="mx-auto max-w-xl rounded-site border border-site-border bg-site-surface p-4">
         <div className="mb-3 flex items-center justify-between">
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-site-text">{gameTitle(replay.game)}</p>

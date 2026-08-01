@@ -11,7 +11,7 @@ import { CoinIcon } from './CoinIcon';
 // ── Card Rendering with Flip Animation ─────────────────────────────
 
 const SUIT_SYMBOLS: Record<string, string> = { H: '\u2665', D: '\u2666', C: '\u2663', S: '\u2660' };
-const SUIT_COLORS: Record<string, string> = { H: 'text-red-600', D: 'text-red-600', C: 'text-gray-900', S: 'text-gray-900' };
+const SUIT_COLORS: Record<string, string> = { H: 'text-casino-card-red', D: 'text-casino-card-red', C: 'text-casino-card-ink', S: 'text-casino-card-ink' };
 
 const FLIP_DURATION_MS = 500;
 
@@ -72,10 +72,10 @@ function CardFace({ card, small, delay }: { card: Card; small?: boolean; delay?:
         }`}
       >
         {/* Back */}
-        <div className="absolute inset-0 backface-hidden rounded-md border border-site-accent/40 bg-linear-to-br from-site-accent to-site-accent-hover" />
+        <div className="absolute inset-0 backface-hidden rounded-site-sm border border-site-accent/40 bg-linear-to-br from-site-accent to-site-accent-hover" />
         {/* Front */}
-        <div className="absolute inset-0 backface-hidden rotate-y-180 rounded-md border border-gray-300 flex flex-col items-center justify-center bg-white">
-          <span className={`${textSize} font-bold text-black`}>{card.rank}</span>
+        <div className="absolute inset-0 backface-hidden rotate-y-180 rounded-site-sm border border-casino-card-edge flex flex-col items-center justify-center bg-casino-card">
+          <span className={`${textSize} font-bold text-casino-card-ink`}>{card.rank}</span>
           <span className={`${textSize} ${SUIT_COLORS[card.suit]}`}>{SUIT_SYMBOLS[card.suit]}</span>
         </div>
       </div>
@@ -86,7 +86,7 @@ function CardFace({ card, small, delay }: { card: Card; small?: boolean; delay?:
 function CardBack({ small }: { small?: boolean }) {
   const w = small ? 'w-7 h-10 sm:w-8 sm:h-11' : 'w-9 h-13 sm:w-10 sm:h-14';
   return (
-    <div className={`${w} rounded-md border border-site-accent/40 bg-linear-to-br from-site-accent to-site-accent-hover shrink-0`} />
+    <div className={`${w} rounded-site-sm border border-site-accent/40 bg-linear-to-br from-site-accent to-site-accent-hover shrink-0`} />
   );
 }
 
@@ -125,14 +125,14 @@ function SplitHandView({ sh, idx, active }: {
       {sh.bet > 0 && (
         <div className="flex items-center gap-0.5">
           <CoinIcon className="w-2.5 h-2.5" />
-          <span className="text-[9px] text-yellow-500 font-bold">{sh.bet}</span>
+          <span className="text-[9px] text-site-warning font-bold">{sh.bet}</span>
         </div>
       )}
       {sh.result && (
         <span className={`text-[9px] font-bold px-1 py-0.5 rounded-full ${
           sh.result === 'win' ? 'bg-site-success/25 text-site-success'
           : sh.result === 'blackjack' ? 'bg-site-accent-dim text-site-accent'
-          : sh.result === 'push' ? 'bg-blue-500/30 text-blue-400'
+          : sh.result === 'push' ? 'bg-casino-seat-1/30 text-casino-seat-1'
           : 'bg-site-danger/25 text-site-danger'
         }`}>
           {sh.result === 'blackjack' ? t("bj-short", { defaultValue: "BJ!" }) : sh.result.toUpperCase()}
@@ -155,7 +155,7 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
   const statusBadge: Record<string, { label: string; color: string }> = {
     waiting: { label: '', color: '' },
     betting: { label: t("status-bet-placed", { defaultValue: "Bet placed" }), color: 'bg-site-accent-dim text-site-accent' },
-    playing: { label: t("status-thinking", { defaultValue: "Thinking..." }), color: 'bg-blue-500/20 text-blue-400' },
+    playing: { label: t("status-thinking", { defaultValue: "Thinking..." }), color: 'bg-casino-seat-1/20 text-casino-seat-1' },
     standing: { label: t("status-stand", { defaultValue: "Stand" }), color: 'bg-site-surface-active text-site-text-muted' },
     busted: { label: t("status-bust", { defaultValue: "Bust!" }), color: 'bg-site-danger/20 text-site-danger' },
     blackjack: { label: t("bj-short", { defaultValue: "BJ!" }), color: 'bg-site-accent-dim text-site-accent' },
@@ -165,7 +165,7 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
   const resultBadge: Record<string, { label: string; color: string }> = {
     win: { label: t("result-win", { defaultValue: "WIN" }), color: 'bg-site-success/25 text-site-success' },
     lose: { label: t("result-lose", { defaultValue: "LOSE" }), color: 'bg-site-danger/25 text-site-danger' },
-    push: { label: t("result-push", { defaultValue: "PUSH" }), color: 'bg-blue-500/30 text-blue-400' },
+    push: { label: t("result-push", { defaultValue: "PUSH" }), color: 'bg-casino-seat-1/30 text-casino-seat-1' },
     blackjack: { label: t("result-blackjack", { defaultValue: "BLACKJACK!" }), color: 'bg-site-accent-dim text-site-accent' },
   };
 
@@ -176,7 +176,7 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
 
   return (
     <div
-      className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all min-w-0 shrink-0 ${
+      className={`flex flex-col items-center gap-1 p-2 rounded-site-sm transition-all min-w-0 shrink-0 ${
         isCurrentTurn ? 'ring-2 ring-site-accent bg-site-accent-dim animate-pulse' : ''
       } ${isMe ? 'bg-site-surface/50' : ''}`}
     >
@@ -226,14 +226,14 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
       {player.bet > 0 && (
         <div className="flex items-center gap-0.5">
           <CoinIcon className="w-3 h-3" />
-          <span className="text-[10px] text-yellow-500 font-bold">{player.bet}</span>
+          <span className="text-[10px] text-site-warning font-bold">{player.bet}</span>
         </div>
       )}
 
       {/* Insurance indicator */}
       {player.insuranceBet > 0 && (
         <div className="flex items-center gap-0.5">
-          <span className="text-[10px] text-blue-400 font-bold">
+          <span className="text-[10px] text-casino-seat-1 font-bold">
             INS: {player.insuranceBet}
             {player.insuranceResult === 'won' && ' +' + player.insuranceBet * 2}
             {player.insuranceResult === 'lost' && ' ' + t("insurance-lost", { defaultValue: "lost" })}
@@ -282,7 +282,7 @@ export function BlackjackTable() {
   return (
     <div className="flex flex-col items-center gap-3 sm:gap-4">
       {/* Dealer area */}
-      <div className={`flex flex-col items-center gap-1 p-2.5 sm:p-3 rounded-xl bg-site-bg-subtle border border-site-border min-h-18 sm:min-h-20 w-full transition-all ${
+      <div className={`flex flex-col items-center gap-1 p-2.5 sm:p-3 rounded-site bg-site-bg-subtle border border-site-border min-h-18 sm:min-h-20 w-full transition-all ${
         tablePhase === 'dealer_turn' ? 'ring-2 ring-site-accent/50' : ''
       }`}>
         <span className="text-[10px] sm:text-xs text-site-text-dim font-bold uppercase tracking-wider">{t("dealer", { defaultValue: "Dealer" })}</span>

@@ -19,7 +19,7 @@ function UserRow({ user }: { user: SidebarUser }) {
  return (
  <Link
  to={`/u/${(user as any).handle || user.id}`as string}
- className="flex items-center gap-2.5 px-2 py-1.5 rounded-site-sm hover:bg-site-surface-hover active:scale-[0.99] transition-[background-color,transform] duration-150 group"
+ className="flex items-center gap-2.5 px-2 py-1.5 rounded-site-sm hover:bg-site-surface-hover active:scale-[0.99] transition-[background-color,transform] duration-site-fast group"
  >
  <UserAvatar src={user.image ?? undefined} alt={user.name || t("user-alt", { defaultValue:"User"})} size={32} fallbackName={user.name ?? undefined} />
  <div className="min-w-0">
@@ -60,7 +60,7 @@ export function MessagesRightSidebar() {
  {/* Previously Messaged */}
  {loaded && recent.length > 0 && (
  <section className="bg-site-surface rounded-site p-4 border border-site-border">
- <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
+ <h2 className="font-display font-bold text-lg text-site-text flex items-center gap-2 mb-3">
  <MessageCircle className="w-5 h-5 text-site-accent"/>
  {t("recently-messaged", { defaultValue:"Recently Messaged"})}
  </h2>
@@ -75,7 +75,7 @@ export function MessagesRightSidebar() {
  {/* Suggested Users */}
  {loaded && suggested.length > 0 && (
  <section className="bg-site-surface rounded-site p-4 border border-site-border">
- <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
+ <h2 className="font-display font-bold text-lg text-site-text flex items-center gap-2 mb-3">
  <UserPlus className="w-5 h-5 text-site-accent"/>
  {t("start-a-conversation", { defaultValue:"Start a Conversation"})}
  </h2>

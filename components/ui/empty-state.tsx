@@ -33,7 +33,7 @@ export function EmptyState({ icon: Icon, title, description, action, className }
  </div>
  ) : null}
  {title ? (
- <p className="font-(family-name:--site-font-display) text-xl font-medium text-site-text">
+ <p className="font-display text-xl font-medium text-site-text">
  {title}
  </p>
  ) : null}

@@ -376,7 +376,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  {sessionUser && (
  <button
  onClick={() => setReplyOpen((v) => !v)}
- className="group flex items-center rounded-full text-site-text-dim hover:text-site-accent transition-colors duration-150"
+ className="group flex items-center rounded-full text-site-text-dim hover:text-site-accent transition-colors duration-site-fast"
  >
  <span className={`${engagementPill} h-6 gap-1 px-1 group-hover:bg-site-accent-dim/50 group-active:scale-95`}>
  <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform"/>
@@ -389,7 +389,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  <button
  onClick={toggleRepost}
  aria-pressed={reposted}
- className={`group flex min-w-11 items-center rounded-full transition-colors duration-150 ${
+ className={`group flex min-w-11 items-center rounded-full transition-colors duration-site-fast ${
  reposted ?'text-site-success':'text-site-text-dim'
  }`}
  title={reposted ? t('undo-rermhark', { defaultValue:'Undo reRMHark'}) :'reRMHark'}
@@ -404,7 +404,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  <button
  onClick={toggleLike}
  aria-pressed={liked}
- className={`group flex min-w-11 items-center rounded-full transition-colors duration-150 ${
+ className={`group flex min-w-11 items-center rounded-full transition-colors duration-site-fast ${
  liked ?'text-site-danger':'text-site-text-dim'
  }`}
  title={liked ? t('unlike', { defaultValue:'Unlike'}) : t('like', { defaultValue:'Like'})}

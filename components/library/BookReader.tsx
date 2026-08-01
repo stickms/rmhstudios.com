@@ -327,7 +327,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
   return (
     <main ref={readerRef} className="vibe-screen lib-reader">
       <header className="lib-reader__bar">
-        <Link to="/library" aria-label={t("back-to-library", { defaultValue: "Back to library" })} className="vibe-toolbar__icon transition-transform duration-150 active:scale-90">
+        <Link to="/library" aria-label={t("back-to-library", { defaultValue: "Back to library" })} className="vibe-toolbar__icon transition-transform duration-site-fast active:scale-90">
           <ArrowLeft size={17} />
         </Link>
         <button type="button" className="lib-reader__identity" onClick={(event) => openDetails(event.currentTarget)} aria-label={t('show-book-details', { defaultValue: 'Show book details' })}>
@@ -365,7 +365,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
           {status === 'ready' && (
             <button
               type="button"
-              className={`vibe-toolbar__icon transition-transform duration-150 active:scale-90${bookmarked ? ' is-on' : ''}`}
+              className={`vibe-toolbar__icon transition-transform duration-site-fast active:scale-90${bookmarked ? ' is-on' : ''}`}
               onClick={toggleBookmark}
               aria-pressed={bookmarked}
               title={bookmarked ? t('remove-bookmark', { defaultValue: 'Remove bookmark' }) : t('add-bookmark', { defaultValue: 'Bookmark this page' })}
@@ -392,7 +392,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
           <button type="button" className="vibe-toolbar__icon lib-reader__desktop-action" onClick={toggleFullscreen} aria-label={fullscreen ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' }) : t('enter-fullscreen', { defaultValue: 'Enter fullscreen' })} title={fullscreen ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' }) : t('enter-fullscreen', { defaultValue: 'Enter fullscreen' })}>
             {fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </button>
-          <a href={book.url} download className="vibe-toolbar__icon transition-transform duration-150 active:scale-90" aria-label={t("download-pdf", { defaultValue: "Download PDF" })}>
+          <a href={book.url} download className="vibe-toolbar__icon transition-transform duration-site-fast active:scale-90" aria-label={t("download-pdf", { defaultValue: "Download PDF" })}>
             <Download size={16} />
           </a>
         </div>
@@ -617,7 +617,7 @@ export function Dropdown({
     <div className="lib-reader__chapters" ref={ref}>
       <button
         type="button"
-        className={`vibe-toolbar__icon transition-transform duration-150 active:scale-90${on ? ' is-on' : ''}`}
+        className={`vibe-toolbar__icon transition-transform duration-site-fast active:scale-90${on ? ' is-on' : ''}`}
         onClick={() => setOpen((o) => !o)}
         aria-haspopup={panelRole}
         aria-expanded={open}

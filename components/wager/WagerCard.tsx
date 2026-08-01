@@ -127,7 +127,7 @@ export function WagerCard({ wager, viewerId, onChange }: Props) {
 
       <div className="flex items-center justify-between text-sm">
         <div className="flex items-center gap-1.5 text-site-text-dim">
-          <Coins className="size-4 text-yellow-500" />
+          <Coins className="size-4 text-site-warning" />
           <span>
             {t('pot', { defaultValue: '{{pot}} coin pot', pot: wager.potCoins || wager.stakeCoins * 2 })}
             {' · '}

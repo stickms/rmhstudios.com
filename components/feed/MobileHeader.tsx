@@ -8,7 +8,7 @@
 export function MobileBrandPrefix() {
   return (
     <>
-      <span className="shrink-0 font-(family-name:--site-font-display) text-xl font-semibold tracking-[-0.022em] text-site-accent max-[419px]:hidden md:hidden">
+      <span className="shrink-0 font-display text-xl font-semibold tracking-[-0.022em] text-site-accent max-[419px]:hidden md:hidden">
         RMH
       </span>
       <span

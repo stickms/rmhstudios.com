@@ -244,8 +244,7 @@ class):
 | Status             | `text-site-success`, `text-site-danger`, `text-site-warning` (and `bg-` variants)                                                                         |
 | Radius             | `rounded-site`, `rounded-site-sm` (theme-aware — do not use `rounded-lg`/`rounded-xl` for site chrome)                                                    |
 | Shadow             | `shadow-site` (prominent), `shadow-site-sm` (resting)                                                                                                     |
-| Fonts              | `font-nunito` (body default), `font-sans` (Inter), `font-mono` (JetBrains Mono), `font-display` (Nunito), `font-serif` (Playfair), `font-comic` (Bangers) |
-| Theme display font | `font-(family-name:--site-font-display)` — used for page `<h1>`s so headings adopt each theme's display face                                              |
+| Fonts              | `font-body` / `font-sans` (`--site-font-body`), `font-mono` (`--site-font-mono`), `font-display` (`--site-font-display`), `font-serif` (Playfair), `font-comic` (Bangers) — the first three resolve through the theme contract, so a theme that sets its own faces is obeyed everywhere |
 
 Extra breakpoint: `xs` = 480px (defined in the `@theme inline` block).
 
@@ -366,7 +365,9 @@ setPreview, accent, setAccent }`. `THEME_BG` is derived from `SITE_STYLES`.
 
 ## 3. Typography & fonts
 
-- Body default is `font-nunito antialiased` (set on `<body>` in `__root.tsx`).
+- Body default is `font-body antialiased` (set on `<body>` in `__root.tsx`), which
+  resolves to `--site-font-body`. `font-sans` is its alias; `font-nunito` still
+  exists but names one literal face and is not the body default.
 - Fonts load from **Google Fonts `<link>`s**, not @fontsource, for site chrome:
   Nunito + Inter are critical (loaded in `__root.tsx` head); decorative theme
   fonts (JetBrains Mono, Playfair Display, Bangers, Bebas Neue, Orbitron,
@@ -375,7 +376,7 @@ setPreview, accent, setAccent }`. `THEME_BG` is derived from `SITE_STYLES`.
   `@fontsource/ibm-plex-*` and `@fontsource/newsreader` are used by specific
   games only.
 - Recurring text patterns:
-  - Page `<h1>`: `font-(family-name:--site-font-display) font-bold text-lg text-site-text`
+  - Page `<h1>`: `font-display font-bold text-lg text-site-text`
   - Body: `text-site-text`; secondary: `text-sm text-site-text-muted`; faint: `text-site-text-dim`
   - Dialog title: `text-lg font-semibold leading-none tracking-tight`
   - Mono accents (counts, section labels): `font-mono text-xs uppercase tracking-widest`

@@ -66,14 +66,14 @@ export function BlackjackGame({ coins, setCoins }: Props) {
   if (connectionStatus === 'error') {
     return (
       <div className="text-center py-12">
-        <p className="text-sm text-red-400">{t("failed-to-connect", { defaultValue: "Failed to connect. Please try again." })}</p>
+        <p className="text-sm text-site-danger">{t("failed-to-connect", { defaultValue: "Failed to connect. Please try again." })}</p>
       </div>
     );
   }
 
   // Status indicator color
   const statusColor =
-    connectionStatus === 'connected' ? 'text-emerald-500' : 'text-red-500';
+    connectionStatus === 'connected' ? 'text-site-success' : 'text-casino-card-red';
 
   // Lobby view
   if (viewMode === 'lobby' || !roomInfo) {

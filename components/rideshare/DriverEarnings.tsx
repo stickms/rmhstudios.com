@@ -137,8 +137,8 @@ export function DriverEarnings() {
                   <div className="flex items-center gap-2 text-sm font-medium text-site-text">
                     {rideClassName(t.rideClass)}
                     {t.ratingByRider != null && (
-                      <span className="flex items-center gap-0.5 text-xs text-amber-400">
-                        <Star className="h-3 w-3 fill-amber-400" /> {t.ratingByRider}
+                      <span className="flex items-center gap-0.5 text-xs text-site-warning">
+                        <Star className="h-3 w-3 fill-site-warning" /> {t.ratingByRider}
                       </span>
                     )}
                   </div>

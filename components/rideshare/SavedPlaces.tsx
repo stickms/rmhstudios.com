@@ -59,7 +59,7 @@ export function SavedPlaces({ places, onChanged }: SavedPlacesProps) {
     <div className="rounded-site border border-site-border bg-site-surface/80 p-5">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-lg font-bold text-site-text">
-          <Star className="h-4 w-4 text-amber-400" /> {t("saved-places", { defaultValue: "Saved places" })}
+          <Star className="h-4 w-4 text-site-warning" /> {t("saved-places", { defaultValue: "Saved places" })}
         </h2>
         {!adding && (
           <button
@@ -81,7 +81,7 @@ export function SavedPlaces({ places, onChanged }: SavedPlacesProps) {
         <ul className="space-y-2">
           {places.map((p) => (
             <li key={p.id} className="flex items-center gap-2 rounded-site-sm border border-site-border bg-site-surface px-3 py-2">
-              <Star className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+              <Star className="h-3.5 w-3.5 shrink-0 text-site-warning" />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-site-text">{p.savedLabel}</div>
                 <div className="truncate text-xs text-site-text-muted" title={p.label}>{p.label}</div>

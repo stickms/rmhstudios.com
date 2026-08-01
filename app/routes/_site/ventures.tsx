@@ -186,7 +186,7 @@ function VenturesPage() {
               <ActiveIcon className="size-8" aria-hidden />
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="font-(family-name:--site-font-display) text-2xl font-semibold tracking-[-0.02em] text-site-text">
+              <h2 className="font-display text-2xl font-semibold tracking-[-0.02em] text-site-text">
                 {activeName}
               </h2>
               <p className="mt-2 max-w-prose text-site-text-muted">

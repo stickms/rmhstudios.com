@@ -165,7 +165,7 @@ export function BuildGrid({
   return (
     <div>
       <LayoutGroup>
-        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-200 ${resorting ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-site ${resorting ? 'opacity-50 pointer-events-none' : ''}`}>
             {builds.map((build) => (
               <motion.div
                 key={build.id}

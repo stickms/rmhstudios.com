@@ -513,7 +513,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  type="button"
  onClick={() => setGifUrl('')}
  aria-label={t('remove-gif-aria', { defaultValue:'Remove GIF'})}
- className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+ className="absolute top-1 right-1 p-1 rounded-full bg-site-media-scrim-strong text-site-media-ink hover:bg-site-media-scrim-hover transition-colors"
  >
  <X className="w-3.5 h-3.5"/>
  </button>
@@ -556,7 +556,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  className={`absolute bottom-1 left-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wide transition-colors ${
  hasAlt
  ?'bg-site-accent text-site-accent-fg'
- :'bg-black/60 text-white/90 hover:bg-black/80'
+ :'bg-site-media-scrim-strong text-site-media-ink/90 hover:bg-site-media-scrim-hover'
  }`}
  >
  {t('alt-badge', { defaultValue:'Alt'})}
@@ -568,7 +568,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  setImageUrls((prev) => prev.filter((_, j) => j !== i));
  setImageAlts((prev) => prev.filter((_, j) => j !== i));
  }}
- className="absolute top-1 right-1 p-0.5 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+ className="absolute top-1 right-1 p-0.5 rounded-full bg-site-media-scrim-strong text-site-media-ink opacity-0 group-hover:opacity-100 transition-opacity"
  >
  <X className="w-3.5 h-3.5"/>
  </button>
@@ -622,7 +622,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  role="dialog"
  aria-modal="true"
  aria-labelledby="compose-alt-title"
- className="relative w-full max-w-md p-4 glass-fill animate-in zoom-in-95 fade-in duration-150"
+ className="relative w-full max-w-md p-4 glass-overlay animate-in zoom-in-95 fade-in duration-150"
  >
  <div className="mb-2 flex items-center justify-between">
  <h3 id="compose-alt-title"className="text-sm font-semibold text-site-text">

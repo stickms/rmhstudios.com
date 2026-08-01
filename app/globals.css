@@ -55,6 +55,30 @@
   font-family: var(--site-font-body);
 }
 
+/* ── Motion duration utilities ────────────────────────────────────────────────
+   design-language.md §0.1 asks that durations come from a token, the same as
+   colour and radius, so a global re-tune is one line. Tailwind v4 has no theme
+   NAMESPACE for `duration-*` (unlike `--color-*` / `--radius-*` / `--ease-*`),
+   which is why ~76 call sites had drifted onto bare `duration-150` /
+   `duration-200` / `duration-300` / `duration-700` literals: there was nothing
+   token-shaped to reach for. These three are it.
+
+   `--site-transition-speed` is the theme's own scalar (200ms default; 150ms in
+   `ultra`), so a theme that wants to feel quick gets a quick whole site rather
+   than a quick handful of components. Use `duration-site` for state changes,
+   `-fast` for micro-feedback (hover tints, focus rings), `-slow` for a reveal or
+   a hero cross-fade. Anything the user is DRAGGING should not be here at all —
+   that is a spring (`APPLE_SPRING` in `lib/motion.ts`), not a duration. */
+@utility duration-site {
+  transition-duration: var(--site-transition-speed, 200ms);
+}
+@utility duration-site-fast {
+  transition-duration: calc(var(--site-transition-speed, 200ms) * 0.75);
+}
+@utility duration-site-slow {
+  transition-duration: calc(var(--site-transition-speed, 200ms) * 1.5);
+}
+
 /* Dream Rift floating particle animation */
 @keyframes dreamrift-float {
   0%,
@@ -116,6 +140,7 @@
   --site-accent-hover: #1a1a1a;
   --site-accent-dim: rgba(0, 0, 0, 0.08);
   --site-success: #167d3a;
+  --site-success-fg: #ffffff;
   --site-danger: #c40016;
   --site-danger-fg: #ffffff;
   --site-warning: #7a4a00;
@@ -345,6 +370,40 @@
   --site-glass-noise: none;
   --site-map-filter: none;
 
+  /* ── Media overlay contract ───────────────────────────────────────────────
+     Ink and scrims that sit ON a photograph or a video, not on a themed surface.
+
+     This is the one place where the ink must NOT track the theme: a chip over a
+     user's photo has no idea whether that photo is a snowfield or a night sky,
+     so it carries its own dark backing and light ink in every theme. That is
+     correct — but it was being written as literal `bg-black/60 text-white`
+     across ~120 call sites (lightboxes, image-grid controls, listing badges,
+     upload tiles), which means it is a design decision the system cannot see,
+     cannot tune, and cannot degrade. High-contrast in particular had no way to
+     reach it: a 60%-alpha scrim is not a high-contrast surface.
+
+     Three scrims, one ink. Reach for the strength by role:
+       `--site-media-scrim`         a chip or label resting on media
+       `--site-media-scrim-strong`  a CONTROL on media (needs a hit target read)
+       `--site-media-scrim-hover`   that control, hovered
+       `--site-media-veil`          a full-viewport lightbox backdrop
+     A scrim is a background-colour, never a `backdrop-filter` — these land on
+     repeated list items, where the §5.1 blur budget is zero. */
+  --site-media-scrim: rgba(0, 0, 0, 0.45);
+  --site-media-scrim-strong: rgba(0, 0, 0, 0.62);
+  --site-media-scrim-hover: rgba(0, 0, 0, 0.82);
+  --site-media-veil: rgba(0, 0, 0, 0.9);
+  --site-media-ink: #ffffff;
+
+  /* Podium ranks — gold / silver / bronze. A leaderboard's top three are a
+     fixed cultural signal, not a theme choice (a "silver" that is the accent
+     colour stops reading as second place), but they were being written as raw
+     `text-yellow-400` / `text-slate-300` / `text-amber-600`. Tokens so a theme
+     CAN tune them for legibility on its own surfaces, which high-contrast does. */
+  --site-podium-gold: #d4a017;
+  --site-podium-silver: #9aa3ad;
+  --site-podium-bronze: #a4692c;
+
   /* Legacy neon palette — kept for game-specific pages */
   --neon-pink: #ff00ff;
   --neon-cyan: #00ffff;
@@ -354,6 +413,47 @@
   --neon-purple: #9900ff;
   --neon-blue: #0066ff;
   --neon-red: #ff0044;
+
+  /* ── Casino table group (`components/rmhcoins/`) ──────────────────────────
+     A scoped variable group, in the same spirit as `--temple-*` / `--slice-*` /
+     `--neon-*`, for the ONE part of the site whose colours are not the theme's
+     to choose: the objects on a card table. A playing card is a white rectangle
+     with black pips and red hearts; a roulette wheel has red, black and green
+     pockets. Recolouring those per theme does not make the page more coherent,
+     it makes the game wrong — the same reason Temple of Joy keeps its candlelight.
+
+     What is NOT in here is everything around the objects: buttons, balances,
+     win/lose messaging and panel chrome all take ordinary `--site-*` tokens, so
+     the surfaces that ARE the site's to theme still track it. Before this group
+     existed the whole surface was raw Tailwind palette classes (`bg-red-600`,
+     `text-gray-900`, `bg-white`), which is why it read as a different product in
+     every theme and had no answer at all for high-contrast.
+
+     These sit alongside the site tokens rather than inside a theme block: the
+     table looks the same in every theme, by design. High-contrast overrides the
+     two that matter for legibility (see the `.style-high-contrast` block). */
+  --casino-card: #f6f6f4;
+  --casino-card-ink: #14161a;
+  --casino-card-red: #c81e2b;
+  --casino-card-edge: #b9bcc4;
+  --casino-card-back: #2a3550;
+  --casino-felt: #23262d;
+  --casino-felt-raised: #31353e;
+  /* Ink for anything printed ON the felt or a pocket — chip labels, pocket
+     numbers, bet-button text. Paired with the dark surfaces above, so it does
+     not follow the page's `--site-text` (which is near-black in the light
+     themes and would vanish). */
+  --casino-ink: #f5f6f8;
+  --casino-red: #c0272d;
+  --casino-red-hover: #d5343a;
+  --casino-green: #1c7a4a;
+  --casino-green-hover: #23955b;
+  /* Seat identity ramp — players must be told apart at a glance, which one
+     accent cannot do. Four hues, each readable on the felt. */
+  --casino-seat-1: #4b8ef0;
+  --casino-seat-2: #9b6ef3;
+  --casino-seat-3: #e0862f;
+  --casino-seat-4: #2fb3a0;
 
   /* Legacy rainbow stops — kept for game pages */
   --rainbow-1: #ff0000;
@@ -453,6 +553,7 @@
   --site-accent-hover: #1a1a1a;
   --site-accent-dim: rgba(0, 0, 0, 0.08);
   --site-success: #167d3a;
+  --site-success-fg: #ffffff;
   --site-danger: #c40016;
   --site-danger-fg: #ffffff;
   --site-warning: #7a4a00;
@@ -496,6 +597,7 @@
   --site-accent-hover: #7a61da;
   --site-accent-dim: rgba(106, 79, 208, 0.12);
   --site-success: #1f9d40;
+  --site-success-fg: #08120c;
   --site-danger: #d70015;
   --site-danger-fg: #ffffff;
   --site-warning: #a8730a;
@@ -548,6 +650,7 @@
   --site-accent-hover: #e6e600;
   --site-accent-dim: rgba(255, 255, 0, 0.18);
   --site-success: #00e676;
+  --site-success-fg: #08120c;
   --site-danger: #ff8080;
   --site-danger-fg: #000000;
   --site-warning: #ffd54a;
@@ -605,6 +708,7 @@
   --site-accent-hover: #47a5ff;
   --site-accent-dim: rgba(41, 151, 255, 0.18);
   --site-success: #30d158;
+  --site-success-fg: #08120c;
   --site-danger: #ff453a;
   --site-danger-fg: #ffffff;
   --site-warning: #ff9f0a;
@@ -653,6 +757,7 @@
   --site-accent-hover: #8e4c26;
   --site-accent-dim: rgba(162, 89, 46, 0.14);
   --site-success: #4f7d3a;
+  --site-success-fg: #ffffff;
   --site-danger: #b23a2f;
   --site-danger-fg: #ffffff;
   --site-warning: #a8730a;
@@ -703,6 +808,7 @@
   --site-accent-hover: #7db0ff;
   --site-accent-dim: rgba(94, 157, 255, 0.16);
   --site-success: #30d158;
+  --site-success-fg: #08120c;
   --site-danger: #ff6961;
   --site-danger-fg: #1a0a0c;
   --site-warning: #ffd60a;
@@ -758,6 +864,7 @@
   --site-accent-hover: #a1fbff;
   --site-accent-dim: rgba(118, 247, 255, 0.14);
   --site-success: #62f6b8;
+  --site-success-fg: #08120c;
   --site-danger: #ff668f;
   --site-danger-fg: #210711;
   --site-warning: #ffd166;
@@ -854,6 +961,7 @@
 html[data-color-vision='deuteranopia'],
 html[data-color-vision='protanopia'] {
   --site-success: #005f9e;
+  --site-success-fg: #ffffff;
   --site-danger: #b03000;
   --site-danger-fg: #ffffff;
   --site-warning: #7a5600;
@@ -875,6 +983,7 @@ html[data-color-vision='protanopia']:is(
     .style-ultra
   ) {
   --site-success: #56b4e9;
+  --site-success-fg: #08120c;
   --site-danger: #ff9a6b;
   --site-danger-fg: #1a0800;
   --site-warning: #f0e442;
@@ -886,6 +995,7 @@ html[data-color-vision='protanopia']:is(
    becomes magenta. */
 html[data-color-vision='tritanopia'] {
   --site-success: #167d3a;
+  --site-success-fg: #ffffff;
   --site-danger: #c40016;
   --site-danger-fg: #ffffff;
   --site-warning: #a01f7a;
@@ -899,6 +1009,7 @@ html[data-color-vision='tritanopia']:is(
     .style-ultra
   ) {
   --site-success: #4ade80;
+  --site-success-fg: #08120c;
   --site-danger: #ff8080;
   --site-danger-fg: #1a0000;
   --site-warning: #ff8ad8;
@@ -1286,15 +1397,28 @@ html.app-route {
     overflow-y: auto;
     overscroll-behavior: contain;
     /* §4.35: single glint layer, tint fills to border-box, transparent border. */
-    /* 62% did not deliver on this tier's own promise ("more opaque so text never
-       ghosts through"): over a busy or high-contrast page — a photo, a dark
-       feature panel — menu labels sat on whatever was behind them and the
-       30px blur alone was not enough separation. 80% still reads as glass and
-       still samples the scene, but a popover is the one surface you have to be
-       able to READ instantly, so it gets the benefit of the doubt. */
+    /* ── The legibility floor (load-bearing) ──────────────────────────────────
+       This tier is the one surface on the site that exists to be READ the moment
+       it appears — a menu, a select list, an autocomplete, a tooltip, a dialog.
+       Nobody scrolls a popover into a comfortable position; they open it, read a
+       label and choose. So unlike every other tier, its opacity is not purely a
+       matter of taste, and it does not get to bottom out.
+
+       Two things had it ghosting anyway. It was 62%, raised once to 80%, and even
+       80% left labels sitting on whatever was behind them over a photo or a dark
+       feature panel — 30px of blur is separation, not contrast. Worse, the Glass
+       clarity slider (§5.46) MULTIPLIED that: at Airy/Clear `--glass-user-tint`
+       runs below 1, so a visitor who asked for a slightly airier site got 80% ×
+       0.7 = 56% on their dropdowns and lost them entirely against a busy page.
+
+       Hence `clamp()`: the base is 90%, the slider still moves it, and 78% is the
+       hard floor no preference can push it under. Airy still reads as airier —
+       everywhere else on the page, and in the blur here — but a menu stays a
+       menu. `clamp()` also caps at 100%, so a Calm/Opaque setting cannot mint an
+       invalid percentage. */
     background-color: color-mix(
       in srgb,
-      var(--site-bg) calc(80% * var(--glass-user-tint, 1)),
+      var(--site-bg) clamp(78%, calc(90% * var(--glass-user-tint, 1)), 100%),
       transparent
     );
     background-image: var(--glass-glint-layer);
@@ -1310,6 +1434,22 @@ html.app-route {
       saturate(180%);
     backdrop-filter: blur(calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1)))
       saturate(180%);
+  }
+
+  /* No backdrop-filter, no translucency. Every tier above leans on the blur to
+     separate itself from what is behind it; where the engine cannot blur (older
+     WebKit, a blocked filter, a print context) the tint alone is doing the whole
+     job and the read surfaces lose. This is the tier layer's own last resort, and
+     it is deliberately not per-component: a surface either has the material or it
+     has the opaque fallback, and the choice is made once, here.
+
+     `.glass-fill` is excluded on purpose — L1 has no blur by design, so it never
+     depended on one, and turning every card and list row opaque would flatten the
+     whole page for a capability it was not using. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    :is(.glass-pane, .glass-chrome, .glass-chrome--aside, .glass-overlay, .glass-inset) {
+      background-color: var(--site-surface-opaque);
+    }
   }
 
   /* Full-screen mobile editors intentionally consume the visual viewport. This
@@ -1404,33 +1544,32 @@ html.app-route {
   .glass-interactive:active {
     scale: 0.97;
   }
-  /* The pointer light is your light, not the sun's — hover only, fine-pointer
-     only, so touch devices never pay for it (§5.1). The hook writes
-     --glass-px/--glass-py on the hovered [data-glass-light] element. A larger,
-     softer radius that eases toward the cursor gives the light a fluid, trailing
-     quality instead of a hard hotspot. */
-  @media (hover: hover) and (pointer: fine) {
-    .glass-interactive::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      border-radius: inherit;
-      pointer-events: none;
-      background: radial-gradient(
-        220px circle at var(--glass-px, 50%) var(--glass-py, -30%),
-        var(--site-glass-light),
-        transparent 72%
-      );
-      opacity: 0;
-      transition:
-        opacity 0.25s ease,
-        background-position 0.2s ease;
-    }
-    .glass-interactive:hover::after {
-      opacity: 1;
-    }
-  }
+  /* ── The pointer hotspot is GONE (§5.1, cursor-reactivity retirement) ──
+     `.glass-interactive` used to grow an `::after` carrying a 220px radial
+     gradient positioned from `--glass-px/--glass-py`, which a document-level
+     `pointermove` listener rewrote on the hovered element every animation
+     frame. Two costs, both paid in the frames that most need to be free:
+
+       1. Moving the gradient's centre is a REPAINT of the whole card, at
+          pointer rate. A gradient is not a compositable property — there is no
+          transform that slides it — so each frame re-rasterised the element's
+          full box. On a grid of hovered cards that is the single most
+          expensive thing an idle-looking page does.
+       2. Finding the element to write to meant `closest('[data-glass-light]')`
+          up the ancestor chain plus a cached `getBoundingClientRect()` per
+          frame, inside a rAF that ran after other writers had already dirtied
+          layout.
+
+     The material does not need it. Glass reads as lit from the always-on rim
+     glint (§4.35), which answers a STATIC sun, and hover is already announced
+     twice over — by the tint-raise above and by `--glass-glint-hover` below,
+     which lifts L1's ambient glint to full. Both are cheap: a background-colour
+     swap and a registered-custom-property fade, no per-frame work at all.
+
+     If a cursor-tracked specular is ever wanted back, it belongs on a
+     compositor-friendly carrier (a transform-translated child layer), never on
+     a repainted gradient position, and it must be gated behind the same tier
+     switches as the rest of the optics. */
 
   /* ══ Pseudo-element contract v2 (§2 + §4.35, load-bearing) ═════════════════
      The specular rim glint is NO LONGER a masked ::before ring — it is a
@@ -1438,7 +1577,9 @@ html.app-route {
      above, painted via --glass-glint-layer). That frees the pseudos:
        • ::before = REFRACTION ONLY (the masked bevel band carrying the lens
          filter, below). Non-refract surfaces have NO ::before at all.
-       • ::after  = the pointer hotspot, owned by .glass-interactive.
+       • ::after  = FREE. It used to be the pointer hotspot; with cursor
+         reactivity retired nothing owns it, so a component may use it — but
+         only for something static.
        • .glass-chrome--aside keeps blur on ::before (§3.3.1); its old ::after
          ring is deleted — it now glints from its own background.
      Never add a third pseudo owner. */
@@ -1735,16 +1876,45 @@ html.style-high-contrast .lg-goo {
   backdrop-filter: none !important;
 }
 /* All remaining optics dead (§4.35 simplified pseudo set): the aside blur carrier,
-   the refract lens band, the pointer hotspot, and the far aurora. */
+   the refract lens band, and the far aurora. (The pointer hotspot used to be
+   switched off here too; it no longer exists on any tier.) */
 .style-high-contrast .glass-chrome--aside::before,
 .style-high-contrast .glass-refract::before,
-.style-high-contrast .glass-interactive::after,
 .style-high-contrast .site-aurora::after {
   display: none;
 }
 .style-high-contrast .glass-liquid {
   background-image: none;
   animation: none;
+}
+
+/* The casino table group is deliberately theme-independent (a playing card is a
+   playing card), but high-contrast is an accessibility contract, not a look — so
+   the pieces whose job is to be READ get pushed to the extremes here, and the
+   felt goes flat so pips and pockets sit on solid ink. The suit hues stay hues:
+   a red that is not red stops being a suit. */
+.style-high-contrast {
+  --casino-card: #ffffff;
+  --casino-card-ink: #000000;
+  --casino-card-red: #d00000;
+  --casino-card-edge: #000000;
+  --casino-felt: #000000;
+  --casino-felt-raised: #1a1a1a;
+  --casino-ink: #ffffff;
+  --site-podium-gold: #ffd400;
+  --site-podium-silver: #e6e6e6;
+  --site-podium-bronze: #ff9d3c;
+  /* Solid, not translucent: a partly-transparent backing is exactly what this
+     theme exists to remove. Media overlays become opaque plates. */
+  --site-media-scrim: #000000;
+  --site-media-scrim-strong: #000000;
+  --site-media-scrim-hover: #1a1a1a;
+  --site-media-veil: #000000;
+  --site-media-ink: #ffffff;
+  --casino-red: #d00000;
+  --casino-red-hover: #ee1111;
+  --casino-green: #007a3d;
+  --casino-green-hover: #009a4d;
 }
 
 /* Reduce transparency — three triggers, one behaviour (§10): the OS media
@@ -1825,9 +1995,6 @@ html.perf-lite .glass-pane {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
-html.perf-lite .glass-interactive::after {
-  display: none;
-}
 html.perf-lite .glass-refract::before {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
@@ -1854,7 +2021,6 @@ html.ios-webkit:not(.app-route) .site-aurora::before {
 html.ios-webkit .site-aurora::after,
 html.ios-webkit .glass-chrome--aside::before,
 html.ios-webkit .glass-refract::before,
-html.ios-webkit .glass-interactive::after,
 html.ios-webkit .lg-goo {
   display: none;
 }
@@ -1909,10 +2075,8 @@ html.ios-webkit .glass-liquid {
        so forced colors keep only the structural border. */
     background-image: none;
   }
-  /* Remaining pseudos (refract band + pointer hotspot) and the far aurora paint
-     nothing. */
+  /* The remaining pseudo (the refract band) and the far aurora paint nothing. */
   .glass-refract::before,
-  .glass-interactive::after,
   .site-aurora::after {
     background: none;
   }
@@ -2037,6 +2201,34 @@ html.readable-font body {
   --color-site-accent-hover: var(--site-accent-hover);
   --color-site-accent-dim: var(--site-accent-dim);
   --color-site-success: var(--site-success);
+  --color-site-success-fg: var(--site-success-fg, #fff);
+  --color-site-media-scrim: var(--site-media-scrim);
+  --color-site-media-scrim-strong: var(--site-media-scrim-strong);
+  --color-site-media-scrim-hover: var(--site-media-scrim-hover);
+  --color-site-media-veil: var(--site-media-veil);
+  --color-site-media-ink: var(--site-media-ink);
+  --color-site-podium-gold: var(--site-podium-gold);
+  --color-site-podium-silver: var(--site-podium-silver);
+  --color-site-podium-bronze: var(--site-podium-bronze);
+
+  /* Casino table group → bg-casino-* / text-casino-* / border-casino-* utilities.
+     Scoped domain colours, not theme tokens — see the group's note in :root. */
+  --color-casino-card: var(--casino-card);
+  --color-casino-card-ink: var(--casino-card-ink);
+  --color-casino-card-red: var(--casino-card-red);
+  --color-casino-card-edge: var(--casino-card-edge);
+  --color-casino-card-back: var(--casino-card-back);
+  --color-casino-felt: var(--casino-felt);
+  --color-casino-felt-raised: var(--casino-felt-raised);
+  --color-casino-ink: var(--casino-ink);
+  --color-casino-red: var(--casino-red);
+  --color-casino-red-hover: var(--casino-red-hover);
+  --color-casino-green: var(--casino-green);
+  --color-casino-green-hover: var(--casino-green-hover);
+  --color-casino-seat-1: var(--casino-seat-1);
+  --color-casino-seat-2: var(--casino-seat-2);
+  --color-casino-seat-3: var(--casino-seat-3);
+  --color-casino-seat-4: var(--casino-seat-4);
   --color-site-danger: var(--site-danger);
   /* Guaranteed-legible ink for text/icons ON a --site-danger fill. Falls back to
      white for themes that predate the token; every built-in theme sets it. */
@@ -2072,11 +2264,37 @@ html.readable-font body {
   --color-neon-purple: var(--neon-purple);
   --color-neon-blue: var(--neon-blue);
 
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-jetbrains-mono);
-  --font-display: var(--font-inter);
-  --font-serif: var(--font-playfair);
-  --font-comic: var(--font-bangers);
+  /* ── Font utilities resolve through the THEME contract ────────────────────
+     These three used to name webfonts directly — `--font-sans: var(--font-inter)`,
+     `--font-mono: var(--font-jetbrains-mono)`, `--font-display: var(--font-inter)`
+     — while the theme contract published `--site-font-body` / `--site-font-mono` /
+     `--site-font-display` beside them. So the site had two parallel type systems
+     and the utilities were wired to the wrong one:
+
+       • `font-mono` (74 call sites across 48 files) bypassed `--site-font-mono`
+         entirely. A theme that sets its own mono face — `ultra` does — changed
+         nothing, anywhere. It also lost the fallback chain: `var(--font-inter)`
+         alone has no `sans-serif` behind it, so a failed webfont fetch dropped
+         those elements to the browser default rather than to a system face.
+       • `font-display` resolved to **Inter**, while `--site-font-display` is the
+         theme's display face. The two names meant opposite things, which is why
+         31 files write the mouthful `font-(family-name:--site-font-display)` to
+         get the display font — the obvious utility was already taken by the wrong
+         one.
+       • `font-sans` skipped `--site-font-body`, so the theme's body face applied
+         to `<body>` by inheritance but was overridden by any element that said
+         `font-sans` to mean "not mono".
+
+     Pointing all three at the tokens fixes every existing call site without
+     touching one of them, and makes `font-display` and
+     `font-(family-name:--site-font-display)` the same thing. `font-serif` and
+     `font-comic` stay literal: they are decorative faces a page opts into
+     deliberately, not roles the theme fills. */
+  --font-sans: var(--site-font-body);
+  --font-mono: var(--site-font-mono);
+  --font-display: var(--site-font-display);
+  --font-serif: var(--font-playfair), Georgia, serif;
+  --font-comic: var(--font-bangers), cursive;
   --breakpoint-xs: 480px;
 
   --color-sidebar-ring: var(--sidebar-ring);
@@ -5530,14 +5748,28 @@ html.reduce-motion .u-parallax {
 
    Only tokens with a real, per-theme foreground are listed — `--site-accent-fg`
    is contrast-checked at runtime by `ensureReadableAccent()` (lib/appearance/
-   contrast.ts), and `--site-danger-fg` is authored per theme. Surfaces without a
-   paired token are left alone rather than guessed at.
+   contrast.ts), and `--site-danger-fg` / `--site-warning-fg` / `--site-success-fg`
+   are authored per theme. Surfaces without a paired token are left alone rather
+   than guessed at.
+
+   `--site-success-fg` was the hole in this table. `--site-success` swings from a
+   dark forest green (`default`) to a bright mint (`nocturne`) across the theme
+   set, so there was no ink that worked for both and callers were reaching for a
+   literal `text-white` — correct in the themes where success is dark, invisible
+   in the ones where it is not. Every theme now authors the pair, chosen for ≥4.5:1
+   against its own green.
    ========================================================================== */
 :where(.bg-site-accent, .bg-site-accent-hover, .hover\:bg-site-accent:hover) {
   color: var(--site-accent-fg);
 }
 :where(.bg-site-danger) {
   color: var(--site-danger-fg);
+}
+:where(.bg-site-success) {
+  color: var(--site-success-fg);
+}
+:where(.bg-site-warning) {
+  color: var(--site-warning-fg);
 }
 /* The inverse surfaces carry a complete contract of their own, so pair those
    too rather than letting them inherit the page's ink. */

@@ -249,7 +249,7 @@ export function ProfileHero({
             <div className="min-w-0">
               <div className="flex min-w-0 items-center gap-1.5">
                 <h2
-                  className="truncate font-(family-name:--site-font-display) text-2xl font-bold tracking-[-0.025em] text-site-text sm:text-3xl"
+                  className="truncate font-display text-2xl font-bold tracking-[-0.025em] text-site-text sm:text-3xl"
                   style={
                     profile.cosmetics?.nameColor?.gradient
                       ? {

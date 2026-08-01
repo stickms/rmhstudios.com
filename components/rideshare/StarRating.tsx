@@ -35,7 +35,7 @@ export function StarRating({ value, onChange, readOnly, size = 24 }: StarRatingP
           >
             <Star
               style={{ width: size, height: size }}
-              className={filled ? 'fill-amber-400 text-amber-400' : 'text-site-text-dim'}
+              className={filled ? 'fill-site-warning text-site-warning' : 'text-site-text-dim'}
             />
           </Tag>
         );

@@ -62,13 +62,13 @@ export function HoldemGame({ coins, setCoins }: Props) {
   if (connectionStatus === 'error') {
     return (
       <div className="text-center py-12">
-        <p className="text-sm text-red-400">{t("failed-to-connect", { defaultValue: "Failed to connect. Please try again." })}</p>
+        <p className="text-sm text-site-danger">{t("failed-to-connect", { defaultValue: "Failed to connect. Please try again." })}</p>
       </div>
     );
   }
 
   const statusColor =
-    connectionStatus === 'connected' ? 'text-emerald-500' : 'text-red-500';
+    connectionStatus === 'connected' ? 'text-site-success' : 'text-casino-card-red';
 
   if (viewMode === 'lobby' || !roomInfo) {
     return (
@@ -79,7 +79,7 @@ export function HoldemGame({ coins, setCoins }: Props) {
         </div>
         <div className="max-w-125 mx-auto w-full">
           <HoldemLobby coins={coins} />
-          {error && <p className="text-sm text-red-400 text-center mt-3">{error}</p>}
+          {error && <p className="text-sm text-site-danger text-center mt-3">{error}</p>}
         </div>
       </div>
     );

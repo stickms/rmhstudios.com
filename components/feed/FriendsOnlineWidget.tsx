@@ -46,7 +46,7 @@ export function FriendsOnlineWidget() {
 
  return (
  <section className="rad-live__card">
- <h2 className="mb-3 flex items-center gap-2 font-(family-name:--site-font-display) text-lg font-bold text-site-text">
+ <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold text-site-text">
  <Users className="h-5 w-5 text-site-accent"aria-hidden />
  {t('friends-online', { defaultValue:'Friends online'})}
  </h2>

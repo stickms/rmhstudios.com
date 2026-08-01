@@ -31,9 +31,9 @@ const fmt = (n: number) => n.toLocaleString();
 
 /** Rank medal color for the top three, else muted. */
 function rankClass(rank: number): string {
- if (rank === 1) return'text-yellow-400';
- if (rank === 2) return'text-slate-300';
- if (rank === 3) return'text-amber-600';
+ if (rank === 1) return'text-site-podium-gold';
+ if (rank === 2) return'text-site-podium-silver';
+ if (rank === 3) return'text-site-podium-bronze';
  return'text-site-text-dim';
 }
 
@@ -156,7 +156,7 @@ export function LeaderboardColumn({
  </p>
  </div>
  <span className="flex items-center gap-1 text-sm font-semibold text-site-text">
- <Coins className="h-3.5 w-3.5 text-yellow-400"aria-hidden /> {fmt(e.coins)}
+ <Coins className="h-3.5 w-3.5 text-site-podium-gold"aria-hidden /> {fmt(e.coins)}
  </span>
  </Reveal>
  ))}

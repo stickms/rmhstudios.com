@@ -24,15 +24,15 @@ for (let row = 0; row < 12; row++) {
 }
 
 const NUMBER_BG: Record<string, string> = {
-  red: 'bg-red-600 hover:bg-red-500',
-  black: 'bg-gray-800 hover:bg-gray-700',
-  green: 'bg-emerald-700 hover:bg-emerald-600',
+  red: 'bg-casino-red hover:bg-casino-red-hover',
+  black: 'bg-casino-felt hover:bg-casino-felt-raised',
+  green: 'bg-casino-green hover:bg-casino-green-hover',
 };
 
 const NUMBER_BG_WIN: Record<string, string> = {
-  red: 'bg-red-500 ring-2 ring-site-accent',
-  black: 'bg-gray-700 ring-2 ring-site-accent',
-  green: 'bg-emerald-600 ring-2 ring-site-accent',
+  red: 'bg-casino-red-hover ring-2 ring-site-accent',
+  black: 'bg-casino-felt-raised ring-2 ring-site-accent',
+  green: 'bg-casino-green-hover ring-2 ring-site-accent',
 };
 
 const CELL_W = 64;
@@ -97,7 +97,7 @@ function SpinningWheel({ result }: { result: number | null }) {
         }}
       />
       <div
-        className="relative overflow-hidden rounded-xl border-2 border-site-accent/60"
+        className="relative overflow-hidden rounded-site border-2 border-site-accent/60"
         style={{ width: '100%', maxWidth: 420, height: 72 }}
       >
         <div
@@ -110,7 +110,7 @@ function SpinningWheel({ result }: { result: number | null }) {
             return (
               <div
                 key={i}
-                className="shrink-0 flex items-center justify-center font-bold text-white text-lg border-r border-white/10"
+                className="shrink-0 flex items-center justify-center font-bold text-casino-ink text-lg border-r border-casino-card/10"
                 style={{
                   width: CELL_W,
                   height: '100%',
@@ -151,7 +151,7 @@ function WinningNumberDisplay({ number: num }: { number: number }) {
         {t('winning-number', { defaultValue: 'Winning Number' })}
       </span>
       <div
-        className="flex items-center justify-center rounded-full text-white font-black text-2xl sm:text-3xl shadow-2xl"
+        className="flex items-center justify-center rounded-full text-casino-ink font-black text-2xl sm:text-3xl shadow-site"
         style={{
           width: 70,
           height: 70,
@@ -190,7 +190,7 @@ function ChipOverlay({
   const amount = getChipAmount(type, numbers);
   if (amount <= 0) return null;
   return (
-    <div className="absolute -top-1 -right-1 z-30 flex items-center gap-0.5 bg-site-accent text-site-accent-fg text-[8px] font-bold rounded-full px-1 py-0.5 shadow-lg border border-site-accent/60">
+    <div className="absolute -top-1 -right-1 z-30 flex items-center gap-0.5 bg-site-accent text-site-accent-fg text-[8px] font-bold rounded-full px-1 py-0.5 shadow-site border border-site-accent/60">
       <CoinIcon className="w-2 h-2" />
       {amount}
     </div>
@@ -213,7 +213,7 @@ function EdgeChip({
   if (amount <= 0) return null;
   return (
     <div
-      className="absolute z-30 flex items-center justify-center bg-site-accent text-site-accent-fg text-[7px] font-bold rounded-full shadow-lg border border-site-accent/60"
+      className="absolute z-30 flex items-center justify-center bg-site-accent text-site-accent-fg text-[7px] font-bold rounded-full shadow-site border border-site-accent/60"
       style={{ width: 18, height: 18, ...style }}
     >
       {amount}
@@ -296,7 +296,7 @@ export function RouletteTable({ coins }: Props) {
                 key={n}
                 onClick={() => handlePlaceBet('straight', [n])}
                 disabled={!isBetting}
-                className={`relative min-h-10 sm:h-10 rounded-t-lg text-white font-bold text-sm transition-all active:scale-95 ${
+                className={`relative min-h-10 sm:h-10 rounded-t-lg text-casino-ink font-bold text-sm transition-all active:scale-95 ${
                   winningNumber === n ? NUMBER_BG_WIN.green : NUMBER_BG.green
                 } ${isBetting ? 'cursor-pointer' : 'cursor-default'}`}
               >
@@ -336,7 +336,7 @@ export function RouletteTable({ coins }: Props) {
                     <button
                       onClick={() => handlePlaceBet('straight', [n])}
                       disabled={!isBetting}
-                      className={`relative w-full min-h-9 sm:h-9 text-white font-bold text-xs rounded transition-all active:scale-95 ${
+                      className={`relative w-full min-h-9 sm:h-9 text-casino-ink font-bold text-xs rounded transition-all active:scale-95 ${
                         isWinner ? NUMBER_BG_WIN[color] : NUMBER_BG[color]
                       } ${isBetting ? 'cursor-pointer' : 'cursor-default'}`}
                     >
@@ -518,9 +518,9 @@ export function RouletteTable({ coins }: Props) {
                   isBetting ? 'cursor-pointer' : 'cursor-default'
                 } ${
                   type === 'red'
-                    ? 'bg-red-600 hover:bg-red-500 text-white'
+                    ? 'bg-casino-red hover:bg-casino-red-hover text-casino-ink'
                     : type === 'black'
-                      ? 'bg-gray-800 hover:bg-gray-700 text-white'
+                      ? 'bg-casino-felt hover:bg-casino-felt-raised text-casino-ink'
                       : 'bg-site-surface border border-site-border text-site-text hover:bg-site-surface-hover'
                 }`}
               >
@@ -548,12 +548,12 @@ export function RouletteTable({ coins }: Props) {
               return (
                 <span
                   key={`${n}-${i}`}
-                  className={`inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full text-[9px] sm:text-[10px] font-bold text-white ${
+                  className={`inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full text-[9px] sm:text-[10px] font-bold text-casino-ink ${
                     color === 'red'
-                      ? 'bg-red-600'
+                      ? 'bg-casino-red'
                       : color === 'green'
-                        ? 'bg-emerald-600'
-                        : 'bg-gray-800'
+                        ? 'bg-casino-green-hover'
+                        : 'bg-casino-felt'
                   }`}
                 >
                   {numberLabel(n)}
@@ -575,7 +575,7 @@ export function RouletteTable({ coins }: Props) {
               return (
                 <div
                   key={player.userId}
-                  className={`flex flex-col items-center gap-0.5 p-2 rounded-lg ${isMe ? 'bg-site-surface/50' : ''}`}
+                  className={`flex flex-col items-center gap-0.5 p-2 rounded-site-sm ${isMe ? 'bg-site-surface/50' : ''}`}
                 >
                   <div className="flex items-center gap-1">
                     {player.avatarUrl ? (
@@ -590,7 +590,7 @@ export function RouletteTable({ coins }: Props) {
                   {player.totalBetThisRound > 0 && (
                     <div className="flex items-center gap-0.5">
                       <CoinIcon className="w-3 h-3" />
-                      <span className="text-[10px] text-yellow-500 font-bold">
+                      <span className="text-[10px] text-site-warning font-bold">
                         {player.totalBetThisRound}
                       </span>
                     </div>

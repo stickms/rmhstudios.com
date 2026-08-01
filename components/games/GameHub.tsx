@@ -101,7 +101,7 @@ export function GameHub({ data }: { data: GameHubData }) {
           <div className="min-w-0 flex-1">
             {/* h2: the route's PageLayout already renders the game's title as
                 the page h1, 130px above this one. */}
-            <h2 className="font-(family-name:--site-font-display) text-lg font-bold text-site-text">
+            <h2 className="font-display text-lg font-bold text-site-text">
               {data.title}
             </h2>
             <div className="mt-1 flex flex-wrap items-center gap-2">

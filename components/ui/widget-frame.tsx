@@ -89,7 +89,7 @@ export function WidgetFrame({
  <AsyncReveal
  show={!initialLoading}
  className={cn(
- 'transition-opacity duration-150',
+ 'transition-opacity duration-site-fast',
  loading && hasResolved.current && 'opacity-70',
  )}
  >

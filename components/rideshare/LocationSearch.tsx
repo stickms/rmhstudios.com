@@ -200,7 +200,7 @@ export function LocationSearch({
                   onClick={() => choose(p)}
                   className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1.5 text-xs text-site-text transition-colors hover:border-site-accent/50 hover:text-site-accent"
                 >
-                  <Star className="h-3 w-3 text-amber-400" /> {p.savedLabel}
+                  <Star className="h-3 w-3 text-site-warning" /> {p.savedLabel}
                 </button>
               ))}
             </div>
@@ -208,7 +208,7 @@ export function LocationSearch({
         </>
       )}
 
-      {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
+      {error && <p className="mt-1 text-xs text-site-danger">{error}</p>}
 
       {open && results.length > 0 && !value && (
         <ul className="absolute z-30 mt-1 max-h-64 w-full overflow-auto glass-overlay">

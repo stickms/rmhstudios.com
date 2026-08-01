@@ -26,7 +26,6 @@ import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { games } from '@/lib/games';
 import { APPLE_SPRING } from '@/lib/motion';
-import { usePointerParallax } from '@/hooks/usePointerParallax';
 import type { ArcadeState, ArcadeChallengeView } from '@/lib/quests/arcade';
 
 /** Milliseconds until the next UTC midnight (when challenges rotate). */
@@ -135,7 +134,7 @@ export function ArcadeHub({
       {!hideHeader && (
         <div className="flex items-center gap-2 border-b border-site-border px-5 py-4 max-md:sr-only max-md:border-b-0">
           <Gamepad2 className="h-5 w-5 text-site-accent" aria-hidden />
-          <h1 className="font-(family-name:--site-font-display) text-2xl font-semibold tracking-[-0.022em] text-site-text">
+          <h1 className="font-display text-2xl font-semibold tracking-[-0.022em] text-site-text">
             {t('arcade-title', { defaultValue: 'Arcade Pass' })}
           </h1>
         </div>
@@ -211,31 +210,26 @@ function ChallengeCard({
   onClaim: () => void;
 }) {
   const { t } = useTranslation('site');
-  const parallax = usePointerParallax({ strength: 10, tilt: 3 });
   const game = games.find((g) => g.id === challenge.game);
   const pct = Math.min(100, Math.round((challenge.progress / challenge.target) * 100));
   const claimable = challenge.completed && !challenge.claimed;
 
   return (
-    // Apple depth: the card is a stack of planes, not a flat rectangle. The art
-    // sits furthest back and drifts most against the pointer (or the phone's
-    // tilt), the content sits nearly on the surface, and the whole card springs
-    // under a press. Everything rides MotionValues straight to the compositor,
-    // so a grid of these costs no per-frame React work — and it all collapses to
-    // a static card under prefers-reduced-motion.
+    // This card used to be a three-plane pointer-parallax stack: each instance
+    // mounted its own pointermove/deviceorientation listener and four springs,
+    // and tilted on `rotateX/rotateY` inside a `preserve-3d` context — so a hub
+    // showing N challenges ran N listeners, N spring loops and N 3D-composited
+    // layers, all to lean a card a few degrees toward the cursor. Cursor
+    // reactivity is retired site-wide (see the §5.1 note in app/globals.css);
+    // what stays is the part that answers a real gesture, the press spring.
     <motion.div
-      ref={parallax.ref as React.RefObject<HTMLDivElement>}
-      className="flex flex-col items-stretch gap-3 rounded-site border border-site-border bg-site-surface p-3 [transform-style:preserve-3d] sm:flex-row"
-      style={{ rotateX: parallax.near.rotateX, rotateY: parallax.near.rotateY }}
+      className="flex flex-col items-stretch gap-3 glass-fill glass-interactive rounded-site p-3 sm:flex-row"
       whileHover={{ scale: 1.008 }}
       whileTap={{ scale: 0.994 }}
       transition={APPLE_SPRING.press}
     >
       {/* Game art */}
-      <motion.div
-        className="relative h-20 w-full shrink-0 overflow-hidden rounded-site-sm bg-site-bg sm:w-28"
-        style={{ x: parallax.far.x, y: parallax.far.y }}
-      >
+      <div className="relative h-20 w-full shrink-0 overflow-hidden rounded-site-sm bg-site-bg sm:w-28">
         {game?.imagePath ? (
           <OptimizedImage
             src={game.imagePath}
@@ -250,13 +244,10 @@ function ChallengeCard({
             <Gamepad2 className="h-6 w-6" aria-hidden />
           </div>
         )}
-      </motion.div>
+      </div>
 
       {/* Details */}
-      <motion.div
-        className="flex min-w-0 flex-1 flex-col"
-        style={{ x: parallax.near.x, y: parallax.near.y }}
-      >
+      <div className="flex min-w-0 flex-1 flex-col">
         <p className="text-sm font-semibold text-site-text">{challenge.title}</p>
         {game && <p className="mt-0.5 text-xs text-site-text-muted">{game.title}</p>}
 
@@ -279,7 +270,7 @@ function ChallengeCard({
             )}
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Action */}
       <div className="flex shrink-0 flex-col items-stretch justify-center gap-2 sm:items-end">

@@ -157,7 +157,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  </div>
  <div className="h-2.5 w-full overflow-hidden rounded-full bg-site-bg">
  <div
- className="h-full rounded-full bg-site-warning transition-[width] duration-300"
+ className="h-full rounded-full bg-site-warning transition-[width] duration-site-slow"
  style={{ width: `${nextPct}%`}}
  />
  </div>
@@ -190,7 +190,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  return (
  <div
  key={m.day}
- className={`flex items-center gap-3 rounded-site border p-3 transition-[transform,border-color] duration-200 ${
+ className={`flex items-center gap-3 rounded-site border p-3 transition-[transform,border-color] duration-site ${
  reached
  ?'border-site-border bg-site-surface'
  :'border-site-border/60 bg-site-bg opacity-70'

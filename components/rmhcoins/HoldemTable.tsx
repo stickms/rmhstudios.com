@@ -9,7 +9,7 @@ import type { PlayerSeatClient } from '@/lib/holdem/types';
 import { CoinIcon } from './CoinIcon';
 
 const SUIT_SYMBOLS: Record<string, string> = { H: '\u2665', D: '\u2666', C: '\u2663', S: '\u2660' };
-const SUIT_COLORS: Record<string, string> = { H: 'text-red-600', D: 'text-red-600', C: 'text-gray-900', S: 'text-gray-900' };
+const SUIT_COLORS: Record<string, string> = { H: 'text-casino-card-red', D: 'text-casino-card-red', C: 'text-casino-card-ink', S: 'text-casino-card-ink' };
 
 function CardFace({ card, small, delay }: { card: Card; small?: boolean; delay?: number }) {
   const [flipped, setFlipped] = useState(false);
@@ -25,9 +25,9 @@ function CardFace({ card, small, delay }: { card: Card; small?: boolean; delay?:
   return (
     <div className={`${w} perspective-500 shrink-0`}>
       <div className={`relative w-full h-full transition-transform duration-700 ease-out transform-3d ${flipped ? 'rotate-y-180' : ''}`}>
-        <div className="absolute inset-0 backface-hidden rounded-md border border-site-accent/40 bg-linear-to-br from-site-accent to-site-accent-hover" />
-        <div className="absolute inset-0 backface-hidden rotate-y-180 rounded-md border border-gray-300 flex flex-col items-center justify-center bg-white">
-          <span className={`${textSize} font-bold text-black`}>{card.rank}</span>
+        <div className="absolute inset-0 backface-hidden rounded-site-sm border border-site-accent/40 bg-linear-to-br from-site-accent to-site-accent-hover" />
+        <div className="absolute inset-0 backface-hidden rotate-y-180 rounded-site-sm border border-casino-card-edge flex flex-col items-center justify-center bg-casino-card">
+          <span className={`${textSize} font-bold text-casino-card-ink`}>{card.rank}</span>
           <span className={`${textSize} ${SUIT_COLORS[card.suit]}`}>{SUIT_SYMBOLS[card.suit]}</span>
         </div>
       </div>
@@ -38,7 +38,7 @@ function CardFace({ card, small, delay }: { card: Card; small?: boolean; delay?:
 function CardBack({ small }: { small?: boolean }) {
   const w = small ? 'w-7 h-10 sm:w-8 sm:h-11' : 'w-9 h-13 sm:w-10 sm:h-14';
   return (
-    <div className={`${w} rounded-md border border-site-accent/40 bg-linear-to-br from-site-accent to-site-accent-hover shrink-0`} />
+    <div className={`${w} rounded-site-sm border border-site-accent/40 bg-linear-to-br from-site-accent to-site-accent-hover shrink-0`} />
   );
 }
 
@@ -68,15 +68,15 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
 }) {
   const { t } = useTranslation("c-rmhcoins");
   const actionLabels: Record<string, { label: string; color: string }> = {
-    fold: { label: t("action-fold", { defaultValue: "Fold" }), color: 'text-gray-500' },
-    check: { label: t("action-check", { defaultValue: "Check" }), color: 'text-blue-400' },
-    call: { label: t("action-call", { defaultValue: "Call" }), color: 'text-emerald-400' },
+    fold: { label: t("action-fold", { defaultValue: "Fold" }), color: 'text-site-text-dim' },
+    check: { label: t("action-check", { defaultValue: "Check" }), color: 'text-casino-seat-1' },
+    call: { label: t("action-call", { defaultValue: "Call" }), color: 'text-site-success' },
     raise: { label: t("action-raise", { defaultValue: "Raise" }), color: 'text-site-accent' },
-    all_in: { label: t("action-all-in", { defaultValue: "ALL IN" }), color: 'text-red-400' },
+    all_in: { label: t("action-all-in", { defaultValue: "ALL IN" }), color: 'text-site-danger' },
   };
 
   return (
-    <div className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all shrink-0 min-w-0 ${
+    <div className={`flex flex-col items-center gap-1 p-2 rounded-site-sm transition-all shrink-0 min-w-0 ${
       isCurrentTurn ? 'ring-2 ring-site-accent bg-site-accent-dim animate-pulse' : ''
     } ${player.folded || player.sittingOut ? 'opacity-40' : ''} ${isMe ? 'bg-site-surface/50' : ''}`}>
       {/* Name + position badges */}
@@ -86,8 +86,8 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
           {isMe ? t("you", { defaultValue: "You" }) : player.userName}
         </span>
         {player.isDealer && <span className="text-[8px] sm:text-[9px] font-bold bg-site-accent-dim text-site-accent px-1 rounded">D</span>}
-        {player.isSmallBlind && <span className="text-[8px] sm:text-[9px] font-bold bg-blue-500/30 text-blue-400 px-1 rounded">SB</span>}
-        {player.isBigBlind && <span className="text-[8px] sm:text-[9px] font-bold bg-purple-500/30 text-purple-400 px-1 rounded">BB</span>}
+        {player.isSmallBlind && <span className="text-[8px] sm:text-[9px] font-bold bg-casino-seat-1/30 text-casino-seat-1 px-1 rounded">SB</span>}
+        {player.isBigBlind && <span className="text-[8px] sm:text-[9px] font-bold bg-casino-seat-2/30 text-casino-seat-2 px-1 rounded">BB</span>}
         {isCurrentTurn && turnSeconds != null && (
           <span className={`text-[8px] sm:text-[9px] font-bold tabular-nums px-1 rounded ${
             turnSeconds <= 5 ? 'bg-site-danger/30 text-site-danger animate-pulse' : 'bg-site-accent-dim text-site-accent'
@@ -123,7 +123,7 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
 
       {/* Current bet */}
       {player.currentBet > 0 && (
-        <span className="text-[10px] text-yellow-500 font-bold">{t("bet-amount", { defaultValue: "Bet: {{amount}}", amount: player.currentBet })}</span>
+        <span className="text-[10px] text-site-warning font-bold">{t("bet-amount", { defaultValue: "Bet: {{amount}}", amount: player.currentBet })}</span>
       )}
 
       {/* Last action */}
@@ -133,9 +133,9 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
         </span>
       )}
 
-      {player.sittingOut && <span className="text-[10px] text-orange-400 font-bold">{t("sitting-out", { defaultValue: "Sitting Out" })}</span>}
-      {player.folded && !player.sittingOut && <span className="text-[10px] text-gray-500 font-bold">{t("folded", { defaultValue: "Folded" })}</span>}
-      {player.allIn && <span className="text-[10px] text-red-400 font-bold animate-pulse">{t("action-all-in", { defaultValue: "ALL IN" })}</span>}
+      {player.sittingOut && <span className="text-[10px] text-casino-seat-3 font-bold">{t("sitting-out", { defaultValue: "Sitting Out" })}</span>}
+      {player.folded && !player.sittingOut && <span className="text-[10px] text-site-text-dim font-bold">{t("folded", { defaultValue: "Folded" })}</span>}
+      {player.allIn && <span className="text-[10px] text-site-danger font-bold animate-pulse">{t("action-all-in", { defaultValue: "ALL IN" })}</span>}
     </div>
   );
 }
@@ -164,12 +164,12 @@ export function HoldemTable() {
       {pot > 0 && (
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-site-bg-subtle border border-site-border">
           <CoinIcon className="w-4 h-4" />
-          <span className="text-sm font-bold text-yellow-500">{pot}</span>
+          <span className="text-sm font-bold text-site-warning">{pot}</span>
         </div>
       )}
 
       {/* Community cards — responsive sizing */}
-      <div className={`flex items-center gap-1 sm:gap-1.5 p-2.5 sm:p-3 rounded-xl bg-site-bg-subtle border border-site-border min-h-18 sm:min-h-20`}>
+      <div className={`flex items-center gap-1 sm:gap-1.5 p-2.5 sm:p-3 rounded-site bg-site-bg-subtle border border-site-border min-h-18 sm:min-h-20`}>
         {communityCards.length > 0 ? (
           communityCards.map((card, i) => (
             <CardFace key={`${card.rank}${card.suit}${i}`} card={card} delay={i * 500} />

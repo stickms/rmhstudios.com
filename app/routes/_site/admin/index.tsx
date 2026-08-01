@@ -78,7 +78,7 @@ function AdminDashboardPage() {
             <h2 className="flex items-center gap-2 text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">
               {t("moderation-queue-title", { defaultValue: "Moderation Queue" })}
               {counts.reports > 0 && (
-                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-site-danger px-1.5 py-0.5 text-xs font-bold text-white">
+                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-site-danger px-1.5 py-0.5 text-xs font-bold text-site-danger-fg">
                   {counts.reports}
                 </span>
               )}
@@ -107,7 +107,7 @@ function AdminDashboardPage() {
             <h2 className="flex items-center gap-2 text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">
               {t("appeals-title", { defaultValue: "Strike Appeals" })}
               {counts.appeals > 0 && (
-                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-site-danger px-1.5 py-0.5 text-xs font-bold text-white">
+                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-site-danger px-1.5 py-0.5 text-xs font-bold text-site-danger-fg">
                   {counts.appeals}
                 </span>
               )}

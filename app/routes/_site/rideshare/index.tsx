@@ -70,8 +70,7 @@ export function RideshareLanding() {
               <Sparkles className="h-3.5 w-3.5" /> {t('community-rideshare', { defaultValue: 'Community rideshare' })}
             </span>
             <h1
-              className="mt-4 text-4xl font-bold tracking-tight text-site-text md:text-5xl"
-              style={{ fontFamily: 'var(--site-font-display)' }}
+              className="mt-4 text-4xl font-bold tracking-tight text-site-text md:text-5xl font-display"
             >
               {t('hero-heading', { defaultValue: 'Getting around, together.' })}
             </h1>
@@ -97,7 +96,7 @@ export function RideshareLanding() {
 
         {/* Ride classes */}
         <section className="mt-10 md:mt-12">
-          <h2 className="text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
+          <h2 className="text-2xl font-bold text-site-text font-display">
             {t('choose-your-ride', { defaultValue: 'Choose your ride' })}
           </h2>
           <p className="mt-1 text-site-text-muted">{t('ride-classes-subtitle', { defaultValue: 'A ride for every trip — from everyday to extra-special.' })}</p>
@@ -138,7 +137,7 @@ export function RideshareLanding() {
 
         {/* How it works (riders) */}
         <section className="mt-10 md:mt-12">
-          <h2 className="text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
+          <h2 className="text-2xl font-bold text-site-text font-display">
             {t('how-it-works', { defaultValue: 'How it works' })}
           </h2>
           <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -167,7 +166,7 @@ export function RideshareLanding() {
               <ShieldCheck className="h-5 w-5" />
               <span className="text-xs font-semibold uppercase tracking-wide">{t('drive-with-rmh', { defaultValue: 'Drive with RMH' })}</span>
             </div>
-            <h2 className="mt-2 text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
+            <h2 className="mt-2 text-2xl font-bold text-site-text font-display">
               {t('driver-cta-heading', { defaultValue: 'Earn your wings as an RMH driver' })}
             </h2>
             <p className="mt-2 text-site-text-muted">
@@ -201,7 +200,7 @@ function PriceEstimator() {
 
   return (
     <section className="mt-10 md:mt-12">
-      <h2 className="text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
+      <h2 className="text-2xl font-bold text-site-text font-display">
         {t('estimate-your-trip', { defaultValue: 'Estimate your trip' })}
       </h2>
       <p className="mt-1 text-site-text-muted">

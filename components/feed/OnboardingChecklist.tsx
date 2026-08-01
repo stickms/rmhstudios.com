@@ -222,7 +222,7 @@ export function OnboardingChecklist() {
  <div className="flex items-center gap-3">
  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-site-surface">
  <div
- className="h-full rounded-full bg-site-accent transition-[width] duration-300"
+ className="h-full rounded-full bg-site-accent transition-[width] duration-site-slow"
  style={{ width: `${(doneCount / steps.length) * 100}%`}}
  />
  </div>

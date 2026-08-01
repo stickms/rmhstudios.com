@@ -54,7 +54,7 @@ export function JumpBackIn() {
  alt=""
  aria-hidden
  loading="lazy"
- className="absolute inset-0 h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+ className="absolute inset-0 h-full w-full object-cover transition-transform duration-site group-hover:scale-105"
  />
  ) : (
  <span
@@ -63,8 +63,8 @@ export function JumpBackIn() {
  />
  )}
  {/* Darken so the title stays legible over any thumbnail. */}
- <span className="absolute inset-0 bg-black/35"aria-hidden />
- <span className="relative truncate text-xs font-semibold text-white drop-shadow">
+ <span className="absolute inset-0 bg-site-media-scrim"aria-hidden />
+ <span className="relative truncate text-xs font-semibold text-site-media-ink drop-shadow">
  {r.title}
  </span>
  </Link>

@@ -123,7 +123,7 @@ export function HoldemLobby({ coins }: Props) {
             </div>
           </div>
           {coins < buyIn && (
-            <p className="text-xs text-red-400">{t("not-enough-coins", { defaultValue: "Not enough coins (need {{buyIn}})", buyIn })}</p>
+            <p className="text-xs text-site-danger">{t("not-enough-coins", { defaultValue: "Not enough coins (need {{buyIn}})", buyIn })}</p>
           )}
           <div className="flex gap-2">
             <Button onClick={handleCreate} disabled={coins < buyIn}
@@ -167,7 +167,7 @@ export function HoldemLobby({ coins }: Props) {
               </div>
               <div className="flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-site-text-dim" />
-                <span className={`text-sm font-bold ${room.playerCount >= room.maxPlayers ? 'text-red-400' : 'text-site-text'}`}>
+                <span className={`text-sm font-bold ${room.playerCount >= room.maxPlayers ? 'text-site-danger' : 'text-site-text'}`}>
                   {room.playerCount}/{room.maxPlayers}
                 </span>
               </div>

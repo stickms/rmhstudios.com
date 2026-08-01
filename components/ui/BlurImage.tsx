@@ -142,7 +142,7 @@ export function BlurImage({
  }}
  className={cn(
  fitClass,
- 'transition-opacity duration-300',
+ 'transition-opacity duration-site-slow',
  loaded ? 'opacity-100' : 'opacity-0',
  reserve && 'absolute inset-0 h-full w-full',
  imgClassName,

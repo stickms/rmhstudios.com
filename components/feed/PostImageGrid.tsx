@@ -116,7 +116,7 @@ function GridImage({
  aspectRatio={1}
  sizes="(max-width: 640px) 50vw, 300px"
  className="h-full w-full"
- imgClassName="transition-transform duration-200 group-hover:scale-[1.02]"
+ imgClassName="transition-transform duration-site group-hover:scale-[1.02]"
  />
  </button>
  );
@@ -268,7 +268,7 @@ function Lightbox({ urls, alts, index, vtName, onIndexChange, onClose }: Lightbo
  // `touch-pinch-zoom` blocks the one-finger pan that would scroll the page
  // behind the overlay while still allowing the two-finger zoom a photo viewer
  // should support (plain `touch-none` would take that away too).
- className="fixed inset-0 z-100 flex touch-pinch-zoom items-center justify-center bg-black/90 p-4 outline-none"
+ className="fixed inset-0 z-100 flex touch-pinch-zoom items-center justify-center bg-site-media-veil p-4 outline-none"
  onClick={(e) => {
  e.stopPropagation();
  onClose();
@@ -280,7 +280,7 @@ function Lightbox({ urls, alts, index, vtName, onIndexChange, onClose }: Lightbo
  <button
  type="button"
  onClick={onClose}
- className="absolute right-4 top-4 rounded-full bg-black/50 p-2 text-white/90 transition-colors hover:bg-black/70 hover:text-white"
+ className="absolute right-4 top-4 rounded-full bg-site-media-scrim p-2 text-site-media-ink/90 transition-colors hover:bg-site-media-scrim-hover hover:text-site-media-ink"
  aria-label={t('close', { defaultValue:'Close'})}
  >
  <X className="h-6 w-6"/>
@@ -294,7 +294,7 @@ function Lightbox({ urls, alts, index, vtName, onIndexChange, onClose }: Lightbo
  e.stopPropagation();
  prev();
  }}
- className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white/90 transition-colors hover:bg-black/70 hover:text-white"
+ className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-site-media-scrim p-2 text-site-media-ink/90 transition-colors hover:bg-site-media-scrim-hover hover:text-site-media-ink"
  aria-label={t('previous-image', { defaultValue:'Previous image'})}
  >
  <ChevronLeft className="h-7 w-7"/>
@@ -305,7 +305,7 @@ function Lightbox({ urls, alts, index, vtName, onIndexChange, onClose }: Lightbo
  e.stopPropagation();
  next();
  }}
- className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white/90 transition-colors hover:bg-black/70 hover:text-white"
+ className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-site-media-scrim p-2 text-site-media-ink/90 transition-colors hover:bg-site-media-scrim-hover hover:text-site-media-ink"
  aria-label={t('next-image', { defaultValue:'Next image'})}
  >
  <ChevronRight className="h-7 w-7"/>
@@ -329,7 +329,7 @@ function Lightbox({ urls, alts, index, vtName, onIndexChange, onClose }: Lightbo
  />
 
  {hasMultiple && (
- <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-sm text-white/90">
+ <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-site-media-scrim px-3 py-1 text-sm text-site-media-ink/90">
  {index + 1} / {urls.length}
  </div>
  )}

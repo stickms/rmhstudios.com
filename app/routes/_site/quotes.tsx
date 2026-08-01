@@ -149,17 +149,17 @@ const categories = [...new Set(quotes.map((q) => q.category))];
 
 function QuoteCard({ quote, index }: { quote: typeof quotes[number]; index: number }) {
   return (
-    <div className="group relative pl-8 border-l-2 border-site-border hover:border-site-accent transition-colors duration-300 py-6">
+    <div className="group relative pl-8 border-l-2 border-site-border hover:border-site-accent transition-colors duration-site-slow py-6">
       {/* Quote number badge */}
-      <div className="absolute -left-3 top-6 w-6 h-6 rounded-full bg-site-surface border border-site-border flex items-center justify-center group-hover:bg-site-accent/10 group-hover:border-site-accent transition-colors duration-300">
-        <span className="text-xs font-mono text-site-text-muted group-hover:text-site-accent transition-colors duration-300">
+      <div className="absolute -left-3 top-6 w-6 h-6 rounded-full bg-site-surface border border-site-border flex items-center justify-center group-hover:bg-site-accent/10 group-hover:border-site-accent transition-colors duration-site-slow">
+        <span className="text-xs font-mono text-site-text-muted group-hover:text-site-accent transition-colors duration-site-slow">
           {index + 1}
         </span>
       </div>
 
       {/* Quote text */}
       <blockquote className="mb-3">
-        <p className="text-site-text text-lg leading-relaxed font-(family-name:--site-font-display) italic">
+        <p className="text-site-text text-lg leading-relaxed font-display italic">
           &ldquo;{quote.text}&rdquo;
         </p>
       </blockquote>
@@ -203,7 +203,7 @@ function QuotesPage() {
           {categories.map((cat) => (
             <span
               key={cat}
-              className="inline-flex items-center px-3 py-1 rounded-full bg-site-surface border border-site-border text-xs font-medium text-site-text-muted hover:text-site-accent hover:border-site-accent/50 transition-colors duration-200 cursor-default"
+              className="inline-flex items-center px-3 py-1 rounded-full bg-site-surface border border-site-border text-xs font-medium text-site-text-muted hover:text-site-accent hover:border-site-accent/50 transition-colors duration-site cursor-default"
             >
               {cat}
             </span>

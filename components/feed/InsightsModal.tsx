@@ -62,7 +62,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
  <DialogContent className="max-w-md p-0 gap-0 bg-site-bg flex flex-col max-h-[80vh] overflow-hidden">
  <div className="flex shrink-0 items-center justify-between border-b border-site-border px-5 py-4">
- <DialogTitle className="flex items-center gap-2 font-(family-name:--site-font-display) text-lg font-bold text-site-text">
+ <DialogTitle className="flex items-center gap-2 font-display text-lg font-bold text-site-text">
  <TrendingUp className="h-5 w-5 text-site-accent"/>
  {t('post-insights', { defaultValue:'Post insights'})}
  </DialogTitle>

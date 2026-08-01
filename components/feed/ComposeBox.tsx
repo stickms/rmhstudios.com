@@ -729,7 +729,7 @@ export function ComposeBox({
  type="button"
  onClick={() => setGifUrl('')}
  aria-label={t('remove-gif-aria', { defaultValue:'Remove GIF'})}
- className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+ className="absolute top-1 right-1 p-1 rounded-full bg-site-media-scrim-strong text-site-media-ink hover:bg-site-media-scrim-hover transition-colors"
  >
  <X className="w-3.5 h-3.5"/>
  </button>
@@ -774,7 +774,7 @@ export function ComposeBox({
  className={`absolute bottom-1 left-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wide transition-colors ${
  hasAlt
  ?'bg-site-accent text-site-accent-fg'
- :'bg-black/60 text-white/90 hover:bg-black/80'
+ :'bg-site-media-scrim-strong text-site-media-ink/90 hover:bg-site-media-scrim-hover'
  }`}
  >
  {t('alt-badge', { defaultValue:'Alt'})}
@@ -786,7 +786,7 @@ export function ComposeBox({
  setImageUrls((prev) => prev.filter((_, j) => j !== i));
  setImageAlts((prev) => prev.filter((_, j) => j !== i));
  }}
- className="absolute top-1 right-1 p-0.5 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+ className="absolute top-1 right-1 p-0.5 rounded-full bg-site-media-scrim-strong text-site-media-ink opacity-0 group-hover:opacity-100 transition-opacity"
  >
  <X className="w-3.5 h-3.5"/>
  </button>
@@ -906,7 +906,7 @@ export function ComposeBox({
  ref={menuPopRef}
  role="menu"
  tabIndex={-1}
- className="absolute bottom-full right-0 mb-1 w-56 glass-fill py-1 z-30"
+ className="absolute bottom-full right-0 mb-1 w-56 glass-overlay py-1 z-30"
  >
  {/* Post visibility (audience) — opens a picker modal */}
  <button
@@ -1069,7 +1069,7 @@ export function ComposeBox({
  type="button"
  aria-label={t('close', { defaultValue:'Close'})}
  tabIndex={-1}
- className="absolute inset-0 bg-black/60"
+ className="absolute inset-0 bg-site-media-scrim-strong"
  onClick={() => setAudienceOpen(false)}
  />
  <div className="relative w-full max-w-xs p-2 glass-fill animate-in zoom-in-95 fade-in duration-150">
@@ -1119,7 +1119,7 @@ export function ComposeBox({
  type="button"
  aria-label={t('close', { defaultValue:'Close'})}
  tabIndex={-1}
- className="absolute inset-0 bg-black/60"
+ className="absolute inset-0 bg-site-media-scrim-strong"
  onClick={() => setReplyOpen(false)}
  />
  <div className="relative w-full max-w-xs p-2 glass-fill animate-in zoom-in-95 fade-in duration-150">
@@ -1166,7 +1166,7 @@ export function ComposeBox({
  {showPriceModal && (
  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
  <div
- className="absolute inset-0 bg-black/60"
+ className="absolute inset-0 bg-site-media-scrim-strong"
  onClick={() => setShowPriceModal(false)}
  />
  <div className="relative w-full max-w-xs p-4 glass-fill animate-in zoom-in-95 fade-in duration-150">
@@ -1231,7 +1231,7 @@ export function ComposeBox({
  {showCheatSheet && (
  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
  <div
- className="absolute inset-0 bg-black/60"
+ className="absolute inset-0 bg-site-media-scrim-strong"
  onClick={() => setShowCheatSheet(false)}
  />
  <div className="relative w-full max-w-sm p-4 glass-fill animate-in zoom-in-95 fade-in duration-150">
@@ -1310,7 +1310,7 @@ export function ComposeBox({
  {altEditIndex !== null && imageUrls[altEditIndex] && (
  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
  <div
- className="absolute inset-0 bg-black/60"
+ className="absolute inset-0 bg-site-media-scrim-strong"
  onClick={() => setAltEditIndex(null)}
  />
  <div className="relative w-full max-w-md p-4 glass-fill animate-in zoom-in-95 fade-in duration-150">

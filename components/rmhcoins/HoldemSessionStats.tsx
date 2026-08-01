@@ -51,7 +51,7 @@ export function HoldemSessionStats() {
                   <tr key={p.userId} className={isMe ? 'text-site-accent' : 'text-site-text'}>
                     <td className="py-1 font-bold truncate max-w-20">
                       {isMe ? t("you", { defaultValue: "You" }) : p.userName}
-                      {p.sittingOut && <span className="text-orange-400 ml-1 text-[9px]">{t("sitting-out", { defaultValue: "(out)" })}</span>}
+                      {p.sittingOut && <span className="text-casino-seat-3 ml-1 text-[9px]">{t("sitting-out", { defaultValue: "(out)" })}</span>}
                     </td>
                     <td className="text-right py-1">
                       <span className="inline-flex items-center gap-0.5">

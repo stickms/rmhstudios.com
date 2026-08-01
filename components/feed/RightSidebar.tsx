@@ -89,7 +89,7 @@ function InviteFriendsCard() {
 
   return (
     <section className="glass-fill p-4">
-      <h2 className="font-(family-name:--site-font-display) font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-1.5">
+      <h2 className="font-display font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-1.5">
         <Gift className="w-5 h-5 text-site-accent" />
         {t('invite-friends', { defaultValue: 'Invite friends' })}
       </h2>
@@ -138,7 +138,7 @@ export function RightSidebar({
 
       {/* Official Builds */}
       <section className="glass-fill p-4">
-        <h2 className="font-(family-name:--site-font-display) font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-3">
+        <h2 className="font-display font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-3">
           <Package className="w-5 h-5 text-site-accent" />
           {t('official-builds', { defaultValue: 'Official Builds' })}
         </h2>
@@ -220,7 +220,7 @@ export function RightSidebar({
           nothing in it. */}
       {userBuilds.length > 0 && (
         <section className="glass-fill p-4">
-          <h2 className="font-(family-name:--site-font-display) font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-3">
+          <h2 className="font-display font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-3">
             <Hammer className="w-5 h-5 text-site-accent" />
             {t('user-builds', { defaultValue: 'User Builds' })}
           </h2>
@@ -289,7 +289,7 @@ export function RightSidebar({
 
       {/* Recommended Users */}
       <section className="glass-fill p-4">
-        <h2 className="font-(family-name:--site-font-display) font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-3">
+        <h2 className="font-display font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-3">
           <UserPlus className="w-5 h-5 text-site-accent" />
           {t('recommended-users', { defaultValue: 'Recommended Users' })}
         </h2>
@@ -337,7 +337,7 @@ export function RightSidebar({
 
       {/* Blog */}
       <section className="glass-fill p-4">
-        <h2 className="font-(family-name:--site-font-display) font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-3">
+        <h2 className="font-display font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-3">
           <BookOpen className="w-5 h-5 text-site-accent" />
           {t('blog', { defaultValue: 'Blog' })}
         </h2>

@@ -293,8 +293,8 @@ export function ActiveRidePanel({
             <div className="flex items-center gap-2">
               <span className="font-semibold text-site-text">{other.name ?? (isDriver ? t("your-rider", { defaultValue: "Your rider" }) : t("your-driver", { defaultValue: "Your driver" }))}</span>
               {!isDriver && driverRatingAvg && (
-                <span className="flex items-center gap-0.5 text-xs text-amber-400">
-                  <Star className="h-3 w-3 fill-amber-400" /> {driverRatingAvg}
+                <span className="flex items-center gap-0.5 text-xs text-site-warning">
+                  <Star className="h-3 w-3 fill-site-warning" /> {driverRatingAvg}
                 </span>
               )}
             </div>
@@ -311,7 +311,7 @@ export function ActiveRidePanel({
       {/* Driver location-sharing hint */}
       {sharingActive && (
         <div className="flex items-center gap-2 rounded-site border border-site-border bg-site-surface/80 px-4 py-2.5 text-xs">
-          <Crosshair className={`h-4 w-4 ${locationState === 'sharing' ? 'text-emerald-400' : 'text-amber-400'}`} />
+          <Crosshair className={`h-4 w-4 ${locationState === 'sharing' ? 'text-site-success' : 'text-site-warning'}`} />
           <span className="text-site-text-muted">
             {locationState === 'sharing'
               ? t("location-sharing", { defaultValue: "Sharing your live location with the rider." })
@@ -355,7 +355,7 @@ export function ActiveRidePanel({
       {/* Completed → rate */}
       {status === 'COMPLETED' && (
         <div className="rounded-site border border-site-border bg-site-surface/80 p-5 text-center">
-          <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-400" />
+          <CheckCircle2 className="mx-auto h-8 w-8 text-site-success" />
           <h3 className="mt-2 font-semibold text-site-text">
             {myRatingGiven ? t("thanks-for-riding", { defaultValue: "Thanks for riding with RMH!" }) : (isDriver ? t("rate-your-rider", { defaultValue: "Rate your rider" }) : t("rate-your-driver", { defaultValue: "Rate your driver" }))}
           </h3>
@@ -402,7 +402,7 @@ export function ActiveRidePanel({
             <button
               onClick={() => act('complete')}
               disabled={busy}
-              className="flex items-center justify-center gap-2 rounded-site bg-site-success px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-site-success/90 disabled:opacity-50 sm:flex-1 sm:py-2.5"
+              className="flex items-center justify-center gap-2 rounded-site bg-site-success px-5 py-3 text-sm font-semibold text-site-success-fg transition-colors hover:bg-site-success/90 disabled:opacity-50 sm:flex-1 sm:py-2.5"
             >
               <Flag className="h-4 w-4" /> {t("complete-trip", { defaultValue: "Complete trip" })}
             </button>
@@ -410,7 +410,7 @@ export function ActiveRidePanel({
           <button
             onClick={() => act('cancel')}
             disabled={busy}
-            className="flex items-center justify-center gap-2 rounded-site border border-site-border px-5 py-3 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/10 disabled:opacity-50 sm:py-2.5"
+            className="flex items-center justify-center gap-2 rounded-site border border-site-border px-5 py-3 text-sm font-medium text-site-danger transition-colors hover:bg-red-500/10 disabled:opacity-50 sm:py-2.5"
           >
             <XCircle className="h-4 w-4" /> {t("cancel", { defaultValue: "Cancel" })}
           </button>

@@ -150,7 +150,7 @@ const SheetTitle = React.forwardRef<
  <DialogPrimitive.Title
  ref={ref}
  className={cn(
- 'font-(family-name:--site-font-display) text-lg font-semibold leading-none tracking-[-0.022em]',
+ 'font-display text-lg font-semibold leading-none tracking-[-0.022em]',
  className,
  )}
  {...props}

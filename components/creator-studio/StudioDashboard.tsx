@@ -72,7 +72,7 @@ function StatTile({
     <Card className="p-4" pane>
       <div className="text-xs uppercase tracking-wide text-site-text-dim">{label}</div>
       <div className="text-2xl font-bold flex items-center gap-1.5 tabular-nums">
-        {Icon ? <Icon className="size-5 text-yellow-500" aria-hidden /> : null}
+        {Icon ? <Icon className="size-5 text-site-warning" aria-hidden /> : null}
         {value.toLocaleString()}
       </div>
     </Card>
@@ -232,7 +232,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="flex items-center gap-1 text-sm font-semibold tabular-nums text-site-text">
-                    <Coins className="size-4 text-yellow-500" aria-hidden />
+                    <Coins className="size-4 text-site-warning" aria-hidden />
                     {tip.amount.toLocaleString()}
                   </span>
                   <span className="text-xs text-site-text-dim">{timeAgoShort(tip.createdAt)}</span>

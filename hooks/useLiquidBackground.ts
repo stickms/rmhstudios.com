@@ -12,14 +12,24 @@ import { clearSceneLight, setAuroraOffset, setSceneLight } from '@/lib/liquid-gl
  * longhand (which composes with the drift animation's `transform`), and a CSS
  * transition eases the follow so the backdrop trails the cursor like a fluid.
  *
- * Two input modes, chosen by device:
- *  - **Fine pointer (desktop):** `pointermove` → offset from the viewport centre.
- *  - **Touch (coarse pointer):** `deviceorientation` → device tilt. On Android /
- *    non-iOS the event fires with no prompt, so we auto-enable. iOS 13+ gates it
- *    behind an explicit `requestPermission()` user gesture; we never prompt on
- *    load — the Settings → Appearance "Tilt effects" row does the gesture-grant and
- *    persists consent as `rmh-motion-ok`, then fires `rmh:tilt-consent` so this hook
- *    starts (or stops) listening live.
+ * **One input mode: device tilt.** `deviceorientation` on coarse-pointer
+ * hardware. On Android / non-iOS the event fires with no prompt, so we
+ * auto-enable. iOS 13+ gates it behind an explicit `requestPermission()` user
+ * gesture; we never prompt on load — the Settings → Appearance "Tilt effects" row
+ * does the gesture-grant and persists consent as `rmh-motion-ok`, then fires
+ * `rmh:tilt-consent` so this hook starts (or stops) listening live.
+ *
+ * There used to be a second mode: a `pointermove` listener on desktop that drifted
+ * the aurora against the cursor. It is gone, with the rest of the site's cursor
+ * reactivity (see the §5.1 note in `app/globals.css`). Cheap as the write itself
+ * had become, the effect still woke a rAF, re-resolved two custom properties and
+ * re-composited two viewport-sized gradient layers on every frame the mouse moved
+ * — an unbroken stream of them during exactly the gestures (drag, scroll, hover
+ * along a grid) that have a frame budget to defend. On a fine pointer this hook now
+ * attaches **no listener at all**; the ambient `aurora-drift` keyframe, which is a
+ * compositor animation with no main-thread cost, carries the backdrop alone.
+ * Tilt survives because it is explicit — the visitor turned it on — and because it
+ * is the one input a touch device has.
  *
  * §5.5x C — tilt light: the same tilt that drifts the aurora also publishes the
  * scene light (viewport px: centre + tilt × ~40% of the viewport, 8px-quantised,
@@ -161,15 +171,6 @@ export function useLiquidBackground(): void {
 
     const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-    const onPointerMove = (e: PointerEvent) => {
-      const nx = (e.clientX / window.innerWidth) * 2 - 1; // -1 … 1
-      const ny = (e.clientY / window.innerHeight) * 2 - 1;
-      // Invert so the aurora drifts against the cursor (content-over-parallax feel).
-      targetX = clamp(-nx, -1, 1) * MAX_SHIFT;
-      targetY = clamp(-ny, -1, 1) * MAX_SHIFT;
-      schedule();
-    };
-
     const onOrientation = (e: DeviceOrientationEvent) => {
       if (e.gamma == null || e.beta == null) return;
       // gamma: left-right tilt (-90…90); beta: front-back (-180…180). Normalise a
@@ -223,10 +224,11 @@ export function useLiquidBackground(): void {
       clearSceneLight();
     };
 
-    if (finePointer) {
-      document.addEventListener('pointermove', onPointerMove, { passive: true });
-      cleanups.push(() => document.removeEventListener('pointermove', onPointerMove));
-    } else if ('DeviceOrientationEvent' in window) {
+    // Cursor input is deliberately NOT wired here any more (see the header note):
+    // a fine-pointer machine gets the ambient `aurora-drift` keyframe and nothing
+    // else, so no listener, no rAF and no style write happens while the mouse
+    // moves. Tilt is the only live input, and only where the visitor asked for it.
+    if (!finePointer && 'DeviceOrientationEvent' in window) {
       const needsPermission =
         typeof (DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> })
           .requestPermission === 'function';

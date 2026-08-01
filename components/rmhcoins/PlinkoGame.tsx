@@ -368,7 +368,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
 
   return (
     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-center gap-4 sm:gap-6 px-3 sm:px-4 py-4 sm:py-6">
-      <div className="w-full max-w-[390px] mx-auto lg:mx-0 aspect-390/420 relative shrink-0 rounded-xl border border-site-border overflow-hidden shadow-(--site-shadow)">
+      <div className="w-full max-w-[390px] mx-auto lg:mx-0 aspect-390/420 relative shrink-0 rounded-site border border-site-border overflow-hidden shadow-(--site-shadow)">
         <canvas
           ref={canvasRef}
           width={CANVAS_W}
@@ -383,10 +383,13 @@ export function PlinkoGame({ coins, setCoins }: Props) {
             }`}
           >
             <div
-              className={`px-4 py-2.5 rounded-xl font-bold text-sm sm:text-lg shadow-lg ${
-                resultWon
-                  ? 'bg-site-success text-black'
-                  : 'bg-site-danger text-black'
+              /* No ink class: the zero-specificity pairing rules in globals.css
+                 give a filled `bg-site-success` / `bg-site-danger` its own
+                 `-fg` token, which tracks each theme's green and red. This used
+                 to say `text-black`, which was invisible on the themes whose
+                 success colour is a dark forest green. */
+              className={`px-4 py-2.5 rounded-site font-bold text-sm sm:text-lg shadow-site ${
+                resultWon ? 'bg-site-success' : 'bg-site-danger'
               }`}
             >
               {resultMessage}
@@ -404,9 +407,9 @@ export function PlinkoGame({ coins, setCoins }: Props) {
               key={i}
               onClick={() => isIdle && setSelectedBin(i)}
               disabled={!isIdle}
-              className={`flex-1 min-h-10 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+              className={`flex-1 min-h-10 py-2 rounded-site text-sm font-bold transition-all active:scale-95 ${
                 selectedBin === i
-                  ? 'ring-2 ring-site-accent text-white scale-105'
+                  ? 'ring-2 ring-site-accent text-casino-ink scale-105'
                   : 'text-site-text-dim hover:text-site-text'
               } disabled:opacity-50`}
               style={{
@@ -432,7 +435,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
               onChange={(e) => setBetInput(e.target.value)}
               onBlur={handleBetBlur}
               disabled={!isIdle}
-              className="w-full bg-site-surface border border-site-border rounded-xl px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40 disabled:opacity-50"
+              className="w-full bg-site-surface border border-site-border rounded-site px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40 disabled:opacity-50"
             />
             <CoinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
           </div>
@@ -442,7 +445,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
                 key={amt}
                 onClick={() => isIdle && setQuickBet(amt)}
                 disabled={!isIdle}
-                className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-xl text-site-text-dim hover:text-site-text hover:bg-site-surface-hover disabled:opacity-50 active:scale-95 transition-all"
+                className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-site text-site-text-dim hover:text-site-text hover:bg-site-surface-hover disabled:opacity-50 active:scale-95 transition-all"
               >
                 {amt}
               </button>
@@ -450,7 +453,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
             <button
               onClick={() => isIdle && setQuickBet(coins)}
               disabled={!isIdle}
-              className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-xl text-site-accent hover:bg-site-surface-hover disabled:opacity-50 active:scale-95 transition-all"
+              className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-site text-site-accent hover:bg-site-surface-hover disabled:opacity-50 active:scale-95 transition-all"
             >
               {t('bet-all', { defaultValue: 'All' })}
             </button>
@@ -463,7 +466,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
         loading={submitting}
         disabled={!isIdle || selectedBin === null}
         variant="accent"
-        className="w-full min-h-11 font-bold rounded-xl text-base"
+        className="w-full min-h-11 font-bold rounded-site text-base"
       >
         {gameState === 'dropping'
           ? t('dropping', { defaultValue: 'Dropping...' })

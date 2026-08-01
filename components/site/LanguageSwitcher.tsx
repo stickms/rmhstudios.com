@@ -163,7 +163,7 @@ export function LanguageSwitcher() {
               width: rect.width,
               maxHeight: rect.maxHeight,
             }}
-            className="z-[100] overflow-y-auto overscroll-contain rounded-site border border-site-border bg-site-surface p-1 shadow-[var(--site-shadow)]"
+            className="z-[100] overflow-y-auto overscroll-contain glass-overlay p-1"
           >
             {LOCALES.map((l) => {
               const active = l === locale;

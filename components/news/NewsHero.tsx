@@ -101,8 +101,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
                     {article.date}
                   </span>
                   <h2
-                    className="mb-7 text-2xl font-medium leading-tight text-site-text md:text-4xl"
-                    style={{ fontFamily: 'var(--site-font-display)' }}
+                    className="mb-7 text-2xl font-medium leading-tight text-site-text md:text-4xl font-display"
                   >
                     {article.title}
                   </h2>
@@ -141,7 +140,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
                 onClick={() => scrollTo(index)}
                 data-slot="news-hero-dot"
                 aria-current={index === selectedIndex ? 'true' : undefined}
-                className={`flex h-11 shrink-0 touch-manipulation items-center justify-center transition-[width] duration-300 ${
+                className={`flex h-11 shrink-0 touch-manipulation items-center justify-center transition-[width] duration-site-slow ${
                   index === selectedIndex ? 'w-11' : 'w-8'
                 }`}
                 aria-label={t('go-to-featured-article', {
@@ -151,7 +150,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
               >
                 <span
                   aria-hidden
-                  className={`relative h-1.5 overflow-hidden rounded-site transition-[width,background-color] duration-300 ${
+                  className={`relative h-1.5 overflow-hidden rounded-site transition-[width,background-color] duration-site-slow ${
                     index === selectedIndex ? 'w-8 bg-site-accent/30' : 'w-1.5 bg-site-border'
                   }`}
                 >

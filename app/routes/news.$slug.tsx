@@ -107,8 +107,7 @@ function NewsArticlePage() {
           </div>
 
           <h1
-            className="text-3xl md:text-5xl font-black text-(--site-text) mb-6 tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 fill-mode-both"
-            style={{ fontFamily: 'var(--site-font-display)' }}
+            className="text-3xl md:text-5xl font-black text-(--site-text) mb-6 tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 fill-mode-both font-display"
           >
             {article.title}
           </h1>
@@ -119,7 +118,7 @@ function NewsArticlePage() {
         </header>
 
         {article.sourceUrl && (
-          <div className="mb-10 p-6 rounded-xl border border-(--site-border) bg-(--site-surface) animate-in fade-in slide-in-from-bottom-4 duration-700 delay-450 fill-mode-both">
+          <div className="mb-10 p-6 rounded-site border border-(--site-border) bg-(--site-surface) animate-in fade-in slide-in-from-bottom-4 duration-700 delay-450 fill-mode-both">
             <p className="text-xs font-semibold uppercase tracking-widest text-(--site-accent) mb-2">
               {t('original-source', { defaultValue: 'Original Source' })}
             </p>

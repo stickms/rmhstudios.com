@@ -310,7 +310,7 @@ export function MembershipPanel({
                     <div className="flex items-start justify-between gap-2">
                       <h3
                         className={cn(
-                          'font-(family-name:--site-font-display) text-2xl font-bold leading-tight tracking-tight',
+                          'font-display text-2xl font-bold leading-tight tracking-tight',
                           plan.featured ? 'text-site-warning' : 'text-site-text',
                         )}
                       >

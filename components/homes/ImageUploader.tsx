@@ -130,7 +130,7 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
             >
               <img src={url} alt="" className="h-full w-full object-cover" />
               {i === 0 && (
-                <span className="absolute left-1 top-1 inline-flex items-center gap-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                <span className="absolute left-1 top-1 inline-flex items-center gap-1 rounded-full bg-site-media-scrim-strong px-1.5 py-0.5 text-[10px] font-medium text-site-media-ink">
                   <Star className="h-3 w-3 fill-current" /> Cover
                 </span>
               )}
@@ -145,7 +145,7 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
                     type="button"
                     onClick={() => makeCover(url)}
                     aria-label="Make cover photo"
-                    className="grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                    className="grid h-7 w-7 place-items-center rounded-full bg-site-media-scrim-strong text-site-media-ink hover:bg-site-media-scrim-hover"
                   >
                     <Star className="h-3.5 w-3.5" />
                   </button>
@@ -154,7 +154,7 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
                   type="button"
                   onClick={() => remove(url)}
                   aria-label="Remove photo"
-                  className="grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                  className="grid h-7 w-7 place-items-center rounded-full bg-site-media-scrim-strong text-site-media-ink hover:bg-site-media-scrim-hover"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>

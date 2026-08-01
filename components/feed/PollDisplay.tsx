@@ -125,7 +125,7 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  >
  {/* Progress bar background */}
  <div
- className={`absolute inset-0 transition-all duration-300 ${
+ className={`absolute inset-0 transition-all duration-site-slow ${
  isSelected ?'bg-site-accent/20':'bg-site-surface/50'
  }`}
  style={{ width: `${pct}%`}}

@@ -54,7 +54,7 @@ function StatTile({
         <Icon className="size-3.5" />
         {label}
       </div>
-      <div className={`truncate font-(family-name:--site-font-display) text-2xl font-bold tracking-tight ${toneText}`}>
+      <div className={`truncate font-display text-2xl font-bold tracking-tight ${toneText}`}>
         {value}
       </div>
     </div>
@@ -170,7 +170,7 @@ function AdminLibraryStoragePage() {
 
             {/* Missing objects */}
             <section className="flex flex-col gap-3">
-              <h2 className="font-(family-name:--site-font-display) text-lg font-semibold text-site-text">
+              <h2 className="font-display text-lg font-semibold text-site-text">
                 {t('missing-objects', {
                   missing: health.missing.length,
                   total: health.total,

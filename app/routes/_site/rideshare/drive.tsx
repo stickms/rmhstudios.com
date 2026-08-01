@@ -221,7 +221,7 @@ function ApplicationForm({
           <ShieldCheck className="h-5 w-5" />
           <span className="text-xs font-semibold uppercase tracking-wide">{t('driver-application', { defaultValue: 'Driver application' })}</span>
         </div>
-        <h2 className="mt-1 text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
+        <h2 className="mt-1 text-2xl font-bold text-site-text font-display">
           {t('tell-us-about-your-ride', { defaultValue: 'Tell us about your ride' })}
         </h2>
         <p className="mt-1 text-site-text-muted">

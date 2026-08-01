@@ -137,6 +137,115 @@ function enclosingTag(src: string, idx: number): string {
   return src.slice(start, end + 1);
 }
 
+/**
+ * Rules 5–7 scan the SITE tier only. The full-screen games and the `--app-*`
+ * apps are exempt from the `--site-*` palette by design (design-language.md §12
+ * and the "games with a bespoke visual identity" note in §12) — Temple of Joy is
+ * SUPPOSED to be candlelit, and forcing it onto site tokens would make it look
+ * like a different product, not a more consistent one. This is the same split
+ * `lib/games.ts` / `lib/apps.ts` publish; it is duplicated here rather than
+ * imported because those modules pull in far more than a static scan needs.
+ *
+ * `rmhladder`, `rmhcalculator` and `homes` are NOT listed: they are `usesSiteTheme`
+ * apps and are held to the site contract.
+ */
+const FULLSCREEN_TIER_DIRS = new Set([
+  // Games (their own palettes / scoped variable groups in globals.css)
+  'altair',
+  'cookgame',
+  'cursed-logic',
+  'daily-puzzles',
+  'dream-rift',
+  'forest-explorer',
+  'game', // Slice It's UI (reached from slice-it/index.tsx → GameCanvas)
+  'house-always-wins',
+  'isleworks',
+  'kowloon-knockout',
+  'laundry-sort',
+  'lights-out',
+  'neon-driftway',
+  'rmh-farming-sim',
+  'signal-forge',
+  'slice-it',
+  'synapse-storm',
+  'temple-of-joy',
+  'vega',
+  'velum2099',
+  'versecraft',
+  'void-breaker',
+  // The `--app-*` full-screen app tier
+  'rmhbox',
+  'rmhcode',
+  'rmhmusic',
+  'rmhstudy',
+  'rmhtube',
+  'rmhtype',
+  'rmhvibe',
+  'shared',
+  'studio',
+  // Standalone campaign/marketing arms with their own art direction
+  'blm',
+  'breakpoint',
+  'covid',
+  'doctrine',
+  'history',
+  'lockdown',
+  'render',
+  'rmh-capital',
+  'rmh-pmc',
+]);
+
+/** Top-level route trees that are full-screen experiences, not `_site` pages. */
+const FULLSCREEN_ROUTE_SEGMENTS = new Set([
+  'altair',
+  'api',
+  'cookgame',
+  'daily',
+  'discord',
+  'dream-rift',
+  'forest-explorer',
+  'house-always-wins',
+  'isleworks',
+  'kowloon-knockout',
+  'laundry-sort',
+  'neon-driftway',
+  'rmh-farming-sim',
+  'rmhbox',
+  'rmhcode',
+  'rmhmusic',
+  'rmhstudy',
+  'rmhtube',
+  'rmhtype',
+  'rochester-offensive',
+  'secret',
+  'slice-it',
+  'strategies',
+  'studio',
+  'synapse-storm',
+  'temple-of-joy',
+  'velum2099',
+  'versecraft',
+  'void-breaker',
+]);
+
+function isSiteTier(file: string): boolean {
+  const parts = file.split(/[\\/]/);
+  if (parts[0] === 'components') return !FULLSCREEN_TIER_DIRS.has(parts[1] ?? '');
+  // app/routes/<seg>/... or app/routes/<seg>.tsx
+  const seg = (parts[2] ?? '').replace(/\.tsx$/, '');
+  return !FULLSCREEN_ROUTE_SEGMENTS.has(seg);
+}
+
+const SITE_FILES = FILES.filter(isSiteTier);
+
+/**
+ * Rule 6 allowlist — the one site-tier file permitted to name raw palette colours.
+ * `/login` renders third-party sign-in buttons, and a provider's mark is its own
+ * brand asset: Discord blurple and Google red are not ours to theme. Everything
+ * else on that page is on tokens.
+ */
+const RAW_COLOR_ALLOW = new Set([join('app', 'routes', 'login.tsx')]);
+
 type Violation = { file: string; line: number; detail: string };
 
 function scanAll(): {
@@ -144,11 +253,17 @@ function scanAll(): {
   underline: Violation[];
   layoutId: Violation[];
   accentBar: Violation[];
+  rawColor: Violation[];
+  rawRadius: Violation[];
+  floatingTier: Violation[];
 } {
   const tablist: Violation[] = [];
   const underline: Violation[] = [];
   const layoutId: Violation[] = [];
   const accentBar: Violation[] = [];
+  const rawColor: Violation[] = [];
+  const rawRadius: Violation[] = [];
+  const floatingTier: Violation[] = [];
 
   // A bottom-border marker (border-b / -2 / -4 / -[..]) but NOT border-b-0.
   const borderBottom = /\bborder-b(?!-0)(?:-(?:2|4|\[[^\]]*\]))?(?![\w-])/;
@@ -210,7 +325,64 @@ function scanAll(): {
       }
     }
   }
-  return { tablist, underline, layoutId, accentBar };
+  // ── Rules 5–7 (site tier only) ───────────────────────────────────────────
+  // These read `className=` values SPECIFICALLY rather than string literals
+  // generally: a class-shaped word in prose ("the old bg-black/60 skin") is a
+  // comment, not a call site, and a naive literal scan reports it as a defect.
+  // Same lesson the game-viewport gate records.
+  const classAttr =
+    /class(?:Name)?\s*=\s*(?:"([^"]*)"|'([^']*)'|`([^`]*)`|\{([\s\S]{0,1200}?)\}\s*(?=[\s/>]))/g;
+  const rawPalette =
+    /(?<![\w:-])(?:bg|text|border|ring|from|via|to|fill|stroke|divide|outline|shadow|decoration|placeholder|caret|accent)-(?:zinc|gray|slate|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}(?![\w-])/g;
+  const rawRadiusRe = /(?<![\w:-])rounded-(?:sm|md|lg|xl|2xl|3xl)(?![\w-])/g;
+  // Floating UI must ride L4. A surface that is positioned, stacked and anchored
+  // to an edge is a dropdown/popover/menu whatever its role attribute says.
+  const positioned = /(?<![\w-])(?:absolute|fixed)(?![\w-])/;
+  const stacked = /(?<![\w-])z-(?:\d{1,3}|\[\d+\])(?![\w-])/;
+  const edgeAnchored =
+    /(?<![\w-])(?:top-full|bottom-full|mt-\d|mb-\d|left-0|right-0|inset-x-0)(?![\w-])/;
+  const lowerTier = /(?<![\w-])(?:glass-(?:fill|pane|chrome))(?![\w-])|(?<![\w-])bg-site-surface(?![\w-])/;
+  const l4Tier = /(?<![\w-])glass-(?:overlay|scrim)(?![\w-])/;
+
+  for (const file of SITE_FILES) {
+    const src = readFileSync(join(ROOT, file), 'utf8');
+    classAttr.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = classAttr.exec(src))) {
+      const value = m[1] ?? m[2] ?? m[3] ?? m[4] ?? '';
+      const line = lineAt(src, m.index);
+
+      if (!RAW_COLOR_ALLOW.has(file)) {
+        rawPalette.lastIndex = 0;
+        let c: RegExpExecArray | null;
+        while ((c = rawPalette.exec(value))) {
+          rawColor.push({ file, line, detail: `raw palette colour \`${c[0]}\`` });
+        }
+      }
+
+      rawRadiusRe.lastIndex = 0;
+      let r: RegExpExecArray | null;
+      while ((r = rawRadiusRe.exec(value))) {
+        rawRadius.push({ file, line, detail: `hardcoded radius \`${r[0]}\`` });
+      }
+
+      if (
+        positioned.test(value) &&
+        stacked.test(value) &&
+        edgeAnchored.test(value) &&
+        lowerTier.test(value) &&
+        !l4Tier.test(value)
+      ) {
+        floatingTier.push({
+          file,
+          line,
+          detail: 'floating surface below L4 (no backdrop blur → text ghosts through)',
+        });
+      }
+    }
+  }
+
+  return { tablist, underline, layoutId, accentBar, rawColor, rawRadius, floatingTier };
 }
 
 function report(label: string, v: Violation[]): string {
@@ -222,12 +394,17 @@ function report(label: string, v: Violation[]): string {
 }
 
 describe('design consistency — one tab-strip grammar (§16.2)', () => {
-  const { tablist, underline, layoutId, accentBar } = scanAll();
+  const { tablist, underline, layoutId, accentBar, rawColor, rawRadius, floatingTier } = scanAll();
 
   it('scans a non-trivial set of production sources', () => {
     // Guards the walker itself — a broken path would make every rule vacuously pass.
     expect(FILES.length).toBeGreaterThan(200);
     expect(FILES).toContain(RENDERER);
+    // …and the site-tier filter, which rules 5–7 depend on. If the exemption
+    // lists ever swallowed the site the new rules would pass on an empty set.
+    expect(SITE_FILES.length).toBeGreaterThan(200);
+    expect(SITE_FILES).toContain(join('components', 'feed', 'PageLayout.tsx'));
+    expect(SITE_FILES).not.toContain(join('components', 'temple-of-joy', 'TempleTabs.tsx'));
   });
 
   it('role="tablist" lives only in LiquidTabs (+ documented allowlist)', () => {
@@ -244,5 +421,48 @@ describe('design consistency — one tab-strip grammar (§16.2)', () => {
 
   it('no conditional accent-underline bar (§17.5 hand-rolled active-tab indicator)', () => {
     expect(accentBar, report('Conditional accent-underline bar', accentBar)).toEqual([]);
+  });
+
+  it('site-tier UI names no raw Tailwind palette colour', () => {
+    expect(
+      rawColor,
+      report('Raw palette colour in site UI', rawColor).replace(
+        POINTER,
+        'Use a --site-* token utility (bg-site-surface, text-site-danger, ' +
+          'text-site-warning, …). A raw palette colour is the same pixel in every ' +
+          'theme, which is the one thing the token contract exists to prevent. If ' +
+          'the colour is genuinely domain-fixed (a playing card, a brand mark), add ' +
+          'a scoped variable group like --casino-* and bind it in @theme inline — ' +
+          'see docs/design-language.md §1.',
+      ),
+    ).toEqual([]);
+  });
+
+  it('site-tier UI uses the themed radius scale', () => {
+    expect(
+      rawRadius,
+      report('Hardcoded radius in site UI', rawRadius).replace(
+        POINTER,
+        'Use rounded-site / rounded-site-sm. `rounded-lg` is a fixed 8px that ' +
+          "ignores each theme's --site-radius (high-contrast squares its corners; " +
+          'the hardcoded ones stay round). rounded-full and rounded-none are fine — ' +
+          'a pill and a square corner are shapes, not radii.',
+      ),
+    ).toEqual([]);
+  });
+
+  it('floating UI rides the L4 overlay tier', () => {
+    expect(
+      floatingTier,
+      report('Floating surface below L4', floatingTier).replace(
+        POINTER,
+        'A dropdown / popover / menu / autocomplete is `.glass-overlay` ' +
+          '(design-language.md §5.1). L1 `.glass-fill` has NO backdrop blur and a ' +
+          'lighter tint by design — it is the tier for repeated CARDS — so a menu ' +
+          'built on it sits transparent over whatever it opened on top of and the ' +
+          'labels ghost. `.glass-overlay` carries the blur plus the ≥78% legibility ' +
+          'floor that the Glass clarity slider cannot push under.',
+      ),
+    ).toEqual([]);
   });
 });
