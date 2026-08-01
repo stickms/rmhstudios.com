@@ -6,13 +6,20 @@
  * colours + positions out of the resolved token once per theme change and feed a
  * fixed shader that composites base-linear + radial glows procedurally.
  *
- * Split into a PURE parser ({@link parseSceneColors} — unit-tested, no DOM) and
- * thin DOM readers ({@link readSceneStatic} once per theme via `getComputedStyle`,
- * {@link readLiveInputs} per frame via cheap inline-style reads that never flush
- * layout).
+ * Split into a PURE parser ({@link parseSceneColors} — unit-tested, no DOM), one
+ * thin DOM reader ({@link readSceneStatic}, once per theme via `getComputedStyle`)
+ * and {@link readLiveInputs}, which per frame reads plain numbers out of
+ * `./scene-light` and touches no styles at all.
  */
 
 import type { SceneGlow, SceneState } from './types';
+import {
+  getAuroraX,
+  getAuroraY,
+  getSceneLightX,
+  getSceneLightY,
+  hasSceneLight,
+} from './scene-light';
 
 /** The colour + geometry portion of the scene — everything but the live inputs. */
 export type SceneStatic = Pick<
@@ -56,14 +63,21 @@ export function parseCssColor(input: string): [number, number, number, number] |
   const m = s.match(/^rgba?\(([^)]+)\)$/);
   if (m) {
     // Comma-, space-, and slash-separated forms all normalise here.
-    const parts = m[1].split(/[\s,/]+/).map((p) => p.trim()).filter(Boolean);
+    const parts = m[1]
+      .split(/[\s,/]+/)
+      .map((p) => p.trim())
+      .filter(Boolean);
     if (parts.length < 3) return null;
-    const chan = (p: string) =>
-      p.endsWith('%') ? (parseFloat(p) / 100) * 255 : parseFloat(p);
+    const chan = (p: string) => (p.endsWith('%') ? (parseFloat(p) / 100) * 255 : parseFloat(p));
     const r = chan(parts[0]);
     const g = chan(parts[1]);
     const b = chan(parts[2]);
-    const a = parts[3] !== undefined ? (parts[3].endsWith('%') ? parseFloat(parts[3]) / 100 : parseFloat(parts[3])) : 1;
+    const a =
+      parts[3] !== undefined
+        ? parts[3].endsWith('%')
+          ? parseFloat(parts[3]) / 100
+          : parseFloat(parts[3])
+        : 1;
     if ([r, g, b, a].some(Number.isNaN)) return null;
     return [clamp01(r / 255), clamp01(g / 255), clamp01(b / 255), clamp01(a)];
   }
@@ -120,7 +134,10 @@ function innerOf(gradient: string): string {
 }
 
 /** Pull the color + trailing stop% out of a gradient color-stop token. */
-function colorAndStop(token: string): { color: [number, number, number, number] | null; stop: number } {
+function colorAndStop(token: string): {
+  color: [number, number, number, number] | null;
+  stop: number;
+} {
   // e.g. "rgba(86,140,255,0.3)" | "transparent 62%" | "#131316 100%"
   const stopMatch = token.match(/(-?\d*\.?\d+)%\s*$/);
   const stop = stopMatch ? parseFloat(stopMatch[1]) / 100 : NaN;
@@ -138,7 +155,8 @@ function parseRadial(gradient: string): SceneGlow | null {
   //   "110% 85% at 10% -5%"  (size may be omitted → default 50% 50% center).
   const head = args[0];
   const atIdx = head.indexOf(' at ');
-  const sizePart = atIdx >= 0 ? head.slice(0, atIdx) : /%/.test(head) && !/,/.test(head) ? head : '';
+  const sizePart =
+    atIdx >= 0 ? head.slice(0, atIdx) : /%/.test(head) && !/,/.test(head) ? head : '';
   const posPart = atIdx >= 0 ? head.slice(atIdx + 4) : '';
   const pcts = (str: string) => (str.match(/-?\d*\.?\d+%/g) ?? []).map((p) => parseFloat(p) / 100);
   const sizes = pcts(sizePart);
@@ -163,7 +181,17 @@ function parseRadial(gradient: string): SceneGlow | null {
     }
   }
   const [r, g, b, a] = first.color;
-  return { r, g, b, a, cx, cy, sx: Math.max(sx, 0.05), sy: Math.max(sy, 0.05), stop: Math.max(stop, 0.05) };
+  return {
+    r,
+    g,
+    b,
+    a,
+    cx,
+    cy,
+    sx: Math.max(sx, 0.05),
+    sy: Math.max(sy, 0.05),
+    stop: Math.max(stop, 0.05),
+  };
 }
 
 /**
@@ -174,7 +202,9 @@ function parseRadial(gradient: string): SceneGlow | null {
 export function parseSceneColors(canvas: string, accent: string, rim: string): SceneStatic {
   const accentC = parseCssColor(accent);
   const rimC = parseCssColor(rim);
-  const accentRgb: [number, number, number] = accentC ? [accentC[0], accentC[1], accentC[2]] : [0.42, 0.79, 1];
+  const accentRgb: [number, number, number] = accentC
+    ? [accentC[0], accentC[1], accentC[2]]
+    : [0.42, 0.79, 1];
   const rimRgb: [number, number, number] = rimC ? [rimC[0], rimC[1], rimC[2]] : [1, 1, 1];
 
   const empty: SceneStatic = {
@@ -249,28 +279,26 @@ export interface LiveInputs {
   hasLight: boolean;
 }
 
-const px = (v: string): number => {
-  const n = parseFloat(v);
-  return Number.isNaN(n) ? 0 : n;
-};
-
 /**
- * Refresh the frequently-changing inputs from INLINE `<html>` style (written by
- * useLiquidBackground / useGlassLight). Reading `element.style` does not flush
- * layout — unlike `getComputedStyle`. Mutates `out` in place.
+ * Refresh the frequently-changing inputs from `lib/liquid-gl/scene-light`, which
+ * `useLiquidBackground` / `useGlassLight` publish to. Mutates `out` in place.
+ *
+ * These used to be read back out of `<html>`'s inline style, which the same two
+ * hooks wrote them to. That made the light a JS→JS channel routed through the
+ * CSSOM — and a custom-property write on the document element dirties the
+ * computed style of the whole document (~70ms on `/store` at 4× throttle, vs
+ * ~2ms for a class toggle). The hooks publish numbers now; nothing here parses a
+ * pixel string, and nothing on the page is restyled to move the light.
  */
 export function readLiveInputs(out: LiveInputs): void {
   if (typeof document === 'undefined') return;
-  const st = document.documentElement.style;
-  out.mx = px(st.getPropertyValue('--aurora-mx'));
-  out.my = px(st.getPropertyValue('--aurora-my'));
-  const lx = st.getPropertyValue('--light-x');
-  const ly = st.getPropertyValue('--light-y');
-  if (lx && ly) {
+  out.mx = getAuroraX();
+  out.my = getAuroraY();
+  if (hasSceneLight()) {
     const vw = window.innerWidth || 1;
     const vh = window.innerHeight || 1;
-    out.lightX = px(lx) / vw;
-    out.lightY = px(ly) / vh;
+    out.lightX = getSceneLightX() / vw;
+    out.lightY = getSceneLightY() / vh;
     out.hasLight = true;
   } else {
     out.lightX = 0.5; // the sun default (§4.1)

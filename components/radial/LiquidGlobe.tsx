@@ -235,12 +235,46 @@ const PARALLELS = [-60, -40, -20, 0, 20, 40, 60];
  */
 const RING_SAMPLES = 72;
 /**
+ * cos/sin of every ring sample angle, built once at module load.
+ *
+ * All thirteen rings are sampled at the SAME angles — a ring differs from its
+ * neighbours only in the plane it lies in, never in where it is cut — so the
+ * angles are constant for the lifetime of the page. Computing them inside the
+ * sample loop cost 2 × 73 × 13 ≈ 1900 trig calls on every frame of every drag,
+ * to arrive at the same 73 pairs of numbers each time.
+ */
+const RING_COS = new Float64Array(RING_SAMPLES + 1);
+const RING_SIN = new Float64Array(RING_SAMPLES + 1);
+for (let s = 0; s <= RING_SAMPLES; s++) {
+  const theta = (s / RING_SAMPLES) * Math.PI * 2;
+  RING_COS[s] = Math.cos(theta);
+  RING_SIN[s] = Math.sin(theta);
+}
+/**
  * Device-pixel ceiling for the cage, matching the site's convention for
  * full-screen canvases (`gameSurfaceDpr`, design-language §12.1 rule 4): fill
  * rate scales with the SQUARE of the ratio, and a hairline wireframe gains
  * nothing visible from a 3x buffer that costs 2.25x the pixels of a 2x one.
  */
 const CAGE_MAX_DPR = 2;
+/**
+ * How far the cage canvas is grown BEYOND the stage box, on every side, as a
+ * fraction of the stage.
+ *
+ * At rest the sphere's limb projects to exactly the stage radius, so a canvas
+ * that matched the stage was flush against the widest thing it had to draw. The
+ * moment a ripple swells the surface — up to `RIPPLE.amplitude` of the radius,
+ * plus the crest's own hairline and its round cap — the wave crossed the limb
+ * and was **clipped square by the edge of the backing store**, so a poke near
+ * the rim looked like it had been cut off by a window rather than travelling
+ * over a ball.
+ *
+ * The bleed is the fix: the canvas is bigger than the globe and hangs outside
+ * it, so there is somewhere for the swell to go. It is not free — fill rate
+ * scales with the square of it — so it is only just larger than the worst case
+ * (~5.5% swell + a ~2px capped stroke on a ~320px stage), not a round 25%.
+ */
+const CAGE_BLEED = 0.09;
 
 /* ── The ripple ──────────────────────────────────────────────────────────────
    A press on the sphere sends a wave out across it. The shape of the wave — a
@@ -296,6 +330,53 @@ interface Ripple {
   /** `performance.now()` at the moment of impact. */
   t0: number;
 }
+
+/* ── The wobble ──────────────────────────────────────────────────────────────
+   A ripple is what happens to the surface; this is what happens to the BALL.
+   Poke a heavy sphere hung in space and it does not only ring — it rocks away
+   from your finger and settles back, a couple of times, quickly. Without that,
+   a poke reads as a wave painted onto something bolted down.
+
+   It is an under-damped spring returning to zero (`lib/fluid` §springStep), not
+   a keyframed shake, for the reasons everything else here is: it composes with
+   whatever the globe is already doing, a second poke mid-rock adds to the first
+   instead of restarting it, and grabbing the globe cancels it in the same way
+   grabbing it cancels a settle.
+
+   It moves the DRAWN rotation only. The lock, the magnetism and the dwell all
+   keep reading the real one — the same rule the ripple follows, and for the same
+   reason: a decorative motion must never be able to shake a destination into or
+   out of the reticle while somebody is holding on it. */
+
+/** The rock's return. Loose and bouncy: this is a ball on a tether, not a control. */
+const WOBBLE_SPRING = spring(0.78, 0.62);
+/**
+ * Peak rock, in degrees, for a poke at the very edge of the sphere. A poke at
+ * dead centre is straight down the viewing axis and rocks nothing at all, so the
+ * impulse scales with how far off-axis the hit was — which is what makes a
+ * glancing blow to the rim shove the globe and a square one just ring it.
+ *
+ * Small on purpose: at 9° the horizon visibly tips and rights itself, and the
+ * pins stay where you were aiming. Anything larger and a poke costs you your aim.
+ */
+const WOBBLE_DEG = 5.5;
+/** Below this the rock is finished, in degrees and degrees/second. */
+const WOBBLE_REST = 0.02;
+/**
+ * The initial velocity that makes {@link WOBBLE_SPRING} peak at one degree —
+ * i.e. its damped natural frequency, since a spring released from rest at zero
+ * with velocity `v` swings out to about `v / ωd` before it turns around.
+ *
+ * Derived from the spring rather than tuned by hand, so re-tuning the spring
+ * cannot silently change how hard a poke hits: `WOBBLE_DEG` stays the peak in
+ * degrees whatever the bounce is set to.
+ */
+const WOBBLE_KICK = (() => {
+  const omega = Math.sqrt(WOBBLE_SPRING.stiffness / WOBBLE_SPRING.mass);
+  const zeta =
+    WOBBLE_SPRING.damping / (2 * Math.sqrt(WOBBLE_SPRING.stiffness * WOBBLE_SPRING.mass));
+  return omega * Math.sqrt(Math.max(0.01, 1 - zeta * zeta));
+})();
 
 interface LiquidGlobeProps {
   /** Destinations, already filtered for auth/admin by the hub. */
@@ -412,6 +493,8 @@ export function LiquidGlobe({
   const lockRef = useRef(-1);
   const readyRef = useRef(false);
   const sizeRef = useRef(320);
+  /** CSS px across the cage canvas — the stage plus its bleed on both sides. */
+  const cageSpan = useRef(320 * (1 + 2 * CAGE_BLEED));
   const dirty = useRef(true);
   /**
    * Whether the visitor has taken hold of the globe yet (a press, or a keyboard
@@ -431,6 +514,13 @@ export function LiquidGlobe({
    * middle of the one gesture this component spends its whole budget on.
    */
   const ripples = useRef<Ripple[]>([]);
+  /**
+   * The rock a poke leaves behind, in degrees off the real rotation, with its
+   * velocity — the spring state the frame loop steps back to zero. Null when the
+   * globe is standing still, which is the state the loop checks to skip the whole
+   * feature.
+   */
+  const wobble = useRef<{ yaw: number; vYaw: number; pitch: number; vPitch: number } | null>(null);
 
   // Only these three reach the render: the caption, the ring's state classes.
   const [lock, setLock] = useState(-1);
@@ -475,10 +565,20 @@ export function LiquidGlobe({
       // assigning `canvas.width` reallocates the backing store and clears it, so
       // a frame loop must never do it (design-language §12.1 rule 4) — this runs
       // on mount and on a real resize, which is exactly when the size changed.
+      //
+      // The canvas is DELIBERATELY bigger than the stage (see CAGE_BLEED): the
+      // sphere's limb already reaches the stage edge at rest, so a ripple's swell
+      // has to have somewhere to go or it is clipped square by the backing store.
+      // The CSS grows the element by the same fraction (`.radial-globe__cage`
+      // uses a negative inset), so the two boxes stay concentric and the globe's
+      // own radius — `sizeRef`, which every projection is scaled by — is
+      // unchanged. Only the paper is bigger; the drawing is not.
+      const span = size * (1 + 2 * CAGE_BLEED);
+      cageSpan.current = span;
       const canvas = cageRef.current;
       if (canvas) {
         const dpr = Math.min(window.devicePixelRatio || 1, CAGE_MAX_DPR);
-        const px = Math.round(size * dpr);
+        const px = Math.round(span * dpr);
         if (canvas.width !== px) {
           canvas.width = px;
           canvas.height = px;
@@ -487,8 +587,9 @@ export function LiquidGlobe({
         cageCtx.current = ctx;
         if (ctx) {
           // One transform for the whole cage: device pixels out, and the origin
-          // at the middle of the globe, which is where the projection puts 0,0.
-          ctx.setTransform(dpr, 0, 0, dpr, (size * dpr) / 2, (size * dpr) / 2);
+          // at the middle of the globe, which is where the projection puts 0,0 —
+          // the centre of the BLED box, which is the same point.
+          ctx.setTransform(dpr, 0, 0, dpr, (span * dpr) / 2, (span * dpr) / 2);
           ctx.lineJoin = 'round';
         }
         // Resolved once per size change rather than per frame: reading a computed
@@ -575,45 +676,125 @@ export function LiquidGlobe({
       hit: true,
     }));
 
+    /* ── Sampling the ripples ─────────────────────────────────────────────
+       `waveAt` is the innermost thing in this component: it runs for all ~950
+       cage samples and every pin, once per live ripple, on every frame of a
+       ripple's life. Two things it must not do per sample, and does not:
+
+         • **Allocate.** `rippleWave` takes its source as an object, so calling
+           it inline minted ~950 short-lived objects per ripple per frame. It
+           destructures its argument on entry and never retains it, so ONE
+           scratch object is reused for every call instead.
+         • **Take an `acos` it is going to throw away.** The wavelet is exactly
+           zero more than four packet widths from the crest (`lib/fluid`
+           §rippleWave), and the overwhelming majority of a sphere is that far
+           away at any instant — a crest is a ~19° band on a 180° surface. So
+           each ripple's live band is converted ONCE per frame into the window of
+           dot products that can fall inside it, and a sample outside that window
+           skips the arc-cosine entirely. `acos` is monotonically decreasing on
+           [-1, 1], so the window is exact: this is a cheaper test for the same
+           condition, not an approximation of it. */
+
+    /** Per-frame ripple state, preallocated — the loop must not allocate. */
+    const waveWin = Array.from({ length: MAX_RIPPLES }, () => ({
+      bx: 0,
+      by: 0,
+      bz: 0,
+      /** Dot-product window in which this ripple can contribute anything. */
+      dotLo: 1,
+      dotHi: -1,
+    }));
+    /** Reused `RippleSource`; `rippleWave` destructures it and keeps no reference. */
+    const waveSrc = { age: 0, distance: 0 };
+    /** Ages of the primed ripples, parallel to `waveWin`. */
+    const waveAge = new Float64Array(MAX_RIPPLES);
+    let waveCount = 0;
+
+    /**
+     * Snapshot the live ripples for this frame: their axis, their age, and the
+     * dot-product window their wavelet is non-zero over.
+     *
+     * Called once per paint, so every sample in a frame is measured against ONE
+     * clock — otherwise the crest is drawn at a slightly different radius on each
+     * ring it crosses.
+     */
+    const primeWaves = (now: number) => {
+      const live = ripples.current;
+      waveCount = 0;
+      for (let i = 0; i < live.length && waveCount < MAX_RIPPLES; i++) {
+        const r = live[i];
+        const age = (now - r.t0) / 1000;
+        if (!(age >= 0) || age >= RIPPLE.life) continue;
+        const front = RIPPLE.speed * age;
+        // The wavelet is zero outside ±4 packet widths of the crest, so only arc
+        // distances in [front - 4w, front + 4w] matter. cos() of the two ends,
+        // clamped to the sphere, is the window in dot-product space.
+        const lo = front - 4 * RIPPLE.width;
+        const hi = front + 4 * RIPPLE.width;
+        const w = waveWin[waveCount];
+        w.bx = r.bx;
+        w.by = r.by;
+        w.bz = r.bz;
+        // acos is DECREASING, so the near end of the band is the HIGH dot.
+        w.dotHi = lo <= 0 ? 1 : Math.cos(lo);
+        w.dotLo = hi >= Math.PI ? -1 : Math.cos(hi);
+        waveAge[waveCount] = age;
+        waveCount++;
+      }
+    };
+
     /**
      * How far the surface at body-space direction `(bx, by, bz)` is pushed out,
      * as a fraction of the radius. Zero — via an early return on the common case
-     * — whenever nothing is rippling, so the whole feature costs one array-length
+     * — whenever nothing is rippling, so the whole feature costs one counter
      * check per sample on every frame a visitor is merely turning the globe.
-     *
-     * `now` is passed in rather than read here: every sample in a frame must be
-     * measured against ONE clock, or the crest is drawn at a slightly different
-     * radius on each ring it crosses.
      */
-    const waveAt = (bx: number, by: number, bz: number, now: number) => {
-      const live = ripples.current;
-      if (live.length === 0) return 0;
+    const waveAt = (bx: number, by: number, bz: number) => {
+      if (waveCount === 0) return 0;
       let sum = 0;
-      for (let i = 0; i < live.length; i++) {
-        const r = live[i];
-        // Both vectors are unit, so the dot is the cosine of the arc between
-        // them; `acos` turns it into the great-circle distance the wave has to
-        // travel to arrive. Clamped because float error can push a dot a hair
-        // past ±1, and `acos` of that is NaN.
-        const dot = bx * r.bx + by * r.by + bz * r.bz;
-        sum += rippleWave({
-          age: (now - r.t0) / 1000,
-          distance: Math.acos(dot > 1 ? 1 : dot < -1 ? -1 : dot),
-        });
+      for (let i = 0; i < waveCount; i++) {
+        const w = waveWin[i];
+        // Both vectors are unit, so the dot IS the cosine of the arc between
+        // them — which is why the band test can be made here, before paying for
+        // the arc-cosine that turns it into a distance.
+        const dot = bx * w.bx + by * w.by + bz * w.bz;
+        if (dot < w.dotLo || dot > w.dotHi) continue;
+        // Clamped because float error can push a dot a hair past ±1, and `acos`
+        // of that is NaN.
+        waveSrc.age = waveAge[i];
+        waveSrc.distance = Math.acos(dot > 1 ? 1 : dot < -1 ? -1 : dot);
+        sum += rippleWave(waveSrc);
       }
       return sum;
     };
 
-    /** Screen-space position + depth of every pin, and what the reticle holds. */
-    const project = () => {
-      const r = rot.current;
+    /**
+     * The rotation everything is DRAWN at: the real one plus the wobble.
+     *
+     * Kept separate from `rot.current` — which is the globe's actual orientation
+     * and the only thing the lock, the magnetism and the release throw ever read
+     * — so the rock cannot move a destination in or out of the reticle. Written
+     * once per frame by `step`, and read by the display projection and the cage.
+     */
+    const draw = { yaw: 0, pitch: 0 };
+
+    /**
+     * Screen-space position + depth of every pin, and what the reticle holds.
+     *
+     * `yaw`/`pitch` are passed in rather than read from `rot.current` because
+     * this runs twice on a wobbling frame: once at the true rotation, which is
+     * what `lockIdx`/`snapIdx` are measured from, and once at the drawn rotation,
+     * which is what the paint uses. On every other frame the two are identical
+     * and it runs once, exactly as before.
+     */
+    const project = (yaw: number, pitch: number) => {
       // Yaw about Y, then pitch about X — the same order as the sphere's
       // `rotateX(pitch) rotateY(yaw)`, which is what keeps the projected pins
       // glued to the drawn wireframe.
-      const cy = Math.cos(r.yaw * DEG);
-      const sy = Math.sin(r.yaw * DEG);
-      const cp = Math.cos(r.pitch * DEG);
-      const sp = Math.sin(r.pitch * DEG);
+      const cy = Math.cos(yaw * DEG);
+      const sy = Math.sin(yaw * DEG);
+      const cp = Math.cos(pitch * DEG);
+      const sp = Math.sin(pitch * DEG);
       let lockD = Infinity;
       let snapD = Infinity;
       lockIdx = -1;
@@ -659,16 +840,18 @@ export function LiquidGlobe({
       const ctx = cageCtx.current;
       const canvas = cageRef.current;
       if (!ctx || !canvas) return;
-      const size = sizeRef.current;
-      const R = size / 2;
-      const r = rot.current;
-      const cy = Math.cos(r.yaw * DEG);
-      const sy = Math.sin(r.yaw * DEG);
-      const cp = Math.cos(r.pitch * DEG);
-      const sp = Math.sin(r.pitch * DEG);
+      const R = sizeRef.current / 2;
+      const cy = Math.cos(draw.yaw * DEG);
+      const sy = Math.sin(draw.yaw * DEG);
+      const cp = Math.cos(draw.pitch * DEG);
+      const sp = Math.sin(draw.pitch * DEG);
       const paint = cagePaint.current;
 
-      ctx.clearRect(-R, -R, size, size);
+      // Clear the whole BLED canvas, not the globe's box: a ripple's swell (and
+      // the crest's capped stroke) is drawn out there, so anything short of this
+      // leaves the previous frame's wave stranded around the rim.
+      const span = cageSpan.current;
+      ctx.clearRect(-span / 2, -span / 2, span, span);
 
       /**
        * How wide this ring's hairline is on screen.
@@ -692,7 +875,20 @@ export function LiquidGlobe({
       };
 
       /**
-       * Stroke one ring, given a function from angle to a point on the sphere.
+       * Stroke one ring.
+       *
+       * Every ring in this cage is a circle, so every one of them is
+       * `u·cosθ + v·sinθ` about a centre offset `oy` along the polar axis — a
+       * meridian and a parallel differ only in which plane `u` and `v` span:
+       *
+       *   • meridian at `a` — u = (cos a, 0, −sin a), v = (0, 1, 0), oy = 0
+       *   • parallel at `lat` — u = (cos lat, 0, 0), v = (0, 0, cos lat),
+       *     oy = −sin lat  (the latitude circle, lifted to its latitude)
+       *
+       * Taking the basis rather than a `theta → point` callback is what keeps the
+       * sample loop free of both a closure call and the three-element array that
+       * callback had to return — ~950 short-lived arrays a frame, which is
+       * precisely the per-frame allocation this loop is not allowed to do.
        *
        * Each sample is pushed out along its own normal by the ripple before it is
        * projected — which, on a unit sphere, is just scaling the direction. That
@@ -703,15 +899,24 @@ export function LiquidGlobe({
       const ring = (
         stroke: string,
         width: number,
-        at: (theta: number) => [number, number, number],
+        ux: number,
+        uy: number,
+        uz: number,
+        vx: number,
+        vy: number,
+        vz: number,
+        oy: number,
       ) => {
         ctx.strokeStyle = stroke;
         ctx.lineWidth = width;
         ctx.beginPath();
         for (let s = 0; s <= RING_SAMPLES; s++) {
-          const theta = (s / RING_SAMPLES) * Math.PI * 2;
-          const [bx, by, bz] = at(theta);
-          const swell = 1 + waveAt(bx, by, bz, now);
+          const ct = RING_COS[s];
+          const st = RING_SIN[s];
+          const bx = ux * ct + vx * st;
+          const by = uy * ct + vy * st + oy;
+          const bz = uz * ct + vz * st;
+          const swell = 1 + waveAt(bx, by, bz);
           const x1 = (bx * cy + bz * sy) * swell;
           const z1 = (-bx * sy + bz * cy) * swell;
           const by2 = by * swell;
@@ -729,20 +934,15 @@ export function LiquidGlobe({
         const sa = Math.sin(a * DEG);
         // A meridian spans (cos a, 0, −sin a) and (0, 1, 0); its plane normal is
         // the cross product of the two.
-        ring(a === 0 ? paint.major : paint.minor, widthFor(sa, 0, ca), (theta) => {
-          const ct = Math.cos(theta);
-          return [ct * ca, Math.sin(theta), -ct * sa];
-        });
+        ring(a === 0 ? paint.major : paint.minor, widthFor(sa, 0, ca), ca, 0, -sa, 0, 1, 0, 0);
       }
+      // Every parallel lies flat, so they all share the globe's polar axis — and
+      // therefore all take the same stroke width, hoisted out of the loop.
+      const parallelWidth = widthFor(0, 1, 0);
       for (const latitude of PARALLELS) {
         const cl = Math.cos(latitude * DEG);
         const yl = -Math.sin(latitude * DEG);
-        // Every parallel lies flat, so they all share the globe's polar axis.
-        ring(latitude === 0 ? paint.major : paint.parallel, widthFor(0, 1, 0), (theta) => [
-          cl * Math.cos(theta),
-          yl,
-          cl * Math.sin(theta),
-        ]);
+        ring(latitude === 0 ? paint.major : paint.parallel, parallelWidth, cl, 0, 0, 0, 0, cl, yl);
       }
 
       /* ── The crest ──────────────────────────────────────────────────────
@@ -772,8 +972,7 @@ export function LiquidGlobe({
         const ax = rip.bx;
         const ay = rip.by;
         const az = rip.bz;
-        const seed =
-          Math.abs(ax) < 0.9 ? [1, 0, 0] : Math.abs(ay) < 0.9 ? [0, 1, 0] : [0, 0, 1];
+        const seed = Math.abs(ax) < 0.9 ? [1, 0, 0] : Math.abs(ay) < 0.9 ? [0, 1, 0] : [0, 0, 1];
         let e1x = seed[1] * az - seed[2] * ay;
         let e1y = seed[2] * ax - seed[0] * az;
         let e1z = seed[0] * ay - seed[1] * ax;
@@ -860,7 +1059,10 @@ export function LiquidGlobe({
       // Depth rank, so `z-index` expresses the ORDER rather than the depth.
       for (let i = 0; i < count; i++) order[i] = i;
       order.sort((a, b) => pz[a] - pz[b]);
-      const rippling = ripples.current.length > 0;
+      // ONE snapshot of the ripples for the whole frame — the pins below and the
+      // cage after them must sample the same instant, or the wave that lifts a
+      // pin is not the wave drawn under it.
+      primeWaves(now);
 
       for (let rank = 0; rank < count; rank++) {
         const i = order[rank];
@@ -878,7 +1080,7 @@ export function LiquidGlobe({
         // the wave reaches the pin — not when the wave reaches the screen
         // position the pin happens to be projected to.
         const n = nodes[i];
-        const swell = rippling ? 1 + waveAt(n.bx, n.by, n.bz, now) : 1;
+        const swell = 1 + waveAt(n.bx, n.by, n.bz);
 
         const transform =
           `translate3d(${(px[i] * R * k * swell).toFixed(2)}px, ${(py[i] * R * k * swell).toFixed(2)}px, 0)` +
@@ -949,6 +1151,29 @@ export function LiquidGlobe({
         dirty.current = true;
       }
 
+      // 0b. The rock a poke left behind — an under-damped spring returning to
+      //     zero. It moves what is DRAWN and nothing else (see the wobble note
+      //     above WOBBLE_SPRING), and it retires itself, so a globe at rest is
+      //     back to writing nothing.
+      const wob = wobble.current;
+      if (wob) {
+        const y = springStep({ value: wob.yaw, velocity: wob.vYaw }, 0, WOBBLE_SPRING, dt);
+        const p = springStep({ value: wob.pitch, velocity: wob.vPitch }, 0, WOBBLE_SPRING, dt);
+        wob.yaw = y.value;
+        wob.vYaw = y.velocity;
+        wob.pitch = p.value;
+        wob.vPitch = p.velocity;
+        if (
+          Math.abs(y.value) < WOBBLE_REST &&
+          Math.abs(p.value) < WOBBLE_REST &&
+          Math.abs(y.velocity) < WOBBLE_REST &&
+          Math.abs(p.velocity) < WOBBLE_REST
+        ) {
+          wobble.current = null;
+        }
+        dirty.current = true;
+      }
+
       // 1. Motion. Dragging writes the rotation directly (in the pointer handler);
       //    everything here is what happens when you are NOT dragging.
       //
@@ -1000,8 +1225,9 @@ export function LiquidGlobe({
         dirty.current = true;
       }
 
-      // 2. Where everything is now, and what the reticle is holding.
-      project();
+      // 2. Where everything is now, and what the reticle is holding. Always at
+      //    the TRUE rotation — this is the pass the lock and the magnetism read.
+      project(r.yaw, r.pitch);
 
       // 3. Magnetism. Once the coast is over, a pin inside the snap cone is eased
       //    to dead centre — including while you hold still with the pointer down,
@@ -1030,11 +1256,16 @@ export function LiquidGlobe({
       }
       if (moved) {
         dirty.current = true;
-        project();
+        project(r.yaw, r.pitch);
       }
 
-      // 4. One paint, from the rotation the lock below was actually computed from.
+      // 4. One paint. `lockIdx`/`snapIdx` are settled by now, so the display pass
+      //    is free to run at the wobbled rotation without touching either — the
+      //    globe rocks, the aim does not.
       if (dirty.current) {
+        draw.yaw = r.yaw + (wob ? wob.yaw : 0);
+        draw.pitch = r.pitch + (wob ? wob.pitch : 0);
+        if (wob) project(draw.yaw, draw.pitch);
         paint(now);
         dirty.current = false;
       }
@@ -1135,12 +1366,45 @@ export function LiquidGlobe({
       if (R <= 0) return;
       // Stage coordinates in radii, y DOWN — the same handedness as everything
       // else here, so no sign flip is needed on the way into body space.
-      const hit = unprojectSphere(
-        (clientX - rect.left - R) / R,
-        (clientY - rect.top - R) / R,
-        PERSP,
-      );
+      const sx = (clientX - rect.left - R) / R;
+      const sy = (clientY - rect.top - R) / R;
+      const hit = unprojectSphere(sx, sy, PERSP);
       if (!hit) return; // pressed the empty corner of the stage, or off it
+
+      /* ── The shove ────────────────────────────────────────────────────────
+         A poke is a force pushing INTO the screen at the point you touched, so
+         the rock it produces is a torque, and a torque is `r × F` — the standard
+         off-centre-strike model, the same one that says where a cue ball goes.
+
+         With the force straight down the viewing axis, F = (0, 0, −1), and the
+         contact at r = (hx, hy, hz) on the near face, that cross product comes
+         out as a torque of −hy about the x axis and +hx about the y axis, and
+         exactly zero about z. So:
+
+           • the lever arm is the contact's distance from the VIEWING AXIS. Dead
+             centre is a shove straight through the middle and rocks nothing;
+             out at the limb it is all leverage and rocks the most.
+           • pushing the right side away brings the left side forward, so the
+             near face travels LEFT — yaw decreases. Pushing below centre brings
+             the top forward and the near face travels UP — pitch increases.
+             (`rawPitch -= dy` in the drag handler is the same convention seen
+             from the other end: drag down, surface down, pitch down.)
+           • no roll, because a force parallel to the viewing axis can generate
+             none — which is just as well, since the globe has no roll axis.
+
+         The lever arm is read off `hit`, the point on the UNIT SPHERE, not off
+         the (sx, sy) the pointer landed on. Those differ by the perspective
+         foreshortening `k`, which is up to 1.19x near the middle of the disc —
+         so using the screen position would have a poke near the centre hit
+         nearly a fifth harder than the geometry says it should.
+
+         Added to whatever rock is already running rather than replacing it, so a
+         second poke mid-wobble builds on the first — or cancels it, if it lands
+         on the opposite side — instead of restarting the spring from a
+         standstill. That is the physical answer as well as the nicer one. */
+      const w = (wobble.current ??= { yaw: 0, vYaw: 0, pitch: 0, vPitch: 0 });
+      w.vYaw -= hit.x * WOBBLE_DEG * WOBBLE_KICK;
+      w.vPitch += hit.y * WOBBLE_DEG * WOBBLE_KICK;
 
       // Un-rotate the impact into the globe's own frame — the exact inverse of
       // the yaw-then-pitch `project()` applies. This is what makes the ripple a
@@ -1160,37 +1424,40 @@ export function LiquidGlobe({
   );
 
   /** Take hold of the globe. Shared by every surface that can start a drag. */
-  const beginDrag = useCallback((e: PointerEvent | ReactPointerEvent<HTMLElement>) => {
-    if (e.button > 0) return;
-    strike(e.clientX, e.clientY);
-    drag.current = {
-      active: true,
-      id: e.pointerId,
-      x: e.clientX,
-      y: e.clientY,
-      moved: 0,
-      held: true,
-    };
-    // Taking hold of a globe that is still springing is not a special case — it
-    // is the point. Cancel the settle and keep whatever rotation it had reached.
-    // A press that lands on a globe already at rest starts a FRESH aim, so the
-    // previous gesture's speed stops counting. A press that interrupts a settle
-    // is a continuation of the throw already in flight, and keeps it.
-    if (!settle.current) peakSpeed.current = 0;
-    rot.current.vYaw = 0;
-    rot.current.vPitch = 0;
-    settle.current = null;
-    rawPitch.current = rot.current.pitch;
-    touched.current = true;
-    swallowClick.current = false;
-    const now = performance.now();
-    lastMoveAt.current = now;
-    yawV.current.reset();
-    pitchV.current.reset();
-    yawV.current.add(rot.current.yaw, now);
-    pitchV.current.add(rot.current.pitch, now);
-    setGrabbing(true);
-  }, [strike]);
+  const beginDrag = useCallback(
+    (e: PointerEvent | ReactPointerEvent<HTMLElement>) => {
+      if (e.button > 0) return;
+      strike(e.clientX, e.clientY);
+      drag.current = {
+        active: true,
+        id: e.pointerId,
+        x: e.clientX,
+        y: e.clientY,
+        moved: 0,
+        held: true,
+      };
+      // Taking hold of a globe that is still springing is not a special case — it
+      // is the point. Cancel the settle and keep whatever rotation it had reached.
+      // A press that lands on a globe already at rest starts a FRESH aim, so the
+      // previous gesture's speed stops counting. A press that interrupts a settle
+      // is a continuation of the throw already in flight, and keeps it.
+      if (!settle.current) peakSpeed.current = 0;
+      rot.current.vYaw = 0;
+      rot.current.vPitch = 0;
+      settle.current = null;
+      rawPitch.current = rot.current.pitch;
+      touched.current = true;
+      swallowClick.current = false;
+      const now = performance.now();
+      lastMoveAt.current = now;
+      yawV.current.reset();
+      pitchV.current.reset();
+      yawV.current.add(rot.current.yaw, now);
+      pitchV.current.add(rot.current.pitch, now);
+      setGrabbing(true);
+    },
+    [strike],
+  );
 
   const onPointerDown = useCallback(
     (e: ReactPointerEvent<HTMLDivElement>) => beginDrag(e),
