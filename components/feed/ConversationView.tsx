@@ -562,7 +562,7 @@ export function ConversationView({
  return (
  <div className="flex flex-col h-screen">
  {/* Header */}
- <div className="site-sticky-chrome bg-site-surface border border-site-border rounded-site shadow-site-sm shrink-0">
+ <div className="glass-chrome site-sticky-chrome shrink-0">
  <div className="flex items-center gap-3 px-4 py-3">
  <Link
  to="/messages"
@@ -887,7 +887,7 @@ export function ConversationView({
  {attachOpen && (
  <div
  ref={attachPanelRef}
- className="absolute bottom-full right-0 z-30 mb-1 w-40 bg-site-surface border border-site-border rounded-site shadow-site-sm py-1"
+ className="absolute bottom-full right-0 z-30 mb-1 w-40 glass-fill py-1"
  >
  <button
  type="button"

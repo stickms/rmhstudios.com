@@ -16,7 +16,7 @@ in `app/globals.css`).
 | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `RadialWheel.tsx`    | The feed as a gently-curved column on the **document's own scroll** (no inner scroll region — so mobile Safari collapses its toolbars). Cards flow at natural heights (variable, never overlapping) and a rAF window-scroll pass rakes each onto a shallow cylinder from cached offsets (no layout thrash). Optional non-raked `lead` slot (the compose box). Reduced-motion → plain list. Fires `onEndReached` for lazy loading.                                                                                                                                                                                                                         |
 | `RadialHub.tsx`      | The persistent navigator's **phase state machine** (closed → open → closing) and chrome. Tapping the fixed RMH orb sends it to the centre of the screen, where it **swells and dissolves into the liquid globe**; an expanding circular **veil** sinks the page behind it, and the foot capsule (identity · settings · sign out · close) rises. Consumes `lib/sidebar-nav`, honours auth/admin gating, owns Escape / outside-tap / focus restoration. The globe is mounted **only** while the menu is up.                                                                                                                                                 |
-| `LiquidGlobe.tsx`    | **The navigator itself** — the destinations as pins on a glass sphere you turn to find where you want to go. Drag (pointer or finger) to spin, release to coast; magnetism eases the nearest destination into the **reticle** once the spin settles; **hold** with the pointer down and the reticle's ring fills; **let go once it is full** and you land there. Let go early, or drag away, and the ring drains — nothing navigates without a deliberate hold-and-release. Wireframe = one canvas, pins = JS-projected real links (click, Enter and screen readers all work without the gesture) — both from the same projection. See "The globe" below. |
+| `LiquidGlobe.tsx`    | **The navigator itself** — the destinations as pins on a glass sphere you turn to find where you want to go. Drag (pointer or finger) to spin, release to coast; magnetism eases the nearest destination into the **reticle** once the spin settles; **hold** with the pointer down and the reticle's ring fills; **let go once it is full** and you land there. Let go early, or drag away, and the ring drains — nothing navigates without a deliberate hold-and-release. **Poke it and it ripples** — a wave spreads from the point you touched and travels with the surface. Wireframe = one canvas, pins = JS-projected real links (click, Enter and screen readers all work without the gesture) — both from the same projection. See "The globe" below. |
 | `RadialShell.tsx`    | The application frame for every standard (`_site`) route: fixed parallax ring backdrop, slim utility top bar, the **three-track frame** (nav rail · `<main>` · live rail) and the hub. The backdrop layer paints **only** the rings — the aurora canvas comes from the document's own fixed layers (`body::before/::after`), so it drifts and parallaxes and is the one scene every `backdrop-filter` on the page samples.                                                                                                                                                                                                                                |
 | `RadialNavRail.tsx`  | Desktop-only left rail: the same `SIDEBAR_NAV` source of truth as the hub, shown persistently ≥1120px with live inbox/notification/admin badges.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `RadialLiveRail.tsx` | Desktop-only right rail (≥1440px): who's online, the daily loop, friends online, trending tags, who to follow — plus the slot a page's `PageLayout` `rightSidebar` portals into (`rail-slot.tsx`).                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -223,6 +223,53 @@ Rules that are easy to break when touching the geometry or the loop:
   small-screen rules keep the locked pin's label even where the others are
   hidden), so the eye never has to leave the reticle, and a screen-reader-only
   live region carries the same information for non-sighted visitors.
+
+### The ripple
+
+Press the sphere and a wave spreads out across it from the exact point you
+touched, swelling the wireframe as it passes, carrying a bright crest, and dying
+as it converges on the far side (~1.15s end to end). It is the globe's answer to
+being touched — the one thing on this screen that behaves like a body of liquid
+rather than a picture of one.
+
+Four things make it read as a wave in a ball rather than a circle drawn on a
+screen, and each is easy to undo by accident:
+
+- **The impact is stored in BODY space, not screen space.** The press is
+  unprojected onto the near face (`lib/fluid` §unprojectSphere, a fixed-point
+  inversion of the same perspective the renderer uses) and then un-rotated
+  through the globe's current yaw/pitch (§unrotateSphere). Everything the frame
+  loop samples — a cage ring's points, a pin's direction — lives in that space,
+  so the wave is a mark on the ball: keep dragging and it travels with the
+  surface it is crossing, and two pokes leave their waves where they were made.
+  Store the impact in screen space and it hangs in front of the sphere instead.
+- **The wave displaces the CAGE.** Each ring sample is pushed out along its own
+  normal before it is projected, which on a unit sphere is just scaling the
+  direction. The wireframe is the structure suspended in the glass, so a wave
+  that swells the structure swells the ball. The crest stroke is the light on it,
+  not the wave itself — it is deliberately only half ink (`--cage-ripple`); at
+  full strength it stopped being a specular and became a hard black ring three
+  times the weight of the equator, pulling the eye off the reticle.
+- **It does not touch the hit test.** `project()` — what the lock, the snap cone
+  and the dwell are all measured from — runs undisplaced; the swell is applied in
+  the *paint*. A decoration must never be able to shake a destination into or out
+  of the reticle under a finger that is holding on it.
+- **It rides the existing frame loop.** No second rAF, no React state, no
+  per-frame allocation: live ripples are a ref the loop reads, capped at three
+  (newest wins), pruned in place, and `waveAt()` returns on an array-length check
+  when nothing is rippling — so a visitor who only ever turns the globe pays one
+  comparison per sample.
+
+The wave's *shape* is `lib/fluid` §rippleWave, shared rather than local for the
+same reason the spring and the rubber band are. It is a Ricker wavelet on a
+quadratic decay: a crest flanked by shallow troughs, so the surface it crosses
+rises, falls back below rest, and settles — a ripple, not a shockwave. Retune the
+feel there, and it stays testable (`lib/__tests__/fluid.test.ts`) and available to
+anything else that ever needs to answer a touch this way.
+
+**Reduced motion stands it down completely** (OS preference or the account
+toggle). An unrequested full-surface animation is exactly what that preference is
+asking not to see; the press still turns the globe as it always did.
 
 ## What makes it smooth (measured — don't undo these)
 

@@ -273,9 +273,9 @@ export function MessagesColumn({
  className={
  embedded
  ?'border-b border-site-border'
- : // Floating L3 bg-site-surface border border-site-border rounded-site shadow-site-sm capsule (§8.2); bg/blur/glint clip to
+ : // Floating L3 .glass-chrome capsule (§8.2); bg/blur/glint clip to
  // rounded-site without overflow-hidden.
-'site-sticky-chrome bg-site-surface border border-site-border rounded-site shadow-site-sm'
+'glass-chrome site-sticky-chrome'
  }
  >
  {!embedded && (
@@ -337,9 +337,9 @@ export function MessagesColumn({
  </p>
  </div>
  ) : (
- // Density page (§8.4): one floating bg-site-surface border border-site-border rounded-site shadow-site-sm container; rows stay
+ // Density page (§8.4): one floating glass-fill container; rows stay
  // dense with divide-y hairlines inside (not per-row cards).
- <div className="bg-site-surface border border-site-border rounded-site shadow-site-sm rounded-site mx-3 mt-3 divide-y divide-site-border overflow-hidden">
+ <div className="glass-fill rounded-site mx-3 mt-3 divide-y divide-site-border overflow-hidden">
  {searchResults.map((conv) => (
  <ConversationRow
  key={conv.id}
@@ -374,9 +374,9 @@ export function MessagesColumn({
  />
  ) : (
  <Reveal>
- {/* Density page (§8.4): rows stay dense inside one floating bg-site-surface border border-site-border rounded-site shadow-site-sm
+ {/* Density page (§8.4): rows stay dense inside one floating glass-fill
  container with divide-y hairlines; the spinner/sentinel sit outside. */}
- <div className="bg-site-surface border border-site-border rounded-site shadow-site-sm rounded-site mx-3 mt-3 divide-y divide-site-border overflow-hidden">
+ <div className="glass-fill rounded-site mx-3 mt-3 divide-y divide-site-border overflow-hidden">
  {conversations.map((conv) => (
  <ConversationRow
  key={conv.id}

@@ -13,7 +13,7 @@ export function ThreadView({ items }: { items: FeedItem[] }) {
  const { t } = useTranslation('feed');
  return (
  <div className="min-h-screen">
- <header className="site-sticky-chrome bg-site-surface border border-site-border rounded-site shadow-site-sm flex items-center gap-3 px-4 py-3">
+ <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <Link
  to="/"
  className="rounded-site-sm p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"

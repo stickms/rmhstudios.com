@@ -88,9 +88,11 @@ export function FeedAnnouncements() {
  {visible.map((a) => (
  <div
  key={a.id}
- // Floating announcement slab (§8.3): L2 bg-site-surface border border-site-border rounded-site shadow-site-sm carries the border +
- // ring glint; the variant utilities tint it and set the accent rim.
- className={`relative border border-site-border shadow-site-sm rounded-site p-3 pr-9 ${VARIANT_STYLES[a.variant] ?? VARIANT_STYLES.info} ${enteringItems.has(a.id) ?'content-item-enter':''}`}
+ // Floating announcement slab (§8.3): L2 `.glass-pane` carries the blur,
+ // the noise and the ring glint; the variant utilities then tint it and set
+ // the accent rim over the top (Tailwind's layer wins over the tier's).
+ // At most a couple are ever on screen, so the L2 blur budget holds.
+ className={`glass-pane relative border-site-border p-3 pr-9 ${VARIANT_STYLES[a.variant] ?? VARIANT_STYLES.info} ${enteringItems.has(a.id) ?'content-item-enter':''}`}
  >
  <button
  onClick={() => dismiss(a.id)}

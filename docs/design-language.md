@@ -4,6 +4,11 @@
 > looks and feels, and how to build UI that is visually native to it. For the
 > step-by-step "build a page that fits" checklist, see
 > [`docs/page-consistency.md`](./page-consistency.md).
+>
+> For the *statement* of the language — what the design is, why it is that way,
+> and the laws behind these rules, without the values that move — see
+> [`design.md`](../design.md) at the repo root. **This file is the authority**
+> whenever the two disagree.
 
 The design language is **Radial Avant-Garde Glass** — a bold, experimental take
 on **Apple's Liquid Glass** material, draped over a **radial** information
@@ -352,7 +357,7 @@ role, not by looks — the tier decides blur cost (see the redesign doc §6 budg
 
 | Class                               | Tier            | Use for                                                                                             |
 | ----------------------------------- | --------------- | --------------------------------------------------------------------------------------------------- |
-| `.glass-fill`                       | L1 (no blur)    | Repeated content: cards, list rows, table rows, grid tiles. Cheap, unlimited.                       |
+| `.glass-fill`                       | L1 (no blur)    | Repeated content: cards, list rows, table rows, grid tiles. Cheap, unlimited. Ambient rim glint.    |
 | `.glass-pane`                       | L2 (blur+noise) | Singular panels: heroes, composers, settings sections, tier cards. Budgeted.                        |
 | `.glass-chrome` (`--aside` variant) | L3              | Persistent chrome: sidebar, sticky headers, mobile dock. Condenses on scroll via `[data-scrolled]`. |
 | `.glass-overlay`                    | L4              | Floating UI: dialogs, popovers, menus, command palette, toasts, tooltips.                           |
@@ -364,7 +369,7 @@ they are signature moments, not defaults:
 
 | Modifier                                     | Budget      | What it adds                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | -------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.glass-interactive` + `data-glass-light=""` | unlimited   | Hover tint-raise, springy press flex (`--ease-glass`), pointer-tracked diffuse highlight (`::after`), and — on `.glass-fill` — the hover-only specular rim glint.                                                                                                                                                                                                                                                                 |
+| `.glass-interactive` + `data-glass-light=""` | unlimited   | Hover tint-raise, springy press flex (`--ease-glass`), pointer-tracked diffuse highlight (`::after`), and — **paired with `.glass-fill`** — the specular rim glint raised from ambient to full on hover. The glint selector is `.glass-fill.glass-interactive`: on its own, `.glass-interactive` still gives the press and the hotspot, but there is no rim to light.                                                                |
 | `.glass-refract` + `data-glass-lens`         | **≤2/page** | Lens-model edge refraction (v2): the backdrop bends through a displacement height field at the pane edge. Hero/chrome only, never in scroll containers. `data-glass-lens` opts into per-element filter sizing (`lib/glass-lens.ts`; Chromium bends the backdrop, Gecko/WebKit displace a mirrored aurora copy — §3.6). Pressing deepens the bend (`:active`, ×1.6, §3.7). Not compatible with `.glass-chrome--aside` (see below). |
 | `.glass-refract--prism`                      | **≤1/page** | True chromatic dispersion (R/G/B displaced at different magnitudes) + fringe. Sanctioned users: login card, command palette, `/store` featured tier, design lab.                                                                                                                                                                                                                                                                  |
 | `.glass-liquid` (or `<GlassPane liquid>`)    | **≤3/page** | Ambient travelling sheen (light over wet glass), painted as a background layer (v2) so it **composes freely** with `.glass-refract` and `.glass-interactive`. Signature surfaces only, never on list items.                                                                                                                                                                                                                       |
@@ -392,11 +397,41 @@ background layer** — it lives in the 1px border ring while the structural bord
 itself goes transparent, so glass reads as one lit sheet, not an outlined frame.
 Its bright segment tracks the global scene light (`--light-x/--light-y`, written
 by `useGlassLight`; absent = a static top sun; touch/perf-lite fall back to an
-element-anchored top-edge sun). `.glass-fill` + `.glass-interactive` glints on
-hover only (its `--glass-glint-hover` multiplier fades 0→1). Wells
-(`.glass-inset`, half-strength border), scrims, and plain fills carry no glint.
-Pseudo contract: `::before` is refraction-only (the masked lens band) or the aside
-blur; `::after` is the pointer light — never add a third owner.
+element-anchored top-edge sun). Scrims carry no glint.
+
+**L1 answers the light too.** `.glass-fill` carries the same glint layer plus the
+micro-noise, at an **ambient** resting strength (`--glass-glint-rest`, 0.45× the
+theme's `--glass-glint-opacity`); `.glass-interactive` raises it to 1 on hover, so
+the hovered fill is still unmistakably the lit one. This is a v2 amendment: the
+glint was L2-and-up only, and the multiplier rested at **0**, which meant the tier
+the site is mostly *made* of was optically dead — and an interactive fill (whose
+border is transparent so the lit edge *is* the border) had no edge and no light at
+all until a pointer arrived, i.e. permanently, on touch. Two things had to change
+in `globals.css` for it to be possible at all, and both are load-bearing:
+
+- L1's tint is `background-color`, **never the `background` shorthand** — the
+  shorthand resets `background-image`, so L1 structurally could not carry a layer.
+  The same applies to anything that re-tints a fill (`.social-post:hover`, the
+  mobile opacity floor): re-tint with `background-color` or you silently strip the
+  material. The degradation blocks (high-contrast, reduced transparency) use the
+  shorthand *deliberately*, to drop the layers along with the translucency.
+- L1's layers clip to **padding-box**, unlike L2+: a fill keeps its visible
+  hairline (it is what separates one repeated row from the next), and a border-box
+  layer under an opaque border is painted over anyway.
+
+Wells (`.glass-inset`, half-strength border) carry no glint. Pseudo contract:
+`::before` is refraction-only (the masked lens band) or the aside blur; `::after`
+is the pointer light — never add a third owner.
+
+**Reach for the tier class, not its box-model equivalent.** `bg-site-surface
+border border-site-border rounded-site shadow-site-sm` renders the same *box* as
+`.glass-fill` and none of its *material* — no noise, no glint, and nothing for the
+degradation tiers to switch off. Hand-rolled recipes had spread to roughly 500
+call sites (with comments that still named the tier they had been flattened out
+of, and a `data-glass-light` or a lone `.glass-interactive` whose effect the
+missing paired class had quietly killed). If a surface is a card use `.glass-fill`,
+a panel `.glass-pane`, sticky chrome `.glass-chrome` + `.site-sticky-chrome`,
+floating UI `.glass-overlay`, a field `.glass-inset`, a backdrop `.glass-scrim`.
 
 Rules: never put a backdrop tier (`.glass-pane/chrome/overlay`) on an ancestor of
 a `position:fixed` element (`backdrop-filter` creates a containing block — use

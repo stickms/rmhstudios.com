@@ -318,7 +318,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  {menuOpen && (
  <div
  ref={menuPopRef}
- className="absolute top-full right-0 mt-1 w-40 bg-site-surface border border-site-border rounded-site shadow-site-sm py-1 z-30"
+ className="absolute top-full right-0 mt-1 w-40 glass-fill py-1 z-30"
  >
  <button
  onClick={() => {
@@ -622,7 +622,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  role="dialog"
  aria-modal="true"
  aria-labelledby="compose-alt-title"
- className="relative w-full max-w-md p-4 bg-site-surface border border-site-border rounded-site shadow-site-sm animate-in zoom-in-95 fade-in duration-150"
+ className="relative w-full max-w-md p-4 glass-fill animate-in zoom-in-95 fade-in duration-150"
  >
  <div className="mb-2 flex items-center justify-between">
  <h3 id="compose-alt-title"className="text-sm font-semibold text-site-text">

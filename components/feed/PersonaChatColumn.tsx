@@ -156,7 +156,7 @@ export function PersonaChatColumn({
 
  return (
  <div className="flex h-screen flex-col">
- <header className="site-sticky-chrome bg-site-surface border border-site-border rounded-site shadow-site-sm flex items-center gap-3 px-4 py-3">
+ <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <Link to="/personas"className="text-site-text-dim hover:text-site-text">
  <ArrowLeft className="h-5 w-5"/>
  </Link>

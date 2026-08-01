@@ -28,7 +28,7 @@ export function JumpBackIn() {
  show={recents.length > 0}
  as="section"
  aria-label={t('jump-back-in', { defaultValue:'Jump back in'})}
- className="bg-site-surface border border-site-border rounded-site shadow-site-sm mx-3 mt-3 p-3"
+ className="glass-fill mx-3 mt-3 p-3"
  >
  <div className="mb-2 flex items-center gap-2">
  <Clock className="h-4 w-4 text-site-accent"aria-hidden />

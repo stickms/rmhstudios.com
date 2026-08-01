@@ -83,7 +83,7 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  // visitor never flashes a sign-in prompt either.
  if (!session && !isPending) {
  return (
- <div className="bg-site-surface border border-site-border rounded-site shadow-site-sm rounded-site mx-3 px-4 py-6 text-center">
+ <div className="glass-fill rounded-site mx-3 px-4 py-6 text-center">
  <p className="text-sm text-site-text-muted mb-2">
  {t('sign-in-prompt', { defaultValue:'Sign in to post RMHarks'})}
  </p>
@@ -95,7 +95,7 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  }
 
  return (
- <div className="social-composer px-4 py-3">
+ <div className="glass-pane social-composer px-4 py-3">
  <div className="flex gap-3">
  {/* Avatar — matches ComposeBox's resting avatar exactly */}
  <div className="w-10 h-10 rounded-full bg-site-surface-hover ring-1 ring-site-border flex items-center justify-center text-site-text font-bold text-sm shrink-0 overflow-hidden">

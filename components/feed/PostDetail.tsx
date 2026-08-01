@@ -278,7 +278,7 @@ export function PostDetail({ postId }: PostDetailProps) {
  <div className="flex flex-col">
  {/* Header bar — §17.6: reserve the sticky-shift with a bottom margin so the
  hero's mt-3 gutter below is honoured (same fix as PageLayout). */}
- <div className="site-sticky-chrome bg-site-surface border border-site-border rounded-site shadow-site-sm">
+ <div className="glass-chrome site-sticky-chrome">
  <div className="flex items-center gap-3 px-4 py-3">
  <button
  onClick={() => window.history.back()}

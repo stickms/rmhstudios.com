@@ -137,7 +137,7 @@ export function ListingCard({
   return (
     <div
       data-glass-light=""
-      className="glass-interactive flex items-center gap-3 rounded-site border bg-site-glass-tint p-3"
+      className="glass-fill glass-interactive flex items-center gap-3 rounded-site p-3"
       style={{
         borderColor: `${RARITY_COLORS[rarity]}55`,
         boxShadow: `inset 0 1px 0 ${RARITY_COLORS[rarity]}55, var(--site-shadow-sm)`,

@@ -152,7 +152,7 @@ export function Tooltip({ content, children, className, delay = 0.2 }: TooltipPr
  // Tailwind's own 2xl radius, a fixed 18px that ignored every theme's
  // radius scale (high-contrast squares its corners to 8px; the tooltip
  // stayed round).
- "bg-site-surface border border-site-border shadow-site rounded-site-sm",
+ "glass-fill shadow-site rounded-site-sm",
  className
  )}
  >
