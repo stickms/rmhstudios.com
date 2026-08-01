@@ -114,7 +114,7 @@
   pointer-events: none;
   overflow: hidden;
   /* Transparent on purpose: the aurora canvas (--site-canvas) is painted by the
-     document's own fixed layers (body::before / ::after in globals.css) so it
+     document's own fixed layers (.site-aurora::before / ::after in globals.css) so it
      drifts and parallaxes, and so every backdrop-filter on the page samples the
      SAME scene. Repeating the canvas here would paint a static copy on top of
      the living one. The rings below are this layer's only content. */
@@ -1141,6 +1141,21 @@ html.perf-lite .radial-backdrop__blob {
 .radial-shell:has(.radial-hub[data-phase='open']) .radial-frame {
   filter: blur(var(--hub-page-blur, 20px));
 }
+/* …and the "rasterises once" above is only true if the blurred layer HOLDS
+   STILL. `.radial-backdrop` does not: it owns the breathing rings and the
+   drifting blob field, which animate forever — so while the menu was open the
+   compositor re-ran a 20px full-viewport blur on every one of their frames, for
+   motion nobody can see through 20px of blur and an opaque veil. Measured on the
+   globe drag (headless Chromium, 4x CPU throttle): dropping this blur alone took
+   the gesture from 5.0fps to 7.9fps.
+
+   Paused rather than `animation: none` so the layers freeze exactly where they
+   are — cutting to the keyframe origin would show as a jump on the way back out,
+   underneath a blur that is itself only 0.32s long. */
+.radial-shell:has(.radial-hub[data-phase='open']) .radial-backdrop__ring,
+.radial-shell:has(.radial-hub[data-phase='open']) .radial-backdrop__blob {
+  animation-play-state: paused;
+}
 .radial-shell:has(.radial-hub:not([data-phase='closed'])) .radial-feed__compose {
   visibility: hidden;
 }
@@ -1321,9 +1336,20 @@ html.perf-lite .radial-hub__veil {
 }
 .radial-globe__cage {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  /* Deliberately LARGER than the stage, and hanging outside it on every side.
+     The sphere's limb already reaches the stage edge at rest, so when a ripple
+     swells the surface the wave crossed the edge of the backing store and was
+     clipped square — a poke near the rim looked cut off by a window instead of
+     travelling over a ball. The bleed gives the swell somewhere to go.
+
+     `--cage-bleed` is the single source of truth for the geometry: LiquidGlobe
+     reads the SAME fraction (`CAGE_BLEED`) to size the backing store and to put
+     the drawing origin at the middle of this box, so the two stay concentric and
+     the globe's drawn radius is unchanged. Change one and change the other. */
+  --cage-bleed: 9%;
+  inset: calc(var(--cage-bleed) * -1);
+  width: auto;
+  height: auto;
   pointer-events: none;
   /* Never painted (a canvas has no text) — it is the cage's ink, resolved, as
      the fallback the drawing code mixes its own colours from on an engine that

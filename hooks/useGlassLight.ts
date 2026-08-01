@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { clearSceneLight, setSceneLight } from '@/lib/liquid-gl/scene-light';
 
 /**
  * The scene light (v2 §4.1–§4.4). One document-level, rAF-throttled
@@ -10,12 +11,21 @@ import { useEffect } from 'react';
  *     `[data-glass-light]` element gets `--glass-px/--glass-py` (percent coords)
  *     so `.glass-interactive`'s `::after` can draw the light where the cursor is.
  *  2. **Global scene light** (v2): the pointer's viewport position, quantised
- *     to 8px, is written as `--light-x/--light-y` on `<html>` for the liquid
- *     renderer. CSS glass rims intentionally keep an element-anchored top sun:
- *     fixed background paint across many panes can trail during scroll/rubber-band.
+ *     to 8px, is published to the liquid renderer. CSS glass rims intentionally
+ *     keep an element-anchored top sun: fixed background paint across many panes
+ *     can trail during scroll/rubber-band.
  *
- * Cost: two `<html>`-level custom-property writes feed the single renderer.
- * 8px quantisation + rAF batching keep updates bounded.
+ * The scene light is published through `lib/liquid-gl/scene-light` — a plain
+ * module — and **not** as `--light-x/--light-y` on `<html>`, which is what it
+ * used to be. No CSS rule ever read those properties; the only consumer is the
+ * renderer, which read them straight back off the same inline style. Writing a
+ * custom property on the document element dirties the computed style of every
+ * element under it, which on this page measured ~70ms per write against ~2ms for
+ * a class toggle — paid on every frame the pointer moved. See the module
+ * docblock in `scene-light.ts` for the measurements.
+ *
+ * Cost now: the per-element hotspot is two writes on the ONE hovered element
+ * (leaf-scoped, ~0ms), and the scene light is a variable assignment.
  *
  * ## Why the hovered element's rect is cached
  *
@@ -83,8 +93,7 @@ export function useGlassLight(): void {
     };
 
     const clearLight = () => {
-      root.style.removeProperty('--light-x');
-      root.style.removeProperty('--light-y');
+      clearSceneLight();
       lastLx = -1;
       lastLy = -1;
     };
@@ -119,8 +128,7 @@ export function useGlassLight(): void {
           const lx = Math.round(e.clientX / Q) * Q;
           const ly = Math.round(e.clientY / Q) * Q;
           if (lx !== lastLx || ly !== lastLy) {
-            root.style.setProperty('--light-x', `${lx}px`);
-            root.style.setProperty('--light-y', `${ly}px`);
+            setSceneLight(lx, ly);
             lastLx = lx;
             lastLy = ly;
           }

@@ -5,7 +5,7 @@
  * Lazy: `initLiquidGL()` is dynamic-imported from Providers after first paint, so
  * the WGSL/GLSL renderers + this module are a code-split chunk that never touches
  * the LCP path. When a tier initialises it sets `html.liquid-gl` (CSS then hides
- * the body::before/after aurora + `.lg-goo` underlays — never double-render); when
+ * the .site-aurora layers + `.lg-goo` underlays — never double-render); when
  * no tier is available it does nothing and the untouched CSS/SVG stack renders.
  *
  * Budgets: one canvas · DPR capped at 1.5 · paused on `visibilitychange` · 30fps
@@ -455,8 +455,8 @@ export function initLiquidGL(): () => void {
 
   // Theme / degradation swaps flip the `class` on <html> (style-*, reduce-motion,
   // reduce-transparency, high-contrast, perf-lite). Re-gate + re-parse on those —
-  // NOT on `style` mutations (those churn every pointer move via --light-x/y; the
-  // inline-signature check in the frame loop catches user-theme colour changes).
+  // NOT on `style` mutations, which are a different signal entirely and are
+  // handled by the cheap inline-signature check below.
   classObserver = new MutationObserver(() => {
     if (!rt) {
       void boot(); // was blocked / not yet up → maybe unblocked now
@@ -474,10 +474,11 @@ export function initLiquidGL(): () => void {
   });
 
   // Inline scene colours (user themes / accents write these on <html>). This is
-  // why the `style` attribute is watched separately from `class` above: inline
-  // style churns on every pointer move via --light-x/y, so the callback must stay
-  // cheap. It compares the three colour vars and only re-parses when one of them
-  // actually changed — a pointer move fails that comparison and does nothing.
+  // why the `style` attribute is watched separately from `class` above: the
+  // attribute still churns during a pointer gesture — `useLiquidBackground`
+  // writes the quantised aurora offset there — so the callback must stay cheap.
+  // It compares the three colour vars and only re-parses when one of them
+  // actually changed; an aurora write fails that comparison and does nothing.
   // MutationObserver batches into a microtask, so a drag costs one comparison per
   // batch instead of one per frame, and an idle page costs nothing at all.
   styleObserver = new MutationObserver(() => {

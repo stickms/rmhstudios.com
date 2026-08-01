@@ -862,8 +862,18 @@ html[data-color-vision='protanopia'] {
 
 /* Same hues lifted for dark surfaces: the light-theme values fall below the
    contrast floor on a near-black background. */
-html[data-color-vision='deuteranopia']:is(.style-graphite, .style-high-contrast, .style-nocturne, .style-ultra),
-html[data-color-vision='protanopia']:is(.style-graphite, .style-high-contrast, .style-nocturne, .style-ultra) {
+html[data-color-vision='deuteranopia']:is(
+    .style-graphite,
+    .style-high-contrast,
+    .style-nocturne,
+    .style-ultra
+  ),
+html[data-color-vision='protanopia']:is(
+    .style-graphite,
+    .style-high-contrast,
+    .style-nocturne,
+    .style-ultra
+  ) {
   --site-success: #56b4e9;
   --site-danger: #ff9a6b;
   --site-danger-fg: #1a0800;
@@ -882,7 +892,12 @@ html[data-color-vision='tritanopia'] {
   --site-warning-fg: #ffffff;
 }
 
-html[data-color-vision='tritanopia']:is(.style-graphite, .style-high-contrast, .style-nocturne, .style-ultra) {
+html[data-color-vision='tritanopia']:is(
+    .style-graphite,
+    .style-high-contrast,
+    .style-nocturne,
+    .style-ultra
+  ) {
   --site-success: #4ade80;
   --site-danger: #ff8080;
   --site-danger-fg: #1a0000;
@@ -910,9 +925,24 @@ html[data-color-vision='tritanopia']:is(.style-graphite, .style-high-contrast, .
    Gated to non-app routes (games/apps own their background); THEME_BG still
    paints the opaque base inline (no-flash script + Providers) so overscroll /
    pre-paint frames stay solid — this only layers colour on top. */
-html:not(.app-route) body::before {
-  content: '';
+/* The host is a real element (rendered once in `app/routes/__root.tsx`) and not
+   `body` itself, because the parallax below is steered by a custom property and
+   a custom-property write on `<html>`/`<body>` restyles the whole document —
+   ~30ms a frame on this page. Here it restyles two pseudo-elements. The host
+   carries no paint of its own; both layers are still pseudo-elements, at the same
+   z-indices, in the same order. */
+.site-aurora {
   position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* A containing block for the two absolutely-positioned layers below, whose
+     oversize insets used to resolve against the viewport — which this is. */
+  contain: layout style;
+}
+html:not(.app-route) .site-aurora::before {
+  content: '';
+  position: absolute;
   /* iOS 26 clips position:fixed to the VISUAL viewport (verified on-device: a
      fixed inset:0 box, and a fixed 100lvh+25vh box, both render only between the
      notch and Safari's floating bar). So this pseudo can only cover that region —
@@ -964,14 +994,14 @@ html:not(.app-route) body::before {
   }
 }
 
-/* Aurora layer 2 — the far field (§5.1). A depth sibling behind body::before:
+/* Aurora layer 2 — the far field (§5.1). A depth sibling behind the near layer:
    it counter-drifts slower and follows the pointer at −0.6× the near layer's
    parallax (reusing --aurora-mx/my written by useLiquidBackground — NO new JS),
    so pointer motion resolves into depth rather than a flat slide. z-index:-2
    keeps it behind the near layer. Same kill-switches as the near layer below. */
-html:not(.app-route):not(.style-high-contrast) body::after {
+html:not(.app-route):not(.style-high-contrast) .site-aurora::after {
   content: '';
-  position: fixed;
+  position: absolute;
   inset: -18%;
   z-index: -2;
   pointer-events: none;
@@ -1005,10 +1035,10 @@ html:not(.app-route):not(.style-high-contrast) body::after {
 
 /* Low-end devices and high-contrast (canvas is `none` there) pay nothing for the
    ambient flow or the parallax follow — both aurora layers. */
-html.perf-lite body::before,
-html.perf-lite body::after,
-html.style-high-contrast body::before,
-html.style-high-contrast body::after {
+html.perf-lite .site-aurora::before,
+html.perf-lite .site-aurora::after,
+html.style-high-contrast .site-aurora::before,
+html.style-high-contrast .site-aurora::after {
   animation: none;
   translate: none;
   transition: none;
@@ -1024,8 +1054,8 @@ html.style-high-contrast body::after {
    over the canvas. When GL is off (unsupported, or perf-lite / reduced-motion /
    high-contrast / reduce-transparency), this class is absent and the CSS/SVG stack
    below renders unchanged — it IS the fallback tier. */
-html.liquid-gl body::before,
-html.liquid-gl body::after {
+html.liquid-gl .site-aurora::before,
+html.liquid-gl .site-aurora::after {
   display: none;
 }
 html.liquid-gl .lg-goo {
@@ -1038,7 +1068,7 @@ html.liquid-gl .lg-goo {
    body background is made transparent to reveal it; <html> keeps its opaque
    THEME_BG as the pre-init / overscroll backstop. !important beats the inline
    body background-color. Gated to non-app routes exactly like the CSS aurora
-   (games/apps own their background) — see the body::before gate above. */
+   (games/apps own their background) — see the .site-aurora gate above. */
 html.liquid-gl:not(.app-route) body {
   background-color: transparent !important;
 }
@@ -1062,7 +1092,7 @@ html:not(.style-high-contrast):not(.app-route) .bg-site-bg:not(.fixed):not([data
 }
 
 /* Games and full-screen apps paint their OWN backdrop, and the aurora canvas is
-   gated off for them (`html.app-route`, see the body::before gate above). A
+   gated off for them (`html.app-route`, see the .site-aurora gate above). A
    translucent surface there has no shared scene to sample — it just greys out
    over whatever the experience is drawing — so resolve the site surfaces to
    their opaque twins on those routes. Site chrome is unaffected: the class only
@@ -1703,7 +1733,7 @@ html.style-high-contrast .lg-goo {
 .style-high-contrast .glass-chrome--aside::before,
 .style-high-contrast .glass-refract::before,
 .style-high-contrast .glass-interactive::after,
-.style-high-contrast body::after {
+.style-high-contrast .site-aurora::after {
   display: none;
 }
 .style-high-contrast .glass-liquid {
@@ -1798,7 +1828,7 @@ html.perf-lite .glass-refract::before {
   filter: none; /* strip the §3.6 mirror displacement */
   background-image: none; /* and the aurora copy it displaced */
 }
-html.perf-lite body::after {
+html.perf-lite .site-aurora::after {
   display: none;
 }
 
@@ -1808,14 +1838,14 @@ html.perf-lite body::after {
    material (tint, blur, glint and depth) plus ordinary component animations, but
    make the full-screen backdrop static and remove the expensive displacement /
    ambient-motion layers so navigation and interaction always retain a frame. */
-html.ios-webkit:not(.app-route) body::before {
+html.ios-webkit:not(.app-route) .site-aurora::before {
   animation: none;
   transition: none;
   will-change: auto;
   translate: none;
   transform: scale(1.08);
 }
-html.ios-webkit body::after,
+html.ios-webkit .site-aurora::after,
 html.ios-webkit .glass-chrome--aside::before,
 html.ios-webkit .glass-refract::before,
 html.ios-webkit .glass-interactive::after,
@@ -1877,7 +1907,7 @@ html.ios-webkit .glass-liquid {
      nothing. */
   .glass-refract::before,
   .glass-interactive::after,
-  body::after {
+  .site-aurora::after {
     background: none;
   }
   .glass-liquid {

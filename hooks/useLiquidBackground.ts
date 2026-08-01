@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
+import { clearSceneLight, setAuroraOffset, setSceneLight } from '@/lib/liquid-gl/scene-light';
 
 /**
  * Makes the aurora canvas reactive to movement — the second half of the site's
  * "liquid" backdrop (the first is the ambient `aurora-drift` keyframe in
  * globals.css). One rAF-throttled listener maps input motion to a small parallax
  * offset written as CSS custom properties (`--aurora-mx` / `--aurora-my`, in px)
- * on `<html>`; the `body::before` aurora layer reads them through its `translate`
+ * on the `.site-aurora` host; its two layers read them through their `translate`
  * longhand (which composes with the drift animation's `transform`), and a CSS
  * transition eases the follow so the backdrop trails the cursor like a fluid.
  *
@@ -20,11 +21,11 @@ import { useEffect } from 'react';
  *    persists consent as `rmh-motion-ok`, then fires `rmh:tilt-consent` so this hook
  *    starts (or stops) listening live.
  *
- * §5.5x C — tilt light: the same tilt that drifts the aurora also writes the scene
- * light `--light-x/--light-y` (viewport px: centre + tilt × ~40% of the viewport,
- * 8px-quantised, rAF-batched — the SAME contract useGlassLight uses on fine pointers
- * §4.4) and toggles `html.tilt-live`. The class remains a useful live-input signal,
- * while coarse-pointer glass keeps an element-anchored rim: mobile compositors can
+ * §5.5x C — tilt light: the same tilt that drifts the aurora also publishes the
+ * scene light (viewport px: centre + tilt × ~40% of the viewport, 8px-quantised,
+ * rAF-batched — the SAME contract useGlassLight uses on fine pointers §4.4) and
+ * toggles `html.tilt-live`. The class remains a useful live-input signal, while
+ * coarse-pointer glass keeps an element-anchored rim: mobile compositors can
  * otherwise lag a fixed glint one frame behind its scrolling parent. Tilt still
  * moves the shared aurora, preserving depth without a detached surface highlight.
  *
@@ -33,10 +34,55 @@ import { useEffect } from 'react';
  * on low-end devices (`html.perf-lite`) — the same gates as the aurora parallax, so
  * tilt light never runs where those degradations apply. Mounted once in
  * `components/Providers.tsx`.
+ *
+ * ## Where these values are written, and why it is not `<html>` (load-bearing)
+ *
+ * A custom-property write dirties the computed style of every element BENEATH
+ * the element written to, because custom properties inherit — and this site
+ * declares ~250 tokens on `:root`, so each of those elements has that whole map
+ * rebuilt. Measured on `/store` (407 elements) at 4× CPU throttle:
+ *
+ * | one custom-property write on… | forced style+layout flush |
+ * | ----------------------------- | ------------------------- |
+ * | `<html>`                      | **~70ms**                 |
+ * | `<body>`                      | ~73ms                     |
+ * | `<main>`                      | ~24ms                     |
+ * | a leaf element                | ~0ms                      |
+ *
+ * (A class toggle on `<html>` costs ~2ms — class changes have invalidation sets;
+ * custom properties do not.)
+ *
+ * This hook used to write four properties on `<html>` — `--light-x`, `--light-y`,
+ * `--aurora-mx`, `--aurora-my` — unconditionally, at full pointer precision, on
+ * every rAF the pointer moved. That is a whole-document restyle per frame for the
+ * entire duration of any gesture, and it was the largest single cost on the site:
+ * dragging the navigation globe measured **4.4fps** with **624ms** of input
+ * latency, against 2.8ms of actual work inside the globe's own frame loop.
+ *
+ * Two things fixed it, and both must hold:
+ *
+ *  1. **The light does not go through CSS at all.** Nothing in the stylesheet
+ *     ever read `--light-x/--light-y`; the renderer read them back off the same
+ *     inline style it wrote them to. They are published through
+ *     `lib/liquid-gl/scene-light` instead — a plain module.
+ *  2. **The aurora offset is written on the layer that reads it.** The two aurora
+ *     layers are pseudo-elements of `.site-aurora` (`app/routes/__root.tsx`), a
+ *     leaf whose only descendants are those two pseudos, so the write invalidates
+ *     them and nothing else. They used to be `body::before`/`body::after`, which
+ *     forced the property up onto `<html>` for them to inherit it.
+ *
+ * If a new value has to reach CSS from here, give it the element that reads it.
+ * Do not put it on `<html>`.
  */
 
 /** Peak parallax travel in px on each axis — kept small so the aurora breathes, not lurches. */
 const MAX_SHIFT = 24;
+/**
+ * Where the parallax offset is written. Its two pseudo-elements ARE the aurora,
+ * and they are the only things that read `--aurora-mx/--aurora-my` — see the
+ * write-budget note above for why that matters. Rendered in `__root.tsx`.
+ */
+const AURORA_HOST = '.site-aurora';
 /** Tilt→light spread: peak specular travel from centre as a fraction of each
  *  viewport axis. ~40% keeps the glint on-pane at a comfortable hand tilt (§5.5x C.1). */
 const TILT_LIGHT_SPREAD = 0.4;
@@ -73,15 +119,36 @@ export function useLiquidBackground(): void {
     let haveLight = false;
     let lastLx = -1;
     let lastLy = -1;
+    /**
+     * The aurora host. Resolved once — it is rendered by `__root.tsx` and lives
+     * for the life of the document. Null only if this hook somehow mounts before
+     * the shell, in which case the aurora simply stays at its resting offset.
+     */
+    const aurora = document.querySelector<HTMLElement>(AURORA_HOST);
+    // Last offset actually written, so a pointer that jitters inside a pixel
+    // writes nothing. Seeded off-grid so the first frame always lands.
+    let lastMx = Number.NaN;
+    let lastMy = Number.NaN;
     let tiltLive = false;
 
     const apply = () => {
       raf = 0;
-      root.style.setProperty('--aurora-mx', `${targetX.toFixed(2)}px`);
-      root.style.setProperty('--aurora-my', `${targetY.toFixed(2)}px`);
+      // Full pointer precision: this write lands on a leaf with two pseudo
+      // children, so it is free. (It was quantised and rate-limited while it
+      // still had to go through `<html>` — see the write-budget note above.)
+      const mx = +targetX.toFixed(2);
+      const my = +targetY.toFixed(2);
+      if (aurora && (mx !== lastMx || my !== lastMy)) {
+        aurora.style.setProperty('--aurora-mx', `${mx}px`);
+        aurora.style.setProperty('--aurora-my', `${my}px`);
+        lastMx = mx;
+        lastMy = my;
+        // Mirrored as numbers so the renderer reads the offset without parsing a
+        // pixel string back out of the inline style every frame.
+        setAuroraOffset(mx, my);
+      }
       if (haveLight && (pendingLx !== lastLx || pendingLy !== lastLy)) {
-        root.style.setProperty('--light-x', `${pendingLx}px`);
-        root.style.setProperty('--light-y', `${pendingLy}px`);
+        setSceneLight(pendingLx, pendingLy);
         lastLx = pendingLx;
         lastLy = pendingLy;
       }
@@ -152,9 +219,8 @@ export function useLiquidBackground(): void {
         root.classList.remove('tilt-live');
         tiltLive = false;
       }
-      // Rest the light at the CSS "sun" default (§4.2 var() fallbacks).
-      root.style.removeProperty('--light-x');
-      root.style.removeProperty('--light-y');
+      // Rest the light at the renderer's "sun" default (§4.1).
+      clearSceneLight();
     };
 
     if (finePointer) {
@@ -192,8 +258,9 @@ export function useLiquidBackground(): void {
     return () => {
       if (raf) cancelAnimationFrame(raf);
       cleanups.forEach((fn) => fn());
-      root.style.removeProperty('--aurora-mx');
-      root.style.removeProperty('--aurora-my');
+      aurora?.style.removeProperty('--aurora-mx');
+      aurora?.style.removeProperty('--aurora-my');
+      setAuroraOffset(0, 0);
     };
   }, []);
 }
