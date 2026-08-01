@@ -199,7 +199,6 @@ const GlassPane: React.FC<GlassPaneProps> = ({
 }) => (
  <div
  data-slot="glass-pane"
- data-glass-light={interactive ? '' : undefined}
  data-glass-lens={refract ? '' : undefined}
  className={cn(
  'glass-pane',

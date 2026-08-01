@@ -424,7 +424,7 @@ export function CursedLogicGame() {
             aria-hidden
           >
             <div
-              className="h-2 w-full max-w-[55%] rounded-full origin-left"
+              className="h-2 w-full max-w-[55%] origin-left"
               style={{
                 background: 'linear-gradient(90deg, rgba(34,211,238,0.9) 0%, rgba(34,211,238,0.4) 60%, transparent 100%)',
                 boxShadow: '0 0 20px 4px rgba(34,211,238,0.6)',
@@ -512,7 +512,7 @@ export function CursedLogicGame() {
           )}
           <div
             key={`player-${animationKey}`}
-            className={`w-16 h-16 rounded-full border-2 flex items-center justify-center font-mono text-xs transition-all duration-300 relative z-0
+            className={`w-16 h-16 rounded-full border-2 flex items-center justify-center font-mono text-xs transition duration-300 relative z-0
               ${playerHit ? 'animate-[cursed-damage_0.5s_ease-out] border-red-500/80 bg-red-500/20' : ''}
               ${playerBlocked && phase === 'resolved' ? 'border-cyan-400 bg-cyan-500/20' : ''}
               ${playerPrepared && phase === 'commit' ? 'animate-[cursed-prepare_1.5s_ease-in-out_infinite] border-cyan-400 bg-cyan-500/10' : ''}
@@ -523,8 +523,8 @@ export function CursedLogicGame() {
           </div>
           <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
             <div
-              className="h-full bg-cyan-500/80 rounded-full transition-all duration-500"
-              style={{ width: `${(integrity / MAX_INTEGRITY_DISPLAY) * 100}%` }}
+              className="h-full bg-cyan-500/80 w-full origin-left transition-transform duration-500"
+              style={{ transform: `scaleX(${((integrity / MAX_INTEGRITY_DISPLAY) * 100) / 100})` }}
             />
           </div>
           {playerPrepared && phase === 'commit' && (
@@ -581,7 +581,7 @@ export function CursedLogicGame() {
           )}
           <div
             key={`protocol-${animationKey}`}
-            className={`w-16 h-16 border-2 flex items-center justify-center font-mono text-[10px] transition-all duration-300 relative z-0
+            className={`w-16 h-16 border-2 flex items-center justify-center font-mono text-[10px] transition duration-300 relative z-0
               ${protocolHit ? 'animate-[cursed-damage_0.5s_ease-out] border-red-500/80 bg-red-500/20' : ''}
               ${protocolBlocked && phase === 'resolved' ? 'border-amber-400 bg-amber-500/20' : ''}
               ${protocolPrepared && phase === 'commit' ? 'animate-[cursed-prepare_1.5s_ease-in-out_infinite] border-amber-400 bg-amber-500/10' : ''}
@@ -598,8 +598,8 @@ export function CursedLogicGame() {
           )}
           <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
             <div
-              className="h-full bg-amber-500/80 rounded-full transition-all duration-500"
-              style={{ width: `${(protocolHealth / PROTOCOL_MAX_DISPLAY) * 100}%` }}
+              className="h-full bg-amber-500/80 w-full origin-left transition-transform duration-500"
+              style={{ transform: `scaleX(${((protocolHealth / PROTOCOL_MAX_DISPLAY) * 100) / 100})` }}
             />
           </div>
           {protocolPrepared && phase === 'commit' && (

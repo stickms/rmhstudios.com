@@ -229,7 +229,7 @@ export function MemoryEchoPuzzle({ config, onSolve, onAttempt }: PuzzleComponent
                     return (
                         <button
                             key={sound}
-                            className={`aspect-square rounded-xl flex flex-col items-center justify-center gap-1 transition-all duration-200 cursor-pointer border-2 ${
+                            className={`aspect-square rounded-xl flex flex-col items-center justify-center gap-1 transition duration-200 cursor-pointer border-2 ${
                                 isActive
                                     ? 'scale-105 shadow-lg border-opacity-80'
                                     : phase === 'input'

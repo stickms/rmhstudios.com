@@ -143,7 +143,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  <DialogContent className="max-w-md p-0 gap-0 bg-site-bg flex flex-col max-h-[80vh] overflow-hidden">
  {/* Header */}
  <div className="flex items-center justify-between px-5 py-4 border-b border-site-border shrink-0">
- <DialogTitle className="font-(family-name:--site-font-display) font-bold text-lg text-site-text">
+ <DialogTitle className="font-display font-bold text-lg text-site-text">
  {title}
  </DialogTitle>
  </div>
@@ -186,7 +186,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  <button
  onClick={() => handleFollowToggle(user)}
  disabled={followingInProgress.has(user.id)}
- className={`shrink-0 px-4 py-1.5 rounded-site-sm text-xs font-bold transition-[color,background-color,border-color,transform] duration-150 active:scale-95 ${
+ className={`shrink-0 px-4 py-1.5 rounded-site-sm text-xs font-bold transition-[color,background-color,border-color,transform] duration-site-fast active:scale-95 ${
  user.isFollowing
  ?'border border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10'
  :'bg-site-accent text-site-bg hover:bg-site-accent-hover'

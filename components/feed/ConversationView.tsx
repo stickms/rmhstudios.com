@@ -583,7 +583,7 @@ export function ConversationView({
  className="ring-2 ring-site-bg"
  />
  <div>
- <p className="font-(family-name:--site-font-display) font-bold text-sm text-site-text">
+ <p className="font-display font-bold text-sm text-site-text">
  {otherUser.name ||'Unknown'}
  </p>
  {otherUser.username && (
@@ -803,7 +803,7 @@ export function ConversationView({
  type="button"
  aria-label={t('remove-image', { defaultValue:'Remove image'})}
  onClick={() => setImageUrls((prev) => prev.filter((u) => u !== url))}
- className="absolute -right-1.5 -top-1.5 rounded-full bg-black/70 p-0.5 text-white hover:bg-black"
+ className="absolute -right-1.5 -top-1.5 rounded-full bg-site-media-scrim-strong p-0.5 text-site-media-ink hover:bg-site-media-scrim-hover"
  >
  <X className="h-3.5 w-3.5"/>
  </button>
@@ -816,7 +816,7 @@ export function ConversationView({
  type="button"
  aria-label={t('remove-gif', { defaultValue:'Remove GIF'})}
  onClick={() => setGifUrl(null)}
- className="absolute -right-1.5 -top-1.5 rounded-full bg-black/70 p-0.5 text-white hover:bg-black"
+ className="absolute -right-1.5 -top-1.5 rounded-full bg-site-media-scrim-strong p-0.5 text-site-media-ink hover:bg-site-media-scrim-hover"
  >
  <X className="h-3.5 w-3.5"/>
  </button>
@@ -887,7 +887,7 @@ export function ConversationView({
  {attachOpen && (
  <div
  ref={attachPanelRef}
- className="absolute bottom-full right-0 z-30 mb-1 w-40 glass-fill py-1"
+ className="absolute bottom-full right-0 z-30 mb-1 w-40 glass-overlay py-1"
  >
  <button
  type="button"

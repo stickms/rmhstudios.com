@@ -343,7 +343,7 @@ export function LightsOutGame() {
                                             onClick={() => handleCellClick(r, c)}
                                             disabled={solved}
                                             className={`
-                                                w-10 h-10 rounded-xl transition-all duration-150
+                                                w-10 h-10 rounded-xl transition-colors duration-150
                                                 ${on
                                                     ? 'bg-amber-400 text-amber-950 shadow-lg shadow-amber-400/30'
                                                     : 'bg-site-bg-subtle border border-site-border'}
@@ -395,7 +395,7 @@ export function LightsOutGame() {
                                         aria-pressed={on}
                                         aria-describedby={isHinted ? 'lights-out-hint' : undefined}
                                         className={`
-                                            relative rounded-xl transition-all duration-150 min-h-0
+                                            relative rounded-xl transition-colors duration-150 min-h-0
                                             ${on
                                                 ? 'bg-amber-400 text-amber-950 shadow-lg shadow-amber-400/30'
                                                 : 'bg-site-bg-subtle border border-site-border'}

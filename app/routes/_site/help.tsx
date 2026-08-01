@@ -32,7 +32,7 @@ function HelpPage() {
           {/* Sticky header — matches the full-height chat layout used elsewhere. */}
           <div className="glass-chrome site-sticky-chrome h-18 shrink-0">
             <div className="h-full flex items-center gap-3 px-4 py-3">
-              <h1 className="font-(family-name:--site-font-display) font-semibold text-2xl tracking-[-0.022em] text-site-text flex items-center gap-2 min-w-0 truncate">
+              <h1 className="font-display font-semibold text-2xl tracking-[-0.022em] text-site-text flex items-center gap-2 min-w-0 truncate">
                 <MobileBrandPrefix />
                 <Sparkles className="size-5 text-site-accent" aria-hidden />
                 Help

@@ -866,7 +866,6 @@ function BookSpine({
         to="/library/$slug"
         params={{ slug: book.slug }}
         className="lib-book glass-fill glass-interactive lib-orbit-card"
-        data-glass-light=""
         data-library-orbit=""
         style={style}
         draggable={dnd?.draggable ? false : undefined}

@@ -142,7 +142,7 @@ export default function PeerReview({
           {categories.map((_, idx) => (
             <span
               key={idx}
-              className={`h-2 w-2 rounded-full transition-all ${
+              className={`h-2 w-2 rounded-full transition-colors ${
                 idx === activeCatIndex
                   ? 'bg-(--app-accent) scale-125'
                   : idx < activeCatIndex

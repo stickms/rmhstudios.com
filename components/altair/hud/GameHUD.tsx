@@ -145,8 +145,8 @@ export default function GameHUD() {
           </div>
           <div className="h-2.5 rounded-full bg-black/50 overflow-hidden">
             <div
-              className="h-full rounded-full transition-all duration-200"
-              style={{ width: `${hpPercent}%`, backgroundColor: hpColor }}
+              className="h-full w-full origin-left transition-[transform,background-color] duration-200"
+              style={{ transform: `scaleX(${(hpPercent) / 100})`, backgroundColor: hpColor }}
             />
           </div>
         </div>
@@ -159,8 +159,8 @@ export default function GameHUD() {
           </div>
           <div className="h-2.5 rounded-full bg-black/50 overflow-hidden">
             <div
-              className="h-full rounded-full bg-(--altair-info) transition-all duration-200"
-              style={{ width: `${xpPercent}%` }}
+              className="h-full bg-(--altair-info) w-full origin-left transition-transform duration-200"
+              style={{ transform: `scaleX(${(xpPercent) / 100})` }}
             />
           </div>
         </div>

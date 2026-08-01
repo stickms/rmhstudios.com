@@ -258,7 +258,7 @@ function ManageAlbumPage() {
                     className="h-full w-full cursor-grab object-cover active:cursor-grabbing"
                   />
                   {slide.type === 'video' && (
-                    <span className="absolute left-1.5 top-1.5 flex size-5 items-center justify-center rounded-full bg-black/60 text-white">
+                    <span className="absolute left-1.5 top-1.5 flex size-5 items-center justify-center rounded-full bg-site-media-scrim-strong text-site-media-ink">
                       <Play size={12} aria-hidden="true" />
                     </span>
                   )}
@@ -271,7 +271,7 @@ function ManageAlbumPage() {
                       defaultValue: `Delete ${slide.type} ${index + 1}`,
                     })}
                     // Always visible on touch (no hover); softens in on hover on pointer devices.
-                    className="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-site-danger sm:size-6 sm:opacity-70 sm:group-hover:opacity-100"
+                    className="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-full bg-site-media-scrim-strong text-site-media-ink transition-colors hover:bg-site-danger sm:size-6 sm:opacity-70 sm:group-hover:opacity-100"
                   >
                     <Trash2 size={12} aria-hidden="true" />
                   </button>

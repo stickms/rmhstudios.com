@@ -109,7 +109,7 @@ export function SupportTierPicker({
                 <div className="flex items-baseline justify-between gap-3">
                   <h3 className="font-semibold text-site-text">{tier.name}</h3>
                   <span className="flex items-center gap-1 text-sm font-semibold text-site-text tabular-nums">
-                    <Coins className="size-4 text-yellow-500" aria-hidden />
+                    <Coins className="size-4 text-site-warning" aria-hidden />
                     {tier.priceCoins}
                     <span className="text-site-text-dim font-normal">
                       {t('per-30-days', { defaultValue: '/ 30d' })}

@@ -47,7 +47,7 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
  <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
  <DialogContent className="max-w-md p-0 gap-0 bg-site-bg flex flex-col max-h-[80vh] overflow-hidden">
  <div className="flex items-center justify-between px-5 py-4 border-b border-site-border shrink-0">
- <DialogTitle className="font-(family-name:--site-font-display) font-bold text-lg text-site-text">
+ <DialogTitle className="font-display font-bold text-lg text-site-text">
  {title}
  </DialogTitle>
  </div>
@@ -66,7 +66,7 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
  key={user.id}
  to={`/u/${user.handle || user.id}`as string}
  onClick={onClose}
- className="flex items-center gap-3 px-5 py-3 hover:bg-site-surface-hover active:scale-[0.99] transition-[background-color,transform] duration-150 border-b border-site-border/50"
+ className="flex items-center gap-3 px-5 py-3 hover:bg-site-surface-hover active:scale-[0.99] transition-[background-color,transform] duration-site-fast border-b border-site-border/50"
  >
  <UserAvatar user={user} linkToProfile={false} />
  <div className="min-w-0">

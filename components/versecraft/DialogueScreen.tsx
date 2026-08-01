@@ -341,7 +341,7 @@ export function DialogueScreen() {
     >
       {/* Background — z-0 */}
       <div
-        className="absolute inset-0 z-0 transition-all duration-1000"
+        className="absolute inset-0 z-0 transition-colors duration-1000"
         style={{ backgroundColor: bg.fallback, filter: timeFilter }}
       >
         <img
@@ -438,7 +438,7 @@ export function DialogueScreen() {
                 {currentNode.choices.map((choice, i) => (
                   <motion.button
                     key={i}
-                    className="w-full text-left px-4 py-2.5 rounded transition-all text-sm md:text-base"
+                    className="w-full text-left px-4 py-2.5 rounded transition-colors text-sm md:text-base"
                     style={{
                       backgroundColor: 'rgba(42, 34, 53, 0.6)',
                       border: '1px solid rgba(196, 163, 90, 0.15)',
@@ -505,7 +505,7 @@ export function DialogueScreen() {
                 e.stopPropagation();
                 setScreen(action.key);
               }}
-              className="text-xs px-3 py-1 rounded transition-all hover:brightness-125"
+              className="text-xs px-3 py-1 rounded transition hover:brightness-125"
               style={{
                 backgroundColor: 'rgba(26, 21, 32, 0.7)',
                 border: '1px solid rgba(196, 163, 90, 0.1)',

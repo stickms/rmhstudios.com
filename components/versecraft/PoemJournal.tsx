@@ -19,7 +19,7 @@ function PoemCard({ poem, isSelected, onClick }: {
 }) {
   return (
     <motion.button
-      className="w-full text-left px-3 py-2 rounded transition-all"
+      className="w-full text-left px-3 py-2 rounded transition-colors"
       style={{
         backgroundColor: isSelected ? 'rgba(196, 163, 90, 0.15)' : 'rgba(42, 34, 53, 0.4)',
         border: `1px solid ${isSelected ? 'rgba(196, 163, 90, 0.4)' : 'transparent'}`,
@@ -76,7 +76,7 @@ export function PoemJournal() {
         </h2>
         <button
           onClick={goBack}
-          className="text-sm px-4 py-1.5 rounded transition-all"
+          className="text-sm px-4 py-1.5 rounded transition-colors"
           style={{
             backgroundColor: 'rgba(42, 34, 53, 0.6)',
             border: '1px solid rgba(196, 163, 90, 0.15)',
@@ -180,8 +180,8 @@ export function PoemJournal() {
                           <span className="text-xs w-16" style={{ color: '#a89888' }}>{name}</span>
                           <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(26, 21, 32, 0.8)' }}>
                             <div
-                              className="h-full rounded-full transition-all"
-                              style={{ width: `${score}%`, backgroundColor: char.color }}
+                              className="h-full w-full origin-left transition-[transform,background-color]"
+                              style={{ transform: `scaleX(${(score) / 100})`, backgroundColor: char.color }}
                             />
                           </div>
                           <span className="text-xs w-8 text-right" style={{ color: '#a89888' }}>{score}</span>

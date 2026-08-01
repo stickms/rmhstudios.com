@@ -96,14 +96,14 @@ export default function RmhMusicPage() {
         >
           <button
             onClick={() => router.navigate({ to: '/rmhmusic/player' })}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:scale-105"
+            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-transform hover:scale-105"
             style={{ background: 'var(--app-accent)', color: 'var(--app-accent-fg)' }}
           >
             <Music className="w-4 h-4" /> {t('open-player', { defaultValue: 'Open Player' })}
           </button>
           <button
             onClick={() => router.navigate({ to: '/music-trivia' })}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:scale-105"
+            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-transform hover:scale-105"
             style={{ background: 'var(--app-surface)', color: 'var(--app-text)' }}
           >
             <Brain className="w-4 h-4" /> {t('guess-the-song', { defaultValue: 'Guess the Song' })}
@@ -137,7 +137,7 @@ export default function RmhMusicPage() {
             <button
               onClick={createRoom}
               disabled={connectionStatus !== 'connected'}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-40"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition disabled:opacity-40"
               style={{ background: 'var(--app-accent)', color: 'var(--app-accent-fg)' }}
             >
               <Plus className="w-4 h-4" /> {t('create-room', { defaultValue: 'Create Room' })}
@@ -164,7 +164,7 @@ export default function RmhMusicPage() {
             <button
               onClick={joinRoom}
               disabled={!joinCode.trim() || connectionStatus !== 'connected'}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-40"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition disabled:opacity-40"
               style={{ background: 'var(--app-surface)', color: 'var(--app-text)' }}
             >
               <ArrowRight className="w-4 h-4" /> {t('join-room', { defaultValue: 'Join Room' })}

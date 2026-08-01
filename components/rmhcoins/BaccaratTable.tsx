@@ -11,7 +11,7 @@ import { CoinIcon } from './CoinIcon';
 // ── Card Rendering with Flip Animation ─────────────────────────────
 
 const SUIT_SYMBOLS: Record<string, string> = { H: '\u2665', D: '\u2666', C: '\u2663', S: '\u2660' };
-const SUIT_COLORS: Record<string, string> = { H: 'text-red-500', D: 'text-red-500', C: 'text-gray-900', S: 'text-gray-900' };
+const SUIT_COLORS: Record<string, string> = { H: 'text-casino-card-red', D: 'text-casino-card-red', C: 'text-casino-card-ink', S: 'text-casino-card-ink' };
 
 const FLIP_DURATION_MS = 600;
 
@@ -39,7 +39,7 @@ function CardFace({ card }: { card: Card }) {
       >
         {/* Back */}
         <div
-          className="rounded-lg border border-site-accent/40"
+          className="rounded-site-sm border border-site-accent/40"
           style={{
             position: 'absolute',
             inset: 0,
@@ -49,7 +49,7 @@ function CardFace({ card }: { card: Card }) {
         />
         {/* Front */}
         <div
-          className="rounded-lg border border-gray-300 flex flex-col items-center justify-center bg-white"
+          className="rounded-site-sm border border-casino-card-edge flex flex-col items-center justify-center bg-casino-card"
           style={{
             position: 'absolute',
             inset: 0,
@@ -57,7 +57,7 @@ function CardFace({ card }: { card: Card }) {
             transform: 'rotateY(180deg)',
           }}
         >
-          <span className="text-sm sm:text-base font-bold text-gray-900">{card.rank}</span>
+          <span className="text-sm sm:text-base font-bold text-casino-card-ink">{card.rank}</span>
           <span className={`text-sm sm:text-base ${SUIT_COLORS[card.suit]}`}>{SUIT_SYMBOLS[card.suit]}</span>
         </div>
       </div>
@@ -68,7 +68,7 @@ function CardFace({ card }: { card: Card }) {
 function CardBack() {
   return (
     <div
-      className="shrink-0 w-11 h-15 sm:w-13 sm:h-18 rounded-lg border border-site-accent/40"
+      className="shrink-0 w-11 h-15 sm:w-13 sm:h-18 rounded-site-sm border border-site-accent/40"
       style={{
         background: 'linear-gradient(135deg, var(--site-accent), var(--site-accent-hover))',
       }}
@@ -138,15 +138,15 @@ function HandDisplay({ cards, label, value, natural, showValue }: {
 function ResultAnnouncement({ result }: { result: BaccaratResult }) {
   const { t } = useTranslation("c-rmhcoins");
   const cfg: Record<BaccaratResult, { label: string; color: string; bg: string }> = {
-    player: { label: t("player-wins", { defaultValue: "Player Wins!" }), color: 'text-red-400', bg: 'bg-red-500/20 border-red-500/30' },
-    banker: { label: t("banker-wins", { defaultValue: "Banker Wins!" }), color: 'text-blue-400', bg: 'bg-blue-500/20 border-blue-500/30' },
-    tie: { label: t("tie", { defaultValue: "Tie!" }), color: 'text-emerald-400', bg: 'bg-emerald-500/20 border-emerald-500/30' },
+    player: { label: t("player-wins", { defaultValue: "Player Wins!" }), color: 'text-site-danger', bg: 'bg-casino-red-hover/20 border-site-danger/30' },
+    banker: { label: t("banker-wins", { defaultValue: "Banker Wins!" }), color: 'text-casino-seat-1', bg: 'bg-casino-seat-1/20 border-casino-seat-1/30' },
+    tie: { label: t("tie", { defaultValue: "Tie!" }), color: 'text-site-success', bg: 'bg-casino-green-hover/20 border-site-success/30' },
   };
 
   const c = cfg[result];
 
   return (
-    <div className={`text-center py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl border ${c.bg} animate-pulse`}>
+    <div className={`text-center py-2.5 sm:py-3 px-4 sm:px-6 rounded-site border ${c.bg} animate-pulse`}>
       <span className={`text-lg sm:text-xl font-bold ${c.color}`}>{c.label}</span>
     </div>
   );
@@ -159,9 +159,9 @@ function HistoryScoreboard({ history }: { history: BaccaratResult[] }) {
   if (history.length === 0) return null;
 
   const dotColor: Record<BaccaratResult, string> = {
-    player: 'bg-red-500',
-    banker: 'bg-blue-500',
-    tie: 'bg-emerald-500',
+    player: 'bg-casino-red-hover',
+    banker: 'bg-casino-seat-1',
+    tie: 'bg-casino-green-hover',
   };
 
   let currentStreak = 0;
@@ -182,20 +182,20 @@ function HistoryScoreboard({ history }: { history: BaccaratResult[] }) {
           <div
             key={i}
             className={`w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full ${dotColor[result]} ${
-              i === lastResults.length - 1 ? 'ring-2 ring-white/50 scale-110' : ''
+              i === lastResults.length - 1 ? 'ring-2 ring-casino-card/50 scale-110' : ''
             }`}
             title={result.charAt(0).toUpperCase() + result.slice(1)}
           />
         ))}
       </div>
       <div className="flex items-center justify-center gap-3 text-[10px]">
-        <span className="text-red-400 font-bold">
+        <span className="text-site-danger font-bold">
           P: {history.filter((r) => r === 'player').length}
         </span>
-        <span className="text-blue-400 font-bold">
+        <span className="text-casino-seat-1 font-bold">
           B: {history.filter((r) => r === 'banker').length}
         </span>
-        <span className="text-emerald-400 font-bold">
+        <span className="text-site-success font-bold">
           T: {history.filter((r) => r === 'tie').length}
         </span>
         {currentStreak > 1 && (
@@ -209,13 +209,13 @@ function HistoryScoreboard({ history }: { history: BaccaratResult[] }) {
 // ── Table Component ────────────────────────────────────────────────
 
 const BET_LABELS: Record<BetType, { short: string; color: string }> = {
-  player: { short: 'P', color: 'bg-red-500/20 text-red-400' },
-  banker: { short: 'B', color: 'bg-blue-500/20 text-blue-400' },
-  tie: { short: 'T', color: 'bg-emerald-500/20 text-emerald-400' },
-  playerPair: { short: 'PP', color: 'bg-red-500/10 text-red-300' },
-  bankerPair: { short: 'BP', color: 'bg-blue-500/10 text-blue-300' },
-  playerDragon: { short: 'PD', color: 'bg-red-500/10 text-red-300' },
-  bankerDragon: { short: 'BD', color: 'bg-blue-500/10 text-blue-300' },
+  player: { short: 'P', color: 'bg-casino-red-hover/20 text-site-danger' },
+  banker: { short: 'B', color: 'bg-casino-seat-1/20 text-casino-seat-1' },
+  tie: { short: 'T', color: 'bg-casino-green-hover/20 text-site-success' },
+  playerPair: { short: 'PP', color: 'bg-casino-red-hover/10 text-site-danger' },
+  bankerPair: { short: 'BP', color: 'bg-casino-seat-1/10 text-casino-seat-1' },
+  playerDragon: { short: 'PD', color: 'bg-casino-red-hover/10 text-site-danger' },
+  bankerDragon: { short: 'BD', color: 'bg-casino-seat-1/10 text-casino-seat-1' },
 };
 
 export function BaccaratTable() {
@@ -258,7 +258,7 @@ export function BaccaratTable() {
       )}
 
       {/* Hands — responsive gap and padding */}
-      <div className={`flex items-start justify-center gap-4 sm:gap-10 p-3 sm:p-5 rounded-xl bg-site-bg-subtle border border-site-border min-h-28 sm:min-h-32 w-full transition-all ${
+      <div className={`flex items-start justify-center gap-4 sm:gap-10 p-3 sm:p-5 rounded-site bg-site-bg-subtle border border-site-border min-h-28 sm:min-h-32 w-full transition ${
         tablePhase === 'dealing' || tablePhase === 'drawing' ? 'ring-1 ring-site-accent/40' : ''
       }`}>
         <HandDisplay
@@ -295,7 +295,7 @@ export function BaccaratTable() {
               return (
                 <div
                   key={p.userId}
-                  className={`flex flex-col gap-1 p-2 rounded-lg border ${
+                  className={`flex flex-col gap-1 p-2 rounded-site-sm border ${
                     isMe ? 'bg-site-accent-dim border-site-accent/30' : 'bg-site-surface/50 border-site-border/50'
                   }`}
                 >
@@ -306,7 +306,7 @@ export function BaccaratTable() {
                     </span>
                     <div className="flex items-center gap-0.5 ml-auto">
                       <CoinIcon className="w-3 h-3" />
-                      <span className="text-[10px] font-bold text-yellow-500">{p.totalBetThisRound}</span>
+                      <span className="text-[10px] font-bold text-site-warning">{p.totalBetThisRound}</span>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1">

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import { clearSceneLight, setAuroraOffset, setSceneLight } from '@/lib/liquid-gl/scene-light';
 
 /**
  * Makes the aurora canvas reactive to movement — the second half of the site's
@@ -12,22 +11,29 @@ import { clearSceneLight, setAuroraOffset, setSceneLight } from '@/lib/liquid-gl
  * longhand (which composes with the drift animation's `transform`), and a CSS
  * transition eases the follow so the backdrop trails the cursor like a fluid.
  *
- * Two input modes, chosen by device:
- *  - **Fine pointer (desktop):** `pointermove` → offset from the viewport centre.
- *  - **Touch (coarse pointer):** `deviceorientation` → device tilt. On Android /
- *    non-iOS the event fires with no prompt, so we auto-enable. iOS 13+ gates it
- *    behind an explicit `requestPermission()` user gesture; we never prompt on
- *    load — the Settings → Appearance "Tilt effects" row does the gesture-grant and
- *    persists consent as `rmh-motion-ok`, then fires `rmh:tilt-consent` so this hook
- *    starts (or stops) listening live.
+ * **One input mode: device tilt.** `deviceorientation` on coarse-pointer
+ * hardware. On Android / non-iOS the event fires with no prompt, so we
+ * auto-enable. iOS 13+ gates it behind an explicit `requestPermission()` user
+ * gesture; we never prompt on load — the Settings → Appearance "Tilt effects" row
+ * does the gesture-grant and persists consent as `rmh-motion-ok`, then fires
+ * `rmh:tilt-consent` so this hook starts (or stops) listening live.
  *
- * §5.5x C — tilt light: the same tilt that drifts the aurora also publishes the
- * scene light (viewport px: centre + tilt × ~40% of the viewport, 8px-quantised,
- * rAF-batched — the SAME contract useGlassLight uses on fine pointers §4.4) and
- * toggles `html.tilt-live`. The class remains a useful live-input signal, while
- * coarse-pointer glass keeps an element-anchored rim: mobile compositors can
- * otherwise lag a fixed glint one frame behind its scrolling parent. Tilt still
- * moves the shared aurora, preserving depth without a detached surface highlight.
+ * There used to be a second mode: a `pointermove` listener on desktop that drifted
+ * the aurora against the cursor. It is gone, with the rest of the site's cursor
+ * reactivity (see the §5.1 note in `app/globals.css`). Cheap as the write itself
+ * had become, the effect still woke a rAF, re-resolved two custom properties and
+ * re-composited two viewport-sized gradient layers on every frame the mouse moved
+ * — an unbroken stream of them during exactly the gestures (drag, scroll, hover
+ * along a grid) that have a frame budget to defend. On a fine pointer this hook now
+ * attaches **no listener at all**; the ambient `aurora-drift` keyframe, which is a
+ * compositor animation with no main-thread cost, carries the backdrop alone.
+ * Tilt survives because it is explicit — the visitor turned it on — and because it
+ * is the one input a touch device has.
+ *
+ * Tilt also toggles `html.tilt-live`, a live-input signal for CSS. It used to
+ * publish a scene light as well (centre + tilt × ~40% of the viewport); the only
+ * consumer of that was the shader tier, which is deleted, so the light is gone
+ * and the tilt moves the aurora alone.
  *
  * No React re-renders (writes straight to the DOM), and fully gated off under
  * reduced motion (OS preference or the `html.reduce-motion` account toggle) and
@@ -62,9 +68,10 @@ import { clearSceneLight, setAuroraOffset, setSceneLight } from '@/lib/liquid-gl
  * Two things fixed it, and both must hold:
  *
  *  1. **The light does not go through CSS at all.** Nothing in the stylesheet
- *     ever read `--light-x/--light-y`; the renderer read them back off the same
- *     inline style it wrote them to. They are published through
- *     `lib/liquid-gl/scene-light` instead — a plain module.
+ *     ever read `--light-x/--light-y`; the shader tier read them back off the same
+ *     inline style it wrote them to. That tier has since been deleted (it was
+ *     never initialised), so there is no scene light left to publish — this hook
+ *     writes the aurora offset and nothing else.
  *  2. **The aurora offset is written on the layer that reads it.** The two aurora
  *     layers are pseudo-elements of `.site-aurora` (`app/routes/__root.tsx`), a
  *     leaf whose only descendants are those two pseudos, so the write invalidates
@@ -83,12 +90,6 @@ const MAX_SHIFT = 24;
  * write-budget note above for why that matters. Rendered in `__root.tsx`.
  */
 const AURORA_HOST = '.site-aurora';
-/** Tilt→light spread: peak specular travel from centre as a fraction of each
- *  viewport axis. ~40% keeps the glint on-pane at a comfortable hand tilt (§5.5x C.1). */
-const TILT_LIGHT_SPREAD = 0.4;
-/** px quantum for the light vars — matches useGlassLight's 8px grid so both light
- *  paths write the same steps and bound style invalidations to ~1/8th (§4.4 budget). */
-const LIGHT_Q = 8;
 /** localStorage consent flag for the iOS motion-permission gate (§5.5x C.3). */
 const MOTION_OK_KEY = 'rmh-motion-ok';
 
@@ -112,13 +113,6 @@ export function useLiquidBackground(): void {
     let raf = 0;
     let targetX = 0;
     let targetY = 0;
-    // Pending tilt-light coords (viewport px, quantised) written in the rAF batch;
-    // haveLight stays false on the fine-pointer path (useGlassLight owns light there).
-    let pendingLx = 0;
-    let pendingLy = 0;
-    let haveLight = false;
-    let lastLx = -1;
-    let lastLy = -1;
     /**
      * The aurora host. Resolved once — it is rendered by `__root.tsx` and lives
      * for the life of the document. Null only if this hook somehow mounts before
@@ -143,14 +137,6 @@ export function useLiquidBackground(): void {
         aurora.style.setProperty('--aurora-my', `${my}px`);
         lastMx = mx;
         lastMy = my;
-        // Mirrored as numbers so the renderer reads the offset without parsing a
-        // pixel string back out of the inline style every frame.
-        setAuroraOffset(mx, my);
-      }
-      if (haveLight && (pendingLx !== lastLx || pendingLy !== lastLy)) {
-        setSceneLight(pendingLx, pendingLy);
-        lastLx = pendingLx;
-        lastLy = pendingLy;
       }
     };
 
@@ -160,15 +146,6 @@ export function useLiquidBackground(): void {
     };
 
     const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-
-    const onPointerMove = (e: PointerEvent) => {
-      const nx = (e.clientX / window.innerWidth) * 2 - 1; // -1 … 1
-      const ny = (e.clientY / window.innerHeight) * 2 - 1;
-      // Invert so the aurora drifts against the cursor (content-over-parallax feel).
-      targetX = clamp(-nx, -1, 1) * MAX_SHIFT;
-      targetY = clamp(-ny, -1, 1) * MAX_SHIFT;
-      schedule();
-    };
 
     const onOrientation = (e: DeviceOrientationEvent) => {
       if (e.gamma == null || e.beta == null) return;
@@ -180,15 +157,6 @@ export function useLiquidBackground(): void {
       // device so light + backdrop travel together, §5.5x C.4).
       targetX = nx * MAX_SHIFT;
       targetY = ny * MAX_SHIFT;
-      // Scene light (§5.5x C): centre + tilt × ~40% of the viewport, 8px-quantised.
-      pendingLx =
-        Math.round((window.innerWidth / 2 + nx * TILT_LIGHT_SPREAD * window.innerWidth) / LIGHT_Q) *
-        LIGHT_Q;
-      pendingLy =
-        Math.round(
-          (window.innerHeight / 2 + ny * TILT_LIGHT_SPREAD * window.innerHeight) / LIGHT_Q,
-        ) * LIGHT_Q;
-      haveLight = true;
       // Mark orientation input live. Coarse-pointer rims remain element-anchored
       // in CSS so their highlight cannot trail a scrolling or transitioning pane.
       if (!tiltLive) {
@@ -212,21 +180,17 @@ export function useLiquidBackground(): void {
       if (!orientationAttached) return;
       orientationAttached = false;
       window.removeEventListener('deviceorientation', onOrientation);
-      haveLight = false;
-      lastLx = -1;
-      lastLy = -1;
       if (tiltLive) {
         root.classList.remove('tilt-live');
         tiltLive = false;
       }
-      // Rest the light at the renderer's "sun" default (§4.1).
-      clearSceneLight();
     };
 
-    if (finePointer) {
-      document.addEventListener('pointermove', onPointerMove, { passive: true });
-      cleanups.push(() => document.removeEventListener('pointermove', onPointerMove));
-    } else if ('DeviceOrientationEvent' in window) {
+    // Cursor input is deliberately NOT wired here any more (see the header note):
+    // a fine-pointer machine gets the ambient `aurora-drift` keyframe and nothing
+    // else, so no listener, no rAF and no style write happens while the mouse
+    // moves. Tilt is the only live input, and only where the visitor asked for it.
+    if (!finePointer && 'DeviceOrientationEvent' in window) {
       const needsPermission =
         typeof (DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> })
           .requestPermission === 'function';
@@ -260,7 +224,6 @@ export function useLiquidBackground(): void {
       cleanups.forEach((fn) => fn());
       aurora?.style.removeProperty('--aurora-mx');
       aurora?.style.removeProperty('--aurora-my');
-      setAuroraOffset(0, 0);
     };
   }, []);
 }

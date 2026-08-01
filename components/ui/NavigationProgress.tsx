@@ -74,12 +74,12 @@ export function NavigationProgress() {
  return (
  <div
  aria-hidden
- className={`pointer-events-none fixed inset-x-0 top-0 z-[300] h-0.5 transition-opacity duration-200 ${
+ className={`pointer-events-none fixed inset-x-0 top-0 z-[300] h-0.5 transition-opacity duration-site ${
  visible ? 'opacity-100' : 'opacity-0'
  }`}
  >
  <div
- className="h-full origin-left bg-site-accent shadow-[0_0_6px_var(--site-accent)] transition-transform duration-150 ease-out"
+ className="h-full origin-left bg-site-accent shadow-[0_0_6px_var(--site-accent)] transition-transform duration-site-fast ease-out"
  style={{ transform: `scaleX(${progress / 100})` }}
  />
  </div>

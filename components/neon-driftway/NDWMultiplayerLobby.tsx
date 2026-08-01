@@ -219,7 +219,7 @@ export function NDWMultiplayerLobby({ onBack, onGameStart }: NDWMultiplayerLobby
                                 <button
                                     key={id}
                                     onClick={() => setSelectedLevel(id)}
-                                    className={`flex-1 p-2 rounded text-sm font-bold transition-all ${selectedLevel === id
+                                    className={`flex-1 p-2 rounded text-sm font-bold transition-colors ${selectedLevel === id
                                             ? 'bg-cyan-500 text-black'
                                             : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
                                         }`}

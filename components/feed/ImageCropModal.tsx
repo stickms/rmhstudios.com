@@ -93,7 +93,7 @@ export function ImageCropModal({
  <button
  type="button"
  tabIndex={-1}
- className="absolute inset-0 bg-black/60"
+ className="absolute inset-0 bg-site-media-scrim-strong"
  onClick={onCancel}
  aria-label={t('close-crop-modal', { defaultValue:'Close crop modal'})}
  />
@@ -121,7 +121,7 @@ export function ImageCropModal({
  </div>
 
  {/* Crop area */}
- <div className="relative min-h-64 w-full flex-1 bg-black/90 sm:h-80 sm:flex-none">
+ <div className="relative min-h-64 w-full flex-1 bg-site-media-veil sm:h-80 sm:flex-none">
  <Cropper
  image={imageSrc}
  crop={crop}

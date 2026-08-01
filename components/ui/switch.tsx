@@ -40,7 +40,7 @@ export function Switch({ checked, onCheckedChange, disabled, className, ...rest 
  className={cn(
  // Knob colour is chosen to contrast its track in BOTH states: accent-fg is
  // guaranteed legible on the accent fill (on), text on the surface (off).
- 'block h-4 w-4 rounded-full shadow-site-sm transition-transform duration-150',
+ 'block h-4 w-4 rounded-full shadow-site-sm transition-transform duration-site-fast',
  checked ? 'translate-x-[21px] bg-site-accent-fg' : 'translate-x-[3px] bg-site-text',
  )}
  />

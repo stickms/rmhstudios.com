@@ -103,7 +103,7 @@ export function HoldemControls() {
       <div className="text-center text-site-text-dim py-4 flex flex-col items-center gap-2">
         {isBusted ? (
           <>
-            <p className="text-sm font-semibold text-red-400">{t("out-of-chips", { defaultValue: "You're out of chips!" })}</p>
+            <p className="text-sm font-semibold text-site-danger">{t("out-of-chips", { defaultValue: "You're out of chips!" })}</p>
             <p className="text-xs">{t("buy-back-in-for", { defaultValue: "Buy back in for" })} <span className="font-bold text-site-text">{roomInfo?.buyIn ?? 0}</span> {t("coins", { defaultValue: "coins" })}.</p>
           </>
         ) : isSittingOut ? (
@@ -151,7 +151,7 @@ export function HoldemControls() {
         )}
         {isBusted ? (
           <>
-            <p className="text-sm font-semibold text-red-400">{t("out-of-chips", { defaultValue: "You're out of chips!" })}</p>
+            <p className="text-sm font-semibold text-site-danger">{t("out-of-chips", { defaultValue: "You're out of chips!" })}</p>
             <p className="text-xs">{t("buy-back-in-for", { defaultValue: "Buy back in for" })} <span className="font-bold text-site-text">{roomInfo?.buyIn ?? 0}</span> {t("coins-to-keep-playing", { defaultValue: "coins to keep playing" })}.</p>
             {rebuyButton}
           </>
@@ -188,7 +188,7 @@ export function HoldemControls() {
       <div className="text-center text-site-text-dim py-4 flex flex-col items-center gap-2">
         {isBusted ? (
           <>
-            <p className="text-sm font-semibold text-red-400">{t("out-of-chips", { defaultValue: "You're out of chips!" })}</p>
+            <p className="text-sm font-semibold text-site-danger">{t("out-of-chips", { defaultValue: "You're out of chips!" })}</p>
             <p className="text-xs">{t("buy-back-in-for", { defaultValue: "Buy back in for" })} <span className="font-bold text-site-text">{roomInfo?.buyIn ?? 0}</span> {t("coins-to-keep-playing", { defaultValue: "coins to keep playing" })}.</p>
             {rebuyButton}
           </>
@@ -232,7 +232,7 @@ export function HoldemControls() {
         <p className="text-sm text-site-accent font-bold animate-pulse">{t("your-turn", { defaultValue: "Your turn!" })}</p>
         <p className="text-xs text-site-text-dim">
           {t("your-chips", { defaultValue: "Your chips:" })} <span className="font-bold text-site-text">{myChips}</span>
-          {toCall > 0 && <span> | {t("to-call", { defaultValue: "To call:" })} <span className="font-bold text-yellow-400">{Math.min(toCall, myChips)}</span></span>}
+          {toCall > 0 && <span> | {t("to-call", { defaultValue: "To call:" })} <span className="font-bold text-site-warning">{Math.min(toCall, myChips)}</span></span>}
         </p>
       </div>
 
@@ -245,18 +245,18 @@ export function HoldemControls() {
 
         {canCheck ? (
           <Button onClick={() => emit(C2S.CHECK)}
-            className="min-h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-site-sm text-sm">
+            className="min-h-12 bg-casino-seat-1 hover:bg-casino-seat-1 text-casino-ink font-bold rounded-site-sm text-sm">
             {t("check", { defaultValue: "Check" })}
           </Button>
         ) : (
           <Button onClick={() => emit(C2S.CALL)}
-            className="min-h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-site-sm text-sm">
+            className="min-h-12 bg-casino-green-hover hover:bg-casino-green text-casino-ink font-bold rounded-site-sm text-sm">
             {t("call", { defaultValue: "Call" })} {Math.min(toCall, myChips)}
           </Button>
         )}
 
         <Button onClick={() => emit(C2S.ALL_IN)}
-          className="min-h-12 bg-red-600 hover:bg-red-700 text-white font-bold rounded-site-sm text-sm">
+          className="min-h-12 bg-casino-red hover:bg-casino-red text-casino-ink font-bold rounded-site-sm text-sm">
           {t("all-in", { defaultValue: "All In" })}
         </Button>
       </div>
@@ -305,7 +305,7 @@ export function HoldemControls() {
 
       <MyHandRank holeCards={myPlayer?.holeCards ?? null} communityCards={communityCards} />
 
-      {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+      {error && <p className="text-sm text-site-danger text-center">{error}</p>}
     </div>
   );
 }

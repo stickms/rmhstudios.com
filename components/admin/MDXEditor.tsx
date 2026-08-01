@@ -187,7 +187,7 @@ export function MDXEditor({
           >
             <div className="flex-1 overflow-y-auto p-4 lg:p-6 flex flex-col gap-6 min-h-0">
               <div className="flex justify-between items-center">
-                <h2 className="font-(family-name:--site-font-display) text-lg font-bold text-site-text">
+                <h2 className="font-display text-lg font-bold text-site-text">
                   {t('metadata', { defaultValue: 'Metadata' })}
                 </h2>
               </div>
@@ -333,7 +333,7 @@ export function MDXEditor({
             className={`h-full ${!isPreviewMode ? 'hidden lg:block' : 'block'} bg-site-bg overflow-y-auto relative border-l border-site-border lg:border-none min-h-0`}
           >
             <div className="glass-chrome site-sticky-contained flex h-16 w-full items-center justify-between gap-3 px-4 py-3">
-              <h2 className="font-(family-name:--site-font-display) text-sm font-bold uppercase tracking-wider text-site-text-dim">
+              <h2 className="font-display text-sm font-bold uppercase tracking-wider text-site-text-dim">
                 {t('live-preview', { defaultValue: 'Live Preview' })}
               </h2>
               <Button

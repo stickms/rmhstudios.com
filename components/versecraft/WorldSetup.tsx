@@ -110,7 +110,7 @@ export function WorldSetup() {
                   <button
                     key={p}
                     onClick={() => { setCustomOn(false); setPronouns(p); }}
-                    className="flex-1 px-3 py-2 rounded text-sm transition-all"
+                    className="flex-1 px-3 py-2 rounded text-sm transition-colors"
                     style={{
                       backgroundColor: active ? 'rgba(196, 163, 90, 0.2)' : 'rgba(42, 34, 53, 0.6)',
                       border: `1px solid ${active ? 'rgba(196, 163, 90, 0.5)' : 'rgba(196, 163, 90, 0.15)'}`,
@@ -123,7 +123,7 @@ export function WorldSetup() {
               })}
               <button
                 onClick={() => setCustomOn(true)}
-                className="px-3 py-2 rounded text-sm transition-all"
+                className="px-3 py-2 rounded text-sm transition-colors"
                 style={{
                   backgroundColor: customOn ? 'rgba(196, 163, 90, 0.2)' : 'rgba(42, 34, 53, 0.6)',
                   border: `1px solid ${customOn ? 'rgba(196, 163, 90, 0.5)' : 'rgba(196, 163, 90, 0.15)'}`,
@@ -156,7 +156,7 @@ export function WorldSetup() {
                   <button
                     key={v}
                     onClick={() => setAttraction(v)}
-                    className="flex-1 px-3 py-2 rounded text-sm transition-all whitespace-nowrap"
+                    className="flex-1 px-3 py-2 rounded text-sm transition-colors whitespace-nowrap"
                     style={{
                       backgroundColor: active ? 'rgba(196, 163, 90, 0.2)' : 'rgba(42, 34, 53, 0.6)',
                       border: `1px solid ${active ? 'rgba(196, 163, 90, 0.5)' : 'rgba(196, 163, 90, 0.15)'}`,
@@ -187,7 +187,7 @@ export function WorldSetup() {
                 <button
                   key={ex}
                   onClick={() => setPrompt(ex)}
-                  className="text-xs px-2 py-1 rounded transition-all hover:brightness-125"
+                  className="text-xs px-2 py-1 rounded transition hover:brightness-125"
                   style={{ backgroundColor: 'rgba(42, 34, 53, 0.5)', border: '1px solid rgba(196, 163, 90, 0.12)', color: '#a89888' }}
                 >
                   {ex.length > 38 ? ex.slice(0, 36) + '…' : ex}
@@ -198,7 +198,7 @@ export function WorldSetup() {
 
           <button
             onClick={() => setIntense(v => !v)}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-all"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-colors"
             style={{ backgroundColor: 'rgba(42, 34, 53, 0.5)', border: '1px solid rgba(196, 163, 90, 0.15)' }}
           >
             <span
@@ -253,7 +253,7 @@ export function WorldSetup() {
           </div>
 
           <button
-            className="w-full text-center text-xs mt-2 transition-all hover:brightness-125"
+            className="w-full text-center text-xs mt-2 transition hover:brightness-125"
             style={{ color: '#777' }}
             onClick={() => setScreen('menu')}
           >

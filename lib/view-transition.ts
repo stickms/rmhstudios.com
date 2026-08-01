@@ -1,8 +1,21 @@
 'use client';
 
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
-import { isWebKit } from '@/lib/liquid-gl/trust';
 import { markPageEnterComplete } from '@/lib/motion';
+
+/**
+ * WebKit detection. iOS Chrome/Edge/Firefox are WebKit too (their UAs carry
+ * `CriOS`/`EdgiOS`/`FxiOS`, not the desktop-Blink `Chrome`/`Edg` tokens).
+ *
+ * This lived in `lib/liquid-gl/trust.ts`, alongside the shader tier's frame
+ * watchdog and failure-cooldown machinery. That tier is deleted (it was never
+ * initialised), and this one function was the only part of the module anything
+ * still called — so it moved to its only caller rather than leaving a 190-line
+ * file behind for twelve lines of UA test.
+ */
+function isWebKit(ua: string): boolean {
+  return /AppleWebKit/.test(ua) && !/\bChrome\/|Chromium|\bEdg\/|OPR\//.test(ua);
+}
 
 type ViewTransition = {
   finished: Promise<void>;

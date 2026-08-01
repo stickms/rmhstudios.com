@@ -113,7 +113,7 @@ export default function GameVoting({ candidates, durationSeconds, endsAt, onVote
             <button
               key={c.minigameId}
               onClick={() => handleVote(c.minigameId)}
-              className={`relative overflow-hidden rounded-xl border p-4 text-left transition-all ${
+              className={`relative overflow-hidden rounded-xl border p-4 text-left transition-colors ${
                 isSelected
                   ? 'border-(--app-accent) bg-(--app-accent)/10 ring-2 ring-(--app-accent)'
                   : 'border-(--app-border) bg-(--app-surface) hover:bg-(--app-surface-hover)'
@@ -144,8 +144,8 @@ export default function GameVoting({ candidates, durationSeconds, endsAt, onVote
               {/* Tally bar */}
               <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-(--app-border)">
                 <div
-                  className="h-full rounded-full bg-(--app-accent) transition-all duration-300"
-                  style={{ width: `${(tally / maxTally) * 100}%` }}
+                  className="h-full bg-(--app-accent) w-full origin-left transition-transform duration-300"
+                  style={{ transform: `scaleX(${((tally / maxTally) * 100) / 100})` }}
                 />
               </div>
             </button>

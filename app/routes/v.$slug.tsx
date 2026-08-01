@@ -392,7 +392,7 @@ function VibeViewer() {
 
       {/* Version history panel — slides in from the right */}
       <div
-        className={`vibe-history-dock fixed right-0 top-0 z-40 h-full pt-[var(--safe-top)] pb-[var(--safe-bottom)] pr-[var(--safe-right)] transition-transform duration-300 ease-out ${
+        className={`vibe-history-dock fixed right-0 top-0 z-40 h-full pt-[var(--safe-top)] pb-[var(--safe-bottom)] pr-[var(--safe-right)] transition-transform duration-site-slow ease-out ${
           historyOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full'
         }`}
       >
@@ -459,7 +459,7 @@ function VibeViewer() {
 
       {/* Slide-up customize panel */}
       <div
-        className={`vibe-panel-dock fixed inset-x-0 bottom-0 z-40 transition-transform duration-300 ease-out ${
+        className={`vibe-panel-dock fixed inset-x-0 bottom-0 z-40 transition-transform duration-site-slow ease-out ${
           panelOpen ? 'translate-y-0' : 'pointer-events-none translate-y-full'
         }`}
       >

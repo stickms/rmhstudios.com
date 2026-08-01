@@ -350,7 +350,7 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
                             onClick={() => clickable && handleAccuse(suspect.name)}
                             disabled={!clickable}
                             className={`
-                                relative p-4 rounded-2xl border text-left transition-all
+                                relative p-4 rounded-2xl border text-left transition-colors
                                 ${cleared
                                     ? 'bg-site-bg opacity-50 border-site-border cursor-default'
                                     : accused

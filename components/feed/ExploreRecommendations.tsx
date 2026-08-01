@@ -124,7 +124,7 @@ export function ExploreRecommendations({
  <Link
  key={tag.tag}
  to={`/tag/${tag.tag}`as string}
- className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1 text-sm text-site-text transition-colors duration-200 hover:border-site-accent/50"
+ className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1 text-sm text-site-text transition-colors duration-site hover:border-site-accent/50"
  >
  <Hash className="h-3 w-3 text-site-accent"/>
  {tag.tag}

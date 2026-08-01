@@ -40,7 +40,6 @@ function AdminDashboardPage() {
           <Link
             to="/admin/users"
             className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
-            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("users-title", { defaultValue: "Users" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -51,7 +50,6 @@ function AdminDashboardPage() {
           <Link
             to="/admin/user-builds"
             className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
-            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("user-builds-title", { defaultValue: "All User Builds" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -62,7 +60,6 @@ function AdminDashboardPage() {
           <Link
             to="/admin/blog"
             className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
-            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("blog-title", { defaultValue: "Manage Blog Posts" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -73,12 +70,11 @@ function AdminDashboardPage() {
           <Link
             to="/admin/reports"
             className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
-            data-glass-light=""
           >
             <h2 className="flex items-center gap-2 text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">
               {t("moderation-queue-title", { defaultValue: "Moderation Queue" })}
               {counts.reports > 0 && (
-                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-site-danger px-1.5 py-0.5 text-xs font-bold text-white">
+                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-site-danger px-1.5 py-0.5 text-xs font-bold text-site-danger-fg">
                   {counts.reports}
                 </span>
               )}
@@ -91,7 +87,6 @@ function AdminDashboardPage() {
           <Link
             to="/admin/economy"
             className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
-            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("economy-title", { defaultValue: "Coin Economy" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -102,12 +97,11 @@ function AdminDashboardPage() {
           <Link
             to="/admin/appeals"
             className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
-            data-glass-light=""
           >
             <h2 className="flex items-center gap-2 text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">
               {t("appeals-title", { defaultValue: "Strike Appeals" })}
               {counts.appeals > 0 && (
-                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-site-danger px-1.5 py-0.5 text-xs font-bold text-white">
+                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-site-danger px-1.5 py-0.5 text-xs font-bold text-site-danger-fg">
                   {counts.appeals}
                 </span>
               )}
@@ -120,7 +114,6 @@ function AdminDashboardPage() {
           <Link
             to="/admin/security-reports"
             className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
-            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("security-reports-title", { defaultValue: "Security Reports" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -131,7 +124,6 @@ function AdminDashboardPage() {
           <Link
             to="/admin/library-quota"
             className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
-            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("library-quota-title", { defaultValue: "Library Upload Appeals" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -142,7 +134,6 @@ function AdminDashboardPage() {
           <Link
             to="/admin/library-storage"
             className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
-            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("library-storage-title", { defaultValue: "Library Storage Health" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -153,7 +144,6 @@ function AdminDashboardPage() {
           <Link
             to="/admin/announcements"
             className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
-            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("announcements-title", { defaultValue: "Feed Announcements" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -164,7 +154,6 @@ function AdminDashboardPage() {
           <Link
             to="/admin/predictions"
             className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
-            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("predictions-title", { defaultValue: "Prediction Markets" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -175,7 +164,6 @@ function AdminDashboardPage() {
           <Link
             to="/admin/analytics"
             className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
-            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("analytics-title", { defaultValue: "Analytics" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -186,7 +174,6 @@ function AdminDashboardPage() {
           <Link
             to="/admin/rideshare"
             className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
-            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("rideshare-title", { defaultValue: "Rideshare Applications" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -197,7 +184,6 @@ function AdminDashboardPage() {
           <Link
             to="/admin/albums"
             className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
-            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("albums-title", { defaultValue: "Library Albums" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -208,7 +194,6 @@ function AdminDashboardPage() {
           <Link
             to="/admin/audit"
             className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
-            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("audit-log-title", { defaultValue: "Audit Log" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">

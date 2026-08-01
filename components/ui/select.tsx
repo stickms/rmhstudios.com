@@ -268,7 +268,7 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
               // Radius and elevation come from the tier's control tokens, like
               // Button/Input/Badge, so a select squares off and swaps its
               // elevation for a hairline ring in the themes that do that.
-              'flex w-full cursor-pointer appearance-none items-center justify-between gap-2 transition-all duration-200',
+              'flex w-full cursor-pointer appearance-none items-center justify-between gap-2 transition duration-site',
               controlSize === 'sm' ? 'h-8 px-3.5 py-1 pr-8' : 'h-10 px-4 py-2 pr-10',
               'focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
               // The value can be longer than the control: clip it rather than let

@@ -62,7 +62,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
  <DialogContent className="max-w-md p-0 gap-0 bg-site-bg flex flex-col max-h-[80vh] overflow-hidden">
  <div className="flex shrink-0 items-center justify-between border-b border-site-border px-5 py-4">
- <DialogTitle className="flex items-center gap-2 font-(family-name:--site-font-display) text-lg font-bold text-site-text">
+ <DialogTitle className="flex items-center gap-2 font-display text-lg font-bold text-site-text">
  <TrendingUp className="h-5 w-5 text-site-accent"/>
  {t('post-insights', { defaultValue:'Post insights'})}
  </DialogTitle>
@@ -121,9 +121,15 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  {data.likeTrend.map((d) => (
  <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
  <div className="flex w-full flex-1 items-end">
+ {/* `scaleY` from the baseline rather than `height` — a column chart animating
+ height relayouts the whole row of bars each frame. */}
  <div
- className="w-full rounded-t bg-site-accent/70 transition-all"
- style={{ height: `${(d.count / maxTrend) * 100}%`, minHeight: d.count > 0 ? 4 : 0 }}
+ className="w-full origin-bottom rounded-t bg-site-accent/70 transition-transform duration-site-slow"
+ style={{
+ height: '100%',
+ transform: `scaleY(${maxTrend > 0 ? d.count / maxTrend : 0})`,
+ minHeight: d.count > 0 ? 4 : 0,
+ }}
  title={t('bar-likes-count', { count: d.count, defaultValue:'{{count}} likes'})}
  />
  </div>

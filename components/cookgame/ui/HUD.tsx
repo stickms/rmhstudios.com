@@ -53,8 +53,8 @@ export function HUD() {
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-700">
             <div
-              className="h-full rounded-full bg-lime-400 transition-all"
-              style={{ width: `${xpBarPct}%` }}
+              className="h-full bg-lime-400 w-full origin-left transition-transform"
+              style={{ transform: `scaleX(${(xpBarPct) / 100})` }}
             />
           </div>
           {!isMaxRank && (
@@ -108,7 +108,7 @@ export function HUD() {
         </div>
         <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-700">
           <div
-            className={`h-full rounded-full transition-all ${hot ? 'bg-red-500' : 'bg-lime-400'}`}
+            className={`h-full rounded-full transition-colors ${hot ? 'bg-red-500' : 'bg-lime-400'}`}
             style={{ width: `${heatPct}%` }}
           />
         </div>

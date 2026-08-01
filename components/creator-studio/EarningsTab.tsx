@@ -117,7 +117,7 @@ export function EarningsTab() {
             {t('redeemable', { defaultValue: 'Redeemable' })}
           </div>
           <div className="text-2xl font-bold flex items-center gap-1.5 tabular-nums">
-            <Coins className="size-5 text-yellow-500" />
+            <Coins className="size-5 text-site-warning" />
             {loading ? '—' : earnings?.redeemable ?? 0}
           </div>
         </Card>
@@ -236,7 +236,7 @@ export function EarningsTab() {
               className={`inline-flex items-center gap-1 font-semibold ${overMax ? 'text-site-danger' : 'text-site-text'}`}
             >
               {cost}
-              <Coins className="size-3.5 text-yellow-500" aria-hidden />
+              <Coins className="size-3.5 text-site-warning" aria-hidden />
             </span>
           </div>
           <Button onClick={submit} loading={submitting} disabled={overMax || cost < MIN_REDEMPTION_COINS}>
@@ -272,7 +272,7 @@ export function EarningsTab() {
                   {' · '}
                   <span className="inline-flex items-center gap-1 text-site-text-dim">
                     {r.amountCoins}
-                    <Coins className="size-3.5 text-yellow-500" aria-hidden />
+                    <Coins className="size-3.5 text-site-warning" aria-hidden />
                   </span>
                 </span>
                 {statusBadge(r.status)}

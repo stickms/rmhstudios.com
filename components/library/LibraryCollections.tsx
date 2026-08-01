@@ -299,7 +299,6 @@ function CollectionTile({
       <button
         type="button"
         className="lib-book lib-coll-tile__btn glass-fill glass-interactive lib-orbit-card"
-        data-glass-light=""
         data-library-orbit=""
         onClick={onOpen}
         aria-label={t('open-collection', { title: c.title, defaultValue: 'Open {{title}}' })}

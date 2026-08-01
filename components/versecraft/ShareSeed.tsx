@@ -35,7 +35,7 @@ export function ShareSeed({ seed, compact = false }: { seed: string; compact?: b
   return (
     <button
       onClick={copy}
-      className="relative inline-flex items-center gap-1.5 rounded transition-all active:scale-95"
+      className="relative inline-flex items-center gap-1.5 rounded transition-transform active:scale-95"
       style={{
         backgroundColor: 'rgba(196,163,90,0.12)',
         border: '1px solid rgba(196,163,90,0.3)',

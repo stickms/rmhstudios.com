@@ -160,15 +160,15 @@ export function RideMap({ pickup, dropoff, driverLocation, className }: RideMapP
             )}
 
             <Marker longitude={pickup!.lng} latitude={pickup!.lat} anchor="center">
-              <span className="block h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-400 shadow" />
+              <span className="block h-3.5 w-3.5 rounded-full border-2 border-white bg-site-success shadow" />
             </Marker>
             <Marker longitude={dropoff!.lng} latitude={dropoff!.lat} anchor="bottom">
               <MapPin className="h-6 w-6 text-site-accent drop-shadow" fill="currentColor" />
             </Marker>
             {driverLocation && (
               <Marker longitude={driverLocation.lng} latitude={driverLocation.lat} anchor="center">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-sky-500 shadow">
-                  <Car className="h-3.5 w-3.5 text-white" />
+                <span className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-site-accent shadow">
+                  <Car className="h-3.5 w-3.5 text-site-media-ink" />
                 </span>
               </Marker>
             )}
@@ -190,13 +190,13 @@ export function RideMap({ pickup, dropoff, driverLocation, className }: RideMapP
       {ready && (
         <div className="space-y-1 border-t border-site-border bg-site-bg/95 p-3 backdrop-blur">
           {driverLocation && (
-            <div className="flex items-center gap-2 text-xs font-medium text-sky-400">
+            <div className="flex items-center gap-2 text-xs font-medium text-site-accent">
               <Car className="h-3.5 w-3.5 shrink-0" />
               <span>{t('driver-location-live', { defaultValue: 'Driver location (live)' })}</span>
             </div>
           )}
           <div className="flex items-center gap-2 text-xs text-site-text">
-            <MapPin className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-site-success" />
             <span className="truncate" title={pickup!.label}>{pickup!.label}</span>
           </div>
           <div className="flex items-center gap-2 text-xs text-site-text">

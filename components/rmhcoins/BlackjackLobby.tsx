@@ -173,7 +173,7 @@ export function BlackjackLobby() {
               <div className="flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-site-text-dim" />
                 <span className={`text-sm font-bold ${
-                  room.playerCount >= room.maxPlayers ? 'text-red-400' : 'text-site-text'
+                  room.playerCount >= room.maxPlayers ? 'text-site-danger' : 'text-site-text'
                 }`}>
                   {room.playerCount}/{room.maxPlayers}
                 </span>

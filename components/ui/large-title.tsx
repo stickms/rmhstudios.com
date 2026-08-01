@@ -83,7 +83,7 @@ export function LargeTitle({
                 {eyebrow}
               </p>
             )}
-            <h1 className="truncate font-(family-name:--site-font-display) text-3xl font-semibold tracking-[-0.022em] text-site-text">
+            <h1 className="truncate font-display text-3xl font-semibold tracking-[-0.022em] text-site-text">
               {title}
             </h1>
           </div>
@@ -105,7 +105,7 @@ export function LargeTitle({
         <div className="relative flex h-14 items-center gap-2 px-4 sm:px-6">
           {leading}
           <motion.h1
-            className="min-w-0 flex-1 truncate text-center font-(family-name:--site-font-display) text-base font-semibold text-site-text"
+            className="min-w-0 flex-1 truncate text-center font-display text-base font-semibold text-site-text"
             style={{ opacity: compactOpacity, y: compactY }}
           >
             {title}
@@ -126,7 +126,7 @@ export function LargeTitle({
         )}
         <p
           aria-hidden
-          className="font-(family-name:--site-font-display) text-[2.125rem] font-semibold leading-tight tracking-[-0.024em] text-site-text"
+          className="font-display text-[2.125rem] font-semibold leading-tight tracking-[-0.024em] text-site-text"
         >
           {title}
         </p>

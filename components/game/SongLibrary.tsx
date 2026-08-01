@@ -352,11 +352,11 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1">
                                             <label className="text-xs font-bold text-slice-text-light uppercase">{t("label-title", { defaultValue: "Title" })}</label>
-                                            <Input value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} className="bg-slice-card-bg text-slice-text placeholder:text-slice-text-light shadow-[5px_5px_15px_var(--slice-shadow-dark),-5px_-5px_15px_var(--slice-shadow-light)] border border-slice-shadow-dark/30 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] transition-all" />
+                                            <Input value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} className="bg-slice-card-bg text-slice-text placeholder:text-slice-text-light shadow-[5px_5px_15px_var(--slice-shadow-dark),-5px_-5px_15px_var(--slice-shadow-light)] border border-slice-shadow-dark/30 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] transition-colors" />
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-xs font-bold text-slice-text-light uppercase">{t("label-artist", { defaultValue: "Artist" })}</label>
-                                            <Input value={uploadArtist} onChange={e => setUploadArtist(e.target.value)} className="bg-slice-card-bg text-slice-text placeholder:text-slice-text-light shadow-[5px_5px_15px_var(--slice-shadow-dark),-5px_-5px_15px_var(--slice-shadow-light)] border border-slice-shadow-dark/30 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] transition-all" />
+                                            <Input value={uploadArtist} onChange={e => setUploadArtist(e.target.value)} className="bg-slice-card-bg text-slice-text placeholder:text-slice-text-light shadow-[5px_5px_15px_var(--slice-shadow-dark),-5px_-5px_15px_var(--slice-shadow-light)] border border-slice-shadow-dark/30 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] transition-colors" />
                                         </div>
                                     </div>
 
@@ -365,7 +365,7 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                                         <Input
                                             value={uploadDescription}
                                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUploadDescription(e.target.value)}
-                                            className="bg-slice-card-bg text-slice-text placeholder:text-slice-text-light shadow-[5px_5px_15px_var(--slice-shadow-dark),-5px_-5px_15px_var(--slice-shadow-light)] border border-slice-shadow-dark/30 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] transition-all"
+                                            className="bg-slice-card-bg text-slice-text placeholder:text-slice-text-light shadow-[5px_5px_15px_var(--slice-shadow-dark),-5px_-5px_15px_var(--slice-shadow-light)] border border-slice-shadow-dark/30 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] transition-colors"
                                             placeholder={t("description-placeholder", { defaultValue: "Tell us about this track..." })}
                                         />
                                     </div>
@@ -380,8 +380,8 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                                     </div>
                                     <div className="w-full h-3 bg-slice-shadow-dark rounded-full overflow-hidden">
                                         <div 
-                                            className="h-full bg-blue-500 rounded-full transition-all duration-300 ease-out"
-                                            style={{ width: `${Math.max(10, uploadProgress)}%` }} // Give a little visual progress even when analyzing
+                                            className="h-full bg-blue-500 w-full origin-left transition-transform duration-300 ease-out"
+                                            style={{ transform: `scaleX(${(Math.max(10, uploadProgress)) / 100})` }} // Give a little visual progress even when analyzing
                                         />
                                     </div>
                                 </div>
@@ -404,7 +404,7 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                 }).map(song => (
                     <div
                         key={song.id}
-                        className={`p-2 flex items-center justify-between group hover:bg-slice-shadow-dark/50 transition-all cursor-pointer border-l-4 ${selectedSongId === song.id ? 'bg-blue-500/10 border-l-blue-500' : 'bg-transparent border-l-transparent'}`}
+                        className={`p-2 flex items-center justify-between group hover:bg-slice-shadow-dark/50 transition-colors cursor-pointer border-l-4 ${selectedSongId === song.id ? 'bg-blue-500/10 border-l-blue-500' : 'bg-transparent border-l-transparent'}`}
                         onClick={() => onHighlight(song)}
                     >
                         <div className="flex items-center gap-3 flex-1 min-w-0">

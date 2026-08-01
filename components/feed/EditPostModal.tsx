@@ -117,7 +117,7 @@ export function EditPostModal({
  setShowGifPicker(true);
  }}
  aria-label={t('swap-gif-aria', { defaultValue:'Swap GIF'})}
- className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors text-xs px-2"
+ className="absolute top-1 right-1 p-1 rounded-full bg-site-media-scrim-strong text-site-media-ink hover:bg-site-media-scrim-hover transition-colors text-xs px-2"
  >
  {t('swap', { defaultValue:'Swap'})}
  </button>

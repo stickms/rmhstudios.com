@@ -220,7 +220,7 @@ export function GroupChatsColumn({
  <Link
  key={g.id}
  to={`/groups/${g.id}`as string}
- className="flex items-center gap-3 px-4 py-3 transition-[background-color,transform] duration-150 hover:bg-site-surface/50 active:scale-[0.99]"
+ className="flex items-center gap-3 px-4 py-3 transition-[background-color,transform] duration-site-fast hover:bg-site-surface/50 active:scale-[0.99]"
  >
  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-site-accent/12 text-site-accent">
  <Users className="h-5 w-5"/>

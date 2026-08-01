@@ -33,7 +33,7 @@ export function CardRewardScreen({ choices, onSelect, onSkip }: Props) {
               <button
                 key={i}
                 onClick={() => onSelect(card)}
-                className="bg-slate-800 border-2 border-cyan-500 hover:border-yellow-400 hover:scale-105 transition-all rounded-lg p-4 w-64"
+                className="bg-slate-800 border-2 border-cyan-500 hover:border-yellow-400 hover:scale-105 transition-colors rounded-lg p-4 w-64"
               >
                 <div className="text-lg font-bold text-cyan-400">{card.name}</div>
                 <div className="text-xs text-slate-400 mb-2">

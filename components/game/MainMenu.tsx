@@ -459,7 +459,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 <div className="flex items-center gap-3">
                     <Button
                         variant="outline"
-                        className="h-10 bg-linear-to-r from-violet-500 to-blue-500 text-white border-none hover:from-violet-400 hover:to-blue-400 font-black px-5 rounded-lg transition-all uppercase tracking-wide text-xs shadow-[0_0_12px_rgba(139,92,246,0.5)] hover:shadow-[0_0_20px_rgba(139,92,246,0.7)] animate-pulse hover:animate-none"
+                        className="h-10 bg-linear-to-r from-violet-500 to-blue-500 text-white border-none hover:from-violet-400 hover:to-blue-400 font-black px-5 rounded-lg transition-colors uppercase tracking-wide text-xs shadow-[0_0_12px_rgba(139,92,246,0.5)] hover:shadow-[0_0_20px_rgba(139,92,246,0.7)] animate-pulse hover:animate-none"
                         onClick={() => setShowMultiplayer(true)}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -468,7 +468,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-10 w-10 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark dark:text-slice-text-muted dark:hover:text-slice-text dark:hover:bg-slice-shadow-light rounded-lg transition-all"
+                        className="h-10 w-10 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark dark:text-slice-text-muted dark:hover:text-slice-text dark:hover:bg-slice-shadow-light rounded-lg transition-colors"
                         onClick={() => setIsDarkMode(!isDarkMode)}
                         title={isDarkMode ? t("switch-to-light-mode", { defaultValue: "Switch to Light Mode" }) : t("switch-to-dark-mode", { defaultValue: "Switch to Dark Mode" })}
                     >
@@ -477,7 +477,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-10 w-10 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark dark:text-slice-text-muted dark:hover:text-slice-text dark:hover:bg-slice-shadow-light rounded-lg transition-all"
+                        className="h-10 w-10 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark dark:text-slice-text-muted dark:hover:text-slice-text dark:hover:bg-slice-shadow-light rounded-lg transition-colors"
                         onClick={() => setShowSettings(true)}
                     >
                         <span className="sr-only">{t("settings", { defaultValue: "Settings" })}</span>
@@ -490,12 +490,12 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 {/* Auth Overlay */}
                 {!session.data && !session.isPending && (
                     <div className="absolute inset-0 z-60 bg-slice-bg/90 flex items-center justify-center p-8 backdrop-blur-xl rounded-[4rem] shadow-[inset_15px_15px_40px_var(--slice-shadow-dark),inset_-15px_-15px_40px_var(--slice-shadow-light)]">
-                        <div className="w-full max-w-md space-y-10 text-center animate-in fade-in zoom-in duration-700">
+                        <div className="w-full max-w-md space-y-10 text-center duration-700">
                              <h3 className="text-3xl sm:text-5xl font-black tracking-tighter uppercase italic text-slice-text">{t("connect-to-start", { defaultValue: "Connect to Start" })}</h3>
                              <p className="text-slice-text-muted font-bold uppercase text-xs tracking-[0.5em] opacity-60">{t("auth-required", { defaultValue: "Authentication is required for leaderboard ranking" })}</p>
                              <div className="space-y-6">
                                 <Button
-                                    className="w-full py-6 sm:py-12 text-xl sm:text-3xl font-black tracking-widest bg-blue-500 hover:bg-blue-400 text-white shadow-[15px_15px_30px_rgba(59,130,246,0.4),-15px_-15px_30px_var(--slice-shadow-light)] rounded-[2.5rem] transition-all transform hover:scale-[1.03] active:scale-95 uppercase"
+                                    className="w-full py-6 sm:py-12 text-xl sm:text-3xl font-black tracking-widest bg-blue-500 hover:bg-blue-400 text-white shadow-[15px_15px_30px_rgba(59,130,246,0.4),-15px_-15px_30px_var(--slice-shadow-light)] rounded-[2.5rem] transition-colors transform hover:scale-[1.03] active:scale-95 uppercase"
                                     onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
                                 >
                                     {t("log-in", { defaultValue: "Log In" })}
@@ -520,12 +520,12 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                     <>
                         {/* Backdrop */}
                         <div
-                            className="absolute inset-0 bg-black/20 z-65 animate-in fade-in duration-200"
+                            className="absolute inset-0 bg-black/20 z-65 duration-200"
                             onClick={() => setSelectedSong(null)}
                         />
 
                         {/* Sidebar Panel */}
-                        <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-70 animate-in slide-in-from-right duration-300 flex flex-col overflow-hidden">
+                        <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-70 duration-300 flex flex-col overflow-hidden">
                             {/* Sidebar Header */}
                             <div className="flex items-center justify-between p-4 border-b border-slice-shadow-dark/50 bg-slice-shadow-dark/20">
                                 <h2 className="text-lg font-black text-slice-text">{t("song-details", { defaultValue: "Song Details" })}</h2>
@@ -556,7 +556,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             
             {/* Settings Overlay remains as a full-screen drawer */}
             {showSettings && (
-                <div className="absolute inset-0 z-80 bg-slice-bg p-5 sm:p-12 flex flex-col animate-in slide-in-from-right-10 overflow-y-auto">
+                <div className="absolute inset-0 z-80 bg-slice-bg p-5 sm:p-12 flex flex-col overflow-y-auto">
                     <div className="flex items-center justify-between mb-5 sm:mb-12">
                         <h2 className="text-2xl sm:text-5xl font-black text-slice-text tracking-tighter uppercase italic">{t("system-configuration", { defaultValue: "System Configuration" })}</h2>
                         <Button 
@@ -609,7 +609,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
 
                                 <div className="pt-4">
                                     <Button 
-                                        className="w-full h-16 bg-slice-bg text-slice-text-darker shadow-[8px_8px_16px_var(--slice-shadow-dark),-8px_-8px_16px_var(--slice-shadow-light)] active:shadow-inner rounded-2xl font-black text-sm tracking-widest uppercase transition-all"
+                                        className="w-full h-16 bg-slice-bg text-slice-text-darker shadow-[8px_8px_16px_var(--slice-shadow-dark),-8px_-8px_16px_var(--slice-shadow-light)] active:shadow-inner rounded-2xl font-black text-sm tracking-widest uppercase transition"
                                         onClick={() => setShowCalibration(true)}
                                     >
                                         {t("calibrate-synchronization", { defaultValue: "Calibrate Synchronization" })}
@@ -634,7 +634,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                                                 {hitSoundOptions.filter(s => s.category === category).map(sound => (
                                                     <button
                                                         key={sound.id}
-                                                        className={`group relative flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                                                        className={`group relative flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
                                                             hitSound === sound.id
                                                                 ? 'bg-blue-500 text-white shadow-[3px_3px_8px_rgba(59,130,246,0.4),-3px_-3px_8px_var(--slice-shadow-light)]'
                                                                 : 'bg-slice-bg text-slice-text-darker shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] hover:shadow-[1px_1px_3px_var(--slice-shadow-dark),-1px_-1px_3px_var(--slice-shadow-light)] active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]'
@@ -646,7 +646,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                                                     >
                                                         <span className="truncate flex-1 text-left">{sound.label}</span>
                                                         <span
-                                                            className={`shrink-0 w-6 h-6 flex items-center justify-center rounded-lg transition-all ${
+                                                            className={`shrink-0 w-6 h-6 flex items-center justify-center rounded-lg transition-transform ${
                                                                 previewingSound === sound.id
                                                                     ? 'scale-110'
                                                                     : ''

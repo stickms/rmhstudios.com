@@ -147,7 +147,7 @@ export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData 
   return (
     <article className="px-4 pt-4 pb-12">
       <header className="mb-4">
-        <h1 className="font-(family-name:--site-font-display) text-xl font-bold text-site-text">{guide!.title}</h1>
+        <h1 className="font-display text-xl font-bold text-site-text">{guide!.title}</h1>
         <div className="mt-2 flex items-center justify-between gap-2">
           <span className="flex items-center gap-2">
             <UserAvatar src={guide!.author.image ?? undefined} alt={guide!.author.name ?? 'User'} size={28} fallbackName={guide!.author.name ?? undefined} />

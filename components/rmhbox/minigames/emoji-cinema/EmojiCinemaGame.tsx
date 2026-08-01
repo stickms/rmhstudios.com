@@ -291,7 +291,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
   switch (phase) {
     case 'PRODUCER_ASSIGNMENT':
       return (
-        <div className="flex flex-col items-center justify-center gap-4 p-8 text-center animate-in fade-in">
+        <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
           <span className="text-5xl">🎬</span>
           <h2 className="text-2xl font-bold text-(--app-text)">
             {isProducer ? t("youre-the-producer", { defaultValue: "You're the Producer!" }) : t("someone-is-the-producer", { defaultValue: "{{name}} is the Producer", name: producerName || 'Someone' })}
@@ -306,7 +306,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
 
     case 'MOVIE_SELECTION':
       return (
-        <div className="flex flex-col items-center justify-center gap-4 p-8 text-center animate-in fade-in">
+        <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
           {isProducer ? (
             <>
               <span className="text-4xl">🎥</span>
@@ -319,7 +319,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
                   <button
                     key={movie.title}
                     onClick={() => handleSelectMovie(movie.title)}
-                    className="p-4 rounded-xl bg-(--app-surface) border border-(--app-border) hover:border-(--app-accent) hover:bg-(--app-border) transition-all text-left"
+                    className="p-4 rounded-xl bg-(--app-surface) border border-(--app-border) hover:border-(--app-accent) hover:bg-(--app-border) transition-colors text-left"
                   >
                     <div className="font-semibold text-(--app-text)">{movie.title} ({movie.year})</div>
                     <div className="text-xs text-(--app-text-muted) mt-1">
@@ -389,7 +389,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
 
     case 'ROUND_RESULTS':
       return noEmojisSkipped ? (
-        <div className="flex flex-col items-center justify-center gap-4 p-8 text-center animate-in fade-in">
+        <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
           <span className="text-5xl">⏭️</span>
           <h2 className="text-xl font-bold text-(--app-text)">{t("round-skipped", { defaultValue: "Round Skipped" })}</h2>
           <p className="text-sm text-(--app-text-muted)">
@@ -412,7 +412,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
 
     case 'TRANSITION':
       return (
-        <div className="flex flex-col items-center justify-center gap-3 p-8 text-center animate-in fade-in">
+        <div className="flex flex-col items-center justify-center gap-3 p-8 text-center">
           <span className="text-4xl animate-bounce">🎬</span>
           <p className="text-sm text-(--app-text-muted)">{t("next-round-starting", { defaultValue: "Next round starting…" })}</p>
         </div>

@@ -7,7 +7,6 @@ import type { Build } from '@/lib/user-builds-types';
 import { TechBadges } from './TechBadges';
 import { BlurImage } from '@/components/ui/BlurImage';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { useCardSheen } from '@/hooks/useCardSheen';
 import { formatCount } from '@/lib/utils';
 import { safeHref } from '@/lib/url-safety';
 import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
@@ -39,7 +38,6 @@ function timeAgo(dateStr: string, t: TFunc): string {
 
 export function BuildCard({ build, onLike }: BuildCardProps) {
   const { t } = useTranslation("c-user-builds");
-  const { cardRef, sheenStyle, handlers: sheenHandlers } = useCardSheen();
   const navigate = useNavigate();
   // §5.48: the card thumbnail liquidly expands into the detail's thumbnail
   // (image↔image). Name set at click time only (never at rest on a list item).
@@ -52,11 +50,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
   };
 
   return (
-    <div
-      ref={cardRef}
-      className="h-full hover:scale-[1.03] transition-transform duration-300"
-      {...sheenHandlers}
-    >
+    <div className="h-full">
       <Link
         to={`/user-builds/${build.slug}` as string}
         onClick={(e) => {
@@ -68,9 +62,13 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
         }}
         className="block h-full"
       >
-        <div className="group relative rounded-site border border-site-border bg-site-surface hover:border-site-accent/50 transition-all overflow-hidden flex flex-col h-full">
-          {/* Mouse-tracking sheen */}
-          <div style={sheenStyle} className="rounded-site" />
+        {/* L1 material (§5.1): `.glass-fill .glass-interactive` is the card tier —
+            it carries the tint, the micro-noise and the rim glint that lifts on
+            hover. This used to be the box-model lookalike (`bg-site-surface` +
+            border + radius) with a cursor-tracked sheen layer painted over it;
+            the tier gives the same read with no per-frame work and degrades
+            centrally. */}
+        <div className="group relative glass-fill glass-interactive rounded-site overflow-hidden flex flex-col h-full">
         {/* Thumbnail */}
         <div ref={thumbRef} className="relative">
           {build.thumbnailUrl ? (
@@ -83,18 +81,18 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
                 quality={75}
                 sizes="(max-width: 640px) 100vw, 400px"
                 className="w-full h-full"
-                imgClassName="w-full h-full group-hover:scale-105 transition-transform duration-300"
+                imgClassName="w-full h-full group-hover:scale-105 transition-transform duration-site-slow"
               />
             </div>
           ) : (
-            <div className="aspect-video w-full bg-gradient-to-br from-violet-500/20 to-fuchsia-600/20 flex items-center justify-center">
+            <div className="aspect-video w-full bg-gradient-to-br from-site-accent/20 to-site-accent-dim flex items-center justify-center">
               <div className="text-4xl font-bold text-site-accent/50">
                 {build.title[0]?.toUpperCase()}
               </div>
             </div>
           )}
           {build.featured && (
-            <div className="absolute top-2 right-2 p-1.5 rounded-site-sm bg-black/60 backdrop-blur-sm" title={t("curated", { defaultValue: "Curated" })}>
+            <div className="absolute top-2 right-2 p-1.5 rounded-site-sm bg-site-media-scrim-strong" title={t("curated", { defaultValue: "Curated" })}>
               <Award className="w-4 h-4 text-site-warning" />
             </div>
           )}

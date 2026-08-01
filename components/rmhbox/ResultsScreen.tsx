@@ -192,7 +192,7 @@ export default function ResultsScreen({
         <motion.div {...fadeInProps(0.75)} className="flex justify-center pt-2 pb-4">
           <button
             onClick={handleNext}
-            className="flex items-center gap-2 rounded-lg px-8 py-3 text-base font-semibold text-white transition-all hover:brightness-110 active:scale-95 animate-pulse"
+            className="flex items-center gap-2 rounded-lg px-8 py-3 text-base font-semibold text-white transition hover:brightness-110 active:scale-95 animate-pulse"
             style={{ backgroundColor: 'var(--app-accent)' }}
           >
             {t("continue-to-lobby", { defaultValue: "Continue to Lobby" })}

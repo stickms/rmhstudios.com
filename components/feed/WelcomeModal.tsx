@@ -85,7 +85,7 @@ export function WelcomeModal() {
  {STEPS.map((_, i) => (
  <span
  key={i}
- className={`h-1.5 rounded-full transition-all ${i === step ?'w-5 bg-site-accent':'w-1.5 bg-site-border'}`}
+ className={`h-1.5 rounded-full transition-[width,background-color] duration-site ${i === step ?'w-5 bg-site-accent':'w-1.5 bg-site-border'}`}
  />
  ))}
  </div>

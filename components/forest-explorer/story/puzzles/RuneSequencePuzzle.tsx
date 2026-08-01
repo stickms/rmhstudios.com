@@ -114,7 +114,7 @@ export function RuneSequencePuzzle({ config, onSolve, onAttempt }: PuzzleCompone
                     return (
                         <button
                             key={i}
-                            className={`w-16 h-16 rounded-xl text-2xl font-bold flex items-center justify-center transition-all duration-200 cursor-pointer border-2 ${
+                            className={`w-16 h-16 rounded-xl text-2xl font-bold flex items-center justify-center transition-colors duration-200 cursor-pointer border-2 ${
                                 isActive
                                     ? 'bg-blue-500/50 border-blue-400 text-white scale-110 shadow-lg shadow-blue-500/30'
                                     : phase === 'input'

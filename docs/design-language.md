@@ -231,7 +231,9 @@ class):
 | Elevation / shape | `--site-shadow` (prominent: modals/popovers/floating chrome), `--site-shadow-sm` (resting: cards/surfaces), `--site-radius`, `--site-radius-sm`, `--site-control-radius` (shared button geometry)                                                           |
 | Layout rhythm     | `--site-page-gutter`, `--site-section-gap`, `--site-panel-padding`, `--site-shell-gap`, `--site-sticky-edge`, `--site-sticky-primary-height`, `--site-sticky-secondary-top`, `--site-touch-target`, `--site-page-bottom-space`                              |
 | Typography        | `--site-font-display`, `--site-font-body`, `--site-font-mono`                                                                                                                                                                                               |
-| Motion / flourish | `--site-transition-speed` (140ms default), `--site-press-duration`, `--site-card-transform`, `--site-glow`, `--site-text-shadow`, `--site-letter-spacing`, `--site-heading-transform`                                                                       |
+| Motion / flourish | `--site-transition-speed` (200ms default), `--site-press-duration`, `--site-card-transform`, `--site-glow`, `--site-text-shadow`, `--site-letter-spacing`, `--site-heading-transform`                                                                       |
+| Media overlays    | `--site-media-scrim`, `--site-media-scrim-strong`, `--site-media-scrim-hover`, `--site-media-veil`, `--site-media-ink` — ink and backings for chips/controls that sit **on a photograph**, where theme-tracking ink would be wrong                          |
+| Podium            | `--site-podium-gold`, `--site-podium-silver`, `--site-podium-bronze`                                                                                                                                                                                        |
 
 ### Tailwind utilities — use these, never raw hex/oklch
 
@@ -241,11 +243,13 @@ class):
 | Borders            | `border-site-border`, `border-site-border-bright`                                                                                                         |
 | Text               | `text-site-text`, `text-site-text-muted`, `text-site-text-dim`                                                                                            |
 | Accent             | `bg-site-accent`, `text-site-accent`, `text-site-accent-fg`, `bg-site-accent-hover`, `bg-site-accent-dim`                                                 |
-| Status             | `text-site-success`, `text-site-danger`, `text-site-warning` (and `bg-` variants)                                                                         |
+| Status             | `text-site-success`, `text-site-danger`, `text-site-warning` (and `bg-` and `-fg` variants)                                                               |
+| Media overlays     | `bg-site-media-scrim`, `bg-site-media-scrim-strong`, `bg-site-media-scrim-hover`, `bg-site-media-veil`, `text-site-media-ink`                            |
+| Podium             | `text-site-podium-gold`, `-silver`, `-bronze`                                                                                                             |
+| Duration           | `duration-site` (the theme's `--site-transition-speed`), `duration-site-fast` (0.75×), `duration-site-slow` (1.5×) — Tailwind has no duration theme namespace, so these are `@utility` classes |
 | Radius             | `rounded-site`, `rounded-site-sm` (theme-aware — do not use `rounded-lg`/`rounded-xl` for site chrome)                                                    |
 | Shadow             | `shadow-site` (prominent), `shadow-site-sm` (resting)                                                                                                     |
-| Fonts              | `font-nunito` (body default), `font-sans` (Inter), `font-mono` (JetBrains Mono), `font-display` (Nunito), `font-serif` (Playfair), `font-comic` (Bangers) |
-| Theme display font | `font-(family-name:--site-font-display)` — used for page `<h1>`s so headings adopt each theme's display face                                              |
+| Fonts              | `font-body` / `font-sans` (`--site-font-body`), `font-mono` (`--site-font-mono`), `font-display` (`--site-font-display`), `font-serif` (Playfair), `font-comic` (Bangers) — the first three resolve through the theme contract, so a theme that sets its own faces is obeyed everywhere |
 
 Extra breakpoint: `xs` = 480px (defined in the `@theme inline` block).
 
@@ -254,11 +258,14 @@ Extra breakpoint: `xs` = 480px (defined in the `@theme inline` block).
 A filled surface is only readable if the ink on it comes from **that surface's
 paired foreground token**, not from the page's ambient `--site-text`:
 
-| Surface                                     | Ink                   |
-| ------------------------------------------- | --------------------- |
-| `bg-site-accent` (and `-hover`)             | `text-site-accent-fg` |
-| `bg-site-danger`                            | `text-site-danger-fg` |
-| `[data-contrast='inverse']`/`.site-inverse` | `--site-inverse-text` |
+| Surface                                     | Ink                    |
+| ------------------------------------------- | ---------------------- |
+| `bg-site-accent` (and `-hover`)             | `text-site-accent-fg`  |
+| `bg-site-danger`                            | `text-site-danger-fg`  |
+| `bg-site-success`                           | `text-site-success-fg` |
+| `bg-site-warning`                           | `text-site-warning-fg` |
+| `[data-contrast='inverse']`/`.site-inverse` | `--site-inverse-text`  |
+| a chip/control **on media**                 | `text-site-media-ink`  |
 
 Forgetting the pair is the classic way to ship invisible UI: inheriting
 `--site-text` onto a dark accent gives near-black on near-black, and onto a light
@@ -366,7 +373,9 @@ setPreview, accent, setAccent }`. `THEME_BG` is derived from `SITE_STYLES`.
 
 ## 3. Typography & fonts
 
-- Body default is `font-nunito antialiased` (set on `<body>` in `__root.tsx`).
+- Body default is `font-body antialiased` (set on `<body>` in `__root.tsx`), which
+  resolves to `--site-font-body`. `font-sans` is its alias; `font-nunito` still
+  exists but names one literal face and is not the body default.
 - Fonts load from **Google Fonts `<link>`s**, not @fontsource, for site chrome:
   Nunito + Inter are critical (loaded in `__root.tsx` head); decorative theme
   fonts (JetBrains Mono, Playfair Display, Bangers, Bebas Neue, Orbitron,
@@ -375,7 +384,7 @@ setPreview, accent, setAccent }`. `THEME_BG` is derived from `SITE_STYLES`.
   `@fontsource/ibm-plex-*` and `@fontsource/newsreader` are used by specific
   games only.
 - Recurring text patterns:
-  - Page `<h1>`: `font-(family-name:--site-font-display) font-bold text-lg text-site-text`
+  - Page `<h1>`: `font-display font-bold text-lg text-site-text`
   - Body: `text-site-text`; secondary: `text-sm text-site-text-muted`; faint: `text-site-text-dim`
   - Dialog title: `text-lg font-semibold leading-none tracking-tight`
   - Mono accents (counts, section labels): `font-mono text-xs uppercase tracking-widest`
@@ -414,7 +423,7 @@ they are signature moments, not defaults:
 
 | Modifier                                     | Budget      | What it adds                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | -------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.glass-interactive` + `data-glass-light=""` | unlimited   | Hover tint-raise, springy press flex (`--ease-glass`), pointer-tracked diffuse highlight (`::after`), and — **paired with `.glass-fill`** — the specular rim glint raised from ambient to full on hover. The glint selector is `.glass-fill.glass-interactive`: on its own, `.glass-interactive` still gives the press and the hotspot, but there is no rim to light.                                                                |
+| `.glass-interactive`                         | unlimited   | Hover tint-raise, springy press flex (`--ease-glass`), and — **paired with `.glass-fill`** — the specular rim glint raised from ambient to full on hover. The glint selector is `.glass-fill.glass-interactive`: on its own, `.glass-interactive` still gives the press, but there is no rim to light. It used to add a **pointer-tracked** diffuse hotspot on `::after`; that is retired (§7.1) and `::after` is free.                                                              |
 | `.glass-refract` + `data-glass-lens`         | **≤2/page** | Lens-model edge refraction (v2): the backdrop bends through a displacement height field at the pane edge. Hero/chrome only, never in scroll containers. `data-glass-lens` opts into per-element filter sizing (`lib/glass-lens.ts`; Chromium bends the backdrop, Gecko/WebKit displace a mirrored aurora copy — §3.6). Pressing deepens the bend (`:active`, ×1.6, §3.7). Not compatible with `.glass-chrome--aside` (see below). |
 | `.glass-refract--prism`                      | **≤1/page** | True chromatic dispersion (R/G/B displaced at different magnitudes) + fringe. Sanctioned users: login card, command palette, `/store` featured tier, design lab.                                                                                                                                                                                                                                                                  |
 | `.glass-liquid` (or `<GlassPane liquid>`)    | **≤3/page** | Ambient travelling sheen (light over wet glass), painted as a background layer (v2) so it **composes freely** with `.glass-refract` and `.glass-interactive`. Signature surfaces only, never on list items.                                                                                                                                                                                                                       |
@@ -435,6 +444,57 @@ Sticky glass uses the shared layout contract rather than local `top-*` values:
 
 Related controls should still be merged into a single sticky surface. Use the
 secondary level only when the two surfaces mount independently.
+
+### 5.1.1 Cursor reactivity is retired (2026-08-01)
+
+Nothing on the site follows the pointer any more. The glass answers a **static
+sun**; hover is a state change, not a position. What was removed, and why:
+
+| Effect                                       | What it cost                                                                                                                                             |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.glass-interactive::after` diffuse hotspot  | A 220px radial gradient whose **centre** moved with the cursor. Gradient position is not compositable — every frame repainted the element's whole box.   |
+| `hooks/useGlassLight`                        | A document `pointermove` listener: a `closest()` ancestor walk, a cached `getBoundingClientRect()`, two custom-property writes per frame — feeding a scene light whose only consumer (`lib/liquid-gl`) is never initialised. |
+| `useLiquidBackground`'s fine-pointer branch  | Woke a rAF and re-composited two viewport-sized aurora layers on every frame the mouse moved.                                                            |
+| `RadialShell`'s ring parallax                | A `pointermove` listener plus a rAF lerp, mounted on **every route**, still scheduling frames a third of a second after the pointer stopped.             |
+| `hooks/useCardSheen`, `hooks/usePointerParallax`, `hooks/useParallax` | Per-component cursor tracking. `usePointerParallax` was mounted **per card** in the arcade hub — N listeners, N spring sets and N `preserve-3d` layers on one page. |
+
+Two things survive, because neither is a cursor: the **device-tilt** aurora
+(opt-in, touch-only, Settings → Appearance) and `useDeviceAttitude` (§7, an
+explicit "inspect this object" control that also has a drag/keyboard path).
+
+If a cursor-tracked specular is ever wanted back, it belongs on a
+compositor-friendly carrier — a transform-translated child layer — never on an
+animated gradient position, and it must sit behind the same tier switches as the
+rest of the optics.
+
+### 5.1.2 The sheen travels on the compositor (v3)
+
+`.glass-liquid` used to animate `background-position`. That is a **paint**
+property — no transform slides a gradient — so every frame of the sweep
+re-rasterised the host's entire box, on an `infinite` animation, on surfaces
+that are by definition among the largest on the page. Measured over 3s inside
+the active sweep, three panes, 4× CPU throttle:
+
+| Renderer work         | animated `background-position` | transform on `::after` |
+| --------------------- | ------------------------------ | ---------------------- |
+| `Paint` events        | 720                            | **0**                  |
+| `RasterTask`          | 2,700 (1,300ms)                | 12 (8.9ms, one-time)   |
+| Area repainted        | 737 Mpx                        | **0 Mpx**              |
+| **Total render time** | **1,453ms**                    | **8.9ms**              |
+
+Three things make it work, and the middle one is the reason it could not have
+been done before §5.1.1:
+
+1. **The host clips.** A moving layer has to leave the pane, and a `clip-path`
+   or `mask` on the layer itself is applied *before* its transform, so it travels
+   with the band. `overflow: clip` (not `hidden`) creates no scroll container
+   and no containing block for absolute descendants.
+2. **`::after` was free**, because the pointer hotspot that owned it is retired.
+3. **The geometry is the old one converted, not redesigned.** At `115deg` a
+   gradient's stops run along the tilted axis, so `transparent 0%` is a corner,
+   not an edge — a narrower band with rounder stops shows hard vertical seams
+   where its box cuts through mid-gradient colour. Keep the 260% width and the
+   original stops.
 
 **The rim glint comes free** (v2, §4.35): `.glass-pane`/`.glass-overlay`/`.glass-chrome`
 (and the `--aside` variant) paint an always-on specular as a **border-box
@@ -466,7 +526,19 @@ in `globals.css` for it to be possible at all, and both are load-bearing:
 
 Wells (`.glass-inset`, half-strength border) carry no glint. Pseudo contract:
 `::before` is refraction-only (the masked lens band) or the aside blur; `::after`
-is the pointer light — never add a third owner.
+is free now that the pointer light is gone (§5.1.1) — a component may use it, for
+something static. Never add a third owner.
+
+**L4 has a legibility floor.** A popover is the one surface a visitor must read
+the instant it appears, so `.glass-overlay`'s tint is
+`clamp(78%, 90% × --glass-user-tint, 100%)` rather than a plain multiply: the
+Glass clarity slider still moves it, but "Airy" cannot take a dropdown to 56%
+opacity and lose it against a busy page. There is also a
+`@supports not (backdrop-filter: …)` rule that turns every blurred tier opaque
+where the engine cannot blur — the tint alone was never doing that job.
+**Floating UI must be `.glass-overlay`.** L1 `.glass-fill` has no backdrop blur
+by design (it is the repeated-card tier); a menu built on it sits transparent
+over whatever it opened on top of. This is CI-enforced — see §13.
 
 **Reach for the tier class, not its box-model equivalent.** `bg-site-surface
 border border-site-border rounded-site shadow-site-sm` renders the same *box* as
@@ -747,6 +819,24 @@ gated off there too, via `html.app-route`).
   cleared after; the detail's secondary content (comments, metadata, related
   lists) then staggers in via `staggerContainer`/`fadeRise`. No-VT browsers get
   instant nav + the stagger.
+- **The animation vocabulary is framer-motion + `lib/motion.ts`, plus the CSS
+  enters that exist (`.page-enter`, `radial-page-rise`, `.feed-item-enter`).**
+  `animate-in` / `fade-in` / `zoom-in-*` / `slide-in-from-*` are NOT available —
+  they belong to `tailwindcss-animate`, which is not installed. Writing them
+  produces no CSS at all. CI-enforced (§13 rule 9).
+- **Never `transition-all`, and never animate a layout property.** `all` makes
+  the engine watch every animatable property on the element, so a class change
+  that happens to touch `width`/`padding`/`gap` animates a reflow nobody asked
+  for. Name what changes: `transition-colors`, `transition-transform`,
+  `transition-opacity`, a `transition-[a,b]` list, or plain `transition` (every
+  visual property, no layout ones). CI-enforced for site UI (§13 rule 8).
+
+  When a layout property is genuinely the thing you want to move, it is almost
+  always cheaper as a transform, because layout animation relayouts the element
+  **and its siblings** every frame. A progress bar is a full-width fill with
+  `origin-left` + `transform: scaleX(p)`, not an animated `width`; a column chart
+  is `origin-bottom` + `scaleY`. See `components/onboarding/FirstWeekCard.tsx`,
+  `components/feed/PollDisplay.tsx` and `components/feed/InsightsModal.tsx`.
 - `hooks/useReducedMotion.ts` — SSR-safe boolean for JS animations CSS can't
   reach; `prefersReducedMotion()` for imperative checks.
 - `hooks/useCelebration.ts` — confetti/fireworks; lazy-loads canvas-confetti,
@@ -872,8 +962,13 @@ lazy locale chunks).
 
 **Don't**
 
-- Hardcode hex/oklch colors, `rounded-lg`, custom shadows, or font families in
-  site UI.
+- Hardcode hex/oklch colors, raw palette classes (`bg-red-600`), `rounded-lg`,
+  custom shadows, bare `duration-200`, or font families in site UI. The first
+  three are CI-enforced (§13).
+- Build a dropdown / popover / menu / tooltip on anything but `.glass-overlay`
+  — L1 has no blur and the labels ghost (§5.1). Also CI-enforced.
+- Track the cursor. Nothing on the site reacts to pointer position any more
+  (§5.1.1); hover is a state, not a coordinate.
 - Re-add navigation/sidebars inside a page (the `_site` shell owns them).
 - Use `react-icons`, an ad-hoc **standalone** `Loader2` where `<Spinner>`
   belongs (inline `Loader2` inheriting a button's colour is fine), or
@@ -1029,6 +1124,24 @@ the normal suite (`pnpm exec vitest run`, gated by `web-ci.yml`):
   switcher that marks its active slot some other way (an accent pill, a
   segmented control, a `flex-1` button row with an active tint) still belongs
   on `LiquidTabs`. Reviewers catch those by eye.
+
+  The same file carries four **site-tier** rules added 2026-08-01 (games and
+  the `--app-*` apps are exempt, by design — Temple of Joy is supposed to be
+  candlelit): **(5)** no raw Tailwind palette colour (`bg-red-600`,
+  `text-zinc-500`, …) in site UI — a domain-fixed colour gets a scoped variable
+  group like `--casino-*` instead; **(6)** no hardcoded radius
+  (`rounded-lg`/`-xl`/`-2xl`) — `rounded-full` and `rounded-none` are shapes,
+  not radii, and stay allowed; **(7)** no floating surface below L4 — an element
+  that is positioned + stacked + edge-anchored and carries `.glass-fill` /
+  `.glass-pane` / `bg-site-surface` is a dropdown with no backdrop blur;
+  **(8)** no `transition-all` — name the properties. The only allowlist entry
+  across those four is `/login`, for the third-party provider brand marks.
+  **(9)** no `tailwindcss-animate` class (`animate-in`, `fade-in-0`,
+  `zoom-in-95`, `slide-in-from-*`, `fill-mode-*`): that plugin is a Tailwind v3
+  thing this project does not have, so they compile to **zero rules** and the
+  element never animates. 103 of them were in the source, on the command
+  palette, the composer and every Radix open/close pair. This rule scans the
+  **whole tree** — a class that produces no CSS is dead in a game too.
 - **`lib/__tests__/game-viewport-consistency.test.ts` — the full-screen
   viewport contract (§12.1).** A static scan over the thirty game/app
   directories that fails on: (1) a scrolling flex/grid container that centres on

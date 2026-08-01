@@ -125,7 +125,7 @@ function TournamentsPage() {
                 </div>
                 <div className="flex items-center gap-4 text-sm text-site-text-dim">
                   <span className="flex items-center gap-1.5">
-                    <Coins className="size-4 text-yellow-500" />
+                    <Coins className="size-4 text-site-warning" />
                     {t('prize', { defaultValue: '{{n}} prize', n: tourney.prizePoolCoins })}
                   </span>
                   <span className="flex items-center gap-1.5">

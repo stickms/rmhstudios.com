@@ -47,8 +47,7 @@ import {
  useSpring,
  type MotionStyle,
 } from 'framer-motion';
-import { useLiquidActive, useLiquidBody, useLiquidGroup } from '@/hooks/useLiquidBody';
-import { computeDroplet } from '@/lib/liquid-gl/droplet';
+import { computeDroplet } from '@/lib/liquid/droplet';
 
 const STRETCH_K = 0.0004; // |velocity px/s| → stretch factor (§5.47 sketch)
 const STRETCH_MAX = 0.5; // §15.3: volume-conserving cap raised to 0.5 for tab-scale jumps
@@ -192,15 +191,11 @@ export function useLiquidMorph({
 }: LiquidMorphOptions): LiquidMorphResult {
  const underlayRef = useRef<HTMLSpanElement>(null);
 
- // §16.1: when a GL tier is live the SHADER draws the metaball merge (capsule +
- // trail droplet as SDF bodies with smooth-min), so we register those bodies and
- // skip the `.lg-goo` SVG underlay entirely. The underlay span still mounts as an
- // invisible coordinate anchor (opacity 0, no filter, no blobs) so the sampler
- // can read the capsule's viewport box + the droplet's underlay-space position.
- const glActive = useLiquidActive();
- const group = useLiquidGroup();
- const capBody = useLiquidBody({ kind: 'capsule', group });
- const dropBody = useLiquidBody({ kind: 'droplet', group });
+ // There used to be a second path here: when a WebGL/WebGPU tier was live the
+ // shader drew the metaball merge (capsule + trail droplet as SDF bodies with
+ // smooth-min) and the `.lg-goo` SVG underlay was skipped. That tier is gone —
+ // it was never initialised, so the branch was dead from the start and the SVG
+ // underlay below is, and always was, what renders.
 
  // Live projected box of the real capsule, in the underlay's own coordinate
  // space (scroll-safe — both are in the same DOM/scroll context).
@@ -294,32 +289,6 @@ export function useLiquidMorph({
  mw.set(c.width);
  mh.set(c.height);
 
- if (glActive) {
- const moving = Math.abs(v.get()) > 40;
- const scrolling = performance.now() < scrollActiveUntil.current;
- capBody.set({
- cx: c.left + c.width / 2,
- cy: c.top + c.height / 2,
- hw: c.width / 2,
- hh: c.height / 2,
- radius: Math.min(c.width, c.height) / 2,
- active: moving || scrolling,
- });
- const dd = dropD.get();
- if (trail) {
- dropBody.set({
- cx: u.left + dropCx.get(),
- cy: u.top + dropCy.get(),
- hw: dd / 2,
- hh: dd / 2,
- radius: dd / 2,
- active: moving || scrolling,
- });
- } else {
- dropBody.set({ cx: 0, cy: 0, hw: 0, hh: 0, radius: 0, active: false });
- }
- }
-
  // Still-moving check: the projected box changed, OR the trailing droplet spring
  // hasn't caught the capsule centre yet (keep sampling so the goo tail resolves).
  const p = prevBox.current;
@@ -391,7 +360,7 @@ export function useLiquidMorph({
  // a stale shader/shadow frame before the rAF sampler follows the projection.
  sampleRef.current();
  kickRef.current();
- }, [activeKey, glActive, reduced]);
+ }, [activeKey, reduced]);
 
  const squashStyle: MotionStyle = reduced
  ? {}
@@ -399,9 +368,7 @@ export function useLiquidMorph({
  ? { scaleX: stretch, scaleY: squash, transformOrigin: origin }
  : { scaleY: stretch, scaleX: squash, transformOrigin: origin };
 
- // With GL live, render an invisible anchor span (no goo, no blobs); otherwise
- // the full `.lg-goo` metaball underlay (the CSS/SVG fallback tier, unchanged).
- const showGoo = trail && !reduced && !glActive;
+ const showGoo = trail && !reduced;
  const underlay = reduced ? null : (
  <motion.span
  ref={underlayRef}

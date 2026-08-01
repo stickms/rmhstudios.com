@@ -421,13 +421,13 @@ function LoginPage() {
       >
         {/* Brand + heading */}
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="glass-inset mb-3 flex size-12 items-center justify-center rounded-2xl">
+          <div className="glass-inset mb-3 flex size-12 items-center justify-center rounded-site">
             <span className="font-serif text-lg font-bold tracking-tight text-site-text">R</span>
           </div>
           <p className="font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-site-text-muted">
             RMH Studios
           </p>
-          <h1 className="mt-1.5 font-(family-name:--site-font-display) text-2xl font-bold tracking-tight text-site-text">
+          <h1 className="mt-1.5 font-display text-2xl font-bold tracking-tight text-site-text">
             {isSignUp
               ? t('create-account-heading', { defaultValue: 'Create your account' })
               : t('welcome-back', { defaultValue: 'Welcome back' })}

@@ -20,7 +20,7 @@ function SliceItPage() {
             <Button
               variant="ghost"
               size="sm"
-              className="text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/20 transition-all rounded-lg text-xs"
+              className="text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/20 transition-colors rounded-lg text-xs"
             >
               <ArrowLeft className="w-3 h-3 mr-1" />
               <span className="hidden sm:inline font-bold">{t("back-to-builds", { defaultValue: "Back to Builds" })}</span>

@@ -138,7 +138,7 @@ function RmhCodePage() {
                 <img src="/images/games/rmhcode.webp" alt="rmhcode" className="object-cover w-full h-full" loading="lazy" />
               </div>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-site-text mb-4 font-(family-name:--site-font-display)">
+            <h1 className="text-4xl md:text-5xl font-bold text-site-text mb-4 font-display">
               rmh<span className="text-violet-400">code</span>
             </h1>
             <p className="text-lg text-site-text-muted max-w-xl mx-auto mb-8">

@@ -84,7 +84,7 @@ export default function HostControlModal() {
       {lobby.state !== 'WAITING' && (
         <button
           onClick={() => setIsOpen(true)}
-          className="flex h-10 w-10 items-center justify-center rounded-full transition-all hover:scale-110 active:scale-95"
+          className="flex h-10 w-10 items-center justify-center rounded-full transition-transform hover:scale-110 active:scale-95"
           style={{
             backgroundColor: 'var(--app-warning)',
             color: '#000',

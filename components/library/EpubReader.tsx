@@ -172,7 +172,7 @@ export function EpubReader({ book }: { book: LibraryBook }) {
   return (
     <main ref={readerRef} className="vibe-screen lib-reader">
       <header className="lib-reader__bar">
-        <Link to="/library" aria-label={t('back-to-library', { defaultValue: 'Back to library' })} className="vibe-toolbar__icon transition-transform duration-150 active:scale-90">
+        <Link to="/library" aria-label={t('back-to-library', { defaultValue: 'Back to library' })} className="vibe-toolbar__icon transition-transform duration-site-fast active:scale-90">
           <ArrowLeft size={17} />
         </Link>
         <button type="button" className="lib-reader__identity" onClick={(event) => openDetails(event.currentTarget)} aria-label={t('show-book-details', { defaultValue: 'Show book details' })}>
@@ -189,7 +189,7 @@ export function EpubReader({ book }: { book: LibraryBook }) {
           {status === 'ready' && (
             <button
               type="button"
-              className={`vibe-toolbar__icon transition-transform duration-150 active:scale-90${bookmarked ? ' is-on' : ''}`}
+              className={`vibe-toolbar__icon transition-transform duration-site-fast active:scale-90${bookmarked ? ' is-on' : ''}`}
               onClick={toggleBookmark}
               aria-pressed={bookmarked}
               title={bookmarked ? t('remove-bookmark', { defaultValue: 'Remove bookmark' }) : t('add-bookmark', { defaultValue: 'Bookmark this page' })}
@@ -216,7 +216,7 @@ export function EpubReader({ book }: { book: LibraryBook }) {
           <button type="button" className="vibe-toolbar__icon lib-reader__desktop-action" onClick={toggleFullscreen} aria-label={fullscreen ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' }) : t('enter-fullscreen', { defaultValue: 'Enter fullscreen' })} title={fullscreen ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' }) : t('enter-fullscreen', { defaultValue: 'Enter fullscreen' })}>
             {fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </button>
-          <a href={book.url} download className="vibe-toolbar__icon transition-transform duration-150 active:scale-90" aria-label={t('download-book', { defaultValue: 'Download book' })}>
+          <a href={book.url} download className="vibe-toolbar__icon transition-transform duration-site-fast active:scale-90" aria-label={t('download-book', { defaultValue: 'Download book' })}>
             <Download size={16} />
           </a>
         </div>

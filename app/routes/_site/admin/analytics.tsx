@@ -36,7 +36,7 @@ function Stat({ icon: Icon, label, value, sub }: { icon: typeof Users; label: st
         <Icon className="h-4 w-4 text-site-accent" />
         <span className="font-mono text-[0.68rem] uppercase tracking-widest text-site-text-dim">{label}</span>
       </div>
-      <p className="mt-1 font-(family-name:--site-font-display) text-2xl font-bold tracking-tight text-site-text">{value.toLocaleString()}</p>
+      <p className="mt-1 font-display text-2xl font-bold tracking-tight text-site-text">{value.toLocaleString()}</p>
       {sub && <p className="text-xs text-site-text-dim">{sub}</p>}
     </div>
   );

@@ -47,19 +47,15 @@ import { m as motion, useMotionValue, useTransform, animate } from 'framer-motio
 import { EASE } from '@/lib/motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
-import { useLiquidActive, useLiquidBody, useLiquidGroup } from '@/hooks/useLiquidBody';
 import {
  FALLBACK_POP_DURATION_S,
  FALLBACK_POP_PROGRESS,
  FALLBACK_POP_TIMES,
  PERF_POP_DURATION_S,
- WEBGPU_POP_DURATION_S,
- WEBGPU_POP_PROGRESS,
- WEBGPU_POP_TIMES,
  createPopPanelMotion,
  popPanelTransform,
  type PopPanelMotion,
-} from '@/lib/liquid-gl/pop-motion';
+} from '@/lib/liquid/pop-motion';
 
 // SSR-safe layout effect (avoids the useLayoutEffect-on-server warning). The DOM
 // work only ever runs on the client (open starts false during SSR anyway).
@@ -131,17 +127,14 @@ export function useLiquidPop({
  const [active, setActive] = useState(false);
  const geometryPinnedRef = useRef(true);
 
- // §16.1: when a GL tier is live the SHADER renders the bud (a growing SDF
- // rounded-rect) smooth-min merged with the trigger disc, so we register those
- // two bodies while the pop animates and skip the `.lg-goo` portal below. Their
- // geometry comes from the same cached-rect motion values (zero layout reads).
- const glActive = useLiquidActive();
+ // This pop used to have a second rendering path: when a WebGL/WebGPU tier was
+ // live the shader drew the bud as an SDF rounded-rect smooth-min merged with the
+ // trigger disc, and the `.lg-goo` portal below was skipped. That tier is gone —
+ // it was never initialised, so the branch had been dead the whole time and only
+ // the CSS/SVG path below ever ran. What is left IS the renderer.
  // Central visual-viewport clamp: every current and future liquid popover gets
  // mobile edge/safe-area protection without per-consumer positioning code.
  useMenuViewportFit(open, panelRef, [], { margin: 12 });
- const group = useLiquidGroup();
- const budBody = useLiquidBody({ kind: 'bud', group, enabled: glActive && active });
- const discBody = useLiquidBody({ kind: 'droplet', group, enabled: glActive && active });
 
  // One progress value (0 = fully at trigger, 1 = fully at panel) drives all
  // geometry AND the panel crossfade. One blob-layer opacity value. Reusing a
@@ -223,7 +216,7 @@ export function useLiquidPop({
 
  if (panel && trigRect.current && panelRect.current) {
  animatedPanel.current = panel;
- panelMotion.current = createPopPanelMotion(trigRect.current, panelRect.current, glActive);
+ panelMotion.current = createPopPanelMotion(trigRect.current, panelRect.current, false);
  panel.style.transformOrigin = `${panelMotion.current.originX}px ${panelMotion.current.originY}px`;
  panel.style.willChange = 'opacity, transform';
  panel.style.transform = popPanelTransform(panelMotion.current, 0);
@@ -254,10 +247,10 @@ export function useLiquidPop({
  discScale.set(1);
  blobOp.set(0);
  setActive(true);
- const openDuration = glActive ? WEBGPU_POP_DURATION_S : FALLBACK_POP_DURATION_S;
- animate(progress, glActive ? [...WEBGPU_POP_PROGRESS] : [...FALLBACK_POP_PROGRESS], {
+ const openDuration = FALLBACK_POP_DURATION_S;
+ animate(progress, [...FALLBACK_POP_PROGRESS], {
  duration: openDuration,
- times: glActive ? [...WEBGPU_POP_TIMES] : [...FALLBACK_POP_TIMES],
+ times: [...FALLBACK_POP_TIMES],
  ease: BUD_EASE,
  });
  animate(blobOp, [0, 1, 1, 0], {
@@ -266,9 +259,9 @@ export function useLiquidPop({
  ease: 'easeInOut',
  });
  // Disc shrinks in the back half so the neck pinches off as the panel lands.
- animate(discScale, glActive ? [1, 1.16, 0.18, 0.36, 0.28] : [1, 1.05, 0.32, 0.25], {
+ animate(discScale, [1, 1.05, 0.32, 0.25], {
  duration: openDuration,
- times: glActive ? [0, 0.18, 0.65, 0.82, 1] : [0, 0.2, 0.72, 1],
+ times: [0, 0.2, 0.72, 1],
  ease: 'easeInOut',
  });
  timerRef.current = setTimeout(
@@ -307,7 +300,7 @@ export function useLiquidPop({
  } else {
  setActive(false);
  }
- }, [open, reduced, triggerRef, panelRef, progress, blobOp, discScale, glActive, resetPanel]);
+ }, [open, reduced, triggerRef, panelRef, progress, blobOp, discScale, resetPanel]);
 
  // Unmount cleanup — kill the timer and invalidate the generation so a pending
  // completion never resurrects an underlay after the consumer is gone.
@@ -373,53 +366,6 @@ export function useLiquidPop({
  // px). Bud = the growing rounded-rect; disc = the trigger-anchored droplet. No
  // layout reads (trigRect/panelRect are cached at open) and none in the GL loop.
  //
- // §16.4 idle-at-rest: a self-driven rAF that runs ONLY while the pop is animating
- // (`active`) AND a GL tier is live — replacing a keepAlive useAnimationFrame that
- // ticked every frame for the pop's whole mounted lifetime (e.g. an always-mounted
- // sidebar user menu). When GL is off, or the pop is closed, no rAF runs at all.
- useEffect(() => {
- if (!glActive || !active) return;
- let raf = requestAnimationFrame(function loop() {
- if (geometryPinnedRef.current && trigRect.current && panelRect.current) {
- const w = growW.get();
- const h = growH.get();
- const left = growLeft.get();
- const top = growTop.get();
- budBody.set({
- cx: left + w / 2,
- cy: top + h / 2,
- hw: w / 2,
- hh: h / 2,
- radius: growRadius.get(),
- active: true,
- });
- const ds = discSize.get();
- discBody.set({
- cx: discLeft.get() + ds / 2,
- cy: discTop.get() + ds / 2,
- hw: ds / 2,
- hh: ds / 2,
- radius: ds / 2,
- active: true,
- });
- }
- raf = requestAnimationFrame(loop);
- });
- return () => cancelAnimationFrame(raf);
- }, [
- active,
- glActive,
- budBody,
- discBody,
- growW,
- growH,
- growLeft,
- growTop,
- growRadius,
- discSize,
- discLeft,
- discTop,
- ]);
 
  // A pop animation uses cached viewport rectangles by design. If scrolling,
  // mobile browser chrome, or a route/layout shift moves either DOM endpoint
@@ -437,8 +383,6 @@ export function useLiquidPop({
  if (!active) return;
 
  geometryPinnedRef.current = false;
- budBody.set({ cx: 0, cy: 0, hw: 0, hh: 0, radius: 0, active: false });
- discBody.set({ cx: 0, cy: 0, hw: 0, hh: 0, radius: 0, active: false });
  progress.set(1);
  resetPanel();
  setActive(false);
@@ -472,10 +416,10 @@ export function useLiquidPop({
  window.removeEventListener('pageshow', resync);
  layoutObserver?.disconnect();
  };
- }, [open, active, triggerRef, panelRef, budBody, discBody, progress, resetPanel]);
+ }, [open, active, triggerRef, panelRef, progress, resetPanel]);
 
  const underlay =
- active && !glActive && typeof document !== 'undefined'
+ active && typeof document !== 'undefined'
  ? createPortal(
  <motion.div
  aria-hidden

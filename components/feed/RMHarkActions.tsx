@@ -129,7 +129,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  onClick={handleCommentClick}
  title={t('comment', { defaultValue:'Comment'})}
  aria-label={t('comment', { defaultValue:'Comment'})}
- className="group flex min-h-11 min-w-11 items-center justify-self-start rounded-full text-site-text-muted hover:text-site-accent transition-colors duration-150"
+ className="group flex min-h-11 min-w-11 items-center justify-self-start rounded-full text-site-text-muted hover:text-site-accent transition-colors duration-site-fast"
  >
  <span className={`${engagementPill} h-9 gap-0.5 px-2 sm:gap-1 sm:px-2.5 group-hover:bg-site-accent-dim/50 group-active:scale-95`}>
  <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform"aria-hidden />
@@ -152,7 +152,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  }
  setRepostMenu((v) => !v);
  }}
- className={`group flex min-h-11 min-w-11 items-center rounded-full transition-colors duration-150 ${
+ className={`group flex min-h-11 min-w-11 items-center rounded-full transition-colors duration-site-fast ${
  item.reposted ?'text-site-success':'text-site-text-muted hover:text-site-success'
  }`}
  title="reRMHark"
@@ -220,7 +220,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  <button
  onClick={toggleLike}
  aria-pressed={!!item.liked}
- className={`group flex min-h-11 min-w-11 items-center justify-self-start rounded-full transition-colors duration-150 ${
+ className={`group flex min-h-11 min-w-11 items-center justify-self-start rounded-full transition-colors duration-site-fast ${
  item.liked ?'text-site-danger':'text-site-text-muted hover:text-site-danger'
  }`}
  title={

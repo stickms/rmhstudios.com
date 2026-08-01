@@ -280,7 +280,7 @@ export function MessagesColumn({
  >
  {!embedded && (
  <div className="flex items-center gap-3 px-4 pt-3">
- <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 min-w-0">
+ <h1 className="font-display font-bold text-lg text-site-text flex items-center gap-2 min-w-0">
  <MobileBrandPrefix />
  {t('messages-heading', { defaultValue:'Messages'})}
  </h1>
@@ -446,7 +446,7 @@ function ConversationRow({
  to={`/messages/${conv.id}`as string}
  // Row separators come from the container's divide-y (§8.4), not a per-row
  // border, so rows read as one dense card rather than stacked slabs.
- className="flex items-center gap-3 px-4 py-3 hover:bg-site-surface/50 active:scale-[0.99] transition-[background-color,transform] duration-150"
+ className="flex items-center gap-3 px-4 py-3 hover:bg-site-surface/50 active:scale-[0.99] transition-[background-color,transform] duration-site-fast"
  >
  <UserAvatar
  src={conv.otherUser.image ?? undefined}

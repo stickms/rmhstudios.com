@@ -121,7 +121,7 @@ export function BuildSidebar({ className = '' }: BuildSidebarProps) {
       )}
 
       {/* Submit CTA */}
-      <div className="mt-8 p-4 rounded-site border border-site-border bg-gradient-to-br from-violet-500/10 to-fuchsia-600/10">
+      <div className="mt-8 p-4 rounded-site border border-site-border bg-gradient-to-br from-site-accent/10 to-site-accent-dim/10">
         <h4 className="font-semibold text-site-text mb-2">
           {t('share-your-build', { defaultValue: 'Share Your Build' })}
         </h4>

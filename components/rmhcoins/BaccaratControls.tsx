@@ -13,9 +13,9 @@ interface Props {
 }
 
 const BET_OPTIONS: { type: BetType; label: string; payout: string; color: string; hoverColor: string }[] = [
-  { type: 'player', label: 'Player', payout: '1:1', color: 'bg-red-600', hoverColor: 'hover:bg-red-700' },
-  { type: 'banker', label: 'Banker', payout: '1:1*', color: 'bg-blue-600', hoverColor: 'hover:bg-blue-700' },
-  { type: 'tie', label: 'Tie', payout: '8:1', color: 'bg-emerald-600', hoverColor: 'hover:bg-emerald-700' },
+  { type: 'player', label: 'Player', payout: '1:1', color: 'bg-casino-red', hoverColor: 'hover:bg-casino-red' },
+  { type: 'banker', label: 'Banker', payout: '1:1*', color: 'bg-casino-seat-1', hoverColor: 'hover:bg-casino-seat-1' },
+  { type: 'tie', label: 'Tie', payout: '8:1', color: 'bg-casino-green-hover', hoverColor: 'hover:bg-casino-green' },
 ];
 
 const SIDE_BET_OPTIONS: { type: BetType; label: string; payout: string }[] = [
@@ -143,7 +143,7 @@ export function BaccaratControls({ coins }: Props) {
               key={opt.type}
               onClick={() => handlePlaceBet(opt.type)}
               disabled={coins - totalBet < chipAmount}
-              className={`flex flex-col items-center justify-center gap-1 min-h-13 p-3 rounded-site-sm ${opt.color} ${opt.hoverColor} text-white font-bold transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`flex flex-col items-center justify-center gap-1 min-h-13 p-3 rounded-site-sm ${opt.color} ${opt.hoverColor} text-casino-ink font-bold transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               <span className="text-sm leading-tight">{opt.label}</span>
               <span className="text-[10px] opacity-75 leading-tight">{opt.payout}</span>
@@ -162,7 +162,7 @@ export function BaccaratControls({ coins }: Props) {
               key={opt.type}
               onClick={() => handlePlaceBet(opt.type)}
               disabled={coins - totalBet < chipAmount}
-              className="flex flex-col items-center justify-center gap-0.5 min-h-11 p-2.5 rounded-site-sm bg-site-surface border border-site-border text-site-text hover:bg-site-surface-hover active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex flex-col items-center justify-center gap-0.5 min-h-11 p-2.5 rounded-site-sm bg-site-surface border border-site-border text-site-text hover:bg-site-surface-hover active:scale-95 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="text-xs font-bold leading-tight">{opt.label}</span>
               <span className="text-[10px] text-site-text-dim leading-tight">{opt.payout}</span>
@@ -197,7 +197,7 @@ export function BaccaratControls({ coins }: Props) {
               <span className="text-xs text-site-text-dim">{t("your-bets-this-round", { defaultValue: "Your bets this round:" })}</span>
               <div className="flex items-center gap-1">
                 <CoinIcon className="w-3.5 h-3.5" />
-                <span className="text-sm font-bold text-yellow-500">{totalBet}</span>
+                <span className="text-sm font-bold text-site-warning">{totalBet}</span>
               </div>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -214,7 +214,7 @@ export function BaccaratControls({ coins }: Props) {
             </div>
             <button
               onClick={handleClearBets}
-              className="w-full min-h-10 text-xs font-bold rounded-site-sm border border-red-500/30 text-red-400 hover:bg-red-500/10 active:scale-[0.98] transition-all"
+              className="w-full min-h-10 text-xs font-bold rounded-site-sm border border-site-danger/30 text-site-danger hover:bg-casino-red-hover/10 active:scale-[0.98] transition-colors"
             >
               {t("clear-all-bets", { defaultValue: "Clear All Bets" })}
             </button>
@@ -222,7 +222,7 @@ export function BaccaratControls({ coins }: Props) {
         )}
 
         {error && (
-          <p className="text-sm text-red-400 text-center">{error}</p>
+          <p className="text-sm text-site-danger text-center">{error}</p>
         )}
       </div>
     );
@@ -242,9 +242,9 @@ export function BaccaratControls({ coins }: Props) {
     const payout = myPlayer?.lastPayout ?? 0;
 
     const resultText: Record<string, { label: string; color: string }> = {
-      player: { label: t("player-wins", { defaultValue: "Player Wins!" }), color: 'text-red-400' },
-      banker: { label: t("banker-wins", { defaultValue: "Banker Wins!" }), color: 'text-blue-400' },
-      tie: { label: t("tie", { defaultValue: "Tie!" }), color: 'text-emerald-400' },
+      player: { label: t("player-wins", { defaultValue: "Player Wins!" }), color: 'text-site-danger' },
+      banker: { label: t("banker-wins", { defaultValue: "Banker Wins!" }), color: 'text-casino-seat-1' },
+      tie: { label: t("tie", { defaultValue: "Tie!" }), color: 'text-site-success' },
     };
 
     const r = lastResult ? resultText[lastResult.result] : null;

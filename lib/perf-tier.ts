@@ -8,8 +8,7 @@
  *                            the pointer; `.lg-goo` metaball underlays are
  *                            dropped; `.glass-liquid`/`.glass-pane` degrade
  *   components/radial/radial.css   the backdrop blob field stops drifting
- *   lib/liquid-gl/detect.ts  the WebGPU/WebGL2 shader tier is refused outright
- *   lib/glass-lens.ts, lib/render/canvas2d-fx.ts, hooks/useGlassLight.ts,
+ *   lib/render/canvas2d-fx.ts, hooks/useGlassLight.ts,
  *   hooks/useLiquidBackground.ts, components/ui/liquid-morph.tsx,
  *   components/ui/liquid-pop.tsx, components/game/GameCanvas.tsx
  *

@@ -70,8 +70,7 @@ export function RideshareLanding() {
               <Sparkles className="h-3.5 w-3.5" /> {t('community-rideshare', { defaultValue: 'Community rideshare' })}
             </span>
             <h1
-              className="mt-4 text-4xl font-bold tracking-tight text-site-text md:text-5xl"
-              style={{ fontFamily: 'var(--site-font-display)' }}
+              className="mt-4 text-4xl font-bold tracking-tight text-site-text md:text-5xl font-display"
             >
               {t('hero-heading', { defaultValue: 'Getting around, together.' })}
             </h1>
@@ -81,13 +80,13 @@ export function RideshareLanding() {
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 to="/rideshare/ride"
-                className="inline-flex items-center gap-2 rounded-site bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-all hover:scale-105 hover:bg-(--site-accent-hover)"
+                className="inline-flex items-center gap-2 rounded-site bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-transform hover:scale-105 hover:bg-(--site-accent-hover)"
               >
                 <MapPin className="h-4 w-4" /> {t('request-a-ride', { defaultValue: 'Request a ride' })}
               </Link>
               <Link
                 to="/rideshare/drive"
-                className="inline-flex items-center gap-2 rounded-site border border-site-border bg-site-surface px-6 py-3 text-sm font-semibold text-site-text transition-all hover:scale-105 hover:border-site-border-bright"
+                className="inline-flex items-center gap-2 rounded-site border border-site-border bg-site-surface px-6 py-3 text-sm font-semibold text-site-text transition-transform hover:scale-105 hover:border-site-border-bright"
               >
                 <Car className="h-4 w-4" /> {t('become-a-driver', { defaultValue: 'Become a driver' })}
               </Link>
@@ -97,7 +96,7 @@ export function RideshareLanding() {
 
         {/* Ride classes */}
         <section className="mt-10 md:mt-12">
-          <h2 className="text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
+          <h2 className="text-2xl font-bold text-site-text font-display">
             {t('choose-your-ride', { defaultValue: 'Choose your ride' })}
           </h2>
           <p className="mt-1 text-site-text-muted">{t('ride-classes-subtitle', { defaultValue: 'A ride for every trip — from everyday to extra-special.' })}</p>
@@ -111,7 +110,7 @@ export function RideshareLanding() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.05 }}
-                  className="group flex flex-col rounded-site border border-site-border bg-site-surface/80 p-5 transition-all hover:border-site-accent/50"
+                  className="group flex flex-col rounded-site border border-site-border bg-site-surface/80 p-5 transition-colors hover:border-site-accent/50"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex h-11 w-11 items-center justify-center rounded-site bg-site-accent/15 text-site-accent">
@@ -138,7 +137,7 @@ export function RideshareLanding() {
 
         {/* How it works (riders) */}
         <section className="mt-10 md:mt-12">
-          <h2 className="text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
+          <h2 className="text-2xl font-bold text-site-text font-display">
             {t('how-it-works', { defaultValue: 'How it works' })}
           </h2>
           <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -167,7 +166,7 @@ export function RideshareLanding() {
               <ShieldCheck className="h-5 w-5" />
               <span className="text-xs font-semibold uppercase tracking-wide">{t('drive-with-rmh', { defaultValue: 'Drive with RMH' })}</span>
             </div>
-            <h2 className="mt-2 text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
+            <h2 className="mt-2 text-2xl font-bold text-site-text font-display">
               {t('driver-cta-heading', { defaultValue: 'Earn your wings as an RMH driver' })}
             </h2>
             <p className="mt-2 text-site-text-muted">
@@ -176,7 +175,7 @@ export function RideshareLanding() {
           </div>
           <Link
             to="/rideshare/drive"
-            className="mt-5 inline-flex shrink-0 items-center gap-2 rounded-site bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-all hover:scale-105 hover:bg-(--site-accent-hover) md:mt-0"
+            className="mt-5 inline-flex shrink-0 items-center gap-2 rounded-site bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-transform hover:scale-105 hover:bg-(--site-accent-hover) md:mt-0"
           >
             {t('start-your-application', { defaultValue: 'Start your application' })} <ArrowRight className="h-4 w-4" />
           </Link>
@@ -201,7 +200,7 @@ function PriceEstimator() {
 
   return (
     <section className="mt-10 md:mt-12">
-      <h2 className="text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
+      <h2 className="text-2xl font-bold text-site-text font-display">
         {t('estimate-your-trip', { defaultValue: 'Estimate your trip' })}
       </h2>
       <p className="mt-1 text-site-text-muted">
@@ -236,7 +235,7 @@ function PriceEstimator() {
                 key={cls.id}
                 type="button"
                 onClick={() => setClassId(cls.id)}
-                className={`rounded-site-sm border px-3 py-2 text-sm font-medium transition-all ${
+                className={`rounded-site-sm border px-3 py-2 text-sm font-medium transition-colors ${
                   classId === cls.id
                     ? 'border-site-accent bg-site-accent/10 text-site-accent'
                     : 'border-site-border bg-site-surface text-site-text hover:border-site-border-bright'

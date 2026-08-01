@@ -47,9 +47,9 @@ export default function BossHealthBar({
         </div>
         <div className="h-3 rounded-full bg-black/60 overflow-hidden border border-white/10">
           <div
-            className="h-full rounded-full transition-all duration-300"
+            className="h-full w-full origin-left transition-[transform,background-color] duration-300"
             style={{
-              width: `${hpPercent}%`,
+              transform: `scaleX(${(hpPercent) / 100})`,
               backgroundColor: color,
               boxShadow: `0 0 8px ${color}`,
             }}

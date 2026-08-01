@@ -47,7 +47,7 @@ function SahurPage() {
           </p>
           <a
             href="/strategies/puzzles"
-            className="inline-block px-6 py-2.5 rounded-lg text-sm font-bold transition-all hover:brightness-110"
+            className="inline-block px-6 py-2.5 rounded-lg text-sm font-bold transition hover:brightness-110"
             style={{ background: '#F59E0B', color: '#000' }}
           >
             {t("play-sahur-puzzle", { defaultValue: "Play Sahur Puzzle" })}

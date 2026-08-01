@@ -294,7 +294,7 @@ function RequestRidePage() {
           <Link
             to="/login"
             search={{ callbackURL: '/rideshare/ride' }}
-            className="mt-5 inline-flex items-center gap-2 rounded-site bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-all hover:scale-105"
+            className="mt-5 inline-flex items-center gap-2 rounded-site bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-transform hover:scale-105"
           >
             <LogIn className="h-4 w-4" /> {t('sign-in-button', { defaultValue: 'Sign in' })}
           </Link>
@@ -420,7 +420,7 @@ function RequestRidePage() {
               <button
                 onClick={submit}
                 disabled={submitting || !pickup || !dropoff}
-                className="flex w-full items-center justify-center gap-2 rounded-site bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-all hover:bg-(--site-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-site bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-colors hover:bg-(--site-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {submitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

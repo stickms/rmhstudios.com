@@ -35,7 +35,7 @@ export function NeumorphicModal({
         <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogPrimitive.Portal>
                 <DialogPrimitive.Overlay 
-                    className="fixed inset-0 z-100 bg-black/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" 
+                    className="fixed inset-0 z-100 bg-black/40 backdrop-blur-sm" 
                 />
                 <DialogPrimitive.Content
                     className={cn(
@@ -43,7 +43,6 @@ export function NeumorphicModal({
                         "bg-slice-bg rounded-[2.5rem]",
                         "shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)]",
                         "border border-slice-shadow-light/20",
-                        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] duration-300"
                     )}
                 >
                     <div className="flex flex-col items-center text-center space-y-6">
@@ -66,7 +65,7 @@ export function NeumorphicModal({
                             <Button
                                 variant="ghost"
                                 onClick={onClose}
-                                className="flex-1 py-6 rounded-2xl text-slice-text-light font-bold hover:text-slice-text hover:bg-slice-shadow-dark/20 transition-all shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)]"
+                                className="flex-1 py-6 rounded-2xl text-slice-text-light font-bold hover:text-slice-text hover:bg-slice-shadow-dark/20 transition-colors shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)]"
                             >
                                 {resolvedCancelText}
                             </Button>
@@ -76,7 +75,7 @@ export function NeumorphicModal({
                                     onClose();
                                 }}
                                 className={cn(
-                                    "flex-1 py-6 rounded-2xl font-black tracking-widest transition-all shadow-lg transform active:scale-95",
+                                    "flex-1 py-6 rounded-2xl font-black tracking-widest transition shadow-lg transform active:scale-95",
                                     variant === 'danger' 
                                         ? "bg-red-500 hover:bg-red-600 text-white shadow-[0_10px_20px_rgba(239,68,68,0.4)]" 
                                         : "bg-blue-500 hover:bg-blue-600 text-white shadow-[0_10px_20px_rgba(59,130,246,0.4)]"

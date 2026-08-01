@@ -44,7 +44,7 @@ interface SongDetailsPanelProps {
 }
 
 const ModifierToggle = ({ label, active, onClick, color }: { label: string, active: boolean, onClick: () => void, color: string }) => (
-    <div className="flex justify-between items-center bg-slice-shadow-dark/20 hover:bg-slice-shadow-dark/50 p-2 rounded-lg border border-slice-shadow-dark/50 cursor-pointer transition-all" onClick={onClick}>
+    <div className="flex justify-between items-center bg-slice-shadow-dark/20 hover:bg-slice-shadow-dark/50 p-2 rounded-lg border border-slice-shadow-dark/50 cursor-pointer transition-colors" onClick={onClick}>
         <span className="text-xs text-slice-text font-bold uppercase select-none">{label}</span>
         <div
             className={`w-10 h-5 rounded-full transition-colors relative ${active ? '' : 'bg-slice-shadow-dark'}`}
@@ -295,7 +295,7 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated, readOnly = false
                 {!readOnly && (
                     <div className="mt-4 flex items-center gap-3">
                         <Button
-                            className="flex-1 h-14 bg-blue-500 hover:bg-blue-600 text-white font-bold text-base rounded-lg active:scale-95 transition-all flex items-center justify-center gap-3 group"
+                            className="flex-1 h-14 bg-blue-500 hover:bg-blue-600 text-white font-bold text-base rounded-lg active:scale-95 transition-colors flex items-center justify-center gap-3 group"
                             onClick={() => onPlay(song)}
                         >
                             <Play className="w-6 h-6 fill-current group-hover:scale-110 transition-transform" />
@@ -303,7 +303,7 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated, readOnly = false
                         </Button>
                         <Button
                             variant="ghost"
-                            className={`h-14 w-14 rounded-lg border flex items-center justify-center transition-all ${
+                            className={`h-14 w-14 rounded-lg border flex items-center justify-center transition-colors ${
                                 song.isLiked
                                     ? 'bg-red-500/10 border-red-500/50 text-red-500 shadow-[inset_2px_2px_4px_rgba(239,68,68,0.2)]'
                                     : 'bg-slice-card-bg border-slice-shadow-dark/50 text-slice-text-light hover:text-red-400 hover:border-red-400/50'
@@ -343,7 +343,7 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated, readOnly = false
                             <button
                                 key={d}
                                 onClick={() => setModifiers({ ...modifiers, difficulty: d })}
-                                className={`px-2 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all border ${
+                                className={`px-2 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-colors border ${
                                     isActive
                                         ? 'text-white shadow-md scale-[1.02]'
                                         : 'bg-slice-shadow-dark/20 text-slice-text-light border-slice-shadow-dark/30 hover:bg-slice-shadow-dark/50'

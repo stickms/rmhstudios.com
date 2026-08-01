@@ -319,7 +319,7 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
                                     onKeyDown={e => handleKeyDown(e, i)}
                                     disabled={isGameOver}
                                     placeholder={t("type-linking-word", { defaultValue: "Type a linking word..." })}
-                                    className={`w-full px-4 py-3 rounded-xl bg-site-surface border text-site-text placeholder:text-site-text-muted/50 focus:outline-none focus:ring-2 transition-all ${
+                                    className={`w-full px-4 py-3 rounded-xl bg-site-surface border text-site-text placeholder:text-site-text-muted/50 focus:outline-none focus:ring-2 transition ${
                                         validationErrors[i]
                                             ? 'border-red-500/50 focus:ring-red-500/30'
                                             : 'border-site-border focus:ring-blue-500/30 focus:border-blue-500/50'

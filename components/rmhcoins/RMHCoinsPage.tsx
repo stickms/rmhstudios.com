@@ -80,7 +80,7 @@ export function RMHCoinsPage() {
       <div className="flex items-center justify-between px-4 py-4 border-b border-site-border">
         <div className="flex items-center gap-2">
           <CoinIcon className="w-6 h-6" />
-          <span className="font-bold text-2xl text-yellow-500">{coins}</span>
+          <span className="font-bold text-2xl text-site-warning">{coins}</span>
           <span className="text-sm text-site-text-dim ml-1">{t("rmh-coins", { defaultValue: "RMH Coins" })}</span>
         </div>
         {coins < 10 && (
@@ -89,7 +89,7 @@ export function RMHCoinsPage() {
             loading={claiming}
             variant="outline"
             size="sm"
-            className="rounded-site-sm border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10"
+            className="rounded-site-sm border-site-warning/50 text-site-warning hover:bg-site-warning/10"
           >
             {t("claim-free-coins", { defaultValue: "Claim 10 Free Coins" })}
           </Button>

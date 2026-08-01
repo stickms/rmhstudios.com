@@ -147,7 +147,6 @@ function AdminAlbumsPage() {
                   to="/admin/albums/$id"
                   params={{ id: album.id }}
                   className="glass-fill glass-interactive group flex flex-col overflow-hidden rounded-site"
-                  data-glass-light=""
                 >
                   <div className="aspect-[4/3] w-full overflow-hidden bg-site-bg">
                     {cover ? (
@@ -155,7 +154,7 @@ function AdminAlbumsPage() {
                         src={cover}
                         alt=""
                         loading="lazy"
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                        className="h-full w-full object-cover transition-transform duration-site-slow group-hover:scale-[1.03]"
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-site-text-dim">

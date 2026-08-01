@@ -82,6 +82,7 @@ opti/**
 :maxdepth: 1
 :hidden:
 
+ui-audit-2026-08-01
 ui-audit-2026-07-28
 performance-audit-2026-07-17
 scalability-audit-2026-07-17

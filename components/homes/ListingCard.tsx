@@ -43,7 +43,7 @@ export function ListingCard({
       params={{ id: listing.id }}
       onMouseEnter={() => onHover?.(listing.id)}
       onMouseLeave={() => onHover?.(null)}
-      className={`group flex h-full flex-col overflow-hidden rounded-site border bg-site-surface/80 shadow-site transition-all hover:-translate-y-0.5 hover:border-site-accent/50 ${
+      className={`group flex h-full flex-col overflow-hidden rounded-site border bg-site-surface/80 shadow-site transition-transform hover:-translate-y-0.5 hover:border-site-accent/50 ${
         active ? 'border-site-accent ring-1 ring-site-accent/40' : 'border-site-border'
       }`}
     >
@@ -62,7 +62,7 @@ export function ListingCard({
         )}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/40 to-transparent" />
         {cover && listing.aiImages.includes(cover) && (
-          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white ">
+          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-site-media-scrim-strong px-1.5 py-0.5 text-[10px] font-medium text-site-media-ink ">
             <Sparkles className="h-3 w-3" /> AI
           </span>
         )}
@@ -86,7 +86,7 @@ export function ListingCard({
         </div>
         {listing.source === 'EXTERNAL' && (
           <span
-            className="absolute bottom-2 right-2 inline-flex max-w-[70%] items-center gap-1 truncate rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white "
+            className="absolute bottom-2 right-2 inline-flex max-w-[70%] items-center gap-1 truncate rounded-full bg-site-media-scrim-strong px-1.5 py-0.5 text-[10px] font-medium text-site-media-ink "
             title={listing.sourceName ?? 'Aggregated listing'}
           >
             <Globe className="h-3 w-3 shrink-0" />
@@ -98,8 +98,7 @@ export function ListingCard({
       <div className="flex flex-1 flex-col gap-2 p-3.5">
         <div className="flex items-baseline justify-between gap-2">
           <span
-            className="text-lg font-bold text-site-text"
-            style={{ fontFamily: 'var(--site-font-display)' }}
+            className="text-lg font-bold text-site-text font-display"
           >
             {formatPrice(listing.price, listing.listingType)}
           </span>

@@ -67,7 +67,7 @@ function EmbedPost() {
   if (!post) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-site-bg p-4">
-        <div className="rounded-xl border border-site-border bg-site-surface px-5 py-4 text-sm text-site-text-muted">
+        <div className="rounded-site border border-site-border bg-site-surface px-5 py-4 text-sm text-site-text-muted">
           {t("post-not-embeddable", { defaultValue: "This post isn’t available to embed." })}
         </div>
       </div>
@@ -76,7 +76,7 @@ function EmbedPost() {
 
   return (
     <div className="bg-site-bg p-3">
-      <article className="mx-auto max-w-xl rounded-2xl border border-site-border bg-site-surface p-4">
+      <article className="mx-auto max-w-xl rounded-site border border-site-border bg-site-surface p-4">
         <div className="flex items-center gap-3">
           {post.user.image ? (
             <img src={post.user.image} alt="" className="h-11 w-11 rounded-full object-cover" />
@@ -95,7 +95,7 @@ function EmbedPost() {
           <p className="mt-3 whitespace-pre-wrap break-words text-[15px] text-site-text">{post.content}</p>
         )}
         {post.imageUrl && (
-          <img src={post.imageUrl} alt={post.imageAlt ?? ''} className="mt-3 max-h-80 w-full rounded-xl object-cover" />
+          <img src={post.imageUrl} alt={post.imageAlt ?? ''} className="mt-3 max-h-80 w-full rounded-site object-cover" />
         )}
 
         <div className="mt-3 flex items-center gap-5 text-xs text-site-text-dim">

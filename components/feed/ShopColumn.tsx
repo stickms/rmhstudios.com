@@ -248,7 +248,6 @@ export function ShopColumn({
           {visible.map((item) => (
             <div
               key={item.id}
-              data-glass-light=""
               // L1 .glass-fill + .glass-interactive together light the hover glint
               // ring (the ring selector needs BOTH classes) and the pointer light.
               className="glass-fill glass-interactive flex items-center gap-3 rounded-site p-3"

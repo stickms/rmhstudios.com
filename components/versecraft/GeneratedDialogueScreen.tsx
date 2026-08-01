@@ -365,7 +365,7 @@ export function GeneratedDialogueScreen() {
       </AnimatePresence>
       {/* Background */}
       <div
-        className="absolute inset-0 z-0 transition-all duration-1000"
+        className="absolute inset-0 z-0 transition-colors duration-1000"
         style={{ backgroundColor: '#1a1520', filter }}
       >
         <img
@@ -482,7 +482,7 @@ export function GeneratedDialogueScreen() {
                 {node.choices.map((choice, i) => (
                   <motion.button
                     key={i}
-                    className="w-full text-left px-4 py-3 rounded transition-all text-sm md:text-base active:scale-[0.99]"
+                    className="w-full text-left px-4 py-3 rounded transition-transform text-sm md:text-base active:scale-[0.99]"
                     style={{
                       minHeight: 48,
                       backgroundColor: 'rgba(42, 34, 53, 0.6)',
@@ -544,7 +544,7 @@ export function GeneratedDialogueScreen() {
               key={k}
               onClick={() => setScreen(k)}
               aria-label={label}
-              className="flex items-center gap-1.5 rounded transition-all active:scale-95"
+              className="flex items-center gap-1.5 rounded transition-transform active:scale-95"
               style={{
                 minHeight: 40,
                 padding: '6px 12px',

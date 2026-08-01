@@ -7,7 +7,6 @@ import { useTranslation } from 'react-i18next';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { BackToTop } from '@/components/ui/back-to-top';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
 import { RadialHub } from './RadialHub';
@@ -17,62 +16,25 @@ import { RailSlotContext } from './rail-slot';
 import { MessagesPanel, NotificationsPanel, ProfilePanel, SearchPanel } from './TopBarPanels';
 
 /**
- * Fixed monochrome backdrop: concentric hairline rings centred on the viewport
- * that drift a few pixels against the pointer for parallax depth. Pointer-driven
- * transforms are written on a single rAF tick and skipped entirely under
- * reduced-motion or on coarse (touch) pointers.
+ * Fixed monochrome backdrop: concentric hairline rings centred on the viewport.
+ *
+ * The rings used to drift a few pixels **against the pointer**, driven by a
+ * `pointermove` listener and a rAF lerp mounted on every page in the site shell.
+ * That is retired along with the rest of the site's cursor reactivity (see the
+ * §5.1 note in `app/globals.css`). It was the cheapest of the pointer effects —
+ * one transform on one composited layer — but it was also the most constant: the
+ * listener was live on every route, and the lerp meant a pointer that crossed the
+ * window kept scheduling frames for a third of a second after it stopped. Frames
+ * spent on a backdrop are frames not spent on the thing the pointer is actually
+ * heading for.
+ *
+ * What is left is static geometry plus the CSS blob field's own slow keyframes,
+ * which run on the compositor and cost the main thread nothing.
  */
 function RadialBackdrop() {
-  const reduced = useReducedMotion();
-  const ringsRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (reduced) return;
-    const el = ringsRef.current;
-    if (!el || !window.matchMedia?.('(pointer: fine)').matches) return;
-
-    let targetX = 0;
-    let targetY = 0;
-    let curX = 0;
-    let curY = 0;
-    let raf = 0;
-    let last = 0;
-
-    const tick = (now: number) => {
-      // Delta-time smoothing, so the parallax settles at the same rate on a
-      // 60Hz and a 144Hz display instead of snapping on fast panels.
-      const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000));
-      last = now;
-      const k = 1 - Math.exp(-5 * dt);
-      curX += (targetX - curX) * k;
-      curY += (targetY - curY) * k;
-      el.style.transform = `translate3d(${curX.toFixed(2)}px, ${curY.toFixed(2)}px, 0)`;
-      if (Math.abs(targetX - curX) > 0.1 || Math.abs(targetY - curY) > 0.1) {
-        raf = requestAnimationFrame(tick);
-      } else {
-        raf = 0;
-      }
-    };
-
-    const onMove = (e: PointerEvent) => {
-      targetX = (e.clientX / window.innerWidth - 0.5) * -28;
-      targetY = (e.clientY / window.innerHeight - 0.5) * -28;
-      if (!raf) {
-        last = performance.now();
-        raf = requestAnimationFrame(tick);
-      }
-    };
-
-    window.addEventListener('pointermove', onMove, { passive: true });
-    return () => {
-      window.removeEventListener('pointermove', onMove);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, [reduced]);
-
   return (
     <div className="radial-backdrop" aria-hidden>
-      <div className="radial-backdrop__rings" ref={ringsRef}>
+      <div className="radial-backdrop__rings">
         {[0, 1, 2, 3, 4, 5].map((i) => (
           <span key={i} className="radial-backdrop__ring" style={{ ['--i' as string]: i }} />
         ))}

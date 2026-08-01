@@ -241,7 +241,6 @@ export function NotificationsPopover({
                       <li key={n.id}>
                         <button
                           type="button"
-                          data-glass-light=""
                           onClick={() => onItemClick(n)}
                           className="glass-interactive flex w-full items-start gap-2.5 px-3 py-2.5 text-left"
                         >

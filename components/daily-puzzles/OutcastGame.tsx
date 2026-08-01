@@ -237,7 +237,7 @@ function OutcastGameContent({ puzzle, dateKey, isToday }: { puzzle: OutcastPuzzl
                                         whileTap={!roundRevealed ? { scale: 0.97 } : {}}
                                         onClick={() => handleItemTap(item.name)}
                                         disabled={roundRevealed}
-                                        className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all cursor-pointer disabled:cursor-default ${cardClass}`}
+                                        className={`flex flex-col items-center gap-2 p-4 rounded-xl transition cursor-pointer disabled:cursor-default ${cardClass}`}
                                     >
                                         <span className="text-3xl">{item.emoji}</span>
                                         <span className="text-sm font-medium text-site-text">

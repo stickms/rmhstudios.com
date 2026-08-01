@@ -131,7 +131,7 @@ function TournamentDetailPage() {
               {t('prize-pool', { defaultValue: 'Prize pool' })}
             </div>
             <div className="font-medium flex items-center gap-1.5">
-              <Coins className="size-4 text-yellow-500" />
+              <Coins className="size-4 text-site-warning" />
               {tourney.prizePoolCoins || tourney.seedPoolCoins}
             </div>
           </div>
@@ -159,7 +159,7 @@ function TournamentDetailPage() {
         {/* Winner banner */}
         {tourney.status === 'COMPLETE' && winner && (
           <Card className="p-4 flex items-center gap-3" pane>
-            <Trophy className="size-8 text-yellow-500 shrink-0" />
+            <Trophy className="size-8 text-site-warning shrink-0" />
             <div>
               <div className="text-xs text-site-text-dim uppercase tracking-wide">
                 {t('champion', { defaultValue: 'Champion' })}
@@ -265,7 +265,7 @@ function TournamentDetailPage() {
                 {e.placement ? (
                   <span className="w-5 text-center text-sm font-semibold text-site-text-dim">
                     {e.placement === 1 ? (
-                      <Trophy className="size-4 text-yellow-500 inline" />
+                      <Trophy className="size-4 text-site-warning inline" />
                     ) : e.placement <= 3 ? (
                       <Medal className="size-4 text-site-text-dim inline" />
                     ) : (

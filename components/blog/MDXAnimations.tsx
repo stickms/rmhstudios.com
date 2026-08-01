@@ -60,12 +60,12 @@ function animated<T extends keyof React.JSX.IntrinsicElements>(tag: T, base: str
 
 export const AnimatedH1 = animated(
   'h1',
-  'mt-12 mb-6 font-(family-name:--site-font-display) text-3xl font-black tracking-tight text-site-text',
+  'mt-12 mb-6 font-display text-3xl font-black tracking-tight text-site-text',
 );
 
 export const AnimatedH2 = animated(
   'h2',
-  'mt-10 mb-5 font-(family-name:--site-font-display) text-2xl font-bold tracking-tight text-site-text',
+  'mt-10 mb-5 font-display text-2xl font-bold tracking-tight text-site-text',
 );
 
 export const AnimatedH3 = animated('h3', 'mt-8 mb-4 text-xl font-bold text-site-text');

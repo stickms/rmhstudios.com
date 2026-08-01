@@ -277,7 +277,7 @@ export function NeonDriftwayUI({
                   key={id}
                   onClick={() => unlocked && onStartLevel(id)}
                   disabled={!unlocked}
-                  className={`relative text-left p-4 rounded-lg border transition-all ${unlocked
+                  className={`relative text-left p-4 rounded-lg border transition-colors ${unlocked
                     ? 'border-zinc-600 hover:border-cyan-500 bg-zinc-900/80 cursor-pointer'
                     : 'border-zinc-800 bg-zinc-900/40 cursor-not-allowed opacity-50'
                     }`}

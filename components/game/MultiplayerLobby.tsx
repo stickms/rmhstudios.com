@@ -289,10 +289,10 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                         {browsedSong && (
                             <>
                                 <div
-                                    className="absolute inset-0 bg-black/20 z-65 animate-in fade-in duration-200"
+                                    className="absolute inset-0 bg-black/20 z-65 duration-200"
                                     onClick={() => setBrowsedSong(null)}
                                 />
-                                <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-70 animate-in slide-in-from-right duration-300 flex flex-col overflow-hidden">
+                                <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-70 duration-300 flex flex-col overflow-hidden">
                                     <div className="flex items-center justify-between p-4 border-b border-slice-shadow-dark/50 bg-slice-shadow-dark/20">
                                         <h2 className="text-lg font-black text-slice-text">{t("song-details", { defaultValue: "Song Details" })}</h2>
                                         <Button variant="ghost" size="icon" className="h-8 w-8 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark rounded-lg"
@@ -325,7 +325,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-10 w-10 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark dark:text-slice-text-muted dark:hover:text-slice-text dark:hover:bg-slice-shadow-light rounded-lg transition-all"
+                                className="h-10 w-10 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark dark:text-slice-text-muted dark:hover:text-slice-text dark:hover:bg-slice-shadow-light rounded-lg transition-colors"
                                 onClick={() => setIsDarkMode(!isDarkMode)}
                                 title={isDarkMode ? t("switch-to-light-mode", { defaultValue: "Switch to Light Mode" }) : t("switch-to-dark-mode", { defaultValue: "Switch to Dark Mode" })}
                             >
@@ -335,7 +335,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                 <Button
                                     size="icon"
                                     variant="ghost"
-                                    className="h-10 w-10 rounded-2xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)] transition-all text-slice-text-muted hover:text-slice-text"
+                                    className="h-10 w-10 rounded-2xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)] transition text-slice-text-muted hover:text-slice-text"
                                     onClick={onOpenSettings}
                                     title={t("settings", { defaultValue: "Settings" })}
                                 >
@@ -352,7 +352,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                 <Button 
                                     size="icon" 
                                     variant="ghost" 
-                                    className="h-12 w-12 rounded-2xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)] transition-all"
+                                    className="h-12 w-12 rounded-2xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)] transition"
                                     onClick={handleCopyLink}
                                     title={t("copy-invite-link", { defaultValue: "Copy Invite Link" })}
                                 >
@@ -473,7 +473,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                                     <button
                                                         key={opt.key}
                                                         onClick={() => handleDifficultyChange({ level: opt.key })}
-                                                        className={`px-1.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all border ${
+                                                        className={`px-1.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-colors border ${
                                                             isActive
                                                                 ? 'text-white shadow-md scale-[1.02]'
                                                                 : 'bg-slice-bg text-slice-text-light border-slice-shadow-dark/50 shadow-[2px_2px_4px_var(--slice-shadow-dark),-2px_-2px_4px_var(--slice-shadow-light)] hover:bg-slice-shadow-dark/20'
@@ -527,7 +527,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                     ].map(opt => (
                                         <button
                                             key={opt.key}
-                                            className={`flex items-center justify-between w-full p-2 rounded-lg transition-all ${
+                                            className={`flex items-center justify-between w-full p-2 rounded-lg transition-colors ${
                                                 myDifficulty[opt.key]
                                                     ? 'bg-blue-500/10 shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]'
                                                     : 'bg-slice-bg shadow-[2px_2px_4px_var(--slice-shadow-dark),-2px_-2px_4px_var(--slice-shadow-light)] hover:bg-slice-shadow-dark/20'
@@ -602,7 +602,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                     const amReady = me?.isReady ?? false;
                                     return (
                                         <Button
-                                            className={`flex-1 font-bold shadow-lg rounded-xl transition-all ${
+                                            className={`flex-1 font-bold shadow-lg rounded-xl transition-colors ${
                                                 amReady
                                                     ? 'bg-green-500 hover:bg-green-600 text-white'
                                                     : 'bg-orange-500 hover:bg-orange-600 text-white'

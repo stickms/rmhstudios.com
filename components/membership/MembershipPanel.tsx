@@ -310,7 +310,7 @@ export function MembershipPanel({
                     <div className="flex items-start justify-between gap-2">
                       <h3
                         className={cn(
-                          'font-(family-name:--site-font-display) text-2xl font-bold leading-tight tracking-tight',
+                          'font-display text-2xl font-bold leading-tight tracking-tight',
                           plan.featured ? 'text-site-warning' : 'text-site-text',
                         )}
                       >
@@ -476,7 +476,17 @@ function PricingStyles() {
       }
 
       /* Straddles the card's top edge. The max-width keeps a long translation
-         inside the card rather than out over its neighbour. */
+         inside the card rather than out over its neighbour.
+
+         Because it deliberately overflows, the featured card has to opt out of
+         the sheen layer's hard clip (.glass-liquid sets overflow:clip, so the
+         travelling band cannot be seen outside the pane). --glass-sheen-bleed is
+         that opt-out: it buys the ribbon room to hang over the edge, and the only
+         cost is that the sheen's soft tail is allowed the same room — which on an
+         alpha ramp is not visible. Keep it just big enough for half the ribbon. */
+      .pricing-card--featured {
+        --glass-sheen-bleed: 16px;
+      }
       .pricing-ribbon {
         position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%);
         border-radius: 9999px; padding: 4px 12px; max-width: calc(100% - 1.5rem);

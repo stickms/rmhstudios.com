@@ -98,7 +98,7 @@ export function ExploreColumn({
  <section className="m-4 rounded-tr-[2.5rem] rounded-bl-[2.5rem] rounded-tl-site rounded-br-site border border-site-border bg-site-surface p-5 shadow-site-sm">
  <label
  htmlFor="ask-feed"
- className="mb-3 flex items-center gap-2 font-(family-name:--site-font-display) text-lg font-bold text-site-text"
+ className="mb-3 flex items-center gap-2 font-display text-lg font-bold text-site-text"
  >
  <Sparkles className="h-4 w-4 text-site-text"/>{''}
  {t('ask-the-feed', { defaultValue:'Ask the feed'})}
@@ -152,7 +152,7 @@ export function ExploreColumn({
  <Link
  key={t.tag}
  to={`/tag/${t.tag}`as string}
- className="inline-flex min-h-11 items-center gap-1 rounded-full border border-site-border bg-site-surface px-3.5 py-1 text-sm text-site-text transition-colors duration-200 hover:border-site-accent/50"
+ className="inline-flex min-h-11 items-center gap-1 rounded-full border border-site-border bg-site-surface px-3.5 py-1 text-sm text-site-text transition-colors duration-site hover:border-site-accent/50"
  >
  <Hash className="h-3 w-3 text-site-accent"/>
  {t.tag}

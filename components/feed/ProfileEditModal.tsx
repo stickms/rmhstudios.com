@@ -626,7 +626,6 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  type="button"
  onClick={() => bannerInputRef.current?.click()}
  className="glass-fill glass-interactive group relative block h-32 w-full overflow-hidden rounded-site"
- data-glass-light=""
  >
  {bannerPreview ? (
  <img src={bannerPreview} alt=""className="size-full object-cover"/>
@@ -674,7 +673,6 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  type="button"
  onClick={() => fileInputRef.current?.click()}
  className="glass-fill glass-interactive group relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-full text-2xl font-bold text-site-text"
- data-glass-light=""
  aria-label={t('change-avatar', { defaultValue:'Change profile photo'})}
  >
  {avatarPreview ? (

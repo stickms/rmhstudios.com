@@ -582,7 +582,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  <button
  type="button"
  onClick={() => setImageUrls((prev) => prev.filter((u) => u !== url))}
- className="absolute -right-1.5 -top-1.5 rounded-full bg-black/70 p-0.5 text-white"
+ className="absolute -right-1.5 -top-1.5 rounded-full bg-site-media-scrim-strong p-0.5 text-site-media-ink"
  aria-label={t('remove', { defaultValue:'Remove'})}
  >
  <X className="h-3.5 w-3.5"/>
@@ -595,7 +595,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  <button
  type="button"
  onClick={() => setGifUrl(null)}
- className="absolute -right-1.5 -top-1.5 rounded-full bg-black/70 p-0.5 text-white"
+ className="absolute -right-1.5 -top-1.5 rounded-full bg-site-media-scrim-strong p-0.5 text-site-media-ink"
  aria-label={t('remove', { defaultValue:'Remove'})}
  >
  <X className="h-3.5 w-3.5"/>
@@ -636,7 +636,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  {attachOpen && (
  <div
  ref={attachPanelRef}
- className="absolute bottom-full left-0 z-30 mb-1 w-40 glass-fill py-1"
+ className="absolute bottom-full left-0 z-30 mb-1 w-40 glass-overlay py-1"
  >
  <button
  type="button"

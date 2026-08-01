@@ -286,7 +286,7 @@ export function PostDetail({ postId }: PostDetailProps) {
  >
  <ArrowLeft className="w-5 h-5 text-site-text"/>
  </button>
- <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text">
+ <h1 className="font-display font-bold text-lg text-site-text">
  {t('post-header', { defaultValue:'Post'})}
  </h1>
  </div>

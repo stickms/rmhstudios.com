@@ -281,7 +281,7 @@ export function PoemPresentation() {
       {/* Continue button */}
       {phase === 'reactions' && (
         <motion.button
-          className="mt-8 px-8 py-3 rounded text-base font-semibold transition-all"
+          className="mt-8 px-8 py-3 rounded text-base font-semibold transition-colors"
           style={{
             backgroundColor: 'rgba(196, 163, 90, 0.25)',
             border: '1px solid rgba(196, 163, 90, 0.5)',

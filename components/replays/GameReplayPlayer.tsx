@@ -244,7 +244,7 @@ function LightsOutStage({ data, step }: { data: ReplayData; step: number }) {
               <div
                 key={c}
                 className={cn(
-                  'h-9 w-9 rounded-md border transition-colors',
+                  'h-9 w-9 rounded-site-sm border transition-colors',
                   cell
                     ? 'border-site-accent bg-site-accent/80 shadow-[0_0_10px_var(--site-accent)]'
                     : 'border-site-border bg-site-bg',

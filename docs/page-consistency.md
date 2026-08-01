@@ -274,9 +274,31 @@ or toast store is the exact drift that tier exists to prevent.
 These are the mistakes that make a page feel "off" — reviewers will flag them:
 
 1. Hardcoded colors (`bg-zinc-900`, `text-white`, hex values) instead of
-   `site-*` tokens — breaks every theme at once.
+   `site-*` tokens — breaks every theme at once. CI-enforced for site-tier
+   files (design-language.md §13 rule 5). Two legitimate escapes, both
+   tokenised: a chip that sits **on a photograph** uses the
+   `--site-media-*` contract (theme-tracking ink over someone's snapshot is
+   the wrong answer), and a domain-fixed palette — a playing card, a roulette
+   pocket — gets a scoped variable group like `--casino-*`.
 2. `rounded-lg`/`rounded-2xl` instead of `rounded-site*` — hardcodes a radius
-   that ignores each theme's `--site-radius` (16px) / `--site-radius-sm` (10px).
+   that ignores each theme's `--site-radius` / `--site-radius-sm`. CI-enforced
+   (§13 rule 6). `rounded-full` and `rounded-none` are shapes, not radii, and
+   stay fine.
+2b. A dropdown / popover / menu / tooltip on `.glass-fill` instead of
+   `.glass-overlay`. L1 has **no backdrop blur** — it is the tier for repeated
+   cards — so a menu built on it is transparent over whatever it opened on top
+   of. CI-enforced (§13 rule 7).
+2b2. `transition-all`. It makes the engine watch every animatable property
+   including the layout ones, so a state change that touches `width` or `gap`
+   animates a reflow. Name what moves (`transition-colors`,
+   `transition-transform`, `transition-[a,b]`, or plain `transition`).
+   CI-enforced (§13 rule 8). And if a layout property IS what you want to
+   animate, reach for a transform first — a progress bar is `scaleX` on a
+   full-width fill, not an animated `width`.
+2c. A bare `duration-200` / `duration-300` instead of `duration-site` /
+   `duration-site-fast` / `duration-site-slow`, which follow the theme's
+   `--site-transition-speed`. Anything the user *drags* is a spring
+   (`APPLE_SPRING`), not a duration at all.
 3. Custom headers instead of `PageLayout`'s sticky header.
 4. Arbitrary column widths instead of `lib/layout-width.ts` constants.
 5. Hand-rolled modals/spinners/empty states/copy-buttons instead of the

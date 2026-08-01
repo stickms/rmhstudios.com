@@ -135,7 +135,7 @@ function PuzzlePlayer({
         {phase === 'playing' && selectedAnswer !== null && (
           <button
             onClick={handleSubmit}
-            className="w-full py-3 rounded-lg text-base md:text-sm font-bold transition-all hover:brightness-110 active:scale-[0.98] min-h-11"
+            className="w-full py-3 rounded-lg text-base md:text-sm font-bold transition hover:brightness-110 active:scale-[0.98] min-h-11"
             style={{ background: 'var(--doctrine-accent, #F97316)', color: '#000' }}
           >
             {t("submit", { defaultValue: "SUBMIT" })}
@@ -170,7 +170,7 @@ function PuzzlePlayer({
               </Link>
               <button
                 onClick={handlePlayAgain}
-                className="flex-1 py-3 rounded-lg text-base md:text-sm font-medium flex items-center justify-center gap-2 min-h-11 transition-all hover:brightness-110"
+                className="flex-1 py-3 rounded-lg text-base md:text-sm font-medium flex items-center justify-center gap-2 min-h-11 transition hover:brightness-110"
                 style={{ background: 'var(--doctrine-accent, #F97316)', color: '#000' }}
               >
                 <RotateCcw size={16} />
@@ -191,7 +191,7 @@ function PuzzlePlayer({
             <p className="text-sm text-white/30 mt-1">{t("puzzle-expired", { defaultValue: "This puzzle has expired." })}</p>
             <button
               onClick={handlePlayAgain}
-              className="px-6 py-3 rounded-lg text-base md:text-sm font-medium min-h-11 transition-all hover:brightness-110"
+              className="px-6 py-3 rounded-lg text-base md:text-sm font-medium min-h-11 transition hover:brightness-110"
               style={{ background: 'var(--doctrine-accent, #F97316)', color: '#000' }}
             >
               <RotateCcw size={16} className="inline mr-2" />
@@ -237,7 +237,7 @@ function AlibiPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onAnsw
           <button
             key={s.name}
             onClick={() => { setSelected(s.name); onAnswer(s.name); }}
-            className={`w-full text-left p-4 md:p-3 rounded-lg transition-all min-h-11 ${
+            className={`w-full text-left p-4 md:p-3 rounded-lg transition-colors min-h-11 ${
               selected === s.name ? 'ring-2' : 'hover:bg-white/5'
             }`}
             style={{
@@ -270,7 +270,7 @@ function OutcastPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onAn
           <button
             key={w}
             onClick={() => { setSelected(w); onAnswer(w); }}
-            className={`px-4 py-3 md:py-2 rounded-lg text-base md:text-sm font-medium transition-all min-h-11 ${
+            className={`px-4 py-3 md:py-2 rounded-lg text-base md:text-sm font-medium transition-colors min-h-11 ${
               selected === w ? 'ring-2' : 'hover:bg-white/10'
             }`}
             style={{
@@ -301,7 +301,7 @@ function ImpostorPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onA
           <button
             key={p.word}
             onClick={() => { setSelected(p.word); onAnswer(p.word); }}
-            className={`w-full text-left p-4 md:p-3 rounded-lg transition-all min-h-11 ${
+            className={`w-full text-left p-4 md:p-3 rounded-lg transition-colors min-h-11 ${
               selected === p.word ? 'ring-2' : 'hover:bg-white/5'
             }`}
             style={{
@@ -359,7 +359,7 @@ function SpectrumPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onA
             onDragOver={(e) => { e.preventDefault(); }}
             onDrop={() => { if (dragIndex !== null && dragIndex !== i) moveItem(dragIndex, i); setDragIndex(null); }}
             onDragEnd={() => setDragIndex(null)}
-            className={`flex items-center gap-3 p-3 md:p-2.5 rounded-lg cursor-grab active:cursor-grabbing select-none transition-all min-h-11 ${
+            className={`flex items-center gap-3 p-3 md:p-2.5 rounded-lg cursor-grab active:cursor-grabbing select-none transition min-h-11 ${
               dragIndex === i ? 'opacity-50 scale-95' : ''
             }`}
             style={{
@@ -426,7 +426,7 @@ function ChainlinkPuzzle({ data, onAnswer }: { data: Record<string, unknown>; on
             onDragOver={(e) => { e.preventDefault(); }}
             onDrop={() => { if (dragIndex !== null && dragIndex !== i) moveItem(dragIndex, i); setDragIndex(null); }}
             onDragEnd={() => setDragIndex(null)}
-            className={`flex items-center gap-3 p-3 md:p-2.5 rounded-lg cursor-grab active:cursor-grabbing select-none transition-all min-h-11 ${
+            className={`flex items-center gap-3 p-3 md:p-2.5 rounded-lg cursor-grab active:cursor-grabbing select-none transition min-h-11 ${
               dragIndex === i ? 'opacity-50 scale-95' : ''
             }`}
             style={{

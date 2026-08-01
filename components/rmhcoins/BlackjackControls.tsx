@@ -163,7 +163,7 @@ export function BlackjackControls({ coins }: Props) {
                   <button
                     key={amt}
                     onClick={() => setQuickBet(amt)}
-                    className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-site-sm text-site-text-dim hover:text-site-text hover:bg-site-surface-hover active:scale-95 transition-all"
+                    className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-site-sm text-site-text-dim hover:text-site-text hover:bg-site-surface-hover active:scale-95 transition-colors"
                   >
                     {amt}
                   </button>
@@ -182,7 +182,7 @@ export function BlackjackControls({ coins }: Props) {
         )}
 
         {error && (
-          <p className="text-sm text-red-400 text-center">{error}</p>
+          <p className="text-sm text-site-danger text-center">{error}</p>
         )}
       </div>
     );
@@ -240,7 +240,7 @@ export function BlackjackControls({ coins }: Props) {
           </div>
         )}
 
-        {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+        {error && <p className="text-sm text-site-danger text-center">{error}</p>}
       </div>
     );
   }
@@ -256,13 +256,13 @@ export function BlackjackControls({ coins }: Props) {
         <div className={`grid ${gridCols} gap-2`}>
           <Button
             onClick={() => emit(C2S.HIT)}
-            className="min-h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-site-sm text-sm"
+            className="min-h-12 bg-casino-green-hover hover:bg-casino-green text-casino-ink font-bold rounded-site-sm text-sm"
           >
             {t("hit", { defaultValue: "Hit" })}
           </Button>
           <Button
             onClick={() => emit(C2S.STAND)}
-            className="min-h-12 bg-red-600 hover:bg-red-700 text-white font-bold rounded-site-sm text-sm"
+            className="min-h-12 bg-casino-red hover:bg-casino-red text-casino-ink font-bold rounded-site-sm text-sm"
           >
             {t("stand", { defaultValue: "Stand" })}
           </Button>
@@ -277,13 +277,13 @@ export function BlackjackControls({ coins }: Props) {
           {canSplit && (
             <Button
               onClick={() => emit(C2S.SPLIT)}
-              className="min-h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-site-sm text-sm"
+              className="min-h-12 bg-casino-seat-1 hover:bg-casino-seat-1 text-casino-ink font-bold rounded-site-sm text-sm"
             >
               {t("split", { defaultValue: "Split" })}
             </Button>
           )}
         </div>
-        {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+        {error && <p className="text-sm text-site-danger text-center">{error}</p>}
       </div>
     );
   }
@@ -323,7 +323,7 @@ export function BlackjackControls({ coins }: Props) {
     const resultText: Record<string, { label: string; color: string }> = {
       blackjack: { label: t("result-blackjack", { defaultValue: "Blackjack! (3:2)" }), color: 'text-site-accent' },
       win: { label: t("result-win", { defaultValue: "You win!" }), color: 'text-site-success' },
-      push: { label: t("result-push", { defaultValue: "Push" }), color: 'text-blue-400' },
+      push: { label: t("result-push", { defaultValue: "Push" }), color: 'text-casino-seat-1' },
       lose: { label: t("result-lose", { defaultValue: "You lose" }), color: 'text-site-danger' },
     };
 
@@ -338,7 +338,7 @@ export function BlackjackControls({ coins }: Props) {
           </p>
         )}
         {myResult.insuranceBet > 0 && myResult.insuranceResult && (
-          <p className={`text-xs mt-1 ${myResult.insuranceResult === 'won' ? 'text-blue-400' : 'text-site-text-dim'}`}>
+          <p className={`text-xs mt-1 ${myResult.insuranceResult === 'won' ? 'text-casino-seat-1' : 'text-site-text-dim'}`}>
             {myResult.insuranceResult === 'won' ? t("insurance-paid-out", { defaultValue: "Insurance paid out!" }) : t("insurance-lost", { defaultValue: "Insurance lost" })}
           </p>
         )}
