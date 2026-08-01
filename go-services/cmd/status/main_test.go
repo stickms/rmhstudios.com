@@ -8,19 +8,19 @@ import (
 	"github.com/rmhstudios/rmh-go/internal/status"
 )
 
-// default*URL mirror the corresponding env defaults in main(): everything a
-// user touches is probed through the PUBLIC origin (so the probe traverses DNS
-// → CDN → Apache → container, the same path a visitor takes), while the
-// internal-only services use compose DNS names.
+// default*URL mirror the corresponding env defaults in main(): the WEB-FACING
+// surfaces are probed through the PUBLIC origin (so the probe traverses DNS →
+// CDN → Apache → container, the same path a visitor takes), while the services
+// with no public route — the three hubs and the supervisor — use compose DNS
+// names.
 const (
 	publicOrigin         = "https://rmhstudios.com"
 	defaultReadyURL      = publicOrigin + "/api/ready"
-	defaultFeedURL       = publicOrigin + "/blog.rss.xml"
+	defaultFeedURL       = publicOrigin + "/blog/rss.xml"
 	defaultSitemapURL    = publicOrigin + "/sitemap.xml"
-	defaultSocketURL     = publicOrigin + "/socket/health"
-	defaultRMHBoxURL     = publicOrigin + "/rmhbox-ws/health"
-	defaultRMHTubeURL    = publicOrigin + "/rmhtube-ws/health"
-	defaultAssetsURL     = "http://assets:7007/health"
+	defaultSocketURL     = "http://socket:7001/health"
+	defaultRMHBoxURL     = "http://rmhbox:7676/health"
+	defaultRMHTubeURL    = "http://rmhtube:7003/health"
 	defaultSupervisorURL = "http://supervisor:9090/health"
 )
 
@@ -35,7 +35,6 @@ func defaultURLs() probeURLs {
 		Socket:     defaultSocketURL,
 		RMHBox:     defaultRMHBoxURL,
 		RMHTube:    defaultRMHTubeURL,
-		Assets:     defaultAssetsURL,
 		Supervisor: defaultSupervisorURL,
 	}
 }
@@ -43,7 +42,7 @@ func defaultURLs() probeURLs {
 // httpTargetNames are every HTTP (non-Database) target buildTargets emits.
 var httpTargetNames = []string{
 	"Website", "App readiness", "Realtime / Games", "RMHbox", "RMHtube",
-	"Content feed", "Sitemap", "Assets", "Background workers",
+	"Content feed", "Sitemap", "Background workers",
 }
 
 // TestBuildTargetsOmitsDatabaseWithoutDSN asserts that with DATABASE_URL unset
@@ -105,17 +104,92 @@ func TestRemovedTopologyTargetsAreGone(t *testing.T) {
 
 	targets := buildTargets(defaultURLs(), 4*time.Second)
 
-	for _, gone := range []string{"Gateway", "RMHmusic", "Recap runner"} {
+	// "Assets" joins that list: the Go assets origin still runs under compose, but
+	// the heavy media it was written to serve moved to Cloudflare R2 behind
+	// cdn.rmhstudios.com (lib/storage/asset.ts) — so no visitor's request ever
+	// reaches it, and a tile for it is a health signal about nothing.
+	for _, gone := range []string{"Gateway", "RMHmusic", "Recap runner", "Assets"} {
 		if findTarget(targets, gone) != nil {
 			t.Fatalf("target %q belongs to the removed Go realtime topology and must not be probed", gone)
 		}
 	}
 	for _, tg := range targets {
-		for _, dead := range []string{"gateway", "rmhmusic-ws", "recap", ":7004", ":7002"} {
+		for _, dead := range []string{"gateway", "rmhmusic-ws", "recap", ":7004", ":7002", "assets:"} {
 			if strings.Contains(tg.URL, dead) {
 				t.Fatalf("target %q still points at removed infrastructure: %q", tg.Name, tg.URL)
 			}
 		}
+	}
+}
+
+// TestProbeURLsAreReachablePaths is the regression guard for the bug this page
+// shipped with: four of its rows were pinned at "Degraded / 0.00% uptime" for
+// days because the URLs behind them 404'd, while every one of those services was
+// serving traffic normally.
+//
+// Two distinct mistakes, one symptom:
+//
+//   - the content feed was probed at /blog.rss.xml, but the route file
+//     `app/routes/blog.rss[.]xml.ts` serves /blog/rss.xml (only the BRACKETED dot
+//     is a literal; the first one is a path separator).
+//   - the three realtime hubs were probed at public paths (/socket/health,
+//     /rmhbox-ws/health, /rmhtube-ws/health) that exist only as rewrites in
+//     deploy/apache/rmhstudios.conf — a file deploy.sh never installs. Unrewritten,
+//     they fall through to the web app's catch-all and answer 404 forever.
+//
+// So: no probe URL may contain the dotted feed spelling, and no probe may depend
+// on an Apache rewrite that the deploy does not own.
+func TestProbeURLsAreReachablePaths(t *testing.T) {
+	t.Setenv("DATABASE_URL", "")
+
+	targets := buildTargets(defaultURLs(), 4*time.Second)
+
+	feed := findTarget(targets, "Content feed")
+	if feed == nil {
+		t.Fatal("missing Content feed target")
+	}
+	if !strings.HasSuffix(feed.URL, "/blog/rss.xml") {
+		t.Fatalf("Content feed URL = %q, want the served route .../blog/rss.xml", feed.URL)
+	}
+
+	for _, name := range []string{"Realtime / Games", "RMHbox", "RMHtube"} {
+		tg := findTarget(targets, name)
+		if tg == nil {
+			t.Fatalf("missing hub target %q", name)
+		}
+		for _, rewritten := range []string{"/socket/health", "/rmhbox-ws/health", "/rmhtube-ws/health"} {
+			if strings.HasSuffix(tg.URL, rewritten) {
+				t.Fatalf("hub %q is probed at %q, a path that only resolves via a hand-installed Apache rewrite", name, tg.URL)
+			}
+		}
+		if !strings.HasSuffix(tg.URL, "/health") {
+			t.Fatalf("hub %q URL = %q, want the hub's own /health", name, tg.URL)
+		}
+	}
+}
+
+// TestHubURLsTrackPortEnv asserts the internal hub URLs are built from the same
+// PORT_* env docker-compose passes into the hub containers, so remapping a port
+// in one place can't leave the probe pointing at the old one.
+func TestHubURLsTrackPortEnv(t *testing.T) {
+	t.Setenv("SOCKET_PORT", "8001")
+	t.Setenv("RMHBOX_PORT", "8676")
+	t.Setenv("RMHTUBE_PORT", "8003")
+
+	for _, c := range []struct{ service, env, def, want string }{
+		{"socket", "SOCKET_PORT", "7001", "http://socket:8001/health"},
+		{"rmhbox", "RMHBOX_PORT", "7676", "http://rmhbox:8676/health"},
+		{"rmhtube", "RMHTUBE_PORT", "7003", "http://rmhtube:8003/health"},
+	} {
+		if got := hubHealthURL(c.service, c.env, c.def); got != c.want {
+			t.Errorf("hubHealthURL(%q) = %q, want %q", c.service, got, c.want)
+		}
+	}
+
+	// Unset → the compose default for that hub.
+	t.Setenv("SOCKET_PORT", "")
+	if got := hubHealthURL("socket", "SOCKET_PORT", "7001"); got != "http://socket:7001/health" {
+		t.Errorf("unset SOCKET_PORT = %q, want the 7001 default", got)
 	}
 }
 
@@ -151,7 +225,7 @@ func TestLatencyBudgetsSet(t *testing.T) {
 	t.Setenv("DATABASE_URL", "")
 
 	targets := buildTargets(defaultURLs(), 4*time.Second)
-	exempt := map[string]bool{"Assets": true, "Background workers": true}
+	exempt := map[string]bool{"Background workers": true}
 
 	for _, tg := range targets {
 		if tg.Probe != nil || exempt[tg.Name] {
@@ -206,7 +280,7 @@ func TestBuildTargetsURLsFlowThrough(t *testing.T) {
 		{"RMHtube", defaultRMHTubeURL},
 		{"Content feed", defaultFeedURL},
 		{"Sitemap", defaultSitemapURL},
-		{"Assets", defaultAssetsURL},
+		{"Background workers", defaultSupervisorURL},
 	} {
 		if tg := findTarget(targets, c.name); tg == nil || tg.URL != c.want {
 			t.Fatalf("%q URL = %+v, want %q", c.name, tg, c.want)
@@ -217,19 +291,18 @@ func TestBuildTargetsURLsFlowThrough(t *testing.T) {
 	overridden := buildTargets(probeURLs{
 		Website:    "https://staging.rmhstudios.com/",
 		Ready:      "https://staging.rmhstudios.com/api/ready",
-		Feed:       "https://staging.rmhstudios.com/blog.rss.xml",
+		Feed:       "https://staging.rmhstudios.com/blog/rss.xml",
 		Sitemap:    "https://staging.rmhstudios.com/sitemap.xml",
 		Socket:     "http://socket-server:7001/health",
-		RMHBox:     "http://rmhbox:7676/health",
-		RMHTube:    "http://rmhtube:7003/health",
-		Assets:     defaultAssetsURL,
+		RMHBox:     "http://rmhbox-staging:7676/health",
+		RMHTube:    "http://rmhtube-staging:7003/health",
 		Supervisor: defaultSupervisorURL,
 	}, 4*time.Second)
 	for _, c := range []struct{ name, want string }{
 		{"Website", "https://staging.rmhstudios.com/"},
 		{"Realtime / Games", "http://socket-server:7001/health"},
-		{"RMHbox", "http://rmhbox:7676/health"},
-		{"RMHtube", "http://rmhtube:7003/health"},
+		{"RMHbox", "http://rmhbox-staging:7676/health"},
+		{"RMHtube", "http://rmhtube-staging:7003/health"},
 	} {
 		if tg := findTarget(overridden, c.name); tg == nil || tg.URL != c.want {
 			t.Fatalf("override %q URL = %+v, want %q", c.name, tg, c.want)

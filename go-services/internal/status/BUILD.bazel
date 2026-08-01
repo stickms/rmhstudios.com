@@ -18,6 +18,7 @@ go_test(
         "dashboard_test.go",
         "persist_test.go",
         "probe_test.go",
+        "render_test.go",
     ],
     embed = [":status"],
 )

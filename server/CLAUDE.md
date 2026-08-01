@@ -153,8 +153,13 @@ history if a rollback ever needs it.
 - Event names: `<app>:<domain>:<action>` client→server; server→client names
   are centralized in `lib/<app>/events.ts` and imported by **both** sides —
   never inline event strings.
-- Apache maps the external paths to loopback ports; health checks live at
-  `<origin>/socket/health` etc.
+- Apache maps the external paths to loopback ports. Each hub serves
+  `{"status":"ok","uptime":N}` at the **root `/health` of its own listener**;
+  the public `<origin>/socket/health` · `/rmhbox-ws/health` · `/rmhtube-ws/health`
+  paths are an Apache rewrite ONTO that endpoint, not a second one — and they
+  only exist once `deploy/apache/rmhstudios.conf` has been hand-installed on the
+  VPS (the deploy never touches `/etc/apache2`). The status service probes the
+  internal `/health` for exactly that reason (`go-services/cmd/status`).
 
 ## Gotchas
 
