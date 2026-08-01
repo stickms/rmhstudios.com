@@ -6,18 +6,18 @@ import { SavedSearches } from '@/components/search/SavedSearches';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { RightSidebar } from '@/components/feed/RightSidebar';
 import { getSidebarData } from '@/lib/sidebar-data';
+import { isSearchTab, type SearchTab } from '@/lib/search/types';
 
 const fetchSidebarData = createServerFn({ method: 'GET' }).handler(async () => {
   return getSidebarData();
 });
 
-const SEARCH_TABS = ['top', 'people', 'posts', 'builds', 'blog'] as const;
-type SearchTab = (typeof SEARCH_TABS)[number];
-
 export const Route = createFileRoute('/_site/search')({
   validateSearch: (search: Record<string, unknown>) => ({
     q: (search.q as string) || '',
-    tab: SEARCH_TABS.includes(search.tab as SearchTab) ? (search.tab as SearchTab) : 'top',
+    // Tabs are declared once in lib/search/types so the page, the API and the
+    // result renderer can never disagree about which corpora a tab covers.
+    tab: isSearchTab(search.tab) ? search.tab : ('top' as SearchTab),
   }),
   loader: () => fetchSidebarData(),
   head: () => ({ meta: [{ title: 'Search | RMH Studios' }] }),

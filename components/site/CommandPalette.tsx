@@ -50,6 +50,7 @@ import {
 } from 'lucide-react';
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
+import { SITE_DESTINATIONS } from '@/lib/search/catalog';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SITE_STYLES, useThemeStore, type SiteStyle } from '@/stores/themeStore';
 import { useSession } from '@/components/Providers';
@@ -88,175 +89,51 @@ interface Command {
   run?: () => void | Promise<void>;
 }
 
-const PAGES: Array<Omit<Command, 'section'>> = [
-  { id: 'page-home', label: 'Home', href: '/', icon: Home, keywords: 'feed timeline' },
-  {
-    id: 'page-explore',
-    label: 'Explore & Search',
-    href: '/search',
-    icon: Compass,
-    keywords: 'search find discover trending',
-  },
-  {
-    id: 'page-messages',
-    label: 'Messages',
-    href: '/messages',
-    icon: Inbox,
-    keywords: 'inbox dm chat conversations',
-    requiresAuth: true,
-  },
-  {
-    // Notifications live as a tab of the Inbox; `/notifications` redirects
-    // there, so this entry stays as the name people actually search for.
-    id: 'page-notifications',
-    label: 'Notifications',
-    href: '/notifications',
-    icon: Bell,
-    keywords: 'alerts mentions activity inbox',
-    requiresAuth: true,
-  },
-  {
-    id: 'page-bookmarks',
-    label: 'Bookmarks',
-    href: '/bookmarks',
-    icon: Bookmark,
-    keywords: 'saved posts',
-    requiresAuth: true,
-  },
-  {
-    id: 'page-library',
-    label: 'Library',
-    href: '/library',
-    icon: Library,
-    keywords: 'books reading documents',
-  },
-  {
-    id: 'page-communities',
-    label: 'Communities',
-    href: '/communities',
-    icon: Users,
-    keywords: 'groups clubs events spaces live audio rooms rsvp',
-  },
-  {
-    id: 'page-store',
-    label: 'Store',
-    href: '/store',
-    icon: ShoppingBag,
-    keywords: 'shop marketplace buy market listings trade sell cosmetics',
-  },
-  {
-    // The Arcade Pass is a section of Create's Games tab; `/arcade` redirects
-    // there, so this entry stays as the name people actually search for.
-    id: 'page-arcade',
-    label: 'Arcade Pass',
-    href: '/arcade',
-    icon: Gamepad2,
-    keywords: 'games daily challenge leaderboard ranking create',
-  },
-  {
-    id: 'page-predictions',
-    label: 'Predictions',
-    href: '/predictions',
-    icon: TrendingUp,
-    keywords: 'bets markets coins',
-  },
-  {
-    id: 'page-create',
-    label: 'Create',
-    href: '/create',
-    icon: Wand2,
-    keywords: 'vibe build ai generate creator studio games apps personas arcade',
-  },
-  {
-    id: 'page-achievements',
-    label: 'Achievements',
-    href: '/achievements',
-    icon: Trophy,
-    keywords: 'badges progress streaks journey',
-    requiresAuth: true,
-  },
-  {
-    id: 'page-wallet',
-    label: 'Wallet',
-    href: '/wallet',
-    icon: Wallet,
-    keywords: 'coins balance transactions',
-    requiresAuth: true,
-  },
-  {
-    id: 'page-daily',
-    label: 'Daily Puzzles',
-    href: '/daily',
-    icon: Puzzle,
-    keywords: 'lights out alibi spectrum outcast chainlink impostor',
-  },
-  {
-    id: 'page-blog',
-    label: 'Blog',
-    href: '/blog',
-    icon: Newspaper,
-    keywords: 'articles research posts',
-  },
-  { id: 'page-news', label: 'News', href: '/news', icon: Newspaper, keywords: 'headlines updates' },
-  {
-    id: 'page-study',
-    label: 'Study Decks',
-    href: '/study',
-    icon: BookOpen,
-    keywords: 'flashcards learn revision',
-  },
-  {
-    id: 'page-roadmap',
-    label: 'Roadmap',
-    href: '/roadmap',
-    icon: MapIcon,
-    keywords: 'plans upcoming features',
-  },
-  {
-    id: 'page-pricing',
-    label: 'Pricing',
-    href: '/pricing',
-    icon: Gem,
-    keywords: 'subscription membership plans upgrade',
-  },
-  {
-    id: 'page-ranked',
-    label: 'Ranked',
-    href: '/ranked',
-    icon: Trophy,
-    keywords: 'leaderboard elo competitive',
-  },
-  {
-    id: 'page-help',
-    label: 'Help',
-    href: '/help',
-    icon: HelpCircle,
-    keywords: 'help support concierge assistant faq questions guide contact',
-  },
-  {
-    id: 'page-settings',
-    label: 'Settings',
-    href: '/settings',
-    icon: SlidersHorizontal,
-    keywords: 'settings preferences appearance theme language locale notifications account',
-  },
-  {
-    id: 'page-security',
-    label: 'Passkeys & Security',
-    href: '/settings/security',
-    icon: KeyRound,
-    keywords: 'passkey webauthn password sign-in settings account sessions devices',
-    requiresAuth: true,
-  },
-  {
-    id: 'page-privacy',
-    label: 'Privacy & Data',
-    href: '/settings/privacy',
-    icon: ShieldUser,
-    keywords: 'privacy data export download gdpr delete account erasure settings',
-    requiresAuth: true,
-  },
-];
+/**
+ * Lucide components for the icon *names* carried by the shared destination
+ * catalog. The catalog is imported by the server too (it backs `/api/search`),
+ * so it can only name its icons — this is where names become components.
+ */
+const DESTINATION_ICONS: Record<string, LucideIcon> = {
+  Home,
+  Compass,
+  Inbox,
+  Bell,
+  Bookmark,
+  Library,
+  Users,
+  ShoppingBag,
+  Gamepad2,
+  TrendingUp,
+  Wand2,
+  Trophy,
+  Wallet,
+  Puzzle,
+  Newspaper,
+  BookOpen,
+  Map: MapIcon,
+  Gem,
+  HelpCircle,
+  SlidersHorizontal,
+  KeyRound,
+  ShieldUser,
+};
+
+/**
+ * The site's destination pages, from `lib/search/catalog.ts`.
+ *
+ * This list used to be duplicated here. It was not the same list: pages added
+ * to one surface never reached the other, so ⌘K and the Explore page disagreed
+ * about what the site even contains. One catalog now feeds both.
+ */
+const PAGES: Array<Omit<Command, 'section'>> = SITE_DESTINATIONS.map((d) => ({
+  id: `page-${d.id}`,
+  label: d.title,
+  href: d.href,
+  icon: DESTINATION_ICONS[d.iconName] ?? Compass,
+  keywords: d.keywords,
+  requiresAuth: d.requiresAuth,
+}));
 
 const SECTION_LABELS: Record<Section, { key: string; fallback: string }> = {
   actions: { key: 'palette-section-actions', fallback: 'Actions' },

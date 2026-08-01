@@ -1,12 +1,19 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { Prisma } from '@prisma/client';
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma.server';
-import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit.server';
+import { searchPeople } from '@/lib/search/people.server';
 
 const TAKE = 5;
 
+/**
+ * GET /api/users/search?q=… — the people typeahead behind @mentions, DM
+ * recipient pickers and invite fields.
+ *
+ * Delegates to the shared people search so the typeahead and the full search
+ * page can never disagree about who matches — in particular, both now find a
+ * user by the display name the site actually renders for them
+ * (`user_profile.displayName`), not just the OAuth `user.name` behind it.
+ */
 export const Route = createFileRoute('/api/users/search')({
   server: {
     handlers: {
@@ -25,60 +32,23 @@ export const Route = createFileRoute('/api/users/search')({
         if (!allowed) return Response.json({ users: [] });
 
         const q = new URL(request.url).searchParams.get('q')?.trim();
-        if (!q) {
-          return Response.json({ users: [] });
-        }
+        if (!q) return Response.json({ users: [] });
 
         // Exclude the viewer themselves — you can't message/mention yourself.
         const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
         const selfId = session?.user?.id ?? null;
 
-        const qLower = q.toLowerCase();
-        // Prefix pattern for short queries: trigram similarity (`%`) needs enough
-        // shared trigrams, so a 1–2 char query wouldn't match on its own. Escape
-        // LIKE metacharacters so user input can't smuggle in wildcards (backslash
-        // is the default LIKE escape).
-        const prefix = qLower.replace(/[\\%_]/g, '\\$&') + '%';
-
-        // People search via the pg_trgm GIN indexes on lower(name) /
-        // lower(username) / lower(handle) (user_name_trgm_idx et al.). `%` gives
-        // typo tolerance; the prefix LIKE keeps short/exact prefixes matching.
-        // Ordered by best similarity. Fully parameterised — no string concat.
-        const matches = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
-          SELECT id
-          FROM "user"
-          WHERE (
-            lower(name) % ${qLower} OR lower(name) LIKE ${prefix}
-            OR lower(username) % ${qLower} OR lower(username) LIKE ${prefix}
-            OR lower(handle) % ${qLower} OR lower(handle) LIKE ${prefix}
-          )
-          ${selfId ? Prisma.sql`AND id <> ${selfId}` : Prisma.empty}
-          ORDER BY GREATEST(
-            COALESCE(similarity(lower(name), ${qLower}), 0),
-            COALESCE(similarity(lower(username), ${qLower}), 0),
-            COALESCE(similarity(lower(handle), ${qLower}), 0)
-          ) DESC
-          LIMIT ${TAKE}
-        `);
-
-        if (matches.length === 0) {
+        try {
+          const results = await searchPeople(q.slice(0, 100), {
+            limit: TAKE,
+            excludeUserId: selfId,
+          });
+          return Response.json({ users: results.map((r) => r.user) });
+        } catch (error) {
+          console.error('User search error:', error);
+          // A typeahead that errors is worse than one that quietly finds nothing.
           return Response.json({ users: [] });
         }
-
-        // Hydrate the shared display shape (profile + equipped cosmetics), then
-        // restore the similarity ordering the raw query produced.
-        const ids = matches.map((m) => m.id);
-        const rows = await prisma.user.findMany({
-          where: { id: { in: ids } },
-          select: userDisplaySelect,
-        });
-        const byId = new Map(rows.map((u) => [u.id, u]));
-        const users = ids
-          .map((id) => byId.get(id))
-          .filter((u): u is (typeof rows)[number] => Boolean(u))
-          .map((u) => resolveUser(u));
-
-        return Response.json({ users });
       },
     },
   },
