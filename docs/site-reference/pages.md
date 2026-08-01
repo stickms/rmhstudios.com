@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 235 routes. 122 render inside the standard site shell (sidebar, nav, context rail); 113 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 235 routes. 123 render inside the standard site shell (sidebar, nav, context rail); 112 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -43,6 +43,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/analytics` | Creator Analytics | public | `app/routes/_site/analytics.tsx` |
 | `/arcade` | redirects to `/create?tab=games` | public | `app/routes/_site/arcade.tsx` |
 | `/blog` | redirects to `/library` | public | `app/routes/_site/blog/index.tsx` |
+| `/blog/:slug` | — | public | `app/routes/_site/blog/$slug.tsx` |
 | `/bookmarks` | Bookmarks | public | `app/routes/_site/bookmarks.tsx` |
 | `/builds` | redirects to `/create?tab=games` | public | `app/routes/_site/builds/index.tsx` |
 | `/builds/:slug` | Build Not Found | public | `app/routes/_site/builds/$slug.tsx` |
@@ -154,7 +155,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/altair/multiplayer` | — | sign-in | `app/routes/altair/multiplayer/index.tsx` |
 | `/altair/multiplayer/:lobbyId` | — | sign-in | `app/routes/altair/multiplayer/$lobbyId.tsx` |
 | `/black-lives-matter` | Black Lives Matter | public | `app/routes/black-lives-matter.tsx` |
-| `/blog/:slug` | — | public | `app/routes/blog.$slug.tsx` |
 | `/blog/rss.xml` | RMH Studios — Blog | public | `app/routes/blog.rss[.]xml.ts` |
 | `/cookgame` | Game | public | `app/routes/cookgame.tsx` |
 | `/cookies` | Cookie Policy | public | `app/routes/cookies.tsx` |

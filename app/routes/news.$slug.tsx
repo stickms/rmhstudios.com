@@ -14,17 +14,7 @@ import { ShareButton } from '@/components/blog/ShareButton';
 import { liquidVTName } from '@/lib/view-transition';
 import { getCategoryColor } from '@/lib/news-categories';
 import { useTranslation } from 'react-i18next';
-import {
-  AnimatedH1, AnimatedH2, AnimatedH3, AnimatedP,
-  AnimatedUl, AnimatedOl, AnimatedLi,
-  AnimatedBlockquote, AnimatedImg, AnimatedHr, AnimatedPre,
-} from '@/components/blog/MDXAnimations';
-
-const animatedComponents = {
-  h1: AnimatedH1, h2: AnimatedH2, h3: AnimatedH3, p: AnimatedP,
-  ul: AnimatedUl, ol: AnimatedOl, li: AnimatedLi,
-  blockquote: AnimatedBlockquote, img: AnimatedImg, hr: AnimatedHr, pre: AnimatedPre,
-};
+import { markdownComponents } from '@/components/blog/MDXAnimations';
 
 const fetchArticle = createServerFn({ method: 'GET' })
   .validator((slug: string) => slug)
@@ -44,7 +34,12 @@ export const Route = createFileRoute('/news/$slug')({
       : [{ title: 'Article Not Found | RMH Studios' }],
     links: [
       buildCanonical(`/news/${params.slug}`),
-      { rel: 'alternate', type: 'application/rss+xml', title: 'RMH Studios — News', href: `${SITE_URL}/news/rss.xml` },
+      {
+        rel: 'alternate',
+        type: 'application/rss+xml',
+        title: 'RMH Studios — News',
+        href: `${SITE_URL}/news/rss.xml`,
+      },
     ],
     scripts: loaderData
       ? [
@@ -65,7 +60,7 @@ export const Route = createFileRoute('/news/$slug')({
 });
 
 function NewsArticlePage() {
-  const { t } = useTranslation("pages");
+  const { t } = useTranslation('pages');
   const article = Route.useLoaderData();
   const { slug } = Route.useParams();
 
@@ -73,9 +68,11 @@ function NewsArticlePage() {
     return (
       <main className="min-h-screen pt-20 pb-20 px-4 bg-(--site-bg)">
         <div className="container mx-auto max-w-3xl text-center">
-          <h1 className="text-3xl font-bold text-(--site-text)">{t("article-not-found", { defaultValue: "Article not found" })}</h1>
+          <h1 className="text-3xl font-bold text-(--site-text)">
+            {t('article-not-found', { defaultValue: 'Article not found' })}
+          </h1>
           <Link to="/news" className="text-(--site-accent) mt-4 inline-block hover:underline">
-            &larr; {t("back-to-news", { defaultValue: "Back to News" })}
+            &larr; {t('back-to-news', { defaultValue: 'Back to News' })}
           </Link>
         </div>
       </main>
@@ -91,7 +88,7 @@ function NewsArticlePage() {
           to="/news"
           className="inline-flex items-center gap-2 text-(--site-text-dim) hover:text-(--site-text) mb-8 transition-colors animate-in fade-in slide-in-from-left-4 duration-700"
         >
-          <ArrowLeft className="w-4 h-4" /> {t("back-to-news", { defaultValue: "Back to News" })}
+          <ArrowLeft className="w-4 h-4" /> {t('back-to-news', { defaultValue: 'Back to News' })}
         </Link>
 
         {/* §5.48 liquid-open hero — the news card morphs into this header. */}
@@ -106,7 +103,7 @@ function NewsArticlePage() {
               <Calendar className="w-4 h-4" />
               {article.date}
             </div>
-            <ShareButton slug={slug} />
+            <ShareButton slug={slug} section="news" />
           </div>
 
           <h1
@@ -124,7 +121,7 @@ function NewsArticlePage() {
         {article.sourceUrl && (
           <div className="mb-10 p-6 rounded-xl border border-(--site-border) bg-(--site-surface) animate-in fade-in slide-in-from-bottom-4 duration-700 delay-450 fill-mode-both">
             <p className="text-xs font-semibold uppercase tracking-widest text-(--site-accent) mb-2">
-              {t("original-source", { defaultValue: "Original Source" })}
+              {t('original-source', { defaultValue: 'Original Source' })}
             </p>
             <p className="text-(--site-text) font-bold text-lg mb-1 leading-snug">
               {article.sourceTitle || article.title}
@@ -139,19 +136,24 @@ function NewsArticlePage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-sm font-bold text-(--site-accent) hover:opacity-80 transition-opacity"
             >
-              {t("read-original-article", { defaultValue: "Read Original Article" })} <ExternalLink className="w-4 h-4" />
+              {t('read-original-article', { defaultValue: 'Read Original Article' })}{' '}
+              <ExternalLink className="w-4 h-4" />
             </a>
           </div>
         )}
 
-        <div className="prose prose-invert prose-lg max-w-none break-words prose-code:break-words prose-headings:font-bold prose-headings:text-(--site-text) prose-p:text-(--site-text-muted) prose-a:text-(--site-accent) hover:prose-a:text-(--site-accent-hover) prose-img:rounded-xl prose-img:border prose-img:border-(--site-border) prose-li:text-(--site-text-muted) prose-strong:text-(--site-text) prose-blockquote:border-l-(--site-accent)">
-          <ReactMarkdown components={animatedComponents}>{article.content}</ReactMarkdown>
+        {/* `markdownComponents` carries the body's styling; the `prose-*`
+            classes that used to wrap it were inert (no typography plugin). */}
+        <div className="max-w-none break-words">
+          <ReactMarkdown components={markdownComponents}>{article.content}</ReactMarkdown>
         </div>
 
         <hr className="my-12 border-(--site-border)" />
 
         <div className="text-center">
-          <p className="text-(--site-text-dim) italic">{t("end-of-article", { defaultValue: "End of Article" })}</p>
+          <p className="text-(--site-text-dim) italic">
+            {t('end-of-article', { defaultValue: 'End of Article' })}
+          </p>
         </div>
       </div>
     </article>

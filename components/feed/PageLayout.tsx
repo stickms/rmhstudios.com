@@ -23,6 +23,18 @@ interface PageLayoutProps {
   backTo?: string;
   backLabel?: string;
   breadcrumbs?: BreadcrumbItem[];
+  /**
+   * Let the title run onto more than one line.
+   *
+   * A page name ("Wallet", "Bookmarks") is short and stays on one line, so the
+   * default keeps `truncate`. But that class puts `white-space: nowrap` on an
+   * *inline* span — `overflow: hidden` does not apply to one, so a title too
+   * long for the column does not ellipsize, it overflows and drags the column's
+   * width out with it (which then pushes the lede past the viewport too). Pages
+   * whose title is a sentence rather than a name — an article headline — opt in
+   * here and wrap instead.
+   */
+  wrapTitle?: boolean;
 }
 
 /**
@@ -50,6 +62,7 @@ export function PageLayout({
   backTo,
   backLabel,
   breadcrumbs,
+  wrapTitle,
 }: PageLayoutProps) {
   const { t } = useTranslation('feed');
   const descriptionId = useId();
@@ -93,7 +106,7 @@ export function PageLayout({
                   scale. `truncate` keeps a long title on one line inside the
                   header's flex row. */}
               <h1 className="site-display-3">
-                <span className="min-w-0 truncate">{title}</span>
+                <span className={wrapTitle ? 'block min-w-0' : 'min-w-0 truncate'}>{title}</span>
               </h1>
               {description && (
                 <p id={descriptionId} data-slot="page-description" className="site-lede">
