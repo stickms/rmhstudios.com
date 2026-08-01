@@ -341,13 +341,45 @@ step_done() {
     log "  └─ done in ${elapsed}s"
 }
 
+# ── Helper: wait for a service port to be published on the host ──────────────
+# All four probed services publish on 127.0.0.1 (docker-compose.yml), so a
+# listening socket is the signal. Two things this has to get right:
+#
+#  1. `count=$((count + 1))`, NEVER `(( count++ ))`. This script runs under
+#     `set -e`, and an arithmetic COMMAND whose expression evaluates to 0
+#     returns exit status 1 — which is exactly what a post-increment returns on
+#     the FIRST pass, since count starts at 0. That killed the backgrounded
+#     subshell about one second in, so the nominal 30s budget was really a
+#     single probe and the diagnostic below was unreachable. Any service that
+#     took a moment to (re)publish its port after `compose up` — or that blipped
+#     while restarting — then failed the deploy here at Step 5, i.e. AFTER Step
+#     4b had already hotswapped Apache onto the new web container: the release
+#     had visibly shipped and the deploy still reported "port health check
+#     failed" (and skipped the prune/cache-rule steps below). An assignment
+#     always returns 0, so the loop now spends its full budget.
+#  2. `ss` (iproute2) is not guaranteed to be on PATH. Without a fallback its
+#     absence makes every probe silently never match — the same false failure,
+#     with the retries doing nothing to help. bash's /dev/tcp connect is a
+#     builtin and needs no package.
+#
+# The budget only costs wall-clock on a genuine failure (a healthy port returns
+# on the first probe) and runs inside the supervisor gate's parallel 120s, so it
+# is free to be generous here. Override with PORT_HEALTH_TIMEOUT if needed.
 check_port() {
-    local port=$1 max_retries=30 count=0
-    while [ $count -lt $max_retries ]; do
-        ss -tuln | grep -qE "[:.]$port\b" && return 0
-        sleep 1; (( count++ ))
+    local port=$1 count=0 max_retries="${PORT_HEALTH_TIMEOUT:-60}" probe=ss
+    command -v ss >/dev/null 2>&1 || probe=connect
+    while [ "$count" -lt "$max_retries" ]; do
+        if [ "$probe" = ss ]; then
+            if ss -tuln 2>/dev/null | grep -qE "[:.]${port}\b"; then
+                return 0
+            fi
+        elif (exec 3<>"/dev/tcp/127.0.0.1/${port}") 2>/dev/null; then
+            return 0
+        fi
+        sleep 1
+        count=$((count + 1))
     done
-    log "ERROR: Port $port did not come up after ${max_retries}s."
+    log "ERROR: Port $port did not come up after ${max_retries}s (probe: ${probe})."
     return 1
 }
 
@@ -847,6 +879,7 @@ check_supervisor() {
 step_start "Running health checks (ports + supervisor, parallel)..."
 port_ok=0
 sup_ok=0
+failed_ports=""
 
 check_port "$PORT_SOCKET"  & p_socket=$!
 check_port "$PORT_RMHBOX"  & p_rmhbox=$!
@@ -854,15 +887,28 @@ check_port "$PORT_RMHTUBE" & p_rmhtube=$!
 check_port "$PORT_STATUS"  & p_status=$!
 check_supervisor           & p_sup=$!
 
-for pid in "$p_socket" "$p_rmhbox" "$p_rmhtube" "$p_status"; do
-    wait "$pid" || port_ok=1
+# Label each job with its compose service name so a failure says WHICH service
+# never published its port. The old report was a bare "port health check failed"
+# covering all four at once — and check_port's own per-port line could not be
+# reached (see above) — so the only artifact of a failed deploy named neither
+# the port nor the service. The labels below are the compose service names
+# verbatim, which also lets the log dump be scoped to what actually failed.
+for job in "socket:$p_socket" "rmhbox:$p_rmhbox" "rmhtube:$p_rmhtube" "status:$p_status"; do
+    if ! wait "${job#*:}"; then
+        port_ok=1
+        failed_ports="${failed_ports} ${job%%:*}"
+    fi
 done
 wait "$p_sup" || sup_ok=1
 
 if [ $port_ok -ne 0 ]; then
-    log "--- Container logs ---"
-    dc logs --tail=50 2>&1 || true
-    update_deploy_status fail "port health check failed"
+    log "ERROR: port health check failed for:${failed_ports}"
+    log "--- Container logs (${failed_ports# }) ---"
+    # Intentional word splitting: $failed_ports is a space-separated list of
+    # compose service names, so the dump covers exactly the failing services.
+    # shellcheck disable=SC2086
+    dc logs --tail=50 $failed_ports 2>&1 || true
+    update_deploy_status fail "port health check failed:${failed_ports}"
     exit 1
 fi
 if [ $sup_ok -ne 0 ]; then

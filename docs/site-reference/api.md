@@ -6,18 +6,20 @@
 
 # API routes
 
-Every server route in the app tier — 456 files across 116 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 465 files across 117 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
 ## `/api/account`
 
-2 routes.
+4 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/account/delete` | `POST` | `app/routes/api/account/delete.ts` |
 | `/api/account/export` | `GET` | `app/routes/api/account/export.ts` |
+| `/api/account/standing` | `GET` | `app/routes/api/account/standing.ts` |
+| `/api/account/strikes/:id/appeal` | `POST` | `app/routes/api/account/strikes/$id/appeal.ts` |
 
 ## `/api/achievements`
 
@@ -29,7 +31,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/admin`
 
-37 routes.
+40 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -42,11 +44,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/analytics` | `GET` | `app/routes/api/admin/analytics.ts` |
 | `/api/admin/announcements` | `GET` `POST` | `app/routes/api/admin/announcements.ts` |
 | `/api/admin/announcements/:id` | `DELETE` `POST` | `app/routes/api/admin/announcements/$id.ts` |
+| `/api/admin/appeals` | `GET` | `app/routes/api/admin/appeals.ts` |
+| `/api/admin/appeals/:id` | `POST` | `app/routes/api/admin/appeals/$id.ts` |
 | `/api/admin/audit-log` | `GET` | `app/routes/api/admin/audit-log.ts` |
 | `/api/admin/blog` | `DELETE` `POST` | `app/routes/api/admin/blog.ts` |
 | `/api/admin/curated-builds/image` | `POST` | `app/routes/api/admin/curated-builds/image.ts` |
 | `/api/admin/curated-builds/image/:filename` | `GET` | `app/routes/api/admin/curated-builds/image/$filename.ts` |
 | `/api/admin/curated-builds/image/proxy` | `GET` | `app/routes/api/admin/curated-builds/image/proxy.ts` |
+| `/api/admin/economy` | `GET` | `app/routes/api/admin/economy.ts` |
 | `/api/admin/library` | `GET` | `app/routes/api/admin/library/index.ts` |
 | `/api/admin/library/:id` | `DELETE` `PATCH` | `app/routes/api/admin/library/$id.ts` |
 | `/api/admin/library/migrate` | `POST` | `app/routes/api/admin/library/migrate.ts` |
@@ -261,12 +266,13 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/developer`
 
-2 routes.
+3 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/developer/keys` | `GET` `POST` | `app/routes/api/developer/keys/index.ts` |
 | `/api/developer/keys/:id` | `DELETE` `PATCH` | `app/routes/api/developer/keys/$id.ts` |
+| `/api/developer/keys/:id/usage` | `GET` | `app/routes/api/developer/keys/$id/usage.ts` |
 
 ## `/api/discord`
 
@@ -388,13 +394,15 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/games`
 
-6 routes.
+8 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/games/:id/guides` | `GET` | `app/routes/api/games/$id.guides.ts` |
+| `/api/games/:id/leaderboard` | `GET` | `app/routes/api/games/$id/leaderboard.ts` |
 | `/api/games/:id/review` | `DELETE` `PUT` | `app/routes/api/games/$id.review.ts` |
 | `/api/games/:id/reviews` | `GET` | `app/routes/api/games/$id.reviews.ts` |
+| `/api/games/:id/score` | `POST` | `app/routes/api/games/$id/score.ts` |
 | `/api/games/synapse-storm/leaderboard` | `GET` | `app/routes/api/games/synapse-storm/leaderboard.ts` |
 | `/api/games/synapse-storm/save` | `GET` | `app/routes/api/games/synapse-storm/save.ts` |
 | `/api/games/synapse-storm/score` | `POST` | `app/routes/api/games/synapse-storm/score.ts` |
@@ -773,6 +781,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/ranked` | `GET` `POST` | `app/routes/api/ranked/index.ts` |
 | `/api/ranked/:game/leaderboard` | `GET` | `app/routes/api/ranked/$game/leaderboard.ts` |
 | `/api/ranked/challenge/:id` | `POST` | `app/routes/api/ranked/challenge/$id.ts` |
+
+## `/api/ready`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/ready` | `GET` | `app/routes/api/ready.ts` |
 
 ## `/api/recap`
 
