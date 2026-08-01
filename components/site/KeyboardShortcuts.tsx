@@ -145,9 +145,10 @@ export function KeyboardShortcuts() {
       )}
       <DialogPrimitive.Root open={helpOpen} onOpenChange={setHelpOpen}>
         <DialogPrimitive.Portal>
-          <DialogPrimitive.Overlay className="fixed inset-0 z-[90] glass-scrim" />
+          <DialogPrimitive.Overlay data-motion="fade" className="fixed inset-0 z-[90] glass-scrim" />
           <DialogPrimitive.Content
             aria-describedby={undefined}
+            data-motion="rise"
             className="glass-overlay fixed left-1/2 top-1/2 z-[91] max-h-[80dvh] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto p-4"
           >
             <DialogPrimitive.Title className="text-base font-bold text-site-text">

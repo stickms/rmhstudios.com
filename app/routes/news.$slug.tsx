@@ -10,6 +10,8 @@ import { articleSchema, jsonLdScript } from '@/lib/schema';
 import ReactMarkdown from 'react-markdown';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Calendar, ExternalLink } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { staggerContainer, staggerItem } from '@/lib/motion';
 import { ShareButton } from '@/components/blog/ShareButton';
 import { liquidVTName } from '@/lib/view-transition';
 import { getCategoryColor } from '@/lib/news-categories';
@@ -83,17 +85,31 @@ function NewsArticlePage() {
 
   return (
     <article className="min-h-screen pt-20 pb-20 px-4 bg-(--site-bg) relative overflow-hidden">
-      <div className="container mx-auto max-w-3xl relative z-10">
+      {/* The article reveals as a short stagger — back link, meta row, headline,
+          lede, source card — on the shared `staggerContainer`/`staggerItem`
+          variants. It used to be five hand-written `animate-in … duration-700
+          delay-450` chains, which (a) never ran, because that vocabulary needs
+          `tailwindcss-animate` and this project does not have it, and (b) would
+          have taken 1,150ms to finish if they had, against §7's 0.3s ceiling.
+          The container's 60ms step lands the last item at ~400ms. */}
+      <motion.div
+        className="container mx-auto max-w-3xl relative z-10"
+        variants={staggerContainer(0.06)}
+        initial="initial"
+        animate="animate"
+      >
+        <motion.div variants={staggerItem}>
         <Link
           to="/news"
           className="inline-flex items-center gap-2 text-(--site-text-dim) hover:text-(--site-text) mb-8 transition-colors duration-site"
         >
           <ArrowLeft className="w-4 h-4" /> {t('back-to-news', { defaultValue: 'Back to News' })}
         </Link>
+        </motion.div>
 
         {/* §5.48 liquid-open hero — the news card morphs into this header. */}
         <header className="mb-12" style={{ viewTransitionName: liquidVTName('news', slug) }}>
-          <div className="flex flex-wrap items-center gap-3 mb-4">
+          <motion.div variants={staggerItem} className="flex flex-wrap items-center gap-3 mb-4">
             <span
               className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${categoryColor.bg} ${categoryColor.text} ${categoryColor.border} border`}
             >
@@ -104,21 +120,28 @@ function NewsArticlePage() {
               {article.date}
             </div>
             <ShareButton slug={slug} section="news" />
-          </div>
+          </motion.div>
 
-          <h1
+          <motion.h1
+            variants={staggerItem}
             className="text-3xl md:text-5xl font-black text-(--site-text) mb-6 tracking-tight leading-tight font-display"
           >
             {article.title}
-          </h1>
+          </motion.h1>
 
-          <p className="text-xl text-(--site-text-muted) leading-relaxed border-l-4 border-(--site-accent) pl-6">
+          <motion.p
+            variants={staggerItem}
+            className="text-xl text-(--site-text-muted) leading-relaxed border-l-4 border-(--site-accent) pl-6"
+          >
             {article.description}
-          </p>
+          </motion.p>
         </header>
 
         {article.sourceUrl && (
-          <div className="mb-10 p-6 rounded-site border border-(--site-border) bg-(--site-surface)">
+          <motion.div
+            variants={staggerItem}
+            className="mb-10 p-6 rounded-site border border-(--site-border) bg-(--site-surface)"
+          >
             <p className="text-xs font-semibold uppercase tracking-widest text-(--site-accent) mb-2">
               {t('original-source', { defaultValue: 'Original Source' })}
             </p>
@@ -138,7 +161,7 @@ function NewsArticlePage() {
               {t('read-original-article', { defaultValue: 'Read Original Article' })}{' '}
               <ExternalLink className="w-4 h-4" />
             </a>
-          </div>
+          </motion.div>
         )}
 
         {/* `markdownComponents` carries the body's styling; the `prose-*`
@@ -154,7 +177,7 @@ function NewsArticlePage() {
             {t('end-of-article', { defaultValue: 'End of Article' })}
           </p>
         </div>
-      </div>
+      </motion.div>
     </article>
   );
 }

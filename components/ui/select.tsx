@@ -294,6 +294,7 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
           <SelectPrimitive.Portal container={appContainer ?? undefined}>
             <SelectPrimitive.Content
               data-slot="select-content"
+              data-motion="pop"
               position="popper"
               sideOffset={6}
               className={cn(

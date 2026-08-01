@@ -4246,6 +4246,103 @@ input[type='number'] {
 .page-root > [data-route-pending] {
   animation: none !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   §7.1 — `data-motion`: the enter/exit vocabulary for Radix surfaces
+   ==========================================================================
+   framer-motion is the site's animation library, and `lib/motion.ts` holds the
+   variants — but a Radix popover/dialog/menu unmounts on its own schedule, so
+   animating one with framer means `forceMount` + `AnimatePresence` threaded
+   through every consumer. The established alternative here is Radix's own
+   `data-state` attribute driving CSS keyframes: `components/ui/dialog.css` and
+   `sheet.css` both already did exactly that, each with a note explaining that
+   `tailwindcss-animate` is not installed.
+
+   The problem was that they were the ONLY two, they hardcoded their own timings
+   (0.3s ease-out, 0.32s cubic-bezier(0.22,1,0.36,1), 0.3s cubic-bezier(0.16,1,0.3,1)
+   — three different answers), and every other Radix surface on the site was left
+   writing `data-[state=open]:animate-in`, which compiles to nothing. So: one
+   vocabulary, opted into with `data-motion`, timed from the same tokens
+   `lib/motion.ts` uses, and dialog/sheet retimed onto it.
+
+     data-motion="fade"  a scrim, a backdrop — opacity only
+     data-motion="pop"   a popover, menu, hover card — the `scaleIn` variant
+     data-motion="rise"  modal content — the `modalContent` variant
+
+   Mirrors of `lib/motion.ts`: `--motion-in` = DURATION.slow (0.22s),
+   `--motion-out` = DURATION.fast (0.1s), the enter curve = EASE.emphasized,
+   the exit = a plain ease-in so dismissals feel immediate. Keep them in step —
+   if one moves, move the other.
+
+   Transform and opacity only; never the blur. `forwards` on the exits so the
+   element stays gone while Radix runs its unmount. Gated on no-preference, and
+   the global reduce rule in §REDUCED MOTION collapses them anyway. */
+:root {
+  --motion-in: 0.22s;
+  --motion-out: 0.1s;
+  --motion-ease-in: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-out: ease-in;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-motion='fade'][data-state='open'] {
+    animation: motion-fade-in var(--motion-in) var(--motion-ease-in);
+  }
+  [data-motion='fade'][data-state='closed'] {
+    animation: motion-fade-out var(--motion-out) var(--motion-ease-out) forwards;
+  }
+  [data-motion='pop'][data-state='open'] {
+    animation: motion-pop-in var(--motion-in) var(--motion-ease-in);
+  }
+  [data-motion='pop'][data-state='closed'] {
+    animation: motion-pop-out var(--motion-out) var(--motion-ease-out) forwards;
+  }
+  [data-motion='rise'][data-state='open'] {
+    animation: motion-rise-in var(--motion-in) var(--motion-ease-in);
+  }
+  [data-motion='rise'][data-state='closed'] {
+    animation: motion-rise-out var(--motion-out) var(--motion-ease-out) forwards;
+  }
+}
+
+/* The keyframes only ever state the FROM (enter) or TO (exit) frame, so they
+   compose with whatever centring `translate` the element already carries —
+   Tailwind v4 centres with the `translate` longhand, which `transform` does not
+   overwrite. A keyframe that spelled out both ends would erase it. */
+@keyframes motion-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes motion-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes motion-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@keyframes motion-pop-out {
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@keyframes motion-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
+@keyframes motion-rise-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .page-root > * {
     animation: none;

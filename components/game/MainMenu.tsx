@@ -1,5 +1,7 @@
 'use client';
 import * as React from 'react';
+import { motion } from 'framer-motion';
+import { scaleIn } from '@/lib/motion';
 import { useTranslation } from "react-i18next";
 
 import { Button } from '@/components/ui/button';
@@ -490,7 +492,12 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 {/* Auth Overlay */}
                 {!session.data && !session.isPending && (
                     <div className="absolute inset-0 z-60 bg-slice-bg/90 flex items-center justify-center p-8 backdrop-blur-xl rounded-[4rem] shadow-[inset_15px_15px_40px_var(--slice-shadow-dark),inset_-15px_-15px_40px_var(--slice-shadow-light)]">
-                        <div className="w-full max-w-md space-y-10 text-center duration-700">
+                        <motion.div
+                            className="w-full max-w-md space-y-10 text-center"
+                            variants={scaleIn}
+                            initial="initial"
+                            animate="animate"
+                        >
                              <h3 className="text-3xl sm:text-5xl font-black tracking-tighter uppercase italic text-slice-text">{t("connect-to-start", { defaultValue: "Connect to Start" })}</h3>
                              <p className="text-slice-text-muted font-bold uppercase text-xs tracking-[0.5em] opacity-60">{t("auth-required", { defaultValue: "Authentication is required for leaderboard ranking" })}</p>
                              <div className="space-y-6">
@@ -501,7 +508,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                                     {t("log-in", { defaultValue: "Log In" })}
                                 </Button>
                              </div>
-                        </div>
+                        </motion.div>
                     </div>
                 )}
 
@@ -520,7 +527,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                     <>
                         {/* Backdrop */}
                         <div
-                            className="absolute inset-0 bg-black/20 z-65 duration-200"
+                            className="absolute inset-0 bg-black/20 z-65"
                             onClick={() => setSelectedSong(null)}
                         />
 

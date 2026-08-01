@@ -819,11 +819,35 @@ gated off there too, via `html.app-route`).
   cleared after; the detail's secondary content (comments, metadata, related
   lists) then staggers in via `staggerContainer`/`fadeRise`. No-VT browsers get
   instant nav + the stagger.
-- **The animation vocabulary is framer-motion + `lib/motion.ts`, plus the CSS
-  enters that exist (`.page-enter`, `radial-page-rise`, `.feed-item-enter`).**
-  `animate-in` / `fade-in` / `zoom-in-*` / `slide-in-from-*` are NOT available —
-  they belong to `tailwindcss-animate`, which is not installed. Writing them
-  produces no CSS at all. CI-enforced (§13 rule 9).
+- **The animation vocabulary has exactly two halves.** `animate-in` /
+  `fade-in` / `zoom-in-*` / `slide-in-from-*` are NOT part of it — they belong
+  to `tailwindcss-animate`, which is not installed, so writing them produces no
+  CSS at all (CI-enforced, §13 rule 9). Reach for:
+
+  **1. framer-motion + `lib/motion.ts`**, for anything React controls the
+  mounting of. `fade`, `fadeRise`, `fadeDown`, `scaleIn`, `popIn`, `overlay`,
+  `modalContent`, and `staggerContainer`/`staggerItem` for a sequence:
+
+  ```tsx
+  <motion.div variants={modalContent} initial="initial" animate="animate" />
+  ```
+
+  **2. `data-motion`**, for a **Radix** surface, whose unmount is Radix's to
+  schedule — animating one with framer means `forceMount` + `AnimatePresence`
+  threaded through every consumer, so the exit rides Radix's own `data-state`
+  instead. Three values, matching the variants above:
+
+  | attribute            | for                                | matches      |
+  | -------------------- | ---------------------------------- | ------------ |
+  | `data-motion="fade"` | a scrim / backdrop                 | `overlay`    |
+  | `data-motion="pop"`  | a popover, menu, select, hover card | `scaleIn`    |
+  | `data-motion="rise"` | modal / dialog content             | `modalContent` |
+
+  Both halves run on one clock: the `--motion-*` tokens in `globals.css` §7.1
+  mirror `DURATION.slow` / `DURATION.fast` / `EASE.emphasized`. `Dialog` and
+  `Sheet` keep their own bespoke keyframes (a sheet slides from an edge, which
+  none of the three shapes covers) but were retimed onto the same tokens — they
+  used to hardcode three different answers between them.
 - **Never `transition-all`, and never animate a layout property.** `all` makes
   the engine watch every animatable property on the element, so a class change
   that happens to touch `width`/`padding`/`gap` animates a reflow nobody asked

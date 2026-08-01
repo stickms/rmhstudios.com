@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
+import { popIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/store/useGameStore';
 import { Button } from '@/components/ui/button';
@@ -87,12 +89,16 @@ export function GameOver({ onRetry }: GameOverProps) {
             <div className="text-6xl font-bold text-slice-text relative inline-block">
               {score.toLocaleString()}
               {isNewBest && (
-                <div className="absolute -top-6 -right-12 rotate-12 duration-500">
+                <motion.div className="absolute -top-6 -right-12 rotate-12 duration-500"
+      variants={popIn}
+      initial="initial"
+      animate="animate"
+    >
                   <div className="bg-yellow-400 text-black text-[10px] font-black px-2 py-1 rounded-md shadow-lg flex items-center gap-1">
                     <Trophy className="w-3 h-3" />
                     {t("new-best", { defaultValue: "NEW BEST!" })}
                   </div>
-                </div>
+                </motion.div>
               )}
             </div>
           </div>

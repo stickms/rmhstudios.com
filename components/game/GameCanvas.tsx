@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
+import { fadeRise, popIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 import { GameEngine } from '@/lib/game/GameEngine';
 import { useGameStore } from '@/lib/store/useGameStore';
@@ -1742,11 +1744,11 @@ export function GameCanvas() {
           {/* Countdown Overlay */}
           {status === 'PLAYING' && countdown > 0 && (
             <div className="absolute inset-0 z-70 flex items-center justify-center pointer-events-none">
-              <div key={countdown} className="duration-500 ease-out">
+              <motion.div key={countdown} variants={popIn} initial="initial" animate="animate">
                 <span className="text-[12rem] font-black italic text-slice-text soft-glow-text drop-shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
                   {countdown}
                 </span>
-              </div>
+              </motion.div>
             </div>
           )}
 
@@ -1789,7 +1791,12 @@ export function GameCanvas() {
 
           {/* No input device warning */}
           {!hasKeyboard && !hasGamepad && !hasTouch && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-90 max-w-md w-[90%] duration-500">
+            <motion.div
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 z-90 max-w-md w-[90%]"
+              variants={fadeRise}
+              initial="initial"
+              animate="animate"
+            >
               <div className="bg-amber-50 border-2 border-amber-400 rounded-2xl px-5 py-4 shadow-lg flex items-start gap-3">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -1819,7 +1826,7 @@ export function GameCanvas() {
                   </p>
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* Gamepad connected indicator (brief) */}

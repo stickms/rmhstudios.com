@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { fadeRise } from '@/lib/motion';
 import { useTranslation } from "react-i18next";
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -99,7 +101,11 @@ export function SongComments({ songId }: SongCommentsProps) {
                     </div>
                 ) : (
                     comments.map(comment => (
-                        <div key={comment.id} className="flex gap-2">
+                        <motion.div key={comment.id} className="flex gap-2"
+      variants={fadeRise}
+      initial="initial"
+      animate="animate"
+    >
                             <div className="w-6 h-6 rounded-full bg-linear-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-[10px] shrink-0 shadow-sm mt-1">
                                 {comment.user.name?.[0] || "?"}
                             </div>
@@ -110,7 +116,7 @@ export function SongComments({ songId }: SongCommentsProps) {
                                 </div>
                                 <p className="text-slice-text-darker text-xs leading-relaxed">{comment.content}</p>
                             </div>
-                        </div>
+                        </motion.div>
                     ))
                 )}
             </div>

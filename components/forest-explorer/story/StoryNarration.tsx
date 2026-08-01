@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
+import { fade } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 import { useStoryStore } from '@/lib/forest-explorer/store';
 
@@ -85,9 +87,15 @@ export function StoryNarration() {
                     className="max-w-xl mx-auto text-center transition-opacity duration-700"
                     style={{ opacity: visible ? 1 : 0 }}
                 >
-                    <p key={lineIdx} className="text-green-100/90 text-base italic leading-relaxed duration-700">
+                    <motion.p
+                      key={lineIdx}
+                      variants={fade}
+                      initial="initial"
+                      animate="animate"
+                      className="text-green-100/90 text-base italic leading-relaxed"
+                    >
                         {lines[lineIdx]}
-                    </p>
+                    </motion.p>
                     <p className="text-white/25 text-[10px] mt-3 tracking-widest uppercase">
                         {lineIdx + 1 < lines.length
                             ? t("narration-continue", { defaultValue: "E — continue" })

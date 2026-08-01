@@ -1,5 +1,6 @@
 /* Sheet enter/exit, driven by Radix's data-state — the same hand-rolled
- * approach as dialog.css (tailwindcss-animate is not installed here).
+ * approach as dialog.css (tailwindcss-animate is not installed here), on the
+ * shared `--motion-*` clock (globals.css §7.1, mirroring lib/motion.ts).
  *
  * Mobile (< md): a bottom sheet that slides up from the bottom edge.
  * Desktop (>= md): a centered dialog that scales in, identical to Dialog.
@@ -7,16 +8,16 @@
  * no-preference so reduced-motion users get an instant appearance. */
 @media (prefers-reduced-motion: no-preference) {
  [data-slot="sheet-overlay"][data-state="open"] {
- animation: ui-sheet-overlay-in 0.3s ease-out;
+ animation: ui-sheet-overlay-in var(--motion-in) var(--motion-ease-in);
  }
  [data-slot="sheet-overlay"][data-state="closed"] {
- animation: ui-sheet-overlay-out 0.2s ease-in forwards;
+ animation: ui-sheet-overlay-out var(--motion-out) var(--motion-ease-out) forwards;
  }
  [data-slot="sheet-content"][data-state="open"] {
- animation: ui-sheet-content-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+ animation: ui-sheet-content-in var(--motion-in) var(--motion-ease-in);
  }
  [data-slot="sheet-content"][data-state="closed"] {
- animation: ui-sheet-content-out 0.2s ease-in forwards;
+ animation: ui-sheet-content-out var(--motion-out) var(--motion-ease-out) forwards;
  }
 }
 

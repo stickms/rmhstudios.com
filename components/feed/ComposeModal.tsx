@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from'react';
+import { motion } from 'framer-motion';
+import { modalContent } from '@/lib/motion';
 import { createPortal } from'react-dom';
 import { useTranslation } from'react-i18next';
 import { X, Plus, BarChart3, ImagePlus } from'lucide-react';
@@ -618,11 +620,14 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  onClick={() => setAltEditIndex(null)}
  aria-label={t('close', { defaultValue:'Close'})}
  />
- <div
+ <motion.div
  role="dialog"
  aria-modal="true"
  aria-labelledby="compose-alt-title"
- className="relative w-full max-w-md p-4 glass-overlay duration-150"
+ variants={modalContent}
+ initial="initial"
+ animate="animate"
+ className="relative w-full max-w-md p-4 glass-overlay"
  >
  <div className="mb-2 flex items-center justify-between">
  <h3 id="compose-alt-title"className="text-sm font-semibold text-site-text">
@@ -679,7 +684,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  {t('done', { defaultValue:'Done'})}
  </Button>
  </div>
- </div>
+ </motion.div>
  </div>
  )}
  </div>,

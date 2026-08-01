@@ -101,6 +101,7 @@ export function ProfileHoverCard({
  side="bottom"
  align="start"
  sideOffset={6}
+ data-motion="pop"
  className="z-[80] w-72 p-4 glass-overlay outline-none"
  >
  {!profile ? (
