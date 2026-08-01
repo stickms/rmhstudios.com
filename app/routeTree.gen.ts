@@ -120,7 +120,6 @@ import { Route as ApiStreakRouteImport } from './routes/api/streak'
 import { Route as ApiTodayRouteImport } from './routes/api/today'
 import { Route as ApiUserBuildsRouteImport } from './routes/api/user-builds'
 import { Route as ApiWrappedRouteImport } from './routes/api/wrapped'
-import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as BlogRssDotxmlRouteImport } from './routes/blog.rss[.]xml'
 import { Route as DailyIndexRouteImport } from './routes/daily/index'
 import { Route as DailyAlibiRouteImport } from './routes/daily/alibi'
@@ -199,6 +198,7 @@ import { Route as SiteAdminSecurityReportsRouteImport } from './routes/_site/adm
 import { Route as SiteAdminUserBuildsRouteImport } from './routes/_site/admin/user-builds'
 import { Route as SiteAdminUsersRouteImport } from './routes/_site/admin/users'
 import { Route as SiteBlogIndexRouteImport } from './routes/_site/blog/index'
+import { Route as SiteBlogSlugRouteImport } from './routes/_site/blog/$slug'
 import { Route as SiteBuildsIndexRouteImport } from './routes/_site/builds/index'
 import { Route as SiteBuildsSlugRouteImport } from './routes/_site/builds/$slug'
 import { Route as SiteCSlugRouteImport } from './routes/_site/c.$slug'
@@ -1292,11 +1292,6 @@ const ApiWrappedRoute = ApiWrappedRouteImport.update({
   path: '/api/wrapped',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BlogSlugRoute = BlogSlugRouteImport.update({
-  id: '/blog/$slug',
-  path: '/blog/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const BlogRssDotxmlRoute = BlogRssDotxmlRouteImport.update({
   id: '/blog/rss.xml',
   path: '/blog/rss.xml',
@@ -1686,6 +1681,11 @@ const SiteAdminUsersRoute = SiteAdminUsersRouteImport.update({
 const SiteBlogIndexRoute = SiteBlogIndexRouteImport.update({
   id: '/blog/',
   path: '/blog/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteBlogSlugRoute = SiteBlogSlugRouteImport.update({
+  id: '/blog/$slug',
+  path: '/blog/$slug',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteBuildsIndexRoute = SiteBuildsIndexRouteImport.update({
@@ -4577,7 +4577,6 @@ export interface FileRoutesByFullPath {
   '/api/today': typeof ApiTodayRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/wrapped': typeof ApiWrappedRoute
-  '/blog/$slug': typeof BlogSlugRoute
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/daily/alibi': typeof DailyAlibiRoute
   '/daily/chainlink': typeof DailyChainlinkRoute
@@ -4655,6 +4654,7 @@ export interface FileRoutesByFullPath {
   '/admin/security-reports': typeof SiteAdminSecurityReportsRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
+  '/blog/$slug': typeof SiteBlogSlugRoute
   '/builds/$slug': typeof SiteBuildsSlugRoute
   '/c/$slug': typeof SiteCSlugRoute
   '/games/$gameId': typeof SiteGamesGameIdRoute
@@ -5280,7 +5280,6 @@ export interface FileRoutesByTo {
   '/api/today': typeof ApiTodayRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/wrapped': typeof ApiWrappedRoute
-  '/blog/$slug': typeof BlogSlugRoute
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/daily/alibi': typeof DailyAlibiRoute
   '/daily/chainlink': typeof DailyChainlinkRoute
@@ -5358,6 +5357,7 @@ export interface FileRoutesByTo {
   '/admin/security-reports': typeof SiteAdminSecurityReportsRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
+  '/blog/$slug': typeof SiteBlogSlugRoute
   '/builds/$slug': typeof SiteBuildsSlugRoute
   '/c/$slug': typeof SiteCSlugRoute
   '/games/$gameId': typeof SiteGamesGameIdRoute
@@ -6008,7 +6008,6 @@ export interface FileRoutesById {
   '/api/today': typeof ApiTodayRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/wrapped': typeof ApiWrappedRoute
-  '/blog/$slug': typeof BlogSlugRoute
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/daily/alibi': typeof DailyAlibiRoute
   '/daily/chainlink': typeof DailyChainlinkRoute
@@ -6087,6 +6086,7 @@ export interface FileRoutesById {
   '/_site/admin/security-reports': typeof SiteAdminSecurityReportsRoute
   '/_site/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/_site/admin/users': typeof SiteAdminUsersRoute
+  '/_site/blog/$slug': typeof SiteBlogSlugRoute
   '/_site/builds/$slug': typeof SiteBuildsSlugRoute
   '/_site/c/$slug': typeof SiteCSlugRoute
   '/_site/games/$gameId': typeof SiteGamesGameIdRoute
@@ -6738,7 +6738,6 @@ export interface FileRouteTypes {
     | '/api/today'
     | '/api/user-builds'
     | '/api/wrapped'
-    | '/blog/$slug'
     | '/blog/rss.xml'
     | '/daily/alibi'
     | '/daily/chainlink'
@@ -6816,6 +6815,7 @@ export interface FileRouteTypes {
     | '/admin/security-reports'
     | '/admin/user-builds'
     | '/admin/users'
+    | '/blog/$slug'
     | '/builds/$slug'
     | '/c/$slug'
     | '/games/$gameId'
@@ -7441,7 +7441,6 @@ export interface FileRouteTypes {
     | '/api/today'
     | '/api/user-builds'
     | '/api/wrapped'
-    | '/blog/$slug'
     | '/blog/rss.xml'
     | '/daily/alibi'
     | '/daily/chainlink'
@@ -7519,6 +7518,7 @@ export interface FileRouteTypes {
     | '/admin/security-reports'
     | '/admin/user-builds'
     | '/admin/users'
+    | '/blog/$slug'
     | '/builds/$slug'
     | '/c/$slug'
     | '/games/$gameId'
@@ -8168,7 +8168,6 @@ export interface FileRouteTypes {
     | '/api/today'
     | '/api/user-builds'
     | '/api/wrapped'
-    | '/blog/$slug'
     | '/blog/rss.xml'
     | '/daily/alibi'
     | '/daily/chainlink'
@@ -8247,6 +8246,7 @@ export interface FileRouteTypes {
     | '/_site/admin/security-reports'
     | '/_site/admin/user-builds'
     | '/_site/admin/users'
+    | '/_site/blog/$slug'
     | '/_site/builds/$slug'
     | '/_site/c/$slug'
     | '/_site/games/$gameId'
@@ -8862,7 +8862,6 @@ export interface RootRouteChildren {
   ApiTodayRoute: typeof ApiTodayRoute
   ApiUserBuildsRoute: typeof ApiUserBuildsRouteWithChildren
   ApiWrappedRoute: typeof ApiWrappedRoute
-  BlogSlugRoute: typeof BlogSlugRoute
   BlogRssDotxmlRoute: typeof BlogRssDotxmlRoute
   DiscordLightsOutRoute: typeof DiscordLightsOutRoute
   DiscordRmhboxRoute: typeof DiscordRmhboxRoute
@@ -9975,13 +9974,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWrappedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/blog/$slug': {
-      id: '/blog/$slug'
-      path: '/blog/$slug'
-      fullPath: '/blog/$slug'
-      preLoaderRoute: typeof BlogSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/blog/rss.xml': {
       id: '/blog/rss.xml'
       path: '/blog/rss.xml'
@@ -10526,6 +10518,13 @@ declare module '@tanstack/react-router' {
       path: '/blog'
       fullPath: '/blog/'
       preLoaderRoute: typeof SiteBlogIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/blog/$slug': {
+      id: '/_site/blog/$slug'
+      path: '/blog/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof SiteBlogSlugRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/builds/': {
@@ -14419,6 +14418,7 @@ interface SiteRouteChildren {
   SiteWishlistRoute: typeof SiteWishlistRoute
   SiteWrappedRoute: typeof SiteWrappedRoute
   SiteIndexRoute: typeof SiteIndexRoute
+  SiteBlogSlugRoute: typeof SiteBlogSlugRoute
   SiteBuildsSlugRoute: typeof SiteBuildsSlugRoute
   SiteCSlugRoute: typeof SiteCSlugRoute
   SiteGamesGameIdRoute: typeof SiteGamesGameIdRoute
@@ -14517,6 +14517,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteWishlistRoute: SiteWishlistRoute,
   SiteWrappedRoute: SiteWrappedRoute,
   SiteIndexRoute: SiteIndexRoute,
+  SiteBlogSlugRoute: SiteBlogSlugRoute,
   SiteBuildsSlugRoute: SiteBuildsSlugRoute,
   SiteCSlugRoute: SiteCSlugRoute,
   SiteGamesGameIdRoute: SiteGamesGameIdRoute,
@@ -15799,7 +15800,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTodayRoute: ApiTodayRoute,
   ApiUserBuildsRoute: ApiUserBuildsRouteWithChildren,
   ApiWrappedRoute: ApiWrappedRoute,
-  BlogSlugRoute: BlogSlugRoute,
   BlogRssDotxmlRoute: BlogRssDotxmlRoute,
   DiscordLightsOutRoute: DiscordLightsOutRoute,
   DiscordRmhboxRoute: DiscordRmhboxRoute,

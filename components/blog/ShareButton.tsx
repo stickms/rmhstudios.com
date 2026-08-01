@@ -1,44 +1,47 @@
-"use client";
+'use client';
 
-import { useState } from"react";
-import { Share2 } from"lucide-react";
-import { useTranslation } from"react-i18next";
+import { Share2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+
+import { CopyButton } from '@/components/ui/copy-button';
+import { SITE_URL } from '@/lib/seo';
 
 interface ShareButtonProps {
- slug: string;
- className?: string; // Allow overriding positioning/styles
+  /** Article slug. */
+  slug: string;
+  /**
+   * URL section the slug lives under. Defaults to `blog`, which is what this
+   * button hardcoded before — so `/news/$slug` was copying a `/blog/…` link
+   * that 404s.
+   */
+  section?: 'blog' | 'news';
+  /** Extra classes for positioning at the call site. */
+  className?: string;
 }
 
-export function ShareButton({ slug, className }: ShareButtonProps) {
- const { t } = useTranslation("c-blog");
- const [copied, setCopied] = useState(false);
+/**
+ * Copies a permalink to the current article.
+ *
+ * This used to be a bespoke button with its own `copied` state and a
+ * `bg-black/60 text-white/70 hover:text-(--neon-cyan)` skin — one of the
+ * hand-rolled copy affordances `CopyButton` exists to replace
+ * (page-consistency.md §3 "States"). It now delegates: same icon, but the
+ * shared control's tokens, focus ring, sonner toast and screen-reader
+ * announcement.
+ *
+ * The URL is built from `SITE_URL` rather than `window.location.origin` so the
+ * value is identical during SSR and after hydration — reading `window` in the
+ * render path made this component client-only for no benefit.
+ */
+export function ShareButton({ slug, section = 'blog', className }: ShareButtonProps) {
+  const { t } = useTranslation('c-blog');
 
- const handleShare = (e: React.MouseEvent) => {
- e.preventDefault();
- e.stopPropagation(); // Prevent ensuring link clicks if inside a card
- 
- // Construct URL safely (client-side)
- const url = `${window.location.origin}/blog/${slug}`;
- navigator.clipboard.writeText(url);
- 
- setCopied(true);
- setTimeout(() => setCopied(false), 2000);
- };
-
- return (
- <button
- onClick={handleShare}
- className={`p-2 rounded-full bg-black/60 text-white/70 hover:text-(--neon-cyan) hover:bg-black/80 active:scale-95 transition-[transform,color,background-color] duration-150 border border-white/10 flex items-center justify-center ${className ||""}`}
- title={t("copy-link", { defaultValue:"Copy Link"})}
- aria-label={t("copy-link", { defaultValue:"Copy Link"})}
- >
- {copied ? (
- <span className="text-xs font-bold text-(--neon-cyan) animate-in fade-in zoom-in duration-200">
- {t("copied", { defaultValue:"Copied!"})}
- </span>
- ) : (
- <Share2 className="w-4 h-4"/>
- )}
- </button>
- );
+  return (
+    <CopyButton
+      value={`${SITE_URL}/${section}/${slug}`}
+      icon={Share2}
+      label={t('copy-link', { defaultValue: 'Copy Link' })}
+      className={className}
+    />
+  );
 }

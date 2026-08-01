@@ -9,34 +9,11 @@ import { Textarea } from '@/components/ui/textarea';
 import ReactMarkdown from 'react-markdown';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { MarkdownEditor } from '@/components/admin/MarkdownEditor';
-import {
-  AnimatedH1,
-  AnimatedH2,
-  AnimatedH3,
-  AnimatedP,
-  AnimatedUl,
-  AnimatedOl,
-  AnimatedLi,
-  AnimatedBlockquote,
-  AnimatedImg,
-  AnimatedHr,
-  AnimatedPre,
-} from '@/components/blog/MDXAnimations';
+// The published article's own element map — importing it (rather than
+// re-listing a subset here, which is what this file used to do and which had
+// already fallen behind by six elements) is what makes this pane a preview.
+import { markdownComponents } from '@/components/blog/MDXAnimations';
 import { toast } from 'sonner';
-
-const animatedComponents = {
-  h1: AnimatedH1,
-  h2: AnimatedH2,
-  h3: AnimatedH3,
-  p: AnimatedP,
-  ul: AnimatedUl,
-  ol: AnimatedOl,
-  li: AnimatedLi,
-  blockquote: AnimatedBlockquote,
-  img: AnimatedImg,
-  hr: AnimatedHr,
-  pre: AnimatedPre,
-};
 
 export function MDXEditor({
   initialData,
@@ -381,7 +358,7 @@ export function MDXEditor({
                       {formData.description}
                     </p>
                   )}
-                  <ReactMarkdown components={animatedComponents}>{previewContent}</ReactMarkdown>
+                  <ReactMarkdown components={markdownComponents}>{previewContent}</ReactMarkdown>
                 </>
               ) : (
                 <div className="text-center text-site-text-dim mt-32 flex flex-col items-center gap-4">
