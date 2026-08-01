@@ -171,8 +171,16 @@ realtime topology.)
   Go `pkg/log` with matching field names). Go services expose Prometheus
   metrics (`pkg/telemetry`); supervisor merges its workers' registries
   on :9090.
-- **Status page:** the Go `status` service (7008) probes every service's
-  `/health` + the DB and keeps uptime history on disk — designed to survive
-  platform outages.
+- **Status page:** the Go `status` service (7008) keeps uptime history on disk
+  and is designed to survive platform outages — its dashboard is one
+  self-contained document that fetches nothing, not even a font. Two kinds of
+  probe: the **web-facing** ones (`/`, `/api/ready`, `/blog/rss.xml`,
+  `/sitemap.xml`) go through the public origin, so they traverse the real user
+  path and assert on response CONTENT — a 200 serving an empty shell reads as
+  degraded, not operational; the **internal** ones (the three Node hubs, the
+  supervisor) hit each container's own `/health` over compose DNS. The hubs are
+  deliberately NOT probed at `<origin>/socket/health` etc: those paths exist only
+  as rewrites in the hand-installed Apache vhost, so probing them reported a
+  permanent 404 outage for hubs that were serving traffic normally.
 - **Deploy telemetry:** Discord webhooks + GitHub commit statuses from
   `deploy.sh`.
