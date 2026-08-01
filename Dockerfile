@@ -100,6 +100,11 @@ COPY lib/blackjack ./lib/blackjack/
 COPY lib/holdem ./lib/holdem/
 COPY lib/baccarat ./lib/baccarat/
 COPY lib/roulette ./lib/roulette/
+# Every casino table moves coins through the shared ledger rather than its own
+# read-then-decrement, and the hub passes its own Prisma client — which is what
+# `ledger-core` (unlike `ledger.server`) is split out for. It imports nothing
+# but `@prisma/client` types, so a single-file copy resolves.
+COPY lib/economy/ledger-core.ts ./lib/economy/ledger-core.ts
 # Dream Rift's socket relay handler only needs the shared, import-free netcode
 # protocol — copy just that file (the rest of lib/dream-rift is browser code).
 COPY lib/dream-rift/net/events.ts ./lib/dream-rift/net/events.ts
@@ -149,6 +154,21 @@ COPY lib/rmhladder ./lib/rmhladder/
 # batched purge queries from this module (relative import, so it must be present
 # in this bundle context).
 COPY lib/cleanup.server.ts ./lib/cleanup.server.ts
+# ladder-worker's résumé storage and job alerts reach the object store and the
+# notification stack. These were invisible until the copy check learned to
+# follow `@/…` specifiers: they enter the graph through one, and everything
+# below them came along unseen. Single files, because each pulls in only the
+# siblings listed here.
+COPY lib/storage/s3.server.ts ./lib/storage/s3.server.ts
+COPY lib/storage/keys.ts ./lib/storage/keys.ts
+COPY lib/storage/asset.ts ./lib/storage/asset.ts
+COPY lib/notifications.server.ts ./lib/notifications.server.ts
+COPY lib/push/send.server.ts ./lib/push/send.server.ts
+COPY lib/redis.server.ts ./lib/redis.server.ts
+COPY lib/user-display.ts ./lib/user-display.ts
+COPY lib/shop/catalog.ts ./lib/shop/catalog.ts
+COPY lib/shop/equipped.ts ./lib/shop/equipped.ts
+COPY lib/shop/themes.ts ./lib/shop/themes.ts
 # homes-worker (RMHHomes external-listing scraper cron) needs lib/homes for its
 # scrape pipeline/seed and the dependency-light watch notifier. Its bundle only
 # reaches lib/homes/scrape + types/distance/watch-match, so the heavier
