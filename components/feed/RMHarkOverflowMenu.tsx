@@ -323,7 +323,7 @@ export function RMHarkOverflowMenu({
  ref={panelRef}
  role="menu"
  tabIndex={-1}
- className="absolute right-0 top-full mt-1 w-44 glass-fill py-1 z-30"
+ className="absolute right-0 top-full mt-1 w-44 glass-overlay py-1 z-50"
  onClick={(e) => e.stopPropagation()}
  onKeyDown={(e) => e.stopPropagation()}
  >

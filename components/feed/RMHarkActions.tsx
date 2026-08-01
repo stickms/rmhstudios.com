@@ -173,7 +173,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  ref={repostPanelRef}
  role="menu"
  tabIndex={-1}
- className="absolute left-0 top-full mt-1 w-40 glass-fill py-1 z-30"
+ className="absolute left-0 top-full mt-1 w-40 glass-overlay py-1 z-50"
  onClick={(e) => e.stopPropagation()}
  >
  <button
