@@ -12,6 +12,7 @@ Generated from `lib/games.ts`, the single source of truth every card on the site
 
 | | Route | Status | Auth | Tags |
 | --- | ----- | ------ | ---- | ---- |
+| **Isleworks** | [`/isleworks`](https://rmhstudios.com/isleworks) | Playable | — | `City Builder` `Strategy` `Relaxing` `Isometric` |
 | **RMHbox** | [`/rmhbox`](https://rmhstudios.com/rmhbox) | Playable | required | `Multiplayer` `Party` `Minigames` |
 | **Altair** | [`/altair`](https://rmhstudios.com/altair) | — | required | `Deckbuilder` `Roguelike` `Strategy` |
 | **Daily Puzzles** | [`/daily`](https://rmhstudios.com/daily) | — | — | `Puzzle` `Daily` `Brain Games` |
@@ -32,6 +33,12 @@ Generated from `lib/games.ts`, the single source of truth every card on the site
 | **RMH Farming Simulator** | [`/rmh-farming-sim`](https://rmhstudios.com/rmh-farming-sim) | — | required | `Simulation` `Farming` `Co-op` `Multiplayer` `3D` |
 
 ## Detail
+
+### Isleworks
+
+Found a city on a square-grid island floating in a soft blue void. Draw roads, raise homes, shops and industry, wire up power and water, and balance pollution, traffic, land value and happiness as the months roll by. Buy new parcels to expand, complete milestones to unlock towers and landmarks, and watch tiny citizens and cars fill the streets of your low-poly diorama.
+
+**Route:** `/isleworks` · **Catalog id:** `isleworks` · **Status:** Playable · **Sign-in:** not required
 
 ### RMHbox
 

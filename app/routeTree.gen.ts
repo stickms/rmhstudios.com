@@ -23,6 +23,7 @@ import { Route as DesignRouteImport } from './routes/design'
 import { Route as DreamRiftRouteImport } from './routes/dream-rift'
 import { Route as ForestExplorerRouteImport } from './routes/forest-explorer'
 import { Route as HouseAlwaysWinsRouteImport } from './routes/house-always-wins'
+import { Route as IsleworksRouteImport } from './routes/isleworks'
 import { Route as KowloonKnockoutRouteImport } from './routes/kowloon-knockout'
 import { Route as LaundrySortRouteImport } from './routes/laundry-sort'
 import { Route as LightsOutRouteImport } from './routes/lights-out'
@@ -802,6 +803,11 @@ const ForestExplorerRoute = ForestExplorerRouteImport.update({
 const HouseAlwaysWinsRoute = HouseAlwaysWinsRouteImport.update({
   id: '/house-always-wins',
   path: '/house-always-wins',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IsleworksRoute = IsleworksRouteImport.update({
+  id: '/isleworks',
+  path: '/isleworks',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KowloonKnockoutRoute = KowloonKnockoutRouteImport.update({
@@ -4476,6 +4482,7 @@ export interface FileRoutesByFullPath {
   '/dream-rift': typeof DreamRiftRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/house-always-wins': typeof HouseAlwaysWinsRoute
+  '/isleworks': typeof IsleworksRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
@@ -5198,6 +5205,7 @@ export interface FileRoutesByTo {
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
+  '/isleworks': typeof IsleworksRoute
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
   '/liquid-glass': typeof LiquidGlassRoute
@@ -5905,6 +5913,7 @@ export interface FileRoutesById {
   '/dream-rift': typeof DreamRiftRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/house-always-wins': typeof HouseAlwaysWinsRoute
+  '/isleworks': typeof IsleworksRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
@@ -6634,6 +6643,7 @@ export interface FileRouteTypes {
     | '/dream-rift'
     | '/forest-explorer'
     | '/house-always-wins'
+    | '/isleworks'
     | '/kowloon-knockout'
     | '/laundry-sort'
     | '/lights-out'
@@ -7356,6 +7366,7 @@ export interface FileRouteTypes {
     | '/design'
     | '/dream-rift'
     | '/house-always-wins'
+    | '/isleworks'
     | '/laundry-sort'
     | '/lights-out'
     | '/liquid-glass'
@@ -8062,6 +8073,7 @@ export interface FileRouteTypes {
     | '/dream-rift'
     | '/forest-explorer'
     | '/house-always-wins'
+    | '/isleworks'
     | '/kowloon-knockout'
     | '/laundry-sort'
     | '/lights-out'
@@ -8790,6 +8802,7 @@ export interface RootRouteChildren {
   DreamRiftRoute: typeof DreamRiftRoute
   ForestExplorerRoute: typeof ForestExplorerRouteWithChildren
   HouseAlwaysWinsRoute: typeof HouseAlwaysWinsRoute
+  IsleworksRoute: typeof IsleworksRoute
   KowloonKnockoutRoute: typeof KowloonKnockoutRouteWithChildren
   LaundrySortRoute: typeof LaundrySortRoute
   LightsOutRoute: typeof LightsOutRoute
@@ -9281,6 +9294,13 @@ declare module '@tanstack/react-router' {
       path: '/house-always-wins'
       fullPath: '/house-always-wins'
       preLoaderRoute: typeof HouseAlwaysWinsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/isleworks': {
+      id: '/isleworks'
+      path: '/isleworks'
+      fullPath: '/isleworks'
+      preLoaderRoute: typeof IsleworksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/kowloon-knockout': {
@@ -15718,6 +15738,7 @@ const rootRouteChildren: RootRouteChildren = {
   DreamRiftRoute: DreamRiftRoute,
   ForestExplorerRoute: ForestExplorerRouteWithChildren,
   HouseAlwaysWinsRoute: HouseAlwaysWinsRoute,
+  IsleworksRoute: IsleworksRoute,
   KowloonKnockoutRoute: KowloonKnockoutRouteWithChildren,
   LaundrySortRoute: LaundrySortRoute,
   LightsOutRoute: LightsOutRoute,
