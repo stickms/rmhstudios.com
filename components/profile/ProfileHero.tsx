@@ -403,7 +403,6 @@ export function ProfileHero({
               type="button"
               onClick={() => onShowSocial('followers')}
               className="glass-fill glass-interactive rounded-site-sm px-2 py-3 text-center"
-              data-glass-light=""
             >
               <AnimatedCount
                 value={profile.followerCount}
@@ -418,7 +417,6 @@ export function ProfileHero({
               type="button"
               onClick={() => onShowSocial('following')}
               className="glass-fill glass-interactive rounded-site-sm px-2 py-3 text-center"
-              data-glass-light=""
             >
               <AnimatedCount
                 value={profile.followingCount}
@@ -479,7 +477,6 @@ export function ProfileHero({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="glass-fill glass-interactive inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-site-text"
-                  data-glass-light=""
                 >
                   <LinkIcon className="size-3.5" aria-hidden />
                   <span className="max-w-48 truncate">{link.label}</span>

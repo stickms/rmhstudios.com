@@ -325,14 +325,16 @@ function LiquidGlassLab() {
         <Section
           id="pointer"
           eyebrow="§4.1"
-          title="Pointer light — interactive glass"
+          title="Hover response — interactive glass"
           description={
             <>
-              The glint is the surface&apos;s <em>specular</em> answer; the diffuse footprint is the{' '}
-              <Mono>.glass-interactive</Mono> + <Mono>data-glass-light</Mono> hotspot, a soft radial
-              that follows your cursor inside the hovered card only (fine pointers only — touch
-              never pays for it). Interactive cards also fade in their glint ring on hover, so at
-              most one card ring paints at a time. Hover a card.
+              The glass no longer tracks your cursor. <Mono>.glass-interactive</Mono> used to grow a
+              soft radial hotspot that followed the pointer inside the hovered card; moving a
+              gradient&apos;s centre repaints the whole element, at pointer rate, so a grid of cards
+              spent its frame budget on a highlight. What answers hover now costs nothing per
+              frame: the tint raises, and the L1 rim glint lifts from its ambient rest to full — so
+              the hovered card is still unmistakably the lit one. The glint itself answers a static
+              sun. Hover a card.
             </>
           }
         >
@@ -346,7 +348,6 @@ function LiquidGlassLab() {
               return (
                 <div
                   key={item.label}
-                  data-glass-light=""
                   className="glass-fill glass-interactive flex h-32 flex-col items-center justify-center gap-2 p-4"
                 >
                   <Icon className="relative z-[1] h-6 w-6 text-site-accent" aria-hidden />
@@ -448,7 +449,6 @@ function LiquidGlassLab() {
             </div>
             <div
               data-glass-lens=""
-              data-glass-light=""
               className="glass-pane glass-refract glass-interactive relative flex h-40 cursor-pointer select-none items-center justify-center overflow-hidden rounded-site p-6"
             >
               <div className="relative z-10 flex flex-col items-center gap-1 text-center">

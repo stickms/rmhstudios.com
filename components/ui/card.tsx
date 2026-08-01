@@ -26,7 +26,6 @@ function Card({
   return (
     <div
       data-slot="card"
-      data-glass-light={interactive ? '' : undefined}
       // `firm` rather than the default: a card is a large surface, and the 4%
       // that reads as a crisp press on a button reads as a wobble on something
       // the width of the column. `.glass-interactive:active` remains the

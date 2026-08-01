@@ -53,7 +53,6 @@ function BlogCard({ post }: { post: Partial<Post> }) {
       // §5.48: liquidly expand the card into the article header on click.
       onClick={(e) => liquidOpen(e, liquidVTName('blog', slug), { to: `/blog/${slug}` })}
       className="lib-blog__card lib-reveal glass-fill glass-interactive lib-orbit-card"
-      data-glass-light=""
       data-library-orbit=""
       role="listitem"
     >

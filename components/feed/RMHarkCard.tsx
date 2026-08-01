@@ -237,11 +237,8 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  {...(item.pending || item.deletedAt ? {} : reactionTrigger)}
  // The repeated timeline card is the L1 tier: `.glass-fill` carries the
  // material (tint, hairline, ambient glint) and `.glass-interactive` the
- // press flex + the pointer-tracked specular — which is what `data-glass-light`
- // has always been asking for, and never got, because the pair of classes the
- // hotspot selector needs was hand-rolled away into flat utilities. The
- // spacing, hover tint and the rest state's border stay in feed.css.
- data-glass-light=""
+ // press flex plus the hover raise of that glint. The spacing, hover tint and
+ // the rest state's border stay in feed.css.
  role={openable ? 'link' : undefined}
  tabIndex={openable ? 0 : undefined}
  className={`glass-fill glass-interactive social-post relative p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent ${

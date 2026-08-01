@@ -262,7 +262,6 @@ export function PlaylistsColumn({
  ?'glass-fill glass-interactive lib-orbit-card'
  :'rounded-site border border-site-border bg-site-surface'
  }
- data-glass-light={embedded ?'': undefined}
  data-library-orbit={embedded ?'': undefined}
  >
  <div className="flex items-center gap-2 p-3">

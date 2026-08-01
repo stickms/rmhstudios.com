@@ -206,7 +206,6 @@ export function ProfileCosmetics() {
               return (
                 <div
                   key={item.id}
-                  data-glass-light=""
                   className="glass-fill glass-interactive flex items-center gap-3 rounded-site p-3"
                   // Rarity communicates value through the rim colour, matching
                   // the shop grid.

@@ -674,7 +674,6 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
                         data-index={index}
                         role="option"
                         aria-selected={active}
-                        data-glass-light=""
                         onMouseMove={() => setActiveIndex(index)}
                         onClick={() => runCommand(cmd)}
                         className={cn(

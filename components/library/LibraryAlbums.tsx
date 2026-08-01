@@ -104,7 +104,6 @@ function AlbumCard({ album }: { album: Album }) {
         to="/library/albums/$albumId"
         params={{ albumId: album.id }}
         className="lib-album glass-fill glass-interactive lib-orbit-card"
-        data-glass-light=""
         data-library-orbit=""
         aria-label={t('open-album', { title: album.title, defaultValue: 'Open {{title}}' })}
         {...preload}
