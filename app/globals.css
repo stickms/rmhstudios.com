@@ -2155,12 +2155,15 @@ html.readable-font body {
   padding-inline: 1rem;
 }
 
-/* Novelty themes retired in the Apple-style overhaul. The catalog is now the
-   three base themes — Dark (:root), Light (.style-light), High Contrast
-   (.style-high-contrast) — plus the curated set above (Graphite / Sepia /
-   Nocturne), the Ultra signature style, and the accent-preset overrides (see
-   lib/appearance.ts). All are registered in stores/themeStore.ts (SITE_STYLES);
-   Liquid Glass is the site default for visitors with no saved preference. */
+/* Novelty themes retired in the Apple-style overhaul. The PICKER now ships three
+   (stores/themeStore.ts, SITE_STYLES): Daylight (`default` — the bare :root,
+   restated as .style-default only so the settings gallery can preview it),
+   Midnight (.style-graphite) and High contrast (.style-high-contrast). The other
+   palettes above — .style-light, .style-sepia, .style-nocturne, .style-ultra —
+   are complete, unregistered token sets kept as the reference every USER theme
+   derives from (lib/themes/tokens.ts) and as proof the contract holds outside
+   monochrome. Accent presets layer on top of any of them (lib/appearance.ts).
+   Persisted-but-unknown ids self-heal to `default` during hydration. */
 
 @theme inline {
   /* Site design system tokens */

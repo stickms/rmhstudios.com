@@ -6,13 +6,16 @@
 
 The site's design language is **Radial Avant-Garde Glass** (see
 [`design-language.md`](./design-language.md)): a radial shell — fixed ring
-backdrop, slim top bar, and a central **RMH hub** that blooms the navigation —
-wrapping content that ships as a flat high-contrast **monochrome** baseline
-today and references Apple-style Liquid Glass optics as its direction. Pages look
-consistent because they share four things: the `_site` **radial shell**, the
-`PageLayout` column system, the `--site-*` token contract, and the same
-route-level conventions (head/SEO, i18n, auth, loading and error states). This
-guide is the recipe.
+backdrop, drifting aurora, slim top bar, and a central **RMH hub** that blooms
+into the **liquid globe** you turn to navigate — wrapping content rendered in
+the **Liquid Glass material**, in a strict high-contrast **monochrome** palette.
+The glass is shipped, not aspirational: surfaces are translucent tints over the
+shared aurora, every tier carries a rim glint, and the tier class is what the
+degradation switches (high contrast, reduced transparency, `perf-lite`) act on.
+Pages look consistent because they share four things: the `_site` **radial
+shell**, the `PageLayout` column system, the `--site-*` token contract, and the
+same route-level conventions (head/SEO, i18n, auth, loading and error states).
+This guide is the recipe.
 
 ---
 
@@ -66,7 +69,12 @@ live rail, which exists only ≥1440px. Treat it as supplementary — anything
 load-bearing belongs in `children`.
 
 Props: `title`, `children`, `rightSidebar?`, `headerRight?`,
-`wide?`, `backTo?`, `backLabel?`.
+`wide?`, `backTo?`, `backLabel?`, `breadcrumbs?`.
+
+**The header is not sticky.** The radial content layer unpins page-level sticky
+chrome — headers, tab strips, search bars — so every `_site` route flows on the
+document's own scroll like the feed. That is what lets mobile Safari collapse its
+toolbars. Don't re-pin one.
 
 ### Feed-column variant
 
@@ -118,7 +126,8 @@ Work through this for every new or edited page:
       (`bg-site-accent/15` + `text-site-accent`) are a separate, correct pattern
       and are untouched.
 - [ ] Surfaces via `Card` (L1 `.glass-fill` by default; `pane` for L2,
-      `interactive` for the pointer light) or the glass elevation classes
+      `interactive` for the hover tint-raise + hover-raised rim glint + press
+      flex) or the glass elevation classes
       (design-language.md §5.1) — repeated rows/tiles use `.glass-fill` (no
       blur), singular panels `.glass-pane`, floating UI `.glass-overlay`. Raw
       `bg-site-surface` still works (degrades to a translucent L1 tint).
@@ -169,6 +178,19 @@ Work through this for every new or edited page:
       lens is parked, see design-language.md), `.glass-refract--prism` (≤1/page,
       static chromatic rim), `.glass-liquid` ambient sheen (≤3/page),
       `.glass-sheen-hover` (primary CTAs).
+- [ ] **Nothing on the page reacts to pointer _position_.** No `pointermove`
+      listener, no gradient or background position driven by a cursor, no
+      per-card sheen or tilt hook — all of that was retired site-wide
+      (design-language.md §5.1.1), because moving a gradient repaints the whole
+      element at pointer rate. Hover is a state (`:hover`, a class), never a
+      coordinate; if you want light on a surface, the tier class already paints
+      it.
+- [ ] **Nothing writes a custom property to `<html>` per frame.** Root custom
+      properties are inherited by the entire document and have no invalidation
+      set, so one such write per frame is a whole-document restyle per frame —
+      it was the single biggest cost the site ever shipped
+      (`performance-audit-2026-08-01.md`). Write to the element that reads the
+      value.
 
 ### States
 
@@ -223,8 +245,17 @@ Work through this for every new or edited page:
       `--site-accent` approaches its `--site-surface` must be checked. Tab to the
       skip link (`_site.tsx`, the first focus stop) under `.style-high-contrast`
       specifically: the ring vs. surface must clear WCAG 1.4.11 (≥3:1).
-- [ ] Check `.style-light` (Glass Light) and `.style-high-contrast` (glass off),
-      plus reduced-transparency, not just the default monochrome baseline.
+- [ ] Check the two other **shipped** themes — `.style-graphite` (Midnight, the
+      dark twin) and `.style-high-contrast` (glass off entirely) — plus
+      reduced-transparency, not just the Daylight default.
+- [ ] **Colour is not the only carrier of meaning.** Status must survive the
+      colour-vision modes (design-language.md §2.1), which retint
+      `--site-success`/`--site-danger`/`--site-warning` — so pair the colour with
+      a glyph, a label or a position. `<Badge>` already does; use it rather than
+      a bare tinted dot.
+- [ ] The page still reads at 125% text size and in `compact` density
+      (Settings → Appearance) — both are token-level and neither should need a
+      per-page override.
 - [ ] Mobile: bottom padding clears the floating dock
       (`pb-[calc(env(safe-area-inset-bottom,0px)+92px)] md:pb-0` on the column —
       PageLayout does this); tap targets comfortable at 480px (`xs` breakpoint).
@@ -299,7 +330,11 @@ These are the mistakes that make a page feel "off" — reviewers will flag them:
    `duration-site-fast` / `duration-site-slow`, which follow the theme's
    `--site-transition-speed`. Anything the user *drags* is a spring
    (`APPLE_SPRING`), not a duration at all.
-3. Custom headers instead of `PageLayout`'s sticky header.
+3. A custom page header instead of `PageLayout`'s — or re-pinning one. The
+   shell's header is a flat, transparent big-type block floating on the ring
+   backdrop, and the radial content layer deliberately **unpins** page-level
+   sticky chrome so every route flows on the document's own scroll (which is the
+   only way mobile Safari collapses its toolbars).
 4. Arbitrary column widths instead of `lib/layout-width.ts` constants.
 5. Hand-rolled modals/spinners/empty states/copy-buttons instead of the
    `components/ui/` primitives, or native `window.confirm` instead of
@@ -313,6 +348,11 @@ These are the mistakes that make a page feel "off" — reviewers will flag them:
    items (blur cost) or on an ancestor of a `position:fixed` element (containing
    block) — see design-language.md §5.1.
 8. Adding `react-icons`, new font imports, or one-off animation systems.
+8b. Re-introducing cursor tracking — a `pointermove` listener, a hover hotspot,
+   a card tilt, a "follow the mouse" glow. The whole class of effect was removed
+   in one pass (design-language.md §5.1.1). Same for a reveal-on-scroll that
+   defaults to `opacity: 0`: use `useReveal`, whose hidden state is opt-in and
+   therefore cannot strand content when the JS does not arrive.
 9. Re-adding app-frame edges: `border-r border-site-border` on page columns,
    full-bleed `sticky top-0 border-b` headers, or a re-implemented sidebar — the
    radial shell owns the chrome (ring backdrop, top bar, central hub nav), and

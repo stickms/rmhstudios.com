@@ -32,7 +32,7 @@ locales, RTL for `ar`/`ur`). Node ≥24.18, pnpm workspace.
 | `server/`      | **Node** service tier: web SSR plus socket-server (7001), rmhbox (7676), rmhtube (7003), and the ladder-worker / homes-worker / jobs (pg-boss) workers.               | [`server/CLAUDE.md`](server/CLAUDE.md)           |
 | `go-services/` | **Go** microservice fleet (Bazel + gazelle): `supervisor`, `status`, `assets` run in prod; the gateway + Go hubs were removed (rewrite §5.2).                         | [`go-services/CLAUDE.md`](go-services/CLAUDE.md) |
 | `stores/`      | Site-level Zustand stores (theme, locale, feed, user display).                                                                                                        | `lib/CLAUDE.md`                                  |
-| `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useGlassLight`, `usePointerParallax`, …).                                                          | `lib/CLAUDE.md`                                  |
+| `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useFluidPress`/`useFluidDrag`, `useLiquidBackground`, `useReveal`, …).                             | `lib/CLAUDE.md`                                  |
 | `prisma/`      | `schema.prisma` (252 models, 66 enums, ~6k lines) + migrations.                                                                                                       | `lib/CLAUDE.md`                                  |
 | `locales/`     | 16 shipped locales × 67 registered namespaces; `en` is authoritative. (More directories exist on disk than are wired up — see the i18n note below.)                   | `lib/CLAUDE.md` §i18n                            |
 | `data/`        | Static JSON (RMHBox content packs, library metadata).                                                                                                                 | —                                                |
@@ -83,12 +83,22 @@ status 7008 · assets 7007. Env: see `.env.example`; minimum is
    utilities (`bg-site-surface`, `rounded-site`, …) so every theme works;
    full-screen apps use the parallel `--app-*` contract in
    `components/shared/app-theme.css`. Use `components/ui/` primitives,
-   `PageLayout`, `lib/motion.ts` tokens, lucide icons, sonner toasts. **Before
-   any UI commit** read [`docs/design-language.md`](docs/design-language.md)
-   §0 (the definition of done) and the checklist in
+   `PageLayout`, `lib/motion.ts` tokens, lucide icons, sonner toasts. Surfaces
+   take a **glass elevation class by role** (`.glass-fill` repeated cards ·
+   `.glass-pane` singular panels · `.glass-chrome` sticky chrome ·
+   `.glass-overlay` floating UI · `.glass-inset` fields), not a hand-rolled
+   `bg-site-surface border rounded-site` box — the class is what carries the
+   material and what the degradation tiers switch off. **Nothing tracks the
+   cursor** (retired 2026-08-01) and nothing writes a custom property to
+   `<html>` per frame. The statement of the language is
+   [`design.md`](design.md) at the root; **before any UI commit** read
+   [`docs/design-language.md`](docs/design-language.md) §0 (the definition of
+   done) and the checklist in
    [`docs/page-consistency.md`](docs/page-consistency.md). Part of this is
    CI-enforced — `lib/__tests__/design-consistency.test.ts` fails the build on
-   hand-rolled tab strips and stray active-underline markers.
+   hand-rolled tab strips, raw palette colours, hardcoded radii, floating UI
+   below L4, `transition-all`, and `tailwindcss-animate` classes (that plugin
+   is not installed, so they compile to nothing).
 5. **i18n:** all user-facing strings through `t("key", { defaultValue })`;
    then `pnpm i18n:extract`. English is authoritative. Two silent failure modes
    to know: **(a)** `defaultValue` is only used when a key is MISSING, so

@@ -20,18 +20,18 @@ architecture. Two ideas, one language:
   focus line, led by an inline compose box; navigation lives in a fixed **RMH
   hub** that, when tapped, sends the orb to the middle of the screen and swells
   it into a **liquid globe** — the destinations pinned to a glass sphere you
-  turn, hold and let go of to travel. A soft parallax
-  **ring backdrop** and a drifting blob field keep the whole surface feeling
-  liquid and continuous. Mobile-first, with a strict **high-contrast
-  monochrome** palette.
+  turn, hold and let go of to travel — and that **ripples when you poke it**. A
+  fixed **ring backdrop**, a drifting blob field and a slowly breathing aurora
+  keep the whole surface feeling liquid and continuous. Mobile-first, with a
+  strict **high-contrast monochrome** palette.
 - **Avant-garde glass.** The material is Apple's Liquid Glass used
   _theatrically_, not literally: physically-plausible layered translucent glass
-  with **live optics** — a specular rim glint that tracks the scene light,
-  lens-model edge refraction (with an optional chromatic **prism** on one
-  flagship surface), a depth-parallaxing aurora canvas, a pointer-tracked
-  diffuse light, and travelling liquid sheens — deployed for signature radial
-  moments (the menu is an **expanding circular veil** growing from the centre,
-  not a drawn disc, with a glass sphere suspended in it). It is
+  with **live optics** — an always-on specular rim glint lit by a static scene
+  sun, lens-model edge refraction (with an optional chromatic **prism** on one
+  flagship surface), a two-layer drifting aurora canvas, micro-noise, and
+  travelling liquid sheens that ride the compositor — deployed for signature
+  radial moments (the menu is an **expanding circular veil** growing from the
+  centre, not a drawn disc, with a glass sphere suspended in it). It is
   expressed as an **elevation system of explicit CSS classes** (`.glass-fill` /
   `.glass-pane` / `.glass-chrome` / `.glass-overlay` / `.glass-inset`, plus the
   modifiers in §5.1) placed _on_ components.
@@ -43,26 +43,48 @@ so any theme (and any accent preset layered on top) restyles the entire site
 without a single component change.
 
 > **What ships today — read this first.** Both layers are live. The **radial**
-> layer (shell, hub, wheel feed) ships in
+> layer (shell, hub, liquid globe, wheel feed) ships in
 > [`components/radial/`](../components/radial/README.md), and the **Liquid Glass
 > material is rendered on top of it**: the radial shell no longer demotes the
 > glass classes to flat cards, the aurora canvas paints and drifts behind
 > everything, and surfaces are translucent by token (`--site-surface` is a tint,
 > not paper) so both the `.glass-*` tiers and the many pages that simply paint
-> `bg-site-surface` sample the same scene. The elevation tiers, rim glint,
-> pointer light, frosted edge bevel and liquid sheen are all on.
+> `bg-site-surface` sample the same scene. The elevation tiers, rim glint (on L1
+> as well as L2+), frosted edge bevel and travelling sheen are all on. The
+> navigation globe **ripples when you poke it**.
 >
-> One optic is **parked**: the SVG displacement lens (`url(#glass-lens)`, §5.1
-> `.glass-refract`) — current Chromium composites the displacement map into the
-> bevel instead of bending the backdrop through it, so refract surfaces keep the
-> frosted edge band (and the prism keeps its static chromatic rim) without the
-> bend. The filters and `lib/glass-lens.ts` still ship; re-enabling is restoring
-> the `@supports` upgrades in `app/globals.css` plus the `initGlassLens()` call
-> in `hooks/useGlassLight.ts`. Everything else in §2, §5.1 and §7 is live.
+> Two things are **not** live, and both are deliberate:
+>
+> - **Nothing tracks the cursor** (§5.1.1, 2026-08-01). The hovered-glass
+>   hotspot, the aurora's pointer parallax, the ring backdrop's, the per-card
+>   sheens and pointer tilts, and the scene-light hook that fed them are all
+>   deleted. The glass answers a **static sun**; hover is a state change, not a
+>   coordinate. If a doc, a comment or a code path still implies otherwise, it
+>   is stale.
+> - **The SVG displacement lens is parked** (`url(#glass-lens)`, §5.1
+>   `.glass-refract`) — current Chromium composites the displacement map into
+>   the bevel instead of bending the backdrop through it, so refract surfaces
+>   keep the frosted edge band (and the prism keeps its static chromatic rim)
+>   without the bend. The filters and `lib/glass-lens.ts` still ship; re-enabling
+>   means restoring the `@supports` upgrades in `app/globals.css` and giving
+>   `initGlassLens()` a caller (its old one, `useGlassLight`, is gone).
+>
+> Also deleted, and worth knowing so you don't go looking for it: the **GL/WebGPU
+> shader tier** (`lib/liquid-gl/`, ~2,240 lines) whose `initLiquidGL()` never had
+> a caller. `liquid-morph` and `liquid-pop` are the SVG-metaball path they always
+> actually ran; comments there that mention a "shader body" are historical.
 
-Specs: [radial UI](../components/radial/README.md) ·
-[v1 glass material](./plans/2026-07-14-liquid-glass-ui-redesign.md) ·
-[v2 optics & floating shell](./plans/2026-07-21-liquid-glass-v2-optics.md).
+**Current companions:** [radial UI + the globe](../components/radial/README.md) ·
+[the per-page checklist](./page-consistency.md) ·
+[UI audit 2026-08-01](./ui-audit-2026-08-01.md) (the most recent site-tier pass) ·
+[performance audit 2026-08-01](./performance-audit-2026-08-01.md) (why the
+cursor effects went).
+
+**Historical specs** — intent at the time of writing, superseded where this file
+disagrees: [v1 glass material](./plans/2026-07-14-liquid-glass-ui-redesign.md)
+(2026-07-14) · [v2 optics & floating shell](./plans/2026-07-21-liquid-glass-v2-optics.md)
+(2026-07-21; its `useGlassLight` v2 and shader-tier sections describe code that
+has since been deleted).
 
 ---
 
@@ -103,10 +125,12 @@ per-page checklist with code.)
 8. **The keyboard and screen-reader path works.** Icon-only controls are named,
    decorative icons are `aria-hidden`, focus stays visible and undoubled. (§8,
    §9)
-9. **It was actually looked at** in `default`, `.style-light` and
-   `.style-high-contrast`, at a phone width and a desktop width, and once with
-   reduced motion on. Three themes × two widths is the floor; the audit matrix
-   in `docs/ui-audit-2026-07-28.md` §1 is the extended version.
+9. **It was actually looked at** in the three shipped themes — `default`
+   (Daylight), `.style-graphite` (Midnight) and `.style-high-contrast` — at a
+   phone width and a desktop width, and once with reduced motion on. Three
+   themes × two widths is the floor; the audit matrix in
+   `docs/ui-audit-2026-07-28.md` §1 is the extended version, and
+   `docs/ui-audit-2026-08-01.md` is the most recent pass over the site tier.
 
 **When the system does not have what you need**, extend the system — add the
 token, add the variant, add the primitive — and say so in the commit message.
@@ -213,8 +237,11 @@ useful (turning the globe) keeps working.
 Tailwind v4 is imported at the top of `app/globals.css`; an `@theme inline`
 block binds the `--site-*` variables to utility classes. The `:root` block is
 the **default theme** — the strict-monochrome Radial Avant-Garde Glass baseline (a
-light palette: white canvas, ink text and accent). There is no `.style-default`
-class; default is the absence of any `.style-*` class on `<html>`.
+light palette: white canvas, ink text and accent). At runtime the default is the
+**absence** of any `.style-*` class on `<html>`; a `.style-default` block also
+exists in `globals.css`, restating the same tokens purely so the settings theme
+gallery can preview the default palette inside a card while another theme is
+active. Keep the two in sync.
 
 Tokens every theme defines (set in `:root`, overridden by each `.style-*`
 class):
@@ -309,14 +336,23 @@ translucent white tints over the drifting canvas. Every other theme is the same
 material in its own palette over its own `--site-canvas` aurora. (The old
 `liquid-glass` theme id is retired — it _became_ the shell.)
 
-Note that `SITE_STYLES` currently ships three of these — `default`, `graphite`
-and `high-contrast`; the other palettes below stay in `globals.css` as complete,
-ready token sets (and as the reference every user theme derives from).
+**The picker ships three**, and they are one system in three accessibility
+modes rather than a gallery of moods — light, dark, and the no-glass fallback:
 
-| Group   | Themes                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Base    | `default` (**Radial Monochrome** — the site default: strict black-&-white, ink accent, translucent white frost over a white aurora), `light` (**Glass Light** — daylight canvas, brighter white frost, dark ink), `high-contrast` (WCAG AAA, **no glass**: opaque black/white, yellow accent, 2px borders), `ultra` (**Ultra** — near-black spectral canvas, precision geometry, ice-cyan signal color, fast motion and restrained violet energy) |
-| Curated | `graphite` (Graphite Glass — monochrome smoke, desaturated), `sepia` (Sepia Glass — warm parchment, amber accent), `nocturne` (Nocturne Glass — deep-navy nightscape, sky-blue aurora)                                                                                                                                                                                                                                                            |
+| Shipped in `SITE_STYLES` | Label             | What it is                                                                                                                                                        |
+| ------------------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `default` (no class)     | **Daylight** ☀    | The site default. Strict black-&-white, ink accent, translucent white frost over a white aurora. `color-scheme: light`, document bg `#ffffff`.                    |
+| `graphite`               | **Midnight** ◐    | The dark twin: OLED-black ground, near-white ink, graphite elevated surfaces, hairline light borders, one calm blue signal. `color-scheme: dark`, bg `#000000`.  |
+| `high-contrast`          | **High contrast** ◑ | WCAG AAA, and **the absence of the material**: opaque surfaces, no blur, no glint, no aurora, 2px borders, yellow accent. Everything must survive it.           |
+
+Four more palettes stay in `globals.css` as complete, ready token sets — they
+are not in the picker, and they exist as the reference every **user theme**
+derives from and as a proof that the contract holds outside monochrome:
+`light` (Glass Light — daylight canvas, brighter white frost), `sepia` (warm
+parchment, amber accent), `nocturne` (deep-navy nightscape, sky-blue aurora),
+`ultra` (near-black spectral canvas, ice-cyan signal, restrained violet energy).
+Persisted-but-unknown ids (a retired decorative theme, or the old `liquid-glass`
+id) self-heal to `default` during hydration.
 
 The glass primitives live in `components/ui/liquid-glass.tsx` (`GlassPane` and
 `GlassFilter` — the v2 lens-filter host mounted globally in `__root.tsx`) with a
@@ -368,6 +404,46 @@ setPreview, accent, setAccent }`. `THEME_BG` is derived from `SITE_STYLES`.
   the persisted class + accent _before hydration_, deriving the background from
   the `THEME_BG` map (also from `SITE_STYLES`), so there is no hand-copied
   theme→background map to keep in sync.
+
+### 2.1 The appearance & accessibility suite
+
+A theme is what the site is made of; the suite is how a visitor tunes it. All of
+it composes on top of whichever theme is active, all of it goes through the same
+token contract (so no component knows it happened), and all of it is applied
+**pre-paint** by the no-flash script and persisted to `localStorage` +
+account-synced. The shared constants, zod schema and storage keys are
+`lib/appearance/prefs.ts`; the settings UI is Settings → Appearance.
+
+| Setting              | Mechanism                                                                                       | Key                  |
+| -------------------- | ------------------------------------------------------------------------------------------------- | -------------------- |
+| **Accent preset**    | 14 curated colors overriding only `--site-accent*` as inline styles on `<html>` (§2)             | `rmh-custom-accent`  |
+| **Text size**        | Four scales (87.5 / 100 / 112.5 / 125%) — a root font-size multiplier, so every `rem` follows    | `rmh-font-scale`     |
+| **Density**          | `cozy` \| `compact` → `html[data-density]`; compact tightens `[data-slot="card"]` padding and gap. Font sizes and touch targets deliberately unchanged | `rmh-density`        |
+| **Readable font**    | `html.readable-font` swaps the **body** face to a high-legibility stack (Atkinson Hyperlegible → Verdana → system) with loosened tracking, word spacing and leading. Headings keep the theme display face | `rmh-readable-font`  |
+| **Reduce motion**    | In-account switch that sets `html.reduce-motion`, on equal footing with the OS preference         | `rmh-reduce-motion`  |
+| **Glass clarity**    | Five stops (§5.46), below                                                                        | `rmh-glass-level`    |
+| **Colour vision**    | `html[data-color-vision=…]` retint of the semantic tokens, below                                  | `rmh-color-vision`   |
+| **Tilt effects**     | The one surviving motion input: `deviceorientation` drives the aurora on touch. iOS needs an explicit `requestPermission()` gesture, which this row performs — we never prompt on load | `rmh-motion-ok`      |
+
+**Colour vision is a first-class axis, not a filter.** On this site colour *is*
+state — win/loss, up/down, rarity, health, leaderboard deltas, moderation status
+— and roughly 8% of men and 0.5% of women have some colour-vision deficiency, so
+it was the largest group the suite was missing. Three modes retint the three
+**semantic** tokens only (`--site-success`, `--site-danger`, `--site-warning`) to
+a palette that stays separable under that deficiency, on the Okabe–Ito basis:
+
+- `deuteranopia` / `protanopia` (red–green): success becomes **blue** and warning
+  a high-lightness amber, so the three differ in hue *and* lightness instead of
+  leaning on a red/green contrast the viewer cannot see.
+- `tritanopia` (blue–yellow): red and green read normally and stay; the yellow
+  warning becomes **magenta**.
+
+It is a retint of the tokens that carry meaning, not a repaint of the site — the
+blocks sit after every `.style-*` block so they win, and `none` removes the
+attribute entirely. **The retint alone is not sufficient:** colour must never be
+the only carrier of meaning, which is why `Badge` pairs every status variant with
+a distinct glyph. Do the same in new UI. Integrity of the three moving parts (the
+mode list, the CSS blocks, the pre-paint script) is CI-enforced — §13.
 
 ---
 
@@ -423,7 +499,7 @@ they are signature moments, not defaults:
 
 | Modifier                                     | Budget      | What it adds                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | -------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.glass-interactive`                         | unlimited   | Hover tint-raise, springy press flex (`--ease-glass`), and — **paired with `.glass-fill`** — the specular rim glint raised from ambient to full on hover. The glint selector is `.glass-fill.glass-interactive`: on its own, `.glass-interactive` still gives the press, but there is no rim to light. It used to add a **pointer-tracked** diffuse hotspot on `::after`; that is retired (§7.1) and `::after` is free.                                                              |
+| `.glass-interactive`                         | unlimited   | Hover tint-raise, springy press flex (`--ease-glass`), and — **paired with `.glass-fill`** — the specular rim glint raised from ambient to full on hover. The glint selector is `.glass-fill.glass-interactive`: on its own, `.glass-interactive` still gives the press, but there is no rim to light. It used to add a **pointer-tracked** diffuse hotspot on `::after`; that is retired (§5.1.1) and `::after` now carries the travelling sheen (§5.1.2).                                                              |
 | `.glass-refract` + `data-glass-lens`         | **≤2/page** | Lens-model edge refraction (v2): the backdrop bends through a displacement height field at the pane edge. Hero/chrome only, never in scroll containers. `data-glass-lens` opts into per-element filter sizing (`lib/glass-lens.ts`; Chromium bends the backdrop, Gecko/WebKit displace a mirrored aurora copy — §3.6). Pressing deepens the bend (`:active`, ×1.6, §3.7). Not compatible with `.glass-chrome--aside` (see below). |
 | `.glass-refract--prism`                      | **≤1/page** | True chromatic dispersion (R/G/B displaced at different magnitudes) + fringe. Sanctioned users: login card, command palette, `/store` featured tier, design lab.                                                                                                                                                                                                                                                                  |
 | `.glass-liquid` (or `<GlassPane liquid>`)    | **≤3/page** | Ambient travelling sheen (light over wet glass), painted as a background layer (v2) so it **composes freely** with `.glass-refract` and `.glass-interactive`. Signature surfaces only, never on list items.                                                                                                                                                                                                                       |
@@ -500,9 +576,11 @@ been done before §5.1.1:
 (and the `--aside` variant) paint an always-on specular as a **border-box
 background layer** — it lives in the 1px border ring while the structural border
 itself goes transparent, so glass reads as one lit sheet, not an outlined frame.
-Its bright segment tracks the global scene light (`--light-x/--light-y`, written
-by `useGlassLight`; absent = a static top sun; touch/perf-lite fall back to an
-element-anchored top-edge sun). Scrims carry no glint.
+Its bright segment is lit by a **static sun** above the page. It used to track a
+JS-published scene light (`--light-x/--light-y`, written by `useGlassLight` on
+every pointer frame); that hook is deleted and nothing writes those properties
+now, so the `var()` fallbacks in the gradient — which were always the touch and
+perf-lite path — are the only path. Scrims carry no glint.
 
 **L1 answers the light too.** `.glass-fill` carries the same glint layer plus the
 micro-noise, at an **ambient** resting strength (`--glass-glint-rest`, 0.45× the
@@ -526,8 +604,9 @@ in `globals.css` for it to be possible at all, and both are load-bearing:
 
 Wells (`.glass-inset`, half-strength border) carry no glint. Pseudo contract:
 `::before` is refraction-only (the masked lens band) or the aside blur; `::after`
-is free now that the pointer light is gone (§5.1.1) — a component may use it, for
-something static. Never add a third owner.
+is the travelling sheen on `.glass-liquid` (§5.1.2) and otherwise free, now that
+the pointer light that used to own it is gone (§5.1.1) — a component may take it
+for something static. Never add a third owner.
 
 **L4 has a legibility floor.** A popover is the one surface a visitor must read
 the instant it appears, so `.glass-overlay`'s tint is
@@ -558,16 +637,17 @@ all degrade these classes automatically — no per-component branching.
 
 `html.perf-lite` is applied by **`lib/perf-tier.ts`** (from `Providers.tsx`) off
 two conservative device facts: `navigator.deviceMemory < 4`, or
-`hardwareConcurrency <= 2`. It is read in a dozen places (both aurora layers, the
-radial blob field, `.lg-goo`, the GL shader-tier gate, `glass-lens`,
-`canvas2d-fx`, `useGlassLight`, `useLiquidBackground`, liquid morph/pop) and
+`hardwareConcurrency <= 2`. It is read in about a dozen places (both aurora
+layers, the radial blob field, `.lg-goo`, `glass-lens`, `canvas2d-fx`,
+`useLiquidBackground`, the sheen keyframe, liquid morph/pop) and
 until 2026-07-30 **nothing ever set it**, so every one of those degradations was
 dead code and the weakest machine on the site rendered the full effect stack.
 Deliberately capability reads and not a measured-fps probe: a tier that can flip
 mid-session restyles the document under the user for reasons they can't see.
 
 The `Card` primitive is L1 `.glass-fill` by default; pass `pane` for L2 and
-`interactive` for the pointer light. Inputs/Textarea/Select are `.glass-inset`;
+`interactive` for the hover tint-raise, hover-raised glint and press flex.
+Inputs/Textarea/Select are `.glass-inset`;
 Dialog is `.glass-overlay` + `.glass-scrim`; the shell chrome is `.glass-chrome`.
 
 ### 5.2 Primitive catalog
@@ -579,7 +659,7 @@ Always reach for these before writing new markup. Helper: `cn()` from
 | --------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Button` / `buttonVariants`                                                 | `components/ui/button.tsx`                               | CVA. Variants: `default`, `destructive`, `danger`, `outline`, `secondary`, `ghost`, `link`, `accent`, `accent-outline`, `accent-ghost`. Sizes: `xs`, `sm`, `default`, `lg`, `icon`, `icon-xs`, `icon-sm`, `icon-lg`. `asChild` supported. **`loading` prop** (+ optional `loadingText`) shows an inline spinner, sets `aria-busy`, and disables the button — reach for this instead of hand-rolling `disabled={x}` + a separate `<Loader2>`.                                                                                           |
 | `Badge` / `badgeVariants`                                                   | `components/ui/badge.tsx`                                | CVA pill. Variants: `default`, `accent`, `solid`, `success`, `warning`, `danger`, `outline`.                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `Card` + Header/Title/Description/Action/Content/Footer                     | `components/ui/card.tsx`                                 | `bg-site-surface border border-site-border rounded-site shadow-site`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `Card` + Header/Title/Description/Action/Content/Footer                     | `components/ui/card.tsx`                                 | The shared content surface, in the glass material. **L1 `.glass-fill`** by default (cards are the most repeated surface on the site, and L1 is the tier with no backdrop blur); `pane` promotes it to L2 `.glass-pane`; `interactive` adds the hover tint-raise, the hover-raised rim glint and the press flex. It also carries `data-fluid-press="firm"` when interactive — a card is column-wide, and the 4% squash that reads as crisp on a button reads as a wobble at that size.                                                    |
 | `Dialog` (Radix wrapper)                                                    | `components/ui/dialog.tsx`                               | Centered, viewport-clamped glass content with safe internal spacing and a translated close control. Pass `mobileFullscreen` for complex/wide editors; they consume the phone visual viewport with safe-area padding, then return to a centered dialog from `sm`.                                                                                                                                                                                                                                                                       |
 | `Input`, `Textarea`                                                         | `components/ui/input.tsx`, `textarea.tsx`                | `bg-site-surface`, `rounded-site-sm`, hairline border, accent focus ring.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `Select`                                                                    | `components/ui/select.tsx`                               | Radix Select in a native-`<select>` shim: callers still write `<option>` children and read `e.target.value` off `onChange`, but the **option list is ours** — a `glass-overlay` popup in the theme's own tokens, not the OS picker (the old §15.6 exemption, now closed). `tier="app"` repaints it in the `--app-*` contract and portals into the `.app-theme` shell, for the full-screen apps. `<option value="">` placeholders are supported (mapped around Radix's reserved empty value); multi-select is not.                      |
@@ -619,9 +699,13 @@ close-button clearance stay consistent.
 
 The `_site` layout route delegates to `components/feed/SiteShell.tsx`, which now
 renders the **radial shell** ([`components/radial/RadialShell.tsx`](../components/radial/RadialShell.tsx)):
-a fixed parallax **ring backdrop**, a slim sticky **utility top bar** (brand ·
-search · inbox · avatar), the **frame** and the central **RMH hub**
-(`RadialHub`). The single
+a fixed **ring backdrop** (concentric hairlines plus a drifting blob field — it
+is static under the pointer now, §5.1.1), a slim sticky **utility top bar**
+(brand · search · inbox · avatar), the **frame** and the central **RMH hub**
+(`RadialHub`). The shell's backdrop layer paints only the rings and blobs; the
+**aurora canvas** is the document's own `.site-aurora` element (rendered in
+`__root.tsx`), which is what every `backdrop-filter` on the page samples. The
+single
 `<main id="main-content">` landmark lives inside the frame; **pages never add
 their own sidebars or page-frame** (and `AnimatedMain` renders a `<div>` — the
 shell's `<main>` is the one landmark).
@@ -645,7 +729,12 @@ destination is a pin on a glass sphere, and you **turn it** to find where you
 want to go — drag to spin, let it coast, and the nearest destination is eased
 into the reticle at the front. **Hold** it there and the reticle's ring fills;
 **let go once it is full** and you land on that page. Let go early, or turn away,
-and the ring drains. Closing reverses the whole motion (the globe collapses, the
+and the ring drains. **Poke the sphere and it ripples** — a wave spreads from the
+exact point you touched, swells the wireframe as it crosses and dies on the far
+side; the impact is stored in the globe's _own_ coordinates, so the wave is a
+mark on the ball and travels with the surface as you keep dragging (shape:
+`rippleWave` in `lib/fluid.ts`; the swell is applied in the paint only, never in
+the hit test). Closing reverses the whole motion (the globe collapses, the
 veil contracts, the orb re-condenses and glides home). The hub remains the
 navigator on mobile and the fast full-screen switcher on desktop, where the nav
 rail shows the same map without a gesture.
@@ -669,7 +758,14 @@ The home (`/`) is a **radial feed**
 cards raked onto a shallow cylinder on the **document's own scroll** (no inner
 scroll region — that is what lets mobile Safari collapse its toolbars), led by an
 inline compose box, with a floating compose button that opens the new-rmhark
-modal. From 1280px it becomes a **deck** — the wheel keeps the primary column and
+modal. A post's **pictures render in the card** ([`RmharkMedia`](../components/radial/RmharkMedia.tsx)):
+up to four tiles, the rest summarised as "+N". Two rules there are load-bearing
+and easy to undo — a lone image's aspect is **clamped** to 4:5…16:9, because the
+wheel is a glance and a 1:4 panorama would own three screens of it; and every
+tile reserves a numeric aspect box **before decode**, because the wheel caches
+each card's document centre and a late-arriving image without a reserved box
+costs a re-measure of every mounted slot on top of the layout shift.
+From 1280px it becomes a **deck** — the wheel keeps the primary column and
 an independent second feed (Following · News · Games) runs beside it. Every other
 `_site` route flows the same way — natural document scroll, **no pinned/sticky
 page chrome** — inside the frame's content track on the backdrop. The radial shell
@@ -715,11 +811,12 @@ gated off there too, via `html.app-route`).
   shallow cylinder on a rAF window-scroll pass with cached offsets (no layout
   thrash — `RadialWheel`), the **hub** glides the orb to centre and blooms the
   **liquid globe** under an expanding `clip-path` **circular veil** (CSS phase
-  machine + one mount-bounded rAF loop for the sphere's spin and dwell), the
-  **ring backdrop** parallaxes to the pointer, and page headers/heroes rise
-  in on mount (`radial-page-rise`). All of it is `transform`/`opacity` only and gated off
-  under reduced motion; optional scroll **haptics** (`navigator.vibrate`) tick
-  as cards cross the focus line.
+  machine + one mount-bounded rAF loop for the sphere's spin, dwell and ripple),
+  and page headers/heroes rise in on mount (`radial-page-rise`). The **ring
+  backdrop** and its blob field drift on their own compositor keyframes — they no
+  longer parallax to the pointer (§5.1.1). All of it is `transform`/`opacity`
+  only and gated off under reduced motion; optional scroll **haptics**
+  (`navigator.vibrate`) tick as cards cross the focus line.
 - **framer-motion** is the animation library. Reach for the shared motion
   system in **`lib/motion.ts`** rather than hand-typing durations/easings:
   it exports the timing tokens (`DURATION`, `EASE`, `SPRING`, `APPLE_SPRING`,
@@ -749,39 +846,71 @@ gated off there too, via `html.app-route`).
   between two states at a CSS threshold. Transform/opacity only — the collapse
   costs no layout. Reduced motion collapses it to a static title with a
   permanent bar.
-- **Depth from pointer/tilt:** `hooks/usePointerParallax.ts` returns
-  spring-smoothed MotionValues at three fixed depths (0 = glued to the surface,
-  1 = furthest back), fed by pointer position on fine-pointer hardware and by
-  `deviceorientation` on touch. Compose two or three depths in one card — a
-  single sliding layer is just movement; layers moving at different rates read
-  as depth. No React render runs per frame.
+- **Depth from scroll, not from the pointer.** `hooks/usePointerParallax.ts` is
+  **gone** (§5.1.1) — it was mounted per card in the arcade hub, which meant N
+  listeners, N spring sets and N `preserve-3d` layers on one page. What remains
+  is scroll-linked: `components/radial/Parallax.tsx` (a framer-motion
+  `useScroll` layer → GPU transforms, static under reduced motion) and
+  `hooks/useSpatialParallax.ts`, the marketing shell's restrained background
+  parallax. The latter is **gated on a consumer being present on the page**
+  (`.rmhp-root, .rmhc-root, .rmht, .spatial-design-hero`), because it writes an
+  inherited custom property to `<html>` and used to do so on the feed, every
+  profile and every settings page for an effect nothing there could show. The
+  principle that survives both: a single sliding layer is just movement — layers
+  moving at _different_ rates read as depth — and no React render runs per frame.
 - `<MotionConfig reducedMotion="user">` wraps the app (`Providers.tsx`), so
   framer-motion automatically respects OS reduced-motion.
+- **Entrances: one reveal, and only genuinely new items.** Two shared hooks
+  replace what used to be five hand-rolled copies apiece.
+  `hooks/useReveal.ts` is the site's single reveal-on-scroll: attach the ref to
+  a container and every descendant carrying `.site-reveal` fades and rises in on
+  the `--site-reveal-*` curve. Its hidden state is **opt-in** — the hook stamps
+  `data-reveal-armed` on the container only _after_ it has an observer watching,
+  and the CSS hides `.site-reveal` only under that attribute, so the resting
+  state of the markup is **visible** and content can only be hidden by a
+  mechanism already able to show it again. Every implementation this replaced
+  defaulted to `opacity: 0` and relied on JS to undo it, which is a blank page
+  whenever the JS does not arrive.
+  `hooks/useStableListMotion.ts` decides which keyed items get the short
+  `.content-item-enter` window: items present on first render are treated as
+  established, so hydration, a cached navigation and a loading placeholder
+  resolving do not replay every card, and a key is never animated twice even if
+  polling returns a new object for it.
 - CSS motion: `.page-root > *` runs the `page-enter` animation (0.16s fade +
   4px rise), suppressed on history-back (`html.nav-pop`) and during View
   Transitions (`html.vt-active`). Feed items use `.feed-item-enter`.
   Shared-element View Transitions go through `lib/view-transition.ts`.
-- **Living backdrop (Liquid Glass material — v2, two layers):** part of the
-  glass layer, so it is dormant under the flat monochrome default
-  (`--site-canvas` is `none`) and returns with the optics. The aurora canvas
-  (`body::before`)
-  runs an ultra-slow transform-only `aurora-drift` keyframe, and a far-field
-  layer (`body::after`, per-theme `--site-aurora-far-*` stops) counter-drifts
-  at `-0.6×` the pointer parallax — so pointer motion produces visible depth.
-  `hooks/useLiquidBackground.ts` (one rAF-throttled listener, mounted in
-  `Providers.tsx` next to `useGlassLight`) writes `--aurora-mx/--aurora-my`;
-  both layers are gated off under reduced motion and `html.perf-lite`, and
+- **Living backdrop (two layers, one host):** the aurora is the shared scene
+  every `backdrop-filter` on the page samples. Both layers are pseudo-elements
+  of **`.site-aurora`**, a leaf element rendered in `app/routes/__root.tsx`:
+  `::before` runs an ultra-slow transform-only `aurora-drift` keyframe, and a
+  far-field `::after` (per-theme `--site-aurora-far-*` stops) counter-drifts on
+  its own slower keyframe, so the two separate into depth on their own. Both are
+  gated off under reduced motion, `html.perf-lite` and `html.app-route`, and
   stop in high-contrast (canvas is `none` there).
-- **The scene light:** `hooks/useGlassLight.ts` also writes 8px-quantized
-  `--light-x/--light-y` on `<html>` (fine pointers only, static under reduced
-  motion) — every glass rim's specular glint answers it. Its per-element
-  duty (`--glass-px/--glass-py` for the `::after` diffuse hotspot) and the
-  `lib/glass-lens.ts` per-element lens-filter generator both initialize from
-  the same single listener. On touch devices `useLiquidBackground.ts` maps
-  `deviceorientation` to the same `--light-x/--light-y` under `html.tilt-live`
-  (opt-in on iOS via Settings → Appearance). The aurora follows that input,
-  while coarse-pointer rim glints stay element-anchored; fixed backgrounds can
-  otherwise composite a frame behind their scrolling parent on mobile.
+
+  Two details are load-bearing. **The host is not `<body>` and not `<html>`.**
+  The layers used to be `body::before/::after`, which forced their offset custom
+  properties up onto `<html>` to be inherited — and a custom-property write on
+  the root dirties the computed style of every element beneath it (~70ms of
+  forced style+layout on `/store` at 4× throttle, versus ~0ms on a leaf), because
+  custom properties have no invalidation sets and this site declares ~250 tokens
+  on `:root`. If a new value has to reach CSS from JS, **give it to the element
+  that reads it.** And the aurora is deliberately dormant on iOS/WebKit
+  (`html.ios-webkit` takes the static CSS aurora): moving a fixed, oversized
+  gradient under several translucent surfaces can wedge WebKit's compositor.
+- **The scene light is static, and the only live input is tilt.**
+  `hooks/useGlassLight.ts` is deleted — nothing writes `--light-x/--light-y` any
+  more, and no rule reads them; each glass rim's glint sits at the `var()`
+  fallback, a fixed sun above the element. `hooks/useLiquidBackground.ts` (one
+  rAF-throttled listener, mounted in `Providers.tsx`) survives with a **single**
+  input mode: `deviceorientation` on coarse-pointer hardware, writing
+  `--aurora-mx/--aurora-my` on `.site-aurora` and toggling `html.tilt-live`.
+  Android fires it with no prompt; iOS 13+ needs an explicit
+  `requestPermission()` user gesture, which Settings → Appearance → "Tilt
+  effects" performs — **never prompt on load** — persisting consent as
+  `rmh-motion-ok` and firing `rmh:tilt-consent` so the hook starts or stops
+  listening live. On a fine pointer this hook attaches **no listener at all**.
 - **Looking at an object (device attitude):** the tilt light above is a lean;
   inspecting something is a full rotation, so it works in quaternions instead.
   `hooks/useDeviceAttitude.ts` (maths in `lib/device-attitude.ts`, no three.js —
@@ -797,12 +926,16 @@ gated off there too, via `html.app-route`).
   motion off get the same object. Rendered with CSS 3D — see
   `components/library/Book3DViewer.tsx`, where a library book is a real
   six-faced volume with a printed spine and a block of pages.
-- **Shader/DOM synchronization:** liquid bodies unregister in layout-effect
-  cleanup and re-sample before paint on route/tab commits. Scroll, nested scroll,
-  elastic touch movement, `visualViewport` changes, page resume, and layout-shift
-  events wake the normally-idle sampler. A liquid pop settles immediately onto
-  its real panel when either endpoint moves mid-animation, preventing a cached
-  GPU bud, rim, or shadow from detaching from its DOM owner.
+- **Overlay/DOM synchronization:** the metaball underlays are portalled, fixed
+  and viewport-positioned, so they have to be re-sampled whenever their DOM
+  owner moves under them. Bodies unregister in layout-effect cleanup and
+  re-sample before paint on route/tab commits; scroll, nested scroll, elastic
+  touch movement, `visualViewport` changes, page resume and layout-shift events
+  wake the normally-idle sampler; and a liquid pop settles immediately onto its
+  real panel when either endpoint moves mid-animation, so a cached bud never
+  detaches from the trigger it budded out of. (Comments in `liquid-morph.tsx` /
+  `liquid-pop.tsx` still say "shader body" in places — that is the deleted GL
+  tier, and the SVG/CSS path they describe is the one that always ran.)
 - **Liquid tabs:** tab strips use `components/ui/liquid-tabs.tsx` — each rides
   its own L1 **glass sheet** (`glass-fill glass-bevel-sm rounded-full` pill,
   `sheet` prop default) placed **below** the hero/page-title capsule, never
@@ -937,7 +1070,18 @@ Global (in `globals.css`):
   and `.rtl-flip` on directional icons.
 - `high-contrast` is an explicit theme choice (there is no
   `@media (prefers-contrast)` hook) — test new UI against `.style-high-contrast`
-  and `.style-light`, not just the default dark theme.
+  and `.style-graphite` (Midnight), not just the default Daylight theme.
+- **Never let colour be the only carrier of meaning.** Colour-vision modes
+  (§2.1) retint the semantic tokens, but a retint cannot rescue a UI where the
+  only difference between two states is hue. Pair status with a glyph, a label,
+  a position or a shape — `Badge` already does, so use it. The three parts of
+  that feature (mode list, CSS blocks, pre-paint script) are CI-checked because
+  a mode with no CSS block is a setting that appears to work and changes
+  nothing.
+- **Respect the in-account switches, not just the OS ones.** `html.reduce-motion`
+  and `html.reduce-transparency` are set by Settings → Appearance and sit on
+  equal footing with `prefers-reduced-motion` / `prefers-reduced-transparency`.
+  Code that checks only the media query misses half the people who asked.
 
 ---
 
@@ -981,8 +1125,8 @@ lazy locale chunks).
   `lib/motion.ts` instead of ad-hoc `duration`/`ease` numbers.
 - Add `data-slot="..."` to new shared primitives so themes can restyle them.
 - Wire every string through `t(..., { defaultValue })`.
-- Test in `default`, `light`, and `high-contrast` themes and under reduced
-  motion.
+- Test in the three shipped themes — `default` (Daylight), `graphite`
+  (Midnight) and `high-contrast` — and under reduced motion.
 
 **Don't**
 
@@ -1181,12 +1325,33 @@ the normal suite (`pnpm exec vitest run`, gated by `web-ci.yml`):
   make the rules pass vacuously. Its docstring records the three manual rules:
   safe-area insets on edge-pinned chrome, DPR clamping on full-screen canvases,
   and no per-frame canvas reallocation.
+- **`lib/__tests__/filter-cost-budget.test.ts` — the SVG-filter cost budget.**
+  Three rules, each a shipped ~15fps regression before it was a rule: no
+  `filter: url(…)` on a full-viewport layer; no CSS filter function **chained
+  after** a `url()` reference (measured: the `url()` alone ~0.4ms/frame, with the
+  chain a 1s `setInterval` did not fire once in 10s); and no painted cursor /
+  document-wide `cursor: none`. The rationale is in
+  [`components/radial/README.md`](../components/radial/README.md).
 - **`lib/__tests__/appearance-contrast.test.ts`** — `ensureReadableAccent()`
   keeps a custom accent from shipping an unreadable `--site-accent-fg` pair.
+- **`lib/__tests__/color-vision-a11y.test.ts`** — the three moving parts of the
+  colour-vision feature (§2.1) must agree: the mode list, a CSS palette block
+  per mode, and the pre-paint script. Each fails silently on its own.
+- **`lib/__tests__/theme-tokens.test.ts`** — the user-theme contract (§2): v1
+  token maps still parse and upcast, `themeCssVars()` derives a complete
+  `--site-*` set, and the publish gate's contrast lint holds.
+- **`lib/__tests__/responsive-layout-contract.test.ts`** — the shared page
+  masthead stays inside narrow viewports (the `min-w-0` on both title paths,
+  and `wrapTitle` for headlines that must wrap rather than overflow).
 - **`lib/__tests__/i18n-catalogs.test.ts` / `i18n-config.test.ts`** — catalog
   and namespace-registry integrity for §10.
 - **`lib/__tests__/raf-loop-allowlist.test.ts`** — keeps rAF loops (the §7
   radial motion layer) to the sanctioned owners instead of one per feature.
+  `useGlassLight.ts`, `useCardSheen.ts` and `useParallax.ts` were removed from
+  the allowlist with the hooks themselves (§5.1.1).
+- **`lib/__tests__/fluid.test.ts`** — the shared gesture maths of §0.5: the
+  spring, the rubber band, projection/detents, and `rippleWave` (the globe's
+  wave shape). Retune the feel there rather than locally, and it stays tested.
 - **`pnpm lint`** — `eslint-plugin-jsx-a11y` at "warn"; the bar is no _new_
   warnings versus the base branch.
 
