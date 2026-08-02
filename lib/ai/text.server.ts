@@ -7,7 +7,11 @@ import OpenAI from 'openai';
 
 const deepseek = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
-  baseURL: 'https://api.deepseek.com/v1',
+  // Overridable so the endpoint can be pointed at a local stand-in (an
+  // OpenAI-compatible proxy, or a stub in a dev/CI environment that must not
+  // reach the real API). Defaults to DeepSeek, so unset behaves exactly as
+  // before.
+  baseURL: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1',
   maxRetries: 1,
   // Cap upstream stalls: the SDK default (~10 min) would pin a request handler
   // on a hung DeepSeek connection. 20s is well above normal completion latency.
