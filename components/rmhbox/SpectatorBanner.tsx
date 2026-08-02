@@ -76,7 +76,10 @@ export default function SpectatorBanner({
             <ChevronDown className="h-3 w-3" />
           </button>
           {dropdownOpen && (
-            <div className="absolute top-full left-0 mt-1 min-w-40 rounded-lg border border-(--app-border) bg-(--app-surface) py-1 shadow-lg">
+            <div
+              data-motion="pop"
+              className="absolute top-full left-0 mt-1 min-w-40 origin-top-left rounded-lg border border-(--app-border) bg-(--app-surface) py-1 shadow-lg"
+            >
               {spectatorTarget.availablePlayers.map((p) => (
                 <button
                   key={p.userId}

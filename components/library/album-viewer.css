@@ -93,6 +93,10 @@
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
+  /* Pinned by its own top-right corner, just under the toolbar button — so that
+     is the corner the shared bloom unfurls from, and the menu grows down out of
+     the button rather than away from it (globals.css §7.1, `data-motion="pop"`). */
+  --motion-origin: top right;
   z-index: 5;
   min-width: 170px;
   display: flex;

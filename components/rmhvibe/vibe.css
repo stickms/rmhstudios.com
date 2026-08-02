@@ -1034,8 +1034,13 @@
 /* Surface comes from `.glass-overlay` (globals.css §L4) — the one material every
    dialog, popover and menu on the site shares. This used to hand-roll it: a
    0.5px border, a hardcoded `rgba(0,0,0,0.5)` drop shadow that only ever suited
-   a dark theme, and its own blur. Only placement and the pop animation are this
-   menu's own business. */
+   a dark theme, and its own blur. Only placement is this menu's own business.
+
+   The open was its own too — a 140ms `vibe-model-pop`, one of the last two
+   private answers to a question globals.css §7.1 already settled. It is
+   `data-motion="pop"` on the element now; because this one opens UPWARD, the
+   origin is its bottom edge, so it grows out of the trigger below it rather than
+   away from it. */
 .vibe-model-select__menu {
   position: absolute;
   bottom: calc(100% + 8px);
@@ -1043,18 +1048,7 @@
   z-index: 50;
   min-width: 220px;
   padding: 6px;
-  animation: vibe-model-pop 140ms ease;
-}
-
-@keyframes vibe-model-pop {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  --motion-origin: bottom left;
 }
 
 .vibe-model-select__group + .vibe-model-select__group {

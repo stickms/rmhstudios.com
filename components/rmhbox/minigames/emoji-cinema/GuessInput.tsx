@@ -96,7 +96,8 @@ export default function GuessInput({ onSubmit, disabled, maxGuesses, guessesUsed
           {showSuggestions && suggestions.length > 0 && !disabled && (
             <div
               ref={suggestionsRef}
-              className="absolute top-full left-0 right-0 z-20 mt-1 rounded-lg bg-(--app-surface) border border-(--app-border) shadow-lg overflow-hidden max-h-48 overflow-y-auto"
+              data-motion="pop"
+              className="absolute top-full left-0 right-0 z-20 mt-1 origin-top rounded-lg bg-(--app-surface) border border-(--app-border) shadow-lg overflow-hidden max-h-48 overflow-y-auto"
             >
               {suggestions.map((title) => (
                 <button

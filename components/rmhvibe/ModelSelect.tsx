@@ -89,6 +89,7 @@ export function ModelSelect({
           ref={menuRef}
           className="vibe-model-select__menu glass-overlay"
           data-slot="model-select-menu"
+          data-motion="pop"
           role="listbox"
           aria-label={t("generation-model", { defaultValue: "Generation model" })}
         >
