@@ -375,6 +375,7 @@ export class LaundryMatch {
 
   // ── Pointer passthrough ─────────────────────────────────────────────────
 
+  /** Grab everything under the ray. Called repeatedly as a pointer sweeps. */
   beginGrab(ray: Ray): boolean {
     return this.finished ? false : this.world.beginGrab(ray);
   }
@@ -383,6 +384,7 @@ export class LaundryMatch {
     this.world.moveGrab(ray);
   }
 
+  /** Let go of the whole armful. */
   endGrab(): void {
     this.world.endGrab();
   }

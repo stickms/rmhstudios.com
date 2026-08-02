@@ -3,11 +3,27 @@
 /**
  * One soft body → one mesh.
  *
- * The geometry is built once from the garment's fixed topology (indices and
- * UVs never change) and its position attribute is re-uploaded every frame from
- * the solver's particle array. Normals are recomputed each frame too — cloth
- * that lights as if it were flat is the single biggest tell that a "3D" cloth
- * sim is faked.
+ * The mesh is the garment's **sewn shell**, not the solver's lattice: a front
+ * sheet, a back sheet and a rim stitching them together, inflated every frame
+ * off the simulated mid-surface by `writeShell`. That is where the fabric's
+ * volume comes from. Rendering the lattice directly — which is what this used
+ * to do — gave a shirt exactly zero thickness, and a garment that turns
+ * edge-on to the camera and vanishes to a line reads as a sheet of paper no
+ * matter how good the cloth simulation behind it is.
+ *
+ * The topology is built once per garment kind (indices and UVs never change)
+ * and only the position and normal attributes are re-uploaded per frame.
+ * Normals are recomputed each frame too — cloth that lights as if it were flat
+ * is the other big tell that a "3D" cloth sim is faked, and with a shell it is
+ * the rim that has to catch the light for the volume to read.
+ *
+ * Because the shell is closed, the material can draw `FrontSide`, which the
+ * flat sheet could not — a sheet lit from one side only looks like a cut-out
+ * the moment it turns over. That is what keeps the change close to free: a
+ * shirt goes from 56 triangles to 172, but back-face culling discards about
+ * half of those before shading, so what actually reaches the rasteriser is
+ * roughly what the double-sided sheet cost. A full arena of laundry is under
+ * 2,000 triangles either way.
  *
  * Nothing here calls `setState`: the whole component re-renders only when the
  * garment is added or removed. Per-frame work happens inside `useFrame` and
@@ -18,6 +34,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { WASH_COLORS } from '@/lib/laundry-sort/constants';
+import { writeShell } from '@/lib/laundry-sort/shell';
 import type { Garment } from '@/lib/laundry-sort/solver';
 import type { QualityFlags } from '@/lib/render/tier';
 import { weaveTexture } from '../weave';
@@ -30,8 +47,8 @@ interface Props {
   quality: QualityFlags;
   /** Simulated seconds, read from the world so the fade uses the same clock. */
   timeRef: { current: number };
-  /** Highlighted while the player is holding it. */
-  heldRef: { current: number | null };
+  /** Highlighted while the player is holding it — one of possibly several. */
+  heldRef: { current: ReadonlySet<number> | null };
 }
 
 export function GarmentCloth({ garment, quality, timeRef, heldRef }: Props) {
@@ -40,14 +57,18 @@ export function GarmentCloth({ garment, quality, timeRef, heldRef }: Props) {
   const wash = WASH_COLORS[garment.colorIndex] ?? WASH_COLORS[0];
 
   const geometry = useMemo(() => {
+    const { shell } = garment.topology;
     const geo = new THREE.BufferGeometry();
     geo.setAttribute(
       'position',
-      new THREE.BufferAttribute(new Float32Array(garment.pos.length), 3),
+      new THREE.BufferAttribute(new Float32Array(shell.vertexCount * 3), 3),
     );
-    geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(garment.topology.uvs), 2));
-    geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(garment.pos.length), 3));
-    geo.setIndex(new THREE.BufferAttribute(new Uint16Array(garment.topology.indices), 1));
+    geo.setAttribute(
+      'normal',
+      new THREE.BufferAttribute(new Float32Array(shell.vertexCount * 3), 3),
+    );
+    geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(shell.uvs), 2));
+    geo.setIndex(new THREE.BufferAttribute(new Uint16Array(shell.indices), 1));
     return geo;
   }, [garment]);
 
@@ -62,11 +83,19 @@ export function GarmentCloth({ garment, quality, timeRef, heldRef }: Props) {
     if (!mesh || !material) return;
 
     const position = geometry.getAttribute('position') as THREE.BufferAttribute;
-    (position.array as Float32Array).set(garment.pos);
+    const normal = geometry.getAttribute('normal') as THREE.BufferAttribute;
+    const { topology } = garment;
+    // Positions and normals in one pass, straight into the attribute buffers.
+    // No allocation, which is why this can run on every garment every frame.
+    writeShell(
+      topology.shell,
+      topology.indices,
+      garment.pos,
+      position.array as Float32Array,
+      normal.array as Float32Array,
+    );
     position.needsUpdate = true;
-    // Per-frame normals are what make a fold catch the light. Cheap here: a
-    // garment is a few dozen vertices, not a character mesh.
-    geometry.computeVertexNormals();
+    normal.needsUpdate = true;
 
     // Resolved garments fade rather than vanish, so the player sees where the
     // points came from.
@@ -81,7 +110,7 @@ export function GarmentCloth({ garment, quality, timeRef, heldRef }: Props) {
 
     // Held cloth lifts toward white so it stays readable under a fast drag; a
     // sorted one glows green on its way out and a missed one goes flat.
-    const held = heldRef.current === garment.id;
+    const held = heldRef.current?.has(garment.id) ?? false;
     const emissive = material.emissive;
     if (held) {
       emissive.setRGB(0.16, 0.16, 0.18);
@@ -98,15 +127,14 @@ export function GarmentCloth({ garment, quality, timeRef, heldRef }: Props) {
     color: baseColor,
     map: texture ?? undefined,
     // The weave doubles as a bump map, so the fabric catches the light along
-    // its stripes and checks. It is what stops a garment reading as a flat
-    // coloured decal once it turns toward the camera.
+    // its stripes and checks — surface detail on top of the shell's shape.
     bumpMap: texture ?? undefined,
     bumpScale: 0.35,
-    side: THREE.DoubleSide,
+    // The shell is a closed solid: front sheet, back sheet, stitched rim. Back
+    // faces are never visible, so drawing them is pure waste.
+    side: THREE.FrontSide,
     roughness: 0.94,
     metalness: 0,
-    // Cloth is not paper: lighting it from one side only makes a falling
-    // garment look like a cut-out whenever it turns edge-on.
     flatShading: false,
   } as const;
 

@@ -138,6 +138,34 @@ describe('ClothWorld', () => {
     expect(garment.restingFor).toBeGreaterThan(0);
   });
 
+  it('rests on its own thickness rather than sinking to its mid-surface', () => {
+    const world = new ClothWorld(buildArena());
+    // The thickest garment in the game, so the difference is unambiguous. It
+    // lands in the bin and spills over the low front lip onto the floor.
+    const garment = spawnOne(world, { kind: 'towel', x: binCenterX(2) });
+    step(world, 480);
+
+    const pad = garment.topology.shell.contactPad;
+    let lowest = Infinity;
+    let clearance = Infinity;
+    for (let i = 0; i < garment.topology.count; i++) {
+      const y = garment.pos[i * 3 + 1];
+      lowest = Math.min(lowest, y);
+      clearance = Math.min(clearance, y - pad[i]);
+    }
+
+    // What the solver simulates is the *middle* of the fabric, so half the
+    // garment's thickness hangs below every particle. Nothing may push that
+    // half through the floor…
+    expect(clearance).toBeGreaterThan(ARENA.floorY - 1e-3);
+    // …and something has to actually be touching, or this would pass just as
+    // well on a garment left hanging in mid-air.
+    expect(clearance).toBeLessThan(0.03);
+    // The flat sheet used a single 0.02 contact radius everywhere, and settled
+    // that much above the floor no matter how thick it was drawn.
+    expect(lowest).toBeGreaterThan(0.026);
+  });
+
   it('settles a garment dropped over a bin inside that bin', () => {
     const arena = buildArena();
     const world = new ClothWorld(arena);
@@ -217,7 +245,7 @@ describe('grabbing', () => {
     step(world, 2);
 
     expect(world.beginGrab(rayAt(garment.cx, garment.cy))).toBe(true);
-    expect(world.heldGarmentId).toBe(garment.id);
+    expect([...world.heldIds]).toEqual([garment.id]);
 
     const target = -2.5;
     for (let i = 0; i < 60; i++) {
@@ -227,10 +255,10 @@ describe('grabbing', () => {
     expect(Math.abs(garment.cx - target)).toBeLessThan(0.5);
 
     world.endGrab();
-    expect(world.heldGarmentId).toBeNull();
+    expect(world.heldIds.size).toBe(0);
   });
 
-  it('holds one garment at a time, on every platform', () => {
+  it('gathers an armful — a sweep adds garments instead of swapping them', () => {
     const world = new ClothWorld(buildArena());
     const first = spawnOne(world, { x: -1.5 });
     const second = spawnOne(world, { x: 1.5 });
@@ -238,9 +266,53 @@ describe('grabbing', () => {
 
     world.beginGrab(rayAt(first.cx, first.cy));
     world.beginGrab(rayAt(second.cx, second.cy));
-    // The second grab replaces the first; it never adds to it. A touchscreen
-    // reporting ten pointers must not outplay a mouse reporting one.
-    expect(world.heldGarmentId).toBe(second.id);
+    // One pointer dragging through the laundry picks up everything it crosses.
+    // The fairness rule is about *pointers* — a touchscreen reporting ten of
+    // them must not outplay a mouse reporting one — and that is enforced in
+    // `PointerRig`, which never lets a second pointer become active.
+    expect(world.heldIds.size).toBe(2);
+    expect(world.heldIds.has(first.id)).toBe(true);
+    expect(world.heldIds.has(second.id)).toBe(true);
+
+    // Grabbing the same garment twice does not stack a second grip on it.
+    world.beginGrab(rayAt(first.cx, first.cy));
+    expect(world.heldIds.size).toBe(2);
+  });
+
+  it('carries a whole armful to the pointer', () => {
+    const world = new ClothWorld(buildArena());
+    const first = spawnOne(world, { kind: 'sock', x: -1.2 });
+    const second = spawnOne(world, { kind: 'sock', x: 1.2 });
+    step(world, 2);
+
+    world.beginGrab(rayAt(first.cx, first.cy));
+    world.beginGrab(rayAt(second.cx, second.cy));
+
+    const target = 2.6;
+    for (let i = 0; i < 90; i++) {
+      world.moveGrab(rayAt(target, 3.5));
+      world.step(FIXED_DT, SUBSTEPS);
+    }
+    // Both come along. They cannot occupy the same point — cloth-on-cloth keeps
+    // them apart — so this only asserts they both travelled to the pointer.
+    expect(Math.abs(first.cx - target)).toBeLessThan(0.8);
+    expect(Math.abs(second.cx - target)).toBeLessThan(0.8);
+  });
+
+  it('drops a garment from the armful when it leaves the world', () => {
+    const world = new ClothWorld(buildArena());
+    const first = spawnOne(world, { x: -1.5 });
+    const second = spawnOne(world, { x: 1.5 });
+    step(world, 2);
+
+    world.beginGrab(rayAt(first.cx, first.cy));
+    world.beginGrab(rayAt(second.cx, second.cy));
+    world.remove(first.id);
+
+    expect(world.heldIds.size).toBe(1);
+    expect(world.heldIds.has(second.id)).toBe(true);
+    // The surviving grip still works rather than tripping over the gap.
+    expect(() => step(world, 10)).not.toThrow();
   });
 
   it('will not grab a garment that has already been resolved', () => {

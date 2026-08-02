@@ -216,6 +216,12 @@ export function MainMenu({
                   'Drag with mouse, finger or pen. Or steer with the arrow keys and pinch with Space.',
               })}
             </li>
+            <li>
+              {t('rule-sweep', {
+                defaultValue:
+                  'Keep holding and drag through the laundry to gather an armful — but letting go drops all of it in the same place.',
+              })}
+            </li>
           </ul>
         </div>
 
