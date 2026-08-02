@@ -4629,6 +4629,23 @@ html.nav-restoring .feed-card-cv {
   overflow: hidden;
   position: relative;
 }
+
+/* One line of placeholder text, sized by the element it stands in.
+   A menu that fetches on open renders its loading state, ANIMATES ITSELF TO
+   THAT HEIGHT, and then jumps when the rows arrive — the box moved after the
+   animation had committed to it (§7.1; `hooks/useReservedRows.ts` supplies the
+   count). Reserving the right height is the fix, and the height has to be right
+   to the pixel or six rows of "close enough" is a 60px jump. So: put this inside
+   the real `<strong>`/`<small>`/`<span class="text-xs">` it replaces and let the
+   line box do the measuring. `1lh` IS one line box of that element; `1em` is the
+   fallback for an engine without it, and it is 11px short per row — which is
+   exactly why this is not a hardcoded height. Verified against a real row: both
+   55px. */
+.skeleton-line {
+  display: block;
+  height: 1em;
+  height: 1lh;
+}
 @media (prefers-reduced-motion: no-preference) {
   [data-slot='skeleton']::after {
     content: '';
