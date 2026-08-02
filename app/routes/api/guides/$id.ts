@@ -17,13 +17,10 @@ export const Route = createFileRoute('/api/guides/$id')({
         return Response.json(guide);
       }),
       PUT: defineHandler(
-        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'guides' } },
-        async ({ request, params, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = guideUpdateSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
+        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'guides' }, body: guideUpdateSchema },
+        async ({ params, session, body }) => {
           try {
-            await updateGuide(session.user.id, params.id, parsed.data);
+            await updateGuide(session.user.id, params.id, body);
           } catch (e) {
             if (e instanceof GameMetaError) {
               return Response.json(

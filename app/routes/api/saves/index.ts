@@ -33,14 +33,10 @@ export const Route = createFileRoute('/api/saves/')({
       }),
 
       POST: defineHandler(
-        { rateLimit: { limit: 60, windowMs: 60_000, prefix: 'saves' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = saveEntitySchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
+        { rateLimit: { limit: 60, windowMs: 60_000, prefix: 'saves' }, body: saveEntitySchema },
+        async ({ session, body }) => {
           try {
-            await addSave(session.user.id, parsed.data);
+            await addSave(session.user.id, body);
           } catch (e) {
             if (e instanceof Error && e.message === 'folder-not-found') {
               return Response.json({ error: 'Folder not found' }, { status: 404 });
@@ -52,13 +48,9 @@ export const Route = createFileRoute('/api/saves/')({
       ),
 
       DELETE: defineHandler(
-        { rateLimit: { limit: 60, windowMs: 60_000, prefix: 'saves' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = saveEntitySchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-          await removeSave(session.user.id, parsed.data.entityType, parsed.data.entityId);
+        { rateLimit: { limit: 60, windowMs: 60_000, prefix: 'saves' }, body: saveEntitySchema },
+        async ({ session, body }) => {
+          await removeSave(session.user.id, body.entityType, body.entityId);
           return Response.json({ saved: false });
         },
       ),

@@ -23,14 +23,14 @@ export const Route = createFileRoute('/api/moderation/mute')({
         return Response.json({ muted: mutes.map((m) => m.mutedId) });
       }),
       POST: defineHandler(
-        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'moderation-mute' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => ({}));
-          const parsed = muteSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
+        {
+          rateLimit: { limit: 30, windowMs: 60_000, prefix: 'moderation-mute' },
+          body: muteSchema,
+          allowEmptyBody: true,
+        },
+        async ({ session, body }) => {
           const muterId = session.user.id;
-          const mutedId = parsed.data.targetUserId;
+          const mutedId = body.targetUserId;
           if (muterId === mutedId) {
             return Response.json({ error: 'You cannot mute yourself' }, { status: 400 });
           }

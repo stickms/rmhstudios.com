@@ -16,15 +16,9 @@ const readSchema = z.object({
 export const Route = createFileRoute('/api/notifications/read')({
   server: {
     handlers: {
-      POST: defineHandler({}, async ({ request, session }) => {
-        const body = await request.json().catch(() => ({}));
-        const parsed = readSchema.safeParse(body);
-        if (!parsed.success) {
-          return Response.json({ error: 'Invalid input' }, { status: 400 });
-        }
-
+      POST: defineHandler({ body: readSchema, allowEmptyBody: true }, async ({ session, body }) => {
         const userId = session.user.id;
-        if (parsed.data.all) {
+        if (body.all) {
           const res = await prisma.notification.updateMany({
             where: { userId, read: false },
             data: { read: true },
@@ -35,12 +29,12 @@ export const Route = createFileRoute('/api/notifications/read')({
           return Response.json({ success: true, updated: res.count });
         }
 
-        if (parsed.data.ids && parsed.data.ids.length > 0) {
+        if (body.ids && body.ids.length > 0) {
           // Scope to the caller's own notifications — never let one user mark
           // another user's notifications read. Only count rows that were
           // actually unread so the counter isn't over-decremented on re-marks.
           const res = await prisma.notification.updateMany({
-            where: { userId, id: { in: parsed.data.ids }, read: false },
+            where: { userId, id: { in: body.ids }, read: false },
             data: { read: true },
           });
           if (res.count > 0) void adjustNotifUnread(userId, -res.count);

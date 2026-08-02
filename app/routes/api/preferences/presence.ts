@@ -25,19 +25,16 @@ export const Route = createFileRoute('/api/preferences/presence')({
         });
       }),
       PUT: defineHandler(
-        { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'presence-prefs' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = presencePrivacySchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
+        {
+          rateLimit: { limit: 20, windowMs: 60_000, prefix: 'presence-prefs' },
+          body: presencePrivacySchema,
+        },
+        async ({ session, body }) => {
           const data = {
-            ...(parsed.data.presenceVisibility !== undefined
-              ? { presenceVisibility: parsed.data.presenceVisibility }
+            ...(body.presenceVisibility !== undefined
+              ? { presenceVisibility: body.presenceVisibility }
               : {}),
-            ...(parsed.data.presenceDetail !== undefined
-              ? { presenceDetail: parsed.data.presenceDetail }
-              : {}),
+            ...(body.presenceDetail !== undefined ? { presenceDetail: body.presenceDetail } : {}),
           };
           const row = await prisma.userProfile.upsert({
             where: { userId: session.user.id },

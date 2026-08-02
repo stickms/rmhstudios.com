@@ -15,13 +15,10 @@ export const Route = createFileRoute('/api/lists/')({
         return Response.json({ lists: await getUserLists(session.user.id, member) });
       }),
       POST: defineHandler(
-        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'lists' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = listCreateSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
+        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'lists' }, body: listCreateSchema },
+        async ({ session, body }) => {
           try {
-            return Response.json({ list: await createList(session.user.id, parsed.data) });
+            return Response.json({ list: await createList(session.user.id, body) });
           } catch (e) {
             if (e instanceof ListError) return Response.json({ error: e.message }, { status: 400 });
             throw e;

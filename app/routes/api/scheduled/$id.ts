@@ -15,54 +15,49 @@ export const Route = createFileRoute('/api/scheduled/$id')({
   server: {
     handlers: {
       // Edit a draft/scheduled post.
-      PATCH: defineHandler({}, async ({ request, params, session }) => {
-        const existing = await prisma.scheduledPost.findUnique({ where: { id: params.id } });
-        if (!existing || existing.userId !== session.user.id) {
-          return Response.json({ error: 'Not found' }, { status: 404 });
-        }
-        if (existing.publishedId) {
-          return Response.json({ error: 'Already published' }, { status: 409 });
-        }
+      PATCH: defineHandler(
+        { body: patchSchema, allowEmptyBody: true, verboseValidationErrors: true },
+        async ({ params, session, body }) => {
+          const existing = await prisma.scheduledPost.findUnique({ where: { id: params.id } });
+          if (!existing || existing.userId !== session.user.id) {
+            return Response.json({ error: 'Not found' }, { status: 404 });
+          }
+          if (existing.publishedId) {
+            return Response.json({ error: 'Already published' }, { status: 409 });
+          }
 
-        const body = await request.json().catch(() => ({}));
-        const parsed = patchSchema.safeParse(body);
-        if (!parsed.success) {
-          return Response.json(
-            { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-            { status: 400 },
-          );
-        }
-        const d = parsed.data;
+          const d = body;
 
-        let scheduledAt: Date | null | undefined;
-        if (d.scheduledAt !== undefined) {
-          if (d.scheduledAt === null) {
-            scheduledAt = null;
-          } else {
-            scheduledAt = new Date(d.scheduledAt);
-            if (scheduledAt.getTime() <= Date.now()) {
-              return Response.json(
-                { error: 'Scheduled time must be in the future' },
-                { status: 400 },
-              );
+          let scheduledAt: Date | null | undefined;
+          if (d.scheduledAt !== undefined) {
+            if (d.scheduledAt === null) {
+              scheduledAt = null;
+            } else {
+              scheduledAt = new Date(d.scheduledAt);
+              if (scheduledAt.getTime() <= Date.now()) {
+                return Response.json(
+                  { error: 'Scheduled time must be in the future' },
+                  { status: 400 },
+                );
+              }
             }
           }
-        }
 
-        const updated = await prisma.scheduledPost.update({
-          where: { id: params.id },
-          data: {
-            ...(d.content !== undefined ? { content: d.content.trim() } : {}),
-            ...(d.audience !== undefined ? { audience: d.audience } : {}),
-            ...(d.unlockPrice !== undefined
-              ? { unlockPrice: d.unlockPrice && d.unlockPrice > 0 ? d.unlockPrice : null }
-              : {}),
-            ...(scheduledAt !== undefined ? { scheduledAt } : {}),
-          },
-        });
+          const updated = await prisma.scheduledPost.update({
+            where: { id: params.id },
+            data: {
+              ...(d.content !== undefined ? { content: d.content.trim() } : {}),
+              ...(d.audience !== undefined ? { audience: d.audience } : {}),
+              ...(d.unlockPrice !== undefined
+                ? { unlockPrice: d.unlockPrice && d.unlockPrice > 0 ? d.unlockPrice : null }
+                : {}),
+              ...(scheduledAt !== undefined ? { scheduledAt } : {}),
+            },
+          });
 
-        return Response.json(updated);
-      }),
+          return Response.json(updated);
+        },
+      ),
 
       // Discard a draft/scheduled post.
       DELETE: defineHandler({}, async ({ params, session }) => {

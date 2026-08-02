@@ -93,11 +93,37 @@ describe('auth modes', () => {
 describe('validation', () => {
   const schema = z.object({ name: z.string().min(1).max(10) });
 
-  it('400s an invalid body with the first zod message', async () => {
+  it('400s an invalid body with a GENERIC message by default', async () => {
     const h = defineHandler({ body: schema }, async () => Response.json({ ok: true }));
-    const res = await h({ params: {}, request: post({ name: '' }) });
+    const res = await h({ params: {}, request: post({ name: 'wayyy too long' }) });
     expect(res.status).toBe(400);
-    expect((await res.json()).error).toBeTruthy();
+    // Must not leak field names or constraints to an arbitrary caller.
+    await expect(res.json()).resolves.toEqual({ error: 'Invalid input' });
+  });
+
+  it('surfaces the zod message only when verboseValidationErrors is set', async () => {
+    const h = defineHandler(
+      { body: schema, verboseValidationErrors: true },
+      async () => Response.json({ ok: true }),
+    );
+    const res = await h({ params: {}, request: post({ name: 'wayyy too long' }) });
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).not.toBe('Invalid input');
+  });
+
+  it('allowEmptyBody validates {} instead of null for a bodyless request', async () => {
+    const optional = z.object({ name: z.string().optional() });
+
+    const strict = defineHandler({ body: optional }, async () => Response.json({ ok: true }));
+    expect((await strict({ params: {}, request: post('') })).status).toBe(400);
+
+    const lenient = defineHandler(
+      { body: optional, allowEmptyBody: true },
+      async ({ body }) => Response.json({ got: body }),
+    );
+    const res = await lenient({ params: {}, request: post('') });
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({ got: {} });
   });
 
   it('400s malformed JSON rather than throwing a 500', async () => {

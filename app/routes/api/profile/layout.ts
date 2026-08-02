@@ -18,17 +18,17 @@ export const Route = createFileRoute('/api/profile/layout')({
         return Response.json({ modules: parseLayout(row?.modules) });
       }),
       PUT: defineHandler(
-        { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'profile-layout' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = layoutSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
+        {
+          rateLimit: { limit: 20, windowMs: 60_000, prefix: 'profile-layout' },
+          body: layoutSchema,
+        },
+        async ({ session, body }) => {
           await prisma.profileLayout.upsert({
             where: { userId: session.user.id },
-            create: { userId: session.user.id, modules: parsed.data.modules },
-            update: { modules: parsed.data.modules },
+            create: { userId: session.user.id, modules: body.modules },
+            update: { modules: body.modules },
           });
-          return Response.json({ modules: parsed.data.modules });
+          return Response.json({ modules: body.modules });
         },
       ),
     },

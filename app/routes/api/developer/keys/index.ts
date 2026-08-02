@@ -46,70 +46,67 @@ export const Route = createFileRoute('/api/developer/keys/')({
         });
       }),
 
-      POST: defineHandler({}, async ({ request, session }) => {
-        const userId = session.user.id;
+      POST: defineHandler(
+        { body: createSchema, allowEmptyBody: true, verboseValidationErrors: true },
+        async ({ request, session, body }) => {
+          const userId = session.user.id;
 
-        // Gate creation on an active subscription (Starter+).
-        const tier = await getUserTier(userId);
-        if (!hasApiAccess(tier)) {
-          return Response.json(
-            { error: 'A Starter subscription or higher is required to use the developer API.' },
-            { status: 403 },
-          );
-        }
+          // Gate creation on an active subscription (Starter+).
+          const tier = await getUserTier(userId);
+          if (!hasApiAccess(tier)) {
+            return Response.json(
+              { error: 'A Starter subscription or higher is required to use the developer API.' },
+              { status: 403 },
+            );
+          }
 
-        const ip = getClientIp(request);
-        const { allowed } = rateLimit(ip, { limit: 10, windowMs: 60_000, prefix: 'apikey-create' });
-        if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
+          const ip = getClientIp(request);
+          const { allowed } = rateLimit(ip, {
+            limit: 10,
+            windowMs: 60_000,
+            prefix: 'apikey-create',
+          });
+          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
-        const body = await request.json().catch(() => ({}));
-        const parsed = createSchema.safeParse(body);
-        if (!parsed.success)
-          return Response.json(
-            { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-            { status: 400 },
-          );
+          const count = await prisma.developerApiKey.count({ where: { userId, revokedAt: null } });
+          if (count >= MAX_KEYS)
+            return Response.json(
+              { error: `You can have at most ${MAX_KEYS} active keys.` },
+              { status: 400 },
+            );
 
-        const count = await prisma.developerApiKey.count({ where: { userId, revokedAt: null } });
-        if (count >= MAX_KEYS)
-          return Response.json(
-            { error: `You can have at most ${MAX_KEYS} active keys.` },
-            { status: 400 },
-          );
+          // Default to a read-only grant when no scopes are supplied.
+          const scopes = body.scopes ? normalizeScopes(body.scopes) : [...DEFAULT_SCOPES];
+          const expiresAt = body.expiresInDays
+            ? new Date(Date.now() + body.expiresInDays * 86_400_000)
+            : null;
 
-        // Default to a read-only grant when no scopes are supplied.
-        const scopes = parsed.data.scopes
-          ? normalizeScopes(parsed.data.scopes)
-          : [...DEFAULT_SCOPES];
-        const expiresAt = parsed.data.expiresInDays
-          ? new Date(Date.now() + parsed.data.expiresInDays * 86_400_000)
-          : null;
+          const { plaintext, hashedKey, prefix, lastFour } = generateApiKey();
+          const key = await prisma.developerApiKey.create({
+            data: {
+              userId,
+              name: body.name.trim(),
+              prefix,
+              hashedKey,
+              lastFour,
+              scopes,
+              expiresAt,
+            },
+            select: {
+              id: true,
+              name: true,
+              prefix: true,
+              lastFour: true,
+              scopes: true,
+              expiresAt: true,
+              createdAt: true,
+            },
+          });
 
-        const { plaintext, hashedKey, prefix, lastFour } = generateApiKey();
-        const key = await prisma.developerApiKey.create({
-          data: {
-            userId,
-            name: parsed.data.name.trim(),
-            prefix,
-            hashedKey,
-            lastFour,
-            scopes,
-            expiresAt,
-          },
-          select: {
-            id: true,
-            name: true,
-            prefix: true,
-            lastFour: true,
-            scopes: true,
-            expiresAt: true,
-            createdAt: true,
-          },
-        });
-
-        // The plaintext is returned once and never stored or shown again.
-        return Response.json({ ...key, key: plaintext }, { status: 201 });
-      }),
+          // The plaintext is returned once and never stored or shown again.
+          return Response.json({ ...key, key: plaintext }, { status: 201 });
+        },
+      ),
     },
   },
 });

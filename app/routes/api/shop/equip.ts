@@ -14,12 +14,8 @@ const schema = z.object({ itemId: z.string().min(1).max(64), equipped: z.boolean
 export const Route = createFileRoute('/api/shop/equip')({
   server: {
     handlers: {
-      POST: defineHandler({}, async ({ request, session }) => {
-        const body = await request.json().catch(() => ({}));
-        const parsed = schema.safeParse(body);
-        if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-        const item = getShopItem(parsed.data.itemId);
+      POST: defineHandler({ body: schema, allowEmptyBody: true }, async ({ session, body }) => {
+        const item = getShopItem(body.itemId);
         if (!item) return Response.json({ error: 'Item not found' }, { status: 404 });
         const userId = session.user.id;
 
@@ -29,7 +25,7 @@ export const Route = createFileRoute('/api/shop/equip')({
         });
         if (!owned) return Response.json({ error: 'You do not own this item' }, { status: 403 });
 
-        if (parsed.data.equipped) {
+        if (body.equipped) {
           // Only one item per kind may be equipped.
           await prisma.$transaction([
             prisma.userInventory.updateMany({
@@ -52,7 +48,7 @@ export const Route = createFileRoute('/api/shop/equip')({
         // drop it so the user's own next feed read reflects the change now.
         invalidateUserDisplay(userId);
 
-        return Response.json({ success: true, equipped: parsed.data.equipped });
+        return Response.json({ success: true, equipped: body.equipped });
       }),
     },
   },

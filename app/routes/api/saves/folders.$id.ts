@@ -11,14 +11,13 @@ export const Route = createFileRoute('/api/saves/folders/$id')({
   server: {
     handlers: {
       PATCH: defineHandler(
-        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'saves-folder' } },
-        async ({ request, params, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = folderUpdateSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
+        {
+          rateLimit: { limit: 30, windowMs: 60_000, prefix: 'saves-folder' },
+          body: folderUpdateSchema,
+        },
+        async ({ params, session, body }) => {
           try {
-            await updateFolder(session.user.id, params.id, parsed.data);
+            await updateFolder(session.user.id, params.id, body);
           } catch (e) {
             if (e instanceof Error && e.message === 'folder-not-found') {
               return Response.json({ error: 'Folder not found' }, { status: 404 });

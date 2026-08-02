@@ -71,18 +71,12 @@ export const Route = createFileRoute('/api/moderation/report')({
             prefix: 'moderation-report',
             message: 'Too many reports. Please slow down.',
           },
+          body: reportSchema,
+          allowEmptyBody: true,
+          verboseValidationErrors: true,
         },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => ({}));
-          const parsed = reportSchema.safeParse(body);
-          if (!parsed.success) {
-            return Response.json(
-              { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-              { status: 400 },
-            );
-          }
-
-          const { entityType, entityId, reason, details } = parsed.data;
+        async ({ session, body }) => {
+          const { entityType, entityId, reason, details } = body;
 
           // One open report per (reporter, entity) — silently succeed if it exists.
           const existing = await prisma.contentReport.findFirst({

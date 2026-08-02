@@ -15,28 +15,20 @@ export const Route = createFileRoute('/api/feed/signal')({
         return Response.json(await getSignals(session.user.id));
       }),
       POST: defineHandler(
-        { rateLimit: { limit: 60, windowMs: 60_000, prefix: 'feed-signal' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = feedSignalSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
+        {
+          rateLimit: { limit: 60, windowMs: 60_000, prefix: 'feed-signal' },
+          body: feedSignalSchema,
+        },
+        async ({ session, body }) => {
           const targetId =
-            parsed.data.kind === 'less_author'
-              ? parsed.data.targetId
-              : normalizeTag(parsed.data.targetId);
-          await recordSignal(session.user.id, parsed.data.kind, targetId);
+            body.kind === 'less_author' ? body.targetId : normalizeTag(body.targetId);
+          await recordSignal(session.user.id, body.kind, targetId);
           return Response.json({ ok: true });
         },
       ),
-      DELETE: defineHandler({}, async ({ request, session }) => {
-        const body = await request.json().catch(() => null);
-        const parsed = feedSignalSchema.safeParse(body);
-        if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-        const targetId =
-          parsed.data.kind === 'less_author'
-            ? parsed.data.targetId
-            : normalizeTag(parsed.data.targetId);
-        await removeSignal(session.user.id, parsed.data.kind, targetId);
+      DELETE: defineHandler({ body: feedSignalSchema }, async ({ session, body }) => {
+        const targetId = body.kind === 'less_author' ? body.targetId : normalizeTag(body.targetId);
+        await removeSignal(session.user.id, body.kind, targetId);
         return Response.json({ ok: true });
       }),
     },

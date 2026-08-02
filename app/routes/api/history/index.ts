@@ -40,18 +40,17 @@ export const Route = createFileRoute('/api/history/')({
       }),
 
       PUT: defineHandler(
-        { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'history-settings' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = pauseSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
+        {
+          rateLimit: { limit: 20, windowMs: 60_000, prefix: 'history-settings' },
+          body: pauseSchema,
+        },
+        async ({ session, body }) => {
           await prisma.userProfile.upsert({
             where: { userId: session.user.id },
-            create: { userId: session.user.id, historyPaused: parsed.data.paused },
-            update: { historyPaused: parsed.data.paused },
+            create: { userId: session.user.id, historyPaused: body.paused },
+            update: { historyPaused: body.paused },
           });
-          return Response.json({ paused: parsed.data.paused });
+          return Response.json({ paused: body.paused });
         },
       ),
     },

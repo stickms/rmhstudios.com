@@ -114,6 +114,24 @@ export interface HandlerOptions<
   /** Zod schema for `?query=params`, parsed from a flat string record. */
   query?: Q;
   /**
+   * Validate `{}` instead of `null` when the body is absent or unparseable.
+   *
+   * Off by default, so a schema with any required field 400s on a bodyless
+   * request. Turn it on for endpoints whose schema is entirely optional and
+   * which are meant to accept a bare `POST` with no body at all.
+   */
+  allowEmptyBody?: boolean;
+  /**
+   * Return the first zod issue message in the 400 body instead of the generic
+   * `'Invalid input'`.
+   *
+   * Off by default on purpose: zod messages name fields and spell out
+   * constraints, which hands an unauthenticated caller a free description of
+   * the schema. Turn it on only where the precise reason is genuinely useful to
+   * a legitimate client (public/developer-facing endpoints).
+   */
+  verboseValidationErrors?: boolean;
+  /**
    * Label used in the 500-path server log so a failure is still traceable to a
    * route. Defaults to `"<METHOD> <pathname>"`.
    */
@@ -225,13 +243,15 @@ export function defineHandler<
       }
 
       /* 3. Validation ---------------------------------------------------- */
+      // Generic unless the route opts in — see `verboseValidationErrors`.
+      const reason = (err: z.ZodError, fallback: string) =>
+        options.verboseValidationErrors ? (err.issues[0]?.message ?? fallback) : fallback;
+
       let body: unknown;
       if (options.body) {
-        const raw = await request.json().catch(() => null);
+        const raw = await request.json().catch(() => (options.allowEmptyBody ? {} : null));
         const parsed = options.body.safeParse(raw);
-        if (!parsed.success) {
-          return badRequest(parsed.error.issues[0]?.message ?? 'Invalid input');
-        }
+        if (!parsed.success) return badRequest(reason(parsed.error, 'Invalid input'));
         body = parsed.data;
       }
 
@@ -239,9 +259,7 @@ export function defineHandler<
       if (options.query) {
         const raw = Object.fromEntries(new URL(request.url).searchParams);
         const parsed = options.query.safeParse(raw);
-        if (!parsed.success) {
-          return badRequest(parsed.error.issues[0]?.message ?? 'Invalid query');
-        }
+        if (!parsed.success) return badRequest(reason(parsed.error, 'Invalid query'));
         query = parsed.data;
       }
 

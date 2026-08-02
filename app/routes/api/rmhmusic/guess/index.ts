@@ -23,26 +23,22 @@ export const Route = createFileRoute('/api/rmhmusic/guess/')({
       }),
 
       POST: defineHandler(
-        { rateLimit: { limit: 15, windowMs: 60_000, prefix: 'music-guess-create' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => ({}));
-          const parsed = createSchema.safeParse(body);
-          if (!parsed.success)
-            return Response.json(
-              { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-              { status: 400 },
-            );
-
-          // Always accept the canonical title; merge any extra accepted answers.
-          const accepted = new Set<string>([parsed.data.title.toLowerCase().trim()]);
-          for (const a of parsed.data.acceptedAnswers ?? []) accepted.add(a.toLowerCase().trim());
+        {
+          rateLimit: { limit: 15, windowMs: 60_000, prefix: 'music-guess-create' },
+          body: createSchema,
+          allowEmptyBody: true,
+          verboseValidationErrors: true,
+        },
+        async ({ session, body }) => {
+          const accepted = new Set<string>([body.title.toLowerCase().trim()]);
+          for (const a of body.acceptedAnswers ?? []) accepted.add(a.toLowerCase().trim());
 
           const puzzle = await prisma.musicGuessPuzzle.create({
             data: {
               authorId: session.user.id,
-              title: parsed.data.title.trim(),
-              artist: parsed.data.artist.trim(),
-              hints: parsed.data.hints.map((h) => h.trim()),
+              title: body.title.trim(),
+              artist: body.artist.trim(),
+              hints: body.hints.map((h) => h.trim()),
               acceptedAnswers: [...accepted],
             },
             select: { id: true },

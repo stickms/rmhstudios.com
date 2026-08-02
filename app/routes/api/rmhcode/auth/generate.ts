@@ -28,18 +28,12 @@ export const Route = createFileRoute('/api/rmhcode/auth/generate')({
             prefix: 'rmhcode-token-gen',
             message: 'Too many token generation requests. Please try again later.',
           },
+          body: generateTokenSchema,
+          allowEmptyBody: true,
+          verboseValidationErrors: true,
         },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => ({}));
-          const parsed = generateTokenSchema.safeParse(body);
-          if (!parsed.success) {
-            return Response.json(
-              { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-              { status: 400 },
-            );
-          }
-
-          const { name } = parsed.data;
+        async ({ session, body }) => {
+          const { name } = body;
 
           // Generate cryptographically secure token
           const token = randomBytes(32).toString('hex'); // 64 chars

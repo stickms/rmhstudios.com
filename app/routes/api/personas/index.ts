@@ -84,59 +84,56 @@ export const Route = createFileRoute('/api/personas/')({
         });
       }),
 
-      POST: defineHandler({}, async ({ request, session }) => {
-        const userId = session.user.id;
+      POST: defineHandler(
+        { body: createSchema, allowEmptyBody: true, verboseValidationErrors: true },
+        async ({ request, session, body }) => {
+          const userId = session.user.id;
 
-        const ip = getClientIp(request);
-        const { allowed } = rateLimit(ip, {
-          limit: 10,
-          windowMs: 60 * 60 * 1000,
-          prefix: 'persona-create',
-        });
-        if (!allowed)
-          return Response.json({ error: 'Too many personas created. Try later.' }, { status: 429 });
+          const ip = getClientIp(request);
+          const { allowed } = rateLimit(ip, {
+            limit: 10,
+            windowMs: 60 * 60 * 1000,
+            prefix: 'persona-create',
+          });
+          if (!allowed)
+            return Response.json(
+              { error: 'Too many personas created. Try later.' },
+              { status: 429 },
+            );
 
-        const body = await request.json().catch(() => ({}));
-        const parsed = createSchema.safeParse(body);
-        if (!parsed.success) {
-          return Response.json(
-            { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-            { status: 400 },
+          const count = await prisma.aiPersona.count({ where: { ownerId: userId } });
+          if (count >= MAX_PERSONAS)
+            return Response.json({ error: `At most ${MAX_PERSONAS} personas` }, { status: 400 });
+
+          const name = body.name.trim();
+          const tagline = body.tagline?.trim() || null;
+          const systemPrompt = body.systemPrompt.trim();
+
+          const persona = await prisma.aiPersona.create({
+            data: {
+              ownerId: userId,
+              name,
+              tagline,
+              systemPrompt,
+              greeting: body.greeting?.trim() || null,
+              emoji: body.emoji || null,
+              isPublic: body.isPublic ?? true,
+            },
+            select: { id: true },
+          });
+
+          // Generate the avatar in the background (paid + slow xAI call) so the
+          // create stays snappy. It self-persists `avatarUrl` on success and
+          // swallows every failure, so the persona is never blocked by it; the
+          // UI shows the emoji until the avatar lands. This runs in a long-lived
+          // Node server, so the floating promise completes after the response.
+          void generatePersonaAvatar(persona.id, { name, tagline, systemPrompt }).catch((err) =>
+            console.error('persona avatar generation error:', err),
           );
-        }
 
-        const count = await prisma.aiPersona.count({ where: { ownerId: userId } });
-        if (count >= MAX_PERSONAS)
-          return Response.json({ error: `At most ${MAX_PERSONAS} personas` }, { status: 400 });
-
-        const name = parsed.data.name.trim();
-        const tagline = parsed.data.tagline?.trim() || null;
-        const systemPrompt = parsed.data.systemPrompt.trim();
-
-        const persona = await prisma.aiPersona.create({
-          data: {
-            ownerId: userId,
-            name,
-            tagline,
-            systemPrompt,
-            greeting: parsed.data.greeting?.trim() || null,
-            emoji: parsed.data.emoji || null,
-            isPublic: parsed.data.isPublic ?? true,
-          },
-          select: { id: true },
-        });
-
-        // Generate the avatar in the background (paid + slow xAI call) so the
-        // create stays snappy. It self-persists `avatarUrl` on success and
-        // swallows every failure, so the persona is never blocked by it; the
-        // UI shows the emoji until the avatar lands. This runs in a long-lived
-        // Node server, so the floating promise completes after the response.
-        void generatePersonaAvatar(persona.id, { name, tagline, systemPrompt }).catch((err) =>
-          console.error('persona avatar generation error:', err),
-        );
-
-        return Response.json({ success: true, id: persona.id }, { status: 201 });
-      }),
+          return Response.json({ success: true, id: persona.id }, { status: 201 });
+        },
+      ),
     },
   },
 });

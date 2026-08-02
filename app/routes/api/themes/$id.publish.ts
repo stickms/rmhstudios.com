@@ -10,12 +10,9 @@ const schema = z.object({ priceCoins: z.number().int().min(THEME_PRICE_MIN).max(
 export const Route = createFileRoute('/api/themes/$id/publish')({
   server: {
     handlers: {
-      POST: defineHandler({}, async ({ request, params, session }) => {
-        const body = await request.json().catch(() => null);
-        const parsed = schema.safeParse(body);
-        if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
+      POST: defineHandler({ body: schema }, async ({ params, session, body }) => {
         try {
-          await publishTheme(session.user.id, params.id, parsed.data.priceCoins);
+          await publishTheme(session.user.id, params.id, body.priceCoins);
         } catch (e) {
           if (e instanceof ThemeError) {
             const status =

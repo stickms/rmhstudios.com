@@ -39,8 +39,11 @@ export const Route = createFileRoute('/api/communities/$slug/announcements')({
             prefix: 'community-announce',
             message: 'Too many announcements. Try later.',
           },
+          body: createSchema,
+          allowEmptyBody: true,
+          verboseValidationErrors: true,
         },
-        async ({ request, params, session }) => {
+        async ({ params, session, body }) => {
           const community = await getCommunityBySlug(params.slug);
           if (!community) return Response.json({ error: 'Not found' }, { status: 404 });
 
@@ -48,16 +51,8 @@ export const Route = createFileRoute('/api/communities/$slug/announcements')({
           if (!canModerate(role))
             return Response.json({ error: 'Only mods can post announcements' }, { status: 403 });
 
-          const parsed = createSchema.safeParse(await request.json().catch(() => ({})));
-          if (!parsed.success) {
-            return Response.json(
-              { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-              { status: 400 },
-            );
-          }
-
           const created = await prisma.communityAnnouncement.create({
-            data: { communityId: community.id, authorId: session.user.id, body: parsed.data.body },
+            data: { communityId: community.id, authorId: session.user.id, body: body.body },
             select: {
               id: true,
               body: true,

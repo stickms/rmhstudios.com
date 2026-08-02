@@ -45,15 +45,9 @@ export const Route = createFileRoute('/api/preferences/muted-words')({
       }),
 
       PUT: defineHandler(
-        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'muted-words' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = schema.safeParse(body);
-          if (!parsed.success) {
-            return Response.json({ error: 'Invalid input' }, { status: 400 });
-          }
-
-          const words = normalize(parsed.data.words);
+        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'muted-words' }, body: schema },
+        async ({ session, body }) => {
+          const words = normalize(body.words);
           await prisma.userProfile.upsert({
             where: { userId: session.user.id },
             create: { userId: session.user.id, mutedWords: words },

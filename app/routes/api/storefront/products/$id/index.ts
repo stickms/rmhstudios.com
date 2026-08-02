@@ -15,37 +15,36 @@ const patchSchema = z.object({
 export const Route = createFileRoute('/api/storefront/products/$id/')({
   server: {
     handlers: {
-      PATCH: defineHandler({}, async ({ request, params, session }) => {
-        const existing = await prisma.storefrontProduct.findUnique({
-          where: { id: params.id },
-          select: { creatorId: true },
-        });
-        if (!existing || existing.creatorId !== session.user.id) {
-          return Response.json({ error: 'Not found' }, { status: 404 });
-        }
+      PATCH: defineHandler(
+        { body: patchSchema, allowEmptyBody: true, verboseValidationErrors: true },
+        async ({ params, session, body }) => {
+          const existing = await prisma.storefrontProduct.findUnique({
+            where: { id: params.id },
+            select: { creatorId: true },
+          });
+          if (!existing || existing.creatorId !== session.user.id) {
+            return Response.json({ error: 'Not found' }, { status: 404 });
+          }
 
-        const body = await request.json().catch(() => ({}));
-        const parsed = patchSchema.safeParse(body);
-        if (!parsed.success) {
-          return Response.json(
-            { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-            { status: 400 },
-          );
-        }
-        const d = parsed.data;
+          const d = body;
 
-        const updated = await prisma.storefrontProduct.update({
-          where: { id: params.id },
-          data: {
-            ...(d.title !== undefined ? { title: d.title.trim() } : {}),
-            ...(d.description !== undefined ? { description: d.description?.trim() || null } : {}),
-            ...(d.price !== undefined ? { price: d.price } : {}),
-            ...(d.deliverable !== undefined ? { deliverable: d.deliverable?.trim() || null } : {}),
-            ...(d.active !== undefined ? { active: d.active } : {}),
-          },
-        });
-        return Response.json(updated);
-      }),
+          const updated = await prisma.storefrontProduct.update({
+            where: { id: params.id },
+            data: {
+              ...(d.title !== undefined ? { title: d.title.trim() } : {}),
+              ...(d.description !== undefined
+                ? { description: d.description?.trim() || null }
+                : {}),
+              ...(d.price !== undefined ? { price: d.price } : {}),
+              ...(d.deliverable !== undefined
+                ? { deliverable: d.deliverable?.trim() || null }
+                : {}),
+              ...(d.active !== undefined ? { active: d.active } : {}),
+            },
+          });
+          return Response.json(updated);
+        },
+      ),
 
       DELETE: defineHandler({}, async ({ params, session }) => {
         const existing = await prisma.storefrontProduct.findUnique({

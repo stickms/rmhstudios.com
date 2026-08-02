@@ -11,13 +11,13 @@ export const Route = createFileRoute('/api/lists/$id/members')({
   server: {
     handlers: {
       PUT: defineHandler(
-        { rateLimit: { limit: 60, windowMs: 60_000, prefix: 'lists-member' } },
-        async ({ request, params, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = listMemberSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
+        {
+          rateLimit: { limit: 60, windowMs: 60_000, prefix: 'lists-member' },
+          body: listMemberSchema,
+        },
+        async ({ params, session, body }) => {
           try {
-            await addMember(session.user.id, params.id, parsed.data.userId);
+            await addMember(session.user.id, params.id, body.userId);
           } catch (e) {
             if (e instanceof ListError) {
               return Response.json(
@@ -30,12 +30,9 @@ export const Route = createFileRoute('/api/lists/$id/members')({
           return Response.json({ ok: true });
         },
       ),
-      DELETE: defineHandler({}, async ({ request, params, session }) => {
-        const body = await request.json().catch(() => null);
-        const parsed = listMemberSchema.safeParse(body);
-        if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
+      DELETE: defineHandler({ body: listMemberSchema }, async ({ params, session, body }) => {
         try {
-          await removeMember(session.user.id, params.id, parsed.data.userId);
+          await removeMember(session.user.id, params.id, body.userId);
         } catch (e) {
           if (e instanceof ListError) {
             return Response.json(

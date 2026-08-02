@@ -40,18 +40,12 @@ export const Route = createFileRoute('/api/communities/')({
             prefix: 'community-create',
             message: 'Too many communities created. Try later.',
           },
+          body: createSchema,
+          allowEmptyBody: true,
+          verboseValidationErrors: true,
         },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => ({}));
-          const parsed = createSchema.safeParse(body);
-          if (!parsed.success) {
-            return Response.json(
-              { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-              { status: 400 },
-            );
-          }
-
-          let slug = slugify(parsed.data.name);
+        async ({ session, body }) => {
+          let slug = slugify(body.name);
           if (!slug) return Response.json({ error: 'Invalid name' }, { status: 400 });
           // Ensure uniqueness.
           if (await prisma.community.findUnique({ where: { slug }, select: { id: true } })) {
@@ -61,11 +55,11 @@ export const Route = createFileRoute('/api/communities/')({
           const community = await prisma.community.create({
             data: {
               slug,
-              name: parsed.data.name.trim(),
-              description: parsed.data.description?.trim() || null,
-              icon: parsed.data.icon || null,
-              color: parsed.data.color || null,
-              isPrivate: parsed.data.isPrivate ?? false,
+              name: body.name.trim(),
+              description: body.description?.trim() || null,
+              icon: body.icon || null,
+              color: body.color || null,
+              isPrivate: body.isPrivate ?? false,
               createdById: session.user.id,
               members: { create: { userId: session.user.id, role: 'ADMIN' } },
             },

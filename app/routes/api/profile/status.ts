@@ -15,17 +15,16 @@ export const Route = createFileRoute('/api/profile/status')({
   server: {
     handlers: {
       PUT: defineHandler(
-        { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'profile-status' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = statusUpdateSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-          const emoji = parsed.data.emoji?.trim() || null;
-          const text = parsed.data.text?.trim() || null;
-          const auto = parsed.data.auto ?? false;
+        {
+          rateLimit: { limit: 20, windowMs: 60_000, prefix: 'profile-status' },
+          body: statusUpdateSchema,
+        },
+        async ({ session, body }) => {
+          const emoji = body.emoji?.trim() || null;
+          const text = body.text?.trim() || null;
+          const auto = body.auto ?? false;
           const cleared = !emoji && !text;
-          const statusExpires = cleared ? null : statusExpiresAt(parsed.data.expiresIn ?? null);
+          const statusExpires = cleared ? null : statusExpiresAt(body.expiresIn ?? null);
 
           const fields = {
             statusEmoji: emoji,

@@ -25,25 +25,24 @@ const schema = z.object({
 export const Route = createFileRoute('/api/games/$id/score')({
   server: {
     handlers: {
-      POST: defineHandler({}, async ({ request, params, session }) => {
-        const body = await request.json().catch(() => ({}));
-        const parsed = schema.safeParse(body);
-        if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
+      POST: defineHandler(
+        { body: schema, allowEmptyBody: true },
+        async ({ params, session, body }) => {
+          const result = await submitGameScore({
+            gameId: params.id,
+            userId: session.user.id,
+            ...body,
+          });
 
-        const result = await submitGameScore({
-          gameId: params.id,
-          userId: session.user.id,
-          ...parsed.data,
-        });
-
-        if (!result.ok) {
-          return Response.json(
-            { error: result.error, reason: result.reason },
-            { status: result.status },
-          );
-        }
-        return Response.json({ success: true });
-      }),
+          if (!result.ok) {
+            return Response.json(
+              { error: result.error, reason: result.reason },
+              { status: result.status },
+            );
+          }
+          return Response.json({ success: true });
+        },
+      ),
     },
   },
 });

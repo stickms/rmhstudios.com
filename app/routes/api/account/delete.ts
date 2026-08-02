@@ -36,14 +36,10 @@ export const Route = createFileRoute('/api/account/delete')({
             prefix: 'account-delete',
             message: 'Too many attempts. Please wait and try again.',
           },
+          body: schema,
+          allowEmptyBody: true,
         },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => ({}));
-          const parsed = schema.safeParse(body);
-          if (!parsed.success) {
-            return Response.json({ error: 'Invalid input' }, { status: 400 });
-          }
-
+        async ({ session, body }) => {
           const userId = session.user.id;
           const user = await prisma.user.findUnique({
             where: { id: userId },
@@ -54,7 +50,7 @@ export const Route = createFileRoute('/api/account/delete')({
           }
 
           // Confirmation must match the user's own handle/username (or email).
-          const confirm = parsed.data.confirm.trim().toLowerCase().replace(/^@/, '');
+          const confirm = body.confirm.trim().toLowerCase().replace(/^@/, '');
           const expected = [user.handle, user.username, user.email]
             .filter(Boolean)
             .map((v) => v!.toLowerCase());

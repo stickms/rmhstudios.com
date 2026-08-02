@@ -11,12 +11,7 @@ const typingSchema = z.object({ isTyping: z.boolean() });
 export const Route = createFileRoute('/api/messages/$conversationId/typing')({
   server: {
     handlers: {
-      POST: defineHandler({}, async ({ request, params, session }) => {
-        const parsed = typingSchema.safeParse(await request.json().catch(() => null));
-        if (!parsed.success) {
-          return Response.json({ error: 'Invalid input' }, { status: 400 });
-        }
-
+      POST: defineHandler({ body: typingSchema }, async ({ params, session, body }) => {
         const { conversationId } = params;
         const userId = session.user.id;
 
@@ -40,7 +35,7 @@ export const Route = createFileRoute('/api/messages/$conversationId/typing')({
 
         notifyUser(otherUserId, {
           type: 'typing',
-          typing: { conversationId, senderId: userId, isTyping: parsed.data.isTyping },
+          typing: { conversationId, senderId: userId, isTyping: body.isTyping },
         });
 
         return Response.json({ success: true });

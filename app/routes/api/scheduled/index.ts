@@ -50,75 +50,74 @@ export const Route = createFileRoute('/api/scheduled/')({
       }),
 
       // Save a new draft or scheduled post.
-      POST: defineHandler({}, async ({ request, session }) => {
-        const userId = session.user.id;
+      POST: defineHandler(
+        { body: createSchema, allowEmptyBody: true, verboseValidationErrors: true },
+        async ({ request, session, body }) => {
+          const userId = session.user.id;
 
-        const ip = getClientIp(request);
-        const { allowed } = rateLimit(ip, {
-          limit: 30,
-          windowMs: 60_000,
-          prefix: 'scheduled-create',
-        });
-        if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
+          const ip = getClientIp(request);
+          const { allowed } = rateLimit(ip, {
+            limit: 30,
+            windowMs: 60_000,
+            prefix: 'scheduled-create',
+          });
+          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
-        const body = await request.json().catch(() => ({}));
-        const parsed = createSchema.safeParse(body);
-        if (!parsed.success) {
-          return Response.json(
-            { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-            { status: 400 },
-          );
-        }
-        const d = parsed.data;
+          const d = body;
 
-        const hasContent =
-          d.content.trim().length > 0 || !!d.poll || !!d.gifUrl || (d.imageUrls?.length ?? 0) > 0;
-        if (!hasContent) {
-          return Response.json({ error: 'Draft cannot be empty' }, { status: 400 });
-        }
+          const hasContent =
+            d.content.trim().length > 0 || !!d.poll || !!d.gifUrl || (d.imageUrls?.length ?? 0) > 0;
+          if (!hasContent) {
+            return Response.json({ error: 'Draft cannot be empty' }, { status: 400 });
+          }
 
-        if (d.imageUrls?.length && !d.imageUrls.every((u) => ownsFeedImageUrl(u, userId))) {
-          return Response.json({ error: 'Invalid image reference' }, { status: 400 });
-        }
+          if (d.imageUrls?.length && !d.imageUrls.every((u) => ownsFeedImageUrl(u, userId))) {
+            return Response.json({ error: 'Invalid image reference' }, { status: 400 });
+          }
 
-        let scheduledAt: Date | null = null;
-        if (d.scheduledAt) {
-          scheduledAt = new Date(d.scheduledAt);
-          if (scheduledAt.getTime() <= Date.now()) {
+          let scheduledAt: Date | null = null;
+          if (d.scheduledAt) {
+            scheduledAt = new Date(d.scheduledAt);
+            if (scheduledAt.getTime() <= Date.now()) {
+              return Response.json(
+                { error: 'Scheduled time must be in the future' },
+                { status: 400 },
+              );
+            }
+          }
+
+          const pending = await prisma.scheduledPost.count({
+            where: { userId, publishedId: null },
+          });
+          if (pending >= MAX_PENDING) {
             return Response.json(
-              { error: 'Scheduled time must be in the future' },
+              { error: `You can keep at most ${MAX_PENDING} drafts` },
               { status: 400 },
             );
           }
-        }
 
-        const pending = await prisma.scheduledPost.count({ where: { userId, publishedId: null } });
-        if (pending >= MAX_PENDING) {
-          return Response.json(
-            { error: `You can keep at most ${MAX_PENDING} drafts` },
-            { status: 400 },
-          );
-        }
+          const sp = await prisma.scheduledPost.create({
+            data: {
+              userId,
+              content: d.content.trim(),
+              gifUrl: d.gifUrl ?? null,
+              imageUrls: d.imageUrls ?? [],
+              imageAlts: (d.imageAlts ?? [])
+                .slice(0, d.imageUrls?.length ?? 0)
+                .map((a) => a.trim()),
+              audience: d.audience ?? 'PUBLIC',
+              isSensitive: d.isSensitive ?? false,
+              replyControl: d.replyControl ?? 'EVERYONE',
+              unlockPrice: d.unlockPrice && d.unlockPrice > 0 ? d.unlockPrice : null,
+              communityId: d.communityId ?? null,
+              poll: d.poll ?? undefined,
+              scheduledAt,
+            },
+          });
 
-        const sp = await prisma.scheduledPost.create({
-          data: {
-            userId,
-            content: d.content.trim(),
-            gifUrl: d.gifUrl ?? null,
-            imageUrls: d.imageUrls ?? [],
-            imageAlts: (d.imageAlts ?? []).slice(0, d.imageUrls?.length ?? 0).map((a) => a.trim()),
-            audience: d.audience ?? 'PUBLIC',
-            isSensitive: d.isSensitive ?? false,
-            replyControl: d.replyControl ?? 'EVERYONE',
-            unlockPrice: d.unlockPrice && d.unlockPrice > 0 ? d.unlockPrice : null,
-            communityId: d.communityId ?? null,
-            poll: d.poll ?? undefined,
-            scheduledAt,
-          },
-        });
-
-        return Response.json(sp, { status: 201 });
-      }),
+          return Response.json(sp, { status: 201 });
+        },
+      ),
     },
   },
 });

@@ -30,80 +30,80 @@ const schema = z.object({
 export const Route = createFileRoute('/api/admin/appeals/$id')({
   server: {
     handlers: {
-      POST: defineHandler({ auth: 'optional' }, async ({ request, params, session }) => {
-        if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-          return Response.json({ error: 'Forbidden' }, { status: 403 });
-        }
-
-        const body = await request.json().catch(() => ({}));
-        const parsed = schema.safeParse(body);
-        if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-        const { action, note } = parsed.data;
-
-        const strike = await prisma.userStrike.findUnique({
-          where: { id: params.id },
-          select: { id: true, userId: true, reason: true, appealStatus: true },
-        });
-        if (!strike) return Response.json({ error: 'Appeal not found' }, { status: 404 });
-        if (strike.appealStatus !== 'PENDING') {
-          return Response.json({ error: 'This appeal was already decided.' }, { status: 409 });
-        }
-
-        const decision = action === 'overturn' ? 'OVERTURNED' : 'UPHELD';
-
-        // Same conditional-update guard the user-side submit uses: two
-        // moderators hitting decide at once, only one write lands.
-        const { count } = await prisma.userStrike.updateMany({
-          where: { id: params.id, appealStatus: 'PENDING' },
-          data: {
-            appealStatus: decision,
-            appealNote: note || null,
-            appealAdminId: session.user.id,
-            decidedAt: new Date(),
-          },
-        });
-        if (count === 0) {
-          return Response.json({ error: 'This appeal was already decided.' }, { status: 409 });
-        }
-
-        // Overturned: recount and lift the auto-ban if it no longer applies.
-        let banLifted = false;
-        if (decision === 'OVERTURNED') {
-          const remaining = await prisma.userStrike.count({
-            where: activeStrikeWhere(strike.userId),
-          });
-          if (remaining < AUTO_BAN_THRESHOLD) {
-            const lifted = await prisma.user.updateMany({
-              where: {
-                id: strike.userId,
-                banReason: AUTO_BAN_REASON,
-                bannedUntil: { gt: new Date() },
-              },
-              data: { bannedUntil: null, banReason: null },
-            });
-            banLifted = lifted.count > 0;
+      POST: defineHandler(
+        { auth: 'optional', body: schema, allowEmptyBody: true },
+        async ({ params, session, body }) => {
+          if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
+            return Response.json({ error: 'Forbidden' }, { status: 403 });
           }
-        }
 
-        await logAdminAction(session.user.id, `appeal.${action}`, {
-          targetType: 'strike',
-          targetId: params.id,
-          detail: banLifted ? `${note ?? ''} (auto-ban lifted)`.trim() : (note ?? undefined),
-        });
+          const { action, note } = body;
 
-        await createNotification({
-          userId: strike.userId,
-          type: 'SYSTEM',
-          entityType: 'strike',
-          entityId: strike.id,
-          preview:
-            decision === 'OVERTURNED'
-              ? 'Your appeal was accepted — the strike has been removed from your account.'
-              : 'Your appeal was reviewed and the strike stands.',
-        });
+          const strike = await prisma.userStrike.findUnique({
+            where: { id: params.id },
+            select: { id: true, userId: true, reason: true, appealStatus: true },
+          });
+          if (!strike) return Response.json({ error: 'Appeal not found' }, { status: 404 });
+          if (strike.appealStatus !== 'PENDING') {
+            return Response.json({ error: 'This appeal was already decided.' }, { status: 409 });
+          }
 
-        return Response.json({ success: true, appealStatus: decision, banLifted });
-      }),
+          const decision = action === 'overturn' ? 'OVERTURNED' : 'UPHELD';
+
+          // Same conditional-update guard the user-side submit uses: two
+          // moderators hitting decide at once, only one write lands.
+          const { count } = await prisma.userStrike.updateMany({
+            where: { id: params.id, appealStatus: 'PENDING' },
+            data: {
+              appealStatus: decision,
+              appealNote: note || null,
+              appealAdminId: session.user.id,
+              decidedAt: new Date(),
+            },
+          });
+          if (count === 0) {
+            return Response.json({ error: 'This appeal was already decided.' }, { status: 409 });
+          }
+
+          // Overturned: recount and lift the auto-ban if it no longer applies.
+          let banLifted = false;
+          if (decision === 'OVERTURNED') {
+            const remaining = await prisma.userStrike.count({
+              where: activeStrikeWhere(strike.userId),
+            });
+            if (remaining < AUTO_BAN_THRESHOLD) {
+              const lifted = await prisma.user.updateMany({
+                where: {
+                  id: strike.userId,
+                  banReason: AUTO_BAN_REASON,
+                  bannedUntil: { gt: new Date() },
+                },
+                data: { bannedUntil: null, banReason: null },
+              });
+              banLifted = lifted.count > 0;
+            }
+          }
+
+          await logAdminAction(session.user.id, `appeal.${action}`, {
+            targetType: 'strike',
+            targetId: params.id,
+            detail: banLifted ? `${note ?? ''} (auto-ban lifted)`.trim() : (note ?? undefined),
+          });
+
+          await createNotification({
+            userId: strike.userId,
+            type: 'SYSTEM',
+            entityType: 'strike',
+            entityId: strike.id,
+            preview:
+              decision === 'OVERTURNED'
+                ? 'Your appeal was accepted — the strike has been removed from your account.'
+                : 'Your appeal was reviewed and the strike stands.',
+          });
+
+          return Response.json({ success: true, appealStatus: decision, banLifted });
+        },
+      ),
     },
   },
 });

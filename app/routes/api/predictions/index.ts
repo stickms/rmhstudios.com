@@ -58,65 +58,61 @@ export const Route = createFileRoute('/api/predictions/')({
         return Response.json({ markets });
       }),
 
-      POST: defineHandler({}, async ({ request, session }) => {
-        const userId = session.user.id;
+      POST: defineHandler(
+        { body: createPredictionSchema, verboseValidationErrors: true },
+        async ({ request, session, body }) => {
+          const userId = session.user.id;
 
-        const ip = getClientIp(request);
-        const { allowed, retryAfter } = rateLimit(`${userId}:${ip}`, {
-          limit: 6,
-          windowMs: 60_000,
-          prefix: 'prediction-create',
-        });
-        if (!allowed) {
-          return Response.json(
-            { error: 'Slow down a moment before submitting another prediction.' },
-            { status: 429, headers: { 'Retry-After': String(retryAfter) } },
-          );
-        }
-
-        const parsed = createPredictionSchema.safeParse(await request.json().catch(() => null));
-        if (!parsed.success) {
-          return Response.json(
-            { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-            { status: 400 },
-          );
-        }
-        const { title, description, closesAt } = parsed.data;
-
-        let closes: Date | null = null;
-        if (closesAt) {
-          closes = new Date(closesAt);
-          if (closes.getTime() <= Date.now()) {
-            return Response.json({ error: 'Close time must be in the future' }, { status: 400 });
+          const ip = getClientIp(request);
+          const { allowed, retryAfter } = rateLimit(`${userId}:${ip}`, {
+            limit: 6,
+            windowMs: 60_000,
+            prefix: 'prediction-create',
+          });
+          if (!allowed) {
+            return Response.json(
+              { error: 'Slow down a moment before submitting another prediction.' },
+              { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+            );
           }
-        }
 
-        // Cap how many pending submissions a single user can have open.
-        const pending = await prisma.prediction.count({
-          where: { creatorId: userId, status: 'PENDING' },
-        });
-        if (pending >= 10) {
-          return Response.json(
-            { error: 'You already have several predictions awaiting approval.' },
-            { status: 400 },
-          );
-        }
+          const { title, description, closesAt } = body;
 
-        const created = await prisma.prediction.create({
-          data: {
-            title,
-            description: description || null,
-            creatorId: userId,
-            closesAt: closes,
-            status: 'PENDING',
-          },
-          include: {
-            creator: { select: { id: true, name: true, handle: true, image: true } },
-          },
-        });
+          let closes: Date | null = null;
+          if (closesAt) {
+            closes = new Date(closesAt);
+            if (closes.getTime() <= Date.now()) {
+              return Response.json({ error: 'Close time must be in the future' }, { status: 400 });
+            }
+          }
 
-        return Response.json({ market: serializeMarket(created, userId) }, { status: 201 });
-      }),
+          // Cap how many pending submissions a single user can have open.
+          const pending = await prisma.prediction.count({
+            where: { creatorId: userId, status: 'PENDING' },
+          });
+          if (pending >= 10) {
+            return Response.json(
+              { error: 'You already have several predictions awaiting approval.' },
+              { status: 400 },
+            );
+          }
+
+          const created = await prisma.prediction.create({
+            data: {
+              title,
+              description: description || null,
+              creatorId: userId,
+              closesAt: closes,
+              status: 'PENDING',
+            },
+            include: {
+              creator: { select: { id: true, name: true, handle: true, image: true } },
+            },
+          });
+
+          return Response.json({ market: serializeMarket(created, userId) }, { status: 201 });
+        },
+      ),
     },
   },
 });

@@ -23,15 +23,11 @@ export const Route = createFileRoute('/api/preferences/layout')({
         return Response.json(parseLayoutPref(row));
       }),
       PUT: defineHandler(
-        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'layout' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = layoutPrefsSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
+        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'layout' }, body: layoutPrefsSchema },
+        async ({ session, body }) => {
           const data = {
-            ...(parsed.data.sidebar !== undefined ? { sidebar: parsed.data.sidebar } : {}),
-            ...(parsed.data.homeStack !== undefined ? { homeStack: parsed.data.homeStack } : {}),
+            ...(body.sidebar !== undefined ? { sidebar: body.sidebar } : {}),
+            ...(body.homeStack !== undefined ? { homeStack: body.homeStack } : {}),
           };
           const row = await prisma.layoutPreference.upsert({
             where: { userId: session.user.id },

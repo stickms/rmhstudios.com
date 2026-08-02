@@ -11,23 +11,22 @@ import { recordBeat } from '@/lib/history/history.server';
 export const Route = createFileRoute('/api/history/beat')({
   server: {
     handlers: {
-      POST: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
-        if (!session) return Response.json({ ok: false }, { status: 401 });
+      POST: defineHandler(
+        { auth: 'optional', body: historyBeatSchema },
+        async ({ request, session, body }) => {
+          if (!session) return Response.json({ ok: false }, { status: 401 });
 
-        const { allowed } = rateLimit(getClientIp(request), {
-          limit: 120,
-          windowMs: 60_000,
-          prefix: 'history-beat',
-        });
-        if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
+          const { allowed } = rateLimit(getClientIp(request), {
+            limit: 120,
+            windowMs: 60_000,
+            prefix: 'history-beat',
+          });
+          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
-        const body = await request.json().catch(() => null);
-        const parsed = historyBeatSchema.safeParse(body);
-        if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-        await recordBeat(session.user.id, parsed.data);
-        return Response.json({ ok: true });
-      }),
+          await recordBeat(session.user.id, body);
+          return Response.json({ ok: true });
+        },
+      ),
     },
   },
 });

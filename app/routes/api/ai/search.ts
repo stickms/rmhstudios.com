@@ -25,52 +25,52 @@ const MAX_SOURCES = 30;
 export const Route = createFileRoute('/api/ai/search')({
   server: {
     handlers: {
-      POST: defineHandler({ auth: 'none' }, async ({ request }) => {
-        if (!isAITextConfigured())
-          return Response.json({ error: 'AI is unavailable' }, { status: 503 });
-        const session = await auth.api.getSession({ headers: request.headers });
-        if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      POST: defineHandler(
+        { auth: 'none', body: schema, allowEmptyBody: true },
+        async ({ request, body }) => {
+          if (!isAITextConfigured())
+            return Response.json({ error: 'AI is unavailable' }, { status: 503 });
+          const session = await auth.api.getSession({ headers: request.headers });
+          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const ip = getClientIp(request);
-        const { allowed } = rateLimit(ip, { limit: 15, windowMs: 60_000, prefix: 'ai-search' });
-        if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
+          const ip = getClientIp(request);
+          const { allowed } = rateLimit(ip, { limit: 15, windowMs: 60_000, prefix: 'ai-search' });
+          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
-        const body = await request.json().catch(() => ({}));
-        const parsed = schema.safeParse(body);
-        if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-        const q = parsed.data.q.trim();
+          const q = body.q.trim();
 
-        // `assist` is on here: the user explicitly asked for a considered
-        // answer, so spending the expansion call on a weak query is warranted.
-        const results = await universalSearch({
-          query: q,
-          tab: 'top',
-          viewerId: session.user.id,
-          signedIn: true,
-          assist: true,
-        });
-
-        const sources: AISearchSource[] = results.top.slice(0, MAX_SOURCES).map((hit) => ({
-          kind: hit.kind,
-          title: hit.title,
-          snippet: (hit.snippet ?? hit.subtitle ?? '').slice(0, 240),
-        }));
-
-        if (sources.length === 0) {
-          return Response.json({
-            answer: `I couldn't find anything matching "${q}". Try a more specific search.`,
-            sourceCount: 0,
-            ...(results.meta.suggestion ? { suggestion: results.meta.suggestion } : {}),
+          // `assist` is on here: the user explicitly asked for a considered
+          // answer, so spending the expansion call on a weak query is warranted.
+          const results = await universalSearch({
+            query: q,
+            tab: 'top',
+            viewerId: session.user.id,
+            signedIn: true,
+            assist: true,
           });
-        }
 
-        const answer = await answerSearch(q, sources);
-        return Response.json({
-          answer,
-          sourceCount: sources.length,
-          confidence: results.meta.confidence,
-        });
-      }),
+          const sources: AISearchSource[] = results.top.slice(0, MAX_SOURCES).map((hit) => ({
+            kind: hit.kind,
+            title: hit.title,
+            snippet: (hit.snippet ?? hit.subtitle ?? '').slice(0, 240),
+          }));
+
+          if (sources.length === 0) {
+            return Response.json({
+              answer: `I couldn't find anything matching "${q}". Try a more specific search.`,
+              sourceCount: 0,
+              ...(results.meta.suggestion ? { suggestion: results.meta.suggestion } : {}),
+            });
+          }
+
+          const answer = await answerSearch(q, sources);
+          return Response.json({
+            answer,
+            sourceCount: sources.length,
+            confidence: results.meta.confidence,
+          });
+        },
+      ),
     },
   },
 });

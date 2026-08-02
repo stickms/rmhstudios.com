@@ -29,18 +29,13 @@ export const Route = createFileRoute('/api/rmhcode/auth/initiate')({
             prefix: 'rmhcode-oauth',
             message: 'Too many requests. Please try again later.',
           },
+          body: initiateSchema,
+          allowEmptyBody: true,
+          verboseValidationErrors: true,
         },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => ({}));
-          const parsed = initiateSchema.safeParse(body);
-          if (!parsed.success) {
-            return Response.json(
-              { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-              { status: 400 },
-            );
-          }
-
-          // Generate token
+        // `body` is validated by the wrapper but unused here — the CLI's
+        // sessionId is checked for shape only, never read.
+        async ({ session }) => {
           const token = randomBytes(32).toString('hex');
 
           // Store only the token's hash with the CLI session name.

@@ -27,49 +27,45 @@ export const Route = createFileRoute('/api/study/decks/')({
         return Response.json(await listDecks(session?.user.id ?? null));
       }),
 
-      POST: defineHandler({}, async ({ request, session }) => {
-        const userId = session.user.id;
+      POST: defineHandler(
+        { body: createSchema, allowEmptyBody: true, verboseValidationErrors: true },
+        async ({ request, session, body }) => {
+          const userId = session.user.id;
 
-        const ip = getClientIp(request);
-        const { allowed } = rateLimit(ip, { limit: 15, windowMs: 60_000, prefix: 'deck-create' });
-        if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
+          const ip = getClientIp(request);
+          const { allowed } = rateLimit(ip, { limit: 15, windowMs: 60_000, prefix: 'deck-create' });
+          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
-        const body = await request.json().catch(() => ({}));
-        const parsed = createSchema.safeParse(body);
-        if (!parsed.success)
+          const count = await prisma.flashcardDeck.count({ where: { userId } });
+          if (count >= MAX_DECKS)
+            return Response.json({ error: 'Too many decks' }, { status: 400 });
+
+          // Optionally seed with AI-generated cards.
+          let cards: { front: string; back: string }[] = [];
+          if (body.generateTopic) {
+            cards = await generateCards(body.generateTopic, 8);
+          }
+
+          const deck = await prisma.flashcardDeck.create({
+            data: {
+              userId,
+              title: body.title.trim(),
+              description: body.description?.trim() || null,
+              isPublic: body.isPublic ?? false,
+              cardCount: cards.length,
+              cards: cards.length
+                ? { create: cards.map((c, i) => ({ front: c.front, back: c.back, position: i })) }
+                : undefined,
+            },
+            select: { id: true },
+          });
+
           return Response.json(
-            { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-            { status: 400 },
+            { success: true, id: deck.id, generated: cards.length },
+            { status: 201 },
           );
-
-        const count = await prisma.flashcardDeck.count({ where: { userId } });
-        if (count >= MAX_DECKS) return Response.json({ error: 'Too many decks' }, { status: 400 });
-
-        // Optionally seed with AI-generated cards.
-        let cards: { front: string; back: string }[] = [];
-        if (parsed.data.generateTopic) {
-          cards = await generateCards(parsed.data.generateTopic, 8);
-        }
-
-        const deck = await prisma.flashcardDeck.create({
-          data: {
-            userId,
-            title: parsed.data.title.trim(),
-            description: parsed.data.description?.trim() || null,
-            isPublic: parsed.data.isPublic ?? false,
-            cardCount: cards.length,
-            cards: cards.length
-              ? { create: cards.map((c, i) => ({ front: c.front, back: c.back, position: i })) }
-              : undefined,
-          },
-          select: { id: true },
-        });
-
-        return Response.json(
-          { success: true, id: deck.id, generated: cards.length },
-          { status: 201 },
-        );
-      }),
+        },
+      ),
     },
   },
 });

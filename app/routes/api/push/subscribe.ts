@@ -56,16 +56,9 @@ export const Route = createFileRoute('/api/push/subscribe')({
         },
       ),
 
-      DELETE: defineHandler({}, async ({ request, session }) => {
-        const body = await request.json().catch(() => null);
-        const parsed = unsubscribeSchema.safeParse(body);
-        if (!parsed.success) {
-          return Response.json({ error: 'Invalid input' }, { status: 400 });
-        }
-
-        // Scoped to the caller — one user can't remove another's subscription.
+      DELETE: defineHandler({ body: unsubscribeSchema }, async ({ session, body }) => {
         await prisma.pushSubscription.deleteMany({
-          where: { endpoint: parsed.data.endpoint, userId: session.user.id },
+          where: { endpoint: body.endpoint, userId: session.user.id },
         });
 
         return Response.json({ success: true });

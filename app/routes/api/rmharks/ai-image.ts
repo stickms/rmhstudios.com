@@ -19,7 +19,7 @@ const bodySchema = z.object({ draft: z.string().max(1000).optional() });
 export const Route = createFileRoute('/api/rmharks/ai-image')({
   server: {
     handlers: {
-      POST: defineHandler({}, async ({ request, session }) => {
+      POST: defineHandler({ body: bodySchema }, async ({ request, session, body }) => {
         if (!isImageGenConfigured()) {
           return Response.json(
             { error: 'AI images are not available right now.' },
@@ -49,13 +49,8 @@ export const Route = createFileRoute('/api/rmharks/ai-image')({
           );
         }
 
-        const parsed = bodySchema.safeParse(await request.json().catch(() => null));
-        if (!parsed.success) {
-          return Response.json({ error: 'Invalid request' }, { status: 400 });
-        }
-
         const url = await generatePostImage({
-          text: parsed.data.draft ?? '',
+          text: body.draft ?? '',
           userId: session.user.id,
         });
         if (!url) {

@@ -20,13 +20,10 @@ export const Route = createFileRoute('/api/themes/')({
         return Response.json({ themes: await listMyThemes(session.user.id) });
       }),
       POST: defineHandler(
-        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'themes' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = createSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
+        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'themes' }, body: createSchema },
+        async ({ session, body }) => {
           try {
-            const id = await createTheme(session.user.id, parsed.data.name, parsed.data.tokens);
+            const id = await createTheme(session.user.id, body.name, body.tokens);
             return Response.json({ id });
           } catch (e) {
             if (e instanceof ThemeError)

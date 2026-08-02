@@ -25,14 +25,10 @@ export const Route = createFileRoute('/api/awards/')({
       }),
 
       POST: defineHandler(
-        { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'awards' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = giveAwardSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
+        { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'awards' }, body: giveAwardSchema },
+        async ({ session, body }) => {
           try {
-            const result = await giveAward(session.user.id, parsed.data);
+            const result = await giveAward(session.user.id, body);
             return Response.json({ ok: true, balance: result.balance });
           } catch (e) {
             if (e instanceof AwardError) {

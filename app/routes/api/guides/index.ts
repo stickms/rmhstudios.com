@@ -8,13 +8,13 @@ export const Route = createFileRoute('/api/guides/')({
   server: {
     handlers: {
       POST: defineHandler(
-        { rateLimit: { limit: 10, windowMs: 3_600_000, prefix: 'guides' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = guideCreateSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
+        {
+          rateLimit: { limit: 10, windowMs: 3_600_000, prefix: 'guides' },
+          body: guideCreateSchema,
+        },
+        async ({ session, body }) => {
           try {
-            const id = await createGuide(session.user.id, parsed.data);
+            const id = await createGuide(session.user.id, body);
             return Response.json({ id });
           } catch (e) {
             if (e instanceof GameMetaError)

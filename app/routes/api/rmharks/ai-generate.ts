@@ -76,7 +76,7 @@ async function buildCommentChain(parentId: string): Promise<string[]> {
 export const Route = createFileRoute('/api/rmharks/ai-generate')({
   server: {
     handlers: {
-      POST: defineHandler({}, async ({ request, session }) => {
+      POST: defineHandler({ body: bodySchema }, async ({ request, session, body }) => {
         if (!isRmharkAIConfigured()) {
           return Response.json(
             { error: 'AI drafting is not available right now.' },
@@ -98,11 +98,7 @@ export const Route = createFileRoute('/api/rmharks/ai-generate')({
           );
         }
 
-        const parsed = bodySchema.safeParse(await request.json().catch(() => null));
-        if (!parsed.success) {
-          return Response.json({ error: 'Invalid request' }, { status: 400 });
-        }
-        const data = parsed.data;
+        const data = body;
 
         let content: string;
         if (data.mode === 'post') {

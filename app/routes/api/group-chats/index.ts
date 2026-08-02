@@ -24,48 +24,47 @@ export const Route = createFileRoute('/api/group-chats/')({
         return Response.json(await listGroupChats(session.user.id));
       }),
 
-      POST: defineHandler({}, async ({ request, session }) => {
-        const userId = session.user.id;
+      POST: defineHandler(
+        { body: createSchema, allowEmptyBody: true, verboseValidationErrors: true },
+        async ({ request, session, body }) => {
+          const userId = session.user.id;
 
-        const ip = getClientIp(request);
-        const { allowed } = rateLimit(ip, { limit: 15, windowMs: 60_000, prefix: 'group-create' });
-        if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
+          const ip = getClientIp(request);
+          const { allowed } = rateLimit(ip, {
+            limit: 15,
+            windowMs: 60_000,
+            prefix: 'group-create',
+          });
+          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
-        const body = await request.json().catch(() => ({}));
-        const parsed = createSchema.safeParse(body);
-        if (!parsed.success)
-          return Response.json(
-            { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-            { status: 400 },
-          );
+          const count = await prisma.groupChatMember.count({ where: { userId } });
+          if (count >= MAX_GROUPS)
+            return Response.json({ error: 'You are in too many groups' }, { status: 400 });
 
-        const count = await prisma.groupChatMember.count({ where: { userId } });
-        if (count >= MAX_GROUPS)
-          return Response.json({ error: 'You are in too many groups' }, { status: 400 });
+          // Resolve members (by id or handle), excluding the creator (added below).
+          const users = await prisma.user.findMany({
+            where: { OR: body.members.flatMap((m) => [{ id: m }, { handle: m }]) },
+            select: { id: true },
+          });
+          const memberIds = new Set(users.map((u) => u.id));
+          memberIds.delete(userId);
+          if (memberIds.size === 0)
+            return Response.json({ error: 'Add at least one other member' }, { status: 400 });
 
-        // Resolve members (by id or handle), excluding the creator (added below).
-        const users = await prisma.user.findMany({
-          where: { OR: parsed.data.members.flatMap((m) => [{ id: m }, { handle: m }]) },
-          select: { id: true },
-        });
-        const memberIds = new Set(users.map((u) => u.id));
-        memberIds.delete(userId);
-        if (memberIds.size === 0)
-          return Response.json({ error: 'Add at least one other member' }, { status: 400 });
-
-        const group = await prisma.groupChat.create({
-          data: {
-            name: parsed.data.name.trim(),
-            ownerId: userId,
-            members: {
-              create: [{ userId }, ...[...memberIds].map((id) => ({ userId: id }))],
+          const group = await prisma.groupChat.create({
+            data: {
+              name: body.name.trim(),
+              ownerId: userId,
+              members: {
+                create: [{ userId }, ...[...memberIds].map((id) => ({ userId: id }))],
+              },
             },
-          },
-          select: { id: true },
-        });
+            select: { id: true },
+          });
 
-        return Response.json({ success: true, id: group.id }, { status: 201 });
-      }),
+          return Response.json({ success: true, id: group.id }, { status: 201 });
+        },
+      ),
     },
   },
 });

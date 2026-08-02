@@ -23,13 +23,10 @@ export const Route = createFileRoute('/api/themes/$id')({
         return Response.json(theme);
       }),
       PUT: defineHandler(
-        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'themes' } },
-        async ({ request, params, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = updateSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
+        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'themes' }, body: updateSchema },
+        async ({ params, session, body }) => {
           try {
-            await updateTheme(session.user.id, params.id, parsed.data);
+            await updateTheme(session.user.id, params.id, body);
           } catch (e) {
             if (e instanceof ThemeError) {
               const status =

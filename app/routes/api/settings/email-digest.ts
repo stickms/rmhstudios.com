@@ -17,20 +17,20 @@ export const Route = createFileRoute('/api/settings/email-digest')({
   server: {
     handlers: {
       POST: defineHandler(
-        { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'email-digest-toggle' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => ({}));
-          const parsed = schema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
+        {
+          rateLimit: { limit: 20, windowMs: 60_000, prefix: 'email-digest-toggle' },
+          body: schema,
+          allowEmptyBody: true,
+        },
+        async ({ session, body }) => {
           const userId = session.user.id;
           await prisma.notificationPreference.upsert({
             where: { userId },
-            create: { userId, emailDigest: parsed.data.enabled },
-            update: { emailDigest: parsed.data.enabled },
+            create: { userId, emailDigest: body.enabled },
+            update: { emailDigest: body.enabled },
           });
 
-          return Response.json({ ok: true, enabled: parsed.data.enabled });
+          return Response.json({ ok: true, enabled: body.enabled });
         },
       ),
     },

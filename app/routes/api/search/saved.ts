@@ -14,19 +14,11 @@ export const Route = createFileRoute('/api/search/saved')({
       GET: defineHandler({}, async ({ session }) => {
         return Response.json({ saved: await listSaved(session.user.id) });
       }),
-      POST: defineHandler({}, async ({ request, session }) => {
+      POST: defineHandler({ body: savedSearchCreateSchema }, async ({ request, session, body }) => {
         const limited = withRateLimit(request, 'write', { prefix: 'saved-search' });
         if (limited) return limited;
-        const body = await request.json().catch(() => null);
-        const parsed = savedSearchCreateSchema.safeParse(body);
-        if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
         try {
-          const saved = await createSaved(
-            session.user.id,
-            parsed.data.query,
-            parsed.data.types,
-            parsed.data.alerts,
-          );
+          const saved = await createSaved(session.user.id, body.query, body.types, body.alerts);
           return Response.json({ saved });
         } catch (e) {
           if (e instanceof SavedSearchError)

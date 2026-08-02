@@ -17,13 +17,13 @@ export const Route = createFileRoute('/api/playlists/$id/items/')({
   server: {
     handlers: {
       POST: defineHandler(
-        { rateLimit: { limit: 60, windowMs: 60_000, prefix: 'playlist-add' } },
-        async ({ request, params, session }) => {
-          const body = await request.json().catch(() => ({}));
-          const parsed = itemSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-          const result = await addItem(params.id, session.user.id, parsed.data);
+        {
+          rateLimit: { limit: 60, windowMs: 60_000, prefix: 'playlist-add' },
+          body: itemSchema,
+          allowEmptyBody: true,
+        },
+        async ({ params, session, body }) => {
+          const result = await addItem(params.id, session.user.id, body);
           if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
           return Response.json({ success: true, duplicate: result.duplicate });
         },

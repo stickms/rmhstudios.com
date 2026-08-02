@@ -18,20 +18,16 @@ export const Route = createFileRoute('/api/circle')({
       }),
 
       PUT: defineHandler(
-        { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'circle' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = putSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
+        { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'circle' }, body: putSchema },
+        async ({ session, body }) => {
           try {
-            await setCircle(session.user.id, parsed.data.userIds);
+            await setCircle(session.user.id, body.userIds);
           } catch (e) {
             if (e instanceof CircleError)
               return Response.json({ error: e.message }, { status: 400 });
             throw e;
           }
-          return Response.json({ ok: true, count: parsed.data.userIds.length });
+          return Response.json({ ok: true, count: body.userIds.length });
         },
       ),
     },

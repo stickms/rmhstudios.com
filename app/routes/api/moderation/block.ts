@@ -24,14 +24,14 @@ export const Route = createFileRoute('/api/moderation/block')({
         return Response.json({ blocked: blocks.map((b) => b.blockedId) });
       }),
       POST: defineHandler(
-        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'moderation-block' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => ({}));
-          const parsed = blockSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
+        {
+          rateLimit: { limit: 30, windowMs: 60_000, prefix: 'moderation-block' },
+          body: blockSchema,
+          allowEmptyBody: true,
+        },
+        async ({ session, body }) => {
           const blockerId = session.user.id;
-          const blockedId = parsed.data.targetUserId;
+          const blockedId = body.targetUserId;
           if (blockerId === blockedId) {
             return Response.json({ error: 'You cannot block yourself' }, { status: 400 });
           }

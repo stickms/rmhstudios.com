@@ -30,16 +30,14 @@ export const Route = createFileRoute('/api/assistant')({
             prefix: 'assistant',
             message: 'Slow down a moment',
           },
+          body: schema,
+          allowEmptyBody: true,
         },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => ({}));
-          const parsed = schema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
+        async ({ session, body }) => {
           const result = await answerQuestion({
             userId: session.user.id,
-            question: parsed.data.question.trim(),
-            history: parsed.data.history,
+            question: body.question.trim(),
+            history: body.history,
           });
 
           return Response.json(result);

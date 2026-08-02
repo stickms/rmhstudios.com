@@ -58,16 +58,8 @@ export const Route = createFileRoute('/api/preferences/appearance')({
       }),
 
       PUT: defineHandler(
-        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'appearance-prefs' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = schema.safeParse(body);
-          if (!parsed.success) {
-            return Response.json({ error: 'Invalid input' }, { status: 400 });
-          }
-
-          // Undefined fields are omitted by Prisma (left unchanged); explicit null
-          // clears the column back to the default.
+        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'appearance-prefs' }, body: schema },
+        async ({ session, body }) => {
           const {
             style,
             accent,
@@ -78,10 +70,10 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             reduceMotion,
             glassLevel,
             colorVision,
-          } = parsed.data;
+          } = body;
           // Custom accent is normalized/nudged through the contrast guard so the
           // stored value is guaranteed to carry a legible label (AA).
-          let customAccent = parsed.data.customAccent;
+          let customAccent = body.customAccent;
           if (customAccent) customAccent = ensureReadableAccent(customAccent).hex;
 
           const comfort = {

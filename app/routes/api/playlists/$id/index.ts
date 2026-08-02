@@ -20,13 +20,13 @@ export const Route = createFileRoute('/api/playlists/$id/')({
       }),
 
       PATCH: defineHandler(
-        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'playlist-rename' } },
-        async ({ request, params, session }) => {
-          const body = await request.json().catch(() => ({}));
-          const parsed = renameSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-          const ok = await renamePlaylist(params.id, session.user.id, parsed.data.name);
+        {
+          rateLimit: { limit: 30, windowMs: 60_000, prefix: 'playlist-rename' },
+          body: renameSchema,
+          allowEmptyBody: true,
+        },
+        async ({ params, session, body }) => {
+          const ok = await renamePlaylist(params.id, session.user.id, body.name);
           if (!ok) return Response.json({ error: 'Not found' }, { status: 404 });
           return Response.json({ success: true });
         },

@@ -15,14 +15,13 @@ export const Route = createFileRoute('/api/saves/folders')({
       }),
 
       POST: defineHandler(
-        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'saves-folder' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = folderCreateSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
+        {
+          rateLimit: { limit: 30, windowMs: 60_000, prefix: 'saves-folder' },
+          body: folderCreateSchema,
+        },
+        async ({ session, body }) => {
           try {
-            const folder = await createFolder(session.user.id, parsed.data.name);
+            const folder = await createFolder(session.user.id, body.name);
             return Response.json({ folder });
           } catch (e) {
             if (e instanceof Error && e.message === 'folder-limit') {

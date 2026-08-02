@@ -22,63 +22,62 @@ import {
 export const Route = createFileRoute('/api/rmhcalculator/graph')({
   server: {
     handlers: {
-      POST: defineHandler({ auth: 'none' }, async ({ request }) => {
-        if (!isCalculatorConfigured())
-          return Response.json(
-            { error: 'The calculator is unavailable right now.' },
-            { status: 503 },
-          );
+      POST: defineHandler(
+        { auth: 'none', body: graphRequestSchema, allowEmptyBody: true },
+        async ({ request, body }) => {
+          if (!isCalculatorConfigured())
+            return Response.json(
+              { error: 'The calculator is unavailable right now.' },
+              { status: 503 },
+            );
 
-        const session = await auth.api.getSession({ headers: request.headers });
-        if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+          const session = await auth.api.getSession({ headers: request.headers });
+          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-        // Graphing is heavier per call — a slightly tighter bucket than compute.
-        const limited = withRateLimit(request, 'ai', {
-          scope: session.user.id,
-          prefix: 'rmhcalc-graph',
-          limit: 12,
-        });
-        if (limited) return limited;
+          // Graphing is heavier per call — a slightly tighter bucket than compute.
+          const limited = withRateLimit(request, 'ai', {
+            scope: session.user.id,
+            prefix: 'rmhcalc-graph',
+            limit: 12,
+          });
+          if (limited) return limited;
 
-        const body = await request.json().catch(() => ({}));
-        const parsed = graphRequestSchema.safeParse(body);
-        if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-        const encoder = new TextEncoder();
-        const stream = new ReadableStream({
-          async start(controller) {
-            const send = (data: unknown) =>
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
-            try {
-              const gen = streamGraph(parsed.data);
-              let step = await gen.next();
-              while (!step.done) {
-                send({ type: 'thinking', text: step.value.text });
-                step = await gen.next();
+          const encoder = new TextEncoder();
+          const stream = new ReadableStream({
+            async start(controller) {
+              const send = (data: unknown) =>
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+              try {
+                const gen = streamGraph(body);
+                let step = await gen.next();
+                while (!step.done) {
+                  send({ type: 'thinking', text: step.value.text });
+                  step = await gen.next();
+                }
+                send({ type: 'graph', data: step.value });
+                send({ type: 'done' });
+              } catch (err) {
+                const message =
+                  err instanceof CalcEngineError
+                    ? err.message
+                    : 'The graph failed. Please try again.';
+                send({ type: 'error', message });
+              } finally {
+                controller.close();
               }
-              send({ type: 'graph', data: step.value });
-              send({ type: 'done' });
-            } catch (err) {
-              const message =
-                err instanceof CalcEngineError
-                  ? err.message
-                  : 'The graph failed. Please try again.';
-              send({ type: 'error', message });
-            } finally {
-              controller.close();
-            }
-          },
-        });
+            },
+          });
 
-        return new Response(stream, {
-          headers: {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache, no-transform',
-            Connection: 'keep-alive',
-            'X-Accel-Buffering': 'no',
-          },
-        });
-      }),
+          return new Response(stream, {
+            headers: {
+              'Content-Type': 'text/event-stream',
+              'Cache-Control': 'no-cache, no-transform',
+              Connection: 'keep-alive',
+              'X-Accel-Buffering': 'no',
+            },
+          });
+        },
+      ),
     },
   },
 });

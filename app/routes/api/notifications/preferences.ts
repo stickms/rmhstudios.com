@@ -37,16 +37,11 @@ export const Route = createFileRoute('/api/notifications/preferences')({
         return Response.json({ likes, comments, follows, mentions, reposts, system });
       }),
 
-      PUT: defineHandler({}, async ({ request, session }) => {
-        const body = await request.json().catch(() => null);
-        const parsed = prefsSchema.safeParse(body);
-        if (!parsed.success) {
-          return Response.json({ error: 'Invalid input' }, { status: 400 });
-        }
+      PUT: defineHandler({ body: prefsSchema }, async ({ session, body }) => {
         const prefs = await prisma.notificationPreference.upsert({
           where: { userId: session.user.id },
-          create: { userId: session.user.id, ...parsed.data },
-          update: parsed.data,
+          create: { userId: session.user.id, ...body },
+          update: body,
         });
         const { likes, comments, follows, mentions, reposts, system } = prefs;
         return Response.json({ likes, comments, follows, mentions, reposts, system });

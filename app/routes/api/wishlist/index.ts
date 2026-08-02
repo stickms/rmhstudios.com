@@ -16,25 +16,23 @@ export const Route = createFileRoute('/api/wishlist/')({
       }),
 
       POST: defineHandler(
-        { rateLimit: { limit: 60, windowMs: 60_000, prefix: 'wishlist' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = wishlistEntrySchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-          await addWish(session.user.id, parsed.data);
+        {
+          rateLimit: { limit: 60, windowMs: 60_000, prefix: 'wishlist' },
+          body: wishlistEntrySchema,
+        },
+        async ({ session, body }) => {
+          await addWish(session.user.id, body);
           return Response.json({ wished: true });
         },
       ),
 
       DELETE: defineHandler(
-        { rateLimit: { limit: 60, windowMs: 60_000, prefix: 'wishlist' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = wishlistEntrySchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-          await removeWish(session.user.id, parsed.data.entityType, parsed.data.entityId);
+        {
+          rateLimit: { limit: 60, windowMs: 60_000, prefix: 'wishlist' },
+          body: wishlistEntrySchema,
+        },
+        async ({ session, body }) => {
+          await removeWish(session.user.id, body.entityType, body.entityId);
           return Response.json({ wished: false });
         },
       ),

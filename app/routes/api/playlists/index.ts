@@ -23,17 +23,13 @@ export const Route = createFileRoute('/api/playlists/')({
       }),
 
       POST: defineHandler(
-        { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'playlist-create' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => ({}));
-          const parsed = createSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-          const result = await createPlaylist(
-            session.user.id,
-            parsed.data.name,
-            parsed.data.kind ?? 'music',
-          );
+        {
+          rateLimit: { limit: 20, windowMs: 60_000, prefix: 'playlist-create' },
+          body: createSchema,
+          allowEmptyBody: true,
+        },
+        async ({ session, body }) => {
+          const result = await createPlaylist(session.user.id, body.name, body.kind ?? 'music');
           if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
           return Response.json({ success: true, id: result.id }, { status: 201 });
         },

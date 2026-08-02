@@ -18,44 +18,38 @@ const MAX_PRODUCTS = 30;
 export const Route = createFileRoute('/api/storefront/products/')({
   server: {
     handlers: {
-      POST: defineHandler({}, async ({ request, session }) => {
-        const userId = session.user.id;
+      POST: defineHandler(
+        { body: schema, allowEmptyBody: true, verboseValidationErrors: true },
+        async ({ request, session, body }) => {
+          const userId = session.user.id;
 
-        const ip = getClientIp(request);
-        const { allowed } = rateLimit(ip, {
-          limit: 20,
-          windowMs: 60_000,
-          prefix: 'storefront-create',
-        });
-        if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
+          const ip = getClientIp(request);
+          const { allowed } = rateLimit(ip, {
+            limit: 20,
+            windowMs: 60_000,
+            prefix: 'storefront-create',
+          });
+          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
-        const body = await request.json().catch(() => ({}));
-        const parsed = schema.safeParse(body);
-        if (!parsed.success) {
-          return Response.json(
-            { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-            { status: 400 },
-          );
-        }
+          const count = await prisma.storefrontProduct.count({ where: { creatorId: userId } });
+          if (count >= MAX_PRODUCTS) {
+            return Response.json({ error: `At most ${MAX_PRODUCTS} products` }, { status: 400 });
+          }
 
-        const count = await prisma.storefrontProduct.count({ where: { creatorId: userId } });
-        if (count >= MAX_PRODUCTS) {
-          return Response.json({ error: `At most ${MAX_PRODUCTS} products` }, { status: 400 });
-        }
+          const product = await prisma.storefrontProduct.create({
+            data: {
+              creatorId: userId,
+              title: body.title.trim(),
+              description: body.description?.trim() || null,
+              price: body.price,
+              deliverable: body.deliverable?.trim() || null,
+            },
+          });
 
-        const product = await prisma.storefrontProduct.create({
-          data: {
-            creatorId: userId,
-            title: parsed.data.title.trim(),
-            description: parsed.data.description?.trim() || null,
-            price: parsed.data.price,
-            deliverable: parsed.data.deliverable?.trim() || null,
-          },
-        });
-
-        await grantAchievement(userId, 'creator.first_product').catch(() => {});
-        return Response.json(product, { status: 201 });
-      }),
+          await grantAchievement(userId, 'creator.first_product').catch(() => {});
+          return Response.json(product, { status: 201 });
+        },
+      ),
     },
   },
 });

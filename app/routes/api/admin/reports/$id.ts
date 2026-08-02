@@ -25,60 +25,57 @@ const STATUS_BY_ACTION = {
 export const Route = createFileRoute('/api/admin/reports/$id')({
   server: {
     handlers: {
-      POST: defineHandler({ auth: 'optional' }, async ({ request, params, session }) => {
-        if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-          return Response.json({ error: 'Forbidden' }, { status: 403 });
-        }
-
-        const body = await request.json().catch(() => ({}));
-        const parsed = actionSchema.safeParse(body);
-        if (!parsed.success) {
-          return Response.json({ error: 'Invalid input' }, { status: 400 });
-        }
-
-        const report = await prisma.contentReport.findUnique({ where: { id: params.id } });
-        if (!report) return Response.json({ error: 'Report not found' }, { status: 404 });
-
-        const newStatus = STATUS_BY_ACTION[parsed.data.action];
-        const terminal = newStatus === 'RESOLVED' || newStatus === 'DISMISSED';
-
-        // Optionally take the reported content down when resolving.
-        if (parsed.data.deleteContent && parsed.data.action === 'resolve') {
-          try {
-            if (report.entityType === 'rmhark') {
-              await prisma.rMHark.update({
-                where: { id: report.entityId },
-                data: { deletedAt: new Date(), deletedByAdmin: true },
-              });
-            } else if (report.entityType === 'comment') {
-              await prisma.rMHarkComment.update({
-                where: { id: report.entityId },
-                data: { deletedAt: new Date(), deletedByAdmin: true },
-              });
-            }
-          } catch (e) {
-            console.error('Report content takedown failed:', e);
+      POST: defineHandler(
+        { auth: 'optional', body: actionSchema, allowEmptyBody: true },
+        async ({ params, session, body }) => {
+          if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
+            return Response.json({ error: 'Forbidden' }, { status: 403 });
           }
-        }
 
-        await prisma.contentReport.update({
-          where: { id: params.id },
-          data: {
-            status: newStatus,
-            moderatorNote: parsed.data.note?.trim() || report.moderatorNote,
-            resolvedById: terminal ? session.user.id : report.resolvedById,
-            resolvedAt: terminal ? new Date() : report.resolvedAt,
-          },
-        });
+          const report = await prisma.contentReport.findUnique({ where: { id: params.id } });
+          if (!report) return Response.json({ error: 'Report not found' }, { status: 404 });
 
-        await logAdminAction(session.user.id, `report.${parsed.data.action}`, {
-          targetType: report.entityType,
-          targetId: report.entityId,
-          detail: parsed.data.deleteContent ? 'content removed' : undefined,
-        });
+          const newStatus = STATUS_BY_ACTION[body.action];
+          const terminal = newStatus === 'RESOLVED' || newStatus === 'DISMISSED';
 
-        return Response.json({ success: true, status: newStatus });
-      }),
+          // Optionally take the reported content down when resolving.
+          if (body.deleteContent && body.action === 'resolve') {
+            try {
+              if (report.entityType === 'rmhark') {
+                await prisma.rMHark.update({
+                  where: { id: report.entityId },
+                  data: { deletedAt: new Date(), deletedByAdmin: true },
+                });
+              } else if (report.entityType === 'comment') {
+                await prisma.rMHarkComment.update({
+                  where: { id: report.entityId },
+                  data: { deletedAt: new Date(), deletedByAdmin: true },
+                });
+              }
+            } catch (e) {
+              console.error('Report content takedown failed:', e);
+            }
+          }
+
+          await prisma.contentReport.update({
+            where: { id: params.id },
+            data: {
+              status: newStatus,
+              moderatorNote: body.note?.trim() || report.moderatorNote,
+              resolvedById: terminal ? session.user.id : report.resolvedById,
+              resolvedAt: terminal ? new Date() : report.resolvedAt,
+            },
+          });
+
+          await logAdminAction(session.user.id, `report.${body.action}`, {
+            targetType: report.entityType,
+            targetId: report.entityId,
+            detail: body.deleteContent ? 'content removed' : undefined,
+          });
+
+          return Response.json({ success: true, status: newStatus });
+        },
+      ),
     },
   },
 });

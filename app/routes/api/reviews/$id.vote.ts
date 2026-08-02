@@ -11,13 +11,13 @@ export const Route = createFileRoute('/api/reviews/$id/vote')({
   server: {
     handlers: {
       POST: defineHandler(
-        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'review-vote' } },
-        async ({ request, params, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = reviewVoteSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
+        {
+          rateLimit: { limit: 30, windowMs: 60_000, prefix: 'review-vote' },
+          body: reviewVoteSchema,
+        },
+        async ({ params, session, body }) => {
           try {
-            await voteReview(session.user.id, params.id, parsed.data.helpful);
+            await voteReview(session.user.id, params.id, body.helpful);
           } catch (e) {
             if (e instanceof GameMetaError) {
               return Response.json(

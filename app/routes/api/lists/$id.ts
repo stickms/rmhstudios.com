@@ -17,13 +17,10 @@ export const Route = createFileRoute('/api/lists/$id')({
         return Response.json(detail);
       }),
       PATCH: defineHandler(
-        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'lists' } },
-        async ({ request, params, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = listUpdateSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
+        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'lists' }, body: listUpdateSchema },
+        async ({ params, session, body }) => {
           try {
-            await updateList(session.user.id, params.id, parsed.data);
+            await updateList(session.user.id, params.id, body);
           } catch (e) {
             if (e instanceof ListError) {
               return Response.json(

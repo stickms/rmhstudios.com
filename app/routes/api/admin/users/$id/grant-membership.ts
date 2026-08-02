@@ -20,71 +20,70 @@ const schema = z.union([
 export const Route = createFileRoute('/api/admin/users/$id/grant-membership')({
   server: {
     handlers: {
-      POST: defineHandler({ auth: 'optional' }, async ({ request, params, session }) => {
-        if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-          return Response.json({ error: 'Forbidden' }, { status: 403 });
-        }
+      POST: defineHandler(
+        { auth: 'optional', body: schema, allowEmptyBody: true },
+        async ({ params, session, body }) => {
+          if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
+            return Response.json({ error: 'Forbidden' }, { status: 403 });
+          }
 
-        const target = await prisma.user.findUnique({
-          where: { id: params.id },
-          select: { id: true },
-        });
-        if (!target) return Response.json({ error: 'User not found' }, { status: 404 });
-
-        const body = await request.json().catch(() => ({}));
-        const parsed = schema.safeParse(body);
-        if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-        if ('revoke' in parsed.data) {
-          const { count } = await prisma.giftMembership.deleteMany({
-            where: { userId: params.id, expiresAt: { gt: new Date() } },
+          const target = await prisma.user.findUnique({
+            where: { id: params.id },
+            select: { id: true },
           });
+          if (!target) return Response.json({ error: 'User not found' }, { status: 404 });
+
+          if ('revoke' in body) {
+            const { count } = await prisma.giftMembership.deleteMany({
+              where: { userId: params.id, expiresAt: { gt: new Date() } },
+            });
+            invalidateUserTier(params.id);
+            await logAdminAction(session.user.id, 'membership.revoke', {
+              targetType: 'user',
+              targetId: params.id,
+              detail: `removed ${count} active grant(s)`,
+            });
+            return Response.json({ success: true, revoked: count });
+          }
+
+          const { tier, months } = body;
+          // Extend an existing active grant of the same tier, else start now.
+          const existing = await prisma.giftMembership.findFirst({
+            where: { userId: params.id, tier, expiresAt: { gt: new Date() } },
+            orderBy: { expiresAt: 'desc' },
+          });
+          const base = existing ? existing.expiresAt : new Date();
+          const expiresAt = new Date(base.getTime() + months * 30 * 24 * 60 * 60 * 1000);
+
+          if (existing) {
+            await prisma.giftMembership.update({
+              where: { id: existing.id },
+              data: { expiresAt, gifterId: session.user.id },
+            });
+          } else {
+            await prisma.giftMembership.create({
+              data: { userId: params.id, gifterId: session.user.id, tier, expiresAt },
+            });
+          }
+
           invalidateUserTier(params.id);
-          await logAdminAction(session.user.id, 'membership.revoke', {
+          await logAdminAction(session.user.id, 'membership.grant', {
             targetType: 'user',
             targetId: params.id,
-            detail: `removed ${count} active grant(s)`,
+            detail: `${tier} for ${months}mo`,
           });
-          return Response.json({ success: true, revoked: count });
-        }
+          await createNotification({
+            userId: params.id,
+            type: 'SYSTEM',
+            entityType: 'membership',
+            entityId: tier,
+            preview: `An admin granted you ${months} month(s) of ${tier === 'pro' ? 'Pro' : 'Starter'}!`,
+            link: '/pricing',
+          }).catch(() => {});
 
-        const { tier, months } = parsed.data;
-        // Extend an existing active grant of the same tier, else start now.
-        const existing = await prisma.giftMembership.findFirst({
-          where: { userId: params.id, tier, expiresAt: { gt: new Date() } },
-          orderBy: { expiresAt: 'desc' },
-        });
-        const base = existing ? existing.expiresAt : new Date();
-        const expiresAt = new Date(base.getTime() + months * 30 * 24 * 60 * 60 * 1000);
-
-        if (existing) {
-          await prisma.giftMembership.update({
-            where: { id: existing.id },
-            data: { expiresAt, gifterId: session.user.id },
-          });
-        } else {
-          await prisma.giftMembership.create({
-            data: { userId: params.id, gifterId: session.user.id, tier, expiresAt },
-          });
-        }
-
-        invalidateUserTier(params.id);
-        await logAdminAction(session.user.id, 'membership.grant', {
-          targetType: 'user',
-          targetId: params.id,
-          detail: `${tier} for ${months}mo`,
-        });
-        await createNotification({
-          userId: params.id,
-          type: 'SYSTEM',
-          entityType: 'membership',
-          entityId: tier,
-          preview: `An admin granted you ${months} month(s) of ${tier === 'pro' ? 'Pro' : 'Starter'}!`,
-          link: '/pricing',
-        }).catch(() => {});
-
-        return Response.json({ success: true, tier, expiresAt: expiresAt.toISOString() });
-      }),
+          return Response.json({ success: true, tier, expiresAt: expiresAt.toISOString() });
+        },
+      ),
     },
   },
 });
