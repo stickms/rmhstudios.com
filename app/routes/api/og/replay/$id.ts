@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { createHash } from 'node:crypto';
 import { getReplay } from '@/lib/replays.server';
-import { renderReplayOgImage } from '@/lib/og/replay-image.server';
+import { renderPageCard } from '@/lib/og/page-card.server';
 import { REPLAY_GAME_TITLES, lightsOutShapeLabel } from '@/lib/game/replay';
 
 /** Best-effort subtitle from the game-specific payload. */
@@ -45,12 +45,24 @@ export const Route = createFileRoute('/api/og/replay/$id')({
           .digest('hex')
           .slice(0, 16);
 
-        const png = await renderReplayOgImage({
-          cacheKey: `${replay.id}:${hash}`,
-          gameTitle,
-          score: replay.score,
-          authorName: replay.author.name ?? 'Someone',
+        const png = await renderPageCard({
+          cacheKey: `replay:${replay.id}:${hash}`,
+          eyebrow: 'Replay',
+          title: gameTitle,
           subtitle,
+          path: `/replays/${replay.id}`,
+          byline: {
+            name: replay.author.name ?? 'Someone',
+            handle: replay.author.handle,
+            image: replay.author.image,
+          },
+          stats:
+            replay.score != null
+              ? [{ value: replay.score.toLocaleString('en-US'), label: 'score', lead: true }]
+              : [],
+          // Replays are immutable; the content hash is in the key, so the
+          // rendered card can live as long as the process does.
+          ttlMs: 24 * 60 * 60 * 1000,
         });
 
         return new Response(new Uint8Array(png), {

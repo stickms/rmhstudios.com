@@ -112,7 +112,12 @@ status 7008 · assets 7007. Env: see `.env.example`; minimum is
    into `locales/en/` without that entry is never loaded, and the UI silently
    falls back to its `defaultValue`s.
 6. **SEO:** per-route `head()`; `buildMeta`/`buildCanonical` from `@/lib/seo`;
-   JSON-LD only via `jsonLdScript()` + builders from `@/lib/schema`.
+   JSON-LD only via `jsonLdScript()` + builders from `@/lib/schema`. `buildMeta`
+   owns the whole Open Graph block — absolute `og:image`, declared dimensions,
+   the right `twitter:card` for the image size, and the section-card fallback —
+   so don't hand-roll `og:*` tags in a route. Point at a dynamic card with
+   `ogCardPath(kind, id)`; cards are rendered by `lib/og/` and documented in
+   [`docs/open-graph.md`](docs/open-graph.md).
 7. **Accessibility:** Radix/native primitives, focus-visible rings are
    global, skip link exists, respect `useReducedMotion`. Test `light` and
    `high-contrast` themes.

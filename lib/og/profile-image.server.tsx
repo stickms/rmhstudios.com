@@ -1,45 +1,50 @@
 /**
- * Dynamic Open Graph card images for user profiles.
+ * Open Graph card for a user profile — 1200×630, satori → resvg → PNG.
  *
- * Renders a 1200×630 social card (avatar, name, handle, bio, follower/post
- * counts) via satori → resvg → PNG, so profile links unfurl with a branded
- * preview instead of a bare avatar. Fonts and rendered cards are cached
- * in-process. Kept self-contained (its own font/avatar helpers) so it doesn't
- * couple to the post-card renderer.
+ * The card is the profile: avatar, name, handle, bio, and the two figures the
+ * page leads with. Chrome comes from `chrome.server`, so this file only says
+ * what a profile is.
+ *
+ * Used by /api/og/profile/$id and referenced from both profile routes'
+ * `og:image` — links unfurl as the profile rather than as a bare avatar.
  */
 
 import React from 'react';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 import {
-  ACCENT,
-  BG,
+  INK,
   MUTED,
-  SURFACE,
-  TEXT,
+  SCALE,
   fetchAvatarDataUri,
   loadFonts,
   satoriFonts,
   stripEmoji,
   truncate as sharedTruncate,
 } from '@/lib/og/shared.server';
+import {
+  LANDSCAPE,
+  avatarDisc,
+  cardFrame,
+  displayTracking,
+  fitText,
+  frameMetrics,
+  pane,
+  statChips,
+  type Stat,
+} from '@/lib/og/chrome.server';
 
 /** This card strips emoji before truncating (satori renders them as tofu). */
 function truncate(s: string, n: number): string {
   return sharedTruncate(stripEmoji(s), n);
 }
 
-// Cool down after a font fetch failure instead of re-hitting Google every request.
-
-
-
-
 const pngCache = new Map<string, { png: Buffer; ts: number }>();
 const PNG_TTL = 10 * 60 * 1000;
 const PNG_MAX = 100;
 
-
-
+const PANE_PAD = 26 * SCALE;
+const AVATAR = 52 * SCALE;
 
 export interface ProfileOgData {
   id: string;
@@ -50,10 +55,6 @@ export interface ProfileOgData {
   followerCount: number;
   postCount: number;
 }
-
-// Inter (used by satori) has no emoji glyphs; strip them so they don't render
-// as "tofu" boxes in the card.
-
 
 function formatCount(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
@@ -73,104 +74,83 @@ export async function renderProfileOgImage(data: ProfileOgData): Promise<Buffer>
   await loadFonts();
 
   const avatar = await fetchAvatarDataUri(data.image);
-  const initial = (data.name || data.handle || 'R')[0]?.toUpperCase() ?? 'R';
-  const bio = truncate(data.bio || '', 150);
+  const name = truncate(data.name || data.handle || 'RMH Studios', 30);
+  const initial = (name || 'R')[0]?.toUpperCase() ?? 'R';
+  const bio = truncate(data.bio || '', 180);
 
-  const element = (
-    <div
-      style={{
-        width: 1200,
-        height: 630,
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: BG,
-        padding: 72,
-        fontFamily: 'Inter',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-        {avatar ? (
-          <img src={avatar} alt="" width={160} height={160} style={{ borderRadius: 80 }} />
-        ) : (
-          <div
+  const frame = frameMetrics(LANDSCAPE.width, LANDSCAPE.height);
+  const inner = frame.width - PANE_PAD * 2;
+  // The identity row takes the avatar's height; the bio gets what's left.
+  const bioBox = frame.height - PANE_PAD * 2 - AVATAR - 18 * SCALE;
+  const nameSize = fitText(name, {
+    width: inner - AVATAR - 20 * SCALE,
+    height: AVATAR * 0.62,
+    steps: [58, 48, 40, 34],
+    lineHeight: 1.1,
+  });
+  const bioSize = fitText(bio, { width: inner, height: bioBox, steps: [40, 34, 28, 24] });
+
+  const stats: Stat[] = [
+    { value: formatCount(data.followerCount ?? 0), label: 'followers', lead: true },
+    { value: formatCount(data.postCount ?? 0), label: 'posts' },
+  ];
+
+  const element = cardFrame({
+    ...LANDSCAPE,
+    eyebrow: 'Profile',
+    children: pane({
+      style: { flex: 1, padding: PANE_PAD },
+      children: [
+        <div key="identity" style={{ display: 'flex', alignItems: 'center', gap: 20 * SCALE }}>
+          {avatarDisc(avatar, initial, AVATAR)}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span
+              style={{
+                fontSize: nameSize,
+                fontWeight: 700,
+                letterSpacing: displayTracking(nameSize),
+                color: INK,
+              }}
+            >
+              {name}
+            </span>
+            {data.handle ? (
+              <span style={{ fontSize: 17 * SCALE, color: MUTED }}>@{data.handle}</span>
+            ) : null}
+          </div>
+        </div>,
+
+        <div
+          key="bio"
+          style={{ display: 'flex', flex: 1, alignItems: 'center', marginTop: 16 * SCALE }}
+        >
+          <span
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 160,
-              height: 160,
-              borderRadius: 80,
-              backgroundColor: SURFACE,
-              color: ACCENT,
-              fontSize: 72,
-              fontWeight: 700,
+              fontSize: bioSize,
+              lineHeight: 1.32,
+              letterSpacing: displayTracking(bioSize),
+              fontWeight: bio ? 500 : 400,
+              color: bio ? INK : MUTED,
             }}
           >
-            {initial}
-          </div>
-        )}
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontSize: 56, fontWeight: 700, color: TEXT }}>
-            {truncate(data.name, 24)}
+            {bio || 'View this profile on RMH Studios'}
           </span>
-          {data.handle && <span style={{ fontSize: 34, color: MUTED }}>@{data.handle}</span>}
-        </div>
-      </div>
-
-      <div
-        style={{
-          display: 'flex',
-          flex: 1,
-          marginTop: 36,
-          fontSize: 38,
-          lineHeight: 1.3,
-          color: bio ? TEXT : MUTED,
-          fontWeight: 400,
-        }}
-      >
-        {bio || 'View this profile on RMH Studios'}
-      </div>
-
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginTop: 'auto',
-        }}
-      >
-        <div style={{ display: 'flex', gap: 40, fontSize: 32, color: MUTED }}>
-          <span style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <span style={{ color: TEXT, fontWeight: 700 }}>{formatCount(data.followerCount)}</span>
-            <span>followers</span>
-          </span>
-          <span style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <span style={{ color: TEXT, fontWeight: 700 }}>{formatCount(data.postCount)}</span>
-            <span>posts</span>
-          </span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div
-            style={{
-              display: 'flex',
-              width: 28,
-              height: 28,
-              borderRadius: 8,
-              backgroundColor: ACCENT,
-            }}
-          />
-          <span style={{ fontSize: 30, fontWeight: 700, color: TEXT }}>RMH Studios</span>
-        </div>
-      </div>
-    </div>
-  );
+        </div>,
+      ],
+    }),
+    footerLeft: statChips(stats),
+    footerRight: data.handle ? (
+      <span style={{ fontSize: 13 * SCALE, fontWeight: 500, color: MUTED }}>
+        rmhstudios.com/u/{truncate(data.handle, 24)}
+      </span>
+    ) : null,
+  });
 
   const svg = await satori(element, {
-    width: 1200,
-    height: 630,
+    ...LANDSCAPE,
     fonts: satoriFonts(),
   });
-  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: 1200 } });
+  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: LANDSCAPE.width } });
   const png = Buffer.from(resvg.render().asPng());
 
   if (pngCache.size >= PNG_MAX) {

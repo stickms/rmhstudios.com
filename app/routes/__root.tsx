@@ -23,6 +23,12 @@ import { installGlobalErrorHandlers } from '@/lib/client-errors';
 import { initWebVitals } from '@/lib/rum';
 import { registerServiceWorker } from '@/lib/sw-register';
 import { organizationSchema, websiteSchema, jsonLdScript } from '@/lib/schema';
+import {
+  DEFAULT_OG_IMAGE,
+  OG_IMAGE_HEIGHT,
+  OG_IMAGE_WIDTH,
+  absoluteUrl,
+} from '@/lib/seo';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { APP_THEME_BG, THEME_BG, DEFAULT_STYLE } from '@/stores/themeStore';
 import { ACCENT_MAP } from '@/lib/appearance';
@@ -262,11 +268,19 @@ export const Route = createRootRoute({
             'A social-first home for original games, creative tools, music, learning, and the people making them.',
         },
         { property: 'og:type', content: 'website' },
-        { property: 'og:image', content: 'https://rmhstudios.com/og.png' },
-        { property: 'og:image:width', content: '1536' },
-        { property: 'og:image:height', content: '1024' },
+        // The site-wide fallback card. Shared with `buildMeta`'s default so a
+        // route that sets no image of its own unfurls the same way whichever
+        // head ends up winning.
+        { property: 'og:image', content: absoluteUrl(DEFAULT_OG_IMAGE) },
+        { property: 'og:image:width', content: String(OG_IMAGE_WIDTH) },
+        { property: 'og:image:height', content: String(OG_IMAGE_HEIGHT) },
+        {
+          property: 'og:image:alt',
+          content: 'The RMH Studios navigation globe, on the site’s glass canvas.',
+        },
+        { property: 'og:locale', content: 'en_US' },
         { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:image', content: 'https://rmhstudios.com/og.png' },
+        { name: 'twitter:image', content: absoluteUrl(DEFAULT_OG_IMAGE) },
       ],
       links: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },

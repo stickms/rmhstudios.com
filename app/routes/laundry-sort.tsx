@@ -15,7 +15,7 @@ import { lazy, Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
-import { buildCanonical, buildMeta } from '@/lib/seo';
+import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
 
 const LaundryGame = lazy(() =>
   import('@/components/laundry-sort/LaundryGame').then((m) => ({ default: m.LaundryGame })),
@@ -42,7 +42,10 @@ export const Route = createFileRoute('/laundry-sort')({
       description:
         'A soft-body cloth physics race. Grab real simulated garments out of the air and sort them by wash — solo against the clock, or against up to seven other people on the same seeded laundry.',
       path: '/laundry-sort',
-      image: '/images/games/laundry_sort.webp',
+      // The game's hub card, not its key art: same reasoning as `/games/$gameId`,
+      // and this route is that game's front door.
+      image: ogCardPath('game', 'laundry-sort'),
+      imageAlt: 'Laundry Sort on RMH Studios — a soft-body cloth physics race.',
     }),
     links: [buildCanonical('/laundry-sort')],
   }),

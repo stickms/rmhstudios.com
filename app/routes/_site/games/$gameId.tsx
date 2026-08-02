@@ -5,7 +5,7 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { GameHub } from '@/components/games/GameHub';
 import { auth } from '@/lib/auth';
 import { games } from '@/lib/games';
-import { buildMeta, buildCanonical } from '@/lib/seo';
+import { buildMeta, buildCanonical, ogCardPath } from '@/lib/seo';
 import { jsonLdScript, videoGameSchema, breadcrumbSchema } from '@/lib/schema';
 import { listReviews, getRatingAgg, listGuides } from '@/lib/games/meta.server';
 import type { ReviewView, RatingAgg, GuideSummary } from '@/lib/games/reviews';
@@ -66,7 +66,14 @@ export const Route = createFileRoute('/_site/games/$gameId')({
         : 'Game hub | RMH Studios',
       description: loaderData?.description ?? '',
       path: `/games/${params.gameId}`,
-      image: loaderData?.image ?? undefined,
+      // The hub's own card — title, tagline, rating, review and guide counts —
+      // rather than the game's key art, which told a recipient nothing about
+      // the page they were being sent to. The art is still what the JSON-LD
+      // below advertises, because that IS a picture of the game.
+      image: ogCardPath('game', params.gameId),
+      imageAlt: loaderData
+        ? `${loaderData.title} on RMH Studios — rating, reviews and guides.`
+        : undefined,
       type: 'article',
     }),
     links: [buildCanonical(`/games/${params.gameId}`)],

@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { GameBackLink } from '@/components/shared/GameBackLink';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
-import { buildCanonical, buildMeta } from '@/lib/seo';
+import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
 
 const IsleworksGame = lazy(() => import('@/components/isleworks/IsleworksGame'));
 
@@ -37,6 +37,8 @@ export const Route = createFileRoute('/isleworks')({
       description:
         'Build a pastel low-poly city on a floating island: lay roads, house residents, wire up power and water, and keep pollution, traffic and happiness in balance.',
       path: '/isleworks',
+      image: ogCardPath('game', 'isleworks'),
+      imageAlt: 'Isleworks on RMH Studios — an isometric island city builder.',
     }),
     links: [buildCanonical('/isleworks')],
   }),

@@ -155,6 +155,15 @@ export async function listGuides(gameId: string, viewerId: string | null): Promi
   });
 }
 
+/**
+ * How many published guides a game has. Split from `listGuides` because the OG
+ * card wants the figure and nothing else — pulling a hundred rows with their
+ * authors resolved, to call `.length` on them, is the expensive way to count.
+ */
+export async function countPublishedGuides(gameId: string): Promise<number> {
+  return prisma.gameGuide.count({ where: { gameId, published: true } });
+}
+
 export async function getGuide(id: string, viewerId: string | null) {
   const guide = await prisma.gameGuide.findUnique({
     where: { id },

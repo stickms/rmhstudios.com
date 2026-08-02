@@ -591,6 +591,9 @@ import { Route as ApiMarketListingsIndexRouteImport } from './routes/api/market/
 import { Route as ApiMessagesConversationIdReactRouteImport } from './routes/api/messages/$conversationId/react'
 import { Route as ApiMessagesConversationIdReadRouteImport } from './routes/api/messages/$conversationId/read'
 import { Route as ApiMessagesConversationIdTypingRouteImport } from './routes/api/messages/$conversationId/typing'
+import { Route as ApiOgBlogSlugRouteImport } from './routes/api/og/blog/$slug'
+import { Route as ApiOgGameGameIdRouteImport } from './routes/api/og/game/$gameId'
+import { Route as ApiOgJobJobIdRouteImport } from './routes/api/og/job/$jobId'
 import { Route as ApiOgMomentIdRouteImport } from './routes/api/og/moment/$id'
 import { Route as ApiOgPostIdRouteImport } from './routes/api/og/post/$id'
 import { Route as ApiOgProfileIdRouteImport } from './routes/api/og/profile/$id'
@@ -3702,6 +3705,21 @@ const ApiMessagesConversationIdTypingRoute =
     path: '/typing',
     getParentRoute: () => ApiMessagesConversationIdRoute,
   } as any)
+const ApiOgBlogSlugRoute = ApiOgBlogSlugRouteImport.update({
+  id: '/api/og/blog/$slug',
+  path: '/api/og/blog/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOgGameGameIdRoute = ApiOgGameGameIdRouteImport.update({
+  id: '/api/og/game/$gameId',
+  path: '/api/og/game/$gameId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOgJobJobIdRoute = ApiOgJobJobIdRouteImport.update({
+  id: '/api/og/job/$jobId',
+  path: '/api/og/job/$jobId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOgMomentIdRoute = ApiOgMomentIdRouteImport.update({
   id: '/api/og/moment/$id',
   path: '/api/og/moment/$id',
@@ -5034,6 +5052,9 @@ export interface FileRoutesByFullPath {
   '/api/messages/$conversationId/react': typeof ApiMessagesConversationIdReactRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
+  '/api/og/blog/$slug': typeof ApiOgBlogSlugRoute
+  '/api/og/game/$gameId': typeof ApiOgGameGameIdRoute
+  '/api/og/job/$jobId': typeof ApiOgJobJobIdRoute
   '/api/og/moment/$id': typeof ApiOgMomentIdRoute
   '/api/og/post/$id': typeof ApiOgPostIdRouteWithChildren
   '/api/og/profile/$id': typeof ApiOgProfileIdRoute
@@ -5737,6 +5758,9 @@ export interface FileRoutesByTo {
   '/api/messages/$conversationId/react': typeof ApiMessagesConversationIdReactRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
+  '/api/og/blog/$slug': typeof ApiOgBlogSlugRoute
+  '/api/og/game/$gameId': typeof ApiOgGameGameIdRoute
+  '/api/og/job/$jobId': typeof ApiOgJobJobIdRoute
   '/api/og/moment/$id': typeof ApiOgMomentIdRoute
   '/api/og/post/$id': typeof ApiOgPostIdRouteWithChildren
   '/api/og/profile/$id': typeof ApiOgProfileIdRoute
@@ -6466,6 +6490,9 @@ export interface FileRoutesById {
   '/api/messages/$conversationId/react': typeof ApiMessagesConversationIdReactRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
+  '/api/og/blog/$slug': typeof ApiOgBlogSlugRoute
+  '/api/og/game/$gameId': typeof ApiOgGameGameIdRoute
+  '/api/og/job/$jobId': typeof ApiOgJobJobIdRoute
   '/api/og/moment/$id': typeof ApiOgMomentIdRoute
   '/api/og/post/$id': typeof ApiOgPostIdRouteWithChildren
   '/api/og/profile/$id': typeof ApiOgProfileIdRoute
@@ -7195,6 +7222,9 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/react'
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
+    | '/api/og/blog/$slug'
+    | '/api/og/game/$gameId'
+    | '/api/og/job/$jobId'
     | '/api/og/moment/$id'
     | '/api/og/post/$id'
     | '/api/og/profile/$id'
@@ -7898,6 +7928,9 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/react'
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
+    | '/api/og/blog/$slug'
+    | '/api/og/game/$gameId'
+    | '/api/og/job/$jobId'
     | '/api/og/moment/$id'
     | '/api/og/post/$id'
     | '/api/og/profile/$id'
@@ -8626,6 +8659,9 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/react'
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
+    | '/api/og/blog/$slug'
+    | '/api/og/game/$gameId'
+    | '/api/og/job/$jobId'
     | '/api/og/moment/$id'
     | '/api/og/post/$id'
     | '/api/og/profile/$id'
@@ -9132,6 +9168,9 @@ export interface RootRouteChildren {
   ApiLibraryCollectionIdRoute: typeof ApiLibraryCollectionIdRouteWithChildren
   ApiLibraryCoverIdRoute: typeof ApiLibraryCoverIdRoute
   ApiLibraryFileIdRoute: typeof ApiLibraryFileIdRoute
+  ApiOgBlogSlugRoute: typeof ApiOgBlogSlugRoute
+  ApiOgGameGameIdRoute: typeof ApiOgGameGameIdRoute
+  ApiOgJobJobIdRoute: typeof ApiOgJobJobIdRoute
   ApiOgMomentIdRoute: typeof ApiOgMomentIdRoute
   ApiOgPostIdRoute: typeof ApiOgPostIdRouteWithChildren
   ApiOgProfileIdRoute: typeof ApiOgProfileIdRoute
@@ -13271,6 +13310,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMessagesConversationIdTypingRouteImport
       parentRoute: typeof ApiMessagesConversationIdRoute
     }
+    '/api/og/blog/$slug': {
+      id: '/api/og/blog/$slug'
+      path: '/api/og/blog/$slug'
+      fullPath: '/api/og/blog/$slug'
+      preLoaderRoute: typeof ApiOgBlogSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/og/game/$gameId': {
+      id: '/api/og/game/$gameId'
+      path: '/api/og/game/$gameId'
+      fullPath: '/api/og/game/$gameId'
+      preLoaderRoute: typeof ApiOgGameGameIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/og/job/$jobId': {
+      id: '/api/og/job/$jobId'
+      path: '/api/og/job/$jobId'
+      fullPath: '/api/og/job/$jobId'
+      preLoaderRoute: typeof ApiOgJobJobIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/og/moment/$id': {
       id: '/api/og/moment/$id'
       path: '/api/og/moment/$id'
@@ -16071,6 +16131,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLibraryCollectionIdRoute: ApiLibraryCollectionIdRouteWithChildren,
   ApiLibraryCoverIdRoute: ApiLibraryCoverIdRoute,
   ApiLibraryFileIdRoute: ApiLibraryFileIdRoute,
+  ApiOgBlogSlugRoute: ApiOgBlogSlugRoute,
+  ApiOgGameGameIdRoute: ApiOgGameGameIdRoute,
+  ApiOgJobJobIdRoute: ApiOgJobJobIdRoute,
   ApiOgMomentIdRoute: ApiOgMomentIdRoute,
   ApiOgPostIdRoute: ApiOgPostIdRouteWithChildren,
   ApiOgProfileIdRoute: ApiOgProfileIdRoute,

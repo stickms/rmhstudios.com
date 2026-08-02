@@ -28,6 +28,7 @@ export const Route = createFileRoute('/api/og/moment/$id')({
           subtitle: moment.payload.subtitle,
           user: moment.user,
           variant,
+          path: `/moments/${params.id}`,
         });
 
         return new Response(new Uint8Array(png), {

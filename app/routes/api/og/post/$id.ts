@@ -13,6 +13,9 @@ export const Route = createFileRoute('/api/og/post/$id')({
           select: {
             id: true,
             content: true,
+            gifUrl: true,
+            imageUrls: true,
+            isSensitive: true,
             deletedAt: true,
             audience: true,
             unlockPrice: true,
@@ -20,13 +23,21 @@ export const Route = createFileRoute('/api/og/post/$id')({
             commentCount: true,
             repostCount: true,
             user: { select: { name: true, handle: true, image: true } },
+            poll: { select: { question: true, _count: { select: { options: true } } } },
+            community: { select: { name: true } },
           },
         });
 
         // Only public, visible, free posts get a content card; otherwise a
         // generic branded card (no private/paid content leaks into previews).
+        // A content warning is treated the same way: whatever it was set on the
+        // post to hide, an unfurl is exactly the surface that would leak it.
         const hideContent =
-          !post || post.deletedAt || post.audience !== 'PUBLIC' || (post.unlockPrice ?? 0) > 0;
+          !post ||
+          post.deletedAt ||
+          post.audience !== 'PUBLIC' ||
+          (post.unlockPrice ?? 0) > 0 ||
+          post.isSensitive;
 
         const png = await renderPostOgImage({
           id: params.id,
@@ -37,6 +48,14 @@ export const Route = createFileRoute('/api/og/post/$id')({
           likeCount: post?.likeCount ?? 0,
           commentCount: post?.commentCount ?? 0,
           repostCount: post?.repostCount ?? 0,
+          // What the post carries, so the card says "2 photos" / "Poll · 4
+          // options" instead of looking like a bare one-liner. Suppressed with
+          // the text for anything that isn't public and free.
+          imageCount: hideContent ? 0 : (post?.imageUrls?.length ?? 0),
+          hasGif: hideContent ? false : Boolean(post?.gifUrl),
+          pollQuestion: hideContent ? null : (post?.poll?.question ?? null),
+          pollOptionCount: hideContent ? 0 : (post?.poll?._count.options ?? 0),
+          community: post?.community?.name ?? null,
         });
 
         return new Response(new Uint8Array(png), {

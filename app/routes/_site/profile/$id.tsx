@@ -12,6 +12,7 @@ import { getSidebarData } from '@/lib/sidebar-data';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getProfile } from '@/lib/profile.server';
 import { WIDE_WIDTH } from '@/lib/layout-width';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, ogCardPath, SITE_URL } from '@/lib/seo';
 
 const fetchProfileData = createServerFn({ method: 'GET' })
   .validator((id: string) => id)
@@ -45,8 +46,11 @@ const fetchProfileData = createServerFn({ method: 'GET' })
         title,
         description,
         ogType: 'profile',
-        ogUrl: `https://rmhstudios.com/u/${handle || id}`,
-        ogImage: profile.image || '',
+        ogUrl: `${SITE_URL}/u/${handle || id}`,
+        // The profile card, not the bare avatar. `/u/$userid` already used it;
+        // this route — the same page under a different URL — was still sharing a
+        // cropped 400px square, so the same profile unfurled two different ways.
+        ogImage: `${SITE_URL}${ogCardPath('profile', handle || id)}`,
       };
     }
 
@@ -65,9 +69,14 @@ export const Route = createFileRoute('/_site/profile/$id')({
       { property: 'og:site_name', content: 'RMH' },
       { property: 'og:url', content: loaderData?.meta.ogUrl ?? '' },
       ...(loaderData?.meta.ogImage
-        ? [{ property: 'og:image', content: loaderData.meta.ogImage }]
+        ? [
+            { property: 'og:image', content: loaderData.meta.ogImage },
+            { property: 'og:image:width', content: String(OG_IMAGE_WIDTH) },
+            { property: 'og:image:height', content: String(OG_IMAGE_HEIGHT) },
+            { property: 'og:image:alt', content: loaderData.meta.title },
+          ]
         : []),
-      { name: 'twitter:card', content: 'summary' },
+      { name: 'twitter:card', content: loaderData?.meta.ogImage ? 'summary_large_image' : 'summary' },
       { name: 'twitter:title', content: loaderData?.meta.title ?? '' },
       { name: 'twitter:description', content: loaderData?.meta.description ?? '' },
       ...(loaderData?.meta.ogImage
