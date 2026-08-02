@@ -19,7 +19,7 @@ import {
  searchShortcodes,
  replaceCompletedShortcode,
 } from'@/lib/emoji/shortcode-matcher';
-import { useLiquidPop } from'@/components/ui/liquid-pop';
+import { usePopPresence } from '@/hooks/usePopPresence';
 
 interface UserSuggestion {
  id: string;
@@ -91,7 +91,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  const [activeIndex, setActiveIndex] = useState(0);
  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
  const [loading, setLoading] = useState(false);
- // §15.6 liquid pop — the suggestion list buds from the caret anchor.
+ // The shared bloom (globals.css §7.1) — held mounted for its close.
  const popAnchorRef = useRef<HTMLSpanElement>(null);
  const popPanelRef = useRef<HTMLDivElement>(null);
 
@@ -218,11 +218,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
 
  const isOpen = trigger !== null && (loading || suggestions.length > 0);
  const query = trigger?.query ??'';
- const { underlay: popUnderlay } = useLiquidPop({
- triggerRef: popAnchorRef,
- panelRef: popPanelRef,
- open: isOpen && position !== null,
- });
+ const { present: popPresent, state: popState } = usePopPresence(isOpen && position !== null);
 
  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
  if (isOpen && suggestions.length > 0) {
@@ -293,7 +289,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  }}
  />
 
- {isOpen && position && (
+ {popPresent && position && (
  <span
  ref={popAnchorRef}
  aria-hidden
@@ -301,11 +297,12 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  style={{ top: position.top, left: Math.max(0, position.left) }}
  />
  )}
- {popUnderlay}
  {isOpen && position && (
  <div
  ref={popPanelRef}
- className="absolute z-50 w-64 max-h-64 overflow-y-auto glass-overlay py-1"
+ data-motion="pop"
+ data-state={popState}
+ className="absolute z-50 w-64 max-h-64 origin-top overflow-y-auto glass-overlay py-1"
  style={{ top: position.top, left: Math.max(0, position.left) }}
  // Keep focus in the textarea when clicking a row.
  onMouseDown={(e) => e.preventDefault()}

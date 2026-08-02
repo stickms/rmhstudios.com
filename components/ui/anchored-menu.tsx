@@ -39,7 +39,7 @@ import {
   type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { useLiquidPop } from '@/components/ui/liquid-pop';
+import { usePopPresence } from '@/hooks/usePopPresence';
 import {
   resolveAnchoredPlacement,
   type Placement,
@@ -57,12 +57,6 @@ const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : use
 const TRIGGER_GAP = 4;
 /** Gap kept between the panel and each viewport edge. */
 const EDGE_MARGIN = 12;
-/**
- * Stacking level for liquid-pop's goo underlay: one below `--z-menu` (40), so
- * the bud reads as being behind the glass it becomes. The hook takes a number,
- * hence the literal — keep the two in step.
- */
-const GOO_Z = 39;
 
 export interface AnchoredMenuProps {
   open: boolean;
@@ -139,14 +133,13 @@ export function AnchoredMenu({
     setPlacement((prev) => (samePlacement(prev, next) ? prev : next));
   }, [anchorRef, side, align]);
 
-  // Placement is resolved BEFORE liquid-pop is told the panel is open (below),
-  // so the pop's cached panel rect is the real one rather than the unplaced
-  // corner the panel occupies for its first, invisible render.
+  // Resolved in a LAYOUT effect, so the placement React renders with is the
+  // real one before anything paints. The last placement is deliberately NOT
+  // cleared on close: the panel stays mounted for its exit (below), and a
+  // placement reset would teleport it to the unplaced corner for the length of
+  // its own close. The next open re-measures here before paint anyway.
   useIsoLayoutEffect(() => {
-    if (!open) {
-      setPlacement(null);
-      return;
-    }
+    if (!open) return;
     measure();
   }, [open, measure]);
 
@@ -175,14 +168,10 @@ export function AnchoredMenu({
     };
   }, [open, measure]);
 
-  // §15.6 liquid pop — the panel buds out of its trigger. Held closed until the
-  // placement above lands so the bud animates toward the panel's real rect.
-  const { underlay } = useLiquidPop({
-    triggerRef: anchorRef,
-    panelRef,
-    open: open && placement !== null,
-    z: GOO_Z,
-  });
+  // The shared bloom (globals.css §7.1) plays on mount and on `data-state`, so
+  // all this needs is to stay mounted long enough for the close — and to say
+  // which corner it grew out of, which `placement.side` has already decided.
+  const { present, state } = usePopPresence(open);
 
   // Escape closes and hands focus back; an outside press closes. `pointerdown`
   // (not click) so the panel dismisses before the press lands on what is under
@@ -256,8 +245,7 @@ export function AnchoredMenu({
 
   return (
     <>
-      {underlay}
-      {open &&
+      {present &&
         typeof document !== 'undefined' &&
         createPortal(
           <div
@@ -269,6 +257,13 @@ export function AnchoredMenu({
             // the panel portals out of the shell — this is how one reaches it.
             data-slot="anchored-menu"
             data-side={placement?.side ?? side}
+            // Which corner the bloom unfurls from — read by the `--motion-origin`
+            // rules in anchored-menu.css. The side is whatever the collision
+            // check above settled on, so a menu that flipped to open upward also
+            // grows upward out of its trigger.
+            data-align={align}
+            data-motion="pop"
+            data-state={state}
             className={cn('anchored-menu glass-overlay py-1', className)}
             style={style}
           >

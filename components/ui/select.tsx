@@ -165,8 +165,15 @@ export interface SelectProps extends Omit<
 /** Per-tier classes. Same structure, two palettes. */
 const TIER_CLASSES = {
   site: {
+    // Type is the site's own body font at the same `text-sm` as `Input` and
+    // `Button`. It used to be `font-mono text-xs font-bold uppercase
+    // tracking-wider` — a fourth typeface on a form, in a size below the body
+    // scale, shouting in caps — which made a row of fields read as three
+    // different design systems and pushed any real value ("Bahasa Indonesia",
+    // an email address) into truncation far earlier than the box needed. The
+    // mono is for code; a select is a control you read a value out of.
     trigger:
-      'rounded-[var(--site-control-radius)] border border-site-border bg-site-surface text-site-text shadow-site-sm hover:border-site-text/40 font-mono text-xs font-bold uppercase tracking-wider focus-visible:border-site-accent focus-visible:ring-2 focus-visible:ring-site-accent',
+      'rounded-[var(--site-control-radius)] border border-site-border bg-site-surface text-site-text shadow-site-sm hover:border-site-text/40 text-sm focus-visible:border-site-accent focus-visible:ring-2 focus-visible:ring-site-accent',
     // `--site-radius`, NOT `--site-control-radius`. The trigger is a control and
     // takes the pill; the POPUP is a panel — a stack of rows — and a 9999px
     // radius on it does not read as "very rounded", it reads as a lozenge, with
@@ -174,7 +181,9 @@ const TIER_CLASSES = {
     // at each end. Same mistake one level down: the items were a pill inside a
     // pill. Panel takes the panel radius, rows take the small one.
     content: 'glass-overlay rounded-[var(--site-radius)] text-site-text',
-    item: 'rounded-[var(--site-radius-sm)] font-mono text-xs font-bold uppercase tracking-wider text-site-text data-[highlighted]:bg-site-surface-hover data-[state=checked]:text-site-accent',
+    // Rows match the trigger, so the value you pick looks like the value you
+    // then see sitting in the control.
+    item: 'rounded-[var(--site-radius-sm)] text-sm text-site-text data-[highlighted]:bg-site-surface-hover data-[state=checked]:text-site-accent',
     label: 'text-site-text-dim',
     scrollButton: 'text-site-text-dim',
     chevron: 'text-site-text-dim',

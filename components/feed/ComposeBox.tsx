@@ -1055,7 +1055,7 @@ export function ComposeBox({
           variants={modalContent}
           initial="initial"
           animate="animate"
-          className="relative w-full max-w-xs p-2 glass-overlay"
+          className="motion-cage relative w-full max-w-xs p-2 glass-overlay"
         >
  <div className="mb-1 flex items-center justify-between px-1 pt-1">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
@@ -1110,7 +1110,7 @@ export function ComposeBox({
           variants={modalContent}
           initial="initial"
           animate="animate"
-          className="relative w-full max-w-xs p-2 glass-overlay"
+          className="motion-cage relative w-full max-w-xs p-2 glass-overlay"
         >
  <div className="mb-1 flex items-center justify-between px-1 pt-1">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
@@ -1162,7 +1162,7 @@ export function ComposeBox({
           variants={modalContent}
           initial="initial"
           animate="animate"
-          className="relative w-full max-w-xs p-4 glass-overlay"
+          className="motion-cage relative w-full max-w-xs p-4 glass-overlay"
         >
  <div className="mb-2 flex items-center justify-between">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
@@ -1232,7 +1232,7 @@ export function ComposeBox({
           variants={modalContent}
           initial="initial"
           animate="animate"
-          className="relative w-full max-w-sm p-4 glass-overlay"
+          className="motion-cage relative w-full max-w-sm p-4 glass-overlay"
         >
  <div className="mb-3 flex items-center justify-between">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
@@ -1316,7 +1316,7 @@ export function ComposeBox({
           variants={modalContent}
           initial="initial"
           animate="animate"
-          className="relative w-full max-w-md p-4 glass-overlay"
+          className="motion-cage relative w-full max-w-md p-4 glass-overlay"
         >
  <div className="mb-2 flex items-center justify-between">
  <h3 className="text-sm font-semibold text-site-text">

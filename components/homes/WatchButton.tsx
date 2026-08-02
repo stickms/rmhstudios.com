@@ -108,7 +108,7 @@ export function WatchButton({ filters, center }: WatchButtonProps) {
           <div
             role="dialog"
             aria-modal="true"
-            className="relative z-10 w-full max-w-md rounded-t-site glass-overlay p-5 sm:rounded-site"
+            className="motion-cage relative z-10 w-full max-w-md rounded-t-site glass-overlay p-5 sm:rounded-site"
           >
             <div className="mb-3 flex items-center justify-between">
               <h3

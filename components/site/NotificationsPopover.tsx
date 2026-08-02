@@ -18,7 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useReservedRows } from '@/hooks/useReservedRows';
 import { NOTIFICATIONS_READ_EVENT } from '@/lib/useNotificationCount';
 import { timeAgoShort } from '@/lib/utils';
-import { useLiquidPop } from '@/components/ui/liquid-pop';
+import { usePopPresence } from '@/hooks/usePopPresence';
 
 /**
  * Rows the popover asks for — and what the loading skeleton reserves, which only
@@ -94,7 +94,7 @@ export function NotificationsPopover({
   const panelRef = useRef<HTMLDivElement>(null);
   // §15.6 liquid pop — the panel buds out of the bell trigger. z above the
   // portaled panel's z-[80] so the reabsorb reads over the page, not under it.
-  const { underlay } = useLiquidPop({ triggerRef: btnRef, panelRef, open, z: 79 });
+  const { present, state } = usePopPresence(open);
   // Reserve the height of the list that is coming. The popover used to open on a
   // centred spinner and then jump to ten rows the moment the fetch landed — the
   // bud animation was fine, the BOX moved out from under it.
@@ -205,17 +205,18 @@ export function NotificationsPopover({
         <span className={labelClass}>{label}</span>
       </button>
 
-      {underlay}
 
-      {open &&
+      {present &&
         typeof document !== 'undefined' &&
         createPortal(
           <div
             ref={panelRef}
+ data-motion="pop"
+ data-state={state}
             role="dialog"
             aria-label={label}
             style={{ position: 'fixed', left: pos.left, top: pos.top, width: PANEL_WIDTH }}
-            className="glass-overlay z-[80] overflow-hidden"
+            className="glass-overlay z-[80] origin-top-left overflow-hidden"
           >
             <div className="flex items-center justify-between border-b border-site-border px-3 py-2">
               <p className="text-sm font-bold text-site-text">{label}</p>

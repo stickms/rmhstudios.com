@@ -11,6 +11,7 @@
 'use client';
 
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { usePopPresence } from '@/hooks/usePopPresence';
 import { useTranslation } from 'react-i18next';
 import {
   Crown,
@@ -79,6 +80,9 @@ function sortMembers(members: ClientMemberInfo[]): ClientMemberInfo[] {
 function StatusSelector({ currentStatus }: { currentStatus: UserPresenceStatus }) {
   const { t } = useTranslation("c-rmhtube");
   const [open, setOpen] = useState(false);
+  // Held mounted for its close (globals.css §7.1); the backdrop below stays on
+  // the raw flag so a leaving menu stops swallowing presses.
+  const { present, state } = usePopPresence(open);
   const btnRef = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState({ top: 0, right: 0 });
 
@@ -114,12 +118,14 @@ function StatusSelector({ currentStatus }: { currentStatus: UserPresenceStatus }
         {currentStatus === 'watching' ? t("status-watching", { defaultValue: "Watching" }) : currentStatus.toUpperCase()}
       </button>
 
-      {open && (
+      {present && (
         <>
           {/* Invisible backdrop to close on outside click */}
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          {open && <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />}
           <div
-            className="fixed z-50 min-w-27.5 rounded-md border border-(--app-border) bg-(--app-surface) shadow-lg py-1"
+            data-motion="pop"
+            data-state={state}
+            className="fixed z-50 min-w-27.5 origin-top-right rounded-md border border-(--app-border) bg-(--app-surface) shadow-lg py-1"
             style={{ top: pos.top, right: pos.right }}
           >
             {STATUS_OPTIONS.map((opt) => (
