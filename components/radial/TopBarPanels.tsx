@@ -25,7 +25,16 @@ import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { QuickPanel, QuickPanelMoreIcon, QuickPanelNote } from './QuickPanel';
+import { QuickPanel, QuickPanelMoreIcon, QuickPanelNote, QuickPanelSkeleton } from './QuickPanel';
+import { useReservedRows } from '@/hooks/useReservedRows';
+
+/**
+ * Rows every list preview caps itself at — the notifications request asks for
+ * this many and the messages panel slices to it. It is also what the loading
+ * skeleton reserves on a first open, which only works because the two are the
+ * same number: a cap that drifted from the reservation would put the jump back.
+ */
+const PREVIEW_LIMIT = 6;
 
 interface PanelProps {
   open: boolean;
@@ -240,9 +249,17 @@ export function NotificationsPanel({ open, onClose, anchorRef }: PanelProps) {
   const { t } = useTranslation('feed');
   const { data, failed } = usePanelData<{ items: NotificationRow[] }>(
     open,
-    '/api/notifications?limit=6',
+    `/api/notifications?limit=${PREVIEW_LIMIT}`,
   );
   const items = data?.items ?? [];
+  // Reserve the shape of the list that is coming, so the panel animates to its
+  // real height instead of to the height of the word "Loading…" and then
+  // jumping. `PREVIEW_LIMIT` is the same cap the request above asks for.
+  const reserved = useReservedRows(
+    'quick-notifications',
+    data ? items.length : null,
+    PREVIEW_LIMIT,
+  );
 
   return (
     <QuickPanel
@@ -271,7 +288,7 @@ export function NotificationsPanel({ open, onClose, anchorRef }: PanelProps) {
           {t('panel-failed', { defaultValue: "Couldn't load that just now." })}
         </QuickPanelNote>
       ) : !data ? (
-        <QuickPanelNote>{t('loading', { defaultValue: 'Loading…' })}</QuickPanelNote>
+        <QuickPanelSkeleton rows={reserved} label={t('loading', { defaultValue: 'Loading…' })} />
       ) : items.length === 0 ? (
         <QuickPanelNote>
           {t('notifications-empty', { defaultValue: 'Nothing new right now.' })}
@@ -317,7 +334,9 @@ export function MessagesPanel({ open, onClose, anchorRef }: PanelProps) {
     open,
     '/api/messages',
   );
-  const items = data?.conversations?.slice(0, 6) ?? [];
+  const items = data?.conversations?.slice(0, PREVIEW_LIMIT) ?? [];
+  // As above: the panel opens at the size of the list it is about to show.
+  const reserved = useReservedRows('quick-messages', data ? items.length : null, PREVIEW_LIMIT);
 
   return (
     <QuickPanel
@@ -338,7 +357,7 @@ export function MessagesPanel({ open, onClose, anchorRef }: PanelProps) {
           {t('panel-failed', { defaultValue: "Couldn't load that just now." })}
         </QuickPanelNote>
       ) : !data ? (
-        <QuickPanelNote>{t('loading', { defaultValue: 'Loading…' })}</QuickPanelNote>
+        <QuickPanelSkeleton rows={reserved} label={t('loading', { defaultValue: 'Loading…' })} />
       ) : items.length === 0 ? (
         <QuickPanelNote>
           {t('messages-empty', { defaultValue: 'No conversations yet.' })}

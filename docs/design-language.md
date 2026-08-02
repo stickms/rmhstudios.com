@@ -1085,10 +1085,39 @@ gated off there too, via `html.app-route`).
   `origin-left` + `transform: scaleX(p)`, not an animated `width`; a column chart
   is `origin-bottom` + `scaleY`. See `components/onboarding/FirstWeekCard.tsx`,
   `components/feed/PollDisplay.tsx` and `components/feed/InsightsModal.tsx`.
+- **A menu that fetches on open must reserve the size it is about to be.** The
+  animation is never what is wrong when a panel opens and then jumps: the box
+  moved after the animation had committed to it. A one-line "Loading…" note is
+  108px and six notification rows are 353 — measured, in the top bar's panels —
+  so the open animated to the wrong height and corrected itself a moment later.
+  Waiting for the data is not the fix; that is a menu that does not respond to
+  being clicked. Predict the size instead, from two sources in order:
+
+  1. **What it was last time.** `hooks/useReservedRows.ts` remembers the row
+     count per panel key for the session. Exact from the second open, and it
+     self-corrects as an inbox fills or empties.
+  2. **The cap the panel already declares.** Every preview is bounded —
+     `?limit=6`, `.slice(0, 6)` — so the first open has a real number rather
+     than a guess. Keep the cap and the reservation as one constant; a cap that
+     drifts from the reservation puts the jump back.
+
+  Then render that many skeleton rows, built from the **real row's own class**
+  with `.skeleton-line` standing in for each line of text. `.skeleton-line` is
+  `1lh` — one line box of the element it sits inside — so a placeholder row is
+  exactly as tall as a loaded one by construction and stays that way if the type
+  scale is ever retuned. (`1em` is the fallback for an engine without `lh`, and
+  it is 11px short per row, which is the whole reason this is not a hardcoded
+  height.) Measured on the notifications panel: a 245px jump becomes 0.
+
+  The bars are `aria-hidden`; announce the state once via `role="status"` with
+  an `sr-only` label, because a screen reader needs "Loading…" and not eighteen
+  empty boxes.
 - `hooks/usePopPresence.ts` — keeps a hand-rolled menu mounted through its
   `data-motion="pop"` close, and supplies the `data-state` to play it with. See
   the close note above; pair it with `hooks/useMenuViewportFit.ts`, which takes
   the same `present` so the clamp survives the exit.
+- `hooks/useReservedRows.ts` — the row count a panel should reserve while it
+  fetches, so its open animation lands on the right height. See the note above.
 - `hooks/useReducedMotion.ts` — SSR-safe boolean for JS animations CSS can't
   reach; `prefersReducedMotion()` for imperative checks.
 - `hooks/useCelebration.ts` — confetti/fireworks; lazy-loads canvas-confetti,

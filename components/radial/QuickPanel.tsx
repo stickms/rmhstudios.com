@@ -12,6 +12,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowRight, type LucideIcon } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 import { usePopPresence } from '@/hooks/usePopPresence';
 
@@ -219,4 +220,48 @@ export function QuickPanelMoreIcon() {
 /** Uniform empty/loading line inside a quick panel. */
 export function QuickPanelNote({ children }: { children: ReactNode }) {
   return <p className="rad-panel__note">{children}</p>;
+}
+
+/**
+ * The loading state for a panel that fetches on open — and, more to the point,
+ * the SIZE of the one that is coming.
+ *
+ * A one-line "Loading…" note is 88px; six notification rows are 330. A panel
+ * that opened at the first and then jumped to the second animated perfectly and
+ * still looked broken, because the box moved after the animation had committed
+ * to it. Reserving the real shape up front is the fix, and it needs no delay:
+ * the row count comes from `useReservedRows` (what this panel showed last time,
+ * falling back to the cap it already declares in its own query).
+ *
+ * Each row is the REAL `.rad-panel__row` with `.skeleton-line`
+ * standing in for its two lines of text, so it is exactly as tall as the thing
+ * it is holding space for rather than approximately as tall. `rows={0}` — a
+ * remembered empty inbox — reserves the note instead, so that case is stable too.
+ *
+ * The bars are decorative; the state is announced once through `role="status"`,
+ * because a screen reader needs "Loading…" and not eighteen empty boxes.
+ */
+export function QuickPanelSkeleton({ rows, label }: { rows: number; label: string }) {
+  return (
+    <div role="status" aria-live="polite" data-slot="quick-panel-skeleton">
+      <span className="sr-only">{label}</span>
+      {rows <= 0 ? (
+        <p className="rad-panel__note" aria-hidden />
+      ) : (
+        Array.from({ length: rows }, (_, i) => (
+          <div key={i} className="rad-panel__row" aria-hidden>
+            <Skeleton className="size-7 shrink-0 rounded-full" />
+            <span className="rad-panel__row-main">
+              <strong>
+                <Skeleton className="skeleton-line w-1/2" />
+              </strong>
+              <small>
+                <Skeleton className="skeleton-line w-4/5" />
+              </small>
+            </span>
+          </div>
+        ))
+      )}
+    </div>
+  );
 }

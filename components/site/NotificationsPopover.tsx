@@ -14,10 +14,17 @@ import { Bell, CheckCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { NotificationBadge } from '@/components/ui/notification-badge';
-import { Spinner } from '@/components/ui/spinner';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useReservedRows } from '@/hooks/useReservedRows';
 import { NOTIFICATIONS_READ_EVENT } from '@/lib/useNotificationCount';
 import { timeAgoShort } from '@/lib/utils';
 import { useLiquidPop } from '@/components/ui/liquid-pop';
+
+/**
+ * Rows the popover asks for — and what the loading skeleton reserves, which only
+ * works because they are the same number (see `hooks/useReservedRows.ts`).
+ */
+const PREVIEW_LIMIT = 10;
 
 interface NotificationActor {
   id: string;
@@ -88,10 +95,14 @@ export function NotificationsPopover({
   // §15.6 liquid pop — the panel buds out of the bell trigger. z above the
   // portaled panel's z-[80] so the reabsorb reads over the page, not under it.
   const { underlay } = useLiquidPop({ triggerRef: btnRef, panelRef, open, z: 79 });
+  // Reserve the height of the list that is coming. The popover used to open on a
+  // centred spinner and then jump to ten rows the moment the fetch landed — the
+  // bud animation was fine, the BOX moved out from under it.
+  const reserved = useReservedRows('sidebar-notifications', items?.length ?? null, PREVIEW_LIMIT);
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/notifications?limit=10', { credentials: 'include' });
+      const res = await fetch(`/api/notifications?limit=${PREVIEW_LIMIT}`, { credentials: 'include' });
       if (!res.ok) return;
       const data = await res.json();
       setItems(data.items ?? []);
@@ -220,8 +231,24 @@ export function NotificationsPopover({
 
             <div className="max-h-[50dvh] overflow-y-auto overscroll-contain">
               {items === null ? (
-                <div className="flex justify-center py-8">
-                  <Spinner />
+                <div role="status" aria-live="polite">
+                  <span className="sr-only">{t('loading', { defaultValue: 'Loading…' })}</span>
+                  {Array.from({ length: Math.max(1, reserved) }, (_, i) => (
+                    <div key={i} aria-hidden className="flex w-full items-start gap-2.5 px-3 py-2.5">
+                      <Skeleton className="size-8 shrink-0 rounded-full" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm">
+                          <Skeleton className="skeleton-line w-4/5" />
+                        </span>
+                        <span className="mt-0.5 block text-xs">
+                          <Skeleton className="skeleton-line w-3/5" />
+                        </span>
+                        <span className="mt-0.5 block text-[11px]">
+                          <Skeleton className="skeleton-line w-10" />
+                        </span>
+                      </span>
+                    </div>
+                  ))}
                 </div>
               ) : items.length === 0 ? (
                 <p className="px-3 py-8 text-center text-sm text-site-text-muted">
