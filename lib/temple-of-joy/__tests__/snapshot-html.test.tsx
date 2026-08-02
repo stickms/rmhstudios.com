@@ -99,7 +99,16 @@ function deepGame(tab: TabId): Partial<GameState> {
     choir: { ...base.choir, unlocked: true, stalls: ['lucia', 'benedict', null], swaps: 4 },
     exchange: { ...base.exchange, unlocked: true, lifetimeProfit: 8e19 },
     hours: { ...base.hours, unlocked: true, mana: 164, maxMana: 240, said: 41 },
-    notices: [{ id: 1, icon: '🏆', title: 'Attentive', body: 'Catch 10 halos.', kind: 'trophy' }],
+    notices: [
+      {
+        id: 1,
+        at: Date.now(),
+        icon: '🏆',
+        title: 'Attentive',
+        body: 'Catch 10 halos.',
+        kind: 'trophy',
+      },
+    ],
   };
 }
 

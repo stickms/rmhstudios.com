@@ -1,15 +1,27 @@
 /**
  * Temple of Joy — the look.
  *
- * Alabaster and gold leaf. The brief is *minimal but not cold*: one warm
- * off-white ground, hairline rules instead of boxes, a single serif for
- * anything that is a number or a name, and gold used exactly where the game
- * wants your eye — the counter, the affordable row, the halo, the button that
- * matters. Nothing else is coloured. A page that is 95% paper makes the 5%
- * that is gold read as light rather than as decoration.
+ * Alabaster and gold leaf, and the room is **cosy**: warm off-white ground with
+ * the light pooling in the middle of it, soft round surfaces that sit on the
+ * page rather than being cut into it, a single serif for anything that is a
+ * number or a name, and gold used exactly where the game wants your eye — the
+ * counter, the affordable row, the halo, the button that matters. Nothing else
+ * is coloured. A page that is 95% paper makes the 5% that is gold read as light
+ * rather than as decoration.
+ *
+ * ## What changed, and what did not
+ *
+ * The **palette is untouched**: every colour token below is the one it has
+ * always been, and Vespers still flips the whole set. What changed is *shape
+ * and material* — bigger radii, cards instead of hairline-separated rows, a
+ * floating counter, a pill rail — and the centrepiece, which used to be an SVG
+ * temple and is now the **liquid globe** the rest of the site navigates with
+ * (`components/radial/LiquidGlobe.tsx`): a wireframe sphere suspended in glass,
+ * with every source you own orbiting it, drawn on one canvas by
+ * `TempleGlobes.tsx`. Buy more globes and the field makes room for them.
  *
  * Dawn is the default, because this is a game about being glad. Vespers is the
- * same building after sunset, and every token below flips.
+ * same room after sunset.
  *
  * Motion: every transition is short, eased out, and driven by transform and
  * opacity only — nothing that triggers layout sits on a hot path. The whole
@@ -59,15 +71,29 @@
   --toj-serif: 'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
   --toj-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-  /* Shape. Small radii; this is a building, not a bubble. */
-  --toj-radius: 10px;
-  --toj-radius-sm: 6px;
-  --toj-radius-lg: 18px;
+  /* Shape. Generous radii: the room is meant to feel sat-in, and a 6px corner
+     reads as a form field. Everything that holds content is soft; only the
+     hairlines that separate sections are still straight. */
+  --toj-radius: 16px;
+  --toj-radius-sm: 11px;
+  --toj-radius-lg: 26px;
+  --toj-radius-pill: 999px;
 
-  /* Depth, used sparingly. */
-  --toj-lift: 0 1px 2px rgb(36 31 22 / 0.04), 0 8px 24px rgb(36 31 22 / 0.06);
-  --toj-lift-sm: 0 1px 2px rgb(36 31 22 / 0.05);
+  /* Depth, used sparingly, and warm rather than grey — a neutral shadow on a
+     cream ground is the single fastest way to make paper look like plastic. */
+  --toj-lift: 0 1px 2px rgb(88 62 18 / 0.05), 0 10px 30px rgb(88 62 18 / 0.07);
+  --toj-lift-sm: 0 1px 2px rgb(88 62 18 / 0.06);
   --toj-halo: 0 0 0 1px rgb(var(--toj-gold-rgb) / 0.28), 0 0 28px rgb(var(--toj-gold-rgb) / 0.22);
+
+  /* The globes' wireframe, read by the canvas renderer in `TempleGlobes.tsx`.
+     Registered as `<color>` below so their COMPUTED value is a resolved colour
+     a canvas can take — an unregistered custom property would hand it the
+     literal `color-mix(…)` text, which `strokeStyle` silently ignores. */
+  --toj-cage-minor: color-mix(in srgb, var(--toj-gold-deep) 30%, transparent);
+  --toj-cage-parallel: color-mix(in srgb, var(--toj-ink-soft) 20%, transparent);
+  --toj-cage-major: color-mix(in srgb, var(--toj-gold-deep) 55%, transparent);
+  --toj-cage-crest: color-mix(in srgb, var(--toj-gold-bright) 85%, transparent);
+  --toj-cage-width: 1px;
 
   /* Motion. One ease, three durations — the whole vocabulary. */
   --toj-ease: cubic-bezier(0.22, 0.68, 0.28, 1);
@@ -83,8 +109,45 @@
   /* The docked panel column on wide screens. */
   --toj-panel-w: clamp(23rem, 33vw, 31rem);
 
+  /**
+   * How wide the globe field is. A TOKEN rather than a value on `.toj-globes`
+   * so the breakpoints below can resize it by inheritance: they set this on the
+   * root, and the rule that consumes it lives four hundred lines further down,
+   * where a same-specificity override in an earlier media query would silently
+   * lose the cascade — which is exactly what happened to the landscape size.
+   *
+   * Clamped against BOTH axes: an idle game is left running in landscape on a
+   * propped-up phone as often as it is held in portrait.
+   */
+  --toj-field: min(46dvh, 78vw, 27rem);
+
   --toj-safe-top: env(safe-area-inset-top, 0px);
   --toj-safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* The cage's ink has to resolve to a real colour for the canvas that strokes
+   it. `@property` is what makes `getComputedStyle` return `rgb(…)` instead of
+   the `color-mix(…)` source text; the renderer checks and mixes its own
+   fallback on an engine that does not implement it. */
+@property --toj-cage-minor {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --toj-cage-parallel {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --toj-cage-major {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --toj-cage-crest {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
 }
 
 /* Vespers. Same building, after the sun. */
@@ -116,6 +179,13 @@
 
   --toj-lift: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px rgb(0 0 0 / 0.45);
   --toj-lift-sm: 0 1px 3px rgb(0 0 0 / 0.4);
+
+  /* After dark the wireframe is the brightest structure in the room, so it is
+     mixed toward the light rather than toward the ink. */
+  --toj-cage-minor: color-mix(in srgb, var(--toj-gold) 34%, transparent);
+  --toj-cage-parallel: color-mix(in srgb, var(--toj-ink-soft) 26%, transparent);
+  --toj-cage-major: color-mix(in srgb, var(--toj-gold-bright) 62%, transparent);
+  --toj-cage-crest: color-mix(in srgb, var(--toj-gold-bright) 92%, transparent);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -138,7 +208,18 @@
      pull-to-refresh and iOS's rubber-band — in a game whose entire interface
      is tapping near the top of the screen. */
   overscroll-behavior: none;
-  background: var(--toj-ground);
+  /* The light pools where the globes are. Two fixed radials on the ground
+     colour — no animation, no filter, nothing that repaints — which is what
+     turns a flat cream page into a room with a lamp in it. */
+  background:
+    radial-gradient(
+      110% 78% at 50% 26%,
+      rgb(var(--toj-gold-rgb) / 0.14),
+      rgb(var(--toj-gold-rgb) / 0.04) 46%,
+      transparent 74%
+    ),
+    radial-gradient(120% 90% at 50% 100%, var(--toj-ground-deep), transparent 60%),
+    var(--toj-ground);
   color: var(--toj-ink);
   font-family: var(--toj-sans);
   font-size: 15px;
@@ -263,17 +344,25 @@
   flex-direction: column;
 }
 
+/**
+ * The dock is a piece of furniture, not a sidebar: it sits ON the ground with
+ * its own soft corner and its own shadow, so the sanctum's light runs past and
+ * behind it rather than stopping at a hard edge.
+ */
 .toj-dock {
   display: flex;
   flex-direction: column;
   min-height: 0;
   background: var(--toj-surface);
+  box-shadow: var(--toj-lift);
 }
 
 @media (min-width: 62rem) {
   .toj-body {
     flex-direction: row;
     align-items: stretch;
+    gap: var(--toj-gutter);
+    padding: 0 var(--toj-gutter) var(--toj-gutter);
   }
 
   .toj-stage {
@@ -283,7 +372,9 @@
   .toj-dock {
     width: var(--toj-panel-w);
     flex-shrink: 0;
-    border-left: 1px solid var(--toj-rule);
+    border-radius: var(--toj-radius-lg);
+    border: 1px solid var(--toj-rule);
+    overflow: hidden;
   }
 }
 
@@ -299,37 +390,15 @@
     --toj-dock-h: min(52dvh, 30rem);
   }
 
-  /* The head is pure overhead on a phone: every row it wraps onto is a row
-     stolen from the altar. The counter stays large — it is the whole point —
-     but the rate, the chips and the way out share one line beneath it. */
-  .toj-hud {
-    gap: 0.5rem;
-    padding-block: 0.45rem;
-    align-items: center;
-  }
-
-  .toj-hud-main {
-    flex-basis: 100%;
-    min-width: 0;
-  }
-
-  .toj-joy {
-    font-size: clamp(1.7rem, 8vw, 2.4rem);
-  }
-
-  .toj-chips {
-    flex: 1;
-    gap: 0.3rem;
-  }
-
-  .toj-hud-actions {
-    margin-inline-start: auto;
-  }
-
+  /* The dock comes up from the bottom edge, so only its top corners are
+     rounded — a card floating clear of the bottom of a phone wastes the one
+     band of screen a thumb reaches most easily. */
   .toj-dock {
     height: var(--toj-dock-h);
     flex-shrink: 0;
     border-top: 1px solid var(--toj-rule);
+    border-radius: var(--toj-radius-lg) var(--toj-radius-lg) 0 0;
+    overflow: hidden;
   }
 
   .toj-stage {
@@ -345,23 +414,21 @@
  */
 @media (max-width: 61.99rem) and (max-height: 32rem) {
   .toj {
-    --toj-dock-h: 62dvh;
+    /* The panel keeps most of the height — you turned the phone sideways to
+       read a list — but not so much that the field is squeezed to nothing. The
+       three numbers below are one budget: 46dvh of dock leaves ~124px of
+       sanctum, which is the field's 20dvh plus the rites row and its padding. */
+    --toj-dock-h: 46dvh;
+    --toj-field: min(20dvh, 26vw);
   }
 
   .toj-stage {
-    min-height: 6rem;
+    min-height: 5rem;
   }
 
-  .toj-altar {
-    width: min(30dvh, 40vw);
-  }
-
-  .toj-joy {
-    font-size: clamp(1.3rem, 4.5vw, 1.9rem);
-  }
-
-  .toj-hud {
-    padding-block: 0.35rem;
+  .toj-sanctum {
+    padding: 0.35rem;
+    gap: 0.3rem;
   }
 }
 
@@ -369,13 +436,21 @@
    4. The head — the counter
    ══════════════════════════════════════════════════════════════════════════ */
 
+/**
+ * The counter floats on the ground rather than sitting in a bar across the top
+ * of it. That is the whole difference between "an app with a header" and "a
+ * room with a number in it", and it costs one border-radius and one shadow.
+ */
 .toj-hud {
   display: flex;
   align-items: flex-start;
   gap: var(--toj-gutter);
-  padding: var(--toj-gap) var(--toj-gutter);
-  border-bottom: 1px solid var(--toj-rule);
+  margin: var(--toj-gap) var(--toj-gutter) 0;
+  padding: var(--toj-gap) calc(var(--toj-gutter) * 0.9);
+  border: 1px solid var(--toj-rule);
+  border-radius: var(--toj-radius-lg);
   background: var(--toj-surface);
+  box-shadow: var(--toj-lift);
   flex-wrap: wrap;
 }
 
@@ -459,10 +534,96 @@
   align-items: center;
 }
 
+/**
+ * The head, on a phone.
+ *
+ * This block has to live AFTER the rules above rather than up with the rest of
+ * the layout breakpoints, and that is not tidiness: it changes `display` from
+ * flex to grid, and the base rule is further down the sheet than section 3 is.
+ * Stated up there it lost the cascade at equal specificity and the header
+ * silently kept wrapping onto three rows — which is a third of a phone screen
+ * spent on a counter.
+ */
+@media (max-width: 61.99rem) {
+  .toj-hud {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.15rem 0.5rem;
+    padding-block: 0.5rem;
+  }
+
+  /* The counter and its rate are one element in the markup and two rows here,
+     so the wrapper steps out of the way rather than becoming a grid item that
+     would confine the rate to the left column — where "12.4 Qi joy per second ·
+     20% held by Sinners" wrapped onto three lines beside a single chip. */
+  .toj-hud-main {
+    display: contents;
+  }
+
+  .toj-joy {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: clamp(1.6rem, 7.5vw, 2.3rem);
+    min-width: 0;
+    /* The counter shrinks its own tracking before it ever wraps: a joy figure
+       broken across two lines is unreadable at a glance, which is the only
+       thing it is for. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+  }
+
+  /* Three chips and a back-link cannot share the counter's row on a 390px
+     phone — between them they leave it about forty pixels, and "20.25 Qi"
+     breaks across two lines. The way out keeps the top row (it is small), the
+     chips take a row of their own, and the rate takes the width it needs. */
+  .toj-hud-actions {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .toj-chips {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    gap: 0.3rem;
+  }
+
+  .toj-rate {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    margin-top: 0;
+  }
+}
+
+/* A phone turned sideways is ~380px tall. The counter gives up its size before
+   the globes do — you turned the phone to read a list, not to admire a number.
+   Here rather than with the other landscape rules for the same cascade reason
+   as the block above. */
+@media (max-width: 61.99rem) and (max-height: 32rem) {
+  .toj-joy {
+    font-size: clamp(1.3rem, 4.5vw, 1.9rem);
+  }
+
+  .toj-hud {
+    padding-block: 0.35rem;
+  }
+}
+
 /* ══════════════════════════════════════════════════════════════════════════
    5. The sanctum
    ══════════════════════════════════════════════════════════════════════════ */
 
+/**
+ * The room the globes turn in.
+ *
+ * A rounded surface of its own rather than an unbounded region of the page: the
+ * light it pools (`::before`) is clipped by `overflow: hidden`, so once the body
+ * gained a gutter on wide screens that clip became a hard-edged rectangle of
+ * glow sitting in the middle of the ground. Giving the sanctum a corner turns
+ * that edge into the edge of a piece of furniture — which is also what makes it
+ * read as a room with the dock beside it rather than as two panes of an app.
+ */
 .toj-sanctum {
   position: relative;
   flex: 1;
@@ -475,6 +636,14 @@
   padding: var(--toj-gutter);
   isolation: isolate;
   overflow: hidden;
+}
+
+@media (min-width: 62rem) {
+  .toj-sanctum {
+    border-radius: var(--toj-radius-lg);
+    border: 1px solid color-mix(in oklab, var(--toj-rule) 60%, transparent);
+    background: color-mix(in oklab, var(--toj-surface) 45%, transparent);
+  }
 }
 
 /* The light the temple is built to face. One soft radial, nothing more. */
@@ -517,74 +686,242 @@
     );
 }
 
-.toj-altar {
+/* ══════════════════════════════════════════════════════════════════════════
+   5b. The globe field
+   ══════════════════════════════════════════════════════════════════════════
+   A square stage holding one to eight liquid globes. Everything inside it is
+   positioned by `TempleGlobes.tsx` in fractions of THIS box's width — so the
+   stage has to stay square and its size has to be the one number the rest is
+   drawn against.
+
+   Nothing here may take a `backdrop-filter`. The canvas above it animates
+   continuously, and a backdrop-filtered layer under an animating element is
+   re-blurred in full every frame (see `components/radial/README.md` for the
+   measurements that killed the same idea on the navigation globe). */
+
+.toj-globes {
   position: relative;
-  width: min(44vh, 76vw, 24rem);
+  /**
+   * Square, and sized on ONE axis so the ratio has something to derive.
+   *
+   * The height is the stated one and the width follows it, which is what lets
+   * the field simply SHRINK when the room is short: it is a flex item with
+   * `flex-shrink: 1`, so on a phone in landscape — where the sanctum is a
+   * hundred-pixel strip between the counter and the dock — the globes get
+   * smaller instead of hanging out of the box. `--toj-field` is the ceiling,
+   * not the size, and it caps against the viewport's WIDTH too (see the token).
+   *
+   * Deliberately no `max-height` beside the `aspect-ratio`: a clamp on the axis
+   * the ratio is not deriving shortens the box without narrowing it and the
+   * square silently breaks (`docs/design-language.md` §12.1 rule 2).
+   */
+  height: var(--toj-field);
+  width: auto;
   aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  transition: transform var(--toj-quick) var(--toj-ease);
-  will-change: transform;
+  flex: 0 1 auto;
+  /* A floor, not zero. Flex shrink with nothing under it collapsed the field to
+     eight pixels on a landscape handset — the globes have to stay a globe even
+     when the room is a strip. */
+  min-height: 4rem;
+  /* The field owns every gesture inside it: the browser must not pan, scroll,
+     select or offer a callout while a globe is being spun — and this is a game
+     whose core verb is tapping the same spot repeatedly. */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  cursor: pointer;
+  perspective: calc(100% * var(--toj-persp, 3.1));
+  perspective-origin: 50% 50%;
 }
 
-.toj-altar:active {
-  transform: translateY(1px) scale(0.985);
-  transition-duration: 60ms;
+/* The globes are at the lane. Nothing to strike, and it says so by going quiet
+   rather than by disappearing — the field is still where it was, still turning,
+   just not yours for the hour. */
+.toj-globes[data-away='true'] {
+  cursor: default;
 }
 
-.toj-altar svg {
+.toj-globes[data-away='true'] .toj-globes-cage,
+.toj-globes[data-away='true'] .toj-orbit {
+  opacity: 0.55;
+  transition: opacity var(--toj-slow) var(--toj-ease);
+}
+
+.toj-globes-cage {
+  position: absolute;
+  inset: 0;
+  /* Sized EXPLICITLY, never by `width: auto` against four insets. A canvas is a
+     REPLACED element, so `auto` resolves to its intrinsic size — the width and
+     height ATTRIBUTES, which are in device pixels. At 1× the two happen to
+     match and it looks right; at 2× the wireframe renders twice its size,
+     anchored top-left. */
   width: 100%;
   height: 100%;
-  display: block;
-  filter: drop-shadow(0 12px 28px rgb(var(--toj-gold-rgb) / 0.2));
+  pointer-events: none;
+  /* Never painted — a canvas has no text. It is the ink the drawing code mixes
+     its own fallback from on an engine without `@property`. */
+  color: var(--toj-ink);
 }
 
-/* A ring that pulses outward on every offering. */
-.toj-altar::after {
-  content: '';
+/**
+ * One globe's glass body: a flat disc of shading over the wireframe, so the
+ * cage reads as structure suspended INSIDE a liquid ball rather than as a
+ * drawing on top of one.
+ *
+ * The element is the size of the whole stage and the frame loop scales it to
+ * the globe's diameter — one `translate3d(…) scale(…)` per globe per frame,
+ * which composites, instead of a width/height write, which is a layout.
+ */
+.toj-globe-glass {
   position: absolute;
-  inset: 6%;
+  inset: 0;
   border-radius: 50%;
-  border: 1px solid rgb(var(--toj-gold-rgb) / 0.5);
-  opacity: 0;
+  pointer-events: none;
+  /* Where each disc sits before the first frame has placed it.
+     A satellite has no meaningful position until the field has been laid out,
+     and eight full-stage discs stacked on the centre is what "no position yet"
+     looks like — so they start at zero and the hub starts at the size it would
+     have on its own. First paint is then a single globe, which is exactly what
+     a save with one globe is, and the frame loop's inline transform takes over
+     from there. */
+  transform: scale(0);
+  /* A specular bloom up-left, a thickening toward the limb where a sphere's
+     glass is deepest, and a bright rim where it turns away. Mixed from the
+     temple's own ink and gold, so dawn and vespers both resolve. */
+  background:
+    radial-gradient(66% 66% at 30% 26%, rgb(var(--toj-gold-rgb) / 0.16) 0%, transparent 62%),
+    radial-gradient(
+      circle closest-side at 50% 50%,
+      transparent 52%,
+      color-mix(in oklab, var(--toj-ink) 6%, transparent) 88%,
+      color-mix(in oklab, var(--toj-ink) 13%, transparent) 100%
+    );
+  box-shadow:
+    inset 0 0 0 1px rgb(var(--toj-gold-rgb) / 0.34),
+    inset 0 -14% 26% -18% color-mix(in oklab, var(--toj-ink) 14%, transparent),
+    0 18px 46px -26px rgb(88 62 18 / 0.55);
+}
+
+/* The one this temple was built around gets the halo — and the standing size,
+   for the frame before the loop has run. */
+.toj-globe-glass[data-hub='true'] {
+  transform: scale(0.8);
+  box-shadow:
+    inset 0 0 0 1px rgb(var(--toj-gold-rgb) / 0.42),
+    inset 0 -14% 26% -18% color-mix(in oklab, var(--toj-ink) 16%, transparent),
+    0 0 44px rgb(var(--toj-gold-rgb) / 0.22),
+    0 26px 60px -30px rgb(88 62 18 / 0.6);
+}
+
+/**
+ * The keyboard's hold on the field.
+ *
+ * `pointer-events: none` so every pointer gesture reaches the stage's own
+ * handler and exactly one thing owns the press — while this stays tabbable and
+ * Enter-activatable, which is what a keyboard player needs. Sized to the hub by
+ * the frame loop, so the focus ring lands on the sphere rather than around the
+ * whole field.
+ */
+.toj-globe-key {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  background: none;
+  z-index: 500;
+}
+
+.toj-globe-key:focus-visible {
+  outline: 2px solid var(--toj-gold);
+  outline-offset: 6px;
+}
+
+/* ── The congregation, orbiting ─────────────────────────────────────────── */
+
+.toj-orbit {
+  position: absolute;
+  inset: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
   pointer-events: none;
 }
 
-.toj-altar[data-struck='true']::after {
-  animation: toj-ring var(--toj-slow) var(--toj-ease-out);
+/* A ZERO-SIZE anchor the frame loop moves. The pin inside centres itself on it,
+   so a single `translate3d(…) scale(…)` both places the icon and foreshortens
+   it — no layout, and no percentage arithmetic against a box whose size depends
+   on its own label. */
+.toj-pin-wrap {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  /* Hidden until the frame loop has projected it. Sixteen icons stacked on the
+     centre of the field is what an unprojected pin list looks like, and it is
+     the first thing a player would see on a slow first paint. */
+  opacity: 0;
+  will-change: transform, opacity;
 }
 
-@keyframes toj-ring {
-  from {
-    opacity: 0.8;
-    transform: scale(0.88);
-  }
-  to {
-    opacity: 0;
-    transform: scale(1.2);
-  }
+.toj-pin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  display: grid;
+  justify-items: center;
+  gap: 0.25rem;
+  width: max-content;
+  max-width: 7rem;
+  text-align: center;
 }
 
-/* The flames on the steps. */
-.toj-flame {
-  transform-origin: center bottom;
-  animation: toj-flicker 2.4s ease-in-out infinite;
+.toj-pin-dot {
+  display: grid;
+  place-items: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 50%;
+  font-size: 0.92rem;
+  background: var(--toj-surface);
+  border: 1px solid rgb(var(--toj-gold-rgb) / 0.42);
+  box-shadow: 0 4px 12px -6px rgb(88 62 18 / 0.55);
 }
 
-@keyframes toj-flicker {
-  0%,
-  100% {
-    transform: scaleY(1) scaleX(1);
-    opacity: 0.95;
+/* The name resolves only for the pins actually facing you — `--near` is written
+   per frame from the pin's depth — so sixteen labels never pile up in the
+   middle of the field. */
+.toj-pin-name {
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.005em;
+  color: var(--toj-ink-soft);
+  opacity: var(--near, 0);
+  text-wrap: balance;
+  white-space: nowrap;
+}
+
+.toj-pin-name b {
+  color: var(--toj-gold-deep);
+  font-weight: 700;
+}
+
+/* Below this the sphere is too small to carry names at all; the pins stay as
+   icons, which is what a phone-sized field can actually read. */
+@media (max-width: 26rem) {
+  .toj-pin-name {
+    display: none;
   }
-  35% {
-    transform: scaleY(1.16) scaleX(0.92);
-    opacity: 1;
-  }
-  70% {
-    transform: scaleY(0.9) scaleX(1.06);
-    opacity: 0.85;
+
+  .toj-pin-dot {
+    width: 1.6rem;
+    height: 1.6rem;
+    font-size: 0.8rem;
   }
 }
 
@@ -735,19 +1072,23 @@
 
 /* ── Sinners ── */
 
+/* Laid over the SQUARE globe stage, not over the sanctum: the ring is placed in
+   percentages, and on a wide room the same percentage is a different distance
+   on each axis — which turned the ring into a flat ellipse around a centre the
+   globes were not at. */
 .toj-sinners {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 2;
+  z-index: 5;
 }
 
 .toj-sinner {
   position: absolute;
-  top: 50%;
-  left: 50%;
   width: 2.4rem;
   height: 2.4rem;
+  /* Centred on its own (left, top), which is where the ring maths puts it. */
+  transform: translate(-50%, -50%);
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -777,7 +1118,7 @@
   }
 }
 
-/* ── Standing actions under the altar ── */
+/* ── Standing actions under the field ── */
 
 .toj-rites {
   display: flex;
@@ -786,6 +1127,25 @@
   justify-content: center;
   align-items: center;
   min-height: 2.25rem;
+  /* Above the pins, which project out past the sphere near the limb. */
+  position: relative;
+  z-index: 6;
+}
+
+/* A standing note rather than a button: the Bowl's hour is a state, not an
+   action, and the one thing it must communicate is why nothing answers a tap. */
+.toj-rite-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: var(--toj-radius-pill);
+  border: 1px solid rgb(var(--toj-gold-rgb) / 0.45);
+  background: var(--toj-gold-wash);
+  color: var(--toj-gold-deep);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 /* ── Active blessings ── */
@@ -855,13 +1215,16 @@
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  padding: 0.5rem 0.95rem;
-  border-radius: var(--toj-radius-sm);
+  padding: 0.52rem 1.05rem;
+  /* Fully round. The room has no square corners left in it, and a pill is also
+     the shape a thumb reads as "press me" fastest. */
+  border-radius: var(--toj-radius-pill);
   border: 1px solid var(--toj-rule-strong);
   background: var(--toj-surface);
+  box-shadow: var(--toj-lift-sm);
   color: var(--toj-ink);
   font-size: 0.85rem;
-  font-weight: 500;
+  font-weight: 550;
   white-space: nowrap;
   transition:
     transform var(--toj-quick) var(--toj-ease),
@@ -888,11 +1251,17 @@
 .toj-btn[data-variant='quiet'] {
   border-color: transparent;
   background: transparent;
+  box-shadow: none;
   color: var(--toj-ink-soft);
 }
 
+.toj-btn[data-variant='danger'] {
+  border-color: color-mix(in oklab, var(--toj-warn) 45%, transparent);
+  color: var(--toj-warn);
+}
+
 .toj-btn[data-size='sm'] {
-  padding: 0.32rem 0.6rem;
+  padding: 0.34rem 0.72rem;
   font-size: 0.78rem;
 }
 
@@ -915,12 +1284,18 @@
    7. Tabs
    ══════════════════════════════════════════════════════════════════════════ */
 
+/**
+ * A rail of pills in a sunken track. The track matters: without it the tabs
+ * float on the panel and the selected one is the only thing with a shape, which
+ * reads as one button beside nine labels rather than as a set of ten.
+ */
 .toj-tabs {
   display: flex;
   gap: 0.15rem;
-  padding: 0.45rem 0.65rem;
-  border-bottom: 1px solid var(--toj-rule);
-  background: var(--toj-surface);
+  margin: 0.55rem 0.6rem 0;
+  padding: 0.22rem;
+  border-radius: var(--toj-radius-pill);
+  background: var(--toj-surface-sunk);
   overflow-x: auto;
   scrollbar-width: none;
   flex-shrink: 0;
@@ -935,20 +1310,22 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.42rem 0.7rem;
-  border-radius: var(--toj-radius-sm);
+  padding: 0.42rem 0.78rem;
+  border-radius: var(--toj-radius-pill);
   font-size: 0.78rem;
   color: var(--toj-ink-soft);
   white-space: nowrap;
   transition:
     color var(--toj-quick) var(--toj-ease),
-    background-color var(--toj-quick) var(--toj-ease);
+    background-color var(--toj-quick) var(--toj-ease),
+    box-shadow var(--toj-quick) var(--toj-ease);
 }
 
 .toj-tab[aria-selected='true'] {
-  color: var(--toj-ink);
-  background: var(--toj-gold-wash);
-  font-weight: 600;
+  color: var(--toj-gold-deep);
+  background: var(--toj-surface);
+  box-shadow: var(--toj-lift-sm);
+  font-weight: 650;
 }
 
 .toj-tab-glyph {
@@ -1052,6 +1429,16 @@
 
 /* ── Rows ── */
 
+/**
+ * A row is a soft card, not a line in a table.
+ *
+ * The list is the thing a player spends the most time reading, and hairline
+ * rules between flat rows are the cheapest possible way to say "spreadsheet".
+ * A card with a little air around it costs a few pixels of density and buys the
+ * whole room's temperature — and, usefully, gives the affordable state
+ * somewhere to happen (a tinted fill and a gold rim) that does not require a
+ * second colour.
+ */
 .toj-row {
   position: relative;
   display: grid;
@@ -1059,33 +1446,61 @@
   align-items: center;
   gap: 0.7rem;
   width: 100%;
-  padding: 0.6rem 0.15rem;
+  margin-bottom: 0.36rem;
+  padding: 0.62rem 0.7rem;
   text-align: left;
-  border-bottom: 1px solid var(--toj-rule);
+  border: 1px solid transparent;
+  border-radius: var(--toj-radius);
+  background: var(--toj-surface-sunk);
   color: inherit;
   transition:
     background-color var(--toj-quick) var(--toj-ease),
-    padding-left var(--toj-quick) var(--toj-ease);
+    border-color var(--toj-quick) var(--toj-ease),
+    transform var(--toj-quick) var(--toj-ease);
 }
 
 button.toj-row:active:not(:disabled) {
   background: var(--toj-gold-wash);
+  transform: scale(0.992);
 }
 
 .toj-row:disabled {
-  opacity: 0.45;
+  opacity: 0.5;
 }
 
-/* Affordable rows get a gold spine. It is the only cue the list needs. */
-.toj-row[data-affordable='true']::before {
+/* Affordable: the card lights up. On a list of forty rows this is the single
+   most-read piece of state in the game, so it is a whole surface rather than a
+   2px spine — and it is a fill AND a rim, never colour alone. */
+.toj-row[data-affordable='true'] {
+  background: var(--toj-gold-wash);
+  border-color: rgb(var(--toj-gold-rgb) / 0.4);
+}
+
+/* The shortest payback available. A second, quieter mark on top of the first —
+   the price goes gold below, and this is what says which one to read. */
+.toj-row[data-recommended='true']::before {
   content: '';
   position: absolute;
-  left: -0.15rem;
-  top: 0.5rem;
-  bottom: 0.5rem;
-  width: 2px;
-  border-radius: 2px;
+  left: 0;
+  top: 0.9rem;
+  bottom: 0.9rem;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
   background: var(--toj-gold);
+}
+
+/* The globes. One row, once a tier, and the only purchase in the list that
+   changes what the sanctum looks like — so it gets to be the one row with a
+   gold rim of its own even before it is affordable. */
+.toj-row-globe {
+  background: var(--toj-surface);
+  border-color: rgb(var(--toj-gold-rgb) / 0.28);
+  box-shadow: var(--toj-lift-sm);
+}
+
+.toj-row-globe[data-affordable='true'] {
+  background: var(--toj-gold-wash);
+  border-color: rgb(var(--toj-gold-rgb) / 0.55);
 }
 
 .toj-row[data-recommended='true'] .toj-row-price {
@@ -1107,13 +1522,14 @@ button.toj-row:active:not(:disabled) {
 }
 
 .toj-row-icon {
-  width: 2rem;
-  height: 2rem;
+  width: 2.1rem;
+  height: 2.1rem;
   display: grid;
   place-items: center;
   font-size: 1.1rem;
-  border-radius: var(--toj-radius-sm);
-  background: var(--toj-surface-sunk);
+  border-radius: var(--toj-radius-pill);
+  background: var(--toj-surface);
+  border: 1px solid var(--toj-rule);
   flex-shrink: 0;
 }
 
@@ -1179,8 +1595,8 @@ button.toj-row:active:not(:disabled) {
 .toj-segments {
   display: flex;
   gap: 0.1rem;
-  padding: 0.15rem;
-  border-radius: var(--toj-radius-sm);
+  padding: 0.18rem;
+  border-radius: var(--toj-radius-pill);
   background: var(--toj-surface-sunk);
   overflow-x: auto;
   scrollbar-width: none;
@@ -1191,8 +1607,8 @@ button.toj-row:active:not(:disabled) {
 }
 
 .toj-segment {
-  padding: 0.3rem 0.6rem;
-  border-radius: calc(var(--toj-radius-sm) - 2px);
+  padding: 0.32rem 0.72rem;
+  border-radius: var(--toj-radius-pill);
   font-size: 0.76rem;
   color: var(--toj-ink-soft);
   white-space: nowrap;
@@ -1672,6 +2088,304 @@ button.toj-row:active:not(:disabled) {
   flex: 1;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   14b. The lane
+   ══════════════════════════════════════════════════════════════════════════
+   A full-screen modal over the whole temple. It is deliberately NOT built on
+   `.toj-scrim` + `.toj-dialog`: a dialog is a paragraph and two buttons, and
+   this is a room with a viewport in it that has to survive a 380px-tall phone
+   in landscape. What it borrows is the material — same surface, same rules,
+   same gold. */
+
+.toj-bowl {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: max(var(--toj-safe-top), 0.5rem) 0.5rem max(var(--toj-safe-bottom), 0.5rem);
+  background: color-mix(in oklab, var(--toj-ground-deep) 88%, transparent);
+  animation: toj-fade var(--toj-base) var(--toj-ease);
+}
+
+.toj-bowl-card {
+  width: min(46rem, 100%);
+  /* `dvh`, so the card does not sit under iOS Safari's collapsing toolbars. */
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: var(--toj-gap) var(--toj-gutter) var(--toj-gutter);
+  border-radius: var(--toj-radius-lg);
+  border: 1px solid var(--toj-rule-strong);
+  background: var(--toj-surface);
+  box-shadow: var(--toj-lift);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  animation: toj-dialog-in var(--toj-slow) var(--toj-ease-out);
+}
+
+.toj-bowl-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.toj-bowl-title {
+  font-family: var(--toj-serif);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.toj-bowl-sub {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  color: var(--toj-ink-soft);
+  max-width: 34rem;
+}
+
+/**
+ * The viewport.
+ *
+ * A fixed aspect ratio and NO `max-height` beside it: the two together is the
+ * bug that flattens a stage to nothing the moment the shorter axis binds
+ * (`docs/design-language.md` §12.1 rule 2). The height is bounded by the card's
+ * own scroll instead.
+ */
+.toj-bowl-view {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  width: 100%;
+  border-radius: var(--toj-radius);
+  border: 1px solid var(--toj-rule);
+  background: var(--toj-ground-deep);
+  overflow: hidden;
+  cursor: grab;
+}
+
+.toj-bowl-view[data-phase='rolling'] {
+  cursor: default;
+}
+
+.toj-bowl-view canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.toj-bowl-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: var(--toj-gutter);
+  text-align: center;
+  font-family: var(--toj-serif);
+  font-size: 1rem;
+  font-style: italic;
+  color: var(--toj-ink-faint);
+}
+
+/* The line you have set, drawn over the lane — written to directly during a
+   swipe, so the feedback costs a custom property rather than a React render. */
+.toj-bowl-aim {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 2px;
+  height: 34%;
+  pointer-events: none;
+  transform: translateX(-50%) translateX(calc(var(--toj-aim, 0) * 22%));
+  background: linear-gradient(to top, rgb(var(--toj-gold-rgb) / 0.85), transparent);
+}
+
+.toj-bowl-power {
+  position: absolute;
+  left: 0.6rem;
+  bottom: 0.6rem;
+  width: 0.4rem;
+  height: 42%;
+  border-radius: var(--toj-radius-pill);
+  background: color-mix(in oklab, var(--toj-ink) 22%, transparent);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.toj-bowl-power-fill {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 100%;
+  border-radius: var(--toj-radius-pill);
+  background: linear-gradient(to top, var(--toj-gold), var(--toj-gold-bright));
+  transform-origin: bottom;
+  transform: scaleY(var(--toj-power, 0));
+}
+
+/* Along the top, in the empty air above the pit — the bottom of the viewport is
+   where the ball sits, and an instruction printed across it read as a label on
+   the ball. */
+.toj-bowl-hint {
+  position: absolute;
+  inset-inline: 0;
+  top: 0.6rem;
+  margin: 0;
+  text-align: center;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--toj-ink) 55%, transparent);
+  pointer-events: none;
+}
+
+/* ── The rack, as ten dots ── */
+
+.toj-bowl-rack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.22rem;
+}
+
+.toj-bowl-row {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.toj-bowl-pin {
+  width: 0.6rem;
+  height: 0.85rem;
+  border-radius: 40% 40% 45% 45% / 60% 60% 40% 40%;
+  background: var(--toj-gold);
+  transition:
+    background-color var(--toj-base) var(--toj-ease),
+    transform var(--toj-base) var(--toj-ease-out),
+    opacity var(--toj-base) var(--toj-ease);
+}
+
+/* Down, said twice: it tips over AND it goes flat. Never by colour alone. */
+.toj-bowl-pin[data-down='true'] {
+  background: var(--toj-rule-strong);
+  transform: rotate(52deg) scale(0.72);
+  opacity: 0.45;
+}
+
+.toj-bowl-status {
+  margin: 0;
+  text-align: center;
+  font-family: var(--toj-serif);
+  font-size: 1.05rem;
+  color: var(--toj-ink);
+  min-height: 1.5rem;
+}
+
+.toj-bowl-actions {
+  display: grid;
+  justify-items: center;
+  gap: 0.4rem;
+}
+
+.toj-bowl-note {
+  margin: 0;
+  max-width: 30rem;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--toj-ink-soft);
+}
+
+/* ── The three dials ── */
+
+.toj-bowl-controls {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0.6rem 0.75rem 0.75rem;
+  border: 1px solid var(--toj-rule);
+  border-radius: var(--toj-radius);
+  background: var(--toj-surface-sunk);
+}
+
+.toj-bowl-controls:disabled {
+  opacity: 0.5;
+}
+
+.toj-bowl-controls .toj-btn {
+  justify-self: stretch;
+  margin-top: 0.25rem;
+}
+
+.toj-bowl-dial {
+  display: grid;
+  grid-template-columns: 4.2rem 1fr 8.5rem;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.toj-bowl-dial-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.toj-bowl-dial-value {
+  font-size: 0.76rem;
+  color: var(--toj-ink-soft);
+  text-align: right;
+  /* The readout changes as the slider moves; a fixed column stops the whole row
+     from reflowing on every arrow key. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* On a phone the dials stack: a 4.2rem label column plus an 8.5rem readout
+   leaves a slider about a thumb wide. */
+@media (max-width: 30rem) {
+  .toj-bowl-dial {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 0.15rem;
+  }
+
+  /* Name and reading on one line, the track under both — the readout belongs
+     with the thing it is reading, not stranded on a row of its own. */
+  .toj-bowl-dial-label {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .toj-bowl-dial-value {
+    grid-column: 2;
+    grid-row: 1;
+    text-align: right;
+  }
+
+  .toj-bowl-dial .toj-slider {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+/* Landscape on a phone is ~380px tall — the whole card has to fit in it, so the
+   viewport gives up its aspect ratio and the copy stands down. */
+@media (max-height: 34rem) {
+  .toj-bowl-view {
+    aspect-ratio: auto;
+    height: min(42dvh, 14rem);
+  }
+
+  .toj-bowl-sub,
+  .toj-bowl-note {
+    display: none;
+  }
+
+  .toj-bowl-title {
+    font-size: 1.15rem;
+  }
+}
+
 /* ── Toast rail ── */
 
 /**
@@ -1690,6 +2404,17 @@ button.toj-row:active:not(:disabled) {
   gap: 0.4rem;
   width: min(22rem, calc(100vw - 2rem));
   pointer-events: none;
+  /**
+   * Bounded to the band between the dock and the head.
+   *
+   * The rail grows upward from the dock, and on a phone in landscape there are
+   * only ~150px of room there — so three toasts climbed straight over the
+   * counter and sat on top of the one number the game exists to show. Clipping
+   * is the right answer rather than shrinking them: the newest toast is at the
+   * bottom of a `column-reverse` stack, so what gets cut is always the oldest.
+   */
+  max-height: min(calc(100dvh - var(--toj-dock-h, 0px) - 8rem), 11rem);
+  overflow: hidden;
 }
 
 @media (min-width: 62rem) {
@@ -1810,8 +2535,16 @@ button.toj-row:active:not(:disabled) {
     border-color: var(--toj-gold);
   }
 
-  .toj-altar:hover {
-    transform: translateY(-2px);
+  /* The field does not lift on hover — the globes inside it are already
+     turning, and a box that moves under a cursor would fight the one thing on
+     screen that is supposed to look like it is floating. The cursor says it
+     instead. */
+  .toj-globes:not([data-away='true']):hover {
+    cursor: grab;
+  }
+
+  .toj-globes:not([data-away='true']):active {
+    cursor: grabbing;
   }
 
   .toj-halo:hover {
@@ -1849,8 +2582,13 @@ button.toj-row:active:not(:disabled) {
   }
 
   button.toj-row:hover:not(:disabled) {
-    background: var(--toj-surface-sunk);
-    padding-left: 0.4rem;
+    border-color: var(--toj-rule-strong);
+    background: var(--toj-surface);
+  }
+
+  button.toj-row[data-affordable='true']:hover:not(:disabled) {
+    border-color: var(--toj-gold);
+    background: var(--toj-gold-wash);
   }
 
   .toj-segment:hover {
@@ -1977,7 +2715,6 @@ button.toj-row:active:not(:disabled) {
 }
 
 .toj[data-flourish='off'] .toj-sanctum::before,
-.toj[data-flourish='off'] .toj-flame,
 .toj[data-flourish='off'] .toj-halo,
 .toj[data-flourish='off'] .toj-sinner,
 .toj[data-flourish='off'] .toj-tab-dot,
@@ -2012,7 +2749,7 @@ button.toj-row:active:not(:disabled) {
 }
 
 @media (forced-colors: active) {
-  .toj-row[data-affordable='true']::before,
+  .toj-row[data-recommended='true']::before,
   .toj-halo,
   .toj-chip,
   .toj-btn,
@@ -2023,5 +2760,37 @@ button.toj-row:active:not(:disabled) {
 
   .toj-tab[aria-selected='true'] {
     outline: 2px solid Highlight;
+  }
+
+  /* Forced colours flatten every fill, so the affordable card — which says what
+     it is with a tinted surface — has to say it with a border as well, and the
+     globe pins and the rack have to keep an outline at all. */
+  .toj-row[data-affordable='true'] {
+    outline: 2px solid Highlight;
+  }
+
+  .toj-pin-dot,
+  .toj-bowl-pin,
+  .toj-globe-glass {
+    forced-color-adjust: none;
+    border: 1px solid CanvasText;
+  }
+
+  .toj-bowl-pin[data-down='true'] {
+    border-style: dashed;
+  }
+}
+
+/**
+ * The lane, quietly.
+ *
+ * The simulation is untouched — a physical roll is the mechanic, not the
+ * decoration — but the camera stops swinging (`BowlLane` reads the same
+ * preference and watches the whole lane from the approach instead) and the
+ * rack's pins tip without the transition.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .toj-bowl-pin {
+    transition: none;
   }
 }

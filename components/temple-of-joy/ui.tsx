@@ -14,6 +14,7 @@ import {
   type ButtonHTMLAttributes,
   type CSSProperties,
   type ReactNode,
+  type Ref,
 } from 'react';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { templeAudio, type ToneName } from '@/lib/temple-of-joy/audio';
@@ -28,6 +29,13 @@ export interface TempleButtonProps extends ButtonHTMLAttributes<HTMLButtonElemen
   ready?: boolean;
   /** Which cue to play on press. Defaults to the neutral tick. */
   tone?: ToneName | null;
+  /**
+   * Taken as an ordinary prop, which is what React 19 makes a `ref` on a
+   * function component. Declared rather than inherited because
+   * `ButtonHTMLAttributes` does not carry one — and the alley needs it to move
+   * focus into a modal on open.
+   */
+  ref?: Ref<HTMLButtonElement>;
 }
 
 export function TempleButton({
@@ -38,11 +46,13 @@ export function TempleButton({
   className,
   type = 'button',
   onClick,
+  ref,
   ...rest
 }: TempleButtonProps) {
   return (
     <button
       {...rest}
+      ref={ref}
       type={type}
       data-variant={variant}
       data-size={size}

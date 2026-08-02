@@ -20,6 +20,7 @@ import { TempleSanctum } from './TempleSanctum';
 import { TempleTabs } from './TempleTabs';
 import { TemplePanel } from './panels/TemplePanel';
 import { TempleDialogs } from './TempleDialogs';
+import { BowlOverlay } from './bowl/BowlOverlay';
 
 export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameState> | null }) {
   const theme = useTempleValue((s) => s.theme);
@@ -175,6 +176,10 @@ export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameSta
         </div>
       </div>
       <TempleDialogs />
+      {/* The alley renders nothing until it is opened, and the three.js and
+          Rapier chunks behind it are only fetched then — most sessions never
+          bowl, and none of them should pay for it. */}
+      <BowlOverlay />
     </div>
   );
 }

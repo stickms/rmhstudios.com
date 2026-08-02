@@ -52,6 +52,16 @@ import { join } from 'node:path';
  *                                       transform/opacity/custom properties, skips
  *                                       every write on a frame where nothing moved,
  *                                       and reads no layout.
+ *   - components/temple-of-joy/TempleGlobes.tsx — the temple's globe field: the
+ *                                       spin/ripple/wobble loop for one to eight
+ *                                       liquid globes. Bounded by MOUNT, like the
+ *                                       navigation globe's and like the game's own
+ *                                       tick: the temple renders it only while the
+ *                                       game is open and the effect cancels the
+ *                                       frame on unmount, so a page at rest has no
+ *                                       loop. While it runs it writes only
+ *                                       transform/opacity/custom properties and
+ *                                       strokes one canvas, and reads no layout.
  *   - app/routes/_site/library/index.tsx — one-shot rAF that starts the
  *                                       scroll-settle glide after a category
  *                                       switch; cancelled in cleanup and on the
@@ -130,6 +140,7 @@ const ALLOW = new Set<string>([
   'components/studio/arrangement/PlayheadCursor.tsx',
   'components/studio/mixer/VUMeter.tsx',
   'components/synapse-storm/PuzzleCard.tsx',
+  'components/temple-of-joy/TempleGlobes.tsx',
   'components/temple-of-joy/TempleOfJoyGame.tsx',
   // The headline joy/rate readouts write textContent on a frame loop
   // rather than re-rendering their subtree 60 times a second.

@@ -14,12 +14,28 @@
  *     × tier blessings × synergies × manna levels
  *   summed
  *     × global blessings × Devotion (Cherubim) × Grace × Legacy
- *     × garden × choir × halo buffs
+ *     × garden × choir × halo buffs × globes × the Bowl
  *     − what the Sinners are drinking
+ *
+ * The two newest terms sit at the end of that line on purpose. The globes are a
+ * flat compounding factor you buy once and keep for the run; the Bowl is a
+ * temporary one you trade a day's cooldown (and your hands) for. Both are
+ * itemised in {@link MultiplierBreakdown} rather than folded into an existing
+ * term, because the one thing this stack must never do is produce a number the
+ * player cannot take apart.
  */
 import type { BlessingDef, GameState, SourceId } from './types';
 import { BLESSINGS, BLESSING_MAP } from './data/blessings';
 import { SOURCES, SOURCE_MAP, COST_GROWTH, REVEAL_SHARE } from './data/sources';
+import {
+  GLOBE_JPS_FACTOR,
+  GLOBE_REVEAL_SHARE,
+  GLOBE_TOUCH_FACTOR,
+  MAX_GLOBES,
+  globeCost,
+  nextGlobe,
+} from './data/globes';
+import { bowlReady, bowlUnlocked } from './bowling';
 import { LEGACY, LEGACY_MAP, GRACE_DIVISOR, MIN_ASCEND_JOY } from './data/legacy';
 import { DEVOTION_PER_TROPHY, DEVOTION_TROPHIES } from './data/trophies';
 import { gardenEffects } from './minigames/garden';
@@ -107,6 +123,91 @@ export function computeBuyCount(state: GameState, id: SourceId): number {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
+   Globes
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/** How many globes are turning. Clamped, because a save is user-editable. */
+export function computeGlobes(state: GameState): number {
+  const held = Math.floor(state.globes ?? 1);
+  if (!Number.isFinite(held)) return 1;
+  return Math.max(1, Math.min(MAX_GLOBES, held));
+}
+
+/** What the globes multiply the rate by. ×1 with the one you were given. */
+export function computeGlobeMultiplier(state: GameState): number {
+  return Math.pow(GLOBE_JPS_FACTOR, computeGlobes(state) - 1);
+}
+
+/** What the globes multiply a hand-offering by. */
+export function computeGlobeTouchMultiplier(state: GameState): number {
+  return Math.pow(GLOBE_TOUCH_FACTOR, computeGlobes(state) - 1);
+}
+
+/** Price of the next globe, or `Infinity` once the set is complete. */
+export function computeGlobeCost(state: GameState): number {
+  return globeCost(computeGlobes(state));
+}
+
+/** Whether the next globe can be bought right now. */
+export function computeGlobeAffordable(state: GameState): boolean {
+  return state.joy >= computeGlobeCost(state);
+}
+
+/**
+ * Whether the next globe is worth showing yet.
+ *
+ * The same "you could plausibly reach it" rule the sources use, at a slightly
+ * lower bar — there is only ever one globe on offer, so it cannot crowd a list,
+ * and seeing the next one coming is most of what makes it a goal.
+ */
+export function computeGlobeVisible(state: GameState): boolean {
+  const next = nextGlobe(computeGlobes(state));
+  if (!next) return false;
+  return state.peakJoy >= next.cost * GLOBE_REVEAL_SHARE;
+}
+
+/**
+ * Which globe each owned source orbits.
+ *
+ * Round-robin down the source ladder, so buying a globe visibly *takes work off
+ * the first one* — the congregation spreads out across the new sphere instead
+ * of the new sphere sitting there empty. Deterministic from the ladder order,
+ * so a source does not hop between globes as the list grows.
+ */
+export function computeSourceGlobe(state: GameState, id: SourceId): number {
+  const globes = computeGlobes(state);
+  const index = SOURCES.findIndex((s) => s.id === id);
+  if (index < 0) return 0;
+  return index % globes;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   The Bowl
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/** What the current boost multiplies the rate by. ×1 when there is none. */
+export function computeBowlMultiplier(state: GameState): number {
+  const bowl = state.bowl;
+  if (!bowl || bowl.remaining <= 0) return 1;
+  return Math.max(1, bowl.multiplier);
+}
+
+/** Whether a boost is running — and therefore whether the hands are still. */
+export function computeBowlActive(state: GameState): boolean {
+  return (state.bowl?.remaining ?? 0) > 0;
+}
+
+/** Whether the lane exists in this save yet. */
+export function computeBowlUnlocked(state: GameState): boolean {
+  return bowlUnlocked(state.lifetimeJoy);
+}
+
+/** Whether a frame may be started right now. */
+export function computeBowlReady(state: GameState): boolean {
+  return state.bowl ? bowlReady(state.bowl, state.lifetimeJoy) : false;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
    Per-source output
    ══════════════════════════════════════════════════════════════════════════ */
 
@@ -160,6 +261,10 @@ export interface MultiplierBreakdown {
   garden: number;
   choir: number;
   buffs: number;
+  /** ×1.5 per globe past the first. */
+  globes: number;
+  /** The Bowl's hour, if one is running. */
+  bowl: number;
   /** Everything above, multiplied together. */
   total: number;
 }
@@ -199,7 +304,11 @@ export function computeMultipliers(state: GameState): MultiplierBreakdown {
   let buffs = 1;
   for (const buff of state.buffs) buffs *= buff.jpsMultiplier;
 
-  const total = blessings * devotionMult * grace * legacyMult * garden * choir * buffs;
+  const globes = computeGlobeMultiplier(state);
+  const bowl = computeBowlMultiplier(state);
+
+  const total =
+    blessings * devotionMult * grace * legacyMult * garden * choir * buffs * globes * bowl;
   return {
     blessings,
     devotion: devotionMult,
@@ -208,6 +317,8 @@ export function computeMultipliers(state: GameState): MultiplierBreakdown {
     garden,
     choir,
     buffs,
+    globes,
+    bowl,
     total,
   };
 }
@@ -264,6 +375,10 @@ export function computeTouch(state: GameState): number {
   multiplier *= gardenEffects(state.garden).touchMultiplier;
   multiplier *= choirEffects(state.choir, state.runPlaytime).touchMultiplier;
   for (const buff of state.buffs) multiplier *= buff.touchMultiplier;
+  // More globes, more surface to strike. Deliberately gentler than their effect
+  // on the rate (×1.25 against ×1.5) — the hand is meant to stay a way in, not
+  // to become the way the late game is played.
+  multiplier *= computeGlobeTouchMultiplier(state);
 
   // The share term reads gross rate: a temple full of Sinners should still
   // reward the hand, and the Sinners will take their cut of the result anyway.
@@ -391,6 +506,22 @@ export function computeKeepsakeSlots(state: GameState): number {
     if (def?.keptBlessings) slots += def.keptBlessings;
   }
   return slots;
+}
+
+/**
+ * How many globes an ascension leaves turning, counting the one you are given.
+ *
+ * The Orbit rungs each keep one more; without them a run starts with the single
+ * globe every temple starts with. Clamped to the set so a save that has somehow
+ * banked more rungs than there are globes cannot start a run above the ceiling.
+ */
+export function computeKeptGlobes(state: GameState): number {
+  let kept = 1;
+  for (const id of state.legacy) {
+    const def = LEGACY_MAP[id];
+    if (def?.keptGlobes) kept += def.keptGlobes;
+  }
+  return Math.min(MAX_GLOBES, Math.min(kept, computeGlobes(state)));
 }
 
 export function computeKeepsMinigames(state: GameState): boolean {

@@ -304,6 +304,45 @@ export const LEGACY: LegacyDef[] = [
     requires: ['hands_1'],
     touchMultiplier: 10,
   },
+  // ── Tier 5: Orbit — the globes that survive the fall ──
+  /**
+   * Everything a run buys with joy is given back on ascension, globes included.
+   * These three rungs are the only exception, and they are priced against the
+   * Inheritance line rather than the Communions: keeping a globe is worth about
+   * what a starting gift is worth, because it *is* one — it starts the next run
+   * at ×1.5 instead of ×1.
+   */
+  {
+    id: 'orbit_1',
+    name: 'A Globe Remembered',
+    description: 'One globe past the first stays in the sanctum through an ascension.',
+    icon: '🔮',
+    cost: 500,
+    tier: 5,
+    requires: ['communion_2'],
+    keptGlobes: 1,
+  },
+  {
+    id: 'orbit_2',
+    name: 'Two Kept Turning',
+    description: 'A second globe survives the fall.',
+    icon: '🔮',
+    cost: 250_000,
+    tier: 5,
+    requires: ['orbit_1'],
+    keptGlobes: 1,
+  },
+  {
+    id: 'orbit_3',
+    name: 'The Constellation Holds',
+    description: 'A third globe survives, and none of the three ever needs buying again.',
+    icon: '🔮',
+    cost: 500_000_000,
+    tier: 5,
+    requires: ['orbit_2'],
+    keptGlobes: 1,
+  },
+
   {
     id: 'reckoning_1',
     name: 'The Kinder Reckoning',

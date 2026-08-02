@@ -34,6 +34,7 @@ import { createChoir } from './minigames/choir';
 import { createExchange } from './minigames/exchange';
 import { createHours } from './minigames/hours';
 import { createManna } from './minigames/manna';
+import { createBowl } from './bowling';
 import {
   computeCanAscend,
   computeAscensionGrace,
@@ -54,6 +55,11 @@ export function createInitialState(): GameState {
     sources: { ...ZERO_SOURCES },
     sourceLevels: { ...ZERO_SOURCES },
     sourceEarnings: { ...ZERO_SOURCES },
+
+    globes: 1,
+    globesBought: 0,
+
+    bowl: createBowl(),
 
     blessings: new Set(),
     trophies: new Set(),
@@ -114,6 +120,7 @@ export function createInitialState(): GameState {
     showAscendDialog: false,
     showVigilDialog: false,
     showMannaDialog: false,
+    showBowl: false,
     initialized: false,
     notices: [],
   };
@@ -135,6 +142,7 @@ interface TempleStore extends GameState {
   touch: () => void;
   buySource: (id: SourceId) => void;
   sellSource: (id: SourceId, n: number) => void;
+  buyGlobe: () => void;
   buyBlessing: (id: string) => void;
   levelSource: (id: SourceId) => void;
   catchHalo: (id: number) => void;
@@ -159,6 +167,11 @@ interface TempleStore extends GameState {
   // ── Hours ──
   pray: (prayer: PrayerId) => void;
 
+  // ── The Bowl ──
+  openBowl: () => void;
+  closeBowl: () => void;
+  finishFrame: (pins: number, firstBall: number) => void;
+
   // ── Ascension ──
   buyLegacy: (id: string) => void;
   setKeepsakes: (ids: string[]) => void;
@@ -180,6 +193,7 @@ interface TempleStore extends GameState {
   setShowAscendDialog: (open: boolean) => void;
   setShowVigilDialog: (open: boolean) => void;
   setShowMannaDialog: (open: boolean) => void;
+  setShowBowl: (open: boolean) => void;
   dismissNotice: (id: number) => void;
 
   // ── Persistence ──
@@ -203,6 +217,7 @@ export const useTempleStore = create<TempleStore>()(
     touch: () => set((s) => Actions.doTouch(s)),
     buySource: (id) => set((s) => Actions.doBuySourceQty(s, id)),
     sellSource: (id, n) => set((s) => Actions.doSellSource(s, id, n)),
+    buyGlobe: () => set((s) => Actions.doBuyGlobe(s)),
     buyBlessing: (id) => set((s) => Actions.doBuyBlessing(s, id)),
     levelSource: (id) => set((s) => Actions.doLevelSource(s, id)),
     catchHalo: (id) => set((s) => Actions.doCatchHalo(s, id)),
@@ -223,6 +238,10 @@ export const useTempleStore = create<TempleStore>()(
 
     pray: (prayer) => set((s) => Actions.doPray(s, prayer)),
 
+    openBowl: () => set((s) => Actions.doOpenBowl(s)),
+    closeBowl: () => set((s) => Actions.doCloseBowl(s)),
+    finishFrame: (pins, firstBall) => set((s) => Actions.doFinishFrame(s, pins, firstBall)),
+
     buyLegacy: (id) => set((s) => Actions.doBuyLegacy(s, id)),
     setKeepsakes: (ids) => set((s) => Actions.doSetKeepsakes(s, ids)),
     ascend: () => set((s) => Actions.doAscend(s)),
@@ -242,6 +261,7 @@ export const useTempleStore = create<TempleStore>()(
     setShowAscendDialog: (showAscendDialog) => set({ showAscendDialog }),
     setShowVigilDialog: (showVigilDialog) => set({ showVigilDialog }),
     setShowMannaDialog: (showMannaDialog) => set({ showMannaDialog }),
+    setShowBowl: (showBowl) => set({ showBowl }),
     dismissNotice: (id) => set((s) => Actions.doDismissNotice(s, id)),
 
     load: (partial) => set(partial),
