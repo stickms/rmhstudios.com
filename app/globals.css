@@ -4134,7 +4134,7 @@ input[type='number'] {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   §7.1 — `data-motion`: the enter/exit vocabulary for Radix surfaces
+   §7.1 — `data-motion`: the enter/exit vocabulary for floating surfaces
    ==========================================================================
    framer-motion is the site's animation library, and `lib/motion.ts` holds the
    variants — but a Radix popover/dialog/menu unmounts on its own schedule, so
@@ -4152,49 +4152,116 @@ input[type='number'] {
    `lib/motion.ts` uses, and dialog/sheet retimed onto it.
 
      data-motion="fade"  a scrim, a backdrop — opacity only
-     data-motion="pop"   a popover, menu, hover card — the `scaleIn` variant
+     data-motion="pop"   a popover, menu, select, hover card — the bloom below
      data-motion="rise"  modal content — the `modalContent` variant
+
+   **This is not Radix-only.** The enter selector is `:not([data-state='closed'])`
+   rather than `[data-state='open']`, so the dozen-odd hand-rolled menus on the
+   site — which mount on open and unmount on close, and therefore carry no
+   `data-state` at all — opt in with the one attribute and get the same open as
+   the Select. They have no exit to animate (React has already removed them by
+   the time it would run); Radix surfaces, which stay mounted while they close,
+   still get the `closed` half. That generalisation is what retired the last two
+   bespoke menu keyframes on the site (`lib-ctx-in` at 120ms and
+   `vibe-model-pop` at 140ms — the same "three different answers" this section
+   was written to end, one level down).
+
+   ── The pop is anchored, and it is a bloom ────────────────────────────────
+   A menu is not something that materialises in mid-air: it comes OUT of the
+   control you pressed. So `pop` scales from the trigger's edge, not the panel's
+   centre. Radix computes that anchor for every popper surface and publishes it
+   as `--radix-popper-transform-origin` on the wrapper it portals (a custom
+   property, so it inherits down to the content) — which means a collision flip,
+   a menu that opens upward because there was no room below, re-anchors itself
+   for free. A hand-rolled menu states its own anchor, either with Tailwind's
+   `origin-*` utility when the placement is static (`origin-top-right` beside the
+   `absolute right-0 top-full` that put it there) or with `--motion-origin` when
+   the menu picks its side at runtime, as the language switcher does. The rule
+   sits in `@layer components` precisely so the utility outranks it; the variable
+   is the escape hatch for the cases a utility cannot express.
+
+   The shape is this site's liquid vocabulary rather than a plain scale: the
+   panel starts flattened against its anchor, unfurls along the axis it grows
+   on, overshoots, squashes, and rebounds — the under-damped settle that
+   `lib/fluid`'s spring gives the globe's wobble and `liquid-pop`'s bud, sampled
+   into keyframe stops because CSS has no spring. Each stop carries its own
+   `animation-timing-function` (and states BOTH animated properties, so no
+   property can be left interpolating across a different pair of stops than its
+   neighbour).
+
+   Only Y overshoots past 1. X deliberately stops there: a panel three percent
+   wider than its box for two frames can push a horizontal scrollbar onto the
+   document, and sideways is not the axis a dropdown reads as unfurling along
+   anyway.
 
    Mirrors of `lib/motion.ts`: `--motion-in` = DURATION.slow (0.22s),
    `--motion-out` = DURATION.fast (0.1s), the enter curve = EASE.emphasized,
-   the exit = a plain ease-in so dismissals feel immediate. Keep them in step —
-   if one moves, move the other.
+   the exit = a plain ease-in so dismissals feel immediate. `--motion-bloom` is
+   the pop's own, longer window, because a spring needs room to settle: it sits
+   between `DURATION.slow` and the 0.4s perceptual duration `APPLE_SPRING.snappy`
+   asks for, which is the preset this shape is a CSS approximation of. Keep them
+   in step — if one moves, move the other.
 
-   Transform and opacity only; never the blur. `forwards` on the exits so the
-   element stays gone while Radix runs its unmount. Gated on no-preference, and
-   the global reduce rule in §REDUCED MOTION collapses them anyway. */
+   Transform and opacity only; never the blur — `.glass-overlay` re-samples its
+   backdrop on every frame it moves, so the bloom stays short and the panels it
+   runs on stay small. `perf-lite` takes a plain scale-fade instead (the same
+   call `liquid-pop`'s 'perf' mode makes). `forwards` on the exits so the element
+   stays gone while Radix runs its unmount. Gated on no-preference, and the
+   global reduce rule in §REDUCED MOTION collapses them anyway. */
 :root {
   --motion-in: 0.22s;
   --motion-out: 0.1s;
+  --motion-bloom: 0.34s;
   --motion-ease-in: cubic-bezier(0.16, 1, 0.3, 1);
   --motion-ease-out: ease-in;
 }
 
+/* Outside the motion query on purpose: the anchor is not an animation, and a
+   `pop` surface that is scaled by anything else should still be scaled from the
+   corner it hangs off. Layered so an `origin-*` utility on the element wins —
+   unlayered rules beat every layer, which would have made the utility silently
+   inert. Empty/absent variables fall through to the initial `50% 50%`, which is
+   the `center` this would otherwise name. */
+@layer components {
+  [data-motion='pop'] {
+    transform-origin: var(--motion-origin, var(--radix-popper-transform-origin, center));
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
-  [data-motion='fade'][data-state='open'] {
+  [data-motion='fade']:not([data-state='closed']) {
     animation: motion-fade-in var(--motion-in) var(--motion-ease-in);
   }
   [data-motion='fade'][data-state='closed'] {
     animation: motion-fade-out var(--motion-out) var(--motion-ease-out) forwards;
   }
-  [data-motion='pop'][data-state='open'] {
-    animation: motion-pop-in var(--motion-in) var(--motion-ease-in);
+  [data-motion='pop']:not([data-state='closed']) {
+    animation: motion-pop-in var(--motion-bloom);
   }
   [data-motion='pop'][data-state='closed'] {
     animation: motion-pop-out var(--motion-out) var(--motion-ease-out) forwards;
   }
-  [data-motion='rise'][data-state='open'] {
+  [data-motion='rise']:not([data-state='closed']) {
     animation: motion-rise-in var(--motion-in) var(--motion-ease-in);
   }
   [data-motion='rise'][data-state='closed'] {
     animation: motion-rise-out var(--motion-out) var(--motion-ease-out) forwards;
   }
+
+  /* perf-lite: the settle is the expensive half (four stops of transform on a
+     backdrop-filtered panel), and it is the half nobody on a struggling device
+     is enjoying. Keep the anchored scale, drop the spring. */
+  html.perf-lite [data-motion='pop']:not([data-state='closed']) {
+    animation: motion-pop-lite var(--motion-in) var(--motion-ease-in);
+  }
 }
 
-/* The keyframes only ever state the FROM (enter) or TO (exit) frame, so they
-   compose with whatever centring `translate` the element already carries —
-   Tailwind v4 centres with the `translate` longhand, which `transform` does not
-   overwrite. A keyframe that spelled out both ends would erase it. */
+/* The keyframes only ever state the FROM (enter) or TO (exit) frame — or, for
+   the bloom, stop short of 100% — so they compose with whatever centring
+   `translate` the element already carries: Tailwind v4 centres with the
+   `translate` longhand, which `transform` does not overwrite, and an omitted
+   100% keyframe resolves to the element's own computed value. A keyframe that
+   spelled out both ends would erase it. */
 @keyframes motion-fade-in {
   from {
     opacity: 0;
@@ -4205,14 +4272,41 @@ input[type='number'] {
     opacity: 0;
   }
 }
+/* The bloom. Flattened against the anchor → unfurls → overshoots → squashes →
+   rebounds, with the implicit 100% landing it on its own transform. */
 @keyframes motion-pop-in {
-  from {
+  0% {
     opacity: 0;
-    transform: scale(0.96);
+    transform: scale(0.94, 0.84);
+    /* Front-loaded, like EASE.emphasized: most of the travel is spent in the
+       first third, which is what makes the open read as instant rather than as
+       something you wait for. */
+    animation-timing-function: cubic-bezier(0.16, 0.84, 0.32, 1);
+  }
+  46% {
+    opacity: 1;
+    transform: scale(1, 1.024);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.3, 1);
+  }
+  72% {
+    opacity: 1;
+    transform: scale(1, 0.992);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.3, 1);
+  }
+  88% {
+    opacity: 1;
+    transform: scale(1, 1.003);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.3, 1);
   }
 }
 @keyframes motion-pop-out {
   to {
+    opacity: 0;
+    transform: scale(0.97, 0.9);
+  }
+}
+@keyframes motion-pop-lite {
+  from {
     opacity: 0;
     transform: scale(0.96);
   }

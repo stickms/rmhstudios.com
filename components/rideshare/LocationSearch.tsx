@@ -211,7 +211,10 @@ export function LocationSearch({
       {error && <p className="mt-1 text-xs text-site-danger">{error}</p>}
 
       {open && results.length > 0 && !value && (
-        <ul className="absolute z-30 mt-1 max-h-64 w-full overflow-auto glass-overlay">
+        <ul
+          data-motion="pop"
+          className="absolute z-30 mt-1 max-h-64 w-full origin-top overflow-auto glass-overlay"
+        >
           {results.map((r, i) => (
             <li key={`${r.lat},${r.lng},${i}`} className="border-b border-site-border/60 last:border-0">
               <button

@@ -543,7 +543,8 @@ export default function ChatPanel() {
       {showMentionDropdown && filteredMembers.length > 0 && (
         <div
           ref={mentionDropdownRef}
-          className="mx-3 mb-1 rounded-lg border border-(--app-border) bg-(--app-bg) shadow-lg overflow-hidden max-h-32 overflow-y-auto"
+          data-motion="pop"
+          className="mx-3 mb-1 origin-bottom rounded-lg border border-(--app-border) bg-(--app-bg) shadow-lg overflow-hidden max-h-32 overflow-y-auto"
         >
           {filteredMembers.map((member) => (
             <button
@@ -616,7 +617,8 @@ export default function ChatPanel() {
       {/* Context menu (pin/unpin) — for host/mod */}
       {contextMenuMessage && contextMenuPos && (
         <div
-          className="fixed z-50 rounded-lg border border-(--app-border) bg-(--app-bg) shadow-xl overflow-hidden py-1 min-w-35"
+          data-motion="pop"
+          className="fixed z-50 origin-top-left rounded-lg border border-(--app-border) bg-(--app-bg) shadow-xl overflow-hidden py-1 min-w-35"
           style={{ left: contextMenuPos.x, top: contextMenuPos.y }}
           onClick={(e) => e.stopPropagation()}
         >

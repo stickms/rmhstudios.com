@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Globe, Check, ChevronDown } from "lucide-react";
@@ -154,6 +154,12 @@ export function LanguageSwitcher() {
             role="listbox"
             aria-label={label}
             onKeyDown={onMenuKey}
+            // The shared bloom (globals.css §7.1). This menu already knows which
+            // way it opened — `rect.openUp` is the same collision decision Radix
+            // makes for its poppers — so it hands that to the animation as the
+            // edge to unfurl from, and a list that flipped above the trigger
+            // grows upward out of it instead of downward into it.
+            data-motion="pop"
             style={{
               position: "fixed",
               left: rect.left,
@@ -162,7 +168,8 @@ export function LanguageSwitcher() {
                 : rect.top,
               width: rect.width,
               maxHeight: rect.maxHeight,
-            }}
+              "--motion-origin": rect.openUp ? "bottom center" : "top center",
+            } as CSSProperties}
             className="z-[100] overflow-y-auto overscroll-contain glass-overlay p-1"
           >
             {LOCALES.map((l) => {
