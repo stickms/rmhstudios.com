@@ -412,7 +412,7 @@ export function AlbumViewer({ album }: { album: Album }) {
               <Share2 size={18} />
             </button>
             {menu === 'share' && slide.type === 'image' && (
-              <div ref={menuRef} className="av__menu" role="menu">
+              <div ref={menuRef} className="av__menu" data-motion="pop" role="menu">
                 <button type="button" role="menuitem" className="av__menu-item" onClick={() => chooseShare('full')}>
                   {t('album-quality-full', { defaultValue: 'Full resolution' })}
                 </button>
@@ -434,7 +434,7 @@ export function AlbumViewer({ album }: { album: Album }) {
               <Download size={18} />
             </button>
             {menu === 'download' && slide.type === 'image' && (
-              <div ref={menuRef} className="av__menu" role="menu">
+              <div ref={menuRef} className="av__menu" data-motion="pop" role="menu">
                 <button type="button" role="menuitem" className="av__menu-item" onClick={() => chooseDownload('full')}>
                   {t('album-quality-full', { defaultValue: 'Full resolution' })}
                 </button>

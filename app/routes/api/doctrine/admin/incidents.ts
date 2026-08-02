@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { transitionIncidentStatus, addIncidentEvent } from '@/lib/doctrine/incidents';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import type { IncidentStatus } from '@/lib/doctrine/types';
@@ -11,68 +11,70 @@ const VALID_STATUSES: IncidentStatus[] = ['ACTIVE', 'MITIGATED', 'RESOLVED', 'LE
 export const Route = createFileRoute('/api/doctrine/admin/incidents')({
   server: {
     handlers: {
-      PATCH: async ({ request }) => {
-        const ip = getClientIp(request);
-        const { allowed } = rateLimit(ip, { limit: 10, windowMs: 60_000, prefix: 'doctrine-admin-incident' });
-        if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
+      PATCH: defineHandler(
+        {
+          auth: 'none',
+          rateLimit: { limit: 10, windowMs: 60_000, prefix: 'doctrine-admin-incident' },
+        },
+        async ({ request }) => {
+          try {
+            const session = await auth.api.getSession({ headers: request.headers });
+            if (!session?.user?.id) {
+              return Response.json({ error: 'Unauthorized' }, { status: 401 });
+            }
 
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session?.user?.id) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
-
-          const admin = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { isAdmin: true },
-          });
-
-          if (!admin?.isAdmin) {
-            return Response.json({ error: 'Admin access required' }, { status: 403 });
-          }
-
-          const body = await request.json();
-          const { id, status, narrative, timelineMessage } = body;
-
-          if (!id) {
-            return Response.json({ error: 'Incident id is required' }, { status: 400 });
-          }
-
-          // Update narrative if provided
-          if (narrative && typeof narrative === 'string') {
-            await prisma.doctrineIncident.update({
-              where: { id },
-              data: { narrative },
+            const admin = await prisma.user.findUnique({
+              where: { id: session.user.id },
+              select: { isAdmin: true },
             });
+
+            if (!admin?.isAdmin) {
+              return Response.json({ error: 'Admin access required' }, { status: 403 });
+            }
+
+            const body = await request.json();
+            const { id, status, narrative, timelineMessage } = body;
+
+            if (!id) {
+              return Response.json({ error: 'Incident id is required' }, { status: 400 });
+            }
+
+            // Update narrative if provided
+            if (narrative && typeof narrative === 'string') {
+              await prisma.doctrineIncident.update({
+                where: { id },
+                data: { narrative },
+              });
+            }
+
+            // Add timeline event if provided
+            if (timelineMessage && typeof timelineMessage === 'string') {
+              await addIncidentEvent(id, 'update', timelineMessage);
+            }
+
+            // Transition status if provided
+            if (status && VALID_STATUSES.includes(status)) {
+              await transitionIncidentStatus(id, status);
+            }
+
+            const incident = await prisma.doctrineIncident.findUnique({
+              where: { id },
+              include: { timeline: { orderBy: { createdAt: 'asc' } } },
+            });
+
+            await logAdminAction(session.user.id, 'doctrine.incident.update', {
+              targetType: 'DoctrineIncident',
+              targetId: String(id),
+              detail: typeof status === 'string' ? status : 'update',
+            });
+
+            return Response.json({ success: true, incident });
+          } catch (e) {
+            console.error('Doctrine admin incident update failed:', e);
+            return Response.json({ error: 'Internal Server Error' }, { status: 500 });
           }
-
-          // Add timeline event if provided
-          if (timelineMessage && typeof timelineMessage === 'string') {
-            await addIncidentEvent(id, 'update', timelineMessage);
-          }
-
-          // Transition status if provided
-          if (status && VALID_STATUSES.includes(status)) {
-            await transitionIncidentStatus(id, status);
-          }
-
-          const incident = await prisma.doctrineIncident.findUnique({
-            where: { id },
-            include: { timeline: { orderBy: { createdAt: 'asc' } } },
-          });
-
-          await logAdminAction(session.user.id, 'doctrine.incident.update', {
-            targetType: 'DoctrineIncident',
-            targetId: String(id),
-            detail: typeof status === 'string' ? status : 'update',
-          });
-
-          return Response.json({ success: true, incident });
-        } catch (e) {
-          console.error('Doctrine admin incident update failed:', e);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { listMarketplaceDecks } from '@/lib/study.server';
 
 /**
@@ -9,16 +9,10 @@ import { listMarketplaceDecks } from '@/lib/study.server';
 export const Route = createFileRoute('/api/study/marketplace')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
-          const q = new URL(request.url).searchParams.get('q');
-          return Response.json(await listMarketplaceDecks(session?.user?.id ?? null, q));
-        } catch (error) {
-          console.error('Deck marketplace error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+      GET: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
+        const q = new URL(request.url).searchParams.get('q');
+        return Response.json(await listMarketplaceDecks(session?.user?.id ?? null, q));
+      }),
     },
   },
 });

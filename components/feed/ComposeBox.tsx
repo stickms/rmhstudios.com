@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from'react';
+import { useState, useRef, useEffect, useCallback } from'react';
 import { motion } from 'framer-motion';
 import { modalContent } from '@/lib/motion';
 import {
@@ -35,7 +35,7 @@ import { useSession, useResolvedUser } from'@/components/Providers';
 import { buildOptimizedUrl } from'@/components/ui/OptimizedImage';
 import { Button } from'@/components/ui/button';
 import { Select } from'@/components/ui/select';
-import { useLiquidPop } from'@/components/ui/liquid-pop';
+import { AnchoredMenu } from'@/components/ui/anchored-menu';
 import { useFeedStore } from'@/stores/feedStore';
 import {
  MAX_RMHARK_LENGTH,
@@ -102,19 +102,9 @@ export function ComposeBox({
  const [showPriceModal, setShowPriceModal] = useState(false); // unlock-price popover
  const [showCheatSheet, setShowCheatSheet] = useState(false); // markdown cheat sheet
  const imageInputRef = useRef<HTMLInputElement>(null);
- const menuRef = useRef<HTMLDivElement>(null);
- // Popover element itself (not its trigger wrapper) — the viewport-fit hook
- // clamps this so the edge-anchored (+) menu can't spill off a small screen.
- const menuPopRef = useRef<HTMLDivElement>(null);
  const menuBtnRef = useRef<HTMLButtonElement>(null);
  const textareaRef = useRef<HTMLTextAreaElement>(null);
  const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
- // §15.6 liquid pop — the attachment (+) menu buds out of its trigger.
- const { underlay: menuUnderlay } = useLiquidPop({
- triggerRef: menuBtnRef,
- panelRef: menuPopRef,
- open: menuOpen,
- });
 
  // Autosave the draft text so a refresh/navigation can't eat an unsent post;
  // offer any stored draft back once on mount.
@@ -133,27 +123,11 @@ export function ComposeBox({
  const { resolved: resolvedUser } = useResolvedUser();
  const remaining = MAX_RMHARK_LENGTH - content.length;
 
- // Close menu on outside click, or on Escape (capture phase, so a panel that
- // stops keydown propagation can't swallow it — see RMHarkOverflowMenu).
- useEffect(() => {
- if (!menuOpen) return;
- const handleClick = (e: MouseEvent) => {
- if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
- setMenuOpen(false);
- }
- };
- const handleKey = (e: KeyboardEvent) => {
- if (e.key !== 'Escape') return;
- setMenuOpen(false);
- menuBtnRef.current?.focus();
- };
- document.addEventListener('mousedown', handleClick);
- document.addEventListener('keydown', handleKey, true);
- return () => {
- document.removeEventListener('mousedown', handleClick);
- document.removeEventListener('keydown', handleKey, true);
- };
- }, [menuOpen]);
+ // Outside-press dismissal, Escape, and focus return all live in AnchoredMenu —
+ // they have to, now that the panel is portaled away from this subtree and a
+ // "did the press land inside the menu?" test can no longer be a `contains`
+ // check on the trigger's wrapper.
+ const closeMenu = useCallback(() => setMenuOpen(false), []);
 
  const hasPoll =
  attachment ==='poll'&&
@@ -888,9 +862,12 @@ export function ComposeBox({
  {/* Emoji picker — sits next to the GIF/poll (+) menu */}
  <EmojiPickerButton direction="down"onSelect={insertEmoji} />
 
- {/* Plus button — image upload, GIF, poll, draft, schedule */}
- <div className="relative"ref={menuRef}>
- {menuUnderlay}
+ {/* Plus button — image upload, GIF, poll, draft, schedule.
+ The panel is an AnchoredMenu: it portals to <body> (in place it is
+ trapped inside `.radial-frame`'s stacking context, so the top bar and
+ the floating chrome paint over it) and it opens on whichever side of
+ the composer has room, rather than being shoved back down the screen
+ by a viewport clamp. */}
  <button
  ref={menuBtnRef}
  type="button"
@@ -903,12 +880,14 @@ export function ComposeBox({
  <Plus className="w-4.5 h-4.5"/>
  </button>
 
- {menuOpen && (
- <div
- ref={menuPopRef}
- role="menu"
- tabIndex={-1}
- className="absolute bottom-full right-0 mb-1 w-56 glass-overlay py-1 z-30"
+ <AnchoredMenu
+ open={menuOpen}
+ onClose={closeMenu}
+ anchorRef={menuBtnRef}
+ label={t('add-to-post-aria', { defaultValue:'Add to post'})}
+ side="top"
+ align="end"
+ className="w-56"
  >
  {/* Post visibility (audience) — opens a picker modal */}
  <button
@@ -1050,9 +1029,7 @@ export function ComposeBox({
  <FileText className="w-4 h-4 text-site-text-dim"/>
  {t('menu-view-drafts', { defaultValue:'View drafts'})}
  </Link>
- </div>
- )}
- </div>
+ </AnchoredMenu>
 
  <Button variant="accent"size="sm"disabled={!canSubmit} onClick={handleSubmit}>
  {submitting

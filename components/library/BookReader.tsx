@@ -627,7 +627,12 @@ export function Dropdown({
         {icon}
       </button>
       {open && (
-        <div className={`lib-reader__chapters-menu${wide ? ' lib-reader__marks-menu' : ''}`} role={panelRole} aria-label={label}>
+        <div
+          className={`lib-reader__chapters-menu${wide ? ' lib-reader__marks-menu' : ''}`}
+          data-motion="pop"
+          role={panelRole}
+          aria-label={label}
+        >
           {children(() => setOpen(false))}
         </div>
       )}

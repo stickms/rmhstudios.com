@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -58,27 +59,21 @@ function mapEventError(err: EventError): [string, number] {
 export const Route = createFileRoute('/api/events/')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
-          const url = new URL(request.url);
-          const scopeParam = url.searchParams.get('scope') ?? 'upcoming';
-          const scope: EventScope =
-            scopeParam === 'community' || scopeParam === 'mine' ? scopeParam : 'upcoming';
-          if (scope === 'mine' && !session) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
-          const events = await listEvents({
-            scope,
-            communityId: url.searchParams.get('communityId'),
-            userId: session?.user.id ?? null,
-          });
-          return Response.json({ events });
-        } catch (error) {
-          console.error('List events error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+      GET: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
+        const url = new URL(request.url);
+        const scopeParam = url.searchParams.get('scope') ?? 'upcoming';
+        const scope: EventScope =
+          scopeParam === 'community' || scopeParam === 'mine' ? scopeParam : 'upcoming';
+        if (scope === 'mine' && !session) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
-      },
+        const events = await listEvents({
+          scope,
+          communityId: url.searchParams.get('communityId'),
+          userId: session?.user.id ?? null,
+        });
+        return Response.json({ events });
+      }),
 
       POST: async ({ request }) => {
         try {

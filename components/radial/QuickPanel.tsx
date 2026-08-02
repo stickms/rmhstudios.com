@@ -171,6 +171,13 @@ export function QuickPanel({
       // Themes restyle through `[data-slot]` (see components/CLAUDE.md), and the
       // panel portals out of the shell — the attribute is how a theme reaches it.
       data-slot="quick-panel"
+      // The shared bloom (globals.css §7.1). Every one of these is pinned by its
+      // own top-right corner, right under the top-bar control it belongs to, so
+      // that corner is what it unfurls from — the panel grows out of the button
+      // you pressed instead of appearing beside it. Below 560px the CSS drops
+      // the anchor and the panel spans the gutters, but it is still pinned by
+      // its top edge, so the same origin reads correctly there.
+      data-motion="pop"
       role="dialog"
       aria-labelledby={headingId}
       tabIndex={-1}
@@ -178,6 +185,7 @@ export function QuickPanel({
         {
           '--panel-top': `${anchor.top}px`,
           '--panel-right': `${anchor.right}px`,
+          '--motion-origin': 'top right',
         } as CSSProperties
       }
     >

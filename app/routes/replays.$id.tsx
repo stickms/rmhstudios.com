@@ -15,7 +15,7 @@ import { ArrowLeft, Clock, Trophy } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { getReplay } from '@/lib/replays.server';
 import { REPLAY_GAME_TITLES } from '@/lib/game/replay';
-import { buildMeta, buildCanonical } from '@/lib/seo';
+import { buildMeta, buildCanonical, ogCardPath } from '@/lib/seo';
 import { GameReplayPlayer } from '@/components/replays/GameReplayPlayer';
 
 const fetchReplay = createServerFn({ method: 'GET' })
@@ -59,7 +59,10 @@ export const Route = createFileRoute('/replays/$id')({
         title,
         description,
         path: `/replays/${params.id}`,
-        image: replay ? `/api/og/replay/${params.id}` : undefined,
+        image: replay ? ogCardPath('replay', params.id) : undefined,
+        imageAlt: replay
+          ? `${gameTitle(replay.game)} replay by ${replay.author.name ?? 'a player'}.`
+          : undefined,
       }),
       links: [buildCanonical(`/replays/${params.id}`)],
     };

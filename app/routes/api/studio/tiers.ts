@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -29,16 +30,9 @@ const putSchema = z.object({ tiers: z.array(tierSchema).min(1).max(MAX_TIERS) })
 export const Route = createFileRoute('/api/studio/tiers')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          return Response.json({ tiers: await listTiers(session.user.id) });
-        } catch (error) {
-          console.error('Studio tiers list error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+      GET: defineHandler({}, async ({ session }) => {
+        return Response.json({ tiers: await listTiers(session.user.id) });
+      }),
 
       PUT: async ({ request }) => {
         try {

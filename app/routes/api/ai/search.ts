@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
@@ -24,8 +25,9 @@ const MAX_SOURCES = 30;
 export const Route = createFileRoute('/api/ai/search')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        try {
+      POST: defineHandler(
+        { auth: 'none', body: schema, allowEmptyBody: true },
+        async ({ request, body }) => {
           if (!isAITextConfigured())
             return Response.json({ error: 'AI is unavailable' }, { status: 503 });
           const session = await auth.api.getSession({ headers: request.headers });
@@ -35,10 +37,7 @@ export const Route = createFileRoute('/api/ai/search')({
           const { allowed } = rateLimit(ip, { limit: 15, windowMs: 60_000, prefix: 'ai-search' });
           if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
-          const body = await request.json().catch(() => ({}));
-          const parsed = schema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-          const q = parsed.data.q.trim();
+          const q = body.q.trim();
 
           // `assist` is on here: the user explicitly asked for a considered
           // answer, so spending the expansion call on a weak query is warranted.
@@ -70,11 +69,8 @@ export const Route = createFileRoute('/api/ai/search')({
             sourceCount: sources.length,
             confidence: results.meta.confidence,
           });
-        } catch (error) {
-          console.error('AI search error:', error);
-          return Response.json({ error: 'Could not answer' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

@@ -31,8 +31,9 @@
 - **i18n:** every user-facing string through `t("key", { defaultValue })`,
   then `pnpm i18n:extract`. A new namespace JSON must also be registered in
   `NAMESPACES` (`lib/i18n/config.ts`) or it is never loaded.
-- **API routes:** session via `auth.api.getSession({ headers })` → rate limit
-  via `lib/rate-limit` → zod validation → `Response.json`. Details in
+- **API routes:** wrap handlers in `defineHandler` from
+  `@/lib/api/handler.server`, which runs session → rate limit → zod validation
+  → try/catch in that order. Don't hand-roll the preamble. Details in
   `app/CLAUDE.md`.
 - **Go services:** config via `pkg/config`, logging via `pkg/log`; run
   `make gazelle` after adding `.go` files. Details in `go-services/CLAUDE.md`.

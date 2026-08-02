@@ -965,22 +965,64 @@ gated off there too, via `html.app-route`).
   <motion.div variants={modalContent} initial="initial" animate="animate" />
   ```
 
-  **2. `data-motion`**, for a **Radix** surface, whose unmount is Radix's to
-  schedule — animating one with framer means `forceMount` + `AnimatePresence`
-  threaded through every consumer, so the exit rides Radix's own `data-state`
-  instead. Three values, matching the variants above:
+  **2. `data-motion`**, for any surface React is not driving the exit of — a
+  **Radix** popover/dialog/menu, whose unmount is Radix's to schedule (animating
+  one with framer means `forceMount` + `AnimatePresence` threaded through every
+  consumer, so the exit rides Radix's own `data-state` instead), and equally the
+  hand-rolled menus that mount on open and unmount on close. Three values:
 
   | attribute            | for                                | matches      |
   | -------------------- | ---------------------------------- | ------------ |
   | `data-motion="fade"` | a scrim / backdrop                 | `overlay`    |
-  | `data-motion="pop"`  | a popover, menu, select, hover card | `scaleIn`    |
+  | `data-motion="pop"`  | a popover, menu, select, hover card | the bloom, below |
   | `data-motion="rise"` | modal / dialog content             | `modalContent` |
+
+  The enter selector is `:not([data-state='closed'])`, not `[data-state='open']`,
+  which is what makes the attribute enough on its own: a hand-rolled menu carries
+  no `data-state` at all, and has no exit to animate because React removed it
+  already. Radix surfaces, which stay mounted while they close, still get the
+  `closed` half.
 
   Both halves run on one clock: the `--motion-*` tokens in `globals.css` §7.1
   mirror `DURATION.slow` / `DURATION.fast` / `EASE.emphasized`. `Dialog` and
   `Sheet` keep their own bespoke keyframes (a sheet slides from an edge, which
   none of the three shapes covers) but were retimed onto the same tokens — they
   used to hardcode three different answers between them.
+- **A menu blooms out of the control you pressed.** `pop` is not a centred
+  scale-fade. It is anchored — the panel grows from the trigger's edge — and the
+  shape is the site's liquid settle rather than a linear scale: flattened against
+  that edge, unfurling along the axis it grows on, overshooting, squashing, and
+  rebounding, which is `lib/fluid`'s under-damped spring (the globe's wobble, the
+  `liquid-pop` bud) sampled into keyframe stops because CSS has no spring. Only
+  Y overshoots past 1; a panel briefly wider than its box can push a horizontal
+  scrollbar onto the document, and sideways is not the axis a dropdown reads as
+  unfurling along.
+
+  The anchor is stated three ways, in priority order:
+
+  1. `--motion-origin` on the element, for a menu that picks its side at runtime
+     (`LanguageSwitcher` hands it the same collision decision it used to place
+     itself, so a list that flipped above its trigger grows upward out of it);
+  2. Tailwind's `origin-*` utility, for a statically placed menu — write
+     `origin-top-right` beside the `absolute right-0 top-full` that put it there.
+     The §7.1 rule lives in `@layer components` precisely so the utility outranks
+     it;
+  3. `--radix-popper-transform-origin`, which every Radix popper publishes on the
+     wrapper it portals — so `Select` and `ProfileHoverCard` re-anchor themselves
+     through a collision flip for free, and neither has to say anything.
+
+  `perf-lite` drops the settle and keeps the anchored scale (the call
+  `liquid-pop`'s own 'perf' mode makes); reduced motion removes it entirely.
+  Retiring the last two menus that still answered this privately — `lib-ctx-in`
+  at 120ms and `vibe-model-pop` at 140ms — is what closed the loop §7.1 was
+  opened to close.
+- **The richer open is `useLiquidPop`** (§15.6), and it stays the one for a menu
+  that buds off a small round trigger: a goo-filtered droplet separates from the
+  button and the real panel crossfades onto it. It costs two refs and a portalled
+  underlay per adopter, which is why the site runs both — the feed's composer,
+  overflow and reaction menus take the bud; everything else takes `data-motion`.
+  Never both on one panel: the hook writes the panel's `transform`/`opacity`/
+  `transform-origin` directly and a keyframe on the same element would fight it.
 - **Never `transition-all`, and never animate a layout property.** `all` makes
   the engine watch every animatable property on the element, so a class change
   that happens to touch `width`/`padding`/`gap` animates a reflow nobody asked

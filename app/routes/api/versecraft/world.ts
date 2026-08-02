@@ -1,11 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit } from '@/lib/rate-limit';
 import { redisRateLimit } from '@/lib/redis.server';
 import { generateWorld, generateChapterOpening } from '@/lib/versecraft/gen/generate.server';
 import { normalizeSeed } from '@/lib/versecraft/gen/rng';
-import type { GeneratedWorld, GenChapter, Pronouns, Attraction } from '@/lib/versecraft/gen/world-types';
+import type {
+  GeneratedWorld,
+  GenChapter,
+  Pronouns,
+  Attraction,
+} from '@/lib/versecraft/gen/world-types';
 
 /** Build the opening payload for a world: prefer a cached full chapter 0,
  *  else a fast partial opening scene. Lets the client start in one round trip. */
@@ -36,8 +41,7 @@ export const Route = createFileRoute('/api/versecraft/world')({
         return Response.json({ world: row.world });
       },
 
-      POST: async ({ request }) => {
-        const session = await auth.api.getSession({ headers: request.headers });
+      POST: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
         if (!session?.user) {
           return Response.json({ error: 'Sign in to use this feature.' }, { status: 401 });
         }
@@ -48,18 +52,45 @@ export const Route = createFileRoute('/api/versecraft/world')({
         const userId = session.user.id;
         const distributed = await redisRateLimit(`versecraft-world:user:${userId}`, 10, 60_000);
         if (!distributed && process.env.NODE_ENV === 'production') {
-          return Response.json({ error: 'AI service is temporarily unavailable.' }, { status: 503, headers: { 'Retry-After': '60' } });
+          return Response.json(
+            { error: 'AI service is temporarily unavailable.' },
+            { status: 503, headers: { 'Retry-After': '60' } },
+          );
         }
-        const local = distributed ?? rateLimit(userId, { limit: 10, windowMs: 60_000, prefix: 'versecraft-world' });
+        const local =
+          distributed ??
+          rateLimit(userId, { limit: 10, windowMs: 60_000, prefix: 'versecraft-world' });
         const globalMinute = await redisRateLimit('versecraft-ai:global:minute', 300, 60_000);
-        const globalDay = await redisRateLimit('versecraft-ai:global:day', Number(process.env.VERSECRAFT_AI_DAILY_CAP ?? 5_000), 86_400_000);
+        const globalDay = await redisRateLimit(
+          'versecraft-ai:global:day',
+          Number(process.env.VERSECRAFT_AI_DAILY_CAP ?? 5_000),
+          86_400_000,
+        );
         if (!local.allowed || globalMinute?.allowed === false || globalDay?.allowed === false) {
-          const retryAfter = Math.max(local.retryAfter, globalMinute?.retryAfter ?? 0, globalDay?.retryAfter ?? 0);
-          return Response.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(retryAfter) } });
+          const retryAfter = Math.max(
+            local.retryAfter,
+            globalMinute?.retryAfter ?? 0,
+            globalDay?.retryAfter ?? 0,
+          );
+          return Response.json(
+            { error: 'Too many requests' },
+            { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+          );
         }
 
-        let body: { seed?: string; prompt?: string; playerName?: string; pronouns?: Pronouns; attraction?: Attraction; withOpening?: boolean };
-        try { body = await request.json(); } catch { return Response.json({ error: 'Invalid JSON' }, { status: 400 }); }
+        let body: {
+          seed?: string;
+          prompt?: string;
+          playerName?: string;
+          pronouns?: Pronouns;
+          attraction?: Attraction;
+          withOpening?: boolean;
+        };
+        try {
+          body = await request.json();
+        } catch {
+          return Response.json({ error: 'Invalid JSON' }, { status: 400 });
+        }
 
         const seed = normalizeSeed(body.seed ?? '');
         const prompt = (body.prompt ?? '').slice(0, 600);
@@ -68,7 +99,10 @@ export const Route = createFileRoute('/api/versecraft/world')({
         if (seed) {
           const existing = await prisma.versecraftWorld.findUnique({ where: { seed } });
           if (existing) {
-            await prisma.versecraftWorld.update({ where: { seed }, data: { plays: { increment: 1 } } });
+            await prisma.versecraftWorld.update({
+              where: { seed },
+              data: { plays: { increment: 1 } },
+            });
             const ew = existing.world as unknown as GeneratedWorld;
             const opening = body.withOpening ? await openingFor(ew, seed) : undefined;
             return Response.json({ world: existing.world, cached: true, opening });
@@ -78,11 +112,24 @@ export const Route = createFileRoute('/api/versecraft/world')({
 
         // Canonical worlds are name-agnostic ("You"); the client shows the
         // player's own name. Story stays identical for everyone on this seed.
-        const world: GeneratedWorld = await generateWorld(seed, prompt, 'You', body.pronouns ?? 'they/them', body.attraction ?? 'everyone');
+        const world: GeneratedWorld = await generateWorld(
+          seed,
+          prompt,
+          'You',
+          body.pronouns ?? 'they/them',
+          body.attraction ?? 'everyone',
+        );
 
         await prisma.versecraftWorld.upsert({
           where: { seed },
-          create: { seed, mcPrompt: prompt, source: world.source, world: world as unknown as object, createdBy: userId, plays: 1 },
+          create: {
+            seed,
+            mcPrompt: prompt,
+            source: world.source,
+            world: world as unknown as object,
+            createdBy: userId,
+            plays: 1,
+          },
           update: {}, // race: another request created it first — keep theirs
         });
         const saved = await prisma.versecraftWorld.findUnique({ where: { seed } });
@@ -90,7 +137,7 @@ export const Route = createFileRoute('/api/versecraft/world')({
         // Same round trip: hand back the opening scene so the client starts fast.
         const opening = body.withOpening ? await openingFor(savedWorld, seed) : undefined;
         return Response.json({ world: saved?.world ?? world, cached: false, opening });
-      },
+      }),
     },
   },
 });

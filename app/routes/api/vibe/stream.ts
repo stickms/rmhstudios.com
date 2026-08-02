@@ -8,96 +8,88 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { generateVibeStream } from '@/lib/rmhvibe/vibe.server';
 import { asVibeModel } from '@/lib/rmhvibe/vibe-types';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 export const Route = createFileRoute('/api/vibe/stream')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        // Generation drives an expensive LLM call (and esbuild bundling), so cap
-        // how often a single client can kick one off. Covers both new pages and
-        // "customize" follow-ups, which share this endpoint.
-        const ip = getClientIp(request);
-        const { allowed, retryAfter } = rateLimit(ip, {
-          limit: 10,
-          windowMs: 5 * 60_000,
-          prefix: 'vibe',
-        });
-        if (!allowed) {
-          return new Response('Too many requests. Please slow down and try again shortly.', {
-            status: 429,
-            headers: { 'Retry-After': String(retryAfter) },
-          });
-        }
+      POST: defineHandler(
+        { auth: 'none', rateLimit: { limit: 10, windowMs: 5 * 60_000, prefix: 'vibe' } },
+        async ({ request }) => {
+          const body = (await request.json().catch(() => ({}))) as {
+            prompt?: unknown;
+            slug?: unknown;
+            fromVersionId?: unknown;
+            model?: unknown;
+          };
+          const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
+          const slug = typeof body.slug === 'string' ? body.slug : undefined;
+          const fromVersionId =
+            typeof body.fromVersionId === 'string' ? body.fromVersionId : undefined;
+          const model = asVibeModel(body.model);
 
-        const body = (await request.json().catch(() => ({}))) as {
-          prompt?: unknown;
-          slug?: unknown;
-          fromVersionId?: unknown;
-          model?: unknown;
-        };
-        const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
-        const slug = typeof body.slug === 'string' ? body.slug : undefined;
-        const fromVersionId =
-          typeof body.fromVersionId === 'string' ? body.fromVersionId : undefined;
-        const model = asVibeModel(body.model);
+          if (!prompt) {
+            return new Response('Missing prompt', { status: 400 });
+          }
 
-        if (!prompt) {
-          return new Response('Missing prompt', { status: 400 });
-        }
-
-        const encoder = new TextEncoder();
-        // `open` tracks whether the client is still connected. Generation is
-        // deliberately NOT tied to the connection: we keep draining the generator
-        // even after the client goes away (`open = false`) so the page is still
-        // built and persisted in the background — the whole point of the reserved
-        // "generating" row. We just stop pushing SSE frames once nobody's listening.
-        let open = true;
-        const stream = new ReadableStream({
-          async start(controller) {
-            const send = (data: unknown) => {
-              if (!open) return;
-              try {
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
-              } catch {
-                open = false; // controller closed/errored — client is gone
-              }
-            };
-            try {
-              for await (const event of generateVibeStream({ prompt, slug, fromVersionId, model })) {
-                send(event);
-              }
-            } catch {
-              send({ type: 'error', message: 'Generation failed' });
-            } finally {
-              if (open) {
+          const encoder = new TextEncoder();
+          // `open` tracks whether the client is still connected. Generation is
+          // deliberately NOT tied to the connection: we keep draining the generator
+          // even after the client goes away (`open = false`) so the page is still
+          // built and persisted in the background — the whole point of the reserved
+          // "generating" row. We just stop pushing SSE frames once nobody's listening.
+          let open = true;
+          const stream = new ReadableStream({
+            async start(controller) {
+              const send = (data: unknown) => {
+                if (!open) return;
                 try {
-                  controller.close();
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
                 } catch {
-                  /* already closed */
+                  open = false; // controller closed/errored — client is gone
                 }
-                open = false;
+              };
+              try {
+                for await (const event of generateVibeStream({
+                  prompt,
+                  slug,
+                  fromVersionId,
+                  model,
+                })) {
+                  send(event);
+                }
+              } catch {
+                send({ type: 'error', message: 'Generation failed' });
+              } finally {
+                if (open) {
+                  try {
+                    controller.close();
+                  } catch {
+                    /* already closed */
+                  }
+                  open = false;
+                }
               }
-            }
-          },
-          // Client disconnected (navigated away / tab closed). Stop emitting, but let
-          // the in-flight generation above run to completion so the page is saved.
-          cancel() {
-            open = false;
-          },
-        });
+            },
+            // Client disconnected (navigated away / tab closed). Stop emitting, but let
+            // the in-flight generation above run to completion so the page is saved.
+            cancel() {
+              open = false;
+            },
+          });
 
-        return new Response(stream, {
-          headers: {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache, no-transform',
-            Connection: 'keep-alive',
-            'X-Accel-Buffering': 'no',
-          },
-        });
-      },
+          return new Response(stream, {
+            headers: {
+              'Content-Type': 'text/event-stream',
+              'Cache-Control': 'no-cache, no-transform',
+              Connection: 'keep-alive',
+              'X-Accel-Buffering': 'no',
+            },
+          });
+        },
+      ),
     },
   },
 });

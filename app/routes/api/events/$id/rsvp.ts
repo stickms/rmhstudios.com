@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -53,18 +54,10 @@ export const Route = createFileRoute('/api/events/$id/rsvp')({
         }
       },
 
-      DELETE: async ({ request, params }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const result = await unrsvp(params.id, session.user.id);
-          return Response.json(result);
-        } catch (error) {
-          console.error('Un-RSVP error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+      DELETE: defineHandler({}, async ({ params, session }) => {
+        const result = await unrsvp(params.id, session.user.id);
+        return Response.json(result);
+      }),
     },
   },
 });

@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { subscribeGroup, type GroupEventPayload } from '@/lib/group-events';
 
@@ -11,9 +11,7 @@ import { subscribeGroup, type GroupEventPayload } from '@/lib/group-events';
 export const Route = createFileRoute('/api/group-chats/$id/stream')({
   server: {
     handlers: {
-      GET: async ({ request, params }) => {
-        const session = await auth.api.getSession({ headers: request.headers });
-        if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      GET: defineHandler({}, async ({ params, session }) => {
         const userId = session.user.id;
 
         // Members only.
@@ -86,7 +84,7 @@ export const Route = createFileRoute('/api/group-chats/$id/stream')({
             'X-Accel-Buffering': 'no',
           },
         });
-      },
+      }),
     },
   },
 });

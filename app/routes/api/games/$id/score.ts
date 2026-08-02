@@ -7,8 +7,8 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
 import { submitGameScore } from '@/lib/game/submit.server';
 
 const schema = z.object({
@@ -25,19 +25,13 @@ const schema = z.object({
 export const Route = createFileRoute('/api/games/$id/score')({
   server: {
     handlers: {
-      POST: async ({ request, params }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const body = await request.json().catch(() => ({}));
-          const parsed = schema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
+      POST: defineHandler(
+        { body: schema, allowEmptyBody: true },
+        async ({ params, session, body }) => {
           const result = await submitGameScore({
             gameId: params.id,
             userId: session.user.id,
-            ...parsed.data,
+            ...body,
           });
 
           if (!result.ok) {
@@ -47,11 +41,8 @@ export const Route = createFileRoute('/api/games/$id/score')({
             );
           }
           return Response.json({ success: true });
-        } catch (error) {
-          console.error('game score submit error:', error);
-          return Response.json({ error: 'Internal server error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

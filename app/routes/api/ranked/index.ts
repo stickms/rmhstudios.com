@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
@@ -19,37 +19,38 @@ const challengeSchema = z.object({
 export const Route = createFileRoute('/api/ranked/')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+      GET: defineHandler({ auth: 'optional' }, async ({ session }) => {
         return Response.json(await getRankedOverview(session?.user.id ?? null));
-      },
+      }),
 
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      POST: defineHandler(
+        { body: challengeSchema, allowEmptyBody: true },
+        async ({ request, session, body }) => {
           const userId = session.user.id;
 
           const ip = getClientIp(request);
-          const { allowed } = rateLimit(ip, { limit: 20, windowMs: 60_000, prefix: 'ranked-challenge' });
+          const { allowed } = rateLimit(ip, {
+            limit: 20,
+            windowMs: 60_000,
+            prefix: 'ranked-challenge',
+          });
           if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
-          const body = await request.json().catch(() => ({}));
-          const parsed = challengeSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-          if (!isRankedGame(parsed.data.game)) return Response.json({ error: 'Unknown game' }, { status: 400 });
+          if (!isRankedGame(body.game))
+            return Response.json({ error: 'Unknown game' }, { status: 400 });
 
           const opponent = await prisma.user.findFirst({
-            where: { OR: [{ id: parsed.data.opponent }, { handle: parsed.data.opponent }] },
+            where: { OR: [{ id: body.opponent }, { handle: body.opponent }] },
             select: { id: true },
           });
           if (!opponent) return Response.json({ error: 'Player not found' }, { status: 404 });
-          if (opponent.id === userId) return Response.json({ error: "You can't challenge yourself" }, { status: 400 });
+          if (opponent.id === userId)
+            return Response.json({ error: "You can't challenge yourself" }, { status: 400 });
 
           // Avoid duplicate open challenges between the same pair for a game.
           const dup = await prisma.rankedChallenge.findFirst({
             where: {
-              game: parsed.data.game,
+              game: body.game,
               status: { in: ['pending', 'accepted'] },
               OR: [
                 { challengerId: userId, opponentId: opponent.id },
@@ -58,10 +59,14 @@ export const Route = createFileRoute('/api/ranked/')({
             },
             select: { id: true },
           });
-          if (dup) return Response.json({ error: 'You already have an open challenge for this game' }, { status: 400 });
+          if (dup)
+            return Response.json(
+              { error: 'You already have an open challenge for this game' },
+              { status: 400 },
+            );
 
           const challenge = await prisma.rankedChallenge.create({
-            data: { game: parsed.data.game, challengerId: userId, opponentId: opponent.id },
+            data: { game: body.game, challengerId: userId, opponentId: opponent.id },
           });
 
           await createNotification({
@@ -75,11 +80,8 @@ export const Route = createFileRoute('/api/ranked/')({
           }).catch(() => {});
 
           return Response.json({ success: true, id: challenge.id }, { status: 201 });
-        } catch (error) {
-          console.error('Ranked challenge error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

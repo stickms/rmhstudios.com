@@ -1,8 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { creditCoins, getBalance } from '@/lib/economy/ledger.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { WHEEL_SEGMENTS, pickSegment, wheelDateKey } from '@/lib/wheel/wheel';
 import { awardXp } from '@/lib/xp/engine.server';
 import { grantAchievement } from '@/lib/achievements/engine.server';
@@ -11,15 +10,9 @@ import { grantAchievement } from '@/lib/achievements/engine.server';
 export const Route = createFileRoute('/api/wheel/spin')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const ip = getClientIp(request);
-          const { allowed } = rateLimit(ip, { limit: 10, windowMs: 60_000, prefix: 'wheel-spin' });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
+      POST: defineHandler(
+        { rateLimit: { limit: 10, windowMs: 60_000, prefix: 'wheel-spin' } },
+        async ({ session }) => {
           const userId = session.user.id;
           const dateKey = wheelDateKey();
           const segment = pickSegment();
@@ -49,16 +42,18 @@ export const Route = createFileRoute('/api/wheel/spin')({
 
             return Response.json({ segment, reward, newBalance: result });
           } catch (e) {
-            if (e && typeof e === 'object' && 'code' in e && (e as { code: string }).code === 'P2002') {
+            if (
+              e &&
+              typeof e === 'object' &&
+              'code' in e &&
+              (e as { code: string }).code === 'P2002'
+            ) {
               return Response.json({ error: 'Already spun today' }, { status: 409 });
             }
             throw e;
           }
-        } catch (error) {
-          console.error('Wheel spin error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

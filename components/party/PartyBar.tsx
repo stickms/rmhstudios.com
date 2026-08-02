@@ -106,9 +106,13 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
             className={cn(
               'absolute right-0 z-10 w-52 glass-overlay p-1',
               // Inline card opens the menu downward; the docked pill opens it up.
-              inline ? 'top-full mt-2' : 'bottom-full mb-2',
+              // The bloom (globals.css §7.1) unfurls from whichever edge that
+              // put it on, so the same menu grows down out of the card and up
+              // out of the dock.
+              inline ? 'top-full mt-2 origin-top-right' : 'bottom-full mb-2 origin-bottom-right',
             )}
             data-slot="party-game-menu"
+            data-motion="pop"
             role="menu"
           >
             <div className="flex items-center justify-between px-2 py-1">

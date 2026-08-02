@@ -294,6 +294,12 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
           <SelectPrimitive.Portal container={appContainer ?? undefined}>
             <SelectPrimitive.Content
               data-slot="select-content"
+              // The shared bloom (globals.css §7.1). It needs nothing from this
+              // component beyond the attribute: `position="popper"` makes Radix
+              // publish `--radix-popper-transform-origin` on the wrapper it
+              // portals, which the bloom reads as its anchor — so a list that
+              // collision-flips above a trigger near the bottom of the screen
+              // unfurls upward out of it without either side being told.
               data-motion="pop"
               position="popper"
               sideOffset={6}

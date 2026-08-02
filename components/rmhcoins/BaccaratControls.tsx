@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBettingCountdown, BettingCountdown } from './BettingCountdown';
 import { CoinIcon } from './CoinIcon';
 import { useBaccaratStore } from '@/lib/baccarat/store';
 import { getBaccaratSocket } from '@/lib/baccarat/socket';
@@ -36,7 +37,7 @@ export function BaccaratControls({ coins }: Props) {
   } = useBaccaratStore();
 
   const [chipAmount, setChipAmount] = useState(5);
-  const [countdown, setCountdown] = useState<number | null>(null);
+  const countdown = useBettingCountdown(tablePhase, bettingCountdown);
   const [localBets, setLocalBets] = useState<Record<BetType, number>>({
     player: 0,
     banker: 0,
@@ -51,25 +52,6 @@ export function BaccaratControls({ coins }: Props) {
 
   const myPlayer = players.find((p) => p.userId === myUserId);
   const totalBet = Object.values(localBets).reduce((sum, v) => sum + v, 0);
-
-  // Betting countdown timer
-  useEffect(() => {
-    if (tablePhase === 'betting' && bettingCountdown !== null) {
-      setCountdown(bettingCountdown);
-      const interval = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev === null || prev <= 0) {
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(interval);
-    } else {
-      setCountdown(null);
-    }
-  }, [tablePhase, bettingCountdown]);
 
   // Reset local bets when a new betting phase starts
   useEffect(() => {
@@ -123,18 +105,9 @@ export function BaccaratControls({ coins }: Props) {
 
   // Betting phase
   if (tablePhase === 'betting') {
-    const isLow = countdown !== null && countdown <= 5;
-
     return (
       <div className="flex flex-col gap-3">
-        {countdown !== null && (
-          <div className="text-center">
-            <span className="text-sm text-site-text-dim">{t("betting-closes-in", { defaultValue: "Betting closes in " })}</span>
-            <span className={`font-bold text-lg tabular-nums ${isLow ? 'text-site-danger animate-pulse' : 'text-site-accent'}`}>
-              {countdown}s
-            </span>
-          </div>
-        )}
+        <BettingCountdown countdown={countdown} />
 
         {/* Main bet buttons — larger touch targets */}
         <div className="grid grid-cols-3 gap-2">

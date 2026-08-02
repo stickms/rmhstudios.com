@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { deleteSlide } from '@/lib/albums.admin.server';
 
@@ -10,8 +10,7 @@ import { deleteSlide } from '@/lib/albums.admin.server';
 export const Route = createFileRoute('/api/admin/albums/$id/slides/$slideId')({
   server: {
     handlers: {
-      DELETE: async ({ request, params }) => {
-        const session = await auth.api.getSession({ headers: request.headers });
+      DELETE: defineHandler({ auth: 'optional' }, async ({ params, session }) => {
         if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
           return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
@@ -24,7 +23,7 @@ export const Route = createFileRoute('/api/admin/albums/$id/slides/$slideId')({
           targetId: params.slideId,
         });
         return Response.json({ success: true });
-      },
+      }),
     },
   },
 });

@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 /**
  * Single Build API
  * GET /api/user-builds/[id] - Get a build by ID or slug
@@ -48,286 +49,273 @@ async function findBuild(idOrSlug: string) {
 export const Route = createFileRoute('/api/user-builds/$id')({
   server: {
     handlers: {
-  GET: async ({ request, params }) => {
-  try {
-    const { id } = params;
+      GET: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+        const { id } = params;
 
-    let currentUserId: string | null = null;
-    let isAdmin = false;
-    try {
-      const session = await auth.api.getSession({ headers: request.headers });
-      currentUserId = session?.user?.id ?? null;
-      isAdmin = !!(session?.user as any)?.isAdmin;
-    } catch {
-      // Not logged in
-    }
+        let currentUserId: string | null = null;
+        let isAdmin = false;
+        try {
+          const session = await auth.api.getSession({ headers: request.headers });
+          currentUserId = session?.user?.id ?? null;
+          isAdmin = !!(session?.user as any)?.isAdmin;
+        } catch {
+          // Not logged in
+        }
 
-    const build = await findBuild(id);
+        const build = await findBuild(id);
 
-    if (!build) {
-      return Response.json({ error: 'Build not found' }, { status: 404 });
-    }
+        if (!build) {
+          return Response.json({ error: 'Build not found' }, { status: 404 });
+        }
 
-    // Check visibility
-    const isOwner = currentUserId === build.userId || isAdmin;
-    if (!isOwner) {
-      if (build.visibility === 'PRIVATE') {
-        return Response.json({ error: 'Build not found' }, { status: 404 });
-      }
-    }
+        // Check visibility
+        const isOwner = currentUserId === build.userId || isAdmin;
+        if (!isOwner) {
+          if (build.visibility === 'PRIVATE') {
+            return Response.json({ error: 'Build not found' }, { status: 404 });
+          }
+        }
 
-    // Check if user liked this build
-    let liked = false;
-    if (currentUserId) {
-      const like = await prisma.buildLike.findUnique({
-        where: { buildId_userId: { buildId: build.id, userId: currentUserId } },
-      });
-      liked = !!like;
-    }
+        // Check if user liked this build
+        let liked = false;
+        if (currentUserId) {
+          const like = await prisma.buildLike.findUnique({
+            where: { buildId_userId: { buildId: build.id, userId: currentUserId } },
+          });
+          liked = !!like;
+        }
 
-    // Marketplace gating: paid builds hide readme/repo/demo until unlocked.
-    const price = build.price ?? 0;
-    let unlocked = isOwner || price <= 0;
-    if (!unlocked && currentUserId) {
-      const u = await prisma.buildUnlock.findUnique({
-        where: { userId_buildId: { userId: currentUserId, buildId: build.id } },
-        select: { id: true },
-      });
-      unlocked = !!u;
-    }
-    const locked = price > 0 && !unlocked;
+        // Marketplace gating: paid builds hide readme/repo/demo until unlocked.
+        const price = build.price ?? 0;
+        let unlocked = isOwner || price <= 0;
+        if (!unlocked && currentUserId) {
+          const u = await prisma.buildUnlock.findUnique({
+            where: { userId_buildId: { userId: currentUserId, buildId: build.id } },
+            select: { id: true },
+          });
+          unlocked = !!u;
+        }
+        const locked = price > 0 && !unlocked;
 
-    return Response.json({
-      id: build.id,
-      slug: build.slug,
-      title: build.title,
-      description: build.description,
-      readme: locked ? null : build.readme,
-      thumbnailUrl: build.thumbnailUrl,
-      repoUrl: locked ? null : build.repoUrl,
-      demoUrl: locked ? null : build.demoUrl,
-      price,
-      locked,
-      unlocked,
-      visibility: build.visibility,
-      featured: build.featured,
-      isCurated: build.isCurated,
-      technologies: build.technologies,
-      likeCount: build.likeCount,
-      commentCount: build.commentCount,
-      viewCount: build.viewCount,
-      createdAt: build.createdAt.toISOString(),
-      updatedAt: build.updatedAt.toISOString(),
-      publishedAt: build.publishedAt?.toISOString() ?? null,
-      user: resolveUser(build.user),
-      category: build.category,
-      tags: build.tags.map((t: { name: string }) => t.name),
-      versions: build.versions.map((v: any) => ({
-        id: v.id,
-        version: v.version,
-        changelog: v.changelog,
-        commitHash: v.commitHash,
-        createdAt: v.createdAt.toISOString(),
-      })),
-      liked,
-      isOwner,
-    });
-  } catch (error) {
-    console.error('Build fetch error:', error);
-    return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-  }
-},
-  PATCH: async ({ request, params }) => {
-  try {
-    const { id } = params;
+        return Response.json({
+          id: build.id,
+          slug: build.slug,
+          title: build.title,
+          description: build.description,
+          readme: locked ? null : build.readme,
+          thumbnailUrl: build.thumbnailUrl,
+          repoUrl: locked ? null : build.repoUrl,
+          demoUrl: locked ? null : build.demoUrl,
+          price,
+          locked,
+          unlocked,
+          visibility: build.visibility,
+          featured: build.featured,
+          isCurated: build.isCurated,
+          technologies: build.technologies,
+          likeCount: build.likeCount,
+          commentCount: build.commentCount,
+          viewCount: build.viewCount,
+          createdAt: build.createdAt.toISOString(),
+          updatedAt: build.updatedAt.toISOString(),
+          publishedAt: build.publishedAt?.toISOString() ?? null,
+          user: resolveUser(build.user),
+          category: build.category,
+          tags: build.tags.map((t: { name: string }) => t.name),
+          versions: build.versions.map((v: any) => ({
+            id: v.id,
+            version: v.version,
+            changelog: v.changelog,
+            commitHash: v.commitHash,
+            createdAt: v.createdAt.toISOString(),
+          })),
+          liked,
+          isOwner,
+        });
+      }),
+      PATCH: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+        const { id } = params;
 
-    // Check auth - support both session and CLI token
-    let userId: string | null = null;
+        // Check auth - support both session and CLI token
+        let userId: string | null = null;
 
-    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
-    if (session) {
-      userId = session.user.id;
-    } else {
-      const user = await getAuthenticatedUser(request, null);
-      if (user) {
-        userId = user.id;
-      }
-    }
+        const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+        if (session) {
+          userId = session.user.id;
+        } else {
+          const user = await getAuthenticatedUser(request, null);
+          if (user) {
+            userId = user.id;
+          }
+        }
 
-    if (!userId) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+        if (!userId) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
-    // Rate limit: 20 updates per hour
-    const ip = getClientIp(request);
-    const { allowed, retryAfter } = rateLimit(ip, {
-      limit: 20,
-      windowMs: 60 * 60 * 1000,
-      prefix: 'build-update',
-    });
-    if (!allowed) {
-      return Response.json(
-        { error: 'Too many updates. Please try again later.' },
-        { status: 429, headers: { 'Retry-After': String(retryAfter) } }
-      );
-    }
+        // Rate limit: 20 updates per hour
+        const ip = getClientIp(request);
+        const { allowed, retryAfter } = rateLimit(ip, {
+          limit: 20,
+          windowMs: 60 * 60 * 1000,
+          prefix: 'build-update',
+        });
+        if (!allowed) {
+          return Response.json(
+            { error: 'Too many updates. Please try again later.' },
+            { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+          );
+        }
 
-    // Find build
-    const build = await findBuild(id);
-    if (!build) {
-      return Response.json({ error: 'Build not found' }, { status: 404 });
-    }
+        // Find build
+        const build = await findBuild(id);
+        if (!build) {
+          return Response.json({ error: 'Build not found' }, { status: 404 });
+        }
 
-    // Check ownership
-    if (build.userId !== userId && !(session?.user as any)?.isAdmin) {
-      return Response.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+        // Check ownership
+        if (build.userId !== userId && !(session?.user as any)?.isAdmin) {
+          return Response.json({ error: 'Unauthorized' }, { status: 403 });
+        }
 
-    // Parse and validate - use admin schema if admin
-    const isAdmin = !!(session?.user as any)?.isAdmin;
-    const body = await request.json();
-    const schema = isAdmin ? adminUpdateBuildSchema : updateBuildSchema;
-    const parsed = schema.safeParse(body);
-    if (!parsed.success) {
-      return Response.json(
-        { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-        { status: 400 }
-      );
-    }
-    const { tags, ...updateData } = parsed.data;
-    // Prepare update data
-    const data: Record<string, unknown> = { ...updateData };
+        // Parse and validate - use admin schema if admin
+        const isAdmin = !!(session?.user as any)?.isAdmin;
+        const body = await request.json();
+        const schema = isAdmin ? adminUpdateBuildSchema : updateBuildSchema;
+        const parsed = schema.safeParse(body);
+        if (!parsed.success) {
+          return Response.json(
+            { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
+            { status: 400 },
+          );
+        }
+        const { tags, ...updateData } = parsed.data;
+        // Prepare update data
+        const data: Record<string, unknown> = { ...updateData };
 
-    // Handle admin-only fields
-    if (isAdmin) {
-      const adminData = parsed.data as any;
-      if (adminData.isCurated !== undefined) data.isCurated = adminData.isCurated;
-      if (adminData.featured !== undefined) data.featured = adminData.featured;
-      if (adminData.userId !== undefined) data.userId = adminData.userId;
-      if (adminData.position !== undefined) data.position = adminData.position;
-    }
+        // Handle admin-only fields
+        if (isAdmin) {
+          const adminData = parsed.data as any;
+          if (adminData.isCurated !== undefined) data.isCurated = adminData.isCurated;
+          if (adminData.featured !== undefined) data.featured = adminData.featured;
+          if (adminData.userId !== undefined) data.userId = adminData.userId;
+          if (adminData.position !== undefined) data.position = adminData.position;
+        }
 
-    // Clean up empty URLs
-    if (data.repoUrl === '') data.repoUrl = null;
-    if (data.demoUrl === '') data.demoUrl = null;
-    if (data.thumbnailUrl === '') data.thumbnailUrl = null;
-    // Normalize marketplace price: 0/undefined → free (null).
-    if (data.price !== undefined) data.price = (data.price as number) > 0 ? data.price : null;
+        // Clean up empty URLs
+        if (data.repoUrl === '') data.repoUrl = null;
+        if (data.demoUrl === '') data.demoUrl = null;
+        if (data.thumbnailUrl === '') data.thumbnailUrl = null;
+        // Normalize marketplace price: 0/undefined → free (null).
+        if (data.price !== undefined) data.price = (data.price as number) > 0 ? data.price : null;
 
-    // Update build and tags
-    const updated = await prisma.$transaction(async (tx) => {
-      const result = await tx.userBuild.update({
-        where: { id: build.id },
-        data,
-        include: {
-          user: { select: userDisplaySelect },
-          category: { select: { id: true, name: true, slug: true, color: true, iconName: true } },
-        },
-      });
+        // Update build and tags
+        const updated = await prisma.$transaction(async (tx) => {
+          const result = await tx.userBuild.update({
+            where: { id: build.id },
+            data,
+            include: {
+              user: { select: userDisplaySelect },
+              category: {
+                select: { id: true, name: true, slug: true, color: true, iconName: true },
+              },
+            },
+          });
 
-      // Update tags if provided
-      if (tags !== undefined) {
-        await tx.buildTag.deleteMany({ where: { buildId: build.id } });
-        if (tags.length > 0) {
-          await tx.buildTag.createMany({
-            data: tags.map((name: string) => ({
-              buildId: build.id,
-              name: name.toLowerCase(),
-            })),
+          // Update tags if provided
+          if (tags !== undefined) {
+            await tx.buildTag.deleteMany({ where: { buildId: build.id } });
+            if (tags.length > 0) {
+              await tx.buildTag.createMany({
+                data: tags.map((name: string) => ({
+                  buildId: build.id,
+                  name: name.toLowerCase(),
+                })),
+              });
+            }
+          }
+
+          return result;
+        });
+
+        // Record admin moderation (editing a build the admin doesn't own).
+        if (isAdmin && build.userId !== userId) {
+          await logAdminAction(userId, 'user-build.edit', {
+            targetType: 'UserBuild',
+            targetId: build.id,
+            detail: `author:${build.userId}`,
           });
         }
-      }
 
-      return result;
-    });
+        // Fetch updated tags
+        const buildTags = await prisma.buildTag.findMany({
+          where: { buildId: build.id },
+          select: { name: true },
+        });
 
-    // Record admin moderation (editing a build the admin doesn't own).
-    if (isAdmin && build.userId !== userId) {
-      await logAdminAction(userId, 'user-build.edit', {
-        targetType: 'UserBuild',
-        targetId: build.id,
-        detail: `author:${build.userId}`,
-      });
-    }
+        return Response.json({
+          id: updated.id,
+          slug: updated.slug,
+          title: updated.title,
+          description: updated.description,
+          thumbnailUrl: updated.thumbnailUrl,
+          repoUrl: updated.repoUrl,
+          demoUrl: updated.demoUrl,
+          visibility: updated.visibility,
+          technologies: updated.technologies,
+          createdAt: updated.createdAt.toISOString(),
+          publishedAt: updated.publishedAt?.toISOString() ?? null,
+          user: resolveUser(updated.user),
+          category: updated.category,
+          tags: buildTags.map((t) => t.name),
+        });
+      }),
+      DELETE: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+        const { id } = params;
 
-    // Fetch updated tags
-    const buildTags = await prisma.buildTag.findMany({
-      where: { buildId: build.id },
-      select: { name: true },
-    });
+        // Check auth - support both session and CLI token
+        let userId: string | null = null;
 
-    return Response.json({
-      id: updated.id,
-      slug: updated.slug,
-      title: updated.title,
-      description: updated.description,
-      thumbnailUrl: updated.thumbnailUrl,
-      repoUrl: updated.repoUrl,
-      demoUrl: updated.demoUrl,
-      visibility: updated.visibility,
-      technologies: updated.technologies,
-      createdAt: updated.createdAt.toISOString(),
-      publishedAt: updated.publishedAt?.toISOString() ?? null,
-      user: resolveUser(updated.user),
-      category: updated.category,
-      tags: buildTags.map((t) => t.name),
-    });
-  } catch (error) {
-    console.error('Build update error:', error);
-    return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-  }
-},
-  DELETE: async ({ request, params }) => {
-  try {
-    const { id } = params;
+        const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+        if (session) {
+          userId = session.user.id;
+        } else {
+          const user = await getAuthenticatedUser(request, null);
+          if (user) {
+            userId = user.id;
+          }
+        }
 
-    // Check auth - support both session and CLI token
-    let userId: string | null = null;
+        if (!userId) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
-    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
-    if (session) {
-      userId = session.user.id;
-    } else {
-      const user = await getAuthenticatedUser(request, null);
-      if (user) {
-        userId = user.id;
-      }
-    }
+        // Find build
+        const build = await findBuild(id);
+        if (!build) {
+          return Response.json({ error: 'Build not found' }, { status: 404 });
+        }
 
-    if (!userId) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+        // Check ownership
+        const isAdmin = !!(session?.user as any)?.isAdmin;
+        if (build.userId !== userId && !isAdmin) {
+          return Response.json({ error: 'Unauthorized' }, { status: 403 });
+        }
 
-    // Find build
-    const build = await findBuild(id);
-    if (!build) {
-      return Response.json({ error: 'Build not found' }, { status: 404 });
-    }
+        // Delete build (cascade deletes tags, likes, comments, views)
+        await prisma.userBuild.delete({ where: { id: build.id } });
 
-    // Check ownership
-    const isAdmin = !!(session?.user as any)?.isAdmin;
-    if (build.userId !== userId && !isAdmin) {
-      return Response.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+        // Record admin moderation (deleting a build the admin doesn't own).
+        if (isAdmin && build.userId !== userId) {
+          await logAdminAction(userId, 'user-build.delete', {
+            targetType: 'UserBuild',
+            targetId: build.id,
+            detail: `author:${build.userId}`,
+          });
+        }
 
-    // Delete build (cascade deletes tags, likes, comments, views)
-    await prisma.userBuild.delete({ where: { id: build.id } });
-
-    // Record admin moderation (deleting a build the admin doesn't own).
-    if (isAdmin && build.userId !== userId) {
-      await logAdminAction(userId, 'user-build.delete', {
-        targetType: 'UserBuild',
-        targetId: build.id,
-        detail: `author:${build.userId}`,
-      });
-    }
-
-    return Response.json({ success: true });
-  } catch (error) {
-    console.error('Build delete error:', error);
-    return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-  }
-},
+        return Response.json({ success: true });
+      }),
     },
   },
 });

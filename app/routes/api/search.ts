@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit.server';
 import { universalSearch } from '@/lib/search/universal.server';
 import { isSearchTab, type SearchTab } from '@/lib/search/types';
@@ -45,12 +45,7 @@ function resolveTab(params: URLSearchParams): SearchTab {
 export const Route = createFileRoute('/api/search')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
-        if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-        // Generous limit so normal use is never throttled: base 60 ×
-        // RATE_LIMIT_MULTIPLIER (default 4) → ~240 req/min per IP.
+      GET: defineHandler({}, async ({ request, session }) => {
         const { allowed } = await checkRateLimit(getClientIp(request), {
           limit: 60,
           windowMs: 60_000,
@@ -87,7 +82,7 @@ export const Route = createFileRoute('/api/search')({
           console.error('Search error:', error);
           return Response.json({ error: 'Internal Server Error' }, { status: 500 });
         }
-      },
+      }),
     },
   },
 });

@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 /**
  * Hashtag suggestions for `#tag` autocomplete.
@@ -14,31 +14,33 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 export const Route = createFileRoute('/api/feed/hashtag-search')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const ip = getClientIp(request);
-        const { allowed } = rateLimit(ip, {
-          limit: 40,
-          windowMs: 60_000,
-          prefix: 'hashtag-search',
-        });
-        if (!allowed)
-          return new Response(JSON.stringify({ error: 'Rate limited' }), { status: 429 });
+      GET: defineHandler(
+        {
+          auth: 'none',
+          rateLimit: {
+            limit: 40,
+            windowMs: 60_000,
+            prefix: 'hashtag-search',
+            message: 'Rate limited',
+          },
+        },
+        async ({ request }) => {
+          const q = new URL(request.url).searchParams.get('q')?.trim().toLowerCase() ?? '';
 
-        const q = new URL(request.url).searchParams.get('q')?.trim().toLowerCase() ?? '';
+          // Tags are stored normalized (lowercased, no leading '#'), so the typed
+          // prefix matches directly. Popularity order comes from the indexed
+          // postCount column (hashtag_postCount_idx).
+          const rows = await prisma.hashtag.findMany({
+            where: q ? { tag: { startsWith: q } } : {},
+            orderBy: { postCount: 'desc' },
+            take: 15,
+            select: { tag: true, postCount: true },
+          });
 
-        // Tags are stored normalized (lowercased, no leading '#'), so the typed
-        // prefix matches directly. Popularity order comes from the indexed
-        // postCount column (hashtag_postCount_idx).
-        const rows = await prisma.hashtag.findMany({
-          where: q ? { tag: { startsWith: q } } : {},
-          orderBy: { postCount: 'desc' },
-          take: 15,
-          select: { tag: true, postCount: true },
-        });
-
-        const tags = rows.map((r) => ({ tag: r.tag, count: r.postCount }));
-        return Response.json({ tags });
-      },
+          const tags = rows.map((r) => ({ tag: r.tag, count: r.postCount }));
+          return Response.json({ tags });
+        },
+      ),
     },
   },
 });

@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
 import { logAdminAction } from '@/lib/admin-audit.server';
@@ -20,30 +20,33 @@ const schema = z.union([
 export const Route = createFileRoute('/api/admin/users/$id/grant-membership')({
   server: {
     handlers: {
-      POST: async ({ request, params }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
+      POST: defineHandler(
+        { auth: 'optional', body: schema, allowEmptyBody: true },
+        async ({ params, session, body }) => {
           if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
             return Response.json({ error: 'Forbidden' }, { status: 403 });
           }
 
-          const target = await prisma.user.findUnique({ where: { id: params.id }, select: { id: true } });
+          const target = await prisma.user.findUnique({
+            where: { id: params.id },
+            select: { id: true },
+          });
           if (!target) return Response.json({ error: 'User not found' }, { status: 404 });
 
-          const body = await request.json().catch(() => ({}));
-          const parsed = schema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-          if ('revoke' in parsed.data) {
+          if ('revoke' in body) {
             const { count } = await prisma.giftMembership.deleteMany({
               where: { userId: params.id, expiresAt: { gt: new Date() } },
             });
             invalidateUserTier(params.id);
-            await logAdminAction(session.user.id, 'membership.revoke', { targetType: 'user', targetId: params.id, detail: `removed ${count} active grant(s)` });
+            await logAdminAction(session.user.id, 'membership.revoke', {
+              targetType: 'user',
+              targetId: params.id,
+              detail: `removed ${count} active grant(s)`,
+            });
             return Response.json({ success: true, revoked: count });
           }
 
-          const { tier, months } = parsed.data;
+          const { tier, months } = body;
           // Extend an existing active grant of the same tier, else start now.
           const existing = await prisma.giftMembership.findFirst({
             where: { userId: params.id, tier, expiresAt: { gt: new Date() } },
@@ -53,13 +56,22 @@ export const Route = createFileRoute('/api/admin/users/$id/grant-membership')({
           const expiresAt = new Date(base.getTime() + months * 30 * 24 * 60 * 60 * 1000);
 
           if (existing) {
-            await prisma.giftMembership.update({ where: { id: existing.id }, data: { expiresAt, gifterId: session.user.id } });
+            await prisma.giftMembership.update({
+              where: { id: existing.id },
+              data: { expiresAt, gifterId: session.user.id },
+            });
           } else {
-            await prisma.giftMembership.create({ data: { userId: params.id, gifterId: session.user.id, tier, expiresAt } });
+            await prisma.giftMembership.create({
+              data: { userId: params.id, gifterId: session.user.id, tier, expiresAt },
+            });
           }
 
           invalidateUserTier(params.id);
-          await logAdminAction(session.user.id, 'membership.grant', { targetType: 'user', targetId: params.id, detail: `${tier} for ${months}mo` });
+          await logAdminAction(session.user.id, 'membership.grant', {
+            targetType: 'user',
+            targetId: params.id,
+            detail: `${tier} for ${months}mo`,
+          });
           await createNotification({
             userId: params.id,
             type: 'SYSTEM',
@@ -70,11 +82,8 @@ export const Route = createFileRoute('/api/admin/users/$id/grant-membership')({
           }).catch(() => {});
 
           return Response.json({ success: true, tier, expiresAt: expiresAt.toISOString() });
-        } catch (error) {
-          console.error('Grant membership error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

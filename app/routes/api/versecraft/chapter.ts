@@ -1,11 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit } from '@/lib/rate-limit';
 import { redisRateLimit } from '@/lib/redis.server';
 import { generateChapter, scribeChapter } from '@/lib/versecraft/gen/generate.server';
 import { normalizeSeed } from '@/lib/versecraft/gen/rng';
-import type { GeneratedWorld, GenScene, GenChapter, ChapterBeat, LedgerEntry } from '@/lib/versecraft/gen/world-types';
+import type {
+  GeneratedWorld,
+  GenScene,
+  GenChapter,
+  ChapterBeat,
+  LedgerEntry,
+} from '@/lib/versecraft/gen/world-types';
 
 /**
  * Seed + index + choicePathHash → generated chapter, cached per that triple so a
@@ -17,8 +23,7 @@ import type { GeneratedWorld, GenScene, GenChapter, ChapterBeat, LedgerEntry } f
 export const Route = createFileRoute('/api/versecraft/chapter')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        const session = await auth.api.getSession({ headers: request.headers });
+      POST: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
         if (!session?.user) {
           return Response.json({ error: 'Sign in to use this feature.' }, { status: 401 });
         }
@@ -29,21 +34,46 @@ export const Route = createFileRoute('/api/versecraft/chapter')({
         const userId = session.user.id;
         const distributed = await redisRateLimit(`versecraft-chapter:user:${userId}`, 15, 60_000);
         if (!distributed && process.env.NODE_ENV === 'production') {
-          return Response.json({ error: 'AI service is temporarily unavailable.' }, { status: 503, headers: { 'Retry-After': '60' } });
+          return Response.json(
+            { error: 'AI service is temporarily unavailable.' },
+            { status: 503, headers: { 'Retry-After': '60' } },
+          );
         }
-        const local = distributed ?? rateLimit(userId, { limit: 15, windowMs: 60_000, prefix: 'versecraft-chapter' });
+        const local =
+          distributed ??
+          rateLimit(userId, { limit: 15, windowMs: 60_000, prefix: 'versecraft-chapter' });
         const globalMinute = await redisRateLimit('versecraft-ai:global:minute', 300, 60_000);
-        const globalDay = await redisRateLimit('versecraft-ai:global:day', Number(process.env.VERSECRAFT_AI_DAILY_CAP ?? 5_000), 86_400_000);
+        const globalDay = await redisRateLimit(
+          'versecraft-ai:global:day',
+          Number(process.env.VERSECRAFT_AI_DAILY_CAP ?? 5_000),
+          86_400_000,
+        );
         if (!local.allowed || globalMinute?.allowed === false || globalDay?.allowed === false) {
-          const retryAfter = Math.max(local.retryAfter, globalMinute?.retryAfter ?? 0, globalDay?.retryAfter ?? 0);
-          return Response.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(retryAfter) } });
+          const retryAfter = Math.max(
+            local.retryAfter,
+            globalMinute?.retryAfter ?? 0,
+            globalDay?.retryAfter ?? 0,
+          );
+          return Response.json(
+            { error: 'Too many requests' },
+            { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+          );
         }
 
         let body: {
-          seed?: string; index?: number; choicePathHash?: string;
-          beat?: ChapterBeat; ledger?: LedgerEntry[]; context?: string; opening?: GenScene;
+          seed?: string;
+          index?: number;
+          choicePathHash?: string;
+          beat?: ChapterBeat;
+          ledger?: LedgerEntry[];
+          context?: string;
+          opening?: GenScene;
         };
-        try { body = await request.json(); } catch { return Response.json({ error: 'Invalid JSON' }, { status: 400 }); }
+        try {
+          body = await request.json();
+        } catch {
+          return Response.json({ error: 'Invalid JSON' }, { status: 400 });
+        }
 
         const seed = normalizeSeed(body.seed ?? '');
         const index = Math.max(0, Math.min(200, Math.floor(body.index ?? 0)));
@@ -58,29 +88,51 @@ export const Route = createFileRoute('/api/versecraft/chapter')({
           where: { seed_index_choicePathHash: { seed, index, choicePathHash } },
         });
         if (cached) {
-          return Response.json({ chapter: cached.content, ledgerEntry: cached.ledger ?? null, partial: false, cached: true });
+          return Response.json({
+            chapter: cached.content,
+            ledgerEntry: cached.ledger ?? null,
+            partial: false,
+            cached: true,
+          });
         }
 
         const worldRow = await prisma.versecraftWorld.findUnique({ where: { seed } });
-        if (!worldRow) return Response.json({ error: 'Unknown seed — create the world first' }, { status: 404 });
+        if (!worldRow)
+          return Response.json({ error: 'Unknown seed — create the world first' }, { status: 404 });
         const world = worldRow.world as unknown as GeneratedWorld;
 
         // Full chapter (optionally continuing from a streamed opening scene).
-        const chapter = await generateChapter(world, index, { beat, ledger, context, opening: body.opening ?? null });
+        const chapter = await generateChapter(world, index, {
+          beat,
+          ledger,
+          context,
+          opening: body.opening ?? null,
+        });
         const ledgerEntry = await scribeChapter(world, chapter);
         await persistChapter(seed, index, choicePathHash, chapter, ledgerEntry);
         return Response.json({ chapter, ledgerEntry, partial: false });
-      },
+      }),
     },
   },
 });
 
 async function persistChapter(
-  seed: string, index: number, choicePathHash: string, chapter: GenChapter, ledgerEntry: LedgerEntry,
+  seed: string,
+  index: number,
+  choicePathHash: string,
+  chapter: GenChapter,
+  ledgerEntry: LedgerEntry,
 ): Promise<void> {
   await prisma.versecraftGenChapter.upsert({
     where: { seed_index_choicePathHash: { seed, index, choicePathHash } },
-    create: { seed, index, choicePathHash, source: chapter.source, content: chapter as unknown as object, ledger: ledgerEntry as unknown as object },
+    create: {
+      seed,
+      index,
+      choicePathHash,
+      source: chapter.source,
+      content: chapter as unknown as object,
+      ledger: ledgerEntry as unknown as object,
+    },
     update: {},
   });
 }

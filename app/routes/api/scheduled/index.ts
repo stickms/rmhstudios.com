@@ -1,15 +1,25 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
-import { MAX_RMHARK_LENGTH, MAX_POLL_QUESTION_LENGTH, MAX_POLL_OPTION_LENGTH, MIN_POLL_OPTIONS, MAX_POLL_OPTIONS, MAX_IMAGE_ALT_LENGTH } from '@/lib/rmhark-schema';
+import {
+  MAX_RMHARK_LENGTH,
+  MAX_POLL_QUESTION_LENGTH,
+  MAX_POLL_OPTION_LENGTH,
+  MIN_POLL_OPTIONS,
+  MAX_POLL_OPTIONS,
+  MAX_IMAGE_ALT_LENGTH,
+} from '@/lib/rmhark-schema';
 import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { listScheduled } from '@/lib/scheduled/list.server';
 
 const pollSchema = z.object({
   question: z.string().min(1).max(MAX_POLL_QUESTION_LENGTH),
-  options: z.array(z.string().min(1).max(MAX_POLL_OPTION_LENGTH)).min(MIN_POLL_OPTIONS).max(MAX_POLL_OPTIONS),
+  options: z
+    .array(z.string().min(1).max(MAX_POLL_OPTION_LENGTH))
+    .min(MIN_POLL_OPTIONS)
+    .max(MAX_POLL_OPTIONS),
   multiSelect: z.boolean().optional(),
   durationHours: z.number().int().min(1).max(720).optional(),
 });
@@ -35,34 +45,25 @@ export const Route = createFileRoute('/api/scheduled/')({
   server: {
     handlers: {
       // List the viewer's drafts + scheduled posts (publishing any that are due).
-      GET: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          return Response.json(await listScheduled(session.user.id));
-        } catch (error) {
-          console.error('Scheduled list error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+      GET: defineHandler({}, async ({ session }) => {
+        return Response.json(await listScheduled(session.user.id));
+      }),
 
       // Save a new draft or scheduled post.
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      POST: defineHandler(
+        { body: createSchema, allowEmptyBody: true, verboseValidationErrors: true },
+        async ({ request, session, body }) => {
           const userId = session.user.id;
 
           const ip = getClientIp(request);
-          const { allowed } = rateLimit(ip, { limit: 30, windowMs: 60_000, prefix: 'scheduled-create' });
+          const { allowed } = rateLimit(ip, {
+            limit: 30,
+            windowMs: 60_000,
+            prefix: 'scheduled-create',
+          });
           if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
-          const body = await request.json().catch(() => ({}));
-          const parsed = createSchema.safeParse(body);
-          if (!parsed.success) {
-            return Response.json({ error: parsed.error.issues[0]?.message ?? 'Invalid input' }, { status: 400 });
-          }
-          const d = parsed.data;
+          const d = body;
 
           const hasContent =
             d.content.trim().length > 0 || !!d.poll || !!d.gifUrl || (d.imageUrls?.length ?? 0) > 0;
@@ -78,13 +79,21 @@ export const Route = createFileRoute('/api/scheduled/')({
           if (d.scheduledAt) {
             scheduledAt = new Date(d.scheduledAt);
             if (scheduledAt.getTime() <= Date.now()) {
-              return Response.json({ error: 'Scheduled time must be in the future' }, { status: 400 });
+              return Response.json(
+                { error: 'Scheduled time must be in the future' },
+                { status: 400 },
+              );
             }
           }
 
-          const pending = await prisma.scheduledPost.count({ where: { userId, publishedId: null } });
+          const pending = await prisma.scheduledPost.count({
+            where: { userId, publishedId: null },
+          });
           if (pending >= MAX_PENDING) {
-            return Response.json({ error: `You can keep at most ${MAX_PENDING} drafts` }, { status: 400 });
+            return Response.json(
+              { error: `You can keep at most ${MAX_PENDING} drafts` },
+              { status: 400 },
+            );
           }
 
           const sp = await prisma.scheduledPost.create({
@@ -93,7 +102,9 @@ export const Route = createFileRoute('/api/scheduled/')({
               content: d.content.trim(),
               gifUrl: d.gifUrl ?? null,
               imageUrls: d.imageUrls ?? [],
-              imageAlts: (d.imageAlts ?? []).slice(0, d.imageUrls?.length ?? 0).map((a) => a.trim()),
+              imageAlts: (d.imageAlts ?? [])
+                .slice(0, d.imageUrls?.length ?? 0)
+                .map((a) => a.trim()),
               audience: d.audience ?? 'PUBLIC',
               isSensitive: d.isSensitive ?? false,
               replyControl: d.replyControl ?? 'EVERYONE',
@@ -105,11 +116,8 @@ export const Route = createFileRoute('/api/scheduled/')({
           });
 
           return Response.json(sp, { status: 201 });
-        } catch (error) {
-          console.error('Scheduled create error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

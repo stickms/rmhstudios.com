@@ -11,7 +11,7 @@ import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { getSidebarData } from '@/lib/sidebar-data';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
-import { SITE_URL } from '@/lib/seo';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, ogCardPath, SITE_URL } from '@/lib/seo';
 
 const fetchPostMeta = createServerFn({ method: 'GET' })
   .validator((postid: string) => postid)
@@ -51,7 +51,7 @@ const fetchPostMeta = createServerFn({ method: 'GET' })
     // Use the dynamic OG card only for public, free posts; otherwise fall back
     // to the author avatar so private/paid content never leaks into previews.
     const isPublicFree = rmhark.audience === 'PUBLIC' && (rmhark.unlockPrice ?? 0) === 0;
-    const ogImage = isPublicFree ? `/api/og/post/${postid}` : user.image;
+    const ogImage = isPublicFree ? ogCardPath('post', postid) : user.image;
 
     return { title, description, userImage: user.image, ogImage, postId: postid };
   });
@@ -89,7 +89,17 @@ export const Route = createFileRoute('/_site/u/$userid/post/$postid')({
         { property: 'og:title', content: meta.title },
         { property: 'og:description', content: meta.description },
         { property: 'og:site_name', content: 'RMH' },
+        { property: 'og:url', content: postUrl },
         ...(ogImage ? [{ property: 'og:image', content: ogImage }] : []),
+        // Only the rendered card has known dimensions — the fallback is the
+        // author's avatar, whatever size they uploaded it at.
+        ...(isCard
+          ? [
+              { property: 'og:image:width', content: String(OG_IMAGE_WIDTH) },
+              { property: 'og:image:height', content: String(OG_IMAGE_HEIGHT) },
+            ]
+          : []),
+        ...(ogImage ? [{ property: 'og:image:alt', content: meta.title }] : []),
         { name: 'twitter:card', content: isCard ? 'summary_large_image' : 'summary' },
         { name: 'twitter:title', content: meta.title },
         { name: 'twitter:description', content: meta.description },

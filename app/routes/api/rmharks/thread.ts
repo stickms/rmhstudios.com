@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { MAX_RMHARK_LENGTH } from '@/lib/rmhark-schema';
@@ -29,10 +29,9 @@ const schema = z.object({
 export const Route = createFileRoute('/api/rmharks/thread')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      POST: defineHandler(
+        { body: schema, allowEmptyBody: true, verboseValidationErrors: true },
+        async ({ request, session, body }) => {
           const userId = session.user.id;
 
           const ban = await getActiveBan(userId);
@@ -55,16 +54,7 @@ export const Route = createFileRoute('/api/rmharks/thread')({
             );
           }
 
-          const body = await request.json().catch(() => ({}));
-          const parsed = schema.safeParse(body);
-          if (!parsed.success) {
-            return Response.json(
-              { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-              { status: 400 },
-            );
-          }
-
-          const segments = parsed.data.segments.map((s) => s.trim()).filter(Boolean);
+          const segments = body.segments.map((s) => s.trim()).filter(Boolean);
           if (segments.length < 2) {
             return Response.json({ error: 'A thread needs at least 2 posts' }, { status: 400 });
           }
@@ -171,11 +161,8 @@ export const Route = createFileRoute('/api/rmharks/thread')({
           }
 
           return Response.json(item, { status: 201 });
-        } catch (error) {
-          console.error('Thread create error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

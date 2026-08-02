@@ -12,6 +12,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { BuildDetail } from '@/components/user-builds';
 import { stripTrailingSlash } from '@/lib/url';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 
 const fetchBuild = createServerFn({ method: 'GET' })
   .validator((slug: string) => slug)
@@ -26,18 +27,23 @@ const fetchBuild = createServerFn({ method: 'GET' })
 
 export const Route = createFileRoute('/_site/user-builds/$slug')({
   loader: ({ params }) => fetchBuild({ data: params.slug }),
-  head: ({ loaderData }) => ({
+  head: ({ loaderData, params }) => ({
+    // As with `/builds/$slug`: the thumbnail is used when there is one, but
+    // absolute — a site-relative `og:image` is ignored by every crawler.
     meta: loaderData
-      ? [
-          { title: `${loaderData.title} | User Builds` },
-          { name: 'description', content: loaderData.description },
-          { property: 'og:title', content: loaderData.title },
-          { property: 'og:description', content: loaderData.description },
-          ...(loaderData.thumbnailUrl
-            ? [{ property: 'og:image', content: loaderData.thumbnailUrl }]
-            : []),
-        ]
+      ? buildMeta({
+          title: `${loaderData.title} | User Builds`,
+          description: loaderData.description,
+          path: `/user-builds/${params.slug}`,
+          image: loaderData.thumbnailUrl || undefined,
+          imageAlt: loaderData.thumbnailUrl
+            ? `${loaderData.title} on RMH Studios`
+            : undefined,
+          imageSize: loaderData.thumbnailUrl ? null : undefined,
+          type: 'article',
+        })
       : [{ title: 'Build Not Found' }],
+    links: [buildCanonical(`/user-builds/${params.slug}`)],
   }),
   component: BuildPage,
 });

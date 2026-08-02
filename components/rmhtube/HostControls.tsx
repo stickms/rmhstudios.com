@@ -216,7 +216,10 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
 
         {/* Speed dropdown — visible to all, handler guards permissions */}
         {showSpeedMenu && (
-          <div className="absolute bottom-full mb-1 right-0 z-50 rounded-lg border border-(--app-border) bg-(--app-surface) shadow-lg py-1 min-w-25">
+          <div
+            data-motion="pop"
+            className="absolute bottom-full mb-1 right-0 origin-bottom-right z-50 rounded-lg border border-(--app-border) bg-(--app-surface) shadow-lg py-1 min-w-25"
+          >
             {PLAYBACK_SPEEDS.map((speed) => (
               <button
                 key={speed}

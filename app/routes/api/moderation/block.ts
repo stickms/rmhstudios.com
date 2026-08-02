@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { invalidateHiddenAuthors } from '@/lib/moderation.server';
 import { invalidateFollowingIds } from '@/lib/social/follow-graph.server';
 import { z } from 'zod';
@@ -16,31 +15,23 @@ const blockSchema = z.object({ targetUserId: z.string().min(1).max(64) });
 export const Route = createFileRoute('/api/moderation/block')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const session = await auth.api.getSession({ headers: request.headers });
-        if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      GET: defineHandler({}, async ({ session }) => {
         const blocks = await prisma.userBlock.findMany({
           where: { blockerId: session.user.id },
           select: { blockedId: true, createdAt: true },
           orderBy: { createdAt: 'desc' },
         });
         return Response.json({ blocked: blocks.map((b) => b.blockedId) });
-      },
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const ip = getClientIp(request);
-          const { allowed } = rateLimit(ip, { limit: 30, windowMs: 60_000, prefix: 'moderation-block' });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
-          const body = await request.json().catch(() => ({}));
-          const parsed = blockSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
+      }),
+      POST: defineHandler(
+        {
+          rateLimit: { limit: 30, windowMs: 60_000, prefix: 'moderation-block' },
+          body: blockSchema,
+          allowEmptyBody: true,
+        },
+        async ({ session, body }) => {
           const blockerId = session.user.id;
-          const blockedId = parsed.data.targetUserId;
+          const blockedId = body.targetUserId;
           if (blockerId === blockedId) {
             return Response.json({ error: 'You cannot block yourself' }, { status: 400 });
           }
@@ -76,11 +67,8 @@ export const Route = createFileRoute('/api/moderation/block')({
           invalidateFollowingIds(blockedId);
 
           return Response.json({ success: true, blocked: true });
-        } catch (error) {
-          console.error('Toggle block error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

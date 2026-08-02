@@ -14,8 +14,8 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
 import { submitGameScore } from '@/lib/game/submit.server';
 
 const scoreSchema = z
@@ -37,39 +37,31 @@ const scoreSchema = z
 export const Route = createFileRoute('/api/games/synapse-storm/score')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const parsed = scoreSchema.safeParse(await request.json().catch(() => null));
-          if (!parsed.success) {
-            return Response.json({ error: 'Invalid score data' }, { status: 400 });
-          }
-          const { score, puzzlesSolved, maxCombo, peakDifficulty, totalTime } = parsed.data;
-
-          const result = await submitGameScore({
-            gameId: 'synapse-storm',
-            userId: session.user.id,
-            score,
-            progress: maxCombo,
-            // The client reports seconds; the pipeline works in milliseconds.
-            durationMs: Math.round(totalTime * 1000),
-            meta: { puzzlesSolved, peakDifficulty },
-          });
-
-          if (!result.ok) {
-            return Response.json(
-              { error: result.error, reason: result.reason },
-              { status: result.status }
-            );
-          }
-          return Response.json({ success: true });
-        } catch (error) {
-          console.error('synapse-storm score error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+      POST: defineHandler({}, async ({ request, session }) => {
+        const parsed = scoreSchema.safeParse(await request.json().catch(() => null));
+        if (!parsed.success) {
+          return Response.json({ error: 'Invalid score data' }, { status: 400 });
         }
-      },
+        const { score, puzzlesSolved, maxCombo, peakDifficulty, totalTime } = parsed.data;
+
+        const result = await submitGameScore({
+          gameId: 'synapse-storm',
+          userId: session.user.id,
+          score,
+          progress: maxCombo,
+          // The client reports seconds; the pipeline works in milliseconds.
+          durationMs: Math.round(totalTime * 1000),
+          meta: { puzzlesSolved, peakDifficulty },
+        });
+
+        if (!result.ok) {
+          return Response.json(
+            { error: result.error, reason: result.reason },
+            { status: result.status },
+          );
+        }
+        return Response.json({ success: true });
+      }),
     },
   },
 });

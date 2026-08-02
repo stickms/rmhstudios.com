@@ -22,6 +22,7 @@ import { BlurImage } from '@/components/ui/BlurImage';
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
 import { stripTrailingSlash } from '@/lib/url';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 
 const allOfficial = [...games, ...apps];
 
@@ -49,21 +50,26 @@ const fetchBuild = createServerFn({ method: 'GET' })
 
 export const Route = createFileRoute('/_site/builds/$slug')({
   loader: ({ params }) => fetchBuild({ data: params.slug }),
-  head: ({ loaderData }) => {
+  head: ({ loaderData, params }) => {
     if (!loaderData) return { meta: [{ title: 'Build Not Found' }] };
     const d = loaderData.data;
+    // The build's own thumbnail when it has one — but as an ABSOLUTE url. These
+    // were emitted site-relative, which crawlers ignore, so every build link
+    // unfurled with no image at all rather than with the wrong one.
+    const thumb =
+      ('imagePath' in d && d.imagePath) || ('thumbnailUrl' in d && d.thumbnailUrl) || null;
     return {
-      meta: [
-        { title: `${d.title} | Builds` },
-        { name: 'description', content: d.description },
-        { property: 'og:title', content: d.title },
-        { property: 'og:description', content: d.description },
-        ...('imagePath' in d && d.imagePath
-          ? [{ property: 'og:image', content: d.imagePath }]
-          : 'thumbnailUrl' in d && d.thumbnailUrl
-            ? [{ property: 'og:image', content: d.thumbnailUrl }]
-            : []),
-      ],
+      meta: buildMeta({
+        title: `${d.title} | Builds`,
+        description: d.description,
+        path: `/builds/${params.slug}`,
+        image: thumb || undefined,
+        imageAlt: thumb ? `${d.title} on RMH Studios` : undefined,
+        // A build thumbnail is whatever shape it was uploaded at.
+        imageSize: thumb ? null : undefined,
+        type: 'article',
+      }),
+      links: [buildCanonical(`/builds/${params.slug}`)],
     };
   },
   component: BuildPage,

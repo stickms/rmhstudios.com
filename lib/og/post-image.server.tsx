@@ -1,98 +1,53 @@
 /**
- * Dynamic Open Graph card images for posts (#26).
+ * Open Graph card for a post (#26) — 1200×630, rendered satori → resvg → PNG.
  *
- * Renders a 1200×630 social card (author, content, engagement) via satori →
- * resvg → PNG. Fonts and rendered cards are cached in-process. Used by
- * /api/og/post/$id and referenced from the post page's og:image meta so links
- * unfurl with a branded preview instead of a bare avatar.
+ * The card is the post: the author, what they actually wrote, what they
+ * attached, and how it has been received. Everything that says "RMH Studios"
+ * comes from `chrome.server` so this file only describes what is specific to a
+ * post.
+ *
+ * Used by /api/og/post/$id, referenced from the post page's `og:image`, and
+ * deliberately blank of content for private/paid posts — the route decides that,
+ * and passes an empty `content` when it does.
  */
 
 import React from 'react';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
-import { LRUCache } from 'lru-cache';
-import { safeFetch } from '@/lib/ssrf-guard.server';
-
-const FONT_REGULAR_URL =
-  'https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf';
-const FONT_BOLD_URL =
-  'https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf';
-const FONT_FETCH_TIMEOUT_MS = 5_000;
-// After a font fetch failure, cool down before retrying instead of re-hitting
-// Google on every single request — a Google Fonts hiccup otherwise turns into a
-// per-request fetch storm and a 500 loop.
-const FONT_FAIL_COOLDOWN_MS = 30_000;
-
-let fontRegular: ArrayBuffer | null = null;
-let fontBold: ArrayBuffer | null = null;
-let fontsLoading: Promise<void> | null = null;
-let fontFailUntil = 0;
-
-async function fetchFont(url: string): Promise<ArrayBuffer> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FONT_FETCH_TIMEOUT_MS);
-  try {
-    const r = await fetch(url, { signal: controller.signal });
-    if (!r.ok) throw new Error(`Font fetch failed: ${r.status}`);
-    return await r.arrayBuffer();
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-function loadFonts(): Promise<void> {
-  if (fontRegular && fontBold) return Promise.resolve();
-  if (fontsLoading) return fontsLoading;
-  // Negative cache: fail fast during the cooldown window rather than retrying.
-  if (Date.now() < fontFailUntil)
-    return Promise.reject(new Error('Fonts unavailable (cooling down)'));
-  fontsLoading = Promise.all([fetchFont(FONT_REGULAR_URL), fetchFont(FONT_BOLD_URL)])
-    .then(([reg, bold]) => {
-      fontRegular = reg;
-      fontBold = bold;
-    })
-    .catch((err) => {
-      fontsLoading = null;
-      fontFailUntil = Date.now() + FONT_FAIL_COOLDOWN_MS;
-      throw err;
-    });
-  return fontsLoading;
-}
-loadFonts().catch(() => {});
+import {
+  DIM,
+  INK,
+  MUTED,
+  SCALE,
+  fetchAvatarDataUri,
+  loadFonts,
+  satoriFonts,
+  stripEmoji,
+  truncate,
+} from '@/lib/og/shared.server';
+import {
+  LANDSCAPE,
+  avatarDisc,
+  cardFrame,
+  displayTracking,
+  fitText,
+  frameMetrics,
+  inset,
+  pane,
+  statChips,
+  type Stat,
+} from '@/lib/og/chrome.server';
 
 const pngCache = new Map<string, { png: Buffer; ts: number }>();
 const PNG_TTL = 10 * 60 * 1000;
 const PNG_MAX = 100;
 
-// Small in-process cache of resolved avatar data URIs, keyed by source URL, so a
-// card re-render (or many cards sharing an author) doesn't re-fetch + re-encode
-// the same avatar.
-const avatarCache = new LRUCache<string, string>({ max: 200, ttl: 10 * 60 * 1000 });
-
-async function fetchAvatarDataUri(url: string | null | undefined): Promise<string | null> {
-  if (!url) return null;
-  const hit = avatarCache.get(url);
-  if (hit) return hit;
-  try {
-    // User-supplied URL → SSRF guard, with a tight timeout so a slow avatar host
-    // can't stall card rendering (and the request handler behind it).
-    const res = await safeFetch(url, { timeoutMs: 3_000 });
-    if (!res.ok) return null;
-    const buf = Buffer.from(await res.arrayBuffer());
-    const type = res.headers.get('content-type') || 'image/png';
-    const dataUri = `data:${type};base64,${buf.toString('base64')}`;
-    avatarCache.set(url, dataUri);
-    return dataUri;
-  } catch {
-    return null;
-  }
-}
-
-const BG = '#0b0d12';
-const SURFACE = '#161922';
-const TEXT = '#f4f6fb';
-const MUTED = '#9aa3b2';
-const ACCENT = '#f5a623';
+/* The pane's own geometry, named because the body's type size is derived from
+   it — see the arithmetic in `renderPostOgImage`. */
+const PANE_PAD = 22 * SCALE;
+const AVATAR = 30 * SCALE;
+const GAP = 12 * SCALE;
+const ATTACHMENT_ROW = 34 * SCALE;
 
 export interface PostOgData {
   id: string;
@@ -103,11 +58,35 @@ export interface PostOgData {
   likeCount: number;
   commentCount: number;
   repostCount: number;
+  /** How many images are attached. Shown as an attachment line, never fetched. */
+  imageCount?: number;
+  /** Whether the post carries a GIF. */
+  hasGif?: boolean;
+  /** The poll's question, when the post is a poll. */
+  pollQuestion?: string | null;
+  /** How many options that poll has. */
+  pollOptionCount?: number;
+  /** The community the post was made in, if any. */
+  community?: string | null;
 }
 
-function truncate(s: string, n: number): string {
-  const t = s.trim();
-  return t.length > n ? `${t.slice(0, n - 1)}…` : t;
+function plural(n: number, one: string, many: string): string {
+  return n === 1 ? one : many;
+}
+
+function compact(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, '')}K`;
+  return String(n);
+}
+
+/** What the post carries besides text — the line under the body. */
+function attachmentLine(data: PostOgData): string | null {
+  const parts: string[] = [];
+  if (data.imageCount) parts.push(`${data.imageCount} ${plural(data.imageCount, 'photo', 'photos')}`);
+  if (data.hasGif) parts.push('GIF');
+  if (data.pollOptionCount) parts.push(`Poll · ${data.pollOptionCount} options`);
+  return parts.length ? parts.join('  ·  ') : null;
 }
 
 export async function renderPostOgImage(data: PostOgData): Promise<Buffer> {
@@ -120,107 +99,108 @@ export async function renderPostOgImage(data: PostOgData): Promise<Buffer> {
   if (cached && Date.now() - cached.ts < PNG_TTL) return cached.png;
 
   await loadFonts();
-  if (!fontRegular || !fontBold) throw new Error('Fonts not loaded');
 
   const avatar = await fetchAvatarDataUri(data.authorImage);
   const initial = (data.authorName || data.authorHandle || 'R')[0]?.toUpperCase() ?? 'R';
-  const body = truncate(data.content || '', 240);
+  const text = stripEmoji(data.content || '').trim();
+  const poll = data.pollQuestion ? stripEmoji(data.pollQuestion).trim() : '';
+  // A poll with no caption still has something to say — its question is the body.
+  const body = truncate(text || poll, 260);
+  const attachments = attachmentLine(data);
 
-  const element = (
-    <div
-      style={{
-        width: 1200,
-        height: 630,
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: BG,
-        padding: 64,
-        fontFamily: 'Inter',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-        {avatar ? (
-          <img src={avatar} width={84} height={84} style={{ borderRadius: 42 }} />
-        ) : (
-          <div
+  // What the pane leaves the post's own text, once the frame, the pane's padding,
+  // the author row and the attachment line have taken their share. satori does
+  // not clip, so this has to be worked out rather than eyeballed — an overlong
+  // body paints straight over the rows around it.
+  const frame = frameMetrics(LANDSCAPE.width, LANDSCAPE.height);
+  const inner = frame.width - PANE_PAD * 2;
+  const bodyBox =
+    frame.height - PANE_PAD * 2 - AVATAR - GAP - (attachments ? ATTACHMENT_ROW : 0);
+  const bodySize = fitText(body, { width: inner, height: bodyBox, steps: [60, 50, 42, 34, 28] });
+
+  const stats: Stat[] = [
+    { value: compact(data.likeCount ?? 0), label: plural(data.likeCount, 'like', 'likes'), lead: true },
+    { value: compact(data.repostCount ?? 0), label: plural(data.repostCount, 'repost', 'reposts') },
+    { value: compact(data.commentCount ?? 0), label: plural(data.commentCount, 'reply', 'replies') },
+  ];
+
+  const element = cardFrame({
+    ...LANDSCAPE,
+    eyebrow: data.community ? `Post · ${truncate(stripEmoji(data.community), 24)}` : 'Post',
+    children: pane({
+      style: { flex: 1, padding: PANE_PAD },
+      children: [
+        <div key="author" style={{ display: 'flex', alignItems: 'center', gap: 12 * SCALE }}>
+          {avatarDisc(avatar, initial, AVATAR)}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span
+              style={{
+                fontSize: 17 * SCALE,
+                fontWeight: 700,
+                letterSpacing: '-0.022em',
+                color: INK,
+              }}
+            >
+              {truncate(stripEmoji(data.authorName), 28)}
+            </span>
+            {data.authorHandle ? (
+              <span style={{ fontSize: 13 * SCALE, color: MUTED }}>@{data.authorHandle}</span>
+            ) : null}
+          </div>
+        </div>,
+
+        <div
+          key="body"
+          style={{
+            display: 'flex',
+            flex: 1,
+            alignItems: 'center',
+            marginTop: GAP,
+          }}
+        >
+          <span
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 84,
-              height: 84,
-              borderRadius: 42,
-              backgroundColor: SURFACE,
-              color: ACCENT,
-              fontSize: 40,
-              fontWeight: 700,
+              fontSize: bodySize,
+              lineHeight: 1.28,
+              letterSpacing: displayTracking(bodySize),
+              fontWeight: body ? 500 : 400,
+              color: body ? INK : MUTED,
             }}
           >
-            {initial}
-          </div>
-        )}
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontSize: 36, fontWeight: 700, color: TEXT }}>
-            {truncate(data.authorName, 28)}
+            {body || 'View this post on RMH Studios'}
           </span>
-          {data.authorHandle && (
-            <span style={{ fontSize: 26, color: MUTED }}>@{data.authorHandle}</span>
-          )}
-        </div>
-      </div>
+        </div>,
 
-      <div
-        style={{
-          display: 'flex',
-          flex: 1,
-          marginTop: 40,
-          fontSize: body.length > 120 ? 44 : 54,
-          lineHeight: 1.3,
-          color: TEXT,
-          fontWeight: 400,
-        }}
-      >
-        {body || 'View this post on RMH Studios'}
-      </div>
-
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginTop: 'auto',
-        }}
-      >
-        <div style={{ display: 'flex', gap: 32, fontSize: 28, color: MUTED }}>
-          <span>♥ {data.likeCount}</span>
-          <span>↺ {data.repostCount}</span>
-          <span>💬 {data.commentCount}</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div
-            style={{
-              display: 'flex',
-              width: 28,
-              height: 28,
-              borderRadius: 8,
-              backgroundColor: ACCENT,
-            }}
-          />
-          <span style={{ fontSize: 30, fontWeight: 700, color: TEXT }}>RMH Studios</span>
-        </div>
-      </div>
-    </div>
-  );
+        attachments ? (
+          <div key="attachments" style={{ display: 'flex', marginTop: 8 * SCALE }}>
+            {inset({
+              style: {
+                paddingTop: 7 * SCALE,
+                paddingBottom: 7 * SCALE,
+                paddingLeft: 12 * SCALE,
+                paddingRight: 12 * SCALE,
+              },
+              children: (
+                <span style={{ fontSize: 13 * SCALE, fontWeight: 500, color: MUTED }}>
+                  {attachments}
+                </span>
+              ),
+            })}
+          </div>
+        ) : null,
+      ],
+    }),
+    footerLeft: statChips(stats),
+    footerRight: (
+      <span style={{ fontSize: 13 * SCALE, fontWeight: 500, color: DIM }}>rmhstudios.com</span>
+    ),
+  });
 
   const svg = await satori(element, {
-    width: 1200,
-    height: 630,
-    fonts: [
-      { name: 'Inter', data: fontRegular, weight: 400, style: 'normal' },
-      { name: 'Inter', data: fontBold, weight: 700, style: 'normal' },
-    ],
+    ...LANDSCAPE,
+    fonts: satoriFonts(),
   });
-  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: 1200 } });
+  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: LANDSCAPE.width } });
   const png = Buffer.from(resvg.render().asPng());
 
   if (pngCache.size >= PNG_MAX) {

@@ -119,7 +119,10 @@ export function LocationSearch({
       </div>
 
       {open && results.length > 0 && (
-        <ul className="absolute z-30 mt-1.5 max-h-72 w-full overflow-auto glass-overlay py-1">
+        <ul
+          data-motion="pop"
+          className="absolute z-30 mt-1.5 max-h-72 w-full origin-top overflow-auto glass-overlay py-1"
+        >
           {results.map((r, i) => (
             <li key={`${r.lat},${r.lng},${i}`}>
               <button

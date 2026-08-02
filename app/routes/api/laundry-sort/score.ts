@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { recordGamePlay } from '@/lib/quests/engine.server';
 import { reportGameResult } from '@/lib/game/results.server';
 import {
@@ -49,89 +49,79 @@ function scoreCeiling(sorted: number): number {
 export const Route = createFileRoute('/api/laundry-sort/score')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        const ip = getClientIp(request);
-        const { allowed, retryAfter } = rateLimit(ip, {
-          limit: 10,
-          windowMs: 60_000,
-          prefix: 'laundry-score',
-        });
-        if (!allowed) {
-          return Response.json(
-            { error: 'Too many requests' },
-            { status: 429, headers: { 'Retry-After': String(retryAfter) } },
-          );
-        }
+      POST: defineHandler(
+        { auth: 'none', rateLimit: { limit: 10, windowMs: 60_000, prefix: 'laundry-score' } },
+        async ({ request }) => {
+          try {
+            const session = await auth.api.getSession({ headers: request.headers });
+            if (!session?.user?.id) {
+              return Response.json({ error: 'Unauthorized' }, { status: 401 });
+            }
+            const userId = session.user.id;
 
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session?.user?.id) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
-          const userId = session.user.id;
+            const body = await request.json().catch(() => ({}));
+            const parsed = bodySchema.safeParse(body);
+            if (!parsed.success) {
+              return Response.json({ error: 'Invalid input' }, { status: 400 });
+            }
+            const { score, sorted, bestCombo } = parsed.data;
 
-          const body = await request.json().catch(() => ({}));
-          const parsed = bodySchema.safeParse(body);
-          if (!parsed.success) {
-            return Response.json({ error: 'Invalid input' }, { status: 400 });
-          }
-          const { score, sorted, bestCombo } = parsed.data;
+            if (score > scoreCeiling(sorted) || bestCombo > sorted) {
+              return Response.json({ error: 'Implausible result' }, { status: 400 });
+            }
 
-          if (score > scoreCeiling(sorted) || bestCombo > sorted) {
-            return Response.json({ error: 'Implausible result' }, { status: 400 });
-          }
+            const existing = await prisma.laundryPlayer.findUnique({ where: { userId } });
 
-          const existing = await prisma.laundryPlayer.findUnique({ where: { userId } });
+            if (existing) {
+              const personalBest = score > existing.highScore;
+              await prisma.laundryPlayer.update({
+                where: { id: existing.id },
+                data: {
+                  highScore: Math.max(existing.highScore, score),
+                  bestCombo: Math.max(existing.bestCombo, bestCombo),
+                  totalSorted: { increment: sorted },
+                  gamesPlayed: { increment: 1 },
+                },
+              });
+              await recordGamePlay(userId);
+              await reportGameResult(userId, { game: 'laundry-sort', score });
+              return Response.json({ ok: true, personalBest });
+            }
 
-          if (existing) {
-            const personalBest = score > existing.highScore;
-            await prisma.laundryPlayer.update({
-              where: { id: existing.id },
-              data: {
-                highScore: Math.max(existing.highScore, score),
-                bestCombo: Math.max(existing.bestCombo, bestCombo),
-                totalSorted: { increment: sorted },
-                gamesPlayed: { increment: 1 },
-              },
-            });
+            // First run for this account. `username` is unique across the board,
+            // so a display name someone else already claimed falls back to a
+            // suffixed form rather than losing the score.
+            const base = (session.user.name || 'Player')
+              .trim()
+              .replace(/[^a-zA-Z0-9_\-. ]/g, '')
+              .slice(0, 24);
+            const username = base.length >= 2 ? base : `Player-${userId.slice(0, 6)}`;
+
+            try {
+              await prisma.laundryPlayer.create({
+                data: { userId, username, highScore: score, bestCombo, totalSorted: sorted },
+              });
+            } catch {
+              await prisma.laundryPlayer.create({
+                data: {
+                  userId,
+                  username: `${username}-${userId.slice(0, 6)}`.slice(0, 32),
+                  highScore: score,
+                  bestCombo,
+                  totalSorted: sorted,
+                },
+              });
+            }
+
             await recordGamePlay(userId);
             await reportGameResult(userId, { game: 'laundry-sort', score });
-            return Response.json({ ok: true, personalBest });
+            return Response.json({ ok: true, personalBest: true });
+          } catch (error) {
+            console.error('Laundry score submit failed:', error);
+            return Response.json({ error: 'Internal server error' }, { status: 500 });
           }
-
-          // First run for this account. `username` is unique across the board,
-          // so a display name someone else already claimed falls back to a
-          // suffixed form rather than losing the score.
-          const base = (session.user.name || 'Player')
-            .trim()
-            .replace(/[^a-zA-Z0-9_\-. ]/g, '')
-            .slice(0, 24);
-          const username = base.length >= 2 ? base : `Player-${userId.slice(0, 6)}`;
-
-          try {
-            await prisma.laundryPlayer.create({
-              data: { userId, username, highScore: score, bestCombo, totalSorted: sorted },
-            });
-          } catch {
-            await prisma.laundryPlayer.create({
-              data: {
-                userId,
-                username: `${username}-${userId.slice(0, 6)}`.slice(0, 32),
-                highScore: score,
-                bestCombo,
-                totalSorted: sorted,
-              },
-            });
-          }
-
-          await recordGamePlay(userId);
-          await reportGameResult(userId, { game: 'laundry-sort', score });
-          return Response.json({ ok: true, personalBest: true });
-        } catch (error) {
-          console.error('Laundry score submit failed:', error);
-          return Response.json({ error: 'Internal server error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

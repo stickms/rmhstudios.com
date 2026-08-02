@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { draftLibraryMetadata, isAITextConfigured } from '@/lib/ai/text.server';
 
@@ -11,12 +11,7 @@ import { draftLibraryMetadata, isAITextConfigured } from '@/lib/ai/text.server';
 export const Route = createFileRoute('/api/library/draft')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        const session = await auth.api.getSession({ headers: request.headers });
-        if (!session) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-        // Admins are unlimited (bulk drafting); regular users are rate-limited.
+      POST: defineHandler({}, async ({ request, session }) => {
         const isAdmin = Boolean((session.user as { isAdmin?: boolean }).isAdmin);
         if (!isAdmin) {
           const ip = getClientIp(request);
@@ -28,7 +23,7 @@ export const Route = createFileRoute('/api/library/draft')({
           if (!allowed) {
             return Response.json(
               { error: 'Too many requests.' },
-              { status: 429, headers: { 'Retry-After': String(retryAfter) } }
+              { status: 429, headers: { 'Retry-After': String(retryAfter) } },
             );
           }
         }
@@ -45,7 +40,7 @@ export const Route = createFileRoute('/api/library/draft')({
         if (!text.trim()) return Response.json({ title: '', description: '' });
         const draft = await draftLibraryMetadata(text);
         return Response.json(draft);
-      },
+      }),
     },
   },
 });

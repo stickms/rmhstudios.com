@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 /**
  * POST /api/announcements/$id/vote — cast/toggle a vote on an announcement poll.
@@ -11,26 +10,9 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 export const Route = createFileRoute('/api/announcements/$id/vote')({
   server: {
     handlers: {
-      POST: async ({ request, params }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
-
-          const ip = getClientIp(request);
-          const { allowed, retryAfter } = rateLimit(ip, {
-            limit: 20,
-            windowMs: 60_000,
-            prefix: 'announcement-poll-vote',
-          });
-          if (!allowed) {
-            return Response.json(
-              { error: 'Too many requests' },
-              { status: 429, headers: { 'Retry-After': String(retryAfter) } }
-            );
-          }
-
+      POST: defineHandler(
+        { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'announcement-poll-vote' } },
+        async ({ request, params, session }) => {
           const { id } = params;
           const body = await request.json().catch(() => ({}));
           const { optionId } = body;
@@ -43,7 +25,9 @@ export const Route = createFileRoute('/api/announcements/$id/vote')({
           const option = await prisma.feedAnnouncementPollOption.findUnique({
             where: { id: optionId },
             include: {
-              poll: { select: { announcementId: true, multiSelect: true, id: true, closesAt: true } },
+              poll: {
+                select: { announcementId: true, multiSelect: true, id: true, closesAt: true },
+              },
             },
           });
 
@@ -106,11 +90,8 @@ export const Route = createFileRoute('/api/announcements/$id/vote')({
             totalVotes,
             options: updatedOptions.map((o) => ({ id: o.id, voteCount: o._count.votes })),
           });
-        } catch (error) {
-          console.error('Announcement poll vote error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });
