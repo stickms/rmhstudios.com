@@ -28,16 +28,18 @@ import { advanceExchange } from './minigames/exchange';
 import { advanceHours } from './minigames/hours';
 import { advanceManna } from './minigames/manna';
 import { advanceSinners } from './minigames/sinners';
+import { advanceBowl } from './bowling';
+import { nextId } from './ids';
 import { auditTrophies } from './trophies';
 import { SOURCES } from './data/sources';
 import { BLESSING_MAP } from './data/blessings';
 
 /* ── Ids ─────────────────────────────────────────────────────────────────── */
 
-let idCounter = 1;
-export function nextId(): number {
-  return idCounter++;
-}
+// Re-exported so the many callers that reach for `nextId` through the tick keep
+// working; the counter itself lives in `ids.ts`, where the trophy audit can
+// reach it without closing an import cycle back through here.
+export { nextId };
 
 /** Longest single step the tick will simulate. Anything more is a vigil. */
 const MAX_STEP_SECONDS = 60;
@@ -115,7 +117,7 @@ export function applyTick(state: GameState, nowMs = Date.now()): GameState {
   let haloTimer = state.haloTimer - delta * modifiers.haloFrequency;
   let halos: Halo[] = [];
   let haloStreak = state.haloStreak;
-  const notices: Notice[] = state.notices.filter((n) => n.id > nowMs - NOTICE_LIFETIME_MS);
+  const notices: Notice[] = state.notices.filter((n) => n.at > nowMs - NOTICE_LIFETIME_MS);
 
   for (const halo of state.halos) {
     const life = halo.life - delta;
@@ -143,6 +145,15 @@ export function applyTick(state: GameState, nowMs = Date.now()): GameState {
     haloTimer = HALO_INTERVAL_MIN + Math.random() * (HALO_INTERVAL_MAX - HALO_INTERVAL_MIN);
   }
 
+  /* ── 4b. The lane ──
+     Two clocks, both in seconds, both counted down here and in the vigil: the
+     boost's remaining hour and the day before the lane reopens. They are kept
+     OUT of `buffs` deliberately — the vigil throws buffs away ("a frenzy you
+     were not present for was never a frenzy") and a bought hour is not a
+     frenzy: it is a window of time you traded a day and your hands for, and it
+     has to be spent whether you sat and watched it or not. */
+  const bowl = advanceBowl(state.bowl, delta);
+
   /* ── 5. The slow layers ── */
 
   const gardenStep = advanceGarden(
@@ -152,7 +163,8 @@ export function applyTick(state: GameState, nowMs = Date.now()): GameState {
   );
   for (const seed of gardenStep.discovered) {
     notices.push({
-      id: nowMs + notices.length,
+      id: nextId(),
+      at: nowMs,
       icon: '🌱',
       title: 'Something new in the garden',
       body: seed,
@@ -165,7 +177,8 @@ export function applyTick(state: GameState, nowMs = Date.now()): GameState {
   const mannaStep = advanceManna(state.manna, deltaMs, modifiers.mannaSpeed);
   if (mannaStep.ripened > 0) {
     notices.push({
-      id: nowMs + notices.length,
+      id: nextId(),
+      at: nowMs,
       icon: '🍞',
       title:
         mannaStep.ripened === 1 ? 'Manna has ripened' : `${mannaStep.ripened} manna have ripened`,
@@ -185,6 +198,7 @@ export function applyTick(state: GameState, nowMs = Date.now()): GameState {
     sourceEarnings,
     sinners: sinnerStep.sinners,
     buffs,
+    bowl,
     halos,
     haloTimer,
     haloStreak,
@@ -307,13 +321,26 @@ export function applyVigil(
 
   const elapsedMs = elapsedSeconds * 1000;
   const modifiers = computeRateModifiers(state);
-  const grossJps = computeGrossJps(state);
+
+  /* ── The Bowl, across an absence ──
+     The boost is a window of TIME, so an absence spends it — but only the part
+     of the absence it actually overlapped, and only within the vigil's own cap.
+     So the base rate is measured with the boost switched off, and the extra is
+     credited separately for however many of the counted seconds were boosted.
+     Multiplying the whole absence by a boost with four minutes left on it would
+     pay out an entire night at ×4. */
+  const restedState: GameState =
+    state.bowl.remaining > 0 ? { ...state, bowl: { ...state.bowl, remaining: 0 } } : state;
+  const grossJps = computeGrossJps(restedState);
+  const bowlMultiplier = state.bowl.remaining > 0 ? Math.max(1, state.bowl.multiplier) : 1;
 
   // ── Income, capped ──
   const { efficiency, hours } = computeVigilTerms(state);
   const countedSeconds = Math.min(elapsedSeconds, hours * 3600);
+  const boostedSeconds = Math.min(state.bowl.remaining, countedSeconds);
   const drain = computeSinnerDrain(state);
-  const joy = grossJps * (1 - drain) * countedSeconds * efficiency;
+  const joy =
+    grossJps * (1 - drain) * efficiency * (countedSeconds + boostedSeconds * (bowlMultiplier - 1));
 
   // ── Sinners, uncapped: they were here the whole time ──
   let appetite = 1;
@@ -351,6 +378,10 @@ export function applyVigil(
     peakJoy: Math.max(state.peakJoy, state.joy + joy),
     sinners: sinnerStep.sinners,
     buffs: [],
+    // Unlike the buffs above, the lane's clocks keep running while the temple
+    // is shut: a day's cooldown that only counted down while you watched would
+    // take a week of real time to clear.
+    bowl: advanceBowl(state.bowl, elapsedSeconds),
     halos: [],
     garden: gardenStep.garden,
     exchange,

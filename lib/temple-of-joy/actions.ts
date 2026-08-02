@@ -18,7 +18,13 @@ import type {
 } from './types';
 import {
   computeAscensionGrace,
+  computeBowlActive,
+  computeBowlReady,
   computeCanAscend,
+  computeGlobeAffordable,
+  computeGlobeCost,
+  computeGlobes,
+  computeKeptGlobes,
   computeGraceEarned,
   computeGrossJps,
   computeKeepsMinigames,
@@ -34,6 +40,8 @@ import {
 import { BLESSING_MAP } from './data/blessings';
 import { LEGACY_MAP } from './data/legacy';
 import { SOURCES, SOURCE_MAP, ZERO_SOURCES } from './data/sources';
+import { GLOBE_MAP } from './data/globes';
+import { BOWL_PINS, finishFrame } from './bowling';
 import { HALO_OUTCOMES, HALO_LIFETIME } from './data/halos';
 import {
   SEED_MAP,
@@ -53,15 +61,25 @@ import { auditTrophies } from './trophies';
 
 /* ── Notices ─────────────────────────────────────────────────────────────── */
 
-function notice(state: GameState, n: Omit<Notice, 'id'>): Notice[] {
-  return [...state.notices, { ...n, id: Date.now() + state.notices.length }];
+function notice(state: GameState, n: Omit<Notice, 'id' | 'at'>): Notice[] {
+  return [...state.notices, { ...n, id: nextId(), at: Date.now() }];
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
    The offering
    ══════════════════════════════════════════════════════════════════════════ */
 
+/**
+ * Strike a globe.
+ *
+ * Refused outright while the Bowl's hour is running: the globes are down at the
+ * lane, so there is nothing in the sanctum to strike. That refusal is the whole
+ * price of a ×4 hour, and it belongs *here* rather than in the component that
+ * draws the sphere — the store, the Steward and any future automation all reach
+ * this function, and a rule enforced by one caller is not a rule.
+ */
 export function doTouch(state: GameState, nowMs = Date.now()): GameState {
+  if (computeBowlActive(state)) return state;
   const recentTouches = [...state.recentTouches.filter((t) => nowMs - t < 3_000), nowMs];
   let gain = computeTouch(state);
 
@@ -102,6 +120,89 @@ export function doBuySourceQty(state: GameState, id: SourceId): GameState {
   const have = state.sources[id] ?? 0;
   const count = state.buyQty === 'max' ? computeMaxAffordable(id, have, state.joy) : state.buyQty;
   return doBuySource(state, id, count);
+}
+
+/**
+ * Buy the next globe.
+ *
+ * There is no quantity switch and no sell path, on purpose. A globe is not a
+ * copy of something — it is a change to the room, bought seven times in a run,
+ * and the two mechanics a source has that this one deliberately lacks (bulk
+ * buying, selling back at a quarter) both exist to make a *fungible* purchase
+ * manageable.
+ */
+export function doBuyGlobe(state: GameState): GameState {
+  if (!computeGlobeAffordable(state)) return state;
+  const cost = computeGlobeCost(state);
+  if (!Number.isFinite(cost)) return state;
+  const held = computeGlobes(state);
+  const def = GLOBE_MAP[held + 1];
+  if (!def) return state;
+
+  return {
+    ...state,
+    joy: state.joy - cost,
+    globes: held + 1,
+    globesBought: state.globesBought + 1,
+    notices: notice(state, {
+      icon: '🔮',
+      title: def.name,
+      body: def.tagline,
+      kind: 'gift',
+    }),
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   The Bowl
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Bank a finished frame: the boost starts, and the lane shuts for a day.
+ *
+ * `pins` is the frame's total and `firstBall` is what the first roll took, which
+ * is the only thing that separates a strike from a spare — they pay the same,
+ * but only one of them is a strike, and the trophies care.
+ *
+ * Guarded on readiness for the same reason every other action here is: the
+ * overlay is a long-lived component with a physics simulation inside it, and a
+ * settle that resolves a frame after the state moved on must not be able to
+ * hand out a second hour or reset the cooldown.
+ */
+export function doFinishFrame(state: GameState, pins: number, firstBall: number): GameState {
+  if (!computeBowlReady(state)) return { ...state, showBowl: false };
+  const bowl = finishFrame(state.bowl, pins, firstBall);
+  const knocked = bowl.lastPins;
+
+  return {
+    ...state,
+    bowl,
+    showBowl: false,
+    notices: notice(state, {
+      icon: knocked >= BOWL_PINS ? '🎳' : knocked > 0 ? '🎯' : '🕳️',
+      title:
+        knocked >= BOWL_PINS
+          ? 'A clean rack'
+          : knocked > 0
+            ? `${knocked} down`
+            : 'The gutter, both times',
+      body:
+        knocked > 0
+          ? `Joy ×${bowl.multiplier.toFixed(2)} for the hour. Your hands are still until it ends.`
+          : 'No boost, and the lane is shut for the day. It happens.',
+      kind: knocked > 0 ? 'gift' : 'warn',
+    }),
+  };
+}
+
+/** Open and close the alley. Refuses to open a lane that is not ready. */
+export function doOpenBowl(state: GameState): GameState {
+  if (!computeBowlReady(state)) return state;
+  return { ...state, showBowl: true, bowl: { ...state.bowl, revealed: true } };
+}
+
+export function doCloseBowl(state: GameState): GameState {
+  return { ...state, showBowl: false };
 }
 
 /** Sell copies back at a quarter of what they cost. Cookie Clicker's rate. */
@@ -844,6 +945,9 @@ export function doAscend(state: GameState): GameState {
     peakJoy: gift.joy,
     sources: { ...ZERO_SOURCES, acolyte: gift.acolytes },
     sourceEarnings: { ...ZERO_SOURCES },
+    // Globes are bought with joy, so an ascension takes them like everything
+    // else joy bought — except the ones the Orbit rungs paid Grace to keep.
+    globes: computeKeptGlobes(state),
     blessings: keptBlessings,
     buffs: [],
     halos: [],

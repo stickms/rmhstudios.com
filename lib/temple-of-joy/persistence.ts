@@ -7,10 +7,19 @@
  * when something goes wrong at three in the morning.
  */
 import { useEffect } from 'react';
-import type { GameState, LegacySaveV1, SaveData, SourceId } from './types';
+import type { BowlState, GameState, LegacySaveV1, SaveData, SourceId } from './types';
 import { useTempleStore } from './store';
 import { createInitialState } from './store';
 import { ZERO_SOURCES } from './data/sources';
+import { MAX_GLOBES } from './data/globes';
+import { reserveId } from './ids';
+import {
+  BOWL_BOOST_SECONDS,
+  BOWL_COOLDOWN_SECONDS,
+  BOWL_MAX_MULTIPLIER,
+  BOWL_PINS,
+  createBowl,
+} from './bowling';
 import { createGarden, emptyPlots, GARDEN_SIZE } from './minigames/garden';
 import { createChoir } from './minigames/choir';
 import { createExchange } from './minigames/exchange';
@@ -19,7 +28,19 @@ import { createManna } from './minigames/manna';
 import { computeGraceEarned } from './engine';
 
 const LOCAL_KEY = 'temple_of_joy_save_v2';
-export const SAVE_VERSION = 2 as const;
+
+/**
+ * v3 added the globes and the Bowl. The local storage key is deliberately
+ * UNCHANGED: v3 is a strict superset of v2 — two scalars and one object, all
+ * optional on the way in — so bumping the key would have orphaned every
+ * existing save to gain nothing. `readSave` accepts either version and
+ * `saveToState` fills the new fields with the values a v2 player should get:
+ * the one globe everybody starts with, and a lane nobody has bowled on.
+ */
+export const SAVE_VERSION = 3 as const;
+
+/** Versions this build knows how to read. */
+const READABLE_VERSIONS = new Set([2, 3]);
 
 /* ══════════════════════════════════════════════════════════════════════════
    Serialising
@@ -42,6 +63,9 @@ export function stateToSave(state: GameState, at = Date.now()): SaveData {
     sources: { ...state.sources },
     sourceLevels: { ...state.sourceLevels },
     sourceEarnings: { ...state.sourceEarnings },
+    globes: state.globes,
+    globesBought: state.globesBought,
+    bowl: state.bowl,
     blessings: [...state.blessings],
     trophies: [...state.trophies],
     grace: state.grace,
@@ -88,6 +112,12 @@ export function saveToState(save: SaveData): Partial<GameState> {
     sources: { ...ZERO_SOURCES, ...(save.sources ?? {}) } as Record<SourceId, number>,
     sourceLevels: { ...ZERO_SOURCES, ...(save.sourceLevels ?? {}) } as Record<SourceId, number>,
     sourceEarnings: { ...ZERO_SOURCES, ...(save.sourceEarnings ?? {}) } as Record<SourceId, number>,
+    // A v2 save predates the globes: it is read as the one every temple starts
+    // with. Clamped both ways, because a save file is a text file a player can
+    // edit, and `globes` sizes an array the renderer walks every frame.
+    globes: Math.max(1, Math.min(MAX_GLOBES, Math.floor(num(save.globes)) || 1)),
+    globesBought: Math.max(0, Math.floor(num(save.globesBought))),
+    bowl: reviveBowl(save.bowl),
     blessings: new Set(save.blessings ?? []),
     trophies: new Set(save.trophies ?? []),
     grace: num(save.grace),
@@ -101,7 +131,7 @@ export function saveToState(save: SaveData): Partial<GameState> {
     halosCaught: num(save.halosCaught),
     haloStreak: num(save.haloStreak),
     rapture: Math.max(0, Math.min(3, num(save.rapture))),
-    sinners: save.sinners ?? [],
+    sinners: reviveSinners(save.sinners),
     sinnersStruck: num(save.sinnersStruck),
     sinnerHarvest: num(save.sinnerHarvest),
     buffs: save.buffs ?? [],
@@ -145,6 +175,46 @@ function reviveGarden(saved: GameState['garden'] | undefined): GameState['garden
     if (plot && typeof plot === 'object') plots[i] = { ...plots[i]!, ...plot };
   });
   return { ...base, ...saved, plots };
+}
+
+/**
+ * The Sinners, with their ids taken out of circulation.
+ *
+ * They are the only entities that survive a save carrying a minted id, so this
+ * is the one place the id counter has to be told what a previous session
+ * already used — see `ids.ts` §reserveId.
+ */
+function reviveSinners(saved: GameState['sinners'] | undefined): GameState['sinners'] {
+  const sinners = saved ?? [];
+  for (const sinner of sinners) reserveId(sinner?.id);
+  return sinners;
+}
+
+/**
+ * The lane, from a save that may predate it entirely.
+ *
+ * Both clocks are clamped to their own ceilings rather than trusted. They are
+ * counted down in seconds by the tick, so a hand-edited `remaining` of `1e9`
+ * would be a boost lasting thirty years — and `multiplier` is a term in the
+ * income stack, which is precisely the field an edited save would reach for.
+ */
+function reviveBowl(saved: BowlState | undefined): BowlState {
+  const base = createBowl();
+  if (!saved || typeof saved !== 'object') return base;
+  const remaining = Math.max(0, Math.min(BOWL_BOOST_SECONDS, num(saved.remaining)));
+  return {
+    ...base,
+    ...saved,
+    cooldown: Math.max(0, Math.min(BOWL_COOLDOWN_SECONDS, num(saved.cooldown))),
+    remaining,
+    multiplier:
+      remaining > 0 ? Math.max(1, Math.min(BOWL_MAX_MULTIPLIER, num(saved.multiplier) || 1)) : 1,
+    frames: Math.max(0, Math.floor(num(saved.frames))),
+    bestPins: Math.max(0, Math.min(BOWL_PINS, Math.floor(num(saved.bestPins)))),
+    strikes: Math.max(0, Math.floor(num(saved.strikes))),
+    lastPins: Math.max(0, Math.min(BOWL_PINS, Math.floor(num(saved.lastPins)))),
+    revealed: Boolean(saved.revealed),
+  };
 }
 
 function reviveExchange(saved: GameState['exchange'] | undefined): GameState['exchange'] {
@@ -208,8 +278,13 @@ export function migrateV1(old: LegacySaveV1): Partial<GameState> {
 export function readSave(raw: unknown): Partial<GameState> | null {
   if (!raw || typeof raw !== 'object') return null;
   const probe = raw as { version?: unknown; lifetimeHappiness?: unknown };
-  if (probe.version === SAVE_VERSION) return saveToState(raw as SaveData);
-  // Anything that is not v2 but carries the old currency is a v1 save.
+  // v2 and v3 are the same document, v3 with three more fields, so one reader
+  // serves both — a v2 payload simply leaves the globes and the lane to their
+  // defaults. Writing always emits the current version.
+  if (typeof probe.version === 'number' && READABLE_VERSIONS.has(probe.version)) {
+    return saveToState(raw as SaveData);
+  }
+  // Anything that is not v2/v3 but carries the old currency is a v1 save.
   if (typeof probe.lifetimeHappiness === 'number') return migrateV1(raw as LegacySaveV1);
   return null;
 }

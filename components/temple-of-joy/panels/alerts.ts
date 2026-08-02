@@ -11,6 +11,8 @@ import type { GameState, TabId } from '@/lib/temple-of-joy/types';
 import {
   computeAvailableBlessings,
   computeCanAscend,
+  computeGlobeAffordable,
+  computeGlobeVisible,
   computeLegacyAffordable,
   computeSourceCost,
   computeSourceVisible,
@@ -29,6 +31,12 @@ export function computeAlerts(state: GameState): TabId[] {
       out.push('sources');
       break;
     }
+  }
+
+  // A globe you can afford. It shares the Sources tab, and it is the biggest
+  // single purchase on that list, so it deserves the dot on its own.
+  if (computeGlobeVisible(state) && computeGlobeAffordable(state) && !out.includes('sources')) {
+    out.push('sources');
   }
 
   // Blessings: same, but these are usually the better buy, so they matter more.

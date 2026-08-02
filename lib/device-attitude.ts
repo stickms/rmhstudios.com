@@ -113,6 +113,37 @@ export async function requestMotionAccess(): Promise<boolean> {
   }
 }
 
+/**
+ * The ACCELEROMETER, which is a separate permission from the orientation one
+ * above.
+ *
+ * `deviceorientation` reports which way the device is facing; `devicemotion`
+ * reports how it is being moved, and iOS gates them behind two different
+ * `requestPermission` calls on two different constructors. Anything that wants
+ * to know a device was *thrown* — as the temple's bowling does — needs this one,
+ * and granting the other does not grant it.
+ *
+ * Must be called straight from a click handler, for the same reason
+ * {@link requestMotionAccess} must: anything awaited first forfeits the user
+ * gesture Safari is checking for.
+ */
+export async function requestDeviceMotionAccess(): Promise<boolean> {
+  if (typeof window === 'undefined' || !('DeviceMotionEvent' in window)) return false;
+  const request = (window.DeviceMotionEvent as unknown as MotionCtor).requestPermission;
+  // No gate on this platform: the event fires freely.
+  if (typeof request !== 'function') return true;
+  try {
+    return (await request()) === 'granted';
+  } catch {
+    // Thrown when called outside a gesture, or inside a cross-origin frame.
+    return false;
+  }
+}
+
+interface MotionCtor {
+  requestPermission?: () => Promise<PermissionState | 'granted' | 'denied'>;
+}
+
 /** Current screen rotation in degrees (0/90/180/270), with the legacy fallback. */
 export function screenAngle(): number {
   if (typeof window === 'undefined') return 0;

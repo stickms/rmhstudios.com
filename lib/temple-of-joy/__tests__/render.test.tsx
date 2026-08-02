@@ -102,8 +102,15 @@ function deepGame(): Partial<GameState> {
     exchange: { ...base.exchange, unlocked: true, lifetimeProfit: 1e28 },
     hours: { ...base.hours, unlocked: true, mana: 180, maxMana: 240, said: 60 },
     notices: [
-      { id: 1, icon: '🏆', title: 'A trophy: with a colon', body: 'And a body', kind: 'trophy' },
-      { id: 2, icon: '🌘', title: 'Something bad', kind: 'warn' },
+      {
+        id: 1,
+        at: Date.now(),
+        icon: '🏆',
+        title: 'A trophy: with a colon',
+        body: 'And a body',
+        kind: 'trophy',
+      },
+      { id: 2, at: Date.now(), icon: '🌘', title: 'Something bad', kind: 'warn' },
     ],
     showVigilDialog: false,
   };
@@ -161,7 +168,32 @@ describe('the room renders', () => {
     useTempleStore.setState(newGame());
     expect(renderToString(<TempleHud />)).toContain('toj-joy');
     expect(renderToString(<TempleTabs />)).toContain('role="tablist"');
-    expect(renderToString(<TempleSanctum />)).toContain('toj-altar');
+    expect(renderToString(<TempleSanctum />)).toContain('toj-globes');
+  });
+
+  it('orbits the sources it owns, and reports how many globes they are on', () => {
+    useTempleStore.setState(deepGame());
+    const one = renderToString(<TempleSanctum />);
+    expect(one).toContain('toj-pin-dot');
+    expect(one).toContain('data-globes="1"');
+
+    useTempleStore.setState({ ...deepGame(), globes: 8 });
+    expect(renderToString(<TempleSanctum />)).toContain('data-globes="8"');
+
+    // The glass bodies are a fixed POOL of eight, positioned (or hidden) by the
+    // frame loop — so buying a globe never has to mint a DOM node mid-gesture.
+    // The count in the markup is therefore always the ceiling, not the holding.
+    expect(one.match(/toj-globe-glass/g)?.length).toBe(8);
+  });
+
+  it('says the globes are away while the Bowl is running, and offers no strike', () => {
+    useTempleStore.setState({
+      ...deepGame(),
+      bowl: { ...createInitialState().bowl, remaining: 1800, multiplier: 4, revealed: true },
+    });
+    const html = renderToString(<TempleSanctum />);
+    expect(html).toContain('data-away="true"');
+    expect(html).toContain('disabled');
   });
 
   it('renders halos, Sinners and buffs on a deep save', () => {

@@ -13,6 +13,7 @@ import { fmt, formatDuration } from '@/lib/temple-of-joy/numbers';
 import {
   computeAscensionGrace,
   computeDevotion,
+  computeGlobes,
   computeGrossJps,
   computeJps,
   computeMultipliers,
@@ -24,6 +25,7 @@ import {
 } from '@/lib/temple-of-joy/engine';
 import { TROPHIES } from '@/lib/temple-of-joy/data/trophies';
 import { BLESSINGS } from '@/lib/temple-of-joy/data/blessings';
+import { MAX_GLOBES } from '@/lib/temple-of-joy/data/globes';
 import { useTempleSnapshot } from '../hooks';
 import { TempleSection } from '../ui';
 
@@ -44,7 +46,14 @@ export function OverviewPanel() {
       lifetime: state.lifetimeJoy,
       run: state.runJoy,
       sources: computeTotalSources(state),
+      globes: computeGlobes(state),
       levels: computeTotalLevels(state),
+      bowlFrames: state.bowl.frames,
+      bowlBest: state.bowl.bestPins,
+      bowlStrikes: state.bowl.strikes,
+      bowlCooldown: state.bowl.cooldown,
+      bowlRemaining: state.bowl.remaining,
+      bowlSeen: state.bowl.revealed,
       blessings: state.blessings.size,
       trophies: state.trophies.size,
       touches: state.totalTouches,
@@ -84,12 +93,15 @@ export function OverviewPanel() {
     [t('mult-garden', { defaultValue: 'Garden' }), s.mult.garden],
     [t('mult-choir', { defaultValue: 'Choir' }), s.mult.choir],
     [t('mult-buffs', { defaultValue: 'Halo blessings' }), s.mult.buffs],
+    [t('mult-globes', { defaultValue: 'The globes' }), s.mult.globes],
+    [t('mult-bowl', { defaultValue: 'The Lane' }), s.mult.bowl],
   ];
 
   const totals: [string, string][] = [
     [t('lifetime-joy', { defaultValue: 'Joy, all time' }), fmt(s.lifetime, s.format)],
     [t('run-joy', { defaultValue: 'Joy, this run' }), fmt(s.run, s.format)],
     [t('sources-owned', { defaultValue: 'Sources owned' }), fmt(s.sources, s.format)],
+    [t('globes-turning', { defaultValue: 'Globes turning' }), `${s.globes} / ${MAX_GLOBES}`],
     [t('levels-raised', { defaultValue: 'Manna levels' }), String(s.levels)],
     [t('blessings-bought', { defaultValue: 'Blessings' }), `${s.blessings} / ${BLESSINGS.length}`],
     [t('trophies-earned', { defaultValue: 'Trophies' }), `${s.trophies} / ${TROPHIES.length}`],
@@ -165,6 +177,40 @@ export function OverviewPanel() {
       {deeds.map(([label, value]) => (
         <Line key={label} label={label} value={value} />
       ))}
+
+      {/* The lane only appears in the ledger once it has been used. A row of
+          zeroes for a mechanic nobody has met yet teaches nothing. */}
+      {s.bowlSeen && (
+        <>
+          <TempleSection>{t('section-bowl', { defaultValue: 'The Lane' })}</TempleSection>
+          <Line
+            label={t('bowl-frames', { defaultValue: 'Frames bowled' })}
+            value={String(s.bowlFrames)}
+          />
+          <Line
+            label={t('bowl-best', { defaultValue: 'Best frame' })}
+            value={t('bowl-pins', { pins: s.bowlBest, defaultValue: '{{pins}} pins' })}
+          />
+          <Line
+            label={t('bowl-strikes', { defaultValue: 'Strikes' })}
+            value={String(s.bowlStrikes)}
+          />
+          <Line
+            label={
+              s.bowlRemaining > 0
+                ? t('bowl-boost-left', { defaultValue: 'Boost ends in' })
+                : t('bowl-next', { defaultValue: 'Lane reopens in' })
+            }
+            value={
+              s.bowlRemaining > 0
+                ? formatDuration(s.bowlRemaining)
+                : s.bowlCooldown > 0
+                  ? formatDuration(s.bowlCooldown)
+                  : t('bowl-open-now', { defaultValue: 'Now' })
+            }
+          />
+        </>
+      )}
     </>
   );
 }

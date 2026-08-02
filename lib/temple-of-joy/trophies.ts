@@ -12,10 +12,12 @@
 import type { GameState, Notice } from './types';
 import { OWN_TIERS, JOY_TROPHY_TIERS, TROPHY_MAP } from './data/trophies';
 import { SOURCES } from './data/sources';
+import { MAX_GLOBES } from './data/globes';
 import { SEEDS } from './minigames/garden';
 import { LEGACY } from './data/legacy';
 import { GOODS } from './minigames/exchange';
 import { computeGrossJps, computeTotalLevels } from './engine';
+import { nextId } from './ids';
 
 export function auditTrophies(state: GameState, nowMs = Date.now()): GameState {
   let trophies = state.trophies;
@@ -50,6 +52,17 @@ export function auditTrophies(state: GameState, nowMs = Date.now()): GameState {
   if (state.totalTouches >= 100_000) grant('touch_100000');
   if (state.totalTouches >= 1_000_000) grant('touch_1000000');
   if (state.recentTouches.filter((t) => nowMs - t < 3_000).length >= 15) grant('fervour');
+
+  /* ── Globes ── */
+  if (state.globes >= 2) grant('globe_2');
+  if (state.globes >= 4) grant('globe_4');
+  if (state.globes >= MAX_GLOBES) grant('globe_8');
+
+  /* ── The Bowl ── */
+  if (state.bowl.frames >= 1) grant('bowl_first');
+  if (state.bowl.frames >= 10) grant('bowl_10');
+  if (state.bowl.frames >= 50) grant('bowl_50');
+  if (state.bowl.strikes >= 1) grant('bowl_strike');
 
   /* ── Halos ── */
   if (state.halosCaught >= 1) grant('halo_1');
@@ -146,8 +159,9 @@ export function auditTrophies(state: GameState, nowMs = Date.now()): GameState {
 
   const notices: Notice[] = [
     ...state.notices,
-    ...earned.slice(0, 3).map((id, i) => ({
-      id: nowMs + i,
+    ...earned.slice(0, 3).map((id) => ({
+      id: nextId(),
+      at: nowMs,
       icon: '🏆',
       title: TROPHY_MAP[id]?.name ?? 'A trophy',
       body: TROPHY_MAP[id]?.description,

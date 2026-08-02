@@ -17,8 +17,14 @@ import { templeAudio } from '@/lib/temple-of-joy/audio';
 import { fmt, fmtCount, formatTimeTo } from '@/lib/temple-of-joy/numbers';
 import type { BuyQty, SourceId } from '@/lib/temple-of-joy/types';
 import { SOURCES } from '@/lib/temple-of-joy/data/sources';
+import { nextGlobe } from '@/lib/temple-of-joy/data/globes';
 import {
   computeBestPurchase,
+  computeGlobeAffordable,
+  computeGlobeCost,
+  computeGlobeMultiplier,
+  computeGlobeVisible,
+  computeGlobes,
   computeJps,
   computeMaxAffordable,
   computeSourceCostN,
@@ -120,6 +126,8 @@ export function SourcesPanel() {
         </p>
       )}
 
+      {!levelMode && <GlobeRow />}
+
       {rows.map((row) => {
         const def = SOURCES.find((s) => s.id === row.id)!;
 
@@ -211,6 +219,82 @@ export function SourcesPanel() {
           />
         );
       })}
+    </>
+  );
+}
+
+/**
+ * The globes, at the top of the shop.
+ *
+ * Deliberately *in* the source list rather than in a panel of its own: a globe
+ * is the same kind of decision as a source — spend joy, get rate — and putting
+ * it anywhere else would hide the run's biggest purchase behind a tab.
+ *
+ * Only one is ever on offer, and it only appears once it is within reach, so
+ * this is one row that comes and goes rather than a locked ladder of eight.
+ */
+function GlobeRow() {
+  const { t } = useTranslation('c-temple-of-joy');
+  const [flashed, flash] = useFlash();
+
+  const state = useTempleSnapshot((s) => {
+    const held = computeGlobes(s);
+    const next = nextGlobe(held);
+    const cost = computeGlobeCost(s);
+    return {
+      held,
+      name: next?.name ?? '',
+      tagline: next?.tagline ?? '',
+      visible: computeGlobeVisible(s),
+      affordable: computeGlobeAffordable(s),
+      cost: fmt(cost, s.numberFormat),
+      wait: formatTimeTo(cost, s.joy, computeJps(s)),
+      multiplier: computeGlobeMultiplier(s),
+    };
+  }, 400);
+
+  if (!state.visible) return null;
+
+  return (
+    <>
+      <p className="toj-section">{t('globes-heading', { defaultValue: 'The globes' })}</p>
+      <TempleRow
+        className="toj-row-globe"
+        icon={<Glyph>🔮</Glyph>}
+        name={state.name}
+        note={state.tagline}
+        price={state.cost}
+        meta={
+          state.affordable
+            ? t('globes-held', {
+                held: state.held,
+                defaultValue: '{{held}} of 8 turning',
+              })
+            : state.wait
+              ? t('in-time', { time: state.wait, defaultValue: 'in {{time}}' })
+              : t('globes-held', { held: state.held, defaultValue: '{{held}} of 8 turning' })
+        }
+        affordable={state.affordable}
+        flash={flashed === 'globe'}
+        disabled={!state.affordable}
+        ariaLabel={t('globes-buy', {
+          name: state.name,
+          cost: state.cost,
+          defaultValue: 'Buy {{name}} for {{cost}} joy — every globe is ×1.5 joy per second',
+        })}
+        onClick={() => {
+          templeAudio.play('purchaseBig');
+          flash('globe');
+          useTempleStore.getState().buyGlobe();
+        }}
+      />
+      <p className="toj-panel-note">
+        {t('globes-note', {
+          current: state.multiplier.toFixed(2),
+          defaultValue:
+            'Every globe past the first is ×1.5 joy per second and ×1.25 by hand, and takes a share of your sources onto its own surface. Yours are worth ×{{current}} right now.',
+        })}
+      </p>
     </>
   );
 }

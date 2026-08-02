@@ -171,6 +171,17 @@ const HANDMADE: TrophyDef[] = [
   { id: 'time_1000h', name: 'A Thousand Hours', description: 'Spend a thousand hours in the temple.', flavor: 'The temple has begun keeping *you*.' },
   { id: 'vigil_long', name: 'The Long Absence', description: 'Return after a full day away.', flavor: 'It kept going. It always keeps going.' },
 
+  // Globes
+  { id: 'globe_2', name: 'A Second Sphere', description: 'Buy a second globe.', flavor: 'The congregation looked up, and then looked up again.' },
+  { id: 'globe_4', name: 'Four Turning', description: 'Have four globes turning at once.', flavor: 'They have started keeping time with each other. Nobody taught them that.' },
+  { id: 'globe_8', name: 'The Whole Constellation', description: 'Have all eight globes turning at once.', flavor: 'Eight of them. Every source you own has somewhere to stand.' },
+
+  // The Bowl
+  { id: 'bowl_first', name: 'Down the Lane', description: 'Bowl the globe once.', flavor: 'It is a sphere. Somebody was always going to.' },
+  { id: 'bowl_strike', name: 'A Clean Rack', description: 'Knock all ten down with the first ball.', flavor: 'The sound it makes is the whole reason.' },
+  { id: 'bowl_10', name: 'League Night', description: 'Bowl ten frames.', flavor: 'Ten days, ten frames. It has become a routine.' },
+  { id: 'bowl_50', name: 'The Regular', description: 'Bowl fifty frames.', flavor: 'They keep your shoes behind the counter now.' },
+
   // Secret
   { id: 'secret_patience', name: 'Never Touched It', description: 'Make a trillion joy without offering by hand.', flavor: 'You never once reached out. It came anyway.', secret: true },
   { id: 'secret_frugal', name: 'The Bare Altar', description: 'Reach a billion joy with no blessings bought.', flavor: 'A stubbornness bordering on doctrine.', secret: true },

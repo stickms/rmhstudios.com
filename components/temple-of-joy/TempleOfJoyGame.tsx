@@ -20,10 +20,18 @@ import { TempleSanctum } from './TempleSanctum';
 import { TempleTabs } from './TempleTabs';
 import { TemplePanel } from './panels/TemplePanel';
 import { TempleDialogs } from './TempleDialogs';
+import { BowlOverlay } from './bowl/BowlOverlay';
 
 export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameState> | null }) {
   const theme = useTempleValue((s) => s.theme);
   const flourish = useTempleValue((s) => s.reducedFlourish);
+  // Any modal open makes the game behind it inert. `aria-modal` alone does not:
+  // it is a hint to assistive tech and nothing at all to the Tab key, so every
+  // source row, tab and Sinner behind an open dialog stayed focusable and
+  // clickable through the scrim.
+  const modal = useTempleValue(
+    (s) => s.showBowl || s.showVigilDialog || s.showAscendDialog || s.showMannaDialog,
+  );
   const rootRef = useRef<HTMLDivElement>(null);
 
   /* ── Load, then catch up on the absence ──────────────────────────────── */
@@ -162,7 +170,7 @@ export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameSta
       data-flourish={flourish ? 'off' : undefined}
       data-no-twemoji
     >
-      <div className="toj-frame">
+      <div className="toj-frame" inert={modal}>
         <TempleHud />
         <div className="toj-body">
           <div className="toj-stage">
@@ -175,6 +183,10 @@ export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameSta
         </div>
       </div>
       <TempleDialogs />
+      {/* The alley renders nothing until it is opened, and the three.js and
+          Rapier chunks behind it are only fetched then — most sessions never
+          bowl, and none of them should pay for it. */}
+      <BowlOverlay />
     </div>
   );
 }

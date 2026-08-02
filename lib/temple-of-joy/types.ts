@@ -11,6 +11,7 @@
  * function, and the whole state serialises — which is what lets the tick be a
  * pure `state -> state` and the save be `JSON.stringify`.
  */
+import type { BowlState } from './bowling';
 
 // ─── Sources ─────────────────────────────────────────────────────────────────
 
@@ -169,6 +170,8 @@ export interface LegacyDef {
   graceShare?: number;
   /** Keep this many blessings through an ascension. */
   keptBlessings?: number;
+  /** Keep this many globes past the first through an ascension. */
+  keptGlobes?: number;
   /** Start each run holding this much joy. */
   startingJoy?: number;
   /** Start each run owning this many of the cheapest source. */
@@ -505,6 +508,13 @@ export interface HoursState {
 
 // ─── The whole state ─────────────────────────────────────────────────────────
 
+/**
+ * The lane's state lives in `bowling.ts` beside the rules that move it, the
+ * same way the garden's and the choir's do. Re-exported here so the save and
+ * the state shape below still read as one document.
+ */
+export type { BowlState };
+
 export type TabId =
   | 'temple'
   | 'sources'
@@ -535,6 +545,21 @@ export interface GameState {
   sourceLevels: Record<SourceId, number>;
   /** Joy each source has produced this run, for the ledger. */
   sourceEarnings: Record<SourceId, number>;
+
+  // ── Globes ──
+  /**
+   * How many liquid globes are turning in the sanctum. Always at least one —
+   * the first is a gift, the other seven are the run's headline purchases. Each
+   * one beyond the first multiplies the rate and the hand-offering, and takes a
+   * share of the orbiting sources onto its own surface.
+   */
+  globes: number;
+  /** Globes bought across every run. Only the trophies read it. */
+  globesBought: number;
+
+  // ── The Bowl ──
+  /** The once-a-day lane: its two clocks, and what the last frame was worth. */
+  bowl: BowlState;
 
   // ── Blessings & trophies ──
   blessings: Set<string>;
@@ -626,13 +651,22 @@ export interface GameState {
   showAscendDialog: boolean;
   showVigilDialog: boolean;
   showMannaDialog: boolean;
+  /** The bowling alley is up, over everything else. */
+  showBowl: boolean;
   initialized: boolean;
   /** Transient notes for the toast rail. */
   notices: Notice[];
 }
 
 export interface Notice {
+  /**
+   * Monotonic, from `ids.ts` — NOT a timestamp. It used to be `Date.now()`
+   * plus an index, which meant two sources minting notices in the same
+   * millisecond produced the same id, and the toast rail keys on it.
+   */
   id: number;
+  /** When it was raised, in ms. What the rail's expiry sweep reads. */
+  at: number;
   icon: string;
   title: string;
   body?: string;
@@ -641,9 +675,16 @@ export interface Notice {
 
 // ─── Save ────────────────────────────────────────────────────────────────────
 
-/** Everything above, minus the parts that are only true while the tab is open. */
+/**
+ * Everything above, minus the parts that are only true while the tab is open.
+ *
+ * **v3** added the globes and the Bowl. Both are optional on the way in
+ * (`saveToState` fills them), so a v2 payload — which is every save written
+ * before this build — still loads: the reader accepts either version and the
+ * writer only ever emits the current one.
+ */
 export interface SaveData {
-  version: 2;
+  version: 2 | 3;
   joy: number;
   runJoy: number;
   lifetimeJoy: number;
@@ -651,6 +692,11 @@ export interface SaveData {
   sources: Partial<Record<SourceId, number>>;
   sourceLevels: Partial<Record<SourceId, number>>;
   sourceEarnings: Partial<Record<SourceId, number>>;
+  /** v3+. Absent on a v2 save, which is read as the one globe you start with. */
+  globes?: number;
+  globesBought?: number;
+  /** v3+. Absent on a v2 save, which is read as a lane nobody has used. */
+  bowl?: BowlState;
   blessings: string[];
   trophies: string[];
   grace: number;
