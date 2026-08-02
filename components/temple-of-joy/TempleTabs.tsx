@@ -116,7 +116,12 @@ export function TempleTabs() {
             <span className="toj-tab-glyph">
               <Glyph>{tab.glyph}</Glyph>
             </span>
-            {t(`tab-${tab.id}`, { defaultValue: tab.label })}
+            {/* An element, not a bare text node: on the desktop rail the tabs
+                are grid cells of equal width, and only a real box can be told
+                to ellipsise the one locale where "Blessings" is two words. */}
+            <span className="toj-tab-label">
+              {t(`tab-${tab.id}`, { defaultValue: tab.label })}
+            </span>
             {alerts.has(tab.id) && !selected && <span className="toj-tab-dot" aria-hidden />}
           </button>
         );

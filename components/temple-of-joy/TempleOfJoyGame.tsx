@@ -25,6 +25,13 @@ import { BowlOverlay } from './bowl/BowlOverlay';
 export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameState> | null }) {
   const theme = useTempleValue((s) => s.theme);
   const flourish = useTempleValue((s) => s.reducedFlourish);
+  // Any modal open makes the game behind it inert. `aria-modal` alone does not:
+  // it is a hint to assistive tech and nothing at all to the Tab key, so every
+  // source row, tab and Sinner behind an open dialog stayed focusable and
+  // clickable through the scrim.
+  const modal = useTempleValue(
+    (s) => s.showBowl || s.showVigilDialog || s.showAscendDialog || s.showMannaDialog,
+  );
   const rootRef = useRef<HTMLDivElement>(null);
 
   /* ── Load, then catch up on the absence ──────────────────────────────── */
@@ -163,7 +170,7 @@ export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameSta
       data-flourish={flourish ? 'off' : undefined}
       data-no-twemoji
     >
-      <div className="toj-frame">
+      <div className="toj-frame" inert={modal}>
         <TempleHud />
         <div className="toj-body">
           <div className="toj-stage">

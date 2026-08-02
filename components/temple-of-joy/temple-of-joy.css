@@ -107,28 +107,76 @@
   --toj-gap: clamp(0.65rem, 1.6vw, 1rem);
 
   /**
-   * Spacing scale.
+   * Spacing, on a 4px grid.
    *
-   * Every inset in the game comes from these four rather than from a fresh
-   * decimal per rule — which is how the interface ended up looking cramped: a
-   * hundred independently-chosen 0.28s and 0.35s, each defensible on its own
-   * and collectively airless. Cosy is mostly a spacing decision.
+   * Every inset in the game is one of these. Not because round numbers are
+   * prettier, but because a grid is the only thing that makes spacing
+   * *comparable*: with a hundred hand-picked decimals there is no way to say
+   * "this gap is bigger than that one" and mean it, and the two rules below
+   * depend entirely on being able to say exactly that.
    */
-  --toj-pad-xs: 0.4rem;
-  --toj-pad-sm: 0.6rem;
-  --toj-pad-md: 0.85rem;
-  --toj-pad-lg: 1.15rem;
+  /* Below the grid: the space between two lines of ONE object — a name and its
+     own sub-line — where a full grid step would read as two objects. */
+  --toj-0: 0.125rem; /* 2px */
+  --toj-1: 0.25rem; /*  4px */
+  --toj-2: 0.5rem; /*   8px */
+  --toj-3: 0.75rem; /* 12px */
+  --toj-4: 1rem; /*    16px */
+  --toj-5: 1.5rem; /*  24px */
+  --toj-6: 2rem; /*    32px */
 
   /**
-   * The gap between a glyph and the words it belongs to.
+   * Proximity — the rule the interface was breaking everywhere.
    *
-   * Its own token because it is the one measurement that appears in every
-   * component in the game — chip, tab, row, button, toast, buff, stall — and
-   * because at the 0.35rem it used to be, a Twemoji sitting at 1em was
-   * touching its label. An icon needs about half its own width of air or the
-   * pair reads as one smudged word.
+   * Things that belong together sit closer than things that do not. That is
+   * not a preference, it is how people parse a row of anything: the eye groups
+   * by distance before it reads a single word.
+   *
+   * The tab rail had it exactly backwards. Two pixels between one tab and the
+   * next, nine between a tab's icon and its own label — so every glyph sat
+   * nearer the *previous* tab's word than its own, and the rail read as
+   * "Temple 🕯️" then "Sources ✨" then "Blessings 🌱". Correct spelling, wrong
+   * object, every single time.
+   *
+   * So there are two tokens and one invariant: BETWEEN is always at least
+   * twice WITHIN. Anything pairing an icon with a label uses `within`;
+   * anything separating one such pair from the next uses `between`.
    */
-  --toj-icon-gap: 0.55rem;
+  --toj-gap-within: var(--toj-2);
+  --toj-gap-between: var(--toj-4);
+
+  /** Alias kept for the icon↔label case, which is what `within` mostly means. */
+  --toj-icon-gap: var(--toj-gap-within);
+
+  /**
+   * Vertical rhythm — the same idea, one axis down.
+   *
+   * A scrolling panel is a stack of blocks, and how far apart two blocks sit is
+   * the only thing telling you whether the second continues the first or starts
+   * something new. Two values do all of it, and the ratio between them is the
+   * message:
+   *
+   *   `flow`  — the next block continues this one (a note under its card, one
+   *             row under the row above).
+   *   `break` — the next block is a new thing (a section heading, a toolbar).
+   *
+   * Everything in a panel picks one. Before this the same sheet was asking for
+   * 1.35rem, 0.15rem, 0.7rem and 0.35rem in adjacent rules, which is not a
+   * rhythm; it is four people guessing.
+   */
+  --toj-flow: var(--toj-3);
+  --toj-break: var(--toj-6);
+
+  /**
+   * The invisible pad that grows a small control to a thumb's worth of target.
+   *
+   * A visual size and a hit size are different problems, and solving the second
+   * by inflating the first is how the manna chip became a 44px CIRCLE with a
+   * ring round it — a value readout that looked like an error badge. Controls
+   * keep the size their content wants and grow an inert `::before` instead.
+   * (Same trick the switch already used, and the navigation globe's pins.)
+   */
+  --toj-touch: 44px;
 
   /* The docked panel column on wide screens. */
   --toj-panel-w: clamp(23rem, 33vw, 31rem);
@@ -278,7 +326,42 @@
   box-sizing: border-box;
 }
 
-.toj button {
+/**
+ * Block margins, off.
+ *
+ * The browser gives every `<p>`, heading and list a `1em` margin above and
+ * below, so a 0.72rem section label carried 11.52px of invisible space and the
+ * 0.82rem note beneath it carried 13.12px — two numbers nobody picked, each
+ * scaling with its own font size, added to whatever padding the rule asked for.
+ * That is where this panel's "arbitrary" rhythm came from, and you can see the
+ * history in the sheet: a dozen rules further down that each say `margin: 0`
+ * because their author hit it once and patched it locally.
+ *
+ * Spacing between blocks is a layout decision and belongs to the layout, so the
+ * UA's guess is cleared once, here, for everything.
+ */
+.toj :where(p, h1, h2, h3, h4, h5, h6, ul, ol, dl, dd, figure, blockquote, fieldset) {
+  margin: 0;
+}
+
+.toj :where(ul, ol) {
+  padding-inline-start: 0;
+  list-style: none;
+}
+
+/**
+ * The button reset, at ZERO specificity.
+ *
+ * `.toj button` scores (0,1,1) — a class plus a type — which outranks every
+ * single-class rule in this file. So `.toj-segment`, `.toj-tab` and `.toj-row`
+ * all computed to `padding: 0` no matter what they asked for, and only the
+ * rules that happened to carry an extra attribute selector
+ * (`.toj-btn[data-size='sm']`) kept theirs. That is the "no padding inside
+ * elements" this UI was reported for. `:where()` contributes nothing to
+ * specificity, so the reset now loses to any component rule, which is the only
+ * thing a reset should ever do.
+ */
+:where(.toj button) {
   font: inherit;
   color: inherit;
   background: none;
@@ -288,7 +371,7 @@
   touch-action: manipulation;
 }
 
-.toj button:disabled {
+:where(.toj button:disabled) {
   cursor: default;
 }
 
@@ -381,7 +464,18 @@
   box-shadow: var(--toj-lift);
 }
 
-@media (min-width: 62rem) {
+/**
+ * Two columns: the room on the left, the panel beside it.
+ *
+ * The condition is an OR, and the second half is the one that matters. Stacking
+ * is the right shape when the screen is TALL and narrow; a phone held sideways
+ * is neither. At 844×340 the stacked layout gave the counter 119 pixels, the
+ * panel 156, and the altar the 56 that were left — a strip, on a screen with
+ * five hundred unused pixels of width running across it. Short and wide is the
+ * case the side-by-side layout was invented for, so it applies there too, at a
+ * width no phone in landscape is below.
+ */
+@media (min-width: 62rem), (min-width: 40rem) and (max-height: 34rem) {
   .toj-body {
     flex-direction: row;
     align-items: stretch;
@@ -396,22 +490,65 @@
   .toj-dock {
     width: var(--toj-panel-w);
     flex-shrink: 0;
-    border-radius: var(--toj-radius-lg);
+    height: auto;
     border: 1px solid var(--toj-rule);
+    border-radius: var(--toj-radius-lg);
     overflow: hidden;
+  }
+
+  /* The sanctum is a column now, not a band, so it stops paying the body's
+     gutter twice. */
+  .toj-sanctum {
+    margin: 0;
+  }
+}
+
+@media (min-width: 62rem) {
+  .toj {
+    /* Once the room is a column of its own rather than a band above the panel,
+       it is about 800×700 and the globes were sitting in the middle of it at
+       phone size — a 27rem field in a 50rem room, with the standing actions
+       marooned an inch below. The altar takes the space it is given. */
+    --toj-field: min(58dvh, 42vw, 34rem);
+  }
+}
+
+/* Sideways on a phone the room is about 480×300, so the field is bounded by
+   height rather than by width — and it is the whole reason to have turned the
+   phone. */
+@media (min-width: 40rem) and (max-height: 34rem) {
+  .toj {
+    --toj-field: min(62dvh, 34vw, 20rem);
+    --toj-panel-w: clamp(17rem, 40vw, 24rem);
   }
 }
 
 /**
- * On a phone the panel takes the bottom half and the sanctum keeps the top —
- * the altar under your eyes, every menu under your thumb. `dvh` again, so the
- * split does not jump when iOS collapses its toolbar mid-scroll.
+ * Stacked: the panel takes the bottom, the sanctum keeps the top — the altar
+ * under your eyes, every menu under your thumb. `dvh` again, so the split does
+ * not jump when iOS collapses its toolbar mid-scroll.
+ *
+ * The condition is the exact complement of the side-by-side one above, written
+ * out rather than approximated: a tall screen narrower than 62rem, OR any
+ * screen narrower than 40rem. Get that wrong in either direction and both
+ * layouts apply at once — the dock takes a fixed height inside a row, or the
+ * sanctum a corner it does not have — and the winner is decided by which rule
+ * happens to be further down the file.
  */
-@media (max-width: 61.99rem) {
+@media (max-width: 39.99rem), (max-width: 61.99rem) and (min-height: 34.01rem) {
   .toj {
-    /* One number for the split, so the toast rail can sit clear of the panel
-       instead of guessing at it. */
-    --toj-dock-h: min(52dvh, 30rem);
+    /**
+     * One number for the split, so the toast rail can sit clear of the panel
+     * instead of guessing at it.
+     *
+     * 46dvh, not 52. The three shares of a phone screen are the counter, the
+     * altar and the list, and the altar is the only one of them that is the
+     * GAME — but it is also the only one that takes what the other two leave,
+     * so it was the one that paid. On a 664px iPhone: 162 of header, 345 of
+     * list, and 67 pixels of globe. Six percent of the screen for the thing the
+     * whole interface is built around.
+     */
+    --toj-dock-h: min(46dvh, 26rem);
   }
 
   /* The dock comes up from the bottom edge, so only its top corners are
@@ -436,7 +573,7 @@
  * a strip — you turned the phone sideways to read a list, not to admire the
  * architecture.
  */
-@media (max-width: 61.99rem) and (max-height: 32rem) {
+@media (max-width: 39.99rem) and (max-height: 32rem) {
   .toj {
     /* The panel keeps most of the height — you turned the phone sideways to
        read a list — but not so much that the field is squeezed to nothing. The
@@ -451,8 +588,8 @@
   }
 
   .toj-sanctum {
-    padding: 0.35rem;
-    gap: 0.3rem;
+    padding: var(--toj-2);
+    gap: var(--toj-2);
   }
 }
 
@@ -465,37 +602,92 @@
  * of it. That is the whole difference between "an app with a header" and "a
  * room with a number in it", and it costs one border-radius and one shadow.
  */
+/**
+ * The header is a GRID, at every size.
+ *
+ * It was a wrapping flex row of three children, and a wrapping row cannot
+ * express a hierarchy: whichever child ran out of room dropped to the next line
+ * and landed hard left, so at one width the leave-link sat in the top-right
+ * corner and at the next it sat alone under the rate, flush left, in an inch of
+ * white. What goes where is a decision, not a consequence of measuring — so it
+ * is stated:
+ *
+ *   counter   │ (chips) │ leave
+ *   rate      │         │
+ *   chips ────┴─────────┘
+ *
+ * The counter takes the free column, the leave-link is pinned to the top-right
+ * corner it belongs in, and the chips take whichever of the two places they fit
+ * — beside the counter when the header is wide, on their own row when it is
+ * not. Nothing ever moves to a position nobody chose.
+ */
 .toj-hud {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--toj-gutter);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: var(--toj-gap-between);
+  row-gap: var(--toj-2);
   margin: var(--toj-gap) var(--toj-gutter) 0;
-  padding: var(--toj-gap) calc(var(--toj-gutter) * 0.9);
+  padding: var(--toj-4);
   border: 1px solid var(--toj-rule);
   border-radius: var(--toj-radius-lg);
   background: var(--toj-surface);
   box-shadow: var(--toj-lift);
-  flex-wrap: wrap;
 }
 
+/**
+ * The counter and its rate: one object in the markup, two grid rows here.
+ *
+ * `display: contents` rather than a grid item, so the rate can take the whole
+ * width while the counter shares its row with the leave-link. Confined to
+ * column 1 the rate got the 210px the link left it and "1.131 Qi joy per second
+ * · 20% held by Sinners" came out on two lines — thirty pixels of a phone
+ * screen, spent on a wrap, in the one place where the room is already short.
+ */
 .toj-hud-main {
-  flex: 1;
-  min-width: 9rem;
+  display: contents;
+}
+
+/* Chips take the full width under the rate — the narrow arrangement, and the
+   default. The wide breakpoint moves them up beside the counter. */
+.toj-chips {
+  grid-column: 1 / -1;
+  grid-row: 3;
+}
+
+/* Pinned to the corner. A "leave this game" link has exactly one right place
+   and it does not depend on how wide the screen is. */
+.toj-hud-actions {
+  grid-column: 2;
+  grid-row: 1;
 }
 
 .toj-joy {
+  grid-column: 1;
+  grid-row: 1;
   display: block;
   font-family: var(--toj-serif);
-  font-size: clamp(1.9rem, 5.5vw, 3rem);
+  font-size: clamp(1.7rem, 5.5vw, 3rem);
   font-weight: 500;
   line-height: 1.05;
   letter-spacing: -0.015em;
+  /* A joy figure broken across two lines is unreadable at a glance, which is
+     the only thing it is for. It clips before it wraps. */
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
 }
 
+ /* The second-most-important number in the game, and it was the third-largest
+    thing in the header — under a decorative trophy percentage. It sits directly
+    under the counter it belongs to and is sized like a subtitle, not a caption. */
 .toj-rate {
+  grid-column: 1 / -1;
+  grid-row: 2;
   display: block;
-  margin-top: 0.15rem;
-  font-size: 0.8rem;
+  font-size: 0.88rem;
+  line-height: 1.35;
   color: var(--toj-ink-soft);
 }
 
@@ -506,31 +698,33 @@
 .toj-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--toj-pad-sm);
+  gap: var(--toj-2);
   align-items: center;
 }
 
 .toj-chip {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: var(--toj-icon-gap);
-  padding: var(--toj-pad-xs) var(--toj-pad-md);
-  border-radius: 99px;
-  border: 1px solid var(--toj-rule);
+  gap: var(--toj-gap-within);
+  padding: var(--toj-1) var(--toj-3);
+  border-radius: var(--toj-radius-pill);
+  border: 1px solid transparent;
   background: var(--toj-surface-sunk);
+  color: var(--toj-ink-soft);
   font-size: 0.8rem;
   white-space: nowrap;
-  transition: border-color var(--toj-base) var(--toj-ease);
+  transition:
+    border-color var(--toj-base) var(--toj-ease),
+    color var(--toj-base) var(--toj-ease);
 }
 
 .toj-chip[data-kind='grace'] {
   color: var(--toj-grace);
-  border-color: color-mix(in oklab, var(--toj-grace) 35%, var(--toj-rule));
 }
 
 .toj-chip[data-kind='manna'] {
   color: var(--toj-manna);
-  border-color: color-mix(in oklab, var(--toj-manna) 35%, var(--toj-rule));
 }
 
 .toj-chip[data-kind='manna'][data-ready='true'] {
@@ -540,97 +734,128 @@
 @keyframes toj-chip-ready {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgb(181 127 56 / 0);
+    background: var(--toj-surface-sunk);
+    border-color: transparent;
   }
   50% {
-    box-shadow: 0 0 0 4px rgb(181 127 56 / 0.18);
+    background: color-mix(in oklab, var(--toj-manna) 14%, var(--toj-surface-sunk));
+    border-color: color-mix(in oklab, var(--toj-manna) 40%, transparent);
   }
 }
 
 .toj-chip[data-kind='devotion'] {
   color: var(--toj-gold-deep);
-  border-color: color-mix(in oklab, var(--toj-gold) 35%, var(--toj-rule));
 }
 
 .toj-hud-actions {
   display: flex;
-  gap: var(--toj-pad-sm);
+  gap: var(--toj-2);
   align-items: center;
 }
 
 /**
- * The head, on a phone.
+ * The head, once there is room for the chips beside the counter.
  *
- * This block has to live AFTER the rules above rather than up with the rest of
- * the layout breakpoints, and that is not tidiness: it changes `display` from
- * flex to grid, and the base rule is further down the sheet than section 3 is.
- * Stated up there it lost the cascade at equal specificity and the header
- * silently kept wrapping onto three rows — which is a third of a phone screen
- * spent on a counter.
+ * Same grid, one more column: the readouts move up out of the second row and
+ * sit between the counter and the leave-link, right-aligned against it, which
+ * is where the eye already goes looking for a status strip. Below this width
+ * they stay on their own row rather than squeezing the counter — the base rule
+ * above.
+ *
+ * This block has to live AFTER the rules it overrides rather than up with the
+ * other layout breakpoints, and that is not tidiness: at equal specificity the
+ * later rule wins, and stated up in section 3 this one silently lost to the
+ * `.toj-chips` placement below it.
  */
-@media (max-width: 61.99rem) {
+/* Below that width the header is three decks deep and the altar under it is
+   paying for every pixel, so the counter's own box tightens: the room it gives
+   up is room the globes get. */
+@media (max-width: 47.99rem) {
   .toj-hud {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 0.15rem 0.5rem;
-    padding-block: 0.5rem;
+    padding: var(--toj-3);
+    row-gap: var(--toj-1);
   }
 
-  /* The counter and its rate are one element in the markup and two rows here,
-     so the wrapper steps out of the way rather than becoming a grid item that
-     would confine the rate to the left column — where "12.4 Qi joy per second ·
-     20% held by Sinners" wrapped onto three lines beside a single chip. */
-  .toj-hud-main {
-    display: contents;
+  .toj-chip {
+    font-size: 0.76rem;
+    padding-inline: var(--toj-2);
   }
 
-  .toj-joy {
-    grid-column: 1;
-    grid-row: 1;
-    font-size: clamp(1.6rem, 7.5vw, 2.3rem);
-    min-width: 0;
-    /* The counter shrinks its own tracking before it ever wraps: a joy figure
-       broken across two lines is unreadable at a glance, which is the only
-       thing it is for. */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: clip;
-  }
-
-  /* Three chips and a back-link cannot share the counter's row on a 390px
-     phone — between them they leave it about forty pixels, and "20.25 Qi"
-     breaks across two lines. The way out keeps the top row (it is small), the
-     chips take a row of their own, and the rate takes the width it needs. */
-  .toj-hud-actions {
-    grid-column: 2;
-    grid-row: 1;
-  }
-
-  .toj-chips {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    gap: 0.3rem;
-  }
-
-  .toj-rate {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    margin-top: 0;
+  /* Same trade, on the room's own inset. */
+  .toj-sanctum {
+    padding: var(--toj-3);
+    gap: var(--toj-2);
   }
 }
 
-/* A phone turned sideways is ~380px tall. The counter gives up its size before
+@media (min-width: 48rem) {
+  .toj-hud {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .toj-chips {
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: flex-end;
+    /* Optically on the counter's line rather than on its box's top edge: the
+       counter is a 3rem serif with most of its mass low in the line. */
+    align-self: center;
+  }
+
+  .toj-hud-actions {
+    grid-column: 3;
+  }
+}
+
+/* A phone turned sideways is ~340px tall. The counter gives up its size before
    the globes do — you turned the phone to read a list, not to admire a number.
    Here rather than with the other landscape rules for the same cascade reason
    as the block above. */
-@media (max-width: 61.99rem) and (max-height: 32rem) {
+@media (max-height: 32rem) {
   .toj-joy {
     font-size: clamp(1.3rem, 4.5vw, 1.9rem);
   }
 
   .toj-hud {
-    padding-block: 0.35rem;
+    padding-block: var(--toj-2);
+    row-gap: var(--toj-1);
+  }
+}
+
+/**
+ * The head on a short, wide screen: ONE row.
+ *
+ * Three decks of header is 119 pixels of a 340-pixel landscape phone — a third
+ * of the screen, on a counter — and the altar underneath it was left with 69.
+ * Sideways there is width to spare and no height at all, so everything goes on
+ * one line and the rate is the thing allowed to truncate: the counter must stay
+ * whole (it is the number), the chips are already short, and losing the tail of
+ * "· 20% held by Sinners" costs less than losing two thirds of the globe.
+ */
+@media (max-height: 34rem) and (min-width: 40rem) {
+  .toj-hud {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    column-gap: var(--toj-gap-between);
+  }
+
+  .toj-rate {
+    grid-column: 2;
+    grid-row: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .toj-chips {
+    grid-column: 3;
+    grid-row: 1;
+    flex-wrap: nowrap;
+  }
+
+  .toj-hud-actions {
+    grid-column: 4;
+    grid-row: 1;
   }
 }
 
@@ -660,13 +885,38 @@
   padding: var(--toj-gutter);
   isolation: isolate;
   overflow: hidden;
+  /* A card at EVERY size, on the header's exact left and right edges. It used
+     to get its corner only above 62rem, so on a phone and a tablet the middle
+     of the screen was a hard-edged full-bleed band of bare ground between two
+     rounded white cards — three surfaces, three different left edges, one of
+     them not a surface at all. Shared edges are most of what "designed" looks
+     like; the room now sits on the same two rules the counter does. */
+  margin: var(--toj-gap) var(--toj-gutter);
+  border-radius: var(--toj-radius-lg);
+  border: 1px solid color-mix(in oklab, var(--toj-rule) 60%, transparent);
+  /* Warm, not white. The ground under this card is a gold radial, and a neutral
+     white veil over a warm light does not lighten it — it desaturates it, which
+     is why the middle of the screen was reading as a grey panel on a cream page.
+     The room's own surface is cream too, so the light survives it. */
+  background: color-mix(in oklab, var(--toj-surface-sunk) 55%, transparent);
 }
 
-@media (min-width: 62rem) {
+/* The side-by-side condition again, and it has to be repeated HERE rather than
+   stated once beside the body's own rules: those come four hundred lines
+   earlier, and at equal specificity the `.toj-sanctum` margin above would win.
+   Anywhere the two-column body applies, it already carries the gutter for both
+   of its children, so the room stops paying it twice. */
+@media (min-width: 62rem), (min-width: 40rem) and (max-height: 34rem) {
   .toj-sanctum {
-    border-radius: var(--toj-radius-lg);
-    border: 1px solid color-mix(in oklab, var(--toj-rule) 60%, transparent);
-    background: color-mix(in oklab, var(--toj-surface) 45%, transparent);
+    margin: 0;
+  }
+}
+
+/* Sideways there is no height to spend on the room's own inset either. */
+@media (max-height: 34rem) {
+  .toj-sanctum {
+    padding: var(--toj-2);
+    gap: var(--toj-2);
   }
 }
 
@@ -747,6 +997,12 @@
      eight pixels on a landscape handset — the globes have to stay a globe even
      when the room is a strip. */
   min-height: 4rem;
+  /* Everything drawn ON the field measures itself against this box rather than
+     against `--toj-field`, which is only what the box ASKED for — see the note
+     on `.toj-sinner`. `inline-size` and not `size`: the width is derived from
+     the height and the ratio, so there is nothing for block containment to do
+     but risk collapsing the canvas inside. */
+  container-type: inline-size;
   /* The field owns every gesture inside it: the browser must not pan, scroll,
      select or offer a callout while a globe is being spun — and this is a game
      whose core verb is tapping the same spot repeatedly. */
@@ -898,7 +1154,7 @@
   transform: translate(-50%, -50%);
   display: grid;
   justify-items: center;
-  gap: 0.25rem;
+  gap: var(--toj-1);
   width: max-content;
   max-width: 7rem;
   text-align: center;
@@ -1107,21 +1363,28 @@
   z-index: 5;
 }
 
+/**
+ * A Sinner, sized against the field it is standing on.
+ *
+ * `cqw` — the field's OWN measured width — not `--toj-field`, which is only the
+ * ceiling the field asks for. On a phone the field flex-shrinks to whatever the
+ * counter and the panel leave it, and the two numbers came apart completely:
+ * the token said 304px while the altar rendered at 67, so each of the five
+ * Sinners was drawn at 48px — nearly three quarters of the sphere they are
+ * supposed to be clinging to, in a ring that hid it entirely. A container query
+ * cannot disagree with the box it is measuring.
+ */
 .toj-sinner {
   position: absolute;
-  /* Sized against the FIELD, not in fixed rem. At 2.4rem a Sinner was a
-     seventh of a phone-sized sphere's width, and a ring of twelve buried the
-     globes they are supposed to be feeding on. The floor keeps them a thumb's
-     worth of target on the smallest field. */
-  width: clamp(1.7rem, calc(var(--toj-field) * 0.14), 2.4rem);
-  height: clamp(1.7rem, calc(var(--toj-field) * 0.14), 2.4rem);
+  width: clamp(1.25rem, 14cqw, 2.4rem);
+  height: clamp(1.25rem, 14cqw, 2.4rem);
   /* Centred on its own (left, top), which is where the ring maths puts it. */
   transform: translate(-50%, -50%);
   display: grid;
   place-items: center;
   border-radius: 50%;
   pointer-events: auto;
-  font-size: 1.1rem;
+  font-size: clamp(0.65rem, 8cqw, 1.1rem);
   color: var(--toj-sable);
   background: var(--toj-surface);
   border: 1px solid color-mix(in oklab, var(--toj-sable) 45%, transparent);
@@ -1146,6 +1409,22 @@
   }
 }
 
+/* Drawn at twenty pixels on a small field, but struck with a thumb. The target
+   grows past the drawing rather than the drawing growing to the target — the
+   same trick the chips and the segments use, and the reason a Sinner can be
+   small enough to see the globe behind it. */
+@media (pointer: coarse) {
+  .toj-sinner::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: var(--toj-touch);
+    height: var(--toj-touch);
+    translate: -50% -50%;
+  }
+}
+
 /* ── Standing actions under the field ── */
 
 /**
@@ -1164,7 +1443,10 @@
 .toj-rites {
   display: flex;
   flex-wrap: nowrap;
-  gap: var(--toj-pad-sm);
+  /* Each of these buttons already holds an icon 8px from its own label. At an
+     8px gap BETWEEN them the row was one undifferentiated strip of glyphs and
+     words; the same inversion the tab rail had. */
+  gap: var(--toj-gap-between);
   justify-content: safe center;
   align-items: center;
   min-height: 2.25rem;
@@ -1173,6 +1455,18 @@
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
+  /* Same edge fade as the tab rail, and for the same reason: on a phone this
+     row is four actions in a 350px sanctum, and a pill sliced down the middle
+     at the edge reads as a bug rather than as "there is more, push it". The row
+     is centred, so when everything fits the fade has nothing under it. */
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--toj-4),
+    #000 calc(100% - var(--toj-4)),
+    transparent 100%
+  );
+  scroll-padding-inline: var(--toj-4);
   /* Above the pins, which project out past the sphere near the limb. */
   position: relative;
   z-index: 6;
@@ -1194,7 +1488,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--toj-icon-gap);
-  padding: 0.45rem var(--toj-pad-lg);
+  padding: var(--toj-2) var(--toj-4);
   border-radius: var(--toj-radius-pill);
   border: 1px solid rgb(var(--toj-gold-rgb) / 0.45);
   background: var(--toj-gold-wash);
@@ -1212,7 +1506,7 @@
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: var(--toj-pad-sm);
+  gap: var(--toj-2);
   flex-wrap: wrap;
   justify-content: center;
   max-width: calc(100% - 2 * var(--toj-gutter));
@@ -1224,7 +1518,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--toj-icon-gap);
-  padding: var(--toj-pad-xs) var(--toj-pad-md) 0.45rem;
+  padding: var(--toj-1) var(--toj-3) 0.45rem;
   border-radius: 99px;
   border: 1px solid rgb(var(--toj-gold-rgb) / 0.4);
   background: var(--toj-surface);
@@ -1271,7 +1565,13 @@
   align-items: center;
   justify-content: center;
   gap: var(--toj-icon-gap);
-  padding: 0.6rem var(--toj-pad-lg);
+  /* A control height, not a padding sum. Buttons in this game carry labels of
+     wildly different lengths and two different font sizes, and padding alone
+     let each of them settle at its own height — a row of actions where no two
+     pills agreed. The minimum sets the height; the padding only guarantees the
+     label never touches the rim. */
+  min-height: 2.25rem;
+  padding: var(--toj-2) var(--toj-4);
   /* Fully round. The room has no square corners left in it, and a pill is also
      the shape a thumb reads as "press me" fastest. */
   border-radius: var(--toj-radius-pill);
@@ -1317,7 +1617,8 @@
 }
 
 .toj-btn[data-size='sm'] {
-  padding: var(--toj-pad-xs) var(--toj-pad-md);
+  min-height: 1.75rem;
+  padding: var(--toj-1) var(--toj-3);
   font-size: 0.78rem;
 }
 
@@ -1347,28 +1648,90 @@
  */
 .toj-tabs {
   display: flex;
-  gap: 0.15rem;
-  margin: var(--toj-pad-sm) var(--toj-pad-sm) 0;
-  padding: 0.28rem;
+  /* BETWEEN one tab and the next — twice the gap inside a tab. See the
+     proximity note in the tokens: this is the measurement that was two pixels
+     while the icon↔label gap was nine, which is what made every glyph read as
+     belonging to the tab before it. */
+  gap: var(--toj-gap-between);
+  margin: var(--toj-2) var(--toj-2) 0;
+  padding: var(--toj-1) var(--toj-3);
   border-radius: var(--toj-radius-pill);
   background: var(--toj-surface-sunk);
   overflow-x: auto;
   scrollbar-width: none;
   flex-shrink: 0;
+  /* Ten tabs never fit. Cut off at a hard edge the last one reads as a
+     rendering fault — half a glyph, no reason — so the rail fades into its own
+     padding instead, which is the one visual convention that says "there is
+     more of this, push it". The fade is exactly the track's inline padding
+     wide, so when the tabs DO fit there is nothing under it to soften. */
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--toj-3),
+    #000 calc(100% - var(--toj-3)),
+    transparent 100%
+  );
+  /* A pill scrolled to the edge should stop at the edge, not under the fade. */
+  scroll-padding-inline: var(--toj-3);
 }
 
 .toj-tabs::-webkit-scrollbar {
   display: none;
 }
 
+/**
+ * On the desktop dock the rail WRAPS instead of scrolling.
+ *
+ * The dock is a fixed 26rem column and there are ten destinations, so the
+ * scrolling rail showed three of them and hid Garden, Choir, Exchange, the
+ * Library and the rest behind a gesture nobody performs on a mouse. Three rows
+ * of pills cost about 70px of a 700px column and make every room in the game
+ * visible at once, which is worth more than the pixels — especially since the
+ * unread dots that mark a newly affordable room are the main reason to look at
+ * this rail at all, and a dot you cannot see is not a notification.
+ *
+ * The phone keeps the scroller: there the constraint is vertical, not
+ * horizontal, and a swipe along a rail under your thumb is the natural gesture.
+ */
+@media (min-width: 62rem) {
+  .toj-tabs {
+    /* A GRID, not a wrapping row: pills of ten different widths wrapping freely
+       give four rows with four different rags, which looks like a spill. Three
+       equal columns and the rail reads as the menu it is. */
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--toj-1);
+    overflow-x: visible;
+    /* No overflow, so no edge to hint at. */
+    mask-image: none;
+    /* A pill is the shape of ONE row of pills. Four rows is a block. */
+    border-radius: var(--toj-radius);
+    padding: var(--toj-2);
+  }
+
+  /* In a column the label starts where the one above it starts. Centred text
+     in a grid cell puts every word in a different place. */
+  .toj-tab {
+    justify-content: flex-start;
+    min-width: 0;
+  }
+
+  .toj-tab-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
 .toj-tab {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: var(--toj-icon-gap);
-  padding: 0.5rem var(--toj-pad-md);
+  /* WITHIN: an icon and the word it names. */
+  gap: var(--toj-gap-within);
+  padding: var(--toj-2) var(--toj-3);
   border-radius: var(--toj-radius-pill);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--toj-ink-soft);
   white-space: nowrap;
   transition:
@@ -1377,6 +1740,9 @@
     box-shadow var(--toj-quick) var(--toj-ease);
 }
 
+/* The selected tab is the only one that lifts. Everything else is a label in a
+   trough — which is what a segmented rail is, and it stops the rail reading as
+   ten buttons of equal weight. */
 .toj-tab[aria-selected='true'] {
   color: var(--toj-gold-deep);
   background: var(--toj-surface);
@@ -1389,6 +1755,11 @@
   align-items: center;
   font-size: 1rem;
   line-height: 1;
+  flex-shrink: 0;
+}
+
+.toj-tab-label {
+  min-width: 0;
 }
 
 /* Something in here is newly affordable. */
@@ -1433,8 +1804,8 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--toj-pad-md);
-  padding: var(--toj-gap) var(--toj-gutter) var(--toj-pad-sm);
+  gap: var(--toj-3);
+  padding: var(--toj-4) var(--toj-gutter) var(--toj-flow);
   flex-shrink: 0;
 }
 
@@ -1470,10 +1841,28 @@
   }
 }
 
+/**
+ * A note.
+ *
+ * Always an explanation of the thing directly above it, so it is spaced
+ * asymmetrically: tight to its subject, `break` before whatever comes next.
+ * Symmetric padding is what made the globes' explanation read as a homeless
+ * paragraph floating between two unrelated cards.
+ */
 .toj-panel-note {
   font-size: 0.82rem;
+  line-height: 1.5;
   color: var(--toj-ink-soft);
-  padding: var(--toj-pad-md) 0.15rem;
+  margin: var(--toj-2) 0 var(--toj-break);
+  /* Prose wants a measure. A full-width panel on a tablet runs a 0.82rem note
+     past 90 characters; comfortable reading tops out around 65. */
+  max-width: 62ch;
+}
+
+/* Two notes in a row are one explanation in two paragraphs — and adjacent
+   margins collapse, so the pair simply takes the larger of the two. */
+.toj-panel-note + .toj-panel-note {
+  margin-top: var(--toj-2);
 }
 
 .toj-empty {
@@ -1502,10 +1891,10 @@
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: var(--toj-pad-md);
+  gap: var(--toj-3);
   width: 100%;
-  margin-bottom: var(--toj-pad-xs);
-  padding: var(--toj-pad-md) var(--toj-pad-md);
+  margin-bottom: var(--toj-1);
+  padding: var(--toj-3) var(--toj-3);
   text-align: left;
   border: 1px solid transparent;
   border-radius: var(--toj-radius);
@@ -1603,7 +1992,7 @@ button.toj-row:active:not(:disabled) {
 }
 
 .toj-row-note {
-  margin-top: 0.22rem;
+  margin-top: var(--toj-1);
   font-size: 0.77rem;
   line-height: 1.4;
   color: var(--toj-ink-soft);
@@ -1618,7 +2007,7 @@ button.toj-row:active:not(:disabled) {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.15rem;
+  gap: var(--toj-0);
   flex-shrink: 0;
   text-align: right;
 }
@@ -1653,8 +2042,8 @@ button.toj-row:active:not(:disabled) {
 
 .toj-segments {
   display: flex;
-  gap: 0.15rem;
-  padding: 0.25rem;
+  gap: var(--toj-1);
+  padding: var(--toj-1);
   border-radius: var(--toj-radius-pill);
   background: var(--toj-surface-sunk);
   overflow-x: auto;
@@ -1665,10 +2054,25 @@ button.toj-row:active:not(:disabled) {
   display: none;
 }
 
+/**
+ * A segment.
+ *
+ * `inline-flex` at every size, not only on a coarse pointer — the layout is
+ * what puts a gap between an icon and its label, and JSX drops the whitespace
+ * between an element and an expression on the next line. So `<Glyph>🍞</Glyph>`
+ * followed by `{t('Raise')}` renders as literally "🍞Raise" in any container
+ * that is not a flex box with a gap. It did, on the one button in the game
+ * that was not.
+ */
 .toj-segment {
-  padding: var(--toj-pad-xs) var(--toj-pad-md);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--toj-gap-within);
+  padding: var(--toj-2) var(--toj-3);
   border-radius: var(--toj-radius-pill);
-  font-size: 0.76rem;
+  font-size: 0.78rem;
   color: var(--toj-ink-soft);
   white-space: nowrap;
   transition:
@@ -1683,16 +2087,48 @@ button.toj-row:active:not(:disabled) {
   box-shadow: var(--toj-lift-sm);
 }
 
+/**
+ * The controls above a list.
+ *
+ * `space-between` looked reasonable in a 380px dock and fell apart the moment
+ * the panel got wide: the quantity switch stayed left, the Raise toggle went to
+ * the far right, and the 600px of nothing between them said the two controls
+ * were unrelated. They are not — they are both "how am I spending" — so they
+ * are one cluster now, and they wrap together instead of drifting apart.
+ */
 .toj-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--toj-pad-sm);
-  padding: var(--toj-pad-xs) 0 var(--toj-pad-md);
+  flex-wrap: wrap;
+  gap: var(--toj-gap-within) var(--toj-gap-between);
+  /* Padding, not margin, and deliberately: this one is `sticky`, so its box has
+     to cover the list scrolling under it. It sits ON the panel's surface rather
+     than between two things. */
+  padding: 0 0 var(--toj-flow);
   position: sticky;
   top: 0;
   z-index: 2;
   background: var(--toj-surface);
+}
+
+/**
+ * A segment standing on its own, outside the sunken track its siblings share.
+ *
+ * Without the track it had no background, no border and no shape — a toggle
+ * drawn as a line of body text. It gets the track it is missing, so a control
+ * that can be on or off looks like one whether there are four of them or one.
+ */
+.toj-toolbar > .toj-segment {
+  background: var(--toj-surface-sunk);
+  /* The same box the switch's own track makes round its pills, so a lone
+     toggle and a group of them line up on the same height. */
+  padding: calc(var(--toj-2) + 1px) var(--toj-4);
+}
+
+.toj-toolbar > .toj-segment[aria-pressed='true'] {
+  background: var(--toj-gold-wash);
+  color: var(--toj-gold-deep);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--toj-gold) 35%, transparent);
 }
 
 /* ── Settings rows ── */
@@ -1701,13 +2137,55 @@ button.toj-row:active:not(:disabled) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  padding: var(--toj-pad-md) 0.15rem;
+  gap: var(--toj-gap-between);
+  padding: var(--toj-3) 0;
   border-bottom: 1px solid var(--toj-rule);
 }
 
+/* The rule separates rows; there is nothing under the last one to separate it
+   from, and a hairline hanging off the bottom of a group is a loose end. */
+.toj-setting:last-child {
+  border-bottom: 0;
+}
+
 .toj-setting-label {
+  /* Takes the room the control does not want, rather than only as much as its
+     longest word. */
+  flex: 1 1 auto;
   min-width: 0;
+}
+
+/**
+ * A row whose control is a SLIDER stacks.
+ *
+ * A switch is 42px wide and can sit beside anything. A slider is 144px plus its
+ * readout, and in a 26rem dock that left the label about 150px — so "Offerings,
+ * purchases, halos, harvests. Move the slider to hear it." came out as four
+ * ragged lines next to a track with room to spare. A control that needs width
+ * gets the width, on its own line, and the sentence gets the row. Same shape as
+ * the bowling dials, for the same reason.
+ */
+.toj-setting:has(.toj-slider) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  row-gap: var(--toj-2);
+}
+
+.toj-setting:has(.toj-slider) .toj-setting-label {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+.toj-setting:has(.toj-slider) .toj-setting-control {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+.toj-setting:has(.toj-slider) .toj-slider {
+  flex: 1;
+  width: auto;
+  max-width: none;
 }
 
 .toj-setting-name {
@@ -1718,7 +2196,7 @@ button.toj-row:active:not(:disabled) {
 
 .toj-setting-note {
   display: block;
-  margin-top: 0.1rem;
+  margin-top: var(--toj-0);
   font-size: 0.76rem;
   color: var(--toj-ink-soft);
 }
@@ -1727,7 +2205,7 @@ button.toj-row:active:not(:disabled) {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--toj-gap-within);
 }
 
 .toj-setting-value {
@@ -1736,12 +2214,34 @@ button.toj-row:active:not(:disabled) {
   font-weight: 600;
 }
 
+/**
+ * A section heading.
+ *
+ * `break` above it, `flow` below: the label belongs to the list under it, not
+ * to the list it follows, and the spacing has to say so before the words do.
+ * It also sits on the cards' own left edge — the old `0.15rem` was an indent
+ * too small to read as an indent and too large to be alignment, so every
+ * heading in the panel was two pixels off the column it introduced.
+ */
 .toj-section {
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.09em;
   color: var(--toj-ink-faint);
-  padding: 1.35rem 0.15rem var(--toj-pad-sm);
+  /* MARGIN, not padding. Space between two blocks belongs to neither of them,
+     and padding is part of a box — including for hit-testing. A `break` of
+     bottom padding on the note above put thirty-two pixels of paragraph on top
+     of the card beneath it, and the top third of that card stopped answering to
+     a thumb. Nothing about it looked wrong; it just did not work. */
+  margin: var(--toj-break) 0 var(--toj-flow);
+}
+
+/* …except when there is nothing above it to break FROM. The panel's own
+   heading, or the toolbar that belongs to the list this heading introduces,
+   have already paid for the space. */
+.toj-section:first-child,
+.toj-toolbar + .toj-section {
+  margin-top: 0;
 }
 
 /* Switch. */
@@ -1798,7 +2298,7 @@ button.toj-row:active:not(:disabled) {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 3px;
-  margin: 0.5rem 0;
+  margin: var(--toj-2) 0;
   padding: 4px;
   border-radius: var(--toj-radius);
   background: var(--toj-surface-sunk);
@@ -1870,15 +2370,15 @@ button.toj-row:active:not(:disabled) {
 .toj-seedbar {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--toj-pad-xs);
-  padding: var(--toj-pad-sm) 0;
+  gap: var(--toj-1);
+  padding: var(--toj-2) 0;
 }
 
 .toj-seed {
   display: inline-flex;
   align-items: center;
   gap: var(--toj-icon-gap);
-  padding: var(--toj-pad-xs) var(--toj-pad-md);
+  padding: var(--toj-1) var(--toj-3);
   border-radius: 99px;
   border: 1px solid var(--toj-rule);
   background: var(--toj-surface);
@@ -1900,15 +2400,15 @@ button.toj-row:active:not(:disabled) {
 
 .toj-stalls {
   display: grid;
-  gap: var(--toj-pad-sm);
-  padding: var(--toj-pad-sm) 0;
+  gap: var(--toj-2);
+  padding: var(--toj-2) 0;
 }
 
 .toj-stall {
   display: flex;
   align-items: center;
-  gap: var(--toj-pad-md);
-  padding: var(--toj-pad-md);
+  gap: var(--toj-3);
+  padding: var(--toj-3);
   border-radius: var(--toj-radius);
   border: 1px dashed var(--toj-rule-strong);
   background: var(--toj-surface-sunk);
@@ -2006,8 +2506,8 @@ button.toj-row:active:not(:disabled) {
 
 .toj-desk {
   display: flex;
-  gap: var(--toj-pad-sm);
-  padding: var(--toj-pad-sm) 0;
+  gap: var(--toj-2);
+  padding: var(--toj-2) 0;
   flex-wrap: wrap;
 }
 
@@ -2129,15 +2629,15 @@ button.toj-row:active:not(:disabled) {
 .toj-dialog-list li {
   display: flex;
   justify-content: space-between;
-  gap: 1rem;
-  padding: var(--toj-pad-sm) 0;
+  gap: var(--toj-gap-between);
+  padding: var(--toj-2) 0;
   border-bottom: 1px solid var(--toj-rule);
   font-size: 0.85rem;
 }
 
 .toj-dialog-actions {
   display: flex;
-  gap: var(--toj-pad-sm);
+  gap: var(--toj-2);
   padding: var(--toj-gap) var(--toj-gutter);
   border-top: 1px solid var(--toj-rule);
   background: var(--toj-surface-sunk);
@@ -2173,7 +2673,7 @@ button.toj-row:active:not(:disabled) {
   max-height: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--toj-pad-md);
+  gap: var(--toj-3);
   padding: var(--toj-gap) var(--toj-gutter) var(--toj-gutter);
   border-radius: var(--toj-radius-lg);
   border: 1px solid var(--toj-rule-strong);
@@ -2188,7 +2688,7 @@ button.toj-row:active:not(:disabled) {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--toj-pad-md);
+  gap: var(--toj-3);
 }
 
 .toj-bowl-title {
@@ -2209,14 +2709,23 @@ button.toj-row:active:not(:disabled) {
 /**
  * The viewport.
  *
- * A fixed aspect ratio and NO `max-height` beside it: the two together is the
- * bug that flattens a stage to nothing the moment the shorter axis binds
- * (`docs/design-language.md` §12.1 rule 2). The height is bounded by the card's
- * own scroll instead.
+ * Sized on the axis that actually binds, which is height. The lane used to take
+ * a 16:10 slice of the card's width and let the card scroll for whatever did
+ * not fit — and on a 1280×860 desktop what did not fit was the Roll button.
+ * A modal whose primary action is below its own fold is a modal people abandon;
+ * the room gives up height for it, because a slightly shorter lane is still a
+ * lane and an invisible button is not a button.
+ *
+ * The `100dvh - 30rem` term is the rest of the card measured — head, rack,
+ * status line, the three dials and the actions — so the view takes exactly the
+ * height nothing else wanted. No `aspect-ratio` and therefore no clamp to break
+ * one (`docs/design-language.md` §12.1 rule 2); `dvh` rather than `vh` so iOS's
+ * collapsing toolbars move it rather than hiding it (rule 3).
  */
 .toj-bowl-view {
   position: relative;
-  aspect-ratio: 16 / 10;
+  height: max(11rem, min(58vw, 100vh - 34rem));
+  height: max(11rem, min(58vw, 100dvh - 34rem));
   width: 100%;
   /* The card SCROLLS, so nothing in it should be squeezed to make it fit.
      Without this the viewport was a flex item that shrank first — and on a
@@ -2299,7 +2808,7 @@ button.toj-row:active:not(:disabled) {
   margin: 0 auto;
   width: max-content;
   max-width: calc(100% - 1.2rem);
-  padding: 0.3rem var(--toj-pad-md);
+  padding: var(--toj-1) var(--toj-3);
   border-radius: var(--toj-radius-pill);
   /* A backing, because the scene behind it is a lit rose window and a plain
      grey caption over that is neither readable nor deliberate-looking. */
@@ -2318,12 +2827,12 @@ button.toj-row:active:not(:disabled) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.3rem;
+  gap: var(--toj-1);
 }
 
 .toj-bowl-row {
   display: flex;
-  gap: var(--toj-pad-xs);
+  gap: var(--toj-1);
 }
 
 .toj-bowl-pin {
@@ -2356,7 +2865,7 @@ button.toj-row:active:not(:disabled) {
 .toj-bowl-actions {
   display: grid;
   justify-items: center;
-  gap: var(--toj-pad-sm);
+  gap: var(--toj-2);
 }
 
 .toj-bowl-note {
@@ -2372,9 +2881,12 @@ button.toj-row:active:not(:disabled) {
 .toj-bowl-controls {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--toj-pad-sm);
+  /* BETWEEN two dials. Inside one, label to track is `--toj-1`; the four-times
+     ratio is what keeps three sliders reading as three controls rather than as
+     six loose lines. */
+  gap: var(--toj-gap-between);
   margin: 0;
-  padding: var(--toj-pad-md) var(--toj-pad-md) var(--toj-pad-md);
+  padding: var(--toj-4);
   border: 1px solid var(--toj-rule);
   border-radius: var(--toj-radius);
   background: var(--toj-surface-sunk);
@@ -2388,73 +2900,62 @@ button.toj-row:active:not(:disabled) {
   justify-self: stretch;
 }
 
+/**
+ * One dial: a name, its current reading, and the track that sets it.
+ *
+ * Label and reading share the top line; the track spans the full width beneath
+ * them. At every size — this used to be the phone layout only, and the wide one
+ * put the three in a `4.2rem 1fr 8.5rem` row, which parked "hooking left, hard"
+ * eight centimetres from the word "Spin" and left the slider a middle column
+ * between two of them. A label, its value and its control are one object;
+ * spreading them across a row makes the eye do a join it should never have been
+ * given.
+ */
 .toj-bowl-dial {
   display: grid;
-  grid-template-columns: 4.2rem 1fr 8.5rem;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--toj-pad-md);
-}
-
-/* The shared `.toj-slider` is clamped to ~9rem because in Settings it is one of
-   three things on a row. Here it IS the row, and a 9rem track inside a 24rem
-   column is a third of the aim you are being asked to set. */
-.toj-bowl-dial .toj-slider {
-  width: 100%;
-  max-width: none;
+  column-gap: var(--toj-3);
+  row-gap: var(--toj-1);
 }
 
 .toj-bowl-dial-label {
+  grid-column: 1;
+  grid-row: 1;
   font-size: 0.8rem;
   font-weight: 600;
 }
 
 .toj-bowl-dial-value {
+  grid-column: 2;
+  grid-row: 1;
   font-size: 0.76rem;
   color: var(--toj-ink-soft);
   text-align: right;
-  /* The readout changes as the slider moves; a fixed column stops the whole row
-     from reflowing on every arrow key. */
+  /* The readout changes as the slider moves; nowrap keeps the row from
+     reflowing on every arrow key. */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* On a phone the dials stack: a 4.2rem label column plus an 8.5rem readout
-   leaves a slider about a thumb wide. */
-@media (max-width: 30rem) {
-  .toj-bowl-dial {
-    grid-template-columns: minmax(0, 1fr) auto;
-    row-gap: 0.15rem;
-  }
-
-  /* Name and reading on one line, the track under both — the readout belongs
-     with the thing it is reading, not stranded on a row of its own. */
-  .toj-bowl-dial-label {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .toj-bowl-dial-value {
-    grid-column: 2;
-    grid-row: 1;
-    text-align: right;
-  }
-
-  .toj-bowl-dial .toj-slider {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
+/* The shared `.toj-slider` is clamped to ~9rem because in Settings it is one of
+   three things on a row. Here it IS the row. */
+.toj-bowl-dial .toj-slider {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  width: 100%;
+  max-width: none;
 }
 
 /* Landscape on a phone is ~380px tall — the whole card has to fit in it, so the
    viewport gives up its aspect ratio and the copy stands down. */
 @media (max-height: 34rem) {
-  /* Sideways on a phone the lane is most of what there is room for, so it
-     takes the height and the prose stands down. The ratio is dropped rather
-     than clamped — an `aspect-ratio` beside a height clamp is the pairing that
-     silently breaks the box (design-language §12.1 rule 2). */
+  /* Sideways on a phone the lane is most of what there is room for, so it takes
+     the height back off the base rule's reserve — the prose below it stands
+     down, so there is less left to reserve for. */
   .toj-bowl-view {
-    aspect-ratio: auto;
+    height: 55vh;
     height: 55dvh;
   }
 
@@ -2492,7 +2993,7 @@ button.toj-row:active:not(:disabled) {
   transform: translateX(-50%);
   display: flex;
   flex-direction: column-reverse;
-  gap: var(--toj-pad-sm);
+  gap: var(--toj-2);
   width: min(22rem, calc(100vw - 2rem));
   pointer-events: none;
   /**
@@ -2520,7 +3021,7 @@ button.toj-row:active:not(:disabled) {
   display: flex;
   align-items: flex-start;
   gap: var(--toj-icon-gap);
-  padding: var(--toj-pad-md) var(--toj-pad-md);
+  padding: var(--toj-3) var(--toj-3);
   border-radius: var(--toj-radius);
   border: 1px solid var(--toj-rule-strong);
   background: var(--toj-surface);
@@ -2567,7 +3068,7 @@ button.toj-row:active:not(:disabled) {
   display: block;
   font-size: 0.76rem;
   color: var(--toj-ink-soft);
-  margin-top: 0.1rem;
+  margin-top: var(--toj-0);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -2580,7 +3081,7 @@ button.toj-row:active:not(:disabled) {
   display: grid;
   place-content: center;
   justify-items: center;
-  gap: 0.4rem;
+  gap: var(--toj-2);
   text-align: center;
   padding: var(--toj-gutter);
 }
@@ -2708,48 +3209,79 @@ button.toj-row:active:not(:disabled) {
  */
 @media (pointer: coarse) {
   .toj-btn {
-    min-height: 44px;
-    padding-inline: 1.05rem;
+    min-height: var(--toj-touch);
+    padding-inline: var(--toj-5);
   }
 
   .toj-btn[data-size='sm'] {
     min-height: 40px;
-    padding-inline: 0.8rem;
+    padding-inline: var(--toj-4);
   }
 
-  .toj-tab {
-    min-height: 44px;
-    padding-inline: 0.85rem;
-  }
-
-  /* "×1" is two characters, and at any sane padding that is a 23px target —
-     a coin toss for a thumb. The minimum is on the WIDTH here, not just the
-     height, which is the axis a segmented switch actually runs out of. */
-  .toj-segment {
-    min-height: 44px;
-    min-width: 44px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding-inline: var(--toj-pad-md);
+  /*
+    "×1" is two characters. Rather than inflate the pill to 44px — which turns
+    a two-character switch into a row of circles — the TARGET is grown past the
+    drawn control by an inert pseudo-element. The switch has always done this;
+    everything small does it now.
+  */
+  .toj-segment::before,
+  .toj-chip::before {
+    content: '';
+    position: absolute;
+    /* Centred on the control, the full target height, and the control's own
+       width — the inline axis already has padding, the block axis is the one
+       that runs short. Inert, so it never eats a press meant for a neighbour
+       beyond taking the one aimed at this control. */
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: var(--toj-touch);
+    translate: 0 -50%;
   }
 
   .toj-row {
     min-height: 56px;
-    padding-block: 0.7rem;
+    padding-block: var(--toj-4);
   }
 
   .toj-seed {
     min-height: 40px;
   }
 
-  /* A chip whose value is one character ("6" of manna) is a 37px target on
-     the width even at a comfortable height — and two of the three chips are
-     buttons that open something. Both axes get the minimum. */
   .toj-chip {
-    min-height: 44px;
-    min-width: 44px;
-    justify-content: center;
+    /* The drawn size stays what the content asks for; `::before` above carries
+       the target. A 44px MINIMUM here is what made the one-character manna chip
+       a circle with a ring round it, which reads as a badge, not a value. */
+    min-height: 34px;
+  }
+
+  /**
+   * The tabs get the real 44, not the invisible one.
+   *
+   * The `::before` trick only works where nothing else is painted over the pad,
+   * and a tab's pad reaches 4.5px below the rail — straight into the panel
+   * header, which has a background and takes the hit. So the bottom tenth of
+   * every tab in the game quietly did not respond. A tab is also not a readout
+   * that would turn into a badge if grown: it is the primary navigation of a
+   * ten-room game, and 44px is simply the right size for it.
+   */
+  .toj-tab {
+    min-height: var(--toj-touch);
+  }
+
+  .toj-tabs {
+    padding-block: var(--toj-1);
+  }
+
+  /* And on a phone, four pixels less again. The header's chip row is 38 pixels
+     of a 664-pixel screen and the altar below it is measured in tens, so where
+     the drawn size and the target are already separate the drawn size gives
+     way. Stated inside this block, after the line above, because at equal
+     specificity that is the only place it can win. */
+  @media (max-width: 47.99rem) {
+    .toj-chip {
+      min-height: 30px;
+    }
   }
 
   /* The switch is the control a thumb misses most often: the track is only
@@ -2777,14 +3309,13 @@ button.toj-row:active:not(:disabled) {
     min-height: 44px;
   }
 
-  /* Halos and Sinners are caught under time pressure; make them forgiving. */
+  /* A Halo is caught under time pressure and is gone in seconds; it can afford
+     to be drawn large. A Sinner stands on the altar for as long as it is alive,
+     so it gets the invisible target instead (see `.toj-sinner::before`) — three
+     rem of DRAWN Sinner is nearly half the sphere on a phone-sized field, and
+     five of them left nothing of the globe to aim at in the first place. */
   .toj-halo {
     width: clamp(3.6rem, 15vw, 4.5rem);
-  }
-
-  .toj-sinner {
-    width: 3rem;
-    height: 3rem;
   }
 }
 
@@ -2902,10 +3433,35 @@ button.toj-row:active:not(:disabled) {
 .toj-bowl-throw {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--toj-pad-sm);
-  margin-top: 0.25rem;
+  gap: var(--toj-gap-between);
 }
 
 .toj-bowl-throw .toj-btn {
   flex: 1 1 9rem;
+}
+
+/**
+ * The card's floor.
+ *
+ * The lane, the rack, the status line and three dials come to more than a phone
+ * screen — sometimes more than a laptop's — so the card scrolls. Everything in
+ * it can wait its turn except the one control the modal exists for, which is
+ * why that one does not scroll away: it sits on the bottom edge and the rest of
+ * the room passes behind it.
+ *
+ * The negative margins bleed it out to the card's own edges (the card carries a
+ * gutter of padding it would otherwise show underneath), and the fade is what
+ * says "there is more above" rather than drawing a lid on the content.
+ */
+.toj-bowl-foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin: 0 calc(var(--toj-gutter) * -1) calc(var(--toj-gutter) * -1);
+  padding: var(--toj-4) var(--toj-gutter) var(--toj-gutter);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--toj-surface) 0%, transparent),
+    var(--toj-surface) var(--toj-4)
+  );
 }

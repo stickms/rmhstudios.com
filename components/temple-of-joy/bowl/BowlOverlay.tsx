@@ -491,7 +491,7 @@ function Alley() {
         </p>
 
         {phase === 'done' ? (
-          <div className="toj-bowl-actions">
+          <div className="toj-bowl-actions toj-bowl-foot">
             <TempleButton variant="gold" ready onClick={bank}>
               <Glyph>🎳</Glyph>
               {down > 0
@@ -575,39 +575,47 @@ function Alley() {
                 controls.current.spin = v;
               }}
             />
-
-            <div className="toj-bowl-throw">
-              <TempleButton
-                variant="gold"
-                ready={phase !== 'rolling'}
-                disabled={phase === 'rolling' || !webgl}
-                onClick={roll}
-              >
-                {phase === 'between'
-                  ? t('bowl-roll-again', { defaultValue: 'Roll the second ball' })
-                  : t('bowl-roll', { defaultValue: 'Roll' })}
-              </TempleButton>
-
-              {/* Offered only where there is an accelerometer to swing. The
-                  press is also the iOS permission prompt, which is why it is a
-                  button and not a setting. */}
-              {swingable && (
-                <TempleButton
-                  variant={swingArmed ? 'gold' : 'plain'}
-                  aria-pressed={swingArmed}
-                  disabled={phase === 'rolling' || !webgl}
-                  onClick={() => {
-                    void armSwing();
-                  }}
-                >
-                  <Glyph>🤾</Glyph>
-                  {swingArmed
-                    ? t('bowl-swing-armed', { defaultValue: 'Swing now' })
-                    : t('bowl-swing', { defaultValue: 'Swing to bowl' })}
-                </TempleButton>
-              )}
-            </div>
           </fieldset>
+        )}
+
+        {/* Outside the fieldset, and last in the card, so it can be the card's
+            sticky floor. On a phone the lane, the rack, the status line and
+            three dials are taller than the screen, and before this the one
+            button the whole modal exists to press was below its own fold. Both
+            buttons already carry their own `disabled`, so leaving the
+            fieldset's group-disable behind costs nothing. */}
+        {phase !== 'done' && (
+          <div className="toj-bowl-throw toj-bowl-foot">
+            <TempleButton
+              variant="gold"
+              ready={phase !== 'rolling'}
+              disabled={phase === 'rolling' || !webgl}
+              onClick={roll}
+            >
+              {phase === 'between'
+                ? t('bowl-roll-again', { defaultValue: 'Roll the second ball' })
+                : t('bowl-roll', { defaultValue: 'Roll' })}
+            </TempleButton>
+
+            {/* Offered only where there is an accelerometer to swing. The press
+                is also the iOS permission prompt, which is why it is a button
+                and not a setting. */}
+            {swingable && (
+              <TempleButton
+                variant={swingArmed ? 'gold' : 'plain'}
+                aria-pressed={swingArmed}
+                disabled={phase === 'rolling' || !webgl}
+                onClick={() => {
+                  void armSwing();
+                }}
+              >
+                <Glyph>🤾</Glyph>
+                {swingArmed
+                  ? t('bowl-swing-armed', { defaultValue: 'Swing now' })
+                  : t('bowl-swing', { defaultValue: 'Swing to bowl' })}
+              </TempleButton>
+            )}
+          </div>
         )}
       </div>
     </div>
