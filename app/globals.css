@@ -323,6 +323,14 @@
      block). 40 sits above `.radial-shell` — which participates at z-auto — and
      below the z-50 dialogs/sheets, so a modal still covers a popover. */
   --z-quickpanel: 40;
+  /* Body-level for the same reason, but for menus that hang off a trigger in the
+     PAGE rather than in the top bar (the composer's (+) menu — see
+     components/ui/anchored-menu). Page content renders inside `.radial-frame`,
+     which is itself a stacking context pinned at `--z-content`, so a menu left
+     in place is capped at 1 relative to the chrome and the top bar (60), the hub
+     orb and the compose FAB (80) all paint over it. Same band as the quick
+     panels: above the shell, below the z-50 dialogs. */
+  --z-menu: 40;
   --z-skip: 200;
   /* Tooltips portal to <body> and must clear the z-50 dialogs/sheets they can
      be triggered from inside, so they sit above the whole stack. */
