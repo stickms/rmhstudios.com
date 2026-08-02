@@ -11,7 +11,7 @@ import { lazy, Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
-import { buildCanonical, buildMeta } from '@/lib/seo';
+import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
 
 const GabrielsHornGame = lazy(() =>
   import('@/components/gabriels-horn/GabrielsHornGame').then((m) => ({
@@ -38,6 +38,11 @@ export const Route = createFileRoute('/gabriels-horn')({
       description:
         'A multiplayer bluffing card game. Three dice are rolled at the start of your turn and you are the only person who cannot see them — ask the table, decide who is lying, and end holding the fewest cards.',
       path: '/gabriels-horn',
+      // The game's hub card, not key art — this route is the game's front door,
+      // the same reasoning as `/games/$gameId` and the other game routes.
+      image: ogCardPath('game', 'gabriels-horn'),
+      imageAlt:
+        "Gabriel's Horn on RMH Studios — a bluffing card game where you cannot see your own dice.",
     }),
     links: [buildCanonical('/gabriels-horn')],
   }),

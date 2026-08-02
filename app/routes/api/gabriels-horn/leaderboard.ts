@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 /**
  * Gabriel's Horn record board.
@@ -31,28 +31,13 @@ export interface HornLeaderboardRow {
 export const Route = createFileRoute('/api/gabriels-horn/leaderboard')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const { allowed, retryAfter } = rateLimit(getClientIp(request), {
-          limit: 30,
-          windowMs: 60_000,
-          prefix: 'gabriels-horn-leaderboard',
-        });
-        if (!allowed) {
-          return Response.json(
-            { error: 'Too many requests' },
-            { status: 429, headers: { 'Retry-After': String(retryAfter) } },
-          );
-        }
-
-        const url = new URL(request.url);
-        const parsed = querySchema.safeParse({
-          limit: url.searchParams.get('limit') ?? undefined,
-        });
-        if (!parsed.success) {
-          return Response.json({ error: 'Invalid query' }, { status: 400 });
-        }
-
-        try {
+      GET: defineHandler(
+        {
+          auth: 'none',
+          rateLimit: { limit: 30, windowMs: 60_000, prefix: 'gabriels-horn-leaderboard' },
+          query: querySchema,
+        },
+        async ({ query }) => {
           const rows = await prisma.gabrielsHornPlayer.findMany({
             where: { gamesPlayed: { gt: 0 } },
             select: {
@@ -64,14 +49,11 @@ export const Route = createFileRoute('/api/gabriels-horn/leaderboard')({
               hornsWon: true,
             },
             orderBy: [{ wins: 'desc' }, { gamesPlayed: 'asc' }],
-            take: parsed.data.limit,
+            take: query.limit,
           });
           return Response.json({ rows });
-        } catch (error) {
-          console.error('gabriels-horn leaderboard error:', error);
-          return Response.json({ error: 'Internal server error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

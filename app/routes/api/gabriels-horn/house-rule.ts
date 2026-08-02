@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
-import { withRateLimit } from '@/lib/rate-limit';
+import { defineHandler } from '@/lib/api/handler.server';
 import { proposeRuleAmendment } from '@/lib/ai/text.server';
 import {
   DEFAULT_HOUSE_RULES,
@@ -65,72 +64,65 @@ export interface HouseRuleProposal {
 export const Route = createFileRoute('/api/gabriels-horn/house-rule')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        const session = await auth.api.getSession({ headers: request.headers });
-        if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      POST: defineHandler(
+        // Per user as well as per IP: this spends money upstream, and one table
+        // should not be able to hammer it.
+        { rateLimit: { policy: 'ai', scope: 'user' }, body: bodySchema },
+        async ({ body }) => {
+          const wish = body.prompt.trim();
+          const current = clampHouseRules(body.current, DEFAULT_HOUSE_RULES);
+          const state = body.state ?? snapshotSchema.parse({});
 
-        // The `ai` policy, keyed per user as well as per IP: this spends money
-        // upstream, and one table should not be able to hammer it.
-        const limited = withRateLimit(request, 'ai', { scope: session.user.id });
-        if (limited) return limited;
-
-        const body = await request.json().catch(() => ({}));
-        const parsed = bodySchema.safeParse(body);
-        if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-        const wish = parsed.data.prompt.trim();
-        const current = clampHouseRules(parsed.data.current, DEFAULT_HOUSE_RULES);
-        const state = parsed.data.state ?? snapshotSchema.parse({});
-
-        const draft = await proposeRuleAmendment({
-          wish,
-          context: {
-            game: "Gabriel's Horn — a blind-dice bluffing card game. Fewest cards wins.",
-            current,
-            bounds: HOUSE_RULE_BOUNDS,
-            booleanKnobs: {
-              hornMustBeStrictlyLowest:
-                'true = whoever calls the End must hold strictly fewest or they finish last; false = a tie is good enough (much gentler)',
-              swapEnabled: 'whether a seven still trades your whole hand with another player',
-              'effects.azure': 'Glimpse — see your own dice this turn',
-              'effects.crimson': 'Accuse — a chosen player draws',
-              'effects.verdant': 'Ward — you cannot be made to draw until your next turn',
-              'effects.amber': "Scry — look at a player's hand",
-            },
-            table: state,
+          const draft = await proposeRuleAmendment({
             wish,
-          },
-        });
+            context: {
+              game: "Gabriel's Horn — a blind-dice bluffing card game. Fewest cards wins.",
+              current,
+              bounds: HOUSE_RULE_BOUNDS,
+              booleanKnobs: {
+                hornMustBeStrictlyLowest:
+                  'true = whoever calls the End must hold strictly fewest or they finish last; false = a tie is good enough (much gentler)',
+                swapEnabled: 'whether a seven still trades your whole hand with another player',
+                'effects.azure': 'Glimpse — see your own dice this turn',
+                'effects.crimson': 'Accuse — a chosen player draws',
+                'effects.verdant': 'Ward — you cannot be made to draw until your next turn',
+                'effects.amber': "Scry — look at a player's hand",
+              },
+              table: state,
+              wish,
+            },
+          });
 
-        // The model answered with something shaped like rules. Clamp it against
-        // the CURRENT rules, so keys it left out simply stay as they were.
-        if (draft.rules) {
-          const rules = clampHouseRules({ ...current, ...draft.rules }, current);
-          const changes = diffHouseRules(current, rules);
-          if (changes.length > 0) {
-            const proposal: HouseRuleProposal = {
-              rules,
-              changes,
-              reasoning: draft.reasoning || 'Adjusted to balance the table.',
-              source: 'ai',
-            };
-            return Response.json(proposal);
+          // The model answered with something shaped like rules. Clamp it
+          // against the CURRENT rules, so keys it left out stay as they were.
+          if (draft.rules) {
+            const rules = clampHouseRules({ ...current, ...draft.rules }, current);
+            const changes = diffHouseRules(current, rules);
+            if (changes.length > 0) {
+              const proposal: HouseRuleProposal = {
+                rules,
+                changes,
+                reasoning: draft.reasoning || 'Adjusted to balance the table.',
+                source: 'ai',
+              };
+              return Response.json(proposal);
+            }
+            // It understood the request and concluded nothing should move — or
+            // returned only out-of-range values that clamped back to the status
+            // quo. Either way there is no amendment, so fall through and let the
+            // deterministic arm try; a player who asked for a change deserves one.
           }
-          // It understood the request and concluded nothing should move — or it
-          // returned only out-of-range values that clamped back to the status
-          // quo. Either way there is no amendment, so fall through and let the
-          // deterministic arm try; a player who asked for a change deserves one.
-        }
 
-        const fallback = heuristicHouseRules(wish, state, current);
-        const proposal: HouseRuleProposal = {
-          rules: fallback.rules,
-          changes: diffHouseRules(current, fallback.rules),
-          reasoning: fallback.reasoning,
-          source: 'fallback',
-        };
-        return Response.json(proposal);
-      },
+          const fallback = heuristicHouseRules(wish, state, current);
+          const proposal: HouseRuleProposal = {
+            rules: fallback.rules,
+            changes: diffHouseRules(current, fallback.rules),
+            reasoning: fallback.reasoning,
+            source: 'fallback',
+          };
+          return Response.json(proposal);
+        },
+      ),
     },
   },
 });
