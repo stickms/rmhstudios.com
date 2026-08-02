@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 235 routes. 123 render inside the standard site shell (sidebar, nav, context rail); 112 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 236 routes. 123 render inside the standard site shell (sidebar, nav, context rail); 113 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -178,6 +178,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/forest-explorer` | — | public | `app/routes/forest-explorer/index.tsx` |
 | `/forest-explorer/explore` | — | public | `app/routes/forest-explorer/explore.tsx` |
 | `/forest-explorer/story` | — | public | `app/routes/forest-explorer/story.tsx` |
+| `/gabriels-horn` | Gabriel | public | `app/routes/gabriels-horn.tsx` |
 | `/house-always-wins` | — | public | `app/routes/house-always-wins.tsx` |
 | `/isleworks` | Isleworks — isometric island city builder | public | `app/routes/isleworks.tsx` |
 | `/kowloon-knockout` | — | public | `app/routes/kowloon-knockout/index.tsx` |

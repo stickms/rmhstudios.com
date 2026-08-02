@@ -31,6 +31,7 @@ Generated from `lib/games.ts`, the single source of truth every card on the site
 | **House Always Wins** | [`/house-always-wins`](https://rmhstudios.com/house-always-wins) | — | required | `Metroidvania` `Platformer` `Narrative` `Pixel Art` |
 | **Dream Rift** | [`/dream-rift`](https://rmhstudios.com/dream-rift) | — | — | `Bullet Hell` `Multiplayer` `Danmaku` `Pixel Art` |
 | **RMH Farming Simulator** | [`/rmh-farming-sim`](https://rmhstudios.com/rmh-farming-sim) | — | required | `Simulation` `Farming` `Co-op` `Multiplayer` `3D` |
+| **Gabriel's Horn** | [`/gabriels-horn`](https://rmhstudios.com/gabriels-horn) | Playable | required | `Multiplayer` `Card Game` `Bluffing` `Party` |
 
 ## Detail
 
@@ -147,3 +148,9 @@ A vertical bullet-hell shoot-’em-up: weave a tiny pinpoint hitbox through dens
 Claim your own pixelated 3D homestead and grow it from a few seed packets into a thriving farm. Till the soil, plant seasonal crops across spring, summer, fall and winter, water them (or let the rain do it), and harvest for Normal, Silver or Gold quality. Sell produce at the General Store and shipping bin, buy new seeds, and upgrade your Hoe, Watering Can and Scythe through Copper, Iron and Gold tiers for wider area-of-effect. Every farm has a shareable invite code: friends request to join, the host approves or declines, and you all share one wallet, inventory and plot of land in real-time co-op — with a previously-joined-farms list to hop back in and host kick controls to keep things friendly.
 
 **Route:** `/rmh-farming-sim` · **Catalog id:** `rmh-farming-sim` · **Sign-in:** required
+
+### Gabriel's Horn
+
+Three dice are rolled at the start of your turn and everyone at the table can see them except you. They each tell you a total — truthfully or not — and you pick one of them and call it: truth, or lie. Get it right and they draw three cards; get it wrong and you do. Cards are the currency of failure, so playing one costs you a card too: four colours of effect (see your own dice, force a draw, ward yourself, look at a hand) and one rank that matters, the seven, which trades your whole hand with anyone you like. When you think you are lowest you sound the horn — but everyone else gets one last turn to fix their hand, or to take yours, and if you were not strictly lowest when the counting stops the call drops you to last. 2–6 players, real-time, with table talk.
+
+**Route:** `/gabriels-horn` · **Catalog id:** `gabriels-horn` · **Status:** Playable · **Sign-in:** required
