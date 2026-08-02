@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { statusUpdateSchema, statusExpiresAt, resolveStatus } from '@/lib/profile/status';
 
 /**
@@ -15,27 +14,17 @@ import { statusUpdateSchema, statusExpiresAt, resolveStatus } from '@/lib/profil
 export const Route = createFileRoute('/api/profile/status')({
   server: {
     handlers: {
-      PUT: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const { allowed } = rateLimit(getClientIp(request), {
-            limit: 20,
-            windowMs: 60_000,
-            prefix: 'profile-status',
-          });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
-          const body = await request.json().catch(() => null);
-          const parsed = statusUpdateSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-          const emoji = parsed.data.emoji?.trim() || null;
-          const text = parsed.data.text?.trim() || null;
-          const auto = parsed.data.auto ?? false;
+      PUT: defineHandler(
+        {
+          rateLimit: { limit: 20, windowMs: 60_000, prefix: 'profile-status' },
+          body: statusUpdateSchema,
+        },
+        async ({ session, body }) => {
+          const emoji = body.emoji?.trim() || null;
+          const text = body.text?.trim() || null;
+          const auto = body.auto ?? false;
           const cleared = !emoji && !text;
-          const statusExpires = cleared ? null : statusExpiresAt(parsed.data.expiresIn ?? null);
+          const statusExpires = cleared ? null : statusExpiresAt(body.expiresIn ?? null);
 
           const fields = {
             statusEmoji: emoji,
@@ -53,24 +42,12 @@ export const Route = createFileRoute('/api/profile/status')({
             status: resolveStatus({ statusEmoji: emoji, statusText: text, statusExpires }),
             auto,
           });
-        } catch (error) {
-          console.error('Profile status update error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
 
-      DELETE: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const { allowed } = rateLimit(getClientIp(request), {
-            limit: 20,
-            windowMs: 60_000,
-            prefix: 'profile-status',
-          });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
+      DELETE: defineHandler(
+        { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'profile-status' } },
+        async ({ session }) => {
           await prisma.userProfile.updateMany({
             where: { userId: session.user.id },
             data: {
@@ -81,11 +58,8 @@ export const Route = createFileRoute('/api/profile/status')({
             },
           });
           return Response.json({ status: null });
-        } catch (error) {
-          console.error('Profile status clear error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

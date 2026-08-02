@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { defineHandler } from '@/lib/api/handler.server';
 
 let cachedToken: { token: string; expiresAt: number } | null = null;
 
@@ -51,54 +51,44 @@ function mapTracks(data: any) {
 export const Route = createFileRoute('/api/rmhmusic/spotify/search')({
   server: {
     handlers: {
-  GET: async ({ request }) => {
-  const ip = getClientIp(request);
-  const { allowed, retryAfter } = rateLimit(ip, {
-    limit: 30,
-    windowMs: 60_000,
-    prefix: 'rmhmusic-search',
-  });
-  if (!allowed) {
-    return Response.json(
-      { error: 'Too many requests' },
-      { status: 429, headers: { 'Retry-After': String(retryAfter) } },
-    );
-  }
+      GET: defineHandler(
+        { auth: 'none', rateLimit: { limit: 30, windowMs: 60_000, prefix: 'rmhmusic-search' } },
+        async ({ request }) => {
+          const q = new URL(request.url).searchParams.get('q')?.trim();
+          const type = new URL(request.url).searchParams.get('type') || 'track';
+          if (!q) return Response.json({ results: [] });
 
-  const q = new URL(request.url).searchParams.get('q')?.trim();
-  const type = new URL(request.url).searchParams.get('type') || 'track';
-  if (!q) return Response.json({ results: [] });
+          // Degrade gracefully when Spotify isn't configured so the UI can show a
+          // helpful message instead of a generic 500.
+          if (!process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) {
+            return Response.json({ tracks: [], configured: false });
+          }
 
-  // Degrade gracefully when Spotify isn't configured so the UI can show a
-  // helpful message instead of a generic 500.
-  if (!process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) {
-    return Response.json({ tracks: [], configured: false });
-  }
+          try {
+            const accessToken = await getClientCredentialsToken();
 
-  try {
-    const accessToken = await getClientCredentialsToken();
+            const searchUrl = new URL('https://api.spotify.com/v1/search');
+            searchUrl.searchParams.set('q', q);
+            searchUrl.searchParams.set('type', type);
+            searchUrl.searchParams.set('limit', '20');
+            searchUrl.searchParams.set('market', 'US');
 
-    const searchUrl = new URL('https://api.spotify.com/v1/search');
-    searchUrl.searchParams.set('q', q);
-    searchUrl.searchParams.set('type', type);
-    searchUrl.searchParams.set('limit', '20');
-    searchUrl.searchParams.set('market', 'US');
+            const res = await fetch(searchUrl.toString(), {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            });
 
-    const res = await fetch(searchUrl.toString(), {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+            if (!res.ok) {
+              return Response.json({ error: 'Search failed' }, { status: 502 });
+            }
 
-    if (!res.ok) {
-      return Response.json({ error: 'Search failed' }, { status: 502 });
-    }
-
-    const data = await res.json();
-    return Response.json({ tracks: mapTracks(data) });
-  } catch (error) {
-    console.error('Spotify search error:', error instanceof Error ? error.message : error);
-    return Response.json({ error: 'Search failed' }, { status: 500 });
-  }
-},
+            const data = await res.json();
+            return Response.json({ tracks: mapTracks(data) });
+          } catch (error) {
+            console.error('Spotify search error:', error instanceof Error ? error.message : error);
+            return Response.json({ error: 'Search failed' }, { status: 500 });
+          }
+        },
+      ),
     },
   },
 });

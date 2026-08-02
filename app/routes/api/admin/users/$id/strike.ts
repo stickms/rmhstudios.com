@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
 import { logAdminAction } from '@/lib/admin-audit.server';
@@ -24,33 +24,36 @@ const schema = z.object({
 export const Route = createFileRoute('/api/admin/users/$id/strike')({
   server: {
     handlers: {
-      POST: async ({ request, params }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
+      POST: defineHandler(
+        { auth: 'optional', body: schema, allowEmptyBody: true },
+        async ({ params, session, body }) => {
           if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
             return Response.json({ error: 'Forbidden' }, { status: 403 });
           }
-          const target = await prisma.user.findUnique({ where: { id: params.id }, select: { id: true } });
+          const target = await prisma.user.findUnique({
+            where: { id: params.id },
+            select: { id: true },
+          });
           if (!target) return Response.json({ error: 'User not found' }, { status: 404 });
-
-          const body = await request.json().catch(() => ({}));
-          const parsed = schema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
 
           const strike = await prisma.userStrike.create({
             data: {
               userId: params.id,
               adminId: session.user.id,
-              reason: parsed.data.reason,
-              expiresAt: parsed.data.expiresDays
-                ? new Date(Date.now() + parsed.data.expiresDays * 24 * 60 * 60 * 1000)
+              reason: body.reason,
+              expiresAt: body.expiresDays
+                ? new Date(Date.now() + body.expiresDays * 24 * 60 * 60 * 1000)
                 : null,
-              entityType: parsed.data.entityType ?? null,
-              entityId: parsed.data.entityId ?? null,
+              entityType: body.entityType ?? null,
+              entityId: body.entityId ?? null,
             },
             select: { id: true },
           });
-          await logAdminAction(session.user.id, 'user.strike', { targetType: 'user', targetId: params.id, detail: parsed.data.reason });
+          await logAdminAction(session.user.id, 'user.strike', {
+            targetType: 'user',
+            targetId: params.id,
+            detail: body.reason,
+          });
 
           // Auto-ban on the 3rd active strike.
           const activeStrikes = await prisma.userStrike.count({
@@ -60,10 +63,17 @@ export const Route = createFileRoute('/api/admin/users/$id/strike')({
           if (activeStrikes >= AUTO_BAN_THRESHOLD) {
             await prisma.user.update({
               where: { id: params.id },
-              data: { bannedUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), banReason: 'Reached 3 strikes' },
+              data: {
+                bannedUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                banReason: 'Reached 3 strikes',
+              },
             });
             await prisma.session.deleteMany({ where: { userId: params.id } }).catch(() => {});
-            await logAdminAction(session.user.id, 'user.autoban', { targetType: 'user', targetId: params.id, detail: '3 strikes' });
+            await logAdminAction(session.user.id, 'user.autoban', {
+              targetType: 'user',
+              targetId: params.id,
+              detail: '3 strikes',
+            });
             autoBanned = true;
           }
 
@@ -74,15 +84,12 @@ export const Route = createFileRoute('/api/admin/users/$id/strike')({
             type: 'SYSTEM',
             entityType: 'strike',
             entityId: strike.id,
-            preview: `You received a moderation warning: ${parsed.data.reason}. You can review or appeal it in Settings → Account status.`,
+            preview: `You received a moderation warning: ${body.reason}. You can review or appeal it in Settings → Account status.`,
           });
 
           return Response.json({ success: true, activeStrikes, autoBanned });
-        } catch (error) {
-          console.error('Strike user error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

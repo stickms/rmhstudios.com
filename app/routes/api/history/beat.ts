@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { historyBeatSchema } from '@/lib/history/constants';
 import { recordBeat } from '@/lib/history/history.server';
@@ -11,9 +11,9 @@ import { recordBeat } from '@/lib/history/history.server';
 export const Route = createFileRoute('/api/history/beat')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
+      POST: defineHandler(
+        { auth: 'optional', body: historyBeatSchema },
+        async ({ request, session, body }) => {
           if (!session) return Response.json({ ok: false }, { status: 401 });
 
           const { allowed } = rateLimit(getClientIp(request), {
@@ -23,17 +23,10 @@ export const Route = createFileRoute('/api/history/beat')({
           });
           if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
-          const body = await request.json().catch(() => null);
-          const parsed = historyBeatSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-          await recordBeat(session.user.id, parsed.data);
+          await recordBeat(session.user.id, body);
           return Response.json({ ok: true });
-        } catch (error) {
-          console.error('History beat error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

@@ -92,12 +92,19 @@ bundle only**. SSR/server builds get the real module.
 ## Auth patterns (canonical)
 
 ```ts
-// API route
+// API route — the wrapper does the session check, so handlers never repeat it.
+import { defineHandler } from '@/lib/api/handler.server';
+
+POST: defineHandler({}, async ({ userId }) => …);                 // 401 if signed out
+POST: defineHandler({ auth: 'admin' }, async ({ userId }) => …);  // 401 / 403
+POST: defineHandler({ auth: 'optional' }, async ({ userId }) => …); // userId: string | null
+```
+
+Reach for the raw call below only outside an API route (server functions,
+workers) — inside `app/routes/api/**` use `defineHandler`:
+
+```ts
 const session = await auth.api.getSession({ headers: request.headers });
-if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-// admin:
-if (!(session.user as { isAdmin?: boolean }).isAdmin)
-  return Response.json({ error: 'Forbidden' }, { status: 403 });
 ```
 
 Session `tier` is injected by the `customSession` plugin from

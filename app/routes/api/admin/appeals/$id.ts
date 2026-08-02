@@ -12,8 +12,8 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { createNotification } from '@/lib/notifications.server';
@@ -30,17 +30,14 @@ const schema = z.object({
 export const Route = createFileRoute('/api/admin/appeals/$id')({
   server: {
     handlers: {
-      POST: async ({ request, params }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
+      POST: defineHandler(
+        { auth: 'optional', body: schema, allowEmptyBody: true },
+        async ({ params, session, body }) => {
           if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
             return Response.json({ error: 'Forbidden' }, { status: 403 });
           }
 
-          const body = await request.json().catch(() => ({}));
-          const parsed = schema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-          const { action, note } = parsed.data;
+          const { action, note } = body;
 
           const strike = await prisma.userStrike.findUnique({
             where: { id: params.id },
@@ -105,11 +102,8 @@ export const Route = createFileRoute('/api/admin/appeals/$id')({
           });
 
           return Response.json({ success: true, appealStatus: decision, banLifted });
-        } catch (error) {
-          console.error('admin appeal decide error:', error);
-          return Response.json({ error: 'Internal server error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

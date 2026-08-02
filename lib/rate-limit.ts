@@ -154,6 +154,13 @@ export interface WithRateLimitOptions {
   windowMs?: number;
   /** Bucket namespace; defaults to the policy name. Set when one route needs its own bucket. */
   prefix?: string;
+  /**
+   * Body message for the 429. Defaults to `'Too many requests'`. Only set it
+   * where a route already shipped a more specific string that clients or copy
+   * depend on — new routes should take the default so the site speaks with one
+   * voice.
+   */
+  message?: string;
 }
 
 /**
@@ -188,7 +195,7 @@ export function withRateLimit(
   });
   if (result.allowed) return null;
   return Response.json(
-    { error: 'Too many requests' },
+    { error: opts.message ?? 'Too many requests' },
     {
       status: 429,
       headers: {

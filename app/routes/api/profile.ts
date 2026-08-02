@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { updateProfileSchema } from '@/lib/profile-schema';
 import { handleSchema, canChangeHandle } from '@/lib/handle';
 import { invalidateUserDisplay } from '@/lib/user-display.server';
@@ -9,26 +8,9 @@ import { invalidateUserDisplay } from '@/lib/user-display.server';
 export const Route = createFileRoute('/api/profile')({
   server: {
     handlers: {
-      PATCH: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
-
-          const ip = getClientIp(request);
-          const { allowed, retryAfter } = rateLimit(ip, {
-            limit: 10,
-            windowMs: 60_000,
-            prefix: 'profile-update',
-          });
-          if (!allowed) {
-            return Response.json(
-              { error: 'Too many requests' },
-              { status: 429, headers: { 'Retry-After': String(retryAfter) } },
-            );
-          }
-
+      PATCH: defineHandler(
+        { rateLimit: { limit: 10, windowMs: 60_000, prefix: 'profile-update' } },
+        async ({ request, session }) => {
           const body = await request.json();
           const parsed = updateProfileSchema.safeParse(body);
           if (!parsed.success) {
@@ -180,11 +162,8 @@ export const Route = createFileRoute('/api/profile')({
             profileSongPreviewUrl: profile.profileSongPreviewUrl,
             profileSongAlbumArt: profile.profileSongAlbumArt,
           });
-        } catch (error) {
-          console.error('Profile update error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

@@ -9,6 +9,7 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { auth } from '@/lib/auth';
 import { withRateLimit } from '@/lib/rate-limit';
 import { computeRequestSchema } from '@/lib/rmhcalculator/types';
@@ -21,20 +22,23 @@ import {
 export const Route = createFileRoute('/api/rmhcalculator/compute')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        try {
+      POST: defineHandler(
+        { auth: 'none', body: computeRequestSchema, allowEmptyBody: true },
+        async ({ request, body }) => {
           if (!isCalculatorConfigured())
-            return Response.json({ error: 'The calculator is unavailable right now.' }, { status: 503 });
+            return Response.json(
+              { error: 'The calculator is unavailable right now.' },
+              { status: 503 },
+            );
 
           const session = await auth.api.getSession({ headers: request.headers });
           if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-          const limited = withRateLimit(request, 'ai', { scope: session.user.id, prefix: 'rmhcalc' });
+          const limited = withRateLimit(request, 'ai', {
+            scope: session.user.id,
+            prefix: 'rmhcalc',
+          });
           if (limited) return limited;
-
-          const body = await request.json().catch(() => ({}));
-          const parsed = computeRequestSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
 
           const encoder = new TextEncoder();
           const stream = new ReadableStream({
@@ -42,7 +46,7 @@ export const Route = createFileRoute('/api/rmhcalculator/compute')({
               const send = (data: unknown) =>
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
               try {
-                const gen = streamCompute(parsed.data);
+                const gen = streamCompute(body);
                 let step = await gen.next();
                 while (!step.done) {
                   send({ type: 'thinking', text: step.value.text });
@@ -52,7 +56,9 @@ export const Route = createFileRoute('/api/rmhcalculator/compute')({
                 send({ type: 'done' });
               } catch (err) {
                 const message =
-                  err instanceof CalcEngineError ? err.message : 'The calculation failed. Please try again.';
+                  err instanceof CalcEngineError
+                    ? err.message
+                    : 'The calculation failed. Please try again.';
                 send({ type: 'error', message });
               } finally {
                 controller.close();
@@ -68,11 +74,8 @@ export const Route = createFileRoute('/api/rmhcalculator/compute')({
               'X-Accel-Buffering': 'no',
             },
           });
-        } catch (error) {
-          console.error('rmhcalculator compute error:', error);
-          return Response.json({ error: 'Internal server error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

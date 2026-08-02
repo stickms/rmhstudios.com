@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { resolveSchema } from '@/lib/predictions/predictions-schema';
 import { resolvePrediction, PredictionError } from '@/lib/predictions/predictions.server';
@@ -8,8 +8,7 @@ import { resolvePrediction, PredictionError } from '@/lib/predictions/prediction
 export const Route = createFileRoute('/api/admin/predictions/$id/resolve')({
   server: {
     handlers: {
-      POST: async ({ request, params }) => {
-        const session = await auth.api.getSession({ headers: request.headers });
+      POST: defineHandler({ auth: 'optional' }, async ({ request, params, session }) => {
         if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
           return Response.json({ error: 'Forbidden' }, { status: 403 });
         }
@@ -35,7 +34,7 @@ export const Route = createFileRoute('/api/admin/predictions/$id/resolve')({
           console.error('Prediction resolve error:', error);
           return Response.json({ error: 'Internal Server Error' }, { status: 500 });
         }
-      },
+      }),
     },
   },
 });

@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { validateImageBuffer } from '@/lib/slice-it/upload-validation';
 import { optimizeImage } from '@/lib/image-optimize';
 import { putObject, deleteObject, s3Configured } from '@/lib/storage/s3.server';
@@ -31,26 +30,16 @@ async function removeStoredAvatar(url: string | null | undefined): Promise<void>
 export const Route = createFileRoute('/api/profile/avatar')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
-
-          const ip = getClientIp(request);
-          const { allowed, retryAfter } = rateLimit(ip, {
+      POST: defineHandler(
+        {
+          rateLimit: {
             limit: 5,
             windowMs: 60_000,
             prefix: 'avatar-upload',
-          });
-          if (!allowed) {
-            return Response.json(
-              { error: 'Too many uploads. Try again later.' },
-              { status: 429, headers: { 'Retry-After': String(retryAfter) } },
-            );
-          }
-
+            message: 'Too many uploads. Try again later.',
+          },
+        },
+        async ({ request, session }) => {
           const formData = await request.formData();
           const file = formData.get('avatar') as File;
           if (!file || file.size === 0) {
@@ -136,59 +125,46 @@ export const Route = createFileRoute('/api/profile/avatar')({
           invalidateUserDisplay(session.user.id);
 
           return Response.json({ image: imageUrl });
-        } catch (error) {
-          console.error('Avatar upload error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+        },
+      ),
+      DELETE: defineHandler({}, async ({ session }) => {
+        const profile = await prisma.userProfile.findUnique({
+          where: { userId: session.user.id },
+          select: { customImage: true },
+        });
+
+        if (!profile?.customImage) {
+          return Response.json({ image: null });
         }
-      },
-      DELETE: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
 
-          const profile = await prisma.userProfile.findUnique({
-            where: { userId: session.user.id },
-            select: { customImage: true },
-          });
+        // Delete the avatar object from storage + purge the CDN edge.
+        await removeStoredAvatar(profile.customImage);
 
-          if (!profile?.customImage) {
-            return Response.json({ image: null });
-          }
+        // Clear custom image in DB
+        await prisma.userProfile.update({
+          where: { userId: session.user.id },
+          data: { customImage: null, customImageSizeBytes: null },
+        });
 
-          // Delete the avatar object from storage + purge the CDN edge.
-          await removeStoredAvatar(profile.customImage);
+        // Refresh the cached feed author display so the reverted avatar shows now.
+        invalidateUserDisplay(session.user.id);
 
-          // Clear custom image in DB
-          await prisma.userProfile.update({
-            where: { userId: session.user.id },
-            data: { customImage: null, customImageSizeBytes: null },
-          });
-
-          // Refresh the cached feed author display so the reverted avatar shows now.
-          invalidateUserDisplay(session.user.id);
-
-          // If User.image was corrupted by old code (overwritten with custom avatar URL),
-          // clear it so it doesn't 404
-          const user = await prisma.user.findUnique({
+        // If User.image was corrupted by old code (overwritten with custom avatar URL),
+        // clear it so it doesn't 404
+        const user = await prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: { image: true },
+        });
+        if (user?.image && userAvatarFilename(user.image) !== null) {
+          await prisma.user.update({
             where: { id: session.user.id },
-            select: { image: true },
+            data: { image: null },
           });
-          if (user?.image && userAvatarFilename(user.image) !== null) {
-            await prisma.user.update({
-              where: { id: session.user.id },
-              data: { image: null },
-            });
-            return Response.json({ image: '/images/social/default_avatar.png' });
-          }
-
-          return Response.json({ image: user?.image || '/images/social/default_avatar.png' });
-        } catch (error) {
-          console.error('Avatar reset error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+          return Response.json({ image: '/images/social/default_avatar.png' });
         }
-      },
+
+        return Response.json({ image: user?.image || '/images/social/default_avatar.png' });
+      }),
     },
   },
 });

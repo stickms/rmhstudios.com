@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { getCommunityBySlug, getRole } from '@/lib/communities/access.server';
 
@@ -7,8 +7,7 @@ import { getCommunityBySlug, getRole } from '@/lib/communities/access.server';
 export const Route = createFileRoute('/api/communities/$slug/members')({
   server: {
     handlers: {
-      GET: async ({ request, params }) => {
-        const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+      GET: defineHandler({ auth: 'optional' }, async ({ params, session }) => {
         const community = await getCommunityBySlug(params.slug);
         if (!community) return Response.json({ error: 'Not found' }, { status: 404 });
 
@@ -36,7 +35,7 @@ export const Route = createFileRoute('/api/communities/$slug/members')({
             joinedAt: m.joinedAt.toISOString(),
           })),
         });
-      },
+      }),
     },
   },
 });

@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { albumAssetUrl } from '@/lib/storage/keys';
@@ -48,8 +48,7 @@ function publicSlide(s: SlideRecord) {
 export const Route = createFileRoute('/api/admin/albums/$id/slides')({
   server: {
     handlers: {
-      POST: async ({ request, params }) => {
-        const session = await auth.api.getSession({ headers: request.headers });
+      POST: defineHandler({ auth: 'optional' }, async ({ request, params, session }) => {
         if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
           return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
@@ -65,11 +64,14 @@ export const Route = createFileRoute('/api/admin/albums/$id/slides')({
         if (!allowed) {
           return Response.json(
             { error: 'Too many uploads, briefly. Try again shortly.' },
-            { status: 429, headers: { 'Retry-After': String(retryAfter) } }
+            { status: 429, headers: { 'Retry-After': String(retryAfter) } },
           );
         }
 
-        const album = await prisma.album.findUnique({ where: { id: params.id }, select: { id: true } });
+        const album = await prisma.album.findUnique({
+          where: { id: params.id },
+          select: { id: true },
+        });
         if (!album) return Response.json({ error: 'Album not found.' }, { status: 404 });
 
         const formData = await request.formData().catch(() => null);
@@ -86,11 +88,14 @@ export const Route = createFileRoute('/api/admin/albums/$id/slides')({
           }
         });
         const files = indexed.map((e) => e.file);
-        if (files.length === 0) return Response.json({ error: 'No files provided.' }, { status: 400 });
+        if (files.length === 0)
+          return Response.json({ error: 'No files provided.' }, { status: 400 });
         if (files.length > MAX_FILES_PER_REQUEST) {
           return Response.json(
-            { error: `Too many files in one request (max ${MAX_FILES_PER_REQUEST}). Upload in batches.` },
-            { status: 400 }
+            {
+              error: `Too many files in one request (max ${MAX_FILES_PER_REQUEST}). Upload in batches.`,
+            },
+            { status: 400 },
           );
         }
 
@@ -137,7 +142,7 @@ export const Route = createFileRoute('/api/admin/albums/$id/slides')({
         }
 
         return Response.json({ created, errors });
-      },
+      }),
     },
   },
 });

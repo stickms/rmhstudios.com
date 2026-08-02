@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit } from '@/lib/rate-limit';
 import { redisRateLimit } from '@/lib/redis.server';
@@ -16,8 +16,7 @@ import type { GeneratedWorld, LedgerEntry } from '@/lib/versecraft/gen/world-typ
 export const Route = createFileRoute('/api/versecraft/outline')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        const session = await auth.api.getSession({ headers: request.headers });
+      POST: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
         if (!session?.user) {
           return Response.json({ error: 'Sign in to use this feature.' }, { status: 401 });
         }
@@ -28,18 +27,38 @@ export const Route = createFileRoute('/api/versecraft/outline')({
         const userId = session.user.id;
         const distributed = await redisRateLimit(`versecraft-outline:user:${userId}`, 20, 60_000);
         if (!distributed && process.env.NODE_ENV === 'production') {
-          return Response.json({ error: 'AI service is temporarily unavailable.' }, { status: 503, headers: { 'Retry-After': '60' } });
+          return Response.json(
+            { error: 'AI service is temporarily unavailable.' },
+            { status: 503, headers: { 'Retry-After': '60' } },
+          );
         }
-        const local = distributed ?? rateLimit(userId, { limit: 20, windowMs: 60_000, prefix: 'versecraft-outline' });
+        const local =
+          distributed ??
+          rateLimit(userId, { limit: 20, windowMs: 60_000, prefix: 'versecraft-outline' });
         const globalMinute = await redisRateLimit('versecraft-ai:global:minute', 300, 60_000);
-        const globalDay = await redisRateLimit('versecraft-ai:global:day', Number(process.env.VERSECRAFT_AI_DAILY_CAP ?? 5_000), 86_400_000);
+        const globalDay = await redisRateLimit(
+          'versecraft-ai:global:day',
+          Number(process.env.VERSECRAFT_AI_DAILY_CAP ?? 5_000),
+          86_400_000,
+        );
         if (!local.allowed || globalMinute?.allowed === false || globalDay?.allowed === false) {
-          const retryAfter = Math.max(local.retryAfter, globalMinute?.retryAfter ?? 0, globalDay?.retryAfter ?? 0);
-          return Response.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(retryAfter) } });
+          const retryAfter = Math.max(
+            local.retryAfter,
+            globalMinute?.retryAfter ?? 0,
+            globalDay?.retryAfter ?? 0,
+          );
+          return Response.json(
+            { error: 'Too many requests' },
+            { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+          );
         }
 
         let body: { seed?: string; ledger?: LedgerEntry[]; fromAct?: number };
-        try { body = await request.json(); } catch { return Response.json({ error: 'Invalid JSON' }, { status: 400 }); }
+        try {
+          body = await request.json();
+        } catch {
+          return Response.json({ error: 'Invalid JSON' }, { status: 400 });
+        }
 
         const seed = normalizeSeed(body.seed ?? '');
         if (!seed) return Response.json({ error: 'Missing seed' }, { status: 400 });
@@ -47,12 +66,13 @@ export const Route = createFileRoute('/api/versecraft/outline')({
         const fromAct = Math.max(1, Math.min(5, Math.floor(body.fromAct ?? 1)));
 
         const worldRow = await prisma.versecraftWorld.findUnique({ where: { seed } });
-        if (!worldRow) return Response.json({ error: 'Unknown seed — create the world first' }, { status: 404 });
+        if (!worldRow)
+          return Response.json({ error: 'Unknown seed — create the world first' }, { status: 404 });
         const world = worldRow.world as unknown as GeneratedWorld;
 
         const outline = await generateOutline(world, ledger, fromAct);
         return Response.json({ outline });
-      },
+      }),
     },
   },
 });

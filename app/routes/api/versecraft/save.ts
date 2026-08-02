@@ -1,111 +1,103 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 export const Route = createFileRoute('/api/versecraft/save')({
   server: {
     handlers: {
-  GET: async ({ request }) => {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session?.user?.id) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+      GET: defineHandler({}, async ({ session }) => {
+        const [save, progress] = await Promise.all([
+          prisma.versecraftSave.findUnique({ where: { userId: session.user.id } }),
+          prisma.versecraftProgress.findUnique({ where: { userId: session.user.id } }),
+        ]);
 
-  const [save, progress] = await Promise.all([
-    prisma.versecraftSave.findUnique({ where: { userId: session.user.id } }),
-    prisma.versecraftProgress.findUnique({ where: { userId: session.user.id } }),
-  ]);
+        return Response.json({
+          saveData: save?.saveData ?? null,
+          progress: progress
+            ? {
+                completedChapters: progress.completedChapters,
+                unlockedEndings: progress.unlockedEndings,
+                completedRoutes: progress.completedRoutes,
+                totalPoemsWritten: progress.totalPoemsWritten,
+                totalPlaytime: progress.totalPlaytime,
+              }
+            : null,
+        });
+      }),
+      POST: defineHandler(
+        { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'versecraft-save' } },
+        async ({ request, session }) => {
+          let body: {
+            saveData?: object;
+            progress?: {
+              completedChapters?: string[];
+              unlockedEndings?: string[];
+              completedRoutes?: string[];
+              totalPoemsWritten?: number;
+              totalPlaytime?: number;
+            };
+          };
+          try {
+            body = await request.json();
+          } catch {
+            return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
+          }
 
-  return Response.json({
-    saveData: save?.saveData ?? null,
-    progress: progress
-      ? {
-          completedChapters: progress.completedChapters,
-          unlockedEndings: progress.unlockedEndings,
-          completedRoutes: progress.completedRoutes,
-          totalPoemsWritten: progress.totalPoemsWritten,
-          totalPlaytime: progress.totalPlaytime,
-        }
-      : null,
-  });
-},
-  POST: async ({ request }) => {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session?.user?.id) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+          const { saveData, progress } = body;
+          if (!saveData || typeof saveData !== 'object') {
+            return Response.json({ error: 'Missing or invalid saveData' }, { status: 400 });
+          }
 
-  const ip = getClientIp(request);
-  const { allowed, retryAfter } = rateLimit(ip, {
-    limit: 20,
-    windowMs: 60_000,
-    prefix: 'versecraft-save',
-  });
-  if (!allowed) {
-    return Response.json(
-      { error: 'Too many requests' },
-      { status: 429, headers: { 'Retry-After': String(retryAfter) } },
-    );
-  }
+          // Validate body size (max 500KB)
+          const bodyStr = JSON.stringify(saveData);
+          if (bodyStr.length > 500_000) {
+            return Response.json({ error: 'Payload too large' }, { status: 413 });
+          }
 
-  let body: { saveData?: object; progress?: {
-    completedChapters?: string[];
-    unlockedEndings?: string[];
-    completedRoutes?: string[];
-    totalPoemsWritten?: number;
-    totalPlaytime?: number;
-  } };
-  try {
-    body = await request.json();
-  } catch {
-    return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
+          const userId = session.user.id;
 
-  const { saveData, progress } = body;
-  if (!saveData || typeof saveData !== 'object') {
-    return Response.json({ error: 'Missing or invalid saveData' }, { status: 400 });
-  }
+          // Upsert save data
+          const save = await prisma.versecraftSave.upsert({
+            where: { userId },
+            create: { userId, saveData },
+            update: { saveData },
+          });
 
-  // Validate body size (max 500KB)
-  const bodyStr = JSON.stringify(saveData);
-  if (bodyStr.length > 500_000) {
-    return Response.json({ error: 'Payload too large' }, { status: 413 });
-  }
+          // Upsert progress if provided
+          if (progress && typeof progress === 'object') {
+            await prisma.versecraftProgress.upsert({
+              where: { userId },
+              create: {
+                userId,
+                completedChapters: progress.completedChapters ?? [],
+                unlockedEndings: progress.unlockedEndings ?? [],
+                completedRoutes: progress.completedRoutes ?? [],
+                totalPoemsWritten: progress.totalPoemsWritten ?? 0,
+                totalPlaytime: progress.totalPlaytime ?? 0,
+              },
+              update: {
+                ...(progress.completedChapters !== undefined && {
+                  completedChapters: progress.completedChapters,
+                }),
+                ...(progress.unlockedEndings !== undefined && {
+                  unlockedEndings: progress.unlockedEndings,
+                }),
+                ...(progress.completedRoutes !== undefined && {
+                  completedRoutes: progress.completedRoutes,
+                }),
+                ...(progress.totalPoemsWritten !== undefined && {
+                  totalPoemsWritten: progress.totalPoemsWritten,
+                }),
+                ...(progress.totalPlaytime !== undefined && {
+                  totalPlaytime: progress.totalPlaytime,
+                }),
+              },
+            });
+          }
 
-  const userId = session.user.id;
-
-  // Upsert save data
-  const save = await prisma.versecraftSave.upsert({
-    where: { userId },
-    create: { userId, saveData },
-    update: { saveData },
-  });
-
-  // Upsert progress if provided
-  if (progress && typeof progress === 'object') {
-    await prisma.versecraftProgress.upsert({
-      where: { userId },
-      create: {
-        userId,
-        completedChapters: progress.completedChapters ?? [],
-        unlockedEndings: progress.unlockedEndings ?? [],
-        completedRoutes: progress.completedRoutes ?? [],
-        totalPoemsWritten: progress.totalPoemsWritten ?? 0,
-        totalPlaytime: progress.totalPlaytime ?? 0,
-      },
-      update: {
-        ...(progress.completedChapters !== undefined && { completedChapters: progress.completedChapters }),
-        ...(progress.unlockedEndings !== undefined && { unlockedEndings: progress.unlockedEndings }),
-        ...(progress.completedRoutes !== undefined && { completedRoutes: progress.completedRoutes }),
-        ...(progress.totalPoemsWritten !== undefined && { totalPoemsWritten: progress.totalPoemsWritten }),
-        ...(progress.totalPlaytime !== undefined && { totalPlaytime: progress.totalPlaytime }),
-      },
-    });
-  }
-
-  return Response.json({ success: true, updatedAt: save.updatedAt });
-},
+          return Response.json({ success: true, updatedAt: save.updatedAt });
+        },
+      ),
     },
   },
 });

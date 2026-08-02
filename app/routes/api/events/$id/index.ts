@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -54,17 +55,11 @@ function mapEventError(err: EventError): [string, number] {
 export const Route = createFileRoute('/api/events/$id/')({
   server: {
     handlers: {
-      GET: async ({ request, params }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
-          const event = await getEvent(params.id, session?.user.id ?? null);
-          if (!event) return Response.json({ error: 'Not found' }, { status: 404 });
-          return Response.json({ event });
-        } catch (error) {
-          console.error('Get event error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+      GET: defineHandler({ auth: 'optional' }, async ({ params, session }) => {
+        const event = await getEvent(params.id, session?.user.id ?? null);
+        if (!event) return Response.json({ error: 'Not found' }, { status: 404 });
+        return Response.json({ event });
+      }),
 
       PATCH: async ({ request, params }) => {
         try {

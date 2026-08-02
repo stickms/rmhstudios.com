@@ -9,6 +9,7 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { auth } from '@/lib/auth';
 import { withRateLimit } from '@/lib/rate-limit';
 import { graphRequestSchema } from '@/lib/rmhcalculator/types';
@@ -21,10 +22,14 @@ import {
 export const Route = createFileRoute('/api/rmhcalculator/graph')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        try {
+      POST: defineHandler(
+        { auth: 'none', body: graphRequestSchema, allowEmptyBody: true },
+        async ({ request, body }) => {
           if (!isCalculatorConfigured())
-            return Response.json({ error: 'The calculator is unavailable right now.' }, { status: 503 });
+            return Response.json(
+              { error: 'The calculator is unavailable right now.' },
+              { status: 503 },
+            );
 
           const session = await auth.api.getSession({ headers: request.headers });
           if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -37,17 +42,13 @@ export const Route = createFileRoute('/api/rmhcalculator/graph')({
           });
           if (limited) return limited;
 
-          const body = await request.json().catch(() => ({}));
-          const parsed = graphRequestSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
           const encoder = new TextEncoder();
           const stream = new ReadableStream({
             async start(controller) {
               const send = (data: unknown) =>
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
               try {
-                const gen = streamGraph(parsed.data);
+                const gen = streamGraph(body);
                 let step = await gen.next();
                 while (!step.done) {
                   send({ type: 'thinking', text: step.value.text });
@@ -57,7 +58,9 @@ export const Route = createFileRoute('/api/rmhcalculator/graph')({
                 send({ type: 'done' });
               } catch (err) {
                 const message =
-                  err instanceof CalcEngineError ? err.message : 'The graph failed. Please try again.';
+                  err instanceof CalcEngineError
+                    ? err.message
+                    : 'The graph failed. Please try again.';
                 send({ type: 'error', message });
               } finally {
                 controller.close();
@@ -73,11 +76,8 @@ export const Route = createFileRoute('/api/rmhcalculator/graph')({
               'X-Accel-Buffering': 'no',
             },
           });
-        } catch (error) {
-          console.error('rmhcalculator graph error:', error);
-          return Response.json({ error: 'Internal server error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { getReplay, deleteReplay, ReplayError } from '@/lib/replays.server';
@@ -11,25 +12,20 @@ import { getReplay, deleteReplay, ReplayError } from '@/lib/replays.server';
 export const Route = createFileRoute('/api/replays/$id')({
   server: {
     handlers: {
-      GET: async ({ request, params }) => {
-        try {
-          const replay = await getReplay(params.id);
-          if (!replay) return Response.json({ error: 'Not found' }, { status: 404 });
+      GET: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+        const replay = await getReplay(params.id);
+        if (!replay) return Response.json({ error: 'Not found' }, { status: 404 });
 
-          if (replay.visibility !== 'public') {
-            // Unlisted replays are only returned to their owner.
-            const session = await auth.api.getSession({ headers: request.headers });
-            if (!session || session.user.id !== replay.author.id) {
-              return Response.json({ error: 'Not found' }, { status: 404 });
-            }
+        if (replay.visibility !== 'public') {
+          // Unlisted replays are only returned to their owner.
+          const session = await auth.api.getSession({ headers: request.headers });
+          if (!session || session.user.id !== replay.author.id) {
+            return Response.json({ error: 'Not found' }, { status: 404 });
           }
-
-          return Response.json({ replay });
-        } catch (error) {
-          console.error('Replay fetch error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
         }
-      },
+
+        return Response.json({ replay });
+      }),
 
       DELETE: async ({ request, params }) => {
         try {

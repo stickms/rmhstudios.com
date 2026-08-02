@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { redisEnabled, redisGetJSON, redisSetJSON } from '@/lib/redis.server';
 import { subscribeUser, type MessageNotification } from '@/lib/message-events';
@@ -45,12 +45,7 @@ async function getUnreadCount(userId: string): Promise<number> {
 export const Route = createFileRoute('/api/messages/stream')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const session = await auth.api.getSession({ headers: request.headers });
-        if (!session) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
+      GET: defineHandler({}, async ({ session }) => {
         const userId = session.user.id;
 
         // Cleanup function stored in closure so cancel() can call it
@@ -148,7 +143,7 @@ export const Route = createFileRoute('/api/messages/stream')({
             Connection: 'keep-alive',
           },
         });
-      },
+      }),
     },
   },
 });

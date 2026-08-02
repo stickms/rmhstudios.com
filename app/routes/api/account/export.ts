@@ -8,9 +8,8 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 // Bound each collection so a power user's export can't blow up memory.
 const CAP = 10_000;
@@ -18,26 +17,16 @@ const CAP = 10_000;
 export const Route = createFileRoute('/api/account/export')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
-
-          // Exports are heavy; keep them infrequent per user/IP.
-          const { allowed, retryAfter } = rateLimit(getClientIp(request), {
+      GET: defineHandler(
+        {
+          rateLimit: {
             limit: 3,
             windowMs: 10 * 60_000,
             prefix: 'account-export',
-          });
-          if (!allowed) {
-            return Response.json(
-              { error: 'You can export your data a few times per hour. Please wait.' },
-              { status: 429, headers: { 'Retry-After': String(retryAfter) } }
-            );
-          }
-
+            message: 'You can export your data a few times per hour. Please wait.',
+          },
+        },
+        async ({ session }) => {
           const userId = session.user.id;
 
           const [
@@ -76,13 +65,33 @@ export const Route = createFileRoute('/api/account/export')({
               },
             }),
             prisma.userProfile.findUnique({ where: { userId } }).catch(() => null),
-            prisma.rMHark.findMany({ where: { userId }, take: CAP, orderBy: { createdAt: 'desc' } }),
-            prisma.rMHarkComment.findMany({ where: { userId }, take: CAP, orderBy: { createdAt: 'desc' } }),
+            prisma.rMHark.findMany({
+              where: { userId },
+              take: CAP,
+              orderBy: { createdAt: 'desc' },
+            }),
+            prisma.rMHarkComment.findMany({
+              where: { userId },
+              take: CAP,
+              orderBy: { createdAt: 'desc' },
+            }),
             prisma.follow.findMany({ where: { followerId: userId }, take: CAP }),
             prisma.follow.findMany({ where: { followingId: userId }, take: CAP }),
-            prisma.coinTransaction.findMany({ where: { senderId: userId }, take: CAP, orderBy: { createdAt: 'desc' } }),
-            prisma.coinTransaction.findMany({ where: { recipientId: userId }, take: CAP, orderBy: { createdAt: 'desc' } }),
-            prisma.notification.findMany({ where: { userId }, take: CAP, orderBy: { createdAt: 'desc' } }),
+            prisma.coinTransaction.findMany({
+              where: { senderId: userId },
+              take: CAP,
+              orderBy: { createdAt: 'desc' },
+            }),
+            prisma.coinTransaction.findMany({
+              where: { recipientId: userId },
+              take: CAP,
+              orderBy: { createdAt: 'desc' },
+            }),
+            prisma.notification.findMany({
+              where: { userId },
+              take: CAP,
+              orderBy: { createdAt: 'desc' },
+            }),
             prisma.rMHarkBookmark.findMany({ where: { userId }, take: CAP }),
             prisma.userAchievement.findMany({ where: { userId }, take: CAP }),
             prisma.userBlock.findMany({ where: { blockerId: userId }, take: CAP }),
@@ -131,9 +140,21 @@ export const Route = createFileRoute('/api/account/export')({
                   },
                 },
               }),
-              prisma.ladderResumeReview.findMany({ where: { userId }, take: CAP, orderBy: { createdAt: 'desc' } }),
-              prisma.ladderJobMatch.findMany({ where: { userId }, take: CAP, orderBy: { score: 'desc' } }),
-              prisma.ladderAlertEvent.findMany({ where: { userId }, take: CAP, orderBy: { createdAt: 'desc' } }),
+              prisma.ladderResumeReview.findMany({
+                where: { userId },
+                take: CAP,
+                orderBy: { createdAt: 'desc' },
+              }),
+              prisma.ladderJobMatch.findMany({
+                where: { userId },
+                take: CAP,
+                orderBy: { score: 'desc' },
+              }),
+              prisma.ladderAlertEvent.findMany({
+                where: { userId },
+                take: CAP,
+                orderBy: { createdAt: 'desc' },
+              }),
             ]),
           ]);
 
@@ -191,11 +212,8 @@ export const Route = createFileRoute('/api/account/export')({
               'Cache-Control': 'no-store',
             },
           });
-        } catch (error) {
-          console.error('Account export error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

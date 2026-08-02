@@ -10,59 +10,25 @@
 import React from 'react';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
+import {
+  ACCENT,
+  BG,
+  MUTED,
+  SURFACE,
+  TEXT,
+  loadFonts,
+  satoriFonts,
+  truncate,
+} from '@/lib/og/shared.server';
 
-const FONT_REGULAR_URL =
-  'https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf';
-const FONT_BOLD_URL =
-  'https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf';
-const FONT_FETCH_TIMEOUT_MS = 5_000;
-const FONT_FAIL_COOLDOWN_MS = 30_000;
 
-let fontRegular: ArrayBuffer | null = null;
-let fontBold: ArrayBuffer | null = null;
-let fontsLoading: Promise<void> | null = null;
-let fontFailUntil = 0;
 
-async function fetchFont(url: string): Promise<ArrayBuffer> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FONT_FETCH_TIMEOUT_MS);
-  try {
-    const r = await fetch(url, { signal: controller.signal });
-    if (!r.ok) throw new Error(`Font fetch failed: ${r.status}`);
-    return await r.arrayBuffer();
-  } finally {
-    clearTimeout(timer);
-  }
-}
 
-function loadFonts(): Promise<void> {
-  if (fontRegular && fontBold) return Promise.resolve();
-  if (fontsLoading) return fontsLoading;
-  if (Date.now() < fontFailUntil)
-    return Promise.reject(new Error('Fonts unavailable (cooling down)'));
-  fontsLoading = Promise.all([fetchFont(FONT_REGULAR_URL), fetchFont(FONT_BOLD_URL)])
-    .then(([reg, bold]) => {
-      fontRegular = reg;
-      fontBold = bold;
-    })
-    .catch((err) => {
-      fontsLoading = null;
-      fontFailUntil = Date.now() + FONT_FAIL_COOLDOWN_MS;
-      throw err;
-    });
-  return fontsLoading;
-}
-loadFonts().catch(() => {});
 
 const pngCache = new Map<string, { png: Buffer; ts: number }>();
 const PNG_TTL = 60 * 60 * 1000;
 const PNG_MAX = 100;
 
-const BG = '#0b0d12';
-const SURFACE = '#161922';
-const TEXT = '#f4f6fb';
-const MUTED = '#9aa3b2';
-const ACCENT = '#f5a623';
 
 export interface ReplayOgData {
   /** Stable cache key — the replay id + a content hash of the visible fields. */
@@ -73,17 +39,12 @@ export interface ReplayOgData {
   subtitle: string | null;
 }
 
-function truncate(s: string, n: number): string {
-  const t = s.trim();
-  return t.length > n ? `${t.slice(0, n - 1)}…` : t;
-}
 
 export async function renderReplayOgImage(data: ReplayOgData): Promise<Buffer> {
   const cached = pngCache.get(data.cacheKey);
   if (cached && Date.now() - cached.ts < PNG_TTL) return cached.png;
 
   await loadFonts();
-  if (!fontRegular || !fontBold) throw new Error('Fonts not loaded');
 
   const scoreLabel = data.score != null ? String(data.score) : '—';
 
@@ -147,10 +108,7 @@ export async function renderReplayOgImage(data: ReplayOgData): Promise<Buffer> {
   const svg = await satori(element, {
     width: 1200,
     height: 630,
-    fonts: [
-      { name: 'Inter', data: fontRegular, weight: 400, style: 'normal' },
-      { name: 'Inter', data: fontBold, weight: 700, style: 'normal' },
-    ],
+    fonts: satoriFonts(),
   });
   const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: 1200 } });
   const png = Buffer.from(resvg.render().asPng());

@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { generatePersonaReply } from '@/lib/personas/chat.server';
 
@@ -11,18 +10,16 @@ const schema = z.object({ message: z.string().min(1).max(1000) });
 export const Route = createFileRoute('/api/personas/$id/chat')({
   server: {
     handlers: {
-      POST: async ({ request, params }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          // AI calls cost money — keep this tightly limited.
-          const ip = getClientIp(request);
-          const { allowed, retryAfter } = rateLimit(ip, { limit: 20, windowMs: 60_000, prefix: 'persona-chat' });
-          if (!allowed) {
-            return Response.json({ error: 'Slow down a moment' }, { status: 429, headers: { 'Retry-After': String(retryAfter) } });
-          }
-
+      POST: defineHandler(
+        {
+          rateLimit: {
+            limit: 20,
+            windowMs: 60_000,
+            prefix: 'persona-chat',
+            message: 'Slow down a moment',
+          },
+        },
+        async ({ request, params, session }) => {
           const body = await request.json().catch(() => ({}));
           const parsed = schema.safeParse(body);
           if (!parsed.success) return Response.json({ error: 'Invalid message' }, { status: 400 });
@@ -45,11 +42,8 @@ export const Route = createFileRoute('/api/personas/$id/chat')({
           });
 
           return Response.json({ reply });
-        } catch (error) {
-          console.error('Persona chat error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

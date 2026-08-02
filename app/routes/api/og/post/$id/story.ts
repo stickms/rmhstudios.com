@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { renderPostStoryImage } from '@/lib/og/post-story.server';
 
@@ -10,46 +11,41 @@ import { renderPostStoryImage } from '@/lib/og/post-story.server';
 export const Route = createFileRoute('/api/og/post/$id/story')({
   server: {
     handlers: {
-      GET: async ({ params }) => {
-        try {
-          const post = await prisma.rMHark.findUnique({
-            where: { id: params.id },
-            select: {
-              content: true,
-              deletedAt: true,
-              audience: true,
-              unlockPrice: true,
-              isSensitive: true,
-              user: { select: { name: true, handle: true, image: true } },
-            },
-          });
+      GET: defineHandler({ auth: 'none' }, async ({ params }) => {
+        const post = await prisma.rMHark.findUnique({
+          where: { id: params.id },
+          select: {
+            content: true,
+            deletedAt: true,
+            audience: true,
+            unlockPrice: true,
+            isSensitive: true,
+            user: { select: { name: true, handle: true, image: true } },
+          },
+        });
 
-          const hideContent =
-            !post ||
-            post.deletedAt ||
-            post.audience !== 'PUBLIC' ||
-            (post.unlockPrice ?? 0) > 0 ||
-            post.isSensitive;
+        const hideContent =
+          !post ||
+          post.deletedAt ||
+          post.audience !== 'PUBLIC' ||
+          (post.unlockPrice ?? 0) > 0 ||
+          post.isSensitive;
 
-          const png = await renderPostStoryImage({
-            id: params.id,
-            content: hideContent ? '' : (post?.content ?? ''),
-            authorName: post?.user?.name ?? 'RMH Studios',
-            authorHandle: post?.user?.handle ?? null,
-            authorImage: post?.user?.image ?? null,
-          });
+        const png = await renderPostStoryImage({
+          id: params.id,
+          content: hideContent ? '' : (post?.content ?? ''),
+          authorName: post?.user?.name ?? 'RMH Studios',
+          authorHandle: post?.user?.handle ?? null,
+          authorImage: post?.user?.image ?? null,
+        });
 
-          return new Response(new Uint8Array(png), {
-            headers: {
-              'Content-Type': 'image/png',
-              'Cache-Control': 'public, max-age=600, s-maxage=3600, stale-while-revalidate=86400',
-            },
-          });
-        } catch (error) {
-          console.error('Story image error:', error);
-          return new Response('Failed to render image', { status: 500 });
-        }
-      },
+        return new Response(new Uint8Array(png), {
+          headers: {
+            'Content-Type': 'image/png',
+            'Cache-Control': 'public, max-age=600, s-maxage=3600, stale-while-revalidate=86400',
+          },
+        });
+      }),
     },
   },
 });

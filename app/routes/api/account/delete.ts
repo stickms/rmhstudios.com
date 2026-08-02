@@ -12,15 +12,11 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { deleteObject } from '@/lib/storage/s3.server';
-import {
-  DELETED_ACCOUNT_BAN_REASON,
-  DELETED_ACCOUNT_LOCK_UNTIL,
-} from '@/lib/account-lifecycle';
+import { DELETED_ACCOUNT_BAN_REASON, DELETED_ACCOUNT_LOCK_UNTIL } from '@/lib/account-lifecycle';
 
 const schema = z.object({ confirm: z.string().min(1).max(120) });
 
@@ -32,31 +28,18 @@ const LOCK_UNTIL = DELETED_ACCOUNT_LOCK_UNTIL;
 export const Route = createFileRoute('/api/account/delete')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
-
-          const { allowed, retryAfter } = rateLimit(getClientIp(request), {
+      POST: defineHandler(
+        {
+          rateLimit: {
             limit: 5,
             windowMs: 60 * 60_000,
             prefix: 'account-delete',
-          });
-          if (!allowed) {
-            return Response.json(
-              { error: 'Too many attempts. Please wait and try again.' },
-              { status: 429, headers: { 'Retry-After': String(retryAfter) } }
-            );
-          }
-
-          const body = await request.json().catch(() => ({}));
-          const parsed = schema.safeParse(body);
-          if (!parsed.success) {
-            return Response.json({ error: 'Invalid input' }, { status: 400 });
-          }
-
+            message: 'Too many attempts. Please wait and try again.',
+          },
+          body: schema,
+          allowEmptyBody: true,
+        },
+        async ({ session, body }) => {
           const userId = session.user.id;
           const user = await prisma.user.findUnique({
             where: { id: userId },
@@ -67,14 +50,14 @@ export const Route = createFileRoute('/api/account/delete')({
           }
 
           // Confirmation must match the user's own handle/username (or email).
-          const confirm = parsed.data.confirm.trim().toLowerCase().replace(/^@/, '');
+          const confirm = body.confirm.trim().toLowerCase().replace(/^@/, '');
           const expected = [user.handle, user.username, user.email]
             .filter(Boolean)
             .map((v) => v!.toLowerCase());
           if (!expected.includes(confirm)) {
             return Response.json(
               { error: 'Confirmation does not match your account name.' },
-              { status: 400 }
+              { status: 400 },
             );
           }
 
@@ -142,11 +125,8 @@ export const Route = createFileRoute('/api/account/delete')({
           ]);
 
           return Response.json({ success: true });
-        } catch (error) {
-          console.error('Account deletion error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { listStorefront } from '@/lib/storefront.server';
 
 /**
@@ -9,17 +9,11 @@ import { listStorefront } from '@/lib/storefront.server';
 export const Route = createFileRoute('/api/storefront/creator/$userid')({
   server: {
     handlers: {
-      GET: async ({ request, params }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
-          const result = await listStorefront(params.userid, session?.user?.id ?? null);
-          if (!result) return Response.json({ error: 'Not found' }, { status: 404 });
-          return Response.json(result);
-        } catch (error) {
-          console.error('Storefront list error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+      GET: defineHandler({ auth: 'optional' }, async ({ params, session }) => {
+        const result = await listStorefront(params.userid, session?.user?.id ?? null);
+        if (!result) return Response.json({ error: 'Not found' }, { status: 404 });
+        return Response.json(result);
+      }),
     },
   },
 });

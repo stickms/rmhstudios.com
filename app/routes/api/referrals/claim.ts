@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { claimReferral } from '@/lib/referrals.server';
 
 /**
@@ -19,25 +18,9 @@ const claimSchema = z.object({
 export const Route = createFileRoute('/api/referrals/claim')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
-
-          const { allowed, retryAfter } = rateLimit(getClientIp(request), {
-            limit: 5,
-            windowMs: 60_000,
-            prefix: 'referral-claim',
-          });
-          if (!allowed) {
-            return Response.json(
-              { error: 'Too many requests' },
-              { status: 429, headers: { 'Retry-After': String(retryAfter) } }
-            );
-          }
-
+      POST: defineHandler(
+        { rateLimit: { limit: 5, windowMs: 60_000, prefix: 'referral-claim' } },
+        async ({ request, session }) => {
           const body = await request.json().catch(() => null);
           const parsed = claimSchema.safeParse(body);
           if (!parsed.success) {
@@ -46,11 +29,8 @@ export const Route = createFileRoute('/api/referrals/claim')({
 
           const result = await claimReferral(session.user.id, parsed.data.code.toLowerCase());
           return Response.json({ result, claimed: result === 'claimed' });
-        } catch (error) {
-          console.error('Referral claim error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

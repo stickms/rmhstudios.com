@@ -79,47 +79,46 @@ path, image})` + `buildCanonical(path)` from `@/lib/seo` (see
 ## Adding an API route
 
 API routes are `.ts` files with `server.handlers` keyed by HTTP method
-(GET/POST/PUT/PATCH/DELETE/OPTIONS). The canonical shape (auth → rate limit →
-validate → act), modeled on `api/ai/transform.ts`:
+(GET/POST/PUT/PATCH/DELETE/OPTIONS). Every handler goes through
+**`defineHandler`** from `@/lib/api/handler.server`, which runs the canonical
+auth → rate limit → validate → act order and catches anything that throws:
 
 ```ts
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { defineHandler } from '@/lib/api/handler.server';
 
 const schema = z.object({ text: z.string().min(1).max(1000) });
 
 export const Route = createFileRoute('/api/example')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const { allowed } = rateLimit(getClientIp(request), {
-            limit: 20,
-            windowMs: 60_000,
-            prefix: 'example',
-          });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
-          const body = await request.json().catch(() => ({}));
-          const parsed = schema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-          // ... use parsed.data and session.user.id
+      POST: defineHandler(
+        { rateLimit: 'ai', body: schema },
+        async ({ userId, body }) => {
+          // session already checked, body already validated
           return Response.json({ ok: true });
-        } catch (error) {
-          console.error('example error:', error);
-          return Response.json({ error: 'Internal server error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });
 ```
+
+Options: `auth` (`'required'` default → 401 · `'admin'` → 401/403 · `'optional'`
+· `'none'`), `rateLimit` (a named policy, or `{ limit, windowMs, prefix }` for a
+bespoke bucket), `body` / `query` (zod schemas → 400 on failure), `label` (the
+name used in the 500-path log). The handler receives `{ request, params,
+session, user, userId, isAdmin, body, query }`.
+
+Do **not** re-implement the preamble by hand. It was previously copied into 439
+handlers, which is 439 chances to invert the order, drop the `Retry-After`
+header, or let a Prisma exception message reach the client. Handlers that throw
+become a bare `{ error: 'Internal Server Error' }` 500 — never echo the caught
+error to the caller.
+
+`/api/v1/**` (the public developer API) uses `withDeveloperApi` instead: a
+different error envelope, API-key auth, scopes, idempotency and quotas.
 
 Conventions:
 
@@ -128,15 +127,16 @@ Conventions:
   unauthorized, 403, 404, 429 rate-limited, 500, 502/503 upstream. Non-JSON
   (images/XML) uses `new Response(body, { headers })` with explicit
   `Content-Type`/`Cache-Control`.
-- **Admin gating:** `if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) …`
-  (the `isAdmin` field is a Better Auth custom user field).
-- **Rate limiting:** prefer `withRateLimit(request, policy)` from
-  `@/lib/rate-limit` — it derives the key via `getClientIp` internally (so no
-  route can key on the wrong request field) and returns a ready 429 `Response`
-  or `null`: `const limited = withRateLimit(request, "write"); if (limited)
-return limited;`. Named policies: `read`/`write`/`ai`/`upload`/`auth`; pass
-  `{ scope: userId }` for a per-user+IP limit. The lower-level
-  `rateLimit(getClientIp(request), …)` is still fine for bespoke limits.
+- **Admin gating:** `defineHandler({ auth: 'admin' }, …)` — anonymous gets 401,
+  a signed-in non-admin gets 403. (`isAdmin` is a Better Auth custom user
+  field; the cast that used to be repeated at 54 call sites now lives in
+  `ApiUser`.)
+- **Rate limiting:** pass `rateLimit` to `defineHandler`. Under the hood it is
+  `withRateLimit(request, policy)` from `@/lib/rate-limit`, which derives the
+  key via `getClientIp` internally so no route can key on the wrong request
+  field. Named policies: `read`/`write`/`ai`/`upload`/`auth`; pass
+  `{ scope: 'user' }` for a per-user+IP bucket, or
+  `{ limit, windowMs, prefix }` for a bespoke one.
 - **Rate limiter caveat:** `lib/rate-limit.ts` is in-memory and per-process,
   and every limit is multiplied by `RATE_LIMIT_MULTIPLIER` (default 4). It
   neither survives restarts nor spans instances.

@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
 import { generateApiKey } from '@/lib/api/developer-auth.server';
@@ -20,29 +20,30 @@ const patchSchema = z.object({
 export const Route = createFileRoute('/api/developer/keys/$id')({
   server: {
     handlers: {
-      PATCH: async ({ request, params }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const key = await prisma.developerApiKey.findUnique({ where: { id: params.id }, select: { userId: true, revokedAt: true } });
-          if (!key || key.userId !== session.user.id) return Response.json({ error: 'Not found' }, { status: 404 });
-          if (key.revokedAt) return Response.json({ error: 'Key has been revoked' }, { status: 400 });
-
-          const body = await request.json().catch(() => ({}));
-          const parsed = patchSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message ?? 'Invalid input' }, { status: 400 });
+      PATCH: defineHandler(
+        { body: patchSchema, allowEmptyBody: true, verboseValidationErrors: true },
+        async ({ params, session, body }) => {
+          const key = await prisma.developerApiKey.findUnique({
+            where: { id: params.id },
+            select: { userId: true, revokedAt: true },
+          });
+          if (!key || key.userId !== session.user.id)
+            return Response.json({ error: 'Not found' }, { status: 404 });
+          if (key.revokedAt)
+            return Response.json({ error: 'Key has been revoked' }, { status: 400 });
 
           const data: Record<string, unknown> = {};
-          if (parsed.data.name !== undefined) data.name = parsed.data.name.trim();
-          if (parsed.data.scopes !== undefined) data.scopes = normalizeScopes(parsed.data.scopes);
-          if (parsed.data.expiresInDays !== undefined) {
-            data.expiresAt = parsed.data.expiresInDays ? new Date(Date.now() + parsed.data.expiresInDays * 86_400_000) : null;
+          if (body.name !== undefined) data.name = body.name.trim();
+          if (body.scopes !== undefined) data.scopes = normalizeScopes(body.scopes);
+          if (body.expiresInDays !== undefined) {
+            data.expiresAt = body.expiresInDays
+              ? new Date(Date.now() + body.expiresInDays * 86_400_000)
+              : null;
           }
 
           // Rotation: issue a fresh secret, invalidating the old one immediately.
           let plaintext: string | undefined;
-          if (parsed.data.rotate) {
+          if (body.rotate) {
             const gen = generateApiKey();
             plaintext = gen.plaintext;
             data.hashedKey = gen.hashedKey;
@@ -53,31 +54,36 @@ export const Route = createFileRoute('/api/developer/keys/$id')({
           const updated = await prisma.developerApiKey.update({
             where: { id: params.id },
             data,
-            select: { id: true, name: true, prefix: true, lastFour: true, scopes: true, expiresAt: true, lastUsedAt: true, createdAt: true },
+            select: {
+              id: true,
+              name: true,
+              prefix: true,
+              lastFour: true,
+              scopes: true,
+              expiresAt: true,
+              lastUsedAt: true,
+              createdAt: true,
+            },
           });
           return Response.json(plaintext ? { ...updated, key: plaintext } : updated);
-        } catch (error) {
-          console.error('Update API key error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
 
-      DELETE: async ({ request, params }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      DELETE: defineHandler({}, async ({ params, session }) => {
+        const key = await prisma.developerApiKey.findUnique({
+          where: { id: params.id },
+          select: { userId: true, revokedAt: true },
+        });
+        if (!key || key.userId !== session.user.id)
+          return Response.json({ error: 'Not found' }, { status: 404 });
+        if (key.revokedAt) return Response.json({ success: true });
 
-          const key = await prisma.developerApiKey.findUnique({ where: { id: params.id }, select: { userId: true, revokedAt: true } });
-          if (!key || key.userId !== session.user.id) return Response.json({ error: 'Not found' }, { status: 404 });
-          if (key.revokedAt) return Response.json({ success: true });
-
-          await prisma.developerApiKey.update({ where: { id: params.id }, data: { revokedAt: new Date() } });
-          return Response.json({ success: true });
-        } catch (error) {
-          console.error('Revoke API key error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        await prisma.developerApiKey.update({
+          where: { id: params.id },
+          data: { revokedAt: new Date() },
+        });
+        return Response.json({ success: true });
+      }),
     },
   },
 });

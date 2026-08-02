@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { listAchievements } from '@/lib/achievements.server';
 
 /**
@@ -9,16 +10,11 @@ import { listAchievements } from '@/lib/achievements.server';
 export const Route = createFileRoute('/api/achievements/$userId')({
   server: {
     handlers: {
-      GET: async ({ params }) => {
-        try {
-          const result = await listAchievements(params.userId);
-          if (!result) return Response.json({ error: 'User not found' }, { status: 404 });
-          return Response.json(result);
-        } catch (error) {
-          console.error('Achievements fetch error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+      GET: defineHandler({ auth: 'none' }, async ({ params }) => {
+        const result = await listAchievements(params.userId);
+        if (!result) return Response.json({ error: 'User not found' }, { status: 404 });
+        return Response.json(result);
+      }),
     },
   },
 });

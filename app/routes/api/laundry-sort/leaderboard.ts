@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 /**
  * Laundry Sort leaderboards.
@@ -31,64 +31,54 @@ export interface LeaderboardRow {
 export const Route = createFileRoute('/api/laundry-sort/leaderboard')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const ip = getClientIp(request);
-        const { allowed, retryAfter } = rateLimit(ip, {
-          limit: 30,
-          windowMs: 60_000,
-          prefix: 'laundry-leaderboard',
-        });
-        if (!allowed) {
-          return Response.json(
-            { error: 'Too many requests' },
-            { status: 429, headers: { 'Retry-After': String(retryAfter) } },
-          );
-        }
+      GET: defineHandler(
+        { auth: 'none', rateLimit: { limit: 30, windowMs: 60_000, prefix: 'laundry-leaderboard' } },
+        async ({ request }) => {
+          const url = new URL(request.url);
+          const parsed = querySchema.safeParse({
+            mode: url.searchParams.get('mode') ?? undefined,
+            limit: url.searchParams.get('limit') ?? undefined,
+          });
+          if (!parsed.success) {
+            return Response.json({ error: 'Invalid query' }, { status: 400 });
+          }
+          const { mode, limit } = parsed.data;
 
-        const url = new URL(request.url);
-        const parsed = querySchema.safeParse({
-          mode: url.searchParams.get('mode') ?? undefined,
-          limit: url.searchParams.get('limit') ?? undefined,
-        });
-        if (!parsed.success) {
-          return Response.json({ error: 'Invalid query' }, { status: 400 });
-        }
-        const { mode, limit } = parsed.data;
+          try {
+            const select = {
+              username: true,
+              highScore: true,
+              gamesPlayed: true,
+              versusWins: true,
+              versusPlayed: true,
+              versusBest: true,
+              bestCombo: true,
+              totalSorted: true,
+            } as const;
 
-        try {
-          const select = {
-            username: true,
-            highScore: true,
-            gamesPlayed: true,
-            versusWins: true,
-            versusPlayed: true,
-            versusBest: true,
-            bestCombo: true,
-            totalSorted: true,
-          } as const;
+            const rows =
+              mode === 'versus'
+                ? await prisma.laundryPlayer.findMany({
+                    // Someone who has never raced has nothing to rank.
+                    where: { versusPlayed: { gt: 0 } },
+                    take: limit,
+                    orderBy: [{ versusWins: 'desc' }, { versusBest: 'desc' }],
+                    select,
+                  })
+                : await prisma.laundryPlayer.findMany({
+                    where: { highScore: { gt: 0 } },
+                    take: limit,
+                    orderBy: { highScore: 'desc' },
+                    select,
+                  });
 
-          const rows =
-            mode === 'versus'
-              ? await prisma.laundryPlayer.findMany({
-                  // Someone who has never raced has nothing to rank.
-                  where: { versusPlayed: { gt: 0 } },
-                  take: limit,
-                  orderBy: [{ versusWins: 'desc' }, { versusBest: 'desc' }],
-                  select,
-                })
-              : await prisma.laundryPlayer.findMany({
-                  where: { highScore: { gt: 0 } },
-                  take: limit,
-                  orderBy: { highScore: 'desc' },
-                  select,
-                });
-
-          return Response.json(rows satisfies LeaderboardRow[]);
-        } catch (error) {
-          console.error('Laundry leaderboard fetch failed:', error);
-          return Response.json({ error: 'Internal server error' }, { status: 500 });
-        }
-      },
+            return Response.json(rows satisfies LeaderboardRow[]);
+          } catch (error) {
+            console.error('Laundry leaderboard fetch failed:', error);
+            return Response.json({ error: 'Internal server error' }, { status: 500 });
+          }
+        },
+      ),
     },
   },
 });

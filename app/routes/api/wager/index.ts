@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { createWagerSchema } from '@/lib/wager/wager-schema';
@@ -7,25 +8,19 @@ import { createWager, listWagers, expireStaleWagers, WagerError } from '@/lib/wa
 export const Route = createFileRoute('/api/wager/')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          const viewerId = session?.user?.id ?? null;
-          const url = new URL(request.url);
-          const filter = url.searchParams.get('filter') === 'mine' ? 'mine' : 'open';
-          const gameId = url.searchParams.get('game') ?? undefined;
-          if (filter === 'mine' && !viewerId) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
-          // Opportunistically refund challenges that timed out (no cron tier).
-          void expireStaleWagers().catch(() => {});
-          const wagers = await listWagers({ viewerId, filter, gameId });
-          return Response.json({ wagers });
-        } catch (error) {
-          console.error('Wager list error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+      GET: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
+        const viewerId = session?.user?.id ?? null;
+        const url = new URL(request.url);
+        const filter = url.searchParams.get('filter') === 'mine' ? 'mine' : 'open';
+        const gameId = url.searchParams.get('game') ?? undefined;
+        if (filter === 'mine' && !viewerId) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
-      },
+        // Opportunistically refund challenges that timed out (no cron tier).
+        void expireStaleWagers().catch(() => {});
+        const wagers = await listWagers({ viewerId, filter, gameId });
+        return Response.json({ wagers });
+      }),
       POST: async ({ request }) => {
         try {
           const session = await auth.api.getSession({ headers: request.headers });

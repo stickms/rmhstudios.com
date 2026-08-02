@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { WHEEL_SEGMENTS, wheelDateKey } from '@/lib/wheel/wheel';
 
@@ -7,8 +7,7 @@ import { WHEEL_SEGMENTS, wheelDateKey } from '@/lib/wheel/wheel';
 export const Route = createFileRoute('/api/wheel/')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+      GET: defineHandler({ auth: 'optional' }, async ({ session }) => {
         const segments = WHEEL_SEGMENTS.map((s) => s.reward);
 
         if (!session) {
@@ -26,7 +25,7 @@ export const Route = createFileRoute('/api/wheel/')({
           canSpin: !today,
           today: today ? { reward: today.reward, segment: today.segment } : null,
         });
-      },
+      }),
     },
   },
 });

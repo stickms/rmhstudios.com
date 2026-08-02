@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { CURRENT_SEASON, tierForXp } from '@/lib/battlepass/season';
 
@@ -7,9 +7,7 @@ import { CURRENT_SEASON, tierForXp } from '@/lib/battlepass/season';
 export const Route = createFileRoute('/api/battlepass/')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
-
+      GET: defineHandler({ auth: 'optional' }, async ({ session }) => {
         let seasonXp = 0;
         let premium = false;
         let claimedFree: number[] = [];
@@ -41,7 +39,7 @@ export const Route = createFileRoute('/api/battlepass/')({
           claimedPaid,
           signedIn: !!session,
         });
-      },
+      }),
     },
   },
 });

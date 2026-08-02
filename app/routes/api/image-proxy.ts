@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { defineHandler } from '@/lib/api/handler.server';
 import { LRUCache } from 'lru-cache';
 import { optimizeImage, parseFormat, negotiateFormat } from '@/lib/image-optimize';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { safeFetch, SsrfError } from '@/lib/ssrf-guard.server';
 import {
   isDiscordAvatarUrl,
@@ -28,22 +28,9 @@ const imageCache = new LRUCache<string, CachedImage>({
 export const Route = createFileRoute('/api/image-proxy')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          // Per-IP rate limit: this endpoint fetches arbitrary upstream URLs, so cap
-          // request volume to blunt SSRF probing / bandwidth abuse (mirrors oembed).
-          const { allowed, retryAfter } = rateLimit(getClientIp(request), {
-            limit: 60,
-            windowMs: 60_000,
-            prefix: 'image-proxy',
-          });
-          if (!allowed) {
-            return Response.json(
-              { error: 'Too many requests' },
-              { status: 429, headers: { 'Retry-After': String(retryAfter) } },
-            );
-          }
-
+      GET: defineHandler(
+        { auth: 'none', rateLimit: { limit: 60, windowMs: 60_000, prefix: 'image-proxy' } },
+        async ({ request }) => {
           const url = new URL(request.url);
           const src = url.searchParams.get('url');
 
@@ -134,11 +121,8 @@ export const Route = createFileRoute('/api/image-proxy')({
               'X-Image-Proxy-Cache': 'MISS',
             },
           });
-        } catch (error) {
-          console.error('Image proxy error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });
