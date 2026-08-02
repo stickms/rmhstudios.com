@@ -7,6 +7,7 @@ import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
+import { usePopPresence } from '@/hooks/usePopPresence';
 import { useParty } from '@/hooks/useParty';
 import type { PartyMemberView } from '@/lib/party/types';
 
@@ -69,7 +70,10 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
   // The game list hangs off the trigger's trailing edge with nothing holding it
   // inside the window — on a phone, or with the bar near an edge, part of it
   // sat off-screen. Clamp it, and re-clamp whenever the viewport changes.
-  useMenuViewportFit(menuOpen, menuRef);
+  // `present` keeps the menu mounted for its close; the viewport clamp is held
+  // for the same window so the panel cannot jump back mid-exit.
+  const { present, state } = usePopPresence(menuOpen);
+  useMenuViewportFit(present, menuRef);
 
   if (!session?.user) return null;
 
@@ -99,7 +103,7 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
           <Gamepad2 className="h-4 w-4" aria-hidden />
           {t('party-choose-game', { defaultValue: 'Choose game' })}
         </Button>
-        {menuOpen && (
+        {present && (
           <div
             ref={menuRef}
             className={cn(
@@ -112,6 +116,7 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
             )}
             data-slot="party-game-menu"
             data-motion="pop"
+            data-state={state}
             role="menu"
           >
             <div className="flex items-center justify-between px-2 py-1">

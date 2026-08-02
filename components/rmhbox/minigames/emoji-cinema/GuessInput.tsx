@@ -9,6 +9,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import Fuse from 'fuse.js';
 import { useTranslation } from 'react-i18next';
+import { usePopPresence } from '@/hooks/usePopPresence';
 
 interface GuessInputProps {
   onSubmit: (guess: string) => void;
@@ -42,6 +43,14 @@ export default function GuessInput({ onSubmit, disabled, maxGuesses, guessesUsed
     const results = fuse.search(value.trim(), { limit: 8 });
     return results.map((r) => r.item.title);
   }, [fuse, value]);
+
+  // The SUGGESTIONS are held through the close, not just a flag: picking one
+  // rewrites the input, which empties the fuse results on the same tick, and a
+  // list that emptied itself mid-exit would collapse to a bare strip on the way
+  // out.
+  const suggestionList = usePopPresence(
+    showSuggestions && suggestions.length > 0 && !disabled ? suggestions : null,
+  );
 
   const handleSubmit = useCallback(() => {
     const trimmed = value.trim();
@@ -93,13 +102,14 @@ export default function GuessInput({ onSubmit, disabled, maxGuesses, guessesUsed
             className="w-full px-3 py-2 rounded-lg bg-(--app-surface) text-(--app-text) border border-(--app-border) outline-none disabled:opacity-50"
           />
           {/* Suggestions dropdown */}
-          {showSuggestions && suggestions.length > 0 && !disabled && (
+          {suggestionList.present && (
             <div
               ref={suggestionsRef}
               data-motion="pop"
+              data-state={suggestionList.state}
               className="absolute top-full left-0 right-0 z-20 mt-1 origin-top rounded-lg bg-(--app-surface) border border-(--app-border) shadow-lg overflow-hidden max-h-48 overflow-y-auto"
             >
-              {suggestions.map((title) => (
+              {suggestionList.present.map((title) => (
                 <button
                   key={title}
                   onClick={() => handleSelectSuggestion(title)}

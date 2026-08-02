@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Loader2, MapPin, X, Star, LocateFixed } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { usePopPresence } from '@/hooks/usePopPresence';
 import type { RidePlace } from '@/lib/rideshare/geo';
 
 interface GeocodeResult {
@@ -47,6 +48,10 @@ export function LocationSearch({
   const [error, setError] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
+  // The RESULTS are what is held through the close, not just a flag: `choose()`
+  // clears the list on the same tick it closes the menu, and a list that emptied
+  // itself mid-exit would collapse to a bare pill on the way out.
+  const list = usePopPresence(open && results.length > 0 && !value ? results : null);
 
   function useCurrentLocation() {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
@@ -210,12 +215,13 @@ export function LocationSearch({
 
       {error && <p className="mt-1 text-xs text-site-danger">{error}</p>}
 
-      {open && results.length > 0 && !value && (
+      {list.present && (
         <ul
           data-motion="pop"
+          data-state={list.state}
           className="absolute z-30 mt-1 max-h-64 w-full origin-top overflow-auto glass-overlay"
         >
-          {results.map((r, i) => (
+          {list.present.map((r, i) => (
             <li key={`${r.lat},${r.lng},${i}`} className="border-b border-site-border/60 last:border-0">
               <button
                 type="button"

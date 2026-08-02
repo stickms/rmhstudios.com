@@ -41,6 +41,7 @@ import type { LibraryBook } from '@/lib/library/library';
 import { liquidVTName } from '@/lib/view-transition';
 import { PageStore } from '@/lib/library/page-store';
 import { useBookState, type Bookmark as BookmarkT, type Note } from '@/lib/library/reader-store';
+import { usePopPresence } from '@/hooks/usePopPresence';
 import { BookCanvas } from './BookCanvas';
 import { ReaderDetails } from './ReaderDetails';
 
@@ -595,6 +596,9 @@ export function Dropdown({
   panelRole?: 'menu' | 'dialog';
 }) {
   const [open, setOpen] = useState(false);
+  // Held mounted for its close (globals.css §7.1); the dismiss listeners below
+  // stay on `open`, so a panel on its way out no longer behaves like one.
+  const { present, state } = usePopPresence(open);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -626,10 +630,11 @@ export function Dropdown({
       >
         {icon}
       </button>
-      {open && (
+      {present && (
         <div
           className={`lib-reader__chapters-menu${wide ? ' lib-reader__marks-menu' : ''}`}
           data-motion="pop"
+          data-state={state}
           role={panelRole}
           aria-label={label}
         >

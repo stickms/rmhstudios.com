@@ -20,6 +20,7 @@
 import { Eye, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { usePopPresence } from '@/hooks/usePopPresence';
 import type { SpectatorTargetInfo, SpectatorMode } from '../../lib/rmhbox/types';
 
 interface SpectatorBannerProps {
@@ -45,6 +46,9 @@ export default function SpectatorBanner({
     && lobbyState === 'PLAYING';
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  // Held mounted for its close (globals.css §7.1); the outside-click listener
+  // below stays on the raw flag.
+  const playerMenu = usePopPresence(dropdownOpen);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
@@ -75,9 +79,10 @@ export default function SpectatorBanner({
             {t("viewing-player", { defaultValue: "Viewing: {{name}}", name: spectatorTarget.targetPlayerName })}
             <ChevronDown className="h-3 w-3" />
           </button>
-          {dropdownOpen && (
+          {playerMenu.present && (
             <div
               data-motion="pop"
+              data-state={playerMenu.state}
               className="absolute top-full left-0 mt-1 min-w-40 origin-top-left rounded-lg border border-(--app-border) bg-(--app-surface) py-1 shadow-lg"
             >
               {spectatorTarget.availablePlayers.map((p) => (

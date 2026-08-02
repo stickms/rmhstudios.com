@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Globe, Check, ChevronDown } from "lucide-react";
 import { LOCALES, LOCALE_LABELS, type Locale } from "@/lib/i18n/config";
 import { useLocaleStore } from "@/stores/localeStore";
+import { usePopPresence } from "@/hooks/usePopPresence";
 import { cn } from "@/lib/utils";
 
 type MenuRect = { left: number; top: number; width: number; maxHeight: number; openUp: boolean };
@@ -22,6 +23,9 @@ export function LanguageSwitcher() {
   const setLocale = useLocaleStore((s) => s.setLocale);
 
   const [open, setOpen] = useState(false);
+  // Holds the menu mounted through its close so the reabsorb is visible; the
+  // listeners below stay on `open`, so a leaving menu already ignores input.
+  const { present, state } = usePopPresence(open);
   const [rect, setRect] = useState<MenuRect | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -146,7 +150,7 @@ export function LanguageSwitcher() {
         />
       </button>
 
-      {open && rect && typeof document !== "undefined" &&
+      {present && rect && typeof document !== "undefined" &&
         createPortal(
           <div
             ref={menuRef}
@@ -160,6 +164,7 @@ export function LanguageSwitcher() {
             // edge to unfurl from, and a list that flipped above the trigger
             // grows upward out of it instead of downward into it.
             data-motion="pop"
+            data-state={state}
             style={{
               position: "fixed",
               left: rect.left,

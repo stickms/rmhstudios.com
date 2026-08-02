@@ -21,6 +21,7 @@ import {
 } from '@/lib/rmhtube/constants';
 import { formatDuration, formatRelativeTime } from '@/lib/rmhtube/utils';
 import type { ChatMessage, ChatEntry, SystemMessage } from '@/lib/rmhtube/types';
+import { usePopPresence } from '@/hooks/usePopPresence';
 import ChatMediaEmbed, { stripEmbedUrls } from './ChatMediaEmbed';
 
 // ─── Helpers ──────────────────────────────────────────────────────
@@ -92,6 +93,12 @@ export default function ChatPanel() {
   const [reactionPickerMessageId, setReactionPickerMessageId] = useState<string | null>(null);
   const [contextMenuMessage, setContextMenuMessage] = useState<ChatMessage | null>(null);
   const [contextMenuPos, setContextMenuPos] = useState<{ x: number; y: number } | null>(null);
+  // Both menus are held mounted for their close (globals.css §7.1). The pin menu
+  // keys on the MESSAGE and the mention list on the MEMBERS, because both are
+  // cleared on the same tick the menu closes — a menu that emptied itself
+  // mid-exit would collapse to a bare strip on the way out. The dismiss
+  // listeners further down stay on the raw state.
+  const pinMenu = usePopPresence(contextMenuMessage);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -196,6 +203,8 @@ export default function ChatPanel() {
     );
   }, [room, showMentionDropdown, mentionFilter]);
 
+  const mentionMenu = usePopPresence(filteredMembers.length > 0 ? filteredMembers : null);
+
   const insertMention = useCallback(
     (userName: string) => {
       const cursorPos = inputRef.current?.selectionStart ?? message.length;
@@ -291,6 +300,10 @@ export default function ChatPanel() {
   if (!room) return null;
 
   const isHost = room.myUserId === room.hostUserId;
+
+  // Bound once so the handlers below inherit the narrowing — `pinMenu.present`
+  // is the retained message and stays non-null for the whole close window.
+  const pinTarget = pinMenu.present;
 
   return (
     <div className="flex flex-col h-full">
@@ -540,13 +553,14 @@ export default function ChatPanel() {
       )}
 
       {/* Mention autocomplete dropdown */}
-      {showMentionDropdown && filteredMembers.length > 0 && (
+      {mentionMenu.present && (
         <div
           ref={mentionDropdownRef}
           data-motion="pop"
-          className="mx-3 mb-1 origin-bottom rounded-lg border border-(--app-border) bg-(--app-bg) shadow-lg overflow-hidden max-h-32 overflow-y-auto"
+          data-state={mentionMenu.state}
+          className="relative mx-3 mb-1 origin-bottom rounded-lg border border-(--app-border) bg-(--app-bg) shadow-lg overflow-hidden max-h-32 overflow-y-auto"
         >
-          {filteredMembers.map((member) => (
+          {mentionMenu.present.map((member) => (
             <button
               key={member.userId}
               onClick={() => insertMention(member.userName)}
@@ -615,16 +629,17 @@ export default function ChatPanel() {
       </form>
 
       {/* Context menu (pin/unpin) — for host/mod */}
-      {contextMenuMessage && contextMenuPos && (
+      {pinTarget && contextMenuPos && (
         <div
           data-motion="pop"
+          data-state={pinMenu.state}
           className="fixed z-50 origin-top-left rounded-lg border border-(--app-border) bg-(--app-bg) shadow-xl overflow-hidden py-1 min-w-35"
           style={{ left: contextMenuPos.x, top: contextMenuPos.y }}
           onClick={(e) => e.stopPropagation()}
         >
-          {room.pinnedMessage?.id === contextMenuMessage.id ? (
+          {room.pinnedMessage?.id === pinTarget.id ? (
             <button
-              onClick={() => handlePin(contextMenuMessage.id, false)}
+              onClick={() => handlePin(pinTarget.id, false)}
               className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-(--app-text) hover:bg-(--app-surface) transition-colors"
             >
               <Pin className="h-3.5 w-3.5" />
@@ -632,7 +647,7 @@ export default function ChatPanel() {
             </button>
           ) : (
             <button
-              onClick={() => handlePin(contextMenuMessage.id, true)}
+              onClick={() => handlePin(pinTarget.id, true)}
               className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-(--app-text) hover:bg-(--app-surface) transition-colors"
             >
               <Pin className="h-3.5 w-3.5" />
@@ -641,7 +656,7 @@ export default function ChatPanel() {
           )}
           <button
             onClick={() => {
-              setReplyTo(contextMenuMessage);
+              setReplyTo(pinTarget);
               setContextMenuMessage(null);
               setContextMenuPos(null);
               inputRef.current?.focus();

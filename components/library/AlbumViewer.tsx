@@ -34,6 +34,7 @@ import { useTranslation } from 'react-i18next';
 import type { Album, AlbumSlide } from '@/lib/albums';
 import { albumCoverVTName } from '@/lib/view-transition';
 import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
+import { usePopPresence } from '@/hooks/usePopPresence';
 import './album-viewer.css';
 
 const MAX_SCALE = 6;
@@ -74,7 +75,11 @@ export function AlbumViewer({ album }: { album: Album }) {
   // rotation/resize — the menus are wider than a toolbar button and anchored to
   // its edge, so nothing else stops them spilling off-screen.
   const menuRef = useRef<HTMLDivElement>(null);
-  useMenuViewportFit(menu !== null, menuRef, [menu]);
+  // Held through the close, and the clamp with it (globals.css §7.1). `present`
+  // is which menu was open, so the leaving panel still has rows to render after
+  // `menu` has already gone back to null.
+  const { present: openMenu, state: menuState } = usePopPresence(menu);
+  useMenuViewportFit(openMenu, menuRef, [menu]);
   // Which slide index has fully loaded (drives the blur-up). Deriving `loaded`
   // from this means it flips to false the instant we navigate, so the blurred
   // thumbnail shows immediately instead of flashing a blank frame.
@@ -411,8 +416,14 @@ export function AlbumViewer({ album }: { album: Album }) {
             >
               <Share2 size={18} />
             </button>
-            {menu === 'share' && slide.type === 'image' && (
-              <div ref={menuRef} className="av__menu" data-motion="pop" role="menu">
+            {openMenu === 'share' && slide.type === 'image' && (
+              <div
+                ref={menuRef}
+                className="av__menu"
+                data-motion="pop"
+                data-state={menuState}
+                role="menu"
+              >
                 <button type="button" role="menuitem" className="av__menu-item" onClick={() => chooseShare('full')}>
                   {t('album-quality-full', { defaultValue: 'Full resolution' })}
                 </button>
@@ -433,8 +444,14 @@ export function AlbumViewer({ album }: { album: Album }) {
             >
               <Download size={18} />
             </button>
-            {menu === 'download' && slide.type === 'image' && (
-              <div ref={menuRef} className="av__menu" data-motion="pop" role="menu">
+            {openMenu === 'download' && slide.type === 'image' && (
+              <div
+                ref={menuRef}
+                className="av__menu"
+                data-motion="pop"
+                data-state={menuState}
+                role="menu"
+              >
                 <button type="button" role="menuitem" className="av__menu-item" onClick={() => chooseDownload('full')}>
                   {t('album-quality-full', { defaultValue: 'Full resolution' })}
                 </button>

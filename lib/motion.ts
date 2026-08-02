@@ -114,6 +114,18 @@ export const pressable = {
   transition: APPLE_SPRING.press,
 } as const;
 
+/**
+ * How long a `data-motion="pop"` surface takes to reabsorb into its trigger on
+ * close, in **milliseconds**.
+ *
+ * The mirror of `--motion-collapse` in `globals.css` §7.1, and the number
+ * `hooks/usePopPresence.ts` counts before it lets React remove a hand-rolled
+ * menu — a menu that unmounts on the same tick its state flips has no close to
+ * play, however good the keyframes are. CSS owns the look; this owns the
+ * lifetime; they have to agree, so if one moves, move the other.
+ */
+export const POP_COLLAPSE_MS = 130;
+
 /** The default tweened transition — smooth, quick, used by the variants below. */
 export const transition: Transition = { duration: DURATION.base, ease: EASE.standard };
 
