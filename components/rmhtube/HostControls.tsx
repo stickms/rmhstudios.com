@@ -10,6 +10,7 @@
 
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { usePopPresence } from '@/hooks/usePopPresence';
 import { Play, Pause, SkipForward, Volume2, VolumeX, Volume1, Subtitles, Gauge, PictureInPicture2, Maximize, Minimize } from 'lucide-react';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
@@ -43,6 +44,9 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
 
   const { t } = useTranslation("c-rmhtube");
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  // Held mounted for its close (globals.css §7.1); the outside-click listener
+  // below stays on the raw flag.
+  const speedMenu = usePopPresence(showSpeedMenu);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const speedMenuRef = useRef<HTMLDivElement>(null);
 
@@ -215,9 +219,10 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
         </button>
 
         {/* Speed dropdown — visible to all, handler guards permissions */}
-        {showSpeedMenu && (
+        {speedMenu.present && (
           <div
             data-motion="pop"
+            data-state={speedMenu.state}
             className="absolute bottom-full mb-1 right-0 origin-bottom-right z-50 rounded-lg border border-(--app-border) bg-(--app-surface) shadow-lg py-1 min-w-25"
           >
             {PLAYBACK_SPEEDS.map((speed) => (

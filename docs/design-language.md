@@ -988,15 +988,63 @@ gated off there too, via `html.app-route`).
   `Sheet` keep their own bespoke keyframes (a sheet slides from an edge, which
   none of the three shapes covers) but were retimed onto the same tokens — they
   used to hardcode three different answers between them.
-- **A menu blooms out of the control you pressed.** `pop` is not a centred
-  scale-fade. It is anchored — the panel grows from the trigger's edge — and the
-  shape is the site's liquid settle rather than a linear scale: flattened against
-  that edge, unfurling along the axis it grows on, overshooting, squashing, and
-  rebounding, which is `lib/fluid`'s under-damped spring (the globe's wobble, the
-  `liquid-pop` bud) sampled into keyframe stops because CSS has no spring. Only
-  Y overshoots past 1; a panel briefly wider than its box can push a horizontal
-  scrollbar onto the document, and sideways is not the axis a dropdown reads as
-  unfurling along.
+- **A menu opens the way the globe does: cage first, then the glass.** The
+  liquid globe never fades a finished sphere in — it blooms a wireframe and lets
+  the material read in around it. `pop` is that, in two acts on one 300ms clock:
+  for the first ~100ms an `::after` draws the panel's rim and a 6 × 7 grid (the
+  globe's own meridian and parallel count) while the panel blooms from its
+  anchor with its fill held off and its rows still at zero; then the cage
+  dissolves, the fill reads in, and the content comes up behind it — legible from
+  about 200ms, which is what "it opened" means to whoever is reading it.
+
+  Two things deliberately do not wait, both for cost: the **blur** lands at once
+  (it is the one property here that cannot be animated cheaply, so act 1 reads as
+  a frosted pane with a wireframe on it — a glass globe with a cage in it), and
+  the **shadow** is never animated at all (a blurred `box-shadow` is a full
+  repaint of the panel and its penumbra every frame). What is left is
+  compositor-only — transform, the cage's opacity, the rows' opacity — plus one
+  flat rect fill.
+- **It rocks; it does not bounce.** The panel never overshoots its own size.
+  What moves is a rotation about the anchor: `lib/fluid`'s under-damped spring at
+  the globe's own `WOBBLE_SPRING` bounce of 0.62, released with the same ωd kick
+  `LiquidGlobe` uses, retimed from the globe's 0.78s to 0.20s because this is a
+  menu and not a ball on a tether, sampled and read off as keyframe stops (CSS
+  has no spring). Peak +1.0 at 41ms, counter-swing −0.275 at 149ms, +0.076 at
+  257ms, done — the globe's "rocks away from your finger and settles back, a
+  couple of times, quickly", to the number. Because the origin is the anchor it
+  is a pendulum swing about the trigger: the corner welded to the control never
+  moves and the far end settles.
+
+  Amplitude is `--motion-wobble` (default `0.9deg`). It is a rotation, so the
+  swing scales with the panel's diagonal — big surfaces dial it down rather than
+  the default being tuned for the biggest one (`.rad-panel` takes `0.42deg`).
+  The scale half is strictly monotonic, 0.94 × 0.84 → 1: a panel that also
+  inflated past its own box read as two springs fighting, and an X overshoot can
+  push a horizontal scrollbar onto the document for two frames besides.
+- **The close is real, on both kinds of surface.** A dismissal is not a
+  performance — no cage, no rock, just a quick reabsorb toward the anchor over
+  `--motion-collapse` (130ms) with `pointer-events: none`, so a panel that is
+  visibly leaving cannot still be clicked. Radix schedules its own unmount and
+  needs nothing. A hand-rolled menu is removed by React the instant its state
+  flips, which is why nothing it did used to be visible on close;
+  **`hooks/usePopPresence.ts`** holds it mounted for exactly that window and
+  flips it to `data-state="closed"`:
+
+  ```tsx
+  const { present, state } = usePopPresence(open);
+  …
+  {present && <div data-motion="pop" data-state={state} className="… origin-top-right" />}
+  ```
+
+  It takes the caller's own open VALUE, not just a boolean, and hands back the
+  last one — so a menu keyed by a pointer position or by which row's menu is
+  showing still has something to render from on the way out, after the state that
+  produced it has been cleared. Only the render reads it: Escape handlers,
+  outside-click listeners and focus-return stay on the raw `open`, because a menu
+  that is leaving should already have stopped behaving like one. The exception is
+  `useMenuViewportFit`, which must be passed `present` — its cleanup strips the
+  clamp it applied, and a panel that snaps back to its unclamped position for the
+  length of its own exit is worse than no exit at all.
 
   The anchor is stated three ways, in priority order:
 
@@ -1011,8 +1059,9 @@ gated off there too, via `html.app-route`).
      wrapper it portals — so `Select` and `ProfileHoverCard` re-anchor themselves
      through a collision flip for free, and neither has to say anything.
 
-  `perf-lite` drops the settle and keeps the anchored scale (the call
-  `liquid-pop`'s own 'perf' mode makes); reduced motion removes it entirely.
+  `perf-lite` drops both acts for a plain anchored scale-fade — no cage element
+  at all, no per-row work — which is the same call `liquid-pop`'s own 'perf' mode
+  makes; reduced motion removes the whole thing, and the menu simply appears.
   Retiring the last two menus that still answered this privately — `lib-ctx-in`
   at 120ms and `vibe-model-pop` at 140ms — is what closed the loop §7.1 was
   opened to close.
@@ -1036,6 +1085,10 @@ gated off there too, via `html.app-route`).
   `origin-left` + `transform: scaleX(p)`, not an animated `width`; a column chart
   is `origin-bottom` + `scaleY`. See `components/onboarding/FirstWeekCard.tsx`,
   `components/feed/PollDisplay.tsx` and `components/feed/InsightsModal.tsx`.
+- `hooks/usePopPresence.ts` — keeps a hand-rolled menu mounted through its
+  `data-motion="pop"` close, and supplies the `data-state` to play it with. See
+  the close note above; pair it with `hooks/useMenuViewportFit.ts`, which takes
+  the same `present` so the clamp survives the exit.
 - `hooks/useReducedMotion.ts` — SSR-safe boolean for JS animations CSS can't
   reach; `prefersReducedMotion()` for imperative checks.
 - `hooks/useCelebration.ts` — confetti/fireworks; lazy-loads canvas-confetti,

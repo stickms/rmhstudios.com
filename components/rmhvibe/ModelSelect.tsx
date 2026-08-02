@@ -18,6 +18,7 @@ import {
   type VibeModel,
 } from '@/lib/rmhvibe/vibe-types';
 import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
+import { usePopPresence } from '@/hooks/usePopPresence';
 
 export function ModelSelect({
   value,
@@ -39,7 +40,9 @@ export function ModelSelect({
   // is taller than a phone once every provider group is listed — on a narrow or
   // short viewport it ran off the screen with no way to reach the models past
   // the edge. Clamp it (and re-clamp on every resize/rotation).
-  useMenuViewportFit(open, menuRef);
+  // Held mounted for its close, and the clamp with it (globals.css §7.1).
+  const { present, state } = usePopPresence(open);
+  useMenuViewportFit(present, menuRef);
 
   // Close on outside click or Escape.
   useEffect(() => {
@@ -84,12 +87,13 @@ export function ModelSelect({
         />
       </button>
 
-      {open && (
+      {present && (
         <div
           ref={menuRef}
           className="vibe-model-select__menu glass-overlay"
           data-slot="model-select-menu"
           data-motion="pop"
+          data-state={state}
           role="listbox"
           aria-label={t("generation-model", { defaultValue: "Generation model" })}
         >

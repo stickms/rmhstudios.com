@@ -13,6 +13,7 @@ import {
 import { createPortal } from 'react-dom';
 import { ArrowRight, type LucideIcon } from 'lucide-react';
 import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
+import { usePopPresence } from '@/hooks/usePopPresence';
 
 // useLayoutEffect warns during SSR; panels only ever open from a client
 // interaction, so the visual result is identical either way.
@@ -82,6 +83,10 @@ export function QuickPanel({
   className,
 }: QuickPanelProps) {
   const panelRef = useRef<HTMLDivElement | null>(null);
+  // Held mounted through the close so the reabsorb is visible. Only the RENDER
+  // reads this — every listener below stays on `open`, so a panel on its way out
+  // has already stopped taking Escape, outside presses and focus.
+  const { present, state } = usePopPresence(open);
   const headingId = useId();
   const [anchor, setAnchor] = useState({ top: 56, right: 12 });
   const [mounted, setMounted] = useState(false);
@@ -105,7 +110,10 @@ export function QuickPanel({
     return () => window.removeEventListener('resize', measure);
   }, [open, anchorRef]);
 
-  useMenuViewportFit(open, panelRef, [anchor.top, anchor.right]);
+  // `present`, not `open`: this hook strips the clamp it applied in its cleanup,
+  // and a panel that snapped back to its unclamped position for the length of
+  // its own exit would be worse than having no exit.
+  useMenuViewportFit(present, panelRef, [anchor.top, anchor.right]);
 
   // Escape closes; an outside press closes. `pointerdown` (not click) so the
   // panel dismisses before the press lands on whatever is underneath.
@@ -162,7 +170,7 @@ export function QuickPanel({
     };
   }, [open, anchorRef]);
 
-  if (!open || !mounted) return null;
+  if (!present || !mounted) return null;
 
   return createPortal(
     <div
@@ -178,6 +186,7 @@ export function QuickPanel({
       // the anchor and the panel spans the gutters, but it is still pinned by
       // its top edge, so the same origin reads correctly there.
       data-motion="pop"
+      data-state={state}
       role="dialog"
       aria-labelledby={headingId}
       tabIndex={-1}

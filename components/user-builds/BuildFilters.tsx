@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Search, ChevronDown, X, User, Plus, Award } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { usePopPresence } from '@/hooks/usePopPresence';
 import { useSession } from '@/components/Providers';
 import type { BuildCategory, BuildSortOption } from '@/lib/user-builds-types';
 
@@ -45,6 +46,11 @@ export function BuildFilters({
   const [search, setSearch] = useState(searchQuery);
   const [showCategories, setShowCategories] = useState(false);
   const [showSort, setShowSort] = useState(false);
+  // Each menu stays mounted for its close (globals.css §7.1). The click-catcher
+  // backdrops below stay on the raw flag — a menu on its way out must not keep
+  // swallowing presses meant for the page behind it.
+  const categoryMenu = usePopPresence(showCategories);
+  const sortMenu = usePopPresence(showSort);
 
   // Debounce search
   useEffect(() => {
@@ -111,11 +117,14 @@ export function BuildFilters({
             />
           </button>
 
-          {showCategories && (
+          {categoryMenu.present && (
             <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowCategories(false)} />
+              {showCategories && (
+                <div className="fixed inset-0 z-40" onClick={() => setShowCategories(false)} />
+              )}
               <div
                 data-motion="pop"
+                data-state={categoryMenu.state}
                 className="absolute top-full mt-2 right-0 origin-top-right w-48 glass-overlay py-1 z-50 max-h-64 overflow-y-auto"
               >
                 <button
@@ -167,11 +176,14 @@ export function BuildFilters({
             />
           </button>
 
-          {showSort && (
+          {sortMenu.present && (
             <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowSort(false)} />
+              {showSort && (
+                <div className="fixed inset-0 z-40" onClick={() => setShowSort(false)} />
+              )}
               <div
                 data-motion="pop"
+                data-state={sortMenu.state}
                 className="absolute top-full mt-2 right-0 origin-top-right w-40 glass-overlay py-1 z-50"
               >
                 {SORT_OPTIONS.map((option) => (

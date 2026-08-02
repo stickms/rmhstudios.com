@@ -10,6 +10,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
+import { usePopPresence } from '@/hooks/usePopPresence';
 
 export type MenuPos = { x: number; y: number };
 
@@ -53,6 +54,10 @@ export function LibraryContextMenu({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState<MenuPos>(pos ?? { x: 0, y: 0 });
+  // Keyed by the pointer position rather than a flag, because `pos` is what the
+  // caller nulls to close — holding the last one is what leaves the menu
+  // something to be anchored at while it plays its exit.
+  const { present, state } = usePopPresence(pos);
 
   useEffect(() => {
     if (pos) setCoords(pos);
@@ -72,7 +77,11 @@ export function LibraryContextMenu({
   // hangs off the bottom with its last items unreachable, and it knows nothing
   // about safe areas or the mobile URL bar. This caps it and scrolls the
   // overflow instead, and re-measures whenever the viewport changes.
-  useMenuViewportFit(Boolean(pos), ref, [coords.x, coords.y]);
+  // `present`, not `pos`: the menu is held mounted for its close (globals.css
+  // §7.1) and the clamp has to survive that window, or it snaps back to its
+  // unclamped position for the length of its own exit. The listeners below stay
+  // on `pos` — a menu that is visibly leaving has already stopped listening.
+  useMenuViewportFit(present, ref, [coords.x, coords.y]);
 
   useEffect(() => {
     if (!pos) return;
@@ -92,7 +101,7 @@ export function LibraryContextMenu({
     };
   }, [pos, onClose]);
 
-  if (!pos || typeof document === 'undefined') return null;
+  if (!present || typeof document === 'undefined') return null;
 
   return createPortal(
     <div
@@ -100,6 +109,7 @@ export function LibraryContextMenu({
       className="lib-ctx glass-overlay"
       data-slot="context-menu"
       data-motion="pop"
+      data-state={state}
       role="menu"
       aria-label={label}
       style={{ left: coords.x, top: coords.y }}

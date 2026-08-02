@@ -47,7 +47,14 @@ interface Options {
  * panels resize the screen on a phone.
  */
 export function useMenuViewportFit<T extends HTMLElement>(
-  open: boolean,
+  /**
+   * Truthy while the menu is on screen. Deliberately not `boolean`: the caller
+   * is usually `usePopPresence`'s `present`, which is the caller's own open
+   * VALUE (a pointer position, which item's menu is showing) held through the
+   * close — and the clamp has to stay applied for that window or the panel
+   * snaps back to its unclamped position mid-exit. Only truthiness is read.
+   */
+  open: unknown,
   menuRef: RefObject<T | null>,
   deps: unknown[] = [],
   { margin = 8 }: Options = {},

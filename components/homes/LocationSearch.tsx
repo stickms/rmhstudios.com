@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Loader2, MapPin, Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { usePopPresence } from '@/hooks/usePopPresence';
 
 export interface HomesPlace {
   label: string;
@@ -38,6 +39,10 @@ export function LocationSearch({
   const [open, setOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The RESULTS are what is held through the close, not just a flag: choosing a
+  // suggestion clears the list on the same tick it closes the menu, and a list
+  // that emptied itself mid-exit would collapse to a bare pill on the way out.
+  const list = usePopPresence(open && results.length > 0 ? results : null);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -118,12 +123,13 @@ export function LocationSearch({
         )}
       </div>
 
-      {open && results.length > 0 && (
+      {list.present && (
         <ul
           data-motion="pop"
+          data-state={list.state}
           className="absolute z-30 mt-1.5 max-h-72 w-full origin-top overflow-auto glass-overlay py-1"
         >
-          {results.map((r, i) => (
+          {list.present.map((r, i) => (
             <li key={`${r.lat},${r.lng},${i}`}>
               <button
                 type="button"
