@@ -37,11 +37,13 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useDeviceAttitude } from '@/hooks/useDeviceAttitude';
 import {
   RIPPLE,
   rippleFront,
@@ -54,7 +56,17 @@ import {
 import { fmtCount } from '@/lib/temple-of-joy/numbers';
 import { SOURCE_MAP } from '@/lib/temple-of-joy/data/sources';
 import { MAX_GLOBES } from '@/lib/temple-of-joy/data/globes';
-import { PERSP, hubRadius, kAt, layoutGlobes, placePins } from '@/lib/temple-of-joy/orbit';
+import {
+  MAX_PINS,
+  MERIDIANS,
+  PARALLELS,
+  PERSP,
+  hubRadius,
+  kAt,
+  layoutGlobes,
+  placePins,
+  tiltAngles,
+} from '@/lib/temple-of-joy/orbit';
 import type { SourceId } from '@/lib/temple-of-joy/types';
 import { useTempleSnapshot, useTempleValue } from './hooks';
 import { Glyph } from './ui';
@@ -120,13 +132,33 @@ const WOBBLE_KICK = (() => {
 /** How quickly the hub eases to its new size when the field gains a globe. */
 const RESIZE_RATE = 6;
 
+/* ── Tilt ──────────────────────────────────────────────────────────────────
+   On a phone the globes also answer the phone itself: turn it and the field
+   turns with you, as though the spheres were hanging in the room rather than
+   printed on the screen. It is composed ON TOP of the drag and the drift
+   rather than replacing them — a phone can only be turned so far before its
+   screen is out of sight, so the tilt is a lean, and a thumb is still how you
+   get all the way round.
+
+   `useDeviceAttitude` owns the sensor, the consent (the site-wide "Tilt
+   effects" switch) and the iOS permission gate; this only has to decide how
+   much of it to apply. */
+
+/** How far the field leans per degree of device rotation. */
+const TILT_GAIN = 0.85;
+/** Ceiling on the lean, in degrees, so the far side is never tilt-only. */
+const TILT_YAW_LIMIT = 52;
+const TILT_PITCH_LIMIT = 34;
+
 /* ── The cage ──────────────────────────────────────────────────────────────
-   Meridians and parallels in degrees. Two sets: the hub gets the full thirteen
-   rings the site's globes are drawn from, and a satellite — a third the radius,
-   where the extra rings resolve to a grey smudge — gets six at half the
-   samples. Same geometry, same projection, a fifth of the work. */
-const MERIDIANS_FULL = [0, 30, 60, 90, 120, 150];
-const PARALLELS_FULL = [-60, -40, -20, 0, 20, 40, 60];
+   Two levels of detail over ONE definition: the hub gets the full thirteen
+   rings every liquid globe on this site is drawn from (`orbit.ts` §The cage —
+   shared with the ball on the lane, which is this same object in three
+   dimensions), and a satellite — a third the radius, where the extra rings
+   resolve to a grey smudge — gets a third of them at half the samples. Same
+   geometry, same projection, a fifth of the work. */
+const MERIDIANS_FULL = MERIDIANS;
+const PARALLELS_FULL = PARALLELS;
 const MERIDIANS_LITE = [0, 60, 120];
 const PARALLELS_LITE = [-35, 0, 35];
 const SAMPLES_FULL = 72;
@@ -188,6 +220,12 @@ function createMotion(index: number): GlobeMotion {
 
 export interface TempleGlobesProps {
   /**
+   * Handed the tilt control so the room can put the switch somewhere with space
+   * for it. It used to live in the corner of the field, which on a 375px phone
+   * is directly on top of the hub.
+   */
+  onTilt?: (attitude: ReturnType<typeof useDeviceAttitude>) => void;
+  /**
    * A globe was struck at this point on the page. The sanctum turns it into joy
    * and a "+N" — this component only knows about spheres.
    */
@@ -204,7 +242,7 @@ export interface TempleGlobesProps {
   children?: React.ReactNode;
 }
 
-export function TempleGlobes({ onStrike, children }: TempleGlobesProps) {
+export function TempleGlobes({ onStrike, onTilt, children }: TempleGlobesProps) {
   const { t } = useTranslation('c-temple-of-joy');
   const reduced = useReducedMotion();
 
@@ -259,6 +297,17 @@ export function TempleGlobes({ onStrike, children }: TempleGlobesProps) {
     return map;
   }, [counts]);
 
+  /**
+   * How big the field is, as one of four coarse bands.
+   *
+   * State rather than a ref because it decides how many pins the field carries,
+   * which is a render. Banded rather than the raw pixel count because crossing
+   * a band is the only thing that changes anything, and this is written from a
+   * ResizeObserver — a rotation or a keyboard opening should not re-place the
+   * whole congregation on every intermediate width.
+   */
+  const [fieldStep, setFieldStep] = useState(3);
+
   const pins = useMemo(() => {
     const owned: Partial<Record<SourceId, number>> = {};
     for (const entry of ownedKey.split(',')) {
@@ -266,8 +315,11 @@ export function TempleGlobes({ onStrike, children }: TempleGlobesProps) {
       const [id] = entry.split(':');
       if (id) owned[id as SourceId] = 1;
     }
-    return placePins(owned, globeCount);
-  }, [ownedKey, globeCount]);
+    // A small field carries fewer: at 170px across, sixteen icons cover the
+    // sphere entirely and none of them can be read.
+    const cap = [5, 8, 12, MAX_PINS][fieldStep] ?? MAX_PINS;
+    return placePins(owned, globeCount, cap);
+  }, [ownedKey, globeCount, fieldStep]);
 
   /* ── Elements the frame loop owns ─────────────────────────────────────── */
 
@@ -301,6 +353,35 @@ export function TempleGlobes({ onStrike, children }: TempleGlobesProps) {
   const drag = useRef({ active: false, id: -1, globe: -1, x: 0, y: 0, moved: 0 });
   /** Set when a release has already been spent on a drag. */
   const spent = useRef(false);
+  /**
+   * The lean the phone is currently held at, in degrees. Written by the sensor
+   * (off the React path entirely — it arrives at sensor rate) and added to the
+   * hub's own rotation when it is drawn.
+   */
+  const tilt = useRef({ yaw: 0, pitch: 0 });
+
+  const attitude = useDeviceAttitude({
+    gain: TILT_GAIN,
+    onRotate: (q) => {
+      const { yaw, pitch } = tiltAngles(q);
+      tilt.current.yaw = clamp(yaw, -TILT_YAW_LIMIT, TILT_YAW_LIMIT);
+      tilt.current.pitch = clamp(pitch, -TILT_PITCH_LIMIT, TILT_PITCH_LIMIT);
+    },
+    // The sensor going away must not leave the field frozen mid-lean.
+    onRest: () => {
+      tilt.current.yaw = 0;
+      tilt.current.pitch = 0;
+    },
+  });
+
+  // Published upward so the room can render the switch. An effect rather than a
+  // render-time call: `attitude` is a memo that only changes when the sensor's
+  // state does, which is what a parent wants to re-render on.
+  const onTiltRef = useRef(onTilt);
+  onTiltRef.current = onTilt;
+  useEffect(() => {
+    onTiltRef.current?.(attitude);
+  }, [attitude]);
 
   /** Read by the frame loop; mirrored into refs so it never re-runs the effect. */
   const countRef = useRef(globeCount);
@@ -322,6 +403,10 @@ export function TempleGlobes({ onStrike, children }: TempleGlobesProps) {
       // whatever radius that frame happened to have.
       const size = el.offsetWidth || 320;
       sizeRef.current = size;
+      // Four coarse bands rather than the raw pixel count: crossing one is the
+      // only thing that changes what the field carries, and this runs from a
+      // ResizeObserver.
+      setFieldStep(size < 190 ? 0 : size < 260 ? 1 : size < 340 ? 2 : 3);
 
       const canvas = canvasRef.current;
       if (!canvas) return;
@@ -700,6 +785,10 @@ export function TempleGlobes({ onStrike, children }: TempleGlobesProps) {
       const count = countRef.current;
       const quiet = calmRef.current;
       const rolling = awayRef.current;
+      // How big everything standing ON the field is drawn, relative to the
+      // 320px the pin's rem sizes were chosen at. Floored so a tiny field's
+      // icons stay legible and capped so a large one's do not bloat.
+      const fieldScale = clamp(size / 320, 0.62, 1.12);
 
       /* 1. The field. The hub eases to its new size when a globe is bought, so
             the purchase reads as the sanctum making room rather than as a
@@ -778,13 +867,17 @@ export function TempleGlobes({ onStrike, children }: TempleGlobesProps) {
           if (!place || !m) continue;
           primeWaves(m.ripples, now);
           const wob = m.wobble;
+          // The lean applies to the hub in full and to the satellites at a
+          // fraction, so tilting the phone reads as parallax through a field
+          // rather than as one flat sheet being rotated.
+          const lean = i === 0 ? 1 : 0.55;
           drawGlobe(
             ctx,
             place.cx * size,
             place.cy * size,
             place.r * size,
-            m.yaw + (wob ? wob.yaw : 0),
-            m.pitch + (wob ? wob.pitch : 0),
+            m.yaw + (wob ? wob.yaw : 0) + tilt.current.yaw * lean,
+            m.pitch + (wob ? wob.pitch : 0) + tilt.current.pitch * lean,
             place.detailed,
             m.ripples,
             now,
@@ -822,8 +915,11 @@ export function TempleGlobes({ onStrike, children }: TempleGlobesProps) {
 
         primeWaves(m.ripples, now);
         const wob = m.wobble;
-        const yaw = m.yaw + (wob ? wob.yaw : 0);
-        const pitch = m.pitch + (wob ? wob.pitch : 0);
+        // The same lean the cage was drawn with — a pin is standing ON that
+        // surface, and the two must not be projected from different rotations.
+        const lean = pin.globe === 0 ? 1 : 0.55;
+        const yaw = m.yaw + (wob ? wob.yaw : 0) + tilt.current.yaw * lean;
+        const pitch = m.pitch + (wob ? wob.pitch : 0) + tilt.current.pitch * lean;
         const cyaw = Math.cos(yaw * DEG);
         const syaw = Math.sin(yaw * DEG);
         const cpit = Math.cos(pitch * DEG);
@@ -839,9 +935,10 @@ export function TempleGlobes({ onStrike, children }: TempleGlobesProps) {
 
         const x = place.cx * size + x1 * R * k * swell;
         const y = place.cy * size + y2 * R * k * swell;
-        // Scaled by how big its globe is as well as by depth, so a pin on a
-        // satellite is a small pin rather than a hub-sized icon on a marble.
-        const scale = k * (0.55 + 1.1 * place.r);
+        // Scaled by how big its globe is, by depth, AND by how big the field
+        // itself is: a pin drawn at its desktop size on a phone-sized sphere is
+        // a third of that sphere's width, and a dozen of them hide it entirely.
+        const scale = k * (0.55 + 1.1 * place.r) * fieldScale;
         el.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0) scale(${scale.toFixed(3)})`;
         // The far hemisphere stays faintly visible — it is what says there is
         // more globe to turn to — but it never takes a pointer (nothing here
@@ -1194,4 +1291,8 @@ export function TempleGlobes({ onStrike, children }: TempleGlobesProps) {
 
 function clamp01(v: number): number {
   return v < 0 ? 0 : v > 1 ? 1 : v;
+}
+
+function clamp(v: number, lo: number, hi: number): number {
+  return v < lo ? lo : v > hi ? hi : v;
 }

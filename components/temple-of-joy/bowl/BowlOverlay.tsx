@@ -31,6 +31,7 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useTranslation } from 'react-i18next';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { supportsWebGL } from '@/lib/shared/platform';
+import { motionCapableDevice, requestDeviceMotionAccess } from '@/lib/device-attitude';
 import { VelocityTracker } from '@/lib/fluid';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
@@ -41,6 +42,7 @@ import {
   BOWL_PINS,
   bowlMultiplier,
 } from '@/lib/temple-of-joy/bowling';
+import { createSwing, feedSwing, resetSwing } from '@/lib/temple-of-joy/swing';
 import { useTempleValue } from '../hooks';
 import { TempleButton, Glyph } from '../ui';
 import type { LaneControls, LanePalette } from './BowlLane';
@@ -203,6 +205,82 @@ function Alley() {
     powerFillRef.current?.style.setProperty('--toj-power', p.toFixed(3));
   }, []);
 
+  /* ── The swing ────────────────────────────────────────────────────────────
+     On a phone you can put the sliders down and actually bowl: set the line,
+     press "Swing to bowl", then wind back and swing the phone like an arm. The
+     detection is `lib/temple-of-joy/swing.ts` — peak acceleration is the power,
+     the wrist turn at that peak is the hook.
+
+     It is a third way in, never the only one. The sliders and the Roll button
+     stay exactly where they are, so nothing here is load-bearing for anybody
+     who cannot (or would rather not) swing a phone across a room. */
+
+  const swingable = useMemo(() => motionCapableDevice(), []);
+  const [swingArmed, setSwingArmed] = useState(false);
+  const swing = useRef(createSwing());
+  /** Set while a throw is being applied, so one swing cannot roll twice. */
+  const swingSpent = useRef(false);
+
+  const armSwing = useCallback(async () => {
+    if (swingArmed) {
+      setSwingArmed(false);
+      return;
+    }
+    // Straight from the click, with nothing awaited first, or Safari stops
+    // counting it as a user gesture and refuses the sensor.
+    const granted = await requestDeviceMotionAccess();
+    if (!granted) return;
+    resetSwing(swing.current);
+    swingSpent.current = false;
+    setSwingArmed(true);
+  }, [swingArmed]);
+
+  useEffect(() => {
+    // Only listen while there is a ball to throw. Between the frame ending and
+    // the overlay closing, a phone put back in a pocket is a large acceleration.
+    if (!swingArmed || (phase !== 'aim' && phase !== 'between')) return;
+
+    resetSwing(swing.current);
+    swingSpent.current = false;
+
+    const onMotion = (event: DeviceMotionEvent) => {
+      if (swingSpent.current) return;
+      // `acceleration` is gravity-free where the platform provides it; where it
+      // does not, the swing detector low-passes gravity out of the other one.
+      const clean = event.acceleration;
+      const raw = clean ?? event.accelerationIncludingGravity;
+      if (!raw || raw.x == null || raw.y == null || raw.z == null) return;
+
+      const thrown = feedSwing(swing.current, {
+        x: raw.x,
+        y: raw.y,
+        z: raw.z,
+        gravityFree: Boolean(clean && clean.x != null),
+        twist: event.rotationRate?.alpha ?? 0,
+        t: performance.now(),
+      });
+      if (!thrown) return;
+
+      swingSpent.current = true;
+      controls.current.power = thrown.power;
+      controls.current.spin = thrown.spin;
+      setPower(thrown.power);
+      setSpin(thrown.spin);
+      paintControls();
+      templeAudio.buzz([12, 24, 40]);
+      roll();
+    };
+
+    window.addEventListener('devicemotion', onMotion);
+    return () => window.removeEventListener('devicemotion', onMotion);
+  }, [swingArmed, phase, paintControls, roll]);
+
+  // A ball that has left the hand re-arms the detector for the next one, rather
+  // than making the player press the button again between the two rolls.
+  useEffect(() => {
+    if (phase === 'between' || phase === 'aim') swingSpent.current = false;
+  }, [phase]);
+
   const swipe = useRef({ active: false, id: -1, x0: 0, y0: 0, w: 1, h: 1 });
   const velocity = useRef(new VelocityTracker());
 
@@ -309,11 +387,17 @@ function Alley() {
               : t('bowl-status-gutter', {
                   defaultValue: 'Nothing down. No boost — but your hands stay free.',
                 })
-          : t('bowl-status-aim', {
-              ball,
-              balls: BOWL_BALLS,
-              defaultValue: 'Ball {{ball}} of {{balls}}. Set your line and roll.',
-            });
+          : swingArmed
+            ? t('bowl-status-swing', {
+                ball,
+                balls: BOWL_BALLS,
+                defaultValue: 'Ball {{ball}} of {{balls}}. Wind back and swing the phone.',
+              })
+            : t('bowl-status-aim', {
+                ball,
+                balls: BOWL_BALLS,
+                defaultValue: 'Ball {{ball}} of {{balls}}. Set your line and roll.',
+              });
 
   return (
     <div className="toj-bowl" ref={rootRef}>
@@ -392,9 +476,11 @@ function Alley() {
           </span>
 
           <p className="toj-bowl-hint" aria-hidden>
-            {phase === 'aim' || phase === 'between'
-              ? t('bowl-hint', { defaultValue: 'Swipe up the lane to roll' })
-              : ''}
+            {phase !== 'aim' && phase !== 'between'
+              ? ''
+              : swingArmed
+                ? t('bowl-hint-swing', { defaultValue: 'Swing the phone to roll' })
+                : t('bowl-hint', { defaultValue: 'Swipe up the lane to roll' })}
           </p>
         </div>
 
@@ -490,16 +576,37 @@ function Alley() {
               }}
             />
 
-            <TempleButton
-              variant="gold"
-              ready={phase !== 'rolling'}
-              disabled={phase === 'rolling' || !webgl}
-              onClick={roll}
-            >
-              {phase === 'between'
-                ? t('bowl-roll-again', { defaultValue: 'Roll the second ball' })
-                : t('bowl-roll', { defaultValue: 'Roll' })}
-            </TempleButton>
+            <div className="toj-bowl-throw">
+              <TempleButton
+                variant="gold"
+                ready={phase !== 'rolling'}
+                disabled={phase === 'rolling' || !webgl}
+                onClick={roll}
+              >
+                {phase === 'between'
+                  ? t('bowl-roll-again', { defaultValue: 'Roll the second ball' })
+                  : t('bowl-roll', { defaultValue: 'Roll' })}
+              </TempleButton>
+
+              {/* Offered only where there is an accelerometer to swing. The
+                  press is also the iOS permission prompt, which is why it is a
+                  button and not a setting. */}
+              {swingable && (
+                <TempleButton
+                  variant={swingArmed ? 'gold' : 'plain'}
+                  aria-pressed={swingArmed}
+                  disabled={phase === 'rolling' || !webgl}
+                  onClick={() => {
+                    void armSwing();
+                  }}
+                >
+                  <Glyph>🤾</Glyph>
+                  {swingArmed
+                    ? t('bowl-swing-armed', { defaultValue: 'Swing now' })
+                    : t('bowl-swing', { defaultValue: 'Swing to bowl' })}
+                </TempleButton>
+              )}
+            </div>
           </fieldset>
         )}
       </div>

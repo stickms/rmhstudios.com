@@ -20,9 +20,12 @@ import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { fmt, formatDuration } from '@/lib/temple-of-joy/numbers';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
 import { computeBowlReady, computeCanAscend } from '@/lib/temple-of-joy/engine';
+import type { useDeviceAttitude } from '@/hooks/useDeviceAttitude';
 import { useTempleSnapshot, useTempleValue } from './hooks';
 import { TempleButton, Glyph } from './ui';
 import { TempleGlobes } from './TempleGlobes';
+
+type Attitude = ReturnType<typeof useDeviceAttitude>;
 
 /** "+N" floating up from where the player struck. */
 interface Burst {
@@ -43,6 +46,12 @@ export function TempleSanctum() {
   const burstId = useRef(0);
 
   const rapture = useTempleValue((s) => s.rapture);
+  /**
+   * The globe field's tilt control, published up so the switch can live in the
+   * standing-actions row rather than in the corner of the field — on a 375px
+   * phone that corner is directly on top of the hub.
+   */
+  const [tilt, setTilt] = useState<Attitude | null>(null);
 
   /* ── The offering ─────────────────────────────────────────────────────── */
 
@@ -91,7 +100,7 @@ export function TempleSanctum() {
       <Motes />
       <Buffs />
 
-      <TempleGlobes onStrike={strike}>
+      <TempleGlobes onStrike={strike} onTilt={setTilt}>
         <Sinners />
       </TempleGlobes>
 
@@ -107,7 +116,7 @@ export function TempleSanctum() {
       ))}
 
       <Halos />
-      <Rites />
+      <Rites tilt={tilt} />
     </div>
   );
 }
@@ -300,7 +309,7 @@ function Sinners() {
 /* ─── Standing actions ──────────────────────────────────────────────────── */
 
 /** The things you can do from the room rather than from a panel. */
-function Rites() {
+function Rites({ tilt }: { tilt: Attitude | null }) {
   const { t } = useTranslation('c-temple-of-joy');
   const state = useTempleSnapshot(
     (s) => ({
@@ -315,6 +324,29 @@ function Rites() {
 
   return (
     <div className="toj-rites">
+      {/*
+        The tilt switch, where a sensor is worth offering at all. It has to BE
+        the gesture — iOS hands over the orientation event only from inside a
+        real tap — so it is a button rather than a settings row, and the first
+        press is the permission prompt and the switch at once.
+      */}
+      {tilt?.supported && (
+        <TempleButton
+          variant="plain"
+          size="sm"
+          tone="tick"
+          aria-pressed={tilt.enabled}
+          onClick={() => {
+            void tilt.toggle();
+          }}
+        >
+          <Glyph>{tilt.enabled ? '🧭' : '📱'}</Glyph>
+          {tilt.enabled
+            ? t('tilt-on', { defaultValue: 'Tilt on' })
+            : t('tilt-off', { defaultValue: 'Turn with the phone' })}
+        </TempleButton>
+      )}
+
       {state.boost > 0 && (
         <p className="toj-rite-note" data-kind="bowl">
           <Glyph>🎳</Glyph>

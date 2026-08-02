@@ -12,6 +12,7 @@ import { useTempleStore } from './store';
 import { createInitialState } from './store';
 import { ZERO_SOURCES } from './data/sources';
 import { MAX_GLOBES } from './data/globes';
+import { reserveId } from './ids';
 import {
   BOWL_BOOST_SECONDS,
   BOWL_COOLDOWN_SECONDS,
@@ -130,7 +131,7 @@ export function saveToState(save: SaveData): Partial<GameState> {
     halosCaught: num(save.halosCaught),
     haloStreak: num(save.haloStreak),
     rapture: Math.max(0, Math.min(3, num(save.rapture))),
-    sinners: save.sinners ?? [],
+    sinners: reviveSinners(save.sinners),
     sinnersStruck: num(save.sinnersStruck),
     sinnerHarvest: num(save.sinnerHarvest),
     buffs: save.buffs ?? [],
@@ -174,6 +175,19 @@ function reviveGarden(saved: GameState['garden'] | undefined): GameState['garden
     if (plot && typeof plot === 'object') plots[i] = { ...plots[i]!, ...plot };
   });
   return { ...base, ...saved, plots };
+}
+
+/**
+ * The Sinners, with their ids taken out of circulation.
+ *
+ * They are the only entities that survive a save carrying a minted id, so this
+ * is the one place the id counter has to be told what a previous session
+ * already used — see `ids.ts` §reserveId.
+ */
+function reviveSinners(saved: GameState['sinners'] | undefined): GameState['sinners'] {
+  const sinners = saved ?? [];
+  for (const sinner of sinners) reserveId(sinner?.id);
+  return sinners;
 }
 
 /**

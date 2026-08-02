@@ -36,14 +36,7 @@ import {
   RigidBody,
   type RapierRigidBody,
 } from '@react-three/rapier';
-import {
-  BufferGeometry,
-  LatheGeometry,
-  SphereGeometry,
-  Vector2,
-  Vector3,
-  WireframeGeometry,
-} from 'three';
+import { BufferAttribute, BufferGeometry, LatheGeometry, Vector2, Vector3 } from 'three';
 import {
   BALL_MASS,
   DECK_DEPTH,
@@ -59,6 +52,7 @@ import {
   pinStanding,
   release,
 } from '@/lib/temple-of-joy/lane';
+import { MERIDIANS, PARALLELS, ringPoints } from '@/lib/temple-of-joy/orbit';
 
 /** How the lane is lit and painted. Resolved from the temple's own tokens. */
 export interface LanePalette {
@@ -315,6 +309,7 @@ function Scene({
         maxCcdSubsteps={2}
       >
         <Lane palette={palette} />
+        <Nave palette={palette} />
 
         {/*
           Mass, friction and restitution belong to the COLLIDER, not to the body
@@ -383,12 +378,19 @@ function length(v: { x: number; y: number; z: number }): number {
 function Lighting({ palette }: { palette: LanePalette }) {
   return (
     <>
-      <ambientLight intensity={0.65} color={palette.ground} />
-      {/* Warm from above the deck — the alley is lit from where the pins are,
-          which is what makes the far end read as the place to look. */}
-      <directionalLight position={[2, 9, LANE_LENGTH - 2]} intensity={1.5} color={palette.gold} />
-      <directionalLight position={[-3, 5, -4]} intensity={0.5} color={palette.goldBright} />
-      <hemisphereLight args={[palette.goldBright, palette.ground, 0.4]} />
+      <ambientLight intensity={0.6} color={palette.ground} />
+      {/* The rose window over the pit. Warm, from high behind the deck, which
+          is what makes the far end of the nave read as the place to look. */}
+      <directionalLight position={[0, 8, LANE_LENGTH + 4]} intensity={1.6} color={palette.gold} />
+      {/* Clerestory: light coming in over the arcade from one side, so the
+          columns cast the nave's own rhythm across the boards. */}
+      <directionalLight
+        position={[-7, 9, LANE_LENGTH * 0.4]}
+        intensity={0.7}
+        color={palette.goldBright}
+      />
+      <directionalLight position={[5, 6, -5]} intensity={0.35} color={palette.goldBright} />
+      <hemisphereLight args={[palette.goldBright, palette.ground, 0.35]} />
     </>
   );
 }
@@ -442,32 +444,186 @@ function Lane({ palette }: { palette: LanePalette }) {
         </group>
       ))}
 
-      {/* The back of the pit, so a ball and its pins stop somewhere. Wider than
-          the lane and taller than the camera ever looks, so the deck reads as
-          the end of a room rather than as a plank standing in a void. */}
+      {/* The back of the pit, so a ball and its pins stop somewhere. The WALL
+          behind it is the apse's — see `Nave`; this is only the stop. */}
       <CuboidCollider
         args={[LANE_WIDTH / 2 + GUTTER_WIDTH + 0.1, 1, 0.1]}
         position={[0, 0.9, LANE_LENGTH + DECK_DEPTH + 0.6]}
       />
-      {/* Wide enough and tall enough to BE the end of the room from every angle
-          the camera takes. At seven metres the floor ran on past it on both
-          sides and the horizon read as a cliff edge. */}
-      <mesh position={[0, 1.9, LANE_LENGTH + DECK_DEPTH + 0.72]}>
-        <boxGeometry args={[16, 4.6, 0.12]} />
-        <meshStandardMaterial color={palette.gutter} roughness={0.85} />
-      </mesh>
+      <Markings palette={palette} />
+    </RigidBody>
+  );
+}
 
-      {/* The floor the whole alley stands on. Without it the lane is a plank
-          hanging in a void, and the eye reads the empty background as a hole
-          rather than as a room. It carries no collider — nothing in this scene
-          is ever meant to reach it. */}
+/* ─── The nave ──────────────────────────────────────────────────────────────
+   The lane is not in a bowling alley. It runs down the middle of the temple —
+   a colonnade either side, a rose window over the pit, candles at every
+   column — because the whole mechanic is "take the globes off their axis and
+   roll them down the aisle", and a strip-lit alley would have made that a
+   different, much smaller joke.
+
+   None of it has a collider. The lane's own walls already bound the ball, so
+   every one of these is paint: eighteen boxes, two lathes, a torus and a fan
+   of quads, which is nothing to draw and the difference between a plank in a
+   void and a room worth rolling down. */
+
+/** How far out from the lane's centre the columns stand. */
+const AISLE_HALF = 3;
+/** Column spacing down the nave. */
+const BAY = 3.4;
+/** Floor to the springing of the arches. */
+const COLUMN_HEIGHT = 5.2;
+
+function Nave({ palette }: { palette: LanePalette }) {
+  const bays = useMemo(() => {
+    const out: number[] = [];
+    // Starts just behind the foul line rather than behind the camera: a column
+    // at z = −2 filled a third of the frame from the approach and the player
+    // was aiming past a pillar.
+    for (let z = -0.6; z < LANE_LENGTH + DECK_DEPTH; z += BAY) out.push(z);
+    return out;
+  }, []);
+
+  /** A column's profile, turned on a lathe: base, shaft with entasis, capital. */
+  const column = useMemo(() => {
+    const h = COLUMN_HEIGHT;
+    const profile: [number, number][] = [
+      [0, 0],
+      [0.42, 0],
+      [0.42, 0.16],
+      [0.3, 0.3],
+      [0.28, h * 0.2],
+      // Entasis: a straight shaft reads as pinched in the middle, so real ones
+      // swell. It costs one extra point.
+      [0.3, h * 0.45],
+      [0.26, h * 0.86],
+      [0.36, h * 0.93],
+      [0.4, h],
+      [0, h],
+    ];
+    return new LatheGeometry(
+      profile.map(([x, y]) => new Vector2(x, y)),
+      12,
+    );
+  }, []);
+  useEffect(() => () => column.dispose(), [column]);
+
+  return (
+    <group>
+      {/* The floor the whole nave stands on. Without it the lane is a plank
+          hanging in a void and the eye reads the background as a hole. */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.42, LANE_LENGTH * 0.4]}>
-        <planeGeometry args={[16, LANE_LENGTH * 2.4]} />
+        <planeGeometry args={[26, LANE_LENGTH * 2.4]} />
         <meshStandardMaterial color={palette.ground} roughness={0.95} />
       </mesh>
 
-      <Markings palette={palette} />
-    </RigidBody>
+      {bays.map((z) =>
+        [-1, 1].map((side) => (
+          <group key={`${z}-${side}`} position={[side * AISLE_HALF, -0.42, z]}>
+            <mesh geometry={column}>
+              <meshStandardMaterial color={palette.pin} roughness={0.62} />
+            </mesh>
+            {/* A candle on every column. Two draws: the wax and the flame.
+                No light source — a real one per bay would be forty lights on a
+                phone, and at this distance the emissive quad is the effect. */}
+            <mesh position={[side * -0.34, 1.15, 0]}>
+              <cylinderGeometry args={[0.05, 0.05, 0.34, 6]} />
+              <meshStandardMaterial color={palette.pin} roughness={0.8} />
+            </mesh>
+            <mesh position={[side * -0.34, 1.4, 0]}>
+              <sphereGeometry args={[0.075, 8, 6]} />
+              <meshBasicMaterial color={palette.goldBright} />
+            </mesh>
+          </group>
+        )),
+      )}
+
+      {/* The arcade: a round arch spanning each bay, along both sides. Half a
+          torus, which is exactly what a Romanesque arch is. */}
+      {bays.slice(0, -1).map((z, i) =>
+        [-1, 1].map((side) => (
+          <mesh
+            key={`arch-${i}-${side}`}
+            position={[side * AISLE_HALF, COLUMN_HEIGHT - 0.42, z + BAY / 2]}
+            rotation={[0, Math.PI / 2, 0]}
+          >
+            <torusGeometry args={[BAY / 2, 0.1, 6, 18, Math.PI]} />
+            <meshStandardMaterial color={palette.pin} roughness={0.62} />
+          </mesh>
+        )),
+      )}
+
+      {/* The vault, as one plane. The camera rarely looks up, but with nothing
+          there the top of every frame is empty background and the nave reads as
+          a colonnade standing in a field. */}
+      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, COLUMN_HEIGHT + 1.6, LANE_LENGTH * 0.4]}>
+        <planeGeometry args={[26, LANE_LENGTH * 2.4]} />
+        <meshStandardMaterial color={palette.gutter} roughness={1} />
+      </mesh>
+
+      <Apse palette={palette} />
+    </group>
+  );
+}
+
+/**
+ * The east end: the wall behind the pit, a rose window over it, and the ribs
+ * of the vault running up to it.
+ *
+ * The window is the one piece of colour in the whole scene, and it is where the
+ * eye ends up anyway — it sits directly over the rack, so the shot you are
+ * waiting on is framed by it.
+ */
+function Apse({ palette }: { palette: LanePalette }) {
+  const z = LANE_LENGTH + DECK_DEPTH + 0.72;
+
+  return (
+    <group>
+      {/* The wall. Wide and tall enough to BE the end of the room from every
+          angle the camera takes — at seven metres the floor ran past it on both
+          sides and the horizon read as a cliff edge. */}
+      <mesh position={[0, 2.4, z]}>
+        <boxGeometry args={[16, 6.4, 0.12]} />
+        <meshStandardMaterial color={palette.gutter} roughness={0.88} />
+      </mesh>
+
+      {/* The rose window: a lit disc, a tracery ring, and eight lights around
+          it. `meshBasicMaterial` throughout — it is glass with the sun behind
+          it, so it should not take the room's lighting. */}
+      {/*
+        Turned to face back down the nave. A `circleGeometry` (and a
+        `planeGeometry`) faces +Z, and the camera looks down +Z at this wall —
+        so left alone every window here presents its BACK to the room and is
+        culled, which is why the rose was an empty ring on the first pass.
+      */}
+      <group position={[0, 3.6, z - 0.08]} rotation={[0, Math.PI, 0]}>
+        <mesh>
+          <circleGeometry args={[1.15, 28]} />
+          <meshBasicMaterial color={palette.goldBright} />
+        </mesh>
+        <mesh position={[0, 0, 0.01]}>
+          <torusGeometry args={[1.15, 0.07, 6, 28]} />
+          <meshStandardMaterial color={palette.pin} roughness={0.6} />
+        </mesh>
+        {Array.from({ length: 8 }, (_, i) => {
+          const a = (i / 8) * Math.PI * 2;
+          return (
+            <mesh key={i} position={[Math.cos(a) * 0.62, Math.sin(a) * 0.62, 0.02]}>
+              <circleGeometry args={[0.24, 14]} />
+              <meshBasicMaterial color={i % 2 ? palette.gold : palette.board} />
+            </mesh>
+          );
+        })}
+      </group>
+
+      {/* Two lancet windows flanking it, so the wall is not one flat slab. */}
+      {[-2.6, 2.6].map((x) => (
+        <mesh key={x} position={[x, 2.1, z - 0.08]} rotation={[0, Math.PI, 0]}>
+          <planeGeometry args={[0.7, 2.4]} />
+          <meshBasicMaterial color={palette.gold} />
+        </mesh>
+      ))}
+    </group>
   );
 }
 
@@ -520,18 +676,53 @@ function Markings({ palette }: { palette: LanePalette }) {
 }
 
 /**
- * The ball: the same liquid globe the sanctum turns, rendered in three
- * dimensions — a glass sphere with the wireframe cage suspended inside it.
+ * The ball IS the liquid globe.
  *
- * The cage is a `WireframeGeometry` over a low-band sphere rather than the
- * thirteen great circles the 2D globe draws, because at this size and this
- * speed the two are indistinguishable and one of them is a single draw call.
+ * Not an approximation of it: the cage is built from the very rings the sanctum
+ * strokes onto its canvas — `MERIDIANS` and `PARALLELS` out of `orbit.ts`,
+ * sampled by the same `ringPoints` — so the thing rolling down the lane is
+ * recognisably the same object you have been striking all game, seen from
+ * outside for the first time. That recognition is the whole reason the mechanic
+ * is bowling and not, say, darts.
+ *
+ * A `WireframeGeometry` over a low-band sphere was the first attempt and it was
+ * wrong in a way that mattered: a UV sphere's wireframe is a *lattice* of
+ * quads, dozens of rings dense at the poles, where the globe's cage is six
+ * great circles and seven parallels. Same idea, entirely different object.
+ *
+ * Thirteen rings are one `lineSegments` draw: they are concatenated into a
+ * single position buffer with a degenerate-free segment list, rather than
+ * thirteen meshes the renderer has to sort.
  */
 function Globe({ radius, palette }: { radius: number; palette: LanePalette }) {
-  const cage = useMemo<BufferGeometry>(
-    () => new WireframeGeometry(new SphereGeometry(radius * 1.002, 14, 9)),
-    [radius],
-  );
+  const cage = useMemo<BufferGeometry>(() => {
+    /** Samples per ring. The ball is small on screen; the cage is not the focus. */
+    const SAMPLES = 40;
+    const rings: Float32Array[] = [
+      ...MERIDIANS.map((a) => ringPoints('meridian', a, SAMPLES)),
+      ...PARALLELS.map((a) => ringPoints('parallel', a, SAMPLES)),
+    ];
+
+    // Each ring of N+1 points becomes N line SEGMENTS (2 vertices each), so the
+    // rings never join to one another across the buffer.
+    const segments = rings.length * SAMPLES;
+    const positions = new Float32Array(segments * 6);
+    let o = 0;
+    for (const ring of rings) {
+      for (let i = 0; i < SAMPLES; i++) {
+        for (const end of [i, i + 1]) {
+          positions[o++] = ring[end * 3]! * radius;
+          positions[o++] = ring[end * 3 + 1]! * radius;
+          positions[o++] = ring[end * 3 + 2]! * radius;
+        }
+      }
+    }
+
+    const geometry = new BufferGeometry();
+    geometry.setAttribute('position', new BufferAttribute(positions, 3));
+    return geometry;
+  }, [radius]);
+
   // Geometry is not garbage collected with the React tree — WebGL buffers are
   // released only by `dispose()`, and a ball that changes size when a globe is
   // bought would otherwise leak one cage per purchase.
@@ -539,18 +730,20 @@ function Globe({ radius, palette }: { radius: number; palette: LanePalette }) {
 
   return (
     <group>
+      {/* The glass body, a hair inside the cage so the wireframe reads as
+          structure suspended IN it rather than as a decal on the surface. */}
       <mesh>
-        <sphereGeometry args={[radius, 32, 24]} />
+        <sphereGeometry args={[radius * 0.985, 32, 24]} />
         <meshStandardMaterial
           color={palette.goldBright}
-          roughness={0.12}
-          metalness={0.25}
+          roughness={0.1}
+          metalness={0.3}
           transparent
-          opacity={0.5}
+          opacity={0.42}
         />
       </mesh>
       <lineSegments geometry={cage}>
-        <lineBasicMaterial color={palette.gold} transparent opacity={0.75} />
+        <lineBasicMaterial color={palette.gold} transparent opacity={0.85} />
       </lineSegments>
     </group>
   );

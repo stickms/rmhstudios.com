@@ -19,3 +19,20 @@ let counter = 1;
 export function nextId(): number {
   return counter++;
 }
+
+/**
+ * Promise never to mint `id` again.
+ *
+ * The counter starts at 1 every time the page loads, but a SAVE carries ids
+ * that were minted in an earlier session — a Sinner latched onto the temple
+ * last night is still id 7 when it is loaded back this morning. Without this
+ * the next Sinner to arrive is also id 7: two React children with the same key
+ * in the ring, and `strikeSinner(7)` reaching whichever one the array happens
+ * to find first.
+ *
+ * So everything that comes back from a save is reserved on the way in, and the
+ * counter resumes above the highest of them.
+ */
+export function reserveId(id: number): void {
+  if (Number.isFinite(id) && id >= counter) counter = Math.floor(id) + 1;
+}

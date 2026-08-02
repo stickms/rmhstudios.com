@@ -39,7 +39,10 @@ import { doAscend, doBuyGlobe, doFinishFrame, doTouch } from '../actions';
 import { applyTick, applyVigil } from '../tick';
 import { readSave, stateToSave } from '../persistence';
 import { LANE_WIDTH, PIN_SPOTS, countStanding, pinStanding, release } from '../lane';
-import { MAX_PINS, hubRadius, layoutGlobes, placePins } from '../orbit';
+import { MAX_PINS, hubRadius, layoutGlobes, placePins, tiltAngles } from '../orbit';
+import { IDENTITY, fromAxisAngle, multiply } from '../../device-attitude';
+import { createSwing, feedSwing, resetSwing } from '../swing';
+import { nextId } from '../ids';
 
 /** A save deep enough that everything under test has something to work on. */
 function rich(over: Partial<GameState> = {}): GameState {
@@ -506,5 +509,165 @@ describe('the save', () => {
     expect(after.bowl!.multiplier).toBe(BOWL_MAX_MULTIPLIER);
     expect(after.bowl!.cooldown).toBe(0);
     expect(after.bowl!.bestPins).toBe(BOWL_PINS);
+  });
+});
+
+/* ══════════════════════════════════════════════════════════════════════════
+   The swing
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Play a swing through the detector.
+ *
+ * `shape` is the acceleration magnitude at each 16ms step — a real swing is a
+ * rise, a peak around the bottom of the arc, and a fall through the follow-
+ * through, and that is what these arrays are.
+ */
+function playSwing(
+  shape: number[],
+  { twist = 0, gravityFree = true }: { twist?: number; gravityFree?: boolean } = {},
+) {
+  const state = createSwing();
+  let thrown: ReturnType<typeof feedSwing> = null;
+  shape.forEach((m, i) => {
+    // Along one axis, plus gravity when the platform gives no clean reading.
+    const result = feedSwing(state, {
+      x: 0,
+      y: gravityFree ? m : m + 9.81,
+      z: 0,
+      gravityFree,
+      twist,
+      t: i * 16,
+    });
+    if (result && !thrown) thrown = result;
+  });
+  return thrown as ReturnType<typeof feedSwing>;
+}
+
+/** Rise to `peak` over `up` samples, then fall away over `down`. */
+function arc(peak: number, up = 12, down = 12): number[] {
+  return [
+    ...Array.from({ length: up }, (_, i) => (peak * (i + 1)) / up),
+    ...Array.from({ length: down }, (_, i) => peak * (1 - (i + 1) / down)),
+  ];
+}
+
+describe('the swing', () => {
+  it('reads a hard swing as more power than a gentle one', () => {
+    const gentle = playSwing(arc(11));
+    const hard = playSwing(arc(24));
+    expect(gentle).not.toBeNull();
+    expect(hard).not.toBeNull();
+    expect(hard!.power).toBeGreaterThan(gentle!.power);
+    expect(gentle!.power).toBeGreaterThan(0);
+    expect(hard!.power).toBeLessThanOrEqual(1);
+  });
+
+  it('caps at a full swing rather than reporting more than everything', () => {
+    expect(playSwing(arc(90))!.power).toBe(1);
+  });
+
+  it('ignores a fidget, and re-arms afterwards rather than eating the next ball', () => {
+    // Over the arming threshold, under the floor a throw has to clear.
+    expect(playSwing(arc(6.4))).toBeNull();
+
+    const state = createSwing();
+    let thrown: ReturnType<typeof feedSwing> = null;
+    [...arc(6.4), ...arc(20)].forEach((m, i) => {
+      const r = feedSwing(state, { x: 0, y: m, z: 0, gravityFree: true, twist: 0, t: i * 16 });
+      if (r && !thrown) thrown = r;
+    });
+    expect(thrown).not.toBeNull();
+  });
+
+  it('never fires while the arm is still speeding up', () => {
+    // A rise with no fall is a swing still in progress, not a throw.
+    expect(playSwing(Array.from({ length: 20 }, (_, i) => i + 4))).toBeNull();
+  });
+
+  it('takes the hook from the wrist turn at the peak', () => {
+    expect(playSwing(arc(20), { twist: 0 })!.spin).toBe(0);
+    expect(playSwing(arc(20), { twist: 180 })!.spin).toBeGreaterThan(0.5);
+    expect(playSwing(arc(20), { twist: -180 })!.spin).toBeLessThan(-0.5);
+    // …and a wrist that spun like a drill still only bends the ball so far.
+    expect(playSwing(arc(20), { twist: 5_000 })!.spin).toBe(1);
+  });
+
+  it('works on a platform that reports gravity in the reading', () => {
+    // The same arc, buried under 9.81 m/s² of gravity on one axis. Without the
+    // low-pass this is a permanent 9.81 "swing" and nothing ever releases.
+    const thrown = playSwing(arc(20, 18, 18), { gravityFree: false });
+    expect(thrown).not.toBeNull();
+    expect(thrown!.power).toBeGreaterThan(0);
+  });
+
+  it('releases a swing that never falls off, rather than holding it open', () => {
+    // Somebody shaking the phone steadily: the ceiling ends it.
+    const held = Array.from({ length: 200 }, () => 14);
+    expect(playSwing(held)).not.toBeNull();
+  });
+
+  it('forgets a swing in progress when the lane asks it to', () => {
+    const state = createSwing();
+    for (let i = 0; i < 8; i++) {
+      feedSwing(state, { x: 0, y: 4 + i * 2, z: 0, gravityFree: true, twist: 0, t: i * 16 });
+    }
+    expect(state.swinging).toBe(true);
+    resetSwing(state);
+    expect(state.swinging).toBe(false);
+    expect(state.peak).toBe(0);
+  });
+});
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Tilt
+   ══════════════════════════════════════════════════════════════════════════ */
+
+describe('reading the phone’s lean', () => {
+  it('is the exact inverse of the rotation the sensor hook builds', () => {
+    for (const [yaw, pitch] of [
+      [0, 0],
+      [30, 0],
+      [0, -25],
+      [-40, 18],
+      [70, -35],
+    ] as const) {
+      // `orbitRotation` composes exactly Rx(−pitch)·Ry(−yaw); `tiltAngles`
+      // takes those two back out, which is what the 2D globe needs.
+      const q = multiply(
+        fromAxisAngle([1, 0, 0], (pitch * Math.PI) / 180),
+        fromAxisAngle([0, 1, 0], (yaw * Math.PI) / 180),
+      );
+      const back = tiltAngles(q);
+      expect(back.yaw).toBeCloseTo(yaw, 6);
+      expect(back.pitch).toBeCloseTo(pitch, 6);
+    }
+  });
+
+  it('reads an identity rotation as no lean at all', () => {
+    expect(tiltAngles(IDENTITY)).toEqual({ yaw: 0, pitch: 0 });
+  });
+});
+
+describe('ids across a session boundary', () => {
+  it('never mints an id a loaded save is already using', () => {
+    // A Sinner latched on last night is still id 9_000 this morning; the
+    // counter starts at 1 every page load. Without the reservation the next
+    // Sinner to arrive is *also* a low number, which is two React children
+    // with the same key and `strikeSinner` reaching the wrong one.
+    const save = stateToSave(
+      rich({
+        sinners: [
+          { id: 9_000, swallowed: 1, arrival: 1, angle: 0, penitent: false },
+          { id: 9_001, swallowed: 1, arrival: 1, angle: 90, penitent: false },
+        ],
+      }),
+    );
+    const loaded = readSave(JSON.parse(JSON.stringify(save)))!;
+    expect(loaded.sinners).toHaveLength(2);
+
+    const minted = [nextId(), nextId(), nextId()];
+    for (const id of minted) expect(id).toBeGreaterThan(9_001);
+    expect(new Set(minted).size).toBe(3);
   });
 });

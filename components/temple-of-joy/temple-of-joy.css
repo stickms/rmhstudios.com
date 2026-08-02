@@ -103,8 +103,32 @@
   --toj-slow: 420ms;
 
   /* Rhythm, scaled to the viewport. */
-  --toj-gutter: clamp(0.85rem, 2.4vw, 1.6rem);
-  --toj-gap: clamp(0.5rem, 1.4vw, 0.9rem);
+  --toj-gutter: clamp(1rem, 2.6vw, 1.75rem);
+  --toj-gap: clamp(0.65rem, 1.6vw, 1rem);
+
+  /**
+   * Spacing scale.
+   *
+   * Every inset in the game comes from these four rather than from a fresh
+   * decimal per rule — which is how the interface ended up looking cramped: a
+   * hundred independently-chosen 0.28s and 0.35s, each defensible on its own
+   * and collectively airless. Cosy is mostly a spacing decision.
+   */
+  --toj-pad-xs: 0.4rem;
+  --toj-pad-sm: 0.6rem;
+  --toj-pad-md: 0.85rem;
+  --toj-pad-lg: 1.15rem;
+
+  /**
+   * The gap between a glyph and the words it belongs to.
+   *
+   * Its own token because it is the one measurement that appears in every
+   * component in the game — chip, tab, row, button, toast, buff, stall — and
+   * because at the 0.35rem it used to be, a Twemoji sitting at 1em was
+   * touching its label. An icon needs about half its own width of air or the
+   * pair reads as one smudged word.
+   */
+  --toj-icon-gap: 0.55rem;
 
   /* The docked panel column on wide screens. */
   --toj-panel-w: clamp(23rem, 33vw, 31rem);
@@ -482,15 +506,15 @@
 .toj-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: var(--toj-pad-sm);
   align-items: center;
 }
 
 .toj-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.28rem 0.6rem;
+  gap: var(--toj-icon-gap);
+  padding: var(--toj-pad-xs) var(--toj-pad-md);
   border-radius: 99px;
   border: 1px solid var(--toj-rule);
   background: var(--toj-surface-sunk);
@@ -530,7 +554,7 @@
 
 .toj-hud-actions {
   display: flex;
-  gap: 0.4rem;
+  gap: var(--toj-pad-sm);
   align-items: center;
 }
 
@@ -1085,8 +1109,12 @@
 
 .toj-sinner {
   position: absolute;
-  width: 2.4rem;
-  height: 2.4rem;
+  /* Sized against the FIELD, not in fixed rem. At 2.4rem a Sinner was a
+     seventh of a phone-sized sphere's width, and a ring of twelve buried the
+     globes they are supposed to be feeding on. The floor keeps them a thumb's
+     worth of target on the smallest field. */
+  width: clamp(1.7rem, calc(var(--toj-field) * 0.14), 2.4rem);
+  height: clamp(1.7rem, calc(var(--toj-field) * 0.14), 2.4rem);
   /* Centred on its own (left, top), which is where the ring maths puts it. */
   transform: translate(-50%, -50%);
   display: grid;
@@ -1120,16 +1148,44 @@
 
 /* ── Standing actions under the field ── */
 
+/**
+ * The standing actions, in one row that scrolls rather than wrapping.
+ *
+ * Wrapping was the obvious choice and the wrong one: the sanctum clips
+ * (`overflow: hidden`, so a ripple cannot escape it), so on a phone holding a
+ * tilt switch, a bowl invitation, "Strike all 5" and "Ascend" the second row
+ * went under the edge and Ascend — the most consequential button in the game —
+ * was simply unreachable.
+ *
+ * `safe center` rather than `center`: a centred row that overflows does so past
+ * BOTH ends, and scroll offsets cannot go negative, so the leftmost action
+ * would be unreachable in the other direction (design-language §12.1 rule 1).
+ */
 .toj-rites {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: center;
+  flex-wrap: nowrap;
+  gap: var(--toj-pad-sm);
+  justify-content: safe center;
   align-items: center;
   min-height: 2.25rem;
+  max-width: 100%;
+  flex-shrink: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
   /* Above the pins, which project out past the sphere near the limb. */
   position: relative;
   z-index: 6;
+}
+
+.toj-rites::-webkit-scrollbar {
+  display: none;
+}
+
+/* Nothing in the row may be squeezed to make the row fit — that is what the
+   scroll is for. */
+.toj-rites > * {
+  flex-shrink: 0;
 }
 
 /* A standing note rather than a button: the Bowl's hour is a state, not an
@@ -1137,8 +1193,8 @@
 .toj-rite-note {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.8rem;
+  gap: var(--toj-icon-gap);
+  padding: 0.45rem var(--toj-pad-lg);
   border-radius: var(--toj-radius-pill);
   border: 1px solid rgb(var(--toj-gold-rgb) / 0.45);
   background: var(--toj-gold-wash);
@@ -1156,7 +1212,7 @@
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 0.4rem;
+  gap: var(--toj-pad-sm);
   flex-wrap: wrap;
   justify-content: center;
   max-width: calc(100% - 2 * var(--toj-gutter));
@@ -1167,8 +1223,8 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.25rem 0.6rem 0.3rem;
+  gap: var(--toj-icon-gap);
+  padding: var(--toj-pad-xs) var(--toj-pad-md) 0.45rem;
   border-radius: 99px;
   border: 1px solid rgb(var(--toj-gold-rgb) / 0.4);
   background: var(--toj-surface);
@@ -1214,8 +1270,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  padding: 0.52rem 1.05rem;
+  gap: var(--toj-icon-gap);
+  padding: 0.6rem var(--toj-pad-lg);
   /* Fully round. The room has no square corners left in it, and a pill is also
      the shape a thumb reads as "press me" fastest. */
   border-radius: var(--toj-radius-pill);
@@ -1261,7 +1317,7 @@
 }
 
 .toj-btn[data-size='sm'] {
-  padding: 0.34rem 0.72rem;
+  padding: var(--toj-pad-xs) var(--toj-pad-md);
   font-size: 0.78rem;
 }
 
@@ -1292,8 +1348,8 @@
 .toj-tabs {
   display: flex;
   gap: 0.15rem;
-  margin: 0.55rem 0.6rem 0;
-  padding: 0.22rem;
+  margin: var(--toj-pad-sm) var(--toj-pad-sm) 0;
+  padding: 0.28rem;
   border-radius: var(--toj-radius-pill);
   background: var(--toj-surface-sunk);
   overflow-x: auto;
@@ -1309,8 +1365,8 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.42rem 0.78rem;
+  gap: var(--toj-icon-gap);
+  padding: 0.5rem var(--toj-pad-md);
   border-radius: var(--toj-radius-pill);
   font-size: 0.78rem;
   color: var(--toj-ink-soft);
@@ -1329,7 +1385,9 @@
 }
 
 .toj-tab-glyph {
-  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  font-size: 1rem;
   line-height: 1;
 }
 
@@ -1375,8 +1433,8 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: var(--toj-gap) var(--toj-gutter) 0.4rem;
+  gap: var(--toj-pad-md);
+  padding: var(--toj-gap) var(--toj-gutter) var(--toj-pad-sm);
   flex-shrink: 0;
 }
 
@@ -1387,11 +1445,11 @@
 }
 
 .toj-panel-sub {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: var(--toj-ink-soft);
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: var(--toj-icon-gap);
 }
 
 .toj-panel-scroll {
@@ -1415,7 +1473,7 @@
 .toj-panel-note {
   font-size: 0.82rem;
   color: var(--toj-ink-soft);
-  padding: 0.55rem 0;
+  padding: var(--toj-pad-md) 0.15rem;
 }
 
 .toj-empty {
@@ -1444,10 +1502,10 @@
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 0.7rem;
+  gap: var(--toj-pad-md);
   width: 100%;
-  margin-bottom: 0.36rem;
-  padding: 0.62rem 0.7rem;
+  margin-bottom: var(--toj-pad-xs);
+  padding: var(--toj-pad-md) var(--toj-pad-md);
   text-align: left;
   border: 1px solid transparent;
   border-radius: var(--toj-radius);
@@ -1540,13 +1598,14 @@ button.toj-row:active:not(:disabled) {
 .toj-row-name {
   display: block;
   font-weight: 550;
-  font-size: 0.9rem;
-  line-height: 1.25;
+  font-size: 0.92rem;
+  line-height: 1.3;
 }
 
 .toj-row-note {
-  margin-top: 0.1rem;
-  font-size: 0.76rem;
+  margin-top: 0.22rem;
+  font-size: 0.77rem;
+  line-height: 1.4;
   color: var(--toj-ink-soft);
   overflow: hidden;
   display: -webkit-box;
@@ -1559,7 +1618,7 @@ button.toj-row:active:not(:disabled) {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.1rem;
+  gap: 0.15rem;
   flex-shrink: 0;
   text-align: right;
 }
@@ -1594,8 +1653,8 @@ button.toj-row:active:not(:disabled) {
 
 .toj-segments {
   display: flex;
-  gap: 0.1rem;
-  padding: 0.18rem;
+  gap: 0.15rem;
+  padding: 0.25rem;
   border-radius: var(--toj-radius-pill);
   background: var(--toj-surface-sunk);
   overflow-x: auto;
@@ -1607,7 +1666,7 @@ button.toj-row:active:not(:disabled) {
 }
 
 .toj-segment {
-  padding: 0.32rem 0.72rem;
+  padding: var(--toj-pad-xs) var(--toj-pad-md);
   border-radius: var(--toj-radius-pill);
   font-size: 0.76rem;
   color: var(--toj-ink-soft);
@@ -1628,8 +1687,8 @@ button.toj-row:active:not(:disabled) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.4rem 0 0.5rem;
+  gap: var(--toj-pad-sm);
+  padding: var(--toj-pad-xs) 0 var(--toj-pad-md);
   position: sticky;
   top: 0;
   z-index: 2;
@@ -1643,7 +1702,7 @@ button.toj-row:active:not(:disabled) {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.65rem 0;
+  padding: var(--toj-pad-md) 0.15rem;
   border-bottom: 1px solid var(--toj-rule);
 }
 
@@ -1682,7 +1741,7 @@ button.toj-row:active:not(:disabled) {
   text-transform: uppercase;
   letter-spacing: 0.09em;
   color: var(--toj-ink-faint);
-  padding: 1.1rem 0 0.35rem;
+  padding: 1.35rem 0.15rem var(--toj-pad-sm);
 }
 
 /* Switch. */
@@ -1811,15 +1870,15 @@ button.toj-row:active:not(:disabled) {
 .toj-seedbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
-  padding: 0.4rem 0;
+  gap: var(--toj-pad-xs);
+  padding: var(--toj-pad-sm) 0;
 }
 
 .toj-seed {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.3rem 0.55rem;
+  gap: var(--toj-icon-gap);
+  padding: var(--toj-pad-xs) var(--toj-pad-md);
   border-radius: 99px;
   border: 1px solid var(--toj-rule);
   background: var(--toj-surface);
@@ -1841,15 +1900,15 @@ button.toj-row:active:not(:disabled) {
 
 .toj-stalls {
   display: grid;
-  gap: 0.5rem;
-  padding: 0.5rem 0;
+  gap: var(--toj-pad-sm);
+  padding: var(--toj-pad-sm) 0;
 }
 
 .toj-stall {
   display: flex;
   align-items: center;
-  gap: 0.7rem;
-  padding: 0.65rem;
+  gap: var(--toj-pad-md);
+  padding: var(--toj-pad-md);
   border-radius: var(--toj-radius);
   border: 1px dashed var(--toj-rule-strong);
   background: var(--toj-surface-sunk);
@@ -1947,8 +2006,8 @@ button.toj-row:active:not(:disabled) {
 
 .toj-desk {
   display: flex;
-  gap: 0.4rem;
-  padding: 0.5rem 0;
+  gap: var(--toj-pad-sm);
+  padding: var(--toj-pad-sm) 0;
   flex-wrap: wrap;
 }
 
@@ -2071,14 +2130,14 @@ button.toj-row:active:not(:disabled) {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.5rem 0;
+  padding: var(--toj-pad-sm) 0;
   border-bottom: 1px solid var(--toj-rule);
   font-size: 0.85rem;
 }
 
 .toj-dialog-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--toj-pad-sm);
   padding: var(--toj-gap) var(--toj-gutter);
   border-top: 1px solid var(--toj-rule);
   background: var(--toj-surface-sunk);
@@ -2114,7 +2173,7 @@ button.toj-row:active:not(:disabled) {
   max-height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: var(--toj-pad-md);
   padding: var(--toj-gap) var(--toj-gutter) var(--toj-gutter);
   border-radius: var(--toj-radius-lg);
   border: 1px solid var(--toj-rule-strong);
@@ -2129,7 +2188,7 @@ button.toj-row:active:not(:disabled) {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: var(--toj-pad-md);
 }
 
 .toj-bowl-title {
@@ -2159,6 +2218,11 @@ button.toj-row:active:not(:disabled) {
   position: relative;
   aspect-ratio: 16 / 10;
   width: 100%;
+  /* The card SCROLLS, so nothing in it should be squeezed to make it fit.
+     Without this the viewport was a flex item that shrank first — and on a
+     phone in landscape, where the card is taller than the screen, it shrank to
+     a hairline and the lane simply was not there. */
+  flex-shrink: 0;
   border-radius: var(--toj-radius);
   border: 1px solid var(--toj-rule);
   background: var(--toj-ground-deep);
@@ -2232,12 +2296,19 @@ button.toj-row:active:not(:disabled) {
   position: absolute;
   inset-inline: 0;
   top: 0.6rem;
-  margin: 0;
+  margin: 0 auto;
+  width: max-content;
+  max-width: calc(100% - 1.2rem);
+  padding: 0.3rem var(--toj-pad-md);
+  border-radius: var(--toj-radius-pill);
+  /* A backing, because the scene behind it is a lit rose window and a plain
+     grey caption over that is neither readable nor deliberate-looking. */
+  background: color-mix(in oklab, var(--toj-ground-deep) 72%, transparent);
   text-align: center;
   font-size: 0.72rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: color-mix(in oklab, var(--toj-ink) 55%, transparent);
+  color: var(--toj-ink-soft);
   pointer-events: none;
 }
 
@@ -2247,12 +2318,12 @@ button.toj-row:active:not(:disabled) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.22rem;
+  gap: 0.3rem;
 }
 
 .toj-bowl-row {
   display: flex;
-  gap: 0.35rem;
+  gap: var(--toj-pad-xs);
 }
 
 .toj-bowl-pin {
@@ -2285,7 +2356,7 @@ button.toj-row:active:not(:disabled) {
 .toj-bowl-actions {
   display: grid;
   justify-items: center;
-  gap: 0.4rem;
+  gap: var(--toj-pad-sm);
 }
 
 .toj-bowl-note {
@@ -2301,9 +2372,9 @@ button.toj-row:active:not(:disabled) {
 .toj-bowl-controls {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.45rem;
+  gap: var(--toj-pad-sm);
   margin: 0;
-  padding: 0.6rem 0.75rem 0.75rem;
+  padding: var(--toj-pad-md) var(--toj-pad-md) var(--toj-pad-md);
   border: 1px solid var(--toj-rule);
   border-radius: var(--toj-radius);
   background: var(--toj-surface-sunk);
@@ -2313,16 +2384,23 @@ button.toj-row:active:not(:disabled) {
   opacity: 0.5;
 }
 
-.toj-bowl-controls .toj-btn {
+.toj-bowl-controls .toj-bowl-throw {
   justify-self: stretch;
-  margin-top: 0.25rem;
 }
 
 .toj-bowl-dial {
   display: grid;
   grid-template-columns: 4.2rem 1fr 8.5rem;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--toj-pad-md);
+}
+
+/* The shared `.toj-slider` is clamped to ~9rem because in Settings it is one of
+   three things on a row. Here it IS the row, and a 9rem track inside a 24rem
+   column is a third of the aim you are being asked to set. */
+.toj-bowl-dial .toj-slider {
+  width: 100%;
+  max-width: none;
 }
 
 .toj-bowl-dial-label {
@@ -2371,9 +2449,13 @@ button.toj-row:active:not(:disabled) {
 /* Landscape on a phone is ~380px tall — the whole card has to fit in it, so the
    viewport gives up its aspect ratio and the copy stands down. */
 @media (max-height: 34rem) {
+  /* Sideways on a phone the lane is most of what there is room for, so it
+     takes the height and the prose stands down. The ratio is dropped rather
+     than clamped — an `aspect-ratio` beside a height clamp is the pairing that
+     silently breaks the box (design-language §12.1 rule 2). */
   .toj-bowl-view {
     aspect-ratio: auto;
-    height: min(42dvh, 14rem);
+    height: 55dvh;
   }
 
   .toj-bowl-sub,
@@ -2383,6 +2465,15 @@ button.toj-row:active:not(:disabled) {
 
   .toj-bowl-title {
     font-size: 1.15rem;
+  }
+
+  .toj-bowl-pin {
+    width: 0.45rem;
+    height: 0.62rem;
+  }
+
+  .toj-bowl-status {
+    font-size: 0.92rem;
   }
 }
 
@@ -2401,7 +2492,7 @@ button.toj-row:active:not(:disabled) {
   transform: translateX(-50%);
   display: flex;
   flex-direction: column-reverse;
-  gap: 0.4rem;
+  gap: var(--toj-pad-sm);
   width: min(22rem, calc(100vw - 2rem));
   pointer-events: none;
   /**
@@ -2428,8 +2519,8 @@ button.toj-row:active:not(:disabled) {
 .toj-toast {
   display: flex;
   align-items: flex-start;
-  gap: 0.55rem;
-  padding: 0.6rem 0.75rem;
+  gap: var(--toj-icon-gap);
+  padding: var(--toj-pad-md) var(--toj-pad-md);
   border-radius: var(--toj-radius);
   border: 1px solid var(--toj-rule-strong);
   background: var(--toj-surface);
@@ -2631,11 +2722,16 @@ button.toj-row:active:not(:disabled) {
     padding-inline: 0.85rem;
   }
 
+  /* "×1" is two characters, and at any sane padding that is a 23px target —
+     a coin toss for a thumb. The minimum is on the WIDTH here, not just the
+     height, which is the axis a segmented switch actually runs out of. */
   .toj-segment {
-    min-height: 40px;
+    min-height: 44px;
+    min-width: 44px;
     display: inline-flex;
     align-items: center;
-    padding-inline: 0.8rem;
+    justify-content: center;
+    padding-inline: var(--toj-pad-md);
   }
 
   .toj-row {
@@ -2647,8 +2743,13 @@ button.toj-row:active:not(:disabled) {
     min-height: 40px;
   }
 
+  /* A chip whose value is one character ("6" of manna) is a 37px target on
+     the width even at a comfortable height — and two of the three chips are
+     buttons that open something. Both axes get the minimum. */
   .toj-chip {
-    min-height: 36px;
+    min-height: 44px;
+    min-width: 44px;
+    justify-content: center;
   }
 
   /* The switch is the control a thumb misses most often: the track is only
@@ -2793,4 +2894,18 @@ button.toj-row:active:not(:disabled) {
   .toj-bowl-pin {
     transition: none;
   }
+}
+
+/* The two ways to let go of the ball, side by side. Roll takes the room it
+   needs and the swing sits beside it; on a narrow phone they stack, because a
+   45%-wide "Swing to bowl" ellipsis is not an affordance. */
+.toj-bowl-throw {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--toj-pad-sm);
+  margin-top: 0.25rem;
+}
+
+.toj-bowl-throw .toj-btn {
+  flex: 1 1 9rem;
 }

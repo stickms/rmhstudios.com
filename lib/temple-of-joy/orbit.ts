@@ -11,6 +11,7 @@
  * −0.4 to 0.4 with a tenth of the stage to spare on each side.
  */
 import { SOURCES } from './data/sources';
+import type { Quat } from '../device-attitude';
 import type { SourceId } from './types';
 
 const DEG = Math.PI / 180;
@@ -122,6 +123,94 @@ export function hubRadius(count: number): number {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
+   The cage
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * The wireframe every liquid globe on this site is drawn from: six great
+ * circles through the poles and seven latitude rings.
+ *
+ * Here rather than in a renderer because there are now two of them — the
+ * sanctum's 2D canvas and the ball on the lane, which is the same object seen
+ * in three dimensions — and a globe that is recognisably the same globe in both
+ * places is the entire point of putting it on a lane. Two hand-kept copies of
+ * "six and seven" would have drifted the first time either was tuned.
+ */
+export const MERIDIANS = [0, 30, 60, 90, 120, 150];
+export const PARALLELS = [-60, -40, -20, 0, 20, 40, 60];
+
+/**
+ * A ring of the cage, as points on the unit sphere.
+ *
+ * `kind` picks which family: a **meridian** at longitude `angle` is a circle
+ * through both poles; a **parallel** at latitude `angle` is the latitude circle,
+ * scaled by `cos(lat)` and lifted to its height. Both are `u·cosθ + v·sinθ`
+ * about a centre offset along the polar axis, which is why one function serves
+ * both and why the 2D renderer can stroke them from the same description it
+ * builds a `BufferGeometry` from here.
+ *
+ * Y points DOWN, matching the screen-handed axes the 2D projection uses.
+ */
+export function ringPoints(
+  kind: 'meridian' | 'parallel',
+  angle: number,
+  samples: number,
+): Float32Array {
+  const out = new Float32Array((samples + 1) * 3);
+  const c = Math.cos(angle * DEG);
+  const s = Math.sin(angle * DEG);
+
+  // u, v: the plane the circle lies in. oy: how far it is lifted up the axis.
+  const [ux, uy, uz] = kind === 'meridian' ? [c, 0, -s] : [c, 0, 0];
+  const [vx, vy, vz] = kind === 'meridian' ? [0, 1, 0] : [0, 0, c];
+  const oy = kind === 'meridian' ? 0 : -s;
+
+  for (let i = 0; i <= samples; i++) {
+    const theta = (i / samples) * Math.PI * 2;
+    const ct = Math.cos(theta);
+    const st = Math.sin(theta);
+    out[i * 3] = ux * ct + vx * st;
+    out[i * 3 + 1] = uy * ct + vy * st + oy;
+    out[i * 3 + 2] = uz * ct + vz * st;
+  }
+  return out;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Tilt
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * The two angles a globe is drawn at, taken back out of the quaternion
+ * `useDeviceAttitude` emits.
+ *
+ * That hook speaks quaternions because it drives things rendered in 3D, where a
+ * rotation is a rotation. This globe is projected by hand from a yaw and a
+ * pitch, so the two have to be recovered — and the recovery is exact rather
+ * than approximate, because `orbitRotation` builds exactly `Rx(a)·Ry(b)` and
+ * nothing else.
+ *
+ * For that product the components come out as
+ *
+ *   x = sin(a/2)·cos(b/2)   y = cos(a/2)·sin(b/2)
+ *   z = sin(a/2)·sin(b/2)   w = cos(a/2)·cos(b/2)
+ *
+ * so `x/w` is `tan(a/2)` and `y/w` is `tan(b/2)`, and each angle is one
+ * `atan2` away with no ambiguity and no gimbal case to guard. Pulling a general
+ * Euler decomposition out instead would flip by 180° exactly at the tilt where
+ * somebody is holding the phone up to look at the thing.
+ *
+ * @returns degrees, in the globe renderer's own sense: `yaw` about the vertical
+ * (right is positive), `pitch` about the horizontal (down is positive).
+ */
+export function tiltAngles(q: Quat): { yaw: number; pitch: number } {
+  const [x, y, , w] = q;
+  const pitch = (2 * Math.atan2(x, w)) / DEG;
+  const yaw = (2 * Math.atan2(y, w)) / DEG;
+  return { yaw, pitch };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
    The congregation
    ══════════════════════════════════════════════════════════════════════════ */
 
@@ -198,8 +287,18 @@ function placeOnSphere(ids: SourceId[], globe: number): Pin[] {
  * ladder moves onto each new sphere, so all four are populated immediately
  * rather than the newest one sitting empty until you buy more sources.
  */
-export function placePins(owned: Partial<Record<SourceId, number>>, globes: number): Pin[] {
+export function placePins(
+  owned: Partial<Record<SourceId, number>>,
+  globes: number,
+  /**
+   * How many pins the field can carry. Defaults to the ceiling; the renderer
+   * passes a smaller number on a small screen, where sixteen icons on a
+   * 170px sphere is not a congregation but a pile.
+   */
+  limit = MAX_PINS,
+): Pin[] {
   const count = Math.max(1, Math.floor(globes));
+  const cap = Math.max(1, Math.min(MAX_PINS, Math.floor(limit)));
 
   // Deepest first — see MAX_PINS.
   const held: { id: SourceId; ladder: number }[] = [];
@@ -211,7 +310,7 @@ export function placePins(owned: Partial<Record<SourceId, number>>, globes: numb
   const byGlobe: SourceId[][] = Array.from({ length: count }, () => []);
   let placed = 0;
   for (const { id, ladder } of held) {
-    if (placed >= MAX_PINS) break;
+    if (placed >= cap) break;
     const globe = ladder % count;
     const bucket = byGlobe[globe]!;
     if (bucket.length >= MAX_PINS_PER_GLOBE) continue;
