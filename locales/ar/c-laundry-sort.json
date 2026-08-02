@@ -69,6 +69,7 @@
   "rule-controls": "Drag with mouse, finger or pen. Or steer with the arrow keys and pinch with Space.",
   "rule-correct": "Right bin: +{{points}}, and every streak sort adds 10% up to +100%.",
   "rule-missed": "Dropped on the floor: no penalty, but the streak still breaks.",
+  "rule-sweep": "Keep holding and drag through the laundry to gather an armful — but letting go drops all of it in the same place.",
   "rule-wrong": "Wrong bin: {{points}} and the streak breaks.",
   "score": "Score",
   "score-not-saved": "Couldn't save that score — the run still counted locally.",

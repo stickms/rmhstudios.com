@@ -7,6 +7,13 @@
  * a shirt drapes over a bin rim because the fabric actually drapes, not
  * because something faked it.
  *
+ * What the solver simulates is the garment's **mid-surface**: one layer of
+ * particles, which is the cheapest thing that behaves like cloth. The garment
+ * the player sees has real thickness, sewn around that surface at render time
+ * by `shell.ts` — no extra particles, no extra constraints, so volume costs
+ * this file nothing but the per-particle contact radii it reads back out of the
+ * shell to keep collisions honest about how thick the fabric is.
+ *
  * Why XPBD rather than a spring-mass integrator: springs stiff enough to look
  * like cotton need a timestep small enough to be unaffordable in a browser, and
  * they explode when a player yanks a sleeve across the screen. XPBD's stiffness
@@ -24,7 +31,7 @@
 
 import { ARENA } from './constants';
 import { pointInBox, type ArenaLayout, type Box } from './arena';
-import { PATTERNS, type GarmentKind, type PatternTopology } from './patterns';
+import { GARMENT_KINDS, PATTERNS, type GarmentKind, type PatternTopology } from './patterns';
 
 // ─── Tuning ─────────────────────────────────────────────────────────────────
 
@@ -76,10 +83,21 @@ const WIND_AMP = 0.55;
 const WIND_FLOOR_Y = 1.3;
 const WIND_RAMP = 1.8;
 
-/** Half-thickness of the cloth for contacts with the arena. */
-const CONTACT_RADIUS = 0.02;
-/** Half-thickness for cloth-on-cloth. Smaller than the tightest weave spacing. */
-const SELF_RADIUS = 0.032;
+/**
+ * Contact half-thicknesses are **per particle** and come from the garment's
+ * shell (`shell.ts`), not from a constant here.
+ *
+ * The solver simulates a mid-surface, but the player sees a sewn shell with
+ * real volume, and the two have to agree about where the fabric ends. A single
+ * global radius would bury half of every garment in the bin it landed in and
+ * let a heap of laundry interpenetrate into one blob. `contactPad` and
+ * `selfRadius` are the same loft profile the renderer inflates the mesh with,
+ * so cloth collides at exactly the thickness it is drawn at — for the cost of
+ * one array read in each contact loop, and no extra particles.
+ */
+const MAX_SELF_RADIUS = Math.max(
+  ...GARMENT_KINDS.map((kind) => PATTERNS[kind].shell.maxSelfRadius),
+);
 
 /** How close the pointer ray must pass to a particle to grab it. */
 const GRAB_RAY_RADIUS = 0.17;
@@ -161,6 +179,7 @@ export interface Ray {
   dz: number;
 }
 
+/** One garment held by the pointer. The player can hold several at once. */
 interface Grip {
   garmentId: number;
   /** Particles held, and how strongly (1 at the pinch, falling off outward). */
@@ -227,7 +246,17 @@ export class ClothWorld {
 
   private readonly arena: ArenaLayout;
   private nextId = 1;
-  private grip: Grip | null = null;
+  /**
+   * Every garment currently in the player's hand. One pointer, many garments —
+   * see {@link beginGrab}.
+   */
+  private readonly grips: Grip[] = [];
+  /** `grips` keyed by garment id, so the hot paths do a set lookup, not a scan. */
+  private readonly held = new Set<number>();
+  /** Scratch for {@link collectHits}; reused so a sweep allocates nothing. */
+  private readonly hitGarments: number[] = [];
+  private readonly hitParticles: number[] = [];
+  private readonly hitDistances: number[] = [];
 
   // Cloth-on-cloth broadphase scratch. Allocated once; the hot loop allocates
   // nothing, because a per-frame allocation at 60 Hz is a per-frame GC pause.
@@ -237,6 +266,8 @@ export class ClothWorld {
   private readonly flatX = new Float32Array(MAX_PARTICLES);
   private readonly flatY = new Float32Array(MAX_PARTICLES);
   private readonly flatZ = new Float32Array(MAX_PARTICLES);
+  /** Each flat particle's cloth-on-cloth radius, from its garment's shell. */
+  private readonly flatR = new Float32Array(MAX_PARTICLES);
   /** Flat particle slot → garment index, and → particle index within it. */
   private readonly flatGarment = new Int32Array(MAX_PARTICLES);
   private readonly flatParticle = new Int32Array(MAX_PARTICLES);
@@ -331,12 +362,13 @@ export class ClothWorld {
       this.garments.splice(index, 1);
       this.revision++;
     }
-    if (this.grip?.garmentId === id) this.grip = null;
+    this.releaseGrip(id);
   }
 
   clear(): void {
     this.garments.length = 0;
-    this.grip = null;
+    this.grips.length = 0;
+    this.held.clear();
     this.time = 0;
     this.nextId = 1;
     this.revision++;
@@ -346,9 +378,21 @@ export class ClothWorld {
     return this.garments.find((g) => g.id === id);
   }
 
-  /** The garment currently held, if any — the HUD highlights it. */
-  get heldGarmentId(): number | null {
-    return this.grip?.garmentId ?? null;
+  /**
+   * Ids of every garment in hand — the renderer highlights these.
+   *
+   * A live set rather than a snapshot: it is read once per frame and must never
+   * cost an allocation to hand out.
+   */
+  get heldIds(): ReadonlySet<number> {
+    return this.held;
+  }
+
+  /** Drop one garment out of the armful, keeping the rest. */
+  private releaseGrip(id: number): void {
+    if (!this.held.delete(id)) return;
+    const index = this.grips.findIndex((grip) => grip.garmentId === id);
+    if (index >= 0) this.grips.splice(index, 1);
   }
 
   // ── Simulation ───────────────────────────────────────────────────────────
@@ -374,14 +418,13 @@ export class ClothWorld {
     }
 
     this.time += dt;
-    const heldId = this.grip?.garmentId ?? -1;
     for (const g of this.garments) {
       g.age += dt;
       this.refreshBounds(g, dt);
       // A garment the player is holding still is not "at rest" — it is being
       // aimed. Counting it as settled would let the miss timer fire on cloth
       // that is very much still in play.
-      g.restingFor = g.speed < REST_SPEED && g.id !== heldId ? g.restingFor + dt : 0;
+      g.restingFor = g.speed < REST_SPEED && !this.held.has(g.id) ? g.restingFor + dt : 0;
     }
   }
 
@@ -528,27 +571,29 @@ export class ClothWorld {
     }
   }
 
-  /** Pull the held handful of fabric toward the pointer. */
+  /** Pull each held handful of fabric toward the pointer. */
   private solveGrip(): void {
-    const grip = this.grip;
-    if (!grip) return;
-    const g = this.get(grip.garmentId);
-    if (!g) {
-      this.grip = null;
-      return;
-    }
+    for (let gi = this.grips.length - 1; gi >= 0; gi--) {
+      const grip = this.grips[gi];
+      const g = this.get(grip.garmentId);
+      if (!g) {
+        this.grips.splice(gi, 1);
+        this.held.delete(grip.garmentId);
+        continue;
+      }
 
-    const { pos } = g;
-    for (let k = 0; k < grip.particles.length; k++) {
-      const p = grip.particles[k];
-      const ix = p * 3;
-      const pull = GRIP_STRENGTH * grip.weights[k];
-      const tx = grip.tx + grip.offsets[k * 3];
-      const ty = grip.ty + grip.offsets[k * 3 + 1];
-      const tz = grip.tz + grip.offsets[k * 3 + 2];
-      pos[ix] += (tx - pos[ix]) * pull;
-      pos[ix + 1] += (ty - pos[ix + 1]) * pull;
-      pos[ix + 2] += (tz - pos[ix + 2]) * pull;
+      const { pos } = g;
+      for (let k = 0; k < grip.particles.length; k++) {
+        const p = grip.particles[k];
+        const ix = p * 3;
+        const pull = GRIP_STRENGTH * grip.weights[k];
+        const tx = grip.tx + grip.offsets[k * 3];
+        const ty = grip.ty + grip.offsets[k * 3 + 1];
+        const tz = grip.tz + grip.offsets[k * 3 + 2];
+        pos[ix] += (tx - pos[ix]) * pull;
+        pos[ix + 1] += (ty - pos[ix + 1]) * pull;
+        pos[ix + 2] += (tz - pos[ix + 2]) * pull;
+      }
     }
   }
 
@@ -566,12 +611,16 @@ export class ClothWorld {
    */
   private solveArena(): void {
     const boxes = this.arena.colliders;
-    const r = CONTACT_RADIUS;
     const candidates = this.boxCandidates;
 
     for (const g of this.garments) {
       const n = g.topology.count;
       const { pos, prev } = g;
+      // The broadphase uses the garment's thickest point; the per-particle
+      // narrowphase below uses the local one, so a hem tucks under a bin rim
+      // that the body of the same garment rests on.
+      const pad = g.topology.shell.contactPad;
+      const r = g.topology.shell.maxContactPad;
 
       let minX = Infinity;
       let minY = Infinity;
@@ -614,17 +663,18 @@ export class ClothWorld {
         const x = pos[ix];
         const y = pos[ix + 1];
         const z = pos[ix + 2];
+        const half = pad[i];
 
         for (let ci = 0; ci < candidateCount; ci++) {
           const b = boxes[candidates[ci]];
-          if (!pointInBox(b, x, y, z, r)) continue;
+          if (!pointInBox(b, x, y, z, half)) continue;
 
-          const dxMin = x - (b.minX - r);
-          const dxMax = b.maxX + r - x;
-          const dyMin = y - (b.minY - r);
-          const dyMax = b.maxY + r - y;
-          const dzMin = z - (b.minZ - r);
-          const dzMax = b.maxZ + r - z;
+          const dxMin = x - (b.minX - half);
+          const dxMax = b.maxX + half - x;
+          const dyMin = y - (b.minY - half);
+          const dyMax = b.maxY + half - y;
+          const dzMin = z - (b.minZ - half);
+          const dzMax = b.maxZ + half - z;
 
           let best = dxMin;
           let axis = 0;
@@ -684,10 +734,24 @@ export class ClothWorld {
     const flatCount = this.flatten();
     if (flatCount < 2) return;
 
-    const cell = SELF_RADIUS * 2;
+    // Sized off the thickest cloth in the game, because the hash is only
+    // correct if every pair that could touch lands within one cell of each
+    // other. Volume made this larger than the flat-sheet version, which is the
+    // one place the shell costs the solver anything — it widens the
+    // neighbourhood each particle has to consider.
+    const cell = MAX_SELF_RADIUS * 2;
     const invCell = 1 / cell;
-    const { hashCounts, hashCursor, hashSorted, flatX, flatY, flatZ, flatGarment, flatParticle } =
-      this;
+    const {
+      hashCounts,
+      hashCursor,
+      hashSorted,
+      flatX,
+      flatY,
+      flatZ,
+      flatR,
+      flatGarment,
+      flatParticle,
+    } = this;
 
     hashCounts.fill(0);
     for (let i = 0; i < flatCount; i++) {
@@ -709,13 +773,11 @@ export class ClothWorld {
       hashSorted[hashCursor[h]++] = i;
     }
 
-    const minDist = SELF_RADIUS * 2;
-    const minDistSq = minDist * minDist;
-
     for (let i = 0; i < flatCount; i++) {
       const gx = Math.floor(flatX[i] * invCell);
       const gy = Math.floor(flatY[i] * invCell);
       const gz = Math.floor(flatZ[i] * invCell);
+      const ri = flatR[i];
 
       for (let ox = -1; ox <= 1; ox++) {
         for (let oy = -1; oy <= 1; oy++) {
@@ -738,11 +800,15 @@ export class ClothWorld {
                 if (dc <= 1 && dr <= 1) continue;
               }
 
+              // Two shells just touching, rather than two mid-surfaces: this is
+              // the sum of the local half-thicknesses, so a fat towel keeps
+              // more room around it than a thin sock cuff.
+              const minDist = ri + flatR[j];
               const dx = flatX[i] - flatX[j];
               const dy = flatY[i] - flatY[j];
               const dz = flatZ[i] - flatZ[j];
               const dsq = dx * dx + dy * dy + dz * dz;
-              if (dsq >= minDistSq) continue;
+              if (dsq >= minDist * minDist) continue;
 
               const d = Math.sqrt(dsq);
               let nx: number;
@@ -788,10 +854,12 @@ export class ClothWorld {
     for (let gi = 0; gi < this.garments.length; gi++) {
       const g = this.garments[gi];
       const n = g.topology.count;
+      const radius = g.topology.shell.selfRadius;
       for (let i = 0; i < n && k < MAX_PARTICLES; i++, k++) {
         this.flatX[k] = g.pos[i * 3];
         this.flatY[k] = g.pos[i * 3 + 1];
         this.flatZ[k] = g.pos[i * 3 + 2];
+        this.flatR[k] = radius[i];
         this.flatGarment[k] = gi;
         this.flatParticle[k] = i;
       }
@@ -896,23 +964,42 @@ export class ClothWorld {
   // ── Pointer interaction ──────────────────────────────────────────────────
 
   /**
-   * Try to pinch the fabric under a pointer ray.
+   * Close the hand on a pointer ray: pinch every garment it passes through that
+   * is not already held, and return whether anything new came along.
    *
-   * Only ONE garment can be held at a time, on every platform. That is a
-   * fairness rule, not a technical limit: a touchscreen could trivially report
-   * ten pinches and a mouse can only ever report one, so allowing multi-touch
-   * grabs would hand phones a permanent advantage in a shared leaderboard.
+   * **One pointer, many garments.** Called on the way down *and* repeatedly as
+   * the pointer sweeps, so holding the button and dragging through the falling
+   * laundry gathers an armful — the thing an actual person does with laundry,
+   * and the thing that stops the game being a sequence of individual clicks.
+   *
+   * The rule this must never break is the one about *pointers*: a touchscreen
+   * can report ten simultaneous pinches and a mouse can only ever report one,
+   * so allowing two pointers to grab at once would hand phones a structural
+   * advantage on a shared leaderboard. That rule is enforced in `PointerRig`,
+   * which owns exactly one active pointer. Gathering with that single pointer
+   * is equally available on every device, so the armful costs nothing in
+   * fairness — and it costs the player instead, because releasing empties the
+   * whole armful into whatever is underneath it at that moment.
    */
   beginGrab(ray: Ray): boolean {
-    const hit = this.pick(ray);
-    if (!hit) return false;
+    const hits = this.collectHits(ray);
+    let grabbed = false;
+    for (let h = 0; h < hits; h++) {
+      const id = this.hitGarments[h];
+      if (this.held.has(id)) continue;
+      if (this.addGrip(id, this.hitParticles[h], ray)) grabbed = true;
+    }
+    return grabbed;
+  }
 
-    const g = this.get(hit.garmentId);
+  /** Pinch one garment at one particle. Returns false if there is no cloth there. */
+  private addGrip(garmentId: number, particle: number, ray: Ray): boolean {
+    const g = this.get(garmentId);
     if (!g || g.state !== 'falling') return false;
 
-    const hx = g.pos[hit.particle * 3];
-    const hy = g.pos[hit.particle * 3 + 1];
-    const hz = g.pos[hit.particle * 3 + 2];
+    const hx = g.pos[particle * 3];
+    const hy = g.pos[particle * 3 + 1];
+    const hz = g.pos[particle * 3 + 2];
 
     const particles: number[] = [];
     const weights: number[] = [];
@@ -933,7 +1020,7 @@ export class ClothWorld {
     }
     if (particles.length === 0) return false;
 
-    this.grip = {
+    this.grips.push({
       garmentId: g.id,
       particles: Int32Array.from(particles),
       weights: Float32Array.from(weights),
@@ -942,57 +1029,93 @@ export class ClothWorld {
       planeY: hy,
       planeZ: hz,
       // The drag plane faces the camera, so the pinch tracks the pointer
-      // exactly and never slides toward or away from the viewer.
+      // exactly and never slides toward or away from the viewer. Each garment
+      // keeps its own plane, so an armful holds its spread in depth instead of
+      // collapsing into a single sheet.
       nx: -ray.dx,
       ny: -ray.dy,
       nz: -ray.dz,
       tx: hx,
       ty: hy,
       tz: hz,
-    };
+    });
+    this.held.add(g.id);
     return true;
   }
 
-  /** Re-aim the pinch. A ray parallel to the drag plane leaves it where it was. */
+  /**
+   * Re-aim every pinch in the armful. A ray parallel to a grip's drag plane
+   * leaves that one where it was.
+   */
   moveGrab(ray: Ray): void {
-    const grip = this.grip;
-    if (!grip) return;
+    for (const grip of this.grips) {
+      const denom = ray.dx * grip.nx + ray.dy * grip.ny + ray.dz * grip.nz;
+      if (Math.abs(denom) < 1e-6) continue;
 
-    const denom = ray.dx * grip.nx + ray.dy * grip.ny + ray.dz * grip.nz;
-    if (Math.abs(denom) < 1e-6) return;
+      const px = grip.planeX - ray.ox;
+      const py = grip.planeY - ray.oy;
+      const pz = grip.planeZ - ray.oz;
+      const t = (px * grip.nx + py * grip.ny + pz * grip.nz) / denom;
+      if (t <= 0) continue;
 
-    const px = grip.planeX - ray.ox;
-    const py = grip.planeY - ray.oy;
-    const pz = grip.planeZ - ray.oz;
-    const t = (px * grip.nx + py * grip.ny + pz * grip.nz) / denom;
-    if (t <= 0) return;
-
-    // Clamped to the slab so a pointer dragged off-canvas cannot haul cloth
-    // through the walls; the constraints would fight it and the fabric would
-    // shudder against the boundary.
-    const margin = 0.25;
-    grip.tx = clamp(ray.ox + ray.dx * t, -ARENA.halfWidth + margin, ARENA.halfWidth - margin);
-    grip.ty = Math.max(ray.oy + ray.dy * t, ARENA.floorY + margin);
-    grip.tz = clamp(ray.oz + ray.dz * t, -ARENA.halfDepth + margin, ARENA.halfDepth - margin);
+      // Clamped to the slab so a pointer dragged off-canvas cannot haul cloth
+      // through the walls; the constraints would fight it and the fabric would
+      // shudder against the boundary.
+      const margin = 0.25;
+      grip.tx = clamp(ray.ox + ray.dx * t, -ARENA.halfWidth + margin, ARENA.halfWidth - margin);
+      grip.ty = Math.max(ray.oy + ray.dy * t, ARENA.floorY + margin);
+      grip.tz = clamp(ray.oz + ray.dz * t, -ARENA.halfDepth + margin, ARENA.halfDepth - margin);
+    }
   }
 
   /**
-   * Let go. Nothing else to do — the released particles keep the velocity the
-   * integrator already gave them, so a flick throws the garment naturally.
+   * Let go of the whole armful. Nothing else to do — the released particles
+   * keep the velocity the integrator already gave them, so a flick throws the
+   * laundry naturally.
    */
   endGrab(): void {
-    this.grip = null;
+    this.grips.length = 0;
+    this.held.clear();
   }
 
   /** Nearest particle whose distance to the ray is under {@link GRAB_RAY_RADIUS}. */
   pick(ray: Ray): { garmentId: number; particle: number; distance: number } | null {
-    let bestGarment = -1;
-    let bestParticle = -1;
-    let bestAlong = Infinity;
+    const hits = this.collectHits(ray);
+    let best = -1;
+    for (let h = 0; h < hits; h++) {
+      if (best < 0 || this.hitDistances[h] < this.hitDistances[best]) best = h;
+    }
+    if (best < 0) return null;
+    return {
+      garmentId: this.hitGarments[best],
+      particle: this.hitParticles[best],
+      distance: this.hitDistances[best],
+    };
+  }
+
+  /**
+   * Every garment the ray passes through, with the nearest particle on each.
+   *
+   * Results land in the reused `hit*` arrays rather than freshly allocated
+   * objects: a sweep calls this several times per frame, and an armful of
+   * garbage per grab attempt is exactly the kind of allocation that turns into
+   * a collection pause mid-drag.
+   *
+   * @returns how many entries were written.
+   */
+  private collectHits(ray: Ray): number {
+    const { hitGarments, hitParticles, hitDistances } = this;
+    hitGarments.length = 0;
+    hitParticles.length = 0;
+    hitDistances.length = 0;
+    const radiusSq = GRAB_RAY_RADIUS * GRAB_RAY_RADIUS;
 
     for (const g of this.garments) {
       if (g.state !== 'falling') continue;
       const n = g.topology.count;
+      let bestAlong = Infinity;
+      let bestParticle = -1;
+
       for (let i = 0; i < n; i++) {
         const ix = i * 3;
         const ox = g.pos[ix] - ray.ox;
@@ -1004,16 +1127,19 @@ export class ClothWorld {
         const px = ox - ray.dx * along;
         const py = oy - ray.dy * along;
         const pz = oz - ray.dz * along;
-        if (px * px + py * py + pz * pz > GRAB_RAY_RADIUS * GRAB_RAY_RADIUS) continue;
+        if (px * px + py * py + pz * pz > radiusSq) continue;
 
         bestAlong = along;
-        bestGarment = g.id;
         bestParticle = i;
       }
+
+      if (bestParticle < 0) continue;
+      hitGarments.push(g.id);
+      hitParticles.push(bestParticle);
+      hitDistances.push(bestAlong);
     }
 
-    if (bestGarment < 0) return null;
-    return { garmentId: bestGarment, particle: bestParticle, distance: bestAlong };
+    return hitGarments.length;
   }
 
   /** Fraction of a garment's particles inside `box`. */

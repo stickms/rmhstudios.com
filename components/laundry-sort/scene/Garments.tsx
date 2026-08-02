@@ -28,7 +28,10 @@ export function Garments({ matchRef, quality }: Props) {
   // Shared mutable channels so the cloth components can read per-frame values
   // without props changing (and therefore without re-rendering).
   const timeRef = useRef(0);
-  const heldRef = useRef<number | null>(null);
+  // The world's live set, not a copy — reassigning the same instance every
+  // frame costs nothing, whereas snapshotting it would allocate 60 times a
+  // second for a value that is usually empty.
+  const heldRef = useRef<ReadonlySet<number> | null>(null);
 
   useFrame(() => {
     const match = matchRef.current;
@@ -41,7 +44,7 @@ export function Garments({ matchRef, quality }: Props) {
     }
 
     timeRef.current = match.world.time;
-    heldRef.current = match.world.heldGarmentId;
+    heldRef.current = match.world.heldIds;
 
     if (match.world.revision !== revisionRef.current) {
       revisionRef.current = match.world.revision;

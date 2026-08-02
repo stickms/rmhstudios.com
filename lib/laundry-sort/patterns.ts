@@ -3,8 +3,10 @@
  *
  * A garment is a **masked grid**: a `cols × rows` lattice of particles with a
  * boolean mask that cuts the silhouette out of it, exactly the way a real
- * pattern piece is cut from a bolt of cloth. Doing it this way buys three
- * things at once:
+ * pattern piece is cut from a bolt of cloth. That lattice is the mid-surface
+ * the solver simulates; the visible garment is the shell sewn around it — see
+ * [`shell.ts`](./shell.ts), which gives the cloth its thickness without adding
+ * a single particle to the sim. Doing it this way buys three things at once:
  *
  * - Constraint generation is mechanical (structural / shear / bending all fall
  *   out of grid adjacency), so a new garment is a mask literal, not new solver
@@ -17,6 +19,8 @@
  * Topology is precomputed once per kind at module load and shared by every
  * instance — only the particle positions are per-garment.
  */
+
+import { buildShell, type ShellTopology } from './shell';
 
 export type GarmentKind = 'shirt' | 'pants' | 'towel' | 'sock';
 
@@ -33,6 +37,17 @@ interface PatternSource {
    * planes and flutters on the way down instead of dropping like a stone.
    */
   drag: number;
+  /**
+   * Peak half-thickness of the sewn shell, in metres — how much fabric sits
+   * between the mid-surface and the outside of the garment at its fattest
+   * point. Tapers to a hem at every open edge (see `shell.ts`).
+   *
+   * Judged against the piece's own `spacing`, because that is the ratio the eye
+   * reads: a sock is barely three centimetres thick, but at a 0.12 lattice it
+   * still looks like the chunky tube it is, while the same figure on a towel's
+   * 0.2 lattice would look like a bedsheet.
+   */
+  thickness: number;
   rows_: string[];
 }
 
@@ -59,6 +74,7 @@ const SOURCES: Record<GarmentKind, PatternSource> = {
     rows: 7,
     spacing: 0.17,
     drag: 1.15,
+    thickness: 0.035,
     rows_: [
       '..XX.XX..',
       'XXXXXXXXX',
@@ -75,6 +91,7 @@ const SOURCES: Record<GarmentKind, PatternSource> = {
     rows: 8,
     spacing: 0.15,
     drag: 0.95,
+    thickness: 0.032,
     rows_: ['XXXXXXX', 'XXXXXXX', 'XXXXXXX', 'XXX.XXX', 'XXX.XXX', 'XXX.XXX', 'XXX.XXX', 'XXX.XXX'],
   },
   // A plain rectangle — the most sail, the most flutter, the easiest to catch.
@@ -83,6 +100,9 @@ const SOURCES: Record<GarmentKind, PatternSource> = {
     rows: 7,
     spacing: 0.2,
     drag: 1.45,
+    // The thickest thing in the game — a towel is the one garment whose bulk is
+    // the point of it.
+    thickness: 0.045,
     rows_: ['XXXXXX', 'XXXXXX', 'XXXXXX', 'XXXXXX', 'XXXXXX', 'XXXXXX', 'XXXXXX'],
   },
   // Sock: an L — a cuff dropping into a foot. Small, dense, barely catches the
@@ -92,6 +112,7 @@ const SOURCES: Record<GarmentKind, PatternSource> = {
     rows: 6,
     spacing: 0.12,
     drag: 0.6,
+    thickness: 0.03,
     rows_: ['XXX..', 'XXX..', 'XXX..', 'XXX..', 'XXXXX', 'XXXXX'],
   },
 };
@@ -120,8 +141,14 @@ export interface PatternTopology {
   structuralRest: Float32Array;
   shearRest: Float32Array;
   bendingRest: Float32Array;
-  /** Triangle indices for the render mesh. */
+  /** Triangle indices for the mid-surface the solver simulates. */
   indices: Uint16Array;
+  /**
+   * The sewn shell built around that mid-surface: the mesh that actually gets
+   * drawn, and the per-particle contact radii that keep the physics agreeing
+   * with the thickness the player can see. Costs the solver no extra particles.
+   */
+  shell: ShellTopology;
   /** `2 * count` UVs so the weave texture tiles across the cut piece. */
   uvs: Float32Array;
   /**
@@ -240,6 +267,8 @@ function buildTopology(kind: GarmentKind, src: PatternSource): PatternTopology {
     }
   }
 
+  const triangles = Uint16Array.from(indices);
+
   return {
     kind,
     cols,
@@ -257,7 +286,18 @@ function buildTopology(kind: GarmentKind, src: PatternSource): PatternTopology {
     structuralRest: restFor(structural),
     shearRest: restFor(shear),
     bendingRest: restFor(bending),
-    indices: Uint16Array.from(indices),
+    indices: triangles,
+    shell: buildShell({
+      count,
+      cols,
+      rows,
+      slotToParticle,
+      particleCol,
+      particleRow,
+      indices: triangles,
+      uvs,
+      thickness: src.thickness,
+    }),
     uvs,
     ripplePhaseCos,
     ripplePhaseSin,
