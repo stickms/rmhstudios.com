@@ -53,6 +53,7 @@
   "music": "음악",
   "neural-collapse": "뉴럴 콜랩스",
   "neural-lobby": "뉴럴 로비",
+  "neural-operatives_one": "뉴럴 오퍼레이터스 ({{count}}/{{max}})",
   "neural-operatives_other": "뉴럴 오퍼레이터 ({{count}}/{{max}})",
   "no-scores-yet": "아직 점수가 없습니다. 첫 번째가 되어보세요!",
   "not-ranked": "아직 순위에 오르지 않았습니다. 한 판 플레이하세요!",
