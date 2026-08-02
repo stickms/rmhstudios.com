@@ -1,45 +1,52 @@
 /**
  * Vertical 1080×1920 "share to Stories" card for a post.
  *
- * Same satori → resvg → PNG pipeline as the OG card, sized 9:16 for Instagram /
- * Snapchat / TikTok stories. Self-contained font/avatar helpers so it doesn't
- * couple to the landscape renderers. Served by /api/og/post/$id/story and
- * offered as a downloadable asset in the share sheet.
+ * Same pipeline and same design language as the landscape card
+ * (`post-image.server`), re-proportioned 9:16 for Instagram / Snapchat / TikTok.
+ * The post's text is the hero here rather than a body under an author row, and
+ * the globe sits under it at the size the navigator actually reads at — a story
+ * is seen full-screen, so there is room for the mark to be the mark.
+ *
+ * Served by /api/og/post/$id/story and offered as a downloadable asset in the
+ * share sheet.
  */
 
 import React from 'react';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 import {
-  ACCENT,
-  BG,
+  INK,
   MUTED,
-  SURFACE,
-  TEXT,
+  SCALE,
   fetchAvatarDataUri,
   loadFonts,
   satoriFonts,
   stripEmoji,
   truncate as sharedTruncate,
 } from '@/lib/og/shared.server';
+import {
+  STORY,
+  avatarDisc,
+  cardFrame,
+  displayTracking,
+  fitText,
+  frameMetrics,
+  globeMark,
+  pane,
+} from '@/lib/og/chrome.server';
 
 /** This card strips emoji before truncating (satori renders them as tofu). */
 function truncate(s: string, n: number): string {
   return sharedTruncate(stripEmoji(s), n);
 }
 
-// Cool down after a font fetch failure instead of re-hitting Google every request.
-
-
-
-
 const pngCache = new Map<string, { png: Buffer; ts: number }>();
 const PNG_TTL = 10 * 60 * 1000;
 const PNG_MAX = 60;
 
-
-
-const CARD = '#12151d';
+const PANE_PAD = 44 * SCALE;
+const AVATAR = 56 * SCALE;
+const MARK = 100 * SCALE;
 
 export interface PostStoryData {
   id: string;
@@ -49,10 +56,6 @@ export interface PostStoryData {
   authorImage: string | null;
 }
 
-// The Inter font used by satori has no emoji glyphs, so emoji would render as
-// "tofu" boxes. Strip emoji/pictographs (plus variation selectors + ZWJ) first.
-
-
 export async function renderPostStoryImage(data: PostStoryData): Promise<Buffer> {
   const cacheKey = data.id;
   const cached = pngCache.get(cacheKey);
@@ -61,106 +64,65 @@ export async function renderPostStoryImage(data: PostStoryData): Promise<Buffer>
   await loadFonts();
 
   const avatar = await fetchAvatarDataUri(data.authorImage);
-  const initial = (data.authorName || data.authorHandle || 'R')[0]?.toUpperCase() ?? 'R';
-  const body = truncate(data.content || 'View this post on RMH Studios', 300);
+  const name = truncate(data.authorName || data.authorHandle || 'RMH Studios', 24);
+  const initial = (name || 'R')[0]?.toUpperCase() ?? 'R';
+  const body = truncate(data.content || 'View this post on RMH Studios', 320);
 
-  const element = (
-    <div
-      style={{
-        width: 1080,
-        height: 1920,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        backgroundColor: BG,
-        padding: 96,
-        fontFamily: 'Inter',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          backgroundColor: CARD,
-          border: `2px solid ${SURFACE}`,
-          borderRadius: 48,
-          padding: 72,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-          {avatar ? (
-            <img src={avatar} alt="" width={120} height={120} style={{ borderRadius: 60 }} />
-          ) : (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 120,
-                height: 120,
-                borderRadius: 60,
-                backgroundColor: SURFACE,
-                color: ACCENT,
-                fontSize: 56,
-                fontWeight: 700,
-              }}
-            >
-              {initial}
-            </div>
-          )}
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: 46, fontWeight: 700, color: TEXT }}>
-              {truncate(data.authorName, 22)}
-            </span>
-            {data.authorHandle && (
-              <span style={{ fontSize: 34, color: MUTED }}>@{data.authorHandle}</span>
-            )}
-          </div>
-        </div>
-
-        <div
-          style={{
-            display: 'flex',
-            marginTop: 56,
-            fontSize: body.length > 160 ? 52 : 64,
-            lineHeight: 1.35,
-            color: TEXT,
-            fontWeight: 400,
-          }}
-        >
-          {body}
-        </div>
-      </div>
-
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 16,
-          marginTop: 64,
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            width: 40,
-            height: 40,
-            borderRadius: 12,
-            backgroundColor: ACCENT,
-          }}
-        />
-        <span style={{ fontSize: 44, fontWeight: 700, color: TEXT }}>RMH Studios</span>
-      </div>
-    </div>
-  );
-
-  const svg = await satori(element, {
-    width: 1080,
-    height: 1920,
-    fonts: satoriFonts(),
+  // The pane sits above the globe, so it gets what's left after the mark and the
+  // gap under it — worked out rather than eyeballed, because satori won't clip.
+  const frame = frameMetrics(STORY.width, STORY.height, true);
+  const inner = frame.width - PANE_PAD * 2;
+  const bodyBox = frame.height - MARK - 60 * SCALE - PANE_PAD * 2 - AVATAR - 30 * SCALE;
+  const bodySize = fitText(body, {
+    width: inner,
+    height: bodyBox,
+    steps: [88, 76, 64, 54, 46, 38],
+    lineHeight: 1.24,
   });
-  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: 1080 } });
+
+  const element = cardFrame({
+    ...STORY,
+    eyebrow: 'Post',
+    centred: true,
+    children: [
+      React.cloneElement(
+        pane({
+          style: { padding: PANE_PAD },
+          children: [
+            <div key="author" style={{ display: 'flex', alignItems: 'center', gap: 20 * SCALE }}>
+              {avatarDisc(avatar, initial, AVATAR)}
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: 24 * SCALE, fontWeight: 700, color: INK }}>{name}</span>
+                {data.authorHandle ? (
+                  <span style={{ fontSize: 18 * SCALE, color: MUTED }}>@{data.authorHandle}</span>
+                ) : null}
+              </div>
+            </div>,
+            <div key="body" style={{ display: 'flex', marginTop: 30 * SCALE }}>
+              <span
+                style={{
+                  fontSize: bodySize,
+                  lineHeight: 1.24,
+                  letterSpacing: displayTracking(bodySize),
+                  fontWeight: 500,
+                  color: INK,
+                }}
+              >
+                {body}
+              </span>
+            </div>,
+          ],
+        }),
+        { key: 'pane' },
+      ),
+      <div key="mark" style={{ display: 'flex', justifyContent: 'center', marginTop: 60 * SCALE }}>
+        {globeMark(MARK, { weight: 0.85 })}
+      </div>,
+    ],
+  });
+
+  const svg = await satori(element, { ...STORY, fonts: satoriFonts() });
+  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: STORY.width } });
   const png = Buffer.from(resvg.render().asPng());
 
   if (pngCache.size >= PNG_MAX) {

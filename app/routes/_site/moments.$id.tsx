@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { ContextRail } from "@/components/feed/ContextRail";
 import { Button } from '@/components/ui/button';
-import { buildMeta, buildCanonical } from '@/lib/seo';
+import { buildMeta, buildCanonical, ogCardPath } from '@/lib/seo';
 import { getMoment } from '@/lib/moments.server';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 
@@ -46,7 +46,13 @@ export const Route = createFileRoute('/_site/moments/$id')({
       : 'A shared moment on RMH Studios.';
     const path = `/moments/${params.id}`;
     return {
-      meta: buildMeta({ title, description, path, image: `/api/og/moment/${params.id}` }),
+      meta: buildMeta({
+        title,
+        description,
+        path,
+        image: ogCardPath('moment', params.id),
+        imageAlt: m ? `${label}: ${m.payload.value}` : undefined,
+      }),
       links: [buildCanonical(path)],
     };
   },

@@ -23,7 +23,7 @@ import { BlurImage } from '@/components/ui/BlurImage';
 import { ShareButton } from '@/components/blog/ShareButton';
 import { markdownComponents } from '@/components/blog/MDXAnimations';
 import { getPostBySlug } from '@/lib/blog';
-import { buildCanonical, SITE_URL } from '@/lib/seo';
+import { buildCanonical, buildMeta, ogCardPath, SITE_URL } from '@/lib/seo';
 import { articleSchema, jsonLdScript } from '@/lib/schema';
 import { liquidVTName } from '@/lib/view-transition';
 
@@ -54,21 +54,21 @@ export const Route = createFileRoute('/_site/blog/$slug')({
     const description = (loaderData?.description as string) ?? '';
     const image = loaderData?.image as string | undefined;
     return {
-      meta: [
-        { title: `${title} | RMH Studios Devlog` },
-        { name: 'description', content: description },
-        { property: 'og:title', content: title },
-        { property: 'og:description', content: description },
-        { property: 'og:type', content: 'article' },
-        ...(image
-          ? [
-              {
-                property: 'og:image',
-                content: image.startsWith('http') ? image : `${SITE_URL}${image}`,
-              },
-            ]
-          : []),
-      ],
+      // A post that chose a hero image shares that image; the rest — most of the
+      // archive — get a rendered devlog card instead of the site-wide default,
+      // which named neither the post nor the blog. `buildMeta` also supplies the
+      // Twitter tags and the absolute URL this head used to omit entirely.
+      meta: buildMeta({
+        title: `${title} | RMH Studios Devlog`,
+        description,
+        path: `/blog/${params.slug}`,
+        image: image || ogCardPath('blog', params.slug),
+        imageAlt: image ? title : `${title} — a devlog post on RMH Studios.`,
+        // A post's own hero art is whatever shape the author uploaded, so the
+        // 1200×630 claim would be a lie for it.
+        imageSize: image ? null : undefined,
+        type: 'article',
+      }),
       links: [
         buildCanonical(`/blog/${params.slug}`),
         {

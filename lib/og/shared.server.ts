@@ -128,10 +128,42 @@ export function truncate(s: string, n: number): string {
   return t.length > n ? `${t.slice(0, n - 1)}…` : t;
 }
 
-/** Card palette. Deliberately hard-coded: satori can't read CSS custom
- * properties, so these mirror the `--site-*` dark tokens by hand. */
-export const BG = '#0b0d12';
-export const SURFACE = '#161922';
-export const TEXT = '#f4f6fb';
-export const MUTED = '#9aa3b2';
-export const ACCENT = '#f5a623';
+/* -------------------------------------------------------------------------- */
+/* Palette + scale                                                            */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The card palette, hand-mirrored from the DEFAULT theme's `--site-*` block in
+ * `app/globals.css`. satori cannot read CSS custom properties, so this is the
+ * one place in the codebase allowed to restate them — keep it in sync when the
+ * default theme's tokens move.
+ *
+ * The default theme is strict monochrome glass (design.md §1): white canvas,
+ * ink text, ink accent, hairline black borders. Cards are therefore ink on
+ * white — not the old dark/amber scheme, which matched no theme the site has
+ * shipped since the rewrite.
+ */
+export const CANVAS = '#ffffff'; // --site-bg
+export const INK = '#000000'; // --site-text, --site-accent
+export const INK_FG = '#ffffff'; // --site-accent-fg
+export const MUTED = '#565656'; // --site-text-muted
+export const DIM = '#767676'; // --site-text-dim
+export const HAIRLINE = 'rgba(0, 0, 0, 0.16)'; // --site-border
+export const HAIRLINE_SOFT = 'rgba(0, 0, 0, 0.08)'; // --site-glass-rim
+export const GLASS = 'rgba(255, 255, 255, 0.72)'; // --site-glass-tint
+export const GLASS_STRONG = 'rgba(255, 255, 255, 0.86)'; // --site-glass-tint-strong
+export const WELL = 'rgba(0, 0, 0, 0.045)'; // --site-bg-subtle
+
+/**
+ * Everything geometric on a card is a site token times this.
+ *
+ * A 1200×630 card is displayed at roughly half that in every unfurl that
+ * matters (Discord ~500px, Twitter ~600px, iMessage ~340px), so a 22px radius
+ * and a 1px hairline drawn at card scale arrive at the viewer as 11px and half
+ * a pixel — a rounder, fainter box than the site's. Doubling the tokens means
+ * the card lands on the *rendered* value the design specifies.
+ */
+export const SCALE = 2;
+export const RADIUS = 22 * SCALE; // --site-radius
+export const RADIUS_SM = 14 * SCALE; // --site-radius-sm
+export const HAIRLINE_W = 1 * SCALE; // --site-border-width

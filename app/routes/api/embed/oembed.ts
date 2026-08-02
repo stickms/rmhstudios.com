@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
-import { SITE_URL } from '@/lib/seo';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, ogCardPath, SITE_URL } from '@/lib/seo';
 
 /**
  * /api/embed/oembed — oEmbed *provider* endpoint (https://oembed.com).
@@ -117,6 +117,13 @@ export const Route = createFileRoute('/api/embed/oembed')({
               html,
               width,
               height,
+              // A consumer that won't run our iframe (most feed readers, and
+              // Slack in a channel that blocks embeds) previously got a payload
+              // with no picture in it at all. The post's own OG card is exactly
+              // the right fallback, and oEmbed has fields for it.
+              thumbnail_url: `${SITE_URL}${ogCardPath('post', post.id)}`,
+              thumbnail_width: OG_IMAGE_WIDTH,
+              thumbnail_height: OG_IMAGE_HEIGHT,
               cache_age: 3600,
             };
 

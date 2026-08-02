@@ -7,7 +7,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { getJobDetail, type QueriesPrisma } from '@/lib/rmhladder/server/queries';
 import { setJobAction, type ActionsPrisma } from '@/lib/rmhladder/server/actions';
-import { buildCanonical, buildMeta } from '@/lib/seo';
+import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
 import { jobPostingSchema, jsonLdScript } from '@/lib/schema';
 import { safeExternalUrl } from '@/components/rmhladder/url';
 
@@ -56,6 +56,10 @@ export const Route = createFileRoute('/_site/rmhladder/jobs/$jobId')({
         title: `${job.title as string} | RMH Ladder`,
         description,
         path,
+        // The role, the company, where it is and what it pays — the things a
+        // recipient needs before deciding to open a shared job link.
+        image: ogCardPath('job', params.jobId),
+        imageAlt: `${job.title as string} at ${companyName}, on RMH Ladder.`,
       }),
       links: [buildCanonical(path)],
       scripts: [jsonLdScript(jobPostingSchema({

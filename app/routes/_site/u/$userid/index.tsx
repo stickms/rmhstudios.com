@@ -11,7 +11,7 @@ import { ProfileColumn } from '@/components/feed/ProfileColumn';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { getSidebarData } from '@/lib/sidebar-data';
 import { personSchema, jsonLdScript } from '@/lib/schema';
-import { SITE_URL } from '@/lib/seo';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, ogCardPath, SITE_URL } from '@/lib/seo';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getProfile } from '@/lib/profile.server';
 import { WIDE_WIDTH } from '@/lib/layout-width';
@@ -52,7 +52,7 @@ const fetchProfileData = createServerFn({ method: 'GET' })
         ogType: 'profile',
         ogUrl: `${SITE_URL}/u/${handle || id}`,
         // Dynamic branded share card (1200×630) instead of a bare avatar.
-        ogImage: `${SITE_URL}/api/og/profile/${handle || id}`,
+        ogImage: `${SITE_URL}${ogCardPath('profile', handle || id)}`,
         avatarImage: profile.image || '',
         name,
         handle: handle ?? null,
@@ -74,7 +74,12 @@ export const Route = createFileRoute('/_site/u/$userid/')({
       { property: 'og:site_name', content: 'RMH' },
       { property: 'og:url', content: loaderData?.meta.ogUrl ?? '' },
       ...(loaderData?.meta.ogImage
-        ? [{ property: 'og:image', content: loaderData.meta.ogImage }]
+        ? [
+            { property: 'og:image', content: loaderData.meta.ogImage },
+            { property: 'og:image:width', content: String(OG_IMAGE_WIDTH) },
+            { property: 'og:image:height', content: String(OG_IMAGE_HEIGHT) },
+            { property: 'og:image:alt', content: loaderData.meta.title },
+          ]
         : []),
       {
         name: 'twitter:card',
