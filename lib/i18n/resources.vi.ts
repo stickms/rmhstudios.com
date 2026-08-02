@@ -16,6 +16,7 @@ import viCDoctrine from "@/locales/vi/c-doctrine.json";
 import viCDreamRift from "@/locales/vi/c-dream-rift.json";
 import viCEconomy from "@/locales/vi/c-economy.json";
 import viCForestExplorer from "@/locales/vi/c-forest-explorer.json";
+import viCGabrielsHorn from "@/locales/vi/c-gabriels-horn.json";
 import viCGame from "@/locales/vi/c-game.json";
 import viCHistory from "@/locales/vi/c-history.json";
 import viCHouseAlwaysWins from "@/locales/vi/c-house-always-wins.json";
@@ -103,6 +104,7 @@ const viResources = {
   "c-dream-rift": viCDreamRift,
   "c-economy": viCEconomy,
   "c-forest-explorer": viCForestExplorer,
+  "c-gabriels-horn": viCGabrielsHorn,
   "c-game": viCGame,
   "c-history": viCHistory,
   "c-house-always-wins": viCHouseAlwaysWins,

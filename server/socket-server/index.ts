@@ -69,6 +69,10 @@ import {
   registerLaundrySortHandlers,
   handleLaundrySortDisconnect,
 } from './handlers/laundry-sort';
+import {
+  registerGabrielsHornHandlers,
+  handleGabrielsHornDisconnect,
+} from './handlers/gabriels-horn';
 import { registerSpacesHandlers, handleSpacesDisconnect } from './handlers/spaces';
 import { registerPartyHandlers, handlePartyDisconnect } from './handlers/party';
 
@@ -270,6 +274,7 @@ io.on('connection', (socket) => {
   registerDreamRiftHandlers(io, socket);
   registerRmhFarmingSimHandlers(io, socket);
   registerLaundrySortHandlers(io, socket);
+  registerGabrielsHornHandlers(io, socket);
 
   // Platform expansion (§4, §5): live Spaces + cross-game party.
   registerSpacesHandlers(io, socket);
@@ -300,6 +305,7 @@ io.on('connection', (socket) => {
     handleDreamRiftDisconnect(io, socket);
     handleRmhFarmingSimDisconnect(io, socket);
     handleLaundrySortDisconnect(io, socket);
+    handleGabrielsHornDisconnect(io, socket);
 
     cleanupRateLimits(socket.id);
   });

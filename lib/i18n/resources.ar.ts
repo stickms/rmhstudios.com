@@ -16,6 +16,7 @@ import arCDoctrine from "@/locales/ar/c-doctrine.json";
 import arCDreamRift from "@/locales/ar/c-dream-rift.json";
 import arCEconomy from "@/locales/ar/c-economy.json";
 import arCForestExplorer from "@/locales/ar/c-forest-explorer.json";
+import arCGabrielsHorn from "@/locales/ar/c-gabriels-horn.json";
 import arCGame from "@/locales/ar/c-game.json";
 import arCHistory from "@/locales/ar/c-history.json";
 import arCHouseAlwaysWins from "@/locales/ar/c-house-always-wins.json";
@@ -105,6 +106,7 @@ const arResources = {
   "c-dream-rift": arCDreamRift,
   "c-economy": arCEconomy,
   "c-forest-explorer": arCForestExplorer,
+  "c-gabriels-horn": arCGabrielsHorn,
   "c-game": arCGame,
   "c-history": arCHistory,
   "c-house-always-wins": arCHouseAlwaysWins,

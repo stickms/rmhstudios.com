@@ -16,6 +16,7 @@ import idCDoctrine from "@/locales/id/c-doctrine.json";
 import idCDreamRift from "@/locales/id/c-dream-rift.json";
 import idCEconomy from "@/locales/id/c-economy.json";
 import idCForestExplorer from "@/locales/id/c-forest-explorer.json";
+import idCGabrielsHorn from "@/locales/id/c-gabriels-horn.json";
 import idCGame from "@/locales/id/c-game.json";
 import idCHistory from "@/locales/id/c-history.json";
 import idCHouseAlwaysWins from "@/locales/id/c-house-always-wins.json";
@@ -103,6 +104,7 @@ const idResources = {
   "c-dream-rift": idCDreamRift,
   "c-economy": idCEconomy,
   "c-forest-explorer": idCForestExplorer,
+  "c-gabriels-horn": idCGabrielsHorn,
   "c-game": idCGame,
   "c-history": idCHistory,
   "c-house-always-wins": idCHouseAlwaysWins,

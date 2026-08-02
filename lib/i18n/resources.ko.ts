@@ -16,6 +16,7 @@ import koCDoctrine from "@/locales/ko/c-doctrine.json";
 import koCDreamRift from "@/locales/ko/c-dream-rift.json";
 import koCEconomy from "@/locales/ko/c-economy.json";
 import koCForestExplorer from "@/locales/ko/c-forest-explorer.json";
+import koCGabrielsHorn from "@/locales/ko/c-gabriels-horn.json";
 import koCGame from "@/locales/ko/c-game.json";
 import koCHistory from "@/locales/ko/c-history.json";
 import koCHouseAlwaysWins from "@/locales/ko/c-house-always-wins.json";
@@ -103,6 +104,7 @@ const koResources = {
   "c-dream-rift": koCDreamRift,
   "c-economy": koCEconomy,
   "c-forest-explorer": koCForestExplorer,
+  "c-gabriels-horn": koCGabrielsHorn,
   "c-game": koCGame,
   "c-history": koCHistory,
   "c-house-always-wins": koCHouseAlwaysWins,

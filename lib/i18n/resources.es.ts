@@ -16,6 +16,7 @@ import esCDoctrine from "@/locales/es/c-doctrine.json";
 import esCDreamRift from "@/locales/es/c-dream-rift.json";
 import esCEconomy from "@/locales/es/c-economy.json";
 import esCForestExplorer from "@/locales/es/c-forest-explorer.json";
+import esCGabrielsHorn from "@/locales/es/c-gabriels-horn.json";
 import esCGame from "@/locales/es/c-game.json";
 import esCHistory from "@/locales/es/c-history.json";
 import esCHouseAlwaysWins from "@/locales/es/c-house-always-wins.json";
@@ -103,6 +104,7 @@ const esResources = {
   "c-dream-rift": esCDreamRift,
   "c-economy": esCEconomy,
   "c-forest-explorer": esCForestExplorer,
+  "c-gabriels-horn": esCGabrielsHorn,
   "c-game": esCGame,
   "c-history": esCHistory,
   "c-house-always-wins": esCHouseAlwaysWins,

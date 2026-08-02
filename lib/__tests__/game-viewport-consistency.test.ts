@@ -60,6 +60,7 @@ const FULLSCREEN_DIRS = [
   'daily-puzzles',
   'dream-rift',
   'forest-explorer',
+  'gabriels-horn',
   'game', // Slice It
   'house-always-wins',
   'isleworks',

@@ -16,6 +16,7 @@ import jaCDoctrine from "@/locales/ja/c-doctrine.json";
 import jaCDreamRift from "@/locales/ja/c-dream-rift.json";
 import jaCEconomy from "@/locales/ja/c-economy.json";
 import jaCForestExplorer from "@/locales/ja/c-forest-explorer.json";
+import jaCGabrielsHorn from "@/locales/ja/c-gabriels-horn.json";
 import jaCGame from "@/locales/ja/c-game.json";
 import jaCHistory from "@/locales/ja/c-history.json";
 import jaCHouseAlwaysWins from "@/locales/ja/c-house-always-wins.json";
@@ -103,6 +104,7 @@ const jaResources = {
   "c-dream-rift": jaCDreamRift,
   "c-economy": jaCEconomy,
   "c-forest-explorer": jaCForestExplorer,
+  "c-gabriels-horn": jaCGabrielsHorn,
   "c-game": jaCGame,
   "c-history": jaCHistory,
   "c-house-always-wins": jaCHouseAlwaysWins,

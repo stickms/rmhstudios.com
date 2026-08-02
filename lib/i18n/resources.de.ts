@@ -16,6 +16,7 @@ import deCDoctrine from "@/locales/de/c-doctrine.json";
 import deCDreamRift from "@/locales/de/c-dream-rift.json";
 import deCEconomy from "@/locales/de/c-economy.json";
 import deCForestExplorer from "@/locales/de/c-forest-explorer.json";
+import deCGabrielsHorn from "@/locales/de/c-gabriels-horn.json";
 import deCGame from "@/locales/de/c-game.json";
 import deCHistory from "@/locales/de/c-history.json";
 import deCHouseAlwaysWins from "@/locales/de/c-house-always-wins.json";
@@ -103,6 +104,7 @@ const deResources = {
   "c-dream-rift": deCDreamRift,
   "c-economy": deCEconomy,
   "c-forest-explorer": deCForestExplorer,
+  "c-gabriels-horn": deCGabrielsHorn,
   "c-game": deCGame,
   "c-history": deCHistory,
   "c-house-always-wins": deCHouseAlwaysWins,

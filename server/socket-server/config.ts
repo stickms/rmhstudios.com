@@ -123,6 +123,31 @@ export const config = {
     'ls:finish': { max: 20, windowMs: 60_000 },
     'ls:rematch': { max: 30, windowMs: 60_000 },
     'ls:ticket': { max: 20, windowMs: 60_000 },
+    // Gabriel's Horn. Turn-based, so every one of these is a deliberate human
+    // action a second or more apart — the caps are set well above a fast player
+    // spamming a button through a laggy round, and nowhere near a flood.
+    'gh:create': { max: 10, windowMs: 60_000 },
+    'gh:join': { max: 30, windowMs: 60_000 },
+    'gh:quickplay': { max: 20, windowMs: 60_000 },
+    'gh:browse': { max: 30, windowMs: 60_000 },
+    'gh:leave': { max: 30, windowMs: 60_000 },
+    'gh:ready': { max: 60, windowMs: 60_000 },
+    'gh:settings': { max: 60, windowMs: 60_000 },
+    'gh:start': { max: 20, windowMs: 60_000 },
+    'gh:kick': { max: 20, windowMs: 60_000 },
+    'gh:play': { max: 120, windowMs: 60_000 },
+    'gh:roll': { max: 120, windowMs: 60_000 },
+    'gh:claim': { max: 120, windowMs: 60_000 },
+    'gh:call': { max: 120, windowMs: 60_000 },
+    'gh:end': { max: 30, windowMs: 60_000 },
+    'gh:pass': { max: 60, windowMs: 60_000 },
+    'gh:chat': { max: 30, windowMs: 60_000 },
+    'gh:rematch': { max: 30, windowMs: 60_000 },
+    // House-rule amendments. Low, because each one is preceded by an AI call on
+    // the web tier (which has its own `ai` limit) and because a table whose
+    // rules change twenty times a minute is not a table.
+    'gh:houseRules': { max: 20, windowMs: 60_000 },
+    'gh:ticket': { max: 20, windowMs: 60_000 },
     // ─── High-frequency relay / movement events ───
     // Movement + per-frame update events were previously unmetered (the rate
     // limiter returns true for events with no rule), so a single socket could

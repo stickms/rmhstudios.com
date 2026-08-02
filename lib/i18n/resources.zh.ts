@@ -16,6 +16,7 @@ import zhCDoctrine from "@/locales/zh/c-doctrine.json";
 import zhCDreamRift from "@/locales/zh/c-dream-rift.json";
 import zhCEconomy from "@/locales/zh/c-economy.json";
 import zhCForestExplorer from "@/locales/zh/c-forest-explorer.json";
+import zhCGabrielsHorn from "@/locales/zh/c-gabriels-horn.json";
 import zhCGame from "@/locales/zh/c-game.json";
 import zhCHistory from "@/locales/zh/c-history.json";
 import zhCHouseAlwaysWins from "@/locales/zh/c-house-always-wins.json";
@@ -105,6 +106,7 @@ const zhResources = {
   "c-dream-rift": zhCDreamRift,
   "c-economy": zhCEconomy,
   "c-forest-explorer": zhCForestExplorer,
+  "c-gabriels-horn": zhCGabrielsHorn,
   "c-game": zhCGame,
   "c-history": zhCHistory,
   "c-house-always-wins": zhCHouseAlwaysWins,
