@@ -15,7 +15,7 @@ import { AIGenerateButton } from'./AIGenerateButton';
 import { MentionTextarea } from'./MentionTextarea';
 import { EmojiPickerButton } from'@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from'@/lib/emoji/use-emoji-insert';
-import { useLiquidPop } from'@/components/ui/liquid-pop';
+import { usePopPresence } from '@/hooks/usePopPresence';
 import { useFreshUser } from'@/stores/userDisplayStore';
 import { timeAgoShort } from'@/lib/utils';
 import { useTranslation } from'react-i18next';
@@ -109,12 +109,8 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  const menuRef = useRef<HTMLDivElement>(null);
  const menuBtnRef = useRef<HTMLButtonElement>(null);
  const menuPanelRef = useRef<HTMLDivElement>(null);
- // §15.6 liquid pop — the comment overflow menu buds out of its trigger.
- const { underlay: menuUnderlay } = useLiquidPop({
- triggerRef: menuBtnRef,
- panelRef: menuPanelRef,
- open: menuOpen,
- });
+ // The shared bloom (globals.css §7.1) — held mounted for its close.
+ const { present: menuPresent, state: menuState } = usePopPresence(menuOpen);
 
  // When the site language changes, drop any cached translation so the next
  //"Translate"click re-translates into the newly selected language.
@@ -305,7 +301,6 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  {/* More menu */}
  {!comment.deletedAt && (
  <div className="relative ml-auto shrink-0"ref={menuRef}>
- {menuUnderlay}
  <button
  ref={menuBtnRef}
  onClick={() => setMenuOpen((v) => !v)}
@@ -313,8 +308,10 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  >
  <MoreHorizontal className="w-3.5 h-3.5"/>
  </button>
- {menuOpen && (
- <div ref={menuPanelRef} className="absolute right-0 top-full mt-1 w-44 glass-overlay py-1 z-50">
+ {menuPresent && (
+ <div ref={menuPanelRef}
+ data-motion="pop"
+ data-state={menuState} className="absolute right-0 top-full mt-1 w-44 origin-top-right glass-overlay py-1 z-50">
  <button
  onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"

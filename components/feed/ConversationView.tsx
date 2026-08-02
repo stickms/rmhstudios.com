@@ -10,7 +10,7 @@ import { Link } from'@tanstack/react-router';
 import { UserAvatar } from'@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from'@/components/Providers';
 import { Button } from'@/components/ui/button';
-import { useLiquidPop } from'@/components/ui/liquid-pop';
+import { usePopPresence } from '@/hooks/usePopPresence';
 import { GhostTextArea } from'./GhostTextArea';
 import { PostImageGrid } from'./PostImageGrid';
 import { useMessageSuggestion } from'@/lib/useMessageSuggestion';
@@ -87,12 +87,8 @@ export function ConversationView({
  const attachRef = useRef<HTMLDivElement>(null);
  const attachBtnRef = useRef<HTMLButtonElement>(null);
  const attachPanelRef = useRef<HTMLDivElement>(null);
- // §15.6 liquid pop — the attach (+) menu buds out of its trigger.
- const { underlay: attachUnderlay } = useLiquidPop({
- triggerRef: attachBtnRef,
- panelRef: attachPanelRef,
- open: attachOpen,
- });
+ // The shared bloom (globals.css §7.1) — held mounted for its close.
+ const { present: attachPresent, state: attachState } = usePopPresence(attachOpen);
  const imageInputRef = useRef<HTMLInputElement>(null);
  const initialFetched = useRef(false);
  // IDs of messages that should NOT animate in: the initial page and any
@@ -868,7 +864,6 @@ export function ConversationView({
  />
  {/* Attach (+) menu — image, GIF. Mirrors the rmhark composer. */}
  <div className="relative shrink-0"ref={attachRef}>
- {attachUnderlay}
  <button
  ref={attachBtnRef}
  type="button"
@@ -884,10 +879,12 @@ export function ConversationView({
  <Plus className="h-5 w-5"/>
  )}
  </button>
- {attachOpen && (
+ {attachPresent && (
  <div
  ref={attachPanelRef}
- className="absolute bottom-full right-0 z-30 mb-1 w-40 glass-overlay py-1"
+ data-motion="pop"
+ data-state={attachState}
+ className="absolute bottom-full right-0 z-30 mb-1 w-40 origin-bottom-right glass-overlay py-1"
  >
  <button
  type="button"

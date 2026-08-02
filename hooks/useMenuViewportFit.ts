@@ -69,7 +69,8 @@ export function useMenuViewportFit<T extends HTMLElement>(
       el.style.removeProperty('max-width');
       el.style.removeProperty('overflow-y');
       el.style.removeProperty('overscroll-behavior');
-      // Individual translate composes with liquid-pop's animated `transform`.
+      // The `translate` LONGHAND, so it composes with the bloom's animated
+      // `transform` (globals.css §7.1) instead of replacing it.
       el.style.removeProperty('translate');
     };
 
@@ -126,9 +127,10 @@ export function useMenuViewportFit<T extends HTMLElement>(
     };
 
     fit();
-    // liquid-pop's longest entrance settles at 460ms. Re-measure once afterward
-    // because getBoundingClientRect includes its temporary scale/rotation.
-    const settleTimer = window.setTimeout(fit, 520);
+    // The bloom settles at `--motion-bloom` (300ms). Re-measure once afterward,
+    // because getBoundingClientRect includes its temporary scale and rotation —
+    // a menu measured mid-open is measured 6% short and gets no clamp it needed.
+    const settleTimer = window.setTimeout(fit, 360);
 
     // Re-fit if the viewport changes while the menu is open (rotation, the
     // mobile URL bar collapsing, a pinch-zoom, desktop resize). Keyboard-driven

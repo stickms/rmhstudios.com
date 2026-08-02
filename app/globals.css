@@ -1342,9 +1342,9 @@ html.app-route {
   .glass-overlay {
     position: relative;
     /* Last-line viewport safety for every floating surface, including older
-       hand-positioned menus that do not use the measured liquid-pop hook. The
-       hook still supplies precise x/y clamping; these limits guarantee that no
-       popover can exceed the visible screen or trap unreachable content. */
+       hand-positioned menus that measure nothing themselves. `useMenuViewportFit`
+       still supplies precise x/y clamping; these limits guarantee that no popover
+       can exceed the visible screen or trap unreachable content. */
     max-inline-size: calc(100dvw - var(--safe-left, 0px) - var(--safe-right, 0px) - 24px);
     max-block-size: calc(100dvh - var(--safe-top, 0px) - var(--safe-bottom, 0px) - 24px);
     overflow-y: auto;
@@ -4272,7 +4272,7 @@ input[type='number'] {
    other.
 
    `perf-lite` drops both the cage and the settle for a plain anchored
-   scale-fade (the same call `liquid-pop`'s 'perf' mode makes). Everything here
+   scale-fade. Everything here
    is gated on no-preference, and the global reduce rule in §REDUCED MOTION
    collapses it anyway. */
 :root {
@@ -4301,6 +4301,30 @@ input[type='number'] {
   [data-motion='pop'] {
     transform-origin: var(--motion-origin, var(--radix-popper-transform-origin, center));
   }
+
+  /* How long the two acts run on each surface. The cage and the reveal are
+     PERCENTAGE keyframes, so they only line up with a surface's own travel if
+     they share its duration — a cage still dissolving after the panel had
+     finished arriving would read as a second, slower animation. The modal
+     surfaces run on `--motion-in`, the window their own keyframes already use;
+     only `pop` has the longer bloom to fill.
+
+     `.motion-cage` is the bare opt-in: the wireframe act WITHOUT a panel
+     animation, for a surface whose travel is somebody else's — a framer
+     `modalContent` variant, a hand-rolled crop dialog. The cage lives on
+     `::after` and the reveal on `> *`, neither of which is the panel, so the
+     two never contend for the same `animation` property. */
+  :is(
+    .motion-cage,
+    [data-motion='rise'],
+    [data-slot='dialog-content'],
+    [data-slot='sheet-content']
+  ) {
+    --motion-open: var(--motion-in);
+  }
+  [data-motion='pop'] {
+    --motion-open: var(--motion-bloom);
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -4327,7 +4351,13 @@ input[type='number'] {
      percentages of the panel rather than degrees of a sphere, so it reads the
      same on a 40px-tall speed menu and a 32rem quick panel. `border-radius:
      inherit` keeps the rim on the panel's own curve in every theme. */
-  [data-motion='pop']:not([data-state='closed'], .glass-liquid)::after {
+  :is(
+      .motion-cage,
+      [data-motion='pop'],
+      [data-motion='rise'],
+      [data-slot='dialog-content'],
+      [data-slot='sheet-content']
+    ):not([data-state='closed'], .glass-liquid)::after {
     content: '';
     position: absolute;
     inset: 0;
@@ -4347,13 +4377,19 @@ input[type='number'] {
         transparent 1px 14.2857%
       );
     opacity: 0;
-    animation: motion-pop-cage var(--motion-bloom) linear;
+    animation: motion-pop-cage var(--motion-open, var(--motion-bloom)) linear;
   }
 
   /* Act 2's reveal. Direct children only — the rows, the header, the footer —
      so the panel's own material can resolve on its own schedule underneath. */
-  [data-motion='pop']:not([data-state='closed']) > * {
-    animation: motion-pop-reveal var(--motion-bloom) linear;
+  :is(
+      .motion-cage,
+      [data-motion='pop'],
+      [data-motion='rise'],
+      [data-slot='dialog-content'],
+      [data-slot='sheet-content']
+    ):not([data-state='closed']) > * {
+    animation: motion-pop-reveal var(--motion-open, var(--motion-bloom)) linear;
   }
 
   [data-motion='rise']:not([data-state='closed']) {
@@ -4370,10 +4406,22 @@ input[type='number'] {
   html.perf-lite [data-motion='pop']:not([data-state='closed']) {
     animation: motion-pop-lite var(--motion-in) var(--motion-ease-in);
   }
-  html.perf-lite [data-motion='pop']:not([data-state='closed'], .glass-liquid)::after {
+  html.perf-lite :is(
+      .motion-cage,
+      [data-motion='pop'],
+      [data-motion='rise'],
+      [data-slot='dialog-content'],
+      [data-slot='sheet-content']
+    ):not([data-state='closed'], .glass-liquid)::after {
     content: none;
   }
-  html.perf-lite [data-motion='pop']:not([data-state='closed']) > * {
+  html.perf-lite :is(
+      .motion-cage,
+      [data-motion='pop'],
+      [data-motion='rise'],
+      [data-slot='dialog-content'],
+      [data-slot='sheet-content']
+    ):not([data-state='closed']) > * {
     animation: none;
   }
 }

@@ -10,7 +10,7 @@
  *   components/radial/radial.css   the backdrop blob field stops drifting
  *   lib/render/canvas2d-fx.ts, hooks/useGlassLight.ts,
  *   hooks/useLiquidBackground.ts, components/ui/liquid-morph.tsx,
- *   components/ui/liquid-pop.tsx, components/game/GameCanvas.tsx
+ *   components/game/GameCanvas.tsx
  *
  * …and until now **nothing ever added it**, so every one of those degradations
  * was dead code and the weakest laptop on the site rendered the full effect

@@ -71,7 +71,7 @@ without a single component change.
 >
 > Also deleted, and worth knowing so you don't go looking for it: the **GL/WebGPU
 > shader tier** (`lib/liquid-gl/`, ~2,240 lines) whose `initLiquidGL()` never had
-> a caller. `liquid-morph` and `liquid-pop` are the SVG-metaball path they always
+> a caller. `liquid-morph` is the SVG-metaball path it always
 > actually ran; comments there that mention a "shader body" are historical.
 
 **Current companions:** [radial UI + the globe](../components/radial/README.md) ·
@@ -931,11 +931,9 @@ gated off there too, via `html.app-route`).
   owner moves under them. Bodies unregister in layout-effect cleanup and
   re-sample before paint on route/tab commits; scroll, nested scroll, elastic
   touch movement, `visualViewport` changes, page resume and layout-shift events
-  wake the normally-idle sampler; and a liquid pop settles immediately onto its
-  real panel when either endpoint moves mid-animation, so a cached bud never
-  detaches from the trigger it budded out of. (Comments in `liquid-morph.tsx` /
-  `liquid-pop.tsx` still say "shader body" in places — that is the deleted GL
-  tier, and the SVG/CSS path they describe is the one that always ran.)
+  wake the normally-idle sampler. (Comments in `liquid-morph.tsx` still say
+  "shader body" in places — that is the deleted GL tier, and the SVG/CSS path
+  they describe is the one that always ran.)
 - **Liquid tabs:** tab strips use `components/ui/liquid-tabs.tsx` — each rides
   its own L1 **glass sheet** (`glass-fill glass-bevel-sm rounded-full` pill,
   `sheet` prop default) placed **below** the hero/page-title capsule, never
@@ -971,11 +969,17 @@ gated off there too, via `html.app-route`).
   consumer, so the exit rides Radix's own `data-state` instead), and equally the
   hand-rolled menus that mount on open and unmount on close. Three values:
 
-  | attribute            | for                                | matches      |
-  | -------------------- | ---------------------------------- | ------------ |
-  | `data-motion="fade"` | a scrim / backdrop                 | `overlay`    |
-  | `data-motion="pop"`  | a popover, menu, select, hover card | the bloom, below |
-  | `data-motion="rise"` | modal / dialog content             | `modalContent` |
+  | attribute            | for                                 | travel           | cage |
+  | -------------------- | ----------------------------------- | ---------------- | ---- |
+  | `data-motion="fade"` | a scrim / backdrop                  | `overlay`        | —    |
+  | `data-motion="pop"`  | a popover, menu, select, hover card | the bloom, below | yes  |
+  | `data-motion="rise"` | modal / dialog content              | `modalContent`   | yes  |
+  | `.motion-cage`       | a surface whose travel is somebody else's (a framer variant) | none | yes |
+
+  `Dialog` and `Sheet` need no attribute — the cage rules name their
+  `data-slot`s directly, so every one on the site gets it without a markup
+  change. A scrim is the one thing that never takes a cage: it has no material
+  to resolve into, it IS the dark behind one.
 
   The enter selector is `:not([data-state='closed'])`, not `[data-state='open']`,
   which is what makes the attribute enough on its own: a hand-rolled menu carries
@@ -985,17 +989,28 @@ gated off there too, via `html.app-route`).
 
   Both halves run on one clock: the `--motion-*` tokens in `globals.css` §7.1
   mirror `DURATION.slow` / `DURATION.fast` / `EASE.emphasized`. `Dialog` and
-  `Sheet` keep their own bespoke keyframes (a sheet slides from an edge, which
-  none of the three shapes covers) but were retimed onto the same tokens — they
-  used to hardcode three different answers between them.
-- **A menu opens the way the globe does: cage first, then the glass.** The
-  liquid globe never fades a finished sphere in — it blooms a wireframe and lets
-  the material read in around it. `pop` is that, in two acts on one 300ms clock:
-  for the first ~100ms an `::after` draws the panel's rim and a 6 × 7 grid (the
-  globe's own meridian and parallel count) while the panel blooms from its
-  anchor with its fill held off and its rows still at zero; then the cage
-  dissolves, the fill reads in, and the content comes up behind it — legible from
-  about 200ms, which is what "it opened" means to whoever is reading it.
+  `Sheet` keep their own bespoke TRAVEL (a sheet slides from an edge, which none
+  of the three shapes covers) but share the tokens and the cage — they used to
+  hardcode three different answers between them.
+- **Every floating surface opens the way the globe does: cage first, then the
+  glass.** The liquid globe never fades a finished sphere in — it blooms a
+  wireframe and lets the material read in around it. That is the site's open, in
+  two acts on one clock (300ms for `pop`, `--motion-in` for the modal tier):
+  for the first third an `::after` draws the panel's rim and a 6 × 7 grid (the
+  globe's own meridian and parallel count) while the panel travels in with its
+  fill held off and its rows still at zero; then the cage dissolves, the fill
+  reads in, and the content comes up behind it — legible from about 200ms on a
+  menu, which is what "it opened" means to whoever is reading it.
+
+  The cage lives on `::after` and the reveal on `> *`. Neither is the panel, so
+  they compose with ANY travel — a Radix `data-state` keyframe, a sheet's slide,
+  a framer `modalContent` variant — instead of contending for the same
+  `animation` property. That is what let one act reach every surface rather than
+  just the ones whose motion this file owns. The one requirement is that the
+  host establish a containing block, or the cage's `position: absolute; inset: 0`
+  escapes to the viewport; every surface in the list is `.glass-overlay`
+  (`position: relative`), and floating UI being `.glass-overlay` is already
+  CI-enforced (§13), so it holds by invariant rather than by discipline.
 
   Two things deliberately do not wait, both for cost: the **blur** lands at once
   (it is the one property here that cannot be animated cheaply, so act 1 reads as
@@ -1060,18 +1075,29 @@ gated off there too, via `html.app-route`).
      through a collision flip for free, and neither has to say anything.
 
   `perf-lite` drops both acts for a plain anchored scale-fade — no cage element
-  at all, no per-row work — which is the same call `liquid-pop`'s own 'perf' mode
-  makes; reduced motion removes the whole thing, and the menu simply appears.
+  at all, no per-row work; reduced motion removes the whole thing, and the menu
+  simply appears.
   Retiring the last two menus that still answered this privately — `lib-ctx-in`
   at 120ms and `vibe-model-pop` at 140ms — is what closed the loop §7.1 was
   opened to close.
-- **The richer open is `useLiquidPop`** (§15.6), and it stays the one for a menu
-  that buds off a small round trigger: a goo-filtered droplet separates from the
-  button and the real panel crossfades onto it. It costs two refs and a portalled
-  underlay per adopter, which is why the site runs both — the feed's composer,
-  overflow and reaction menus take the bud; everything else takes `data-motion`.
-  Never both on one panel: the hook writes the panel's `transform`/`opacity`/
-  `transform-origin` directly and a keyframe on the same element would fight it.
+- **There is exactly one open, and every floating surface takes it.** There used
+  to be two: `data-motion` for most things and `useLiquidPop` (§15.6) for the
+  feed's menus — a goo-filtered droplet that budded off the trigger and
+  crossfaded into the real panel. It looked good and it cost two refs, a
+  portalled underlay and an SVG filter per adopter, so it only ever reached
+  twelve of them and the other forty opened differently. The hook is **deleted**;
+  its consumers take `data-motion="pop"` + `usePopPresence`, which is two lines
+  and no portal. The wireframe act reaches further still: `pop`, `rise`,
+  `Dialog`, `Sheet` and the class `.motion-cage` (the bare opt-in, for a surface
+  whose travel is a framer variant's) all get it, because the cage lives on
+  `::after` and the reveal on `> *` — neither is the panel, so they compose with
+  any travel instead of contending for the same `animation` property.
+
+  One requirement: the host must establish a containing block, or the cage's
+  `position: absolute; inset: 0` escapes to the viewport. Every surface in that
+  list is `.glass-overlay`, which is `position: relative` — and floating UI
+  being `.glass-overlay` is already CI-enforced (§13), so this holds by an
+  invariant rather than by discipline.
 - **Never `transition-all`, and never animate a layout property.** `all` makes
   the engine watch every animatable property on the element, so a class change
   that happens to touch `width`/`padding`/`gap` animates a reflow nobody asked

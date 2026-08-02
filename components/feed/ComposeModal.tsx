@@ -16,7 +16,7 @@ import { authClient } from'@/lib/auth-client';
 import { useResolvedUser } from'@/components/Providers';
 import { buildOptimizedUrl } from'@/components/ui/OptimizedImage';
 import { Button } from'@/components/ui/button';
-import { useLiquidPop } from'@/components/ui/liquid-pop';
+import { usePopPresence } from '@/hooks/usePopPresence';
 import { useFeedStore } from'@/stores/feedStore';
 import {
  MAX_RMHARK_LENGTH,
@@ -77,12 +77,8 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  const menuRef = useRef<HTMLDivElement>(null);
  const menuPopRef = useRef<HTMLDivElement>(null);
  const menuBtnRef = useRef<HTMLButtonElement>(null);
- // §15.6 liquid pop — the attachment (+) menu buds out of its trigger.
- const { underlay: menuUnderlay } = useLiquidPop({
- triggerRef: menuBtnRef,
- panelRef: menuPopRef,
- open: menuOpen,
- });
+ // The shared bloom (globals.css §7.1) — held mounted for its close.
+ const { present: menuPresent, state: menuState } = usePopPresence(menuOpen);
  const textareaRef = useRef<HTMLTextAreaElement>(null);
  const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
  const { prependItem } = useFeedStore();
@@ -250,7 +246,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  role="dialog"
  aria-modal="true"
  aria-label={t('palette-new-post', { defaultValue:'New post'})}
- className="glass-overlay absolute inset-0 h-dvh max-h-none overflow-y-auto overscroll-contain rounded-none pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] text-site-text sm:inset-x-4 sm:bottom-auto sm:top-[10vh] sm:mx-auto sm:h-auto sm:max-h-[80dvh] sm:max-w-lg sm:rounded-site sm:p-0"
+ className="motion-cage glass-overlay absolute inset-0 h-dvh max-h-none overflow-y-auto overscroll-contain rounded-none pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] text-site-text sm:inset-x-4 sm:bottom-auto sm:top-[10vh] sm:mx-auto sm:h-auto sm:max-h-[80dvh] sm:max-w-lg sm:rounded-site sm:p-0"
  >
  {/* Header */}
  <div className="flex items-center justify-between px-4 py-3 border-b border-site-border">
@@ -308,7 +304,6 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
 
  {/* Plus button */}
  <div className="relative"ref={menuRef}>
- {menuUnderlay}
  <button
  ref={menuBtnRef}
  onClick={() => setMenuOpen((v) => !v)}
@@ -317,10 +312,12 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  <Plus className="w-4.5 h-4.5"/>
  </button>
 
- {menuOpen && (
+ {menuPresent && (
  <div
  ref={menuPopRef}
- className="absolute top-full right-0 mt-1 w-40 glass-overlay py-1 z-50"
+ data-motion="pop"
+ data-state={menuState}
+ className="absolute top-full right-0 mt-1 w-40 origin-top-right glass-overlay py-1 z-50"
  >
  <button
  onClick={() => {
@@ -627,7 +624,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  variants={modalContent}
  initial="initial"
  animate="animate"
- className="relative w-full max-w-md p-4 glass-overlay"
+ className="motion-cage relative w-full max-w-md p-4 glass-overlay"
  >
  <div className="mb-2 flex items-center justify-between">
  <h3 id="compose-alt-title"className="text-sm font-semibold text-site-text">

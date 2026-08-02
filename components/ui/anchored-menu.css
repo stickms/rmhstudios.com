@@ -20,3 +20,22 @@
   overflow-y: auto;
   overscroll-behavior: contain;
 }
+
+/* Where the bloom unfurls from (globals.css §7.1). Composed from the two
+   decisions the component has already made — which side the collision check
+   put the panel on, and which edge of the trigger it lines up with — so the
+   menu always grows OUT of its trigger, including when it flipped sides. */
+.anchored-menu {
+  --motion-origin-block: top;
+  --motion-origin-inline: center;
+  --motion-origin: var(--motion-origin-block) var(--motion-origin-inline);
+}
+.anchored-menu[data-side='top'] {
+  --motion-origin-block: bottom;
+}
+.anchored-menu[data-align='start'] {
+  --motion-origin-inline: left;
+}
+.anchored-menu[data-align='end'] {
+  --motion-origin-inline: right;
+}

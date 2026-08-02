@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback, type KeyboardEvent } from'react';
 import { useTranslation } from'react-i18next';
 import { BadgeCheck } from'lucide-react';
-import { useLiquidPop } from'@/components/ui/liquid-pop';
+import { usePopPresence } from '@/hooks/usePopPresence';
 
 interface UserSuggestion {
  id: string;
@@ -65,13 +65,11 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
  const [activeIndex, setActiveIndex] = useState(0);
  const [loading, setLoading] = useState(false);
  const requestSeq = useRef(0);
- // §15.6 liquid pop — the suggestion list buds out of the input.
+ // The shared bloom (globals.css §7.1) — held mounted for its close.
  const popPanelRef = useRef<HTMLDivElement>(null);
- const { underlay: popUnderlay } = useLiquidPop({
- triggerRef: inputRef,
- panelRef: popPanelRef,
- open: open && (loading || suggestions.length > 0),
- });
+ const { present: popPresent, state: popState } = usePopPresence(
+ open && (loading || suggestions.length > 0),
+ );
 
  const { t } = useTranslation('feed');
  const { token, start } = currentToken(value, multiple);
@@ -164,11 +162,12 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
  autoComplete="off"
  />
 
- {popUnderlay}
- {open && (loading || suggestions.length > 0) && (
+ {popPresent && (
  <div
  ref={popPanelRef}
- className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-y-auto glass-overlay py-1"
+ data-motion="pop"
+ data-state={popState}
+ className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 origin-top overflow-y-auto glass-overlay py-1"
  onMouseDown={(e) => e.preventDefault()}
  >
  {loading && suggestions.length === 0 ? (

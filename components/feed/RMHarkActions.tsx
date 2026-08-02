@@ -16,7 +16,7 @@ import { useTranslation } from'react-i18next';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';
 import { useSignInPrompt } from'@/hooks/useSignInPrompt';
 import { EngagementCount, engagementPill } from'./EngagementCount';
-import { useLiquidPop } from'@/components/ui/liquid-pop';
+import { usePopPresence } from '@/hooks/usePopPresence';
 
 interface RMHarkActionsProps {
  item: FeedItem;
@@ -42,12 +42,8 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  // surface instead — that circle is what reads as the trigger on screen.
  const repostIconRef = useRef<HTMLSpanElement>(null);
  const repostPanelRef = useRef<HTMLDivElement>(null);
- // §15.6 liquid pop — the reRMHark menu buds out of its trigger.
- const { underlay: repostUnderlay } = useLiquidPop({
- triggerRef: repostIconRef,
- panelRef: repostPanelRef,
- open: repostMenu,
- });
+ // The shared bloom (globals.css §7.1) — held mounted for its close.
+ const { present: repostPresent, state: repostState } = usePopPresence(repostMenu);
  const { run: runLike } = useOptimisticAction();
  const { run: runRepost } = useOptimisticAction();
  const promptSignIn = useSignInPrompt();
@@ -139,7 +135,6 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
 
  {/* reRMHark */}
  <div className="relative justify-self-start"ref={repostRef}>
- {repostUnderlay}
  <button
  ref={repostBtnRef}
  onClick={(e) => {
@@ -168,12 +163,14 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  <EngagementCount value={item.repostCount} />
  </span>
  </button>
- {repostMenu && (
+ {repostPresent && (
  <div
  ref={repostPanelRef}
+ data-motion="pop"
+ data-state={repostState}
  role="menu"
  tabIndex={-1}
- className="absolute left-0 top-full mt-1 w-40 glass-overlay py-1 z-50"
+ className="absolute left-0 top-full mt-1 w-40 origin-top-left glass-overlay py-1 z-50"
  onClick={(e) => e.stopPropagation()}
  >
  <button
