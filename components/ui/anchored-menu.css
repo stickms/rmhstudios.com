@@ -1,0 +1,22 @@
+/* AnchoredMenu — placement only. The surface (blur, tint, rim, radius, shadow)
+   comes from `.glass-overlay`, the shared L4 floating-UI material in
+   globals.css; nothing here re-rolls it. */
+
+.anchored-menu {
+  position: fixed;
+  z-index: var(--z-menu);
+  /* Height cap for the side the menu opened on, measured in the component.
+     It lives in a CUSTOM PROPERTY read by this rule rather than in an inline
+     `max-height`, and that is load-bearing: `useMenuViewportFit` (which every
+     liquid popover runs through) starts each pass by removing the element's
+     inline `max-height`, which would silently drop the cap until React's next
+     render. A custom property survives that, and because the cap keeps the
+     panel inside the viewport the fit pass then finds nothing left to correct.
+
+     `.glass-overlay` already declares a `max-block-size` of its own as a
+     last-line viewport guard; this file is unlayered, so the tighter,
+     side-aware cap wins over that layered fallback. */
+  max-height: var(--anchored-menu-max-h, none);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}

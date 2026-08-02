@@ -33,6 +33,16 @@ import { join } from 'node:path';
  *   - components/radial/RadialHub.tsx, components/radial/QuickPanel.tsx —
  *                                       one-shot rAF to move focus after the
  *                                       menu/panel opens; cancelled in cleanup.
+ *   - components/ui/anchored-menu.tsx — two one-shots, no loop: the same
+ *                                       move-focus-after-open frame as QuickPanel,
+ *                                       and a re-anchor THROTTLE that coalesces a
+ *                                       scroll/resize burst into one frame (the
+ *                                       handler no-ops while a frame is already
+ *                                       pending and never schedules from inside
+ *                                       its own callback). Both are cancelled in
+ *                                       cleanup, and both effects only run while
+ *                                       the menu is open — a page at rest has
+ *                                       neither.
  *   - components/radial/LiquidGlobe.tsx — the navigation globe's spin/dwell loop.
  *                                       Bounded by MOUNT, like a game's: RadialHub
  *                                       renders it only while the hub is open, and
@@ -126,6 +136,7 @@ const ALLOW = new Set<string>([
   'components/temple-of-joy/ui.tsx',
   'components/ui/AnimatedCount.tsx',
   'components/ui/TwemojiProvider.tsx',
+  'components/ui/anchored-menu.tsx',
   'components/ui/back-to-top.tsx',
   'components/ui/liquid-morph.tsx',
   'components/ui/liquid-tabs.tsx',
