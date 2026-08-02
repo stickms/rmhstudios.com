@@ -22,6 +22,7 @@ import { Route as DeeplinkRouteImport } from './routes/deeplink'
 import { Route as DesignRouteImport } from './routes/design'
 import { Route as DreamRiftRouteImport } from './routes/dream-rift'
 import { Route as ForestExplorerRouteImport } from './routes/forest-explorer'
+import { Route as GabrielsHornRouteImport } from './routes/gabriels-horn'
 import { Route as HouseAlwaysWinsRouteImport } from './routes/house-always-wins'
 import { Route as IsleworksRouteImport } from './routes/isleworks'
 import { Route as KowloonKnockoutRouteImport } from './routes/kowloon-knockout'
@@ -326,6 +327,8 @@ import { Route as ApiFeedSignalRouteImport } from './routes/api/feed/signal'
 import { Route as ApiFeedStreamRouteImport } from './routes/api/feed/stream'
 import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-explorer/save'
 import { Route as ApiFriendsActiveRouteImport } from './routes/api/friends/active'
+import { Route as ApiGabrielsHornHouseRuleRouteImport } from './routes/api/gabriels-horn/house-rule'
+import { Route as ApiGabrielsHornLeaderboardRouteImport } from './routes/api/gabriels-horn/leaderboard'
 import { Route as ApiGifSearchRouteImport } from './routes/api/gif/search'
 import { Route as ApiGroupChatsIndexRouteImport } from './routes/api/group-chats/index'
 import { Route as ApiGuidesIndexRouteImport } from './routes/api/guides/index'
@@ -798,6 +801,11 @@ const DreamRiftRoute = DreamRiftRouteImport.update({
 const ForestExplorerRoute = ForestExplorerRouteImport.update({
   id: '/forest-explorer',
   path: '/forest-explorer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GabrielsHornRoute = GabrielsHornRouteImport.update({
+  id: '/gabriels-horn',
+  path: '/gabriels-horn',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HouseAlwaysWinsRoute = HouseAlwaysWinsRouteImport.update({
@@ -2329,6 +2337,18 @@ const ApiFriendsActiveRoute = ApiFriendsActiveRouteImport.update({
   path: '/api/friends/active',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGabrielsHornHouseRuleRoute =
+  ApiGabrielsHornHouseRuleRouteImport.update({
+    id: '/api/gabriels-horn/house-rule',
+    path: '/api/gabriels-horn/house-rule',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiGabrielsHornLeaderboardRoute =
+  ApiGabrielsHornLeaderboardRouteImport.update({
+    id: '/api/gabriels-horn/leaderboard',
+    path: '/api/gabriels-horn/leaderboard',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiGifSearchRoute = ApiGifSearchRouteImport.update({
   id: '/api/gif/search',
   path: '/api/gif/search',
@@ -4481,6 +4501,7 @@ export interface FileRoutesByFullPath {
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
+  '/gabriels-horn': typeof GabrielsHornRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
@@ -4754,6 +4775,8 @@ export interface FileRoutesByFullPath {
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/friends/active': typeof ApiFriendsActiveRoute
+  '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
+  '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
@@ -5204,6 +5227,7 @@ export interface FileRoutesByTo {
   '/deeplink': typeof DeeplinkRouteWithChildren
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
+  '/gabriels-horn': typeof GabrielsHornRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
   '/laundry-sort': typeof LaundrySortRoute
@@ -5457,6 +5481,8 @@ export interface FileRoutesByTo {
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/friends/active': typeof ApiFriendsActiveRoute
+  '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
+  '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
@@ -5912,6 +5938,7 @@ export interface FileRoutesById {
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
+  '/gabriels-horn': typeof GabrielsHornRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
@@ -6186,6 +6213,8 @@ export interface FileRoutesById {
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/friends/active': typeof ApiFriendsActiveRoute
+  '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
+  '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
@@ -6642,6 +6671,7 @@ export interface FileRouteTypes {
     | '/design'
     | '/dream-rift'
     | '/forest-explorer'
+    | '/gabriels-horn'
     | '/house-always-wins'
     | '/isleworks'
     | '/kowloon-knockout'
@@ -6915,6 +6945,8 @@ export interface FileRouteTypes {
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
     | '/api/friends/active'
+    | '/api/gabriels-horn/house-rule'
+    | '/api/gabriels-horn/leaderboard'
     | '/api/gif/search'
     | '/api/guides/$id'
     | '/api/handle/check'
@@ -7365,6 +7397,7 @@ export interface FileRouteTypes {
     | '/deeplink'
     | '/design'
     | '/dream-rift'
+    | '/gabriels-horn'
     | '/house-always-wins'
     | '/isleworks'
     | '/laundry-sort'
@@ -7618,6 +7651,8 @@ export interface FileRouteTypes {
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
     | '/api/friends/active'
+    | '/api/gabriels-horn/house-rule'
+    | '/api/gabriels-horn/leaderboard'
     | '/api/gif/search'
     | '/api/guides/$id'
     | '/api/handle/check'
@@ -8072,6 +8107,7 @@ export interface FileRouteTypes {
     | '/design'
     | '/dream-rift'
     | '/forest-explorer'
+    | '/gabriels-horn'
     | '/house-always-wins'
     | '/isleworks'
     | '/kowloon-knockout'
@@ -8346,6 +8382,8 @@ export interface FileRouteTypes {
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
     | '/api/friends/active'
+    | '/api/gabriels-horn/house-rule'
+    | '/api/gabriels-horn/leaderboard'
     | '/api/gif/search'
     | '/api/guides/$id'
     | '/api/handle/check'
@@ -8801,6 +8839,7 @@ export interface RootRouteChildren {
   DesignRoute: typeof DesignRoute
   DreamRiftRoute: typeof DreamRiftRoute
   ForestExplorerRoute: typeof ForestExplorerRouteWithChildren
+  GabrielsHornRoute: typeof GabrielsHornRoute
   HouseAlwaysWinsRoute: typeof HouseAlwaysWinsRoute
   IsleworksRoute: typeof IsleworksRoute
   KowloonKnockoutRoute: typeof KowloonKnockoutRouteWithChildren
@@ -8926,6 +8965,8 @@ export interface RootRouteChildren {
   ApiFeedStreamRoute: typeof ApiFeedStreamRoute
   ApiForestExplorerSaveRoute: typeof ApiForestExplorerSaveRoute
   ApiFriendsActiveRoute: typeof ApiFriendsActiveRoute
+  ApiGabrielsHornHouseRuleRoute: typeof ApiGabrielsHornHouseRuleRoute
+  ApiGabrielsHornLeaderboardRoute: typeof ApiGabrielsHornLeaderboardRoute
   ApiGifSearchRoute: typeof ApiGifSearchRoute
   ApiGuidesIdRoute: typeof ApiGuidesIdRouteWithChildren
   ApiHandleCheckRoute: typeof ApiHandleCheckRoute
@@ -9286,6 +9327,13 @@ declare module '@tanstack/react-router' {
       path: '/forest-explorer'
       fullPath: '/forest-explorer'
       preLoaderRoute: typeof ForestExplorerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gabriels-horn': {
+      id: '/gabriels-horn'
+      path: '/gabriels-horn'
+      fullPath: '/gabriels-horn'
+      preLoaderRoute: typeof GabrielsHornRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/house-always-wins': {
@@ -11414,6 +11462,20 @@ declare module '@tanstack/react-router' {
       path: '/api/friends/active'
       fullPath: '/api/friends/active'
       preLoaderRoute: typeof ApiFriendsActiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/gabriels-horn/house-rule': {
+      id: '/api/gabriels-horn/house-rule'
+      path: '/api/gabriels-horn/house-rule'
+      fullPath: '/api/gabriels-horn/house-rule'
+      preLoaderRoute: typeof ApiGabrielsHornHouseRuleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/gabriels-horn/leaderboard': {
+      id: '/api/gabriels-horn/leaderboard'
+      path: '/api/gabriels-horn/leaderboard'
+      fullPath: '/api/gabriels-horn/leaderboard'
+      preLoaderRoute: typeof ApiGabrielsHornLeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/gif/search': {
@@ -15738,6 +15800,7 @@ const rootRouteChildren: RootRouteChildren = {
   DesignRoute: DesignRoute,
   DreamRiftRoute: DreamRiftRoute,
   ForestExplorerRoute: ForestExplorerRouteWithChildren,
+  GabrielsHornRoute: GabrielsHornRoute,
   HouseAlwaysWinsRoute: HouseAlwaysWinsRoute,
   IsleworksRoute: IsleworksRoute,
   KowloonKnockoutRoute: KowloonKnockoutRouteWithChildren,
@@ -15864,6 +15927,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiFeedStreamRoute: ApiFeedStreamRoute,
   ApiForestExplorerSaveRoute: ApiForestExplorerSaveRoute,
   ApiFriendsActiveRoute: ApiFriendsActiveRoute,
+  ApiGabrielsHornHouseRuleRoute: ApiGabrielsHornHouseRuleRoute,
+  ApiGabrielsHornLeaderboardRoute: ApiGabrielsHornLeaderboardRoute,
   ApiGifSearchRoute: ApiGifSearchRoute,
   ApiGuidesIdRoute: ApiGuidesIdRouteWithChildren,
   ApiHandleCheckRoute: ApiHandleCheckRoute,

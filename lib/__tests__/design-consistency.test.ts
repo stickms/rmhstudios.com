@@ -158,6 +158,7 @@ const FULLSCREEN_TIER_DIRS = new Set([
   'daily-puzzles',
   'dream-rift',
   'forest-explorer',
+  'gabriels-horn',
   'game', // Slice It's UI (reached from slice-it/index.tsx → GameCanvas)
   'house-always-wins',
   'isleworks',
@@ -205,6 +206,7 @@ const FULLSCREEN_ROUTE_SEGMENTS = new Set([
   'discord',
   'dream-rift',
   'forest-explorer',
+  'gabriels-horn',
   'house-always-wins',
   'isleworks',
   'kowloon-knockout',

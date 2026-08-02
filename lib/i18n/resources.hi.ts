@@ -16,6 +16,7 @@ import hiCDoctrine from "@/locales/hi/c-doctrine.json";
 import hiCDreamRift from "@/locales/hi/c-dream-rift.json";
 import hiCEconomy from "@/locales/hi/c-economy.json";
 import hiCForestExplorer from "@/locales/hi/c-forest-explorer.json";
+import hiCGabrielsHorn from "@/locales/hi/c-gabriels-horn.json";
 import hiCGame from "@/locales/hi/c-game.json";
 import hiCHistory from "@/locales/hi/c-history.json";
 import hiCHouseAlwaysWins from "@/locales/hi/c-house-always-wins.json";
@@ -103,6 +104,7 @@ const hiResources = {
   "c-dream-rift": hiCDreamRift,
   "c-economy": hiCEconomy,
   "c-forest-explorer": hiCForestExplorer,
+  "c-gabriels-horn": hiCGabrielsHorn,
   "c-game": hiCGame,
   "c-history": hiCHistory,
   "c-house-always-wins": hiCHouseAlwaysWins,

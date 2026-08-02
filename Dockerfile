@@ -137,6 +137,15 @@ COPY lib/rmhtype/events.ts ./lib/rmhtype/events.ts
 # modules; the rest of lib/laundry-sort is the browser-side cloth solver.
 COPY lib/laundry-sort/net/events.ts ./lib/laundry-sort/net/events.ts
 COPY lib/laundry-sort/constants.ts ./lib/laundry-sort/constants.ts
+# Gabriel's Horn is server-authoritative in a way the other games are not — the
+# hub owns the deck, the dice and every hand, because the whole premise is that
+# the roller must never receive the faces. So the handler needs the rulebook
+# (constants), the wire protocol (net/events) and the deck itself. All three are
+# import-free; the rest of lib/gabriels-horn is the browser store and client.
+COPY lib/gabriels-horn/constants.ts ./lib/gabriels-horn/constants.ts
+COPY lib/gabriels-horn/deck.ts ./lib/gabriels-horn/deck.ts
+COPY lib/gabriels-horn/house-rules.ts ./lib/gabriels-horn/house-rules.ts
+COPY lib/gabriels-horn/net/events.ts ./lib/gabriels-horn/net/events.ts
 # lights-out, doctrine, rmhvibe, rmhark-ai, media and storage were only imported
 # by the Node workers now running in the Go supervisor — no longer copied here so
 # changes to them don't bust this stage's cache.

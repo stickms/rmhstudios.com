@@ -1,0 +1,602 @@
+/**
+ * Gabriel's Horn — palette, Liquid Glass material, cards and dice.
+ *
+ * Structure comes from the shared app chrome (`components/shared/app-theme.css`);
+ * this file contributes a brass-on-midnight ramp, the four card colours, and the
+ * game's own take on the site's material.
+ *
+ * ── Why the glass is re-expressed here ─────────────────────────────────────
+ * The site's `.glass-*` elevation classes are keyed to `--site-*`, and
+ * `html.app-route` deliberately resolves those tokens to their OPAQUE twins on
+ * game routes — a translucent site surface over a game's own backdrop has no
+ * shared scene to sample and just greys out (app/globals.css §html.app-route).
+ * Using them here would therefore paint flat paper in the wrong palette.
+ *
+ * So the tiers below are the SAME material, stated against `--app-*`: a tint, a
+ * specular glint lit by one static scene sun above the surface, a frosted edge,
+ * and a blur only where the tier can afford it. The grammar matches the site's
+ * on purpose — L1 for repeated content with no blur, L2 for singular panels,
+ * L4 for anything floating — so the elevation reads the same way it does
+ * everywhere else on the site. (design-language.md §5.1, and its instruction
+ * that when the system lacks what you need you extend the system and say so.)
+ *
+ * Nothing here tracks the cursor. The specular answers a fixed sun at 50% -5%,
+ * exactly as the site's does; hover is a state change, not a coordinate
+ * (design-language.md §5.1.1, retired 2026-08-01).
+ */
+
+@import '../shared/app-theme.css';
+
+/* ─── Dark (default) ─────────────────────────────────────────────── */
+
+.gabriels-horn-theme {
+  --app-bg: #0d0b14;
+  --app-bg-subtle: #131020;
+  --app-surface: #1a1628;
+  --app-surface-hover: #221d33;
+  --app-surface-active: #2b2440;
+  --app-border: #2b2440;
+  --app-border-bright: #3d3358;
+  --app-text: #f0ecf7;
+  --app-text-muted: #a196bd;
+  /*
+   * `-dim` carries real hint text here (the card economy, the phase rules), not
+   * just decoration, so it is set to clear 4.5:1 against `--app-surface` rather
+   * than to the app default's ~3.6:1. Measured, not guessed: #8a80a8 on #1a1628
+   * is 4.8:1, and 5.3:1 on the page ground.
+   */
+  --app-text-dim: #8a80a8;
+
+  --app-accent: #e0b155;
+  --app-accent-fg: #241a05;
+  --app-accent-hover: #cc9d41;
+  --app-success: #6fcf97;
+  --app-danger: #e0736e;
+  --app-warning: #e0b155;
+  --app-info: #7fa8e0;
+
+  --app-shadow: 0 8px 32px rgb(0 0 0 / 0.5);
+
+  /* ── The material ──────────────────────────────────────────────── */
+
+  /** Tint carried by a glass surface. Translucent so the scene shows through. */
+  --gh-tint: rgb(38 31 60 / 0.62);
+  --gh-tint-strong: rgb(44 36 70 / 0.86);
+  /** The specular. One sun, fixed above the surface — never a pointer. */
+  --gh-rim: rgb(255 255 255 / 0.55);
+  --gh-glint: 0.4;
+  --gh-blur: 18px;
+  --gh-saturate: 170%;
+  /** Micro-noise: breaks up the flat tint so the material reads as a substance. */
+  --gh-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+
+  /* The four card colours. Rank means nothing; these mean everything. */
+  --gh-azure: #4f9bd9;
+  --gh-azure-fg: #04121f;
+  --gh-crimson: #d95f5f;
+  --gh-crimson-fg: #200606;
+  --gh-verdant: #5fbf87;
+  --gh-verdant-fg: #04180e;
+  --gh-amber: #d9a441;
+  --gh-amber-fg: #201503;
+
+  /* The seven — the only rank with a rule attached, so it gets its own edge. */
+  --gh-swap: #c58ae0;
+  --gh-swap-fg: #1c0a24;
+}
+
+/* ─── Light ──────────────────────────────────────────────────────── */
+
+.gabriels-horn-theme.app-light {
+  --app-bg: #f6f3fb;
+  --app-bg-subtle: #ece7f5;
+  --app-surface: #ffffff;
+  --app-surface-hover: #f3eefa;
+  --app-surface-active: #e7dff5;
+  --app-border: #ded4ee;
+  --app-border-bright: #c4b5e0;
+  --app-text: #241d33;
+  --app-text-muted: #665b80;
+  /* 5.7:1 on white, 5.2:1 on the page ground — same reasoning as the dark ramp. */
+  --app-text-dim: #6b6280;
+
+  --app-accent: #8a6414;
+  --app-accent-fg: #ffffff;
+  --app-accent-hover: #6f5010;
+  --app-success: #157a45;
+  --app-danger: #b32d28;
+  --app-warning: #8a6414;
+  --app-info: #1d5aa8;
+
+  --app-shadow: 0 8px 32px rgb(36 29 51 / 0.1);
+
+  --gh-tint: rgb(255 255 255 / 0.66);
+  --gh-tint-strong: rgb(255 255 255 / 0.9);
+  --gh-rim: rgb(255 255 255 / 0.9);
+  --gh-glint: 0.7;
+
+  --gh-azure: #1d5aa8;
+  --gh-azure-fg: #ffffff;
+  --gh-crimson: #b32d28;
+  --gh-crimson-fg: #ffffff;
+  --gh-verdant: #157a45;
+  --gh-verdant-fg: #ffffff;
+  --gh-amber: #8a6414;
+  --gh-amber-fg: #ffffff;
+  --gh-swap: #6b3a8a;
+  --gh-swap-fg: #ffffff;
+}
+
+/* ─── High contrast ──────────────────────────────────────────────── */
+
+.gabriels-horn-theme.app-high-contrast {
+  --gh-azure: #4db8ff;
+  --gh-azure-fg: #000000;
+  --gh-crimson: #ff6b6b;
+  --gh-crimson-fg: #000000;
+  --gh-verdant: #4dff9e;
+  --gh-verdant-fg: #000000;
+  --gh-amber: #ffd24d;
+  --gh-amber-fg: #000000;
+  --gh-swap: #e0a3ff;
+  --gh-swap-fg: #000000;
+}
+
+/* ══ The scene ═══════════════════════════════════════════════════════
+ *
+ * Glass needs something to be glass OVER. The site has a drifting aurora
+ * canvas; a game route has that canvas gated off (globals.css §.site-aurora),
+ * so the table paints its own: two wide radial fields, fixed, no animation, no
+ * canvas, no per-frame anything. It exists so the tint above it has colour
+ * variance to pick up — a translucent panel over a flat black page is just a
+ * grey box.
+ */
+.gh-scene {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--app-bg);
+}
+
+.gh-scene::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      70rem 50rem at 50% -10%,
+      color-mix(in srgb, var(--app-accent) 13%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      55rem 45rem at 10% 105%,
+      color-mix(in srgb, var(--gh-swap) 12%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      45rem 40rem at 95% 60%,
+      color-mix(in srgb, var(--gh-azure) 9%, transparent),
+      transparent 60%
+    );
+}
+
+/* ══ Elevation tiers ═════════════════════════════════════════════════ */
+
+/*
+ * L1 — repeated content (roster seats, claim rows, cards).
+ *
+ * Tint, ambient specular, hairline. **No backdrop blur**, deliberately: this is
+ * the tier a list is made of, and the budget is zero blurred surfaces on
+ * repeated items (design-language.md §5.1). The scene behind provides the
+ * variance that makes the tint read as glass.
+ */
+.gh-fill {
+  position: relative;
+  background-color: var(--gh-tint);
+  background-image:
+    var(--gh-noise),
+    radial-gradient(
+      20rem circle at 50% -5%,
+      color-mix(in srgb, var(--gh-rim) calc(var(--gh-glint) * 45%), transparent),
+      transparent 65%
+    );
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+  box-shadow: var(--app-shadow-sm);
+}
+
+/*
+ * L2 — singular panels. The blurred tier. Budgeted: at most a handful on
+ * screen, which the table's layout holds to (dice pane, decision pane, hand
+ * pane, log pane).
+ */
+.gh-pane {
+  position: relative;
+  background-color: var(--gh-tint);
+  background-image:
+    var(--gh-noise),
+    radial-gradient(
+      26rem circle at 50% -8%,
+      color-mix(in srgb, var(--gh-rim) calc(var(--gh-glint) * 55%), transparent),
+      transparent 62%
+    );
+  border: 1px solid transparent;
+  border-radius: var(--app-radius-lg);
+  box-shadow:
+    var(--app-shadow-sm),
+    inset 0 1px 0 0 color-mix(in srgb, var(--gh-rim) 22%, transparent);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .gh-pane {
+    -webkit-backdrop-filter: blur(var(--gh-blur)) saturate(var(--gh-saturate));
+    backdrop-filter: blur(var(--gh-blur)) saturate(var(--gh-saturate));
+  }
+}
+
+/*
+ * The frosted edge bevel. A separate ring rather than a thicker border, so the
+ * light bends at the boundary the way the site's optics ring does instead of
+ * the edge being a drawn line.
+ */
+.gh-pane::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--gh-rim) 42%, transparent),
+    color-mix(in srgb, var(--gh-rim) 6%, transparent) 40%,
+    transparent 70%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+/*
+ * L4 — floating. The rules sheet. Heavier blur AND a legibility floor: a menu
+ * you can read the page through is the defect this tier exists to prevent.
+ */
+.gh-overlay {
+  position: relative;
+  background-color: var(--gh-tint-strong);
+  background-image:
+    var(--gh-noise),
+    radial-gradient(
+      32rem circle at 50% -6%,
+      color-mix(in srgb, var(--gh-rim) calc(var(--gh-glint) * 60%), transparent),
+      transparent 60%
+    );
+  border: 1px solid color-mix(in srgb, var(--gh-rim) 16%, transparent);
+  border-radius: var(--app-radius-lg);
+  box-shadow:
+    var(--app-shadow),
+    inset 0 1px 0 0 color-mix(in srgb, var(--gh-rim) 28%, transparent);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .gh-overlay {
+    -webkit-backdrop-filter: blur(28px) saturate(var(--gh-saturate));
+    backdrop-filter: blur(28px) saturate(var(--gh-saturate));
+  }
+}
+
+/* Fields. Recessed rather than raised — the one tier lit from below. */
+.gh-inset {
+  background-color: color-mix(in srgb, var(--app-bg) 55%, transparent);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-sm);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.25);
+}
+
+/* ══ Cards ═══════════════════════════════════════════════════════════
+ *
+ * A card has to say three things, in this order: its COLOUR (which is the
+ * effect), whether it is a SEVEN (the only rank with a rule), and — distantly —
+ * its rank. So the colour is a field across the whole face, the seven gets its
+ * own edge, and the rank sits small in the corner where a playing card puts it.
+ *
+ * Proportions are a real card's, near enough: 5:7. That is what makes a row of
+ * them read as a hand rather than as a row of chips.
+ */
+.gh-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  aspect-ratio: 5 / 7;
+  padding: 0.45rem 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--gh-card, var(--app-border)) 45%, transparent);
+  color: var(--app-text);
+  overflow: hidden;
+  isolation: isolate;
+  /* Named properties only — `all` would watch width/height and animate a reflow
+     every time the hand re-wraps (design-language.md §7). */
+  transition:
+    transform var(--app-duration) var(--app-ease),
+    box-shadow var(--app-duration) var(--app-ease),
+    border-color var(--app-duration-fast) var(--app-ease);
+  /* The colour field, the specular, and the noise, in one stack. */
+  background-color: color-mix(in srgb, var(--gh-card, var(--app-surface)) 16%, var(--app-surface));
+  background-image:
+    var(--gh-noise),
+    radial-gradient(
+      120% 80% at 50% -20%,
+      color-mix(in srgb, var(--gh-rim) 30%, transparent),
+      transparent 62%
+    ),
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--gh-card, transparent) 22%, transparent),
+      transparent 55%
+    );
+  box-shadow:
+    var(--app-shadow-sm),
+    inset 0 1px 0 0 color-mix(in srgb, var(--gh-rim) 26%, transparent);
+}
+
+/* The seven. Two signals, because it is the one rank anybody looks for: a
+   brighter edge, and a soft bloom of its own colour inside it. */
+.gh-card[data-swap='true'] {
+  border-color: color-mix(in srgb, var(--gh-swap) 75%, transparent);
+  box-shadow:
+    var(--app-shadow-sm),
+    inset 0 0 0 1px color-mix(in srgb, var(--gh-swap) 40%, transparent),
+    inset 0 -1.5rem 2rem -1rem color-mix(in srgb, var(--gh-swap) 30%, transparent);
+}
+
+/* Picked up. Lifts toward the light, so the specular strengthens as it rises. */
+.gh-card[data-selected='true'] {
+  transform: translateY(-0.45rem);
+  border-color: var(--app-accent);
+  box-shadow:
+    0 0.75rem 1.5rem -0.5rem rgb(0 0 0 / 0.45),
+    0 0 0 2px var(--app-accent),
+    inset 0 1px 0 0 color-mix(in srgb, var(--gh-rim) 45%, transparent);
+}
+
+button.gh-card:not(:disabled) {
+  cursor: pointer;
+}
+
+button.gh-card:not(:disabled):hover {
+  transform: translateY(-0.2rem);
+  border-color: color-mix(in srgb, var(--gh-card, var(--app-border-bright)) 80%, transparent);
+}
+
+button.gh-card:not(:disabled):active {
+  transform: translateY(-0.1rem) scale(0.985);
+}
+
+button.gh-card[data-selected='true']:not(:disabled):hover {
+  transform: translateY(-0.55rem);
+}
+
+/* The colour swatch that names the effect. */
+.gh-pip {
+  display: inline-block;
+  inline-size: 0.55rem;
+  block-size: 0.55rem;
+  border-radius: 999px;
+  background: var(--gh-card, var(--app-text-dim));
+  box-shadow: inset 0 1px 0 0 color-mix(in srgb, var(--gh-rim) 45%, transparent);
+}
+
+/*
+ * The hand.
+ *
+ * A wrap rather than a horizontal scroller, because a hand is not a fixed four
+ * cards — losing rounds is how you get to twelve, and twelve in a scroller means
+ * scrubbing sideways to find out what you are holding at the exact moment you
+ * need to decide something. It wraps, and only the whole block scrolls, with
+ * room at the top for the lift a selected card takes (which the scroll container
+ * would otherwise clip).
+ */
+.gh-hand {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4rem, 1fr));
+  gap: 0.5rem;
+  padding-top: 0.6rem;
+  max-height: 15rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* ══ Dice ════════════════════════════════════════════════════════════
+ *
+ * Pips, not numerals. A die reads faster as a pattern than as a digit, and this
+ * is a game where three of them are read and summed under a clock.
+ *
+ * Each die is a rounded cube lit by the same fixed sun as everything else: a
+ * specular across the top-left, a soft occlusion at the bottom, and pips that
+ * are actually recessed into the face rather than dots drawn on it.
+ */
+.gh-die {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 0.1rem;
+  inline-size: 3.25rem;
+  block-size: 3.25rem;
+  padding: 0.45rem;
+  border-radius: 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--gh-rim) 16%, transparent);
+  background-color: color-mix(in srgb, var(--app-text) 92%, var(--app-accent));
+  background-image:
+    radial-gradient(140% 100% at 30% -20%, rgb(255 255 255 / 0.95), rgb(255 255 255 / 0) 58%),
+    linear-gradient(170deg, rgb(255 255 255 / 0.5), rgb(0 0 0 / 0.14));
+  box-shadow:
+    0 0.5rem 1rem -0.35rem rgb(0 0 0 / 0.55),
+    inset 0 -0.35rem 0.6rem -0.3rem rgb(0 0 0 / 0.22),
+    inset 0 1px 0 0 rgb(255 255 255 / 0.9);
+}
+
+/* One pip. Recessed: a dark well with a lit lower lip. */
+.gh-pip-dot {
+  border-radius: 999px;
+  background: radial-gradient(circle at 40% 35%, #2b2440, #0d0b14);
+  box-shadow:
+    inset 0 1px 1px rgb(0 0 0 / 0.6),
+    0 1px 0 rgb(255 255 255 / 0.55);
+  align-self: center;
+  justify-self: center;
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+}
+
+/*
+ * A die the reader is not allowed to see.
+ *
+ * This is not a loading state, it is THE RULE, so it has to read as deliberate
+ * at a glance or the first round of every game is spent wondering what is
+ * broken. It is the same cube, unlit and unfilled: a dashed well with a single
+ * question mark, visibly the absence of a face rather than a face not yet
+ * arrived.
+ */
+.gh-die[data-hidden='true'] {
+  display: grid;
+  place-items: center;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  border: 1px dashed color-mix(in srgb, var(--app-text-dim) 70%, transparent);
+  background-color: color-mix(in srgb, var(--app-bg) 70%, transparent);
+  background-image: radial-gradient(
+    120% 90% at 50% -15%,
+    color-mix(in srgb, var(--gh-rim) 12%, transparent),
+    transparent 60%
+  );
+  color: var(--app-text-dim);
+  font-family: var(--app-font-mono);
+  font-size: 1.35rem;
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 0 color-mix(in srgb, var(--gh-rim) 10%, transparent);
+}
+
+/*
+ * The globe the dice sit in.
+ *
+ * The site's signature is radial — content orbits a centre, and its flagship
+ * surface is a glass sphere. The table's centre is the roll, so the dice get the
+ * same treatment: a soft spherical field behind them with its own specular, so
+ * the hero of the screen is lit like the rest of the material rather than
+ * floating on the page. Static — it answers the scene sun, not a pointer.
+ */
+.gh-orb {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1.1rem 1rem 0.9rem;
+  isolation: isolate;
+}
+
+.gh-orb::before {
+  content: '';
+  position: absolute;
+  inset-inline: 50%;
+  inset-block-start: -0.5rem;
+  z-index: -1;
+  inline-size: 15rem;
+  block-size: 15rem;
+  translate: -50% 0;
+  border-radius: 999px;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at 50% 22%,
+      color-mix(in srgb, var(--gh-rim) 12%, transparent),
+      transparent 42%
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      color-mix(in srgb, var(--app-accent) 14%, transparent),
+      color-mix(in srgb, var(--gh-swap) 8%, transparent) 55%,
+      transparent 72%
+    );
+}
+
+/* ══ Degradation ═════════════════════════════════════════════════════
+ *
+ * Centrally, not per component (design-language.md §0.6). Every optic below is
+ * decoration: the text sits on a tint that stays legible with all of it off.
+ */
+
+@media (prefers-reduced-transparency: reduce) {
+  .gabriels-horn-theme .gh-pane,
+  .gabriels-horn-theme .gh-overlay,
+  .gabriels-horn-theme .gh-fill {
+    background-color: var(--app-surface);
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .gabriels-horn-theme .gh-scene::before,
+  .gabriels-horn-theme .gh-orb::before,
+  .gabriels-horn-theme .gh-pane::before {
+    display: none;
+  }
+}
+
+.gabriels-horn-theme.app-high-contrast .gh-pane,
+.gabriels-horn-theme.app-high-contrast .gh-overlay,
+.gabriels-horn-theme.app-high-contrast .gh-fill {
+  background-color: var(--app-surface);
+  background-image: none;
+  border-color: var(--app-border-bright);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.gabriels-horn-theme.app-high-contrast .gh-scene::before,
+.gabriels-horn-theme.app-high-contrast .gh-orb::before,
+.gabriels-horn-theme.app-high-contrast .gh-pane::before {
+  display: none;
+}
+
+.gabriels-horn-theme.app-high-contrast .gh-card {
+  background-image: none;
+  border-width: 2px;
+  border-color: var(--gh-card, var(--app-border-bright));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gh-card {
+    transition: none;
+  }
+  .gh-card[data-selected='true'],
+  button.gh-card:not(:disabled):hover,
+  button.gh-card:not(:disabled):active {
+    /* The lift is how a picked-up card says it is picked up, so the state is
+       kept and only the travel is dropped. */
+    transform: none;
+  }
+}
+
+/* Windows High Contrast: the OS owns the palette, so hand the surfaces back. */
+@media (forced-colors: active) {
+  .gh-card,
+  .gh-die,
+  .gh-fill,
+  .gh-pane,
+  .gh-overlay {
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .gh-pip-dot {
+    background: CanvasText;
+  }
+}

@@ -16,6 +16,7 @@ import trCDoctrine from "@/locales/tr/c-doctrine.json";
 import trCDreamRift from "@/locales/tr/c-dream-rift.json";
 import trCEconomy from "@/locales/tr/c-economy.json";
 import trCForestExplorer from "@/locales/tr/c-forest-explorer.json";
+import trCGabrielsHorn from "@/locales/tr/c-gabriels-horn.json";
 import trCGame from "@/locales/tr/c-game.json";
 import trCHistory from "@/locales/tr/c-history.json";
 import trCHouseAlwaysWins from "@/locales/tr/c-house-always-wins.json";
@@ -103,6 +104,7 @@ const trResources = {
   "c-dream-rift": trCDreamRift,
   "c-economy": trCEconomy,
   "c-forest-explorer": trCForestExplorer,
+  "c-gabriels-horn": trCGabrielsHorn,
   "c-game": trCGame,
   "c-history": trCHistory,
   "c-house-always-wins": trCHouseAlwaysWins,

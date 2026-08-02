@@ -16,6 +16,7 @@ import itCDoctrine from "@/locales/it/c-doctrine.json";
 import itCDreamRift from "@/locales/it/c-dream-rift.json";
 import itCEconomy from "@/locales/it/c-economy.json";
 import itCForestExplorer from "@/locales/it/c-forest-explorer.json";
+import itCGabrielsHorn from "@/locales/it/c-gabriels-horn.json";
 import itCGame from "@/locales/it/c-game.json";
 import itCHistory from "@/locales/it/c-history.json";
 import itCHouseAlwaysWins from "@/locales/it/c-house-always-wins.json";
@@ -103,6 +104,7 @@ const itResources = {
   "c-dream-rift": itCDreamRift,
   "c-economy": itCEconomy,
   "c-forest-explorer": itCForestExplorer,
+  "c-gabriels-horn": itCGabrielsHorn,
   "c-game": itCGame,
   "c-history": itCHistory,
   "c-house-always-wins": itCHouseAlwaysWins,

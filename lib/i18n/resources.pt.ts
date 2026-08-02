@@ -16,6 +16,7 @@ import ptCDoctrine from "@/locales/pt/c-doctrine.json";
 import ptCDreamRift from "@/locales/pt/c-dream-rift.json";
 import ptCEconomy from "@/locales/pt/c-economy.json";
 import ptCForestExplorer from "@/locales/pt/c-forest-explorer.json";
+import ptCGabrielsHorn from "@/locales/pt/c-gabriels-horn.json";
 import ptCGame from "@/locales/pt/c-game.json";
 import ptCHistory from "@/locales/pt/c-history.json";
 import ptCHouseAlwaysWins from "@/locales/pt/c-house-always-wins.json";
@@ -103,6 +104,7 @@ const ptResources = {
   "c-dream-rift": ptCDreamRift,
   "c-economy": ptCEconomy,
   "c-forest-explorer": ptCForestExplorer,
+  "c-gabriels-horn": ptCGabrielsHorn,
   "c-game": ptCGame,
   "c-history": ptCHistory,
   "c-house-always-wins": ptCHouseAlwaysWins,

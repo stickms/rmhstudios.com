@@ -76,6 +76,7 @@ model User {
   dreamRiftProfile     DreamRiftPlayer?
   dreamRiftCoopRuns    DreamRiftCoopRun[]
   farmingSimFarm       FarmingSimFarm?
+  gabrielsHornProfile  GabrielsHornPlayer?
 
   // Slice-It Library Relations
   uploadedSongs Song[]            @relation("SongUploader")
@@ -2831,6 +2832,33 @@ model DreamRiftCoopRun {
 
   @@index([difficulty, combinedScore(sort: Desc)], map: "idx_dream_rift_coop_score")
   @@index([difficulty, timeSurvived(sort: Desc)], map: "idx_dream_rift_coop_time")
+}
+
+// ─── Gabriel's Horn ───────────────────────────────────────────────
+
+// One row per account that has finished a game of Gabriel's Horn. Written
+// fire-and-forget by the socket hub when hands are counted.
+//
+// Ranked on `wins` rather than `bestHand`: a two-card finish at a three-player
+// table is not the same achievement as one at a six-player table, and a board
+// that sorted on it would reward finding the smallest table. `bestHand` is a
+// keepsake, and is null until a first game finishes (0 is a legitimate hand —
+// an empty one — so it cannot double as "unset").
+model GabrielsHornPlayer {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  gamesPlayed  Int      @default(0)
+  wins         Int      @default(0)
+  bestHand     Int?
+  // Times this player sounded the horn, and times that call actually held.
+  hornsSounded Int      @default(0)
+  hornsWon     Int      @default(0)
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([wins(sort: Desc)], map: "idx_gabriels_horn_wins")
 }
 
 // RMH Farming Simulator — one persistent farm per user. The full live world

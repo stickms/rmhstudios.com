@@ -16,6 +16,7 @@ import frCDoctrine from "@/locales/fr/c-doctrine.json";
 import frCDreamRift from "@/locales/fr/c-dream-rift.json";
 import frCEconomy from "@/locales/fr/c-economy.json";
 import frCForestExplorer from "@/locales/fr/c-forest-explorer.json";
+import frCGabrielsHorn from "@/locales/fr/c-gabriels-horn.json";
 import frCGame from "@/locales/fr/c-game.json";
 import frCHistory from "@/locales/fr/c-history.json";
 import frCHouseAlwaysWins from "@/locales/fr/c-house-always-wins.json";
@@ -103,6 +104,7 @@ const frResources = {
   "c-dream-rift": frCDreamRift,
   "c-economy": frCEconomy,
   "c-forest-explorer": frCForestExplorer,
+  "c-gabriels-horn": frCGabrielsHorn,
   "c-game": frCGame,
   "c-history": frCHistory,
   "c-house-always-wins": frCHouseAlwaysWins,

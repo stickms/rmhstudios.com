@@ -21,6 +21,7 @@ const PARTY_GAMES: { id: string; label: string }[] = [
   { id: 'synapse-storm', label: 'Synapse Storm' },
   { id: 'holdem', label: "Hold'em" },
   { id: 'kowloon-knockout', label: 'Kowloon Knockout' },
+  { id: 'gabriels-horn', label: "Gabriel's Horn" },
 ];
 
 function MemberAvatar({ member, size = 30 }: { member: PartyMemberView; size?: number }) {
