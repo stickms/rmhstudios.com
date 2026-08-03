@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { Sparkles } from 'lucide-react';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from "@/components/feed/ContextRail";
+import { PageFrame } from '@/components/feed/PageLayout';
 import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
 import { ConciergePanel } from '@/components/assistant/ConciergePanel';
 import { buildMeta, buildCanonical } from '@/lib/seo';
@@ -21,8 +20,7 @@ export const Route = createFileRoute('/_site/help')({
 
 function HelpPage() {
   return (
-    <>
-      <AnimatedMain className="w-full min-w-0">
+    <PageFrame noDockPadding>
         {/* h-screen with no bottom clearance parked the concierge's input and
             its suggestion chips permanently under the hub orb (and, on a first
             visit, under the cookie bar too). Reserve the floating chrome's own
@@ -42,10 +40,6 @@ function HelpPage() {
 
           <ConciergePanel className="flex-1 min-h-0" />
         </div>
-      </AnimatedMain>
-
-      {/* Trailing gutter, matching the wide-no-right-sidebar pages. */}
-      <ContextRail reserve />
-    </>
+    </PageFrame>
   );
 }

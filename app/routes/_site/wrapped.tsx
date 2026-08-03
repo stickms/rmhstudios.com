@@ -1,9 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from "@/components/feed/ContextRail";
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { WrappedColumn } from '@/components/feed/WrappedColumn';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -35,9 +33,7 @@ function WrappedPage() {
 
   return (
     <>
-      <AnimatedMain
-        className="w-full min-w-0 pb-dock"
-      >
+      <PageFrame>
         {isPending ? (
           <div className="flex justify-center py-20">
             <Spinner />
@@ -52,8 +48,7 @@ function WrappedPage() {
         ) : (
           <WrappedColumn initialData={wrapped} />
         )}
-      </AnimatedMain>
-      <ContextRail reserve />
+      </PageFrame>
     </>
   );
 }

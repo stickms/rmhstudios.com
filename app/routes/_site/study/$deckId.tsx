@@ -1,9 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from '@/components/feed/ContextRail';
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { DeckStudyColumn } from '@/components/feed/DeckStudyColumn';
 import { auth } from '@/lib/auth';
 import { getDeck, type DeckDetail } from '@/lib/study.server';
@@ -62,12 +60,11 @@ function DeckPage() {
   const { deck } = Route.useLoaderData();
   return (
     <>
-      <AnimatedMain className="w-full min-w-0 pb-dock">
+      <PageFrame>
         {/* `key` remounts the column on deck→deck navigation so it re-seeds
             cleanly from the new loader data. */}
         <DeckStudyColumn key={deckId} deckId={deckId} initialData={deck} />
-      </AnimatedMain>
-      <ContextRail reserve />
+      </PageFrame>
     </>
   );
 }

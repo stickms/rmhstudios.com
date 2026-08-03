@@ -1,10 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { BookmarksColumn } from '@/components/feed/BookmarksColumn';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from "@/components/feed/ContextRail";
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { auth } from '@/lib/auth';
 import { listBookmarks } from '@/lib/bookmarks.server';
 
@@ -27,12 +25,9 @@ function BookmarksPage() {
   const { bookmarks } = Route.useLoaderData();
   return (
     <>
-      <AnimatedMain
-        className="w-full min-w-0 pb-dock"
-      >
+      <PageFrame>
         <BookmarksColumn initialData={bookmarks} />
-      </AnimatedMain>
-      <ContextRail reserve />
+      </PageFrame>
     </>
   );
 }

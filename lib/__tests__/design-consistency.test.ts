@@ -747,3 +747,70 @@ describe('the token contract holds in CSS too', () => {
     ).toEqual([]);
   });
 });
+
+/**
+ * ───────────────── one page frame, not twenty-nine copies ─────────────────
+ *
+ * `components/feed/PageLayout.tsx` exports both halves of the shared frame:
+ * `PageLayout` (frame + title header) and `PageFrame` (frame only, for a page
+ * whose content already draws its own `ColumnHeader`).
+ *
+ * 29 `_site` routes used to import `AnimatedMain` and `ContextRail` directly
+ * and assemble the frame themselves, because `PageLayout` always rendered a
+ * header and there was no way to ask for just the frame. The measure, the
+ * `pb-dock` inset and the rail reservation were therefore written out 29 extra
+ * times — and drifted into three width spellings, two rail spellings, and 22
+ * files still importing a `targetWidth` constant the API had stopped taking.
+ * `docs/page-consistency.md` exists because this drifts; nothing detected it.
+ *
+ * The allowlist is empty on purpose. If a page genuinely needs a bespoke
+ * frame, add it here with a reason rather than importing around the rule.
+ */
+const FRAME_ALLOW = new Set<string>([]);
+
+describe('site pages take the shared frame', () => {
+  const routeFiles = FILES.filter((f) =>
+    f.split(/[\\/]/).slice(0, 3).join('/') === 'app/routes/_site' ||
+    f.startsWith(join('app', 'routes', '_site')),
+  );
+
+  it('finds the _site routes at all', () => {
+    expect(routeFiles.length).toBeGreaterThan(100);
+  });
+
+  it('imports no frame primitive directly', () => {
+    const offenders: string[] = [];
+    for (const file of routeFiles) {
+      if (FRAME_ALLOW.has(file)) continue;
+      const src = readFileSync(join(ROOT, file), 'utf8');
+      const bad = ['feed/AnimatedMain', 'feed/ContextRail'].filter((m) => src.includes(m));
+      if (bad.length > 0) offenders.push(`${file} — imports ${bad.join(' + ')}`);
+    }
+    expect(
+      offenders,
+      'A page under app/routes/_site assembled the page frame by hand. Use ' +
+        '`PageLayout` (frame + title header) or `PageFrame` (frame only, when ' +
+        "the page's own column already renders a ColumnHeader) from " +
+        '@/components/feed/PageLayout. Both live in one file so the reading ' +
+        'measure, the pb-dock inset and the live-rail portal are stated once. ' +
+        'See docs/page-consistency.md.',
+    ).toEqual([]);
+  });
+
+  it('passes no deprecated rail spacer', () => {
+    // `reserve` / `compactReserve` are documented no-ops on ContextRail — the
+    // shell's grid keeps the column centred without a spacer — but two dozen
+    // call sites still passed them, which reads as load-bearing to the next
+    // person to touch the file.
+    const offenders: string[] = [];
+    for (const file of [...routeFiles, ...SITE_FILES]) {
+      const src = readFileSync(join(ROOT, file), 'utf8');
+      if (/<ContextRail[^>]*\b(reserve|compactReserve)\b/.test(src)) offenders.push(file);
+    }
+    expect(
+      offenders,
+      '`reserve` and `compactReserve` do nothing (see ContextRail\'s own ' +
+        'JSDoc). Drop the prop rather than carrying it forward.',
+    ).toEqual([]);
+  });
+});

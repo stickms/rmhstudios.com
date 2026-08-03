@@ -1,9 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from '@/components/feed/ContextRail';
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { CommunityColumn } from '@/components/feed/CommunityColumn';
 import { auth } from '@/lib/auth';
 import { buildCanonical, buildMeta } from '@/lib/seo';
@@ -95,14 +93,13 @@ function CommunityPage() {
   };
   return (
     <>
-      <AnimatedMain className="w-full min-w-0 pb-dock">
+      <PageFrame>
         <CommunityColumn
           slug={slug}
           initialCommunity={community}
           initialItems={feed?.items ?? null}
         />
-      </AnimatedMain>
-      <ContextRail reserve />
+      </PageFrame>
     </>
   );
 }

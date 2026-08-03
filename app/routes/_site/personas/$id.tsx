@@ -1,9 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from '@/components/feed/ContextRail';
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { PersonaChatColumn } from '@/components/feed/PersonaChatColumn';
 import { auth } from '@/lib/auth';
 import { getPersonaChat, type PersonaChatPayload } from '@/lib/persona-chat.server';
@@ -68,12 +66,11 @@ function PersonaChatPage() {
   const { personaChat } = Route.useLoaderData();
   return (
     <>
-      <AnimatedMain className="w-full min-w-0">
+      <PageFrame noDockPadding>
         {/* `key` remounts the column on persona→persona navigation so it
             re-seeds cleanly from the new loader data (no stale-state carryover). */}
         <PersonaChatColumn key={id} id={id} initialData={personaChat} />
-      </AnimatedMain>
-      <ContextRail reserve />
+      </PageFrame>
     </>
   );
 }

@@ -1,9 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from "@/components/feed/ContextRail";
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { StorefrontColumn } from '@/components/feed/StorefrontColumn';
 import { auth } from '@/lib/auth';
 import { listStorefront } from '@/lib/storefront.server';
@@ -31,12 +29,9 @@ function StorePage() {
   const { data } = Route.useLoaderData();
   return (
     <>
-      <AnimatedMain
-        className="w-full min-w-0 pb-dock"
-      >
+      <PageFrame>
         <StorefrontColumn key={userid} userid={userid} initialData={data} />
-      </AnimatedMain>
-      <ContextRail reserve />
+      </PageFrame>
     </>
   );
 }

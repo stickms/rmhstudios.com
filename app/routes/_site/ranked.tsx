@@ -1,10 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { PageFrame } from '@/components/feed/PageLayout';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from '@/components/feed/ContextRail';
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { RankedColumn } from '@/components/feed/RankedColumn';
 import { auth } from '@/lib/auth';
 import { getRankedOverview } from '@/lib/ranked.server';
@@ -37,10 +35,9 @@ function RankedPage() {
   const { overview } = Route.useLoaderData();
   return (
     <>
-      <AnimatedMain className="w-full min-w-0 pb-dock">
+      <PageFrame>
         <RankedColumn initialData={overview} />
-      </AnimatedMain>
-      <ContextRail reserve />
+      </PageFrame>
     </>
   );
 }

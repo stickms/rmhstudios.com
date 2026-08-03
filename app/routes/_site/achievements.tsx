@@ -1,10 +1,8 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { PageFrame } from '@/components/feed/PageLayout';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from '@/components/feed/ContextRail';
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { Trophy } from 'lucide-react';
 import { ColumnHeader } from '@/components/feed/ColumnHeader';
 import { JourneyColumn } from '@/components/feed/JourneyColumn';
@@ -48,7 +46,7 @@ function AchievementsPage() {
 
   return (
     <>
-      <AnimatedMain className="w-full min-w-0 pb-dock">
+      <PageFrame>
         {session && !isPending ? (
           <JourneyColumn
             userId={session.user.id}
@@ -85,8 +83,7 @@ function AchievementsPage() {
             )}
           </>
         )}
-      </AnimatedMain>
-      <ContextRail reserve />
+      </PageFrame>
     </>
   );
 }

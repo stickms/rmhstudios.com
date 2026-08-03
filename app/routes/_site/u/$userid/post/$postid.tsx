@@ -3,11 +3,10 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
+import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
 import { RightSidebar } from '@/components/feed/RightSidebar';
-import { ContextRail } from '@/components/feed/ContextRail';
 import { PostDetail } from '@/components/feed/PostDetail';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { getSidebarData } from '@/lib/sidebar-data';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
@@ -157,21 +156,17 @@ function PostPage() {
   const { sidebar } = Route.useLoaderData();
 
   return (
-    <>
-      {/* Center - Post Detail */}
-      <AnimatedMain className="w-full min-w-0 pb-dock">
-        <PostDetail postId={postid} />
-      </AnimatedMain>
-
-      {/* Right Sidebar */}
-      <ContextRail>
+    <PageFrame
+      rightSidebar={
         <RightSidebar
           officialBuilds={sidebar.officialBuilds}
           userBuilds={sidebar.userBuilds}
           recommendedUsers={sidebar.recommendedUsers}
           blogPosts={sidebar.blogPosts}
         />
-      </ContextRail>
-    </>
+      }
+    >
+        <PostDetail postId={postid} />
+    </PageFrame>
   );
 }

@@ -4,17 +4,15 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
+import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
 import { RightSidebar } from '@/components/feed/RightSidebar';
-import { ContextRail } from '@/components/feed/ContextRail';
 import { ProfileColumn } from '@/components/feed/ProfileColumn';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { getSidebarData } from '@/lib/sidebar-data';
 import { personSchema, jsonLdScript } from '@/lib/schema';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, ogCardPath, SITE_URL } from '@/lib/seo';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getProfile } from '@/lib/profile.server';
-import { WIDE_WIDTH } from '@/lib/layout-width';
 
 const fetchProfileData = createServerFn({ method: 'GET' })
   .validator((id: string) => id)
@@ -129,19 +127,17 @@ function ProfilePage() {
   const userId = userid.replace(/^@/, '');
 
   return (
-    <>
-      <AnimatedMain className="w-full min-w-0 pb-dock">
-        <ProfileColumn key={userId} userId={userId} initialProfile={profile} />
-      </AnimatedMain>
-
-      <ContextRail>
+    <PageFrame
+      rightSidebar={
         <RightSidebar
           officialBuilds={sidebar.officialBuilds}
           userBuilds={sidebar.userBuilds}
           recommendedUsers={sidebar.recommendedUsers}
           blogPosts={sidebar.blogPosts}
         />
-      </ContextRail>
-    </>
+      }
+    >
+      <ProfileColumn key={userId} userId={userId} initialProfile={profile} />
+    </PageFrame>
   );
 }
