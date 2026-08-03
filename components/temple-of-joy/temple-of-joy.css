@@ -541,19 +541,37 @@
      * One number for the split, so the toast rail can sit clear of the panel
      * instead of guessing at it.
      *
-     * 46dvh, not 52. The three shares of a phone screen are the counter, the
-     * altar and the list, and the altar is the only one of them that is the
-     * GAME — but it is also the only one that takes what the other two leave,
-     * so it was the one that paid. On a 664px iPhone: 162 of header, 345 of
-     * list, and 67 pixels of globe. Six percent of the screen for the thing the
-     * whole interface is built around.
+     * The three shares of a phone screen are the counter, the altar and the
+     * list, and the altar is the only one of them that is the GAME — but it is
+     * also the only one that takes what the other two leave, so it was the one
+     * that paid. On a 664px iPhone it was 162 of header, 345 of list, and 67
+     * pixels of globe; on an iPhone SE, 142 / 261 / 67, which is twelve percent
+     * of the screen for the thing the whole interface is built around. The
+     * counter floats over the room now (it costs nothing), the navigation is a
+     * bar along the bottom edge (it costs 3.25rem and buys the thumb zone), and
+     * the list keeps a share it can show four rows in.
      */
-    --toj-dock-h: min(46dvh, 26rem);
+    --toj-dock-h: min(42dvh, 24rem);
+    /* The bar's drawn height, before the safe-area inset it adds underneath.
+       Named because the toast rail has to sit clear of it. */
+    --toj-bar-h: 3.75rem;
+    /* The altar is bounded by what is left, not by a guess at it — the frame's
+       height less the list, the bar, the counter's two lines, the rites row and
+       the room's own inset. Written down rather than approximated, because
+       every previous version of this number was a guess and every one of them
+       was wrong. */
+    --toj-field: min(
+      calc(
+        100dvh - var(--toj-dock-h) - var(--toj-bar-h) - 8.25rem - var(--toj-safe-top) -
+          var(--toj-safe-bottom) * 2
+      ),
+      86vw
+    );
   }
 
-  /* The dock comes up from the bottom edge, so only its top corners are
-     rounded — a card floating clear of the bottom of a phone wastes the one
-     band of screen a thumb reaches most easily. */
+  /* The dock comes up from the bar, so only its top corners are rounded — a
+     card floating clear of the bottom of a phone wastes the one band of screen
+     a thumb reaches most easily. */
   .toj-dock {
     height: var(--toj-dock-h);
     flex-shrink: 0;
@@ -563,7 +581,7 @@
   }
 
   .toj-stage {
-    min-height: 11rem;
+    min-height: 9rem;
   }
 }
 
@@ -1760,6 +1778,173 @@
 
 .toj-tab-label {
   min-width: 0;
+}
+
+/* ── The bottom bar ── */
+
+/**
+ * The phone's navigation: five doors along the bottom edge.
+ *
+ * Everything about this shape is borrowed, and deliberately — a bar of
+ * glyph-over-label slots pinned to the bottom is what a person's thumb already
+ * expects, and the cost of inventing something here is that nobody finds the
+ * Garden. It replaces a rail that sat in the middle of the screen showing three
+ * of ten rooms behind a horizontal swipe.
+ *
+ * It is a bar, not a card: full width, a rule along the top, and the safe-area
+ * inset added to its padding rather than to a margin, so the row of labels sits
+ * above the home indicator and the surface still runs to the bottom of the
+ * glass.
+ */
+.toj-tabs[data-variant='bar'] {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0;
+  margin: 0;
+  padding: var(--toj-1) var(--toj-1) calc(var(--toj-1) + var(--toj-safe-bottom));
+  padding-inline: max(var(--toj-1), var(--safe-left)) max(var(--toj-1), var(--safe-right));
+  border-radius: 0;
+  border-top: 1px solid var(--toj-rule);
+  background: var(--toj-surface);
+  overflow: visible;
+  mask-image: none;
+  /* Over the toast rail and the sanctum's own layers, under a modal. */
+  position: relative;
+  z-index: 20;
+}
+
+.toj-tabs[data-variant='bar'] .toj-tab {
+  flex-direction: column;
+  justify-content: center;
+  /* The glyph sits ON the word, not beside it. */
+  gap: 3px;
+  min-height: 3.25rem;
+  padding: var(--toj-1) 2px;
+  border-radius: var(--toj-radius);
+  font-size: 0.68rem;
+  line-height: 1.15;
+  /* Five slots on a 320px phone is 62px each, and "Blessings" is nine
+     characters. It wraps rather than being cut, and the slot is tall enough
+     for two lines. */
+  white-space: normal;
+  text-align: center;
+}
+
+.toj-tabs[data-variant='bar'] .toj-tab-glyph {
+  font-size: 1.25rem;
+}
+
+.toj-tabs[data-variant='bar'] .toj-tab-label {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+/**
+ * The selected slot.
+ *
+ * No lifted pill: on a bar the raised-tab idiom reads as a floating button, and
+ * the thing that says "you are here" on every phone is colour plus weight, with
+ * the glyph itself doing the work. The tinted wash is only strong enough to
+ * find at a glance.
+ */
+.toj-tabs[data-variant='bar'] .toj-tab[aria-selected='true'] {
+  color: var(--toj-gold-deep);
+  background: var(--toj-gold-wash);
+  box-shadow: none;
+  font-weight: 650;
+}
+
+.toj-tabs[data-variant='bar'] .toj-tab-dot {
+  top: 6px;
+  inset-inline-end: 25%;
+  width: 6px;
+  height: 6px;
+}
+
+/* ── The More sheet ── */
+
+/**
+ * The rooms that did not fit the bar.
+ *
+ * It comes up from the bottom edge the bar is on, because that is where the
+ * tap was — a menu that opens in the middle of the screen makes you look for
+ * what you just asked for.
+ */
+.toj-scrim[data-sheet='true'] {
+  align-items: flex-end;
+  padding: 0;
+}
+
+.toj-sheet {
+  width: 100%;
+  max-height: 80dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--toj-2) var(--toj-gutter)
+    calc(var(--toj-gutter) + var(--toj-safe-bottom));
+  border-radius: var(--toj-radius-lg) var(--toj-radius-lg) 0 0;
+  border-top: 1px solid var(--toj-rule);
+  background: var(--toj-surface);
+  box-shadow: var(--toj-lift);
+  animation: toj-sheet-in var(--toj-base) var(--toj-ease-out);
+}
+
+@keyframes toj-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* The one visual convention that says "this came up from the edge and can go
+   back down". It is decoration — the scrim and Escape are what close it. */
+.toj-sheet-grip {
+  display: block;
+  width: 2.25rem;
+  height: 4px;
+  margin: 0 auto var(--toj-4);
+  border-radius: 99px;
+  background: var(--toj-rule-strong);
+}
+
+.toj-sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
+  gap: var(--toj-2);
+}
+
+.toj-sheet-tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--toj-1);
+  min-height: 4.5rem;
+  padding: var(--toj-3) var(--toj-2);
+  border-radius: var(--toj-radius);
+  background: var(--toj-surface-sunk);
+  color: var(--toj-ink-soft);
+  font-size: 0.76rem;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.toj-sheet-tab[aria-current='page'] {
+  background: var(--toj-gold-wash);
+  color: var(--toj-gold-deep);
+  font-weight: 650;
+}
+
+.toj-sheet-glyph {
+  font-size: 1.4rem;
+  line-height: 1;
 }
 
 /* Something in here is newly affordable. */
@@ -2988,7 +3173,11 @@ button.toj-row:active:not(:disabled) {
 .toj-toasts {
   position: fixed;
   z-index: 45;
-  bottom: calc(var(--toj-dock-h, 0px) + var(--toj-safe-bottom) + 0.75rem);
+  /* Clear of the panel AND of the bar under it — `--toj-bar-h` is set only in
+     the stacked layout, where the bar exists. */
+  bottom: calc(
+    var(--toj-dock-h, 0px) + var(--toj-bar-h, 0px) + var(--toj-safe-bottom) + 0.75rem
+  );
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -3214,7 +3403,11 @@ button.toj-row:active:not(:disabled) {
   }
 
   .toj-btn[data-size='sm'] {
-    min-height: 40px;
+    /* 44, not 40. The small variant is used for the leave-link, which now sits
+       in a floating counter with `pointer-events: none` around it — so unlike
+       every other button in the game it has no parent to catch a near miss,
+       and its drawn box IS its target. */
+    min-height: var(--toj-touch);
     padding-inline: var(--toj-4);
   }
 
@@ -3464,4 +3657,164 @@ button.toj-row:active:not(:disabled) {
     color-mix(in oklab, var(--toj-surface) 0%, transparent),
     var(--toj-surface) var(--toj-4)
   );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   18. The phone, stated last
+   ══════════════════════════════════════════════════════════════════════════
+   Every rule here belongs with the stacked-layout block in section 3, and none
+   of them can live there: they override components defined hundreds of lines
+   further down, and at equal specificity the later rule wins. Stated up with
+   the rest of the layout they lost silently — the counter kept its card, the
+   panel kept its redundant header, and the only sign was that the altar was
+   still too small.
+
+   The shape this produces is the one every idle game on a phone has converged
+   on, and for the same reasons: the object you tap owns the top half of the
+   screen with the counter floating over it, the shop is a list under that, and
+   navigation is a fixed bar in the thumb's arc. */
+
+@media (max-width: 39.99rem), (max-width: 61.99rem) and (min-height: 34.01rem) {
+  /**
+   * The room takes the whole top of the screen, and the counter floats in it.
+   *
+   * `position: relative` on the STAGE rather than on the sanctum because the
+   * sanctum clips (`overflow: hidden`, so a ripple cannot escape it) and the
+   * counter has to be able to sit on the room's very edge.
+   */
+  .toj-stage {
+    position: relative;
+  }
+
+  .toj-hud {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 4;
+    margin: 0;
+    padding: calc(var(--toj-3) + var(--toj-safe-top)) var(--toj-gutter) var(--toj-5);
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    /**
+     * Sky, not a card.
+     *
+     * A floating counter needs the field to be quiet behind it, and the field
+     * is not: satellite globes orbit through the top corners and Sinners ring
+     * the limb, so "6.036 Qi" was reading over a wireframe sphere and a chip
+     * had a face behind it. A card would fix that and take the room back. A
+     * gradient of the room's own surface, opaque where the text is and gone by
+     * the time it reaches the globe, fixes it for nothing — which is why every
+     * game with a heads-up display over a playfield has one.
+     */
+    background: linear-gradient(
+      to bottom,
+      var(--toj-ground) 0%,
+      color-mix(in oklab, var(--toj-ground) 82%, transparent) 55%,
+      transparent 100%
+    );
+    /* The counter is a readout lying over the altar, and the altar is the one
+       thing in this game you tap. Taps go THROUGH it; only its own controls
+       take one back. */
+    pointer-events: none;
+  }
+
+  .toj-hud button,
+  .toj-hud a {
+    pointer-events: auto;
+  }
+
+  /**
+   * The room's top inset is the counter's first two lines, so the globes centre
+   * in the space that is actually left rather than behind the number.
+   *
+   * Two lines, not three: the chip row is allowed to overlap the field, because
+   * the field is a SQUARE holding an inscribed sphere and its top corners are
+   * empty by construction. That is the whole trick behind a floating counter,
+   * and it is worth about forty pixels of altar on a phone.
+   */
+  .toj-sanctum {
+    margin: 0 var(--toj-gutter) var(--toj-2);
+    padding: 4.5rem var(--toj-3) var(--toj-2);
+  }
+
+  /**
+   * The rate, on one line.
+   *
+   * At 320px "1.131 Qi joy per second · 20% held by Sinners" wrapped, and the
+   * second line pushed the chip row down and the altar with it — nineteen
+   * pixels of a 568px screen, spent on a wrap. It gives up a tenth of a
+   * point of size instead, which nobody will notice and which the globe gets.
+   */
+  @media (max-width: 22rem) {
+    .toj-rate {
+      font-size: 0.8rem;
+    }
+
+    .toj-hud {
+      padding-inline: var(--toj-3);
+    }
+  }
+
+  /**
+   * The panel's own header is redundant on a phone and costs 58px of list.
+   *
+   * Its title names the room the bar underneath already names and highlights,
+   * and its right-hand figure is the joy total — which is the largest thing on
+   * the screen, four inches above it. Two of a 279px panel's 58 pixels were new
+   * information. The list gets them.
+   */
+  .toj-panel-head {
+    display: none;
+  }
+
+  /* The panel's top inset came from the header that is now gone. */
+  .toj-panel-scroll {
+    padding-top: var(--toj-3);
+  }
+
+  /**
+   * The shop list, read at arm's length.
+   *
+   * A price is the decision this list exists to support and it was 15.7px —
+   * smaller than the name beside it, which is backwards for a shop. The name
+   * goes to 16px (the platform body size; 14.7 is what you use when something
+   * has to fit, and now nothing does), the note to 13.6 (below 13 is where
+   * small text stops being read at all), and the price to the size it deserves.
+   */
+  .toj-row {
+    padding: var(--toj-4) var(--toj-3);
+    margin-bottom: var(--toj-2);
+  }
+
+  .toj-row-name {
+    font-size: 1rem;
+  }
+
+  .toj-row-note {
+    font-size: 0.85rem;
+  }
+
+  .toj-row-price {
+    font-size: 1.15rem;
+  }
+
+  .toj-row-count {
+    font-size: 0.78rem;
+  }
+
+  /**
+   * The buy-quantity switch, compacted.
+   *
+   * It is sticky, so it is charged against the list for the whole session: 78
+   * of a 279px panel, which is a row and a half of shop you never see. The
+   * controls stay a full thumb's target — that is the `::before` pad's whole
+   * job — while the drawn pills give back what they can.
+   */
+  .toj-toolbar {
+    padding-bottom: var(--toj-2);
+  }
+
+  .toj-segments {
+    padding: 2px;
+  }
 }

@@ -7,17 +7,18 @@
  */
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { applyVigil } from '@/lib/temple-of-joy/tick';
 import { doAudit } from '@/lib/temple-of-joy/actions';
 import { useAutoSave } from '@/lib/temple-of-joy/persistence';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
 import type { GameState } from '@/lib/temple-of-joy/types';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTempleValue } from './hooks';
 import { TempleHud } from './TempleHud';
 import { TempleSanctum } from './TempleSanctum';
-import { TempleTabs } from './TempleTabs';
+import { TempleRooms, TempleTabs } from './TempleTabs';
 import { TemplePanel } from './panels/TemplePanel';
 import { TempleDialogs } from './TempleDialogs';
 import { BowlOverlay } from './bowl/BowlOverlay';
@@ -32,6 +33,19 @@ export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameSta
   const modal = useTempleValue(
     (s) => s.showBowl || s.showVigilDialog || s.showAscendDialog || s.showMannaDialog,
   );
+  /**
+   * Bottom bar or side rail — the same question the stylesheet asks, asked
+   * once here because the answer changes where the navigation is MOUNTED, not
+   * just how it looks. This is the exact complement of the side-by-side layout
+   * condition in `temple-of-joy.css`; keep the two in step.
+   */
+  const bar = useMediaQuery(
+    '(max-width: 39.99rem), (max-width: 61.99rem) and (min-height: 34.01rem)',
+  );
+  // The bar's overflow sheet. Owned here rather than in the bar because the
+  // thing it has to disable — the whole game — is this component's child, and
+  // the sheet is that child's sibling.
+  const [rooms, setRooms] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
   /* ── Load, then catch up on the absence ──────────────────────────────── */
@@ -170,18 +184,38 @@ export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameSta
       data-flourish={flourish ? 'off' : undefined}
       data-no-twemoji
     >
-      <div className="toj-frame" inert={modal}>
-        <TempleHud />
+      <div className="toj-frame" inert={modal || rooms}>
+        {/* Where the counter lives is a layout decision, not a style one.
+            On a phone it goes INSIDE the room, floating over its light, the way
+            every idle game on a phone puts it — as a card above the room it was
+            19% of an iPhone and 25% of an iPhone SE, and the altar it was
+            describing had 17% and 12%. On a wide screen it stays a card across
+            the top of BOTH columns, where the height is free and spanning the
+            whole width is what makes it read as the game's header rather than
+            as the room's. */}
+        {!bar && <TempleHud />}
+
         <div className="toj-body">
           <div className="toj-stage">
+            {bar && <TempleHud />}
             <TempleSanctum />
           </div>
           <div className="toj-dock">
-            <TempleTabs />
+            {!bar && <TempleTabs />}
             <TemplePanel />
           </div>
         </div>
+
+        {/* Below the panel and pinned to the bottom edge, in the thumb's arc.
+            One instance either way — two tablists in the DOM is two things for
+            a screen reader to walk and two places for the selected room to
+            disagree with itself. */}
+        {bar && <TempleTabs variant="bar" more={rooms} onMore={setRooms} />}
       </div>
+
+      {/* Outside the frame, so the frame going `inert` behind it does not take
+          the sheet with it. */}
+      {bar && rooms && <TempleRooms onClose={() => setRooms(false)} />}
       <TempleDialogs />
       {/* The alley renders nothing until it is opened, and the three.js and
           Rapier chunks behind it are only fetched then — most sessions never
