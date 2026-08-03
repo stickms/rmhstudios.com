@@ -136,19 +136,25 @@ export function ThemeStudio({
               </Button>
             </div>
           ) : (
-            <Card pane className="flex-row items-center gap-3 p-4">
-              <Sparkles className="h-5 w-5 shrink-0 text-site-accent" aria-hidden />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-site-text">
-                  {t('member-gate-title', { defaultValue: 'Create & sell themes with a membership' })}
-                </p>
-                <p className="text-xs text-site-text-muted">
-                  {t('member-gate-desc', {
-                    defaultValue: 'Anyone can buy themes with coins — designing and selling them is a member perk.',
-                  })}
-                </p>
+            // Stacks below `sm`: as one row the CTA is `flex: none` at ~150px,
+            // which left the copy about 110px on a phone — a two-word title over
+            // four lines. The button goes full width underneath instead, which is
+            // also the comfortable place to reach it.
+            <Card pane className="flex-col items-start gap-3 p-4 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 items-start gap-3">
+                <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-site-accent" aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-site-text">
+                    {t('member-gate-title', { defaultValue: 'Create & sell themes with a membership' })}
+                  </p>
+                  <p className="text-xs text-site-text-muted">
+                    {t('member-gate-desc', {
+                      defaultValue: 'Anyone can buy themes with coins — designing and selling them is a member perk.',
+                    })}
+                  </p>
+                </div>
               </div>
-              <Button asChild variant="accent" size="sm">
+              <Button asChild variant="accent" size="sm" className="w-full sm:ml-auto sm:w-auto">
                 <ViewTransitionLink to="/store">
                   {t('member-gate-cta', { defaultValue: 'Become a member' })}
                 </ViewTransitionLink>

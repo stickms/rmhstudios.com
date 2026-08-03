@@ -167,14 +167,19 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
   );
 
   if (inline) {
+    // The heading row wraps, and the description claims a whole row of its own
+    // below `sm`. As one unwrapped row the sentence took the width and left
+    // "Party up" about 40px, which rendered as "Party" over "up". (Comment here
+    // rather than in the JSX: a `{/* … */}` immediately before a `t()` call
+    // makes i18next-parser skip that key.)
     return (
       <section className="mb-4 rounded-site border border-site-border bg-site-surface p-4">
-        <div className="mb-3 flex items-center gap-2">
-          <Users className="h-4 w-4 text-site-accent" aria-hidden />
+        <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1">
+          <Users className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />
           <h3 className="text-sm font-semibold text-site-text">
             {t('party-heading', { defaultValue: 'Party up' })}
           </h3>
-          <p className="text-xs text-site-text-dim">
+          <p className="basis-full text-xs text-site-text-dim sm:basis-auto">
             {t('party-subheading', {
               defaultValue: 'Start a party and pick a game to play with friends.',
             })}

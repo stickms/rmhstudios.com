@@ -179,6 +179,25 @@
     linear-gradient(to top, rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0) 60%);
 }
 
+/* Phones: scrim bottom-up, not left-to-right.
+   The horizontal ramp is sized for a wide hero where `.store-hero__body`
+   (max-width 560px) sits entirely inside the dark 0–38% band. At 390px the body
+   IS the hero, so the title's right half and the last tag pill landed on the
+   0.12/0 end of the ramp — white type straight onto bright artwork (measured on
+   Temple of Joy, whose art is gold and near-white). A vertical scrim covers the
+   full width of the text block, which is what the text block now is. */
+@media (max-width: 719.98px) {
+  .store-hero__scrim {
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.92) 0%,
+      rgba(0, 0, 0, 0.8) 42%,
+      rgba(0, 0, 0, 0.45) 70%,
+      rgba(0, 0, 0, 0.1) 100%
+    );
+  }
+}
+
 .store-hero__body {
   position: relative;
   z-index: 2;

@@ -201,13 +201,13 @@ function CompaniesPage() {
             const priority = c.priorityLevel as number;
             return [
               <tr key={c.id as string}>
-                <td>
+                <td data-label="Company">
                   <div className="rl-company-cell">
                     <span>{c.name as string}</span>
                     <span className="rl-eyebrow">{c.industry as string}</span>
                   </div>
                 </td>
-                <td>
+                <td data-label="Priority">
                   <div className="rl-priority-stepper" role="group" aria-label={`Priority for ${c.name as string}`}>
                     <button
                       type="button"
@@ -230,7 +230,7 @@ function CompaniesPage() {
                     </button>
                   </div>
                 </td>
-                <td>
+                <td data-label="Sources">
                   <div className="rl-source-dots">
                     {API_PLATFORMS.map((p) => {
                       const src = byPlatform.get(p);
@@ -249,8 +249,8 @@ function CompaniesPage() {
                     })}
                   </div>
                 </td>
-                <td className="rl-mono">{(c.activeJobCount as number) ?? 0}</td>
-                <td>
+                <td className="rl-mono" data-label="Active jobs">{(c.activeJobCount as number) ?? 0}</td>
+                <td data-label="Enabled">
                   <button
                     type="button"
                     className="rl-toggle"
@@ -262,7 +262,7 @@ function CompaniesPage() {
                     {c.enabled ? 'On' : 'Off'}
                   </button>
                 </td>
-                <td>
+                <td data-label="Watch">
                   <button
                     type="button"
                     className={`rl-star${watched ? ' rl-star--on' : ''}`}
@@ -273,7 +273,7 @@ function CompaniesPage() {
                     {watched ? '★' : '☆'}
                   </button>
                 </td>
-                <td>
+                <td data-label="Details">
                   <button
                     type="button"
                     className="rl-chip"

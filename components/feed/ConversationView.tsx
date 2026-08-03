@@ -555,8 +555,26 @@ export function ConversationView({
  );
  }
 
+ // The space the shell actually leaves, NOT `h-screen`.
+ //
+ // `h-screen` is `100vh` — the LARGE viewport on a phone — and this column sits
+ // below the shell's 56px top bar inside a `<main>` that reserves `--rad-top` /
+ // `--rad-bottom` for the floating dock. So the thread came out ~900px tall in
+ // an 844px window: the document scrolled 242px WHILE the message list scrolled
+ // its own 842px. Two scroll contexts fighting over one gesture, a composer
+ // parked below the fold, and — because the page scrolls at all — no toolbar
+ // collapse in mobile Safari.
+ //
+ // Subtracting the shell's own tokens (rather than a magic number) leaves the
+ // page exactly viewport-height, so there is one scroller: the message list.
+ //
+ // `svh`, not `dvh`: the small viewport is the one with the browser toolbars
+ // SHOWN, so sizing to it cannot overflow. `dvh` tracks whichever state the
+ // toolbars are in, which means the column is briefly too tall every time they
+ // expand — and the document starts scrolling again exactly when the user is
+ // reaching for the composer.
  return (
- <div className="flex flex-col h-screen">
+ <div className="flex flex-col h-[calc(100svh-var(--rad-topbar-h,3.5rem)-var(--rad-top,0px)-var(--rad-bottom,0px))]">
  {/* Header */}
  <div className="glass-chrome site-sticky-chrome shrink-0">
  <div className="flex items-center gap-3 px-4 py-3">
@@ -775,8 +793,10 @@ export function ConversationView({
  </div>
  )}
 
- {/* Input */}
- <div className="shrink-0 border-t border-site-border bg-site-bg px-4 py-3">
+ {/* Input. `--safe-bottom` keeps the send row clear of the home indicator and
+ iOS Safari's floating tab bar — this row is the bottom edge of the column
+ now that the column stops at the viewport. */}
+ <div className="shrink-0 border-t border-site-border bg-site-bg px-4 pt-3 pb-[calc(0.75rem+var(--safe-bottom,0px))]">
  {showGifPicker && (
  <GifPicker
  className="mx-2 mb-2"

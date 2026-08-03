@@ -805,6 +805,27 @@
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--site-text);
+  /* One word, and it must never be the thing that gives way: the search field
+     beside it is `w-[min(320px,48vw)]` and the admin backfill button is
+     `flex: none`, so on a phone the only flexible item left was this title. It
+     collapsed to ~30px and rendered "Pages" as "Page/s". */
+  flex: none;
+  white-space: nowrap;
+}
+
+/* Phones: the title takes its own line and the search gets the full width. */
+@media (max-width: 640px) {
+  .vibe-gallery__head {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .vibe-gallery__head [data-slot='search-field'] {
+    /* Beats the `ml-auto w-[min(320px,48vw)]` utility that sized it for a row
+       it no longer shares — at 48vw on a phone the placeholder was cut mid-word. */
+    margin-left: 0;
+    width: auto;
+    flex: 1 1 12rem;
+  }
 }
 
 /* Admin-only: re-render every page thumbnail. Sits just right of the search. */

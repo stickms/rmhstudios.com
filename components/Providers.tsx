@@ -217,6 +217,33 @@ export const THEME_EXCLUDED_ROUTES = [
   ...apps.filter((a) => !a.usesSiteTheme).map((a) => a.href),
 ].filter((href) => href.startsWith('/'));
 
+/**
+ * `_site` pages whose URL happens to sit under an app's prefix, and which must
+ * therefore keep the site theme.
+ *
+ * `/studio` is the DAW and owns its `--app-*` chrome; `/studio/themes` is an
+ * ordinary `PageLayout` page that merely lives under that path. A bare
+ * `startsWith` claimed it for the app tier, so the document painted the app's
+ * near-black background while the suppressed style class left `--site-text` at
+ * Daylight's `#000000` — a 1.07:1 `<h1>`, measured. The page was unreadable.
+ */
+export const THEME_EXCLUDED_EXCEPTIONS = ['/studio/themes'];
+
+/**
+ * Whether a pathname belongs to the app/game tier (no site theme, app chrome
+ * background). Matched on **segment boundaries** so `/rmhcodex` could never be
+ * claimed by `/rmhcode`, with the exceptions above winning outright.
+ *
+ * The no-flash `themeScript` in `app/routes/__root.tsx` reimplements this in ES5
+ * because it runs before any bundle does; the two must agree, so change both.
+ */
+export function isAppThemeRoute(pathname: string | undefined | null): boolean {
+  if (!pathname) return false;
+  const under = (base: string) => pathname === base || pathname.startsWith(`${base}/`);
+  if (THEME_EXCLUDED_EXCEPTIONS.some(under)) return false;
+  return THEME_EXCLUDED_ROUTES.some(under);
+}
+
 export function Providers({
   children,
   initialUser = null,
@@ -404,7 +431,7 @@ export function Providers({
       .catch(() => {});
   }, [userId]);
 
-  const isAppRoute = THEME_EXCLUDED_ROUTES.some((route) => pathname?.startsWith(route));
+  const isAppRoute = isAppThemeRoute(pathname);
 
   // Toggle app-route class so CSS can disable scrollbar-gutter on game/app pages
   useEffect(() => {

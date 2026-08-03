@@ -243,6 +243,14 @@
   --site-kicker-size: 0.6875rem;
   --site-kicker-tracking: 0.2em;
   --site-kicker-weight: 700;
+  /* On a phone the kicker is the eyebrow over every PageLayout title and the
+     "Back" label, in muted ink at wide tracking, held at arm's length. 11px was
+     the only type on the site still under the 12px floor; AUD-002 already moved
+     this token in accessibility's favour once, and the same argument reaches one
+     step further where the viewing distance is worst. Desktop keeps 11px. */
+  @media (max-width: 767.98px) {
+    --site-kicker-size: 0.75rem;
+  }
 
   /* The lede paragraph that follows a display heading. */
   --site-lede-size: clamp(1rem, 1.5vw, 1.3rem);
@@ -3315,6 +3323,22 @@ body {
   color: var(--site-accent-fg);
 }
 
+/* `type="search"` inputs get the platform's own clear control, and every one of
+   ours also renders a themed clear button (`components/ui/search-field.tsx`).
+   That component's docblock says this rule hides the UA one "so it can't stack
+   with this one" — but the rule was never written, so a filled search field
+   showed TWO ✕ controls side by side (confirmed on /search at 390px; WebKit
+   draws its own on iOS as well). Hide the UA affordance everywhere so the
+   themed, translated, correctly-sized one is the only one there is. */
+input[type='search']::-webkit-search-cancel-button,
+input[type='search']::-webkit-search-decoration,
+input[type='search']::-webkit-search-results-button,
+input[type='search']::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
 /* Placeholder text — themed and consistent across engines. Firefox applies a
    ~0.54 default opacity to placeholders; pin it to 1 so the dim token reads the
    same in Gecko, Blink and WebKit. */
@@ -4800,8 +4824,18 @@ body {
     top: calc(var(--safe-top) + var(--site-sticky-edge));
   }
 
+  /* `break-word`, NOT `anywhere`. Both break a word that cannot fit its line,
+     so an unbreakable URL is still contained either way — but `anywhere` also
+     collapses an element's intrinsic MIN-CONTENT width to a single character,
+     and that is the whole difference. A flex row that should have been forced
+     to wrap (or to overflow visibly) instead let its text column shrink to
+     nothing: measured 24px on the /leaderboard "Ranked" card, which rendered
+     the word as "Ra/nk/ed", and the same shape produced "Page/s", "In/f/o",
+     "Suc/ces/s" and "CORPOR/ATE/STRATE/GY" elsewhere. With `break-word` the
+     min-content width stays the longest word, so a column can no longer
+     collapse below one and the layout bug shows up as a layout bug. */
   [data-slot='page-content'] {
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 }
 
@@ -5643,6 +5677,27 @@ html.reduce-motion .u-parallax {
   --tab-seg-min: 3.25rem;
 }
 
+/* Phones: the segment minimum comes from the strip's own longest label.
+   The grid only wraps to another row once a column can no longer meet
+   `--tab-seg-min`, so that minimum is also the promise about what fits. A flat
+   5.5rem broke the promise — a 390px screen packed three ~108px columns and
+   then ellipsed "Notifications" (85px of text in an 80px content box). But a
+   flat *larger* value is just as wrong in the other direction: RMHLadder's nine
+   short labels ("Jobs", "Alerts", "Health") fit three-up comfortably, and
+   forcing 8rem dropped them to two columns over five rows.
+   `liquid-tabs.tsx` therefore measures its own labels and writes
+   `--tab-seg-content`; the strip takes whichever is larger. Strips with short
+   labels keep their dense grid, and only the ones that need the room wrap. */
+@media (max-width: 767.98px) {
+  [data-slot='liquid-tabs']:not([data-tab-icon-only]) {
+    --tab-seg-min: max(5.5rem, var(--tab-seg-content, 0px));
+  }
+  /* Glyph strips are unaffected — their segment holds an icon, not a word. */
+  [data-slot='liquid-tabs'][data-tab-icon-only] {
+    --tab-seg-min: 3.25rem;
+  }
+}
+
 /* §5.5x B — the strip is primary navigation on several routes, and its pills
    were 36–38px on touch. Grow the hit area on coarse pointers only; fine
    pointers keep the compact strip. */
@@ -5694,8 +5749,17 @@ html.reduce-motion .u-parallax {
      the information and the glyph is decoration, so the glyph is what goes: below
      md a strip that shows labels drops its icons and spends the width on text.
      `iconOnly` strips are the exception — there the glyph IS the label, so it
-     stays (and its own label is the thing hidden, just above). */
-  [data-slot='liquid-tabs']:not([data-tab-icon-only]) :is(button, a) > svg:first-child {
+     stays (and its own label is the thing hidden, just above).
+
+     `> svg`, NOT `> svg:first-child`: the ACTIVE tab renders the flowing capsule
+     as its first child (`{capsule(active)}{content(tab)}` in liquid-tabs.tsx),
+     so `:first-child` matched every tab except the active one. The result was
+     backwards — the tab whose name matters most was the only one still paying
+     ~24px for a glyph, which is what turned the selected tab into "Messa…" on
+     /messages and "Everyt…" on /library while its neighbours showed their full
+     labels. The capsule and the count/badge are spans, so a plain child
+     combinator hits the icon and only the icon. */
+  [data-slot='liquid-tabs']:not([data-tab-icon-only]) :is(button, a) > svg {
     display: none;
   }
 }

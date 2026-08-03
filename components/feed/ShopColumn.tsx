@@ -45,9 +45,16 @@ function Preview({ item }: { item: ShopItemView }) {
     );
   }
   if (kind === 'NAME_COLOR') {
+    // Every name colour in the catalog is a bright, saturated hue — that is what
+    // makes it worth buying — and drawn as ink straight onto the card they were
+    // unreadable: white 2.65:1, sky 1.80, emerald 1.67, amber 1.49, lime 1.38.
+    // You could not see what you were buying. The swatch now sits on the shared
+    // media scrim (the token for "a chip resting on media", i.e. a neutral dark
+    // any bright ink reads on), which is also closer to how the colour looks in
+    // a feed than a bare white rectangle was.
     return (
       <div
-        className="flex h-12 items-center justify-center rounded-site-sm px-3 text-sm font-bold"
+        className="flex h-12 items-center justify-center rounded-site-sm bg-site-media-scrim-strong px-3 text-sm font-bold"
         style={data.gradient ? { background: data.gradient, color: '#fff' } : { color: data.color }}
       >
         {t('name-preview', { defaultValue: 'Name' })}
@@ -262,9 +269,18 @@ export function ShopColumn({
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="truncate text-sm font-semibold text-site-text">{item.name}</p>
+                  {/* The rarity palette is saturated mid-tones, and as INK on the
+                      card they all sit under 2.5:1 — legendary #f59e0b measured
+                      2.04, uncommon #22c55e 2.0, exotic #06b6d4 2.2. The colour
+                      moves to the chip's fill and border (where it still reads as
+                      "legendary" at a glance) and the word takes the surface's own
+                      ink. Same fix as the achievement tier chips. */}
                   <span
-                    className="text-[11px] font-bold uppercase"
-                    style={{ color: RARITY_COLORS[item.rarity] }}
+                    className="shrink-0 rounded border px-1 py-0.5 text-[11px] font-bold uppercase text-site-text"
+                    style={{
+                      background: `${RARITY_COLORS[item.rarity]}2e`,
+                      borderColor: `${RARITY_COLORS[item.rarity]}99`,
+                    }}
                   >
                     {item.rarity}
                   </span>

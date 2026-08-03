@@ -2829,6 +2829,14 @@ html.perf-lite .radial-hub__veil {
 .radial-feed__compose {
   max-width: calc(50vw - var(--site-hub-orb-size) / 2 - 1rem);
   overflow: hidden;
+  /* 0.7rem of padding around a 1.1rem glyph is a 40px button, and this is the
+     primary compose action on a phone — the one control on the feed that has to
+     be hittable one-handed. Grown here rather than via the ::after trick used on
+     the top bar, because the FAB clips its own overflow (the label ellipsis
+     above) and would swallow the overlay exactly like the brand did. */
+  min-height: var(--site-touch-target);
+  min-width: var(--site-touch-target);
+  justify-content: center;
 }
 .radial-feed__compose-label {
   min-width: 0;
@@ -2839,12 +2847,22 @@ html.perf-lite .radial-hub__veil {
 
 /* A.3 — The top bar is a two-item flex row whose right half grows with the
    number of signed-in controls. Without this the brand is the one that gives
-   way, and on a narrow phone the wordmark slid under the buttons. */
+   way, and on a narrow phone the wordmark slid under the buttons.
+
+   The clip lives on the WORDMARK, not on the link. It used to sit on
+   `.radial-topbar__brand`, where it also clipped that element's own ::after —
+   the transparent 44px touch overlay added for coarse pointers in §5.5x B
+   below. The two rules are ~70 lines apart and the accessibility one lost
+   silently: the brand's hit area measured 48×27 on a phone, not 44×44. Clipping
+   the children instead contains the text exactly as before and leaves the
+   overlay free to extend past the link's box, which is the whole point of it. */
 .radial-topbar__brand {
   min-width: 0;
-  overflow: hidden;
 }
-.radial-topbar__mark {
+.radial-topbar__mark,
+.radial-topbar__brand small {
+  min-width: 0;
+  overflow: hidden;
   white-space: nowrap;
 }
 .radial-topbar__actions {
@@ -2914,6 +2932,9 @@ html.perf-lite .radial-hub__veil {
   .radial-topbar__btn,
   .radial-topbar__signin,
   .radial-topbar__brand,
+  /* The account menu — 32×32 painted, and the one control on this bar that was
+     never listed here, so it stayed a 33px target on every page of the site. */
+  .radial-topbar__avatar,
   .rad-live__row,
   .rad-deck__row {
     position: relative;
@@ -2921,6 +2942,7 @@ html.perf-lite .radial-hub__veil {
   .radial-topbar__btn::after,
   .radial-topbar__signin::after,
   .radial-topbar__brand::after,
+  .radial-topbar__avatar::after,
   .rad-live__row::after,
   .rad-deck__row::after {
     content: '';

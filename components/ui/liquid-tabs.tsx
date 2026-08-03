@@ -303,6 +303,28 @@ export function LiquidTabs({
   // segment width there; everything else about the strip is width-independent.
   const innerClass = cn('relative w-full min-w-0', !sheet && className);
 
+  // How much room this strip's longest label actually needs, published for the
+  // phone rule in globals.css to raise `--tab-seg-min` with. A character count
+  // in `ch` plus the segment's own padding — no measurement pass, no observer
+  // (the grid replaced one deliberately), and it only has to be right enough to
+  // decide how many columns fit. Strips whose labels are short are unaffected,
+  // because the rule takes `max()` of this and the existing floor.
+  const longestLabel = tabs.reduce((n, t) => Math.max(n, t.label.length), 0);
+  const hasCounter = tabs.some((t) => typeof t.count === 'number' || typeof t.badge === 'number');
+  // Deliberately NOT `ch`: the property is written on the strip, whose font-size
+  // is the inherited 1rem, while the labels render at text-sm/text-xs — so `ch`
+  // over-measured by ~30% and pushed nine short labels down to two columns.
+  // 0.58em per character, in the label's own size, plus that size's horizontal
+  // padding (`pad` below) and the counter slot when present. The coefficient is
+  // measured, not guessed: "Communities" renders 88px at 14px — 0.571em/char —
+  // and an earlier 0.5em under-reserved it by 11px, so the strip still packed
+  // three columns and still ellipsed the word it was widened for.
+  const labelRem = size === 'sm' ? 0.75 : 0.875;
+  const padRem = size === 'sm' ? 1.5 : 1.75;
+  const segContent = iconOnly
+    ? undefined
+    : `${(longestLabel * labelRem * 0.58 + padRem + (hasCounter ? 1.75 : 0)).toFixed(2)}rem`;
+
   const items = tabs.map((tab) => {
     const active = tab.id === value;
     if (link) {
@@ -362,6 +384,7 @@ export function LiquidTabs({
       data-slot="liquid-tabs"
       data-tab-size={size}
       data-tab-icon-only={iconOnly ? '' : undefined}
+      style={segContent ? ({ '--tab-seg-content': segContent } as React.CSSProperties) : undefined}
       className={innerClass}
     >
       {items}
@@ -375,6 +398,7 @@ export function LiquidTabs({
       data-slot="liquid-tabs"
       data-tab-size={size}
       data-tab-icon-only={iconOnly ? '' : undefined}
+      style={segContent ? ({ '--tab-seg-content': segContent } as React.CSSProperties) : undefined}
       className={innerClass}
     >
       {items}
