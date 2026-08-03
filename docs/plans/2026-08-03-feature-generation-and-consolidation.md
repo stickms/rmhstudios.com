@@ -1,14 +1,25 @@
 # Feature Generation & Frontend Consolidation — 2026-08-03
 
 **Document type:** Product/architecture idea list (no implementation)
-**Branch audited:** `claude/website-feature-audit-36kvk6` (at `3047783`)
+**Branch audited:** `claude/website-feature-audit-36kvk6`, **revised against `0bd0236a`**
 **Two questions asked:** (1) what is this site lacking relative to comparable
 platforms, and (2) how do we consolidate what already exists, especially on the
 frontend.
 
-**Method.** Read the live tree — `app/routes/**` (733 route files, 127 under
+> **Revision note (same day).** The first pass of this document was written against
+> `3047783`. Four commits landed on `main` immediately afterwards, one of them a
+> large SEO sweep (`8cad6b95`, "SEO: make every public page discoverable, and keep
+> it that way") touching ~35 of the routes audited here plus the whole sitemap
+> layer, and one retiring the Alex Discord bot (`7cc2a801`, −3 Prisma models). Every
+> finding those commits touched has been re-verified against the merged tree and is
+> flagged **[resolved]**, **[escalated]** or **[unchanged]** below. The short
+> version: **F1 shipped**, §0(a) is fixed, C3 got easier, C2 and C8 are now
+> confirmed by the repo's own code comments, and **C1 got worse** — the SEO pass
+> hardened two duplicate URLs with self-canonicals rather than removing them.
+
+**Method.** Read the live tree — `app/routes/**` (734 route files, 127 under
 `_site/`, 125 API namespaces), `lib/games.ts` + `lib/apps.ts`, `lib/sidebar-nav.ts`,
-`prisma/schema.prisma` (252 models), `components/**` (927 `.tsx`, 41 `.css`) — then
+`prisma/schema.prisma` (249 models), `components/**` (927 `.tsx`, 41 `.css`) — then
 subtracted everything already shipped **and** everything already specced in the four
 prior idea docs so nothing here repeats them:
 
@@ -30,11 +41,12 @@ docs use.
 > half-landed.** `/playlists`, `/creator-studio`, `/arcade`, `/leaderboard`,
 > `/builds` and `/market` were correctly folded into hub pages and reduced to
 > redirect stubs. But `/shop` and `/pricing` were folded into `/store` and left
-> live; `/explore` lost its nav entry and was left live and unlinked; `/profile/$id`
-> was superseded by `/u/$userid` and left live; the `PageLayout` migration stopped
-> at 65 of 127 pages and left a dead import behind in 22 of them. The result is a
-> site with roughly a dozen URLs that render content the reader can reach two ways,
-> at two levels of quality, with the canonical tag missing from the worse one.
+> live; `/explore` lost its nav entry and kept its page, reachable only from the 404;
+> `/profile/$id` was superseded by `/u/$userid` and left live; the `PageLayout`
+> migration stopped at 65 of 127 pages and left a dead import behind in 22 of them.
+> The result is roughly a dozen URLs rendering content the reader can reach two ways
+> at two levels of quality — and, since `8cad6b95`, the two ways now compete over
+> which is canonical rather than merely leaving it unstated.
 >
 > **Finishing the consolidations already started is cheaper than any feature in
 > this document and improves more of the site.** Part I is that work. Part II is
@@ -47,22 +59,43 @@ docs use.
 Not features. Reporting them here because they were found on the way and both are
 small.
 
-**(a) `/sitemap.xml` advertises two URLs that 404.** `app/routes/sitemap[.]xml.ts`
-lines 48–49 emit `/games` and `/apps` at priority 0.9 — the two highest-priority
-entries after the homepage. Neither exists in `routeTree.gen.ts`; there is no
-`_site/games/index.tsx` and no apps index at all (the catalogs are browsable at
-`/create?tab=games` and `?tab=apps`). Search Console will be reporting these as
-errors. The same file also hardcodes `const SITE_URL = 'https://rmhstudios.com'`
-instead of importing it from `@/lib/seo`, and omits `/u/$userid` profiles and
-`/tag/$tag` — the two largest classes of public content on the site.
+**(a) `/sitemap.xml` advertised two URLs that 404. — [resolved by `8cad6b95`]**
+The old `app/routes/sitemap[.]xml.ts` emitted `/games` and `/apps` at priority 0.9,
+hardcoded its own `SITE_URL`, and omitted profiles and tags. All three are fixed:
+the route is now a 39-line sitemap **index** delegating to `/sitemaps/{section}[-{n}].xml`
+(`app/routes/sitemaps.$name.ts` + `lib/sitemap.ts` + `lib/sitemap.server.ts`), it
+imports `SITE_URL` from `@/lib/seo`, and users, posts, vibe pages and communities
+are all sections now. Two new suites gate it —
+`lib/__tests__/sitemap-coverage.test.ts` ("lists no path that has no route", "lists
+no route that only redirects", "gives every sitemap-listed page a description and a
+canonical") and `sitemap-sections.test.ts`. This is a better outcome than the
+finding asked for; see F1, which is now delivered.
 
-**(b) 22 route files import `WIDE_NO_RIGHT_SIDEBAR_WIDTH` and never use it.**
+One artifact of the fix is worth carrying forward: `lib/seo-catalog.ts` now exports
+
+```ts
+/** Where the games/apps browser actually lives. There is no `/games` route. */
+export const GAMES_INDEX_PATH = '/create?tab=games';
+export const APPS_INDEX_PATH = '/create?tab=apps';
+```
+
+The SEO work hit C8's wall and worked around it by encoding the tab URL as a
+constant. That is the right call for a sweep that wasn't allowed to add routes —
+and it is independent confirmation that the catalogue has no index page.
+
+**(b) 22 route files import `WIDE_NO_RIGHT_SIDEBAR_WIDTH` and never use it. — [unchanged]**
 `c.$slug`, `progress`, `ranked`, `shop`, `drafts`, `moments.$id`, `thread/$rootId`,
 `achievements`, `personas/$id`, `music-trivia`, `tag.$tag`, `store/$userid`,
 `wrapped`, `bookmarks`, `recap`, `spaces.$id`, `roadmap`, `groups/index`,
 `study/browse`, `study/$deckId`, `study/index`, `explore`. Residue of the layout
 refactor described in C5. Harmless at runtime; useful as a map of exactly which
 pages the migration didn't finish.
+
+`8cad6b95` edited **13 of these 22 files** to add a `head()` and left the dead import
+in every one of them — `shop.tsx` is the clearest case, where the commit reformatted
+the `AnimatedMain` call two lines below the unused import. That is the finding's own
+proof: this residue is invisible to a reviewer working route-by-route, which is why
+C5 proposes a lint gate rather than a one-off cleanup.
 
 ---
 
@@ -93,7 +126,33 @@ not.**
 
 ---
 
-## C1. Finish `/store`: `/shop` and `/pricing` are still live duplicates — **XS**
+## C1. Finish `/store`: `/shop` and `/pricing` are still live duplicates — **XS** — [escalated]
+
+> **What changed.** `8cad6b95` gave `/shop`, `/pricing` **and** `/store` each a
+> `buildMeta({ path })` + `buildCanonical()` self-canonical, and listed `/shop`
+> (0.5), `/store` (0.5) and `/pricing` (0.6) in the sitemap as three separate
+> pages. Before the sweep, none of the three had a canonical, so a crawler had to
+> guess which was authoritative. Now `/shop` and `/store?tab=shop` — the identical
+> `ShopColumn`, the identical `getShopData()` loader — **each assert that they are
+> the canonical version of the same content.** An ambiguous duplicate became a
+> contradictory one.
+>
+> This was not an oversight. `sitemap-coverage.test.ts` line 266 requires that every
+> sitemap-listed page have a description and a canonical, so the gate will keep
+> re-asserting `/shop`'s self-canonical for exactly as long as `/shop` remains a
+> listed route. **The gate cannot fix this and correctly does not try** — the
+> decision "should this page exist" is upstream of it.
+>
+> The vocabulary to express the answer already exists in the same file:
+> `EXCLUDED_ROUTES` in `lib/sitemap.ts` carries a `'duplicate'` reason, used for
+> `/rmhtype/solo` (`'duplicate', // same content as /rmhtype`) and the six
+> `/daily/*` puzzle routes. `/shop` and `/pricing` are that case and were listed
+> instead. Redirecting them (the proposal below) is better still, because
+> `sitemap-coverage.test.ts` line 174 — "lists no route that only redirects" —
+> then removes them from the sitemap automatically.
+>
+> **Effort is unchanged at XS. Urgency is now the highest in Part I.**
+
 
 **Evidence.** `_site/store/index.tsx` docstring: *"Merges what used to be three
 separate destinations — Membership (`/pricing`), the cosmetics Shop (`/shop`), and
@@ -122,7 +181,29 @@ an ad. Keeping it as a redirect (not deleting it) is the whole point.
 
 ---
 
-## C2. Retire `/profile/$id` in favour of `/u/$userid` — **XS**
+## C2. Retire `/profile/$id` in favour of `/u/$userid` — **XS** — [escalated]
+
+> **What changed.** The SEO sweep classified every route in the tree, and it
+> recorded this exact finding in code. `lib/sitemap.ts` line 374:
+>
+> ```ts
+> '/profile/$id': null, // legacy alias of `/u/$userid`
+> '/store/$userid': null, // mirrors the profile; would duplicate it
+> ```
+>
+> So the duplicate is now **documented and excluded from the sitemap** — and still
+> live, still linked from wherever it was already linked, and still the only one of
+> the pair without a `rel=canonical`. Sitemap exclusion is not deindexing: it stops
+> the site *submitting* the URL, it does nothing about crawlers reaching it from
+> links, history or the existing index. A page that a crawler can reach, that
+> duplicates another page, and that carries no canonical, is the precise shape this
+> finding describes — and the sweep that touched ~35 route heads did not give this
+> one a head at all.
+>
+> The fix below is unchanged and now has the repo's own comment as its
+> justification. Note the same line flags `/store/$userid` as a profile mirror,
+> which is worth a look on the same pass.
+
 
 **Evidence.** `diff` of the two files: they are the same route, and the older one is
 strictly worse. `_site/u/$userid/index.tsx` (147 lines) has a `rel=canonical` link,
@@ -144,28 +225,55 @@ function with it.
 
 ---
 
-## C3. `/explore` is orphaned — decide, then act — **XS**
+## C3. `/explore` is orphaned, and SEO already picked the winner — **XS** — [half-resolved]
 
 **Evidence.** `SIDEBAR_NAV` maps the label "Explore" to **`/search`** (line 65), and
 `_site/search.tsx` titles itself `explore-title` → "Explore". Meanwhile
 `_site/explore.tsx` is a separate live page rendering a different component
-(`ExploreColumn`, fed by `listExplore()`). A grep for `/explore` across `app/`,
-`components/` and `lib/` returns **only** `routeTree.gen.ts` — nothing in the product
-links to it. It is SSR'd, indexable, and unreachable by navigation.
+(`ExploreColumn`, fed by `listExplore()`). The only in-product link to it is
+`components/errors/NotFound.tsx:46` — the 404 page (pre-existing, from `1cf59ccc`,
+not the SEO sweep). It is not in the nav, not in the globe, not in the rail.
 
-**Consequence.** Two "Explore" surfaces with different content, one of which no user
-can find, plus a live loader nobody triggers deliberately.
+> **What changed, and it resolves the open question.** The first pass of this
+> document offered two options — fold `/explore` into `/search`, or promote it. The
+> SEO sweep answered, in `lib/sitemap.ts`:
+>
+> ```ts
+> { loc: '/explore', changefreq: 'daily', priority: 0.8 },   // listed, high priority
+> '/search': 'noindex', // a search results page is thin by construction
+> ```
+>
+> `/explore` also got a full `buildMeta` description and a self-canonical. So the
+> SEO layer has decided `/explore` is the public Explore surface and `/search` is a
+> thin results page that should not be indexed at all — which is the correct call on
+> both counts.
+>
+> **The nav was not told.** Today the site tells crawlers "Explore is `/explore`,
+> priority 0.8, changes daily" and tells users "Explore is `/search`, which we have
+> asked Google to ignore." The 404 page is the only thing in the product that agrees
+> with the sitemap.
 
-**Proposal.** Two honest options — pick one, don't leave it:
-- **Fold.** `ExploreColumn` becomes a tab of `/search` (which already has a
-  `?tab=` contract via `lib/search/types`), and `/explore` becomes a redirect. This
-  is the consolidation-consistent answer.
-- **Promote.** If `ExploreColumn`'s recommendations are better than the search
-  landing state, make `/explore` the destination and redirect `/search` to it.
+**Proposal — now one line, not a decision.** Point the `Explore` entry in
+`SIDEBAR_NAV` at `/explore` instead of `/search`:
 
-Either way the reachable surface count goes from two to one. Note `ExploreColumn`
-also renders `MemoRMHarkCard` from `VirtualPostList`, so it is on the good card path
-(C4) — the fold is mechanical.
+```ts
+{ id: '/search', href: '/search', tKey: 'nav-explore', label: 'Explore', icon: Compass },
+//   ^^^^^^^^          ^^^^^^^^  → '/explore'
+```
+
+Two cautions, both cheap:
+- `id` is the **stable customization key** validated against `SIDEBAR_NAV_IDS` in
+  `lib/home-widgets.ts` — the file's own header says renaming an id is a data
+  migration. Change `href` and leave `id: '/search'` alone unless you ship the
+  migration.
+- `/search` must stay reachable: it is where the search field submits and where
+  `SavedSearches` links. Keep it as a destination, just not as the nav's Explore
+  pin.
+
+Then `ExploreColumn` should gain a search entry point (or `/explore` should host the
+field) so the two surfaces are one journey rather than two doors. `ExploreColumn`
+already renders `MemoRMHarkCard` from `VirtualPostList`, so it is on the good card
+path (C4) and inherits any fix made there.
 
 ---
 
@@ -204,7 +312,17 @@ visual-risk item in Part I.
 
 ---
 
-## C5. Finish the `PageLayout` migration — **S**
+## C5. Finish the `PageLayout` migration — **S** — [unchanged]
+
+> **Re-verified after `8cad6b95`: still 65 of 127, still 29 hand-rolled, still 22
+> dead imports.** The SEO sweep edited a dozen of the hand-rolled routes
+> (`achievements`, `c.$slug`, `explore`, `groups/index`, `personas/$id`, `ranked`,
+> `roadmap`, `shop`, `study/*`, `tag.$tag`, `thread/$rootId`,
+> `u/$userid/post/$postid`) to add a `head()` and changed nothing about their
+> layout. A sweep that opened two thirds of the offending files and moved the
+> number by zero is the argument for the CI gate at the end of this section rather
+> than for another cleanup pass.
+
 
 **Evidence.** `components/CLAUDE.md` and `design.md` §5 both name
 `feed/PageLayout.tsx` the canonical page wrapper, and
@@ -346,7 +464,29 @@ backfill are the M.
 
 ---
 
-## C8. `/create` is a creator verb doing consumer work — **S (product), M (with an index page)**
+## C8. `/create` is a creator verb doing consumer work — **S (product), M (with an index page)** — [escalated]
+
+> **What changed.** The SEO sweep independently hit this wall and had to encode the
+> workaround as a constant — `lib/seo-catalog.ts`:
+>
+> ```ts
+> /** Where the games/apps browser actually lives. There is no `/games` route. */
+> export const GAMES_INDEX_PATH = '/create?tab=games';
+> export const APPS_INDEX_PATH = '/create?tab=apps';
+> ```
+>
+> Every game's `head()` now walks a JSON-LD breadcrumb back through that path. But
+> `sitemap-coverage.test.ts` line 200 asserts **"keeps query strings out of the
+> sitemap"** — correctly, since a `?tab=` URL is a page state, not a page. So the
+> browse surface for 21 games and 12 apps is now, by rule, the one thing on this
+> site that **cannot be submitted to a search engine**, and the breadcrumb for every
+> game page terminates at a URL no crawler will index.
+>
+> The sweep did everything it could without adding routes: 18 game roots that had no
+> `head()` at all now have titles, descriptions, canonicals and cards derived from
+> `lib/games.ts`. That work is done and good. It has no index page to point at, and
+> that is the remaining half.
+
 
 **Evidence.** `SIDEBAR_NAV` line 75 gives `/create` the label "Create" and the `Wand2`
 icon. `_site/create/index.tsx` has six tabs: `pages`, `games`, `apps`, `user-builds`,
@@ -414,20 +554,23 @@ settings pages want their own URL for support links and search. So the fix is no
 
 ## Consolidation scoreboard
 
-| # | Item | Effort | Surfaces removed | Risk |
-|:--:|---|:--:|:--:|---|
-| C1 | `/shop`, `/pricing` → `/store` stubs | XS | 2 | None — pure redirect |
-| C2 | `/profile/$id` → `/u/$userid` stub | XS | 1 | None — fixes an SEO defect |
-| C3 | `/explore` folded or promoted | XS | 1 | None — nothing links to it |
-| C4 | One post-card renderer | S | 1 component | **Visual** — screenshot pass required |
-| C5 | Finish `PageLayout` (29 routes) + gate | S | 29 bespoke frames | Visual, per batch |
-| C6 | Extend the design gate to `.css`, then burn down | M | — | None for step 1 |
-| C7 | One saves hub; `RMHarkBookmark` → `SavedItem` | M | 3 | **Data migration** |
-| C8 | Re-expose `/games` + `/apps` as public indexes | S–M | −2 (adds two, on purpose) | None |
-| C9 | Settings index + fold `studio/themes` | S | 1 | None |
+| # | Item | Effort | Surfaces removed | Risk | Post-`0bd0236a` |
+|:--:|---|:--:|:--:|---|---|
+| C1 | `/shop`, `/pricing` → `/store` stubs | XS | 2 | None — pure redirect | **escalated** — both now self-canonical against `/store` |
+| C2 | `/profile/$id` → `/u/$userid` stub | XS | 1 | None — fixes an SEO defect | **escalated** — now documented in `lib/sitemap.ts` as a "legacy alias" and left live |
+| C3 | Point nav's Explore at `/explore` | XS | 1 | None | **easier** — SEO already picked the winner; one `href` |
+| C4 | One post-card renderer | S | 1 component | **Visual** — screenshot pass required | unchanged |
+| C5 | Finish `PageLayout` (29 routes) + gate | S | 29 bespoke frames | Visual, per batch | unchanged — a 13-file sweep moved it by zero |
+| C6 | Extend the design gate to `.css`, then burn down | M | — | None for step 1 | unchanged — gate still `.tsx`-only |
+| C7 | One saves hub; `RMHarkBookmark` → `SavedItem` | M | 3 | **Data migration** | unchanged |
+| C8 | Re-expose `/games` + `/apps` as public indexes | S–M | −2 (adds two, on purpose) | None | **escalated** — the catalogue is now un-submittable by rule |
+| C9 | Settings index + fold `studio/themes` | S | 1 | None | unchanged |
 
-C1 + C2 + C3 together are perhaps two hours and remove four duplicate URLs, one of
-them an active SEO defect. **Start there.**
+C1 + C2 + C3 together are perhaps two hours and remove three duplicate URLs plus one
+nav contradiction. **Start there** — and note that C1 and C2 are now actively
+degrading rather than merely untidy: one page-pair is emitting contradictory
+canonicals, and the other is a known-duplicate route that was classified rather than
+retired.
 
 ---
 
@@ -536,22 +679,21 @@ Flair is a separate, smaller item and can wait.
 
 ## F. Discovery & SEO
 
-### F1. A real sitemap: index-sharded, profile-inclusive, canonical-clean — **S**
+### F1. ~~A real sitemap: index-sharded, profile-inclusive, canonical-clean~~ — **[SHIPPED in `8cad6b95`]**
 
-**Gap evidence.** §0(a). One monolithic `sitemap.xml` capped at `take: 1000` per
-content type, missing `/u/$userid` and `/tag/$tag`, advertising two 404s, and
-hardcoding its own `SITE_URL`.
+Proposed in the first pass of this document; delivered by the SEO sweep the same day,
+in a stronger form than proposed. `/sitemap.xml` is now an index over
+`/sitemaps/{section}[-{n}].xml` with per-section chunking and a documented cap
+warning; profiles, posts, vibe pages and communities are sections; `SITE_URL` comes
+from `@/lib/seo`; and the whole thing is gated by two new suites that also enforce
+per-page canonicals and descriptions. Recorded here rather than deleted so the
+sequencing below still reads.
 
-**Why it matters.** Profiles are the largest class of public content on a social site
-and none of them are submitted. The 50,000-URL / 50MB sitemap limit is a real ceiling
-once profiles are included, which is why the answer is a sitemap **index** with a
-child per content type — `sitemap-profiles-1.xml`, `sitemap-posts-1.xml`, etc.
-
-**Shape.** `sitemap[.]xml.ts` becomes an index; one child route per type with keyset
-pagination on `(updatedAt, id)`; import `SITE_URL` from `@/lib/seo`; exclude anything
-`noindex` (the `robots: noindex` meta on `/saves`, `/lists`, `/wishlist`, `/history`
-already marks those correctly — the sitemap just needs to agree). Do this *after* C1
-and C2 so it isn't submitting the duplicate URLs.
+**One follow-up remains, and it is C1's.** `sitemap-coverage.test.ts` requires a
+canonical on every listed page but cannot know that two listed pages are the same
+page. `/shop` and `/store` are both listed, both self-canonical. Fixing C1 removes
+one of them from the sitemap automatically via the suite's own
+"lists no route that only redirects" rule.
 
 ### F2. Automated accessibility checks in CI — **S**
 
@@ -614,8 +756,16 @@ that makes `DailyStreak` survivable on a commute. Take the S half now.
 
 # Part III — Sequencing
 
-**Week 1 — the free consolidations.** C1, C2, C3 (four duplicate URLs gone, one SEO
-defect fixed) then §0(a) and §0(b). Roughly a day. No user-visible risk.
+**Week 1 — the free consolidations.** C1, C2, C3 then §0(b). Roughly a day, no
+user-visible risk, and the three of them retire two contradictory canonicals, one
+classified-but-live duplicate, and the nav/sitemap disagreement about what "Explore"
+means. §0(a) and F1 are already done.
+
+A note on ordering that the SEO sweep makes concrete: **do the routing decision
+before the metadata pass, not after.** `8cad6b95` gave `/shop` a description, a
+canonical and a sitemap entry — all of which have to be undone the moment C1 lands,
+and none of which would have been written if C1 had landed first. The same is true
+of every future sweep over `/profile/$id`. Consolidation is upstream of SEO.
 
 **Week 2 — the gates, before the risky work.** C6 step 1 (`.css` allowlist freeze),
 F2 (axe in CI), F3 (visual baseline). Each is independently useful and together they
@@ -668,9 +818,25 @@ document was written**), bundle budgets
 (`lib/__tests__/performance-guardrails.test.ts`), client error beacons (`lib/rum.ts`,
 `lib/client-errors.ts`).
 
-**Still absent from the 07-31 list** (unchanged, and #4 remains the highest-leverage
-item across both documents): feature flags, public status page, changelog, keyword
-mutes, visibility tiers, age assurance, semantic search / pgvector, OAuth apps.
+**SEO/discoverability — shipped by `8cad6b95` after the first pass of this document
+was written:** the sitemap index with per-section chunking (`lib/sitemap.ts`,
+`sitemap.server.ts`, `app/routes/sitemaps.$name.ts`), a `head()` with title,
+description, canonical and OG card on all 18 previously-bare game roots and the app
+roots — derived from `lib/games.ts`/`lib/apps.ts` via `lib/seo-catalog.ts` so the
+catalogue and the pages cannot drift — an explicit `EXCLUDED_ROUTES` classification
+for every route in the tree with a typed `ExclusionReason`, a rewritten
+`public/robots.txt`, and two CI suites asserting that the sitemap never lists a
+missing route, a redirect-only route, a duplicate `loc`, an absolute URL, a query
+string, or a page lacking a description/canonical.
+
+That commit also removes three Prisma models with the Alex bot retirement
+(`7cc2a801`), so the model count in this document is **249**, not the 252 quoted in
+`/CLAUDE.md` and the earlier plan docs.
+
+**Still absent from the 07-31 list** (re-checked against `0bd0236a`, and #4 remains
+the highest-leverage item across both documents): feature flags, public status page,
+changelog, keyword mutes, visibility tiers, age assurance, semantic search /
+pgvector, OAuth apps.
 
 ---
 
