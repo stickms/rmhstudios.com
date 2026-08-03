@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from "@/components/feed/ContextRail";
+import { ContextRail } from '@/components/feed/ContextRail';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { DeckMarketplaceColumn } from '@/components/feed/DeckMarketplaceColumn';
 import { auth } from '@/lib/auth';
@@ -17,7 +18,15 @@ const fetchMarketplace = createServerFn({ method: 'GET' }).handler(async () => {
 });
 
 export const Route = createFileRoute('/_site/study/browse')({
-  head: () => ({ meta: [{ title: 'Browse decks | RMH Studios' }] }),
+  head: () => ({
+    meta: buildMeta({
+      title: 'Browse decks | RMH Studios',
+      description:
+        'Browse public flashcard decks shared by the RMH Studios community and clone any of them into your own library.',
+      path: '/study/browse',
+    }),
+    links: [buildCanonical('/study/browse')],
+  }),
   loader: () => fetchMarketplace(),
   component: BrowsePage,
 });
@@ -26,9 +35,7 @@ function BrowsePage() {
   const initialData = Route.useLoaderData();
   return (
     <>
-      <AnimatedMain
-        className="w-full min-w-0 pb-dock"
-      >
+      <AnimatedMain className="w-full min-w-0 pb-dock">
         <DeckMarketplaceColumn initialData={initialData} />
       </AnimatedMain>
       <ContextRail reserve />

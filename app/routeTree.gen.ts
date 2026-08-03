@@ -174,6 +174,7 @@ import { Route as SecretIndexRouteImport } from './routes/secret/index'
 import { Route as SecretCursedLogicRouteImport } from './routes/secret/cursed-logic'
 import { Route as SecretSignalForgeRouteImport } from './routes/secret/signal-forge'
 import { Route as SecretVegaRouteImport } from './routes/secret/vega'
+import { Route as SitemapsNameRouteImport } from './routes/sitemaps.$name'
 import { Route as SliceItIndexRouteImport } from './routes/slice-it/index'
 import { Route as StrategiesIndexRouteImport } from './routes/strategies/index'
 import { Route as StrategiesIncidentsRouteImport } from './routes/strategies/incidents'
@@ -1567,6 +1568,11 @@ const SecretVegaRoute = SecretVegaRouteImport.update({
   id: '/vega',
   path: '/vega',
   getParentRoute: () => SecretRoute,
+} as any)
+const SitemapsNameRoute = SitemapsNameRouteImport.update({
+  id: '/sitemaps/$name',
+  path: '/sitemaps/$name',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const SliceItIndexRoute = SliceItIndexRouteImport.update({
   id: '/',
@@ -4656,6 +4662,7 @@ export interface FileRoutesByFullPath {
   '/secret/cursed-logic': typeof SecretCursedLogicRouteWithChildren
   '/secret/signal-forge': typeof SecretSignalForgeRoute
   '/secret/vega': typeof SecretVegaRoute
+  '/sitemaps/$name': typeof SitemapsNameRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
   '/v/$slug': typeof VSlugRoute
@@ -5364,6 +5371,7 @@ export interface FileRoutesByTo {
   '/rmhtype/solo': typeof RmhtypeSoloRoute
   '/secret/signal-forge': typeof SecretSignalForgeRoute
   '/secret/vega': typeof SecretVegaRoute
+  '/sitemaps/$name': typeof SitemapsNameRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
   '/v/$slug': typeof VSlugRoute
@@ -6099,6 +6107,7 @@ export interface FileRoutesById {
   '/secret/cursed-logic': typeof SecretCursedLogicRouteWithChildren
   '/secret/signal-forge': typeof SecretSignalForgeRoute
   '/secret/vega': typeof SecretVegaRoute
+  '/sitemaps/$name': typeof SitemapsNameRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
   '/v/$slug': typeof VSlugRoute
@@ -6835,6 +6844,7 @@ export interface FileRouteTypes {
     | '/secret/cursed-logic'
     | '/secret/signal-forge'
     | '/secret/vega'
+    | '/sitemaps/$name'
     | '/strategies/incidents'
     | '/strategies/sahur'
     | '/v/$slug'
@@ -7543,6 +7553,7 @@ export interface FileRouteTypes {
     | '/rmhtype/solo'
     | '/secret/signal-forge'
     | '/secret/vega'
+    | '/sitemaps/$name'
     | '/strategies/incidents'
     | '/strategies/sahur'
     | '/v/$slug'
@@ -8277,6 +8288,7 @@ export interface FileRouteTypes {
     | '/secret/cursed-logic'
     | '/secret/signal-forge'
     | '/secret/vega'
+    | '/sitemaps/$name'
     | '/strategies/incidents'
     | '/strategies/sahur'
     | '/v/$slug'
@@ -8945,6 +8957,7 @@ export interface RootRouteChildren {
   NewsRssDotxmlRoute: typeof NewsRssDotxmlRoute
   RefCodeRoute: typeof RefCodeRoute
   ReplaysIdRoute: typeof ReplaysIdRoute
+  SitemapsNameRoute: typeof SitemapsNameRoute
   VSlugRoute: typeof VSlugRoute
   VNewRoute: typeof VNewRoute
   ApiAccountDeleteRoute: typeof ApiAccountDeleteRoute
@@ -10431,6 +10444,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/secret/vega'
       preLoaderRoute: typeof SecretVegaRouteImport
       parentRoute: typeof SecretRoute
+    }
+    '/sitemaps/$name': {
+      id: '/sitemaps/$name'
+      path: '/sitemaps/$name'
+      fullPath: '/sitemaps/$name'
+      preLoaderRoute: typeof SitemapsNameRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/slice-it/': {
       id: '/slice-it/'
@@ -15931,6 +15951,7 @@ const rootRouteChildren: RootRouteChildren = {
   NewsRssDotxmlRoute: NewsRssDotxmlRoute,
   RefCodeRoute: RefCodeRoute,
   ReplaysIdRoute: ReplaysIdRoute,
+  SitemapsNameRoute: SitemapsNameRoute,
   VSlugRoute: VSlugRoute,
   VNewRoute: VNewRoute,
   ApiAccountDeleteRoute: ApiAccountDeleteRoute,

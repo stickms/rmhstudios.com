@@ -6,6 +6,7 @@
  */
 
 import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { gameRouteHead } from '@/lib/seo-catalog';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
@@ -30,8 +31,6 @@ function RMHboxLayout() {
 
 export const Route = createFileRoute('/rmhbox')({
   beforeLoad: () => checkAuth(),
-  head: () => ({
-    links: [{ rel: 'stylesheet', href: rmhboxCss }],
-  }),
+  head: () => gameRouteHead('rmhbox', { links: [{ rel: 'stylesheet', href: rmhboxCss }] }),
   component: RMHboxLayout,
 });

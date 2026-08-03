@@ -17,6 +17,7 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { Sparkles, ShoppingBag, Store as StoreIcon } from 'lucide-react';
@@ -58,14 +59,13 @@ const fetchStore = createServerFn({ method: 'GET' }).handler(async () => {
 export const Route = createFileRoute('/_site/store/')({
   loader: () => fetchStore(),
   head: () => ({
-    meta: [
-      { title: 'Store — RMH Studios' },
-      {
-        name: 'description',
-        content:
-          'Membership tiers, the cosmetics shop, and the player marketplace — all in one place.',
-      },
-    ],
+    meta: buildMeta({
+      title: 'Store — RMH Studios',
+      description:
+        'Membership tiers, the cosmetics shop, and the player marketplace — all in one place.',
+      path: '/store',
+    }),
+    links: [buildCanonical('/store')],
   }),
   validateSearch: (search: Record<string, unknown>): { tab?: StoreTab } => {
     const tab = search.tab;

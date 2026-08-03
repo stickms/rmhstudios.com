@@ -4,25 +4,27 @@
 
 import { lazy, Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
+import { gameRouteHead } from '@/lib/seo-catalog';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 
 const DreamRiftGate = lazy(() =>
-    import('@/components/dream-rift/DreamRiftGate').then((m) => ({
-        default: m.DreamRiftGate,
-    })),
+  import('@/components/dream-rift/DreamRiftGate').then((m) => ({
+    default: m.DreamRiftGate,
+  })),
 );
 
 export const Route = createFileRoute('/dream-rift')({
-    component: DreamRiftPage,
+  head: () => gameRouteHead('dream-rift'),
+  component: DreamRiftPage,
 });
 
 function DreamRiftPage() {
-    return (
-        <GameErrorBoundary gameName="Dream Rift">
-            <Suspense fallback={<GameLoadingFallback />}>
-                <DreamRiftGate />
-            </Suspense>
-        </GameErrorBoundary>
-    );
+  return (
+    <GameErrorBoundary gameName="Dream Rift">
+      <Suspense fallback={<GameLoadingFallback />}>
+        <DreamRiftGate />
+      </Suspense>
+    </GameErrorBoundary>
+  );
 }

@@ -1,4 +1,5 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router'
+import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { gameRouteHead } from '@/lib/seo-catalog';
 
 function RmhFarmingSimLayout() {
   return (
@@ -9,9 +10,10 @@ function RmhFarmingSimLayout() {
       />
       <Outlet />
     </div>
-  )
+  );
 }
 
 export const Route = createFileRoute('/rmh-farming-sim')({
+  head: () => gameRouteHead('rmh-farming-sim'),
   component: RmhFarmingSimLayout,
-})
+});

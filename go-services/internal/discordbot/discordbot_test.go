@@ -2,747 +2,807 @@ package discordbot
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/rmhstudios/rmh-go/pkg/log"
 )
 
-// ─── chat-embed char-budget packing ─────────────────────────────────────────
+func testLogger() *log.Logger { return log.New("discord-bot-test", "error") }
 
-// helper: total char count of an embed the way buildChatEmbed budgets it.
-func embedCharTotal(title, footer string, fields [][2]string) int {
-	total := runeLen(title) + runeLen(footer)
-	for _, f := range fields {
-		total += runeLen(f[0]) + runeLen(f[1])
+// pngBytes is a one-pixel PNG header plus filler — enough for detectImageExt and
+// for a fake HTTP body, without embedding a real fixture.
+var pngBytes = append([]byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}, []byte("payload")...)
+
+// ─── Command surface ────────────────────────────────────────────────────
+
+// The whole point of the bot: one command, named /liquid, taking a required
+// image attachment. A regression here is a regression in what the bot IS.
+func TestSlashCommandsIsOnlyLiquid(t *testing.T) {
+	cmds := slashCommands()
+	if len(cmds) != 1 {
+		t.Fatalf("expected exactly 1 command, got %d", len(cmds))
 	}
-	return total
+	c := cmds[0]
+	if c.Name != "liquid" {
+		t.Fatalf("expected /liquid, got /%s", c.Name)
+	}
+	if len(c.Options) != 2 {
+		t.Fatalf("expected 2 options (image, notes), got %d", len(c.Options))
+	}
+	image := c.Options[0]
+	if image.Name != "image" || image.Type != discordgo.ApplicationCommandOptionAttachment || !image.Required {
+		t.Fatalf("first option must be a required attachment named image, got %+v", image)
+	}
+	if notes := c.Options[1]; notes.Name != "notes" || notes.Required {
+		t.Fatalf("second option must be an optional notes string, got %+v", notes)
+	}
 }
 
-func TestBuildChatEmbed_RespectsTotalBudget(t *testing.T) {
-	// A huge reply should be packed into multiple fields but never exceed the
-	// 6000-char total budget.
-	message := "tell me a long story"
-	username := "tester"
-	reply := strings.Repeat("a", 20000)
-
-	embed := buildChatEmbed(message, username, reply)
-
-	var fields [][2]string
-	for _, f := range embed.Fields {
-		fields = append(fields, [2]string{f.Name, f.Value})
-	}
-	total := embedCharTotal(embed.Title, embed.Footer.Text, fields)
-	if total > embedTotalMax {
-		t.Fatalf("embed total %d exceeds budget %d", total, embedTotalMax)
-	}
-	if len(embed.Fields) < 2 {
-		t.Fatalf("expected reply to be split across multiple fields, got %d", len(embed.Fields))
-	}
-	for _, f := range embed.Fields {
-		if runeLen(f.Value) > fieldValueMax {
-			t.Errorf("field %q value len %d exceeds field cap %d", f.Name, runeLen(f.Value), fieldValueMax)
+// No trace of the retired Alex bot may survive in the command surface.
+func TestNoLegacyAlexCommands(t *testing.T) {
+	retired := []string{"chat", "alex", "feed", "play", "clean", "rest", "study",
+		"career", "show", "revive", "newlife", "caretakers", "alexmessages", "rename", "prompt"}
+	for _, c := range slashCommands() {
+		for _, old := range retired {
+			if c.Name == old {
+				t.Fatalf("retired Alex command /%s is still registered", old)
+			}
 		}
 	}
-	if len(embed.Fields) > maxFields {
-		t.Errorf("field count %d exceeds %d", len(embed.Fields), maxFields)
+}
+
+// ─── Attachment resolution ──────────────────────────────────────────────
+
+func TestAttachmentOptionResolves(t *testing.T) {
+	att := &discordgo.MessageAttachment{ID: "42", Filename: "cat.png", ContentType: "image/png", Size: 10}
+	data := &discordgo.ApplicationCommandInteractionData{
+		Options: []*discordgo.ApplicationCommandInteractionDataOption{
+			{Name: "image", Type: discordgo.ApplicationCommandOptionAttachment, Value: "42"},
+		},
+		Resolved: &discordgo.ApplicationCommandInteractionDataResolved{
+			Attachments: map[string]*discordgo.MessageAttachment{"42": att},
+		},
+	}
+	got := newOptionMap(data.Options).attachment(data, "image")
+	if got != att {
+		t.Fatalf("expected the resolved attachment, got %+v", got)
 	}
 }
 
-func TestBuildChatEmbed_TruncationEllipsis(t *testing.T) {
-	reply := strings.Repeat("z", 30000)
-	embed := buildChatEmbed("hi", "u", reply)
-	last := embed.Fields[len(embed.Fields)-1]
-	if !strings.HasSuffix(last.Value, "…") {
-		t.Errorf("expected truncated last field to end with ellipsis, got tail %q", tail(last.Value, 5))
+func TestAttachmentOptionMissingResolvedIsNil(t *testing.T) {
+	data := &discordgo.ApplicationCommandInteractionData{
+		Options: []*discordgo.ApplicationCommandInteractionDataOption{
+			{Name: "image", Type: discordgo.ApplicationCommandOptionAttachment, Value: "99"},
+		},
+		Resolved: &discordgo.ApplicationCommandInteractionDataResolved{
+			Attachments: map[string]*discordgo.MessageAttachment{},
+		},
+	}
+	if got := newOptionMap(data.Options).attachment(data, "image"); got != nil {
+		t.Fatalf("expected nil for an unresolved id, got %+v", got)
+	}
+	if got := newOptionMap(data.Options).attachment(nil, "image"); got != nil {
+		t.Fatalf("expected nil for nil data, got %+v", got)
 	}
 }
 
-func TestBuildChatEmbed_ShortReply(t *testing.T) {
-	embed := buildChatEmbed("hey", "bob", "yo whats good")
-	if len(embed.Fields) != 2 {
-		t.Fatalf("expected 2 fields (You + Alex), got %d", len(embed.Fields))
-	}
-	if embed.Fields[0].Name != youFieldName || embed.Fields[1].Name != alexFieldName {
-		t.Errorf("unexpected field names: %q / %q", embed.Fields[0].Name, embed.Fields[1].Name)
-	}
-	if embed.Fields[1].Value != "yo whats good" {
-		t.Errorf("reply mangled: %q", embed.Fields[1].Value)
-	}
-}
+// ─── Upload validation ──────────────────────────────────────────────────
 
-func TestBuildChatEmbed_EmptyReply(t *testing.T) {
-	embed := buildChatEmbed("hey", "bob", "")
-	var alex string
-	for _, f := range embed.Fields {
-		if f.Name == alexFieldName {
-			alex = f.Value
-		}
-	}
-	if alex != "(no response)" {
-		t.Errorf("expected '(no response)' placeholder, got %q", alex)
-	}
-}
-
-func tail(s string, n int) string {
-	r := []rune(s)
-	if len(r) <= n {
-		return s
-	}
-	return string(r[len(r)-n:])
-}
-
-// ─── tamagotchi domain ──────────────────────────────────────────────────────
-
-func TestNewPetDefaults(t *testing.T) {
-	now := time.Unix(1_700_000_000, 0).UTC()
-	p := newPet("g1", now)
-	if !p.Alive || p.LifeStage != StageInfant || p.Generation != 1 {
-		t.Fatalf("new pet should be a living gen-1 infant, got alive=%v stage=%s gen=%d", p.Alive, p.LifeStage, p.Generation)
-	}
-	if p.Health != startHealth {
-		t.Errorf("new pet health = %v, want %v", p.Health, startHealth)
-	}
-}
-
-func TestApplyDecayReducesStats(t *testing.T) {
-	now := time.Unix(1_700_000_000, 0).UTC()
-	p := newPet("g1", now)
-	p.applyDecay(now.Add(2 * time.Hour))
-	if p.Hunger >= startHunger {
-		t.Errorf("hunger should decay over 2h: got %v (start %v)", p.Hunger, startHunger)
-	}
-	if p.Energy >= startEnergy {
-		t.Errorf("energy should decay over 2h: got %v (start %v)", p.Energy, startEnergy)
-	}
-}
-
-func TestApplyDecayKillsNeglectedPet(t *testing.T) {
-	now := time.Unix(1_700_000_000, 0).UTC()
-	p := newPet("g1", now)
-	// A very long neglect gap must drain stats to 0 and then health to 0 → dead.
-	res := p.applyDecay(now.Add(1000 * time.Hour))
-	if p.Alive {
-		t.Fatalf("pet neglected for 1000h should be dead, health=%v", p.Health)
-	}
-	if !res.Died {
-		t.Errorf("decayResult should report Died on the transition")
-	}
-	if p.DiedAt == nil {
-		t.Errorf("DiedAt should be stamped on death")
-	}
-}
-
-func TestDeadPetDoesNotDecayFurther(t *testing.T) {
-	now := time.Unix(1_700_000_000, 0).UTC()
-	p := newPet("g1", now)
-	p.applyDecay(now.Add(1000 * time.Hour)) // dies
-	p.Health = 0
-	res := p.applyDecay(now.Add(2000 * time.Hour))
-	if res.Died {
-		t.Errorf("a already-dead pet should not re-trigger Died")
-	}
-}
-
-func TestComputeStageByAge(t *testing.T) {
-	now := time.Unix(1_700_000_000, 0).UTC()
-	p := newPet("g1", now)
+func TestValidateAttachment(t *testing.T) {
 	cases := []struct {
-		ageHours float64
-		want     LifeStage
+		name string
+		att  *discordgo.MessageAttachment
+		ok   bool
 	}{
-		{1, StageInfant},
-		{13, StageToddler},
-		{50, StageChild},
-		{130, StageTeen},
-		{300, StageAdult},
+		{"nil", nil, false},
+		{"png", &discordgo.MessageAttachment{Filename: "a.png", ContentType: "image/png", Size: 1024}, true},
+		{"webp", &discordgo.MessageAttachment{Filename: "a.webp", ContentType: "IMAGE/WEBP", Size: 1024}, true},
+		{"pdf", &discordgo.MessageAttachment{Filename: "a.pdf", ContentType: "application/pdf", Size: 1024}, false},
+		{"no type but sized", &discordgo.MessageAttachment{Filename: "a.bin", Width: 10, Height: 10, Size: 1024}, true},
+		{"no type no dims", &discordgo.MessageAttachment{Filename: "a.bin", Size: 1024}, false},
+		{"too big", &discordgo.MessageAttachment{Filename: "a.png", ContentType: "image/png", Size: maxSourceBytes + 1}, false},
 	}
-	for _, c := range cases {
-		got := p.computeStage(now.Add(time.Duration(c.ageHours * float64(time.Hour))))
-		if got != c.want {
-			t.Errorf("age %.0fh: computeStage = %s, want %s", c.ageHours, got, c.want)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := validateAttachment(tc.att)
+			if tc.ok && err != nil {
+				t.Fatalf("expected acceptance, got %v", err)
+			}
+			if !tc.ok && err == nil {
+				t.Fatal("expected rejection, got nil")
+			}
+		})
+	}
+}
+
+// A file that lies about its content type is caught by the magic bytes, not by
+// the claim — the sniffed type is what the vision data URI gets labelled with.
+func TestFetchSourceRejectsNonImageBytes(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("<!doctype html><html>not an image</html>"))
+	}))
+	defer srv.Close()
+
+	s := NewLiquidService(nil, nil, time.Second, testLogger())
+	_, err := s.fetchSource(context.Background(), &discordgo.MessageAttachment{URL: srv.URL, Filename: "lie.png"})
+	if err == nil {
+		t.Fatal("expected an error for non-image bytes")
+	}
+}
+
+func TestFetchSourceSniffsMIME(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write(pngBytes)
+	}))
+	defer srv.Close()
+
+	s := NewLiquidService(nil, nil, time.Second, testLogger())
+	src, err := s.fetchSource(context.Background(), &discordgo.MessageAttachment{URL: srv.URL, Filename: "a.jpg"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// The upload claimed .jpg; the bytes are a PNG, and the bytes win.
+	if src.MIME != "image/png" {
+		t.Fatalf("expected image/png from the magic bytes, got %s", src.MIME)
+	}
+}
+
+func TestFetchSourceEnforcesSizeCeiling(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write(pngBytes)
+		_, _ = w.Write(make([]byte, maxSourceBytes))
+	}))
+	defer srv.Close()
+
+	s := NewLiquidService(nil, nil, time.Second, testLogger())
+	if _, err := s.fetchSource(context.Background(), &discordgo.MessageAttachment{URL: srv.URL, Filename: "big.png"}); err == nil {
+		t.Fatal("expected the oversize body to be rejected")
+	}
+}
+
+// ─── Cooldown ───────────────────────────────────────────────────────────
+
+func TestCooldownBlocksRepeatAndReleaseClears(t *testing.T) {
+	s := NewLiquidService(nil, nil, time.Minute, testLogger())
+	now := time.Now()
+
+	if ok, _ := s.claim("u1", now); !ok {
+		t.Fatal("first claim should succeed")
+	}
+	ok, wait := s.claim("u1", now.Add(time.Second))
+	if ok {
+		t.Fatal("second claim inside the cooldown should be refused")
+	}
+	if wait <= 0 {
+		t.Fatalf("expected a positive remaining wait, got %v", wait)
+	}
+	// A different user is unaffected.
+	if ok, _ := s.claim("u2", now.Add(time.Second)); !ok {
+		t.Fatal("a second user should not be blocked by the first")
+	}
+	// Releasing after a pre-flight failure gives the slot straight back.
+	s.release("u1")
+	if ok, _ := s.claim("u1", now.Add(2*time.Second)); !ok {
+		t.Fatal("claim after release should succeed")
+	}
+}
+
+func TestCooldownExpiresAndPrunes(t *testing.T) {
+	s := NewLiquidService(nil, nil, time.Minute, testLogger())
+	now := time.Now()
+	s.claim("u1", now)
+
+	if ok, _ := s.claim("u1", now.Add(2*time.Minute)); !ok {
+		t.Fatal("claim past the cooldown should succeed")
+	}
+	// The prune runs under the same lock as the claim: only the live entry stays.
+	s.claim("u2", now.Add(2*time.Minute))
+	s.claim("u3", now.Add(10*time.Minute))
+	s.mu.Lock()
+	n := len(s.last)
+	s.mu.Unlock()
+	if n != 1 {
+		t.Fatalf("expected stale entries pruned to 1 live entry, got %d", n)
+	}
+}
+
+// ─── Prompt construction ────────────────────────────────────────────────
+
+// The render brief must lead with the canon and carry the subject — a brief
+// missing either half produces an object that is not this design language, or
+// not this image.
+func TestBuildRenderPromptCarriesCanonAndSubject(t *testing.T) {
+	p := buildRenderPrompt("A ceramic teapot with a bamboo handle, centred on a plain table.", "")
+	if !strings.HasPrefix(p, liquidGlobeVisual) {
+		t.Fatal("render prompt must lead with the visual canon")
+	}
+	if !strings.Contains(p, "ceramic teapot") {
+		t.Fatal("render prompt must carry the subject description")
+	}
+	for _, must := range []string{"monochrome", "wireframe", "specular", "No text"} {
+		if !strings.Contains(p, must) {
+			t.Fatalf("render prompt is missing the canon term %q", must)
 		}
 	}
 }
 
-func TestApplyDecayDetectsGrowUp(t *testing.T) {
-	now := time.Unix(1_700_000_000, 0).UTC()
-	p := newPet("g1", now)
-	// Keep him healthy so he stays alive while aging into a toddler.
-	p.BornAt = now.Add(-13 * time.Hour)
-	res := p.applyDecay(now)
-	if !res.GrewUp || p.LifeStage != StageToddler {
-		t.Errorf("expected grow-up to toddler, got grew=%v stage=%s", res.GrewUp, p.LifeStage)
+func TestBuildRenderPromptSubordinatesNotes(t *testing.T) {
+	p := buildRenderPrompt("A teapot.", "make it red and add my name in big letters")
+	idx := strings.Index(p, "ADDITIONAL DIRECTION")
+	if idx < 0 {
+		t.Fatal("notes should appear as additional direction")
+	}
+	if idx < strings.Index(p, "FORBIDDEN") {
+		t.Fatal("requester direction must come after the canon's rules, not before them")
+	}
+	if !strings.Contains(p[idx:], "subordinate to every rule above") {
+		t.Fatal("notes must be explicitly subordinated to the canon")
 	}
 }
 
-func TestFeedBobaRaisesHungerAndHappiness(t *testing.T) {
-	now := time.Unix(1_700_000_000, 0).UTC()
-	p := newPet("g1", now)
-	p.Hunger, p.Happiness = 40, 40
-	r := p.Feed("boba", now)
-	if !r.OK || r.Care != "feeds" {
-		t.Fatalf("boba feed should succeed and credit feeds, got ok=%v care=%s", r.OK, r.Care)
-	}
-	if p.Hunger <= 40 || p.Happiness <= 40 {
-		t.Errorf("boba should raise hunger (%v) and happiness (%v)", p.Hunger, p.Happiness)
-	}
-	if p.LastFedAt == nil {
-		t.Errorf("LastFedAt should be stamped")
+func TestBuildRenderPromptOmitsEmptyNotes(t *testing.T) {
+	if strings.Contains(buildRenderPrompt("A teapot.", "   "), "ADDITIONAL DIRECTION") {
+		t.Fatal("blank notes should not add a direction block")
 	}
 }
 
-func TestPlayRefusedWhenTooTired(t *testing.T) {
-	now := time.Unix(1_700_000_000, 0).UTC()
-	p := newPet("g1", now)
-	p.Energy = 10
-	r := p.Play(now)
-	if r.OK {
-		t.Errorf("play should be refused when energy < 15")
+// The reviewer must be handed the real laws, not a paraphrase, so the note it
+// writes cites tokens and classes that actually exist.
+func TestReviewerPromptEmbedsLaws(t *testing.T) {
+	p := reviewerSystemPrompt()
+	if !strings.Contains(p, liquidGlobeLaws) {
+		t.Fatal("reviewer prompt must embed the laws verbatim")
 	}
-}
-
-func TestActionsBlockedWhenDead(t *testing.T) {
-	now := time.Unix(1_700_000_000, 0).UTC()
-	p := newPet("g1", now)
-	p.Alive = false
-	if r := p.Feed("boba", now); r.OK {
-		t.Errorf("cannot feed a dead pet")
-	}
-	if r := p.Play(now); r.OK {
-		t.Errorf("cannot play with a dead pet")
-	}
-	if r := p.Clean(now); r.OK {
-		t.Errorf("cannot clean a dead pet")
-	}
-}
-
-func TestStartNewLifeResetsAndBumpsGeneration(t *testing.T) {
-	now := time.Unix(1_700_000_000, 0).UTC()
-	p := newPet("g1", now)
-	p.Name = "Bob"
-	p.LastChannelID = "chan123"
-	p.Alive = false
-	p.Generation = 2
-	p.startNewLife(now.Add(time.Hour))
-	if !p.Alive || p.Generation != 3 {
-		t.Fatalf("startNewLife should produce a living gen-3 pet, got alive=%v gen=%d", p.Alive, p.Generation)
-	}
-	if p.Name != "Bob" || p.LastChannelID != "chan123" {
-		t.Errorf("startNewLife should preserve name (%q) and channel (%q)", p.Name, p.LastChannelID)
-	}
-	if p.LifeStage != StageInfant {
-		t.Errorf("reincarnated pet should be an infant again, got %s", p.LifeStage)
-	}
-}
-
-func TestMoodPriority(t *testing.T) {
-	now := time.Unix(1_700_000_000, 0).UTC()
-	p := newPet("g1", now)
-	p.Hunger = 5 // critically hungry
-	if got := p.mood().Key; got != "hungry" {
-		t.Errorf("critically hungry pet mood = %q, want hungry", got)
-	}
-	p.Alive = false
-	if got := p.mood().Key; got != "gone" {
-		t.Errorf("dead pet mood = %q, want gone", got)
-	}
-}
-
-func TestNeedsSurfacesCriticalStats(t *testing.T) {
-	now := time.Unix(1_700_000_000, 0).UTC()
-	p := newPet("g1", now)
-	p.Hunger = 5
-	p.Energy = 5
-	needs := p.needs()
-	if len(needs) < 2 {
-		t.Fatalf("expected at least hungry+sleepy needs, got %v", needs)
-	}
-}
-
-func TestSanitizePetName(t *testing.T) {
-	cases := []struct{ in, want string }{
-		{"  Alex  ", "Alex"},
-		{"@everyone", "everyone"},
-		{"`rm -rf`", "rm -rf"},
-		{"", ""},
-		{strings.Repeat("x", 40), strings.Repeat("x", 32)},
-	}
-	for _, c := range cases {
-		if got := sanitizePetName(c.in); got != c.want {
-			t.Errorf("sanitizePetName(%q) = %q, want %q", c.in, got, c.want)
+	for _, must := range []string{"--site-*", ".glass-fill", ".glass-overlay", "Never invent a token name"} {
+		if !strings.Contains(p, must) {
+			t.Fatalf("reviewer prompt is missing %q", must)
 		}
 	}
 }
 
-func TestStatBarBounds(t *testing.T) {
-	if bar := statBar(0); !strings.HasPrefix(bar, strings.Repeat("░", 10)) {
-		t.Errorf("statBar(0) should be all empty, got %q", bar)
+// ─── xAI client ─────────────────────────────────────────────────────────
+
+func TestDescribeSendsDataURIAndReturnsText(t *testing.T) {
+	var got visionRequest
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/chat/completions" {
+			t.Errorf("unexpected path %s", r.URL.Path)
+		}
+		if auth := r.Header.Get("Authorization"); auth != "Bearer k" {
+			t.Errorf("missing bearer auth, got %q", auth)
+		}
+		body, _ := io.ReadAll(r.Body)
+		if err := json.Unmarshal(body, &got); err != nil {
+			t.Errorf("bad request body: %v", err)
+		}
+		_, _ = w.Write([]byte(`{"choices":[{"message":{"content":"  A ceramic teapot.  "}}]}`))
+	}))
+	defer srv.Close()
+
+	c := newXAIClient("k", "", "", nil, testLogger())
+	c.baseURL = srv.URL
+
+	desc, err := c.Describe(context.Background(), &sourceImage{Bytes: pngBytes, MIME: "image/png"}, "focus on the handle")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-	if bar := statBar(100); !strings.HasPrefix(bar, strings.Repeat("█", 10)) {
-		t.Errorf("statBar(100) should be all full, got %q", bar)
+	if desc != "A ceramic teapot." {
+		t.Fatalf("expected the trimmed description, got %q", desc)
 	}
-	if bar := statBar(150); !strings.Contains(bar, "100/100") {
-		t.Errorf("statBar should clamp >100 to 100, got %q", bar)
+	if got.Model != defaultXAIVisionModel {
+		t.Fatalf("expected the default vision model, got %q", got.Model)
+	}
+	if len(got.Messages) != 2 {
+		t.Fatalf("expected a system + user message, got %d", len(got.Messages))
+	}
+	part := got.Messages[1].Content[0]
+	if part.Type != "image_url" || part.ImageURL == nil {
+		t.Fatalf("expected an image_url part first, got %+v", part)
+	}
+	if !strings.HasPrefix(part.ImageURL.URL, "data:image/png;base64,") {
+		t.Fatalf("expected a base64 data URI, got %q", truncate(part.ImageURL.URL, 40))
+	}
+	if !strings.Contains(got.Messages[1].Content[1].Text, "focus on the handle") {
+		t.Fatal("notes should steer the describer")
 	}
 }
 
-func TestStudyBuildsIntelligence(t *testing.T) {
-	now := time.Unix(1_700_000_000, 0).UTC()
-	p := newPet("g1", now)
-	before := p.Intelligence
-	r := p.Study(now)
-	if !r.OK || r.Care != "studies" {
-		t.Fatalf("study should succeed and credit studies, got ok=%v care=%s", r.OK, r.Care)
-	}
-	if p.Intelligence <= before {
-		t.Errorf("study should raise intelligence: %v -> %v", before, p.Intelligence)
-	}
-	if p.Energy >= startEnergy {
-		t.Errorf("study should cost energy, got %v", p.Energy)
-	}
-	if p.LastStudiedAt == nil {
-		t.Errorf("LastStudiedAt should be stamped")
+func TestDescribeSurfacesAPIError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusTooManyRequests)
+		_, _ = w.Write([]byte(`{"error":{"message":"slow down"}}`))
+	}))
+	defer srv.Close()
+
+	c := newXAIClient("k", "", "", nil, testLogger())
+	c.baseURL = srv.URL
+	if _, err := c.Describe(context.Background(), &sourceImage{Bytes: pngBytes, MIME: "image/png"}, ""); err == nil {
+		t.Fatal("expected an error for HTTP 429")
 	}
 }
 
-func TestStudyRefusedWhenExhausted(t *testing.T) {
-	now := time.Unix(1_700_000_000, 0).UTC()
-	p := newPet("g1", now)
-	p.Energy = 10
-	if r := p.Study(now); r.OK {
-		t.Errorf("study should be refused when too tired")
+func TestDescribeWithoutKeyFails(t *testing.T) {
+	c := newXAIClient("", "", "", nil, testLogger())
+	if _, err := c.Describe(context.Background(), &sourceImage{Bytes: pngBytes, MIME: "image/png"}, ""); err == nil {
+		t.Fatal("expected an error with no API key")
 	}
 }
 
-func TestStartNewLifeCarriesLegacyIntelligence(t *testing.T) {
-	now := time.Unix(1_700_000_000, 0).UTC()
-	p := newPet("g1", now)
-	p.Name = "Bob"
-	p.LastChannelID = "chan1"
-	p.Intelligence = 80
-	p.Career = "swe"
-	p.Generation = 2
-	p.startNewLife(now.Add(time.Hour))
-
-	if p.Generation != 3 || !p.Alive || p.LifeStage != StageInfant {
-		t.Fatalf("new life should be a living gen-3 infant, got gen=%d alive=%v stage=%s", p.Generation, p.Alive, p.LifeStage)
+// Render with no database cannot reserve budget, and unaccounted image spend is
+// exactly what the reservation exists to prevent — so it must fail closed, and
+// say so as "unavailable" rather than as "today's budget is spent".
+func TestRenderFailsClosedWithoutBudget(t *testing.T) {
+	c := newXAIClient("k", "", "", newBudgetRepo(nil), testLogger())
+	_, err := c.Render(context.Background(), "prompt", time.Now())
+	if !errors.Is(err, errBudgetUnavailable) {
+		t.Fatalf("expected errBudgetUnavailable, got %v", err)
 	}
-	if p.Name != "Bob" || p.LastChannelID != "chan1" {
-		t.Errorf("new life should preserve name (%q) and channel (%q)", p.Name, p.LastChannelID)
-	}
-	if p.Career != "" {
-		t.Errorf("new life should clear career, got %q", p.Career)
-	}
-	want := legacyIntelligenceBonus(80)
-	if p.Intelligence != want {
-		t.Errorf("legacy intelligence = %v, want %v", p.Intelligence, want)
-	}
-	if p.Intelligence > 30 {
-		t.Errorf("legacy bonus should be capped at 30, got %v", p.Intelligence)
+	if !strings.Contains(renderFailureReason(err), "accounted for") {
+		t.Fatal("the no-database case must not be reported as an exhausted budget")
 	}
 }
 
-func TestCanGraduateOnlyAsLivingAdult(t *testing.T) {
-	now := time.Unix(1_700_000_000, 0).UTC()
-	p := newPet("g1", now)
-	if p.canGraduate() {
-		t.Errorf("an infant should not be able to graduate")
+// fakeBudget stands in for Postgres so the paid render path can be exercised.
+type fakeBudget struct {
+	ok    bool
+	err   error
+	calls int
+	day   string
+	cap   int
+}
+
+func (f *fakeBudget) available() bool { return true }
+func (f *fakeBudget) reserve(_ context.Context, day string, capLimit int) (bool, error) {
+	f.calls++
+	f.day, f.cap = day, capLimit
+	return f.ok, f.err
+}
+
+// The whole xAI half, end to end: read the image, fold the subject into the
+// canon, generate, download, sniff.
+func TestReadThenRenderRoundTrip(t *testing.T) {
+	var renderBody struct {
+		Model  string `json:"model"`
+		Prompt string `json:"prompt"`
+		N      int    `json:"n"`
 	}
-	p.LifeStage = StageAdult
-	if !p.canGraduate() {
-		t.Errorf("a living adult should be able to graduate")
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/chat/completions", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"choices":[{"message":{"content":"A ceramic teapot with a bamboo handle."}}]}`))
+	})
+	mux.HandleFunc("/images/generations", func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		if err := json.Unmarshal(body, &renderBody); err != nil {
+			t.Errorf("bad render body: %v", err)
+		}
+		_, _ = w.Write([]byte(`{"data":[{"url":"` + imageServerURL + `/out.png"}]}`))
+	})
+	mux.HandleFunc("/out.png", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write(pngBytes)
+	})
+
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	imageServerURL = srv.URL // the render response points back at this same server
+	t.Cleanup(func() { imageServerURL = "" })
+
+	budget := &fakeBudget{ok: true}
+	c := newXAIClient("k", "", "", budget, testLogger())
+	c.baseURL = srv.URL
+
+	subject, err := c.Describe(context.Background(), &sourceImage{Bytes: pngBytes, MIME: "image/png"}, "")
+	if err != nil {
+		t.Fatalf("describe: %v", err)
 	}
-	p.Alive = false
-	if p.canGraduate() {
-		t.Errorf("a dead adult should not be able to graduate (revive instead)")
+
+	now := time.Date(2026, 8, 3, 12, 0, 0, 0, time.UTC)
+	img, err := c.Render(context.Background(), buildRenderPrompt(subject, ""), now)
+	if err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	if img.Filename != "liquid.png" {
+		t.Fatalf("expected liquid.png, got %q", img.Filename)
+	}
+	if string(img.Bytes) != string(pngBytes) {
+		t.Fatal("downloaded bytes should be the generated image")
+	}
+	if budget.calls != 1 || budget.day != "2026-08-03" || budget.cap != 50 {
+		t.Fatalf("expected one reservation for today at the default cap, got %+v", budget)
+	}
+	if renderBody.Model != defaultXAIImageModel || renderBody.N != 1 {
+		t.Fatalf("expected one image from the cheap model, got %+v", renderBody)
+	}
+	// The subject read in stage 1 must actually reach stage 2, under the canon.
+	if !strings.Contains(renderBody.Prompt, "ceramic teapot") {
+		t.Fatal("the render prompt must carry the subject the vision stage read")
+	}
+	if !strings.HasPrefix(renderBody.Prompt, liquidGlobeVisual) {
+		t.Fatal("the render prompt must lead with the canon")
 	}
 }
 
-func TestValidCareer(t *testing.T) {
-	if !validCareer("swe") || !validCareer("quant") {
-		t.Errorf("swe/quant should be valid careers")
-	}
-	if validCareer("astronaut") || validCareer("") {
-		t.Errorf("unknown/empty careers should be invalid")
-	}
-	if careerDisplay("") == "" {
-		t.Errorf("careerDisplay of empty should return an 'undecided' label, not empty")
+// imageServerURL lets the fake images/generations handler point at its own
+// server; set per-test, since httptest picks the port at listen time.
+var imageServerURL string
+
+func TestRenderRefusesAtCap(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Error("no request should be made once the budget is at cap")
+	}))
+	defer srv.Close()
+
+	c := newXAIClient("k", "", "", &fakeBudget{ok: false}, testLogger())
+	c.baseURL = srv.URL
+	if _, err := c.Render(context.Background(), "p", time.Now()); !errors.Is(err, errBudgetExhausted) {
+		t.Fatalf("expected errBudgetExhausted, got %v", err)
 	}
 }
 
-func TestWantsMessage(t *testing.T) {
-	cases := []struct {
-		level string
-		kind  proactiveKind
-		want  bool
+// Bytes that are not an image must never be attached as one — an xAI error page
+// served with a 200 is exactly the shape this guards against.
+func TestRenderRejectsNonImagePayload(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/images/generations", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"data":[{"url":"` + imageServerURL + `/out"}]}`))
+	})
+	mux.HandleFunc("/out", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"error":"nope"}`))
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	imageServerURL = srv.URL
+	t.Cleanup(func() { imageServerURL = "" })
+
+	c := newXAIClient("k", "", "", &fakeBudget{ok: true}, testLogger())
+	c.baseURL = srv.URL
+	if _, err := c.Render(context.Background(), "p", time.Now()); err == nil {
+		t.Fatal("expected unrecognized bytes to be rejected")
+	}
+}
+
+func TestRenderWithNoDataReturnsError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"data":[]}`))
+	}))
+	defer srv.Close()
+
+	c := newXAIClient("k", "", "", &fakeBudget{ok: true}, testLogger())
+	c.baseURL = srv.URL
+	if _, err := c.Render(context.Background(), "p", time.Now()); err == nil {
+		t.Fatal("expected an error when xAI returns no image")
+	}
+}
+
+func TestConfiguredHonoursKillSwitch(t *testing.T) {
+	c := newXAIClient("k", "", "", nil, testLogger())
+	if !c.configured() {
+		t.Fatal("a client with a key should be configured")
+	}
+	t.Setenv("XAI_IMAGE_ENABLED", "false")
+	if c.configured() {
+		t.Fatal("XAI_IMAGE_ENABLED=false must hard-disable the client")
+	}
+	if (*xaiClient)(nil).configured() {
+		t.Fatal("a nil client is never configured")
+	}
+}
+
+func TestImageDailyCap(t *testing.T) {
+	if got := imageDailyCap(); got != 50 {
+		t.Fatalf("expected the default cap of 50, got %d", got)
+	}
+	t.Setenv("XAI_IMAGE_DAILY_CAP", "7")
+	if got := imageDailyCap(); got != 7 {
+		t.Fatalf("expected 7, got %d", got)
+	}
+	t.Setenv("XAI_IMAGE_DAILY_CAP", "nonsense")
+	if got := imageDailyCap(); got != 50 {
+		t.Fatalf("expected the default for an unparseable cap, got %d", got)
+	}
+}
+
+// ─── DeepSeek client ────────────────────────────────────────────────────
+
+func TestExplainPostsReviewerBrief(t *testing.T) {
+	var got chatCompletionRequest
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/chat/completions" {
+			t.Errorf("unexpected path %s", r.URL.Path)
+		}
+		body, _ := io.ReadAll(r.Body)
+		if err := json.Unmarshal(body, &got); err != nil {
+			t.Errorf("bad request body: %v", err)
+		}
+		_, _ = w.Write([]byte(`{"choices":[{"message":{"content":"**Token contract** — it uses --site-* only."}}]}`))
+	}))
+	defer srv.Close()
+
+	c := NewDeepSeekClient("k", "")
+	c.baseURL = srv.URL
+
+	note, err := c.Explain(context.Background(), "A ceramic teapot.", "the brief", false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(note, "--site-*") {
+		t.Fatalf("unexpected note %q", note)
+	}
+	if got.Model != "deepseek-chat" {
+		t.Fatalf("expected the default model, got %q", got.Model)
+	}
+	if got.Stream {
+		t.Fatal("the reviewer call must not stream")
+	}
+	if got.Temperature == nil || *got.Temperature != reviewTemperature {
+		t.Fatalf("expected the review temperature to be pinned, got %v", got.Temperature)
+	}
+	if len(got.Messages) != 2 || got.Messages[0].Role != roleSystem {
+		t.Fatalf("expected a system + user pair, got %+v", got.Messages)
+	}
+	if !strings.Contains(got.Messages[1].Content, "A ceramic teapot.") {
+		t.Fatal("the reviewer must be told what the picture was")
+	}
+	if strings.Contains(got.Messages[1].Content, "did not complete") {
+		t.Fatal("a successful render must not be described as failed")
+	}
+}
+
+func TestExplainMarksAFailedRender(t *testing.T) {
+	var got chatCompletionRequest
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(body, &got)
+		_, _ = w.Write([]byte(`{"choices":[{"message":{"content":"note"}}]}`))
+	}))
+	defer srv.Close()
+
+	c := NewDeepSeekClient("k", "")
+	c.baseURL = srv.URL
+	if _, err := c.Explain(context.Background(), "subject", "brief", true); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(got.Messages[1].Content, "did not complete") {
+		t.Fatal("a failed render must be declared, so the note describes the spec rather than a picture")
+	}
+}
+
+func TestDeepSeekConfigured(t *testing.T) {
+	if NewDeepSeekClient("", "").configured() {
+		t.Fatal("no key means not configured")
+	}
+	if !NewDeepSeekClient("k", "").configured() {
+		t.Fatal("a key means configured")
+	}
+	if (*DeepSeekClient)(nil).configured() {
+		t.Fatal("a nil client is never configured")
+	}
+}
+
+// ─── Reply rendering ────────────────────────────────────────────────────
+
+func TestBuildResultEmbedWithImage(t *testing.T) {
+	att := &discordgo.MessageAttachment{Filename: "cat.png", URL: "https://cdn.example/cat.png"}
+	e := buildResultEmbed(resultView{
+		Username:   "ada",
+		Attachment: att,
+		Image:      &renderedImage{Bytes: pngBytes, Filename: "liquid.png"},
+		Note:       "the note",
+		Notes:      "keep the ears",
+	})
+	if e.Image == nil || e.Image.URL != "attachment://liquid.png" {
+		t.Fatalf("expected the generated image attached, got %+v", e.Image)
+	}
+	if e.Thumbnail == nil || e.Thumbnail.URL != att.URL {
+		t.Fatalf("expected the source as the thumbnail, got %+v", e.Thumbnail)
+	}
+	if e.Description != "the note" {
+		t.Fatalf("expected the note as the description, got %q", e.Description)
+	}
+	if !strings.Contains(e.Title, "cat.png") {
+		t.Fatalf("expected the source filename in the title, got %q", e.Title)
+	}
+	if !strings.Contains(e.Footer.Text, "ada") {
+		t.Fatalf("expected the requester in the footer, got %q", e.Footer.Text)
+	}
+	if len(e.Fields) != 1 || e.Fields[0].Value != "keep the ears" {
+		t.Fatalf("expected the direction field, got %+v", e.Fields)
+	}
+	// The language is monochrome; the embed's accent bar must not be the one
+	// coloured thing on screen.
+	if e.Color != liquidEmbedColor {
+		t.Fatalf("expected the ink embed colour, got %#x", e.Color)
+	}
+}
+
+func TestBuildResultEmbedWithoutImageExplainsWhy(t *testing.T) {
+	e := buildResultEmbed(resultView{
+		Username:  "ada",
+		Note:      "the note",
+		RenderErr: errBudgetExhausted,
+	})
+	if e.Image != nil {
+		t.Fatal("no render means no embed image")
+	}
+	if len(e.Fields) == 0 || !strings.Contains(e.Fields[0].Value, "budget") {
+		t.Fatalf("expected the budget reason surfaced, got %+v", e.Fields)
+	}
+	if e.Description != "the note" {
+		t.Fatal("the design note still ships when the render fails")
+	}
+}
+
+func TestBuildResultEmbedTruncatesToDiscordLimits(t *testing.T) {
+	e := buildResultEmbed(resultView{
+		Username:   strings.Repeat("u", footerMax+50),
+		Attachment: &discordgo.MessageAttachment{Filename: strings.Repeat("f", titleMax+50)},
+		Image:      &renderedImage{Filename: "liquid.png"},
+		Note:       strings.Repeat("n", embedDescMax+50),
+		Notes:      strings.Repeat("d", fieldValueMax+50),
+	})
+	if l := len([]rune(e.Title)); l > titleMax {
+		t.Fatalf("title over limit: %d", l)
+	}
+	if l := len([]rune(e.Description)); l > embedDescMax {
+		t.Fatalf("description over limit: %d", l)
+	}
+	if l := len([]rune(e.Footer.Text)); l > footerMax {
+		t.Fatalf("footer over limit: %d", l)
+	}
+	for _, f := range e.Fields {
+		if l := len([]rune(f.Value)); l > fieldValueMax {
+			t.Fatalf("field value over limit: %d", l)
+		}
+	}
+}
+
+func TestSourceLabelFallsBack(t *testing.T) {
+	if got := sourceLabel(nil); got != "Liquid Globe treatment" {
+		t.Fatalf("unexpected fallback %q", got)
+	}
+	if got := sourceLabel(&discordgo.MessageAttachment{Filename: "  "}); got != "Liquid Globe treatment" {
+		t.Fatalf("unexpected fallback for a blank filename: %q", got)
+	}
+}
+
+// The error embed is public, so an upstream response body must never reach it —
+// the same rule the web tier's API handlers follow.
+func TestPublicErrorNeverEchoesAResponseBody(t *testing.T) {
+	err := fmt.Errorf(`xai HTTP 401: {"error":{"message":"bad key sk-abc123","request_id":"r-1"}}`)
+	got := publicError(err)
+	for _, leak := range []string{"sk-abc123", "request_id", "{"} {
+		if strings.Contains(got, leak) {
+			t.Fatalf("public error leaked %q: %s", leak, got)
+		}
+	}
+	if !strings.Contains(got, "xai HTTP 401") {
+		t.Fatalf("the failure shape should survive: %s", got)
+	}
+}
+
+func TestPublicErrorCategories(t *testing.T) {
+	cases := map[string]struct {
+		err  error
+		want string
 	}{
-		{msgLevelAll, kindAmbient, true},
-		{msgLevelAll, kindCareAlert, true},
-		{msgLevelAll, kindGrewUp, true},
-		{msgLevelAll, kindDied, true},
-		{msgLevelCare, kindAmbient, false}, // care-only drops random ambient
-		{msgLevelCare, kindCareAlert, true},
-		{msgLevelCare, kindGrewUp, true}, // life events still count as care
-		{msgLevelCare, kindDied, true},
-		{msgLevelOff, kindAmbient, false},
-		{msgLevelOff, kindCareAlert, false},
-		{msgLevelOff, kindGrewUp, false},
-		{msgLevelOff, kindDied, false},
-		{"", kindAmbient, true}, // unknown/empty defaults to "all"
+		"nil":       {nil, "logged"},
+		"timeout":   {fmt.Errorf("describe: %w", context.DeadlineExceeded), "timed out"},
+		"cancelled": {fmt.Errorf("render: %w", context.Canceled), "shutting down"},
+		"budget":    {errBudgetExhausted, "budget is spent"},
+		"no db":     {errBudgetUnavailable, "accounted for"},
 	}
-	for _, c := range cases {
-		if got := wantsMessage(c.level, c.kind); got != c.want {
-			t.Errorf("wantsMessage(%q, %v) = %v, want %v", c.level, c.kind, got, c.want)
-		}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			if got := publicError(tc.err); !strings.Contains(got, tc.want) {
+				t.Fatalf("expected %q in %q", tc.want, got)
+			}
+		})
 	}
 }
 
-func TestPresenceReflectsState(t *testing.T) {
-	now := time.Unix(1_700_000_000, 0).UTC()
-	p := newPet("g1", now)
-	if txt := presenceText(p); !strings.Contains(txt, "Baby Alex") {
-		t.Errorf("infant presence should mention Baby Alex, got %q", txt)
+func TestStripBody(t *testing.T) {
+	if got := stripBody(`deepseek HTTP 500: {"a":1}`); got != "deepseek HTTP 500" {
+		t.Fatalf("got %q", got)
 	}
-	if s := presenceStatus(p); s != "online" {
-		t.Errorf("healthy pet should be online, got %q", s)
-	}
-	p.Alive = false
-	if txt := presenceText(p); !strings.Contains(txt, "passed out") {
-		t.Errorf("dead pet presence should say passed out, got %q", txt)
-	}
-	if s := presenceStatus(p); s != "dnd" {
-		t.Errorf("dead pet should be dnd, got %q", s)
+	if got := stripBody("plain failure"); got != "plain failure" {
+		t.Fatalf("a body-free message should pass through, got %q", got)
 	}
 }
 
-func TestCanToggleAlex(t *testing.T) {
-	// OwnerID has stray whitespace to prove the comparison trims it.
-	b := &Bot{cfg: Config{OwnerID: " owner1 "}}
-
-	mk := func(userID string, perms int64) *discordgo.InteractionCreate {
-		return &discordgo.InteractionCreate{Interaction: &discordgo.Interaction{
-			Member: &discordgo.Member{User: &discordgo.User{ID: userID}, Permissions: perms},
-		}}
+func TestRenderFailureReason(t *testing.T) {
+	if !strings.Contains(renderFailureReason(errBudgetExhausted), "budget") {
+		t.Fatal("the budget case should name the budget")
 	}
-
-	cases := []struct {
-		name  string
-		i     *discordgo.InteractionCreate
-		allow bool
-	}{
-		{"bot owner (no perms, env has whitespace)", mk("owner1", 0), true},
-		{"manage messages", mk("u2", discordgo.PermissionManageMessages), true},
-		{"administrator", mk("u3", discordgo.PermissionAdministrator), true},
-		{"manage + other perms", mk("u4", discordgo.PermissionManageMessages|discordgo.PermissionViewChannel), true},
-		{"regular member", mk("u5", discordgo.PermissionViewChannel|discordgo.PermissionSendMessages), false},
-		{"no perms", mk("u6", 0), false},
+	if r := renderFailureReason(nil); r == "" {
+		t.Fatal("a nil error still needs a reason")
 	}
-	for _, c := range cases {
-		// Session is nil here; the owner + permission paths don't need it.
-		if got := b.canToggleAlex(nil, c.i); got != c.allow {
-			t.Errorf("%s: canToggleAlex = %v, want %v", c.name, got, c.allow)
-		}
-	}
-
-	// A nil member (e.g. a DM) is never allowed unless it's the owner.
-	if b.canToggleAlex(nil, &discordgo.InteractionCreate{Interaction: &discordgo.Interaction{}}) {
-		t.Error("nil member should not be allowed")
+	if !strings.Contains(renderFailureReason(context.DeadlineExceeded), "didn't come back") {
+		t.Fatal("a generic failure should read as a generic failure")
 	}
 }
 
-func TestBoundMessage(t *testing.T) {
-	if got := boundMessage(`  "hey there"  `); got != "hey there" {
-		t.Errorf("boundMessage should trim spaces + surrounding quotes, got %q", got)
-	}
-	long := strings.Repeat("a", 800)
-	got := boundMessage(long)
-	if len([]rune(got)) > 601 { // 600 + ellipsis
-		t.Errorf("boundMessage should cap length, got %d runes", len([]rune(got)))
+// ─── Text helpers ───────────────────────────────────────────────────────
+
+// Discord counts characters, and this copy is emoji-heavy, so every cut has to
+// be rune-safe — a byte cut splits a glyph and Discord rejects the embed.
+func TestTruncateIsRuneSafe(t *testing.T) {
+	s := "🔮🔮🔮🔮"
+	got := truncate(s, 3)
+	if len([]rune(got)) != 3 {
+		t.Fatalf("expected 3 runes, got %d (%q)", len([]rune(got)), got)
 	}
 	if !strings.HasSuffix(got, "…") {
-		t.Errorf("over-long message should end with an ellipsis")
+		t.Fatalf("expected an ellipsis marker, got %q", got)
+	}
+	if truncate(s, 4) != s {
+		t.Fatal("an exact fit must be returned unchanged")
+	}
+	if truncate(s, 0) != "" {
+		t.Fatal("a zero budget yields nothing")
+	}
+	if got := truncateHard(s, 2); len([]rune(got)) != 2 || strings.Contains(got, "…") {
+		t.Fatalf("truncateHard must cut without a marker, got %q", got)
 	}
 }
 
-func TestCleanDiscordContent(t *testing.T) {
-	cases := []struct{ in, want string }{
-		{"<@123> hey", "Alex hey"},
-		{"<@!123> yo", "Alex yo"},
-		{"  hello  ", "hello"},
-		{"no mention", "no mention"},
+func TestDetectImageExt(t *testing.T) {
+	cases := map[string][]byte{
+		".png":  {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A},
+		".jpg":  {0xFF, 0xD8, 0xFF, 0xE0},
+		".gif":  []byte("GIF89a"),
+		".webp": []byte("RIFF\x00\x00\x00\x00WEBPVP8 "),
 	}
-	for _, c := range cases {
-		if got := cleanDiscordContent(c.in, "123"); got != c.want {
-			t.Errorf("cleanDiscordContent(%q) = %q, want %q", c.in, got, c.want)
+	for want, buf := range cases {
+		if got := detectImageExt(buf); got != want {
+			t.Fatalf("expected %s, got %q", want, got)
+		}
+		if mime := mimeForExt(want); !strings.HasPrefix(mime, "image/") {
+			t.Fatalf("no MIME for %s", want)
 		}
 	}
-}
-
-// ─── /prompt persona override + mention context ─────────────────────────────
-
-func TestWithPersonaReplacesLeadingSystem(t *testing.T) {
-	history := []ChatMessage{
-		{Role: roleSystem, Content: "OLD PERSONA"},
-		{Role: roleUser, Content: "hi"},
-		{Role: roleAssistant, Content: "yo"},
+	if got := detectImageExt([]byte("<html>")); got != "" {
+		t.Fatalf("expected no match for HTML, got %q", got)
 	}
-	out := withPersona(history, "NEW PERSONA")
-	if out[0].Role != roleSystem || out[0].Content != "NEW PERSONA" {
-		t.Errorf("leading system message should be replaced, got %+v", out[0])
+	if got := detectImageExt(nil); got != "" {
+		t.Fatalf("expected no match for empty input, got %q", got)
 	}
-	if len(out) != 3 || out[1].Content != "hi" || out[2].Content != "yo" {
-		t.Errorf("rest of the history should be preserved, got %+v", out)
-	}
-	// The original slice must be left untouched (we send an ephemeral copy).
-	if history[0].Content != "OLD PERSONA" {
-		t.Errorf("withPersona must not mutate the input history, got %q", history[0].Content)
+	if got := mimeForExt(".txt"); got != "" {
+		t.Fatalf("expected no MIME for an unknown ext, got %q", got)
 	}
 }
 
-func TestWithPersonaPrependsWhenNoSystem(t *testing.T) {
-	history := []ChatMessage{{Role: roleUser, Content: "hi"}}
-	out := withPersona(history, "PERSONA")
-	if len(out) != 2 || out[0].Role != roleSystem || out[0].Content != "PERSONA" {
-		t.Errorf("persona should be prepended when history has no leading system msg, got %+v", out)
+func TestRoundWaitFloorsAtOneSecond(t *testing.T) {
+	if got := roundWait(120 * time.Millisecond); got != time.Second {
+		t.Fatalf("expected a 1s floor, got %v", got)
 	}
-	if out[1].Content != "hi" {
-		t.Errorf("user turn should follow the prepended persona, got %+v", out[1])
+	if got := roundWait(2400 * time.Millisecond); got != 2*time.Second {
+		t.Fatalf("expected 2s, got %v", got)
 	}
 }
 
-func TestEffectivePromptFallsBackToDefault(t *testing.T) {
-	// With no guild (DM), and with a guild but no pet/DB configured, Alex uses his
-	// built-in persona. A nil pet pointer is safe (CustomPrompt guards nil).
-	s := &ChatService{}
-	if got := s.effectivePrompt(context.Background(), ""); got != alexSystemPrompt {
-		t.Errorf("empty guild should yield the default persona")
+func TestInteractionUser(t *testing.T) {
+	member := &discordgo.InteractionCreate{Interaction: &discordgo.Interaction{
+		Member: &discordgo.Member{User: &discordgo.User{ID: "1", Username: "ada"}},
+	}}
+	if id, name := interactionUser(member); id != "1" || name != "ada" {
+		t.Fatalf("guild path: got %s/%s", id, name)
 	}
-	if got := s.effectivePrompt(context.Background(), "guild1"); got != alexSystemPrompt {
-		t.Errorf("unconfigured guild should yield the default persona")
+	dm := &discordgo.InteractionCreate{Interaction: &discordgo.Interaction{
+		User: &discordgo.User{ID: "2", Username: "grace"},
+	}}
+	if id, name := interactionUser(dm); id != "2" || name != "grace" {
+		t.Fatalf("dm path: got %s/%s", id, name)
 	}
-}
-
-func TestSnowflakeLessOrdersChronologically(t *testing.T) {
-	// Larger snowflake == later message.
-	if !snowflakeLess("100", "200") {
-		t.Errorf("100 should sort before 200")
-	}
-	if snowflakeLess("200", "100") {
-		t.Errorf("200 should not sort before 100")
-	}
-	// Real-length snowflakes (19 digits) compare numerically, not lexically.
-	older, newer := "1200000000000000000", "1200000000000000009"
-	if !snowflakeLess(older, newer) {
-		t.Errorf("numeric snowflake ordering broken for %s vs %s", older, newer)
-	}
-	// Different-length ids: the longer (newer) one sorts later even via fallback.
-	if !snowflakeLess("999", "1000000000000000000") {
-		t.Errorf("shorter/older id should sort first")
-	}
-}
-
-func TestTranscriptTurnRoles(t *testing.T) {
-	bot := transcriptTurn(&discordgo.Message{Author: &discordgo.User{ID: "bot"}, Content: "hi im alex"}, "bot")
-	if len(bot) != 1 || bot[0].Role != roleAssistant {
-		t.Errorf("bot's own message should be an assistant turn, got %+v", bot)
-	}
-	user := transcriptTurn(&discordgo.Message{Author: &discordgo.User{ID: "u1", Username: "bob"}, Content: "sup"}, "bot")
-	if len(user) != 1 || user[0].Role != roleUser || !strings.HasPrefix(user[0].Content, "bob: ") {
-		t.Errorf("other user's message should be a name-prefixed user turn, got %+v", user)
-	}
-	if empty := transcriptTurn(&discordgo.Message{Author: &discordgo.User{ID: "u1"}, Content: "   "}, "bot"); empty != nil {
-		t.Errorf("empty-content message should produce no turn, got %+v", empty)
-	}
-}
-
-func TestBuildAlexImagePromptSafe(t *testing.T) {
-	now := time.Unix(1_700_000_000, 0).UTC()
-	p := newPet("g1", now)
-	prompt := buildAlexImagePrompt(p, p.mood())
-	if !strings.Contains(prompt, "No text") {
-		t.Errorf("image prompt should forbid text, got %q", prompt)
-	}
-	if !strings.Contains(strings.ToLower(prompt), "baby") {
-		t.Errorf("infant prompt should describe a baby, got %q", prompt)
-	}
-}
-
-func TestWantsMessagePrompt(t *testing.T) {
-	// Interactive community prompts follow the same rules as ambient chatter.
-	if !wantsMessage(msgLevelAll, kindPrompt) {
-		t.Errorf("'all' should allow prompts")
-	}
-	if wantsMessage(msgLevelCare, kindPrompt) {
-		t.Errorf("'care' should drop prompts (they're random chatter)")
-	}
-	if wantsMessage(msgLevelOff, kindPrompt) {
-		t.Errorf("'off' should drop prompts")
-	}
-}
-
-func TestNormalizeCareer(t *testing.T) {
-	cases := map[string]string{
-		"swe":               "swe",
-		"Software Engineer": "swe",
-		"developer":         "swe",
-		"quant":             "quant",
-		"UX":                "design",
-		"product manager":   "pm",
-		"astronaut":         "", // custom → no known key
-		"":                  "",
-		"   ":               "",
-	}
-	for in, want := range cases {
-		if got := normalizeCareer(in); got != want {
-			t.Errorf("normalizeCareer(%q) = %q, want %q", in, got, want)
-		}
-	}
-}
-
-func TestSanitizeCareer(t *testing.T) {
-	if got := sanitizeCareer("  astronaut  "); got != "astronaut" {
-		t.Errorf("expected trimmed 'astronaut', got %q", got)
-	}
-	if got := sanitizeCareer("@everyone `rm -rf` *boss*"); strings.ContainsAny(got, "@`*") {
-		t.Errorf("should strip injection/markdown chars, got %q", got)
-	}
-	if sanitizeCareer("   ") != "" {
-		t.Errorf("blank input should sanitize to empty")
-	}
-	if len([]rune(sanitizeCareer(strings.Repeat("x", 100)))) > 40 {
-		t.Errorf("should cap at 40 runes")
-	}
-}
-
-func TestCareerDisplayCustom(t *testing.T) {
-	if careerDisplay("swe") != careerLabel["swe"] {
-		t.Errorf("known key should map to its label")
-	}
-	if got := careerDisplay("pro boba taster"); got != "pro boba taster" {
-		t.Errorf("custom career should show as typed, got %q", got)
-	}
-}
-
-func TestClaimPromptOncePerUser(t *testing.T) {
-	ps := &PetService{}
-	now := time.Unix(1_700_000_000, 0).UTC()
-	ps.registerPrompt(promptStyleEvent, map[string]bool{"chanA": true}, now)
-
-	if !ps.claimPrompt("chanA", "user1", now) {
-		t.Fatalf("first claim should succeed")
-	}
-	if ps.claimPrompt("chanA", "user1", now) {
-		t.Errorf("second claim by the same user should fail")
-	}
-	if !ps.claimPrompt("chanA", "user2", now) {
-		t.Errorf("a different user should still be able to claim")
-	}
-	if ps.claimPrompt("chanB", "user3", now) {
-		t.Errorf("a claim in a non-prompt channel should fail")
-	}
-	if ps.claimPrompt("chanA", "user4", now.Add(promptDuration()+time.Second)) {
-		t.Errorf("an expired prompt should not be claimable")
-	}
-}
-
-func TestClaimPromptRespectsCap(t *testing.T) {
-	ps := &PetService{}
-	now := time.Unix(1_700_000_000, 0).UTC()
-	ps.registerPrompt(promptStyleQuestion, map[string]bool{"c": true}, now)
-
-	claimed := 0
-	for i := 0; i < promptMaxClaims+5; i++ {
-		if ps.claimPrompt("c", "user"+itoa(i), now) {
-			claimed++
-		}
-	}
-	if claimed != promptMaxClaims {
-		t.Errorf("expected exactly %d winners (cap), got %d", promptMaxClaims, claimed)
-	}
-}
-
-// ─── passed-out message state ───────────────────────────────────────────────
-//
-// When Alex has passed out (health hit 0, awaiting /revive), EVERY message path —
-// the AI system context and the no-AI static fallbacks — must reflect that he's
-// down and never have him chirping for food/boba like he's fine.
-
-// foodWords are the "acting alive" tells a passed-out message must not contain.
-var foodWords = []string{"boba", "feed", "food", "hungry", "snack", "meal"}
-
-func containsAnyFold(s string, subs []string) string {
-	low := strings.ToLower(s)
-	for _, sub := range subs {
-		if strings.Contains(low, sub) {
-			return sub
-		}
-	}
-	return ""
-}
-
-func TestPetStateLinePassedOut(t *testing.T) {
-	now := time.Unix(1_700_000_000, 0).UTC()
-	p := newPet("g1", now)
-	p.Alive = false
-
-	line := petStateLine(p)
-	if !strings.Contains(strings.ToLower(line), "revive") {
-		t.Errorf("passed-out state line should point at a revive, got %q", line)
-	}
-	if bad := containsAnyFold(line, foodWords); bad == "" {
-		t.Errorf("passed-out state line should forbid, not invite, food talk (missing the guard), got %q", line)
-	}
-
-	// A living Alex's state line still describes his mood normally.
-	p.Alive = true
-	if line := petStateLine(p); strings.Contains(strings.ToLower(line), "passed out") {
-		t.Errorf("living Alex should not read as passed out, got %q", line)
-	}
-}
-
-func TestCareInstructionGoneIsReviveNotFood(t *testing.T) {
-	got := careInstruction("gone")
-	if !strings.Contains(strings.ToLower(got), "/revive") {
-		t.Errorf("the 'gone' care plea should ask for a /revive, got %q", got)
-	}
-	if !strings.Contains(strings.ToLower(got), "passed out") {
-		t.Errorf("the 'gone' care plea should say he's passed out, got %q", got)
-	}
-	// A normal need still names its own care command.
-	if got := careInstruction("hungry"); !strings.Contains(got, "/feed") {
-		t.Errorf("the 'hungry' plea should ask for a /feed, got %q", got)
-	}
-}
-
-func TestMentionFallbackLinePassedOut(t *testing.T) {
-	// Every passed-out fallback points at a revive and mentions no food.
-	for _, line := range mentionPassedOutLines {
-		if !strings.Contains(strings.ToLower(line), "revive") {
-			t.Errorf("passed-out mention line should mention revive, got %q", line)
-		}
-		if bad := containsAnyFold(line, foodWords); bad != "" {
-			t.Errorf("passed-out mention line should not mention %q, got %q", bad, line)
-		}
-	}
-	// The passedOut branch of the picker only ever draws from that pool.
-	for i := 0; i < 50; i++ {
-		if bad := containsAnyFold(mentionFallbackLine(true), foodWords); bad != "" {
-			t.Fatalf("mentionFallbackLine(true) drew a food line %q", bad)
-		}
-	}
-}
-
-func TestPromptAckLinePassedOut(t *testing.T) {
-	for _, line := range promptAckPassedOutLines {
-		if !strings.Contains(strings.ToLower(line), "revive") {
-			t.Errorf("passed-out prompt-ack line should mention revive, got %q", line)
-		}
-	}
-	for i := 0; i < 50; i++ {
-		if bad := containsAnyFold(promptAckLine(true), foodWords); bad != "" {
-			t.Fatalf("promptAckLine(true) drew a food line %q", bad)
-		}
+	if id, _ := interactionUser(&discordgo.InteractionCreate{Interaction: &discordgo.Interaction{}}); id != "" {
+		t.Fatal("an interaction with no user yields empty strings")
 	}
 }

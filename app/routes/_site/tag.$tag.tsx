@@ -2,11 +2,12 @@ import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from "@/components/feed/ContextRail";
+import { ContextRail } from '@/components/feed/ContextRail';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { TagColumn } from '@/components/feed/TagColumn';
 import { auth } from '@/lib/auth';
 import { listTagFeed, type TagFeedResult } from '@/lib/tags.server';
+import { SITE_URL } from '@/lib/seo';
 
 // Prefetch the first page of the tag feed server-side so it's present at first
 // paint (SSR) and prefetched on hover intent instead of fetched client-side on
@@ -20,18 +21,35 @@ const fetchTagFeed = createServerFn({ method: 'GET' })
   });
 
 export const Route = createFileRoute('/_site/tag/$tag')({
-  head: ({ params }) => ({
-    meta: [{ title: `#${params.tag} | RMH Studios` }],
-    // Feed autodiscovery for the hashtag's public posts.
-    links: [
-      {
-        rel: 'alternate',
-        type: 'application/rss+xml',
-        title: `#${params.tag} — posts`,
-        href: `/tag/${params.tag}/rss.xml`,
-      },
-    ],
-  }),
+  /**
+   * Tags are user-minted, so the URL space is unbounded and `#Foo`, `#foo` and
+   * `#FOO` are three URLs for one feed. The canonical is the lowercase form,
+   * and the page is `follow` but not `index`: the posts themselves are what
+   * should rank, and this page is how a crawler reaches them.
+   */
+  head: ({ params }) => {
+    const tag = params.tag.replace(/^#/, '');
+    return {
+      meta: [
+        { title: `#${tag} | RMH Studios` },
+        {
+          name: 'description',
+          content: `Posts tagged #${tag} on RMH Studios.`,
+        },
+        { name: 'robots', content: 'noindex, follow' },
+      ],
+      links: [
+        { rel: 'canonical', href: `${SITE_URL}/tag/${encodeURIComponent(tag.toLowerCase())}` },
+        // Feed autodiscovery for the hashtag's public posts.
+        {
+          rel: 'alternate',
+          type: 'application/rss+xml',
+          title: `#${tag} — posts`,
+          href: `/tag/${tag}/rss.xml`,
+        },
+      ],
+    };
+  },
   loader: ({ params }): Promise<{ data: TagFeedResult }> => fetchTagFeed({ data: params.tag }),
   component: TagPage,
 });
@@ -44,11 +62,9 @@ function TagPage() {
   const { data } = Route.useLoaderData() as unknown as { data: TagFeedResult };
   return (
     <>
-      <AnimatedMain
-        className="w-full min-w-0 pb-dock"
-      >
-      <TagColumn tag={tag} initialData={data} />
-    </AnimatedMain>
+      <AnimatedMain className="w-full min-w-0 pb-dock">
+        <TagColumn tag={tag} initialData={data} />
+      </AnimatedMain>
       <ContextRail reserve />
     </>
   );

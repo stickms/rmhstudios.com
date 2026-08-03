@@ -32,9 +32,19 @@ const fetchPostMeta = createServerFn({ method: 'GET' })
 
     const user = resolveUser(rmhark.user as any);
     const userName = user.name || 'Someone';
+    const handle = (rmhark.user as { handle?: string | null }).handle ?? null;
+
+    // Only a public, free post may put its own words in a meta tag. This gate
+    // used to cover the card image alone, so a followers-only or paid post
+    // still emitted its body as `description` and `og:description` — readable
+    // by any crawler, and by anyone who viewed source, without ever meeting the
+    // audience rule or paying the unlock. The gate now covers the text too.
+    const isPublicFree = rmhark.audience === 'PUBLIC' && (rmhark.unlockPrice ?? 0) === 0;
 
     let description: string;
-    if (rmhark.content) {
+    if (!isPublicFree) {
+      description = `A post by ${userName} on RMH.`;
+    } else if (rmhark.content) {
       description = rmhark.content;
     } else if (rmhark.poll) {
       description = `Poll: ${rmhark.poll.question}`;
@@ -44,16 +54,25 @@ const fetchPostMeta = createServerFn({ method: 'GET' })
       description = 'Post on RMH';
     }
 
-    const title = rmhark.content
-      ? `${userName} on RMH: "${rmhark.content.length > 80 ? rmhark.content.slice(0, 80) + '...' : rmhark.content}"`
-      : `${userName} on RMH`;
+    const title =
+      isPublicFree && rmhark.content
+        ? `${userName} on RMH: "${rmhark.content.length > 80 ? rmhark.content.slice(0, 80) + '...' : rmhark.content}"`
+        : `${userName} on RMH`;
 
-    // Use the dynamic OG card only for public, free posts; otherwise fall back
-    // to the author avatar so private/paid content never leaks into previews.
-    const isPublicFree = rmhark.audience === 'PUBLIC' && (rmhark.unlockPrice ?? 0) === 0;
     const ogImage = isPublicFree ? ogCardPath('post', postid) : user.image;
 
-    return { title, description, userImage: user.image, ogImage, postId: postid };
+    return {
+      title,
+      description,
+      userImage: user.image,
+      ogImage,
+      postId: postid,
+      handle,
+      // Restricted posts are excluded from the sitemap, but a link shared into a
+      // public channel is enough for a crawler to find one — so say it on the
+      // page as well.
+      indexable: isPublicFree && Boolean(handle),
+    };
   });
 
 const fetchSidebarData = createServerFn({ method: 'GET' }).handler(async () => {
@@ -80,10 +99,20 @@ export const Route = createFileRoute('/_site/u/$userid/post/$postid')({
     const isCard = !!meta.ogImage && meta.ogImage.startsWith('/api/og/');
     // Only free, public posts are embeddable — advertise oEmbed for those so
     // Discord/Slack/WordPress unfurl them richly via /api/embed/oembed.
+    //
+    // `$userid` accepts an id, a handle, or a handle with a legacy `@` prefix,
+    // so one post has at least three working URLs — and the RSS feeds link to a
+    // fourth, `/thread/{id}`. Every one of them served the same body with no
+    // canonical, which is four competing candidates for the same content. The
+    // author's handle is the canonical form; `postUrl` (which echoes whichever
+    // alias was requested) is still what oEmbed and `og:url` describe, because
+    // those identify the page that was actually fetched.
     const postUrl = `${SITE_URL}/u/${params.userid}/post/${params.postid}`;
+    const canonicalUrl = meta.handle ? `${SITE_URL}/u/${meta.handle}/post/${params.postid}` : null;
     return {
       meta: [
         { title: meta.title },
+        ...(meta.indexable ? [] : [{ name: 'robots', content: 'noindex, follow' }]),
         { name: 'description', content: meta.description },
         { property: 'og:type', content: 'article' },
         { property: 'og:title', content: meta.title },
@@ -105,16 +134,19 @@ export const Route = createFileRoute('/_site/u/$userid/post/$postid')({
         { name: 'twitter:description', content: meta.description },
         ...(ogImage ? [{ name: 'twitter:image', content: ogImage }] : []),
       ],
-      links: isCard
-        ? [
-            {
-              rel: 'alternate',
-              type: 'application/json+oembed',
-              href: `${SITE_URL}/api/embed/oembed?url=${encodeURIComponent(postUrl)}&format=json`,
-              title: meta.title,
-            },
-          ]
-        : [],
+      links: [
+        ...(canonicalUrl ? [{ rel: 'canonical', href: canonicalUrl }] : []),
+        ...(isCard
+          ? [
+              {
+                rel: 'alternate',
+                type: 'application/json+oembed',
+                href: `${SITE_URL}/api/embed/oembed?url=${encodeURIComponent(postUrl)}&format=json`,
+                title: meta.title,
+              },
+            ]
+          : []),
+      ],
     };
   },
   component: PostPage,

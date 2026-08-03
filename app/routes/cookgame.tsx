@@ -1,6 +1,7 @@
 // app/routes/cookgame.tsx
 import { lazy, Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
+import { gameRouteHead } from '@/lib/seo-catalog';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 
@@ -19,11 +20,6 @@ function CookgamePage() {
 }
 
 export const Route = createFileRoute('/cookgame')({
-  head: () => ({
-    meta: [
-      { title: 'Game | RMH Studios' },
-      { name: 'description', content: 'A satirical underground tycoon sim. Mix product, manage heat, run your block.' },
-    ],
-  }),
+  head: () => gameRouteHead('cookgame'),
   component: CookgamePage,
 });

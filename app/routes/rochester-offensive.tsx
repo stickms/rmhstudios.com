@@ -1,10 +1,11 @@
-import { lazy, Suspense } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
-import { GameBackLink } from '@/components/shared/GameBackLink'
-import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
-import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
+import { lazy, Suspense } from 'react';
+import { createFileRoute } from '@tanstack/react-router';
+import { gameRouteHead } from '@/lib/seo-catalog';
+import { GameBackLink } from '@/components/shared/GameBackLink';
+import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
+import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 
-const Breakpoint = lazy(() => import('@/components/breakpoint/Breakpoint'))
+const Breakpoint = lazy(() => import('@/components/breakpoint/Breakpoint'));
 
 function BreakpointPage() {
   return (
@@ -22,9 +23,10 @@ function BreakpointPage() {
         </GameErrorBoundary>
       </div>
     </main>
-  )
+  );
 }
 
 export const Route = createFileRoute('/rochester-offensive')({
+  head: () => gameRouteHead('rochester-offensive'),
   component: BreakpointPage,
-})
+});

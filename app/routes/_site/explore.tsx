@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from "@/components/feed/ContextRail";
+import { ContextRail } from '@/components/feed/ContextRail';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { ExploreColumn } from '@/components/feed/ExploreColumn';
 import { auth } from '@/lib/auth';
@@ -18,7 +19,15 @@ const fetchExplore = createServerFn({ method: 'GET' }).handler(async () => {
 });
 
 export const Route = createFileRoute('/_site/explore')({
-  head: () => ({ meta: [{ title: 'Explore | RMH Studios' }] }),
+  head: () => ({
+    meta: buildMeta({
+      title: 'Explore | RMH Studios',
+      description:
+        'Trending posts, rising creators and what the RMH Studios community is talking about right now.',
+      path: '/explore',
+    }),
+    links: [buildCanonical('/explore')],
+  }),
   loader: () => fetchExplore(),
   component: ExplorePage,
 });
@@ -27,11 +36,9 @@ function ExplorePage() {
   const { data } = Route.useLoaderData();
   return (
     <>
-      <AnimatedMain
-        className="w-full min-w-0 pb-dock"
-      >
-      <ExploreColumn initialData={data} />
-    </AnimatedMain>
+      <AnimatedMain className="w-full min-w-0 pb-dock">
+        <ExploreColumn initialData={data} />
+      </AnimatedMain>
       <ContextRail reserve />
     </>
   );

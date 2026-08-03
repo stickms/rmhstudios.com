@@ -2,11 +2,71 @@
 User-agent: *
 Allow: /
 
-# Don't crawl server API routes, auth flows, or per-user account areas.
+# Share cards must stay crawlable. Every dynamic Open Graph image on the site is
+# served from /api/og/*, and Twitterbot and LinkedInBot both honour robots.txt
+# before fetching og:image — so a blanket "Disallow: /api/" meant every post,
+# profile, job, game and blog link unfurled with no image on the two networks
+# the site is most often promoted on. These two rules are more specific than the
+# /api/ rule below, so they win.
+Allow: /api/og/
+Allow: /api/vibe/thumb/
+Allow: /api/embed/oembed
+
+# Everything else under /api/ is a JSON endpoint, an auth flow or an upload
+# target. None of it is a page.
 Disallow: /api/
+
+# Auth flows.
 Disallow: /login
-Disallow: /wallet
-Disallow: /settings
 Disallow: /rmhcode/auth
+
+# Search results are an unbounded URL space generated from user input — the
+# classic crawl-budget sink. The content behind them is reachable from the
+# sitemap and from the hub pages.
+Disallow: /search
+
+# Per-viewer pages. A signed-out crawler only ever gets the login redirect from
+# these, so fetching them is wasted budget on both sides.
+Disallow: /admin
+Disallow: /analytics
+Disallow: /bookmarks
+Disallow: /drafts
+Disallow: /history
+Disallow: /lists
+Disallow: /messages
+Disallow: /notifications
+Disallow: /progress
+Disallow: /recap
+Disallow: /saves
+Disallow: /settings
+Disallow: /share
+Disallow: /wallet
+Disallow: /wishlist
+Disallow: /wrapped
+Disallow: /creator-studio
+Disallow: /user-builds/manage
+Disallow: /user-builds/submit
+Disallow: /homes/manage
+Disallow: /homes/saved
+Disallow: /homes/watches
+Disallow: /rmhladder/alerts
+Disallow: /rmhladder/health
+Disallow: /rmhladder/pipeline
+Disallow: /rmhladder/resume
+Disallow: /rmhladder/review
+Disallow: /rmhladder/settings
+
+# Referral links redirect and carry a tracking code; the destination is indexed
+# on its own URL.
+Disallow: /ref/
+
+# Pages absent from this file on purpose: /embed/*, /offline, /secret/* and the
+# Discord Activity routes all carry a `noindex` meta tag instead. Blocking them
+# here would stop a crawler ever reading that tag, which is what actually keeps
+# an already-discovered URL out of the index.
+
+# AI crawlers (GPTBot, ClaudeBot, PerplexityBot, …) are allowed deliberately by
+# the rule at the top: being cited in an assistant's answer is a distribution
+# channel, not a leak. Add an explicit block here if that ever changes.
 
 Sitemap: https://rmhstudios.com/sitemap.xml

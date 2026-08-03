@@ -86,7 +86,8 @@ export function buildMeta({
   const section = image ? null : staticCardFor(path);
   const ogImage = absoluteUrl(image || (section ? staticCardImage(section) : DEFAULT_OG_IMAGE));
   // A supplied image is a 1200×630 card unless the caller says otherwise.
-  const size = imageSize === undefined ? { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT } : imageSize;
+  const size =
+    imageSize === undefined ? { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT } : imageSize;
   const isLarge = !size || size.width >= 600;
 
   return [
@@ -119,4 +120,24 @@ export function buildMeta({
  */
 export function buildCanonical(path: string) {
   return { rel: 'canonical', href: `${SITE_URL}${path}` };
+}
+
+/**
+ * `head()` for a page that should never be indexed — a personal surface, an
+ * admin screen, an auth step.
+ *
+ * These pages still need a `<title>`: a crawler will not index them, but the
+ * browser tab, the history entry, the bookmark and the screen-reader
+ * announcement all read it, and dozens of routes here had none at all (the tab
+ * fell back to the site-wide default, so a signed-in user's open tabs were
+ * indistinguishable from each other).
+ *
+ * `nofollow` is deliberately NOT set: these pages link into the public site,
+ * and there is no reason to throw that away. What matters is that the page
+ * itself stays out of the index.
+ */
+export function noindexHead(title: string) {
+  return {
+    meta: [{ title: `${title} | RMH Studios` }, { name: 'robots', content: 'noindex, follow' }],
+  };
 }

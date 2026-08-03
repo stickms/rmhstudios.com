@@ -1,9 +1,12 @@
-import { lazy, Suspense } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
-import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
-import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
+import { lazy, Suspense } from 'react';
+import { createFileRoute } from '@tanstack/react-router';
+import { gameRouteHead } from '@/lib/seo-catalog';
+import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
+import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 
-const Velum2099Game = lazy(() => import('@/components/velum2099/Velum2099Game').then(m => ({ default: m.Velum2099Game })))
+const Velum2099Game = lazy(() =>
+  import('@/components/velum2099/Velum2099Game').then((m) => ({ default: m.Velum2099Game })),
+);
 
 function Velum2099Page() {
   return (
@@ -17,9 +20,10 @@ function Velum2099Page() {
         </Suspense>
       </GameErrorBoundary>
     </main>
-  )
+  );
 }
 
 export const Route = createFileRoute('/velum2099')({
+  head: () => gameRouteHead('velum2099'),
   component: Velum2099Page,
-})
+});
