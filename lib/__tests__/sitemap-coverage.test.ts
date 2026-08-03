@@ -79,9 +79,21 @@ function sourceFor(file: string): string {
   return readFileSync(file, 'utf8');
 }
 
-/** A route whose only job is to `throw redirect(...)` before it renders. */
+/**
+ * A route whose only job is to `throw redirect(...)` before it renders.
+ *
+ * Two signals, and both are required. A `throw redirect(` under `beforeLoad`
+ * alone is not enough: a route that renders a page can still redirect one
+ * *search param* elsewhere — `/create` sends `?tab=apps` to `/apps` now that
+ * the apps catalog is its own page — and that route's own URL is perfectly
+ * indexable. What makes a route redirect-*only* is that it has no component to
+ * render, which is exactly the shape of every stub in `app/routes/_site`
+ * (`shop`, `pricing`, `market`, `profile/$id`, `arcade`, `leaderboard`, …).
+ */
 function isRedirectOnly(src: string): boolean {
-  return /beforeLoad:[\s\S]{0,240}?throw redirect\(/.test(src);
+  const redirectsEarly = /beforeLoad:[\s\S]{0,240}?throw redirect\(/.test(src);
+  const rendersSomething = /\bcomponent:\s*\w/.test(src);
+  return redirectsEarly && !rendersSomething;
 }
 
 const ROUTE_FILES = pageRouteFiles();

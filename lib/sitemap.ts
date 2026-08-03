@@ -45,8 +45,12 @@ export const SITEMAP_CHUNK_SIZE = 40_000;
 export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/', changefreq: 'daily', priority: 1.0 },
 
-  // Primary hubs. `/create` is where the games/apps/builds browser actually
-  // lives — the old `/games` and `/apps` sitemap entries pointed at nothing.
+  // Primary hubs. `/games` and `/apps` are the public catalog indexes; they
+  // were listed here for a long time with nothing behind them, then dropped
+  // when that was found, and now exist. `/create` is the creator half of the
+  // same catalog (Arcade Pass, Ranked, personas, earnings) and stays listed.
+  { loc: '/games', changefreq: 'weekly', priority: 0.9 },
+  { loc: '/apps', changefreq: 'weekly', priority: 0.9 },
   { loc: '/create', changefreq: 'daily', priority: 0.8 },
   { loc: '/explore', changefreq: 'daily', priority: 0.8 },
   { loc: '/library', changefreq: 'daily', priority: 0.8 },

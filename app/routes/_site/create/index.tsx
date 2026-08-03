@@ -12,18 +12,19 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, redirect, useNavigate, Link } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
-import { FileText, Gamepad2, AppWindow, Boxes, Bot, Coins } from 'lucide-react';
+import { FileText, Gamepad2, Boxes, Bot, Coins } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type LiquidTab } from '@/components/ui/liquid-tabs';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { Button } from '@/components/ui/button';
 import { listCuratedBuilds } from '@/lib/builds/curated';
 import { listVibePages } from '@/lib/rmhvibe/vibe.server';
 import { PagesTab, type VibeGallery } from '@/components/creator-studio/PagesTab';
-import { CuratedBuildsTab, UserBuildsTab } from '@/components/creator-studio/BuildsTab';
+import { UserBuildsTab } from '@/components/creator-studio/BuildsTab';
 import { RankedSummary } from '@/components/creator-studio/RankedSummary';
 import {
   ArcadeSection,
@@ -40,7 +41,14 @@ import '@/components/builds/builds.css';
 import '@/components/creator-studio/creator-studio.css';
 import '@/components/creator-studio/storefront.css';
 
-const STUDIO_TABS = ['pages', 'games', 'apps', 'user-builds', 'personas', 'earnings'] as const;
+/**
+ * `apps` is deliberately absent: the apps catalog is its own page at `/apps`,
+ * and this tab rendered nothing but that same catalog. `?tab=apps` redirects
+ * there (see `beforeLoad`) so deep links survive. The Games tab keeps its
+ * creator surfaces — party, Ranked, the Arcade Pass — and links out to
+ * `/games` for the catalog rather than rendering a second copy of it.
+ */
+const STUDIO_TABS = ['pages', 'games', 'user-builds', 'personas', 'earnings'] as const;
 type StudioTab = (typeof STUDIO_TABS)[number];
 
 const fetchGallery = createServerFn({ method: 'GET' })
@@ -57,6 +65,10 @@ export const Route = createFileRoute('/_site/create/')({
     }),
     links: [buildCanonical('/create')],
   }),
+  beforeLoad: ({ search }) => {
+    // The apps catalog moved out to its own indexable page.
+    if ((search as { tab?: string }).tab === 'apps') throw redirect({ to: '/apps' });
+  },
   validateSearch: (search: Record<string, unknown>): { tab?: StudioTab; sub?: ArcadeSubTab } => {
     const { tab, sub } = search;
     return {
@@ -98,13 +110,11 @@ function CreatePage() {
     [navigate],
   );
 
-  const games = useMemo(() => curated.filter((b) => b.kind === 'game'), [curated]);
-  const apps = useMemo(() => curated.filter((b) => b.kind === 'app'), [curated]);
+  const gameCount = useMemo(() => curated.filter((b) => b.kind === 'game').length, [curated]);
 
   const tabs: LiquidTab[] = [
     { id: 'pages', label: t('studio-tab-pages', { defaultValue: 'Pages' }), icon: FileText },
     { id: 'games', label: t('studio-tab-games', { defaultValue: 'Games' }), icon: Gamepad2 },
-    { id: 'apps', label: t('studio-tab-apps', { defaultValue: 'Apps' }), icon: AppWindow },
     {
       id: 'user-builds',
       label: t('studio-tab-user-builds', { defaultValue: 'User Builds' }),
@@ -164,27 +174,23 @@ function CreatePage() {
             <PartyBar inline />
             <RankedSummary />
             <ArcadeSection sub={sub} onSubChange={setArcadeSub} />
-            <CuratedBuildsTab
-              curated={games}
-              seed={seed + 1}
-              searchPlaceholder={t('search-games-placeholder', { defaultValue: 'Search games...' })}
-              emptyLabel={t('empty-games', { defaultValue: 'No games match that search.' })}
-            />
-          </div>
-        )}
-        {tab === 'apps' && (
-          <div
-            className="cstudio-body"
-            role="tabpanel"
-            id="cstudio-panel-apps"
-            aria-labelledby="cstudio-tab-apps"
-          >
-            <CuratedBuildsTab
-              curated={apps}
-              seed={seed + 2}
-              searchPlaceholder={t('search-apps-placeholder', { defaultValue: 'Search apps...' })}
-              emptyLabel={t('empty-apps', { defaultValue: 'No apps match that search.' })}
-            />
+            <section className="glass-fill rounded-site p-4">
+              <h2 className="text-base font-semibold text-site-text">
+                {t('create-games-catalog-title', { defaultValue: 'All games' })}
+              </h2>
+              <p className="mt-1 text-sm text-site-text-muted">
+                {t('create-games-catalog-body', {
+                  count: gameCount,
+                  defaultValue:
+                    'The full catalog of {{count}} games lives on its own page, so it can be linked and found.',
+                })}
+              </p>
+              <Button asChild variant="accent" size="sm" className="mt-3">
+                <Link to="/games">
+                  {t('create-games-catalog-cta', { defaultValue: 'Browse all games' })}
+                </Link>
+              </Button>
+            </section>
           </div>
         )}
         {tab === 'user-builds' && (
