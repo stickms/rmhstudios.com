@@ -12,7 +12,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { fmt } from '@/lib/temple-of-joy/numbers';
 import type { TabId } from '@/lib/temple-of-joy/types';
-import { useTempleValue } from '../hooks';
+import { useStackedLayout, useTempleValue } from '../hooks';
 import { LiveValue, Glyph } from '../ui';
 import { OverviewPanel } from './OverviewPanel';
 import { SourcesPanel } from './SourcesPanel';
@@ -34,26 +34,35 @@ const RELEASE = 24;
 /**
  * Fold the bottom bar away while you are reading down a list.
  *
- * The bar is 3.75rem of a phone screen that has already given ~50px to Safari's
- * own bar, and the moment you are scrolling a shop you are not looking at the
- * navigation. Down past a threshold folds it; any real movement upward, or
- * returning near the top, brings it back — the same bargain the browser makes
- * with its own chrome, which is why it needs no explaining.
+ * The bar is 3.75rem of a phone screen that has already given ~100px to
+ * Safari's own chrome, and the moment you are scrolling a shop you are not
+ * looking at the navigation. Down past a threshold folds it; any real movement
+ * upward, or returning near the top, brings it back — the same bargain the
+ * browser makes with its own bars, which is why it needs no explaining.
+ *
+ * Bound to whichever object is actually scrolling: on a phone the DOCUMENT (the
+ * layout is a page, so Safari collapses), on a desktop the dock's own scroller.
+ * Only the bar layout has a bar, so only it does any of this.
  *
  * The flag is written straight onto the root element rather than held in React
  * state. It changes only when the direction flips, but a scroll handler that
  * re-rendered the panel would re-render it during momentum scrolling on the one
- * device this exists for. Writing one attribute is a class change on a subtree
- * of five buttons; a re-render is the whole list.
+ * device this exists for. Writing one attribute restyles a subtree of five
+ * buttons; a re-render is the whole list.
  */
-function useNavCompaction(ref: React.RefObject<HTMLDivElement | null>, tab: TabId) {
+function useNavCompaction(
+  ref: React.RefObject<HTMLDivElement | null>,
+  tab: TabId,
+  stacked: boolean,
+) {
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || !stacked) return;
     const root = el.closest<HTMLElement>('.toj');
     if (!root) return;
 
-    let last = el.scrollTop;
+    const read = () => window.scrollY;
+    let last = read();
     let compact = false;
 
     const apply = (next: boolean) => {
@@ -64,7 +73,7 @@ function useNavCompaction(ref: React.RefObject<HTMLDivElement | null>, tab: TabI
     };
 
     const onScroll = () => {
-      const top = el.scrollTop;
+      const top = read();
       const delta = top - last;
       last = top;
 
@@ -75,29 +84,36 @@ function useNavCompaction(ref: React.RefObject<HTMLDivElement | null>, tab: TabI
       else if (delta < -RELEASE) apply(false);
     };
 
-    el.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
     return () => {
-      el.removeEventListener('scroll', onScroll);
+      window.removeEventListener('scroll', onScroll);
       // Leaving the panel — or the tab — must not strand the bar folded.
       root.removeAttribute('data-nav');
     };
     // Re-bound per tab: `TemplePanel` remounts the scroll region on a tab
     // change (the `key` below), so the element this closes over is replaced.
-  }, [ref, tab]);
+  }, [ref, tab, stacked]);
 }
 
 export function TemplePanel() {
   const { t } = useTranslation('c-temple-of-joy');
   const tab = useTempleValue((s) => s.tab);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const stacked = useStackedLayout();
 
   // A tab change should start at the top of the new list, not wherever the
-  // previous one happened to be scrolled to.
+  // previous one happened to be scrolled to — and "the top" belongs to whatever
+  // is doing the scrolling, which is the document on a phone.
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: 0 });
-  }, [tab]);
+    // `instant`, explicitly: `globals.css` sets `html { scroll-behavior: smooth }`
+    // site-wide, and on a phone this is now the DOCUMENT — so a tab change would
+    // otherwise animate the whole page back up from wherever the last list was,
+    // in front of a player who has already tapped somewhere else.
+    if (stacked) window.scrollTo({ top: 0, behavior: 'instant' });
+    else scrollRef.current?.scrollTo({ top: 0 });
+  }, [tab, stacked]);
 
-  useNavCompaction(scrollRef, tab);
+  useNavCompaction(scrollRef, tab, stacked);
 
   const panels: Record<TabId, { title: string; body: ReactNode }> = {
     temple: { title: t('tab-temple', { defaultValue: 'Temple' }), body: <OverviewPanel /> },
@@ -107,7 +123,7 @@ export function TemplePanel() {
     },
     blessings: {
       title: t('tab-blessings', { defaultValue: 'Blessings' }),
-      body: <BlessingsPanel scrollRef={scrollRef} />,
+      body: <BlessingsPanel />,
     },
     garden: { title: t('tab-garden', { defaultValue: 'Garden' }), body: <GardenPanel /> },
     choir: { title: t('tab-choir', { defaultValue: 'Choir' }), body: <ChoirPanel /> },
@@ -116,7 +132,7 @@ export function TemplePanel() {
     legacy: { title: t('tab-legacy', { defaultValue: 'The Ladder' }), body: <LadderPanel /> },
     trophies: {
       title: t('tab-trophies', { defaultValue: 'Trophies' }),
-      body: <TrophiesPanel scrollRef={scrollRef} />,
+      body: <TrophiesPanel />,
     },
     settings: { title: t('tab-settings', { defaultValue: 'Settings' }), body: <SettingsPanel /> },
   };

@@ -16,6 +16,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 
 type Store = ReturnType<typeof useTempleStore.getState>;
@@ -203,4 +204,57 @@ export function useDocumentTheme(ref: React.RefObject<HTMLElement | null>): void
       meta.remove();
     };
   }, [ref, theme]);
+}
+
+/**
+ * The stacked layout — altar above, list below, bar along the bottom.
+ *
+ * Stated once, because three different things depend on the answer and two of
+ * them are not CSS: where the navigation MOUNTS, and what object is doing the
+ * scrolling. It is the exact complement of the side-by-side condition in
+ * `temple-of-joy.css`; keep the two in step.
+ */
+export const STACKED_QUERY = '(max-width: 39.99rem), (max-width: 61.99rem) and (min-height: 34.01rem)';
+
+export function useStackedLayout(): boolean {
+  return useMediaQuery(STACKED_QUERY);
+}
+
+/**
+ * Grow a windowed list as its end comes into view.
+ *
+ * An observer on a sentinel rather than arithmetic on `scrollTop`, because the
+ * thing that scrolls is not the same object in both layouts: on a phone it is
+ * the document, on a desktop it is the dock. The old check —
+ * `scrollHeight - scrollTop - clientHeight` on the panel — reads zero for a
+ * panel that no longer scrolls, which is indistinguishable from "you are at the
+ * bottom", so it would have paged the entire list in at once on the layout with
+ * the least memory to spare. A viewport-rooted observer is right in both, and
+ * it accounts for clipping by any scrolling ancestor on the way up.
+ *
+ * `rootMargin` is the same 600px of lookahead the scroll maths used.
+ */
+export function useGrowOnApproach(
+  hasMore: boolean,
+  grow: () => void,
+): React.RefObject<HTMLDivElement | null> {
+  const sentinel = useRef<HTMLDivElement>(null);
+  const onGrow = useRef(grow);
+  onGrow.current = grow;
+
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!hasMore || !el) return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) onGrow.current();
+      },
+      { rootMargin: '600px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMore]);
+
+  return sentinel;
 }
