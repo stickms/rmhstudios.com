@@ -201,10 +201,14 @@ function AdminUsersPage() {
         />
 
         <div className="glass-fill rounded-site overflow-x-auto min-h-[400px]">
-          {/* min-w keeps the header and rows column-aligned; the container scrolls
-              horizontally on narrow screens instead of crushing the name column. */}
-          <div className="min-w-[600px]">
-          <div className="p-4 border-b border-site-border bg-site-bg/50">
+          {/* From `sm` this is a real 4-column table and `min-w` keeps the header
+              aligned with the rows, scrolling horizontally rather than crushing
+              the name column. Below `sm` the columns become a stacked card (the
+              row wraps, see below), so the min-width — and the column header it
+              existed to align — would only push five sixths of every row behind
+              a swipe with nothing on screen saying so. */}
+          <div className="min-w-0 sm:min-w-[600px]">
+          <div className="hidden sm:block p-4 border-b border-site-border bg-site-bg/50">
             <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 text-xs font-semibold text-site-text-dim uppercase tracking-wider">
               <div>{t("col-user", { defaultValue: "User" })}</div>
               <div className="w-20 text-center">{t("col-verified", { defaultValue: "Verified" })}</div>
@@ -233,8 +237,8 @@ function AdminUsersPage() {
               const secondaryLine =
                 user.email ?? (user.isBot ? t("bot-no-email", { defaultValue: "Automated account" }) : null);
               return (
-                <div key={user.id} ref={isLast ? lastUserElementRef : null} className="p-4 flex items-center gap-4 hover:bg-site-surface-hover transition-colors">
-                  <div className="flex-1 flex items-center gap-4 min-w-0">
+                <div key={user.id} ref={isLast ? lastUserElementRef : null} className="p-4 flex flex-wrap items-center gap-4 hover:bg-site-surface-hover transition-colors">
+                  <div className="flex-1 basis-full sm:basis-auto flex items-center gap-4 min-w-0">
                     <div className="w-10 h-10 rounded-full bg-site-bg overflow-hidden flex-shrink-0 border border-site-border">
                       {user.image ? (
                         <img src={user.image} alt={user.name} loading="lazy" className="w-full h-full object-cover" />

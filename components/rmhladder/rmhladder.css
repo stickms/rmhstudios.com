@@ -447,6 +447,66 @@
   }
 }
 
+/* Phones: the companies table becomes a list of cards.
+   Seven columns in 390px gave the COMPANY cell about 90px, which is narrower
+   than the words in it — "Corporate Strategy" came out as "CORPOR/ATE/STRATE/GY"
+   — and the remaining columns were unreadable slivers. A horizontal scroller
+   would have hidden five of the seven columns behind a swipe with no affordance
+   saying so. Each row becomes a card and each cell a labelled line instead; the
+   label comes from `data-label`, which mirrors the `<th>` the header hides. The
+   markup stays a real table, so the semantics and the screen-reader
+   row/column associations are untouched. */
+@media (max-width: 767.98px) {
+  .rl-companies-table thead {
+    /* Not `display: none` — that drops the header from the a11y tree too. */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .rl-companies-table,
+  .rl-companies-table tbody,
+  .rl-companies-table tr,
+  .rl-companies-table td {
+    display: block;
+    width: 100%;
+  }
+  .rl-companies-table tr {
+    margin-bottom: var(--site-section-gap, 12px);
+    border: 1px solid var(--hairline);
+    border-radius: var(--site-radius);
+    padding: 4px 0;
+  }
+  .rl-companies-table td {
+    display: grid;
+    grid-template-columns: minmax(5.5rem, 34%) 1fr;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-bottom: 0;
+  }
+  .rl-companies-table td + td {
+    border-top: 1px solid color-mix(in srgb, var(--hairline) 60%, transparent);
+  }
+  .rl-companies-table td::before {
+    content: attr(data-label);
+    font-family: var(--font-data);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--slate);
+  }
+  /* The expanded sources panel is a full-width detail, not a labelled field. */
+  .rl-companies-table .rl-source-detail td {
+    display: block;
+  }
+  .rl-companies-table .rl-source-detail td::before {
+    content: none;
+  }
+}
+
 .rl-jobs-table {
   width: 100%;
   border-collapse: collapse;
