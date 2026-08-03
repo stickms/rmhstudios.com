@@ -226,7 +226,8 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/settings/privacy': 'personal',
   '/settings/profile': 'personal',
   '/settings/security': 'personal',
-  '/studio/themes': 'personal',
+  '/settings/themes': 'personal',
+  '/studio/themes': 'redirect', // → /settings/themes
   '/user-builds/manage': 'personal',
   '/user-builds/submit': 'auth-gated',
   '/v/new': 'auth-gated',

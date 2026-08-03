@@ -4,22 +4,18 @@
  * account sections prompt for sign-in.
  */
 
+import { useMemo, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   Palette,
   Languages,
   Bell,
   User,
-  KeyRound,
-  ShieldUser,
-  Wallet,
-  Zap,
   ChevronRight,
   Sparkles,
   LayoutDashboard,
-  SlidersHorizontal,
-  Gavel,
   type LucideIcon,
 } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -28,6 +24,12 @@ import { AccentPicker } from '@/components/settings/AccentPicker';
 import { NotificationPrefsPanel } from '@/components/settings/NotificationPrefsPanel';
 import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
 import { useSession } from '@/components/Providers';
+import { SearchField } from '@/components/ui/search-field';
+import {
+  SETTINGS_DESTINATIONS,
+  filterSettings,
+  type SettingsGroup,
+} from '@/lib/settings-nav';
 
 export const Route = createFileRoute('/_site/settings/')({
   head: () => ({
@@ -96,11 +98,31 @@ function AccountLink({
   );
 }
 
+const GROUP_ORDER: SettingsGroup[] = ['personalization', 'content', 'account'];
+
+const GROUP_LABELS: Record<SettingsGroup, (t: TFunction) => string> = {
+  personalization: (t) => t('settings-group-personalization', { defaultValue: 'Personalization' }),
+  content: (t) => t('settings-group-content', { defaultValue: 'Content & audience' }),
+  account: (t) => t('settings-group-account', { defaultValue: 'Account' }),
+};
+
 function SettingsPage() {
   const { t } = useTranslation('feed');
   const { data: session, isPending } = useSession();
   const signedIn = !!session?.user;
   const handle = (session?.user as { handle?: string | null } | undefined)?.handle;
+  const [query, setQuery] = useState('');
+
+  // Signed-out visitors see only what they can actually change (theme,
+  // language, accessibility) rather than a list of links to a sign-in prompt.
+  const groups = useMemo(() => {
+    const visible = SETTINGS_DESTINATIONS.filter((d) => signedIn || !d.requiresAuth);
+    const matched = filterSettings(visible, query);
+    return GROUP_ORDER.map((group) => ({
+      group,
+      items: matched.filter((d) => d.group === group),
+    })).filter((g) => g.items.length > 0);
+  }, [signedIn, query]);
 
   const signInPrompt = (
     <p className="text-sm text-site-text-muted">
@@ -190,34 +212,71 @@ function SettingsPage() {
           <LanguageSwitcher />
         </SectionCard>
 
+        {/* Every settings destination, from one catalog (`lib/settings-nav.ts`)
+            and filterable. The hub used to hand-list six of the eleven
+            destinations, so appearance, content preferences, close friends and
+            the theme studio were reachable only by knowing the URL — a new
+            settings page was a route, and updating this page was a separate
+            step someone had to remember. */}
         <SectionCard
-          id="personalization"
+          id="all-settings"
           icon={LayoutDashboard}
-          title={t('settings-personalization', { defaultValue: 'Personalization' })}
-          subtitle={t('settings-personalization-hint', {
-            defaultValue: 'Arrange your home widgets and sidebar.',
+          title={t('settings-all', { defaultValue: 'All settings' })}
+          subtitle={t('settings-all-hint', {
+            defaultValue: 'Everything you can change, in one list.',
           })}
         >
-          <div className="-mx-3 flex flex-col">
-            <AccountLink
-              to="/settings/layout"
-              icon={SlidersHorizontal}
-              label={t('settings-layout', { defaultValue: 'Home & sidebar layout' })}
-              hint={t('settings-layout-hint', {
-                defaultValue: 'Reorder home widgets; pin or hide sidebar items',
+          <SearchField
+            value={query}
+            onValueChange={setQuery}
+            placeholder={t('settings-search-placeholder', {
+              defaultValue: 'Search settings — try "dark mode" or "export"',
+            })}
+            aria-label={t('settings-search-label', { defaultValue: 'Search settings' })}
+          />
+
+          {!isPending && !signedIn && <div className="mt-3">{signInPrompt}</div>}
+
+          {groups.map(({ group, items }) => (
+            <div key={group} className="mt-4">
+              <h3 className="mb-1 text-xs font-bold uppercase tracking-wider text-site-text-muted">
+                {GROUP_LABELS[group](t)}
+              </h3>
+              <div className="-mx-3 flex flex-col">
+                {items.map((d) => (
+                  <AccountLink
+                    key={d.id}
+                    to={d.to}
+                    icon={d.icon}
+                    label={t(`settings-nav-${d.id}`, { defaultValue: d.label })}
+                    hint={t(`settings-nav-${d.id}-hint`, { defaultValue: d.hint })}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {signedIn && handle && !query && (
+            <div className="-mx-3 mt-4 border-t border-site-border pt-2">
+              <AccountLink
+                to={`/u/${handle}`}
+                icon={User}
+                label={t('settings-account-profile', { defaultValue: 'View your profile' })}
+                hint={t('settings-account-profile-hint', {
+                  defaultValue: 'Your public page and posts',
+                })}
+              />
+            </div>
+          )}
+
+          {groups.length === 0 && (
+            <p className="mt-4 text-sm text-site-text-muted">
+              {t('settings-search-empty', {
+                query,
+                defaultValue: 'Nothing in settings matches "{{query}}".',
               })}
-            />
-            <AccountLink
-              to="/settings/notifications"
-              icon={Bell}
-              label={t('settings-notifications-advanced', {
-                defaultValue: 'Notification channels & quiet hours',
-              })}
-              hint={t('settings-notifications-advanced-hint', {
-                defaultValue: 'Per-category push, in-app, and email',
-              })}
-            />
-          </div>
+            </p>
+          )}
         </SectionCard>
 
         <SectionCard
@@ -229,72 +288,6 @@ function SettingsPage() {
           })}
         >
           {!isPending && !signedIn ? signInPrompt : <NotificationPrefsPanel />}
-        </SectionCard>
-
-        <SectionCard
-          id="account"
-          icon={User}
-          title={t('settings-account', { defaultValue: 'Account' })}
-          subtitle={t('settings-account-hint', {
-            defaultValue: 'Profile, security, privacy, and your wallet.',
-          })}
-        >
-          {!isPending && !signedIn ? (
-            signInPrompt
-          ) : (
-            <div className="-mx-3 flex flex-col">
-              {handle && (
-                <AccountLink
-                  to={`/u/${handle}`}
-                  icon={User}
-                  label={t('settings-account-profile', { defaultValue: 'Profile' })}
-                  hint={t('settings-account-profile-hint', {
-                    defaultValue: 'Your public page and posts',
-                  })}
-                />
-              )}
-              <AccountLink
-                to="/settings/security"
-                icon={KeyRound}
-                label={t('settings-account-security', { defaultValue: 'Passkeys & security' })}
-                hint={t('settings-account-security-hint', {
-                  defaultValue: 'Passkeys, sessions, and devices',
-                })}
-              />
-              <AccountLink
-                to="/settings/privacy"
-                icon={ShieldUser}
-                label={t('settings-account-privacy', { defaultValue: 'Privacy & data' })}
-                hint={t('settings-account-privacy-hint', {
-                  defaultValue: 'Export or delete your data',
-                })}
-              />
-              <AccountLink
-                to="/settings/account-status"
-                icon={Gavel}
-                label={t('settings-account-status', { defaultValue: 'Account status' })}
-                hint={t('settings-account-status-hint', {
-                  defaultValue: 'Standing, strikes, and appeals',
-                })}
-              />
-              <AccountLink
-                to="/wallet"
-                icon={Wallet}
-                label={t('settings-account-wallet', { defaultValue: 'Wallet' })}
-                hint={t('settings-account-wallet-hint', {
-                  defaultValue: 'Coins, transactions, and memberships',
-                })}
-              />
-              <AccountLink
-                to="/progress"
-                icon={Zap}
-                label={t('settings-account-progress', { defaultValue: 'Progress' })}
-                hint={t('settings-account-progress-hint', {
-                  defaultValue: 'XP, streaks, quests, and achievements',
-                })}
-              />
-            </div>
-          )}
         </SectionCard>
       </div>
     </PageLayout>

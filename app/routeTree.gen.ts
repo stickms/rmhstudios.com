@@ -249,6 +249,7 @@ import { Route as SiteSettingsNotificationsRouteImport } from './routes/_site/se
 import { Route as SiteSettingsPrivacyRouteImport } from './routes/_site/settings/privacy'
 import { Route as SiteSettingsProfileRouteImport } from './routes/_site/settings/profile'
 import { Route as SiteSettingsSecurityRouteImport } from './routes/_site/settings/security'
+import { Route as SiteSettingsThemesRouteImport } from './routes/_site/settings/themes'
 import { Route as SiteSpacesIndexRouteImport } from './routes/_site/spaces.index'
 import { Route as SiteSpacesIdRouteImport } from './routes/_site/spaces.$id'
 import { Route as SiteStoreIndexRouteImport } from './routes/_site/store/index'
@@ -1948,6 +1949,11 @@ const SiteSettingsProfileRoute = SiteSettingsProfileRouteImport.update({
 const SiteSettingsSecurityRoute = SiteSettingsSecurityRouteImport.update({
   id: '/settings/security',
   path: '/settings/security',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteSettingsThemesRoute = SiteSettingsThemesRouteImport.update({
+  id: '/settings/themes',
+  path: '/settings/themes',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteSpacesIndexRoute = SiteSpacesIndexRouteImport.update({
@@ -4745,6 +4751,7 @@ export interface FileRoutesByFullPath {
   '/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/settings/profile': typeof SiteSettingsProfileRoute
   '/settings/security': typeof SiteSettingsSecurityRoute
+  '/settings/themes': typeof SiteSettingsThemesRoute
   '/spaces/$id': typeof SiteSpacesIdRoute
   '/store/$userid': typeof SiteStoreUseridRoute
   '/studio/themes': typeof SiteStudioThemesRoute
@@ -5457,6 +5464,7 @@ export interface FileRoutesByTo {
   '/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/settings/profile': typeof SiteSettingsProfileRoute
   '/settings/security': typeof SiteSettingsSecurityRoute
+  '/settings/themes': typeof SiteSettingsThemesRoute
   '/spaces/$id': typeof SiteSpacesIdRoute
   '/store/$userid': typeof SiteStoreUseridRoute
   '/studio/themes': typeof SiteStudioThemesRoute
@@ -6195,6 +6203,7 @@ export interface FileRoutesById {
   '/_site/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/_site/settings/profile': typeof SiteSettingsProfileRoute
   '/_site/settings/security': typeof SiteSettingsSecurityRoute
+  '/_site/settings/themes': typeof SiteSettingsThemesRoute
   '/_site/spaces/$id': typeof SiteSpacesIdRoute
   '/_site/store/$userid': typeof SiteStoreUseridRoute
   '/_site/studio/themes': typeof SiteStudioThemesRoute
@@ -6933,6 +6942,7 @@ export interface FileRouteTypes {
     | '/settings/privacy'
     | '/settings/profile'
     | '/settings/security'
+    | '/settings/themes'
     | '/spaces/$id'
     | '/store/$userid'
     | '/studio/themes'
@@ -7645,6 +7655,7 @@ export interface FileRouteTypes {
     | '/settings/privacy'
     | '/settings/profile'
     | '/settings/security'
+    | '/settings/themes'
     | '/spaces/$id'
     | '/store/$userid'
     | '/studio/themes'
@@ -8382,6 +8393,7 @@ export interface FileRouteTypes {
     | '/_site/settings/privacy'
     | '/_site/settings/profile'
     | '/_site/settings/security'
+    | '/_site/settings/themes'
     | '/_site/spaces/$id'
     | '/_site/store/$userid'
     | '/_site/studio/themes'
@@ -10992,6 +11004,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/security'
       fullPath: '/settings/security'
       preLoaderRoute: typeof SiteSettingsSecurityRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/settings/themes': {
+      id: '/_site/settings/themes'
+      path: '/settings/themes'
+      fullPath: '/settings/themes'
+      preLoaderRoute: typeof SiteSettingsThemesRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/spaces/': {
@@ -14623,6 +14642,7 @@ interface SiteRouteChildren {
   SiteSettingsPrivacyRoute: typeof SiteSettingsPrivacyRoute
   SiteSettingsProfileRoute: typeof SiteSettingsProfileRoute
   SiteSettingsSecurityRoute: typeof SiteSettingsSecurityRoute
+  SiteSettingsThemesRoute: typeof SiteSettingsThemesRoute
   SiteSpacesIdRoute: typeof SiteSpacesIdRoute
   SiteStoreUseridRoute: typeof SiteStoreUseridRoute
   SiteStudioThemesRoute: typeof SiteStudioThemesRoute
@@ -14724,6 +14744,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteSettingsPrivacyRoute: SiteSettingsPrivacyRoute,
   SiteSettingsProfileRoute: SiteSettingsProfileRoute,
   SiteSettingsSecurityRoute: SiteSettingsSecurityRoute,
+  SiteSettingsThemesRoute: SiteSettingsThemesRoute,
   SiteSpacesIdRoute: SiteSpacesIdRoute,
   SiteStoreUseridRoute: SiteStoreUseridRoute,
   SiteStudioThemesRoute: SiteStudioThemesRoute,
