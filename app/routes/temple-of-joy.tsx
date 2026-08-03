@@ -3,23 +3,14 @@ import { createFileRoute, Outlet } from '@tanstack/react-router';
 /**
  * Temple of Joy shell.
  *
- * The display face is declared in the document head rather than as a `<link>`
- * in the component body: a stylesheet link rendered mid-body is only honoured
- * by some engines, and even where it works the font arrives after first paint,
- * so the title visibly swaps face in front of the player. `preconnect` opens
- * the connection while the route chunk is still downloading, and the weight
- * list is trimmed to the four the game actually sets.
+ * No font links. The game used to pull Cormorant Garamond from Google Fonts
+ * here — two preconnects and a render-blocking stylesheet — for a face nothing
+ * else on the site uses, because its display type was a serif of its own
+ * choosing. It reads `--site-font-display` / `--site-font-body` now, like every
+ * other page, and both resolve from `globals.css` before this route is reached.
+ * So the round trip is gone and so is the swap: the title no longer changes
+ * face in front of the player after first paint.
  */
 export const Route = createFileRoute('/temple-of-joy')({
-  head: () => ({
-    links: [
-      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-      { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
-      {
-        rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&display=swap',
-      },
-    ],
-  }),
   component: () => <Outlet />,
 });

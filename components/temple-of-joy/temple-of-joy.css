@@ -67,9 +67,68 @@
   --toj-good: #4b7d4a;
   --toj-warn: #a75437;
 
-  /* Type. Cormorant is loaded by the route's head. */
-  --toj-serif: 'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
-  --toj-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /**
+   * Type — the site's contract, not a second opinion on it.
+   *
+   * These were re-typed stacks, and both disagreed with the rest of the site.
+   * The body face put `Inter` FIRST while `--site-font-body` puts
+   * `-apple-system, BlinkMacSystemFont, 'SF Pro Text'` first — globals.css calls
+   * San Francisco "the single biggest Apple cue" — so on every Apple device the
+   * game rendered in Inter while the page that linked to it rendered in SF Pro.
+   * Different letterforms, different rhythm, one tap apart.
+   *
+   * The display face was Cormorant Garamond, which nothing else on the site
+   * uses and which the route pulled from Google Fonts with two preconnects and
+   * a render-blocking stylesheet. The liquid-globe language has no serif: its
+   * display face is the same SF/Inter stack as its body, set apart by size,
+   * weight and tracking rather than by a second family.
+   *
+   * Read through `var()` rather than copied, so a theme that changes its faces
+   * changes the game's too — matching by construction instead of by upkeep. The
+   * fallbacks are the site's own defaults, for the case where this stylesheet is
+   * loaded without globals.css.
+   */
+  --toj-display: var(
+    --site-font-display,
+    -apple-system,
+    BlinkMacSystemFont,
+    'SF Pro Display',
+    'Inter Variable',
+    'Inter',
+    system-ui,
+    sans-serif
+  );
+  --toj-sans: var(
+    --site-font-body,
+    -apple-system,
+    BlinkMacSystemFont,
+    'SF Pro Text',
+    'Inter Variable',
+    'Inter',
+    system-ui,
+    sans-serif
+  );
+
+  /**
+   * The tracking that comes with the face.
+   *
+   * SF Pro and Inter are drawn to be set tight at display sizes; the site says
+   * so once in `--site-letter-spacing`. Cormorant was not, which is why the
+   * counter carried its own -0.015em. Same source as the faces now.
+   */
+  --toj-display-tracking: var(--site-letter-spacing, -0.022em);
+
+  /**
+   * Tabular figures, which the old face could not offer.
+   *
+   * Every number in an idle game changes several times a second, and Cormorant
+   * sets proportional old-style figures — a `1` is narrower than a `0`, so the
+   * counter's width jittered on every tick and the price column shifted under a
+   * thumb already reaching for it. SF Pro and Inter both ship tabular figures;
+   * this turns them on for the readouts, and only for the readouts, since prose
+   * reads better proportional.
+   */
+  --toj-figures: tabular-nums;
 
   /* Shape. Generous radii: the room is meant to feel sat-in, and a 6px corner
      reads as a form field. Everything that holds content is soft; only the
@@ -611,6 +670,29 @@
   }
 }
 
+/**
+ * Everything that ticks, on tabular figures.
+ *
+ * Listed rather than applied wholesale: a note or a name that happens to
+ * contain a digit reads better with proportional figures, so only the readouts
+ * — the ones whose width must not change while you look at them — opt in.
+ */
+.toj-joy,
+.toj-rate,
+.toj-chip,
+.toj-burst,
+.toj-panel-sub,
+.toj-row-price,
+.toj-row-count,
+.toj-setting-value,
+.toj-slider-value,
+.toj-dialog-figure,
+.toj-bowl-dial-value,
+.toj-pin-name b,
+.toj-stall-effect {
+  font-variant-numeric: var(--toj-figures);
+}
+
 /* ══════════════════════════════════════════════════════════════════════════
    4. The head — the counter
    ══════════════════════════════════════════════════════════════════════════ */
@@ -684,11 +766,14 @@
   grid-column: 1;
   grid-row: 1;
   display: block;
-  font-family: var(--toj-serif);
+  font-family: var(--toj-display);
   font-size: clamp(1.7rem, 5.5vw, 3rem);
-  font-weight: 500;
+  /* 600, not 500. Cormorant is a high-contrast old-style face that reads heavy
+     at 500; SF Pro and Inter are optical-neutral and read light there, and this
+     is the largest thing on the screen. */
+  font-weight: 600;
   line-height: 1.05;
-  letter-spacing: -0.015em;
+  letter-spacing: var(--toj-display-tracking);
   /* A joy figure broken across two lines is unreadable at a glance, which is
      the only thing it is for. It clips before it wraps. */
   min-width: 0;
@@ -1258,7 +1343,7 @@
 .toj-burst {
   position: absolute;
   pointer-events: none;
-  font-family: var(--toj-serif);
+  font-family: var(--toj-display);
   font-size: 1.35rem;
   font-weight: 600;
   color: var(--toj-gold-deep);
@@ -1995,9 +2080,10 @@
 }
 
 .toj-panel-title {
-  font-family: var(--toj-serif);
+  font-family: var(--toj-display);
   font-size: 1.28rem;
   font-weight: 600;
+  letter-spacing: var(--toj-display-tracking);
 }
 
 .toj-panel-sub {
@@ -2054,9 +2140,11 @@
   padding: 2rem 0;
   text-align: center;
   color: var(--toj-ink-faint);
-  font-family: var(--toj-serif);
+  font-family: var(--toj-display);
   font-size: 1.02rem;
-  font-style: italic;
+  /* No italic. In an old-style serif it read as a quiet aside; in a neutral
+     sans it reads as emphasis, which is the opposite of what an empty state
+     wants. The muted ink is what says "nothing here yet". */
 }
 
 /* ── Rows ── */
@@ -2198,10 +2286,14 @@ button.toj-row:active:not(:disabled) {
 }
 
 .toj-row-price {
-  font-family: var(--toj-serif);
+  font-family: var(--toj-display);
   font-size: 0.98rem;
-  font-weight: 600;
+  /* The name beside it is 550. At 600 in the same family the two read as one
+     phrase — the old serif separated them for free and no longer does, so the
+     weight has to. */
+  font-weight: 700;
   line-height: 1.15;
+  letter-spacing: var(--toj-display-tracking);
 }
 
 .toj-row-count {
@@ -2394,7 +2486,7 @@ button.toj-row:active:not(:disabled) {
 }
 
 .toj-setting-value {
-  font-family: var(--toj-serif);
+  font-family: var(--toj-display);
   font-size: 0.98rem;
   font-weight: 600;
 }
@@ -2633,7 +2725,7 @@ button.toj-row:active:not(:disabled) {
 
 .toj-stall-name {
   display: block;
-  font-family: var(--toj-serif);
+  font-family: var(--toj-display);
   font-size: 1.02rem;
   font-weight: 600;
   line-height: 1.2;
@@ -2783,9 +2875,10 @@ button.toj-row:active:not(:disabled) {
 }
 
 .toj-dialog-title {
-  font-family: var(--toj-serif);
+  font-family: var(--toj-display);
   font-size: 1.55rem;
   font-weight: 600;
+  letter-spacing: var(--toj-display-tracking);
   line-height: 1.15;
   margin: 0 0 0.35rem;
 }
@@ -2797,9 +2890,10 @@ button.toj-row:active:not(:disabled) {
 }
 
 .toj-dialog-figure {
-  font-family: var(--toj-serif);
+  font-family: var(--toj-display);
   font-size: 2.1rem;
   font-weight: 600;
+  letter-spacing: var(--toj-display-tracking);
   color: var(--toj-gold-deep);
   margin: 0.6rem 0 0.1rem;
 }
@@ -2877,9 +2971,10 @@ button.toj-row:active:not(:disabled) {
 }
 
 .toj-bowl-title {
-  font-family: var(--toj-serif);
+  font-family: var(--toj-display);
   font-size: 1.5rem;
   font-weight: 600;
+  letter-spacing: var(--toj-display-tracking);
   line-height: 1.1;
   margin: 0;
 }
@@ -2942,9 +3037,9 @@ button.toj-row:active:not(:disabled) {
   margin: 0;
   padding: var(--toj-gutter);
   text-align: center;
-  font-family: var(--toj-serif);
+  font-family: var(--toj-display);
   font-size: 1rem;
-  font-style: italic;
+  /* Italic was a serif idiom — see `.toj-empty`. */
   color: var(--toj-ink-faint);
 }
 
@@ -3041,7 +3136,7 @@ button.toj-row:active:not(:disabled) {
 .toj-bowl-status {
   margin: 0;
   text-align: center;
-  font-family: var(--toj-serif);
+  font-family: var(--toj-display);
   font-size: 1.05rem;
   color: var(--toj-ink);
   min-height: 1.5rem;
@@ -3276,9 +3371,10 @@ button.toj-row:active:not(:disabled) {
 }
 
 .toj-loading-title {
-  font-family: var(--toj-serif);
+  font-family: var(--toj-display);
   font-size: clamp(1.9rem, 6vw, 2.8rem);
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: var(--toj-display-tracking);
   margin: 0;
 }
 
