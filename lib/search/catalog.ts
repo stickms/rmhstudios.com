@@ -73,7 +73,7 @@ export const SITE_DESTINATIONS: SiteDestination[] = [
   {
     id: 'bookmarks',
     title: 'Bookmarks',
-    href: '/bookmarks',
+    href: '/saves',
     iconName: 'Bookmark',
     keywords: 'saved posts read later',
     requiresAuth: true,

@@ -31,7 +31,7 @@ export const Route = createFileRoute('/api/rmharks/$id/insights')({
 
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
         const [bookmarks, unlockAgg, recentLikes] = await Promise.all([
-          prisma.rMHarkBookmark.count({ where: { rmheetId: id } }),
+          prisma.savedItem.count({ where: { entityType: 'rmhark', entityId: id } }),
           post.unlockPrice
             ? prisma.postUnlock.aggregate({
                 where: { rmheetId: id },

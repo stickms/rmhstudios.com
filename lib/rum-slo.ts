@@ -19,7 +19,7 @@ const CORE_PREFIXES = [
   '/profile',
   '/u',
   '/messages',
-  '/bookmarks',
+  '/saves',
   '/search',
 ];
 const CONTENT_PREFIXES = ['/blog', '/news', '/library', '/textbook', '/indonesia-history'];

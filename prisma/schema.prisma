@@ -332,22 +332,22 @@ model User {
   sharedMoments        SharedMoment[]
 
   // ─── Parity / QOL / customization (2026-07-20 design) ────────────────────
-  saveFolders        SaveFolder[]
-  savedItems         SavedItem[]
-  historyEntries     HistoryEntry[]
-  contentAwardsGiven ContentAward[]
-  wishlistEntries    WishlistEntry[]
-  closeFriendsOwned  CloseFriend[]  @relation("CircleOwner")
-  closeFriendOf      CloseFriend[]  @relation("CircleMember")
-  userLists          UserList[]
+  saveFolders         SaveFolder[]
+  savedItems          SavedItem[]
+  historyEntries      HistoryEntry[]
+  contentAwardsGiven  ContentAward[]
+  wishlistEntries     WishlistEntry[]
+  closeFriendsOwned   CloseFriend[]    @relation("CircleOwner")
+  closeFriendOf       CloseFriend[]    @relation("CircleMember")
+  userLists           UserList[]
   userListMemberships UserListMember[]
-  feedSignals        FeedSignal[]
-  gameReviews        GameReview[]
-  gameReviewVotes    GameReviewVote[]
-  gameGuides         GameGuide[]
-  userThemes         UserTheme[]
-  profileLayout      ProfileLayout?
-  savedSearches      SavedSearch[]
+  feedSignals         FeedSignal[]
+  gameReviews         GameReview[]
+  gameReviewVotes     GameReviewVote[]
+  gameGuides          GameGuide[]
+  userThemes          UserTheme[]
+  profileLayout       ProfileLayout?
+  savedSearches       SavedSearch[]
 
   @@index([isBot])
   @@index([followerCount])
@@ -361,13 +361,13 @@ model User {
 // (the default) — rows are created on first save from the preferences panel.
 // Moderation notices (SYSTEM/strike) are always delivered regardless.
 model NotificationPreference {
-  userId   String  @id
-  likes    Boolean @default(true)
-  comments Boolean @default(true) // includes replies
-  follows  Boolean @default(true)
-  mentions Boolean @default(true)
-  reposts  Boolean @default(true)
-  system   Boolean @default(true) // achievements, levels, coins, …
+  userId      String  @id
+  likes       Boolean @default(true)
+  comments    Boolean @default(true) // includes replies
+  follows     Boolean @default(true)
+  mentions    Boolean @default(true)
+  reposts     Boolean @default(true)
+  system      Boolean @default(true) // achievements, levels, coins, …
   // Weekly digest email (opt-in). Missing row / unset = off; users turn it on
   // in settings. Kept opt-in for deliverability + consent hygiene.
   emailDigest Boolean @default(false)
@@ -392,21 +392,21 @@ model NotificationPreference {
 // knobs (density, font scale, …) can be added later as additional nullable
 // columns without a data backfill. A missing row = all defaults.
 model AppearancePreference {
-  userId              String  @id
-  style               String? // site theme id (see SITE_STYLES); null → DEFAULT_STYLE (Glass Dark)
-  accent              String? // accent preset id (see ACCENT_PRESETS); null → theme's own accent
-  reduceTransparency  Boolean @default(false) // collapse the glass to opaque surfaces
+  userId             String  @id
+  style              String? // site theme id (see SITE_STYLES); null → DEFAULT_STYLE (Glass Dark)
+  accent             String? // accent preset id (see ACCENT_PRESETS); null → theme's own accent
+  reduceTransparency Boolean @default(false) // collapse the glass to opaque surfaces
   // Appearance & accessibility suite (§13). Null = built-in default.
-  fontScale    Int? // 875 | 1000 | 1125 | 1250 (per-mille; avoids floats)
-  density      String? @db.VarChar(8) // 'cozy' | 'compact'
-  readableFont Boolean @default(false)
-  customAccent String? @db.VarChar(7) // '#rrggbb'; wins over `accent` preset
-  reduceMotion Boolean @default(false)
-  glassLevel   Int? // glass clarity slider (§5.46): 0 Opaque · 1 Calm · 2 Default · 3 Airy · 4 Clear; null → 2
+  fontScale          Int? // 875 | 1000 | 1125 | 1250 (per-mille; avoids floats)
+  density            String? @db.VarChar(8) // 'cozy' | 'compact'
+  readableFont       Boolean @default(false)
+  customAccent       String? @db.VarChar(7) // '#rrggbb'; wins over `accent` preset
+  reduceMotion       Boolean @default(false)
+  glassLevel         Int? // glass clarity slider (§5.46): 0 Opaque · 1 Calm · 2 Default · 3 Airy · 4 Clear; null → 2
   /// Colour-vision deficiency mode: 'deuteranopia' | 'protanopia' |
   /// 'tritanopia'; null/'none' → the untouched palette. Retints the semantic
   /// success/danger/warning tokens only.
-  colorVision  String? @db.VarChar(16)
+  colorVision        String? @db.VarChar(16)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -596,8 +596,8 @@ model LaundryPlayer {
   versusPlayed Int @default(0)
   versusBest   Int @default(0)
   // Career stats, shown on the results screen and the leaderboard detail rows.
-  bestCombo   Int @default(0)
-  totalSorted Int @default(0)
+  bestCombo    Int @default(0)
+  totalSorted  Int @default(0)
 
   // Link to Auth User
   userId String? @unique
@@ -2208,20 +2208,20 @@ model DeveloperApiKey {
 /// log — one row per key per day, written from an in-process buffer so a busy
 /// key costs one write per flush interval rather than one per request.
 model ApiUsageDaily {
-  id  String @id @default(cuid())
-  keyId String
+  id           String   @id @default(cuid())
+  keyId        String
   /// UTC day as "YYYYMMDD" — the same bucket the rate limiter uses, so the two
   /// can never disagree about which day a request belongs to.
-  day String @db.VarChar(8)
+  day          String   @db.VarChar(8)
   /// Requests served.
-  requests Int @default(0)
+  requests     Int      @default(0)
   /// Cost-weighted units drawn against the daily quota (heavy endpoints > 1).
-  units Int @default(0)
+  units        Int      @default(0)
   /// 4xx and 5xx kept apart: a client integrating badly and a server failing
   /// are different problems and must not sum into one number.
-  clientErrors Int @default(0)
-  serverErrors Int @default(0)
-  updatedAt DateTime @updatedAt
+  clientErrors Int      @default(0)
+  serverErrors Int      @default(0)
+  updatedAt    DateTime @updatedAt
 
   key DeveloperApiKey @relation(fields: [keyId], references: [id], onDelete: Cascade)
 
@@ -2611,18 +2611,18 @@ model GroupPollVote {
 
 /// RMHStudy flashcard deck (#31). Decks are personal but can be shared publicly.
 model FlashcardDeck {
-  id          String   @id @default(cuid())
-  userId      String
-  title       String   @db.VarChar(100)
-  description String?  @db.VarChar(500)
-  isPublic    Boolean  @default(false)
-  cardCount   Int      @default(0)
+  id           String   @id @default(cuid())
+  userId       String
+  title        String   @db.VarChar(100)
+  description  String?  @db.VarChar(500)
+  isPublic     Boolean  @default(false)
+  cardCount    Int      @default(0)
   // Set when this deck was cloned from a public deck (marketplace). Provenance +
   // the "you already added this deck" guard. Not a relation (the source may be
   // deleted); it just records the source deck id.
   clonedFromId String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   cards Flashcard[]
@@ -4189,6 +4189,10 @@ model UserMute {
 }
 
 // ─── Bookmarks ────────────────────────────────────────────────────────────
+/// DEPRECATED — folded into `SavedItem` (entityType 'rmhark') by migration
+/// 20260803210000. Nothing reads or writes this table; the rows are kept for one
+/// deploy so the change is reversible without a restore, then the table and this
+/// model should be dropped. Do not add callers.
 model RMHarkBookmark {
   id        String   @id @default(cuid())
   userId    String
@@ -4619,23 +4623,23 @@ model UserSeasonProgress {
 /// Scheduled posts are materialized into real RMHarks lazily by the publisher
 /// once their time is due. `publishedId` links to the created post afterwards.
 model ScheduledPost {
-  id          String         @id @default(cuid())
-  userId      String
-  content     String         @db.Text
-  gifUrl      String?        @db.Text
-  imageUrls   String[]       @default([])
+  id           String             @id @default(cuid())
+  userId       String
+  content      String             @db.Text
+  gifUrl       String?            @db.Text
+  imageUrls    String[]           @default([])
   // Per-image alt text (accessibility), aligned by index with imageUrls.
-  imageAlts   String[]       @default([])
-  audience    RMHarkAudience @default(PUBLIC)
+  imageAlts    String[]           @default([])
+  audience     RMHarkAudience     @default(PUBLIC)
   isSensitive  Boolean            @default(false)
   replyControl RMHarkReplyControl @default(EVERYONE)
-  unlockPrice Int?
-  communityId String?
-  poll        Json? // { question, options[], multiSelect, durationHours }
-  scheduledAt DateTime? // null = plain draft
-  publishedId String? // set once published → the created RMHark id
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  unlockPrice  Int?
+  communityId  String?
+  poll         Json? // { question, options[], multiSelect, durationHours }
+  scheduledAt  DateTime? // null = plain draft
+  publishedId  String? // set once published → the created RMHark id
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -5374,14 +5378,14 @@ enum WagerMatchStatus {
 }
 
 model WagerMatch {
-  id         String           @id @default(cuid())
-  gameId     String           @db.VarChar(64) // GameInfo.id / app id; must be wager-eligible
+  id           String           @id @default(cuid())
+  gameId       String           @db.VarChar(64) // GameInfo.id / app id; must be wager-eligible
   challengerId String
-  opponentId String? // null = open challenge anyone may accept
-  stakeCoins Int // per-player stake
-  potCoins   Int              @default(0) // escrowed total (2 × stake once accepted)
-  rakeBps    Int              @default(0) // rake in basis points, taken from the pot on settle
-  status     WagerMatchStatus @default(OPEN)
+  opponentId   String? // null = open challenge anyone may accept
+  stakeCoins   Int // per-player stake
+  potCoins     Int              @default(0) // escrowed total (2 × stake once accepted)
+  rakeBps      Int              @default(0) // rake in basis points, taken from the pot on settle
+  status       WagerMatchStatus @default(OPEN)
 
   // Result reporting
   winnerId                   String?
@@ -5478,11 +5482,11 @@ model TournamentEntrant {
   eliminatedAt DateTime?
   joinedAt     DateTime  @default(now())
 
-  tournament  Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  matchesAsA  TournamentMatch[] @relation("MatchEntrantA")
-  matchesAsB  TournamentMatch[] @relation("MatchEntrantB")
-  matchesWon  TournamentMatch[] @relation("MatchWinner")
+  tournament Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchesAsA TournamentMatch[] @relation("MatchEntrantA")
+  matchesAsB TournamentMatch[] @relation("MatchEntrantB")
+  matchesWon TournamentMatch[] @relation("MatchWinner")
 
   @@unique([tournamentId, userId])
   @@index([tournamentId, seed])
@@ -5807,6 +5811,11 @@ model SavedItem {
 
   @@unique([userId, entityType, entityId])
   @@index([userId, folderId, createdAt(sort: Desc)])
+  // Reverse lookup: "how many people saved this?" — the insights panel counts
+  // saves per post. `RMHarkBookmark` carried an equivalent `@@index([rmheetId])`
+  // and this table inherited its rows without inheriting the index, which would
+  // have turned that count into a full scan of every save on the site.
+  @@index([entityType, entityId])
   @@map("saved_item")
 }
 

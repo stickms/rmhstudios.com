@@ -268,14 +268,23 @@ export interface BookmarkResult {
   bookmarked: boolean;
 }
 
-/** Set the bookmark state of a post idempotently. */
+/**
+ * Set the bookmark state of a post idempotently.
+ *
+ * A bookmark IS a save with `entityType: 'rmhark'`. It used to be its own
+ * table, so a post could be bookmarked and saved independently into two lists
+ * on two pages that did not know about each other; the rows were folded into
+ * `saved_item` by the 20260803210000 migration. The bookmark button is kept as
+ * its own verb because it is one tap with no folder picker — the folder stays
+ * null and the item lands in the default "Saved".
+ */
 export async function setBookmark(
   userId: string,
   postId: string,
   bookmarked: boolean,
 ): Promise<BookmarkResult> {
-  const existing = await prisma.rMHarkBookmark.findUnique({
-    where: { userId_rmheetId: { userId, rmheetId: postId } },
+  const existing = await prisma.savedItem.findUnique({
+    where: { userId_entityType_entityId: { userId, entityType: 'rmhark', entityId: postId } },
     select: { id: true },
   });
 
@@ -285,7 +294,11 @@ export async function setBookmark(
   if (bookmarked) {
     const post = await prisma.rMHark.findUnique({ where: { id: postId }, select: { id: true } });
     if (!post) return { ok: false, found: false, bookmarked: false };
-    await prisma.rMHarkBookmark.create({ data: { userId, rmheetId: postId } });
+    // Not `addSave`: that upsert would move an already-saved post out of the
+    // folder its owner filed it in. A bookmark press must never re-file.
+    await prisma.savedItem.create({
+      data: { userId, entityType: 'rmhark', entityId: postId, folderId: null },
+    });
     void enqueueProgression({
       actorId: userId,
       achievement: 'social.first_bookmark',
@@ -295,14 +308,14 @@ export async function setBookmark(
     return { ok: true, found: true, bookmarked: true };
   }
 
-  await prisma.rMHarkBookmark.delete({ where: { id: existing!.id } });
+  await prisma.savedItem.delete({ where: { id: existing!.id } });
   return { ok: true, found: true, bookmarked: false };
 }
 
 /** Toggle a bookmark (used by the in-app web route). */
 export async function toggleBookmark(userId: string, postId: string): Promise<BookmarkResult> {
-  const existing = await prisma.rMHarkBookmark.findUnique({
-    where: { userId_rmheetId: { userId, rmheetId: postId } },
+  const existing = await prisma.savedItem.findUnique({
+    where: { userId_entityType_entityId: { userId, entityType: 'rmhark', entityId: postId } },
     select: { id: true },
   });
   return setBookmark(userId, postId, !existing);

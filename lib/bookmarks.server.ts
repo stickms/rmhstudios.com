@@ -62,16 +62,32 @@ export async function listBookmarks(
   opts: { cursor?: string | null; limit?: number } = {},
 ): Promise<{ items: FeedItem[]; nextCursor: string | null; hasMore: boolean }> {
   const limit = Math.min(opts.limit ?? 20, 50);
-  const bookmarks = await prisma.rMHarkBookmark.findMany({
-    where: { userId: viewerId, rmhark: { deletedAt: null } },
+  // Bookmarks live in `saved_item` (entityType 'rmhark') since the
+  // 20260803210000 migration folded the old `rmheet_bookmark` table in. That
+  // table is polymorphic, so there is no Prisma relation to `include` — the
+  // posts are fetched by id in a second query and re-ordered to match.
+  const saves = await prisma.savedItem.findMany({
+    where: { userId: viewerId, entityType: 'rmhark' },
     orderBy: { createdAt: 'desc' },
-    take: limit + 1,
+    // Over-fetch: a save whose post was since deleted is dropped below, and
+    // without slack a page of them would return short and stall the cursor.
+    take: (limit + 1) * 2,
     ...(opts.cursor ? { skip: 1, cursor: { id: opts.cursor } } : {}),
-    include: { rmhark: { include: rmharkInclude(viewerId) } },
+    select: { id: true, entityId: true },
   });
 
-  const hasMore = bookmarks.length > limit;
-  const page = hasMore ? bookmarks.slice(0, limit) : bookmarks;
+  const posts = await prisma.rMHark.findMany({
+    where: { id: { in: saves.map((s) => s.entityId) }, deletedAt: null },
+    include: rmharkInclude(viewerId),
+  });
+  const byId = new Map(posts.map((p) => [p.id, p]));
+
+  const live = saves
+    .filter((s) => byId.has(s.entityId))
+    .map((s) => ({ id: s.id, rmhark: byId.get(s.entityId)! }));
+
+  const hasMore = live.length > limit;
+  const page = hasMore ? live.slice(0, limit) : live;
 
   // Bounded reaction summaries for the whole page (two aggregate queries) instead
   // of fetching every reaction row per post (perf audit §2.3).

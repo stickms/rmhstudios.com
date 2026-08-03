@@ -190,10 +190,10 @@ export type ExclusionReason =
 export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   // ── personal / auth-gated ──
   '/analytics': 'personal',
-  '/bookmarks': 'personal',
+  '/bookmarks': 'redirect', // → /saves
   '/drafts': 'personal',
   '/history': 'personal',
-  '/lists': 'personal',
+  '/lists': 'redirect', // → /saves?tab=lists
   '/messages': 'personal',
   '/notifications': 'personal',
   '/progress': 'personal',
@@ -201,7 +201,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/saves': 'personal',
   '/share': 'personal',
   '/wallet': 'personal',
-  '/wishlist': 'personal',
+  '/wishlist': 'redirect', // → /saves?tab=wishlist
   '/wrapped': 'personal',
   '/creator-studio': 'personal',
   '/homes/manage': 'personal',
