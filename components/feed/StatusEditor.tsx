@@ -101,7 +101,7 @@ export function StatusEditor({ initial }: { initial: UserStatus | null }) {
  <button
  type="button"
  onClick={openEditor}
- className="group inline-flex max-w-full items-center"
+ className="touch-target group inline-flex max-w-full items-center"
  aria-label={t('edit-status', { defaultValue:'Edit your status'})}
  >
  <StatusBadge status={status} className="group-hover:border-site-text/40"/>
