@@ -573,3 +573,177 @@ describe('design consistency — one tab-strip grammar (§16.2)', () => {
     ).toEqual([]);
   });
 });
+
+/**
+ * ─────────────────────── the token contract, in CSS ───────────────────────
+ *
+ * Rules 5 and 6 above police raw palette colours and hardcoded radii in `.tsx`.
+ * They never opened a `.css` file, and there are 29,022 lines of them under
+ * `components/` — so `bg-red-600` failed the build while `background: #e11d48`
+ * two directories away did not, and `rounded-xl` failed while
+ * `border-radius: 14px` did not.
+ *
+ * That is most of where the contract actually leaked. `library.css` alone
+ * carries 42 raw hex colours and 33 hardcoded radii; a purchased user theme —
+ * which design.md §6 says must render every component correctly precisely
+ * because none of them knows it exists — reaches none of them.
+ *
+ * The gate is a ratchet, not a cliff. Every existing violation is frozen below
+ * with its count; a file may only get cleaner. New files get zero tolerance.
+ * The games and `--app-*` tiers are exempt here for the same reason they are
+ * exempt from rules 5–7: Temple of Joy is supposed to be candlelit.
+ */
+
+function collectCss(dir: string, out: string[] = []): string[] {
+  let entries;
+  try {
+    entries = readdirSync(join(ROOT, dir), { withFileTypes: true });
+  } catch {
+    return out;
+  }
+  for (const entry of entries) {
+    const rel = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name !== 'node_modules') collectCss(rel, out);
+    } else if (entry.name.endsWith('.css')) {
+      out.push(rel);
+    }
+  }
+  return out;
+}
+
+/** `#abc`, `#abcd`, `#aabbcc`, `#aabbccdd` — but not a 5- or 7-digit run. */
+const CSS_HEX = /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![0-9a-fA-F])/g;
+const CSS_RADIUS = /border-radius:\s*([^;}\n]+)/g;
+
+/**
+ * A radius that should have been a token.
+ *
+ * Exempt: anything already reading a `var(--…)`; `0`; `50%` and the 9999px
+ * idiom, which are *shapes* (a circle, a pill) rather than the theme's corner
+ * rounding — no theme wants a "circle" to stop being a circle.
+ */
+function isThemeableRadius(value: string): boolean {
+  const v = value.trim();
+  if (/var\(|inherit|unset|initial|revert/.test(v)) return false;
+  if (/^0(px|rem|em|%)?$/.test(v)) return false;
+  if (/50%/.test(v) || /\b9{3,}px\b/.test(v)) return false;
+  return /\d/.test(v);
+}
+
+function cssViolations(src: string): { hex: number; radius: number } {
+  const hex = (src.match(CSS_HEX) ?? []).length;
+  let radius = 0;
+  CSS_RADIUS.lastIndex = 0;
+  for (let m = CSS_RADIUS.exec(src); m; m = CSS_RADIUS.exec(src)) {
+    if (isThemeableRadius(m[1])) radius++;
+  }
+  return { hex, radius };
+}
+
+/**
+ * The frozen state, 2026-08-03. Lower a number when you clean a file; delete
+ * the entry when it reaches zero. Never raise one — that is the whole point.
+ *
+ * Suggested order to burn it down: `library.css` first (the Library is a
+ * flagship consumer surface and the worst offender), then
+ * `creator-studio.css`, then the rest.
+ */
+const CSS_DEBT: Record<string, { hex: number; radius: number }> = {
+  'components/library/library.css': { hex: 42, radius: 33 },
+  'components/creator-studio/creator-studio.css': { hex: 32, radius: 5 },
+  'components/rmhtech/rmhtech.css': { hex: 16, radius: 5 },
+  'components/library/album-admin.css': { hex: 12, radius: 10 },
+  'components/library/album-viewer.css': { hex: 7, radius: 3 },
+  'components/creator-studio/storefront.css': { hex: 5, radius: 3 },
+  'components/rmhladder/rmhladder.css': { hex: 0, radius: 14 },
+  'components/feed/feed.css': { hex: 0, radius: 7 },
+  'components/security/security.css': { hex: 0, radius: 4 },
+  'components/rmhcalculator/rmhcalculator.css': { hex: 0, radius: 3 },
+  'components/builds/builds.css': { hex: 2, radius: 2 },
+  'components/library/book-3d.css': { hex: 1, radius: 2 },
+  'components/radial/radial.css': { hex: 2, radius: 0 },
+};
+
+const SITE_CSS = collectCss('components').filter((f) => {
+  const parts = f.split(/[\\/]/);
+  return !FULLSCREEN_TIER_DIRS.has(parts[1] ?? '');
+});
+
+describe('the token contract holds in CSS too', () => {
+  const measured = SITE_CSS.map((file) => ({
+    file: file.split(/[\\/]/).join('/'),
+    ...cssViolations(readFileSync(join(ROOT, file), 'utf8')),
+  }));
+
+  it('scans the site-tier stylesheets at all', () => {
+    // Guards the collector: if `SITE_CSS` ever silently goes empty (a rename, a
+    // changed tier set) every assertion below would pass vacuously.
+    expect(measured.length).toBeGreaterThan(10);
+    expect(measured.map((m) => m.file)).toContain('components/feed/feed.css');
+    expect(measured.map((m) => m.file)).not.toContain(
+      'components/temple-of-joy/temple-of-joy.css',
+    );
+  });
+
+  it('adds no raw hex colour or hardcoded radius to a clean stylesheet', () => {
+    const offenders = measured
+      .filter((m) => !(m.file in CSS_DEBT) && (m.hex > 0 || m.radius > 0))
+      .map((m) => `${m.file} — ${m.hex} hex, ${m.radius} hardcoded radius`);
+    expect(
+      offenders,
+      'Raw colour / radius in a site-tier stylesheet. Use the token contract: ' +
+        '`var(--site-surface)`, `var(--site-accent)`, `var(--site-radius)` and ' +
+        'friends (design.md §2 — "nothing is hardcoded"). A theme nobody on the ' +
+        'team has opened must still render this file correctly, and a hex here ' +
+        'is invisible to every theme, to high contrast, and to the colour-vision ' +
+        'modes. If a value is genuinely domain-fixed (a playing card, a rarity ' +
+        'tier), give it a scoped variable group in globals.css instead.',
+    ).toEqual([]);
+  });
+
+  it('never lets a stylesheet get worse than its frozen count', () => {
+    const regressions: string[] = [];
+    for (const [file, frozen] of Object.entries(CSS_DEBT)) {
+      const now = measured.find((m) => m.file === file);
+      if (!now) continue; // deleted or renamed — the drained check below reports it
+      if (now.hex > frozen.hex) {
+        regressions.push(`${file} — hex ${frozen.hex} → ${now.hex}`);
+      }
+      if (now.radius > frozen.radius) {
+        regressions.push(`${file} — radius ${frozen.radius} → ${now.radius}`);
+      }
+    }
+    expect(
+      regressions,
+      'A stylesheet on the CSS_DEBT list gained violations. The list is a ' +
+        'ratchet: these files are allowed to stay as bad as they are while they ' +
+        'get cleaned up, and are not allowed to get worse. Put new colours and ' +
+        'radii on tokens.',
+    ).toEqual([]);
+  });
+
+  it('drains the debt list as files are cleaned', () => {
+    const stale: string[] = [];
+    for (const [file, frozen] of Object.entries(CSS_DEBT)) {
+      const now = measured.find((m) => m.file === file);
+      if (!now) {
+        stale.push(`${file} — no longer scanned; remove it from CSS_DEBT`);
+        continue;
+      }
+      if (now.hex === 0 && now.radius === 0) {
+        stale.push(`${file} — now clean; remove it from CSS_DEBT`);
+      } else if (now.hex < frozen.hex || now.radius < frozen.radius) {
+        stale.push(
+          `${file} — improved to ${now.hex} hex / ${now.radius} radius; ` +
+            `lower its CSS_DEBT entry to match`,
+        );
+      }
+    }
+    expect(
+      stale,
+      'CSS_DEBT is out of date. Lowering these numbers when you clean a file is ' +
+        'what stops the list from quietly becoming permission.',
+    ).toEqual([]);
+  });
+});
