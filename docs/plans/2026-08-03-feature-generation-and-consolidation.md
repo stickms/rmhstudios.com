@@ -1,6 +1,6 @@
 # Feature Generation & Frontend Consolidation — 2026-08-03
 
-**Document type:** Product/architecture idea list (no implementation)
+**Document type:** Audit + the implementation record for Part I
 **Branch audited:** `claude/website-feature-audit-36kvk6`, **revised against `0bd0236a`**
 **Two questions asked:** (1) what is this site lacking relative to comparable
 platforms, and (2) how do we consolidate what already exists, especially on the
@@ -51,6 +51,29 @@ docs use.
 > **Finishing the consolidations already started is cheaper than any feature in
 > this document and improves more of the site.** Part I is that work. Part II is
 > the new-feature answer.
+
+
+> **STATUS — all of Part I is implemented.** C1–C9 shipped on
+> `claude/website-feature-audit-36kvk6` (PR #750) in six commits after this
+> document was written. Each finding below keeps its original text, because the
+> evidence is why the change was made; what changed is recorded per item as
+> **[DONE]** with the commit's shape. Part II is still a proposal list — nothing
+> in it has been built.
+>
+> Where implementation disagreed with the plan, the plan was wrong and the
+> record says so:
+> - **C4** did *not* merge the two card renderers. Doing so would move 30
+>   imports and 11 hooks onto the wheel, against the measured 3D-transform cost
+>   in design.md §4. The real defect — two private relative-time formatters
+>   giving different answers for the same post, one of them re-introducing the
+>   hydration hazard `RelativeTime` exists to fix — was fixed instead, and the
+>   split is now documented rather than accidental.
+> - **C7** did *not* merge Lists or Wishlist into `SavedItem`. A list curates
+>   *accounts*; a wishlist entry carries a target price. They became tabs of one
+>   destination, not rows in one table.
+> - **C8** grew a second half nobody planned: `/create` stopped rendering the
+>   catalog at all, because leaving it at two URLs would have recreated exactly
+>   what C1 removed.
 
 ---
 
@@ -126,7 +149,12 @@ not.**
 
 ---
 
-## C1. Finish `/store`: `/shop` and `/pricing` are still live duplicates — **XS** — [escalated]
+## C1. Finish `/store`: `/shop` and `/pricing` are still live duplicates — **[DONE]**
+
+> Both are `beforeLoad` redirect stubs; both moved from `STATIC_ROUTES` to
+> `EXCLUDED_ROUTES` as redirects; the membership OG card followed `/pricing` to
+> `/store`, which had been falling through to `default.png`. Seven inbound
+> references repointed, including the `/shop` link on the settings page.
 
 > **What changed.** `8cad6b95` gave `/shop`, `/pricing` **and** `/store` each a
 > `buildMeta({ path })` + `buildCanonical()` self-canonical, and listed `/shop`
@@ -181,7 +209,11 @@ an ad. Keeping it as a redirect (not deleting it) is the whole point.
 
 ---
 
-## C2. Retire `/profile/$id` in favour of `/u/$userid` — **XS** — [escalated]
+## C2. Retire `/profile/$id` in favour of `/u/$userid` — **[DONE]**
+
+> Redirect stub; the param passes straight through since `/u/$userid` resolves
+> an id. Six call sites that fell back to `/profile/<id>` when a handle was
+> missing now use `/u/<handle ?? id>`.
 
 > **What changed.** The SEO sweep classified every route in the tree, and it
 > recorded this exact finding in code. `lib/sitemap.ts` line 374:
@@ -225,7 +257,10 @@ function with it.
 
 ---
 
-## C3. `/explore` is orphaned, and SEO already picked the winner — **XS** — [half-resolved]
+## C3. `/explore` is orphaned, and SEO already picked the winner — **[DONE]**
+
+> One `href` in `SIDEBAR_NAV`, with `id: '/search'` kept stable. That broke a
+> test asserting `id === href`, which was the wrong invariant — see C5.
 
 **Evidence.** `SIDEBAR_NAV` maps the label "Explore" to **`/search`** (line 65), and
 `_site/search.tsx` titles itself `explore-title` → "Explore". Meanwhile
@@ -277,7 +312,11 @@ path (C4) and inherits any fix made there.
 
 ---
 
-## C4. Two post-card renderers — **S**
+## C4. Two post-card renderers — **[DONE, differently]**
+
+> Not merged; see the status banner. `radial/RmharkCard.tsx` → `WheelCard.tsx`
+> (killing the case-only collision), both cards onto one `relativeTimeShort`
+> through `RelativeTime`, and the deliberate split documented in the file.
 
 **Evidence.** `components/feed/RMHarkCard.tsx` (541 lines) is the real one, used by
 `FeedItem`, `VirtualPostList`, `ExploreColumn`, `ExploreRecommendations`,
@@ -312,7 +351,14 @@ visual-risk item in Part I.
 
 ---
 
-## C5. Finish the `PageLayout` migration — **S** — [unchanged]
+## C5. Finish the `PageLayout` migration — **[DONE]**
+
+> The prediction in this section held: what `PageLayout` was missing is the
+> ability to supply the frame *without* a header, for pages whose column draws
+> its own `ColumnHeader`. `PageFrame` is that, all 29 routes take one of the
+> two, every dead import is gone, and a gate with an empty allowlist keeps it
+> that way. Also retired two dozen calls passing `ContextRail`'s no-op
+> `reserve`/`compactReserve`.
 
 > **Re-verified after `8cad6b95`: still 65 of 127, still 29 hand-rolled, still 22
 > dead imports.** The SEO sweep edited a dozen of the hand-rolled routes
@@ -368,7 +414,14 @@ and it stops the count climbing back.
 
 ---
 
-## C6. The token contract is enforced in `.tsx` and unenforced in 29,022 lines of `.css` — **M**
+## C6. The token contract is enforced in `.tsx` and unenforced in 29,022 lines of `.css` — **[DONE, step 1]**
+
+> The gate ships as a ratchet: 13 stylesheets frozen at their current counts in
+> `CSS_DEBT`, zero tolerance for anything not on the list, and a fourth
+> assertion that fails when a file improves without its entry being lowered, so
+> the list drains instead of becoming permission. Verified in both directions.
+> **Step 2 — actually burning the 119 hex + 91 radius violations down, starting
+> with `library.css` — is not done and is the follow-up.**
 
 **Evidence.** `design-consistency.test.ts` collects sources via
 `entry.name.endsWith('.tsx')` (line 98). It never opens a `.css` file. There are 41
@@ -412,7 +465,14 @@ line 60 names it as intentionally not liquid-glass. That exemption should be
 
 ---
 
-## C7. The collection problem: one concept, twelve models, five destinations — **M**
+## C7. The collection problem: one concept, twelve models, five destinations — **[DONE]**
+
+> `RMHarkBookmark` folded into `SavedItem` by migration 20260803210000,
+> verified against a real Postgres (history applies clean; a bookmarked-and-
+> filed post keeps its folder; re-running is a no-op; no row unaccounted for).
+> `SavedItem` gained the reverse index the old table had. `/saves` is one
+> destination with Saved · Lists · Wishlist tabs. `SavedSearch` /
+> `LadderSavedSearch` were left alone — still worth merging.
 
 **Evidence.** Grepping the schema for save-shaped models returns twelve:
 
@@ -464,7 +524,13 @@ backfill are the M.
 
 ---
 
-## C8. `/create` is a creator verb doing consumer work — **S (product), M (with an index page)** — [escalated]
+## C8. `/create` is a creator verb doing consumer work — **[DONE]**
+
+> `/games` and `/apps` exist, with descriptions, canonicals and an `ItemList`
+> of their members; `GAMES_INDEX_PATH`/`APPS_INDEX_PATH` point at them, so every
+> game breadcrumb now ends somewhere a crawler will follow. `/create` no longer
+> renders the catalog — the Apps tab is gone and `?tab=apps` redirects.
+> **Not done:** renaming the Create nav pin to "Arcade". That is a product call.
 
 > **What changed.** The SEO sweep independently hit this wall and had to encode the
 > workaround as a constant — `lib/seo-catalog.ts`:
@@ -528,7 +594,11 @@ consolidated its away.
 
 ---
 
-## C9. Settings has ten pages and an off-site eleventh — **S**
+## C9. Settings has ten pages and an off-site eleventh — **[DONE]**
+
+> Destinations are a catalog (`lib/settings-nav.ts`) the hub renders and
+> filters, with a keywords field so "dark mode" finds Appearance. Theme
+> authoring moved to `/settings/themes`; `/studio/themes` redirects.
 
 **Evidence.** `_site/settings/` holds `index`, `profile`, `appearance`, `content`,
 `privacy`, `security`, `notifications`, `circle`, `layout`, `account-status`. Theme
@@ -554,17 +624,17 @@ settings pages want their own URL for support links and search. So the fix is no
 
 ## Consolidation scoreboard
 
-| # | Item | Effort | Surfaces removed | Risk | Post-`0bd0236a` |
+| # | Item | Effort | Surfaces removed | Risk | Status |
 |:--:|---|:--:|:--:|---|---|
-| C1 | `/shop`, `/pricing` → `/store` stubs | XS | 2 | None — pure redirect | **escalated** — both now self-canonical against `/store` |
-| C2 | `/profile/$id` → `/u/$userid` stub | XS | 1 | None — fixes an SEO defect | **escalated** — now documented in `lib/sitemap.ts` as a "legacy alias" and left live |
-| C3 | Point nav's Explore at `/explore` | XS | 1 | None | **easier** — SEO already picked the winner; one `href` |
-| C4 | One post-card renderer | S | 1 component | **Visual** — screenshot pass required | unchanged |
-| C5 | Finish `PageLayout` (29 routes) + gate | S | 29 bespoke frames | Visual, per batch | unchanged — a 13-file sweep moved it by zero |
-| C6 | Extend the design gate to `.css`, then burn down | M | — | None for step 1 | unchanged — gate still `.tsx`-only |
-| C7 | One saves hub; `RMHarkBookmark` → `SavedItem` | M | 3 | **Data migration** | unchanged |
-| C8 | Re-expose `/games` + `/apps` as public indexes | S–M | −2 (adds two, on purpose) | None | **escalated** — the catalogue is now un-submittable by rule |
-| C9 | Settings index + fold `studio/themes` | S | 1 | None | unchanged |
+| C1 | `/shop`, `/pricing` → `/store` stubs | XS | 2 | None — pure redirect | **shipped** |
+| C2 | `/profile/$id` → `/u/$userid` stub | XS | 1 | None — fixes an SEO defect | **shipped** |
+| C3 | Point nav's Explore at `/explore` | XS | 1 | None | **shipped** |
+| C4 | One post-card renderer | S | 1 component | **Visual** — screenshot pass required | **shipped** |
+| C5 | Finish `PageLayout` (29 routes) + gate | S | 29 bespoke frames | Visual, per batch | **shipped** |
+| C6 | Extend the design gate to `.css`, then burn down | M | — | None for step 1 | **shipped** (ratchet; burn-down pending) |
+| C7 | One saves hub; `RMHarkBookmark` → `SavedItem` | M | 3 | **Data migration** | **shipped** |
+| C8 | Re-expose `/games` + `/apps` as public indexes | S–M | −2 (adds two, on purpose) | None | **shipped** |
+| C9 | Settings index + fold `studio/themes` | S | 1 | None | **shipped** |
 
 C1 + C2 + C3 together are perhaps two hours and remove three duplicate URLs plus one
 nav contradiction. **Start there** — and note that C1 and C2 are now actively
