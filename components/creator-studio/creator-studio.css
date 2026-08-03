@@ -94,6 +94,33 @@
   padding: 14px 16px;
 }
 
+/* Phones: the actions drop to their own row.
+   This head is icon (36px) + titles (flex:1) + actions (flex: none, ~209px).
+   On a 390px screen that leaves the title column **24px**, and since
+   `[data-slot='page-content']` sets `overflow-wrap: anywhere` below 768px the
+   word does not overflow — it shatters, rendering "Ranked" as "Ra/nk/ed" down
+   three lines. Wrapping the row puts the title back on a full-width line and
+   the two controls beneath it. */
+@media (max-width: 640px) {
+  .cstudio-ranked__head {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+  .cstudio-ranked__titles {
+    /* Beat the icon to the remaining space, then let actions take row two. */
+    flex: 1 1 calc(100% - 48px);
+  }
+  .cstudio-ranked__actions {
+    flex: 1 0 100%;
+  }
+  .cstudio-ranked__toggle,
+  .cstudio-ranked__link {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-height: var(--site-touch-target);
+  }
+}
+
 .cstudio-ranked__icon {
   display: inline-flex;
   align-items: center;

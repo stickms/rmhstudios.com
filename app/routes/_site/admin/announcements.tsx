@@ -447,13 +447,17 @@ function AdminAnnouncementsPage() {
             </button>
           </div>
 
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex gap-1.5">
+          {/* Wraps: four pills plus Publish on one unwrapped row left each pill
+              ~30px on a phone, and the phone-wide `overflow-wrap: anywhere`
+              rendered them as "In/f/o" and "Suc/ces/s". `whitespace-nowrap` is
+              the belt to that braces — a pill's label is one word by definition. */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-1.5">
               {VARIANTS.map((v) => (
                 <button
                   key={v}
                   onClick={() => setVariant(v)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${
+                  className={`rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap capitalize transition-colors ${
                     variant === v ? 'bg-site-accent text-(--site-accent-fg)' : 'border border-site-border bg-site-bg text-site-text-muted'
                   }`}
                 >

@@ -97,16 +97,21 @@ export function AchievementsColumn({
 
  const pct = data.stats.total ? Math.round((data.stats.unlocked / data.stats.total) * 100) : 0;
 
+ // The `{' '}` separators below are load-bearing. They used to be `{''}`, and
+ // because JSX drops the newline between the count and the following word the
+ // page rendered "0 / 79unlocked" and "0earned" with no space at all. (Written
+ // here rather than as a JSX comment beside the strings: a `{/* … */}` directly
+ // before a `t()` call makes i18next-parser skip the key entirely.)
  const Stats = (
  <>
  <div className="flex items-center gap-3 text-sm text-site-text-muted">
  <span>
- <strong className="text-site-text">{data.stats.unlocked}</strong> / {data.stats.total}{''}
+ <strong className="text-site-text">{data.stats.unlocked}</strong> / {data.stats.total}{' '}
  {t('unlocked', { defaultValue:'unlocked'})}
  </span>
  <span aria-hidden>·</span>
  <span className="inline-flex items-center gap-1">
- <Coins className="h-3.5 w-3.5 text-site-warning"/> {data.stats.coinsEarned}{''}
+ <Coins className="h-3.5 w-3.5 text-site-warning"/> {data.stats.coinsEarned}{' '}
  {t('earned', { defaultValue:'earned'})}
  </span>
  </div>
@@ -181,11 +186,16 @@ export function AchievementsColumn({
  <div className="min-w-0 flex-1">
  <div className="flex items-center gap-2">
  <p className="truncate text-sm font-semibold text-site-text">{a.name}</p>
+ {/* The tier colours are metals — gold #ffd700, silver #c0c0c0, platinum
+ #67e8f9 — and as INK on their own 13% tint they measured 1.28:1,
+ 1.50:1 and 1.31:1 against the surface. The colour stays as the chip's
+ fill and border, where it carries the tier perfectly well; the word
+ takes the surface's own ink so it is actually readable. */}
  <span
- className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase"
+ className="rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase text-site-text"
  style={{
- background: `${TIER_COLORS[a.tier]}22`,
- color: TIER_COLORS[a.tier],
+ background: `${TIER_COLORS[a.tier]}2e`,
+ borderColor: `${TIER_COLORS[a.tier]}99`,
  }}
  >
  {a.tier}
