@@ -52,7 +52,7 @@ go-services/
 | `recap` | `RECAP_PORT` 7004 | HTTP (health) | recap | fully ported (Lights Out → Discord) |
 | `doctrine-worker` | — | worker | doctrine-worker | fully ported (mulberry32 bit-exact puzzle gen, Sahur, decay) |
 | `vibe-worker` | — | worker | vibe-worker | fully ported (chromedp thumbnails; needs Chromium in image) |
-| `discord-bot` | — | worker | discord-bot | `/chat` + full Alex tamagotchi; idles without token |
+| `discord-bot` | — | worker | discord-bot | the Liquid Globe bot: one `/liquid` command (xAI reads + renders, DeepSeek explains); idles without token |
 | `bot-worker` | — | worker | bot-worker | ported; idles without `DEEPSEEK_API_KEY` |
 | `assets` | `ASSETS_PORT` 7007 | HTTP | Apache off-disk CDN | range-aware S3/R2 streaming for `/library /music /models /sprites` |
 | `status` | `STATUS_PORT` 7008 | HTTP | server/status | `/api/status` is byte-compatible with the Node original; the dashboard is now the site's own liquid-globe design (`internal/status/dashboard.go`) |
@@ -164,5 +164,10 @@ make images         # build + load every service image into Docker (Bazel)
 3. There is no `cmd/ledger`: `internal/ledger` (Go artifact/provenance store)
    is implemented but wired into no binary — not built, not deployed. The
    `ledger_*` schema tables remain.
-4. Discord bot commands are `/chat` + the Alex tamagotchi; there is no
-   `/rmhbot` command (old README claim is stale).
+4. The Discord bot has exactly **one** command, `/liquid` — it takes an image
+   and re-makes it in the site's design language
+   ([`docs/liquid-bot/`](../docs/liquid-bot/README.md)). The Alex tamagotchi it
+   replaced (`/chat`, `/feed`, `/play`, …) and its five `discord_alex_*` /
+   `discord_chat_session` tables are gone (migration
+   `20260803120000_retire_alex_bot`); `image_gen_budget` is the bot's only
+   remaining table. There is no `/rmhbot` command either (old README claim).
