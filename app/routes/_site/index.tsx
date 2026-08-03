@@ -7,6 +7,7 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { RadialFeed } from '@/components/radial/RadialFeed';
 import { getRequestSession } from '@/lib/auth-session.server';
@@ -43,10 +44,12 @@ export const Route = createFileRoute('/_site/')({
   staleTime: 60_000,
   loader: () => ({ initialFeed: fetchInitialFeed() }),
   head: () => ({
-    meta: [
-      { title: 'RMH Studios' },
-      { name: 'description', content: 'The RMH Studios community feed.' },
-    ],
+    meta: buildMeta({
+      title: 'RMH Studios',
+      description: 'The RMH Studios community feed.',
+      path: '/',
+    }),
+    links: [buildCanonical('/')],
   }),
   component: Home,
 });

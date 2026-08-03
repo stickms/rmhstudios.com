@@ -6,6 +6,7 @@
  * this route just supplies the loader (current tier) and page chrome.
  */
 import { createFileRoute } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
@@ -32,13 +33,12 @@ const fetchCurrentTier = createServerFn({ method: 'GET' }).handler(
 export const Route = createFileRoute('/_site/pricing')({
   loader: () => fetchCurrentTier(),
   head: () => ({
-    meta: [
-      { title: 'Membership — RMH Studios' },
-      {
-        name: 'description',
-        content: 'Become a member of RMH Studios. Four tiers, from Free to Enterprise.',
-      },
-    ],
+    meta: buildMeta({
+      title: 'Membership — RMH Studios',
+      description: 'Become a member of RMH Studios. Four tiers, from Free to Enterprise.',
+      path: '/pricing',
+    }),
+    links: [buildCanonical('/pricing')],
   }),
   component: Pricing,
 });

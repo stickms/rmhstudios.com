@@ -1,10 +1,14 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router'
-import { Toaster } from 'sonner'
-import sliceItCss from '@/components/slice-it/slice-it.css?url'
+import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { gameRouteHead } from '@/lib/seo-catalog';
+import { Toaster } from 'sonner';
+import sliceItCss from '@/components/slice-it/slice-it.css?url';
 
 function SliceItLayout() {
   return (
-    <div style={{ fontFamily: '"Outfit", sans-serif' }} className="slice-theme min-h-screen text-slate-700 dark:text-slate-200 transition-colors duration-300">
+    <div
+      style={{ fontFamily: '"Outfit", sans-serif' }}
+      className="slice-theme min-h-screen text-slate-700 dark:text-slate-200 transition-colors duration-300"
+    >
       <link
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap"
@@ -12,12 +16,10 @@ function SliceItLayout() {
       <Outlet />
       <Toaster />
     </div>
-  )
+  );
 }
 
 export const Route = createFileRoute('/slice-it')({
-  head: () => ({
-    links: [{ rel: 'stylesheet', href: sliceItCss }],
-  }),
+  head: () => gameRouteHead('slice-it', { links: [{ rel: 'stylesheet', href: sliceItCss }] }),
   component: SliceItLayout,
-})
+});

@@ -6,6 +6,7 @@
  */
 
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
+import { appRouteHead } from '@/lib/seo-catalog';
 import { createServerFn } from '@tanstack/react-start';
 import { auth } from '@/lib/auth';
 import { getRequest } from '@tanstack/react-start/server';
@@ -21,13 +22,7 @@ const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
 
 export const Route = createFileRoute('/rmhtube')({
   beforeLoad: () => checkAuth(),
-  head: () => ({
-    meta: [
-      { title: 'RmhTube — Watch Together' },
-      { name: 'description', content: 'Watch videos together in sync with friends' },
-    ],
-    links: [{ rel: 'stylesheet', href: rmhtubeCss }],
-  }),
+  head: () => appRouteHead('rmhtube', { links: [{ rel: 'stylesheet', href: rmhtubeCss }] }),
   component: () => (
     <RmhTubeShell>
       <Outlet />

@@ -6,6 +6,7 @@
  */
 
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
+import { appRouteHead } from '@/lib/seo-catalog';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
@@ -20,15 +21,7 @@ const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
 
 export const Route = createFileRoute('/rmhmusic')({
   beforeLoad: () => checkAuth(),
-  head: () => ({
-    meta: [
-      { title: 'RMH Music | rmhstudios' },
-      {
-        name: 'description',
-        content: 'Listen to Spotify with friends. Create rooms, share music, vibe together.',
-      },
-    ],
-  }),
+  head: () => appRouteHead('rmhmusic'),
   // `.app-theme` is the shared app chrome and `.rmhmusic-theme` its palette
   // (rmhmusic.css). The site theme class is never applied here
   // (THEME_EXCLUDED_ROUTES), so without them the tokens resolve light against

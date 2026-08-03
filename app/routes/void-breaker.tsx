@@ -1,10 +1,13 @@
-import { lazy, Suspense } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
-import { GameBackLink } from '@/components/shared/GameBackLink'
-import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
-import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
+import { lazy, Suspense } from 'react';
+import { createFileRoute } from '@tanstack/react-router';
+import { gameRouteHead } from '@/lib/seo-catalog';
+import { GameBackLink } from '@/components/shared/GameBackLink';
+import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
+import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 
-const VoidBreakerGame = lazy(() => import('@/components/void-breaker/VoidBreakerGame').then(m => ({ default: m.VoidBreakerGame })))
+const VoidBreakerGame = lazy(() =>
+  import('@/components/void-breaker/VoidBreakerGame').then((m) => ({ default: m.VoidBreakerGame })),
+);
 
 function VoidBreakerPage() {
   return (
@@ -21,9 +24,10 @@ function VoidBreakerPage() {
         </GameErrorBoundary>
       </div>
     </main>
-  )
+  );
 }
 
 export const Route = createFileRoute('/void-breaker')({
+  head: () => gameRouteHead('void-breaker'),
   component: VoidBreakerPage,
-})
+});

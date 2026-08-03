@@ -2,10 +2,11 @@ import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from "@/components/feed/ContextRail";
+import { ContextRail } from '@/components/feed/ContextRail';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { CommunityColumn } from '@/components/feed/CommunityColumn';
 import { auth } from '@/lib/auth';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import {
   getCommunity,
   getCommunityFeed,
@@ -32,11 +33,53 @@ const fetchCommunityPage = createServerFn({ method: 'GET' })
         getCommunityFeed(slug, viewerId),
       ]);
       return { community, feed };
-    }
+    },
   );
 
 export const Route = createFileRoute('/_site/c/$slug')({
-  head: ({ params }) => ({ meta: [{ title: `${params.slug} | Communities` }] }),
+  /**
+   * The title used to be the raw slug, so `/c/retro-hardware` rendered
+   * "retro-hardware | Communities" — the URL, echoed back, with no description
+   * and no canonical. Communities are in the sitemap now; they need the name
+   * people actually call them.
+   *
+   * A private community is listed nowhere and marked `noindex` here: its
+   * existence is not secret (the slug is guessable) but its description and
+   * member count are members-only, and a search snippet is not a membership.
+   */
+  // Annotated for the inference quirk documented on `/games/$gameId`.
+  head: ({
+    loaderData,
+    params,
+  }: {
+    loaderData?: { community: CommunityDetail | null; feed: CommunityFeedResult | null };
+    params: { slug: string };
+  }) => {
+    const community = loaderData?.community;
+    const path = `/c/${params.slug}`;
+    if (!community || community.isPrivate) {
+      return {
+        meta: [
+          { title: community ? `${community.name} | Communities` : 'Community | RMH Studios' },
+          { name: 'robots', content: 'noindex, follow' },
+        ],
+        links: [buildCanonical(path)],
+      };
+    }
+    return {
+      meta: buildMeta({
+        title: `${community.name} — community | RMH Studios`,
+        description:
+          community.description ||
+          `${community.name} on RMH Studios — ${community.memberCount} members and ${community.postCount} posts.`,
+        path,
+        image: community.icon || undefined,
+        imageAlt: community.icon ? `${community.name}'s community icon.` : undefined,
+        imageSize: community.icon ? null : undefined,
+      }),
+      links: [buildCanonical(path)],
+    };
+  },
   loader: ({ params }) => fetchCommunityPage({ data: params.slug }),
   component: CommunityPage,
 });
@@ -52,9 +95,7 @@ function CommunityPage() {
   };
   return (
     <>
-      <AnimatedMain
-        className="w-full min-w-0 pb-dock"
-      >
+      <AnimatedMain className="w-full min-w-0 pb-dock">
         <CommunityColumn
           slug={slug}
           initialCommunity={community}

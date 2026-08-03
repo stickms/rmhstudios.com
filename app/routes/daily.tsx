@@ -2,6 +2,7 @@
  *  render their own layouts (the persistent 3D desk was retired in favour of the
  *  interactive non-3D hub at /daily). */
 import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { gameRouteHead } from '@/lib/seo-catalog';
 
 function DailyLayout() {
   return (
@@ -12,5 +13,6 @@ function DailyLayout() {
 }
 
 export const Route = createFileRoute('/daily')({
+  head: () => gameRouteHead('daily-puzzles'),
   component: DailyLayout,
 });

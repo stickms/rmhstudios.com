@@ -15,6 +15,7 @@ import RMHboxHeader from '@/components/rmhbox/RMHboxHeader';
 import MinigameLeaderboardModal from '@/components/rmhbox/MinigameLeaderboardModal';
 import LucideAwardIcon from '@/components/rmhbox/LucideAwardIcon';
 import { getAllMinigames } from '@/lib/rmhbox/minigame-registry';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import type { MinigameDefinition } from '@/lib/rmhbox/types';
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -25,18 +26,27 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 function MinigamesPage() {
-  const { t } = useTranslation("r-rmhbox");
+  const { t } = useTranslation('r-rmhbox');
   const navigate = useNavigate();
   const minigames = getAllMinigames();
   const [leaderboardGame, setLeaderboardGame] = useState<MinigameDefinition | null>(null);
 
   return (
     <div className="flex h-screen flex-col">
-      <RMHboxHeader context="minigames" backHref="/rmhbox" backLabel={t("home", { defaultValue: "Home" })} />
+      <RMHboxHeader
+        context="minigames"
+        backHref="/rmhbox"
+        backLabel={t('home', { defaultValue: 'Home' })}
+      />
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-8" style={{ scrollbarGutter: 'stable both-edges' }}>
+      <div
+        className="flex-1 overflow-y-auto p-4 md:p-8"
+        style={{ scrollbarGutter: 'stable both-edges' }}
+      >
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold mb-6 text-(--app-text)">{t("minigames", { defaultValue: "Minigames" })}</h2>
+          <h2 className="text-2xl font-bold mb-6 text-(--app-text)">
+            {t('minigames', { defaultValue: 'Minigames' })}
+          </h2>
 
           <div className="grid gap-4 sm:grid-cols-2">
             {minigames.map((game) => (
@@ -53,11 +63,17 @@ function MinigamesPage() {
                   <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-semibold text-(--app-text)">{game.displayName}</h3>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${CATEGORY_COLORS[game.category] ?? ''}`}>
+                      <span
+                        className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${CATEGORY_COLORS[game.category] ?? ''}`}
+                      >
                         {game.category}
                       </span>
                       <span className="text-xs text-(--app-text-muted)">
-                        {t("player-range", { minPlayers: game.minPlayers, maxPlayers: game.maxPlayers, defaultValue: "{{minPlayers}}–{{maxPlayers}} players" })}
+                        {t('player-range', {
+                          minPlayers: game.minPlayers,
+                          maxPlayers: game.maxPlayers,
+                          defaultValue: '{{minPlayers}}–{{maxPlayers}} players',
+                        })}
                       </span>
                     </div>
                   </div>
@@ -74,15 +90,20 @@ function MinigamesPage() {
                     data-testid={`leaderboard-btn-${game.id}`}
                   >
                     <Trophy className="h-4 w-4" />
-                    {t("leaderboard", { defaultValue: "Leaderboard" })}
+                    {t('leaderboard', { defaultValue: 'Leaderboard' })}
                   </button>
                   <button
-                    onClick={() => navigate({ to: '/rmhbox/minigames/$minigameId/history', params: { minigameId: game.id } })}
+                    onClick={() =>
+                      navigate({
+                        to: '/rmhbox/minigames/$minigameId/history',
+                        params: { minigameId: game.id },
+                      })
+                    }
                     className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-colors bg-(--app-accent) text-white hover:bg-(--app-accent-hover)"
                     data-testid={`history-btn-${game.id}`}
                   >
                     <History className="h-4 w-4" />
-                    {t("history", { defaultValue: "History" })}
+                    {t('history', { defaultValue: 'History' })}
                   </button>
                 </div>
               </div>
@@ -105,5 +126,16 @@ function MinigamesPage() {
 }
 
 export const Route = createFileRoute('/rmhbox/minigames/')({
+  // Its own head rather than the one inherited from the `/rmhbox` shell: this
+  // is a catalogue of every minigame, and "what games are in it" is the
+  // question someone asks before deciding to open a party game at all.
+  head: () => ({
+    meta: buildMeta({
+      title: 'RMHbox minigames — the full list | RMH Studios',
+      description: `All ${getAllMinigames().length} RMHbox minigames: word, trivia, action and creative rounds, with leaderboards and match history for each.`,
+      path: '/rmhbox/minigames',
+    }),
+    links: [buildCanonical('/rmhbox/minigames')],
+  }),
   component: MinigamesPage,
 });

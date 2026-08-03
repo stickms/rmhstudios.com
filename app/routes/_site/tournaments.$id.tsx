@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { createServerFn } from '@tanstack/react-start';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -11,9 +12,71 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession } from '@/components/Providers';
 import { BracketView } from '@/components/tournaments/BracketView';
 import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
+import { prisma } from '@/lib/prisma.server';
+import { getWagerGame } from '@/lib/wager/eligible-games';
+import { buildCanonical, buildMeta } from '@/lib/seo';
+
+/**
+ * A meta-only loader.
+ *
+ * The page itself fetches the full tournament client-side (below), which is
+ * fine for the UI but leaves nothing in the server-rendered `<head>` — so every
+ * tournament shared the title "Tournament | RMH Studios" and unfurled as the
+ * site default. This fetches just enough for the head, and deliberately does
+ * not replace the client fetch: the bracket updates live, and a loader would
+ * only serve a snapshot the component immediately overwrites.
+ */
+const fetchTournamentMeta = createServerFn({ method: 'GET' })
+  .validator((id: string) => id)
+  .handler(async ({ data: id }) => {
+    // A direct select rather than `getTournament`, which pulls every entrant,
+    // match and payout — none of which a `<title>` needs.
+    const t = await prisma.tournament
+      .findUnique({
+        where: { id },
+        select: {
+          name: true,
+          gameId: true,
+          visibility: true,
+          maxPlayers: true,
+          prizePoolCoins: true,
+          _count: { select: { entrants: true } },
+        },
+      })
+      .catch(() => null);
+    if (!t) return null;
+    return {
+      name: t.name,
+      gameTitle: getWagerGame(t.gameId)?.title ?? null,
+      visibility: t.visibility,
+      playerCount: t._count.entrants,
+      maxPlayers: t.maxPlayers,
+      prizePoolCoins: t.prizePoolCoins,
+    };
+  });
 
 export const Route = createFileRoute('/_site/tournaments/$id')({
-  head: () => ({ meta: [{ title: 'Tournament | RMH Studios' }] }),
+  loader: ({ params }) => fetchTournamentMeta({ data: params.id }),
+  head: ({ loaderData, params }) => {
+    const path = `/tournaments/${params.id}`;
+    if (!loaderData || loaderData.visibility !== 'public') {
+      return {
+        meta: [
+          { title: loaderData ? `${loaderData.name} | RMH Studios` : 'Tournament | RMH Studios' },
+          { name: 'robots', content: 'noindex, follow' },
+        ],
+      };
+    }
+    const game = loaderData.gameTitle ?? 'RMH Studios';
+    return {
+      meta: buildMeta({
+        title: `${loaderData.name} — ${game} tournament | RMH Studios`,
+        description: `A ${game} tournament on RMH Studios: ${loaderData.playerCount} of ${loaderData.maxPlayers} players, ${loaderData.prizePoolCoins} coins in the prize pool.`,
+        path,
+      }),
+      links: [buildCanonical(path)],
+    };
+  },
   component: TournamentDetailPage,
 });
 
@@ -108,7 +171,15 @@ function TournamentDetailPage() {
       backLabel={t('back', { defaultValue: 'Back to tournaments' })}
       wide
       headerRight={
-        <Badge variant={tourney.status === 'LIVE' ? 'accent' : tourney.status === 'COMPLETE' ? 'success' : 'outline'}>
+        <Badge
+          variant={
+            tourney.status === 'LIVE'
+              ? 'accent'
+              : tourney.status === 'COMPLETE'
+                ? 'success'
+                : 'outline'
+          }
+        >
           {tourney.status === 'REGISTRATION'
             ? t('registering', { defaultValue: 'Registering' })
             : tourney.status === 'LIVE'
@@ -176,7 +247,7 @@ function TournamentDetailPage() {
               onClick={() =>
                 act(
                   `/api/tournaments/${id}/register`,
-                  t('registered', { defaultValue: 'You\'re in!' }),
+                  t('registered', { defaultValue: "You're in!" }),
                 )
               }
               loading={busy}
@@ -207,7 +278,10 @@ function TournamentDetailPage() {
             <Button
               variant="secondary"
               onClick={() =>
-                act(`/api/tournaments/${id}/start`, t('started', { defaultValue: 'Bracket started!' }))
+                act(
+                  `/api/tournaments/${id}/start`,
+                  t('started', { defaultValue: 'Bracket started!' }),
+                )
               }
               loading={busy}
               disabled={tourney.playerCount < 2}

@@ -13,6 +13,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
@@ -110,14 +111,13 @@ const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : use
 
 export const Route = createFileRoute('/_site/library/')({
   head: () => ({
-    meta: [
-      { title: 'Library | RMH Studios' },
-      {
-        name: 'description',
-        content:
-          'Browse and read the RMH Studios library — a shelf of documents, theses, and plans.',
-      },
-    ],
+    meta: buildMeta({
+      title: 'Library | RMH Studios',
+      description:
+        'Browse and read the RMH Studios library — a shelf of documents, theses, and plans.',
+      path: '/library',
+    }),
+    links: [buildCanonical('/library')],
   }),
   validateSearch: (search: Record<string, unknown>): { view?: LibraryView } => {
     const view = search.view;
@@ -402,7 +402,6 @@ function Library() {
       return b.title.toLowerCase().includes(q) || b.description.toLowerCase().includes(q);
     });
   }, [books, query, collectedSlugs]);
-
 
   // Sections render in manual order (position), title as a stable tiebreak — so
   // admin reordering (arrows + drag) actually takes effect.

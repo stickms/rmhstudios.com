@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from "@/components/feed/ContextRail";
+import { ContextRail } from '@/components/feed/ContextRail';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { Trophy } from 'lucide-react';
 import { ColumnHeader } from '@/components/feed/ColumnHeader';
@@ -25,7 +26,15 @@ const fetchAchievements = createServerFn({ method: 'GET' }).handler(async () => 
 });
 
 export const Route = createFileRoute('/_site/achievements')({
-  head: () => ({ meta: [{ title: 'Achievements | RMH Studios' }] }),
+  head: () => ({
+    meta: buildMeta({
+      title: 'Achievements | RMH Studios',
+      description:
+        'Every achievement on RMH Studios: what unlocks it, what it is worth, and who has earned it.',
+      path: '/achievements',
+    }),
+    links: [buildCanonical('/achievements')],
+  }),
   loader: () => fetchAchievements(),
   component: AchievementsPage,
 });
@@ -39,9 +48,7 @@ function AchievementsPage() {
 
   return (
     <>
-      <AnimatedMain
-        className="w-full min-w-0 pb-dock"
-      >
+      <AnimatedMain className="w-full min-w-0 pb-dock">
         {session && !isPending ? (
           <JourneyColumn
             userId={session.user.id}

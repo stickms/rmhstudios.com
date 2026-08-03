@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { useTranslation } from 'react-i18next';
@@ -31,7 +32,15 @@ const fetchCommunities = createServerFn({ method: 'GET' }).handler(async () => {
 });
 
 export const Route = createFileRoute('/_site/communities')({
-  head: () => ({ meta: [{ title: 'Communities | RMH Studios' }] }),
+  head: () => ({
+    meta: buildMeta({
+      title: 'Communities | RMH Studios',
+      description:
+        'Find and join public communities on RMH Studios — spaces, events and group discussion around what you are into.',
+      path: '/communities',
+    }),
+    links: [buildCanonical('/communities')],
+  }),
   // `tab` is optional (omitted for the default) so existing `to="/communities"`
   // links stay valid; the component reads it with a `'communities'` default.
   validateSearch: (search: Record<string, unknown>): { tab?: CommunitiesTab } => {

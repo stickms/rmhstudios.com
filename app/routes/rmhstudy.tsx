@@ -3,6 +3,7 @@
  */
 
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
+import { appRouteHead } from '@/lib/seo-catalog';
 import { createServerFn } from '@tanstack/react-start';
 import { auth } from '@/lib/auth';
 import { getRequest } from '@tanstack/react-start/server';
@@ -18,13 +19,7 @@ const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
 
 export const Route = createFileRoute('/rmhstudy')({
   beforeLoad: () => checkAuth(),
-  head: () => ({
-    meta: [
-      { title: 'RMH Study — Study Together' },
-      { name: 'description', content: 'Study together with synced Pomodoro timers, focus tracking, and ambient sounds.' },
-    ],
-    links: [{ rel: 'stylesheet', href: rmhstudyCss }],
-  }),
+  head: () => appRouteHead('rmhstudy', { links: [{ rel: 'stylesheet', href: rmhstudyCss }] }),
   component: () => (
     <RmhStudyShell>
       <Outlet />

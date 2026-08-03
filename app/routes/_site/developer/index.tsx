@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { Terminal, BookOpen, ExternalLink } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,15 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { DEVELOPER_DOCS_URL } from '@/lib/docs-site';
 
 export const Route = createFileRoute('/_site/developer/')({
-  head: () => ({ meta: [{ title: 'Developer API | RMH Studios' }] }),
+  head: () => ({
+    meta: buildMeta({
+      title: 'Developer API | RMH Studios',
+      description:
+        'Build on RMH Studios: scoped API keys, a documented REST API, webhooks and usage quotas.',
+      path: '/developer',
+    }),
+    links: [buildCanonical('/developer')],
+  }),
   component: DeveloperHome,
 });
 

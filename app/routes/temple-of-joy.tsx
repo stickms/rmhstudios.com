@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { gameRouteHead } from '@/lib/seo-catalog';
 
 /**
  * Temple of Joy shell.
@@ -12,5 +13,6 @@ import { createFileRoute, Outlet } from '@tanstack/react-router';
  * face in front of the player after first paint.
  */
 export const Route = createFileRoute('/temple-of-joy')({
+  head: () => gameRouteHead('temple-of-joy'),
   component: () => <Outlet />,
 });

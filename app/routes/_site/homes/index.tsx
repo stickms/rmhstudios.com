@@ -7,6 +7,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { m as motion } from 'framer-motion';
 import {
   Bell,
@@ -38,14 +39,13 @@ import { parseFilters, serializeFilters } from '@/lib/homes/query';
 
 export const Route = createFileRoute('/_site/homes/')({
   head: () => ({
-    meta: [
-      { title: 'RMHHomes — Rentals & houses posted by the community' },
-      {
-        name: 'description',
-        content:
-          'Browse real apartments and houses posted by RMH members, or post your own. Search by location, map every result, save favorites, and message the poster.',
-      },
-    ],
+    meta: buildMeta({
+      title: 'RMHHomes — Rentals & houses posted by the community',
+      description:
+        'Browse real apartments and houses posted by RMH members, or post your own. Search by location, map every result, save favorites, and message the poster.',
+      path: '/homes',
+    }),
+    links: [buildCanonical('/homes')],
   }),
   component: HomesBrowsePage,
 });
@@ -177,7 +177,10 @@ function HomesBrowsePage() {
       emptyDescription="Be the first to post a home in this area."
       emptyAction={
         <Button asChild>
-          <Link to={session ? '/homes/submit' : '/login'} search={session ? undefined : { callbackURL: '/homes/submit' }}>
+          <Link
+            to={session ? '/homes/submit' : '/login'}
+            search={session ? undefined : { callbackURL: '/homes/submit' }}
+          >
             <Plus className="h-4 w-4" aria-hidden />
             Post a listing
           </Link>

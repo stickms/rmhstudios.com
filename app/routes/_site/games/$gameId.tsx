@@ -7,6 +7,7 @@ import { auth } from '@/lib/auth';
 import { games } from '@/lib/games';
 import { buildMeta, buildCanonical, ogCardPath } from '@/lib/seo';
 import { jsonLdScript, videoGameSchema, breadcrumbSchema } from '@/lib/schema';
+import { GAMES_INDEX_PATH } from '@/lib/seo-catalog';
 import { listReviews, getRatingAgg, listGuides } from '@/lib/games/meta.server';
 import type { ReviewView, RatingAgg, GuideSummary } from '@/lib/games/reviews';
 
@@ -94,7 +95,10 @@ export const Route = createFileRoute('/_site/games/$gameId')({
                   : undefined,
             }),
             breadcrumbSchema([
-              { name: 'Games', path: '/games' },
+              // `/games` is not a route — it 404s. The browser lives on
+              // `/create`, and a breadcrumb that points at a dead URL is
+              // dropped from the rich result along with everything after it.
+              { name: 'Games', path: GAMES_INDEX_PATH },
               { name: loaderData.title, path: `/games/${params.gameId}` },
             ]),
           ]),
