@@ -3314,6 +3314,48 @@ body {
     min-block-size: var(--site-touch-target);
     min-inline-size: var(--site-touch-target);
   }
+  /* The one search input on the site (`components/ui/search-field.tsx`) is
+     `py-2`, which lands at 41px — under the floor on every page that carries a
+     search box. Only the block size: its inline size is the column. */
+  [data-slot='search-field'] input {
+    min-block-size: var(--site-touch-target);
+  }
+}
+
+/* ==========================================================================
+   `.touch-target` — grow the HIT AREA without growing the control
+   --------------------------------------------------------------------------
+   Some controls have to stay visually small: a metadata link sitting in a line
+   of text (a coin count, a website, "Edit your status") cannot be padded to
+   44px without breaking the line it lives in. The answer the top bar already
+   uses is a transparent, centred `::after` that extends what the finger can
+   land on while every painted pixel stays put — but it was written out longhand
+   in `radial.css` per element, so nothing outside that file could reuse it and
+   the profile hero's links measured 89×21 to 89×38 on a phone.
+
+   This is that technique as one class. Put it on any control whose visual size
+   is deliberately under 44px. It needs no `position: relative` of its own —
+   the rule supplies it — and it is inert on fine pointers.
+
+   Not a replacement for real padding: if a control CAN be 44px, make it 44px.
+   Overlapping overlays still resolve by paint order, so don't stack these on
+   controls that sit less than 44px apart.
+   ========================================================================== */
+@media (pointer: coarse) {
+  .touch-target {
+    position: relative;
+  }
+  .touch-target::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    width: 100%;
+    height: 100%;
+    min-width: var(--site-touch-target);
+    min-height: var(--site-touch-target);
+  }
 }
 
 /* Selection styling — accent fill with the accent's own foreground so text stays

@@ -309,6 +309,32 @@
   margin-bottom: 20px;
 }
 
+/* Reveals the next page of companies. Full width and a 44px target because on a
+   phone it is the control at the end of a long scroll, reached one-handed. */
+.rl-show-more {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  min-height: var(--site-touch-target);
+  padding: 10px 16px;
+  border: 1.5px solid var(--hairline);
+  border-radius: var(--site-radius);
+  background: transparent;
+  font-family: var(--font-data);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--slate);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+.rl-show-more:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
 .rl-chip {
   display: inline-flex;
   align-items: center;
@@ -481,11 +507,28 @@
   }
   .rl-companies-table td {
     display: grid;
-    grid-template-columns: minmax(5.5rem, 34%) 1fr;
+    /* `minmax(0, 1fr)`, not `1fr`: a grid track's default minimum is min-content,
+       so the source badges (an inline-flex row) pushed the value column wider
+       than the card and the last chip was clipped by the card's own border. */
+    grid-template-columns: minmax(5.5rem, 34%) minmax(0, 1fr);
     align-items: center;
     gap: 12px;
     padding: 8px 12px;
     border-bottom: 0;
+  }
+  /* The badge row wraps inside its column rather than running off the card. */
+  .rl-companies-table .rl-source-dots {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+  /* These are the row's controls, and on a card they are what the finger goes
+     for — the star was an 18px glyph in 2px of padding. */
+  .rl-companies-table .rl-star,
+  .rl-companies-table .rl-toggle,
+  .rl-companies-table .rl-chip {
+    min-height: var(--site-touch-target);
+    min-width: var(--site-touch-target);
+    justify-content: center;
   }
   .rl-companies-table td + td {
     border-top: 1px solid color-mix(in srgb, var(--hairline) 60%, transparent);

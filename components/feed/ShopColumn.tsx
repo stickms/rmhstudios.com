@@ -52,10 +52,26 @@ function Preview({ item }: { item: ShopItemView }) {
     // media scrim (the token for "a chip resting on media", i.e. a neutral dark
     // any bright ink reads on), which is also closer to how the colour looks in
     // a feed than a bare white rectangle was.
+    // A gradient item paints the gradient onto the TEXT rather than replacing
+    // the chip's background with it. Setting it as the background overrode the
+    // scrim class (an inline style always does), which put white ink straight
+    // onto a gradient — 2.66:1 on the light end of aurora/molten. Clipping it to
+    // the glyphs keeps the scrim underneath, so the backing is the same known
+    // dark for every item, and it shows the gradient as what is actually sold:
+    // the colour of a name.
     return (
       <div
         className="flex h-12 items-center justify-center rounded-site-sm bg-site-media-scrim-strong px-3 text-sm font-bold"
-        style={data.gradient ? { background: data.gradient, color: '#fff' } : { color: data.color }}
+        style={
+          data.gradient
+            ? {
+                backgroundImage: data.gradient,
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                color: 'transparent',
+              }
+            : { color: data.color }
+        }
       >
         {t('name-preview', { defaultValue: 'Name' })}
       </div>

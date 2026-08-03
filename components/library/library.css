@@ -1117,8 +1117,15 @@
 .lib-upload__open {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 7px;
   padding: 7px 13px;
+  /* 7px around 13px type is a 31px button, and on a phone the label collapses
+     to the glyph alone (43×31 measured). This one is a standalone control with
+     room around it, so it takes the real 44px rather than the ::after trick the
+     inline metadata links need. */
+  min-height: var(--site-touch-target);
+  min-width: var(--site-touch-target);
   font-size: 13px;
   font-weight: 500;
   color: var(--site-text);

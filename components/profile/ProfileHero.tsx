@@ -271,7 +271,7 @@ export function ProfileHero({
                 {profile.handle ? <span>@{profile.handle}</span> : null}
                 <Link
                   to="/predictions"
-                  className="inline-flex items-center gap-1 rounded-full bg-site-warning/10 px-2 py-0.5 font-semibold text-site-warning transition-colors hover:bg-site-warning/15"
+                  className="touch-target inline-flex items-center gap-1 rounded-full bg-site-warning/10 px-2 py-0.5 font-semibold text-site-warning transition-colors hover:bg-site-warning/15"
                   title={t('rmh-coins-count', {
                     count: profile.coins,
                     defaultValue: '{{count}} RMH Coins',
@@ -451,7 +451,7 @@ export function ProfileHero({
                 href={safeHref(profile.website)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-w-0 items-center gap-1.5 text-site-accent hover:underline"
+                className="touch-target inline-flex min-w-0 items-center gap-1.5 text-site-accent hover:underline"
               >
                 <LinkIcon className="size-4 shrink-0" aria-hidden />
                 <span className="max-w-64 truncate">
@@ -476,7 +476,7 @@ export function ProfileHero({
                   href={safeHref(link.url)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="glass-fill glass-interactive inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-site-text"
+                  className="touch-target glass-fill glass-interactive inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-site-text"
                 >
                   <LinkIcon className="size-3.5" aria-hidden />
                   <span className="max-w-48 truncate">{link.label}</span>
