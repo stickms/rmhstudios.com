@@ -1,4 +1,5 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router'
+import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { gameRouteHead } from '@/lib/seo-catalog';
 
 function KowloonKnockoutLayout() {
   return (
@@ -9,9 +10,10 @@ function KowloonKnockoutLayout() {
       />
       <Outlet />
     </div>
-  )
+  );
 }
 
 export const Route = createFileRoute('/kowloon-knockout')({
+  head: () => gameRouteHead('kowloon-knockout'),
   component: KowloonKnockoutLayout,
-})
+});

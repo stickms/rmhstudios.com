@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Swords, Plus } from 'lucide-react';
@@ -12,13 +13,12 @@ import type { SerializedWager } from '@/lib/wager/wager.server';
 
 export const Route = createFileRoute('/_site/wager/')({
   head: () => ({
-    meta: [
-      { title: 'Wager Matches | RMH Studios' },
-      {
-        name: 'description',
-        content: 'Challenge anyone to a coin-staked head-to-head match on any skill game.',
-      },
-    ],
+    meta: buildMeta({
+      title: 'Wager Matches | RMH Studios',
+      description: 'Challenge anyone to a coin-staked head-to-head match on any skill game.',
+      path: '/wager',
+    }),
+    links: [buildCanonical('/wager')],
   }),
   component: WagerPage,
 });

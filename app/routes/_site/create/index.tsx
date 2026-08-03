@@ -13,6 +13,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { FileText, Gamepad2, AppWindow, Boxes, Bot, Coins } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -48,14 +49,13 @@ const fetchGallery = createServerFn({ method: 'GET' })
 
 export const Route = createFileRoute('/_site/create/')({
   head: () => ({
-    meta: [
-      { title: 'Create | RMH Studios' },
-      {
-        name: 'description',
-        content:
-          'Create pages, play the daily arcade challenges, explore games and apps, and build AI personas — all in one place.',
-      },
-    ],
+    meta: buildMeta({
+      title: 'Create | RMH Studios',
+      description:
+        'Create pages, play the daily arcade challenges, explore games and apps, and build AI personas — all in one place.',
+      path: '/create',
+    }),
+    links: [buildCanonical('/create')],
   }),
   validateSearch: (search: Record<string, unknown>): { tab?: StudioTab; sub?: ArcadeSubTab } => {
     const { tab, sub } = search;

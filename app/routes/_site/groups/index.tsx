@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from "@/components/feed/ContextRail";
+import { ContextRail } from '@/components/feed/ContextRail';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { GroupChatsColumn } from '@/components/feed/GroupChatsColumn';
 import { auth } from '@/lib/auth';
@@ -18,7 +19,14 @@ const fetchGroups = createServerFn({ method: 'GET' }).handler(async () => {
 });
 
 export const Route = createFileRoute('/_site/groups/')({
-  head: () => ({ meta: [{ title: 'Group Chats | RMH Studios' }] }),
+  head: () => ({
+    meta: buildMeta({
+      title: 'Group Chats | RMH Studios',
+      description: 'Group chats on RMH Studios — start one with friends or join a public room.',
+      path: '/groups',
+    }),
+    links: [buildCanonical('/groups')],
+  }),
   loader: () => fetchGroups(),
   component: GroupsPage,
 });
@@ -27,9 +35,7 @@ function GroupsPage() {
   const { groups } = Route.useLoaderData();
   return (
     <>
-      <AnimatedMain
-        className="w-full min-w-0 pb-dock"
-      >
+      <AnimatedMain className="w-full min-w-0 pb-dock">
         <GroupChatsColumn initialData={groups} />
       </AnimatedMain>
       <ContextRail reserve />

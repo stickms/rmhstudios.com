@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trophy, Plus, Coins, Users } from 'lucide-react';
@@ -13,13 +14,12 @@ import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
 
 export const Route = createFileRoute('/_site/tournaments/')({
   head: () => ({
-    meta: [
-      { title: 'Tournaments | RMH Studios' },
-      {
-        name: 'description',
-        content: 'Compete in coin-prize bracket tournaments across RMH Studios games.',
-      },
-    ],
+    meta: buildMeta({
+      title: 'Tournaments | RMH Studios',
+      description: 'Compete in coin-prize bracket tournaments across RMH Studios games.',
+      path: '/tournaments',
+    }),
+    links: [buildCanonical('/tournaments')],
   }),
   component: TournamentsPage,
 });

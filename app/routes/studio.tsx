@@ -6,6 +6,7 @@
  */
 
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
+import { appRouteHead } from '@/lib/seo-catalog';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
@@ -19,11 +20,6 @@ const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
 
 export const Route = createFileRoute('/studio')({
   beforeLoad: () => checkAuth(),
-  head: () => ({
-    meta: [
-      { title: 'RMH Studio | rmhstudios' },
-      { name: 'description', content: 'Make beats in your browser. Multi-track DAW with synths, drums, effects, and samples.' },
-    ],
-  }),
+  head: () => appRouteHead('studio'),
   component: () => <Outlet />,
 });

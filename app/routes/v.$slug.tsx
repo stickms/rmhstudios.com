@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createFileRoute, notFound, Link } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import {
   ArrowLeft,
   Pencil,
@@ -53,6 +54,7 @@ const fetchVibe = createServerFn({ method: 'GET' })
       description: page.description || `A vibe page about "${page.prompt}".`,
       // "generating" | "ready" | "error" — drives the still-building overlay below.
       status: page.status,
+      thumbnailUrl: page.thumbnailUrl,
     };
   });
 
@@ -66,21 +68,39 @@ const fetchVibeVersion = createServerFn({ method: 'GET' })
 
 export const Route = createFileRoute('/v/$slug')({
   loader: ({ params }) => fetchVibe({ data: params.slug }),
-  head: ({ loaderData }) => {
+  /**
+   * Vibe pages are user-generated and public, and they are now in the sitemap —
+   * so they need the two things the hand-rolled block here was missing: an
+   * `og:url` and an image (the unfurl was title-and-text only), and a canonical
+   * so the listed URL is the one that ranks. `buildMeta` supplies both, plus
+   * the size declaration and the matching `twitter:card`.
+   *
+   * A page still generating has no screenshot and no final copy, so it is held
+   * out of the index until the worker finishes; the sitemap only lists `ready`
+   * ones for the same reason.
+   */
+  head: ({ loaderData, params }) => {
     const title = loaderData?.title ?? 'Vibe';
     const description = loaderData?.description ?? 'A vibe page generated on RMH Studios.';
+    const path = `/v/${params.slug}`;
+    const ready = loaderData?.status === 'ready';
     return {
       meta: [
-        { title: `${title} | RMH Studios` },
-        { name: 'description', content: description },
-        { property: 'og:type', content: 'website' },
-        { property: 'og:title', content: title },
-        { property: 'og:description', content: description },
-        { property: 'og:site_name', content: 'RMH Studios' },
-        { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:title', content: title },
-        { name: 'twitter:description', content: description },
+        ...buildMeta({
+          title: `${title} | RMH Studios`,
+          description,
+          path,
+          image: (ready && loaderData?.thumbnailUrl) || undefined,
+          imageAlt: loaderData?.thumbnailUrl
+            ? `Screenshot of "${title}", a page generated on RMH Studios.`
+            : undefined,
+          // The screenshot is whatever aspect the generated page rendered at,
+          // not a 1200×630 card.
+          imageSize: loaderData?.thumbnailUrl ? null : undefined,
+        }),
+        ...(ready ? [] : [{ name: 'robots', content: 'noindex, follow' }]),
       ],
+      links: [buildCanonical(path)],
     };
   },
   notFoundComponent: VibeNotFound,
@@ -88,8 +108,13 @@ export const Route = createFileRoute('/v/$slug')({
 });
 
 function VibeViewer() {
-  const { t } = useTranslation("pages");
-  const { slug, html: initialHtml, status: initialStatus, title: initialTitle } = Route.useLoaderData();
+  const { t } = useTranslation('pages');
+  const {
+    slug,
+    html: initialHtml,
+    status: initialStatus,
+    title: initialTitle,
+  } = Route.useLoaderData();
 
   // Generation lifecycle for the page itself: a freshly-reserved page arrives here
   // as "generating" (the user was navigated over before the build finished), so we
@@ -215,7 +240,9 @@ function VibeViewer() {
     try {
       const version = await fetchVibeVersion({ data: { slug, versionId } });
       if (!version) {
-        setError(t("version-unavailable", { defaultValue: "That version is no longer available." }));
+        setError(
+          t('version-unavailable', { defaultValue: 'That version is no longer available.' }),
+        );
         return;
       }
       setHtml(version.html);
@@ -223,7 +250,7 @@ function VibeViewer() {
       setActiveVersionId(versionId);
       if (version.title) document.title = `${version.title} | RMH Studios`;
     } catch {
-      setError(t("version-load-error", { defaultValue: "Could not load that version." }));
+      setError(t('version-load-error', { defaultValue: 'Could not load that version.' }));
     }
   }
 
@@ -274,7 +301,9 @@ function VibeViewer() {
     } catch (err) {
       hadError = true;
       setError(
-        err instanceof VibeStreamError ? err.message : t("customize-error", { defaultValue: "Something went wrong. Try again." }),
+        err instanceof VibeStreamError
+          ? err.message
+          : t('customize-error', { defaultValue: 'Something went wrong. Try again.' }),
       );
     } finally {
       setBusy(false);
@@ -292,7 +321,11 @@ function VibeViewer() {
           finalTitle = latest.title;
         } else {
           hadError = true;
-          setError(t("connection-lost", { defaultValue: "Lost the connection before the update finished. Please try again." }));
+          setError(
+            t('connection-lost', {
+              defaultValue: 'Lost the connection before the update finished. Please try again.',
+            }),
+          );
         }
       } catch {
         hadError = true;
@@ -353,13 +386,17 @@ function VibeViewer() {
 
       {/* Floating toolbar — top-right */}
       <div className="vibe-toolbar fixed right-[calc(0.75rem+var(--safe-right))] top-[calc(0.75rem+var(--safe-top))] z-40">
-        <Link to="/v" aria-label={t("back-to-pages", { defaultValue: "Back to pages" })} className="vibe-toolbar__icon">
+        <Link
+          to="/v"
+          aria-label={t('back-to-pages', { defaultValue: 'Back to pages' })}
+          className="vibe-toolbar__icon"
+        >
           <ArrowLeft size={17} />
         </Link>
         <button
           type="button"
           onClick={handleShare}
-          aria-label={t("copy-share-link", { defaultValue: "Copy share link" })}
+          aria-label={t('copy-share-link', { defaultValue: 'Copy share link' })}
           className="vibe-toolbar__icon"
         >
           {copied ? <Check size={17} /> : <Share2 size={16} />}
@@ -367,7 +404,7 @@ function VibeViewer() {
         <button
           type="button"
           onClick={toggleHistory}
-          aria-label={t("version-history", { defaultValue: "Version history" })}
+          aria-label={t('version-history', { defaultValue: 'Version history' })}
           aria-pressed={historyOpen}
           className="vibe-toolbar__icon"
         >
@@ -375,17 +412,19 @@ function VibeViewer() {
         </button>
         <button type="button" onClick={() => setPanelOpen((v) => !v)} className="vibe-toolbar__cta">
           <Pencil size={15} />
-          {t("customize", { defaultValue: "Customize" })}
+          {t('customize', { defaultValue: 'Customize' })}
         </button>
       </div>
 
       {/* Banner shown while previewing an earlier variant */}
       {viewingOlder && (
         <div className="vibe-version-banner fixed left-1/2 top-[calc(0.75rem+var(--safe-top))] z-40 -translate-x-1/2">
-          <span>{t("viewing-earlier-version", { defaultValue: "Viewing an earlier version" })}</span>
+          <span>
+            {t('viewing-earlier-version', { defaultValue: 'Viewing an earlier version' })}
+          </span>
           <button type="button" onClick={backToLatest} className="vibe-version-banner__btn">
             <RotateCcw size={13} />
-            {t("back-to-latest", { defaultValue: "Back to latest" })}
+            {t('back-to-latest', { defaultValue: 'Back to latest' })}
           </button>
         </div>
       )}
@@ -398,11 +437,13 @@ function VibeViewer() {
       >
         <div className="vibe-history flex h-full flex-col">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="vibe-panel__title">{t("version-history", { defaultValue: "Version history" })}</p>
+            <p className="vibe-panel__title">
+              {t('version-history', { defaultValue: 'Version history' })}
+            </p>
             <button
               type="button"
               onClick={() => setHistoryOpen(false)}
-              aria-label={t("close-history", { defaultValue: "Close history" })}
+              aria-label={t('close-history', { defaultValue: 'Close history' })}
               className="vibe-panel__close"
             >
               <X size={16} />
@@ -416,7 +457,9 @@ function VibeViewer() {
               </div>
             )}
             {!loadingVersions && versions && versions.length === 0 && (
-              <p className="vibe-history__empty">{t("no-history", { defaultValue: "No history yet." })}</p>
+              <p className="vibe-history__empty">
+                {t('no-history', { defaultValue: 'No history yet.' })}
+              </p>
             )}
             {!loadingVersions &&
               versions &&
@@ -425,7 +468,8 @@ function VibeViewer() {
                 .reverse()
                 .map(({ v, label }) => {
                   const isActive =
-                    activeVersionId === v.id || (activeVersionId === null && v.id === latestVersionId);
+                    activeVersionId === v.id ||
+                    (activeVersionId === null && v.id === latestVersionId);
                   return (
                     <button
                       key={v.id}
@@ -438,7 +482,9 @@ function VibeViewer() {
                         <span className="vibe-history__ver">
                           v{label}
                           {v.id === latestVersionId && (
-                            <span className="vibe-history__badge">{t("latest-badge", { defaultValue: "latest" })}</span>
+                            <span className="vibe-history__badge">
+                              {t('latest-badge', { defaultValue: 'latest' })}
+                            </span>
                           )}
                         </span>
                         <time className="vibe-history__time">{formatVersionDate(v.createdAt)}</time>
@@ -451,7 +497,9 @@ function VibeViewer() {
 
           {viewingOlder && (
             <p className="vibe-history__hint">
-              {t("history-branch-hint", { defaultValue: "Hit Customize to branch a new version from the one you're viewing." })}
+              {t('history-branch-hint', {
+                defaultValue: "Hit Customize to branch a new version from the one you're viewing.",
+              })}
             </p>
           )}
         </div>
@@ -465,13 +513,15 @@ function VibeViewer() {
       >
         <div className="vibe-panel mx-auto">
           <div className="mb-2 flex items-center justify-between gap-3">
-            <p className="vibe-panel__title">{t("customize-this-page", { defaultValue: "Customize this page" })}</p>
+            <p className="vibe-panel__title">
+              {t('customize-this-page', { defaultValue: 'Customize this page' })}
+            </p>
             <div className="flex items-center gap-2">
               <ModelSelect value={model} onChange={setModel} disabled={busy} />
               <button
                 type="button"
                 onClick={() => setPanelOpen(false)}
-                aria-label={t("close", { defaultValue: "Close" })}
+                aria-label={t('close', { defaultValue: 'Close' })}
                 className="vibe-panel__close"
               >
                 <X size={16} />
@@ -498,7 +548,9 @@ function VibeViewer() {
                 }
               }}
               rows={2}
-              placeholder={t("customize-placeholder", { defaultValue: "Make it darker, add a pricing section, more neon…" })}
+              placeholder={t('customize-placeholder', {
+                defaultValue: 'Make it darker, add a pricing section, more neon…',
+              })}
               disabled={busy}
               className="vibe-panel__input min-h-11 flex-1"
             />
@@ -506,14 +558,18 @@ function VibeViewer() {
               type="button"
               onClick={() => void handleCustomize()}
               disabled={busy || !prompt.trim()}
-              aria-label={t("apply-customization", { defaultValue: "Apply customization" })}
+              aria-label={t('apply-customization', { defaultValue: 'Apply customization' })}
               className="vibe-panel__submit"
             >
               {busy ? <Loader2 size={18} className="animate-spin" /> : <CornerDownLeft size={18} />}
             </button>
           </div>
 
-          {busy && <p className="vibe-panel__hint mt-2">{t("reimagining", { defaultValue: "Reimagining your page…" })}</p>}
+          {busy && (
+            <p className="vibe-panel__hint mt-2">
+              {t('reimagining', { defaultValue: 'Reimagining your page…' })}
+            </p>
+          )}
           {error && <p className="vibe-panel__error mt-2">{error}</p>}
         </div>
       </div>
@@ -539,20 +595,31 @@ function formatVersionDate(iso: string): string {
  *  continues server-side even if the user navigated here mid-build (or left and came
  *  back), so this resolves on its own. */
 function VibeGenerating({ title, slow }: { title: string; slow: boolean }) {
-  const { t } = useTranslation("pages");
+  const { t } = useTranslation('pages');
   return (
     <div className="vibe-screen fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 px-6 py-12 text-center">
       <div className="vibe-spinner" aria-hidden="true" />
       <div>
-        <p className="vibe-rise text-lg font-semibold tracking-tight">{t("building-vibe", { defaultValue: "Building your vibe…" })}</p>
+        <p className="vibe-rise text-lg font-semibold tracking-tight">
+          {t('building-vibe', { defaultValue: 'Building your vibe…' })}
+        </p>
         <p className="vibe-rise-2 vibe-hint mt-2 max-w-md">
           {title
-            ? t("building-with-title", { defaultValue: '"{{title}}" is coming together. This page updates on its own — you can safely wait here.', title })
-            : t("building-no-title", { defaultValue: "This page updates on its own when it's ready — you can safely wait here." })}
+            ? t('building-with-title', {
+                defaultValue:
+                  '"{{title}}" is coming together. This page updates on its own — you can safely wait here.',
+                title,
+              })
+            : t('building-no-title', {
+                defaultValue:
+                  "This page updates on its own when it's ready — you can safely wait here.",
+              })}
         </p>
         {slow && (
           <p className="vibe-rise-3 vibe-hint mt-2 max-w-md opacity-80">
-            {t("building-slow", { defaultValue: "Still working — a detailed build can take a couple of minutes." })}
+            {t('building-slow', {
+              defaultValue: 'Still working — a detailed build can take a couple of minutes.',
+            })}
           </p>
         )}
       </div>
@@ -562,26 +629,36 @@ function VibeGenerating({ title, slow }: { title: string; slow: boolean }) {
 
 /** Shown when a background generation failed (the reserved page was marked errored). */
 function VibeGenerationFailed() {
-  const { t } = useTranslation("pages");
+  const { t } = useTranslation('pages');
   return (
     <div className="vibe-screen fixed inset-0 z-50 flex flex-col items-center justify-center gap-4">
-      <p className="vibe-rise text-2xl font-bold tracking-tight">{t("generation-failed-title", { defaultValue: "Couldn't finish this vibe" })}</p>
-      <p className="vibe-rise-2 vibe-hint">{t("generation-failed-hint", { defaultValue: "Generation didn't complete. Give it another go." })}</p>
+      <p className="vibe-rise text-2xl font-bold tracking-tight">
+        {t('generation-failed-title', { defaultValue: "Couldn't finish this vibe" })}
+      </p>
+      <p className="vibe-rise-2 vibe-hint">
+        {t('generation-failed-hint', {
+          defaultValue: "Generation didn't complete. Give it another go.",
+        })}
+      </p>
       <Link to="/v" className="vibe-rise-3 vibe-toolbar__cta mt-3">
-        {t("back-to-pages", { defaultValue: "Back to pages" })}
+        {t('back-to-pages', { defaultValue: 'Back to pages' })}
       </Link>
     </div>
   );
 }
 
 function VibeNotFound() {
-  const { t } = useTranslation("pages");
+  const { t } = useTranslation('pages');
   return (
     <div className="vibe-screen fixed inset-0 flex flex-col items-center justify-center gap-4">
-      <p className="vibe-rise text-3xl font-bold tracking-tight">{t("not-found-title", { defaultValue: "Vibe not found" })}</p>
-      <p className="vibe-rise-2 vibe-hint">{t("not-found-hint", { defaultValue: "This page doesn't exist (or never did)." })}</p>
+      <p className="vibe-rise text-3xl font-bold tracking-tight">
+        {t('not-found-title', { defaultValue: 'Vibe not found' })}
+      </p>
+      <p className="vibe-rise-2 vibe-hint">
+        {t('not-found-hint', { defaultValue: "This page doesn't exist (or never did)." })}
+      </p>
       <Link to="/v" className="vibe-rise-3 vibe-toolbar__cta mt-3">
-        {t("make-your-own", { defaultValue: "Make your own" })}
+        {t('make-your-own', { defaultValue: 'Make your own' })}
       </Link>
     </div>
   );

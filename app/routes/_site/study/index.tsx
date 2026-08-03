@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from "@/components/feed/ContextRail";
+import { ContextRail } from '@/components/feed/ContextRail';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { FlashcardsColumn } from '@/components/feed/FlashcardsColumn';
 import { auth } from '@/lib/auth';
@@ -19,7 +20,14 @@ const fetchDecks = createServerFn({ method: 'GET' }).handler(async () => {
 });
 
 export const Route = createFileRoute('/_site/study/')({
-  head: () => ({ meta: [{ title: 'Flashcards | RMH Studios' }] }),
+  head: () => ({
+    meta: buildMeta({
+      title: 'Flashcards | RMH Studios',
+      description: 'Build and drill flashcard decks with spaced repetition on RMHStudy.',
+      path: '/study',
+    }),
+    links: [buildCanonical('/study')],
+  }),
   loader: () => fetchDecks(),
   component: StudyPage,
 });
@@ -28,9 +36,7 @@ function StudyPage() {
   const { decks } = Route.useLoaderData();
   return (
     <>
-      <AnimatedMain
-        className="w-full min-w-0 pb-dock"
-      >
+      <AnimatedMain className="w-full min-w-0 pb-dock">
         <FlashcardsColumn initialData={decks} />
       </AnimatedMain>
       <ContextRail reserve />
