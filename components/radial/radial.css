@@ -2097,7 +2097,7 @@ html.perf-lite .radial-hub__veil {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-/* "Read more" cue on a clamped body (RmharkCard measures; short posts get
+/* "Read more" cue on a clamped body (WheelCard measures; short posts get
    none). Not a control — the whole card is the link — so it is styled as an
    affordance rather than given its own hit area. */
 .rmhark__more {

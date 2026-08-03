@@ -7,25 +7,8 @@ import { BadgeCheck, Heart, MessageCircle, Repeat2 } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { RmharkMedia } from './RmharkMedia';
+import { relativeTimeShort } from '@/lib/utils';
 import type { FeedItem } from '@/lib/feed-types';
-
-/**
- * Elapsed time, formatted against an explicit `now` — never `Date.now()` read
- * at render. A relative string computed during SSR does not survive to
- * hydration (the clock moved), which fails hydration for the entire tree; see
- * components/ui/RelativeTime.
- */
-function timeAgo(then: number, now: number): string {
-  const s = Math.max(0, Math.floor((now - then) / 1000));
-  if (s < 60) return `${s}s`;
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `${d}d`;
-  return `${Math.floor(d / 7)}w`;
-}
 
 /** "GAME_ANNOUNCEMENT" → "Game announcement" — the last-resort label when a
  *  feed category has no translation of its own. */
@@ -43,11 +26,33 @@ function hrefFor(item: FeedItem): string {
 }
 
 /**
- * A single RMHark projected from the radial core — the compact monochrome unit
- * of the feed wheel. Rmharks show author + content; platform announcements show
- * their headline. Kept deliberately light so the wheel stays fluid mid-spin.
+ * A `FeedItem` as the compact, monochrome unit of the home wheel — author +
+ * content for a post, headline for a platform announcement.
+ *
+ * **This is deliberately not `components/feed/RMHarkCard`, and the two are not
+ * merging.** They render the same `FeedItem`, which is why they used to be
+ * named `RmharkCard` and `RMHarkCard` — a pair distinguished only by the case
+ * of three letters, and a collision waiting for the first contributor on a
+ * case-insensitive filesystem.
+ *
+ * They stay separate because the column card is an interactive post (30
+ * imports, 11 hooks, session + feed-store subscriptions, view tracking,
+ * like/repost/menu actions) and the wheel cannot afford it: the wheel rakes
+ * its cards onto a 3D cylinder, and design.md §4 records that a rotated 3D
+ * transform is the slow path for an antialiased curve — nothing rasterised
+ * survives between frames, and the globe's wireframe as thirteen elements
+ * halved the frame rate of the whole gesture. Adding a `variant="wheel"` to
+ * the 541-line card would put all of that weight on the site's most-viewed
+ * surface to save a file.
+ *
+ * What they must NOT do is disagree about the same post. Everything shared is
+ * shared for real: `relativeTimeShort` (the two had private copies that
+ * disagreed — this one stopped at "5w" where the column rolled over to "1mo"),
+ * `RelativeTime`, `UserAvatar`, `FeedItem`. When you add a capability to one
+ * card, check whether this one silently drops it — media was exactly that bug,
+ * and the comment below is what it left behind.
  */
-export const RmharkCard = memo(function RmharkCard({ item }: { item: FeedItem }) {
+export const WheelCard = memo(function WheelCard({ item }: { item: FeedItem }) {
   const { t } = useTranslation('feed');
   const contentRef = useRef<HTMLParagraphElement | null>(null);
   const [clamped, setClamped] = useState(false);
@@ -76,7 +81,7 @@ export const RmharkCard = memo(function RmharkCard({ item }: { item: FeedItem })
             {item.createdAt ? (
               <>
                 {' · '}
-                <RelativeTime date={item.createdAt} format={timeAgo} />
+                <RelativeTime date={item.createdAt} format={relativeTimeShort} />
               </>
             ) : null}
           </span>

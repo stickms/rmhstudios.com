@@ -12,7 +12,7 @@ import { RadialLoader } from '@/components/ui/radial-loader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RadialWheel, type RadialWheelItem } from './RadialWheel';
 import { RadialSideFeed } from './RadialSideFeed';
-import { RmharkCard } from './RmharkCard';
+import { WheelCard } from './WheelCard';
 
 // The full composer is a heavy chunk (GIF picker, AI buttons, mention/emoji
 // autocomplete) — defer it out of the feed route's initial bundle; it only
@@ -64,7 +64,7 @@ function FeedWheel({ initial }: { initial: InitialFeed }) {
   }, []);
 
   const wheelItems = useMemo<RadialWheelItem[]>(
-    () => items.map((item) => ({ id: item.id, node: <RmharkCard item={item} /> })),
+    () => items.map((item) => ({ id: item.id, node: <WheelCard item={item} /> })),
     [items],
   );
 
