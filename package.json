@@ -115,7 +115,7 @@
     "nanoid": "^6.0.0",
     "node-cron": "^4.6.0",
     "node-html-parser": "^9.0.0",
-    "openai": "^6.49.0",
+    "openai": "^7.2.0",
     "pdfjs-dist": "^6.1.200",
     "pg": "^8.22.0",
     "pg-boss": "^12.26.3",
