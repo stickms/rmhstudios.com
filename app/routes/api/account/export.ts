@@ -92,7 +92,7 @@ export const Route = createFileRoute('/api/account/export')({
               take: CAP,
               orderBy: { createdAt: 'desc' },
             }),
-            prisma.rMHarkBookmark.findMany({ where: { userId }, take: CAP }),
+            prisma.savedItem.findMany({ where: { userId, entityType: 'rmhark' }, take: CAP }),
             prisma.userAchievement.findMany({ where: { userId }, take: CAP }),
             prisma.userBlock.findMany({ where: { blockerId: userId }, take: CAP }),
             prisma.userMute.findMany({ where: { muterId: userId }, take: CAP }),

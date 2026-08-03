@@ -1,38 +1,16 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
-import { BookmarksColumn } from '@/components/feed/BookmarksColumn';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from "@/components/feed/ContextRail";
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
-import { auth } from '@/lib/auth';
-import { listBookmarks } from '@/lib/bookmarks.server';
+/**
+ * /bookmarks — legacy redirect to /saves.
+ *
+ * A bookmark is a save. `SavedItem` has listed 'rmhark' among its entity types
+ * since it was built; `RMHarkBookmark` predated it and was never folded in, so
+ * the same post could sit in two lists on two pages that did not know about
+ * each other. Migration 20260803210000 merged the rows.
+ */
 
-// Prefetch the first page server-side (present at first paint / prefetched on
-// intent). Signed-out visitors get `null` and the column shows its empty state.
-const fetchBookmarks = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
-  if (!session) return { bookmarks: null };
-  return { bookmarks: await listBookmarks(session.user.id) };
-});
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_site/bookmarks')({
-  head: () => ({ meta: [{ title: 'Bookmarks | RMH Studios' }] }),
-  loader: () => fetchBookmarks(),
-  component: BookmarksPage,
+  beforeLoad: () => {
+    throw redirect({ to: '/saves', search: { tab: 'saved' } });
+  },
 });
-
-function BookmarksPage() {
-  const { bookmarks } = Route.useLoaderData();
-  return (
-    <>
-      <AnimatedMain
-        className="w-full min-w-0 pb-dock"
-      >
-        <BookmarksColumn initialData={bookmarks} />
-      </AnimatedMain>
-      <ContextRail reserve />
-    </>
-  );
-}

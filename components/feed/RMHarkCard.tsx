@@ -26,7 +26,8 @@ import { useReactionTrigger } from'@/lib/emoji/use-reaction-trigger';
 import { applyReactionToggle } from'@/lib/social/reactions';
 import { useResolvedUser, useSession } from'@/components/Providers';
 import { useFreshUser } from'@/stores/userDisplayStore';
-import { timeAgoShort } from'@/lib/utils';
+import { relativeTimeShort } from'@/lib/utils';
+import { RelativeTime } from'@/components/ui/RelativeTime';
 import { useTranslation } from'react-i18next';
 import { useLocaleStore } from'@/stores/localeStore';
 import { LOCALE_TO_LANGUAGE_NAME } from'@/lib/i18n/config';
@@ -360,12 +361,9 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  {t('unknown-user', { defaultValue:'Unknown'})}
  </span>
  )}
- {/* Relative time is computed from Date.now(), so the value the server
- renders and the value the client hydrates with can differ by a tick
- (e.g."5s"→"7s"). suppressHydrationWarning keeps React from
- treating that expected drift as a hydration error (React #418). */}
- <span className="text-site-text-dim shrink-0"suppressHydrationWarning>
- · {timeAgoShort(item.createdAt)}
+ <span className="text-site-text-dim shrink-0">
+ ·{' '}
+ <RelativeTime date={item.createdAt} format={relativeTimeShort} />
  </span>
  {item.edited && (
  <span className="text-site-text-dim shrink-0"title="Edited">

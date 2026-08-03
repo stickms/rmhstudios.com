@@ -109,7 +109,7 @@ function planCopy(t: (key: string, opts: { defaultValue: string }) => string) {
 
 export function MembershipPanel({
   currentTier,
-  returnPath = '/pricing',
+  returnPath = '/store',
   onCoinShop,
   headingLevel = 'h1',
 }: {

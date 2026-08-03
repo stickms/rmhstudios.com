@@ -1,7 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from "@/components/feed/ContextRail";
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
+import { PageFrame } from '@/components/feed/PageLayout';
 import { Zap } from 'lucide-react';
 import { ColumnHeader } from '@/components/feed/ColumnHeader';
 import { JourneyColumn } from '@/components/feed/JourneyColumn';
@@ -23,9 +21,7 @@ function ProgressPage() {
 
   return (
     <>
-      <AnimatedMain
-        className="w-full min-w-0 pb-dock"
-      >
+      <PageFrame>
         {session && !isPending ? (
           <JourneyColumn userId={session.user.id} initialTab="progress" />
         ) : (
@@ -58,8 +54,7 @@ function ProgressPage() {
             )}
           </>
         )}
-      </AnimatedMain>
-      <ContextRail reserve />
+      </PageFrame>
     </>
   );
 }

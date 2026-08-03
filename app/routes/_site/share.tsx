@@ -9,7 +9,7 @@
  */
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { PageFrame } from '@/components/feed/PageLayout';
 import { ComposeModal } from '@/components/feed/ComposeModal';
 
 export const Route = createFileRoute('/_site/share')({
@@ -38,8 +38,8 @@ function SharePage() {
   const draft = buildDraft({ title, text, url });
 
   return (
-    <AnimatedMain className="w-full min-w-0 pb-dock">
+    <PageFrame>
       <ComposeModal open initialContent={draft} onClose={() => navigate({ to: '/' })} />
-    </AnimatedMain>
+    </PageFrame>
   );
 }

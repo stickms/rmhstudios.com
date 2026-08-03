@@ -45,8 +45,12 @@ export const SITEMAP_CHUNK_SIZE = 40_000;
 export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/', changefreq: 'daily', priority: 1.0 },
 
-  // Primary hubs. `/create` is where the games/apps/builds browser actually
-  // lives — the old `/games` and `/apps` sitemap entries pointed at nothing.
+  // Primary hubs. `/games` and `/apps` are the public catalog indexes; they
+  // were listed here for a long time with nothing behind them, then dropped
+  // when that was found, and now exist. `/create` is the creator half of the
+  // same catalog (Arcade Pass, Ranked, personas, earnings) and stays listed.
+  { loc: '/games', changefreq: 'weekly', priority: 0.9 },
+  { loc: '/apps', changefreq: 'weekly', priority: 0.9 },
   { loc: '/create', changefreq: 'daily', priority: 0.8 },
   { loc: '/explore', changefreq: 'daily', priority: 0.8 },
   { loc: '/library', changefreq: 'daily', priority: 0.8 },
@@ -60,21 +64,22 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   // Secondary site surfaces.
   //
   // Absent on purpose: `/arcade`, `/leaderboard`, `/events`, `/market`,
-  // `/personas`, `/playlists`, `/spaces` and `/v` all look like destinations in
-  // the nav but are `beforeLoad` redirects into a tab of `/create`, `/store`,
-  // `/communities` or `/library`. They are in `EXCLUDED_ROUTES` as redirects;
-  // the pages they land on are listed here instead.
+  // `/shop`, `/pricing`, `/personas`, `/playlists`, `/spaces` and `/v` all look
+  // like destinations in the nav but are `beforeLoad` redirects into a tab of
+  // `/create`, `/store`, `/communities` or `/library`. They are in
+  // `EXCLUDED_ROUTES` as redirects; the pages they land on are listed here
+  // instead. `/shop` and `/pricing` joined that list late — they were listed
+  // here *and* self-canonical while `/store` was too, so one catalog and one
+  // pricing table each claimed two canonical URLs.
   { loc: '/achievements', changefreq: 'weekly', priority: 0.5 },
   { loc: '/groups', changefreq: 'weekly', priority: 0.5 },
   { loc: '/help', changefreq: 'monthly', priority: 0.6 },
   { loc: '/predictions', changefreq: 'daily', priority: 0.5 },
-  { loc: '/pricing', changefreq: 'monthly', priority: 0.6 },
   { loc: '/quotes', changefreq: 'weekly', priority: 0.4 },
   { loc: '/ranked', changefreq: 'daily', priority: 0.5 },
   { loc: '/rideshare', changefreq: 'weekly', priority: 0.5 },
   { loc: '/roadmap', changefreq: 'weekly', priority: 0.5 },
   { loc: '/services', changefreq: 'monthly', priority: 0.6 },
-  { loc: '/shop', changefreq: 'weekly', priority: 0.5 },
   { loc: '/store', changefreq: 'weekly', priority: 0.5 },
   { loc: '/study', changefreq: 'weekly', priority: 0.5 },
   { loc: '/study/browse', changefreq: 'daily', priority: 0.5 },
@@ -185,10 +190,10 @@ export type ExclusionReason =
 export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   // ── personal / auth-gated ──
   '/analytics': 'personal',
-  '/bookmarks': 'personal',
+  '/bookmarks': 'redirect', // → /saves
   '/drafts': 'personal',
   '/history': 'personal',
-  '/lists': 'personal',
+  '/lists': 'redirect', // → /saves?tab=lists
   '/messages': 'personal',
   '/notifications': 'personal',
   '/progress': 'personal',
@@ -196,7 +201,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/saves': 'personal',
   '/share': 'personal',
   '/wallet': 'personal',
-  '/wishlist': 'personal',
+  '/wishlist': 'redirect', // → /saves?tab=wishlist
   '/wrapped': 'personal',
   '/creator-studio': 'personal',
   '/homes/manage': 'personal',
@@ -221,7 +226,8 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/settings/privacy': 'personal',
   '/settings/profile': 'personal',
   '/settings/security': 'personal',
-  '/studio/themes': 'personal',
+  '/settings/themes': 'personal',
+  '/studio/themes': 'redirect', // → /settings/themes
   '/user-builds/manage': 'personal',
   '/user-builds/submit': 'auth-gated',
   '/v/new': 'auth-gated',
@@ -265,6 +271,8 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/leaderboard': 'redirect', // → /create?tab=games&sub=leaderboard
   '/events': 'redirect', // → /communities?tab=events
   '/market': 'redirect', // → /store?tab=market
+  '/shop': 'redirect', // → /store?tab=shop
+  '/pricing': 'redirect', // → /store?tab=membership
   '/personas': 'redirect', // → /create?tab=personas
   '/playlists': 'redirect', // → /library?view=music
   '/spaces': 'redirect', // → /communities?tab=spaces

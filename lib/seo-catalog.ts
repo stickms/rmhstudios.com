@@ -15,12 +15,22 @@
 
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
-import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
+import { buildCanonical, buildMeta, ogCardPath, SITE_URL } from '@/lib/seo';
 import { breadcrumbSchema, jsonLdScript, videoGameSchema } from '@/lib/schema';
 
-/** Where the games/apps browser actually lives. There is no `/games` route. */
-export const GAMES_INDEX_PATH = '/create?tab=games';
-export const APPS_INDEX_PATH = '/create?tab=apps';
+/**
+ * The catalog index pages, and what every game/app breadcrumb walks back to.
+ *
+ * These used to be `/create?tab=games` and `/create?tab=apps`, because the
+ * browser lived only as a tab of Create and there was no `/games` route. That
+ * made the browse surface for the whole catalog the one page on the site that
+ * could not be submitted to a search engine — `sitemap-coverage` refuses query
+ * strings, correctly, since a `?tab=` is a page state and not a page. Both are
+ * real routes now (`_site/games/index.tsx`, `_site/apps/index.tsx`) and the
+ * Create tabs remain for the creator surfaces stacked above them.
+ */
+export const GAMES_INDEX_PATH = '/games';
+export const APPS_INDEX_PATH = '/apps';
 
 /** A `<link>` descriptor, as TanStack's `head().links` accepts it. */
 type LinkTag = Record<string, string>;
@@ -109,5 +119,34 @@ export function appRouteHead(id: string, options: HeadOptions = {}) {
         ]),
       ),
     ],
+  };
+}
+
+/**
+ * `ItemList` JSON-LD for a catalog index page.
+ *
+ * The index pages are the only place a crawler can see the catalog as a *set*
+ * rather than as 21 unrelated documents, so they carry the list. Entries are
+ * `url`-only positions rather than nested objects: the full `VideoGame` /
+ * `SoftwareApplication` description lives on each item's own page, and
+ * repeating it here would be two sources for one fact.
+ */
+export function catalogItemListSchema(kind: 'game' | 'app') {
+  const entries =
+    kind === 'game'
+      ? games.filter((g) => !g.unlisted && g.href.startsWith('/')).map((g) => `/games/${g.id}`)
+      : apps.filter((a) => a.href.startsWith('/')).map((a) => a.href);
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: kind === 'game' ? 'RMH Studios games' : 'RMH Studios apps',
+    numberOfItems: entries.length,
+    itemListOrder: 'https://schema.org/ItemListOrderAscending',
+    itemListElement: entries.map((path, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: `${SITE_URL}${path}`,
+    })),
   };
 }

@@ -1,66 +1,20 @@
 /**
- * Pricing Page Route (/pricing)
+ * /pricing — legacy redirect.
  *
- * Standalone "membership" page. The tier UI itself lives in the reusable
- * `MembershipPanel` (also embedded at the top of the combined /store page);
- * this route just supplies the loader (current tier) and page chrome.
+ * Membership is the "Membership" tab of /store, alongside Shop and Market.
+ * This route redirects so old links — upgrade prompts, the developer keys
+ * page, and anything handed to a payment processor or a partner — land there.
+ *
+ * Keeping it as a redirect rather than deleting it is the point: /pricing is
+ * the URL most likely to exist outside this codebase. The page it used to
+ * render was the same <MembershipPanel/> the tab renders, off the same tier
+ * lookup, at a second indexable URL with its own canonical.
  */
-import { createFileRoute } from '@tanstack/react-router';
-import { buildCanonical, buildMeta } from '@/lib/seo';
-import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
-import { auth } from '@/lib/auth';
-import { getUserTier, type Tier } from '@/lib/entitlements';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from '@/components/feed/ContextRail';
-import { MembershipPanel } from '@/components/membership/MembershipPanel';
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 
-/**
- * `null` means "nobody is signed in" — distinct from the free tier. Collapsing
- * the two showed signed-out visitors a Free card badged "Current" with a
- * disabled "Your current plan" button where its call to action belongs.
- */
-const fetchCurrentTier = createServerFn({ method: 'GET' }).handler(
-  async (): Promise<Tier | null> => {
-    const request = getRequest();
-    const session = await auth.api.getSession({ headers: request.headers });
-    if (!session?.user?.id) return null;
-    return getUserTier(session.user.id);
-  },
-);
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_site/pricing')({
-  loader: () => fetchCurrentTier(),
-  head: () => ({
-    meta: buildMeta({
-      title: 'Membership — RMH Studios',
-      description: 'Become a member of RMH Studios. Four tiers, from Free to Enterprise.',
-      path: '/pricing',
-    }),
-    links: [buildCanonical('/pricing')],
-  }),
-  component: Pricing,
+  beforeLoad: () => {
+    throw redirect({ to: '/store', search: { tab: 'membership' } });
+  },
 });
-
-function Pricing() {
-  // Cast: until app/routeTree.gen.ts regenerates (first dev/build),
-  // useLoaderData() infers `any`, which breaks RANK[currentTier] indexing.
-  const currentTier = Route.useLoaderData() as Tier | null;
-
-  return (
-    <>
-      <AnimatedMain
-        className="relative isolate min-h-screen w-full min-w-0 pb-dock"
-        targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
-      >
-        {/* One hero. The panel's own PinnedHero is the page's h1 and carries
-            the tier CTAs; a route-level AppleHero above it stacked a second
-            full hero (and a second h1) in front of every price. */}
-        <MembershipPanel currentTier={currentTier} returnPath="/pricing" />
-      </AnimatedMain>
-      {/* Trailing gutter to match the blog/library layout */}
-      <ContextRail reserve compactReserve />
-    </>
-  );
-}

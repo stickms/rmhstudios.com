@@ -348,14 +348,14 @@ export function NotificationsColumn({
  return `/u/${n.actor?.handle ??'_'}/post/${n.entityId}`;
  case'user':
  if (!n.entityId) return null;
- return n.actor?.handle ? `/u/${n.actor.handle}`: `/profile/${n.entityId}`;
+ return `/u/${n.actor?.handle ?? n.entityId}`;
  // System notifications route to the relevant hub.
  case'achievement':
  return'/achievements';
  case'level':
  return'/progress';
  case'membership':
- return'/pricing';
+ return'/store?tab=membership';
  case'ride':
  case'ride_message':
  return'/rideshare/ride';

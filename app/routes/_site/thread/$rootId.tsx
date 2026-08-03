@@ -1,9 +1,7 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
+import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from '@/components/feed/ContextRail';
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { ThreadView } from '@/components/feed/ThreadView';
 import { auth } from '@/lib/auth';
 import { getThread } from '@/lib/feed/thread.server';
@@ -68,10 +66,9 @@ function ThreadPage() {
   const { items } = Route.useLoaderData();
   return (
     <>
-      <AnimatedMain className="w-full min-w-0 pb-dock">
+      <PageFrame>
         <ThreadView items={items} />
-      </AnimatedMain>
-      <ContextRail reserve />
+      </PageFrame>
     </>
   );
 }

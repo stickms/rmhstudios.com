@@ -169,7 +169,7 @@ export function ProfileCosmetics() {
         })}
         action={
           <Button asChild variant="accent" size="sm">
-            <Link to="/shop">
+            <Link to="/store" search={{ tab: 'shop' }}>
               {t('profile-cosmetics-empty-cta', { defaultValue: 'Go to the shop' })}
             </Link>
           </Button>

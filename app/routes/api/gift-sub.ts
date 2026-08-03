@@ -55,7 +55,7 @@ export const Route = createFileRoute('/api/gift-sub')({
             entityType: 'membership',
             entityId: parsed.data.tier,
             preview: `${session.user.name ?? 'Someone'} gifted you ${parsed.data.months} month(s) of ${GIFT_TIER_LABELS[parsed.data.tier]}!`,
-            link: '/pricing',
+            link: '/store?tab=membership',
           }).catch(() => {});
           await grantAchievement(session.user.id, 'economy.first_gift_sub').catch(() => {});
 

@@ -1,10 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { PageFrame } from '@/components/feed/PageLayout';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from '@/components/feed/ContextRail';
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { DeckMarketplaceColumn } from '@/components/feed/DeckMarketplaceColumn';
 import { auth } from '@/lib/auth';
 import { listMarketplaceDecks } from '@/lib/study.server';
@@ -35,10 +33,9 @@ function BrowsePage() {
   const initialData = Route.useLoaderData();
   return (
     <>
-      <AnimatedMain className="w-full min-w-0 pb-dock">
+      <PageFrame>
         <DeckMarketplaceColumn initialData={initialData} />
-      </AnimatedMain>
-      <ContextRail reserve />
+      </PageFrame>
     </>
   );
 }

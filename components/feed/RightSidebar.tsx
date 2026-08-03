@@ -295,7 +295,7 @@ export function RightSidebar({
         </h2>
         <div className="space-y-2.5">
           {recommendedUsers.map((user) => {
-            const profileHref = user.handle ? `/u/${user.handle}` : `/profile/${user.id}`;
+            const profileHref = `/u/${user.handle ?? user.id}`;
             return (
               <div
                 key={user.id}

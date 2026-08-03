@@ -1,10 +1,8 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { FileText } from 'lucide-react';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from "@/components/feed/ContextRail";
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { ColumnHeader } from '@/components/feed/ColumnHeader';
 import { DraftsColumn } from '@/components/feed/DraftsColumn';
 import { useSession } from '@/components/Providers';
@@ -39,9 +37,7 @@ function DraftsPage() {
 
   return (
     <>
-      <AnimatedMain
-        className="w-full min-w-0 pb-dock"
-      >
+      <PageFrame>
         {session && !isPending ? (
           <DraftsColumn initialData={drafts} />
         ) : (
@@ -68,8 +64,7 @@ function DraftsPage() {
             )}
           </>
         )}
-      </AnimatedMain>
-      <ContextRail reserve />
+      </PageFrame>
     </>
   );
 }

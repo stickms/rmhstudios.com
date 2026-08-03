@@ -34,7 +34,7 @@ const GO_TARGETS: Array<{ key: string; href: string; tKey: string; label: string
   { key: 'e', href: '/search', tKey: 'kbd-go-explore', label: 'Explore & search' },
   { key: 'n', href: '/notifications', tKey: 'kbd-go-notifications', label: 'Notifications' },
   { key: 'm', href: '/messages', tKey: 'kbd-go-messages', label: 'Messages' },
-  { key: 'b', href: '/bookmarks', tKey: 'kbd-go-bookmarks', label: 'Bookmarks' },
+  { key: 'b', href: '/saves', tKey: 'kbd-go-bookmarks', label: 'Saved' },
   { key: 'l', href: '/library', tKey: 'kbd-go-library', label: 'Library' },
   { key: 'c', href: '/communities', tKey: 'kbd-go-communities', label: 'Communities' },
   { key: 'w', href: '/wallet', tKey: 'kbd-go-wallet', label: 'Wallet' },

@@ -142,7 +142,11 @@ export function AIImageButton({
  })}
  </p>
  <div className="mt-5 flex flex-col gap-2">
- <Link to="/pricing"onClick={() => setShowUpgrade(false)}>
+ <Link
+              to="/store"
+              search={{ tab: 'membership' }}
+              onClick={() => setShowUpgrade(false)}
+            >
  <Button variant="accent"className="w-full gap-1.5">
  <Sparkles className="h-4 w-4"/>
  {t('ai-image-upgrade-cta', { defaultValue:'Upgrade to unlock'})}

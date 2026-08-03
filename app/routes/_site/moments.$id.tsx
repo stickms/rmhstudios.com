@@ -7,14 +7,12 @@
  */
 
 import { createFileRoute, notFound, Link } from '@tanstack/react-router';
+import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
 import { useTranslation } from 'react-i18next';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from "@/components/feed/ContextRail";
 import { Button } from '@/components/ui/button';
 import { buildMeta, buildCanonical, ogCardPath } from '@/lib/seo';
 import { getMoment } from '@/lib/moments.server';
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 
 const KIND_LABELS: Record<string, string> = {
   achievement: 'Achievement unlocked',
@@ -72,9 +70,7 @@ function MomentPage() {
 
   return (
     <>
-      <AnimatedMain
-        className="w-full min-w-0 pb-dock"
-      >
+      <PageFrame>
         <div className="mx-auto flex max-w-2xl flex-col items-center gap-6 px-4 py-12 text-center">
           <p className="text-sm font-semibold uppercase tracking-wide text-site-accent">{label}</p>
 
@@ -101,7 +97,7 @@ function MomentPage() {
 
           <div className="flex flex-wrap items-center justify-center gap-3">
             {moment.user.handle && (
-              <Link to="/profile/$id" params={{ id: moment.user.id }}>
+              <Link to="/u/$userid" params={{ userid: moment.user.handle }}>
                 <Button variant="outline">
                   {t('moment-view-profile', { defaultValue: 'View profile' })}
                 </Button>
@@ -114,8 +110,7 @@ function MomentPage() {
             </Link>
           </div>
         </div>
-      </AnimatedMain>
-      <ContextRail reserve />
+      </PageFrame>
     </>
   );
 }

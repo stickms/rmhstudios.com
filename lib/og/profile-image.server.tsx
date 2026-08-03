@@ -5,7 +5,7 @@
  * page leads with. Chrome comes from `chrome.server`, so this file only says
  * what a profile is.
  *
- * Used by /api/og/profile/$id and referenced from both profile routes'
+ * Used by /api/og/profile/$id and referenced from the /u/$userid route's
  * `og:image` — links unfurl as the profile rather than as a bare avatar.
  */
 

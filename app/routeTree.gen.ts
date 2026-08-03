@@ -199,6 +199,7 @@ import { Route as SiteAdminRideshareRouteImport } from './routes/_site/admin/rid
 import { Route as SiteAdminSecurityReportsRouteImport } from './routes/_site/admin/security-reports'
 import { Route as SiteAdminUserBuildsRouteImport } from './routes/_site/admin/user-builds'
 import { Route as SiteAdminUsersRouteImport } from './routes/_site/admin/users'
+import { Route as SiteAppsIndexRouteImport } from './routes/_site/apps/index'
 import { Route as SiteBlogIndexRouteImport } from './routes/_site/blog/index'
 import { Route as SiteBlogSlugRouteImport } from './routes/_site/blog/$slug'
 import { Route as SiteBuildsIndexRouteImport } from './routes/_site/builds/index'
@@ -206,6 +207,7 @@ import { Route as SiteBuildsSlugRouteImport } from './routes/_site/builds/$slug'
 import { Route as SiteCSlugRouteImport } from './routes/_site/c.$slug'
 import { Route as SiteCreateIndexRouteImport } from './routes/_site/create/index'
 import { Route as SiteDeveloperIndexRouteImport } from './routes/_site/developer/index'
+import { Route as SiteGamesIndexRouteImport } from './routes/_site/games/index'
 import { Route as SiteGamesGameIdRouteImport } from './routes/_site/games/$gameId'
 import { Route as SiteGroupsIndexRouteImport } from './routes/_site/groups/index'
 import { Route as SiteGroupsIdRouteImport } from './routes/_site/groups/$id'
@@ -247,6 +249,7 @@ import { Route as SiteSettingsNotificationsRouteImport } from './routes/_site/se
 import { Route as SiteSettingsPrivacyRouteImport } from './routes/_site/settings/privacy'
 import { Route as SiteSettingsProfileRouteImport } from './routes/_site/settings/profile'
 import { Route as SiteSettingsSecurityRouteImport } from './routes/_site/settings/security'
+import { Route as SiteSettingsThemesRouteImport } from './routes/_site/settings/themes'
 import { Route as SiteSpacesIndexRouteImport } from './routes/_site/spaces.index'
 import { Route as SiteSpacesIdRouteImport } from './routes/_site/spaces.$id'
 import { Route as SiteStoreIndexRouteImport } from './routes/_site/store/index'
@@ -1695,6 +1698,11 @@ const SiteAdminUsersRoute = SiteAdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const SiteAppsIndexRoute = SiteAppsIndexRouteImport.update({
+  id: '/apps/',
+  path: '/apps/',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteBlogIndexRoute = SiteBlogIndexRouteImport.update({
   id: '/blog/',
   path: '/blog/',
@@ -1729,6 +1737,11 @@ const SiteDeveloperIndexRoute = SiteDeveloperIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => SiteDeveloperRouteRoute,
+} as any)
+const SiteGamesIndexRoute = SiteGamesIndexRouteImport.update({
+  id: '/games/',
+  path: '/games/',
+  getParentRoute: () => SiteRoute,
 } as any)
 const SiteGamesGameIdRoute = SiteGamesGameIdRouteImport.update({
   id: '/games/$gameId',
@@ -1936,6 +1949,11 @@ const SiteSettingsProfileRoute = SiteSettingsProfileRouteImport.update({
 const SiteSettingsSecurityRoute = SiteSettingsSecurityRouteImport.update({
   id: '/settings/security',
   path: '/settings/security',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteSettingsThemesRoute = SiteSettingsThemesRouteImport.update({
+  id: '/settings/themes',
+  path: '/settings/themes',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteSpacesIndexRoute = SiteSpacesIndexRouteImport.update({
@@ -4733,6 +4751,7 @@ export interface FileRoutesByFullPath {
   '/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/settings/profile': typeof SiteSettingsProfileRoute
   '/settings/security': typeof SiteSettingsSecurityRoute
+  '/settings/themes': typeof SiteSettingsThemesRoute
   '/spaces/$id': typeof SiteSpacesIdRoute
   '/store/$userid': typeof SiteStoreUseridRoute
   '/studio/themes': typeof SiteStudioThemesRoute
@@ -4956,10 +4975,12 @@ export interface FileRoutesByFullPath {
   '/tag/$tag/rss.xml': typeof TagTagRssDotxmlRoute
   '/u/$handle/rss.xml': typeof UHandleRssDotxmlRoute
   '/admin/': typeof SiteAdminIndexRoute
+  '/apps/': typeof SiteAppsIndexRoute
   '/blog/': typeof SiteBlogIndexRoute
   '/builds/': typeof SiteBuildsIndexRoute
   '/create/': typeof SiteCreateIndexRoute
   '/developer/': typeof SiteDeveloperIndexRoute
+  '/games/': typeof SiteGamesIndexRoute
   '/groups/': typeof SiteGroupsIndexRoute
   '/homes/': typeof SiteHomesIndexRoute
   '/library/': typeof SiteLibraryIndexRoute
@@ -5443,6 +5464,7 @@ export interface FileRoutesByTo {
   '/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/settings/profile': typeof SiteSettingsProfileRoute
   '/settings/security': typeof SiteSettingsSecurityRoute
+  '/settings/themes': typeof SiteSettingsThemesRoute
   '/spaces/$id': typeof SiteSpacesIdRoute
   '/store/$userid': typeof SiteStoreUseridRoute
   '/studio/themes': typeof SiteStudioThemesRoute
@@ -5666,10 +5688,12 @@ export interface FileRoutesByTo {
   '/tag/$tag/rss.xml': typeof TagTagRssDotxmlRoute
   '/u/$handle/rss.xml': typeof UHandleRssDotxmlRoute
   '/admin': typeof SiteAdminIndexRoute
+  '/apps': typeof SiteAppsIndexRoute
   '/blog': typeof SiteBlogIndexRoute
   '/builds': typeof SiteBuildsIndexRoute
   '/create': typeof SiteCreateIndexRoute
   '/developer': typeof SiteDeveloperIndexRoute
+  '/games': typeof SiteGamesIndexRoute
   '/groups': typeof SiteGroupsIndexRoute
   '/homes': typeof SiteHomesIndexRoute
   '/library': typeof SiteLibraryIndexRoute
@@ -6179,6 +6203,7 @@ export interface FileRoutesById {
   '/_site/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/_site/settings/profile': typeof SiteSettingsProfileRoute
   '/_site/settings/security': typeof SiteSettingsSecurityRoute
+  '/_site/settings/themes': typeof SiteSettingsThemesRoute
   '/_site/spaces/$id': typeof SiteSpacesIdRoute
   '/_site/store/$userid': typeof SiteStoreUseridRoute
   '/_site/studio/themes': typeof SiteStudioThemesRoute
@@ -6402,10 +6427,12 @@ export interface FileRoutesById {
   '/tag/$tag/rss.xml': typeof TagTagRssDotxmlRoute
   '/u/$handle/rss.xml': typeof UHandleRssDotxmlRoute
   '/_site/admin/': typeof SiteAdminIndexRoute
+  '/_site/apps/': typeof SiteAppsIndexRoute
   '/_site/blog/': typeof SiteBlogIndexRoute
   '/_site/builds/': typeof SiteBuildsIndexRoute
   '/_site/create/': typeof SiteCreateIndexRoute
   '/_site/developer/': typeof SiteDeveloperIndexRoute
+  '/_site/games/': typeof SiteGamesIndexRoute
   '/_site/groups/': typeof SiteGroupsIndexRoute
   '/_site/homes/': typeof SiteHomesIndexRoute
   '/_site/library/': typeof SiteLibraryIndexRoute
@@ -6915,6 +6942,7 @@ export interface FileRouteTypes {
     | '/settings/privacy'
     | '/settings/profile'
     | '/settings/security'
+    | '/settings/themes'
     | '/spaces/$id'
     | '/store/$userid'
     | '/studio/themes'
@@ -7138,10 +7166,12 @@ export interface FileRouteTypes {
     | '/tag/$tag/rss.xml'
     | '/u/$handle/rss.xml'
     | '/admin/'
+    | '/apps/'
     | '/blog/'
     | '/builds/'
     | '/create/'
     | '/developer/'
+    | '/games/'
     | '/groups/'
     | '/homes/'
     | '/library/'
@@ -7625,6 +7655,7 @@ export interface FileRouteTypes {
     | '/settings/privacy'
     | '/settings/profile'
     | '/settings/security'
+    | '/settings/themes'
     | '/spaces/$id'
     | '/store/$userid'
     | '/studio/themes'
@@ -7848,10 +7879,12 @@ export interface FileRouteTypes {
     | '/tag/$tag/rss.xml'
     | '/u/$handle/rss.xml'
     | '/admin'
+    | '/apps'
     | '/blog'
     | '/builds'
     | '/create'
     | '/developer'
+    | '/games'
     | '/groups'
     | '/homes'
     | '/library'
@@ -8360,6 +8393,7 @@ export interface FileRouteTypes {
     | '/_site/settings/privacy'
     | '/_site/settings/profile'
     | '/_site/settings/security'
+    | '/_site/settings/themes'
     | '/_site/spaces/$id'
     | '/_site/store/$userid'
     | '/_site/studio/themes'
@@ -8583,10 +8617,12 @@ export interface FileRouteTypes {
     | '/tag/$tag/rss.xml'
     | '/u/$handle/rss.xml'
     | '/_site/admin/'
+    | '/_site/apps/'
     | '/_site/blog/'
     | '/_site/builds/'
     | '/_site/create/'
     | '/_site/developer/'
+    | '/_site/games/'
     | '/_site/groups/'
     | '/_site/homes/'
     | '/_site/library/'
@@ -10620,6 +10656,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminUsersRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/_site/apps/': {
+      id: '/_site/apps/'
+      path: '/apps'
+      fullPath: '/apps/'
+      preLoaderRoute: typeof SiteAppsIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/blog/': {
       id: '/_site/blog/'
       path: '/blog'
@@ -10668,6 +10711,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/developer/'
       preLoaderRoute: typeof SiteDeveloperIndexRouteImport
       parentRoute: typeof SiteDeveloperRouteRoute
+    }
+    '/_site/games/': {
+      id: '/_site/games/'
+      path: '/games'
+      fullPath: '/games/'
+      preLoaderRoute: typeof SiteGamesIndexRouteImport
+      parentRoute: typeof SiteRoute
     }
     '/_site/games/$gameId': {
       id: '/_site/games/$gameId'
@@ -10954,6 +11004,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/security'
       fullPath: '/settings/security'
       preLoaderRoute: typeof SiteSettingsSecurityRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/settings/themes': {
+      id: '/_site/settings/themes'
+      path: '/settings/themes'
+      fullPath: '/settings/themes'
+      preLoaderRoute: typeof SiteSettingsThemesRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/spaces/': {
@@ -14585,6 +14642,7 @@ interface SiteRouteChildren {
   SiteSettingsPrivacyRoute: typeof SiteSettingsPrivacyRoute
   SiteSettingsProfileRoute: typeof SiteSettingsProfileRoute
   SiteSettingsSecurityRoute: typeof SiteSettingsSecurityRoute
+  SiteSettingsThemesRoute: typeof SiteSettingsThemesRoute
   SiteSpacesIdRoute: typeof SiteSpacesIdRoute
   SiteStoreUseridRoute: typeof SiteStoreUseridRoute
   SiteStudioThemesRoute: typeof SiteStudioThemesRoute
@@ -14597,9 +14655,11 @@ interface SiteRouteChildren {
   SiteUserBuildsManageRoute: typeof SiteUserBuildsManageRoute
   SiteUserBuildsSubmitRoute: typeof SiteUserBuildsSubmitRoute
   SiteWagerIdRoute: typeof SiteWagerIdRoute
+  SiteAppsIndexRoute: typeof SiteAppsIndexRoute
   SiteBlogIndexRoute: typeof SiteBlogIndexRoute
   SiteBuildsIndexRoute: typeof SiteBuildsIndexRoute
   SiteCreateIndexRoute: typeof SiteCreateIndexRoute
+  SiteGamesIndexRoute: typeof SiteGamesIndexRoute
   SiteGroupsIndexRoute: typeof SiteGroupsIndexRoute
   SiteHomesIndexRoute: typeof SiteHomesIndexRoute
   SiteLibraryIndexRoute: typeof SiteLibraryIndexRoute
@@ -14684,6 +14744,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteSettingsPrivacyRoute: SiteSettingsPrivacyRoute,
   SiteSettingsProfileRoute: SiteSettingsProfileRoute,
   SiteSettingsSecurityRoute: SiteSettingsSecurityRoute,
+  SiteSettingsThemesRoute: SiteSettingsThemesRoute,
   SiteSpacesIdRoute: SiteSpacesIdRoute,
   SiteStoreUseridRoute: SiteStoreUseridRoute,
   SiteStudioThemesRoute: SiteStudioThemesRoute,
@@ -14696,9 +14757,11 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteUserBuildsManageRoute: SiteUserBuildsManageRoute,
   SiteUserBuildsSubmitRoute: SiteUserBuildsSubmitRoute,
   SiteWagerIdRoute: SiteWagerIdRoute,
+  SiteAppsIndexRoute: SiteAppsIndexRoute,
   SiteBlogIndexRoute: SiteBlogIndexRoute,
   SiteBuildsIndexRoute: SiteBuildsIndexRoute,
   SiteCreateIndexRoute: SiteCreateIndexRoute,
+  SiteGamesIndexRoute: SiteGamesIndexRoute,
   SiteGroupsIndexRoute: SiteGroupsIndexRoute,
   SiteHomesIndexRoute: SiteHomesIndexRoute,
   SiteLibraryIndexRoute: SiteLibraryIndexRoute,

@@ -76,7 +76,7 @@ export function ListDetailView({
     const res = await fetch(`/api/lists/${list.id}`, { method: 'DELETE' });
     if (res.ok) {
       toast.success(t('deleted', { defaultValue: 'List deleted' }));
-      void navigate({ to: '/lists' });
+      void navigate({ to: '/saves', search: { tab: 'lists' } });
     }
   }
 

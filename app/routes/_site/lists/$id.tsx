@@ -25,7 +25,7 @@ export const Route = createFileRoute('/_site/lists/$id')({
 function ListPage() {
   const { list, members } = Route.useLoaderData();
   return (
-    <PageLayout title={list.name} backTo="/lists">
+    <PageLayout title={list.name} backTo="/saves">
       <ListDetailView list={list} members={members} />
     </PageLayout>
   );

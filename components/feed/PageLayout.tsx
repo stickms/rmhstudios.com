@@ -5,9 +5,75 @@ import { Link } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Breadcrumbs, type BreadcrumbItem } from '@/components/ui/breadcrumbs';
+import { cn } from '@/lib/utils';
 import { DEFAULT_WIDTH, WIDE_WIDTH } from '@/lib/layout-width';
 import { AnimatedMain } from './AnimatedMain';
 import { ContextRail } from './ContextRail';
+
+interface PageFrameProps {
+  children: React.ReactNode;
+  /**
+   * Page-specific content for the shell's live rail. Portalled into the rail on
+   * wide screens and dropped entirely on narrow ones — supplementary only.
+   */
+  rightSidebar?: React.ReactNode;
+  wide?: boolean;
+  /**
+   * Extra classes for the scrolling column. The frame always supplies
+   * `w-full min-w-0`; pass `noDockPadding` rather than fighting `pb-dock` here.
+   */
+  className?: string;
+  /**
+   * Drop the bottom inset that keeps content clear of the floating dock. Only
+   * for pages that end in their own full-bleed element.
+   */
+  noDockPadding?: boolean;
+}
+
+/**
+ * The page frame with no header — `AnimatedMain` at the right measure, the
+ * dock inset, and the live-rail portal.
+ *
+ * This exists because 26 routes hand-rolled exactly this: they render a column
+ * component that already draws its own `ColumnHeader` (Explore, Bookmarks,
+ * Ranked, Drafts, Achievements, the thread and profile views …), so
+ * `PageLayout` would have stacked a second title above the first, and the only
+ * way out was to import `AnimatedMain` and `ContextRail` directly and repeat
+ * the arithmetic. Which meant the frame — the measure, the `pb-dock` inset, the
+ * rail reservation — was written out 26 more times and drifted: three widths,
+ * two rail spellings, and 21 files still importing a `targetWidth` constant the
+ * API had stopped taking.
+ *
+ * So: `PageLayout` when the page needs a title, `PageFrame` when its content
+ * already has one. Nothing under `app/routes/_site/` should import
+ * `AnimatedMain` directly — `lib/__tests__/design-consistency.test.ts` enforces
+ * that, with an allowlist for the handful of genuinely bespoke shells.
+ */
+export function PageFrame({
+  children,
+  rightSidebar,
+  wide,
+  className,
+  noDockPadding,
+}: PageFrameProps) {
+  const targetWidth = wide ? WIDE_WIDTH : DEFAULT_WIDTH;
+  return (
+    <>
+      <AnimatedMain
+        className={cn('w-full min-w-0', !noDockPadding && 'pb-dock', className)}
+        targetWidth={targetWidth}
+        wide={wide}
+      >
+        {children}
+      </AnimatedMain>
+      {/* No `reserve` — it and `compactReserve` are documented no-ops on
+          ContextRail (the shell's grid keeps the column centred on its own),
+          and the rail renders nothing without children anyway. Two dozen call
+          sites were passing them. */}
+      <ContextRail>{rightSidebar}</ContextRail>
+    </>
+  );
+}
 
 interface PageLayoutProps {
   title: string;

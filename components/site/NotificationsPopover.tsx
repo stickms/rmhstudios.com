@@ -64,7 +64,7 @@ function resolveLink(n: NotificationItem): string | null {
       return n.entityId ? `/u/${n.actor?.handle ?? '_'}/post/${n.entityId}` : null;
     case 'user':
       if (!n.entityId) return null;
-      return n.actor?.handle ? `/u/${n.actor.handle}` : `/profile/${n.entityId}`;
+      return `/u/${n.actor?.handle ?? n.entityId}`;
     default:
       return null;
   }

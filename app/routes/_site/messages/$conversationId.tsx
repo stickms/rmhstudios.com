@@ -3,12 +3,11 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
+import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { MessagesRightSidebar } from '@/components/feed/MessagesRightSidebar';
-import { ContextRail } from '@/components/feed/ContextRail';
 import { ConversationView } from '@/components/feed/ConversationView';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { auth } from '@/lib/auth';
 import { getConversationOtherUser, type ConversationOtherUser } from '@/lib/conversation.server';
 
@@ -33,16 +32,8 @@ function ConversationPage() {
   const { otherUser } = Route.useLoaderData() as { otherUser: ConversationOtherUser | null };
 
   return (
-    <>
-      {/* Center - Conversation */}
-      <AnimatedMain className="w-full min-w-0 pb-dock">
+    <PageFrame rightSidebar={<MessagesRightSidebar />}>
         <ConversationView conversationId={conversationId} initialOtherUser={otherUser} />
-      </AnimatedMain>
-
-      {/* Right Sidebar */}
-      <ContextRail>
-        <MessagesRightSidebar />
-      </ContextRail>
-    </>
+    </PageFrame>
   );
 }

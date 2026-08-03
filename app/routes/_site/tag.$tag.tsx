@@ -1,9 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from '@/components/feed/ContextRail';
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { TagColumn } from '@/components/feed/TagColumn';
 import { auth } from '@/lib/auth';
 import { listTagFeed, type TagFeedResult } from '@/lib/tags.server';
@@ -62,10 +60,9 @@ function TagPage() {
   const { data } = Route.useLoaderData() as unknown as { data: TagFeedResult };
   return (
     <>
-      <AnimatedMain className="w-full min-w-0 pb-dock">
+      <PageFrame>
         <TagColumn tag={tag} initialData={data} />
-      </AnimatedMain>
-      <ContextRail reserve />
+      </PageFrame>
     </>
   );
 }

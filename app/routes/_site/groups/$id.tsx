@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { ContextRail } from "@/components/feed/ContextRail";
+import { PageFrame } from '@/components/feed/PageLayout';
 import { GroupChatView } from '@/components/feed/GroupChatView';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,7 @@ function GroupChatPage() {
 
   return (
     <>
-      <AnimatedMain className="w-full min-w-0">
+      <PageFrame noDockPadding>
         {isPending ? (
           <div className="flex justify-center py-20">
             <Spinner />
@@ -34,8 +33,7 @@ function GroupChatPage() {
         ) : (
           <GroupChatView id={id} currentUserId={session.user.id} />
         )}
-      </AnimatedMain>
-      <ContextRail reserve />
+      </PageFrame>
     </>
   );
 }
