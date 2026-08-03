@@ -20,17 +20,13 @@ import {
   computeBestPurchase,
   computeJps,
 } from '@/lib/temple-of-joy/engine';
-import { useFlash, useTempleSnapshot, useTempleValue } from '../hooks';
+import { useFlash, useGrowOnApproach, useTempleSnapshot, useTempleValue } from '../hooks';
 import { TempleRow, TempleSegments, TempleEmpty, Glyph } from '../ui';
 
 /** Rows rendered before the window grows. */
 const PAGE = 40;
 
-export function BlessingsPanel({
-  scrollRef,
-}: {
-  scrollRef: React.RefObject<HTMLDivElement | null>;
-}) {
+export function BlessingsPanel() {
   const { t } = useTranslation('c-temple-of-joy');
   const filter = useTempleValue((s) => s.blessingFilter);
   const [flashed, flash] = useFlash();
@@ -64,21 +60,9 @@ export function BlessingsPanel({
   // Grow the window as the player nears the end. Not a virtualiser: rows are
   // variable-height and read top-to-bottom, so "render 40, add 40" gets the
   // whole benefit for a fraction of the complexity — and keeps ⌘F working.
-  useEffect(() => {
-    const node = scrollRef.current;
-    if (!node || limit >= rows.length) return;
-
-    const onScroll = () => {
-      const remaining = node.scrollHeight - node.scrollTop - node.clientHeight;
-      if (remaining < 600) setLimit((current) => Math.min(rows.length, current + PAGE));
-    };
-
-    node.addEventListener('scroll', onScroll, { passive: true });
-    // Fire once: a short list in a tall panel never scrolls, so the handler
-    // above would never run and the rest would never appear.
-    onScroll();
-    return () => node.removeEventListener('scroll', onScroll);
-  }, [rows.length, limit, scrollRef]);
+  const sentinel = useGrowOnApproach(limit < rows.length, () =>
+    setLimit((current) => Math.min(rows.length, current + PAGE)),
+  );
 
   const options = useMemo(
     () =>
@@ -134,6 +118,10 @@ export function BlessingsPanel({
           />
         ))
       )}
+
+      {/* Where the window ends. Coming into view is what pages the next forty
+          in — see `useGrowOnApproach`. */}
+      <div ref={sentinel} aria-hidden />
     </>
   );
 }

@@ -610,38 +610,52 @@
      * bar along the bottom edge (it costs 3.25rem and buys the thumb zone), and
      * the list keeps a share it can show four rows in.
      */
-    --toj-dock-h: min(42dvh, 24rem);
+    /**
+     * How much the bottom bar gives back when you scroll into the list.
+     *
+     * Zero until the panel is scrolled down, then the labels fold away and the
+     * bar loses this much height. Whatever it gives up the list takes, exactly
+     * — the two tokens below are written against it — so the altar above never
+     * moves. A globe that resized every time you scrolled a shop would be worse
+     * than the pixels are worth, and on iOS the whole reason to reclaim them is
+     * that Safari's own bar has already taken fifty of its own.
+     */
+    --toj-nav-shrink: 0rem;
+
+    --toj-dock-h: calc(min(42dvh, 24rem) + var(--toj-nav-shrink));
     /* The bar's drawn height, before the safe-area inset it adds underneath.
        Named because the toast rail has to sit clear of it. */
-    --toj-bar-h: 3.75rem;
-    /* The altar is bounded by what is left, not by a guess at it — the frame's
-       height less the list, the bar, the counter's two lines, the rites row and
-       the room's own inset. Written down rather than approximated, because
-       every previous version of this number was a guess and every one of them
-       was wrong. */
-    --toj-field: min(
-      calc(
-        100dvh - var(--toj-dock-h) - var(--toj-bar-h) - 8.25rem - var(--toj-safe-top) -
-          var(--toj-safe-bottom) * 2
-      ),
-      86vw
+    --toj-bar-h: calc(3.75rem - var(--toj-nav-shrink));
+
+    /**
+     * How tall the pinned altar is.
+     *
+     * The same arithmetic the flex column used to do — viewport less the list,
+     * the bar and the insets — but written down, because the stage is no longer
+     * a flex child that can be told to take what is left. It is `sticky`, and a
+     * sticky box needs a height of its own.
+     *
+     * `dvh`, so when Safari's toolbar rolls away the altar is what grows.
+     */
+    --toj-stage-h: calc(
+      100dvh - var(--toj-dock-h) - var(--toj-bar-h) - var(--toj-safe-top) -
+        var(--toj-safe-bottom)
     );
+
+    /* What is left of the pinned altar once the counter's two lines, the rites
+       row and the room's own inset have taken theirs. Derived from the stage
+       rather than re-deriving the stage, so the two can never disagree.
+       `dock + bar` is invariant under the shrink above, so neither moves when
+       the bar folds. */
+    --toj-field: min(calc(var(--toj-stage-h) - 8.25rem - var(--toj-safe-bottom)), 86vw);
   }
 
-  /* The dock comes up from the bar, so only its top corners are rounded — a
-     card floating clear of the bottom of a phone wastes the one band of screen
-     a thumb reaches most easily. */
-  .toj-dock {
-    height: var(--toj-dock-h);
-    flex-shrink: 0;
-    border-top: 1px solid var(--toj-rule);
-    border-radius: var(--toj-radius-lg) var(--toj-radius-lg) 0 0;
-    overflow: hidden;
+  /* Scrolled down into the list: the labels fold and the bar hands its height
+     to the panel above it. Scrolling back up, or reaching the top, restores it. */
+  .toj[data-nav='compact'] {
+    --toj-nav-shrink: 1.25rem;
   }
 
-  .toj-stage {
-    min-height: 9rem;
-  }
 }
 
 /**
@@ -1904,8 +1918,13 @@
   justify-content: center;
   /* The glyph sits ON the word, not beside it. */
   gap: 3px;
-  min-height: 3.25rem;
+  min-height: calc(3.25rem - var(--toj-nav-shrink, 0rem));
   padding: var(--toj-1) 2px;
+  transition:
+    min-height var(--toj-base) var(--toj-ease),
+    color var(--toj-quick) var(--toj-ease),
+    background-color var(--toj-quick) var(--toj-ease),
+    box-shadow var(--toj-quick) var(--toj-ease);
   border-radius: var(--toj-radius);
   font-size: 0.68rem;
   line-height: 1.15;
@@ -1926,6 +1945,29 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
+  /* Folded away rather than removed. `display: none` cannot be transitioned and
+     would take the word out of the accessibility tree with it; a clipped box of
+     zero height keeps the label readable to a screen reader while the glyph
+     carries the slot visually. */
+  max-height: 2.4em;
+  transition:
+    max-height var(--toj-base) var(--toj-ease),
+    opacity var(--toj-quick) var(--toj-ease);
+}
+
+.toj[data-nav='compact'] .toj-tabs[data-variant='bar'] .toj-tab-label {
+  max-height: 0;
+  opacity: 0;
+}
+
+.toj[data-nav='compact'] .toj-tabs[data-variant='bar'] .toj-tab-glyph {
+  font-size: 1.35rem;
+}
+
+/* The dot rides the glyph up as the label goes. */
+.toj[data-nav='compact'] .toj-tabs[data-variant='bar'] .toj-tab-dot {
+  top: 3px;
+  inset-inline-end: 28%;
 }
 
 /**
@@ -1962,6 +2004,31 @@
 .toj-scrim[data-sheet='true'] {
   align-items: flex-end;
   padding: 0;
+}
+
+/**
+ * A fixed overlay over a scrolling document scrolls the document.
+ *
+ * On a phone the page behind these is a real document now, so a drag that
+ * starts on a scrim — the dark area around a dialog, which is most of the
+ * screen — scrolled the shop underneath it. `touch-action: none` on the
+ * backdrop refuses the gesture outright, which is cheaper and steadier than
+ * the usual body-locking trick (that one has to save and restore the scroll
+ * position, and gets it wrong on iOS often enough to be famous).
+ *
+ * The panels inside opt back in: the lane's card and the room sheet are
+ * genuinely scrollable, and carry their own `overscroll-behavior: contain` so
+ * reaching their end does not hand the gesture back to the page.
+ */
+.toj-scrim,
+.toj-bowl {
+  touch-action: none;
+}
+
+.toj-dialog,
+.toj-sheet,
+.toj-bowl-card {
+  touch-action: pan-y;
 }
 
 .toj-sheet {
@@ -3772,14 +3839,102 @@ button.toj-row:active:not(:disabled) {
 
 @media (max-width: 39.99rem), (max-width: 61.99rem) and (min-height: 34.01rem) {
   /**
-   * The room takes the whole top of the screen, and the counter floats in it.
+   * ── The DOCUMENT scrolls here, not a box inside it ──────────────────────
    *
-   * `position: relative` on the STAGE rather than on the sanctum because the
-   * sanctum clips (`overflow: hidden`, so a ripple cannot escape it) and the
-   * counter has to be able to sit on the room's very edge.
+   * Mobile Safari only rolls its address and tab bars away for document
+   * scroll. A `flex-1 overflow-y-auto` panel inside a `position: fixed` shell —
+   * which is what this was — scrolls perfectly and tells the browser nothing,
+   * so Safari kept ~100px of chrome for the whole session on the one device
+   * with the least room to spare. It is the fifth rule in
+   * `docs/design-language.md` §12.1, and this game was breaking it.
+   *
+   * So on a phone the shell stops being a fixed viewport and becomes a page:
+   * the altar is `sticky` at the top (still pinned, still tappable, never
+   * scrolls away), the list flows underneath it in normal document flow, and
+   * the bar is `fixed` to the bottom edge. Nothing moves visually that did not
+   * move before — but the thing being scrolled is now the document, so Safari
+   * collapses, `100dvh` grows, and `--toj-stage-h` hands every recovered pixel
+   * to the globe.
+   *
+   * The desktop keeps the fixed shell and the inner scroller: there is no
+   * browser chrome to reclaim and a dock that scrolls beside a static room is
+   * the right shape for a mouse.
+   */
+  .toj {
+    position: static;
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: visible;
+    /* The document is the scroller now, so its overscroll has to reach the
+       browser — that is the gesture Safari watches. Pull-to-refresh is not a
+       risk here: the altar owns its own gestures (`touch-action: none` on the
+       field), so a drag that starts on the globe never becomes a page pull. */
+    overscroll-behavior: auto;
+  }
+
+  .toj-frame {
+    height: auto;
+    min-height: 100dvh;
+    /* Clear of the fixed bar, so the last row of the list is reachable. */
+    padding-bottom: calc(var(--toj-bar-h) + var(--toj-safe-bottom));
+  }
+
+  .toj-body {
+    display: block;
+  }
+
+  /**
+   * The altar, pinned.
+   *
+   * Opaque, because the list now scrolls BEHIND it rather than inside a box
+   * beside it — and it carries the room's light, which used to be painted by
+   * `.toj` across a viewport that no longer exists.
    */
   .toj-stage {
-    position: relative;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    height: var(--toj-stage-h);
+    min-height: 9rem;
+    background:
+      radial-gradient(
+        110% 78% at 50% 26%,
+        rgb(var(--toj-gold-rgb) / 0.14),
+        rgb(var(--toj-gold-rgb) / 0.04) 46%,
+        transparent 74%
+      ),
+      radial-gradient(120% 90% at 50% 100%, var(--toj-ground-deep), transparent 60%),
+      var(--toj-ground);
+  }
+
+  /* The dock comes up from the bar, so only its top corners are rounded — a
+     card floating clear of the bottom of a phone wastes the one band of screen
+     a thumb reaches most easily. It is as tall as its contents now; the
+     minimum is what guarantees a list under the altar at rest. */
+  .toj-dock {
+    min-height: var(--toj-dock-h);
+    border-top: 1px solid var(--toj-rule);
+    border-radius: var(--toj-radius-lg) var(--toj-radius-lg) 0 0;
+  }
+
+  /* Not a scroller any more — the document is. */
+  .toj-panel-scroll {
+    overflow: visible;
+    flex: none;
+  }
+
+  .toj-tabs[data-variant='bar'] {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+  }
+
+  /* The dock is no longer a fixed slab at the bottom of the screen — it is the
+     document — so the toast rail clears only the bar. */
+  .toj-toasts {
+    bottom: calc(var(--toj-bar-h) + var(--toj-safe-bottom) + 0.75rem);
+    max-height: 11rem;
   }
 
   .toj-hud {
@@ -3863,9 +4018,41 @@ button.toj-row:active:not(:disabled) {
     display: none;
   }
 
-  /* The panel's top inset came from the header that is now gone. */
+  /**
+   * The panel's top inset came from the header that is now gone — and it cannot
+   * go on the SCROLLER.
+   *
+   * A sticky `top: 0` pins to the scroll container's PADDING edge, not its
+   * scrollport edge, so 12px of scroller padding left the quantity switch
+   * floating 12px below the top of the dock with a live 12px band above it.
+   * Rows scrolled up through that band in front of the control that is supposed
+   * to be covering them. The space has to belong to the sticky element itself,
+   * so that when it pins, its own box is what fills the gap.
+   */
   .toj-panel-scroll {
+    padding-top: 0;
+  }
+
+  /**
+   * The quantity switch pins under the ALTAR, not under the viewport.
+   *
+   * Its scrollport is the document now, so a bare `top: 0` would slide it up
+   * behind the pinned room and leave the list with no controls. It stops where
+   * the room stops — and because that offset is `--toj-stage-h`, which is
+   * `dvh`-based, it follows the altar as Safari's toolbar rolls away.
+   */
+  .toj-toolbar {
     padding-top: var(--toj-3);
+    top: var(--toj-stage-h);
+    /* Under the room (z-index 3), over the rows it covers. */
+    z-index: 2;
+  }
+
+  /* Panels that open on something other than the toolbar — the Temple's stats,
+     Settings' first group — still need the inset, and theirs can be a margin
+     because nothing sticks. */
+  .toj-panel-scroll > :first-child:not(.toj-toolbar) {
+    margin-top: var(--toj-3);
   }
 
   /**

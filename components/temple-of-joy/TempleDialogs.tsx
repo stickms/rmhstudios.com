@@ -8,9 +8,10 @@
  */
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
+import { clearSave } from '@/lib/temple-of-joy/persistence';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
 import { fmt, formatDuration } from '@/lib/temple-of-joy/numbers';
 import {
@@ -30,6 +31,7 @@ export function TempleDialogs() {
       <VigilDialog />
       <AscendDialog />
       <MannaDialog />
+      <ResetDialog />
       <Toasts />
     </>
   );
@@ -348,6 +350,68 @@ function Scrim({ children, onClose }: { children: React.ReactNode; onClose: () =
         {children}
       </div>
     </div>
+  );
+}
+
+/* ─── Starting again ──────────────────────────────────────────── */
+
+/**
+ * The one action in the game that takes something away for good.
+ *
+ * Ascension gives Grace back and keeps your levels; this keeps nothing. It gets
+ * a dialog rather than a confirm-on-second-tap because a mis-tap here cannot be
+ * undone by playing on, and it says the word "everything" before the button
+ * does.
+ */
+function ResetDialog() {
+  const { t } = useTranslation('c-temple-of-joy');
+  const open = useTempleValue((s) => s.showResetDialog);
+  const [working, setWorking] = useState(false);
+
+  if (!open) return null;
+
+  const close = () => useTempleStore.getState().setShowResetDialog(false);
+
+  return (
+    <Scrim onClose={working ? () => {} : close}>
+      <div className="toj-dialog-body">
+        <h2 className="toj-dialog-title">
+          {t('reset-title', { defaultValue: 'Empty the temple' })}
+        </h2>
+        <p className="toj-dialog-text">
+          {t('reset-text', {
+            defaultValue:
+              'Every source, every blessing, every trophy, all your Grace and every ascension — deleted, here and on your account. There is no way back and no Grace for it. The temple opens again as if you had never been.',
+          })}
+        </p>
+      </div>
+
+      <div className="toj-dialog-actions">
+        <TempleButton variant="quiet" disabled={working} onClick={close}>
+          {t('reset-keep', { defaultValue: 'Keep playing' })}
+        </TempleButton>
+        <TempleButton
+          variant="danger"
+          disabled={working}
+          onClick={() => {
+            setWorking(true);
+            // The store is reset FIRST so the interface is already empty by the
+            // time the network settles; `clearSave` is awaited only to keep the
+            // button disabled until the row is actually gone. Autosave writes
+            // the fresh state back over whatever raced it — either way what
+            // lands is an empty save.
+            useTempleStore.getState().reset();
+            void clearSave().finally(() => {
+              setWorking(false);
+              close();
+            });
+          }}
+        >
+          <Glyph>🗑️</Glyph>
+          {t('reset-confirm', { defaultValue: 'Delete everything' })}
+        </TempleButton>
+      </div>
+    </Scrim>
   );
 }
 

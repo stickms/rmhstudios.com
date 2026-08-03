@@ -12,18 +12,14 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TROPHIES, TROPHY_MAP } from '@/lib/temple-of-joy/data/trophies';
 import { computeDevotion } from '@/lib/temple-of-joy/engine';
-import { useTempleSnapshot } from '../hooks';
+import { useGrowOnApproach, useTempleSnapshot } from '../hooks';
 import { TempleRow, TempleSegments, TempleSection, Glyph } from '../ui';
 
 const PAGE = 60;
 
 type Filter = 'all' | 'earned' | 'locked';
 
-export function TrophiesPanel({
-  scrollRef,
-}: {
-  scrollRef: React.RefObject<HTMLDivElement | null>;
-}) {
+export function TrophiesPanel() {
   const { t } = useTranslation('c-temple-of-joy');
   const [filter, setFilter] = useState<Filter>('all');
   const [limit, setLimit] = useState(PAGE);
@@ -50,19 +46,9 @@ export function TrophiesPanel({
     setLimit(PAGE);
   }, [filter]);
 
-  useEffect(() => {
-    const node = scrollRef.current;
-    if (!node || limit >= rows.length) return;
-
-    const onScroll = () => {
-      const remaining = node.scrollHeight - node.scrollTop - node.clientHeight;
-      if (remaining < 600) setLimit((current) => Math.min(rows.length, current + PAGE));
-    };
-
-    node.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => node.removeEventListener('scroll', onScroll);
-  }, [rows.length, limit, scrollRef]);
+  const sentinel = useGrowOnApproach(limit < rows.length, () =>
+    setLimit((current) => Math.min(rows.length, current + PAGE)),
+  );
 
   return (
     <>
@@ -127,6 +113,9 @@ export function TrophiesPanel({
           />
         );
       })}
+
+      {/* Where the window ends — see `useGrowOnApproach`. */}
+      <div ref={sentinel} aria-hidden />
     </>
   );
 }

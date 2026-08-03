@@ -15,20 +15,47 @@ import { join } from 'node:path';
 const SHEET = join(process.cwd(), 'components/temple-of-joy/temple-of-joy.css');
 const css = readFileSync(SHEET, 'utf8');
 
-/** Every selector in the sheet, paired with the line it starts on. */
+/**
+ * Every selector in the sheet, paired with the line it starts on.
+ *
+ * A line scan, not a regex over the whole file. The obvious pattern for this —
+ * `/(^|[};])\s*([^{};@]+?)\s*\{/g` — backtracks catastrophically once the sheet
+ * passes a few thousand lines, and the symptom is this test timing out rather
+ * than failing, which reads like an unrelated flake. The sheet is
+ * prettier-formatted, so a selector is one or more lines ending in `{`.
+ */
 function selectors(): { text: string; line: number }[] {
-  const out: { text: string; line: number }[] = [];
   // Strip comments first: they contain braces, prose and example CSS.
   const stripped = css.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
-  const re = /(^|[};])\s*([^{};@]+?)\s*\{/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(stripped))) {
-    const text = m[2].trim();
-    if (!text || text.startsWith('@') || text.startsWith('%')) continue;
-    // Inside a keyframes body: `0%`, `from`, `to`.
-    if (/^(from|to|[\d.]+%(\s*,\s*[\d.]+%)*)$/.test(text)) continue;
-    out.push({ text, line: stripped.slice(0, m.index).split('\n').length });
-  }
+  const out: { text: string; line: number }[] = [];
+
+  let pending = '';
+  let start = 0;
+  stripped.split('\n').forEach((raw, index) => {
+    const line = raw.trim();
+    if (!line) return;
+
+    if (line.endsWith('{')) {
+      if (!pending) start = index + 1;
+      const text = (pending ? `${pending} ${line}` : line).slice(0, -1).trim();
+      pending = '';
+      if (!text || text.startsWith('@') || text.startsWith('%')) return;
+      // Inside a keyframes body: `0%`, `from`, `to`.
+      if (/^(from|to|[\d.]+%(\s*,\s*[\d.]+%)*)$/.test(text)) return;
+      out.push({ text, line: start });
+      return;
+    }
+
+    // A comma-separated selector list spread over several lines.
+    if (line.endsWith(',')) {
+      if (!pending) start = index + 1;
+      pending += (pending ? ' ' : '') + line;
+      return;
+    }
+
+    pending = '';
+  });
+
   return out;
 }
 
