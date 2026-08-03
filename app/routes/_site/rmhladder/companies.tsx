@@ -91,6 +91,14 @@ function CompaniesPage() {
   const [watchlist, setWatchlist] = useState<Set<string>>(new Set(watchlistCompanyIds));
   const [expanded, setExpanded] = useState<string | null>(null);
   const [errorLine, setErrorLine] = useState<string | null>(null);
+  // How many rows are on screen. The loader hands back the whole catalog (344
+  // companies today) and this page used to render every one. That was survivable
+  // as a dense table; it is not as the phone card layout below, where each row
+  // is seven labelled lines — 344 of them is a page tens of thousands of pixels
+  // tall that has to lay out before anything is interactive. Search narrows the
+  // list, and this reveals the rest a chunk at a time.
+  const PAGE = 25;
+  const [limit, setLimit] = useState(PAGE);
 
   const prevRef = useRef(companies);
   useEffect(() => {
@@ -98,6 +106,8 @@ function CompaniesPage() {
       prevRef.current = companies;
       setRows(companies as AnyRow[]);
       setWatchlist(new Set(watchlistCompanyIds));
+      setLimit(PAGE); // a new result set starts at the top again
+
     }
   }, [companies, watchlistCompanyIds]);
 
@@ -193,7 +203,7 @@ function CompaniesPage() {
           </tr>
         </thead>
         <tbody>
-          {rows.map((c) => {
+          {rows.slice(0, limit).map((c) => {
             const sources = (c.sources as AnyRow[] | undefined) ?? [];
             const byPlatform = new Map(sources.map((s) => [s.platform as string, s]));
             const isExpanded = expanded === c.id;
@@ -304,6 +314,12 @@ function CompaniesPage() {
           })}
         </tbody>
       </table>
+
+      {rows.length > limit && (
+        <button type="button" className="rl-show-more" onClick={() => setLimit((n) => n + PAGE)}>
+          Show more — {rows.length - limit} of {rows.length} remaining
+        </button>
+      )}
     </div>
   );
 }
