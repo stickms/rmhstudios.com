@@ -314,7 +314,7 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
         section: 'actions',
         keywords: 'me account profile page',
         icon: User,
-        run: () => go(`/profile/${userHandle}`),
+        run: () => go(`/u/${userHandle}`),
       });
     }
     if (signedIn) {

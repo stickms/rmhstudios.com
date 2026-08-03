@@ -365,7 +365,7 @@ async function applyFollow(args: {
       type: 'FOLLOW',
       entityType: 'user',
       entityId: followerId,
-      link: args.followerHandle ? `/u/${args.followerHandle}` : `/profile/${followerId}`,
+      link: `/u/${args.followerHandle ?? followerId}`,
       dedupeUnread: true,
     });
     // Three serial upserts against the *followed* user's achievement rows. They

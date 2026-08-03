@@ -101,7 +101,7 @@ function MomentPage() {
 
           <div className="flex flex-wrap items-center justify-center gap-3">
             {moment.user.handle && (
-              <Link to="/profile/$id" params={{ id: moment.user.id }}>
+              <Link to="/u/$userid" params={{ userid: moment.user.handle }}>
                 <Button variant="outline">
                   {t('moment-view-profile', { defaultValue: 'View profile' })}
                 </Button>

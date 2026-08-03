@@ -113,7 +113,7 @@ export interface ProfilePayload {
 /**
  * Resolve a public profile by handle (preferred) or id, annotated for the given
  * viewer (follow state, own-profile extras). Shared by the `/api/profile/$id`
- * GET handler and the `/profile/$id` route loader so the page can be
+ * GET handler and the `/u/$userid` route loader so the page can be
  * server-rendered / prefetched instead of fetched client-side on mount.
  *
  * Returns `null` when no such user exists (the caller maps that to a 404 /

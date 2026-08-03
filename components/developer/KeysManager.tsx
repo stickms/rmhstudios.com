@@ -152,7 +152,9 @@ export function KeysManager() {
           request, so it stays in sync with your subscription.
         </p>
         <Button asChild variant="accent" size="sm" className="mt-3">
-          <Link to="/pricing">View plans</Link>
+          <Link to="/store" search={{ tab: 'membership' }}>
+            View plans
+          </Link>
         </Button>
       </section>
     );

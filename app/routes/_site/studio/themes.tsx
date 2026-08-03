@@ -40,7 +40,7 @@ export const Route = createFileRoute('/_site/studio/themes')({
 function ThemeStudioPage() {
   const data = Route.useLoaderData();
   return (
-    <PageLayout title="Theme Studio" backTo="/shop">
+    <PageLayout title="Theme Studio" backTo="/store">
       <ThemeStudio
         initialMine={data.mine}
         initialShop={data.shop}

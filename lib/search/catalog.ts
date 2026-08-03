@@ -188,7 +188,7 @@ export const SITE_DESTINATIONS: SiteDestination[] = [
   {
     id: 'pricing',
     title: 'Pricing',
-    href: '/pricing',
+    href: '/store?tab=membership',
     iconName: 'Gem',
     keywords: 'subscription membership plans upgrade billing stripe',
     description: 'Membership tiers and what each includes.',

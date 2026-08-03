@@ -60,21 +60,22 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   // Secondary site surfaces.
   //
   // Absent on purpose: `/arcade`, `/leaderboard`, `/events`, `/market`,
-  // `/personas`, `/playlists`, `/spaces` and `/v` all look like destinations in
-  // the nav but are `beforeLoad` redirects into a tab of `/create`, `/store`,
-  // `/communities` or `/library`. They are in `EXCLUDED_ROUTES` as redirects;
-  // the pages they land on are listed here instead.
+  // `/shop`, `/pricing`, `/personas`, `/playlists`, `/spaces` and `/v` all look
+  // like destinations in the nav but are `beforeLoad` redirects into a tab of
+  // `/create`, `/store`, `/communities` or `/library`. They are in
+  // `EXCLUDED_ROUTES` as redirects; the pages they land on are listed here
+  // instead. `/shop` and `/pricing` joined that list late — they were listed
+  // here *and* self-canonical while `/store` was too, so one catalog and one
+  // pricing table each claimed two canonical URLs.
   { loc: '/achievements', changefreq: 'weekly', priority: 0.5 },
   { loc: '/groups', changefreq: 'weekly', priority: 0.5 },
   { loc: '/help', changefreq: 'monthly', priority: 0.6 },
   { loc: '/predictions', changefreq: 'daily', priority: 0.5 },
-  { loc: '/pricing', changefreq: 'monthly', priority: 0.6 },
   { loc: '/quotes', changefreq: 'weekly', priority: 0.4 },
   { loc: '/ranked', changefreq: 'daily', priority: 0.5 },
   { loc: '/rideshare', changefreq: 'weekly', priority: 0.5 },
   { loc: '/roadmap', changefreq: 'weekly', priority: 0.5 },
   { loc: '/services', changefreq: 'monthly', priority: 0.6 },
-  { loc: '/shop', changefreq: 'weekly', priority: 0.5 },
   { loc: '/store', changefreq: 'weekly', priority: 0.5 },
   { loc: '/study', changefreq: 'weekly', priority: 0.5 },
   { loc: '/study/browse', changefreq: 'daily', priority: 0.5 },
@@ -265,6 +266,8 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/leaderboard': 'redirect', // → /create?tab=games&sub=leaderboard
   '/events': 'redirect', // → /communities?tab=events
   '/market': 'redirect', // → /store?tab=market
+  '/shop': 'redirect', // → /store?tab=shop
+  '/pricing': 'redirect', // → /store?tab=membership
   '/personas': 'redirect', // → /create?tab=personas
   '/playlists': 'redirect', // → /library?view=music
   '/spaces': 'redirect', // → /communities?tab=spaces

@@ -110,7 +110,9 @@ export const STATIC_CARDS: StaticCard[] = [
     subtitle: 'Bought with coins you earned, made by people who play here.',
   },
   {
-    path: '/pricing',
+    // `/pricing` is a redirect into this page's default tab now, so the card
+    // answers for `/store` — which otherwise fell through to `default.png`.
+    path: '/store',
     file: 'pricing',
     eyebrow: 'Membership',
     title: 'Everything, or everything plus.',

@@ -162,7 +162,11 @@ function SettingsPage() {
               {t('settings-premium-themes', {
                 defaultValue: 'Looking for more? Premium profile themes are in the shop.',
               })}{' '}
-              <Link to="/shop" className="text-site-accent hover:underline">
+              <Link
+                to="/store"
+                search={{ tab: 'shop' }}
+                className="text-site-accent hover:underline"
+              >
                 {t('settings-premium-themes-link', { defaultValue: 'Browse the shop' })}
               </Link>{' '}
               {t('settings-premium-themes-or', { defaultValue: 'or' })}{' '}
