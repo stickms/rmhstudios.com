@@ -135,3 +135,72 @@ export function useFlash(ms = 420): [string | null, (id: string) => void] {
 
   return [id, flash];
 }
+
+/**
+ * Paint the document itself in the temple's colours.
+ *
+ * `.toj` is `position: fixed; inset: 0`, so it covers the layout viewport and
+ * nothing else. Everything outside it — the strip behind the status bar, the
+ * one behind iOS Safari's floating bottom bar, the overscroll gutter — is
+ * painted by the document, and the document was painting white.
+ *
+ * Two reasons, both in `globals.css`. `body { background: var(--site-bg) }`
+ * with `min-height: 100%` covers whatever the root element was given, so the
+ * inline theme script's `documentElement.style.backgroundColor` never showed.
+ * And a game route is in `THEME_EXCLUDED_ROUTES`, so no `style-*` class is
+ * applied and `--site-bg` keeps its light default however dark the rest of the
+ * user's site is. A dark temple in a white frame, permanently.
+ *
+ * So the game paints the document for as long as it is on screen, reading its
+ * OWN ground rather than a copy of it — `--toj-ground` resolves through
+ * `data-theme`, so Vespers follows for free — and puts back exactly what it
+ * found on the way out.
+ *
+ * The `theme-color` tag is the one that tints Safari's chrome, and `__root.tsx`
+ * deliberately omits it site-wide because the site's chrome is a gradient
+ * aurora that a flat bar cannot match. It says so, and says a route whose own
+ * colour IS flat may set one. This is that route: at the very top and bottom
+ * the room is its ground colour and nothing else. The tag is marked
+ * `data-toj-theme` so it can never be confused with the site's own
+ * `data-rmh-theme` one, which the site's runtime mirror is the only thing
+ * allowed to touch.
+ */
+export function useDocumentTheme(ref: React.RefObject<HTMLElement | null>): void {
+  const theme = useTempleValue((s) => s.theme);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const ground = getComputedStyle(el).getPropertyValue('--toj-ground').trim();
+    if (!ground) return;
+
+    const html = document.documentElement;
+    const { body } = document;
+    const before = {
+      htmlBg: html.style.backgroundColor,
+      htmlScheme: html.style.colorScheme,
+      bodyBg: body.style.backgroundColor,
+    };
+
+    html.style.backgroundColor = ground;
+    body.style.backgroundColor = ground;
+    // Dawn is a cream page and Vespers a near-black one; the browser's own
+    // furniture — scrollbars, form controls, the rubber-band gutter — should
+    // agree with whichever is up.
+    html.style.colorScheme = theme === 'vespers' ? 'dark' : 'light';
+
+    const meta = document.createElement('meta');
+    meta.name = 'theme-color';
+    meta.content = ground;
+    meta.setAttribute('data-toj-theme', '');
+    document.head.appendChild(meta);
+
+    return () => {
+      html.style.backgroundColor = before.htmlBg;
+      html.style.colorScheme = before.htmlScheme;
+      body.style.backgroundColor = before.bodyBg;
+      meta.remove();
+    };
+  }, [ref, theme]);
+}

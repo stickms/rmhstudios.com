@@ -610,15 +610,29 @@
      * bar along the bottom edge (it costs 3.25rem and buys the thumb zone), and
      * the list keeps a share it can show four rows in.
      */
-    --toj-dock-h: min(42dvh, 24rem);
+    /**
+     * How much the bottom bar gives back when you scroll into the list.
+     *
+     * Zero until the panel is scrolled down, then the labels fold away and the
+     * bar loses this much height. Whatever it gives up the list takes, exactly
+     * — the two tokens below are written against it — so the altar above never
+     * moves. A globe that resized every time you scrolled a shop would be worse
+     * than the pixels are worth, and on iOS the whole reason to reclaim them is
+     * that Safari's own bar has already taken fifty of its own.
+     */
+    --toj-nav-shrink: 0rem;
+
+    --toj-dock-h: calc(min(42dvh, 24rem) + var(--toj-nav-shrink));
     /* The bar's drawn height, before the safe-area inset it adds underneath.
        Named because the toast rail has to sit clear of it. */
-    --toj-bar-h: 3.75rem;
+    --toj-bar-h: calc(3.75rem - var(--toj-nav-shrink));
+
     /* The altar is bounded by what is left, not by a guess at it — the frame's
        height less the list, the bar, the counter's two lines, the rites row and
        the room's own inset. Written down rather than approximated, because
        every previous version of this number was a guess and every one of them
-       was wrong. */
+       was wrong. `dock + bar` is invariant under the shrink above, so this does
+       not move when the bar folds. */
     --toj-field: min(
       calc(
         100dvh - var(--toj-dock-h) - var(--toj-bar-h) - 8.25rem - var(--toj-safe-top) -
@@ -626,6 +640,12 @@
       ),
       86vw
     );
+  }
+
+  /* Scrolled down into the list: the labels fold and the bar hands its height
+     to the panel above it. Scrolling back up, or reaching the top, restores it. */
+  .toj[data-nav='compact'] {
+    --toj-nav-shrink: 1.25rem;
   }
 
   /* The dock comes up from the bar, so only its top corners are rounded — a
@@ -1904,8 +1924,13 @@
   justify-content: center;
   /* The glyph sits ON the word, not beside it. */
   gap: 3px;
-  min-height: 3.25rem;
+  min-height: calc(3.25rem - var(--toj-nav-shrink, 0rem));
   padding: var(--toj-1) 2px;
+  transition:
+    min-height var(--toj-base) var(--toj-ease),
+    color var(--toj-quick) var(--toj-ease),
+    background-color var(--toj-quick) var(--toj-ease),
+    box-shadow var(--toj-quick) var(--toj-ease);
   border-radius: var(--toj-radius);
   font-size: 0.68rem;
   line-height: 1.15;
@@ -1926,6 +1951,29 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
+  /* Folded away rather than removed. `display: none` cannot be transitioned and
+     would take the word out of the accessibility tree with it; a clipped box of
+     zero height keeps the label readable to a screen reader while the glyph
+     carries the slot visually. */
+  max-height: 2.4em;
+  transition:
+    max-height var(--toj-base) var(--toj-ease),
+    opacity var(--toj-quick) var(--toj-ease);
+}
+
+.toj[data-nav='compact'] .toj-tabs[data-variant='bar'] .toj-tab-label {
+  max-height: 0;
+  opacity: 0;
+}
+
+.toj[data-nav='compact'] .toj-tabs[data-variant='bar'] .toj-tab-glyph {
+  font-size: 1.35rem;
+}
+
+/* The dot rides the glyph up as the label goes. */
+.toj[data-nav='compact'] .toj-tabs[data-variant='bar'] .toj-tab-dot {
+  top: 3px;
+  inset-inline-end: 28%;
 }
 
 /**
@@ -3863,9 +3911,30 @@ button.toj-row:active:not(:disabled) {
     display: none;
   }
 
-  /* The panel's top inset came from the header that is now gone. */
+  /**
+   * The panel's top inset came from the header that is now gone — and it cannot
+   * go on the SCROLLER.
+   *
+   * A sticky `top: 0` pins to the scroll container's PADDING edge, not its
+   * scrollport edge, so 12px of scroller padding left the quantity switch
+   * floating 12px below the top of the dock with a live 12px band above it.
+   * Rows scrolled up through that band in front of the control that is supposed
+   * to be covering them. The space has to belong to the sticky element itself,
+   * so that when it pins, its own box is what fills the gap.
+   */
   .toj-panel-scroll {
+    padding-top: 0;
+  }
+
+  .toj-toolbar {
     padding-top: var(--toj-3);
+  }
+
+  /* Panels that open on something other than the toolbar — the Temple's stats,
+     Settings' first group — still need the inset, and theirs can be a margin
+     because nothing sticks. */
+  .toj-panel-scroll > :first-child:not(.toj-toolbar) {
+    margin-top: var(--toj-3);
   }
 
   /**

@@ -269,6 +269,27 @@ function SaveTools() {
           {status}
         </p>
       )}
+
+      {/* Its own group, below the note, so it is never the button next to the
+          one you meant. The confirmation is a dialog — see `ResetDialog`. */}
+      <TempleSection>{t('start-again', { defaultValue: 'Start again' })}</TempleSection>
+
+      <p className="toj-panel-note">
+        {t('reset-note', {
+          defaultValue:
+            'Deletes this temple everywhere — on this device and on your account. Copy your save first if you want it back.',
+        })}
+      </p>
+
+      <div className="toj-desk">
+        <TempleButton
+          size="sm"
+          variant="danger"
+          onClick={() => useTempleStore.getState().setShowResetDialog(true)}
+        >
+          {t('reset-save', { defaultValue: 'Empty the temple' })}
+        </TempleButton>
+      </div>
     </>
   );
 }

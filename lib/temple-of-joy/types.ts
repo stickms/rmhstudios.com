@@ -651,6 +651,8 @@ export interface GameState {
   showAscendDialog: boolean;
   showVigilDialog: boolean;
   showMannaDialog: boolean;
+  /** The "start again" confirmation. Irreversible, so it gets a real one. */
+  showResetDialog: boolean;
   /** The bowling alley is up, over everything else. */
   showBowl: boolean;
   initialized: boolean;

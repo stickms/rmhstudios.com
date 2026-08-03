@@ -15,7 +15,7 @@ import { useAutoSave } from '@/lib/temple-of-joy/persistence';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
 import type { GameState } from '@/lib/temple-of-joy/types';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { useTempleValue } from './hooks';
+import { useDocumentTheme, useTempleValue } from './hooks';
 import { TempleHud } from './TempleHud';
 import { TempleSanctum } from './TempleSanctum';
 import { TempleRooms, TempleTabs } from './TempleTabs';
@@ -31,7 +31,12 @@ export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameSta
   // source row, tab and Sinner behind an open dialog stayed focusable and
   // clickable through the scrim.
   const modal = useTempleValue(
-    (s) => s.showBowl || s.showVigilDialog || s.showAscendDialog || s.showMannaDialog,
+    (s) =>
+      s.showBowl ||
+      s.showVigilDialog ||
+      s.showAscendDialog ||
+      s.showMannaDialog ||
+      s.showResetDialog,
   );
   /**
    * Bottom bar or side rail — the same question the stylesheet asks, asked
@@ -47,6 +52,11 @@ export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameSta
   // the sheet is that child's sibling.
   const [rooms, setRooms] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+
+  // The strips outside `.toj` — status bar, Safari's bottom bar, the overscroll
+  // gutter — belong to the document, and the document does not know this game
+  // has a theme. See the hook.
+  useDocumentTheme(rootRef);
 
   /* ── Load, then catch up on the absence ──────────────────────────────── */
 

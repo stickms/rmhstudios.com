@@ -25,6 +25,67 @@ import { LadderPanel } from './LadderPanel';
 import { TrophiesPanel } from './TrophiesPanel';
 import { SettingsPanel } from './SettingsPanel';
 
+/** Past this much scroll the bar folds; back under it, it unfolds. */
+const COMPACT_AT = 56;
+
+/** And this much movement in the other direction unfolds it early. */
+const RELEASE = 24;
+
+/**
+ * Fold the bottom bar away while you are reading down a list.
+ *
+ * The bar is 3.75rem of a phone screen that has already given ~50px to Safari's
+ * own bar, and the moment you are scrolling a shop you are not looking at the
+ * navigation. Down past a threshold folds it; any real movement upward, or
+ * returning near the top, brings it back — the same bargain the browser makes
+ * with its own chrome, which is why it needs no explaining.
+ *
+ * The flag is written straight onto the root element rather than held in React
+ * state. It changes only when the direction flips, but a scroll handler that
+ * re-rendered the panel would re-render it during momentum scrolling on the one
+ * device this exists for. Writing one attribute is a class change on a subtree
+ * of five buttons; a re-render is the whole list.
+ */
+function useNavCompaction(ref: React.RefObject<HTMLDivElement | null>, tab: TabId) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const root = el.closest<HTMLElement>('.toj');
+    if (!root) return;
+
+    let last = el.scrollTop;
+    let compact = false;
+
+    const apply = (next: boolean) => {
+      if (next === compact) return;
+      compact = next;
+      if (next) root.setAttribute('data-nav', 'compact');
+      else root.removeAttribute('data-nav');
+    };
+
+    const onScroll = () => {
+      const top = el.scrollTop;
+      const delta = top - last;
+      last = top;
+
+      // Near the top the bar is always out: there is nothing to reclaim yet,
+      // and a bar that stayed folded at rest would just look broken.
+      if (top < COMPACT_AT) apply(false);
+      else if (delta > 0) apply(true);
+      else if (delta < -RELEASE) apply(false);
+    };
+
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      // Leaving the panel — or the tab — must not strand the bar folded.
+      root.removeAttribute('data-nav');
+    };
+    // Re-bound per tab: `TemplePanel` remounts the scroll region on a tab
+    // change (the `key` below), so the element this closes over is replaced.
+  }, [ref, tab]);
+}
+
 export function TemplePanel() {
   const { t } = useTranslation('c-temple-of-joy');
   const tab = useTempleValue((s) => s.tab);
@@ -35,6 +96,8 @@ export function TemplePanel() {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 });
   }, [tab]);
+
+  useNavCompaction(scrollRef, tab);
 
   const panels: Record<TabId, { title: string; body: ReactNode }> = {
     temple: { title: t('tab-temple', { defaultValue: 'Temple' }), body: <OverviewPanel /> },
