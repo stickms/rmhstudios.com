@@ -47,6 +47,21 @@ export const Route = createFileRoute('/api/temple-of-joy/save')({
           return Response.json({ success: true, updatedAt: save.updatedAt });
         },
       ),
+      /**
+       * Start again.
+       *
+       * `deleteMany` rather than `delete`: there may be no row (a player who
+       * only ever played signed-out on this device), and a missing row is the
+       * outcome being asked for, not an error. Rate-limited like a write —
+       * more tightly, in fact, because nothing here is worth repeating.
+       */
+      DELETE: defineHandler(
+        { rateLimit: { limit: 5, windowMs: 60_000, prefix: 'toj-wipe' } },
+        async ({ session }) => {
+          await prisma.templeOfJoySave.deleteMany({ where: { userId: session.user.id } });
+          return Response.json({ success: true });
+        },
+      ),
     },
   },
 });

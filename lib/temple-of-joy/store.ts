@@ -120,6 +120,7 @@ export function createInitialState(): GameState {
     showAscendDialog: false,
     showVigilDialog: false,
     showMannaDialog: false,
+    showResetDialog: false,
     showBowl: false,
     initialized: false,
     notices: [],
@@ -193,6 +194,7 @@ interface TempleStore extends GameState {
   setShowAscendDialog: (open: boolean) => void;
   setShowVigilDialog: (open: boolean) => void;
   setShowMannaDialog: (open: boolean) => void;
+  setShowResetDialog: (open: boolean) => void;
   setShowBowl: (open: boolean) => void;
   dismissNotice: (id: number) => void;
 
@@ -261,11 +263,20 @@ export const useTempleStore = create<TempleStore>()(
     setShowAscendDialog: (showAscendDialog) => set({ showAscendDialog }),
     setShowVigilDialog: (showVigilDialog) => set({ showVigilDialog }),
     setShowMannaDialog: (showMannaDialog) => set({ showMannaDialog }),
+    setShowResetDialog: (showResetDialog) => set({ showResetDialog }),
     setShowBowl: (showBowl) => set({ showBowl }),
     dismissNotice: (id) => set((s) => Actions.doDismissNotice(s, id)),
 
     load: (partial) => set(partial),
-    reset: () => set(createInitialState()),
+    reset: () =>
+      set(() => {
+        const now = Date.now();
+        // `initialized` back to true and the clocks reset to now: a fresh state
+        // straight from the factory has neither, and the shell's loader only
+        // runs once per mount — so without this the game would sit unopened
+        // behind a wiped save and then credit a vigil for the epoch.
+        return { ...createInitialState(), initialized: true, lastTick: now, lastSaved: now, openedAt: now };
+      }),
   })),
 );
 

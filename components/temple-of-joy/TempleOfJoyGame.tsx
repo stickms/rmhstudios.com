@@ -14,8 +14,7 @@ import { doAudit } from '@/lib/temple-of-joy/actions';
 import { useAutoSave } from '@/lib/temple-of-joy/persistence';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
 import type { GameState } from '@/lib/temple-of-joy/types';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { useTempleValue } from './hooks';
+import { useDocumentTheme, useStackedLayout, useTempleValue } from './hooks';
 import { TempleHud } from './TempleHud';
 import { TempleSanctum } from './TempleSanctum';
 import { TempleRooms, TempleTabs } from './TempleTabs';
@@ -31,22 +30,27 @@ export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameSta
   // source row, tab and Sinner behind an open dialog stayed focusable and
   // clickable through the scrim.
   const modal = useTempleValue(
-    (s) => s.showBowl || s.showVigilDialog || s.showAscendDialog || s.showMannaDialog,
+    (s) =>
+      s.showBowl ||
+      s.showVigilDialog ||
+      s.showAscendDialog ||
+      s.showMannaDialog ||
+      s.showResetDialog,
   );
-  /**
-   * Bottom bar or side rail — the same question the stylesheet asks, asked
-   * once here because the answer changes where the navigation is MOUNTED, not
-   * just how it looks. This is the exact complement of the side-by-side layout
-   * condition in `temple-of-joy.css`; keep the two in step.
-   */
-  const bar = useMediaQuery(
-    '(max-width: 39.99rem), (max-width: 61.99rem) and (min-height: 34.01rem)',
-  );
+  // Bottom bar or side rail — the same question the stylesheet asks, asked here
+  // because the answer changes where the navigation is MOUNTED, not just how it
+  // looks. See `STACKED_QUERY`.
+  const bar = useStackedLayout();
   // The bar's overflow sheet. Owned here rather than in the bar because the
   // thing it has to disable — the whole game — is this component's child, and
   // the sheet is that child's sibling.
   const [rooms, setRooms] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+
+  // The strips outside `.toj` — status bar, Safari's bottom bar, the overscroll
+  // gutter — belong to the document, and the document does not know this game
+  // has a theme. See the hook.
+  useDocumentTheme(rootRef);
 
   /* ── Load, then catch up on the absence ──────────────────────────────── */
 

@@ -540,3 +540,32 @@ export function saveNow(): Promise<void> {
   useTempleStore.setState({ lastSaved: now });
   return saveToServer(state, now);
 }
+
+/**
+ * Erase everything, everywhere.
+ *
+ * Local first and unconditionally: the local copy is the one that survives a
+ * closed laptop, so a wipe that cleared only the server would be undone by the
+ * next autosave the moment the page reloaded. The server call is best-effort
+ * for the same reason it is best-effort on the way out — a signed-out player
+ * has no row to delete and gets a 401, which is not a failure of this
+ * operation.
+ *
+ * Returns nothing to check. There is no partial success worth reporting to a
+ * player: either the game in front of them is empty or it is not, and the
+ * caller resets the store either way.
+ */
+export async function clearSave(): Promise<void> {
+  try {
+    localStorage.removeItem(LOCAL_KEY);
+  } catch {
+    // Private browsing, quota, a disabled storage API.
+  }
+
+  try {
+    await fetch(SAVE_URL, { method: 'DELETE', keepalive: true });
+  } catch {
+    // Offline, signed out, or the request outlived the page. The local copy is
+    // already gone, which is what the player asked for.
+  }
+}
