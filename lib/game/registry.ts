@@ -90,6 +90,19 @@ export const GAME_SCORE_RULES: readonly GameScoreRules[] = [
     maxProgress: 1_000_000,
   },
   {
+    id: 'nightrail',
+    label: 'Nightrail',
+    // A perfect skybridge run banks combos at a ×20 cap on top of the delivery
+    // and par-time bonuses, so the honest ceiling is high. These numbers reject
+    // the impossible rather than policing the excellent.
+    maxScore: 4_000_000,
+    maxScorePerSecond: 12_000,
+    minDurationMs: 5_000,
+    direction: 'higher-is-better',
+    progressLabel: 'Distance',
+    maxProgress: 50_000,
+  },
+  {
     id: 'signal-forge',
     label: 'Signal Forge',
     unlisted: true,

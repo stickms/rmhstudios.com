@@ -31,6 +31,7 @@ import esCLockdown from "@/locales/es/c-lockdown.json";
 import esCModeration from "@/locales/es/c-moderation.json";
 import esCNeonDriftway from "@/locales/es/c-neon-driftway.json";
 import esCNews from "@/locales/es/c-news.json";
+import esCNightrail from "@/locales/es/c-nightrail.json";
 import esCPredictions from "@/locales/es/c-predictions.json";
 import esCProfileModules from "@/locales/es/c-profile-modules.json";
 import esCRideshare from "@/locales/es/c-rideshare.json";
@@ -119,6 +120,7 @@ const esResources = {
   "c-moderation": esCModeration,
   "c-neon-driftway": esCNeonDriftway,
   "c-news": esCNews,
+  "c-nightrail": esCNightrail,
   "c-predictions": esCPredictions,
   "c-profile-modules": esCProfileModules,
   "c-rideshare": esCRideshare,

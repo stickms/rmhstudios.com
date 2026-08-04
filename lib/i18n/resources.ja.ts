@@ -31,6 +31,7 @@ import jaCLockdown from "@/locales/ja/c-lockdown.json";
 import jaCModeration from "@/locales/ja/c-moderation.json";
 import jaCNeonDriftway from "@/locales/ja/c-neon-driftway.json";
 import jaCNews from "@/locales/ja/c-news.json";
+import jaCNightrail from "@/locales/ja/c-nightrail.json";
 import jaCPredictions from "@/locales/ja/c-predictions.json";
 import jaCProfileModules from "@/locales/ja/c-profile-modules.json";
 import jaCRideshare from "@/locales/ja/c-rideshare.json";
@@ -119,6 +120,7 @@ const jaResources = {
   "c-moderation": jaCModeration,
   "c-neon-driftway": jaCNeonDriftway,
   "c-news": jaCNews,
+  "c-nightrail": jaCNightrail,
   "c-predictions": jaCPredictions,
   "c-profile-modules": jaCProfileModules,
   "c-rideshare": jaCRideshare,

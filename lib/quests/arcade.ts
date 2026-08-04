@@ -101,6 +101,25 @@ const POOL: ArcadeChallengeDef[] = [
     coins: 14,
   },
   {
+    game: 'nightrail',
+    title: 'Score 25,000 in Nightrail',
+    metric: 'score',
+    target: 25000,
+    xp: 55,
+    coins: 14,
+  },
+  {
+    // The distance target is roughly the harbor level end to end, so this one
+    // is "finish a delivery" rather than "score well on it" — a different ask
+    // of the same run.
+    game: 'nightrail',
+    title: 'Cover 2,000m in a single Nightrail run',
+    metric: 'clear',
+    target: 2000,
+    xp: 50,
+    coins: 12,
+  },
+  {
     game: 'slice-it',
     title: 'Score 5,000 in Slice It!',
     metric: 'score',

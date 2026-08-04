@@ -68,6 +68,7 @@ const FULLSCREEN_DIRS = [
   'laundry-sort',
   'lights-out',
   'neon-driftway',
+  'nightrail',
   'rmh-farming-sim',
   'rmhbox',
   'rmhcalculator',

@@ -31,6 +31,7 @@ import trCLockdown from "@/locales/tr/c-lockdown.json";
 import trCModeration from "@/locales/tr/c-moderation.json";
 import trCNeonDriftway from "@/locales/tr/c-neon-driftway.json";
 import trCNews from "@/locales/tr/c-news.json";
+import trCNightrail from "@/locales/tr/c-nightrail.json";
 import trCPredictions from "@/locales/tr/c-predictions.json";
 import trCProfileModules from "@/locales/tr/c-profile-modules.json";
 import trCRideshare from "@/locales/tr/c-rideshare.json";
@@ -119,6 +120,7 @@ const trResources = {
   "c-moderation": trCModeration,
   "c-neon-driftway": trCNeonDriftway,
   "c-news": trCNews,
+  "c-nightrail": trCNightrail,
   "c-predictions": trCPredictions,
   "c-profile-modules": trCProfileModules,
   "c-rideshare": trCRideshare,

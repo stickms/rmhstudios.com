@@ -31,6 +31,7 @@ import koCLockdown from "@/locales/ko/c-lockdown.json";
 import koCModeration from "@/locales/ko/c-moderation.json";
 import koCNeonDriftway from "@/locales/ko/c-neon-driftway.json";
 import koCNews from "@/locales/ko/c-news.json";
+import koCNightrail from "@/locales/ko/c-nightrail.json";
 import koCPredictions from "@/locales/ko/c-predictions.json";
 import koCProfileModules from "@/locales/ko/c-profile-modules.json";
 import koCRideshare from "@/locales/ko/c-rideshare.json";
@@ -119,6 +120,7 @@ const koResources = {
   "c-moderation": koCModeration,
   "c-neon-driftway": koCNeonDriftway,
   "c-news": koCNews,
+  "c-nightrail": koCNightrail,
   "c-predictions": koCPredictions,
   "c-profile-modules": koCProfileModules,
   "c-rideshare": koCRideshare,

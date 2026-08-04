@@ -57,7 +57,7 @@ export const NAMESPACES = [
   "c-game", "c-history", "c-house-always-wins", "c-isleworks",
   "c-kowloon-knockout", "c-laundry-sort", "c-layout", "c-library",
   "c-lights-out", "c-lists", "c-lockdown", "c-moderation", "c-neon-driftway",
-  "c-news", "c-predictions", "c-profile-modules", "c-rideshare",
+  "c-news", "c-nightrail", "c-predictions", "c-profile-modules", "c-rideshare",
   "c-rmh-capital", "c-rmh-pmc", "c-rmhbox", "c-rmhcalculator", "c-rmhcode",
   "c-rmhcoins", "c-rmhmusic", "c-rmhstudy", "c-rmhtech", "c-rmhtube",
   "c-rmhtype", "c-rmhvibe", "c-roadmap", "c-saves", "c-signal-forge",

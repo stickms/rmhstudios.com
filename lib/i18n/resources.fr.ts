@@ -31,6 +31,7 @@ import frCLockdown from "@/locales/fr/c-lockdown.json";
 import frCModeration from "@/locales/fr/c-moderation.json";
 import frCNeonDriftway from "@/locales/fr/c-neon-driftway.json";
 import frCNews from "@/locales/fr/c-news.json";
+import frCNightrail from "@/locales/fr/c-nightrail.json";
 import frCPredictions from "@/locales/fr/c-predictions.json";
 import frCProfileModules from "@/locales/fr/c-profile-modules.json";
 import frCRideshare from "@/locales/fr/c-rideshare.json";
@@ -119,6 +120,7 @@ const frResources = {
   "c-moderation": frCModeration,
   "c-neon-driftway": frCNeonDriftway,
   "c-news": frCNews,
+  "c-nightrail": frCNightrail,
   "c-predictions": frCPredictions,
   "c-profile-modules": frCProfileModules,
   "c-rideshare": frCRideshare,

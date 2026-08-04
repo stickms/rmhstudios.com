@@ -32,6 +32,7 @@ import { Route as LightsOutRouteImport } from './routes/lights-out'
 import { Route as LiquidGlassRouteImport } from './routes/liquid-glass'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as NeonDriftwayRouteImport } from './routes/neon-driftway'
+import { Route as NightrailRouteImport } from './routes/nightrail'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as OptimizationRouteImport } from './routes/optimization'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -868,6 +869,11 @@ const LoginRoute = LoginRouteImport.update({
 const NeonDriftwayRoute = NeonDriftwayRouteImport.update({
   id: '/neon-driftway',
   path: '/neon-driftway',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NightrailRoute = NightrailRouteImport.update({
+  id: '/nightrail',
+  path: '/nightrail',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfflineRoute = OfflineRouteImport.update({
@@ -4614,6 +4620,7 @@ export interface FileRoutesByFullPath {
   '/liquid-glass': typeof LiquidGlassRoute
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
+  '/nightrail': typeof NightrailRoute
   '/offline': typeof OfflineRoute
   '/optimization': typeof OptimizationRoute
   '/privacy': typeof PrivacyRoute
@@ -5356,6 +5363,7 @@ export interface FileRoutesByTo {
   '/liquid-glass': typeof LiquidGlassRoute
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
+  '/nightrail': typeof NightrailRoute
   '/offline': typeof OfflineRoute
   '/optimization': typeof OptimizationRoute
   '/privacy': typeof PrivacyRoute
@@ -6085,6 +6093,7 @@ export interface FileRoutesById {
   '/liquid-glass': typeof LiquidGlassRoute
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
+  '/nightrail': typeof NightrailRoute
   '/offline': typeof OfflineRoute
   '/optimization': typeof OptimizationRoute
   '/privacy': typeof PrivacyRoute
@@ -6835,6 +6844,7 @@ export interface FileRouteTypes {
     | '/liquid-glass'
     | '/login'
     | '/neon-driftway'
+    | '/nightrail'
     | '/offline'
     | '/optimization'
     | '/privacy'
@@ -7577,6 +7587,7 @@ export interface FileRouteTypes {
     | '/liquid-glass'
     | '/login'
     | '/neon-driftway'
+    | '/nightrail'
     | '/offline'
     | '/optimization'
     | '/privacy'
@@ -8305,6 +8316,7 @@ export interface FileRouteTypes {
     | '/liquid-glass'
     | '/login'
     | '/neon-driftway'
+    | '/nightrail'
     | '/offline'
     | '/optimization'
     | '/privacy'
@@ -9054,6 +9066,7 @@ export interface RootRouteChildren {
   LiquidGlassRoute: typeof LiquidGlassRoute
   LoginRoute: typeof LoginRoute
   NeonDriftwayRoute: typeof NeonDriftwayRoute
+  NightrailRoute: typeof NightrailRoute
   OfflineRoute: typeof OfflineRoute
   OptimizationRoute: typeof OptimizationRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -9616,6 +9629,13 @@ declare module '@tanstack/react-router' {
       path: '/neon-driftway'
       fullPath: '/neon-driftway'
       preLoaderRoute: typeof NeonDriftwayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nightrail': {
+      id: '/nightrail'
+      path: '/nightrail'
+      fullPath: '/nightrail'
+      preLoaderRoute: typeof NightrailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offline': {
@@ -16154,6 +16174,7 @@ const rootRouteChildren: RootRouteChildren = {
   LiquidGlassRoute: LiquidGlassRoute,
   LoginRoute: LoginRoute,
   NeonDriftwayRoute: NeonDriftwayRoute,
+  NightrailRoute: NightrailRoute,
   OfflineRoute: OfflineRoute,
   OptimizationRoute: OptimizationRoute,
   PrivacyRoute: PrivacyRoute,

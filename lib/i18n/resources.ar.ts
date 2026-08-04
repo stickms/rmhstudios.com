@@ -31,6 +31,7 @@ import arCLockdown from "@/locales/ar/c-lockdown.json";
 import arCModeration from "@/locales/ar/c-moderation.json";
 import arCNeonDriftway from "@/locales/ar/c-neon-driftway.json";
 import arCNews from "@/locales/ar/c-news.json";
+import arCNightrail from "@/locales/ar/c-nightrail.json";
 import arCPredictions from "@/locales/ar/c-predictions.json";
 import arCProfileModules from "@/locales/ar/c-profile-modules.json";
 import arCRideshare from "@/locales/ar/c-rideshare.json";
@@ -121,6 +122,7 @@ const arResources = {
   "c-moderation": arCModeration,
   "c-neon-driftway": arCNeonDriftway,
   "c-news": arCNews,
+  "c-nightrail": arCNightrail,
   "c-predictions": arCPredictions,
   "c-profile-modules": arCProfileModules,
   "c-rideshare": arCRideshare,
