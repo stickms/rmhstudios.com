@@ -346,6 +346,29 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     save: 'none',
     accessibility: ['no-timed-input'],
   },
+  nightrail: {
+    genre: ['racing', 'arcade'],
+    // No shared session — the competition is the leaderboard, not other trains.
+    players: ['single', 'async-leaderboard'],
+    // Keyboard, touch and gamepad each cover the whole control set on their
+    // own, so nothing is strictly required. Mouse is listed because a drag is
+    // the desktop way to throw the four diagonal tricks a keyboard can't
+    // express, not because the game can be played with it alone.
+    input: { supported: ['keyboard', 'mouse', 'touch', 'gamepad'], required: [] },
+    // A single delivery is about a minute; a sitting is a few attempts at one
+    // line, or a run at all five.
+    sessionMinutes: [5, 20],
+    engine: 'webgl',
+    demanding: true,
+    // Level unlocks are `localStorage` under `nightrail.unlocks`. The
+    // `NightrailPlayer` row is a leaderboard record, not progress the game
+    // reads back, so `own-table` would overstate what following your account
+    // actually gets you.
+    save: 'local-only',
+    accessibility: [],
+    // Neon signage, bloom, drift sparks and the crash burst all strobe.
+    descriptors: ['flashing'],
+  },
 };
 
 export function capabilitiesFor(gameId: string): GameCapabilities | undefined {
