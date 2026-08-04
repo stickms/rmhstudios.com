@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 236 routes. 123 render inside the standard site shell (sidebar, nav, context rail); 113 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 241 routes. 126 render inside the standard site shell (sidebar, nav, context rail); 115 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -41,35 +41,37 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/user-builds` | — | admin | `app/routes/_site/admin/user-builds.tsx` |
 | `/admin/users` | — | admin | `app/routes/_site/admin/users.tsx` |
 | `/analytics` | Creator Analytics | public | `app/routes/_site/analytics.tsx` |
+| `/apps` | Apps | public | `app/routes/_site/apps/index.tsx` |
 | `/arcade` | redirects to `/create?tab=games` | public | `app/routes/_site/arcade.tsx` |
 | `/blog` | redirects to `/library` | public | `app/routes/_site/blog/index.tsx` |
 | `/blog/:slug` | — | public | `app/routes/_site/blog/$slug.tsx` |
-| `/bookmarks` | Bookmarks | public | `app/routes/_site/bookmarks.tsx` |
+| `/bookmarks` | redirects to `/saves?tab=saved` | public | `app/routes/_site/bookmarks.tsx` |
 | `/builds` | redirects to `/create?tab=games` | public | `app/routes/_site/builds/index.tsx` |
 | `/builds/:slug` | Build Not Found | public | `app/routes/_site/builds/$slug.tsx` |
 | `/c/:slug` | — | public | `app/routes/_site/c.$slug.tsx` |
 | `/communities` | Communities | public | `app/routes/_site/communities.tsx` |
-| `/create` | Create | public | `app/routes/_site/create/index.tsx` |
+| `/create` | redirects to `/apps` | public | `app/routes/_site/create/index.tsx` |
 | `/creator-studio` | redirects to `/create?tab=earnings` | public | `app/routes/_site/creator-studio.tsx` |
 | `/developer` | Developer API | public | `app/routes/_site/developer/index.tsx` |
 | `/drafts` | Drafts | public | `app/routes/_site/drafts.tsx` |
 | `/events` | redirects to `/communities?tab=events` | public | `app/routes/_site/events.tsx` |
 | `/explore` | Explore | public | `app/routes/_site/explore.tsx` |
+| `/games` | Games | public | `app/routes/_site/games/index.tsx` |
 | `/games/:gameId` | — | public | `app/routes/_site/games/$gameId.tsx` |
-| `/games/:gameId/guides/:guideId` | Guide | public | `app/routes/_site/games/$gameId_.guides.$guideId.tsx` |
+| `/games/:gameId/guides/:guideId` | — | public | `app/routes/_site/games/$gameId_.guides.$guideId.tsx` |
 | `/groups` | Group Chats | public | `app/routes/_site/groups/index.tsx` |
 | `/groups/:id` | Group Chat | public | `app/routes/_site/groups/$id.tsx` |
 | `/help` | Help & Concierge | public | `app/routes/_site/help.tsx` |
 | `/history` | History | public | `app/routes/_site/history.tsx` |
 | `/homes` | RMHHomes — Rentals & houses posted by the community | public | `app/routes/_site/homes/index.tsx` |
-| `/homes/listing/:id` | — | public | `app/routes/_site/homes/listing.$id.tsx` |
+| `/homes/listing/:id` | Listing \| RMHHomes | public | `app/routes/_site/homes/listing.$id.tsx` |
 | `/homes/manage` | RMHHomes — My listings | public | `app/routes/_site/homes/manage.tsx` |
 | `/homes/saved` | RMHHomes — Saved | public | `app/routes/_site/homes/saved.tsx` |
 | `/homes/submit` | RMHHomes — Post a listing | public | `app/routes/_site/homes/submit.tsx` |
 | `/homes/watches` | RMHHomes — My alerts | public | `app/routes/_site/homes/watches.tsx` |
 | `/leaderboard` | redirects to `/create?tab=games&sub=leaderboard` | public | `app/routes/_site/leaderboard.tsx` |
 | `/library` | Library | public | `app/routes/_site/library/index.tsx` |
-| `/lists` | Lists | public | `app/routes/_site/lists/index.tsx` |
+| `/lists` | redirects to `/saves?tab=lists` | public | `app/routes/_site/lists/index.tsx` |
 | `/lists/:id` | List | public | `app/routes/_site/lists/$id.tsx` |
 | `/market` | redirects to `/store?tab=market` | public | `app/routes/_site/market.tsx` |
 | `/messages` | Inbox | public | `app/routes/_site/messages/index.tsx` |
@@ -79,11 +81,11 @@ Standard pages, rendered inside the sidebar shell.
 | `/news` | News | public | `app/routes/_site/news/index.tsx` |
 | `/notifications` | redirects to `/messages?tab=notifications` | public | `app/routes/_site/notifications.tsx` |
 | `/personas` | redirects to `/create?tab=personas` | public | `app/routes/_site/personas/index.tsx` |
-| `/personas/:id` | Chat | public | `app/routes/_site/personas/$id.tsx` |
+| `/personas/:id` | Persona | public | `app/routes/_site/personas/$id.tsx` |
 | `/playlists` | redirects to `/library?view=music` | public | `app/routes/_site/playlists.tsx` |
 | `/predictions` | Predictions | public | `app/routes/_site/predictions.tsx` |
-| `/pricing` | Membership — RMH Studios | public | `app/routes/_site/pricing.tsx` |
-| `/profile/:id` | User Not Found \| RMH | public | `app/routes/_site/profile/$id.tsx` |
+| `/pricing` | redirects to `/store?tab=membership` | public | `app/routes/_site/pricing.tsx` |
+| `/profile/:id` | redirects to `/u/$userid` | public | `app/routes/_site/profile/$id.tsx` |
 | `/progress` | Progress | public | `app/routes/_site/progress.tsx` |
 | `/quotes` | Steve Jobs Quotes | public | `app/routes/_site/quotes.tsx` |
 | `/ranked` | Ranked | public | `app/routes/_site/ranked.tsx` |
@@ -114,20 +116,21 @@ Standard pages, rendered inside the sidebar shell.
 | `/settings/privacy` | Privacy & data | public | `app/routes/_site/settings/privacy.tsx` |
 | `/settings/profile` | Profile customization | public | `app/routes/_site/settings/profile.tsx` |
 | `/settings/security` | Security | public | `app/routes/_site/settings/security.tsx` |
+| `/settings/themes` | Theme Studio | public | `app/routes/_site/settings/themes.tsx` |
 | `/share` | Share to RMH Studios | public | `app/routes/_site/share.tsx` |
-| `/shop` | Shop | public | `app/routes/_site/shop.tsx` |
+| `/shop` | redirects to `/store?tab=shop` | public | `app/routes/_site/shop.tsx` |
 | `/spaces` | redirects to `/communities?tab=spaces` | public | `app/routes/_site/spaces.index.tsx` |
 | `/spaces/:id` | — | public | `app/routes/_site/spaces.$id.tsx` |
 | `/store` | Store — RMH Studios | public | `app/routes/_site/store/index.tsx` |
 | `/store/:userid` | Store | public | `app/routes/_site/store/$userid.tsx` |
-| `/studio/themes` | Theme Studio | public | `app/routes/_site/studio/themes.tsx` |
+| `/studio/themes` | redirects to `/settings/themes` | public | `app/routes/_site/studio/themes.tsx` |
 | `/study` | Flashcards | public | `app/routes/_site/study/index.tsx` |
-| `/study/:deckId` | Study | public | `app/routes/_site/study/$deckId.tsx` |
+| `/study/:deckId` | Deck \| RMHStudy | public | `app/routes/_site/study/$deckId.tsx` |
 | `/study/browse` | Browse decks | public | `app/routes/_site/study/browse.tsx` |
 | `/tag/:tag` | — | public | `app/routes/_site/tag.$tag.tsx` |
-| `/thread/:rootId` | Thread | public | `app/routes/_site/thread/$rootId.tsx` |
+| `/thread/:rootId` | — | public | `app/routes/_site/thread/$rootId.tsx` |
 | `/tournaments` | Tournaments | public | `app/routes/_site/tournaments.index.tsx` |
-| `/tournaments/:id` | Tournament | public | `app/routes/_site/tournaments.$id.tsx` |
+| `/tournaments/:id` | — | public | `app/routes/_site/tournaments.$id.tsx` |
 | `/u/:userid` | User Not Found \| RMH | public | `app/routes/_site/u/$userid/index.tsx` |
 | `/u/:userid/post/:postid` | Post Not Found \| RMH | public | `app/routes/_site/u/$userid/post/$postid.tsx` |
 | `/user-builds` | redirects to `/builds` | public | `app/routes/_site/user-builds/index.tsx` |
@@ -139,7 +142,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/wager` | Wager Matches | public | `app/routes/_site/wager.index.tsx` |
 | `/wager/:id` | Wager Match | public | `app/routes/_site/wager.$id.tsx` |
 | `/wallet` | redirects to `/predictions` | public | `app/routes/_site/wallet.tsx` |
-| `/wishlist` | Wishlist | public | `app/routes/_site/wishlist.tsx` |
+| `/wishlist` | redirects to `/saves?tab=wishlist` | public | `app/routes/_site/wishlist.tsx` |
 | `/wrapped` | Wrapped | public | `app/routes/_site/wrapped.tsx` |
 
 ## Full-screen
@@ -151,12 +154,13 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/.well-known/apple-app-site-association` | — | public | `app/routes/[.]well-known.apple-app-site-association.ts` |
 | `/.well-known/assetlinks.json` | — | public | `app/routes/[.]well-known.assetlinks[.]json.ts` |
 | `/adaptive-intelligence` | — | public | `app/routes/adaptive-intelligence.tsx` |
-| `/altair` | — | sign-in | `app/routes/altair/index.tsx` |
+| `/ads.txt` | — | public | `app/routes/ads[.]txt.ts` |
+| `/altair` | — | public | `app/routes/altair/index.tsx` |
 | `/altair/multiplayer` | — | sign-in | `app/routes/altair/multiplayer/index.tsx` |
 | `/altair/multiplayer/:lobbyId` | — | sign-in | `app/routes/altair/multiplayer/$lobbyId.tsx` |
 | `/black-lives-matter` | Black Lives Matter | public | `app/routes/black-lives-matter.tsx` |
 | `/blog/rss.xml` | RMH Studios — Blog | public | `app/routes/blog.rss[.]xml.ts` |
-| `/cookgame` | Game | public | `app/routes/cookgame.tsx` |
+| `/cookgame` | — | public | `app/routes/cookgame.tsx` |
 | `/cookies` | Cookie Policy | public | `app/routes/cookies.tsx` |
 | `/copyright` | Copyright | public | `app/routes/copyright.tsx` |
 | `/covid` | — | public | `app/routes/covid.tsx` |
@@ -213,7 +217,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmh-pmc/operators` | — | public | `app/routes/rmh-pmc/operators.tsx` |
 | `/rmhbox` | — | sign-in | `app/routes/rmhbox/index.tsx` |
 | `/rmhbox/:lobbyId` | — | sign-in | `app/routes/rmhbox/$lobbyId.tsx` |
-| `/rmhbox/minigames` | — | sign-in | `app/routes/rmhbox/minigames/index.tsx` |
+| `/rmhbox/minigames` | RMHbox minigames — the full list | sign-in | `app/routes/rmhbox/minigames/index.tsx` |
 | `/rmhbox/minigames/:minigameId/history` | — | sign-in | `app/routes/rmhbox/minigames/$minigameId/history.tsx` |
 | `/rmhcalculator` | RMHCalculator — AI Graphing & Scientific Calculator | sign-in | `app/routes/rmhcalculator.tsx` |
 | `/rmhcode` | — | public | `app/routes/rmhcode/index.tsx` |
@@ -236,6 +240,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/secret/vega` | Project Vega | public | `app/routes/secret/vega.tsx` |
 | `/security` | Security | public | `app/routes/security.tsx` |
 | `/sitemap.xml` | — | public | `app/routes/sitemap[.]xml.ts` |
+| `/sitemaps/:name` | — | public | `app/routes/sitemaps.$name.ts` |
 | `/slice-it` | — | public | `app/routes/slice-it/index.tsx` |
 | `/strategies` | — | public | `app/routes/strategies/index.tsx` |
 | `/strategies/incidents` | — | public | `app/routes/strategies/incidents.tsx` |

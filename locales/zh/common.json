@@ -1,10 +1,12 @@
 {
+  "ad-label": "Advertisement",
   "cookie-consent-accept": "Accept all",
   "cookie-consent-essential": "Essential only",
   "cookie-consent-label": "Cookie notice",
   "cookie-consent-learn": "Learn more",
   "cookie-consent-learn-aria": "Learn more about our cookie policy",
   "cookie-consent-text": "We use essential cookies to run the site and privacy-friendly analytics to improve it.",
+  "cookie-consent-text-ads": "We use essential cookies to run the site, privacy-friendly analytics to improve it, and advertising cookies to fund it. Choosing “Essential only” keeps the ads but stops them being personalised.",
   "home-aria-label": "RMH Studios home",
   "loading": "Loading…",
   "messages": "Messages",
