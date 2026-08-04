@@ -97,9 +97,18 @@ export const HELP_SNIPPETS: Omit<KnowledgeEntry, 'kind'>[] = [
   {
     id: 'help:membership',
     title: 'Memberships and paid tiers',
-    tags: ['membership', 'subscription', 'stripe', 'pro', 'starter', 'enterprise', 'billing'],
+    tags: [
+      'membership',
+      'subscription',
+      'stripe',
+      'pro',
+      'hard-r',
+      'starter',
+      'enterprise',
+      'billing',
+    ],
     route: '/membership',
-    text: 'Paid memberships (Starter, Pro, Enterprise) unlock perks like the developer API, a profile badge, and higher limits. Manage or upgrade your plan on the membership page; billing is handled by Stripe.',
+    text: 'Paid memberships (HARD-R, Pro, Enterprise) unlock perks like the developer API, a profile badge, and higher limits. Manage or upgrade your plan on the membership page; billing is handled by Stripe.',
   },
   {
     id: 'help:gift-membership',
@@ -210,7 +219,7 @@ export const HELP_SNIPPETS: Omit<KnowledgeEntry, 'kind'>[] = [
     title: 'The developer API',
     tags: ['api', 'developer', 'tokens', 'webhooks', 'integration'],
     route: '/developer',
-    text: 'Members on Starter and above get a scoped developer API with API keys and webhooks. Manage keys and read the docs in the developer area.',
+    text: 'Members on HARD-R and above get a scoped developer API with API keys and webhooks. Manage keys and read the docs in the developer area.',
   },
   {
     id: 'help:library',

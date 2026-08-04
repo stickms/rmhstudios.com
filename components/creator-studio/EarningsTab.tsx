@@ -173,7 +173,7 @@ export function EarningsTab() {
             <div className="space-y-1.5">
               <Label htmlFor="r-tier">{t('tier', { defaultValue: 'Tier' })}</Label>
               <Select id="r-tier" value={tier} onChange={(e) => setTier(e.target.value as 'starter' | 'pro')}>
-                <option value="starter">Starter</option>
+                <option value="starter">HARD-R</option>
                 <option value="pro">Pro</option>
               </Select>
             </div>

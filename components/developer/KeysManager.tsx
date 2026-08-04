@@ -148,7 +148,7 @@ export function KeysManager() {
         <ShieldCheck className="mx-auto mb-2 h-7 w-7 text-site-accent" />
         <p className="font-semibold text-site-text">A subscription is required</p>
         <p className="mx-auto mt-1 max-w-sm text-sm text-site-text-muted">
-          The developer API needs an active Starter plan or higher. Your access is checked on every
+          The developer API needs an active HARD-R plan or higher. Your access is checked on every
           request, so it stays in sync with your subscription.
         </p>
         <Button asChild variant="accent" size="sm" className="mt-3">

@@ -96,7 +96,7 @@ export async function authenticateApiKey(request: Request): Promise<ApiAuthSucce
   // Re-check entitlement on every request so lapsed subscriptions lose access.
   const tier = await getUserTier(record.userId);
   if (!hasApiAccess(tier)) {
-    return { ok: false, status: 403, code: 'subscription_required', message: 'The developer API requires an active Starter subscription or higher.' };
+    return { ok: false, status: 403, code: 'subscription_required', message: 'The developer API requires an active HARD-R subscription or higher.' };
   }
 
   const ban = await getActiveBan(record.userId);

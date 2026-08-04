@@ -51,11 +51,11 @@ export const Route = createFileRoute('/api/developer/keys/')({
         async ({ request, session, body }) => {
           const userId = session.user.id;
 
-          // Gate creation on an active subscription (Starter+).
+          // Gate creation on an active subscription (HARD-R+, plan id `starter`).
           const tier = await getUserTier(userId);
           if (!hasApiAccess(tier)) {
             return Response.json(
-              { error: 'A Starter subscription or higher is required to use the developer API.' },
+              { error: 'A HARD-R subscription or higher is required to use the developer API.' },
               { status: 403 },
             );
           }

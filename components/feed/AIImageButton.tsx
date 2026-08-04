@@ -23,7 +23,7 @@ interface AIImageButtonProps {
 
 /**
  * A wand button that asks xAI to generate an image for the post and hands the
- * resulting feed URL back to the composer. Starter+ only — the composer passes
+ * resulting feed URL back to the composer. HARD-R+ only — the composer passes
  * `locked`for lower tiers so they see the feature (greyed out) and an upgrade
  * nudge; the server re-checks the tier regardless.
  */
@@ -138,7 +138,7 @@ export function AIImageButton({
  <p className="mx-auto mt-2 max-w-xs text-sm text-site-text-muted">
  {t('ai-image-upgrade-body', {
  defaultValue:
-'Turn your posts into eye-catching art. Generate custom AI images straight from the composer — available on Starter and above.',
+'Turn your posts into eye-catching art. Generate custom AI images straight from the composer — available on HARD-R and above.',
  })}
  </p>
  <div className="mt-5 flex flex-col gap-2">
