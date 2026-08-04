@@ -300,6 +300,9 @@ import { Route as ApiAwardsIndexRouteImport } from './routes/api/awards/index'
 import { Route as ApiBattlepassIndexRouteImport } from './routes/api/battlepass/index'
 import { Route as ApiBattlepassClaimRouteImport } from './routes/api/battlepass/claim'
 import { Route as ApiBattlepassUnlockRouteImport } from './routes/api/battlepass/unlock'
+import { Route as ApiCallsHistoryRouteImport } from './routes/api/calls/history'
+import { Route as ApiCallsIceRouteImport } from './routes/api/calls/ice'
+import { Route as ApiCallsPrivacyRouteImport } from './routes/api/calls/privacy'
 import { Route as ApiCoinsIndexRouteImport } from './routes/api/coins/index'
 import { Route as ApiCoinsBetRouteImport } from './routes/api/coins/bet'
 import { Route as ApiCoinsClaimRouteImport } from './routes/api/coins/claim'
@@ -2212,6 +2215,21 @@ const ApiBattlepassClaimRoute = ApiBattlepassClaimRouteImport.update({
 const ApiBattlepassUnlockRoute = ApiBattlepassUnlockRouteImport.update({
   id: '/api/battlepass/unlock',
   path: '/api/battlepass/unlock',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCallsHistoryRoute = ApiCallsHistoryRouteImport.update({
+  id: '/api/calls/history',
+  path: '/api/calls/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCallsIceRoute = ApiCallsIceRouteImport.update({
+  id: '/api/calls/ice',
+  path: '/api/calls/ice',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCallsPrivacyRoute = ApiCallsPrivacyRouteImport.update({
+  id: '/api/calls/privacy',
+  path: '/api/calls/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCoinsIndexRoute = ApiCoinsIndexRouteImport.update({
@@ -4834,6 +4852,9 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
   '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
+  '/api/calls/history': typeof ApiCallsHistoryRoute
+  '/api/calls/ice': typeof ApiCallsIceRoute
+  '/api/calls/privacy': typeof ApiCallsPrivacyRoute
   '/api/coins/bet': typeof ApiCoinsBetRoute
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/gift': typeof ApiCoinsGiftRoute
@@ -5554,6 +5575,9 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
   '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
+  '/api/calls/history': typeof ApiCallsHistoryRoute
+  '/api/calls/ice': typeof ApiCallsIceRoute
+  '/api/calls/privacy': typeof ApiCallsPrivacyRoute
   '/api/coins/bet': typeof ApiCoinsBetRoute
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/gift': typeof ApiCoinsGiftRoute
@@ -6300,6 +6324,9 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
   '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
+  '/api/calls/history': typeof ApiCallsHistoryRoute
+  '/api/calls/ice': typeof ApiCallsIceRoute
+  '/api/calls/privacy': typeof ApiCallsPrivacyRoute
   '/api/coins/bet': typeof ApiCoinsBetRoute
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/gift': typeof ApiCoinsGiftRoute
@@ -7046,6 +7073,9 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/battlepass/claim'
     | '/api/battlepass/unlock'
+    | '/api/calls/history'
+    | '/api/calls/ice'
+    | '/api/calls/privacy'
     | '/api/coins/bet'
     | '/api/coins/claim'
     | '/api/coins/gift'
@@ -7766,6 +7796,9 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/battlepass/claim'
     | '/api/battlepass/unlock'
+    | '/api/calls/history'
+    | '/api/calls/ice'
+    | '/api/calls/privacy'
     | '/api/coins/bet'
     | '/api/coins/claim'
     | '/api/coins/gift'
@@ -8511,6 +8544,9 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/battlepass/claim'
     | '/api/battlepass/unlock'
+    | '/api/calls/history'
+    | '/api/calls/ice'
+    | '/api/calls/privacy'
     | '/api/coins/bet'
     | '/api/coins/claim'
     | '/api/coins/gift'
@@ -9107,6 +9143,9 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiBattlepassClaimRoute: typeof ApiBattlepassClaimRoute
   ApiBattlepassUnlockRoute: typeof ApiBattlepassUnlockRoute
+  ApiCallsHistoryRoute: typeof ApiCallsHistoryRoute
+  ApiCallsIceRoute: typeof ApiCallsIceRoute
+  ApiCallsPrivacyRoute: typeof ApiCallsPrivacyRoute
   ApiCoinsBetRoute: typeof ApiCoinsBetRoute
   ApiCoinsClaimRoute: typeof ApiCoinsClaimRoute
   ApiCoinsGiftRoute: typeof ApiCoinsGiftRoute
@@ -11453,6 +11492,27 @@ declare module '@tanstack/react-router' {
       path: '/api/battlepass/unlock'
       fullPath: '/api/battlepass/unlock'
       preLoaderRoute: typeof ApiBattlepassUnlockRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/calls/history': {
+      id: '/api/calls/history'
+      path: '/api/calls/history'
+      fullPath: '/api/calls/history'
+      preLoaderRoute: typeof ApiCallsHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/calls/ice': {
+      id: '/api/calls/ice'
+      path: '/api/calls/ice'
+      fullPath: '/api/calls/ice'
+      preLoaderRoute: typeof ApiCallsIceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/calls/privacy': {
+      id: '/api/calls/privacy'
+      path: '/api/calls/privacy'
+      fullPath: '/api/calls/privacy'
+      preLoaderRoute: typeof ApiCallsPrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/coins/': {
@@ -16184,6 +16244,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiBattlepassClaimRoute: ApiBattlepassClaimRoute,
   ApiBattlepassUnlockRoute: ApiBattlepassUnlockRoute,
+  ApiCallsHistoryRoute: ApiCallsHistoryRoute,
+  ApiCallsIceRoute: ApiCallsIceRoute,
+  ApiCallsPrivacyRoute: ApiCallsPrivacyRoute,
   ApiCoinsBetRoute: ApiCoinsBetRoute,
   ApiCoinsClaimRoute: ApiCoinsClaimRoute,
   ApiCoinsGiftRoute: ApiCoinsGiftRoute,

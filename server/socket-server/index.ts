@@ -75,6 +75,7 @@ import {
 } from './handlers/gabriels-horn';
 import { registerSpacesHandlers, handleSpacesDisconnect } from './handlers/spaces';
 import { registerPartyHandlers, handlePartyDisconnect } from './handlers/party';
+import { registerCallHandlers, handleCallDisconnect } from './handlers/call';
 
 // ─── Startup validation ─────────────────────────────────────────
 
@@ -279,6 +280,7 @@ io.on('connection', (socket) => {
   // Platform expansion (§4, §5): live Spaces + cross-game party.
   registerSpacesHandlers(io, socket);
   registerPartyHandlers(io, socket);
+  registerCallHandlers(io, socket);
 
   // Disconnect cleanup
   socket.on('disconnect', (reason) => {
@@ -286,6 +288,7 @@ io.on('connection', (socket) => {
 
     handleSpacesDisconnect(io, socket);
     handlePartyDisconnect(io, socket);
+    void handleCallDisconnect(io, socket);
     handleSynapseStormDisconnect(io, socket);
     handleSliceItDisconnect(io, socket);
     handleNeonDriftwayDisconnect(io, socket);

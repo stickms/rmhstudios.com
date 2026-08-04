@@ -50,6 +50,7 @@ import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
 import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
 import { CommandPaletteMount } from '@/components/site/CommandPaletteMount';
+import { CallMount } from '@/components/call/CallMount';
 import { ThemePreviewBar } from '@/components/themes/ThemePreviewBar';
 import { RecentsTracker } from '@/components/site/RecentsTracker';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
@@ -853,6 +854,10 @@ export function Providers({
                     {/* §14: the floating try-before-buy / preview-on-site confirm bar,
                         mounted globally so it survives navigation under a previewed theme. */}
                     <ThemePreviewBar />
+                    {/* Voice calls. Mounted here for the same reason: an
+                        incoming call has to ring wherever the user is, and
+                        answering one must survive navigating away. */}
+                    <CallMount />
                   </SilentErrorBoundary>
                 </ConfirmProvider>
               </ResolvedUserCtx.Provider>

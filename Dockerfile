@@ -120,6 +120,10 @@ COPY lib/quests/catalog.ts ./lib/quests/catalog.ts
 # constant/type modules, so copy the dirs so the bundle can resolve them.
 COPY lib/party ./lib/party/
 COPY lib/spaces ./lib/spaces/
+# Voice-call signalling: the socket hub imports the event contract and the
+# shared state machine (peer.ts/store.ts are client-only and never reached).
+COPY lib/call/events.ts ./lib/call/events.ts
+COPY lib/call/state.ts ./lib/call/state.ts
 # The realtime status/grace contract, shared by BOTH sides of the wire: the
 # client's connection states and the 15s disconnect window that
 # server/shared/presence-grace.ts and server/rmhbox/config.ts both read, so a
