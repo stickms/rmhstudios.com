@@ -7,8 +7,57 @@ import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import type { TFunction } from 'i18next';
+import {
+  CURRENT_RELEASE,
+  gridClassFor,
+  itemNumber,
+  storageKeyFor,
+  type WhatsNewItemId,
+} from '@/lib/whats-new';
 
-const STORAGE_KEY = 'rmh-whatsnew-seen-social-rewrite-v1';
+/**
+ * Card copy, as literal `t()` calls keyed by item id.
+ *
+ * `t(item.titleKey)` would be tidier and does not work: `i18next-parser` reads
+ * the source statically, so a computed key never lands in `locales/` and every
+ * locale serves the English default forever (CLAUDE.md §5). Spelled out here
+ * for the same reason `planCopy()` and `featureCopy()` are.
+ */
+export function releaseCopy(t: TFunction): Record<WhatsNewItemId, { title: string; copy: string }> {
+  return {
+    'voice-calls': {
+      title: t('whatsnew-voice-calls-title', { defaultValue: 'Call each other' }),
+      copy: t('whatsnew-voice-calls-copy', {
+        defaultValue:
+          'Voice calls, straight from a conversation or someone’s profile. Audio goes directly between the two of you — it never passes through us.',
+      }),
+    },
+    'upload-privacy': {
+      title: t('whatsnew-upload-privacy-title', { defaultValue: 'Photos travel lighter' }),
+      copy: t('whatsnew-upload-privacy-copy', {
+        defaultValue:
+          'Every image you upload is now losslessly re-compressed, and the location your camera quietly attached is stripped before anyone else can read it.',
+      }),
+    },
+    translations: {
+      title: t('whatsnew-translations-title', { defaultValue: 'In your language' }),
+      copy: t('whatsnew-translations-copy', {
+        defaultValue:
+          'Thirteen parts of the site — tournaments, wagers, saves, lists, awards and more — were only ever showing English. They speak all sixteen languages now.',
+      }),
+    },
+    'membership-features': {
+      title: t('whatsnew-membership-title', { defaultValue: 'What membership gets you' }),
+      copy: t('whatsnew-membership-copy', {
+        defaultValue:
+          'The store now lists every feature a membership unlocks, and what each tier includes.',
+      }),
+    },
+  };
+}
+
+const STORAGE_KEY = storageKeyFor(CURRENT_RELEASE);
 const WELCOME_KEY = 'rmh-welcome-seen-v1';
 const LANG_KEY = 'rmh-lang-picked-v1';
 let presentedInThisRuntime = false;
@@ -26,37 +75,13 @@ export function WhatsNewModal() {
   const { data: session, isPending } = useSession();
   const consentAnswered = useCookieConsentAnswered();
   const [open, setOpen] = useState(false);
-  const changes = [
-    {
-      number: '01',
-      key: 'social-rewrite-feed',
-      title: t('social-rewrite-feed-title', { defaultValue: 'The feed comes first' }),
-      copy: t('social-rewrite-feed-copy', {
-        defaultValue:
-          'Posts, projects, games, and conversations now meet in one immediate community timeline.',
-      }),
-    },
-    {
-      number: '02',
-      key: 'social-rewrite-navigation',
-      title: t('social-rewrite-navigation-title', {
-        defaultValue: 'Every section is one tap away',
-      }),
-      copy: t('social-rewrite-navigation-copy', {
-        defaultValue:
-          'Persistent tabs and a thumb-friendly mobile dock keep the whole platform within reach.',
-      }),
-    },
-    {
-      number: '03',
-      key: 'social-rewrite-theme',
-      title: t('social-rewrite-theme-title', { defaultValue: 'A new visual system' }),
-      copy: t('social-rewrite-theme-copy', {
-        defaultValue:
-          'Daylight, Midnight, and High Contrast share crisp surfaces, stronger type, and purposeful motion.',
-      }),
-    },
-  ] as const;
+  const copy = releaseCopy(t);
+  const changes = CURRENT_RELEASE.items.map((id, index) => ({
+    key: id,
+    number: itemNumber(index),
+    title: copy[id].title,
+    copy: copy[id].copy,
+  }));
 
   useEffect(() => {
     if (isPending) return;
@@ -92,18 +117,16 @@ export function WhatsNewModal() {
         <div className="spatial-whats-new__intro">
           <div className="spatial-whats-new__meta">
             <span>{t('whats-new', { defaultValue: 'What’s new' })}</span>
-            <span>26 / 01</span>
+            <span>{CURRENT_RELEASE.version}</span>
           </div>
           <div>
             <DialogTitle className="spatial-whats-new__title">
-              {t('whatsnew-title-social-rewrite', {
-                defaultValue: 'RMH is social now.',
-              })}
+              {t('whatsnew-title-calls', { defaultValue: 'Now you can talk.' })}
             </DialogTitle>
             <DialogDescription className="spatial-whats-new__description">
-              {t('whatsnew-subtitle-social-rewrite', {
+              {t('whatsnew-subtitle-calls', {
                 defaultValue:
-                  'A mobile-first interface built around people, projects, and the things worth sharing.',
+                  'Voice calls between any two people, lighter and more private uploads, and thirteen more corners of the site in your own language.',
               })}
             </DialogDescription>
           </div>
@@ -112,7 +135,7 @@ export function WhatsNewModal() {
           </div>
         </div>
 
-        <div className="spatial-whats-new__changes grid grid-cols-1 sm:grid-cols-3">
+        <div className={`spatial-whats-new__changes grid ${gridClassFor(changes.length)}`}>
           {changes.map((change) => (
             <article key={change.key}>
               <span>{change.number}</span>
@@ -127,7 +150,7 @@ export function WhatsNewModal() {
         <div className="spatial-whats-new__footer">
           <span>{t('designed-for-community', { defaultValue: 'Designed for community.' })}</span>
           <Button className="w-full sm:ml-auto sm:w-auto" onClick={() => setOpen(false)}>
-            {t('enter-new-rmh', { defaultValue: 'Enter the new RMH' })}
+            {t('whatsnew-dismiss', { defaultValue: 'Got it' })}
             <ArrowUpRight aria-hidden />
           </Button>
         </div>

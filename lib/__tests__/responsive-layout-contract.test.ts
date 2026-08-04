@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { gridClassFor } from '@/lib/whats-new';
 
 const ROOT = process.cwd();
 
@@ -33,8 +34,22 @@ describe('spatial redesign — responsive layout contract', () => {
   it('uses a phone-first announcement layout with a full-width primary action', () => {
     const modal = source('components/feed/WhatsNewModal.tsx');
 
-    expect(modal).toContain('grid-cols-1');
-    expect(modal).toContain('sm:grid-cols-3');
+    // The announcement's grid moved into `lib/whats-new.ts` when the modal
+    // became data-driven, so the column classes are asserted there — and as
+    // behaviour rather than as a substring, which is a stronger guarantee than
+    // the grep this replaced: EVERY supported card count must start at one
+    // column and only widen from `sm:` up.
+    for (const count of [2, 3, 4]) {
+      const cls = gridClassFor(count);
+      expect({ count, phoneFirst: cls.startsWith('grid-cols-1') }).toEqual({
+        count,
+        phoneFirst: true,
+      });
+      // No unprefixed multi-column class would override the phone-first base.
+      expect({ count, bare: /(^|\s)grid-cols-[2-9]/.test(cls) }).toEqual({ count, bare: false });
+    }
+
+    // The dismiss button still spans the sheet on a phone.
     expect(modal).toContain('w-full sm:ml-auto sm:w-auto');
   });
 
