@@ -13,6 +13,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { mapWithConcurrency } from '@/lib/async-pool';
 import { matchesEvent } from '@/lib/webhooks/events';
 import { signWebhookPayload } from '@/lib/webhooks/signature';
 import { safeFetch, SsrfError } from '@/lib/ssrf-guard.server';
@@ -146,6 +147,9 @@ export async function emitWebhookEvent(userId: string, event: string, data: unkn
   }
 }
 
+/** Distinct subscriber endpoints drained at once (each stays sequential). */
+const ENDPOINT_DELIVERY_CONCURRENCY = 6;
+
 /**
  * Drain due PENDING deliveries (retries). Intended to be called periodically by
  * an authenticated cron route. Returns the number of deliveries attempted.
@@ -158,15 +162,34 @@ export async function deliverDuePending(max = 50): Promise<number> {
     include: { endpoint: { select: { id: true, url: true, secret: true, failureCount: true, enabled: true } } },
   });
 
-  let attempted = 0;
-  for (const d of due) {
-    if (!d.endpoint.enabled) {
-      // Endpoint was disabled after this was queued — mark the delivery failed.
-      await prisma.webhookDelivery.update({ where: { id: d.id }, data: { status: 'FAILED', error: 'endpoint disabled' } }).catch(() => {});
-      continue;
-    }
-    attempted++;
-    await attemptDelivery(d.id, d.event, d.payload, { id: d.endpoint.id, url: d.endpoint.url, secret: d.endpoint.secret, failureCount: d.endpoint.failureCount }, d.attempts + 1);
+  // Deliveries whose endpoint was disabled after queueing are all failed in one
+  // statement rather than an UPDATE apiece.
+  const disabled = due.filter((d) => !d.endpoint.enabled);
+  if (disabled.length > 0) {
+    await prisma.webhookDelivery.updateMany({ where: { id: { in: disabled.map((d) => d.id) } }, data: { status: 'FAILED', error: 'endpoint disabled' } }).catch(() => {});
   }
-  return attempted;
+
+  // The rest are outbound HTTP calls, previously awaited strictly one after
+  // another — so a batch of 50 took the sum of 50 request timeouts, and one slow
+  // subscriber stalled every other subscriber's retries behind it.
+  //
+  // Deliveries are grouped by endpoint and the groups run concurrently, while
+  // each endpoint's own deliveries stay sequential and in `nextAttemptAt` order.
+  // That keeps per-subscriber ordering and avoids aiming a burst of parallel
+  // requests at any single subscriber, which a flat parallel drain would do.
+  const byEndpoint = new Map<string, typeof due>();
+  for (const d of due) {
+    if (!d.endpoint.enabled) continue;
+    const group = byEndpoint.get(d.endpoint.id);
+    if (group) group.push(d);
+    else byEndpoint.set(d.endpoint.id, [d]);
+  }
+
+  await mapWithConcurrency([...byEndpoint.values()], ENDPOINT_DELIVERY_CONCURRENCY, async (group) => {
+    for (const d of group) {
+      await attemptDelivery(d.id, d.event, d.payload, { id: d.endpoint.id, url: d.endpoint.url, secret: d.endpoint.secret, failureCount: d.endpoint.failureCount }, d.attempts + 1);
+    }
+  });
+
+  return due.length - disabled.length;
 }

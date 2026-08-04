@@ -42,12 +42,17 @@ export const Route = createFileRoute('/api/versecraft/chapter')({
         const local =
           distributed ??
           rateLimit(userId, { limit: 15, windowMs: 60_000, prefix: 'versecraft-chapter' });
-        const globalMinute = await redisRateLimit('versecraft-ai:global:minute', 300, 60_000);
-        const globalDay = await redisRateLimit(
-          'versecraft-ai:global:day',
-          Number(process.env.VERSECRAFT_AI_DAILY_CAP ?? 5_000),
-          86_400_000,
-        );
+        // Both global buckets are consumed regardless of the other's verdict (the
+        // check below reads them together), so they go out in parallel rather
+        // than as two serial Redis round-trips ahead of any real work.
+        const [globalMinute, globalDay] = await Promise.all([
+          redisRateLimit('versecraft-ai:global:minute', 300, 60_000),
+          redisRateLimit(
+            'versecraft-ai:global:day',
+            Number(process.env.VERSECRAFT_AI_DAILY_CAP ?? 5_000),
+            86_400_000,
+          ),
+        ]);
         if (!local.allowed || globalMinute?.allowed === false || globalDay?.allowed === false) {
           const retryAfter = Math.max(
             local.retryAfter,

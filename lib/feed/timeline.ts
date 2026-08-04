@@ -29,9 +29,12 @@ import { audienceWhere, circleOwnerIds } from './audience.server';
 import { getSignals } from './signals.server';
 import { mutedTagWhere } from './signals';
 import { applyLock } from './map-feed-item.server';
+import { deduplicateReposts } from './dedupe';
 import type { ReactionSummary } from '../social/reactions';
 import { apiCache } from '../cache';
 import { cachedSWR } from '../cached.server';
+
+export { deduplicateReposts };
 
 export type FeedSurface = 'following' | 'foryou';
 
@@ -144,23 +147,6 @@ function mapPoll(poll: any): FeedPoll | undefined {
     })),
     myVotes: poll.options.filter((o: any) => o.votes?.length > 0).map((o: any) => o.id),
   };
-}
-
-/* ------------------------------------------------------------------ */
-/*  Repost de-duplication                                              */
-/* ------------------------------------------------------------------ */
-
-export function deduplicateReposts(items: FeedItem[], windowSize = 2): FeedItem[] {
-  const result: FeedItem[] = [];
-  for (const item of items) {
-    if (item.repostedBy) {
-      const underlyingId = item.actualId ?? item.id;
-      const recentIds = result.slice(-windowSize).map((i) => i.actualId ?? i.id);
-      if (recentIds.includes(underlyingId)) continue;
-    }
-    result.push(item);
-  }
-  return result;
 }
 
 /* ------------------------------------------------------------------ */
@@ -536,10 +522,10 @@ async function getFollowingTimeline(params: GetTimelineParams): Promise<Timeline
   // reposters) once instead of joining them per row.
   const displayMap = await getUserDisplayMap(collectAuthorIds(rmharks, repostRecords));
 
-  const merged = [
+  const merged = sortByKeysetDesc([
     ...rmharks.map((r) => mapOwn(r, userId, displayMap)),
     ...repostRecords.map((rp) => mapRepost(rp, userId, displayMap)),
-  ].sort(compareKeysetDesc);
+  ]);
 
   const items = deduplicateReposts(merged).slice(0, limit);
 
@@ -653,10 +639,10 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
     const displayMap = await getUserDisplayMap(collectAuthorIds(rmharks, repostRecords));
 
     dbItems = deduplicateReposts(
-      [
+      sortByKeysetDesc([
         ...rmharks.map((r) => mapOwn(r, userId, displayMap)),
         ...repostRecords.map((rp) => mapRepost(rp, userId, displayMap)),
-      ].sort(compareKeysetDesc),
+      ]),
     ).slice(0, limit);
 
     const interest = await interestPromise;
@@ -681,9 +667,7 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
   if (filter === 'all') {
     // Interleave: 3 RMHarks per 1 announcement to prioritize user content.
     // Copy before sorting — `announcements` may be a shared cached array.
-    const sortedAnnouncements = [...announcements].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
+    const sortedAnnouncements = sortByCreatedAtDesc([...announcements]);
     const result: FeedItem[] = [];
     let ri = 0;
     let ai = 0;
@@ -697,9 +681,7 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
     }
     paginatedItems = result;
   } else {
-    paginatedItems = [...dbItems, ...announcements]
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, limit);
+    paginatedItems = sortByCreatedAtDesc([...dbItems, ...announcements]).slice(0, limit);
   }
 
   // Cursor is anchored to the last real DB item (RMHark) — announcements have
@@ -720,12 +702,30 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
   };
 }
 
-/** Compare two emitted items by their `(createdAt, id)` keyset, descending. */
-function compareKeysetDesc(a: FeedItem, b: FeedItem): number {
-  const ta = new Date(a.createdAt).getTime();
-  const tb = new Date(b.createdAt).getTime();
-  if (tb !== ta) return tb - ta;
-  return keysetOf(b).id.localeCompare(keysetOf(a).id);
+/**
+ * Sort emitted items by their `(createdAt, id)` keyset, descending.
+ *
+ * Decorate-sort-undecorate: each item's timestamp and keyset id are derived
+ * ONCE up front rather than inside the comparator. A comparator runs O(n log n)
+ * times, so parsing both dates and rebuilding both keyset objects per
+ * comparison meant ~200 `new Date` parses and ~200 object allocations to order
+ * a 40-item page — all of it recomputing the same handful of values.
+ */
+function sortByKeysetDesc<T extends FeedItem>(items: T[]): T[] {
+  const decorated = items.map((item) => ({
+    item,
+    time: new Date(item.createdAt).getTime(),
+    id: keysetOf(item).id,
+  }));
+  decorated.sort((a, b) => (b.time !== a.time ? b.time - a.time : b.id.localeCompare(a.id)));
+  return decorated.map((d) => d.item);
+}
+
+/** Sort by `createdAt` descending, parsing each timestamp once. */
+function sortByCreatedAtDesc<T extends FeedItem>(items: T[]): T[] {
+  const decorated = items.map((item) => ({ item, time: new Date(item.createdAt).getTime() }));
+  decorated.sort((a, b) => b.time - a.time);
+  return decorated.map((d) => d.item);
 }
 
 /* ------------------------------------------------------------------ */

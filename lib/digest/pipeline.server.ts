@@ -63,6 +63,15 @@ export async function runWeeklyDigest(staggerMs = 150): Promise<DigestRunResult>
 
   const result: DigestRunResult = { eligible: userIds.length, sent: 0, skipped: 0, failed: 0 };
 
+  // Addresses for the whole cohort in one query. This was a findUnique per user
+  // inside the send loop; the sends themselves stay sequential on purpose, so
+  // the run keeps a steady pace against the mail provider rather than bursting.
+  const emailRows = await prisma.user.findMany({
+    where: { id: { in: userIds } },
+    select: { id: true, email: true },
+  });
+  const emailByUser = new Map(emailRows.map((u) => [u.id, u.email]));
+
   for (const userId of userIds) {
     try {
       const digest = await assembleDigest(userId);
@@ -71,8 +80,8 @@ export async function runWeeklyDigest(staggerMs = 150): Promise<DigestRunResult>
         result.skipped++;
         continue;
       }
-      const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
-      if (!user?.email) {
+      const email = emailByUser.get(userId);
+      if (!email) {
         result.skipped++;
         continue;
       }
@@ -80,7 +89,7 @@ export async function runWeeklyDigest(staggerMs = 150): Promise<DigestRunResult>
       // RFC 8058 one-click unsubscribe headers, in addition to the footer link.
       const unsubUrl = `${SITE_URL}/api/email/unsubscribe?token=${encodeURIComponent(signUnsubToken(userId))}`;
       const ok = await sendEmail({
-        to: user.email,
+        to: email,
         subject: digest.subject,
         html: digest.html,
         text: digest.text,

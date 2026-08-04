@@ -397,3 +397,21 @@ export async function getBalanceOn(db: Db, userId: string): Promise<number> {
   });
   return profile?.coins ?? 0;
 }
+
+/**
+ * Balances for several users in one query. Users with no profile row are absent
+ * from the map; read with `?? 0` to match `getBalanceOn`'s default.
+ *
+ * The casino tables settle a whole table at once and then broadcast each seat's
+ * new balance. Doing that with `getBalanceOn` per seat meant one round-trip per
+ * player, in sequence, inside the settlement transaction.
+ */
+export async function getBalancesOn(db: Db, userIds: string[]): Promise<Map<string, number>> {
+  const unique = [...new Set(userIds)];
+  if (unique.length === 0) return new Map();
+  const rows = await db.userProfile.findMany({
+    where: { userId: { in: unique } },
+    select: { userId: true, coins: true },
+  });
+  return new Map(rows.map((r) => [r.userId, r.coins]));
+}
