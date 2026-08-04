@@ -31,9 +31,9 @@ function slugBase(companyName: string): string {
 export function candidateSlugs(companyName: string): string[] {
   const base = slugBase(companyName); // e.g. 'jpmorgan chase', 'hig capital', 'stripe'
 
-  const noSpaces = base.replace(/ /g, '');    // (1) 'jpmorganchase'
+  const noSpaces = base.replace(/ /g, ''); // (1) 'jpmorganchase'
   const hyphenated = base.replace(/ /g, '-'); // (2) 'jpmorgan-chase'
-  const firstWord = base.split(' ')[0];       // (3) 'jpmorgan'
+  const firstWord = base.split(' ')[0]; // (3) 'jpmorgan'
 
   // (4) raw lowercase name stripped of non-alphanumerics before normalization
   const rawLower = companyName.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -64,12 +64,16 @@ export async function probeSlug(
 
   const url = (() => {
     switch (platform) {
-      case 'greenhouse':    return greenhouseBoardUrl(slug);
-      case 'lever':        return leverPostingsUrl(slug);
-      case 'ashby':        return ashbyBoardUrl(slug);
+      case 'greenhouse':
+        return greenhouseBoardUrl(slug);
+      case 'lever':
+        return leverPostingsUrl(slug);
+      case 'ashby':
+        return ashbyBoardUrl(slug);
       // SR postings endpoint returns 200 {"content":[]} for ANY slug (even nonexistent companies),
       // so probe the company-details endpoint instead — it 404s for unknown companies.
-      case 'smartrecruiters': return `https://api.smartrecruiters.com/v1/companies/${slug}`;
+      case 'smartrecruiters':
+        return `https://api.smartrecruiters.com/v1/companies/${slug}`;
     }
   })();
 

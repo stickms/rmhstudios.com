@@ -170,9 +170,7 @@ describe('assessJob — London analyst → non_us_role override', () => {
 
 describe('assessJob — ambiguous location', () => {
   it('adds ambiguous_us_location when isUS is null', () => {
-    const result = assessJob(
-      baseArgs({ locationRaw: 'Main Campus', country: null }),
-    );
+    const result = assessJob(baseArgs({ locationRaw: 'Main Campus', country: null }));
     expect(result.reviewReasons).toContain('ambiguous_us_location');
   });
 });
@@ -182,9 +180,7 @@ describe('assessJob — ambiguous location', () => {
 describe('assessJob — senior/non-early-career title', () => {
   it('nulls graduationYearTarget and schoolYearTarget when classification is no', () => {
     // Use a title that strongly classifies as 'no'
-    const result = assessJob(
-      baseArgs({ title: 'Senior Vice President, Finance' }),
-    );
+    const result = assessJob(baseArgs({ title: 'Senior Vice President, Finance' }));
     expect(result.fields.earlyCareerClassification).toBe('no');
     expect(result.fields.graduationYearTarget).toBeNull();
     expect(result.fields.schoolYearTarget).toBeNull();
@@ -223,9 +219,7 @@ describe('assessJob — remoteStatus handling', () => {
   });
 
   it('downgrades remote_us to onsite when location is non-US', () => {
-    const result = assessJob(
-      baseArgs({ locationRaw: 'Remote - London', country: null }),
-    );
+    const result = assessJob(baseArgs({ locationRaw: 'Remote - London', country: null }));
     // isUS is false (london signal), so remote_us must be downgraded
     expect(result.fields.remoteStatus).not.toBe('remote_us');
   });
@@ -280,7 +274,12 @@ describe('assessJob — fields completeness', () => {
   });
 
   it('sets employmentType full_time for non-intern program types', () => {
-    const result = assessJob(baseArgs({ title: 'Entry Level Business Analyst', descriptionHtml: '<p>Join our team.</p>' }, {}));
+    const result = assessJob(
+      baseArgs(
+        { title: 'Entry Level Business Analyst', descriptionHtml: '<p>Join our team.</p>' },
+        {},
+      ),
+    );
     // entry_level is not in the internship-type list → full_time
     expect(result.fields.programType).toBe('entry_level');
     expect(result.fields.employmentType).toBe('full_time');
@@ -332,22 +331,26 @@ describe('assessJob — country field semantics', () => {
 
   it('London job with country "GB": country is "GB"', () => {
     const result = assessJob(
-      baseArgs({ locationRaw: 'London', country: 'GB', title: 'Director of Operations' }, { usConfirmed: false }),
+      baseArgs(
+        { locationRaw: 'London', country: 'GB', title: 'Director of Operations' },
+        { usConfirmed: false },
+      ),
     );
     expect(result.fields.country).toBe('GB');
   });
 
   it('London via locationRaw only (no country): country is null', () => {
     const result = assessJob(
-      baseArgs({ locationRaw: 'London, UK', country: null, title: 'Investment Banking Analyst' }, { usConfirmed: false }),
+      baseArgs(
+        { locationRaw: 'London, UK', country: null, title: 'Investment Banking Analyst' },
+        { usConfirmed: false },
+      ),
     );
     expect(result.fields.country).toBeNull();
   });
 
   it('Main Campus ambiguous location (no country): country is null', () => {
-    const result = assessJob(
-      baseArgs({ locationRaw: 'Main Campus', country: null }),
-    );
+    const result = assessJob(baseArgs({ locationRaw: 'Main Campus', country: null }));
     // isUS is null (ambiguous) → country is null
     expect(result.fields.country).toBeNull();
   });
@@ -370,9 +373,11 @@ describe('application deadline extraction', () => {
     expect(deadline?.getFullYear()).toBe(2026);
     expect(deadline?.getMonth()).toBe(6);
 
-    const result = assessJob(baseArgs({
-      descriptionHtml: '<p>Apply by July 31, 2026 for consideration.</p>',
-    }));
+    const result = assessJob(
+      baseArgs({
+        descriptionHtml: '<p>Apply by July 31, 2026 for consideration.</p>',
+      }),
+    );
     expect(result.fields.applicationDeadline?.getDate()).toBe(31);
   });
 

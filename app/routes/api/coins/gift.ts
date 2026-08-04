@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { assertNoRecoveryHold } from '@/lib/recovery/hold.server';
 import {
   sendCoinGift,
   CoinGiftError,
@@ -55,6 +56,12 @@ export const Route = createFileRoute('/api/coins/gift')({
           const body = await request.json().catch(() => ({}));
           const parsed = schema.safeParse(body);
           if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
+
+          // A recovered account is held for 72h before it can move value. Without
+          // this the hold is reported and not enforced, and account recovery
+          // becomes the cheapest route into the economy.
+          const held = await assertNoRecoveryHold(session.user.id);
+          if (held) return held;
 
           const recipient = await prisma.user.findFirst({
             where: { OR: [{ id: parsed.data.recipient }, { handle: parsed.data.recipient }] },

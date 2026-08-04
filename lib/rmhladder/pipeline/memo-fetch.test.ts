@@ -4,7 +4,12 @@ import { memoFetch } from './memo-fetch';
 function makeCountingFetch(responses: Map<string, { status: number; body: string }>) {
   const callCount = new Map<string, number>();
   const impl: typeof fetch = async (input, _init?) => {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : (input as Request).url;
+    const url =
+      typeof input === 'string'
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : (input as Request).url;
     callCount.set(url, (callCount.get(url) ?? 0) + 1);
     const resp = responses.get(url);
     if (!resp) throw new Error(`No stub for ${url}`);
@@ -44,9 +49,7 @@ describe('memoFetch', () => {
   });
 
   it('caches non-ok (4xx/5xx) responses', async () => {
-    const responses = new Map([
-      ['https://example.com/gone', { status: 404, body: 'not found' }],
-    ]);
+    const responses = new Map([['https://example.com/gone', { status: 404, body: 'not found' }]]);
     const { impl, callCount } = makeCountingFetch(responses);
     const fetch = memoFetch(impl);
 
@@ -93,9 +96,7 @@ describe('memoFetch', () => {
   });
 
   it('different memoFetch instances do not share cache', async () => {
-    const responses = new Map([
-      ['https://example.com/x', { status: 200, body: '"x"' }],
-    ]);
+    const responses = new Map([['https://example.com/x', { status: 200, body: '"x"' }]]);
     const { impl, callCount } = makeCountingFetch(responses);
 
     const fetch1 = memoFetch(impl);

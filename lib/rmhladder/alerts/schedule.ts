@@ -37,14 +37,13 @@ export function isDigestDue(prefs: LadderAlertSchedulePrefs, now = new Date()): 
   if (prefs.digestFrequency === 'immediate') return true;
   const local = localParts(now, prefs.timezone);
   if (local.hour < 8 || local.hour >= 12) return false;
-  return prefs.digestFrequency === 'daily'
-    || (prefs.digestFrequency === 'weekly' && local.weekday === 'Mon');
+  return (
+    prefs.digestFrequency === 'daily' ||
+    (prefs.digestFrequency === 'weekly' && local.weekday === 'Mon')
+  );
 }
 
-export function formatInUserTimezone(
-  value: Date,
-  timezone: string | null | undefined,
-): string {
+export function formatInUserTimezone(value: Date, timezone: string | null | undefined): string {
   try {
     return new Intl.DateTimeFormat('en-US', {
       timeZone: timezone || 'America/New_York',

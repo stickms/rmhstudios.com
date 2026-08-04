@@ -6,7 +6,12 @@ import { analyzeRedactedResume } from '../ai/resume-review.server';
 import { ensureCachedJobProfile } from '../ai/job-profile.server';
 import { scoreCandidateForJob } from '../matching/score';
 import type { MatchUserPreferences } from '../matching/score';
-import { decryptResumeFile, decryptResumeText, encryptResumeFile, encryptResumeText } from './crypto.server';
+import {
+  decryptResumeFile,
+  decryptResumeText,
+  encryptResumeFile,
+  encryptResumeText,
+} from './crypto.server';
 import { extractResumeText, validateResumeFile } from './extract.server';
 import { isOwnedResumeKey, resumeObjectKey } from './keys';
 import { redactResumePii } from './redact';
@@ -30,8 +35,10 @@ interface ModelMethods {
 }
 
 export interface ResumePrisma {
-  ladderResume: Partial<ModelMethods> & Pick<ModelMethods, 'findMany' | 'findFirst' | 'create' | 'update' | 'delete'>;
-  ladderResumeVersion: Partial<ModelMethods> & Pick<ModelMethods, 'findFirst' | 'create' | 'update'>;
+  ladderResume: Partial<ModelMethods> &
+    Pick<ModelMethods, 'findMany' | 'findFirst' | 'create' | 'update' | 'delete'>;
+  ladderResumeVersion: Partial<ModelMethods> &
+    Pick<ModelMethods, 'findFirst' | 'create' | 'update'>;
   ladderResumeReview: Partial<ModelMethods> & Pick<ModelMethods, 'create' | 'update'>;
   ladderAiTask: Partial<ModelMethods> & Pick<ModelMethods, 'create' | 'update'>;
   ladderJob: Partial<ModelMethods> & Pick<ModelMethods, 'findMany'>;
@@ -86,22 +93,26 @@ function publicVersion(version: AnyRow) {
     confirmedAt: (version.confirmedAt as Date | null) ?? null,
     createdAt: version.createdAt as Date,
     latestReview: publicReview((version.reviews as AnyRow[] | undefined)?.[0]),
-    matches: (isConfirmed ? ((version.matches as AnyRow[] | undefined) ?? []) : []).map((match) => ({
-      id: match.id as string,
-      jobId: match.jobId as string,
-      score: match.score as number,
-      confidence: match.confidence as number,
-      breakdown: match.breakdown,
-      matchedSkills: (match.matchedSkills as string[]) ?? [],
-      missingSkills: (match.missingSkills as string[]) ?? [],
-      explanation: (match.explanation as string | null) ?? null,
-      job: match.job ? {
-        id: match.job.id as string,
-        title: match.job.title as string,
-        locationRaw: (match.job.locationRaw as string | null) ?? null,
-        company: match.job.company ? { name: match.job.company.name as string } : null,
-      } : null,
-    })),
+    matches: (isConfirmed ? ((version.matches as AnyRow[] | undefined) ?? []) : []).map(
+      (match) => ({
+        id: match.id as string,
+        jobId: match.jobId as string,
+        score: match.score as number,
+        confidence: match.confidence as number,
+        breakdown: match.breakdown,
+        matchedSkills: (match.matchedSkills as string[]) ?? [],
+        missingSkills: (match.missingSkills as string[]) ?? [],
+        explanation: (match.explanation as string | null) ?? null,
+        job: match.job
+          ? {
+              id: match.job.id as string,
+              title: match.job.title as string,
+              locationRaw: (match.job.locationRaw as string | null) ?? null,
+              company: match.job.company ? { name: match.job.company.name as string } : null,
+            }
+          : null,
+      }),
+    ),
   };
 }
 
@@ -114,7 +125,11 @@ export async function listUserResumes(prisma: ResumePrisma, userId: string) {
         orderBy: { versionNumber: 'desc' },
         include: {
           reviews: { orderBy: { createdAt: 'desc' }, take: 1 },
-          matches: { orderBy: { score: 'desc' }, take: 30, include: { job: { include: { company: true } } } },
+          matches: {
+            orderBy: { score: 'desc' },
+            take: 30,
+            include: { job: { include: { company: true } } },
+          },
         },
       },
     },
@@ -140,7 +155,8 @@ export async function uploadResume(
   storage: StorageDeps = DEFAULT_STORAGE,
 ) {
   if (args.file.buffer.length === 0) throw new Error('Resume file is empty');
-  if (args.file.buffer.length > RESUME_MAX_BYTES) throw new Error('Resume exceeds the 10 MiB limit');
+  if (args.file.buffer.length > RESUME_MAX_BYTES)
+    throw new Error('Resume exceeds the 10 MiB limit');
   validateResumeFile(args.file);
 
   const extractedText = await extractResumeText(args.file.buffer, args.file.mimeType);
@@ -148,15 +164,21 @@ export async function uploadResume(
   const sha256 = createHash('sha256').update(args.file.buffer).digest('hex');
   let resume: AnyRow | null = null;
   if (args.resumeId) {
-    resume = await prisma.ladderResume.findFirst({ where: { id: args.resumeId, userId: args.userId } });
+    resume = await prisma.ladderResume.findFirst({
+      where: { id: args.resumeId, userId: args.userId },
+    });
     if (!resume) throw new Error('Resume not found');
   } else {
     const baseName = args.file.filename.replace(/\.(pdf|docx|txt)$/i, '').trim() || 'Resume';
-    resume = await prisma.ladderResume.create({ data: { userId: args.userId, name: (args.name?.trim() || baseName).slice(0, 160) } });
+    resume = await prisma.ladderResume.create({
+      data: { userId: args.userId, name: (args.name?.trim() || baseName).slice(0, 160) },
+    });
   }
 
   const latest = await prisma.ladderResumeVersion.findFirst({
-    where: { resumeId: resume.id }, orderBy: { versionNumber: 'desc' }, select: { versionNumber: true },
+    where: { resumeId: resume.id },
+    orderBy: { versionNumber: 'desc' },
+    select: { versionNumber: true },
   });
   const versionNumber = ((latest?.versionNumber as number | undefined) ?? 0) + 1;
   const key = resumeObjectKey({
@@ -166,7 +188,9 @@ export async function uploadResume(
     mimeType: args.file.mimeType,
   });
   const aad = textAad(args.userId, resume.id as string, sha256);
-  const encryptedFile = encryptResumeFile(args.file.buffer, { aad: fileAad(args.userId, resume.id as string, sha256) });
+  const encryptedFile = encryptResumeFile(args.file.buffer, {
+    aad: fileAad(args.userId, resume.id as string, sha256),
+  });
 
   await storage.put(key, encryptedFile, 'application/octet-stream');
   let version: AnyRow;
@@ -191,7 +215,10 @@ export async function uploadResume(
     await storage.delete(key).catch(() => undefined);
     throw error;
   }
-  await prisma.ladderResume.update({ where: { id: resume.id }, data: { activeVersionId: version.id } });
+  await prisma.ladderResume.update({
+    where: { id: resume.id },
+    data: { activeVersionId: version.id },
+  });
   await prisma.ladderAiTask.create({
     data: {
       userId: args.userId,
@@ -205,7 +232,11 @@ export async function uploadResume(
       finishedAt: new Date(),
     },
   });
-  return { resumeId: resume.id as string, version: publicVersion(version), redactions: redacted.counts };
+  return {
+    resumeId: resume.id as string,
+    version: publicVersion(version),
+    redactions: redacted.counts,
+  };
 }
 
 async function ownedResumeWithVersions(prisma: ResumePrisma, userId: string, resumeId: string) {
@@ -225,11 +256,15 @@ export async function downloadResume(
 ) {
   const resume = await ownedResumeWithVersions(prisma, userId, resumeId);
   const versions = (resume.versions as AnyRow[] | undefined) ?? [];
-  const version = versions.find((candidate) => candidate.id === resume.activeVersionId) ?? versions[0];
-  if (!version || !isOwnedResumeKey(version.storageKey as string, userId)) throw new Error('Resume file not found');
+  const version =
+    versions.find((candidate) => candidate.id === resume.activeVersionId) ?? versions[0];
+  if (!version || !isOwnedResumeKey(version.storageKey as string, userId))
+    throw new Error('Resume file not found');
   const object = await storage.get(version.storageKey as string);
   if (!object) throw new Error('Resume file not found');
-  const body = decryptResumeFile(object.body, { aad: fileAad(userId, resume.id as string, version.sha256 as string) });
+  const body = decryptResumeFile(object.body, {
+    aad: fileAad(userId, resume.id as string, version.sha256 as string),
+  });
   return { body, filename: version.filename as string, mimeType: version.mimeType as string };
 }
 
@@ -241,7 +276,8 @@ export async function deleteResume(
 ) {
   const resume = await ownedResumeWithVersions(prisma, userId, resumeId);
   for (const version of (resume.versions as AnyRow[] | undefined) ?? []) {
-    if (!isOwnedResumeKey(version.storageKey as string, userId)) throw new Error('Invalid owned resume storage key');
+    if (!isOwnedResumeKey(version.storageKey as string, userId))
+      throw new Error('Invalid owned resume storage key');
     // Do not remove DB ownership until private object deletion succeeds. A
     // transient storage failure can then be retried without orphaning PII.
     await storage.delete(version.storageKey as string);
@@ -279,7 +315,10 @@ async function refreshMatches(
   const matches: AnyRow[] = [];
   for (const job of jobs) {
     const latestVerification = (job.verifications as AnyRow[] | undefined)?.[0];
-    if (!latestVerification || !['verified_active', 'verified_probable'].includes(latestVerification.status as string)) {
+    if (
+      !latestVerification ||
+      !['verified_active', 'verified_probable'].includes(latestVerification.status as string)
+    ) {
       continue;
     }
     const profile = await ensureCachedJobProfile(
@@ -293,7 +332,10 @@ async function refreshMatches(
       create: { userId: args.userId, resumeVersionId: args.versionId, jobId: job.id, ...match },
       update: match,
     });
-    matches.push({ ...stored, job: { id: job.id, title: job.title, locationRaw: job.locationRaw, company: job.company } });
+    matches.push({
+      ...stored,
+      job: { id: job.id, title: job.title, locationRaw: job.locationRaw, company: job.company },
+    });
   }
   const eligibleJobIds = matches.map((match) => match.jobId as string);
   await prisma.ladderJobMatch.deleteMany({
@@ -324,28 +366,56 @@ export async function refreshConfirmedResumeMatches(
 
 export async function analyzeResume(
   prisma: ResumePrisma,
-  args: { userId: string; resumeId: string; versionId?: string; provider?: LadderAiProviderName; reservedTaskId?: string },
+  args: {
+    userId: string;
+    resumeId: string;
+    versionId?: string;
+    provider?: LadderAiProviderName;
+    reservedTaskId?: string;
+  },
 ) {
   const resume = await ownedResumeWithVersions(prisma, args.userId, args.resumeId);
   const versions = (resume.versions as AnyRow[] | undefined) ?? [];
   const version = args.versionId
     ? versions.find((candidate) => candidate.id === args.versionId)
-    : versions.find((candidate) => candidate.id === resume.activeVersionId) ?? versions[0];
+    : (versions.find((candidate) => candidate.id === resume.activeVersionId) ?? versions[0]);
   if (!version?.redactedTextEncrypted) throw new Error('Resume text is not ready for analysis');
   const provider = configuredLadderAiProvider(args.provider);
   const now = new Date();
   const task = args.reservedTaskId
     ? await prisma.ladderAiTask.update({
         where: { id: args.reservedTaskId },
-        data: { status: 'processing', provider: provider.name, inputRef: version.sha256, attempts: 1, startedAt: now },
+        data: {
+          status: 'processing',
+          provider: provider.name,
+          inputRef: version.sha256,
+          attempts: 1,
+          startedAt: now,
+        },
       })
     : await prisma.ladderAiTask.create({
-        data: { userId: args.userId, kind: 'resume_review', status: 'processing', provider: provider.name, resumeVersionId: version.id, inputRef: version.sha256, dedupeKey: `resume_review:${version.id}`, attempts: 1, startedAt: now },
+        data: {
+          userId: args.userId,
+          kind: 'resume_review',
+          status: 'processing',
+          provider: provider.name,
+          resumeVersionId: version.id,
+          inputRef: version.sha256,
+          dedupeKey: `resume_review:${version.id}`,
+          attempts: 1,
+          startedAt: now,
+        },
       });
   let review: AnyRow | null = null;
   try {
     review = await prisma.ladderResumeReview.create({
-      data: { userId: args.userId, resumeVersionId: version.id, provider: provider.name, model: provider.model, status: 'processing' },
+      data: {
+        userId: args.userId,
+        resumeVersionId: version.id,
+        provider: provider.name,
+        model: provider.model,
+        status: 'processing',
+      },
     });
     const aad = textAad(args.userId, resume.id as string, version.sha256 as string);
     const redactedText = decryptResumeText(version.redactedTextEncrypted as string, { aad });
@@ -353,23 +423,45 @@ export async function analyzeResume(
     const completedAt = new Date();
     const completedReview = await prisma.ladderResumeReview.update({
       where: { id: review.id },
-      data: { status: 'complete', profile: analyzed.analysis.profile, review: analyzed.analysis.review, completedAt, error: null },
+      data: {
+        status: 'complete',
+        profile: analyzed.analysis.profile,
+        review: analyzed.analysis.review,
+        completedAt,
+        error: null,
+      },
     });
     await prisma.ladderAiTask.update({
-      where: { id: task.id }, data: { status: 'complete', outputRef: review.id, dedupeKey: null, finishedAt: completedAt, error: null },
+      where: { id: task.id },
+      data: {
+        status: 'complete',
+        outputRef: review.id,
+        dedupeKey: null,
+        finishedAt: completedAt,
+        error: null,
+      },
     });
 
     // The model's profile is a draft. It must never change ranking until the
     // owner confirms or corrects it through confirmResumeProfile.
     return { review: publicReview(completedReview), matches: [], requiresConfirmation: true };
   } catch (error) {
-    const message = error instanceof Error ? error.message.slice(0, 2000) : 'Resume analysis failed';
+    const message =
+      error instanceof Error ? error.message.slice(0, 2000) : 'Resume analysis failed';
     const failedAt = new Date();
     await Promise.allSettled([
       ...(review
-        ? [prisma.ladderResumeReview.update({ where: { id: review.id }, data: { status: 'failed', error: message, completedAt: failedAt } })]
+        ? [
+            prisma.ladderResumeReview.update({
+              where: { id: review.id },
+              data: { status: 'failed', error: message, completedAt: failedAt },
+            }),
+          ]
         : []),
-      prisma.ladderAiTask.update({ where: { id: task.id }, data: { status: 'failed', error: message, dedupeKey: null, finishedAt: failedAt } }),
+      prisma.ladderAiTask.update({
+        where: { id: task.id },
+        data: { status: 'failed', error: message, dedupeKey: null, finishedAt: failedAt },
+      }),
     ]);
     throw error;
   }
@@ -380,26 +472,45 @@ export async function confirmResumeProfile(
   args: { userId: string; resumeId: string; versionId: string; profile: CandidateProfile },
 ) {
   const resume = await ownedResumeWithVersions(prisma, args.userId, args.resumeId);
-  const version = ((resume.versions as AnyRow[] | undefined) ?? []).find((candidate) => candidate.id === args.versionId);
+  const version = ((resume.versions as AnyRow[] | undefined) ?? []).find(
+    (candidate) => candidate.id === args.versionId,
+  );
   if (!version) throw new Error('Resume version not found');
   const profile = candidateProfileSchema.parse(args.profile);
   const confirmedAt = new Date();
   const task = await prisma.ladderAiTask.create({
-    data: { userId: args.userId, kind: 'match_refresh', status: 'processing', resumeVersionId: version.id, attempts: 1, startedAt: confirmedAt },
+    data: {
+      userId: args.userId,
+      kind: 'match_refresh',
+      status: 'processing',
+      resumeVersionId: version.id,
+      attempts: 1,
+      startedAt: confirmedAt,
+    },
   });
   try {
-    const matches = await refreshMatches(prisma, { userId: args.userId, versionId: version.id as string, profile });
+    const matches = await refreshMatches(prisma, {
+      userId: args.userId,
+      versionId: version.id as string,
+      profile,
+    });
     // Confirmation becomes visible only after the deterministic refresh
     // completes, so a partial failed refresh cannot surface draft matches.
     await prisma.ladderResumeVersion.update({
       where: { id: version.id },
       data: { confirmedProfile: profile, confirmedAt, matchesRefreshedAt: new Date() },
     });
-    await prisma.ladderAiTask.update({ where: { id: task.id }, data: { status: 'complete', outputRef: version.id, finishedAt: new Date() } });
+    await prisma.ladderAiTask.update({
+      where: { id: task.id },
+      data: { status: 'complete', outputRef: version.id, finishedAt: new Date() },
+    });
     return { profile, confirmedAt, matches };
   } catch (error) {
     const message = error instanceof Error ? error.message.slice(0, 2000) : 'Match refresh failed';
-    await prisma.ladderAiTask.update({ where: { id: task.id }, data: { status: 'failed', error: message, finishedAt: new Date() } });
+    await prisma.ladderAiTask.update({
+      where: { id: task.id },
+      data: { status: 'failed', error: message, finishedAt: new Date() },
+    });
     throw error;
   }
 }

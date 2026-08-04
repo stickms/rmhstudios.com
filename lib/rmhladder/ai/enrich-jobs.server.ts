@@ -1,8 +1,5 @@
 import { ensureCachedJobProfile, type JobProfilePrisma } from './job-profile.server';
-import {
-  ladderAiProviderConfigured,
-  type LadderAiProviderName,
-} from './provider.server';
+import { ladderAiProviderConfigured, type LadderAiProviderName } from './provider.server';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- structural Prisma boundary
 type AnyRow = Record<string, any>;
@@ -28,9 +25,10 @@ export async function enrichRecentLadderJobs(
   prisma: JobEnrichmentPrisma,
   options: { limit?: number; provider?: LadderAiProviderName } = {},
 ): Promise<JobEnrichmentResult> {
-  const provider = options.provider
-    ?? (process.env.LADDER_AI_PROVIDER as LadderAiProviderName | undefined)
-    ?? 'deepseek';
+  const provider =
+    options.provider ??
+    (process.env.LADDER_AI_PROVIDER as LadderAiProviderName | undefined) ??
+    'deepseek';
   if (!ladderAiProviderConfigured(provider)) {
     return { attempted: 0, enriched: 0, skipped: true };
   }
@@ -45,10 +43,7 @@ export async function enrichRecentLadderJobs(
     prisma.ladderJob.findMany({
       where: {
         ...baseWhere,
-        OR: [
-          { profile: { is: null } },
-          { profile: { is: { provider: 'deterministic' } } },
-        ],
+        OR: [{ profile: { is: null } }, { profile: { is: { provider: 'deterministic' } } }],
       },
       include: { company: true },
       orderBy: [{ profile: { updatedAt: 'asc' } }, { updatedAt: 'asc' }],

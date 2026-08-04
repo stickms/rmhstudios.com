@@ -17,16 +17,20 @@ export interface JobProfilePrisma {
 }
 
 export function jobProfileSourceHash(job: LadderJobForProfile): string {
-  return createHash('sha256').update(JSON.stringify({
-    title: job.title,
-    descriptionSummary: job.descriptionSummary,
-    fullDescription: job.fullDescription,
-    locationRaw: job.locationRaw,
-    city: job.city,
-    state: job.state,
-    remoteStatus: job.remoteStatus,
-    programType: job.programType,
-  })).digest('hex');
+  return createHash('sha256')
+    .update(
+      JSON.stringify({
+        title: job.title,
+        descriptionSummary: job.descriptionSummary,
+        fullDescription: job.fullDescription,
+        locationRaw: job.locationRaw,
+        city: job.city,
+        state: job.state,
+        remoteStatus: job.remoteStatus,
+        programType: job.programType,
+      }),
+    )
+    .digest('hex');
 }
 
 const SYSTEM = `Extract a structured job profile for deterministic candidate matching.
@@ -40,7 +44,10 @@ export async function extractJobProfileWithAi(
 ): Promise<{ profile: JobProfile; provider: string; model: string }> {
   const client = opts.client ?? configuredLadderAiProvider(opts.provider);
   const deterministic = profileJobDeterministically(job);
-  const description = (job.fullDescription ?? job.descriptionSummary ?? '').split('\0').join('').slice(0, 40_000);
+  const description = (job.fullDescription ?? job.descriptionSummary ?? '')
+    .split('\0')
+    .join('')
+    .slice(0, 40_000);
   const raw = await client.completeJson({
     system: SYSTEM,
     prompt: `<job_posting_data>\nTitle: ${job.title}\nCompany: ${job.company?.name ?? ''}\nLocation: ${job.locationRaw ?? ''}\nDescription:\n${description}\n</job_posting_data>\nUse these trusted normalized fields when the posting is ambiguous:\n${JSON.stringify({ remoteStatus: deterministic.remoteStatus, programType: deterministic.programType, earlyCareer: deterministic.earlyCareer })}`,
@@ -66,7 +73,8 @@ export async function ensureCachedJobProfile(
     // User-triggered matching deliberately creates a deterministic cache entry
     // when a posting has not been enriched yet. A configured worker should be
     // allowed to upgrade that entry once, while normal reads keep reusing it.
-    if (parsed.success && (!opts.allowAi || cached.provider !== 'deterministic')) return parsed.data;
+    if (parsed.success && (!opts.allowAi || cached.provider !== 'deterministic'))
+      return parsed.data;
   }
 
   let profile = profileJobDeterministically(job);

@@ -48,21 +48,31 @@ export function FeedControlsSettings() {
       s
         ? {
             ...s,
-            mutedTags: kind === 'mute_tag' && !s.mutedTags.includes(tag) ? [...s.mutedTags, tag] : s.mutedTags,
-            followedTags: kind === 'follow_tag' && !s.followedTags.includes(tag) ? [...s.followedTags, tag] : s.followedTags,
+            mutedTags:
+              kind === 'mute_tag' && !s.mutedTags.includes(tag)
+                ? [...s.mutedTags, tag]
+                : s.mutedTags,
+            followedTags:
+              kind === 'follow_tag' && !s.followedTags.includes(tag)
+                ? [...s.followedTags, tag]
+                : s.followedTags,
           }
         : s,
     );
-    await mutate('POST', kind, tag).catch(() => toast.error(t('error', { defaultValue: 'Something went wrong' })));
+    await mutate('POST', kind, tag).catch(() =>
+      toast.error(t('error', { defaultValue: 'Something went wrong' })),
+    );
   }
 
   async function removeSignal(kind: FeedSignalKind, targetId: string) {
     setSignals((s) => {
       if (!s) return s;
       return {
-        lessAuthors: kind === 'less_author' ? s.lessAuthors.filter((x) => x !== targetId) : s.lessAuthors,
+        lessAuthors:
+          kind === 'less_author' ? s.lessAuthors.filter((x) => x !== targetId) : s.lessAuthors,
         mutedTags: kind === 'mute_tag' ? s.mutedTags.filter((x) => x !== targetId) : s.mutedTags,
-        followedTags: kind === 'follow_tag' ? s.followedTags.filter((x) => x !== targetId) : s.followedTags,
+        followedTags:
+          kind === 'follow_tag' ? s.followedTags.filter((x) => x !== targetId) : s.followedTags,
       };
     });
     await mutate('DELETE', kind, targetId).catch(() => {});
@@ -72,7 +82,9 @@ export function FeedControlsSettings() {
     <div className="space-y-8">
       <TagSection
         title={t('muted-tags', { defaultValue: 'Muted hashtags' })}
-        description={t('muted-tags-desc', { defaultValue: 'Posts with these tags are hidden from your feed.' })}
+        description={t('muted-tags-desc', {
+          defaultValue: 'Posts with these tags are hidden from your feed.',
+        })}
         tags={signals.mutedTags}
         onAdd={(v) => addTag('mute_tag', v)}
         onRemove={(v) => removeSignal('mute_tag', v)}
@@ -96,7 +108,11 @@ export function FeedControlsSettings() {
         ) : (
           <div className="flex flex-wrap gap-2">
             {signals.lessAuthors.map((id) => (
-              <Chip key={id} label={`${id.slice(0, 8)}…`} onRemove={() => removeSignal('less_author', id)} />
+              <Chip
+                key={id}
+                label={`${id.slice(0, 8)}…`}
+                onRemove={() => removeSignal('less_author', id)}
+              />
             ))}
           </div>
         )}

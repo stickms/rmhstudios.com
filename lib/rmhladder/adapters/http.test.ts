@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { DomainRateLimiter, parseSafeLadderUrl, politeFetch } from './http';
 
-const stub = (status: number, body: string, capture?: { headers?: Record<string, string> }): typeof fetch =>
+const stub = (
+  status: number,
+  body: string,
+  capture?: { headers?: Record<string, string> },
+): typeof fetch =>
   (async (_url: unknown, init?: RequestInit) => {
     if (capture) capture.headers = Object.fromEntries(new Headers(init?.headers).entries());
     return new Response(body, { status });
@@ -23,7 +27,9 @@ describe('politeFetch', () => {
     expect(cap.headers?.['user-agent']).toMatch(/rmhladder-bot/);
   });
   it('never throws on network failure', async () => {
-    const boom = (async () => { throw new Error('ECONNREFUSED'); }) as unknown as typeof fetch;
+    const boom = (async () => {
+      throw new Error('ECONNREFUSED');
+    }) as unknown as typeof fetch;
     const r = await politeFetch('https://example.com/x', { fetchImpl: boom });
     expect(r).toEqual({ ok: false, status: 0, body: '' });
   });
@@ -37,7 +43,11 @@ describe('politeFetch', () => {
 
     await politeFetch('https://example.com/jobs', {
       fetchImpl: impl,
-      init: { method: 'POST', body: '{"offset":0}', headers: { 'content-type': 'application/json' } },
+      init: {
+        method: 'POST',
+        body: '{"offset":0}',
+        headers: { 'content-type': 'application/json' },
+      },
     });
 
     expect(captured?.method).toBe('POST');
@@ -63,13 +73,18 @@ describe('politeFetch', () => {
     }) as typeof fetch;
 
     expect(parseSafeLadderUrl(url)).toBeNull();
-    await expect(politeFetch(url, { fetchImpl: impl })).resolves.toEqual({ ok: false, status: 0, body: '' });
+    await expect(politeFetch(url, { fetchImpl: impl })).resolves.toEqual({
+      ok: false,
+      status: 0,
+      body: '',
+    });
     expect(called).toBe(false);
   });
 
   it('accepts a public HTTPS URL', () => {
-    expect(parseSafeLadderUrl('https://boards-api.greenhouse.io/v1/boards/acme/jobs')?.hostname)
-      .toBe('boards-api.greenhouse.io');
+    expect(
+      parseSafeLadderUrl('https://boards-api.greenhouse.io/v1/boards/acme/jobs')?.hostname,
+    ).toBe('boards-api.greenhouse.io');
   });
 });
 

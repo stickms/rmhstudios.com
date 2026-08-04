@@ -32,7 +32,11 @@ function makeFakePrisma() {
   const sourceErrors: AnyRow[] = [];
   const alerts: AnyRow[] = [];
 
-  let compSeq = 0, veriSeq = 0, taskSeq = 0, sourceSeq = 0, runSeq = 0;
+  let compSeq = 0,
+    veriSeq = 0,
+    taskSeq = 0,
+    sourceSeq = 0,
+    runSeq = 0;
 
   return {
     ladderCompany: {
@@ -86,10 +90,17 @@ function makeFakePrisma() {
 
         // Preset filters
         if (where?.discoveredAt?.gte) {
-          rows = rows.filter((r) => new Date(r.discoveredAt as Date) >= new Date(where.discoveredAt!.gte as any));
+          rows = rows.filter(
+            (r) => new Date(r.discoveredAt as Date) >= new Date(where.discoveredAt!.gte as any),
+          );
         }
         if (where?.applicationDeadline?.lte) {
-          rows = rows.filter((r) => r.applicationDeadline && new Date(r.applicationDeadline as Date) <= new Date(where.applicationDeadline!.lte as any));
+          rows = rows.filter(
+            (r) =>
+              r.applicationDeadline &&
+              new Date(r.applicationDeadline as Date) <=
+                new Date(where.applicationDeadline!.lte as any),
+          );
         }
         if (where?.remoteStatus) {
           rows = rows.filter((r) => r.remoteStatus === where.remoteStatus);
@@ -111,8 +122,13 @@ function makeFakePrisma() {
           const query = String(searchOr[0]?.title?.contains ?? '').toLowerCase();
           rows = rows.filter((r) => {
             const company = companies.get(r.companyId as string);
-            return [r.title, r.roleCategory, r.locationRaw, r.descriptionSummary, company?.name]
-              .some((value) => typeof value === 'string' && value.toLowerCase().includes(query));
+            return [
+              r.title,
+              r.roleCategory,
+              r.locationRaw,
+              r.descriptionSummary,
+              company?.name,
+            ].some((value) => typeof value === 'string' && value.toLowerCase().includes(query));
           });
         }
 
@@ -130,7 +146,11 @@ function makeFakePrisma() {
           } else if (orderBy.length && orderBy[0].discoveredAt) {
             rows.sort((a, b) => {
               const dir = orderBy[0].discoveredAt === 'desc' ? -1 : 1;
-              return dir * (new Date(a.discoveredAt as Date).getTime() - new Date(b.discoveredAt as Date).getTime());
+              return (
+                dir *
+                (new Date(a.discoveredAt as Date).getTime() -
+                  new Date(b.discoveredAt as Date).getTime())
+              );
             });
           }
         }
@@ -145,14 +165,21 @@ function makeFakePrisma() {
             .sort((a, b) => new Date(b.checkedAt).getTime() - new Date(a.checkedAt).getTime())
             .slice(0, 1);
           return {
-          earlyCareerClassification: 'yes',
-          ...j,
-          company: include?.company ? companies.get(j.companyId as string) : undefined,
-          verifications: include?.verifications
-            ? jobVerifications.length
-              ? jobVerifications
-              : [{ id: `default-${j.id}`, jobId: j.id, status: 'verified_active', checkedAt: new Date() }]
-            : undefined,
+            earlyCareerClassification: 'yes',
+            ...j,
+            company: include?.company ? companies.get(j.companyId as string) : undefined,
+            verifications: include?.verifications
+              ? jobVerifications.length
+                ? jobVerifications
+                : [
+                    {
+                      id: `default-${j.id}`,
+                      jobId: j.id,
+                      status: 'verified_active',
+                      checkedAt: new Date(),
+                    },
+                  ]
+              : undefined,
           };
         });
       },
@@ -168,7 +195,9 @@ function makeFakePrisma() {
           company: include?.company ? companies.get(job.companyId as string) : undefined,
           verifications: include?.verifications ? latestVeri : undefined,
           actions: include?.actions ? jobActions.filter((a) => a.jobId === job.id) : undefined,
-          applications: include?.applications ? applications.filter((a) => a.jobId === job.id) : undefined,
+          applications: include?.applications
+            ? applications.filter((a) => a.jobId === job.id)
+            : undefined,
         };
       },
     },
@@ -190,7 +219,11 @@ function makeFakePrisma() {
         return rows.map((t) => ({
           ...t,
           job: include?.job ? (t.jobId ? jobs.get(t.jobId) : null) : undefined,
-          source: include?.source ? (t.sourceId ? sources.find((s) => s.id === t.sourceId) : null) : undefined,
+          source: include?.source
+            ? t.sourceId
+              ? sources.find((s) => s.id === t.sourceId)
+              : null
+            : undefined,
         }));
       },
       async create({ data }: FakeArgs) {
@@ -205,7 +238,9 @@ function makeFakePrisma() {
         let rows = sources;
         if (where?.status) {
           rows = (where.status as AnyRow).in
-            ? rows.filter((s) => ((where.status as AnyRow).in as string[]).includes(s.status as string))
+            ? rows.filter((s) =>
+                ((where.status as AnyRow).in as string[]).includes(s.status as string),
+              )
             : rows.filter((s) => s.status === where.status);
         }
         if (where?.OR) {
@@ -216,7 +251,11 @@ function makeFakePrisma() {
               if (clause.status) return s.status === clause.status;
               if (clause.lastSuccessAt === null) return s.lastSuccessAt == null;
               const lt = (clause.lastSuccessAt as AnyRow)?.lt;
-              return lt != null && s.lastSuccessAt != null && new Date(s.lastSuccessAt as Date) < new Date(lt);
+              return (
+                lt != null &&
+                s.lastSuccessAt != null &&
+                new Date(s.lastSuccessAt as Date) < new Date(lt)
+              );
             }),
           );
         }
@@ -238,7 +277,10 @@ function makeFakePrisma() {
         if (orderBy?.length && orderBy[0].startedAt) {
           rows.sort((a, b) => {
             const dir = orderBy[0].startedAt === 'desc' ? -1 : 1;
-            return dir * (new Date(a.startedAt as Date).getTime() - new Date(b.startedAt as Date).getTime());
+            return (
+              dir *
+              (new Date(a.startedAt as Date).getTime() - new Date(b.startedAt as Date).getTime())
+            );
           });
         }
         if (take) rows = rows.slice(0, take);
@@ -272,9 +314,7 @@ function makeFakePrisma() {
     },
     ladderKeyword: {
       async findMany({ where }: FakeArgs) {
-        return keywords.filter(
-          (k) => k.userId === where.userId,
-        );
+        return keywords.filter((k) => k.userId === where.userId);
       },
     },
     ladderWatchlistEntry: {
@@ -307,14 +347,19 @@ function makeFakePrisma() {
       async findMany({ where }: FakeArgs) {
         return alerts
           .filter((a) => a.userId === where.userId)
-          .sort((a, b) => new Date(b.sentAt as Date).getTime() - new Date(a.sentAt as Date).getTime());
+          .sort(
+            (a, b) => new Date(b.sentAt as Date).getTime() - new Date(a.sentAt as Date).getTime(),
+          );
       },
     },
     ladderAlertEvent: {
       async findMany({ where }: FakeArgs) {
         return alerts
           .filter((a) => a.userId === where.userId)
-          .sort((a, b) => new Date(b.createdAt as Date).getTime() - new Date(a.createdAt as Date).getTime());
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt as Date).getTime() - new Date(a.createdAt as Date).getTime(),
+          );
       },
     },
     _state: {
@@ -340,7 +385,13 @@ describe('queries.ts', () => {
     it('filters by preset: new (7 days)', async () => {
       const prisma = makeFakePrisma();
       const c1 = (await prisma.ladderCompany.create({
-        data: { name: 'TestCo', normalizedName: 'testco', industry: 'finance', firmType: 'bank', enabled: true },
+        data: {
+          name: 'TestCo',
+          normalizedName: 'testco',
+          industry: 'finance',
+          firmType: 'bank',
+          enabled: true,
+        },
       })) as AnyRow;
       const now = new Date();
       const old = new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000);
@@ -376,10 +427,17 @@ describe('queries.ts', () => {
     it('excludes non-US by default, includes with includeNonUS', async () => {
       const prisma = makeFakePrisma();
       const c1 = (await prisma.ladderCompany.create({
-        data: { name: 'TestCo', normalizedName: 'testco', industry: 'finance', firmType: 'bank', enabled: true },
+        data: {
+          name: 'TestCo',
+          normalizedName: 'testco',
+          industry: 'finance',
+          firmType: 'bank',
+          enabled: true,
+        },
       })) as AnyRow;
 
-      const jobId1 = 'job-us', jobId2 = 'job-non-us';
+      const jobId1 = 'job-us',
+        jobId2 = 'job-non-us';
       prisma._state.jobs.set(jobId1, {
         id: jobId1,
         companyId: c1.id,
@@ -403,7 +461,13 @@ describe('queries.ts', () => {
       });
 
       prisma._state.verifications.push(
-        { id: 'v1', jobId: jobId1, status: 'verified_active', confidence: 100, checkedAt: new Date() },
+        {
+          id: 'v1',
+          jobId: jobId1,
+          status: 'verified_active',
+          confidence: 100,
+          checkedAt: new Date(),
+        },
         { id: 'v2', jobId: jobId2, status: 'non_us_role', confidence: 100, checkedAt: new Date() },
       );
 
@@ -420,18 +484,40 @@ describe('queries.ts', () => {
     it('filters by preset: finance (company industry)', async () => {
       const prisma = makeFakePrisma();
       const fin = (await prisma.ladderCompany.create({
-        data: { name: 'BankCo', normalizedName: 'bankco', industry: 'Investment Banking', firmType: 'bank' },
+        data: {
+          name: 'BankCo',
+          normalizedName: 'bankco',
+          industry: 'Investment Banking',
+          firmType: 'bank',
+        },
       })) as AnyRow;
       const tech = (await prisma.ladderCompany.create({
-        data: { name: 'TechCo', normalizedName: 'techco', industry: 'Technology', firmType: 'technology' },
+        data: {
+          name: 'TechCo',
+          normalizedName: 'techco',
+          industry: 'Technology',
+          firmType: 'technology',
+        },
       })) as AnyRow;
       prisma._state.jobs.set('finjob', {
-        id: 'finjob', companyId: fin.id, title: 'IB Analyst', normalizedTitle: 'ib analyst',
-        status: 'active', discoveredAt: new Date(), remoteStatus: 'onsite', relevanceScoreBase: 50,
+        id: 'finjob',
+        companyId: fin.id,
+        title: 'IB Analyst',
+        normalizedTitle: 'ib analyst',
+        status: 'active',
+        discoveredAt: new Date(),
+        remoteStatus: 'onsite',
+        relevanceScoreBase: 50,
       });
       prisma._state.jobs.set('techjob', {
-        id: 'techjob', companyId: tech.id, title: 'SWE Intern', normalizedTitle: 'swe intern',
-        status: 'active', discoveredAt: new Date(), remoteStatus: 'onsite', relevanceScoreBase: 50,
+        id: 'techjob',
+        companyId: tech.id,
+        title: 'SWE Intern',
+        normalizedTitle: 'swe intern',
+        status: 'active',
+        discoveredAt: new Date(),
+        remoteStatus: 'onsite',
+        relevanceScoreBase: 50,
       });
 
       const result = await listJobs(prisma, 'user1', { preset: 'finance' });
@@ -440,21 +526,31 @@ describe('queries.ts', () => {
 
     it('searches company, location, role family, and summary as well as title', async () => {
       const prisma = makeFakePrisma();
-      const company = await prisma.ladderCompany.create({
+      const company = (await prisma.ladderCompany.create({
         data: { name: 'Acme Capital', normalizedName: 'acme capital', priorityLevel: 3 },
-      }) as AnyRow;
+      })) as AnyRow;
       prisma._state.jobs.set('searchable', {
-        id: 'searchable', companyId: company.id, title: 'Analyst', status: 'active',
-        earlyCareerClassification: 'yes', discoveredAt: new Date(), remoteStatus: 'onsite',
-        relevanceScoreBase: 80, locationRaw: 'Boston, Massachusetts', roleCategory: 'Research',
+        id: 'searchable',
+        companyId: company.id,
+        title: 'Analyst',
+        status: 'active',
+        earlyCareerClassification: 'yes',
+        discoveredAt: new Date(),
+        remoteStatus: 'onsite',
+        relevanceScoreBase: 80,
+        locationRaw: 'Boston, Massachusetts',
+        roleCategory: 'Research',
       });
 
-      await expect(listJobs(prisma, 'user1', { q: 'Capital' }))
-        .resolves.toMatchObject({ rows: [{ id: 'searchable' }] });
-      await expect(listJobs(prisma, 'user1', { q: 'Boston' }))
-        .resolves.toMatchObject({ rows: [{ id: 'searchable' }] });
-      await expect(listJobs(prisma, 'user1', { q: 'Research' }))
-        .resolves.toMatchObject({ rows: [{ id: 'searchable' }] });
+      await expect(listJobs(prisma, 'user1', { q: 'Capital' })).resolves.toMatchObject({
+        rows: [{ id: 'searchable' }],
+      });
+      await expect(listJobs(prisma, 'user1', { q: 'Boston' })).resolves.toMatchObject({
+        rows: [{ id: 'searchable' }],
+      });
+      await expect(listJobs(prisma, 'user1', { q: 'Research' })).resolves.toMatchObject({
+        rows: [{ id: 'searchable' }],
+      });
     });
 
     it('excludes rows matching a user block keyword', async () => {
@@ -463,14 +559,32 @@ describe('queries.ts', () => {
         data: { name: 'TestCo', normalizedName: 'testco', industry: 'finance', firmType: 'bank' },
       })) as AnyRow;
       prisma._state.jobs.set('ok', {
-        id: 'ok', companyId: c1.id, title: 'Finance Analyst', normalizedTitle: 'finance analyst',
-        status: 'active', discoveredAt: new Date(), remoteStatus: 'onsite', relevanceScoreBase: 50,
+        id: 'ok',
+        companyId: c1.id,
+        title: 'Finance Analyst',
+        normalizedTitle: 'finance analyst',
+        status: 'active',
+        discoveredAt: new Date(),
+        remoteStatus: 'onsite',
+        relevanceScoreBase: 50,
       });
       prisma._state.jobs.set('blocked', {
-        id: 'blocked', companyId: c1.id, title: 'Crypto Trading Analyst', normalizedTitle: 'crypto trading analyst',
-        status: 'active', discoveredAt: new Date(), remoteStatus: 'onsite', relevanceScoreBase: 90,
+        id: 'blocked',
+        companyId: c1.id,
+        title: 'Crypto Trading Analyst',
+        normalizedTitle: 'crypto trading analyst',
+        status: 'active',
+        discoveredAt: new Date(),
+        remoteStatus: 'onsite',
+        relevanceScoreBase: 90,
       });
-      prisma._state.keywords.push({ id: 'k1', userId: 'user1', keyword: 'crypto', weight: 0, type: 'block' });
+      prisma._state.keywords.push({
+        id: 'k1',
+        userId: 'user1',
+        keyword: 'crypto',
+        weight: 0,
+        type: 'block',
+      });
 
       const result = await listJobs(prisma, 'user1', {});
       expect(result.rows.map((r) => r.id)).toEqual(['ok']);
@@ -479,17 +593,41 @@ describe('queries.ts', () => {
     it('boost keyword flips relevance ordering', async () => {
       const prisma = makeFakePrisma();
       const c1 = (await prisma.ladderCompany.create({
-        data: { name: 'TestCo', normalizedName: 'testco', industry: 'finance', firmType: 'bank', priorityLevel: 3 },
+        data: {
+          name: 'TestCo',
+          normalizedName: 'testco',
+          industry: 'finance',
+          firmType: 'bank',
+          priorityLevel: 3,
+        },
       })) as AnyRow;
       prisma._state.jobs.set('higherBase', {
-        id: 'higherBase', companyId: c1.id, title: 'Operations Analyst', normalizedTitle: 'operations analyst',
-        status: 'active', discoveredAt: new Date(), remoteStatus: 'onsite', relevanceScoreBase: 60,
+        id: 'higherBase',
+        companyId: c1.id,
+        title: 'Operations Analyst',
+        normalizedTitle: 'operations analyst',
+        status: 'active',
+        discoveredAt: new Date(),
+        remoteStatus: 'onsite',
+        relevanceScoreBase: 60,
       });
       prisma._state.jobs.set('boosted', {
-        id: 'boosted', companyId: c1.id, title: 'Equity Research Analyst', normalizedTitle: 'equity research analyst',
-        status: 'active', discoveredAt: new Date(), remoteStatus: 'onsite', relevanceScoreBase: 55,
+        id: 'boosted',
+        companyId: c1.id,
+        title: 'Equity Research Analyst',
+        normalizedTitle: 'equity research analyst',
+        status: 'active',
+        discoveredAt: new Date(),
+        remoteStatus: 'onsite',
+        relevanceScoreBase: 55,
       });
-      prisma._state.keywords.push({ id: 'k1', userId: 'user1', keyword: 'equity research', weight: 20, type: 'boost' });
+      prisma._state.keywords.push({
+        id: 'k1',
+        userId: 'user1',
+        keyword: 'equity research',
+        weight: 20,
+        type: 'boost',
+      });
 
       const result = await listJobs(prisma, 'user1', {});
       expect(result.rows.map((r) => r.id)).toEqual(['boosted', 'higherBase']);
@@ -502,19 +640,29 @@ describe('queries.ts', () => {
         data: { name: 'TestCo', normalizedName: 'testco', industry: 'finance', firmType: 'bank' },
       })) as AnyRow;
       // Seed in ascending base order so the test would fail if fake/listJobs don't sort
-      for (const [id, base] of [['low', 10], ['mid', 50], ['high', 90]] as [string, number][]) {
+      for (const [id, base] of [
+        ['low', 10],
+        ['mid', 50],
+        ['high', 90],
+      ] as [string, number][]) {
         prisma._state.jobs.set(id, {
-          id, companyId: c1.id, title: `Job ${id}`, normalizedTitle: `job ${id}`,
-          status: 'active', discoveredAt: new Date(), remoteStatus: 'onsite', relevanceScoreBase: base,
+          id,
+          companyId: c1.id,
+          title: `Job ${id}`,
+          normalizedTitle: `job ${id}`,
+          status: 'active',
+          discoveredAt: new Date(),
+          remoteStatus: 'onsite',
+          relevanceScoreBase: base,
         });
       }
       // Direct fake call: orderBy desc + take 2 should return the two highest base scores
-      const top2 = await prisma.ladderJob.findMany({
+      const top2 = (await prisma.ladderJob.findMany({
         where: { status: 'active' },
         orderBy: [{ relevanceScoreBase: 'desc' }],
         take: 2,
         include: {},
-      }) as AnyRow[];
+      })) as AnyRow[];
       expect(top2.map((j) => j.id)).toEqual(['high', 'mid']);
       // listJobs returns final-relevance-desc (base scores are the only differentiator here)
       const result = await listJobs(prisma, 'user1', {});
@@ -550,13 +698,18 @@ describe('queries.ts', () => {
 
     it('supports public browsing without loading user actions', async () => {
       const prisma = makeFakePrisma();
-      const company = await prisma.ladderCompany.create({
+      const company = (await prisma.ladderCompany.create({
         data: { name: 'Public Co', normalizedName: 'public co', priorityLevel: 3 },
-      }) as AnyRow;
+      })) as AnyRow;
       prisma._state.jobs.set('public-job', {
-        id: 'public-job', companyId: company.id, title: 'New Grad Engineer',
-        status: 'active', earlyCareerClassification: 'yes', discoveredAt: new Date(),
-        remoteStatus: 'onsite', relevanceScoreBase: 80,
+        id: 'public-job',
+        companyId: company.id,
+        title: 'New Grad Engineer',
+        status: 'active',
+        earlyCareerClassification: 'yes',
+        discoveredAt: new Date(),
+        remoteStatus: 'onsite',
+        relevanceScoreBase: 80,
       });
 
       const result = await listJobs(prisma, null, {});
@@ -566,21 +719,34 @@ describe('queries.ts', () => {
 
     it('excludes non-early-career and unverified roles from the public feed', async () => {
       const prisma = makeFakePrisma();
-      const company = await prisma.ladderCompany.create({
+      const company = (await prisma.ladderCompany.create({
         data: { name: 'Public Co', normalizedName: 'public co', priorityLevel: 3 },
-      }) as AnyRow;
+      })) as AnyRow;
       prisma._state.jobs.set('senior', {
-        id: 'senior', companyId: company.id, title: 'Senior Engineer', status: 'active',
-        earlyCareerClassification: 'no', discoveredAt: new Date(), remoteStatus: 'onsite',
+        id: 'senior',
+        companyId: company.id,
+        title: 'Senior Engineer',
+        status: 'active',
+        earlyCareerClassification: 'no',
+        discoveredAt: new Date(),
+        remoteStatus: 'onsite',
         relevanceScoreBase: 90,
       });
       prisma._state.jobs.set('unverified', {
-        id: 'unverified', companyId: company.id, title: 'Analyst', status: 'active',
-        earlyCareerClassification: 'yes', discoveredAt: new Date(), remoteStatus: 'onsite',
+        id: 'unverified',
+        companyId: company.id,
+        title: 'Analyst',
+        status: 'active',
+        earlyCareerClassification: 'yes',
+        discoveredAt: new Date(),
+        remoteStatus: 'onsite',
         relevanceScoreBase: 90,
       });
       prisma._state.verifications.push({
-        id: 'v-unverified', jobId: 'unverified', status: 'unverified', checkedAt: new Date(),
+        id: 'v-unverified',
+        jobId: 'unverified',
+        status: 'unverified',
+        checkedAt: new Date(),
       });
 
       const result = await listJobs(prisma, null, {});
@@ -589,17 +755,22 @@ describe('queries.ts', () => {
 
     it('applies a signed-in user relevance threshold', async () => {
       const prisma = makeFakePrisma();
-      const company = await prisma.ladderCompany.create({
+      const company = (await prisma.ladderCompany.create({
         data: { name: 'Threshold Co', normalizedName: 'threshold co', priorityLevel: 3 },
-      }) as AnyRow;
+      })) as AnyRow;
       await prisma.ladderUserPrefs.upsert({
         where: { userId: 'user1' },
         create: { userId: 'user1', relevanceThreshold: 70 },
         update: { relevanceThreshold: 70 },
       });
       prisma._state.jobs.set('low', {
-        id: 'low', companyId: company.id, title: 'Analyst', status: 'active',
-        earlyCareerClassification: 'yes', discoveredAt: new Date(), remoteStatus: 'onsite',
+        id: 'low',
+        companyId: company.id,
+        title: 'Analyst',
+        status: 'active',
+        earlyCareerClassification: 'yes',
+        discoveredAt: new Date(),
+        remoteStatus: 'onsite',
         relevanceScoreBase: 60,
       });
 
@@ -609,12 +780,17 @@ describe('queries.ts', () => {
 
     it('keeps saved state separate from application status', async () => {
       const prisma = makeFakePrisma();
-      const company = await prisma.ladderCompany.create({
+      const company = (await prisma.ladderCompany.create({
         data: { name: 'State Co', normalizedName: 'state co', priorityLevel: 3 },
-      }) as AnyRow;
+      })) as AnyRow;
       prisma._state.jobs.set('job-state', {
-        id: 'job-state', companyId: company.id, title: 'Analyst', status: 'active',
-        earlyCareerClassification: 'yes', discoveredAt: new Date(), remoteStatus: 'onsite',
+        id: 'job-state',
+        companyId: company.id,
+        title: 'Analyst',
+        status: 'active',
+        earlyCareerClassification: 'yes',
+        discoveredAt: new Date(),
+        remoteStatus: 'onsite',
         relevanceScoreBase: 80,
       });
       prisma._state.jobActions.push({ userId: 'user1', jobId: 'job-state', action: 'saved' });
@@ -630,7 +806,13 @@ describe('queries.ts', () => {
     it('returns job with all verifications sorted desc by checkedAt', async () => {
       const prisma = makeFakePrisma();
       const c1 = (await prisma.ladderCompany.create({
-        data: { name: 'TestCo', normalizedName: 'testco', industry: 'finance', firmType: 'bank', enabled: true },
+        data: {
+          name: 'TestCo',
+          normalizedName: 'testco',
+          industry: 'finance',
+          firmType: 'bank',
+          enabled: true,
+        },
       })) as AnyRow;
 
       const jobId = 'job1';
@@ -647,8 +829,20 @@ describe('queries.ts', () => {
 
       const now = new Date();
       prisma._state.verifications.push(
-        { id: 'v1', jobId, status: 'unverified', confidence: 0, checkedAt: new Date(now.getTime() - 1000) },
-        { id: 'v2', jobId, status: 'verified_active', confidence: 100, checkedAt: new Date(now.getTime() + 1000) },
+        {
+          id: 'v1',
+          jobId,
+          status: 'unverified',
+          confidence: 0,
+          checkedAt: new Date(now.getTime() - 1000),
+        },
+        {
+          id: 'v2',
+          jobId,
+          status: 'verified_active',
+          confidence: 100,
+          checkedAt: new Date(now.getTime() + 1000),
+        },
       );
 
       const result = await getJobDetail(prisma, 'user1', jobId);
@@ -658,16 +852,26 @@ describe('queries.ts', () => {
 
     it('does not expose inactive or unverified jobs on public permalinks', async () => {
       const prisma = makeFakePrisma();
-      const company = await prisma.ladderCompany.create({
+      const company = (await prisma.ladderCompany.create({
         data: { name: 'Private Co', normalizedName: 'private co' },
-      }) as AnyRow;
+      })) as AnyRow;
       prisma._state.jobs.set('expired', {
-        id: 'expired', companyId: company.id, title: 'Old role', status: 'expired',
-        earlyCareerClassification: 'yes', discoveredAt: new Date(), relevanceScoreBase: 90,
+        id: 'expired',
+        companyId: company.id,
+        title: 'Old role',
+        status: 'expired',
+        earlyCareerClassification: 'yes',
+        discoveredAt: new Date(),
+        relevanceScoreBase: 90,
       });
       prisma._state.jobs.set('unclear', {
-        id: 'unclear', companyId: company.id, title: 'Unclear role', status: 'active',
-        earlyCareerClassification: 'unclear', discoveredAt: new Date(), relevanceScoreBase: 90,
+        id: 'unclear',
+        companyId: company.id,
+        title: 'Unclear role',
+        status: 'active',
+        earlyCareerClassification: 'unclear',
+        discoveredAt: new Date(),
+        relevanceScoreBase: 90,
       });
 
       await expect(getJobDetail(prisma, null, 'expired')).resolves.toBeNull();
@@ -764,7 +968,12 @@ describe('queries.ts', () => {
         data: { companyId: 'c1', platform: 'lever', status: 'active', lastSuccessAt: nineHoursAgo },
       });
       await prisma.ladderSource.create({
-        data: { companyId: 'c1', platform: 'ashby', status: 'active', lastSuccessAt: sevenHoursAgo },
+        data: {
+          companyId: 'c1',
+          platform: 'ashby',
+          status: 'active',
+          lastSuccessAt: sevenHoursAgo,
+        },
       });
 
       const result = await listStaleSources(prisma, now);
@@ -837,8 +1046,22 @@ describe('queries.ts', () => {
   describe('listCompanies', () => {
     it('filters by name query and maps activeJobCount', async () => {
       const prisma = makeFakePrisma();
-      await prisma.ladderCompany.create({ data: { name: 'Goldman Sachs', normalizedName: 'goldman sachs', industry: 'Investment Banking', firmType: 'bulge_bracket' } });
-      await prisma.ladderCompany.create({ data: { name: 'Stripe', normalizedName: 'stripe', industry: 'Technology', firmType: 'technology' } });
+      await prisma.ladderCompany.create({
+        data: {
+          name: 'Goldman Sachs',
+          normalizedName: 'goldman sachs',
+          industry: 'Investment Banking',
+          firmType: 'bulge_bracket',
+        },
+      });
+      await prisma.ladderCompany.create({
+        data: {
+          name: 'Stripe',
+          normalizedName: 'stripe',
+          industry: 'Technology',
+          firmType: 'technology',
+        },
+      });
       const result = await listCompanies(prisma, { q: 'gold' });
       expect(result).toHaveLength(1);
       expect((result[0] as AnyRow).name).toBe('Goldman Sachs');
@@ -848,9 +1071,30 @@ describe('queries.ts', () => {
     it('returns companies alphabetically by name', async () => {
       const prisma = makeFakePrisma();
       // Seed intentionally out of order
-      await prisma.ladderCompany.create({ data: { name: 'Stripe', normalizedName: 'stripe', industry: 'Technology', firmType: 'technology' } });
-      await prisma.ladderCompany.create({ data: { name: 'Apollo', normalizedName: 'apollo', industry: 'Private Equity', firmType: 'pe' } });
-      await prisma.ladderCompany.create({ data: { name: 'Morgan Stanley', normalizedName: 'morgan stanley', industry: 'Investment Banking', firmType: 'bank' } });
+      await prisma.ladderCompany.create({
+        data: {
+          name: 'Stripe',
+          normalizedName: 'stripe',
+          industry: 'Technology',
+          firmType: 'technology',
+        },
+      });
+      await prisma.ladderCompany.create({
+        data: {
+          name: 'Apollo',
+          normalizedName: 'apollo',
+          industry: 'Private Equity',
+          firmType: 'pe',
+        },
+      });
+      await prisma.ladderCompany.create({
+        data: {
+          name: 'Morgan Stanley',
+          normalizedName: 'morgan stanley',
+          industry: 'Investment Banking',
+          firmType: 'bank',
+        },
+      });
       const result = await listCompanies(prisma, {});
       expect(result.map((c) => (c as AnyRow).name)).toEqual(['Apollo', 'Morgan Stanley', 'Stripe']);
     });
@@ -859,9 +1103,16 @@ describe('queries.ts', () => {
   describe('listRuns', () => {
     it('returns runs newest-first with error rows attached', async () => {
       const prisma = makeFakePrisma();
-      const r1 = (await prisma.ladderScrapeRun.create({ data: { trigger: 'cron', startedAt: new Date(Date.now() - 1000) } })) as AnyRow;
+      const r1 = (await prisma.ladderScrapeRun.create({
+        data: { trigger: 'cron', startedAt: new Date(Date.now() - 1000) },
+      })) as AnyRow;
       await prisma.ladderScrapeRun.create({ data: { trigger: 'manual', startedAt: new Date() } });
-      prisma._state.sourceErrors.push({ id: 'e1', runId: r1.id, errorClass: 'process', message: 'boom' });
+      prisma._state.sourceErrors.push({
+        id: 'e1',
+        runId: r1.id,
+        errorClass: 'process',
+        message: 'boom',
+      });
       const result = await listRuns(prisma, 10);
       expect(result).toHaveLength(2);
       expect((result[1] as AnyRow).errors).toHaveLength(1);
@@ -872,7 +1123,12 @@ describe('queries.ts', () => {
     it('returns user applications with job + company context', async () => {
       const prisma = makeFakePrisma();
       prisma._state.companies.set('c1', { id: 'c1', name: 'Stripe' });
-      prisma._state.jobs.set('j1', { id: 'j1', companyId: 'c1', title: 'PM Intern', status: 'active' });
+      prisma._state.jobs.set('j1', {
+        id: 'j1',
+        companyId: 'c1',
+        title: 'PM Intern',
+        status: 'active',
+      });
       prisma._state.applications.push(
         { id: 'ap1', userId: 'user1', jobId: 'j1', status: 'interviewing' },
         { id: 'ap2', userId: 'other', jobId: 'j1', status: 'applied' },
@@ -888,7 +1144,13 @@ describe('queries.ts', () => {
       const prisma = makeFakePrisma();
       const now = Date.now();
       prisma._state.alerts.push(
-        { id: 'al1', userId: 'user1', jobId: 'j1', type: 'immediate', createdAt: new Date(now - 1000) },
+        {
+          id: 'al1',
+          userId: 'user1',
+          jobId: 'j1',
+          type: 'immediate',
+          createdAt: new Date(now - 1000),
+        },
         { id: 'al2', userId: 'user1', jobId: 'j2', type: 'daily_digest', createdAt: new Date(now) },
         { id: 'al3', userId: 'other', jobId: 'j3', type: 'immediate', createdAt: new Date(now) },
       );

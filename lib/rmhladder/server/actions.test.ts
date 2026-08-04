@@ -29,15 +29,24 @@ function makeFakePrisma() {
   const prefs = new Map<string, AnyRow>();
   const alerts: AnyRow[] = [];
 
-  let actSeq = 0, appSeq = 0, veriSeq = 0, kwSeq = 0;
+  let actSeq = 0,
+    appSeq = 0,
+    veriSeq = 0,
+    kwSeq = 0;
 
   return {
     ladderJobAction: {
       async findUnique({ where }: FakeArgs) {
-        return jobActions.find((a) => a.userId === where.userId_jobId.userId && a.jobId === where.userId_jobId.jobId) ?? null;
+        return (
+          jobActions.find(
+            (a) => a.userId === where.userId_jobId.userId && a.jobId === where.userId_jobId.jobId,
+          ) ?? null
+        );
       },
       async upsert({ where, create, update }: FakeArgs) {
-        const existing = jobActions.find((a) => a.userId === where.userId_jobId.userId && a.jobId === where.userId_jobId.jobId);
+        const existing = jobActions.find(
+          (a) => a.userId === where.userId_jobId.userId && a.jobId === where.userId_jobId.jobId,
+        );
         if (existing) {
           Object.assign(existing, update);
           return existing;
@@ -47,16 +56,24 @@ function makeFakePrisma() {
         return row;
       },
       async delete({ where }: FakeArgs) {
-        const idx = jobActions.findIndex((a) => a.userId === where.userId_jobId.userId && a.jobId === where.userId_jobId.jobId);
+        const idx = jobActions.findIndex(
+          (a) => a.userId === where.userId_jobId.userId && a.jobId === where.userId_jobId.jobId,
+        );
         if (idx >= 0) jobActions.splice(idx, 1);
       },
     },
     ladderApplication: {
       async findUnique({ where }: FakeArgs) {
-        return applications.find((a) => a.userId === where.userId_jobId.userId && a.jobId === where.userId_jobId.jobId) ?? null;
+        return (
+          applications.find(
+            (a) => a.userId === where.userId_jobId.userId && a.jobId === where.userId_jobId.jobId,
+          ) ?? null
+        );
       },
       async upsert({ where, create, update }: FakeArgs) {
-        const existing = applications.find((a) => a.userId === where.userId_jobId.userId && a.jobId === where.userId_jobId.jobId);
+        const existing = applications.find(
+          (a) => a.userId === where.userId_jobId.userId && a.jobId === where.userId_jobId.jobId,
+        );
         if (existing) {
           Object.assign(existing, update);
           return existing;
@@ -102,10 +119,22 @@ function makeFakePrisma() {
     },
     ladderKeyword: {
       async findUnique({ where }: FakeArgs) {
-        return keywords.find((k) => k.userId === where.userId_keyword_type.userId && k.keyword === where.userId_keyword_type.keyword && k.type === where.userId_keyword_type.type) ?? null;
+        return (
+          keywords.find(
+            (k) =>
+              k.userId === where.userId_keyword_type.userId &&
+              k.keyword === where.userId_keyword_type.keyword &&
+              k.type === where.userId_keyword_type.type,
+          ) ?? null
+        );
       },
       async upsert({ where, create, update }: FakeArgs) {
-        const idx = keywords.findIndex((k) => k.userId === where.userId_keyword_type.userId && k.keyword === where.userId_keyword_type.keyword && k.type === where.userId_keyword_type.type);
+        const idx = keywords.findIndex(
+          (k) =>
+            k.userId === where.userId_keyword_type.userId &&
+            k.keyword === where.userId_keyword_type.keyword &&
+            k.type === where.userId_keyword_type.type,
+        );
         if (idx >= 0) {
           Object.assign(keywords[idx], update);
           return keywords[idx];
@@ -115,7 +144,12 @@ function makeFakePrisma() {
         return row;
       },
       async delete({ where }: FakeArgs) {
-        const idx = keywords.findIndex((k) => k.userId === where.userId_keyword_type.userId && k.keyword === where.userId_keyword_type.keyword && k.type === where.userId_keyword_type.type);
+        const idx = keywords.findIndex(
+          (k) =>
+            k.userId === where.userId_keyword_type.userId &&
+            k.keyword === where.userId_keyword_type.keyword &&
+            k.type === where.userId_keyword_type.type,
+        );
         if (idx >= 0) keywords.splice(idx, 1);
       },
     },
@@ -133,7 +167,13 @@ function makeFakePrisma() {
     },
     ladderWatchlistEntry: {
       async findUnique({ where }: FakeArgs) {
-        return watchlist.find((w) => w.userId === where.userId_companyId.userId && w.companyId === where.userId_companyId.companyId) ?? null;
+        return (
+          watchlist.find(
+            (w) =>
+              w.userId === where.userId_companyId.userId &&
+              w.companyId === where.userId_companyId.companyId,
+          ) ?? null
+        );
       },
       async create({ data }: FakeArgs) {
         const row = { id: `w-${Math.random()}`, ...data } as AnyRow;
@@ -141,7 +181,11 @@ function makeFakePrisma() {
         return row;
       },
       async delete({ where }: FakeArgs) {
-        const idx = watchlist.findIndex((w) => w.userId === where.userId_companyId.userId && w.companyId === where.userId_companyId.companyId);
+        const idx = watchlist.findIndex(
+          (w) =>
+            w.userId === where.userId_companyId.userId &&
+            w.companyId === where.userId_companyId.companyId,
+        );
         if (idx >= 0) watchlist.splice(idx, 1);
       },
     },
@@ -157,7 +201,8 @@ function makeFakePrisma() {
     ladderAlertEvent: {
       async updateMany({ where, data }: FakeArgs) {
         const targets = alerts.filter(
-          (a) => a.userId === where.userId &&
+          (a) =>
+            a.userId === where.userId &&
             (!where.id || a.id === where.id) &&
             (where.readAt !== null || a.readAt == null),
         );
@@ -165,7 +210,18 @@ function makeFakePrisma() {
         return { count: targets.length };
       },
     },
-    _state: { companies, jobs, jobActions, applications, reviewTasks, verifications, keywords, watchlist, prefs, alerts },
+    _state: {
+      companies,
+      jobs,
+      jobActions,
+      applications,
+      reviewTasks,
+      verifications,
+      keywords,
+      watchlist,
+      prefs,
+      alerts,
+    },
   } as any;
 }
 
@@ -218,7 +274,11 @@ describe('actions.ts', () => {
 
       await resolveReviewTask(prisma, 'user1', 't1', 'verify');
       expect(prisma._state.jobs.get('job1')?.status).toBe('active');
-      expect(prisma._state.verifications.some((v: AnyRow) => v.jobId === 'job1' && v.status === 'verified_probable')).toBe(true);
+      expect(
+        prisma._state.verifications.some(
+          (v: AnyRow) => v.jobId === 'job1' && v.status === 'verified_probable',
+        ),
+      ).toBe(true);
       expect(prisma._state.reviewTasks[0].status).toBe('resolved');
     });
 
@@ -229,7 +289,11 @@ describe('actions.ts', () => {
 
       await resolveReviewTask(prisma, 'user1', 't1', 'expire');
       expect(prisma._state.jobs.get('job1')?.status).toBe('expired');
-      expect(prisma._state.verifications.some((v: AnyRow) => v.jobId === 'job1' && v.status === 'expired')).toBe(true);
+      expect(
+        prisma._state.verifications.some(
+          (v: AnyRow) => v.jobId === 'job1' && v.status === 'expired',
+        ),
+      ).toBe(true);
     });
 
     it('non_us: creates verification row only, no job mutation', async () => {
@@ -239,7 +303,11 @@ describe('actions.ts', () => {
 
       await resolveReviewTask(prisma, 'user1', 't1', 'non_us');
       expect(prisma._state.jobs.get('job1')?.status).toBe('active');
-      expect(prisma._state.verifications.some((v: AnyRow) => v.jobId === 'job1' && v.status === 'non_us_role')).toBe(true);
+      expect(
+        prisma._state.verifications.some(
+          (v: AnyRow) => v.jobId === 'job1' && v.status === 'non_us_role',
+        ),
+      ).toBe(true);
     });
 
     it('duplicate: expires the duplicate job and records verification', async () => {
@@ -249,7 +317,11 @@ describe('actions.ts', () => {
 
       await resolveReviewTask(prisma, 'user1', 't1', 'duplicate');
       expect(prisma._state.jobs.get('job1')?.status).toBe('expired');
-      expect(prisma._state.verifications.some((v: AnyRow) => v.jobId === 'job1' && v.status === 'expired')).toBe(true);
+      expect(
+        prisma._state.verifications.some(
+          (v: AnyRow) => v.jobId === 'job1' && v.status === 'expired',
+        ),
+      ).toBe(true);
       expect(prisma._state.reviewTasks[0].status).toBe('resolved');
     });
 
