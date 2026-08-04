@@ -23,6 +23,9 @@
  * - **Settling is bounded.** A pin can rock against its neighbour for a long
  *   time, and a player is owed a count either way, so the roll ends when the
  *   deck goes quiet *or* after a hard ceiling — whichever comes first.
+ * - **A pin deregisters itself.** The frame loop reaches into Rapier through a
+ *   registry of live bodies, and keeping a body in it one moment past its
+ *   removal is a wasm trap rather than a wrong number. See `RackPin`.
  */
 'use client';
 
@@ -157,6 +160,13 @@ function Scene({
   onRolling,
 }: BowlLaneProps) {
   const ball = useRef<RapierRigidBody | null>(null);
+  /**
+   * The pins that are actually in the world right now, by spot.
+   *
+   * A slot is populated while its pin is racked and emptied the moment it is
+   * not — which is `RackPin`'s whole job, and not something the ref can be
+   * trusted to do on its own.
+   */
   const pins = useRef<Array<RapierRigidBody | null>>([]);
   const rolling = useRef(false);
   const elapsed = useRef(0);
@@ -186,9 +196,11 @@ function Scene({
     body.resetForces(true);
     body.wakeUp();
 
-    // Every pin is woken with the ball. A rack that has been standing long
-    // enough to fall asleep does not react to the first contact until the
-    // solver notices it, which reads as the ball passing through them.
+    // Every pin still racked is woken with the ball. A rack that has been
+    // standing long enough to fall asleep does not react to the first contact
+    // until the solver notices it, which reads as the ball passing through
+    // them. Empty slots are the pins the last ball took — see `RackPin` for why
+    // they are empty rather than dangling.
     for (const pin of pins.current) pin?.wakeUp();
 
     rolling.current = true;
@@ -339,24 +351,7 @@ function Scene({
 
         {PIN_SPOTS.map((spot, i) =>
           standing[i] ? (
-            <RigidBody
-              key={i}
-              ref={(body) => {
-                pins.current[i] = body;
-              }}
-              colliders={false}
-              position={[spot[0], PIN_HEIGHT / 2 + 0.001, LANE_LENGTH + spot[1]]}
-              linearDamping={0.12}
-              angularDamping={0.2}
-            >
-              <CylinderCollider
-                args={[PIN_HEIGHT / 2, PIN_RADIUS]}
-                mass={PIN_MASS}
-                friction={0.32}
-                restitution={0.34}
-              />
-              <Pin palette={palette} />
-            </RigidBody>
+            <RackPin key={i} index={i} spot={spot} registry={pins} palette={palette} />
           ) : null,
         )}
       </Physics>
@@ -746,6 +741,76 @@ function Globe({ radius, palette }: { radius: number; palette: LanePalette }) {
         <lineBasicMaterial color={palette.gold} transparent opacity={0.85} />
       </lineSegments>
     </group>
+  );
+}
+
+/**
+ * One pin of the rack, and the bookkeeping that keeps a dead body out of the
+ * frame loop.
+ *
+ * The bookkeeping is not incidental. `@react-three/rapier` invokes a CALLBACK
+ * ref exactly once — inside the effect that creates the body — and never again
+ * with `null` when it destroys it. Its `useForwardedRef` only knows how to
+ * follow an object ref; the callback case is an acknowledged gap, and React
+ * itself never gets a look in, because `ref` is a prop this component consumes
+ * rather than one it hands to a host element.
+ *
+ * So `ref={(body) => (registry.current[i] = body)}` registers a pin and nothing
+ * ever unregisters it. A pin knocked down on the first ball left its freed
+ * handle in the registry, and the second ball's `wakeUp()` walked that handle
+ * into Rapier's wasm: `RuntimeError: unreachable`, the whole `<Canvas>` torn
+ * down mid-frame, and an alley stuck on "Rolling…" for ever — because the
+ * settle that ends the phase can only come from the scene that just died.
+ * Every frame that was not a first-ball strike ended that way.
+ *
+ * Hence the deregistration below: the half of the ref contract rapier does not
+ * implement, done here where the registry lives.
+ */
+function RackPin({
+  index,
+  spot,
+  registry,
+  palette,
+}: {
+  /** Which of `PIN_SPOTS` this is, and therefore which slot it owns. */
+  index: number;
+  spot: readonly [number, number];
+  registry: { current: Array<RapierRigidBody | null> };
+  palette: LanePalette;
+}) {
+  /** What this pin put in the registry, so it only ever clears its own. */
+  const body = useRef<RapierRigidBody | null>(null);
+
+  useEffect(
+    () => () => {
+      // Identity-checked rather than a blind `= null`: a re-rack that mounts a
+      // fresh pin on this spot in the same commit must not have it wiped by the
+      // outgoing pin's cleanup.
+      if (registry.current[index] === body.current) registry.current[index] = null;
+      body.current = null;
+    },
+    [index, registry],
+  );
+
+  return (
+    <RigidBody
+      ref={(instance) => {
+        body.current = instance;
+        registry.current[index] = instance;
+      }}
+      colliders={false}
+      position={[spot[0], PIN_HEIGHT / 2 + 0.001, LANE_LENGTH + spot[1]]}
+      linearDamping={0.12}
+      angularDamping={0.2}
+    >
+      <CylinderCollider
+        args={[PIN_HEIGHT / 2, PIN_RADIUS]}
+        mass={PIN_MASS}
+        friction={0.32}
+        restitution={0.34}
+      />
+      <Pin palette={palette} />
+    </RigidBody>
   );
 }
 

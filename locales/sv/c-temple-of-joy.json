@@ -48,6 +48,7 @@
   "bowl-status-count": "{{down}} down. Joy ×{{multiplier}} for the hour.",
   "bowl-status-gutter": "Nothing down. No boost — but your hands stay free.",
   "bowl-status-rolling": "Rolling…",
+  "bowl-status-stalled": "The lane never reported that ball, so nothing was counted. Roll it again — or leave and come back.",
   "bowl-status-swing": "Ball {{ball}} of {{balls}}. Wind back and swing the phone.",
   "bowl-strikes": "Strikes",
   "bowl-sub": "One frame a day. Every pin is worth more rate for {{minutes}} minutes — and your hands are still until it ends.",
