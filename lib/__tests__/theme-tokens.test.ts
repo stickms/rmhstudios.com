@@ -1,16 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import {
-  themeTokensSchema,
   DEFAULT_THEME_TOKENS,
   THEME_TOKENS_VERSION,
   TINT_ALPHA_MAX_DARK,
   lintThemeContrast,
   canPublish,
-  upcastTokens,
   upcastV1,
-  readTokens,
   themeCssVars,
 } from '@/lib/themes/tokens';
+// The zod schema + parse path live in their own module so `tokens.ts` stays
+// zod-free on the client critical path (see that file's header note).
+import { themeTokensSchema, upcastTokens, readTokens } from '@/lib/themes/tokens-schema';
 
 // The v1 map the studio shipped before the v2 glass contract (§14.1). Existing
 // drafts/purchases persist exactly this shape and must keep parsing.

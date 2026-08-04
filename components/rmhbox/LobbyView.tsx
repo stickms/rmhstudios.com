@@ -19,7 +19,9 @@ import { useNavigate } from '@tanstack/react-router';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
-import { isDiscordActivity } from '@/lib/discord-sdk';
+// Detector only — from the SDK-free module so the standalone /rmhbox bundle
+// doesn't carry the Activity SDK (see lib/discord-activity.ts).
+import { isDiscordActivity } from '@/lib/discord-activity';
 import { SlidersHorizontal } from 'lucide-react';
 import RoomCodeDisplay from './RoomCodeDisplay';
 import PlayerList from './PlayerList';

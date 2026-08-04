@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
-import { themeTokensSchema } from '@/lib/themes/tokens';
+import { themeTokensSchema } from '@/lib/themes/tokens-schema';
 import { listMyThemes, createTheme, ThemeError } from '@/lib/themes/themes.server';
 
 const createSchema = z.object({

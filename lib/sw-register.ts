@@ -6,7 +6,9 @@
  * scope rules don't allow it) and on browsers without support.
  */
 
-import { isDiscordActivity } from '@/lib/discord-sdk';
+// NOT from '@/lib/discord-sdk' — see that module's re-export note; importing it
+// here would drag the Activity SDK onto every page's critical path.
+import { isDiscordActivity } from '@/lib/discord-activity';
 
 export function registerServiceWorker(): void {
   if (!import.meta.env.PROD) return;

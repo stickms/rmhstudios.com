@@ -8,7 +8,7 @@
  * to a low-cardinality first-segment route label before logging it.
  */
 
-import { onCLS, onFCP, onINP, onLCP, onTTFB, type Metric } from 'web-vitals';
+import type { Metric } from 'web-vitals';
 
 const ENDPOINT = '/api/rum';
 let started = false;
@@ -39,13 +39,30 @@ function send(metric: Metric): void {
   }
 }
 
-/** Start collecting Core Web Vitals. Safe to call once on the client. */
+/**
+ * Start collecting Core Web Vitals. Safe to call once on the client.
+ *
+ * The library is fetched in its OWN chunk rather than imported at module scope:
+ * `__root.tsx` calls this from a mount effect, so a static import only served to
+ * put 8.5 KB of measurement code into the entry chunk that every page must parse
+ * before it can hydrate — i.e. the monitoring was taxing the very metric it
+ * reports. Arriving a tick late costs no data: every metric here is collected
+ * through a `buffered: true` PerformanceObserver, so entries that occurred
+ * before this resolves (TTFB, FCP, the early layout shifts) are replayed on
+ * registration.
+ */
 export function initWebVitals(): void {
   if (started || typeof window === 'undefined') return;
   started = true;
-  onLCP(send);
-  onCLS(send);
-  onINP(send);
-  onFCP(send);
-  onTTFB(send);
+  void import('web-vitals')
+    .then(({ onCLS, onFCP, onINP, onLCP, onTTFB }) => {
+      onLCP(send);
+      onCLS(send);
+      onINP(send);
+      onFCP(send);
+      onTTFB(send);
+    })
+    .catch(() => {
+      /* telemetry must never break the page */
+    });
 }

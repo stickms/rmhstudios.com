@@ -3,6 +3,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { DiscordSDK, patchUrlMappings, type Types } from '@discord/embedded-app-sdk';
 
+// Re-exported for the /discord/* call sites, which load the SDK anyway. Code on
+// a SHARED path (__root.tsx, lib/sw-register.ts, …) must import it from
+// '@/lib/discord-activity' directly — importing it from here would pull the
+// 135 KB SDK into the client entry chunk. See that file's docblock.
+export { isDiscordActivity } from '@/lib/discord-activity';
+
 export interface DiscordUser {
     id: string;
     username: string;
@@ -66,16 +72,6 @@ type DiscordState =
     | { status: 'loading' }
     | { status: 'error'; error: string }
     | { status: 'ready'; context: DiscordContext };
-
-/**
- * Detects whether the app is running inside a Discord Activity iframe.
- */
-export function isDiscordActivity(): boolean {
-    if (typeof window === 'undefined') return false;
-    // Discord Activities are loaded in an iframe with a specific query param
-    const params = new URLSearchParams(window.location.search);
-    return params.has('frame_id') && params.has('instance_id');
-}
 
 /**
  * Hook to initialize the Discord Embedded App SDK.

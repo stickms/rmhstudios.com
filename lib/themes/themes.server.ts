@@ -10,15 +10,13 @@
 import { prisma } from '@/lib/prisma.server';
 import { transferCoins, InsufficientFundsError } from '@/lib/economy/ledger.server';
 import {
-  themeTokensSchema,
   canPublish,
-  upcastTokens,
-  readTokens,
   THEME_PRICE_MIN,
   THEME_PRICE_MAX,
   type ThemeTokens,
   type UserThemeView,
 } from '@/lib/themes/tokens';
+import { themeTokensSchema, upcastTokens, readTokens } from '@/lib/themes/tokens-schema';
 import { getUserTier } from '@/lib/entitlements';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 
