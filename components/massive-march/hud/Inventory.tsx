@@ -19,7 +19,8 @@ import { Hand, Backpack, PackageOpen } from 'lucide-react';
 import { ITEMS, type ItemKind, type Slot } from '@/lib/massive-march/items';
 import { live } from '@/lib/massive-march/live';
 import { mm } from '@/lib/massive-march/net/client';
-import { useMmStore } from '@/lib/massive-march/store';
+import type { MemberInfo } from '@/lib/massive-march/net/events';
+import { none, useMmStore } from '@/lib/massive-march/store';
 import { TOY } from '@/lib/massive-march/palette';
 import { BOARD, Chip, INK, MarchButton, Panel } from '../ui';
 
@@ -123,7 +124,7 @@ function Section({
 export function InventorySheet() {
   const { t } = useTranslation('c-massive-march');
   const pack = useMmStore((s) => s.pack);
-  const members = useMmStore((s) => s.session?.members ?? []);
+  const members = useMmStore((s) => s.session?.members ?? none<MemberInfo>());
   const items = carriedItems();
 
   const hands = items.filter((item) => item.where === 'hands');
