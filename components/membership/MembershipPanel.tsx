@@ -2,10 +2,15 @@
  * Membership panel — the editorial subscription-tier UI.
  *
  * Extracted from the former standalone /pricing route so it can be embedded
- * both there and at the top of the combined /store page. Starter & Pro start
+ * both there and at the top of the combined /store page. HARD-R & Pro start
  * Stripe-hosted checkout via the better-auth stripe client; Enterprise is a
  * sales-led "Contact team" flow. The Pro tier is visually featured (gold
  * accents echo the amber profile badge it unlocks).
+ *
+ * Note on tier ids: the $20 tier is DISPLAYED as "HARD-R" but its id is still
+ * `starter` everywhere under the hood — that string is the Stripe plan name,
+ * the `Subscription.plan` column value and the gift/grant API enum, so it is
+ * deliberately not renamed with the label.
  *
  * Self-contained (atmosphere + scoped styles live inside the section), so it
  * drops into any positioned container. `returnPath` controls where Stripe
@@ -68,7 +73,7 @@ function planCopy(t: (key: string, opts: { defaultValue: string }) => string) {
       ],
     },
     starter: {
-      name: t('plan-starter-name', { defaultValue: 'Starter' }),
+      name: t('plan-starter-name', { defaultValue: 'HARD-R' }),
       period: t('plan-starter-period', { defaultValue: '/mo' }),
       tagline: t('plan-starter-tagline', {
         defaultValue: 'Everything unlocked — and the keys.',
@@ -85,7 +90,7 @@ function planCopy(t: (key: string, opts: { defaultValue: string }) => string) {
       period: t('plan-pro-period', { defaultValue: '/mo' }),
       tagline: t('plan-pro-tagline', { defaultValue: 'For power users who want the badge.' }),
       features: [
-        t('plan-pro-feature-1', { defaultValue: 'Everything in Starter' }),
+        t('plan-pro-feature-1', { defaultValue: 'Everything in HARD-R' }),
         t('plan-pro-feature-2', { defaultValue: 'Verified profile badge' }),
         t('plan-pro-feature-3', { defaultValue: 'Early access to new tools' }),
         t('plan-pro-feature-4', { defaultValue: 'Dedicated support' }),

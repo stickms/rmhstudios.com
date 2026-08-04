@@ -35,7 +35,7 @@ export function tierFromSubscription(
   return mapPlanToTier(sub.plan);
 }
 
-/** Starter and above get programmatic RMH API access. */
+/** HARD-R (plan id `starter`) and above get programmatic RMH API access. */
 export function hasApiAccess(tier: Tier): boolean {
   return TIER_RANK[tier] >= TIER_RANK.starter;
 }

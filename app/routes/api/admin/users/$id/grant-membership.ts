@@ -77,7 +77,7 @@ export const Route = createFileRoute('/api/admin/users/$id/grant-membership')({
             type: 'SYSTEM',
             entityType: 'membership',
             entityId: tier,
-            preview: `An admin granted you ${months} month(s) of ${tier === 'pro' ? 'Pro' : 'Starter'}!`,
+            preview: `An admin granted you ${months} month(s) of ${tier === 'pro' ? 'Pro' : 'HARD-R'}!`,
             link: '/store?tab=membership',
           }).catch(() => {});
 

@@ -4,7 +4,7 @@ Limits are enforced **per key**, per minute:
 
 | Tier | Requests / minute |
 | ---- | ----------------- |
-| Starter | 120 |
+| HARD-R | 120 |
 | Pro / higher | 600 |
 
 Image uploads have a tighter dedicated budget (15/min) and a tier-scaled daily quota on top of the per-minute limit.
