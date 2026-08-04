@@ -26,10 +26,14 @@ import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { MemberFeatureGrid } from '@/components/membership/MemberFeatureGrid';
+import { TIER_RANK as RANK } from '@/lib/entitlements/tiers';
+import type { MemberFeature } from '@/lib/entitlements/features';
 
-// Local display-only ordering (do NOT import the server-side TIER_RANK — it
-// pulls the prisma client into the client bundle).
-const RANK: Record<Tier, number> = { free: 0, starter: 1, pro: 2, enterprise: 3 };
+// `TIER_RANK` used to be re-declared here with a note not to import the shared
+// one "because it pulls the prisma client into the client bundle". That is no
+// longer true: the pure tier vocabulary lives in `lib/entitlements/tiers.ts`,
+// which has no server imports, and `lib/entitlements.ts` re-exports it.
 
 /**
  * Structure only — the words live in `planCopy()` below. Prices stay literal:
@@ -117,6 +121,7 @@ export function MembershipPanel({
   returnPath = '/store',
   onCoinShop,
   headingLevel = 'h1',
+  highlightFeature = null,
 }: {
   /** `null` = signed out. Distinct from 'free', which is a real membership. */
   currentTier: Tier | null;
@@ -127,6 +132,12 @@ export function MembershipPanel({
   onCoinShop?: () => void;
   /** Pass 'h2' when the embedding page already renders its own h1 (/store). */
   headingLevel?: 'h1' | 'h2';
+  /**
+   * The feature that sent the viewer here, from `?feature=` (see `upgradeHref`).
+   * Its card sorts first and is ringed, so someone refused mid-action lands
+   * looking at the thing they wanted rather than at a price table.
+   */
+  highlightFeature?: MemberFeature | null;
 }) {
   const { t } = useTranslation('site');
   const signedOut = currentTier === null;
@@ -440,6 +451,11 @@ export function MembershipPanel({
             })}
           </RevealGroup>
         </div>
+
+        {/* ── What a membership unlocks ──────────────────────── */}
+        {/* Rendered from the same registry the API routes gate on, so this
+            list cannot drift from what is actually enforced. */}
+        <MemberFeatureGrid tier={tier} highlight={highlightFeature ?? null} signedOut={signedOut} />
 
         {/* ── Footnote ───────────────────────────────────────── */}
         <Reveal as="p" className="mt-12 text-center font-mono text-xs text-site-text-muted">

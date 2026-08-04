@@ -9,7 +9,8 @@ import {
   TOURNAMENT_PAYOUT_SPLITS,
   TOURNAMENT_RAKE_BPS,
 } from '@/lib/wager/constants';
-import { generateBracket } from './bracket';
+import { generateBracket, resolveBracketRows } from './bracket';
+import { randomUUID } from 'node:crypto';
 
 type Db = PrismaClient;
 
@@ -197,6 +198,11 @@ export async function startTournament(
   const orderedIds = entrants.map((e) => e.id);
   const bracket = generateBracket(t.format as 'SINGLE_ELIM' | 'ROUND_ROBIN', orderedIds);
 
+  // Match ids are minted here rather than discovered from the database, so the
+  // whole bracket — including every nextMatchId link — is fully resolved before
+  // the transaction opens (see resolveBracketRows).
+  const matchRows = resolveBracketRows(bracket.matches, randomUUID);
+
   await db.$transaction(async (tx) => {
     // Assign seeds.
     for (let i = 0; i < entrants.length; i++) {
@@ -205,34 +211,32 @@ export async function startTournament(
         data: { seed: i + 1 },
       });
     }
-    // Persist matches, keyed by (round, slot) so we can resolve nextKey → id.
-    const keyToId = new Map<string, string>();
-    for (const m of bracket.matches) {
-      const created = await tx.tournamentMatch.create({
-        data: {
+
+    // Persist matches in bulk. This used to be one INSERT per match followed by
+    // one UPDATE per match to wire the winner-advances links, all awaited in
+    // sequence inside this transaction. A round-robin is n(n-1)/2 matches, so at
+    // the 64-player cap that was 2016 inserts plus their updates on a single
+    // connection — comfortably past Prisma's default 5s interactive-transaction
+    // timeout, i.e. starting a large tournament could not succeed at all.
+    // Chunked so a very large bracket stays clear of Postgres' bind-parameter
+    // ceiling (~65535 per statement, and each row binds 9).
+    const CHUNK = 1000;
+    for (let i = 0; i < matchRows.length; i += CHUNK) {
+      await tx.tournamentMatch.createMany({
+        data: matchRows.slice(i, i + CHUNK).map((m) => ({
+          id: m.id,
           tournamentId: t.id,
           round: m.round,
           slot: m.slot,
           entrantAId: m.entrantAId,
           entrantBId: m.entrantBId,
           state: m.state === 'BYE' ? 'BYE' : m.state === 'READY' ? 'READY' : 'PENDING',
-        },
+          nextMatchId: m.nextMatchId,
+          nextSlot: m.nextSlot,
+        })),
       });
-      keyToId.set(`${m.round}:${m.slot}`, created.id);
     }
-    // Second pass: wire nextMatchId / nextSlot now that ids exist.
-    for (const m of bracket.matches) {
-      if (m.nextKey) {
-        const id = keyToId.get(`${m.round}:${m.slot}`);
-        const nextId = keyToId.get(m.nextKey);
-        if (id && nextId) {
-          await tx.tournamentMatch.update({
-            where: { id },
-            data: { nextMatchId: nextId, nextSlot: m.nextSlot },
-          });
-        }
-      }
-    }
+
     await tx.tournament.update({
       where: { id: t.id },
       data: { status: 'LIVE', startedAt: new Date() },
@@ -328,7 +332,8 @@ export async function settleMatch(
       const remaining = await db.tournamentMatch.count({
         where: { tournamentId: opts.tournamentId, state: { not: 'COMPLETE' } },
       });
-      if (remaining === 0) tournamentComplete = await maybeCompleteTournament(opts.tournamentId, db);
+      if (remaining === 0)
+        tournamentComplete = await maybeCompleteTournament(opts.tournamentId, db);
     }
   }
   return { settled: outcome.settled, tournamentComplete };
@@ -579,9 +584,7 @@ export interface SerializedTournament {
 
 const LIST_INCLUDE = { _count: { select: { entrants: true } } } as const;
 
-function serializeSummary(
-  t: Tournament & { _count: { entrants: number } },
-): SerializedTournament {
+function serializeSummary(t: Tournament & { _count: { entrants: number } }): SerializedTournament {
   const game = getWagerGame(t.gameId);
   return {
     id: t.id,
@@ -664,7 +667,10 @@ export async function getTournament(
 }
 
 /** Notify entrants when a tournament goes live (best-effort). */
-export async function notifyTournamentStarted(tournamentId: string, db: Db = prisma): Promise<void> {
+export async function notifyTournamentStarted(
+  tournamentId: string,
+  db: Db = prisma,
+): Promise<void> {
   const entrants = await db.tournamentEntrant.findMany({
     where: { tournamentId },
     select: { userId: true },

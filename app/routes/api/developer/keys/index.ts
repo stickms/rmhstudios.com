@@ -23,21 +23,24 @@ export const Route = createFileRoute('/api/developer/keys/')({
   server: {
     handlers: {
       GET: defineHandler({}, async ({ session }) => {
-        const tier = await getUserTier(session.user.id);
-        const keys = await prisma.developerApiKey.findMany({
-          where: { userId: session.user.id, revokedAt: null },
-          orderBy: { createdAt: 'desc' },
-          select: {
-            id: true,
-            name: true,
-            prefix: true,
-            lastFour: true,
-            scopes: true,
-            expiresAt: true,
-            lastUsedAt: true,
-            createdAt: true,
-          },
-        });
+        // Independent reads — the tier lookup doesn't gate the key list.
+        const [tier, keys] = await Promise.all([
+          getUserTier(session.user.id),
+          prisma.developerApiKey.findMany({
+            where: { userId: session.user.id, revokedAt: null },
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              name: true,
+              prefix: true,
+              lastFour: true,
+              scopes: true,
+              expiresAt: true,
+              lastUsedAt: true,
+              createdAt: true,
+            },
+          }),
+        ]);
         return Response.json({
           keys,
           hasApiAccess: hasApiAccess(tier),

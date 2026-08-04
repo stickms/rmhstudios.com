@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { reportClientError } from '@/lib/client-errors';
 
 interface Props {
   children: ReactNode;
@@ -66,6 +67,15 @@ export class GameErrorBoundary extends Component<Props, State> {
       error,
       info.componentStack,
     );
+    // Catching the error is what stops it reaching `window.onerror`, so without
+    // this the boundary is where game crashes go to be forgotten: 30+ routes
+    // wrap a game in it and the only record was a console line nobody reads.
+    // `source` carries the game so the sink can answer "which game is broken?"
+    // rather than just "something threw". reportClientError never throws.
+    reportClientError(error, {
+      source: `game-boundary:${this.props.gameName ?? 'unknown'}`,
+      componentStack: info.componentStack ?? undefined,
+    });
   }
 
   render() {

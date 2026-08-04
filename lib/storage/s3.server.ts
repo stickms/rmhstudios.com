@@ -9,6 +9,7 @@ import {
 import fs from "node:fs/promises";
 import path from "node:path";
 import { contentTypeForFilename } from "./keys";
+import { compressForStorage } from "./compress.server";
 
 function requireEnv(name: string): string {
   const v = process.env[name];
@@ -126,21 +127,47 @@ function getClient(): S3Client {
   return client;
 }
 
+/**
+ * Write an object to storage.
+ *
+ * Every body goes through {@link compressForStorage} first, so "compress what
+ * we upload" is a property of the storage layer rather than a rule each of the
+ * ~20 call sites has to remember. That pass is lossless, format-preserving and
+ * never returns something larger than it was given, so it is safe here where it
+ * would not be safe to apply per-caller. See `lib/storage/compress.server.ts`
+ * for what it will and won't touch.
+ *
+ * An explicit `contentEncoding` means the caller has already compressed the
+ * body itself; that path is passed straight through untouched, because
+ * double-encoding would produce an object no browser can read.
+ */
 export async function putObject(
   key: string,
   body: Buffer,
   contentType: string,
   contentEncoding?: string
 ): Promise<void> {
+  let out = body;
+  let encoding = contentEncoding;
+
+  if (!contentEncoding) {
+    const compressed = await compressForStorage(body, contentType);
+    out = compressed.body;
+    encoding = compressed.contentEncoding;
+  }
+
   // The local FS backend can't persist metadata; readers fall back to sniffing.
-  if (!s3Configured()) return localPut(key, body);
+  // Brotli'd bodies would therefore be unreadable on disk, so the local path
+  // stores what it was handed.
+  if (!s3Configured()) return localPut(key, encoding === "br" ? body : out);
+
   await getClient().send(
     new PutObjectCommand({
       Bucket: getBucket(),
       Key: key,
-      Body: body,
+      Body: out,
       ContentType: contentType,
-      ...(contentEncoding ? { ContentEncoding: contentEncoding } : {}),
+      ...(encoding ? { ContentEncoding: encoding } : {}),
     })
   );
 }

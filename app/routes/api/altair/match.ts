@@ -108,28 +108,31 @@ export const Route = createFileRoute('/api/altair/match')({
             },
           });
 
-          // Create player match records
-          for (const p of players) {
-            await tx.altairMatchPlayer.create({
-              data: {
-                matchId: matchRecord.id,
-                userId: p.userId,
-                userName: p.userName ?? 'Player',
-                classId: p.classId ?? 'unknown',
-                slot: p.slot ?? 0,
-                finalLevel: p.level ?? 1,
-                kills: p.kills ?? 0,
-                coinsEarned: p.coinsEarned ?? 0,
-                timeSurvived: p.timeSurvived ?? 0,
-                wasDowned: p.wasDowned ?? false,
-                wasRevived: p.wasRevived ?? false,
-                revivesGiven: p.revivesGiven ?? 0,
-                wasAliveAtEnd: p.wasAliveAtEnd ?? true,
-                stats: p.coinBreakdown ?? {},
-              },
-            });
+          // Player match rows are independent inserts with nothing read back, so
+          // they go in as one statement rather than an awaited create per player.
+          await tx.altairMatchPlayer.createMany({
+            data: players.map((p) => ({
+              matchId: matchRecord.id,
+              userId: p.userId,
+              userName: p.userName ?? 'Player',
+              classId: p.classId ?? 'unknown',
+              slot: p.slot ?? 0,
+              finalLevel: p.level ?? 1,
+              kills: p.kills ?? 0,
+              coinsEarned: p.coinsEarned ?? 0,
+              timeSurvived: p.timeSurvived ?? 0,
+              wasDowned: p.wasDowned ?? false,
+              wasRevived: p.wasRevived ?? false,
+              revivesGiven: p.revivesGiven ?? 0,
+              wasAliveAtEnd: p.wasAliveAtEnd ?? true,
+              stats: p.coinBreakdown ?? {},
+            })),
+          });
 
-            // Upsert co-op profile — only for verified real users.
+          // Co-op profiles still need per-user upsert semantics (increments on
+          // an existing row), which has no bulk form.
+          for (const p of players) {
+            // Only verified real users get a persisted profile.
             if (!realUserIds.has(p.userId)) continue;
             await tx.altairCoopProfile.upsert({
               where: { userId: p.userId },

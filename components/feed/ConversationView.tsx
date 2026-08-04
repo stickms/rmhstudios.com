@@ -8,6 +8,7 @@ import { EASE_OUT_EXPO } from'@/components/motion';
 import { Spinner } from'@/components/ui/spinner';
 import { Link } from'@tanstack/react-router';
 import { UserAvatar } from'@/components/ui/UserAvatar';
+import { CallButton } from'@/components/call/CallButton';
 import { useSession, useResolvedUser } from'@/components/Providers';
 import { Button } from'@/components/ui/button';
 import { usePopPresence } from '@/hooks/usePopPresence';
@@ -605,6 +606,23 @@ export function ConversationView({
  )}
  </div>
  </Link>
+ )}
+ {/* Voice call. Renders nothing when a call can't be placed (signed out,
+ no WebRTC); the server is still the authority on whether this person
+ accepts calls from you. */}
+ {otherUser && (
+ <div className="ml-auto">
+ <CallButton
+ user={{
+ id: otherUser.id,
+ name: otherUser.name ?? null,
+ image: otherUser.image ?? null,
+ handle: (otherUser as { handle?: string | null }).handle ?? null,
+ }}
+ conversationId={conversationId}
+ viewerId={session?.user?.id ?? null}
+ />
+ </div>
  )}
  </div>
  </div>

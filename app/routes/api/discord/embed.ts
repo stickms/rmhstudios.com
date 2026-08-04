@@ -591,18 +591,32 @@ export const Route = createFileRoute('/api/discord/embed')({
                   distinct: ['guildId'],
                 });
 
-                for (const { guildId: g } of otherGuilds) {
-                  const ch = await prisma.discordActivityChannel.findUnique({
-                    where: { guildId_activity: { guildId: g, activity: 'lights-out' } },
-                  });
-                  if (!ch) continue;
-
-                  const participants = await prisma.discordDailyParticipant.findMany({
-                    where: { guildId: g, dateKey },
-                  });
-                  postOrEditEmbed(ch.channelId, g, dateKey, participants).catch((e) =>
-                    console.error('[embed] postOrEditEmbed error:', e),
-                  );
+                // Resolve every other guild's channel and participant list in two
+                // queries instead of a channel lookup plus a participant lookup
+                // per guild, awaited in sequence. A user in many shared guilds
+                // otherwise paid 2 round-trips each just to fan out an embed.
+                const otherGuildIds = otherGuilds.map((o) => o.guildId);
+                const [channels, allParticipants] = await Promise.all([
+                  prisma.discordActivityChannel.findMany({
+                    where: { guildId: { in: otherGuildIds }, activity: 'lights-out' },
+                  }),
+                  prisma.discordDailyParticipant.findMany({
+                    where: { guildId: { in: otherGuildIds }, dateKey },
+                  }),
+                ]);
+                const participantsByGuild = new Map<string, typeof allParticipants>();
+                for (const p of allParticipants) {
+                  const list = participantsByGuild.get(p.guildId);
+                  if (list) list.push(p);
+                  else participantsByGuild.set(p.guildId, [p]);
+                }
+                for (const ch of channels) {
+                  postOrEditEmbed(
+                    ch.channelId,
+                    ch.guildId,
+                    dateKey,
+                    participantsByGuild.get(ch.guildId) ?? [],
+                  ).catch((e) => console.error('[embed] postOrEditEmbed error:', e));
                 }
               } catch (propErr) {
                 console.error('Failed to propagate completion:', propErr);
