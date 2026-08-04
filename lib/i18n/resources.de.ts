@@ -31,6 +31,7 @@ import deCLockdown from "@/locales/de/c-lockdown.json";
 import deCModeration from "@/locales/de/c-moderation.json";
 import deCNeonDriftway from "@/locales/de/c-neon-driftway.json";
 import deCNews from "@/locales/de/c-news.json";
+import deCNightrail from "@/locales/de/c-nightrail.json";
 import deCPredictions from "@/locales/de/c-predictions.json";
 import deCProfileModules from "@/locales/de/c-profile-modules.json";
 import deCRideshare from "@/locales/de/c-rideshare.json";
@@ -119,6 +120,7 @@ const deResources = {
   "c-moderation": deCModeration,
   "c-neon-driftway": deCNeonDriftway,
   "c-news": deCNews,
+  "c-nightrail": deCNightrail,
   "c-predictions": deCPredictions,
   "c-profile-modules": deCProfileModules,
   "c-rideshare": deCRideshare,

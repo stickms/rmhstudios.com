@@ -31,6 +31,7 @@ import hiCLockdown from "@/locales/hi/c-lockdown.json";
 import hiCModeration from "@/locales/hi/c-moderation.json";
 import hiCNeonDriftway from "@/locales/hi/c-neon-driftway.json";
 import hiCNews from "@/locales/hi/c-news.json";
+import hiCNightrail from "@/locales/hi/c-nightrail.json";
 import hiCPredictions from "@/locales/hi/c-predictions.json";
 import hiCProfileModules from "@/locales/hi/c-profile-modules.json";
 import hiCRideshare from "@/locales/hi/c-rideshare.json";
@@ -119,6 +120,7 @@ const hiResources = {
   "c-moderation": hiCModeration,
   "c-neon-driftway": hiCNeonDriftway,
   "c-news": hiCNews,
+  "c-nightrail": hiCNightrail,
   "c-predictions": hiCPredictions,
   "c-profile-modules": hiCProfileModules,
   "c-rideshare": hiCRideshare,

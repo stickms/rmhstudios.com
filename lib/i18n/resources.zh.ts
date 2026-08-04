@@ -31,6 +31,7 @@ import zhCLockdown from "@/locales/zh/c-lockdown.json";
 import zhCModeration from "@/locales/zh/c-moderation.json";
 import zhCNeonDriftway from "@/locales/zh/c-neon-driftway.json";
 import zhCNews from "@/locales/zh/c-news.json";
+import zhCNightrail from "@/locales/zh/c-nightrail.json";
 import zhCPredictions from "@/locales/zh/c-predictions.json";
 import zhCProfileModules from "@/locales/zh/c-profile-modules.json";
 import zhCRideshare from "@/locales/zh/c-rideshare.json";
@@ -121,6 +122,7 @@ const zhResources = {
   "c-moderation": zhCModeration,
   "c-neon-driftway": zhCNeonDriftway,
   "c-news": zhCNews,
+  "c-nightrail": zhCNightrail,
   "c-predictions": zhCPredictions,
   "c-profile-modules": zhCProfileModules,
   "c-rideshare": zhCRideshare,

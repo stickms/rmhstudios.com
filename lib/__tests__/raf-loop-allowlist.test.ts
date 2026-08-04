@@ -124,6 +124,7 @@ const ALLOW = new Set<string>([
   'components/library/UploadModal.tsx',
   'components/radial/LiquidGlobe.tsx',
   'components/neon-driftway/NeonDriftwayGame.tsx',
+  'components/nightrail/NightrailGame.tsx',
   'components/news/NewsHero.tsx',
   'components/rmh-capital/ContactPage.tsx',
   'components/rmh-capital/shared.tsx',

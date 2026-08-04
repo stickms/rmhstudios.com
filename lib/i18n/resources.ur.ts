@@ -31,6 +31,7 @@ import urCLockdown from "@/locales/ur/c-lockdown.json";
 import urCModeration from "@/locales/ur/c-moderation.json";
 import urCNeonDriftway from "@/locales/ur/c-neon-driftway.json";
 import urCNews from "@/locales/ur/c-news.json";
+import urCNightrail from "@/locales/ur/c-nightrail.json";
 import urCPredictions from "@/locales/ur/c-predictions.json";
 import urCProfileModules from "@/locales/ur/c-profile-modules.json";
 import urCRideshare from "@/locales/ur/c-rideshare.json";
@@ -119,6 +120,7 @@ const urResources = {
   "c-moderation": urCModeration,
   "c-neon-driftway": urCNeonDriftway,
   "c-news": urCNews,
+  "c-nightrail": urCNightrail,
   "c-predictions": urCPredictions,
   "c-profile-modules": urCProfileModules,
   "c-rideshare": urCRideshare,

@@ -59,6 +59,7 @@ model User {
   templeOfJoyProfile   TempleOfJoySave?
   gameSaves            GameSave[]
   neonDriftwayProfile  NeonDriftwayPlayer?
+  nightrailProfile     NightrailPlayer?
   synapseStormProfile  SynapseStormPlayer?
   rmhboxProfile        RMHboxProfile?
   rmhtypeProfiles      RmhTypeProfile[]
@@ -748,6 +749,28 @@ model NeonDriftwayPlayer {
   user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([highScore(sort: Desc)], map: "idx_neon_driftway_high_score")
+}
+
+model NightrailPlayer {
+  id       String @id @default(uuid())
+  username String @unique
+  /// Best single-run score across every level.
+  highScore Int @default(0)
+  /// Furthest distance covered in one run, metres.
+  bestDistance Int @default(0)
+  /// Highest combo multiplier ever reached — the trick-skill number.
+  bestMultiplier Int @default(1)
+  /// Highest level reached, so the level select can be restored per account.
+  bestLevel   Int @default(1)
+  /// Runs that reached the finish line with cargo still aboard.
+  runsFinished Int @default(0)
+  gamesPlayed Int @default(1)
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([highScore(sort: Desc)], map: "idx_nightrail_high_score")
 }
 
 model VoidBreakerPlayer {
