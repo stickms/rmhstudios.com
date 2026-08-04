@@ -21,9 +21,13 @@ import { evaluateObjectives, initialObjectives } from './objectives';
 import { emptyStats, recomputeDerived } from './simulation';
 import { DEFAULT_HEIGHT, DEFAULT_WIDTH, generateIsland } from './terrain';
 import type { BuildingInstance, CityState } from './types';
+import { isleworksSave } from './cloud';
+import { SAVE_KEY, SAVE_VERSION, type SavedCity } from './save-format';
 
-export const SAVE_VERSION = 1;
-export const SAVE_KEY = 'isleworks:city';
+// Re-exported so every existing importer of `./city` keeps working.
+export { SAVE_KEY, SAVE_VERSION };
+export type { SavedBuilding, SavedCity } from './save-format';
+
 
 let instanceCounter = 0;
 
@@ -123,32 +127,16 @@ export function createCity(seed = Math.floor(Math.random() * 1e9)): CityState {
 
 /* ── Persistence ───────────────────────────────────────────────────────────*/
 
-interface SavedBuilding {
-  d: string;
-  x: number;
-  y: number;
-  r: number;
-  l: number;
-  c: number;
-  m: number;
-}
-
-interface SavedCity {
-  v: number;
-  seed: number;
-  money: number;
-  taxRate: number;
-  month: number;
-  population: number;
-  peak: number;
-  parcels: number[];
-  buildings: SavedBuilding[];
-  claimed: string[];
-  completed: string[];
-}
-
-export function serializeCity(state: CityState): string {
-  const payload: SavedCity = {
+/**
+ * The city, as the object that gets stored.
+ *
+ * Split out of `serializeCity` because the save now travels to an account as
+ * well as to `localStorage`, and the transport there speaks JSON values rather
+ * than JSON text — stringifying a string would store the city as one long
+ * escaped blob nothing could read back.
+ */
+export function toSavedCity(state: CityState): SavedCity {
+  return {
     v: SAVE_VERSION,
     seed: state.seed,
     money: Math.round(state.money),
@@ -169,16 +157,22 @@ export function serializeCity(state: CityState): string {
     claimed: state.objectives.filter((o) => o.claimed).map((o) => o.id),
     completed: state.objectives.filter((o) => o.complete).map((o) => o.id),
   };
-  return JSON.stringify(payload);
+}
+
+export function serializeCity(state: CityState): string {
+  return JSON.stringify(toSavedCity(state));
 }
 
 export function deserializeCity(raw: string): CityState | null {
-  let payload: SavedCity;
   try {
-    payload = JSON.parse(raw) as SavedCity;
+    return fromSavedCity(JSON.parse(raw) as SavedCity);
   } catch {
     return null;
   }
+}
+
+/** Rebuild a city from a stored payload, or reject it. */
+export function fromSavedCity(payload: SavedCity | null): CityState | null {
   if (!payload || typeof payload.seed !== 'number' || payload.v !== SAVE_VERSION) return null;
 
   const state = createCity(payload.seed);
@@ -217,32 +211,37 @@ export function deserializeCity(raw: string): CityState | null {
   return state;
 }
 
+/**
+ * The city on THIS device.
+ *
+ * Still here, and still local-only, because two callers want exactly that: the
+ * title screen's "Continue" summary, and `deserializeCity` for an imported
+ * file. Choosing between this and the account's copy is `cloud.ts`'s job — see
+ * `lib/game-saves/conflict.ts` for why it cannot be done by timestamp.
+ */
 export function loadCity(): CityState | null {
   if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.localStorage.getItem(SAVE_KEY);
-    return raw ? deserializeCity(raw) : null;
-  } catch {
-    return null;
-  }
+  return fromSavedCity(isleworksSave.readLocal());
 }
 
+/**
+ * Write the city everywhere it belongs.
+ *
+ * Local first and synchronously — that is the copy that survives a closed
+ * laptop — then the account, best-effort and unawaited. Both go through the
+ * shared kit, which is what stamps the local copy as this account's so a second
+ * person on the same browser is never offered somebody else's city.
+ */
 export function saveCity(state: CityState): void {
   if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(SAVE_KEY, serializeCity(state));
-  } catch {
-    /* Private mode or a full quota — the city keeps playing, it just won't persist. */
-  }
+  const payload = toSavedCity(state);
+  isleworksSave.writeLocal(payload);
+  isleworksSave.writeCloud(payload).catch(() => {});
 }
 
 export function clearSave(): void {
   if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.removeItem(SAVE_KEY);
-  } catch {
-    /* no-op */
-  }
+  void isleworksSave.clear();
 }
 
 /** Which parcels are adjacent to something already owned — the only ones for sale. */

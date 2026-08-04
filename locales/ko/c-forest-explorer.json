@@ -81,7 +81,6 @@
   "puzzle-solved": "퍼즐 해결됨!",
   "puzzle-type-not-implemented": "아직 구현되지 않은 퍼즐 유형입니다.",
   "puzzles-progress": "{{solvedCount}}/{{total}} 퍼즐",
-  "redirecting-to-login": "로그인으로 리디렉션 중...",
   "reflection-instructions": "클릭하여 거울을 배치/회전시키고 빛을 목표물로 유도하세요",
   "reflection-instructions-prisms": "Guide the beam through every prism ◆ to the target",
   "repeat-the-pattern": "패턴을 반복하세요 ({{current}}/{{total}})",

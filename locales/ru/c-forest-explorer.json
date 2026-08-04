@@ -90,7 +90,6 @@
   "puzzle-solved": "Головоломка решена!",
   "puzzle-type-not-implemented": "Тип головоломки ещё не реализован.",
   "puzzles-progress": "{{solvedCount}}/{{total}} головоломок",
-  "redirecting-to-login": "Перенаправление на страницу входа...",
   "reflection-instructions": "Нажмите, чтобы разместить/повернуть зеркала и направить луч света на цель",
   "reflection-instructions-prisms": "Guide the beam through every prism ◆ to the target",
   "repeat-the-pattern": "Повторите узор ({{current}}/{{total}})",

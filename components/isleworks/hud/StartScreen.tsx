@@ -12,27 +12,30 @@
  * first thing anyone sees is the game, not a splash.
  */
 
-import { useEffect, useState } from 'react';
 import { Play, RotateCcw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { loadCity } from '@/lib/isleworks/city';
+import { isleworksSave, summarizeIsleworksSave } from '@/lib/isleworks/cloud';
 import { useIsleworks } from '@/lib/isleworks/store';
+import { useCloudSave } from '@/hooks/useCloudSave';
 
 export function StartScreen() {
-  const { t } = useTranslation('c-isleworks');
+  const { t, i18n } = useTranslation('c-isleworks');
   const start = useIsleworks((s) => s.start);
-  const [saved, setSaved] = useState<{ month: number; population: number } | null>(null);
 
-  useEffect(() => {
-    // Reading the save is a localStorage + full sim rebuild, so it happens once
-    // on mount rather than on every render of the panel.
-    const city = loadCity();
-    if (city) setSaved({ month: city.month, population: city.stats.population });
-  }, []);
+  // The city can be in two places — this browser and the account — and the
+  // Continue button has to offer the one that would actually be loaded. Reading
+  // the stored payload rather than rebuilding a `CityState` also drops a full
+  // simulation rebuild from the title screen's mount.
+  const cloud = useCloudSave(isleworksSave, {
+    gameName: 'Isleworks',
+    summarize: (save) => summarizeIsleworksSave(save, t, i18n.language),
+  });
+  const saved = cloud.status === 'ready' ? cloud.save : null;
 
   return (
     <div className="isw-title">
+      {cloud.conflictDialog}
       <div className="isw-panel isw-title-card">
         <div>
           <h1 className="isw-title-name">{t('title', { defaultValue: 'Isleworks' })}</h1>
@@ -50,7 +53,7 @@ export function StartScreen() {
               type="button"
               className="isw-btn isw-btn--primary"
               style={{ height: 40, padding: '0 18px', fontSize: 13 }}
-              onClick={() => start({ fresh: false })}
+              onClick={() => start({ fresh: false, saved })}
             >
               <Play size={15} aria-hidden />
               {t('continue', {

@@ -84,7 +84,12 @@ export function summarizeForestSave(
     lines: [
       {
         label: t('save-summary-playtime', { defaultValue: 'Played for' }),
-        value: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
+        // "1h 43m" is two untranslated units. They are short enough that most
+        // locales keep a letter, but the letter is not always `h` and `m`.
+        value:
+          hours > 0
+            ? t('save-summary-hm', { hours, minutes, defaultValue: '{{hours}}h {{minutes}}m' })
+            : t('save-summary-m', { minutes, defaultValue: '{{minutes}}m' }),
       },
       { label: t('save-summary-puzzles', { defaultValue: 'Puzzles solved' }), value: String(puzzles) },
       { label: t('save-summary-journal', { defaultValue: 'Journal entries' }), value: String(entries) },

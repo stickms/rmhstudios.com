@@ -81,7 +81,6 @@
   "puzzle-solved": "Teka-teki Terpecahkan!",
   "puzzle-type-not-implemented": "Jenis teka-teki belum diimplementasikan.",
   "puzzles-progress": "{{solvedCount}}/{{total}} teka-teki",
-  "redirecting-to-login": "Mengarahkan ke login...",
   "reflection-instructions": "Klik untuk menempatkan/memutar cermin dan arahkan sinar cahaya ke target",
   "reflection-instructions-prisms": "Guide the beam through every prism ◆ to the target",
   "repeat-the-pattern": "Ulangi pola ({{current}}/{{total}})",

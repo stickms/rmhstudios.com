@@ -84,7 +84,6 @@
   "puzzle-solved": "पहेली हल हुई!",
   "puzzle-type-not-implemented": "पहेली प्रकार अभी लागू नहीं हुआ है।",
   "puzzles-progress": "{{solvedCount}}/{{total}} पहेलियाँ",
-  "redirecting-to-login": "लॉगिन पर रीडायरेक्ट हो रहा है...",
   "reflection-instructions": "दर्पण रखने/घुमाने और प्रकाश किरण को लक्ष्य तक ले जाने के लिए क्लिक करें",
   "reflection-instructions-prisms": "Guide the beam through every prism ◆ to the target",
   "repeat-the-pattern": "पैटर्न दोहराएँ ({{current}}/{{total}})",

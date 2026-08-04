@@ -24,6 +24,7 @@
   "lobby-disbanded": "로비가 해체되었습니다",
   "lobby-host": "호스트: {{hostName}}",
   "meta-shop": "메타 상점",
+  "multiplayer-feature": "Playing Altair with someone else",
   "multiplayer-title": "멀티플레이어",
   "no-public-lobbies": "공개 로비가 없습니다. 하나 만들어 보세요!",
   "players-label": "플레이어",

@@ -87,7 +87,6 @@
   "puzzle-solved": "Puzzle Risolto!",
   "puzzle-type-not-implemented": "Tipo di puzzle non ancora implementato.",
   "puzzles-progress": "{{solvedCount}}/{{total}} puzzle",
-  "redirecting-to-login": "Reindirizzamento al login...",
   "reflection-instructions": "Clicca per posizionare/ruotare gli specchi e guidare il raggio di luce verso il bersaglio",
   "reflection-instructions-prisms": "Guide the beam through every prism ◆ to the target",
   "repeat-the-pattern": "Ripeti lo schema ({{current}}/{{total}})",
