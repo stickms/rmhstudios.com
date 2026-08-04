@@ -171,6 +171,9 @@ COPY lib/cleanup.server.ts ./lib/cleanup.server.ts
 COPY lib/storage/s3.server.ts ./lib/storage/s3.server.ts
 COPY lib/storage/keys.ts ./lib/storage/keys.ts
 COPY lib/storage/asset.ts ./lib/storage/asset.ts
+# `putObject` runs every upload through the lossless storage compressor, so the
+# workers that write to the object store need it too.
+COPY lib/storage/compress.server.ts ./lib/storage/compress.server.ts
 COPY lib/notifications.server.ts ./lib/notifications.server.ts
 COPY lib/push/send.server.ts ./lib/push/send.server.ts
 COPY lib/redis.server.ts ./lib/redis.server.ts

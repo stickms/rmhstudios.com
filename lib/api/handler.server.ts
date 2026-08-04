@@ -47,6 +47,7 @@ import {
   type RateLimitPolicy,
   type WithRateLimitOptions,
 } from '@/lib/rate-limit';
+import { canUse, upgradeRequiredBody, type MemberFeature } from '@/lib/entitlements/features';
 
 /* -------------------------------------------------------------------------- */
 /* Session                                                                    */
@@ -136,6 +137,22 @@ export interface HandlerOptions<
    * route. Defaults to `"<METHOD> <pathname>"`.
    */
   label?: string;
+  /**
+   * Gate the route behind a membership feature (`lib/entitlements/features.ts`).
+   *
+   * Refusal is a **402 carrying an upgrade envelope**, not a bare 403, so the
+   * client can render "this needs HARD-R" with a link straight to the plan
+   * instead of a toast that says "Forbidden". Routing every paywall through
+   * here is what keeps the gate and the membership page's feature list derived
+   * from the same declaration — a feature cannot be gated without also being
+   * advertised.
+   *
+   * Runs after the session check (it needs a user) and before rate limiting, so
+   * a free account hitting a paid endpoint gets the upsell rather than
+   * eventually a 429. Implies `auth: 'required'` — an anonymous caller gets 401
+   * first, because "sign in" is the more useful next step than "subscribe".
+   */
+  feature?: MemberFeature;
 }
 
 type Parsed<S extends z.ZodType | undefined> = S extends z.ZodType ? z.infer<S> : undefined;
@@ -235,6 +252,24 @@ export function defineHandler<
 
       if ((mode === 'required' || mode === 'admin') && !userId) return unauthorized();
       if (mode === 'admin' && !isAdmin) return forbidden();
+
+      /* 1b. Membership gate ---------------------------------------------- */
+      if (options.feature) {
+        if (!userId) return unauthorized();
+        // Imported lazily on purpose. `lib/entitlements` reaches for
+        // `lib/prisma.server` at module scope, and a static import here would
+        // put a live database connection in the import graph of *every* module
+        // that pulls in `defineHandler` — which broke this file's own test suite
+        // the moment the gate was added. Only routes that actually gate pay for
+        // it, and the module system caches it after the first call.
+        const { getUserTier } = await import('@/lib/entitlements');
+        // Admins are not silently exempt: an admin on a free plan should see
+        // exactly what a member sees, or the paywall is never dogfooded.
+        const tier = await getUserTier(userId);
+        if (!canUse(tier, options.feature)) {
+          return Response.json(upgradeRequiredBody(options.feature), { status: 402 });
+        }
+      }
 
       /* 2. Rate limit ---------------------------------------------------- */
       if (options.rateLimit) {

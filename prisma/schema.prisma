@@ -350,6 +350,10 @@ model User {
   profileLayout       ProfileLayout?
   savedSearches       SavedSearch[]
 
+  // ─── Emoji & sticker packs (2026-08-04) ──────────────────────────────────
+  emojiPacks    EmojiPack[]
+  emojiPackSubs EmojiPackSubscription[]
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the "online now" fallback count (WHERE lastSeenAt >= cutoff). The
@@ -6091,4 +6095,84 @@ model SavedSearch {
 
   @@index([userId])
   @@map("saved_search")
+}
+
+// ─── Emoji & sticker packs ──────────────────────────────────────────────────
+//
+// Creating a pack is a membership feature (`custom-emoji` / `sticker-packs` in
+// lib/entitlements/features.ts); SUBSCRIBING to and using one is free for
+// everyone. That asymmetry is the whole design: members supply the content, and
+// the content is what makes the site feel alive for the people who don't pay.
+//
+// Items are moderated before they render in anyone else's conversation — a
+// custom emoji is a user-supplied image drawn inline at small size in someone
+// else's thread, which is the classic vector for shipping a slur as a picture.
+
+model EmojiPack {
+  id              String   @id @default(cuid())
+  ownerId         String
+  /// Share-link identity. Immutable once published.
+  slug            String   @unique @db.VarChar(48)
+  name            String   @db.VarChar(60)
+  description     String?  @db.VarChar(300)
+  /// 'emoji' (inline, shortcode-addressable) | 'sticker' (large, standalone) | 'mixed'
+  kind            String   @default("emoji") @db.VarChar(8)
+  coverUrl        String?  @db.VarChar(500)
+  /// 'public' — listed and searchable | 'unlisted' — link only | 'private' — owner only
+  visibility      String   @default("public") @db.VarChar(8)
+  /// PENDING | APPROVED | REMOVED. Only APPROVED packs are usable by non-owners.
+  status          String   @default("PENDING") @db.VarChar(12)
+  itemCount       Int      @default(0)
+  subscriberCount Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  owner         User                    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  items         EmojiPackItem[]
+  subscriptions EmojiPackSubscription[]
+
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@index([status, visibility, subscriberCount(sort: Desc)])
+  @@map("emoji_pack")
+}
+
+model EmojiPackItem {
+  id         String   @id @default(cuid())
+  packId     String
+  /// Shortcode without colons. Unique within a pack; resolution across packs is
+  /// ordered by the subscriber's pack order, so a collision is a preference and
+  /// not an error.
+  name       String   @db.VarChar(32)
+  /// 'emoji' | 'sticker'
+  kind       String   @default("emoji") @db.VarChar(8)
+  url        String   @db.VarChar(500)
+  /// Mandatory. A custom emoji with no alt text is invisible to a screen reader
+  /// and to anyone whose images fail to load, so it is not optional at any tier.
+  alt        String   @db.VarChar(140)
+  /// Animated items are frozen to their first frame under prefers-reduced-motion.
+  animated   Boolean  @default(false)
+  position   Int      @default(0)
+  usageCount Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  pack EmojiPack @relation(fields: [packId], references: [id], onDelete: Cascade)
+
+  @@unique([packId, name])
+  @@index([packId, position])
+  @@map("emoji_pack_item")
+}
+
+model EmojiPackSubscription {
+  packId    String
+  userId    String
+  /// The subscriber's ordering, which decides shortcode precedence on collision.
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  pack EmojiPack @relation(fields: [packId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([packId, userId])
+  @@index([userId, position])
+  @@map("emoji_pack_subscription")
 }

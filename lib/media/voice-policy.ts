@@ -23,7 +23,7 @@
  * imports the same numbers to reject. One source, so the two cannot drift.
  */
 
-import type { Tier } from '@/lib/entitlements';
+import type { Tier } from '@/lib/entitlements/tiers';
 
 export interface VoiceLimits {
   /** Hard ceiling on the stored object. */
