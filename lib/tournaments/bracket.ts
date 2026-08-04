@@ -133,3 +133,56 @@ export function generateBracket(
     ? generateRoundRobin(entrantIdsBySeed)
     : generateSingleElim(entrantIdsBySeed);
 }
+
+/** A bracket match with its row id assigned and `nextKey` resolved to that id. */
+export interface PersistableMatch {
+  id: string;
+  round: number;
+  slot: number;
+  entrantAId: string | null;
+  entrantBId: string | null;
+  state: 'READY' | 'PENDING' | 'BYE';
+  /** Row id of the match this winner flows into, or null for a final/leaf. */
+  nextMatchId: string | null;
+  nextSlot: 0 | 1 | null;
+}
+
+/**
+ * Assign row ids to a bracket and resolve every `nextKey` into the actual id of
+ * the target match — in memory, before anything is written.
+ *
+ * The persistence path used to discover these ids the slow way: insert each
+ * match one at a time to learn its generated id, then walk the bracket a second
+ * time issuing an UPDATE per match to wire the links. Since `nextMatchId` is a
+ * plain string column (not a Prisma relation — see schema.prisma), the ids can
+ * simply be minted up front, which collapses both passes into a single bulk
+ * insert. Kept here, pure and id-generator-agnostic, so it stays unit-testable
+ * and this module keeps its no-I/O contract.
+ *
+ * `makeId` must return a distinct id per call.
+ */
+export function resolveBracketRows(
+  matches: BracketMatch[],
+  makeId: () => string,
+): PersistableMatch[] {
+  const keyOf = (round: number, slot: number) => `${round}:${slot}`;
+
+  // Pass 1 (in memory): mint an id for every match and index it by its key.
+  const ids = matches.map(() => makeId());
+  const idByKey = new Map<string, string>();
+  matches.forEach((m, i) => idByKey.set(keyOf(m.round, m.slot), ids[i]));
+
+  // Pass 2 (in memory): resolve each nextKey to the id minted above. A nextKey
+  // with no matching match is dropped rather than dangling, matching the old
+  // behaviour where an unresolvable link simply never got written.
+  return matches.map((m, i) => ({
+    id: ids[i],
+    round: m.round,
+    slot: m.slot,
+    entrantAId: m.entrantAId,
+    entrantBId: m.entrantBId,
+    state: m.state,
+    nextMatchId: m.nextKey ? (idByKey.get(m.nextKey) ?? null) : null,
+    nextSlot: m.nextKey && idByKey.get(m.nextKey) ? m.nextSlot : null,
+  }));
+}

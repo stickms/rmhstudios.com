@@ -34,7 +34,7 @@ export interface NotifyPrisma {
     }): Promise<{ count: number }>;
   };
   notification: {
-    create(args: { data: Record<string, unknown> }): Promise<unknown>;
+    createMany(args: { data: Record<string, unknown>[] }): Promise<{ count: number }>;
   };
 }
 
@@ -58,23 +58,25 @@ export async function notifyWatchersOfExternalListing(
     const priceDollars = Math.round(listing.priceCents / 100).toLocaleString('en-US');
     const kind = listing.listingType === 'RENT' ? 'rental' : 'home for sale';
 
-    for (const w of toNotify) {
-      await prisma.notification.create({
-        data: {
-          userId: w.userId,
-          actorId: null,
-          type: 'SYSTEM',
-          entityType: 'home_listing',
-          entityId: listing.id,
-          preview:
-            `New ${kind} matching “${w.label}”: ${listing.title} — $${priceDollars} in ${listing.city}, ${listing.state}`.slice(
-              0,
-              280,
-            ),
-          link: `/homes/listing/${listing.id}`,
-        },
-      });
-    }
+    // One bulk insert instead of an awaited create per watcher. The watch query
+    // above takes up to 2000 rows, so a broadly-matching listing meant up to
+    // 2000 sequential round-trips here; the rows are independent and none of
+    // them is read back, which is exactly what createMany is for.
+    await prisma.notification.createMany({
+      data: toNotify.map((w) => ({
+        userId: w.userId,
+        actorId: null,
+        type: 'SYSTEM' as const,
+        entityType: 'home_listing',
+        entityId: listing.id,
+        preview:
+          `New ${kind} matching “${w.label}”: ${listing.title} — $${priceDollars} in ${listing.city}, ${listing.state}`.slice(
+            0,
+            280,
+          ),
+        link: `/homes/listing/${listing.id}`,
+      })),
+    });
 
     await prisma.homeWatch.updateMany({
       where: { id: { in: toNotify.map((w) => w.id) } },

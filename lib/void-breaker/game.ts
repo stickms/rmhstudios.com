@@ -13,6 +13,7 @@ import type {
   Shockwave,
 } from './types';
 import type { SfxEvent, SfxName } from './audio';
+import { acquirePooled, type Pooled } from './pool';
 import {
   ARENA_W,
   ARENA_H,
@@ -141,6 +142,23 @@ export class VoidBreakerEngine {
   projectiles: Projectile[] = [];
   shards: Shard[] = [];
   particles: Particle[] = [];
+
+  /**
+   * Per-pool cursor for free-slot acquisition. See lib/void-breaker/pool.ts for
+   * why searches resume instead of restarting at index 0.
+   */
+  private poolCursors = { projectiles: 0, shards: 0, particles: 0, heartPickups: 0 };
+
+  /** Claim a free slot from `pool`, or undefined when every slot is in use. */
+  private acquire<T extends Pooled>(
+    pool: T[],
+    key: keyof VoidBreakerEngine['poolCursors'],
+  ): T | undefined {
+    const claim = acquirePooled(pool, this.poolCursors[key]);
+    if (!claim) return undefined;
+    this.poolCursors[key] = claim.next;
+    return claim.slot;
+  }
   popups: Popup[] = [];
   heartPickups: HeartPickup[] = [];
   /** Expanding ring effects (detonate, void pulse, boss death). */
@@ -461,7 +479,7 @@ export class VoidBreakerEngine {
     this.player.hp = this.player.maxHp;
     // Grant starting shards as real orbiting shards (shield + multiplier).
     for (let i = 0; i < startShards && this.player.shards < MAX_SHARDS; i++) {
-      const s = this.shards.find((sh) => !sh.active);
+      const s = this.acquire(this.shards, 'shards');
       if (!s) break;
       s.active = true;
       s.collected = true;
@@ -870,7 +888,7 @@ export class VoidBreakerEngine {
     const spreadStep = f.spread ?? 0.12;
     const baseAngle = p.aimAngle - (count - 1) * spreadStep * 0.5;
     for (let i = 0; i < count; i++) {
-      const slot = this.projectiles.find((pr) => !pr.active);
+      const slot = this.acquire(this.projectiles, 'projectiles');
       if (!slot) break;
       const a = baseAngle + i * spreadStep;
       const cos = Math.cos(a),
@@ -1498,7 +1516,7 @@ export class VoidBreakerEngine {
 
   /** Lob a fused AoE bomb toward the player's current position. */
   private fireBomb(e: Enemy): void {
-    const slot = this.projectiles.find((pr) => !pr.active);
+    const slot = this.acquire(this.projectiles, 'projectiles');
     if (!slot) return;
     const a = Math.atan2(this.player.y - e.y, this.player.x - e.x);
     const speed = 210;
@@ -1783,7 +1801,7 @@ export class VoidBreakerEngine {
 
   /** Fire one boss bullet along an absolute angle. */
   private fireBossBullet(e: Enemy, angle: number, speed: number): void {
-    const slot = this.projectiles.find((pr) => !pr.active);
+    const slot = this.acquire(this.projectiles, 'projectiles');
     if (!slot) return;
     slot.active = true;
     slot.x = e.x;
@@ -1847,7 +1865,7 @@ export class VoidBreakerEngine {
 
   /** Spawn a single edge wall bullet with an explicit velocity. */
   private fireWallBullet(x: number, y: number, vx: number, vy: number): void {
-    const slot = this.projectiles.find((pr) => !pr.active);
+    const slot = this.acquire(this.projectiles, 'projectiles');
     if (!slot) return;
     slot.active = true;
     slot.x = x;
@@ -1910,7 +1928,7 @@ export class VoidBreakerEngine {
     const tier = Math.floor(this.wave / BOSS_WAVE_INTERVAL);
     const speed = getScaledProjSpeed(BOSS_PROJ_SPEED, this.wave);
     for (let i = 0; i < count; i++) {
-      const slot = this.projectiles.find((pr) => !pr.active);
+      const slot = this.acquire(this.projectiles, 'projectiles');
       if (!slot) break;
       const a = (Math.PI * 2 * i) / count;
       slot.active = true;
@@ -1947,7 +1965,7 @@ export class VoidBreakerEngine {
     const speed = getScaledProjSpeed(e.isBoss ? BOSS_PROJ_SPEED : 200, this.wave);
     const dmg = getScaledEnemyDamage(1, this.wave);
     for (let i = 0; i < count; i++) {
-      const slot = this.projectiles.find((pr) => !pr.active);
+      const slot = this.acquire(this.projectiles, 'projectiles');
       if (!slot) break;
       const a = count === 1 ? baseAngle : baseAngle - spread / 2 + (spread * i) / (count - 1);
       slot.active = true;
@@ -2265,7 +2283,7 @@ export class VoidBreakerEngine {
   // ── Shards ──
 
   private spawnShard(x: number, y: number): void {
-    const slot = this.shards.find((s) => !s.active);
+    const slot = this.acquire(this.shards, 'shards');
     if (!slot) return;
     const a = Math.random() * Math.PI * 2;
     const spd = 80 + Math.random() * 60;
@@ -2341,7 +2359,7 @@ export class VoidBreakerEngine {
       }
     }
     for (let i = 0; i < 30; i++) {
-      const pp = this.particles.find((pt) => !pt.active);
+      const pp = this.acquire(this.particles, 'particles');
       if (!pp) break;
       const a = Math.random() * Math.PI * 2;
       const spd = blast * 1.5 + Math.random() * 200;
@@ -2434,7 +2452,7 @@ export class VoidBreakerEngine {
     speedRange: number,
   ): void {
     for (let i = 0; i < count; i++) {
-      const p = this.particles.find((pt) => !pt.active);
+      const p = this.acquire(this.particles, 'particles');
       if (!p) break;
       const a = Math.random() * Math.PI * 2;
       const spd = speedRange * 0.4 + Math.random() * speedRange * 0.6;
@@ -2621,7 +2639,7 @@ export class VoidBreakerEngine {
     const damage = this.abilityProg.abilities.allySynergyActive
       ? ALLY_PROJ_DAMAGE * 2
       : ALLY_PROJ_DAMAGE;
-    const proj = this.projectiles.find((p) => !p.active);
+    const proj = this.acquire(this.projectiles, 'projectiles');
     if (!proj) return;
     proj.active = true;
     proj.x = ax;
@@ -2693,7 +2711,7 @@ export class VoidBreakerEngine {
 
   /** Spawn a heart pickup at the given position. */
   private spawnHeartPickup(x: number, y: number): void {
-    const slot = this.heartPickups.find((h) => !h.active);
+    const slot = this.acquire(this.heartPickups, 'heartPickups');
     if (!slot) return;
     slot.active = true;
     slot.x = x + (Math.random() - 0.5) * 20;
