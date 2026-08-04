@@ -44,7 +44,7 @@ function DeveloperHome() {
             <Terminal className="mt-0.5 h-5 w-5 shrink-0 text-site-accent" aria-hidden />
             <span>
               Build on RMH Studios programmatically. The REST API is available to{' '}
-              <strong className="text-site-text">Starter subscribers and above</strong>. Create a
+              <strong className="text-site-text">HARD-R subscribers and above</strong>. Create a
               scoped key below, then read the{' '}
               <a
                 href={DEVELOPER_DOCS_URL}

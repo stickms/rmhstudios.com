@@ -98,7 +98,7 @@ export function buildOpenApiDocument(): Record<string, unknown> {
       version: API_VERSION,
       description:
         'The RMH Studios REST API. Authenticate every request with an API key (Bearer or X-API-Key). ' +
-        'Requires an active Starter subscription or higher. Errors use a stable `{ error: { type, code, message, request_id } }` envelope.',
+        'Requires an active HARD-R subscription or higher. Errors use a stable `{ error: { type, code, message, request_id } }` envelope.',
       contact: { name: 'RMH Studios', url: `${API_BASE_URL}/developer` },
     },
     servers: [{ url: API_BASE_URL }],

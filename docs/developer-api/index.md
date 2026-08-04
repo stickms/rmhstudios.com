@@ -7,7 +7,7 @@ Build on RMH Studios programmatically — read your account and the public feed,
 | **Base URL** | `https://rmhstudios.com` |
 | **Version** | `v1` — breaking changes ship under a new version prefix |
 | **Format** | JSON request/response bodies, UTF-8. Writes accept `application/json` |
-| **Availability** | An active **Starter** subscription or higher. Entitlement is re-checked on **every** request, so access tracks your subscription in real time |
+| **Availability** | An active **HARD-R** subscription or higher. Entitlement is re-checked on **every** request, so access tracks your subscription in real time |
 | **OpenAPI** | [`/api/v1/openapi.json`](https://rmhstudios.com/api/v1/openapi.json) — point your codegen at it |
 
 ## Quickstart

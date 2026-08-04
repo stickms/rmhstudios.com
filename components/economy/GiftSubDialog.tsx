@@ -40,8 +40,8 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
       if (res.ok) {
         toast.success(
           recipientName
-            ? t('gift-success-named', { defaultValue: 'Gifted {{months}} month{{s}} of {{tier}} to {{name}}!', months, s: months > 1 ? 's' : '', tier: tier === 'pro' ? 'Pro' : 'Starter', name: recipientName })
-            : t('gift-success', { defaultValue: 'Gifted {{months}} month{{s}} of {{tier}}!', months, s: months > 1 ? 's' : '', tier: tier === 'pro' ? 'Pro' : 'Starter' })
+            ? t('gift-success-named', { defaultValue: 'Gifted {{months}} month{{s}} of {{tier}} to {{name}}!', months, s: months > 1 ? 's' : '', tier: tier === 'pro' ? 'Pro' : 'HARD-R', name: recipientName })
+            : t('gift-success', { defaultValue: 'Gifted {{months}} month{{s}} of {{tier}}!', months, s: months > 1 ? 's' : '', tier: tier === 'pro' ? 'Pro' : 'HARD-R' })
         );
         onOpenChange(false);
       } else if (res.status === 401) {
@@ -81,7 +81,7 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
                     tier === tierOpt ? 'border-site-accent bg-site-accent/10 text-site-text' : 'border-site-border text-site-text-muted hover:text-site-text'
                   }`}
                 >
-                  {tierOpt === 'pro' ? 'Pro' : 'Starter'}
+                  {tierOpt === 'pro' ? 'Pro' : 'HARD-R'}
                   <span className="mt-0.5 flex items-center justify-center gap-0.5 text-[11px] text-site-text-dim">
                     <CoinIcon className="h-3 w-3" /> {PRICES[tierOpt].toLocaleString()}/mo
                   </span>

@@ -94,7 +94,7 @@ export interface ApiHandlerOptions {
   cost?: number;
 }
 
-// Per-key per-minute request budget. Pro+ gets a higher ceiling than Starter.
+// Per-key per-minute request budget. Pro+ gets a higher ceiling than HARD-R.
 const LIMITS: Record<string, number> = { starter: 120, pro: 600, enterprise: 600 };
 
 // Per-key DAILY quota (request units). Programmatic clients get a firm ceiling —
