@@ -1,9 +1,16 @@
 /**
  * Appearance & accessibility comfort preferences (§13) — client-safe shared
- * constants, zod, and localStorage keys used by the store, the Providers
- * runtime, the settings panel, and the sync API.
+ * constants, DOM appliers, and localStorage keys used by the store, the
+ * Providers runtime, the settings panel, and the sync API.
+ *
+ * NOTE — this module must stay zod-free; the request schema lives next door in
+ * `./prefs-schema`. `Providers.tsx` and `__root.tsx` both import constants from
+ * here on every page, and because zod builds schemas by CALLING `z.object(...)`
+ * at module scope, rolldown cannot prove those calls side-effect-free and drop
+ * them. One `import { z }` here therefore put **69.7 KB of zod on the client
+ * critical path of every route** to validate a settings PATCH body that only
+ * `/api/preferences/appearance` ever receives.
  */
-import { z } from 'zod';
 
 export const FONT_SCALES = [875, 1000, 1125, 1250] as const;
 export type FontScale = (typeof FONT_SCALES)[number];
@@ -114,21 +121,6 @@ export function applyGlassLevel(html: HTMLElement, level: number) {
     html.style.removeProperty('--glass-user-tint');
   }
 }
-
-export const appearanceComfortSchema = z.object({
-  fontScale: z
-    .union([z.literal(875), z.literal(1000), z.literal(1125), z.literal(1250)])
-    .nullable()
-    .optional(),
-  density: z.enum(DENSITIES).nullable().optional(),
-  readableFont: z.boolean().optional(),
-  customAccent: z.string().regex(HEX_RE).nullable().optional(),
-  reduceMotion: z.boolean().optional(),
-  glassLevel: z.number().int().min(0).max(4).nullable().optional(),
-  colorVision: z.enum(COLOR_VISION_MODES).nullable().optional(),
-});
-
-export type AppearanceComfortInput = z.infer<typeof appearanceComfortSchema>;
 
 export const FONT_SCALE_KEY = 'rmh-font-scale';
 export const DENSITY_KEY = 'rmh-density';

@@ -9,7 +9,7 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Select } from '@/components/ui/select';
 import { ChevronDown, ChevronUp, Search, ArrowUpDown, Filter } from 'lucide-react';
@@ -418,11 +418,23 @@ function MinigameHistoryPage() {
                     {isExpanded && (
                       <div className="border-t border-(--app-border) p-4 bg-(--app-bg)">
                         {match.gameLog && DetailComponent ? (
-                          <DetailComponent
-                            gameLog={match.gameLog}
-                            currentUserId=""
-                            players={match.players}
-                          />
+                          // Detail views are registered lazily (see
+                          // lib/rmhbox/history-display-registrations.ts) so they
+                          // stay off the site-wide entry chunk; this boundary
+                          // covers the one fetch on first expand.
+                          <Suspense
+                            fallback={
+                              <p className="text-sm text-center py-4 text-(--app-text-muted)">
+                                {t('loading-detail', { defaultValue: 'Loading details…' })}
+                              </p>
+                            }
+                          >
+                            <DetailComponent
+                              gameLog={match.gameLog}
+                              currentUserId=""
+                              players={match.players}
+                            />
+                          </Suspense>
                         ) : match.gameLog ? (
                           <pre className="text-xs overflow-auto text-(--app-text-muted) max-h-64">
                             {JSON.stringify(match.gameLog, null, 2)}

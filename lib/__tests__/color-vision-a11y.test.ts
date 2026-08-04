@@ -7,8 +7,10 @@ import {
   COLOR_VISION_HINTS,
   DEFAULT_COLOR_VISION,
   isColorVisionMode,
-  appearanceComfortSchema,
 } from '@/lib/appearance/prefs';
+// The zod schema lives apart so `prefs` stays off the client critical path —
+// see that module's header note.
+import { appearanceComfortSchema } from '@/lib/appearance/prefs-schema';
 
 /**
  * Colour-vision support has three moving parts that must agree, and each one

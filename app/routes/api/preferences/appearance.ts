@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { SITE_STYLES } from '@/stores/themeStore';
 import { ACCENT_PRESETS } from '@/lib/appearance';
-import { appearanceComfortSchema } from '@/lib/appearance/prefs';
+import { appearanceComfortSchema } from '@/lib/appearance/prefs-schema';
 import { ensureReadableAccent } from '@/lib/appearance/contrast';
 
 /**

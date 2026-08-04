@@ -13,15 +13,22 @@
  * few knobs — so every user theme is automatically a correct glass tint and
  * future optics upgrades apply to every sold theme retroactively.
  *
- * v1 maps (9 flat colors + radius) **upcast on read** ({@link upcastTokens}) so
- * existing drafts and purchases keep working — never a breaking reject.
+ * v1 maps (9 flat colors + radius) **upcast on read** (`upcastTokens`, in
+ * `./tokens-schema`) so existing drafts and purchases keep working — never a
+ * breaking reject.
  */
-import { z } from 'zod';
 import { parseHex, toHex, relativeLuminance, contrastRatio } from '@/lib/appearance/contrast';
 
 export const THEME_TOKENS_VERSION = 2 as const;
 
-const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/);
+// NOTE — this module must stay zod-free (the schemas live in
+// `@/lib/themes/tokens-schema`, which imports FROM here). `Providers.tsx` needs
+// exactly one binding from this file, `clearThemeTokens`, on every page. Because
+// zod builds its schemas by CALLING `z.object(...)` at module scope, rolldown
+// cannot treat those as side-effect-free and drop them, so that one import used
+// to pull **69.7 KB of zod** onto the client critical path of every route to
+// validate an optional localStorage blob. Keep validation on the other side of
+// the split; only the theme studio and the API need it.
 
 // tintAlpha clamps (§14.1): 0.04–0.30 on a dark base; up to 0.65 when canvasBase
 // luminance is high (a bright frost over a bright scene needs more body to read).
@@ -31,7 +38,8 @@ export const TINT_ALPHA_MAX_LIGHT = 0.65;
 /** The luminance above which canvasBase counts as a "light" scene. */
 const LIGHT_CANVAS_LUMINANCE = 0.5;
 
-function maxTintAlpha(canvasBase: string): number {
+/** The luminance-dependent tintAlpha ceiling for a base color (§14.1). */
+export function maxTintAlpha(canvasBase: string): number {
   return relativeLuminance(canvasBase) >= LIGHT_CANVAS_LUMINANCE
     ? TINT_ALPHA_MAX_LIGHT
     : TINT_ALPHA_MAX_DARK;
@@ -42,61 +50,45 @@ export function clampTintAlpha(alpha: number, canvasBase: string): number {
   return Math.min(Math.max(alpha, TINT_ALPHA_MIN), maxTintAlpha(canvasBase));
 }
 
-export const themeTokensSchema = z
-  .object({
-    v: z.literal(THEME_TOKENS_VERSION),
-    // The scene — base + three aurora glows (the radial GEOMETRY is a fixed
-    // system template; the theme only colors it).
-    canvasBase: hex,
-    glow1: hex,
-    glow2: hex,
-    glow3: hex,
-    // The material — one tint color + alpha + rim/glint strength.
-    tint: hex,
-    tintAlpha: z.number().min(TINT_ALPHA_MIN).max(TINT_ALPHA_MAX_LIGHT),
-    glintStrength: z.number().min(0).max(1),
-    // Ink & accent (as v1).
-    text: hex,
-    textMuted: hex,
-    border: hex,
-    accent: hex,
-    accentFg: hex,
-    radius: z.number().int().min(0).max(32),
-  })
-  .strict()
-  .superRefine((t, ctx) => {
-    // Skip when canvasBase already failed the hex field check (avoids re-parsing
-    // an invalid color here — the field schema already recorded that issue).
-    if (!/^#[0-9a-fA-F]{6}$/.test(t.canvasBase)) return;
-    // The high-alpha ceiling depends on the base luminance (§14.1).
-    const max = maxTintAlpha(t.canvasBase);
-    if (t.tintAlpha > max) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['tintAlpha'],
-        message: `tintAlpha must be ≤ ${max} for this canvasBase luminance`,
-      });
-    }
-  });
-
-export type ThemeTokens = z.infer<typeof themeTokensSchema>;
+/**
+ * The v2 token contract. Declared structurally rather than inferred from the zod
+ * schema so this module carries no zod (see the note at the top of the file);
+ * `tokens-schema.ts` pins its schema to this type, so the two cannot drift.
+ */
+export interface ThemeTokens {
+  v: typeof THEME_TOKENS_VERSION;
+  // The scene — base + three aurora glows (the radial GEOMETRY is a fixed
+  // system template; the theme only colors it).
+  canvasBase: string;
+  glow1: string;
+  glow2: string;
+  glow3: string;
+  // The material — one tint color + alpha + rim/glint strength.
+  tint: string;
+  tintAlpha: number;
+  glintStrength: number;
+  // Ink & accent (as v1).
+  text: string;
+  textMuted: string;
+  border: string;
+  accent: string;
+  accentFg: string;
+  radius: number;
+}
 
 /** The v1 contract (still parsed on read, then upcast — never written anew). */
-const themeTokensV1Schema = z
-  .object({
-    v: z.literal(1),
-    bg: hex,
-    surface: hex,
-    surfaceHover: hex,
-    text: hex,
-    textMuted: hex,
-    border: hex,
-    accent: hex,
-    accentFg: hex,
-    radius: z.number().int().min(0).max(32),
-  })
-  .strict();
-type ThemeTokensV1 = z.infer<typeof themeTokensV1Schema>;
+export interface ThemeTokensV1 {
+  v: 1;
+  bg: string;
+  surface: string;
+  surfaceHover: string;
+  text: string;
+  textMuted: string;
+  border: string;
+  accent: string;
+  accentFg: string;
+  radius: number;
+}
 
 /** A sensible starting palette (Glass-Dark-ish) for a new draft. */
 export const DEFAULT_THEME_TOKENS: ThemeTokens = {
@@ -304,27 +296,6 @@ export function upcastV1(v1: ThemeTokensV1): ThemeTokens {
     accentFg: v1.accentFg,
     radius: v1.radius,
   };
-}
-
-/**
- * Parse stored tokens (v2 preferred, v1 upcast) — the read path for drafts and
- * purchases persisted before v2. Throws only on a map that is neither.
- */
-export function upcastTokens(raw: unknown): ThemeTokens {
-  const v2 = themeTokensSchema.safeParse(raw);
-  if (v2.success) return v2.data;
-  const v1 = themeTokensV1Schema.safeParse(raw);
-  if (v1.success) return upcastV1(v1.data);
-  throw new Error('INVALID_TOKENS');
-}
-
-/** Best-effort read: upcast if possible, else fall back to the default palette. */
-export function readTokens(raw: unknown): ThemeTokens {
-  try {
-    return upcastTokens(raw);
-  } catch {
-    return DEFAULT_THEME_TOKENS;
-  }
 }
 
 // ── contrast gate (§14.3) — pure math, shared by editor + publish API ─────────

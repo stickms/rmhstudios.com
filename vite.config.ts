@@ -192,10 +192,18 @@ export default defineConfig({
       // NOTE: `router: { autoCodeSplitting: true }` was tested (rewrite R3-T5,
       // 2026-07-18) and is a VERIFIED NO-OP here — enabling it produced a
       // byte-identical build (same chunk hashes, same 582 chunks, same 216 KB
-      // brotli entry). Routes are already split by rolldown's per-route async
-      // chunking; the shared entry is framework+shell, not "all route shells".
-      // The real shared-entry reduction is the workspace decomposition (design
-      // §7.1), not this flag. Do not re-add it expecting a win.
+      // brotli entry). The reason (found 2026-08-04): TanStack Start's
+      // `parseStartConfig` does `configSchema.omit({ autoCodeSplitting: true })`
+      // before handing the router config on, so the option is STRIPPED from the
+      // accepted schema and Start decides splitting itself. The flag is never
+      // read — that is why the build is byte-identical, not because there was
+      // nothing to split. Do not re-add it expecting a win.
+      //
+      // What DOES matter is that `routeTree.gen.ts` imports all 739 route
+      // modules statically and Start's splitter only lifts out route
+      // COMPONENTS: anything else a route module touches at top level lands in
+      // the shared entry that every page loads. See
+      // docs/performance-audit-2026-08-04.md.
     }),
     react(),
     nitro({

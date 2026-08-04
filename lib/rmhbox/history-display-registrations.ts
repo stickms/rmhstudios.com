@@ -6,20 +6,58 @@
  * Minimalist Masterpiece, Emoji Cinema, and Wit-War.
  *
  * Reference: docs/rmhbox/design-spec/core.md §14A.5
+ *
+ * ## Why every DetailComponent is `lazy()`
+ *
+ * This module is imported for its side effects by
+ * `app/routes/rmhbox/minigames/$minigameId/history.tsx`, and `routeTree.gen.ts`
+ * imports every route module statically — so whatever this file pulls in ends up
+ * in the SHARED CLIENT ENTRY that every page of the site loads before it can
+ * hydrate. Importing the nine detail views eagerly put **46.9 KB of
+ * `components/rmhbox`** there, plus `twemoji-parser` (13.6 KB) which only
+ * `EmojiCinemaHistoryDetail` reaches, on the homepage's critical path.
+ *
+ * A detail view renders only when a visitor expands one row of one minigame's
+ * history, so each is behind its own `lazy()` boundary and its chunk is fetched
+ * on that expand. The `searchableFields` / `filterableFields` / `getSummary`
+ * config stays eager — it is plain functions, it is what the list itself reads,
+ * and it is cheap.
  */
 
+import { lazy } from 'react';
 import { registerHistoryDisplay } from './history-display-registry';
 import type { GameLog } from './history-display-registry';
 
-import RhymeTimeHistoryDetail from '@/components/rmhbox/minigames/rhyme-time/RhymeTimeHistoryDetail';
-import UndercoverAgentHistoryDetail from '@/components/rmhbox/minigames/undercover-agent/UndercoverAgentHistoryDetail';
-import CategoryCrashHistoryDetail from '@/components/rmhbox/minigames/category-crash/CategoryCrashHistoryDetail';
-import WikiRaceHistoryDetail from '@/components/rmhbox/minigames/wiki-race/WikiRaceHistoryDetail';
-import MinimalistMasterpieceHistoryDetail from '@/components/rmhbox/minigames/minimalist-masterpiece/MinimalistMasterpieceHistoryDetail';
-import EmojiCinemaHistoryDetail from '@/components/rmhbox/minigames/emoji-cinema/EmojiCinemaHistoryDetail';
-import WitWarHistoryDetail from '@/components/rmhbox/minigames/wit-war/WitWarHistoryDetail';
-import FactOrFrictionHistoryDetail from '@/components/rmhbox/minigames/fact-or-friction/FactOrFrictionHistoryDetail';
-import UndercoverEditorHistoryDetail from '@/components/rmhbox/minigames/undercover-editor/UndercoverEditorHistoryDetail';
+const RhymeTimeHistoryDetail = lazy(
+  () => import('@/components/rmhbox/minigames/rhyme-time/RhymeTimeHistoryDetail'),
+);
+const UndercoverAgentHistoryDetail = lazy(
+  () => import('@/components/rmhbox/minigames/undercover-agent/UndercoverAgentHistoryDetail'),
+);
+const CategoryCrashHistoryDetail = lazy(
+  () => import('@/components/rmhbox/minigames/category-crash/CategoryCrashHistoryDetail'),
+);
+const WikiRaceHistoryDetail = lazy(
+  () => import('@/components/rmhbox/minigames/wiki-race/WikiRaceHistoryDetail'),
+);
+const MinimalistMasterpieceHistoryDetail = lazy(
+  () =>
+    import(
+      '@/components/rmhbox/minigames/minimalist-masterpiece/MinimalistMasterpieceHistoryDetail'
+    ),
+);
+const EmojiCinemaHistoryDetail = lazy(
+  () => import('@/components/rmhbox/minigames/emoji-cinema/EmojiCinemaHistoryDetail'),
+);
+const WitWarHistoryDetail = lazy(
+  () => import('@/components/rmhbox/minigames/wit-war/WitWarHistoryDetail'),
+);
+const FactOrFrictionHistoryDetail = lazy(
+  () => import('@/components/rmhbox/minigames/fact-or-friction/FactOrFrictionHistoryDetail'),
+);
+const UndercoverEditorHistoryDetail = lazy(
+  () => import('@/components/rmhbox/minigames/undercover-editor/UndercoverEditorHistoryDetail'),
+);
 
 // ─── Rhyme Time ──────────────────────────────────────────────────
 

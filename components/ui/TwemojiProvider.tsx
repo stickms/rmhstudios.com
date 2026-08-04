@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useCallback, type ReactNode } from 'react';
-import twemoji, { type ParseCallback } from '@twemoji/api';
+import { useEffect, useRef, type ReactNode } from 'react';
+import type { ParseCallback } from '@twemoji/api';
 
 interface TwemojiProviderProps {
  children: ReactNode;
@@ -66,17 +66,30 @@ function isTwemojiExempt(el: HTMLElement): boolean {
  * changed rather than re-walking the whole tree on every mutation. The wrapper
  * defaults to `display: contents` so wrapping large regions doesn't disturb
  * layout (fl: heights, grids, etc.).
+ *
+ * **`@twemoji/api` is loaded in its own chunk, not imported at module scope.**
+ * This provider wraps the whole `<Outlet/>` in `__root.tsx`, so a static import
+ * put twemoji + twemoji-parser — 32.9 KB — into the entry chunk of every page,
+ * parsed before hydration could begin. Nothing here needs it until the mount
+ * effect runs, and the first thing that effect does is a full-subtree parse, so
+ * whatever rendered while the chunk was in flight is picked up anyway. Native
+ * glyphs (correct, just OS-styled) show for those few frames.
  */
 export function TwemojiProvider({ children, className, tag: Tag = 'span' }: TwemojiProviderProps) {
  const ref = useRef<HTMLElement>(null);
 
- const parse = useCallback((target: HTMLElement) => {
- twemoji.parse(target, PARSE_OPTIONS);
- }, []);
-
  useEffect(() => {
  const el = ref.current;
  if (!el) return;
+
+ let observer: MutationObserver | undefined;
+ let cancelled = false;
+
+ void import('@twemoji/api').then(({ default: twemoji }) => {
+ // The element can unmount while the chunk is in flight.
+ if (cancelled || !el.isConnected) return;
+
+ const parse = (target: HTMLElement) => twemoji.parse(target, PARSE_OPTIONS);
 
  parse(el); // initial pass over existing content
 
@@ -91,7 +104,7 @@ export function TwemojiProvider({ children, className, tag: Tag = 'span' }: Twem
  }
  };
 
- const observer = new MutationObserver((records) => {
+ observer = new MutationObserver((records) => {
  for (const rec of records) {
  if (rec.type === 'characterData') {
  const t = parseTarget(rec.target);
@@ -109,6 +122,7 @@ export function TwemojiProvider({ children, className, tag: Tag = 'span' }: Twem
  }
  });
  observer.observe(el, { childList: true, subtree: true, characterData: true });
+ });
 
  // Restore the native glyph when a Twemoji asset fails to load.
  //
@@ -131,10 +145,13 @@ export function TwemojiProvider({ children, className, tag: Tag = 'span' }: Twem
  el.addEventListener('error', onAssetError, true);
 
  return () => {
- observer.disconnect();
+ // `observer` is undefined if the twemoji chunk hasn't resolved yet; the
+ // flag stops that resolution from attaching one after teardown.
+ cancelled = true;
+ observer?.disconnect();
  el.removeEventListener('error', onAssetError, true);
  };
- }, [parse]);
+ }, []);
 
  const style = Tag === 'span' ? ({ display: 'contents' } as const) : undefined;
 
