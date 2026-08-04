@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { useClipboard } from '@/hooks/useClipboard';
+import { AdSlot } from '@/components/ads/AdSlot';
 
 interface SidebarOfficialBuild {
   id: string;
@@ -359,6 +360,13 @@ export function RightSidebar({
           {t('show-more', { defaultValue: 'Show more' })}
         </Link>
       </section>
+
+      {/* The rail unit, above the footer links. The rail itself is dropped
+          entirely on narrow screens, so this never competes with content on a
+          phone; on desktop it sits after every real rail module rather than
+          between them. Renders nothing for members / un-consented visitors —
+          see lib/ads/adsense.ts. */}
+      <AdSlot placement="rail" />
 
       {/* Footer */}
       <div className="text-xs text-site-text-dim px-2 space-y-1">

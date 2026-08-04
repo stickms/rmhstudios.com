@@ -26,15 +26,31 @@
 const FRAME_ANCESTORS =
   "frame-ancestors 'self' https://discord.com https://*.discord.com https://*.discordsays.com";
 
+// Google's AdSense hosts (lib/ads/). Mirrors the enumerated set in the enforced
+// edge policy (deploy/apache/rmhstudios.conf) so the report-only policy here
+// doesn't fill the violation log with ad traffic the edge already permits.
+const AD_SCRIPT_HOSTS =
+  "https://pagead2.googlesyndication.com https://tpc.googlesyndication.com " +
+  "https://partner.googleadservices.com https://adservice.google.com " +
+  "https://googleads.g.doubleclick.net";
+const AD_FRAME_HOSTS =
+  "https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com";
+
 const REPORT_ONLY_CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${AD_SCRIPT_HOSTS}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data: https://fonts.gstatic.com",
   "connect-src 'self' https: wss:",
   "media-src 'self' blob: https:",
   "worker-src 'self' blob:",
+  // Ad creatives are cross-origin iframes; without an explicit frame-src they
+  // fall back to `default-src 'self'` and every filled unit reports a violation.
+  // Protected Audience creatives use fenced frames, which do not inherit
+  // frame-src and need their own directive.
+  `frame-src 'self' blob: ${AD_FRAME_HOSTS}`,
+  "fenced-frame-src https://googleads.g.doubleclick.net https://tpc.googlesyndication.com",
   "frame-ancestors 'self' https://discord.com https://*.discord.com https://*.discordsays.com",
   "object-src 'none'",
   "base-uri 'self'",

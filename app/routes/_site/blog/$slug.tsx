@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { Calendar } from 'lucide-react';
 
 import { PageLayout } from '@/components/feed/PageLayout';
+import { AdSlot } from '@/components/ads/AdSlot';
 import { Badge } from '@/components/ui/badge';
 import { BlurImage } from '@/components/ui/BlurImage';
 import { ShareButton } from '@/components/blog/ShareButton';
@@ -155,6 +156,12 @@ function BlogPost() {
         </div>
 
         <hr className="border-site-border" />
+
+        {/* Below the body, after the reader has the post. `AdSlot` renders
+            nothing for members, for anyone who hasn't answered the cookie
+            banner, and when no publisher id is configured — see
+            lib/ads/adsense.ts. */}
+        <AdSlot placement="article-end" />
 
         <p className="text-center text-site-text-dim italic">
           {t('end-of-log', { defaultValue: 'End of Log' })}

@@ -72,6 +72,15 @@ function CookiesPage() {
                 ' — Monitor site load times, error rates, and other technical metrics to maintain and improve infrastructure.',
             })}
           </li>
+          <li>
+            <strong>
+              {t('cookie-advertising-label', { defaultValue: 'Advertising cookies' })}
+            </strong>
+            {t('cookie-advertising-desc', {
+              defaultValue:
+                ' — Set by Google AdSense on pages that display ads, to serve the ad, cap how often you see the same one, and detect invalid traffic. They are only set after you answer the cookie notice, are never set for members on a paid plan, and are never set on sign-in, settings, wallet, checkout or messages pages.',
+            })}
+          </li>
         </ul>
 
         <h2>{t('cookie-third-party-heading', { defaultValue: '3. Third-Party Cookies' })}</h2>
@@ -79,6 +88,22 @@ function CookiesPage() {
           {t('cookie-third-party-body', {
             defaultValue:
               'Some pages on our Services may include content from or links to third-party services (for example, embedded video players or analytics providers). These third parties may set their own cookies, which are governed by their respective privacy and cookie policies. RMHStudios has no control over these cookies.',
+          })}
+        </p>
+        {/* Advertising lives inside §3 rather than under a heading of its own:
+            the numbered sections are shipped translated strings in 16 locales, so
+            inserting a new numbered heading would renumber every section after
+            it, and the body has no styled `h3` level to demote it to. */}
+        <p>
+          {t('cookie-advertising-body', {
+            defaultValue:
+              'Some pages carry advertising served by Google AdSense, which is how the free tier of the Services is paid for. Google acts as a third-party vendor and may use cookies and similar identifiers to serve and measure ads. If you choose “Essential only” in the cookie notice, we ask Google for non-personalised advertising: the ads you see are then based on the page you are reading rather than on a profile of you. Note that non-personalised advertising still uses a limited amount of storage for frequency capping and fraud detection.',
+          })}
+        </p>
+        <p>
+          {t('cookie-advertising-controls', {
+            defaultValue:
+              'You can change or withdraw your choice at any time under Settings → Privacy & data, review or change your Google ad settings at adssettings.google.com, and opt out of personalised advertising from participating vendors at aboutads.info/choices. Members on any paid plan are never shown ads and never have advertising cookies set.',
           })}
         </p>
 

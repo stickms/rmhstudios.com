@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 470 files across 118 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 471 files across 119 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -400,6 +400,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/gabriels-horn/house-rule` | `POST` | `app/routes/api/gabriels-horn/house-rule.ts` |
 | `/api/gabriels-horn/leaderboard` | `GET` | `app/routes/api/gabriels-horn/leaderboard.ts` |
+
+## `/api/game-saves`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/game-saves/:gameId` | `DELETE` `GET` `POST` | `app/routes/api/game-saves/$gameId.ts` |
 
 ## `/api/games`
 
@@ -1126,7 +1134,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
-| `/api/temple-of-joy/save` | `GET` `POST` | `app/routes/api/temple-of-joy/save.ts` |
+| `/api/temple-of-joy/save` | `DELETE` `GET` `POST` | `app/routes/api/temple-of-joy/save.ts` |
 
 ## `/api/themes`
 
