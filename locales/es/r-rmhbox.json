@@ -18,6 +18,7 @@
   "joining-lobby": "Uniéndose al lobby {{lobbyId}}...",
   "leaderboard": "Tabla de clasificación",
   "leave": "Salir",
+  "loading-detail": "Loading details…",
   "loading-history": "Cargando historial...",
   "match-history": "Historial de partidas",
   "minigames": "Minijuegos",

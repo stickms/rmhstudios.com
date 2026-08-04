@@ -9,7 +9,18 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createInitialState, useTempleStore } from '../store';
-import { MIN_SERVER_GAP_MS, readSave, saveBeacon, stateToSave, saveToServer } from '../persistence';
+import {
+  MIN_SERVER_GAP_MS,
+  readSave,
+  saveBeacon,
+  saveLocal,
+  stateToSave,
+  saveToServer,
+  setSaveIdentity,
+  summarizeTempleSave,
+  templeSave,
+} from '../persistence';
+import { untranslated } from '@/lib/game-saves/conflict';
 import { applyTick, applyVigil } from '../tick';
 import type { GameState } from '../types';
 
@@ -28,11 +39,37 @@ function playing(): GameState {
   };
 }
 
+/**
+ * A `localStorage` for a Node suite.
+ *
+ * The save is identity-aware now, and the rule that makes it so — a local copy
+ * is stamped with whose it is — cannot be tested without somewhere to stamp it.
+ */
+function stubStorage(): Storage {
+  const map = new Map<string, string>();
+  const storage = {
+    getItem: (key: string) => map.get(key) ?? null,
+    setItem: (key: string, value: string) => void map.set(key, value),
+    removeItem: (key: string) => void map.delete(key),
+    clear: () => map.clear(),
+    key: (index: number) => [...map.keys()][index] ?? null,
+    get length() {
+      return map.size;
+    },
+  } satisfies Storage;
+  vi.stubGlobal('localStorage', storage);
+  return storage;
+}
+
 beforeEach(() => {
   useTempleStore.setState(createInitialState());
+  // Signed in unless a test says otherwise: every server-write assertion below
+  // is about a player who has an account to write to.
+  setSaveIdentity('player-1');
 });
 
 afterEach(() => {
+  setSaveIdentity(null);
   vi.unstubAllGlobals();
 });
 
@@ -158,6 +195,91 @@ describe('the ordinary write', () => {
     // The route permits 20 requests a minute. The gap has to leave room for
     // the interval, the idle timer and a player switching tabs.
     expect(60_000 / MIN_SERVER_GAP_MS).toBeLessThanOrEqual(20);
+  });
+});
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Playing without an account
+   ══════════════════════════════════════════════════════════════════════════ */
+
+describe('a guest', () => {
+  it('never touches the network', async () => {
+    setSaveIdentity(null);
+    const fetchMock = vi.fn(() => Promise.resolve(new Response('{}')));
+    const sendBeacon = vi.fn(() => true);
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('navigator', { sendBeacon });
+
+    await saveToServer(playing(), AT);
+    expect(saveBeacon(playing(), AT)).toBe(false);
+    expect(await templeSave.readCloud()).toBeNull();
+
+    // A signed-out player has no row to write, and a 401 on every autosave is
+    // how you teach somebody to ignore their console.
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(sendBeacon).not.toHaveBeenCalled();
+  });
+
+  it('still writes the save this browser holds', () => {
+    setSaveIdentity(null);
+    stubStorage();
+
+    saveLocal(playing(), AT);
+    const back = templeSave.readLocal();
+
+    expect(back).toBeTruthy();
+    expect(back!.lifetimeJoy).toBe(99_999);
+    expect(back!.lastSaved).toBe(AT);
+  });
+});
+
+describe('a save on a shared browser', () => {
+  it('is claimed by whoever signs in after playing as a guest', () => {
+    stubStorage();
+    setSaveIdentity(null);
+    saveLocal(playing(), AT);
+
+    // The whole point of guest play: make an account, keep the temple.
+    setSaveIdentity('player-1');
+    expect(templeSave.readLocal()?.lifetimeJoy).toBe(99_999);
+  });
+
+  it('is invisible to a different account', () => {
+    stubStorage();
+    setSaveIdentity('player-1');
+    saveLocal(playing(), AT);
+
+    // Two people, one laptop. Reading somebody else's run would be bad; playing
+    // on and autosaving it to YOUR account would be worse.
+    setSaveIdentity('player-2');
+    expect(templeSave.readLocal()).toBeNull();
+
+    setSaveIdentity('player-1');
+    expect(templeSave.readLocal()).toBeTruthy();
+  });
+
+  it('survives a build that predates the ownership stamp', () => {
+    const storage = stubStorage();
+    // What is on disk for everyone playing today: a save, and no meta beside it.
+    storage.setItem('temple_of_joy_save_v2', JSON.stringify(stateToSave(playing(), AT)));
+
+    setSaveIdentity('player-1');
+    expect(templeSave.readLocal()?.lifetimeJoy).toBe(99_999);
+  });
+});
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Choosing between two temples
+   ══════════════════════════════════════════════════════════════════════════ */
+
+describe('the conflict summary', () => {
+  it('reports the figures a player recognises their own run by', () => {
+    const summary = summarizeTempleSave(stateToSave(playing(), AT), untranslated);
+
+    expect(summary.savedAt).toBe(AT);
+    expect(summary.headline).toContain('joy');
+    // Sources owned: the 30 Devotees from `playing()`.
+    expect(summary.lines.map((line) => line.value)).toContain('30');
   });
 });
 

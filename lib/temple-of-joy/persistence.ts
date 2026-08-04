@@ -20,6 +20,9 @@ import {
   BOWL_PINS,
   createBowl,
 } from './bowling';
+import { createCloudSave, jsonTransport } from '@/lib/game-saves/cloud-save';
+import { untranslated, type SaveSummary, type SummaryTranslate } from '@/lib/game-saves/conflict';
+import { fmt, fmtCount, formatDuration } from './numbers';
 import { createGarden, emptyPlots, GARDEN_SIZE } from './minigames/garden';
 import { createChoir } from './minigames/choir';
 import { createExchange } from './minigames/exchange';
@@ -294,6 +297,116 @@ export function readSave(raw: unknown): Partial<GameState> | null {
    ══════════════════════════════════════════════════════════════════════════ */
 
 /**
+ * The temple's save, wherever it lives.
+ *
+ * The mechanics — stamping the local copy with whose it is, no-opping the
+ * network while signed out, and refusing to pick between two saves that have
+ * genuinely diverged — belong to every game on the site, so they live in
+ * `lib/game-saves`. What is temple-specific is only what is below: which
+ * document shapes count as a save, which of its counters can never run
+ * backwards, and which four figures a player needs in order to choose between
+ * two runs.
+ *
+ * The endpoint is the temple's own rather than the shared one. It predates the
+ * shared table and has a working row per account; moving it would be a
+ * migration with nothing on the other side.
+ */
+export const templeSave = createCloudSave<SaveData>({
+  gameId: 'temple-of-joy',
+  localKey: LOCAL_KEY,
+  transport: jsonTransport('/api/temple-of-joy/save'),
+
+  /**
+   * v1, v2 and v3 all come back as a current-version document.
+   *
+   * The v1 migration has to run *here*, not at load: the conflict prompt
+   * compares counters, and a v1 save reports none of them. Normalising on the
+   * way in means the comparison, the summary card and the game all read the
+   * same shape.
+   */
+  parse(raw) {
+    const state = readSave(raw);
+    if (!state) return null;
+    const probe = raw as { version?: unknown };
+    if (typeof probe.version === 'number' && READABLE_VERSIONS.has(probe.version)) {
+      return raw as SaveData;
+    }
+    // A v1 save carries no timestamp of its own, and a zero here would have the
+    // vigil credit an absence measured from 1970.
+    return stateToSave({ ...createInitialState(), ...state }, num(state.lastSaved) || Date.now());
+  },
+
+  /**
+   * The counters an honest temple can only ever add to.
+   *
+   * Deliberately excludes `joy`, `grace` and anything else that is *spent*: a
+   * save with less joy than another may simply have bought something, and
+   * treating that as a divergence would put a dialog in front of a player every
+   * time they shopped on two devices. `graceEarned` is the lifetime figure and
+   * `graceSpent` only rises, so both are safe where `grace` is not.
+   */
+  monotonic: (save) => ({
+    lifetimeJoy: num(save.lifetimeJoy),
+    playtime: num(save.playtime),
+    totalTouches: num(save.totalTouches),
+    ascensions: num(save.ascensions),
+    graceEarned: num(save.graceEarned),
+    graceSpent: num(save.graceSpent),
+    halosCaught: num(save.halosCaught),
+    sinnersStruck: num(save.sinnersStruck),
+    mannaGathered: num(save.manna?.gathered),
+    trophies: save.trophies?.length ?? 0,
+    levels: Object.values(save.sourceLevels ?? {}).reduce((sum, n) => sum + num(n), 0),
+  }),
+
+  savedAt: (save) => num(save.lastSaved),
+
+  summarize: (save) => summarizeTempleSave(save, untranslated),
+});
+
+/**
+ * A save, as the four figures somebody needs to recognise their own run.
+ *
+ * Lifetime joy is the headline because it is the only number that survives an
+ * ascension and therefore the only one that means "how far along is this". The
+ * rest answer the questions a player actually asks when told they have two
+ * saves: how long did I play it, how big did it get, and how many times have I
+ * been round.
+ */
+export function summarizeTempleSave(save: SaveData, t: SummaryTranslate): SaveSummary {
+  return {
+    savedAt: num(save.lastSaved),
+    headline: t('save-summary-joy', {
+      joy: fmt(num(save.lifetimeJoy), save.numberFormat ?? 'named'),
+      defaultValue: '{{joy}} joy, all time',
+    }),
+    lines: [
+      {
+        label: t('time-in-temple', { defaultValue: 'Time in the temple' }),
+        value: formatDuration(num(save.playtime)),
+      },
+      {
+        label: t('sources-owned', { defaultValue: 'Sources owned' }),
+        value: fmtCount(Object.values(save.sources ?? {}).reduce((sum, n) => sum + num(n), 0)),
+      },
+      {
+        label: t('ascensions', { defaultValue: 'Ascensions' }),
+        value: String(num(save.ascensions)),
+      },
+      {
+        label: t('trophies-earned', { defaultValue: 'Trophies' }),
+        value: String(save.trophies?.length ?? 0),
+      },
+    ],
+  };
+}
+
+/** Tell the save who is playing. `null` while signed out. */
+export function setSaveIdentity(userId: string | null): void {
+  templeSave.setIdentity(userId);
+}
+
+/**
  * The guaranteed write.
  *
  * Synchronous, same-process, no network — which is why it is the one that runs
@@ -302,34 +415,15 @@ export function readSave(raw: unknown): Partial<GameState> | null {
  * survives closing the laptop.
  */
 export function saveLocal(state: GameState, at = Date.now()): void {
-  try {
-    localStorage.setItem(LOCAL_KEY, JSON.stringify(stateToSave(state, at)));
-  } catch {
-    // Private browsing, quota, a disabled storage API — none of which should
-    // interrupt a game that also saves to the server.
-  }
+  templeSave.writeLocal(stateToSave(state, at), at);
 }
 
 export function loadLocal(): unknown {
-  try {
-    const raw = localStorage.getItem(LOCAL_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+  return templeSave.readLocal();
 }
 
-const SAVE_URL = '/api/temple-of-joy/save';
-
 export async function saveToServer(state: GameState, at = Date.now()): Promise<void> {
-  await fetch(SAVE_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    // `keepalive` lets the request outlive the document, which matters on the
-    // paths that fire while the page is going away.
-    keepalive: true,
-    body: JSON.stringify({ saveData: stateToSave(state, at) }),
-  });
+  await templeSave.writeCloud(stateToSave(state, at), at);
 }
 
 /**
@@ -337,51 +431,19 @@ export async function saveToServer(state: GameState, at = Date.now()): Promise<v
  *
  * A plain `fetch` issued from `pagehide` is routinely cancelled mid-flight —
  * the browser is under no obligation to finish a request for a document that
- * no longer exists. `sendBeacon` is the API built for exactly this: the
- * request is handed to the browser's own queue and survives the unload.
+ * no longer exists. `sendBeacon` is the API built for exactly this: the request
+ * is handed to the browser's own queue and survives the unload.
  *
- * Both it and `keepalive` cap the body at 64 KB, and a late-game save can
- * approach that, so a `false` return falls through to `keepalive` and, failing
- * that, to nothing at all — which is survivable, because {@link saveLocal} has
- * already run by the time this is called.
+ * Returns `false` for a signed-out player, who has no server to reach. That is
+ * not a failure: {@link saveLocal} has already run by the time this is called,
+ * and for a guest the local copy *is* the save.
  */
 export function saveBeacon(state: GameState, at = Date.now()): boolean {
-  const body = JSON.stringify({ saveData: stateToSave(state, at) });
-
-  try {
-    if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
-      // The Blob's type becomes the Content-Type; without it the route sees
-      // `text/plain` and some stacks refuse to parse the body.
-      if (navigator.sendBeacon(SAVE_URL, new Blob([body], { type: 'application/json' }))) {
-        return true;
-      }
-    }
-  } catch {
-    // Beacon can throw on a body the browser considers too large.
-  }
-
-  try {
-    void fetch(SAVE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      keepalive: true,
-      body,
-    }).catch(() => {});
-    return true;
-  } catch {
-    return false;
-  }
+  return templeSave.writeBeacon(stateToSave(state, at), at);
 }
 
 export async function loadFromServer(): Promise<unknown> {
-  try {
-    const res = await fetch('/api/temple-of-joy/save');
-    if (!res.ok) return null;
-    const json = (await res.json()) as { saveData?: unknown };
-    return json.saveData ?? null;
-  } catch {
-    return null;
-  }
+  return templeSave.readCloud();
 }
 
 /* ── Import / export ─────────────────────────────────────────────────────── */
@@ -556,16 +618,5 @@ export function saveNow(): Promise<void> {
  * caller resets the store either way.
  */
 export async function clearSave(): Promise<void> {
-  try {
-    localStorage.removeItem(LOCAL_KEY);
-  } catch {
-    // Private browsing, quota, a disabled storage API.
-  }
-
-  try {
-    await fetch(SAVE_URL, { method: 'DELETE', keepalive: true });
-  } catch {
-    // Offline, signed out, or the request outlived the page. The local copy is
-    // already gone, which is what the player asked for.
-  }
+  await templeSave.clear();
 }

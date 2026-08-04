@@ -531,10 +531,18 @@
  * is neither. At 844×340 the stacked layout gave the counter 119 pixels, the
  * panel 156, and the altar the 56 that were left — a strip, on a screen with
  * five hundred unused pixels of width running across it. Short and wide is the
- * case the side-by-side layout was invented for, so it applies there too, at a
- * width no phone in landscape is below.
+ * case the side-by-side layout was invented for, so it applies there too.
+ *
+ * The width it applies from is **34rem**, not the 40rem it was. 40rem excluded
+ * exactly one class of device — the small phone in landscape, 568×320 — and
+ * handed it the stacked layout on a screen 320 pixels tall. The arithmetic
+ * there does not close: 46dvh of dock and a 3.75rem bar leave 113 pixels of
+ * stage, and the counter alone wants ninety of them, so the altar overflowed
+ * its own box and the room sat on top of the shop. Two columns fit that screen
+ * comfortably — a 17rem dock and 272 pixels of room — and one column never
+ * will.
  */
-@media (min-width: 62rem), (min-width: 40rem) and (max-height: 34rem) {
+@media (min-width: 62rem), (min-width: 34rem) and (max-height: 34rem) {
   .toj-body {
     flex-direction: row;
     align-items: stretch;
@@ -574,12 +582,21 @@
 
 /* Sideways on a phone the room is about 480×300, so the field is bounded by
    height rather than by width — and it is the whole reason to have turned the
-   phone. */
-@media (min-width: 40rem) and (max-height: 34rem) {
+   phone.
+
+   `--toj-bar-h` is declared here too. Below 62rem the navigation is the bottom
+   bar in BOTH layouts (see `BAR_QUERY` in `hooks.ts`), and the toast rail has to
+   sit clear of it — it reads the token with a `0px` fallback, which was correct
+   only while the bar existed nowhere but the stacked layout. */
+@media (min-width: 34rem) and (max-height: 34rem) {
   .toj {
     --toj-field: min(62dvh, 34vw, 20rem);
     --toj-panel-w: clamp(17rem, 40vw, 24rem);
+    /* 2.5rem of slot plus the bar's own 0.25rem of padding, twice. Written down
+       because the toast rail measures itself against it. */
+    --toj-bar-h: 3rem;
   }
+
 }
 
 /**
@@ -589,12 +606,12 @@
  *
  * The condition is the exact complement of the side-by-side one above, written
  * out rather than approximated: a tall screen narrower than 62rem, OR any
- * screen narrower than 40rem. Get that wrong in either direction and both
+ * screen narrower than 34rem. Get that wrong in either direction and both
  * layouts apply at once — the dock takes a fixed height inside a row, or the
  * sanctum a corner it does not have — and the winner is decided by which rule
  * happens to be further down the file.
  */
-@media (max-width: 39.99rem), (max-width: 61.99rem) and (min-height: 34.01rem) {
+@media (max-width: 33.99rem), (max-width: 61.99rem) and (min-height: 34.01rem) {
   .toj {
     /**
      * One number for the split, so the toast rail can sit clear of the panel
@@ -683,7 +700,7 @@
  * a strip — you turned the phone sideways to read a list, not to admire the
  * architecture.
  */
-@media (max-width: 39.99rem) and (max-height: 32rem) {
+@media (max-width: 33.99rem) and (max-height: 32rem) {
   .toj {
     /* The panel keeps most of the height — you turned the phone sideways to
        read a list — but not so much that the field is squeezed to nothing. The
@@ -883,6 +900,10 @@
   color: var(--toj-gold-deep);
 }
 
+.toj-chip[data-kind='sources'] {
+  color: var(--toj-ink-soft);
+}
+
 .toj-hud-actions {
   display: flex;
   gap: var(--toj-2);
@@ -968,9 +989,16 @@
  * whole (it is the number), the chips are already short, and losing the tail of
  * "· 20% held by Sinners" costs less than losing two thirds of the globe.
  */
-@media (max-height: 34rem) and (min-width: 40rem) {
+@media (max-height: 34rem) and (min-width: 34rem) {
   .toj-hud {
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    /* The rate column is `max-content` with a floor, not a bare `1fr`. A `1fr`
+       track shrinks all the way to zero, and on a 568px screen it did: the row
+       is a counter, a rate, four chips and a way out, and the grid resolved the
+       overflow by cutting "71.17 M/s" down to "7". A track that cannot go below
+       5rem pushes the pressure onto the chips instead, which is where it
+       belongs — they are short, and the one that is purely decorative gets out
+       of the way below. */
+    grid-template-columns: auto minmax(5rem, max-content) minmax(0, 1fr) auto;
     align-items: center;
     column-gap: var(--toj-gap-between);
   }
@@ -987,11 +1015,49 @@
     grid-column: 3;
     grid-row: 1;
     flex-wrap: nowrap;
+    /* Last in, first out. The strip can hold three chips on a 568px screen and
+       four on an 844px one, so it scrolls rather than crushing them — the same
+       bargain, and the same fade, the tab rail makes. */
+    overflow-x: auto;
+    scrollbar-width: none;
+    mask-image: linear-gradient(to right, transparent 0, #000 var(--toj-2), #000 100%);
+  }
+
+  .toj-chips::-webkit-scrollbar {
+    display: none;
   }
 
   .toj-hud-actions {
     grid-column: 4;
     grid-row: 1;
+  }
+
+  /* The one chip that is neither a number you own nor a button that goes
+     somewhere — Devotion is a derived percentage, and the Temple panel itemises
+     it. It is the right thing to lose first on the narrowest screen that still
+     gets the one-row head. */
+  .toj-chip[data-kind='devotion'] {
+    display: none;
+  }
+}
+
+/* Above that width there is room for all four again. */
+@media (max-height: 34rem) and (min-width: 46rem) {
+  .toj-chip[data-kind='devotion'] {
+    display: inline-flex;
+  }
+}
+
+/* The head of a panel, on a screen with no height. The title is still the
+   largest thing in the dock; it just stops taking 28px of padding with it. */
+@media (max-height: 34rem) {
+  .toj-panel-head {
+    padding-top: var(--toj-3);
+    padding-bottom: var(--toj-2);
+  }
+
+  .toj-panel-title {
+    font-size: 1.1rem;
   }
 }
 
@@ -1042,7 +1108,7 @@
    earlier, and at equal specificity the `.toj-sanctum` margin above would win.
    Anywhere the two-column body applies, it already carries the gutter for both
    of its children, so the room stops paying it twice. */
-@media (min-width: 62rem), (min-width: 40rem) and (max-height: 34rem) {
+@media (min-width: 62rem), (min-width: 34rem) and (max-height: 34rem) {
   .toj-sanctum {
     margin: 0;
   }
@@ -1863,6 +1929,11 @@
   position: relative;
   display: inline-flex;
   align-items: center;
+  /* A flex child shrinks by default, and a scrolling rail is exactly where that
+     is wrong: rather than overflowing (which is what the scroller is FOR) the
+     pills compressed until each label ran out of its own box and printed over
+     the glyph of the tab beside it. The rail read as a rendering fault. */
+  flex-shrink: 0;
   /* WITHIN: an icon and the word it names. */
   gap: var(--toj-gap-within);
   padding: var(--toj-2) var(--toj-3);
@@ -1981,6 +2052,48 @@
 
 .toj[data-nav='compact'] .toj-tabs[data-variant='bar'] .toj-tab-glyph {
   font-size: 1.35rem;
+}
+
+/**
+ * The bar, on a phone held sideways.
+ *
+ * Glyph BESIDE word rather than over it. Stacked, a slot is 3.25rem of a
+ * 390-pixel screen and the bar is a sixth of everything; laid out in a row it is
+ * 2.5rem, there is width to spare in landscape, and the twenty pixels go to the
+ * list — which is the reason somebody turned the phone.
+ *
+ * Here rather than up with the other landscape rules, and that is cascade
+ * rather than tidiness: the stacked bar's `min-height` and `flex-direction` are
+ * declared immediately above at equal specificity, so stated earlier this block
+ * silently lost. The same trap is documented twice more in this file.
+ */
+@media (min-width: 34rem) and (max-height: 34rem) {
+  /* In flow inside the frame here rather than `fixed` to the viewport, so the
+     frame's own safe-area padding already sits under it — adding the inset
+     again would float the labels a notch above the glass. */
+  .toj-tabs[data-variant='bar'] {
+    padding-bottom: var(--toj-1);
+  }
+
+  .toj-tabs[data-variant='bar'] .toj-tab {
+    flex-direction: row;
+    gap: var(--toj-gap-within);
+    min-height: 2.5rem;
+    white-space: nowrap;
+  }
+
+  .toj-tabs[data-variant='bar'] .toj-tab-glyph {
+    font-size: 1.05rem;
+  }
+
+  .toj-tabs[data-variant='bar'] .toj-tab-label {
+    font-size: 0.74rem;
+    /* One line, ellipsised — the two-line clamp exists for a 62px slot, and a
+       slot here is twice that. */
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    text-overflow: ellipsis;
+  }
 }
 
 /* The dot rides the glyph up as the label goes. */
@@ -2232,6 +2345,81 @@
      wants. The muted ink is what says "nothing here yet". */
 }
 
+/**
+ * The holdings strip — a standing readout above a list.
+ *
+ * Auto-fit rather than a fixed column count: it is three figures in a 26rem
+ * desktop dock and two-plus-a-wrap in a 17rem landscape one, and the alternative
+ * is a media query per panel that uses it.
+ */
+.toj-holdings-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: var(--toj-2);
+  /* `--toj-break` would be right between two unrelated blocks; this one is the
+     header of the list directly under it, and the sticky toolbar carries its own
+     `--toj-flow` underneath. */
+  margin-bottom: var(--toj-4);
+  padding: var(--toj-3);
+  border-radius: var(--toj-radius);
+  background: var(--toj-surface-sunk);
+  border: 1px solid color-mix(in oklab, var(--toj-rule) 60%, transparent);
+}
+
+.toj-figure {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.toj-figure-value {
+  font-family: var(--toj-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: var(--toj-display-tracking);
+  font-variant-numeric: var(--toj-figures);
+}
+
+.toj-figure-label {
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--toj-ink-soft);
+}
+
+/**
+ * Sideways, the strip lies down.
+ *
+ * A three-cell grid of value-over-label is four lines tall, and the dock it
+ * heads is about 230 pixels on a landscape phone — it was taking half of the
+ * list it exists to summarise. Laid out as a wrapping row of "value label"
+ * pairs it is one line, occasionally two, and the shop gets its rows back.
+ */
+@media (max-height: 34rem) {
+  .toj-holdings-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--toj-1) var(--toj-gap-between);
+    padding: var(--toj-2) var(--toj-3);
+    margin-bottom: var(--toj-2);
+  }
+
+  .toj-figure {
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--toj-1);
+  }
+
+  .toj-figure-value {
+    font-size: 0.92rem;
+  }
+
+  .toj-figure-label {
+    font-size: 0.68rem;
+  }
+}
+
 /* ── Rows ── */
 
 /**
@@ -2327,6 +2515,7 @@ button.toj-row:active:not(:disabled) {
 }
 
 .toj-row-icon {
+  position: relative;
   width: 2.1rem;
   height: 2.1rem;
   display: grid;
@@ -2336,6 +2525,42 @@ button.toj-row:active:not(:disabled) {
   background: var(--toj-surface);
   border: 1px solid var(--toj-rule);
   flex-shrink: 0;
+}
+
+/**
+ * How many you own, on the glyph.
+ *
+ * Overhangs the chip into the gutter between the icon and the name rather than
+ * sitting under it: the gutter is 12px of nothing, the row is the densest thing
+ * in the game, and a count that added height to every row would cost a list row
+ * on exactly the screens that have the fewest — a phone in landscape shows four.
+ *
+ * `min-width` with centred text so "1" and "214" are the same shape, because a
+ * badge that changes width as you buy makes the whole column twitch.
+ */
+.toj-row-owned {
+  position: absolute;
+  bottom: -0.3rem;
+  inset-inline-end: -0.45rem;
+  min-width: 1.15rem;
+  padding: 0 0.25rem;
+  border-radius: var(--toj-radius-pill);
+  background: var(--toj-ink);
+  color: var(--toj-surface);
+  font-size: 0.64rem;
+  font-weight: 650;
+  line-height: 1.45;
+  text-align: center;
+  font-variant-numeric: var(--toj-figures);
+  /* A ring in the row's own fill, so the badge reads as ON the glyph rather
+     than as a third object floating between the glyph and the name. */
+  box-shadow: 0 0 0 2px var(--toj-surface-sunk);
+}
+
+/* An affordable row tints its fill gold, and a ring drawn in the flat surface
+   colour would cut a pale notch out of it. */
+.toj-row[data-affordable='true'] .toj-row-owned {
+  box-shadow: 0 0 0 2px var(--toj-gold-wash);
 }
 
 .toj-row-body {
@@ -2500,12 +2725,40 @@ button.toj-row:active:not(:disabled) {
    rather than as a stats panel with a table dropped into it. */
 
 .toj-holding {
+  position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--toj-gap-within) var(--toj-gap-between);
   padding: var(--toj-3) 0;
   border-bottom: 1px solid var(--toj-rule);
+  isolation: isolate;
+}
+
+/**
+ * The share of the rate, as a bar under the row.
+ *
+ * A hairline along the bottom edge rather than a filled band behind the text:
+ * the ledger is twenty rows deep and twenty tinted bands is a bar chart you
+ * have to read *through*. Two pixels on the rule that is already there costs
+ * nothing and answers the question the column exists for — which of these is
+ * carrying the run — without anyone reading a single number.
+ *
+ * `--toj-holding-share` is a percentage set per row. Absent (no rate at all),
+ * the bar has zero width and the row is exactly what it was.
+ */
+.toj-holding::after {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  bottom: -1px;
+  z-index: -1;
+  height: 2px;
+  width: var(--toj-holding-share, 0%);
+  max-width: 100%;
+  border-radius: 2px;
+  background: var(--toj-gold);
+  opacity: 0.75;
 }
 
 .toj-holding:last-child {
@@ -3919,7 +4172,7 @@ button.toj-row:active:not(:disabled) {
    screen with the counter floating over it, the shop is a list under that, and
    navigation is a fixed bar in the thumb's arc. */
 
-@media (max-width: 39.99rem), (max-width: 61.99rem) and (min-height: 34.01rem) {
+@media (max-width: 33.99rem), (max-width: 61.99rem) and (min-height: 34.01rem) {
   /**
    * ── The DOCUMENT scrolls here, not a box inside it ──────────────────────
    *

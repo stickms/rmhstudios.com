@@ -109,3 +109,19 @@ export function formatTimeTo(cost: number, held: number, rate: number): string {
   if (rate <= 0) return '—';
   return formatDuration((cost - held) / rate);
 }
+
+/**
+ * A source's share of the rate, to one decimal.
+ *
+ * Never rounded to a bare "0.0" while it is still making something: a source
+ * that has been overtaken ten times over is exactly the one a player is
+ * deciding whether to keep buying, and "0.0%" and "<0.1%" answer that question
+ * differently. Returns `null` when there is no rate to take a share of, so the
+ * caller can say nothing rather than divide by zero and print `NaN`.
+ */
+export function sharePercent(part: number, total: number): string | null {
+  if (!Number.isFinite(part) || !Number.isFinite(total) || total <= 0) return null;
+  const share = (part / total) * 100;
+  if (share > 0 && share < 0.05) return '<0.1';
+  return share.toFixed(1);
+}

@@ -14,7 +14,7 @@
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
-import { fmt, fmtCount, formatTimeTo } from '@/lib/temple-of-joy/numbers';
+import { fmt, fmtCount, formatTimeTo, sharePercent } from '@/lib/temple-of-joy/numbers';
 import type { BuyQty, SourceId } from '@/lib/temple-of-joy/types';
 import { SOURCES } from '@/lib/temple-of-joy/data/sources';
 import { nextGlobe } from '@/lib/temple-of-joy/data/globes';
@@ -30,6 +30,8 @@ import {
   computeSourceCostN,
   computeSourceJps,
   computeSourceVisible,
+  computeTotalLevels,
+  computeTotalSources,
 } from '@/lib/temple-of-joy/engine';
 import { levelCost } from '@/lib/temple-of-joy/minigames/manna';
 import { useFlash, useTempleSnapshot, useTempleValue } from '../hooks';
@@ -52,6 +54,12 @@ export function SourcesPanel() {
     const jps = computeJps(s);
     const best = computeBestPurchase(s);
     const bestId = best?.kind === 'source' ? best.id : null;
+    // The denominator for every row's share. Summed over ALL sources rather
+    // than taken from `computeJps`, because that figure carries the touch
+    // bonuses and the Sinners' drain — dividing by it would make the shares add
+    // up to something other than a hundred, which is the one thing a percentage
+    // has to do.
+    const fromSources = SOURCES.reduce((sum, source) => sum + computeSourceJps(s, source.id), 0);
 
     return SOURCES.filter((source) => computeSourceVisible(s, source.id)).map((source) => {
       const owned = s.sources[source.id] ?? 0;
@@ -59,10 +67,12 @@ export function SourcesPanel() {
       const cost = computeSourceCostN(source.id, owned, Math.max(1, count));
       const level = s.sourceLevels[source.id] ?? 0;
       const raiseCost = levelCost(level);
+      const output = computeSourceJps(s, source.id);
 
       return {
         id: source.id,
         owned,
+        ownedLabel: fmtCount(owned),
         count,
         level,
         raiseCost,
@@ -72,7 +82,17 @@ export function SourcesPanel() {
         wait: formatTimeTo(cost, s.joy, jps),
         // What this source is contributing right now, which is the honest
         // answer to "is it still worth buying these".
-        output: fmt(computeSourceJps(s, source.id), s.numberFormat),
+        output: fmt(output, s.numberFormat),
+        // And what it is contributing *relative to everything else*, which is
+        // the answer to "where should the next purchase go".
+        //
+        // Suppressed below a tenth of a percent rather than shown as `<0.1`.
+        // The ledger says `<0.1` on purpose — there, the question is "is this
+        // still doing anything at all". Here the line is a reason to buy, and
+        // twelve consecutive rows all reading "<0.1% of your rate" is a column
+        // of noise that makes the three rows where the share MATTERS harder to
+        // find, not easier.
+        share: shareOrNull(output, fromSources),
         recommended: source.id === bestId,
       };
     });
@@ -88,6 +108,8 @@ export function SourcesPanel() {
 
   return (
     <>
+      <Holdings />
+
       <div className="toj-toolbar">
         {/* The quantity switch is meaningless while raising — a Manna level is
             always exactly one — so it steps aside rather than sitting there
@@ -136,6 +158,7 @@ export function SourcesPanel() {
             <TempleRow
               key={row.id}
               icon={<Glyph>{def.icon}</Glyph>}
+              owned={row.owned > 0 ? row.ownedLabel : undefined}
               name={def.name}
               note={
                 <>
@@ -181,26 +204,27 @@ export function SourcesPanel() {
           <TempleRow
             key={row.id}
             icon={<Glyph>{def.icon}</Glyph>}
+            owned={row.owned > 0 ? row.ownedLabel : undefined}
             name={def.name}
             note={
               row.owned > 0
-                ? t('source-output', {
-                    rate: row.output,
-                    defaultValue: 'making {{rate}} joy per second',
-                  })
+                ? row.share
+                  ? t('source-output-share', {
+                      rate: row.output,
+                      percent: row.share,
+                      defaultValue: '{{rate}}/s · {{percent}}% of your rate',
+                    })
+                  : t('source-output', {
+                      rate: row.output,
+                      defaultValue: 'making {{rate}} joy per second',
+                    })
                 : def.tagline
             }
             price={row.cost}
-            meta={
-              row.affordable
-                ? t('owned-count', { owned: fmtCount(row.owned), defaultValue: '{{owned}} owned' })
-                : row.wait
-                  ? t('in-time', { time: row.wait, defaultValue: 'in {{time}}' })
-                  : t('owned-count', {
-                      owned: fmtCount(row.owned),
-                      defaultValue: '{{owned}} owned',
-                    })
-            }
+            // The count used to live here, and only while you could afford the
+            // row — it is a badge on the glyph now, so this line is free to be
+            // the one thing it was competing with: how long until you can.
+            meta={row.wait ? t('in-time', { time: row.wait, defaultValue: 'in {{time}}' }) : null}
             affordable={row.affordable}
             recommended={row.recommended}
             flash={flashed === row.id}
@@ -220,6 +244,88 @@ export function SourcesPanel() {
         );
       })}
     </>
+  );
+}
+
+/**
+ * What the shop is a shop *for* — a standing summary of what you already hold.
+ *
+ * The shop is a list of things to buy, and a list of things to buy is a poor
+ * answer to "what do I have". You could read a price and a countdown for every
+ * source in the game and nowhere at all read the two figures that decide the
+ * next purchase: how much of this temple there is, and how much of the rate is
+ * actually coming from it rather than from the multiplier stack.
+ *
+ * Three figures, at the top, above the buy controls. `Manna levels` only joins
+ * them once any exist, because a zero there teaches nothing about a mechanic
+ * you have not met.
+ */
+function Holdings() {
+  const { t } = useTranslation('c-temple-of-joy');
+
+  const held = useTempleSnapshot((s) => {
+    const fromSources = SOURCES.reduce((sum, source) => sum + computeSourceJps(s, source.id), 0);
+    const jps = computeJps(s);
+    return {
+      total: computeTotalSources(s),
+      kinds: SOURCES.filter((source) => (s.sources[source.id] ?? 0) > 0).length,
+      levels: computeTotalLevels(s),
+      rate: fmt(fromSources, s.numberFormat),
+      // What share of the rate on the counter the sources themselves account
+      // for. The rest is the multiplier stack, and knowing which of the two is
+      // carrying the run is the whole reason to show it.
+      share: jps > 0 ? sharePercent(fromSources, jps) : null,
+    };
+  }, 600);
+
+  if (held.total === 0) return null;
+
+  return (
+    <div className="toj-holdings-strip">
+      {/* Labels are terse on purpose. This strip sits above the list in a dock
+          that is 230 pixels tall on a phone in landscape, and every word here is
+          a word the shop underneath does not get to show. "from sources" is
+          implied by the panel it is in. */}
+      <Figure
+        value={fmtCount(held.total)}
+        label={t('holdings-total-kinds', {
+          kinds: held.kinds,
+          defaultValue: 'owned · {{kinds}} kinds',
+        })}
+      />
+      <Figure
+        value={`${held.rate}/s`}
+        label={
+          held.share
+            ? t('holdings-rate-of', {
+                percent: held.share,
+                defaultValue: '{{percent}}% of your rate',
+              })
+            : t('holdings-rate', { defaultValue: 'from sources' })
+        }
+      />
+      {held.levels > 0 && (
+        <Figure
+          value={String(held.levels)}
+          label={t('holdings-levels', { defaultValue: 'Manna levels' })}
+        />
+      )}
+    </div>
+  );
+}
+
+/** A share worth printing on a shop row, or nothing. See the call site. */
+function shareOrNull(part: number, total: number): string | null {
+  const share = sharePercent(part, total);
+  return share === null || share === '<0.1' ? null : share;
+}
+
+function Figure({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="toj-figure">
+      <b className="toj-figure-value">{value}</b>
+      <span className="toj-figure-label">{label}</span>
+    </div>
   );
 }
 

@@ -57,6 +57,7 @@ model User {
   vegaProfile          VegaPlayer?
   signalForgeProfile   SignalForgePlayer?
   templeOfJoyProfile   TempleOfJoySave?
+  gameSaves            GameSave[]
   neonDriftwayProfile  NeonDriftwayPlayer?
   synapseStormProfile  SynapseStormPlayer?
   rmhboxProfile        RMHboxProfile?
@@ -703,6 +704,34 @@ model TempleOfJoySave {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("temple_of_joy_save")
+}
+
+/// The shared single-player save.
+///
+/// One row per (account, game) holding whatever that game's client serialises,
+/// for the games that had no save table of their own — the alternative being
+/// fifteen near-identical two-column models and fifteen near-identical routes.
+/// Games that already have a table (Temple of Joy, Forest Explorer, Versecraft,
+/// Synapse Storm, Signal Forge) keep it; there is nothing to gain from moving a
+/// working save across a migration.
+///
+/// `gameId` is checked against `SHARED_SAVE_GAMES` in `lib/game-saves/registry`
+/// before anything is written, so this cannot be used as a general key-value
+/// store by anyone holding a session.
+model GameSave {
+  /// Time-sortable rather than `cuid()`, per the new-table policy: this is
+  /// append-heavy and every read is by `(userId, gameId)` anyway.
+  id        String   @id @default(uuid(7))
+  userId    String
+  gameId    String
+  saveData  Json
+  updatedAt DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+  @@index([userId])
+  @@map("game_save")
 }
 
 model NeonDriftwayPlayer {

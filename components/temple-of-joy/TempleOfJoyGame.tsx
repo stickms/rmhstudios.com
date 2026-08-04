@@ -14,7 +14,7 @@ import { doAudit } from '@/lib/temple-of-joy/actions';
 import { useAutoSave } from '@/lib/temple-of-joy/persistence';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
 import type { GameState } from '@/lib/temple-of-joy/types';
-import { useDocumentTheme, useStackedLayout, useTempleValue } from './hooks';
+import { useBarNav, useDocumentTheme, useStackedLayout, useTempleValue } from './hooks';
 import { TempleHud } from './TempleHud';
 import { TempleSanctum } from './TempleSanctum';
 import { TempleRooms, TempleTabs } from './TempleTabs';
@@ -37,10 +37,13 @@ export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameSta
       s.showMannaDialog ||
       s.showResetDialog,
   );
-  // Bottom bar or side rail — the same question the stylesheet asks, asked here
-  // because the answer changes where the navigation is MOUNTED, not just how it
-  // looks. See `STACKED_QUERY`.
-  const bar = useStackedLayout();
+  // Two questions, deliberately not one. `stacked` decides where the COUNTER
+  // lives and what scrolls; `bar` decides where the NAVIGATION lives. A phone in
+  // landscape answers them differently — two columns, and still a thumb bar —
+  // and collapsing them into one flag is what put a ten-item horizontal
+  // scroller inside a 24rem dock. See `BAR_QUERY`.
+  const stacked = useStackedLayout();
+  const bar = useBarNav();
   // The bar's overflow sheet. Owned here rather than in the bar because the
   // thing it has to disable — the whole game — is this component's child, and
   // the sheet is that child's sibling.
@@ -197,11 +200,11 @@ export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameSta
             the top of BOTH columns, where the height is free and spanning the
             whole width is what makes it read as the game's header rather than
             as the room's. */}
-        {!bar && <TempleHud />}
+        {!stacked && <TempleHud />}
 
         <div className="toj-body">
           <div className="toj-stage">
-            {bar && <TempleHud />}
+            {stacked && <TempleHud />}
             <TempleSanctum />
           </div>
           <div className="toj-dock">

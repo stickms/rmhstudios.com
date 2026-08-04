@@ -18,6 +18,7 @@
   "joining-lobby": "ロビー {{lobbyId}} に参加中...",
   "leaderboard": "リーダーボード",
   "leave": "退出",
+  "loading-detail": "Loading details…",
   "loading-history": "履歴を読み込み中...",
   "match-history": "試合履歴",
   "minigames": "ミニゲーム",

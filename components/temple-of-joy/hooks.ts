@@ -207,17 +207,61 @@ export function useDocumentTheme(ref: React.RefObject<HTMLElement | null>): void
 }
 
 /**
- * The stacked layout — altar above, list below, bar along the bottom.
+ * The stacked layout — altar above, list below.
  *
- * Stated once, because three different things depend on the answer and two of
- * them are not CSS: where the navigation MOUNTS, and what object is doing the
- * scrolling. It is the exact complement of the side-by-side condition in
- * `temple-of-joy.css`; keep the two in step.
+ * Stated once, because two things depend on the answer and neither is purely
+ * CSS: where the COUNTER mounts (inside the room on a phone, above both columns
+ * on a wide screen), and what object is doing the scrolling (the document when
+ * stacked, the dock otherwise). It is the exact complement of the side-by-side
+ * condition in `temple-of-joy.css`; keep the two in step.
  */
-export const STACKED_QUERY = '(max-width: 39.99rem), (max-width: 61.99rem) and (min-height: 34.01rem)';
+export const STACKED_QUERY = '(max-width: 33.99rem), (max-width: 61.99rem) and (min-height: 34.01rem)';
 
 export function useStackedLayout(): boolean {
   return useMediaQuery(STACKED_QUERY);
+}
+
+/**
+ * Where the navigation goes — and it is a *separate* question from the layout.
+ *
+ * It used to be the same question, and that is what made a phone in landscape
+ * look broken. Sideways, the temple is two columns, so the tabs went into the
+ * dock as a rail — a horizontal scroller in a 24rem column, holding ten
+ * destinations. It showed three of them, the labels overlapped the glyphs
+ * because a flex child in a scroller shrinks unless told not to, and the other
+ * seven were behind a swipe on a strip that does not look like a scroller.
+ *
+ * So the two questions are asked separately now. **Layout** follows the shape of
+ * the screen: two columns whenever it is wide, or short and wide. **Navigation**
+ * follows the hand: below the desktop breakpoint a thumb is the pointer,
+ * wherever the columns happen to be, so the bar goes along the bottom edge in
+ * both layouts. Above it, the dock's wrapping grid rail shows all ten at once,
+ * which is right for a mouse.
+ *
+ * The bar costs 3.5rem of a 390-pixel landscape screen and gives back the rail's
+ * height inside the dock, which is where the list is.
+ */
+export const BAR_QUERY = '(max-width: 61.99rem)';
+
+export function useBarNav(): boolean {
+  return useMediaQuery(BAR_QUERY);
+}
+
+/**
+ * A screen with no height to spend — a phone held sideways, essentially.
+ *
+ * The same threshold the stylesheet uses to lay the counter out on one line,
+ * asked in JS because one thing about that row is not a style: the rate's
+ * WORDING. "71.17 M joy per second" is sixty pixels wider than "71.17 M/s" on a
+ * row that also has to hold a counter, four chips and a way out, and at 568px
+ * the grid resolved that by truncating the rate to a single digit — which is
+ * worse than not showing it. Shortening the sentence is the fix; ellipsising it
+ * is not.
+ */
+export const SHORT_QUERY = '(max-height: 34rem)';
+
+export function useShortViewport(): boolean {
+  return useMediaQuery(SHORT_QUERY);
 }
 
 /**

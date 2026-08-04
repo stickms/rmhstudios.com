@@ -25,7 +25,7 @@
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { fmt, fmtCount, formatDuration } from '@/lib/temple-of-joy/numbers';
+import { fmt, fmtCount, formatDuration, sharePercent } from '@/lib/temple-of-joy/numbers';
 import {
   computeAscensionGrace,
   computeDevotion,
@@ -381,53 +381,56 @@ function Holdings() {
             'Every source you hold, what it makes, and its share of your rate. The share is the one to read: it is where your next purchase is worth the most.',
         })}
       </p>
-      {rows.map((row) => (
-        <div className="toj-holding" key={row.id}>
-          <span className="toj-holding-icon" aria-hidden>
-            <Glyph>{row.icon}</Glyph>
-          </span>
-          <span className="toj-holding-name">
-            <b>{row.name}</b>
-            <small>
-              {row.level > 0
-                ? t('holding-owned-level', {
-                    owned: fmtCount(row.owned),
-                    level: row.level,
-                    defaultValue: '{{owned}} owned · level {{level}}',
-                  })
-                : t('holding-owned', {
-                    owned: fmtCount(row.owned),
-                    defaultValue: '{{owned}} owned',
-                  })}
-            </small>
-          </span>
-          <span className="toj-holding-figures">
-            <b>{fmt(row.jps, packed.format)}</b>
-            <small>
-              {packed.total > 0
-                ? t('holding-share', {
-                    percent: sharePercent(row.jps, packed.total),
-                    defaultValue: '{{percent}}% of rate',
-                  })
-                : t('holding-idle', { defaultValue: 'idle' })}
-            </small>
-          </span>
-        </div>
-      ))}
+      {rows.map((row) => {
+        const share = sharePercent(row.jps, packed.total);
+        return (
+          <div
+            className="toj-holding"
+            key={row.id}
+            // The bar behind the row IS the share, drawn rather than only
+            // written: twenty rows of percentages is a table you read one line
+            // at a time, and the question — which of these is carrying the run —
+            // is answered by the shape of the column in one glance.
+            style={
+              packed.total > 0
+                ? ({ '--toj-holding-share': `${(row.jps / packed.total) * 100}%` } as React.CSSProperties)
+                : undefined
+            }
+          >
+            <span className="toj-holding-icon" aria-hidden>
+              <Glyph>{row.icon}</Glyph>
+            </span>
+            <span className="toj-holding-name">
+              <b>{row.name}</b>
+              <small>
+                {row.level > 0
+                  ? t('holding-owned-level', {
+                      owned: fmtCount(row.owned),
+                      level: row.level,
+                      defaultValue: '{{owned}} owned · level {{level}}',
+                    })
+                  : t('holding-owned', {
+                      owned: fmtCount(row.owned),
+                      defaultValue: '{{owned}} owned',
+                    })}
+              </small>
+            </span>
+            <span className="toj-holding-figures">
+              <b>{fmt(row.jps, packed.format)}</b>
+              <small>
+                {share
+                  ? t('holding-share', {
+                      percent: share,
+                      defaultValue: '{{percent}}% of rate',
+                    })
+                  : t('holding-idle', { defaultValue: 'idle' })}
+              </small>
+            </span>
+          </div>
+        );
+      })}
     </>
   );
-}
-
-/**
- * A source's share of the rate, to one decimal — but never rounded to a bare
- * "0.0" while it is still making something. A source that has been overtaken
- * ten times over is exactly the one a player is deciding whether to keep
- * buying, and "0.0%" and "<0.1%" answer that question differently.
- */
-function sharePercent(jps: number, total: number): string {
-  const share = (jps / total) * 100;
-  if (share > 0 && share < 0.05) return '<0.1';
-  return share.toFixed(1);
 }
 
 function Line({ label, value }: { label: string; value: string }) {
