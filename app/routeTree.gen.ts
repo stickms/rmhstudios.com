@@ -300,6 +300,9 @@ import { Route as ApiAwardsIndexRouteImport } from './routes/api/awards/index'
 import { Route as ApiBattlepassIndexRouteImport } from './routes/api/battlepass/index'
 import { Route as ApiBattlepassClaimRouteImport } from './routes/api/battlepass/claim'
 import { Route as ApiBattlepassUnlockRouteImport } from './routes/api/battlepass/unlock'
+import { Route as ApiCallsHistoryRouteImport } from './routes/api/calls/history'
+import { Route as ApiCallsIceRouteImport } from './routes/api/calls/ice'
+import { Route as ApiCallsPrivacyRouteImport } from './routes/api/calls/privacy'
 import { Route as ApiCoinsIndexRouteImport } from './routes/api/coins/index'
 import { Route as ApiCoinsBetRouteImport } from './routes/api/coins/bet'
 import { Route as ApiCoinsClaimRouteImport } from './routes/api/coins/claim'
@@ -325,6 +328,8 @@ import { Route as ApiDreamRiftLeaderboardRouteImport } from './routes/api/dream-
 import { Route as ApiDreamRiftScoreRouteImport } from './routes/api/dream-rift/score'
 import { Route as ApiEmailUnsubscribeRouteImport } from './routes/api/email/unsubscribe'
 import { Route as ApiEmbedOembedRouteImport } from './routes/api/embed/oembed'
+import { Route as ApiEmojiPacksIndexRouteImport } from './routes/api/emoji-packs/index'
+import { Route as ApiEmojiPacksInstalledRouteImport } from './routes/api/emoji-packs/installed'
 import { Route as ApiEventsIndexRouteImport } from './routes/api/events/index'
 import { Route as ApiFeedHashtagSearchRouteImport } from './routes/api/feed/hashtag-search'
 import { Route as ApiFeedMentionSearchRouteImport } from './routes/api/feed/mention-search'
@@ -572,6 +577,9 @@ import { Route as ApiDoctrineReputationLeaderboardRouteImport } from './routes/a
 import { Route as ApiDoctrineSafehouseContentRouteImport } from './routes/api/doctrine/safehouse/content'
 import { Route as ApiDoctrineSafehouseDisclosuresRouteImport } from './routes/api/doctrine/safehouse/disclosures'
 import { Route as ApiDoctrineSahurStatusRouteImport } from './routes/api/doctrine/sahur/status'
+import { Route as ApiEmojiPacksSlugIndexRouteImport } from './routes/api/emoji-packs/$slug/index'
+import { Route as ApiEmojiPacksSlugItemsRouteImport } from './routes/api/emoji-packs/$slug/items'
+import { Route as ApiEmojiPacksSlugSubscribeRouteImport } from './routes/api/emoji-packs/$slug/subscribe'
 import { Route as ApiEventsIdIndexRouteImport } from './routes/api/events/$id/index'
 import { Route as ApiEventsIdIcsRouteImport } from './routes/api/events/$id/ics'
 import { Route as ApiEventsIdRsvpRouteImport } from './routes/api/events/$id/rsvp'
@@ -2209,6 +2217,21 @@ const ApiBattlepassUnlockRoute = ApiBattlepassUnlockRouteImport.update({
   path: '/api/battlepass/unlock',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCallsHistoryRoute = ApiCallsHistoryRouteImport.update({
+  id: '/api/calls/history',
+  path: '/api/calls/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCallsIceRoute = ApiCallsIceRouteImport.update({
+  id: '/api/calls/ice',
+  path: '/api/calls/ice',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCallsPrivacyRoute = ApiCallsPrivacyRouteImport.update({
+  id: '/api/calls/privacy',
+  path: '/api/calls/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCoinsIndexRoute = ApiCoinsIndexRouteImport.update({
   id: '/api/coins/',
   path: '/api/coins/',
@@ -2334,6 +2357,16 @@ const ApiEmailUnsubscribeRoute = ApiEmailUnsubscribeRouteImport.update({
 const ApiEmbedOembedRoute = ApiEmbedOembedRouteImport.update({
   id: '/api/embed/oembed',
   path: '/api/embed/oembed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEmojiPacksIndexRoute = ApiEmojiPacksIndexRouteImport.update({
+  id: '/api/emoji-packs/',
+  path: '/api/emoji-packs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEmojiPacksInstalledRoute = ApiEmojiPacksInstalledRouteImport.update({
+  id: '/api/emoji-packs/installed',
+  path: '/api/emoji-packs/installed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiEventsIndexRoute = ApiEventsIndexRouteImport.update({
@@ -3615,6 +3648,22 @@ const ApiDoctrineSahurStatusRoute = ApiDoctrineSahurStatusRouteImport.update({
   path: '/api/doctrine/sahur/status',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiEmojiPacksSlugIndexRoute = ApiEmojiPacksSlugIndexRouteImport.update({
+  id: '/api/emoji-packs/$slug/',
+  path: '/api/emoji-packs/$slug/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEmojiPacksSlugItemsRoute = ApiEmojiPacksSlugItemsRouteImport.update({
+  id: '/api/emoji-packs/$slug/items',
+  path: '/api/emoji-packs/$slug/items',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEmojiPacksSlugSubscribeRoute =
+  ApiEmojiPacksSlugSubscribeRouteImport.update({
+    id: '/api/emoji-packs/$slug/subscribe',
+    path: '/api/emoji-packs/$slug/subscribe',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiEventsIdIndexRoute = ApiEventsIdIndexRouteImport.update({
   id: '/api/events/$id/',
   path: '/api/events/$id/',
@@ -4803,6 +4852,9 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
   '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
+  '/api/calls/history': typeof ApiCallsHistoryRoute
+  '/api/calls/ice': typeof ApiCallsIceRoute
+  '/api/calls/privacy': typeof ApiCallsPrivacyRoute
   '/api/coins/bet': typeof ApiCoinsBetRoute
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/gift': typeof ApiCoinsGiftRoute
@@ -4826,6 +4878,7 @@ export interface FileRoutesByFullPath {
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
+  '/api/emoji-packs/installed': typeof ApiEmojiPacksInstalledRoute
   '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
   '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/signal': typeof ApiFeedSignalRoute
@@ -5019,6 +5072,7 @@ export interface FileRoutesByFullPath {
   '/api/battlepass/': typeof ApiBattlepassIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/api/communities/': typeof ApiCommunitiesIndexRoute
+  '/api/emoji-packs/': typeof ApiEmojiPacksIndexRoute
   '/api/events/': typeof ApiEventsIndexRoute
   '/api/group-chats/': typeof ApiGroupChatsIndexRoute
   '/api/guides/': typeof ApiGuidesIndexRoute
@@ -5092,6 +5146,8 @@ export interface FileRoutesByFullPath {
   '/api/doctrine/safehouse/content': typeof ApiDoctrineSafehouseContentRoute
   '/api/doctrine/safehouse/disclosures': typeof ApiDoctrineSafehouseDisclosuresRoute
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
+  '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
+  '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
   '/api/events/$id/ics': typeof ApiEventsIdIcsRoute
   '/api/events/$id/rsvp': typeof ApiEventsIdRsvpRoute
   '/api/feed/image/$filename': typeof ApiFeedImageFilenameRoute
@@ -5210,6 +5266,7 @@ export interface FileRoutesByFullPath {
   '/api/developer/keys/': typeof ApiDeveloperKeysIndexRoute
   '/api/doctrine/incidents/': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
+  '/api/emoji-packs/$slug/': typeof ApiEmojiPacksSlugIndexRoute
   '/api/events/$id/': typeof ApiEventsIdIndexRoute
   '/api/group-chats/$id/': typeof ApiGroupChatsIdIndexRoute
   '/api/market/listings/': typeof ApiMarketListingsIndexRoute
@@ -5518,6 +5575,9 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
   '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
+  '/api/calls/history': typeof ApiCallsHistoryRoute
+  '/api/calls/ice': typeof ApiCallsIceRoute
+  '/api/calls/privacy': typeof ApiCallsPrivacyRoute
   '/api/coins/bet': typeof ApiCoinsBetRoute
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/gift': typeof ApiCoinsGiftRoute
@@ -5541,6 +5601,7 @@ export interface FileRoutesByTo {
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
+  '/api/emoji-packs/installed': typeof ApiEmojiPacksInstalledRoute
   '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
   '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/signal': typeof ApiFeedSignalRoute
@@ -5734,6 +5795,7 @@ export interface FileRoutesByTo {
   '/api/battlepass': typeof ApiBattlepassIndexRoute
   '/api/coins': typeof ApiCoinsIndexRoute
   '/api/communities': typeof ApiCommunitiesIndexRoute
+  '/api/emoji-packs': typeof ApiEmojiPacksIndexRoute
   '/api/events': typeof ApiEventsIndexRoute
   '/api/group-chats': typeof ApiGroupChatsIndexRoute
   '/api/guides': typeof ApiGuidesIndexRoute
@@ -5807,6 +5869,8 @@ export interface FileRoutesByTo {
   '/api/doctrine/safehouse/content': typeof ApiDoctrineSafehouseContentRoute
   '/api/doctrine/safehouse/disclosures': typeof ApiDoctrineSafehouseDisclosuresRoute
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
+  '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
+  '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
   '/api/events/$id/ics': typeof ApiEventsIdIcsRoute
   '/api/events/$id/rsvp': typeof ApiEventsIdRsvpRoute
   '/api/feed/image/$filename': typeof ApiFeedImageFilenameRoute
@@ -5925,6 +5989,7 @@ export interface FileRoutesByTo {
   '/api/developer/keys': typeof ApiDeveloperKeysIndexRoute
   '/api/doctrine/incidents': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation': typeof ApiDoctrineReputationIndexRoute
+  '/api/emoji-packs/$slug': typeof ApiEmojiPacksSlugIndexRoute
   '/api/events/$id': typeof ApiEventsIdIndexRoute
   '/api/group-chats/$id': typeof ApiGroupChatsIdIndexRoute
   '/api/market/listings': typeof ApiMarketListingsIndexRoute
@@ -6259,6 +6324,9 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
   '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
+  '/api/calls/history': typeof ApiCallsHistoryRoute
+  '/api/calls/ice': typeof ApiCallsIceRoute
+  '/api/calls/privacy': typeof ApiCallsPrivacyRoute
   '/api/coins/bet': typeof ApiCoinsBetRoute
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/gift': typeof ApiCoinsGiftRoute
@@ -6282,6 +6350,7 @@ export interface FileRoutesById {
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
+  '/api/emoji-packs/installed': typeof ApiEmojiPacksInstalledRoute
   '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
   '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/signal': typeof ApiFeedSignalRoute
@@ -6475,6 +6544,7 @@ export interface FileRoutesById {
   '/api/battlepass/': typeof ApiBattlepassIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/api/communities/': typeof ApiCommunitiesIndexRoute
+  '/api/emoji-packs/': typeof ApiEmojiPacksIndexRoute
   '/api/events/': typeof ApiEventsIndexRoute
   '/api/group-chats/': typeof ApiGroupChatsIndexRoute
   '/api/guides/': typeof ApiGuidesIndexRoute
@@ -6548,6 +6618,8 @@ export interface FileRoutesById {
   '/api/doctrine/safehouse/content': typeof ApiDoctrineSafehouseContentRoute
   '/api/doctrine/safehouse/disclosures': typeof ApiDoctrineSafehouseDisclosuresRoute
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
+  '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
+  '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
   '/api/events/$id/ics': typeof ApiEventsIdIcsRoute
   '/api/events/$id/rsvp': typeof ApiEventsIdRsvpRoute
   '/api/feed/image/$filename': typeof ApiFeedImageFilenameRoute
@@ -6666,6 +6738,7 @@ export interface FileRoutesById {
   '/api/developer/keys/': typeof ApiDeveloperKeysIndexRoute
   '/api/doctrine/incidents/': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
+  '/api/emoji-packs/$slug/': typeof ApiEmojiPacksSlugIndexRoute
   '/api/events/$id/': typeof ApiEventsIdIndexRoute
   '/api/group-chats/$id/': typeof ApiGroupChatsIdIndexRoute
   '/api/market/listings/': typeof ApiMarketListingsIndexRoute
@@ -7000,6 +7073,9 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/battlepass/claim'
     | '/api/battlepass/unlock'
+    | '/api/calls/history'
+    | '/api/calls/ice'
+    | '/api/calls/privacy'
     | '/api/coins/bet'
     | '/api/coins/claim'
     | '/api/coins/gift'
@@ -7023,6 +7099,7 @@ export interface FileRouteTypes {
     | '/api/dream-rift/score'
     | '/api/email/unsubscribe'
     | '/api/embed/oembed'
+    | '/api/emoji-packs/installed'
     | '/api/feed/hashtag-search'
     | '/api/feed/mention-search'
     | '/api/feed/signal'
@@ -7216,6 +7293,7 @@ export interface FileRouteTypes {
     | '/api/battlepass/'
     | '/api/coins/'
     | '/api/communities/'
+    | '/api/emoji-packs/'
     | '/api/events/'
     | '/api/group-chats/'
     | '/api/guides/'
@@ -7289,6 +7367,8 @@ export interface FileRouteTypes {
     | '/api/doctrine/safehouse/content'
     | '/api/doctrine/safehouse/disclosures'
     | '/api/doctrine/sahur/status'
+    | '/api/emoji-packs/$slug/items'
+    | '/api/emoji-packs/$slug/subscribe'
     | '/api/events/$id/ics'
     | '/api/events/$id/rsvp'
     | '/api/feed/image/$filename'
@@ -7407,6 +7487,7 @@ export interface FileRouteTypes {
     | '/api/developer/keys/'
     | '/api/doctrine/incidents/'
     | '/api/doctrine/reputation/'
+    | '/api/emoji-packs/$slug/'
     | '/api/events/$id/'
     | '/api/group-chats/$id/'
     | '/api/market/listings/'
@@ -7715,6 +7796,9 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/battlepass/claim'
     | '/api/battlepass/unlock'
+    | '/api/calls/history'
+    | '/api/calls/ice'
+    | '/api/calls/privacy'
     | '/api/coins/bet'
     | '/api/coins/claim'
     | '/api/coins/gift'
@@ -7738,6 +7822,7 @@ export interface FileRouteTypes {
     | '/api/dream-rift/score'
     | '/api/email/unsubscribe'
     | '/api/embed/oembed'
+    | '/api/emoji-packs/installed'
     | '/api/feed/hashtag-search'
     | '/api/feed/mention-search'
     | '/api/feed/signal'
@@ -7931,6 +8016,7 @@ export interface FileRouteTypes {
     | '/api/battlepass'
     | '/api/coins'
     | '/api/communities'
+    | '/api/emoji-packs'
     | '/api/events'
     | '/api/group-chats'
     | '/api/guides'
@@ -8004,6 +8090,8 @@ export interface FileRouteTypes {
     | '/api/doctrine/safehouse/content'
     | '/api/doctrine/safehouse/disclosures'
     | '/api/doctrine/sahur/status'
+    | '/api/emoji-packs/$slug/items'
+    | '/api/emoji-packs/$slug/subscribe'
     | '/api/events/$id/ics'
     | '/api/events/$id/rsvp'
     | '/api/feed/image/$filename'
@@ -8122,6 +8210,7 @@ export interface FileRouteTypes {
     | '/api/developer/keys'
     | '/api/doctrine/incidents'
     | '/api/doctrine/reputation'
+    | '/api/emoji-packs/$slug'
     | '/api/events/$id'
     | '/api/group-chats/$id'
     | '/api/market/listings'
@@ -8455,6 +8544,9 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/battlepass/claim'
     | '/api/battlepass/unlock'
+    | '/api/calls/history'
+    | '/api/calls/ice'
+    | '/api/calls/privacy'
     | '/api/coins/bet'
     | '/api/coins/claim'
     | '/api/coins/gift'
@@ -8478,6 +8570,7 @@ export interface FileRouteTypes {
     | '/api/dream-rift/score'
     | '/api/email/unsubscribe'
     | '/api/embed/oembed'
+    | '/api/emoji-packs/installed'
     | '/api/feed/hashtag-search'
     | '/api/feed/mention-search'
     | '/api/feed/signal'
@@ -8671,6 +8764,7 @@ export interface FileRouteTypes {
     | '/api/battlepass/'
     | '/api/coins/'
     | '/api/communities/'
+    | '/api/emoji-packs/'
     | '/api/events/'
     | '/api/group-chats/'
     | '/api/guides/'
@@ -8744,6 +8838,8 @@ export interface FileRouteTypes {
     | '/api/doctrine/safehouse/content'
     | '/api/doctrine/safehouse/disclosures'
     | '/api/doctrine/sahur/status'
+    | '/api/emoji-packs/$slug/items'
+    | '/api/emoji-packs/$slug/subscribe'
     | '/api/events/$id/ics'
     | '/api/events/$id/rsvp'
     | '/api/feed/image/$filename'
@@ -8862,6 +8958,7 @@ export interface FileRouteTypes {
     | '/api/developer/keys/'
     | '/api/doctrine/incidents/'
     | '/api/doctrine/reputation/'
+    | '/api/emoji-packs/$slug/'
     | '/api/events/$id/'
     | '/api/group-chats/$id/'
     | '/api/market/listings/'
@@ -9046,6 +9143,9 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiBattlepassClaimRoute: typeof ApiBattlepassClaimRoute
   ApiBattlepassUnlockRoute: typeof ApiBattlepassUnlockRoute
+  ApiCallsHistoryRoute: typeof ApiCallsHistoryRoute
+  ApiCallsIceRoute: typeof ApiCallsIceRoute
+  ApiCallsPrivacyRoute: typeof ApiCallsPrivacyRoute
   ApiCoinsBetRoute: typeof ApiCoinsBetRoute
   ApiCoinsClaimRoute: typeof ApiCoinsClaimRoute
   ApiCoinsGiftRoute: typeof ApiCoinsGiftRoute
@@ -9069,6 +9169,7 @@ export interface RootRouteChildren {
   ApiDreamRiftScoreRoute: typeof ApiDreamRiftScoreRoute
   ApiEmailUnsubscribeRoute: typeof ApiEmailUnsubscribeRoute
   ApiEmbedOembedRoute: typeof ApiEmbedOembedRoute
+  ApiEmojiPacksInstalledRoute: typeof ApiEmojiPacksInstalledRoute
   ApiFeedHashtagSearchRoute: typeof ApiFeedHashtagSearchRoute
   ApiFeedMentionSearchRoute: typeof ApiFeedMentionSearchRoute
   ApiFeedSignalRoute: typeof ApiFeedSignalRoute
@@ -9206,6 +9307,7 @@ export interface RootRouteChildren {
   ApiBattlepassIndexRoute: typeof ApiBattlepassIndexRoute
   ApiCoinsIndexRoute: typeof ApiCoinsIndexRoute
   ApiCommunitiesIndexRoute: typeof ApiCommunitiesIndexRoute
+  ApiEmojiPacksIndexRoute: typeof ApiEmojiPacksIndexRoute
   ApiEventsIndexRoute: typeof ApiEventsIndexRoute
   ApiGroupChatsIndexRoute: typeof ApiGroupChatsIndexRoute
   ApiGuidesIndexRoute: typeof ApiGuidesIndexRoute
@@ -9266,6 +9368,8 @@ export interface RootRouteChildren {
   ApiDoctrineSafehouseContentRoute: typeof ApiDoctrineSafehouseContentRoute
   ApiDoctrineSafehouseDisclosuresRoute: typeof ApiDoctrineSafehouseDisclosuresRoute
   ApiDoctrineSahurStatusRoute: typeof ApiDoctrineSahurStatusRoute
+  ApiEmojiPacksSlugItemsRoute: typeof ApiEmojiPacksSlugItemsRoute
+  ApiEmojiPacksSlugSubscribeRoute: typeof ApiEmojiPacksSlugSubscribeRoute
   ApiEventsIdIcsRoute: typeof ApiEventsIdIcsRoute
   ApiEventsIdRsvpRoute: typeof ApiEventsIdRsvpRoute
   ApiFeedImageFilenameRoute: typeof ApiFeedImageFilenameRoute
@@ -9322,6 +9426,7 @@ export interface RootRouteChildren {
   ApiDeveloperKeysIndexRoute: typeof ApiDeveloperKeysIndexRoute
   ApiDoctrineIncidentsIndexRoute: typeof ApiDoctrineIncidentsIndexRoute
   ApiDoctrineReputationIndexRoute: typeof ApiDoctrineReputationIndexRoute
+  ApiEmojiPacksSlugIndexRoute: typeof ApiEmojiPacksSlugIndexRoute
   ApiEventsIdIndexRoute: typeof ApiEventsIdIndexRoute
   ApiGroupChatsIdIndexRoute: typeof ApiGroupChatsIdIndexRoute
   ApiMarketListingsIndexRoute: typeof ApiMarketListingsIndexRoute
@@ -11389,6 +11494,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiBattlepassUnlockRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/calls/history': {
+      id: '/api/calls/history'
+      path: '/api/calls/history'
+      fullPath: '/api/calls/history'
+      preLoaderRoute: typeof ApiCallsHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/calls/ice': {
+      id: '/api/calls/ice'
+      path: '/api/calls/ice'
+      fullPath: '/api/calls/ice'
+      preLoaderRoute: typeof ApiCallsIceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/calls/privacy': {
+      id: '/api/calls/privacy'
+      path: '/api/calls/privacy'
+      fullPath: '/api/calls/privacy'
+      preLoaderRoute: typeof ApiCallsPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/coins/': {
       id: '/api/coins/'
       path: '/api/coins'
@@ -11562,6 +11688,20 @@ declare module '@tanstack/react-router' {
       path: '/api/embed/oembed'
       fullPath: '/api/embed/oembed'
       preLoaderRoute: typeof ApiEmbedOembedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/emoji-packs/': {
+      id: '/api/emoji-packs/'
+      path: '/api/emoji-packs'
+      fullPath: '/api/emoji-packs/'
+      preLoaderRoute: typeof ApiEmojiPacksIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/emoji-packs/installed': {
+      id: '/api/emoji-packs/installed'
+      path: '/api/emoji-packs/installed'
+      fullPath: '/api/emoji-packs/installed'
+      preLoaderRoute: typeof ApiEmojiPacksInstalledRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/events/': {
@@ -13291,6 +13431,27 @@ declare module '@tanstack/react-router' {
       path: '/api/doctrine/sahur/status'
       fullPath: '/api/doctrine/sahur/status'
       preLoaderRoute: typeof ApiDoctrineSahurStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/emoji-packs/$slug/': {
+      id: '/api/emoji-packs/$slug/'
+      path: '/api/emoji-packs/$slug'
+      fullPath: '/api/emoji-packs/$slug/'
+      preLoaderRoute: typeof ApiEmojiPacksSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/emoji-packs/$slug/items': {
+      id: '/api/emoji-packs/$slug/items'
+      path: '/api/emoji-packs/$slug/items'
+      fullPath: '/api/emoji-packs/$slug/items'
+      preLoaderRoute: typeof ApiEmojiPacksSlugItemsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/emoji-packs/$slug/subscribe': {
+      id: '/api/emoji-packs/$slug/subscribe'
+      path: '/api/emoji-packs/$slug/subscribe'
+      fullPath: '/api/emoji-packs/$slug/subscribe'
+      preLoaderRoute: typeof ApiEmojiPacksSlugSubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/events/$id/': {
@@ -16083,6 +16244,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiBattlepassClaimRoute: ApiBattlepassClaimRoute,
   ApiBattlepassUnlockRoute: ApiBattlepassUnlockRoute,
+  ApiCallsHistoryRoute: ApiCallsHistoryRoute,
+  ApiCallsIceRoute: ApiCallsIceRoute,
+  ApiCallsPrivacyRoute: ApiCallsPrivacyRoute,
   ApiCoinsBetRoute: ApiCoinsBetRoute,
   ApiCoinsClaimRoute: ApiCoinsClaimRoute,
   ApiCoinsGiftRoute: ApiCoinsGiftRoute,
@@ -16106,6 +16270,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDreamRiftScoreRoute: ApiDreamRiftScoreRoute,
   ApiEmailUnsubscribeRoute: ApiEmailUnsubscribeRoute,
   ApiEmbedOembedRoute: ApiEmbedOembedRoute,
+  ApiEmojiPacksInstalledRoute: ApiEmojiPacksInstalledRoute,
   ApiFeedHashtagSearchRoute: ApiFeedHashtagSearchRoute,
   ApiFeedMentionSearchRoute: ApiFeedMentionSearchRoute,
   ApiFeedSignalRoute: ApiFeedSignalRoute,
@@ -16243,6 +16408,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiBattlepassIndexRoute: ApiBattlepassIndexRoute,
   ApiCoinsIndexRoute: ApiCoinsIndexRoute,
   ApiCommunitiesIndexRoute: ApiCommunitiesIndexRoute,
+  ApiEmojiPacksIndexRoute: ApiEmojiPacksIndexRoute,
   ApiEventsIndexRoute: ApiEventsIndexRoute,
   ApiGroupChatsIndexRoute: ApiGroupChatsIndexRoute,
   ApiGuidesIndexRoute: ApiGuidesIndexRoute,
@@ -16304,6 +16470,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDoctrineSafehouseContentRoute: ApiDoctrineSafehouseContentRoute,
   ApiDoctrineSafehouseDisclosuresRoute: ApiDoctrineSafehouseDisclosuresRoute,
   ApiDoctrineSahurStatusRoute: ApiDoctrineSahurStatusRoute,
+  ApiEmojiPacksSlugItemsRoute: ApiEmojiPacksSlugItemsRoute,
+  ApiEmojiPacksSlugSubscribeRoute: ApiEmojiPacksSlugSubscribeRoute,
   ApiEventsIdIcsRoute: ApiEventsIdIcsRoute,
   ApiEventsIdRsvpRoute: ApiEventsIdRsvpRoute,
   ApiFeedImageFilenameRoute: ApiFeedImageFilenameRoute,
@@ -16360,6 +16528,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDeveloperKeysIndexRoute: ApiDeveloperKeysIndexRoute,
   ApiDoctrineIncidentsIndexRoute: ApiDoctrineIncidentsIndexRoute,
   ApiDoctrineReputationIndexRoute: ApiDoctrineReputationIndexRoute,
+  ApiEmojiPacksSlugIndexRoute: ApiEmojiPacksSlugIndexRoute,
   ApiEventsIdIndexRoute: ApiEventsIdIndexRoute,
   ApiGroupChatsIdIndexRoute: ApiGroupChatsIdIndexRoute,
   ApiMarketListingsIndexRoute: ApiMarketListingsIndexRoute,

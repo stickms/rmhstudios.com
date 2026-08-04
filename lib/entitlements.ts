@@ -1,54 +1,20 @@
 import { prisma } from '@/lib/prisma.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
+import { TIER_RANK, mapPlanToTier, tierFromSubscription, type Tier } from '@/lib/entitlements/tiers';
 
-export type Tier = 'free' | 'starter' | 'pro' | 'enterprise';
-
-export const TIER_RANK: Record<Tier, number> = {
-  free: 0,
-  starter: 1,
-  pro: 2,
-  enterprise: 3,
-};
-
-// Subscription statuses that grant entitlement.
-const ACTIVE_STATUSES = new Set(['active', 'trialing']);
-
-/** Map a Stripe/Prisma plan name to a tier. Unknown -> free. */
-export function mapPlanToTier(plan: string | null | undefined): Tier {
-  switch (plan) {
-    case 'starter':
-      return 'starter';
-    case 'pro':
-      return 'pro';
-    case 'enterprise':
-      return 'enterprise';
-    default:
-      return 'free';
-  }
-}
-
-/** Resolve the entitled tier for a single subscription record. Fails closed to free. */
-export function tierFromSubscription(
-  sub: { plan?: string | null; status?: string | null } | null | undefined,
-): Tier {
-  if (!sub || !sub.status || !ACTIVE_STATUSES.has(sub.status)) return 'free';
-  return mapPlanToTier(sub.plan);
-}
-
-/** HARD-R (plan id `starter`) and above get programmatic RMH API access. */
-export function hasApiAccess(tier: Tier): boolean {
-  return TIER_RANK[tier] >= TIER_RANK.starter;
-}
-
-/** Image upload via the developer API — starter and above. */
-export function hasApiImageUpload(tier: Tier): boolean {
-  return TIER_RANK[tier] >= TIER_RANK.starter;
-}
-
-/** Pro and above (incl. enterprise) get the profile badge. */
-export function hasBadge(tier: Tier): boolean {
-  return TIER_RANK[tier] >= TIER_RANK.pro;
-}
+// The pure tier vocabulary lives in `lib/entitlements/tiers.ts` so it can be
+// imported without dragging `lib/prisma.server` in (see that file's header).
+// Re-exported here so `@/lib/entitlements` stays the normal import and no
+// existing call site has to change.
+export {
+  TIER_RANK,
+  mapPlanToTier,
+  tierFromSubscription,
+  hasApiAccess,
+  hasApiImageUpload,
+  hasBadge,
+} from '@/lib/entitlements/tiers';
+export type { Tier } from '@/lib/entitlements/tiers';
 
 // `getUserTier` runs on EVERY authenticated request — the Better Auth
 // `customSession` plugin (lib/auth.ts) calls it on session resolution, so its
