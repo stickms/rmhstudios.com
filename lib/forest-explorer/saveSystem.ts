@@ -1,8 +1,9 @@
 import type { ForestExplorerSave, ActId } from './types';
 
-const STORAGE_KEY = 'forest-explorer-story-v1';
+/** Exported so `cloud.ts` reads the same key and the same version check. */
+export const STORAGE_KEY = 'forest-explorer-story-v1';
 const MAX_PAYLOAD = 200 * 1024; // 200 KB
-const CURRENT_VERSION = 1;
+export const CURRENT_VERSION = 1;
 
 // ─── localStorage ───────────────────────────────────────────────────────────
 

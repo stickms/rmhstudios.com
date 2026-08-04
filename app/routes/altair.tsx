@@ -1,24 +1,21 @@
 /**
- * Altair Layout — Auth Gate + Theme Shell
+ * Altair Layout — the theme shell.
  *
- * Wraps all /altair routes with authentication and the Altair theme system.
- * Unauthenticated users are redirected to /login with a callback URL.
+ * It used to be the auth gate too, and that was the wrong door. Altair is a
+ * single-player roguelike with a co-op mode bolted to the side: the run, the
+ * classes, the bestiary and the meta shop are all local, and none of them has
+ * ever needed to know who you are. The gate turned away every visitor at the
+ * URL for the sake of one screen behind it.
+ *
+ * The gate moved to that screen — `/altair/multiplayer` — where it is true. The
+ * menu button that leads there asks with a modal instead, so a signed-out player
+ * who taps MULTIPLAYER out of curiosity keeps the game they were already in.
  */
 
-import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
+import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { gameRouteHead } from '@/lib/seo-catalog';
-import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
-import { auth } from '@/lib/auth';
 import AltairShell from '@/components/altair/AltairShell';
 import altairCss from '@/components/altair/altair.css?url';
-
-const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/altair' } });
-  return { user: session.user };
-});
 
 function AltairLayout() {
   return (
@@ -29,7 +26,6 @@ function AltairLayout() {
 }
 
 export const Route = createFileRoute('/altair')({
-  beforeLoad: () => checkAuth(),
   head: () => gameRouteHead('altair', { links: [{ rel: 'stylesheet', href: altairCss }] }),
   component: AltairLayout,
 });

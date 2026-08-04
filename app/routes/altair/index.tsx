@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { useAltairGameStore } from '@/lib/altair/stores/game-store'
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store'
 import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store'
+import { useSignInGate } from '@/components/shared/SignInRequiredDialog'
 import AltairHeader from '@/components/altair/AltairHeader'
 import MenuScreen from '@/components/altair/screens/MenuScreen'
 import ClassSelectScreen from '@/components/altair/screens/ClassSelectScreen'
@@ -34,6 +35,12 @@ function AltairPage() {
   const settingsDoubleTime = useAltairSettingsStore((s) => s.doubleTime)
   const [showSettings, setShowSettings] = useState(false)
   const [showBestiary, setShowBestiary] = useState(false)
+
+  // Co-op is the only part of Altair that needs an account, so it is the only
+  // part that asks. A modal rather than the route's own redirect: the redirect
+  // still guards the URL, but reaching it by tapping MULTIPLAYER in a game you
+  // are already playing should not cost you the screen you were on.
+  const coopGate = useSignInGate()
 
   // Track whether run-end side effects have been applied for the current run.
   const runFinalizedRef = useRef(false)
@@ -205,7 +212,12 @@ function AltairPage() {
           <AltairHeader context="menu" />
           <MenuScreen
             onPlay={goToClassSelect}
-            onMultiplayer={() => navigate({ to: '/altair/multiplayer' })}
+            onMultiplayer={() =>
+              coopGate.require(
+                () => navigate({ to: '/altair/multiplayer' }),
+                t('multiplayer-feature', { defaultValue: 'Playing Altair with someone else' }),
+              )
+            }
             onMetaShop={() => setPhase('meta_shop')}
             onSettings={() => {
               setShowSettings(true)
@@ -214,6 +226,7 @@ function AltairPage() {
               setShowBestiary(true)
             }}
           />
+          {coopGate.dialog}
         </>
       )
 
