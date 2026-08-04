@@ -5,11 +5,27 @@
  * "×4,182,003" and nothing else stops being a game you can play and becomes a
  * game you watch; showing which layer contributed what is what lets a player
  * decide whether to chase trophies, plant a garden, or just buy more Acolytes.
+ *
+ * ## The ledger, and why it is here
+ *
+ * The same argument applies one level down, and the game was not making it. You
+ * could read "Sources owned: 412" here and the price of the next Acolyte in the
+ * shop, and nowhere at all could you read what you actually HAVE — how many of
+ * each, how far each had been raised, and which of them was carrying the run.
+ * The shop is a list of things to buy; it hides everything you already own
+ * behind a price, and it hides a source entirely once it is no longer visible
+ * for purchase.
+ *
+ * So `Holdings` is an inventory rather than a shop: every source with a count,
+ * its Manna level, what it makes, and its SHARE of the rate — which is the one
+ * number that turns a wall of figures into a decision, because it is the only
+ * one that says where the next purchase should go.
  */
 'use client';
 
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { fmt, formatDuration } from '@/lib/temple-of-joy/numbers';
+import { fmt, fmtCount, formatDuration } from '@/lib/temple-of-joy/numbers';
 import {
   computeAscensionGrace,
   computeDevotion,
@@ -19,15 +35,18 @@ import {
   computeMultipliers,
   computeSinnerDrain,
   computeTotalLevels,
+  computeSourceJps,
   computeTotalSources,
   computeTouch,
   computeVigil,
 } from '@/lib/temple-of-joy/engine';
 import { TROPHIES } from '@/lib/temple-of-joy/data/trophies';
 import { BLESSINGS } from '@/lib/temple-of-joy/data/blessings';
+import { SOURCES } from '@/lib/temple-of-joy/data/sources';
+import { SEEDS } from '@/lib/temple-of-joy/minigames/garden';
 import { MAX_GLOBES } from '@/lib/temple-of-joy/data/globes';
 import { useTempleSnapshot } from '../hooks';
-import { TempleSection } from '../ui';
+import { TempleSection, Glyph } from '../ui';
 
 export function OverviewPanel() {
   const { t } = useTranslation('c-temple-of-joy');
@@ -45,7 +64,19 @@ export function OverviewPanel() {
       mult: m,
       lifetime: state.lifetimeJoy,
       run: state.runJoy,
+      peak: state.peakJoy,
       sources: computeTotalSources(state),
+      globesBought: state.globesBought,
+      graceEarned: state.graceEarned,
+      graceSpent: state.graceSpent,
+      haloStreak: state.haloStreak,
+      rapture: state.rapture,
+      mannaGathered: state.manna.gathered,
+      seedsKnown: state.garden.known.length,
+      choirSwaps: state.choir.swaps,
+      marketProfit: state.exchange.lifetimeProfit,
+      prayersSaid: state.hours.said,
+      keepsakes: state.keepsakes.length,
       globes: computeGlobes(state),
       levels: computeTotalLevels(state),
       bowlFrames: state.bowl.frames,
@@ -100,17 +131,68 @@ export function OverviewPanel() {
   const totals: [string, string][] = [
     [t('lifetime-joy', { defaultValue: 'Joy, all time' }), fmt(s.lifetime, s.format)],
     [t('run-joy', { defaultValue: 'Joy, this run' }), fmt(s.run, s.format)],
+    [t('peak-joy', { defaultValue: 'Most joy held at once' }), fmt(s.peak, s.format)],
     [t('sources-owned', { defaultValue: 'Sources owned' }), fmt(s.sources, s.format)],
     [t('globes-turning', { defaultValue: 'Globes turning' }), `${s.globes} / ${MAX_GLOBES}`],
+    [t('globes-bought', { defaultValue: 'Globes bought this run' }), String(s.globesBought)],
     [t('levels-raised', { defaultValue: 'Manna levels' }), String(s.levels)],
+    [t('manna-gathered', { defaultValue: 'Gathered, all time' }), String(s.mannaGathered)],
     [t('blessings-bought', { defaultValue: 'Blessings' }), `${s.blessings} / ${BLESSINGS.length}`],
     [t('trophies-earned', { defaultValue: 'Trophies' }), `${s.trophies} / ${TROPHIES.length}`],
     [t('devotion', { defaultValue: 'Devotion' }), `+${Math.round(s.devotion * 100)}%`],
   ];
 
+  /**
+   * The rooms off the nave. Each line only appears once its room has been
+   * opened — a ledger of four zeroes for mechanics a player has not met is the
+   * same mistake as a rail of locked tabs.
+   */
+  const rooms: [string, string][] = [
+    ...(s.seedsKnown > 0
+      ? ([
+          [
+            t('seeds-known', { defaultValue: 'Seeds discovered' }),
+            `${s.seedsKnown} / ${SEEDS.length}`,
+          ],
+        ] as [string, string][])
+      : []),
+    ...(s.choirSwaps > 0
+      ? ([[t('choir-swaps', { defaultValue: 'Choir re-seatings' }), String(s.choirSwaps)]] as [
+          string,
+          string,
+        ][])
+      : []),
+    ...(s.marketProfit > 0
+      ? ([
+          [
+            t('exchange-profit', { defaultValue: 'Taken in all time' }),
+            fmt(s.marketProfit, s.format),
+          ],
+        ] as [string, string][])
+      : []),
+    ...(s.prayersSaid > 0
+      ? ([[t('prayers-said', { defaultValue: 'Prayers said' }), String(s.prayersSaid)]] as [
+          string,
+          string,
+        ][])
+      : []),
+    ...(s.rapture > 0
+      ? ([[t('rapture-stage', { defaultValue: 'Rapture reached' }), String(s.rapture)]] as [
+          string,
+          string,
+        ][])
+      : []),
+  ];
+
   const deeds: [string, string][] = [
     [t('offerings-made', { defaultValue: 'Offerings by hand' }), s.touches.toLocaleString('en-US')],
     [t('halos-caught', { defaultValue: 'Halos caught' }), s.halos.toLocaleString('en-US')],
+    ...(s.haloStreak > 0
+      ? ([[t('halo-streak', { defaultValue: 'Halos in a row' }), String(s.haloStreak)]] as [
+          string,
+          string,
+        ][])
+      : []),
     [t('sinners-struck', { defaultValue: 'Sinners struck' }), s.sinners.toLocaleString('en-US')],
     ...(s.harvest > 0
       ? ([
@@ -124,6 +206,21 @@ export function OverviewPanel() {
     [t('time-this-run', { defaultValue: 'Time this run' }), formatDuration(s.runPlaytime)],
     [t('ascensions', { defaultValue: 'Ascensions' }), String(s.ascensions)],
     [t('grace-held', { defaultValue: 'Grace held' }), String(s.grace)],
+    ...(s.graceEarned > 0
+      ? ([
+          [t('grace-earned', { defaultValue: 'Grace earned, all time' }), String(s.graceEarned)],
+          [
+            t('grace-spent-total', { defaultValue: 'Grace spent on the Ladder' }),
+            String(s.graceSpent),
+          ],
+        ] as [string, string][])
+      : []),
+    ...(s.keepsakes > 0
+      ? ([[t('keepsakes-carried', { defaultValue: 'Keepsakes carried' }), String(s.keepsakes)]] as [
+          string,
+          string,
+        ][])
+      : []),
     ...(s.nextGrace > 0
       ? ([[t('grace-waiting', { defaultValue: 'Grace waiting' }), `+${s.nextGrace}`]] as [
           string,
@@ -173,10 +270,21 @@ export function OverviewPanel() {
         <Line key={label} label={label} value={value} />
       ))}
 
+      {rooms.length > 0 && (
+        <>
+          <TempleSection>{t('section-rooms', { defaultValue: 'The rooms' })}</TempleSection>
+          {rooms.map(([label, value]) => (
+            <Line key={label} label={label} value={value} />
+          ))}
+        </>
+      )}
+
       <TempleSection>{t('section-deeds', { defaultValue: 'Deeds' })}</TempleSection>
       {deeds.map(([label, value]) => (
         <Line key={label} label={label} value={value} />
       ))}
+
+      <Holdings />
 
       {/* The lane only appears in the ledger once it has been used. A row of
           zeroes for a mechanic nobody has met yet teaches nothing. */}
@@ -213,6 +321,113 @@ export function OverviewPanel() {
       )}
     </>
   );
+}
+
+/**
+ * Everything you own, and what each of it is doing.
+ *
+ * Packed into a STRING rather than returned as an array of objects, because
+ * `useTempleSnapshot` compares shallowly: a fresh array of fresh row objects is
+ * never equal to the last one, so the panel would re-render on every beat
+ * whether or not a single figure had moved. One string of rounded figures
+ * compares by value, so a temple standing still costs nothing to display.
+ *
+ * The rate is rounded to three significant figures before it goes into the key
+ * for the same reason — an untouched source's raw output still drifts in the
+ * sixteenth decimal, and comparing that is the same as not comparing at all.
+ */
+function Holdings() {
+  const { t } = useTranslation('c-temple-of-joy');
+
+  const packed = useTempleSnapshot((state) => {
+    const rows: string[] = [];
+    let total = 0;
+    for (const source of SOURCES) {
+      const owned = state.sources[source.id] ?? 0;
+      if (owned <= 0) continue;
+      const jps = computeSourceJps(state, source.id);
+      total += jps;
+      rows.push(
+        `${source.id}|${owned}|${state.sourceLevels[source.id] ?? 0}|${jps.toPrecision(3)}`,
+      );
+    }
+    return { rows: rows.join(','), total, format: state.numberFormat };
+  }, 700);
+
+  const rows = useMemo(() => {
+    if (!packed.rows) return [];
+    return packed.rows.split(',').map((entry) => {
+      const [id, owned, level, jps] = entry.split('|');
+      const def = SOURCES.find((source) => source.id === id);
+      return {
+        id: id!,
+        name: def?.name ?? id!,
+        icon: def?.icon ?? '•',
+        owned: Number(owned),
+        level: Number(level),
+        jps: Number(jps),
+      };
+    });
+  }, [packed.rows]);
+
+  if (rows.length === 0) return null;
+
+  return (
+    <>
+      <TempleSection>{t('section-holdings', { defaultValue: 'What you own' })}</TempleSection>
+      <p className="toj-panel-note">
+        {t('holdings-note', {
+          defaultValue:
+            'Every source you hold, what it makes, and its share of your rate. The share is the one to read: it is where your next purchase is worth the most.',
+        })}
+      </p>
+      {rows.map((row) => (
+        <div className="toj-holding" key={row.id}>
+          <span className="toj-holding-icon" aria-hidden>
+            <Glyph>{row.icon}</Glyph>
+          </span>
+          <span className="toj-holding-name">
+            <b>{row.name}</b>
+            <small>
+              {row.level > 0
+                ? t('holding-owned-level', {
+                    owned: fmtCount(row.owned),
+                    level: row.level,
+                    defaultValue: '{{owned}} owned · level {{level}}',
+                  })
+                : t('holding-owned', {
+                    owned: fmtCount(row.owned),
+                    defaultValue: '{{owned}} owned',
+                  })}
+            </small>
+          </span>
+          <span className="toj-holding-figures">
+            <b>{fmt(row.jps, packed.format)}</b>
+            <small>
+              {packed.total > 0
+                ? t('holding-share', {
+                    percent: sharePercent(row.jps, packed.total),
+                    defaultValue: '{{percent}}% of rate',
+                  })
+                : t('holding-idle', { defaultValue: 'idle' })}
+            </small>
+          </span>
+        </div>
+      ))}
+    </>
+  );
+}
+
+/**
+ * A source's share of the rate, to one decimal — but never rounded to a bare
+ * "0.0" while it is still making something. A source that has been overtaken
+ * ten times over is exactly the one a player is deciding whether to keep
+ * buying, and "0.0%" and "<0.1%" answer that question differently.
+ */
+function sharePercent(jps: number, total: number): string {
+  const share = (jps / total) * 100;
+  if (share > 0 && share < 0.05) return '<0.1';
+  return share.toFixed(1);
 }
 
 function Line({ label, value }: { label: string; value: string }) {

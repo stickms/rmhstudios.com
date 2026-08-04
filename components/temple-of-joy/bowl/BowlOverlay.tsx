@@ -58,6 +58,25 @@ const SWIPE_AIM_SPAN = 0.34;
 /** Horizontal pointer speed (px/s) at release that reads as a full hook. */
 const SWIPE_SPIN_SPAN = 900;
 
+/**
+ * How long a roll may go unanswered before the alley gives the ball back.
+ *
+ * `rolling` disables everything in the room — the dials, the Roll button, the
+ * Leave button, and the Escape key — because the settle is what advances the
+ * frame and a player who walks out over it has thrown a ball nobody counted.
+ * The consequence is that the ONLY thing that can end the phase is a report
+ * from the lane, and the lane is a lazily-loaded physics scene holding its own
+ * GL context: lose the context, fail the chunk, or throw inside the frame loop
+ * and the player is sealed in a modal with nothing left to press. The lane's own
+ * `MAX_ROLL_SECONDS` ceiling cannot help — it is counted by the frame loop,
+ * which is the thing that has stopped.
+ *
+ * Comfortably longer than a roll can legitimately take (that ceiling of nine
+ * seconds, plus the ~2.6s the camera holds on the deck before the count lands),
+ * so this only ever fires for a lane that is genuinely not coming back.
+ */
+const ROLL_WATCHDOG_MS = 20_000;
+
 type Phase = 'aim' | 'rolling' | 'between' | 'done';
 
 const FULL_RACK: boolean[] = Array.from({ length: BOWL_PINS }, () => true);
@@ -78,6 +97,8 @@ function Alley() {
   const [ball, setBall] = useState(1);
   const [firstBall, setFirstBall] = useState(0);
   const [rollToken, setRollToken] = useState(0);
+  /** The last ball was abandoned rather than counted — see `ROLL_WATCHDOG_MS`. */
+  const [stalled, setStalled] = useState(false);
   /** Mirrors of the control ref, at the pace a human moves a slider. */
   const [aim, setAim] = useState(0);
   const [power, setPower] = useState(0.62);
@@ -153,9 +174,26 @@ function Alley() {
 
   const roll = useCallback(() => {
     if (controls.current.power < 0.05) return;
+    setStalled(false);
     setPhase('rolling');
     setRollToken((n) => n + 1);
   }, []);
+
+  /**
+   * The lane stopped answering. See `ROLL_WATCHDOG_MS`.
+   *
+   * The ball is given back rather than counted: a roll nobody watched should
+   * not score, and the frame is still there to be bowled. Everything the phase
+   * was disabling — the dials, Roll, Leave, Escape — comes back with it.
+   */
+  useEffect(() => {
+    if (phase !== 'rolling') return;
+    const timer = window.setTimeout(() => {
+      setStalled(true);
+      setPhase(ball === 1 ? 'aim' : 'between');
+    }, ROLL_WATCHDOG_MS);
+    return () => window.clearTimeout(timer);
+  }, [ball, phase]);
 
   const onRolling = useCallback(() => {
     templeAudio.play('strike');
@@ -166,6 +204,9 @@ function Alley() {
     (next: boolean[]) => {
       const knocked = BOWL_PINS - next.filter(Boolean).length;
       setStanding(next);
+      // A count that arrives late — after the watchdog had already given the
+      // ball back — is still a count, and it retires the notice with it.
+      setStalled(false);
 
       if (ball === 1) {
         setFirstBall(knocked);
@@ -363,41 +404,49 @@ function Alley() {
   /* ── Copy ─────────────────────────────────────────────────────────────── */
 
   const multiplier = bowlMultiplier(down);
+  // `stalled` is only ever true with a ball still in hand — rolling clears it,
+  // and so does a count — so it reads ahead of the aim and between lines it
+  // stands in for, and can never mask a finished frame.
   const status =
     phase === 'rolling'
       ? t('bowl-status-rolling', { defaultValue: 'Rolling…' })
-      : phase === 'between'
-        ? t('bowl-status-between', {
-            down: firstBall,
-            standing: standing.filter(Boolean).length,
-            defaultValue: 'Ball one: {{down}} down, {{standing}} standing. One ball left.',
+      : stalled
+        ? t('bowl-status-stalled', {
+            defaultValue:
+              'The lane never reported that ball, so nothing was counted. Roll it again — or leave and come back.',
           })
-        : phase === 'done'
-          ? down >= BOWL_PINS
-            ? t('bowl-status-clean', {
-                multiplier: multiplier.toFixed(2),
-                defaultValue: 'All ten. Joy ×{{multiplier}} for the hour.',
-              })
-            : down > 0
-              ? t('bowl-status-count', {
-                  down,
+        : phase === 'between'
+          ? t('bowl-status-between', {
+              down: firstBall,
+              standing: standing.filter(Boolean).length,
+              defaultValue: 'Ball one: {{down}} down, {{standing}} standing. One ball left.',
+            })
+          : phase === 'done'
+            ? down >= BOWL_PINS
+              ? t('bowl-status-clean', {
                   multiplier: multiplier.toFixed(2),
-                  defaultValue: '{{down}} down. Joy ×{{multiplier}} for the hour.',
+                  defaultValue: 'All ten. Joy ×{{multiplier}} for the hour.',
                 })
-              : t('bowl-status-gutter', {
-                  defaultValue: 'Nothing down. No boost — but your hands stay free.',
+              : down > 0
+                ? t('bowl-status-count', {
+                    down,
+                    multiplier: multiplier.toFixed(2),
+                    defaultValue: '{{down}} down. Joy ×{{multiplier}} for the hour.',
+                  })
+                : t('bowl-status-gutter', {
+                    defaultValue: 'Nothing down. No boost — but your hands stay free.',
+                  })
+            : swingArmed
+              ? t('bowl-status-swing', {
+                  ball,
+                  balls: BOWL_BALLS,
+                  defaultValue: 'Ball {{ball}} of {{balls}}. Wind back and swing the phone.',
                 })
-          : swingArmed
-            ? t('bowl-status-swing', {
-                ball,
-                balls: BOWL_BALLS,
-                defaultValue: 'Ball {{ball}} of {{balls}}. Wind back and swing the phone.',
-              })
-            : t('bowl-status-aim', {
-                ball,
-                balls: BOWL_BALLS,
-                defaultValue: 'Ball {{ball}} of {{balls}}. Set your line and roll.',
-              });
+              : t('bowl-status-aim', {
+                  ball,
+                  balls: BOWL_BALLS,
+                  defaultValue: 'Ball {{ball}} of {{balls}}. Set your line and roll.',
+                });
 
   return (
     <div className="toj-bowl" ref={rootRef}>

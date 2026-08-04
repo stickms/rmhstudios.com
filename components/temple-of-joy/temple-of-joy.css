@@ -622,10 +622,31 @@
      */
     --toj-nav-shrink: 0rem;
 
-    --toj-dock-h: calc(min(42dvh, 24rem) + var(--toj-nav-shrink));
+    --toj-dock-h: calc(min(44dvh, 25rem) + var(--toj-nav-shrink));
     /* The bar's drawn height, before the safe-area inset it adds underneath.
        Named because the toast rail has to sit clear of it. */
     --toj-bar-h: calc(3.75rem - var(--toj-nav-shrink));
+
+    /**
+     * What is left of the altar once you have scrolled into the list.
+     *
+     * The altar is pinned, and a pinned altar that keeps its full height keeps
+     * half the phone for as long as you are reading — which on a 667px screen
+     * left the shop four rows and, at rest, ONE. The room was not too small;
+     * the list was, permanently, because the two were sharing a screen neither
+     * could give up.
+     *
+     * So the altar parks instead of staying. Scroll down and it slides up until
+     * only this much of it is left — the counter, and the rites row under it —
+     * and the list has the rest of the screen for as long as it is the thing you
+     * are looking at. Flick back to the top and the room is whole again.
+     *
+     * Tall enough for the fixed counter (two lines and its chip row, 6.4rem —
+     * see `.toj-buffs` for why that measurement is the same on every phone) plus
+     * the standing actions beneath it, so nothing in the parked band is clipped
+     * and "Strike all" stays under a thumb while you shop.
+     */
+    --toj-stage-min-h: 11rem;
 
     /**
      * How tall the pinned altar is.
@@ -638,8 +659,7 @@
      * `dvh`, so when Safari's toolbar rolls away the altar is what grows.
      */
     --toj-stage-h: calc(
-      100dvh - var(--toj-dock-h) - var(--toj-bar-h) - var(--toj-safe-top) -
-        var(--toj-safe-bottom)
+      100dvh - var(--toj-dock-h) - var(--toj-bar-h) - var(--toj-safe-top) - var(--toj-safe-bottom)
     );
 
     /* What is left of the pinned altar once the counter's two lines, the rites
@@ -655,7 +675,6 @@
   .toj[data-nav='compact'] {
     --toj-nav-shrink: 1.25rem;
   }
-
 }
 
 /**
@@ -796,7 +815,7 @@
   text-overflow: clip;
 }
 
- /* The second-most-important number in the game, and it was the third-largest
+/* The second-most-important number in the game, and it was the third-largest
     thing in the header — under a decorative trophy percentage. It sits directly
     under the counter it belongs to and is sized like a subtitle, not a caption. */
 .toj-rate {
@@ -2036,8 +2055,7 @@
   max-height: 80dvh;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: var(--toj-2) var(--toj-gutter)
-    calc(var(--toj-gutter) + var(--toj-safe-bottom));
+  padding: var(--toj-2) var(--toj-gutter) calc(var(--toj-gutter) + var(--toj-safe-bottom));
   border-radius: var(--toj-radius-lg) var(--toj-radius-lg) 0 0;
   border-top: 1px solid var(--toj-rule);
   background: var(--toj-surface);
@@ -2473,6 +2491,72 @@ button.toj-row:active:not(:disabled) {
   background: var(--toj-gold-wash);
   color: var(--toj-gold-deep);
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--toj-gold) 35%, transparent);
+}
+
+/* ── The ledger of holdings ──────────────────────────────────────────────────
+   An inventory line, not a shop row: nothing here is a button, because nothing
+   here can be bought. It is a settings row with an icon and a second figure —
+   the same rhythm and the same hairline, so the overview reads as one document
+   rather than as a stats panel with a table dropped into it. */
+
+.toj-holding {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--toj-gap-within) var(--toj-gap-between);
+  padding: var(--toj-3) 0;
+  border-bottom: 1px solid var(--toj-rule);
+}
+
+.toj-holding:last-child {
+  border-bottom: 0;
+}
+
+.toj-holding-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--toj-radius-pill);
+  background: var(--toj-surface-sunk);
+  font-size: 0.9rem;
+}
+
+.toj-holding-name,
+.toj-holding-figures {
+  display: flex;
+  flex-direction: column;
+  /* Below the grid: a name and its own sub-line are ONE object. */
+  gap: var(--toj-0);
+  min-width: 0;
+}
+
+.toj-holding-figures {
+  text-align: end;
+}
+
+.toj-holding-name b,
+.toj-holding-figures b {
+  font-weight: 600;
+  /* A source name is not worth two lines in a ledger; the shop has the room to
+     spell it out and this does not. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toj-holding-name small,
+.toj-holding-figures small {
+  font-size: 0.78rem;
+  color: var(--toj-ink-soft);
+  white-space: nowrap;
+}
+
+.toj-holding-figures b,
+.toj-holding-figures small,
+.toj-holding-name small {
+  font-variant-numeric: var(--toj-figures);
 }
 
 /* ── Settings rows ── */
@@ -3337,9 +3421,7 @@ button.toj-row:active:not(:disabled) {
   z-index: 45;
   /* Clear of the panel AND of the bar under it — `--toj-bar-h` is set only in
      the stacked layout, where the bar exists. */
-  bottom: calc(
-    var(--toj-dock-h, 0px) + var(--toj-bar-h, 0px) + var(--toj-safe-bottom) + 0.75rem
-  );
+  bottom: calc(var(--toj-dock-h, 0px) + var(--toj-bar-h, 0px) + var(--toj-safe-bottom) + 0.75rem);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -3891,9 +3973,19 @@ button.toj-row:active:not(:disabled) {
    * beside it — and it carries the room's light, which used to be painted by
    * `.toj` across a viewport that no longer exists.
    */
+  /**
+   * Parked, not pinned — see `--toj-stage-min-h`.
+   *
+   * A NEGATIVE sticky offset, which is the whole trick: the altar keeps its
+   * full height in the flow and simply stops scrolling once its last
+   * `--toj-stage-min-h` reaches the top edge. Nothing reflows, so nothing
+   * jumps. Collapsing it by animating `height` instead would shorten the
+   * document under a finger that is already moving, and the list would lurch
+   * upward by exactly the amount the room gave back.
+   */
   .toj-stage {
     position: sticky;
-    top: 0;
+    top: calc(var(--toj-stage-min-h) - var(--toj-stage-h));
     z-index: 3;
     height: var(--toj-stage-h);
     min-height: 9rem;
@@ -3937,12 +4029,23 @@ button.toj-row:active:not(:disabled) {
     max-height: 11rem;
   }
 
+  /**
+   * `fixed`, not `absolute`, because the altar under it now moves.
+   *
+   * Absolute meant "the top of the room", and the room slides up out of the way
+   * as you scroll into the list — taking the joy counter with it. The counter is
+   * the one number that should never leave a phone screen, so it is pinned to
+   * the viewport rather than to the thing that scrolls. It still lands inside
+   * the altar's parked band, so its gradient always has the room behind it and
+   * never the list.
+   */
   .toj-hud {
-    position: absolute;
+    position: fixed;
     inset: 0 0 auto;
     z-index: 4;
     margin: 0;
-    padding: calc(var(--toj-3) + var(--toj-safe-top)) var(--toj-gutter) var(--toj-5);
+    padding: calc(var(--toj-3) + var(--toj-safe-top)) calc(var(--toj-gutter) + var(--safe-right))
+      var(--toj-5) calc(var(--toj-gutter) + var(--safe-left));
     border: 0;
     border-radius: 0;
     box-shadow: none;
@@ -3972,6 +4075,24 @@ button.toj-row:active:not(:disabled) {
   .toj-hud button,
   .toj-hud a {
     pointer-events: auto;
+  }
+
+  /**
+   * Active blessings drop clear of the whole counter block.
+   *
+   * They are centred and the joy figure is wide, so at the field's top edge a
+   * running buff sat straight across "4.200 Qi" — the largest thing on the
+   * screen, illegible for as long as the buff lasts — and one line down it cut
+   * through the chips instead.
+   *
+   * The offset can be a constant because the block above it is one on every
+   * phone: `--toj-joy` is `clamp(1.7rem, 5.5vw, 3rem)`, and 5.5vw does not reach
+   * 1.7rem until 495px, so every phone width takes the clamp's FLOOR. Counter,
+   * rate and chips therefore measure the same 6.4rem from the top of the room on
+   * a 320px screen and on a 430px one; this clears them with a little air.
+   */
+  .toj-buffs {
+    top: 6.75rem;
   }
 
   /**
@@ -4041,9 +4162,17 @@ button.toj-row:active:not(:disabled) {
    * the room stops — and because that offset is `--toj-stage-h`, which is
    * `dvh`-based, it follows the altar as Safari's toolbar rolls away.
    */
+  /**
+   * The quantity switch pins under the PARKED altar.
+   *
+   * At rest the room is taller than that, so the switch rises and tucks behind
+   * it — which is what the z-index below is for — and emerges again exactly as
+   * the altar finishes parking. The two never overlap visibly and the switch is
+   * never stranded halfway down an empty band.
+   */
   .toj-toolbar {
     padding-top: var(--toj-3);
-    top: var(--toj-stage-h);
+    top: var(--toj-stage-min-h);
     /* Under the room (z-index 3), over the rows it covers. */
     z-index: 2;
   }
