@@ -37,7 +37,7 @@ export const META_NODES: MetaNodeDef[] = [
 ];
 
 const NODE_BY_ID = new Map(META_NODES.map(n => [n.id, n]));
-const STORAGE_KEY = 'vb-meta';
+export const META_STORAGE_KEY = 'vb-meta';
 
 export function getNodeDef(id: MetaNodeId): MetaNodeDef | undefined {
   return NODE_BY_ID.get(id);
@@ -114,6 +114,34 @@ export function unlockWeapon(state: MetaState, id: WeaponId): MetaState {
   };
 }
 
+/**
+ * Cores this save has spent, reconstructed from what it owns.
+ *
+ * Nothing records it directly — `cores` is the balance, and buying decrements
+ * it — but every price is a pure function of the thing bought, so the total is
+ * recoverable. That matters for one specific reason: syncing this save to an
+ * account needs a counter that can only ever go UP, and the balance is not one.
+ * Two devices with identical unlocks but different balances would otherwise
+ * look identical to the conflict check, and the larger balance could be thrown
+ * away silently. `coresEarned` is the honest high-water mark. See
+ * `lib/game-saves/conflict.ts`.
+ */
+export function coresSpent(state: MetaState): number {
+  let spent = 0;
+  for (const def of META_NODES) {
+    const level = nodeLevel(state, def.id);
+    for (let i = 0; i < level; i++) spent += nodeCost(def, i);
+  }
+  for (const id of state.unlocked ?? []) spent += getCharacter(id).unlockCost;
+  for (const id of state.unlockedWeapons ?? []) spent += getWeapon(id).unlockCost;
+  return spent;
+}
+
+/** Every core this save has ever banked. Only ever rises. */
+export function coresEarned(state: MetaState): number {
+  return Math.max(0, Math.floor(state.cores ?? 0)) + coresSpent(state);
+}
+
 /** Cores awarded for a finished run. */
 export function awardCores(score: number, bossesKilled: number, wave: number): number {
   return Math.floor(score / 800) + bossesKilled * 3 + Math.floor(wave / 2);
@@ -143,7 +171,7 @@ export function metaBonuses(state: MetaState): MetaBonuses {
 export function loadMeta(): MetaState {
   if (typeof window === 'undefined') return emptyMeta();
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(META_STORAGE_KEY);
     if (!raw) return emptyMeta();
     const parsed = JSON.parse(raw) as MetaState;
     return {
@@ -160,7 +188,7 @@ export function loadMeta(): MetaState {
 export function saveMeta(state: MetaState): void {
   if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    window.localStorage.setItem(META_STORAGE_KEY, JSON.stringify(state));
   } catch {
     /* storage full / unavailable — non-fatal */
   }

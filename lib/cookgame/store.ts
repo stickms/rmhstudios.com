@@ -6,7 +6,8 @@ import { ADDITIVES, BUYERS, INPUTS, GROWABLE } from './content';
 import { mix, effectSetKey, productValue } from './effects';
 import { discoverEffects, mergeBestValue } from './journal';
 import { buyerOffer, applyHeatOnSale, decayHeat, packageProduct, UNITS_PER_BATCH } from './economy';
-import { SaveState, CURRENT_VERSION, createNewSave, saveGame, loadGame } from './saveSystem';
+import { SaveState, CURRENT_VERSION, createNewSave } from './saveSystem';
+import { persistCookgameSave } from './cloud';
 import { xpForSale, xpForRecipe, xpForProduction, rankForXp, perksAtRank } from './progression';
 import {
   plantPlot as cPlant, canTend, tendPlot as cTend,
@@ -73,7 +74,7 @@ interface CookgameState {
   setActiveOverlay: (id: string | null) => void;
   setPlayerPosition: (p: [number, number, number]) => void;
   saveNow: () => void;
-  loadOrNew: () => void;
+  loadOrNew: (save?: SaveState | null) => void;
   resetGame: () => void;
   buyInput: (id: InputId) => boolean;
   plantPlot: (plotIndex: number, strainKey: string, now: number) => boolean;
@@ -281,9 +282,19 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
 
   saveNow: () => {
     const { cash, heat, inventory, discoveredRecipes, xp, ownedPropertyTier, keys, clock, discoveredEffects, recipeMeta, currentDistrict, buyerState } = get();
-    saveGame({ version: CURRENT_VERSION, cash, heat, inventory, discoveredRecipes, xp, ownedPropertyTier, keys, clock, discoveredEffects, recipeMeta, currentDistrict, buyerState });
+    // Local first and synchronous, account after and best-effort — the split
+    // that lets a closed laptop keep the run. See `lib/game-saves`.
+    persistCookgameSave({ version: CURRENT_VERSION, cash, heat, inventory, discoveredRecipes, xp, ownedPropertyTier, keys, clock, discoveredEffects, recipeMeta, currentDistrict, buyerState });
   },
-  loadOrNew: () => set(fromSave(loadGame() ?? createNewSave())),
+  /**
+   * Open from a save the caller has already resolved, or start fresh.
+   *
+   * Reading storage itself is no longer this store's job: the save can now be
+   * in two places at once, and choosing between them needs the dominance check
+   * in `lib/game-saves/conflict` plus, sometimes, a person. The component does
+   * that and hands the answer down.
+   */
+  loadOrNew: (save = null) => set(fromSave(save ?? createNewSave())),
   resetGame: () => { incomeAccum = 0; driftAccum = 0; set({ ...fromSave(createNewSave()), nearbyInteractable: null, activeOverlay: null, cookSession: null }); },
 
   buyInput: (id) => {

@@ -333,6 +333,7 @@ import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-e
 import { Route as ApiFriendsActiveRouteImport } from './routes/api/friends/active'
 import { Route as ApiGabrielsHornHouseRuleRouteImport } from './routes/api/gabriels-horn/house-rule'
 import { Route as ApiGabrielsHornLeaderboardRouteImport } from './routes/api/gabriels-horn/leaderboard'
+import { Route as ApiGameSavesGameIdRouteImport } from './routes/api/game-saves/$gameId'
 import { Route as ApiGifSearchRouteImport } from './routes/api/gif/search'
 import { Route as ApiGroupChatsIndexRouteImport } from './routes/api/group-chats/index'
 import { Route as ApiGuidesIndexRouteImport } from './routes/api/guides/index'
@@ -2376,6 +2377,11 @@ const ApiGabrielsHornLeaderboardRoute =
     path: '/api/gabriels-horn/leaderboard',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiGameSavesGameIdRoute = ApiGameSavesGameIdRouteImport.update({
+  id: '/api/game-saves/$gameId',
+  path: '/api/game-saves/$gameId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGifSearchRoute = ApiGifSearchRouteImport.update({
   id: '/api/gif/search',
   path: '/api/gif/search',
@@ -4821,6 +4827,7 @@ export interface FileRoutesByFullPath {
   '/api/friends/active': typeof ApiFriendsActiveRoute
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
+  '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
@@ -5534,6 +5541,7 @@ export interface FileRoutesByTo {
   '/api/friends/active': typeof ApiFriendsActiveRoute
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
+  '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
@@ -6273,6 +6281,7 @@ export interface FileRoutesById {
   '/api/friends/active': typeof ApiFriendsActiveRoute
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
+  '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
@@ -7012,6 +7021,7 @@ export interface FileRouteTypes {
     | '/api/friends/active'
     | '/api/gabriels-horn/house-rule'
     | '/api/gabriels-horn/leaderboard'
+    | '/api/game-saves/$gameId'
     | '/api/gif/search'
     | '/api/guides/$id'
     | '/api/handle/check'
@@ -7725,6 +7735,7 @@ export interface FileRouteTypes {
     | '/api/friends/active'
     | '/api/gabriels-horn/house-rule'
     | '/api/gabriels-horn/leaderboard'
+    | '/api/game-saves/$gameId'
     | '/api/gif/search'
     | '/api/guides/$id'
     | '/api/handle/check'
@@ -8463,6 +8474,7 @@ export interface FileRouteTypes {
     | '/api/friends/active'
     | '/api/gabriels-horn/house-rule'
     | '/api/gabriels-horn/leaderboard'
+    | '/api/game-saves/$gameId'
     | '/api/gif/search'
     | '/api/guides/$id'
     | '/api/handle/check'
@@ -9052,6 +9064,7 @@ export interface RootRouteChildren {
   ApiFriendsActiveRoute: typeof ApiFriendsActiveRoute
   ApiGabrielsHornHouseRuleRoute: typeof ApiGabrielsHornHouseRuleRoute
   ApiGabrielsHornLeaderboardRoute: typeof ApiGabrielsHornLeaderboardRoute
+  ApiGameSavesGameIdRoute: typeof ApiGameSavesGameIdRoute
   ApiGifSearchRoute: typeof ApiGifSearchRoute
   ApiGuidesIdRoute: typeof ApiGuidesIdRouteWithChildren
   ApiHandleCheckRoute: typeof ApiHandleCheckRoute
@@ -11592,6 +11605,13 @@ declare module '@tanstack/react-router' {
       path: '/api/gabriels-horn/leaderboard'
       fullPath: '/api/gabriels-horn/leaderboard'
       preLoaderRoute: typeof ApiGabrielsHornLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/game-saves/$gameId': {
+      id: '/api/game-saves/$gameId'
+      path: '/api/game-saves/$gameId'
+      fullPath: '/api/game-saves/$gameId'
+      preLoaderRoute: typeof ApiGameSavesGameIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/gif/search': {
@@ -16073,6 +16093,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiFriendsActiveRoute: ApiFriendsActiveRoute,
   ApiGabrielsHornHouseRuleRoute: ApiGabrielsHornHouseRuleRoute,
   ApiGabrielsHornLeaderboardRoute: ApiGabrielsHornLeaderboardRoute,
+  ApiGameSavesGameIdRoute: ApiGameSavesGameIdRoute,
   ApiGifSearchRoute: ApiGifSearchRoute,
   ApiGuidesIdRoute: ApiGuidesIdRouteWithChildren,
   ApiHandleCheckRoute: ApiHandleCheckRoute,

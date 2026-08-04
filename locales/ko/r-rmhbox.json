@@ -18,6 +18,7 @@
   "joining-lobby": "로비 {{lobbyId}}에 참가 중...",
   "leaderboard": "리더보드",
   "leave": "나가기",
+  "loading-detail": "Loading details…",
   "loading-history": "기록 불러오는 중...",
   "match-history": "매치 기록",
   "minigames": "미니게임",

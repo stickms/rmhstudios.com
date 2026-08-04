@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { ActId, ActPhase, PuzzleState, ActProgress, ForestExplorerSave } from './types';
-import { saveGame, loadGame, createNewSave, dbSave, dbLoad } from './saveSystem';
+import { createNewSave, dbSave } from './saveSystem';
+import { forestExplorerSave } from './cloud';
 import { getPuzzleById, getPuzzlesByAct, isPuzzleLocked } from './puzzleDefinitions';
 import { getEntryById } from '@/components/forest-explorer/story/journal/journalData';
 
@@ -75,7 +76,7 @@ interface StoryState {
     dismissToast: () => void;
     showNarration: (lines: string[]) => void;
     dismissNarration: () => void;
-    initializeGame: (isLoggedIn: boolean) => Promise<void>;
+    initializeGame: (isLoggedIn: boolean, save?: ForestExplorerSave | null) => Promise<void>;
     newGame: () => void;
     solvePuzzle: (puzzleId: string) => void;
     openPuzzle: (puzzleId: string) => void;
@@ -164,21 +165,19 @@ export const useStoryStore = create<StoryState>((set, get) => ({
     showNarration: (lines: string[]) => set({ narrationLines: lines }),
     dismissNarration: () => set({ narrationLines: null }),
 
-    initializeGame: async (isLoggedIn: boolean) => {
+    /**
+     * Open the story from a save the caller has already chosen.
+     *
+     * Choosing is no longer this function's job. It used to read localStorage,
+     * read the account, and keep whichever was NEWER — which loses a finished
+     * act the first time you open the game on a second device, because the
+     * empty save that device writes at t+0 is newer than everything you have
+     * played. That decision now belongs to `lib/game-saves`, which can tell a
+     * continuation from a divergence and asks the player about the latter; the
+     * component hands the answer down. See `cloud.ts`.
+     */
+    initializeGame: async (isLoggedIn: boolean, save: ForestExplorerSave | null = null) => {
         set({ isLoggedIn });
-
-        // Try localStorage first
-        let save = loadGame();
-
-        // If logged in, also try DB and take the newer one
-        if (isLoggedIn) {
-            const dbSaveData = await dbLoad();
-            if (dbSaveData) {
-                if (!save || dbSaveData.savedAt > save.savedAt) {
-                    save = dbSaveData;
-                }
-            }
-        }
 
         if (save) {
             set({
@@ -220,7 +219,9 @@ export const useStoryStore = create<StoryState>((set, get) => ({
             treesShiftCount: 0,
             initialized: true,
         });
-        saveGame(fresh);
+        // Through the kit, like every other write: a fresh save is still this
+        // account's save, and the stamp is what says so.
+        forestExplorerSave.writeLocal(fresh, fresh.savedAt);
     },
 
     solvePuzzle: (puzzleId: string) => {
@@ -454,21 +455,31 @@ export const useStoryStore = create<StoryState>((set, get) => ({
             journalEntries: state.discoveredEntries,
             storyFlags: state.storyFlags,
         };
-        saveGame(save);
+        // Through the kit: the local write is what stamps the save as this
+        // account's, so a second person on the same browser is not offered it.
+        forestExplorerSave.writeLocal(save, save.savedAt);
         if (state.isLoggedIn) {
             debouncedDbSync(save);
         }
     },
 
+    /**
+     * Re-read the save mid-session (the pause menu's "reload checkpoint").
+     *
+     * Still prefers the account's copy when it is ahead, but by the kit's
+     * dominance rule rather than by timestamp — the same reason as above.
+     */
     loadProgress: async () => {
-        const state = get();
-        let save = loadGame();
-        if (state.isLoggedIn) {
-            const remote = await dbLoad();
-            if (remote && (!save || remote.savedAt > save.savedAt)) {
-                save = remote;
-            }
-        }
+        const choice = await forestExplorerSave.resolve();
+        // A divergence mid-session is not worth a modal over a running scene:
+        // the local copy is the one being played, so it wins here and the
+        // question gets asked properly on the next load.
+        const save =
+            choice.kind === 'resolved'
+                ? choice.save
+                : choice.kind === 'conflict'
+                  ? choice.local
+                  : null;
         if (!save) return false;
 
         set({

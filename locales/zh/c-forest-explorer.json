@@ -81,7 +81,6 @@
   "puzzle-solved": "谜题已解！",
   "puzzle-type-not-implemented": "谜题类型尚未实现。",
   "puzzles-progress": "{{solvedCount}}/{{total}} 个谜题",
-  "redirecting-to-login": "正在重定向到登录页面...",
   "reflection-instructions": "点击放置/旋转镜子，引导光束到达目标。",
   "reflection-instructions-prisms": "Guide the beam through every prism ◆ to the target",
   "repeat-the-pattern": "重复模式（{{current}}/{{total}}）",

@@ -87,7 +87,6 @@
   "puzzle-solved": "Puzzle Résolu !",
   "puzzle-type-not-implemented": "Type de puzzle pas encore implémenté.",
   "puzzles-progress": "{{solvedCount}}/{{total}} puzzles",
-  "redirecting-to-login": "Redirection vers la connexion...",
   "reflection-instructions": "Cliquez pour placer/tourner les miroirs et guider le faisceau lumineux vers la cible",
   "reflection-instructions-prisms": "Guide the beam through every prism ◆ to the target",
   "repeat-the-pattern": "Répétez le motif ({{current}}/{{total}})",

@@ -84,7 +84,6 @@
   "puzzle-solved": "Rätsel gelöst!",
   "puzzle-type-not-implemented": "Rätseltyp noch nicht implementiert.",
   "puzzles-progress": "{{solvedCount}}/{{total}} Rätsel",
-  "redirecting-to-login": "Weiterleitung zur Anmeldung...",
   "reflection-instructions": "Klicke, um Spiegel zu platzieren/drehen und den Lichtstrahl zum Ziel zu lenken",
   "reflection-instructions-prisms": "Guide the beam through every prism ◆ to the target",
   "repeat-the-pattern": "Wiederhole das Muster ({{current}}/{{total}})",

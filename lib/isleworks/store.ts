@@ -22,11 +22,13 @@ import {
   buildableTilesIn,
   clearSave,
   createCity,
+  fromSavedCity,
   loadCity,
   makeInstance,
   purchasableParcels,
   saveCity,
   unlockParcel,
+  type SavedCity,
 } from './city';
 import { getDefinition, tryGetDefinition } from './catalog';
 import { EVENT_INTERVAL, rollEvent } from './events';
@@ -80,7 +82,7 @@ interface IsleworksState {
   /** Instance ids placed this session, for the rise animation. */
   freshIds: string[];
 
-  start: (options?: { fresh?: boolean; seed?: number }) => void;
+  start: (options?: { fresh?: boolean; seed?: number; saved?: SavedCity | null }) => void;
   setTool: (tool: ToolMode) => void;
   rotateTool: (delta: number) => void;
   cancelTool: () => void;
@@ -128,8 +130,16 @@ export const useIsleworks = create<IsleworksState>((set, get) => ({
   started: false,
   freshIds: [],
 
-  start: ({ fresh = false, seed } = {}) => {
-    const city = fresh ? createCity(seed) : (loadCity() ?? createCity(seed));
+  /**
+   * Open a city.
+   *
+   * `saved` is the payload the caller has already resolved between this device
+   * and the account — see `cloud.ts`. It falls back to the local copy so the
+   * signature still works for callers that have not resolved anything (and for
+   * a guest, where local *is* the only copy).
+   */
+  start: ({ fresh = false, seed, saved } = {}) => {
+    const city = fresh ? createCity(seed) : (fromSavedCity(saved ?? null) ?? loadCity() ?? createCity(seed));
     set({ ...commit(city), started: true, speed: 1 });
   },
 

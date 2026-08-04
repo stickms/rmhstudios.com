@@ -81,7 +81,6 @@
   "puzzle-solved": "パズル解決！",
   "puzzle-type-not-implemented": "このパズルタイプはまだ実装されていません。",
   "puzzles-progress": "パズル {{solvedCount}}/{{total}}",
-  "redirecting-to-login": "ログインにリダイレクト中...",
   "reflection-instructions": "クリックして鏡を配置/回転し、光線を目標に導いてください",
   "reflection-instructions-prisms": "Guide the beam through every prism ◆ to the target",
   "repeat-the-pattern": "パターンを繰り返す ({{current}}/{{total}})",

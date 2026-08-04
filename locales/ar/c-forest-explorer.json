@@ -96,7 +96,6 @@
   "puzzle-solved": "تم حل اللغز!",
   "puzzle-type-not-implemented": "نوع اللغز لم يتم تنفيذه بعد.",
   "puzzles-progress": "{{solvedCount}}/{{total}} ألغاز",
-  "redirecting-to-login": "جاري إعادة التوجيه إلى تسجيل الدخول...",
   "reflection-instructions": "انقر لوضع/تدوير المرايا وتوجيه شعاع الضوء نحو الهدف",
   "reflection-instructions-prisms": "Guide the beam through every prism ◆ to the target",
   "repeat-the-pattern": "كرر النمط ({{current}}/{{total}})",

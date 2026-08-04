@@ -87,7 +87,6 @@
   "puzzle-solved": "Quebra-cabeça Resolvido!",
   "puzzle-type-not-implemented": "Tipo de quebra-cabeça ainda não implementado.",
   "puzzles-progress": "{{solvedCount}}/{{total}} quebra-cabeças",
-  "redirecting-to-login": "Redirecionando para login...",
   "reflection-instructions": "Clique para posicionar/girar espelhos e guiar o feixe de luz até o alvo",
   "reflection-instructions-prisms": "Guide the beam through every prism ◆ to the target",
   "repeat-the-pattern": "Repita o padrão ({{current}}/{{total}})",

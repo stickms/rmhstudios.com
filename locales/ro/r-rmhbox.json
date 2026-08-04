@@ -18,6 +18,7 @@
   "joining-lobby": "Joining lobby {{lobbyId}}...",
   "leaderboard": "Leaderboard",
   "leave": "Leave",
+  "loading-detail": "Loading details…",
   "loading-history": "Loading history...",
   "match-history": "Match History",
   "minigames": "Minigames",

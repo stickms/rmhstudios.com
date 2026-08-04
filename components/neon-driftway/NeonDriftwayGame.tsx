@@ -26,6 +26,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  neonDriftwaySave,
+  persistNeonDriftwayUnlocks,
+  summarizeNeonDriftwaySave,
+} from '@/lib/neon-driftway/cloud';
+import { useCloudSave } from '@/hooks/useCloudSave';
 import { NeonDriftwayEngine } from '@/lib/neon-driftway/game';
 import { NeonDriftwayRenderer3D } from '@/lib/neon-driftway/renderer3d';
 import { GyroTracker, gyroPermissionGateExists, type GyroStatus } from '@/lib/neon-driftway/gyro';
@@ -42,7 +48,6 @@ import { NeonDriftwayHud, type HudHandle } from './NeonDriftwayHud';
 import { NDWMultiplayerLobby } from './NDWMultiplayerLobby';
 import { NDWMultiplayerClient } from '@/lib/neon-driftway/multiplayer';
 
-const STORAGE_KEY = 'neon-driftway.unlocks';
 const VR_KEY = 'neon-driftway.vr';
 
 type UIState = 'menu' | 'levelSelect' | 'playing' | 'gameOver' | 'levelComplete'
@@ -50,24 +55,6 @@ type UIState = 'menu' | 'levelSelect' | 'playing' | 'gameOver' | 'levelComplete'
 
 /** One eye or two, and whether the gyro is driving the camera. */
 export type ViewMode = 'fixed' | 'gyro' | 'vr';
-
-function loadUnlocks(): Set<LevelId> {
-  const set = new Set<LevelId>([1 as LevelId]);
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const arr = JSON.parse(raw) as number[];
-      for (const n of arr) if (n === 2 || n === 3) set.add(n as LevelId);
-    }
-  } catch { /* ignore */ }
-  return set;
-}
-
-function saveUnlocks(unlocks: Set<LevelId>): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...unlocks]));
-  } catch { /* ignore */ }
-}
 
 /** A stored mode, or null when the player has never chosen one. */
 function loadViewMode(): ViewMode | null {
@@ -113,6 +100,16 @@ function motionPlausible(): boolean {
 
 export function NeonDriftwayGame() {
   const { t } = useTranslation('c-neon-driftway');
+  // Which tracks are open follows the account when there is one.
+  const cloud = useCloudSave(neonDriftwaySave, {
+    gameName: 'Neon Driftway',
+    summarize: (save) => summarizeNeonDriftwaySave(save, t),
+  });
+
+  useEffect(() => {
+    if (cloud.status !== 'ready') return;
+    setUnlockedLevels(new Set((cloud.save ?? [1]) as LevelId[]));
+  }, [cloud.status, cloud.save]);
   const reducedMotion = useReducedMotion();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -152,7 +149,7 @@ export function NeonDriftwayGame() {
   // ── Mount: capabilities, saved state, gyro tracker ──
 
   useEffect(() => {
-    setUnlockedLevels(loadUnlocks());
+
     setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
     setWebglReady(supportsWebGL());
 
@@ -535,7 +532,7 @@ export function NeonDriftwayGame() {
 
             if (changed) {
               setUnlockedLevels(newUnlocks);
-              saveUnlocks(newUnlocks);
+              persistNeonDriftwayUnlocks(newUnlocks);
             }
           }
         }
@@ -679,6 +676,10 @@ export function NeonDriftwayGame() {
       className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-black"
       style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
     >
+      {/* Two sets of unlocks that disagree. Nothing is applied until it is
+          answered, so no drive can overwrite the set still being offered. */}
+      {cloud.conflictDialog}
+
       <canvas
         ref={canvasRef}
         className="absolute inset-0 block h-full w-full"

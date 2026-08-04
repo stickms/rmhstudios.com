@@ -10,24 +10,29 @@
 
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
-import { fmt, formatDuration } from '@/lib/temple-of-joy/numbers';
+import { fmt, fmtCount, formatDuration } from '@/lib/temple-of-joy/numbers';
 import { saveNow } from '@/lib/temple-of-joy/persistence';
 import {
   computeDevotion,
   computeRateModifiers,
   computeSinnerDrain,
+  computeTotalSources,
 } from '@/lib/temple-of-joy/engine';
 import { MANNA_KIND_MAP, ripenDuration } from '@/lib/temple-of-joy/minigames/manna';
-import { useTempleSnapshot } from './hooks';
+import { useShortViewport, useTempleSnapshot } from './hooks';
 import { LiveValue, TempleButton, Glyph } from './ui';
 
 export function TempleHud() {
   const { t } = useTranslation('c-temple-of-joy');
+  // Sideways the whole head is one row, and the rate is the part that has to
+  // give. See `SHORT_QUERY`.
+  const short = useShortViewport();
 
   // Which chips exist at all is a slow-changing question; the values inside
   // them are `<LiveValue>`s anyway.
   const shown = useTempleSnapshot(
     (s) => ({
+      sources: computeTotalSources(s) > 0,
       grace: s.grace > 0 || s.ascensions > 0,
       manna: s.manna.revealed || s.manna.held > 0,
       mannaReady: s.manna.held > 0,
@@ -46,21 +51,42 @@ export function TempleHud() {
           style={undefined}
           read={(s) => {
             const drain = computeSinnerDrain(s);
-            const rate = t('per-second', {
-              rate: fmt(s.getJps(), s.numberFormat),
-              defaultValue: '{{rate}} joy per second',
-            });
-            return drain > 0
-              ? `${rate} · ${t('drained', {
-                  percent: Math.round(drain * 100),
+            const figure = fmt(s.getJps(), s.numberFormat);
+            const rate = short
+              ? t('per-second-tight', { rate: figure, defaultValue: '{{rate}}/s' })
+              : t('per-second', { rate: figure, defaultValue: '{{rate}} joy per second' });
+            if (drain <= 0) return rate;
+
+            const percent = Math.round(drain * 100);
+            return short
+              ? `${rate} · −${percent}%`
+              : `${rate} · ${t('drained', {
+                  percent,
                   defaultValue: '{{percent}}% held by Sinners',
-                })}`
-              : rate;
+                })}`;
           }}
         />
       </div>
 
       <div className="toj-chips">
+        {/* How much temple there is. First in the row because it is the figure
+            the counter above it does NOT tell you: the rate is the *output* of
+            everything you own, and until this was here the only way to find out
+            how many Acolytes you had was to open the shop and hope you could
+            afford one. */}
+        {shown.sources && (
+          <button
+            type="button"
+            className="toj-chip"
+            data-kind="sources"
+            onClick={() => useTempleStore.getState().setTab('sources')}
+            title={t('sources-hint', { defaultValue: 'Everything you own. Opens the shop.' })}
+          >
+            <Glyph label={t('tab-sources', { defaultValue: 'Sources' })}>🕯️</Glyph>
+            <LiveValue read={(s) => fmtCount(computeTotalSources(s))} />
+          </button>
+        )}
+
         {shown.devotion && (
           <span className="toj-chip" data-kind="devotion">
             <Glyph label={t('devotion', { defaultValue: 'Devotion' })}>🏆</Glyph>

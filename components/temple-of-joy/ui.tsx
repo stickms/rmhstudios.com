@@ -120,6 +120,17 @@ export function LiveValue({ read, className, style, as: Tag = 'span' }: LiveValu
 
 export interface TempleRowProps {
   icon?: ReactNode;
+  /**
+   * How many of this you own, as a badge on the icon.
+   *
+   * On the icon rather than in `meta`, and that is the whole point: `meta` is
+   * the second line of the right-hand figures, and in the shop that line is the
+   * price countdown — so the count was shown only while you could AFFORD the
+   * thing, and vanished exactly when you were deciding whether to keep buying
+   * it. A badge costs no height, survives every state, and is where a count
+   * belongs in any inventory anyone has ever used.
+   */
+  owned?: ReactNode;
   name: ReactNode;
   note?: ReactNode;
   /** Right-hand figure — a price, a count, a reward. */
@@ -139,6 +150,7 @@ export interface TempleRowProps {
 
 export function TempleRow({
   icon,
+  owned,
   name,
   note,
   price,
@@ -153,7 +165,19 @@ export function TempleRow({
 }: TempleRowProps) {
   const content = (
     <>
-      {icon != null && <span className="toj-row-icon">{icon}</span>}
+      {icon != null && (
+        <span className="toj-row-icon">
+          {icon}
+          {/* `aria-hidden`: the count is already in the row's own label, and a
+              screen reader reading "214" between the glyph and the name would
+              be reading the same fact twice, out of order. */}
+          {owned != null && (
+            <span className="toj-row-owned" aria-hidden>
+              {owned}
+            </span>
+          )}
+        </span>
+      )}
       <span className="toj-row-body">
         <span className="toj-row-name">{name}</span>
         {note != null && <span className="toj-row-note">{note}</span>}

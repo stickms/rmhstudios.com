@@ -18,6 +18,7 @@
   "joining-lobby": "Rejoindre le hall {{lobbyId}}...",
   "leaderboard": "Classement",
   "leave": "Quitter",
+  "loading-detail": "Loading details…",
   "loading-history": "Chargement de l'historique...",
   "match-history": "Historique des parties",
   "minigames": "Mini-jeux",

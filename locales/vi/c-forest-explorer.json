@@ -81,7 +81,6 @@
   "puzzle-solved": "Câu đố đã giải!",
   "puzzle-type-not-implemented": "Loại câu đố chưa được triển khai.",
   "puzzles-progress": "{{solvedCount}}/{{total}} câu đố",
-  "redirecting-to-login": "Đang chuyển hướng đến đăng nhập...",
   "reflection-instructions": "Nhấp để đặt/xoay gương và dẫn tia sáng đến mục tiêu",
   "reflection-instructions-prisms": "Guide the beam through every prism ◆ to the target",
   "repeat-the-pattern": "Lặp lại mẫu ({{current}}/{{total}})",

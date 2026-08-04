@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { clearSave } from '@/lib/temple-of-joy/persistence';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
-import { fmt, formatDuration } from '@/lib/temple-of-joy/numbers';
+import { fmt, fmtCount, formatDuration } from '@/lib/temple-of-joy/numbers';
 import {
   computeAscensionGrace,
   computeKeepsMinigames,
@@ -279,6 +279,7 @@ function MannaDialog() {
                 <TempleRow
                   key={row.id}
                   icon={<Glyph>{def.icon}</Glyph>}
+                  owned={row.owned > 0 ? fmtCount(row.owned) : undefined}
                   name={def.name}
                   note={
                     def.minigame && row.level === 0
@@ -379,9 +380,9 @@ function ResetDialog() {
           {t('reset-title', { defaultValue: 'Empty the temple' })}
         </h2>
         <p className="toj-dialog-text">
-          {t('reset-text', {
+          {t('reset-text-anywhere', {
             defaultValue:
-              'Every source, every blessing, every trophy, all your Grace and every ascension — deleted, here and on your account. There is no way back and no Grace for it. The temple opens again as if you had never been.',
+              'Every source, every blessing, every trophy, all your Grace and every ascension — deleted, on this device and on your account if you have one. There is no way back and no Grace for it. The temple opens again as if you had never been.',
           })}
         </p>
       </div>

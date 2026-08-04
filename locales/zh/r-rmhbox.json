@@ -18,6 +18,7 @@
   "joining-lobby": "正在加入大厅 {{lobbyId}}...",
   "leaderboard": "排行榜",
   "leave": "离开",
+  "loading-detail": "Loading details…",
   "loading-history": "加载历史记录...",
   "match-history": "比赛记录",
   "minigames": "小游戏",

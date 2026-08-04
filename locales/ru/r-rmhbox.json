@@ -18,6 +18,7 @@
   "joining-lobby": "Присоединение к лобби {{lobbyId}}...",
   "leaderboard": "Таблица лидеров",
   "leave": "Выйти",
+  "loading-detail": "Loading details…",
   "loading-history": "Загрузка истории...",
   "match-history": "История матчей",
   "minigames": "Мини-игры",

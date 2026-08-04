@@ -3,6 +3,8 @@ import { useEffect, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import { useCookgameStore } from '@/lib/cookgame/store';
+import { cookgameSave } from '@/lib/cookgame/cloud';
+import { useCloudSave } from '@/hooks/useCloudSave';
 import { TownScene, STATION_POSITIONS, BUYER_POSITIONS, PLOT_POSITIONS, DRYING_POSITION, CHEM_POSITION, PROPERTY_POSITION, HARDWARE_POSITION, AFTERHOURS_POSITION, MARCUS_POSITION, VERA_POSITION, SILAS_POSITION } from './world/TownScene';
 import { PlayerController } from './world/PlayerController';
 import { Interactable } from './world/Interactable';
@@ -61,10 +63,18 @@ export function CookGameGame() {
   // loop while an overlay is open would also pause world time.
   const { quality, dpr, downscale } = useRenderQuality();
 
-  // Load saved game (or start fresh) once on mount.
+  // The save can be in two places now — this browser and the account — so the
+  // load waits on the hook rather than reading storage itself. `ready` does not
+  // arrive until any conflict between the two has been answered, which is what
+  // stops the autosave below writing over the save still being offered.
+  // No `summarize` override: nothing in this game is translated yet, so the
+  // store's own English summary is already the right one.
+  const cloud = useCloudSave(cookgameSave, { gameName: 'Cookgame' });
+
   useEffect(() => {
-    useCookgameStore.getState().loadOrNew();
-  }, []);
+    if (cloud.status !== 'ready') return;
+    useCookgameStore.getState().loadOrNew(cloud.save);
+  }, [cloud.status, cloud.save]);
 
   // Debounced autosave on state changes + save on tab close.
   // Uses a closure snapshot of the persisted non-clock fields to detect real
@@ -142,6 +152,10 @@ export function CookGameGame() {
 
   return (
     <div className="relative w-full h-full">
+      {/* Two saves that have both been played. Rendered over the game rather
+          than instead of it — the scene is inert until `loadOrNew` runs, and it
+          only runs once this has been answered. */}
+      {cloud.conflictDialog}
       <Canvas
         shadows={quality.shadows}
         dpr={dpr}

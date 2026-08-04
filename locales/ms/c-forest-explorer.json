@@ -81,7 +81,6 @@
   "puzzle-solved": "Puzzle Solved!",
   "puzzle-type-not-implemented": "Puzzle type not implemented yet.",
   "puzzles-progress": "{{solvedCount}}/{{total}} puzzles",
-  "redirecting-to-login": "Redirecting to login...",
   "reflection-instructions": "Click to place/rotate mirrors and guide the light beam to the target",
   "reflection-instructions-prisms": "Guide the beam through every prism ◆ to the target",
   "repeat-the-pattern": "Repeat the pattern ({{current}}/{{total}})",

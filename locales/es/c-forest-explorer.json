@@ -87,7 +87,6 @@
   "puzzle-solved": "¡Acertijo Resuelto!",
   "puzzle-type-not-implemented": "Tipo de acertijo aún no implementado.",
   "puzzles-progress": "{{solvedCount}}/{{total}} acertijos",
-  "redirecting-to-login": "Redirigiendo al inicio de sesión...",
   "reflection-instructions": "Haz clic para colocar/girar espejos y guiar el haz de luz hacia el objetivo",
   "reflection-instructions-prisms": "Guide the beam through every prism ◆ to the target",
   "repeat-the-pattern": "Repite el patrón ({{current}}/{{total}})",

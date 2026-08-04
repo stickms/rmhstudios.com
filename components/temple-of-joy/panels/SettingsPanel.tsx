@@ -23,12 +23,14 @@ import {
   importSave,
   saveNow,
 } from '@/lib/temple-of-joy/persistence';
+import { useSession } from '@/components/Providers';
 import { useTempleSnapshot, useTempleValue } from '../hooks';
 import { TempleButton, TempleSection, TempleSlider, TempleSwitch } from '../ui';
 
 export function SettingsPanel() {
   const { t } = useTranslation('c-temple-of-joy');
   const store = useTempleStore;
+  const signedIn = Boolean(useSession().data?.user);
 
   const sound = useTempleValue((s) => s.soundEnabled);
   const music = useTempleValue((s) => s.musicVolume);
@@ -172,11 +174,19 @@ export function SettingsPanel() {
         })}
       </p>
 
+      <SaveDestination />
+
       <Setting
         name={t('save-last', { defaultValue: 'Last saved' })}
-        note={t('save-where', {
-          defaultValue: 'To your account, and to this browser as a fallback.',
-        })}
+        note={
+          signedIn
+            ? t('save-where', {
+                defaultValue: 'To your account, and to this browser as a fallback.',
+              })
+            : t('save-where-guest', {
+                defaultValue: 'To this browser only.',
+              })
+        }
       >
         <span className="toj-setting-value">
           {stats.sinceSave < 5
@@ -199,6 +209,67 @@ export function SettingsPanel() {
       </Setting>
 
       <SaveTools />
+    </>
+  );
+}
+
+/**
+ * Where this temple lives, and the offer to put it somewhere better.
+ *
+ * The sign-in prompt is HERE rather than at the door, and that is the whole
+ * argument for letting people play signed out: the account buys one specific
+ * thing — the same temple on your phone and your laptop — and the honest place
+ * to say so is next to the save, once somebody has a temple worth carrying.
+ *
+ * A signed-in player gets the same row without the button, because "where is my
+ * save" is a reasonable question to be able to answer at any point.
+ */
+function SaveDestination() {
+  const { t } = useTranslation('c-temple-of-joy');
+  const signedIn = Boolean(useSession().data?.user);
+
+  if (signedIn) {
+    return (
+      <Setting
+        name={t('save-account', { defaultValue: 'Your account' })}
+        note={t('save-account-note', {
+          defaultValue: 'This temple follows you to every device you sign in on.',
+        })}
+      >
+        <span className="toj-setting-value">✓</span>
+      </Setting>
+    );
+  }
+
+  return (
+    <>
+      <Setting
+        name={t('save-guest', { defaultValue: 'Playing as a guest' })}
+        note={t('save-guest-note', {
+          defaultValue:
+            'This temple lives in this browser. Clearing your site data takes it with them, and it will not be here on another device.',
+        })}
+      >
+        <TempleButton
+          size="sm"
+          variant="gold"
+          onClick={() => {
+            // Saved first, and locally, so the temple on this device is current
+            // before the navigation — signing in is exactly the moment this save
+            // gets claimed by an account, and it should be the newest one.
+            saveNow().catch(() => {});
+            window.location.href = '/login?callbackURL=/temple-of-joy';
+          }}
+        >
+          {t('save-sign-in', { defaultValue: 'Sign in' })}
+        </TempleButton>
+      </Setting>
+      <p className="toj-panel-note">
+        {t('save-guest-carry', {
+          defaultValue:
+            'Signing in carries this temple up to your account as it is — you do not start again.',
+        })}
+      </p>
     </>
   );
 }
@@ -275,9 +346,9 @@ function SaveTools() {
       <TempleSection>{t('start-again', { defaultValue: 'Start again' })}</TempleSection>
 
       <p className="toj-panel-note">
-        {t('reset-note', {
+        {t('reset-note-anywhere', {
           defaultValue:
-            'Deletes this temple everywhere — on this device and on your account. Copy your save first if you want it back.',
+            'Deletes this temple everywhere it is kept — this device, and your account if you are signed in. Copy your save first if you want it back.',
         })}
       </p>
 

@@ -84,7 +84,6 @@
   "puzzle-solved": "پہیلی حل ہو گئی!",
   "puzzle-type-not-implemented": "پہیلی کی قسم ابھی لاگو نہیں ہوئی۔",
   "puzzles-progress": "{{solvedCount}}/{{total}} پہیلیاں",
-  "redirecting-to-login": "لاگ ان پر ری ڈائریکٹ ہو رہا ہے...",
   "reflection-instructions": "آئینے رکھنے/گھمانے اور روشنی کی شعاع کو ہدف تک پہنچانے کے لیے کلک کریں",
   "reflection-instructions-prisms": "Guide the beam through every prism ◆ to the target",
   "repeat-the-pattern": "نمونہ دہرائیں ({{current}}/{{total}})",

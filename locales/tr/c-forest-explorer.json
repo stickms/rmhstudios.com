@@ -84,7 +84,6 @@
   "puzzle-solved": "Bulmaca Çözüldü!",
   "puzzle-type-not-implemented": "Bulmaca türü henüz uygulanmadı.",
   "puzzles-progress": "{{solvedCount}}/{{total}} bulmaca",
-  "redirecting-to-login": "Giriş sayfasına yönlendiriliyor...",
   "reflection-instructions": "Aynaları yerleştirmek/döndürmek için tıklayın ve ışık huzmesini hedefe yönlendirin",
   "reflection-instructions-prisms": "Guide the beam through every prism ◆ to the target",
   "repeat-the-pattern": "Deseni tekrarla ({{current}}/{{total}})",

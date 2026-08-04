@@ -7,8 +7,8 @@ import { scaleIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 import { useStoryStore } from '@/lib/forest-explorer/store';
 import { actMaps } from '@/lib/forest-explorer/actMaps';
-import { hasSave } from '@/lib/forest-explorer/saveSystem';
-import { authClient } from '@/lib/auth-client';
+import { forestExplorerSave, summarizeForestSave } from '@/lib/forest-explorer/cloud';
+import { useCloudSave } from '@/hooks/useCloudSave';
 import { useRenderQuality } from '@/lib/render/useRenderQuality';
 import AdaptiveQuality from '@/components/render/AdaptiveQuality';
 import { StoryScene } from './StoryScene';
@@ -23,7 +23,10 @@ import type { ActId } from '@/lib/forest-explorer/types';
 
 export function StoryGame() {
     const { t } = useTranslation("c-forest-explorer");
-    const { data: session, isPending: sessionPending } = authClient.useSession();
+    const cloud = useCloudSave(forestExplorerSave, {
+        gameName: 'Forest Explorer',
+        summarize: (save) => summarizeForestSave(save, t),
+    });
 
     const [locked, setLocked] = useState(false);
     const [showMenu, setShowMenu] = useState(true);
@@ -54,13 +57,16 @@ export function StoryGame() {
     const [shiftDarkness, setShiftDarkness] = useState(false);
     const [showCompletion, setShowCompletion] = useState(false);
 
-    // Initialize game once session is resolved
+    // Open the story from whichever save won — or, if this device and the
+    // account hold two that have genuinely diverged, from the one the player
+    // picks in `cloud.conflictDialog`. The hook does not report `ready` until
+    // that has happened, so nothing is loaded and nothing is autosaved over
+    // while the question is on screen.
     useEffect(() => {
-        if (sessionPending) return;
-        if (!session?.user) return; // Auth gate handled below
-        setHasSaveData(hasSave());
-        initializeGame(true);
-    }, [sessionPending, session, initializeGame]);
+        if (cloud.status !== 'ready') return;
+        setHasSaveData(cloud.save !== null);
+        void initializeGame(cloud.signedIn, cloud.save);
+    }, [cloud.status, cloud.save, cloud.signedIn, initializeGame]);
 
     // Act 2: tree shift darkness overlay — fires on every shift event
     useEffect(() => {
@@ -149,26 +155,19 @@ export function StoryGame() {
         setShowMenu(true);
     };
 
-    // Auth gate — redirect to login if not signed in
-    if (sessionPending) {
+    // Two saves that have both been played. Nothing else is rendered behind it:
+    // the scene has not been initialised, so there is no run to autosave over
+    // the very save being offered.
+    if (cloud.status === 'conflict') {
         return (
-            <div className="w-full h-full flex items-center justify-center bg-black">
-                <div className="text-white/50 text-sm">{t("loading", { defaultValue: "Loading..." })}</div>
-            </div>
+            <div className="w-full h-full bg-black">{cloud.conflictDialog}</div>
         );
     }
 
-    if (!session?.user) {
-        if (typeof window !== 'undefined') {
-            window.location.href = '/login?callbackURL=/forest-explorer/story';
-        }
-        return (
-            <div className="w-full h-full flex items-center justify-center bg-black">
-                <div className="text-white/50 text-sm">{t("redirecting-to-login", { defaultValue: "Redirecting to login..." })}</div>
-            </div>
-        );
-    }
-
+    // The session used to be an auth gate that sent a signed-out visitor to
+    // `/login`. It decides only WHERE the save goes — the account, or this
+    // browser — and the story itself asks nothing of it. It is still waited for,
+    // because the answer picks which save gets loaded.
     if (!initialized) {
         return (
             <div className="w-full h-full flex items-center justify-center bg-black">
