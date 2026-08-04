@@ -28,6 +28,7 @@ import urCLibrary from "@/locales/ur/c-library.json";
 import urCLightsOut from "@/locales/ur/c-lights-out.json";
 import urCLists from "@/locales/ur/c-lists.json";
 import urCLockdown from "@/locales/ur/c-lockdown.json";
+import urCMassiveMarch from "@/locales/ur/c-massive-march.json";
 import urCModeration from "@/locales/ur/c-moderation.json";
 import urCNeonDriftway from "@/locales/ur/c-neon-driftway.json";
 import urCNews from "@/locales/ur/c-news.json";
@@ -117,6 +118,7 @@ const urResources = {
   "c-lights-out": urCLightsOut,
   "c-lists": urCLists,
   "c-lockdown": urCLockdown,
+  "c-massive-march": urCMassiveMarch,
   "c-moderation": urCModeration,
   "c-neon-driftway": urCNeonDriftway,
   "c-news": urCNews,
