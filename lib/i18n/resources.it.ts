@@ -28,6 +28,7 @@ import itCLibrary from "@/locales/it/c-library.json";
 import itCLightsOut from "@/locales/it/c-lights-out.json";
 import itCLists from "@/locales/it/c-lists.json";
 import itCLockdown from "@/locales/it/c-lockdown.json";
+import itCMassiveMarch from "@/locales/it/c-massive-march.json";
 import itCModeration from "@/locales/it/c-moderation.json";
 import itCNeonDriftway from "@/locales/it/c-neon-driftway.json";
 import itCNews from "@/locales/it/c-news.json";
@@ -117,6 +118,7 @@ const itResources = {
   "c-lights-out": itCLightsOut,
   "c-lists": itCLists,
   "c-lockdown": itCLockdown,
+  "c-massive-march": itCMassiveMarch,
   "c-moderation": itCModeration,
   "c-neon-driftway": itCNeonDriftway,
   "c-news": itCNews,

@@ -28,6 +28,7 @@ import jaCLibrary from "@/locales/ja/c-library.json";
 import jaCLightsOut from "@/locales/ja/c-lights-out.json";
 import jaCLists from "@/locales/ja/c-lists.json";
 import jaCLockdown from "@/locales/ja/c-lockdown.json";
+import jaCMassiveMarch from "@/locales/ja/c-massive-march.json";
 import jaCModeration from "@/locales/ja/c-moderation.json";
 import jaCNeonDriftway from "@/locales/ja/c-neon-driftway.json";
 import jaCNews from "@/locales/ja/c-news.json";
@@ -117,6 +118,7 @@ const jaResources = {
   "c-lights-out": jaCLightsOut,
   "c-lists": jaCLists,
   "c-lockdown": jaCLockdown,
+  "c-massive-march": jaCMassiveMarch,
   "c-moderation": jaCModeration,
   "c-neon-driftway": jaCNeonDriftway,
   "c-news": jaCNews,

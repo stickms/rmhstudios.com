@@ -28,6 +28,7 @@ import ruCLibrary from "@/locales/ru/c-library.json";
 import ruCLightsOut from "@/locales/ru/c-lights-out.json";
 import ruCLists from "@/locales/ru/c-lists.json";
 import ruCLockdown from "@/locales/ru/c-lockdown.json";
+import ruCMassiveMarch from "@/locales/ru/c-massive-march.json";
 import ruCModeration from "@/locales/ru/c-moderation.json";
 import ruCNeonDriftway from "@/locales/ru/c-neon-driftway.json";
 import ruCNews from "@/locales/ru/c-news.json";
@@ -117,6 +118,7 @@ const ruResources = {
   "c-lights-out": ruCLightsOut,
   "c-lists": ruCLists,
   "c-lockdown": ruCLockdown,
+  "c-massive-march": ruCMassiveMarch,
   "c-moderation": ruCModeration,
   "c-neon-driftway": ruCNeonDriftway,
   "c-news": ruCNews,
