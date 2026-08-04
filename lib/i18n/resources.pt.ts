@@ -31,6 +31,7 @@ import ptCLockdown from "@/locales/pt/c-lockdown.json";
 import ptCModeration from "@/locales/pt/c-moderation.json";
 import ptCNeonDriftway from "@/locales/pt/c-neon-driftway.json";
 import ptCNews from "@/locales/pt/c-news.json";
+import ptCNightrail from "@/locales/pt/c-nightrail.json";
 import ptCPredictions from "@/locales/pt/c-predictions.json";
 import ptCProfileModules from "@/locales/pt/c-profile-modules.json";
 import ptCRideshare from "@/locales/pt/c-rideshare.json";
@@ -119,6 +120,7 @@ const ptResources = {
   "c-moderation": ptCModeration,
   "c-neon-driftway": ptCNeonDriftway,
   "c-news": ptCNews,
+  "c-nightrail": ptCNightrail,
   "c-predictions": ptCPredictions,
   "c-profile-modules": ptCProfileModules,
   "c-rideshare": ptCRideshare,

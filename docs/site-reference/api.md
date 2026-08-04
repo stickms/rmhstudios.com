@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 472 files across 120 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 480 files across 122 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -175,6 +175,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/builds/cover/:file` | `GET` | `app/routes/api/builds/cover/$file.ts` |
 
+## `/api/calls`
+
+3 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/calls/history` | `GET` | `app/routes/api/calls/history.ts` |
+| `/api/calls/ice` | `GET` | `app/routes/api/calls/ice.ts` |
+| `/api/calls/privacy` | `GET` `PUT` | `app/routes/api/calls/privacy.ts` |
+
 ## `/api/circle`
 
 1 route.
@@ -336,6 +346,18 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/embed/oembed` | `GET` | `app/routes/api/embed/oembed.ts` |
+
+## `/api/emoji-packs`
+
+5 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/emoji-packs` | `GET` `POST` | `app/routes/api/emoji-packs/index.ts` |
+| `/api/emoji-packs/:slug` | `GET` | `app/routes/api/emoji-packs/$slug/index.ts` |
+| `/api/emoji-packs/:slug/items` | `DELETE` `POST` | `app/routes/api/emoji-packs/$slug/items.ts` |
+| `/api/emoji-packs/:slug/subscribe` | `DELETE` `POST` | `app/routes/api/emoji-packs/$slug/subscribe.ts` |
+| `/api/emoji-packs/installed` | `GET` | `app/routes/api/emoji-packs/installed.ts` |
 
 ## `/api/events`
 

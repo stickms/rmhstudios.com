@@ -59,6 +59,7 @@ model User {
   templeOfJoyProfile   TempleOfJoySave?
   gameSaves            GameSave[]
   neonDriftwayProfile  NeonDriftwayPlayer?
+  nightrailProfile     NightrailPlayer?
   synapseStormProfile  SynapseStormPlayer?
   rmhboxProfile        RMHboxProfile?
   rmhtypeProfiles      RmhTypeProfile[]
@@ -354,6 +355,14 @@ model User {
   profileLayout       ProfileLayout?
   savedSearches       SavedSearch[]
 
+  // ─── Emoji & sticker packs (2026-08-04) ──────────────────────────────────
+  emojiPacks    EmojiPack[]
+  emojiPackSubs EmojiPackSubscription[]
+
+  // ─── Voice calls ─────────────────────────────────────────────────────────
+  callsPlaced   Call[] @relation("CallCaller")
+  callsReceived Call[] @relation("CallCallee")
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the "online now" fallback count (WHERE lastSeenAt >= cutoff). The
@@ -385,6 +394,11 @@ model NotificationPreference {
   quietStart Int? // minutes from midnight, user tz
   quietEnd   Int?
   tz         String? @db.VarChar(40)
+
+  /// Who may start a voice call with this user: 'everyone' | 'following'
+  /// (people this user follows) | 'nobody'. Enforced server-side in the call
+  /// signaling handler, never by the caller's client.
+  callPrivacy String @default("following") @db.VarChar(10)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -752,6 +766,28 @@ model NeonDriftwayPlayer {
   user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([highScore(sort: Desc)], map: "idx_neon_driftway_high_score")
+}
+
+model NightrailPlayer {
+  id       String @id @default(uuid())
+  username String @unique
+  /// Best single-run score across every level.
+  highScore Int @default(0)
+  /// Furthest distance covered in one run, metres.
+  bestDistance Int @default(0)
+  /// Highest combo multiplier ever reached — the trick-skill number.
+  bestMultiplier Int @default(1)
+  /// Highest level reached, so the level select can be restored per account.
+  bestLevel   Int @default(1)
+  /// Runs that reached the finish line with cargo still aboard.
+  runsFinished Int @default(0)
+  gamesPlayed Int @default(1)
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([highScore(sort: Desc)], map: "idx_nightrail_high_score")
 }
 
 model VoidBreakerPlayer {
@@ -6148,4 +6184,141 @@ model SavedSearch {
 
   @@index([userId])
   @@map("saved_search")
+}
+
+// ─── Emoji & sticker packs ──────────────────────────────────────────────────
+//
+// Creating a pack is a membership feature (`custom-emoji` / `sticker-packs` in
+// lib/entitlements/features.ts); SUBSCRIBING to and using one is free for
+// everyone. That asymmetry is the whole design: members supply the content, and
+// the content is what makes the site feel alive for the people who don't pay.
+//
+// Items are moderated before they render in anyone else's conversation — a
+// custom emoji is a user-supplied image drawn inline at small size in someone
+// else's thread, which is the classic vector for shipping a slur as a picture.
+
+model EmojiPack {
+  id              String   @id @default(cuid())
+  ownerId         String
+  /// Share-link identity. Immutable once published.
+  slug            String   @unique @db.VarChar(48)
+  name            String   @db.VarChar(60)
+  description     String?  @db.VarChar(300)
+  /// 'emoji' (inline, shortcode-addressable) | 'sticker' (large, standalone) | 'mixed'
+  kind            String   @default("emoji") @db.VarChar(8)
+  coverUrl        String?  @db.VarChar(500)
+  /// 'public' — listed and searchable | 'unlisted' — link only | 'private' — owner only
+  visibility      String   @default("public") @db.VarChar(8)
+  /// PENDING | APPROVED | REMOVED. Only APPROVED packs are usable by non-owners.
+  status          String   @default("PENDING") @db.VarChar(12)
+  itemCount       Int      @default(0)
+  subscriberCount Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  owner         User                    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  items         EmojiPackItem[]
+  subscriptions EmojiPackSubscription[]
+
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@index([status, visibility, subscriberCount(sort: Desc)])
+  @@map("emoji_pack")
+}
+
+model EmojiPackItem {
+  id         String   @id @default(cuid())
+  packId     String
+  /// Shortcode without colons. Unique within a pack; resolution across packs is
+  /// ordered by the subscriber's pack order, so a collision is a preference and
+  /// not an error.
+  name       String   @db.VarChar(32)
+  /// 'emoji' | 'sticker'
+  kind       String   @default("emoji") @db.VarChar(8)
+  url        String   @db.VarChar(500)
+  /// Mandatory. A custom emoji with no alt text is invisible to a screen reader
+  /// and to anyone whose images fail to load, so it is not optional at any tier.
+  alt        String   @db.VarChar(140)
+  /// Animated items are frozen to their first frame under prefers-reduced-motion.
+  animated   Boolean  @default(false)
+  position   Int      @default(0)
+  usageCount Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  pack EmojiPack @relation(fields: [packId], references: [id], onDelete: Cascade)
+
+  @@unique([packId, name])
+  @@index([packId, position])
+  @@map("emoji_pack_item")
+}
+
+model EmojiPackSubscription {
+  packId    String
+  userId    String
+  /// The subscriber's ordering, which decides shortcode precedence on collision.
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  pack EmojiPack @relation(fields: [packId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([packId, userId])
+  @@index([userId, position])
+  @@map("emoji_pack_subscription")
+}
+
+/// A 1:1 voice call.
+///
+/// Media never touches our servers: two participants means plain peer-to-peer
+/// WebRTC, so there is no SFU and no media relay to run (the group-audio design
+/// in docs/plans/2026-07-19 needed one; this does not). What is persisted here
+/// is only the call *record* — who called whom, when, and how it ended — so a
+/// conversation can show "Missed voice call" the way every messenger does.
+///
+/// No audio is recorded, and there is nowhere for it to be recorded to.
+model Call {
+  id             String  @id @default(cuid())
+  callerId       String
+  calleeId       String
+  /// The DM thread this call belongs to, when it started from one. Null for a
+  /// call started from a profile.
+  conversationId String?
+
+  /// ringing → connected → ended, or ringing → (missed | declined | cancelled | failed).
+  status CallStatus @default(RINGING)
+
+  createdAt   DateTime  @default(now())
+  /// When ICE actually connected — the difference between "they picked up" and
+  /// "it rang". Null for every terminal status except ENDED.
+  connectedAt DateTime?
+  endedAt     DateTime?
+  /// Denormalised talk time in seconds, for the history row. 0 unless connected.
+  durationSec Int       @default(0)
+
+  caller User @relation("CallCaller", fields: [callerId], references: [id], onDelete: Cascade)
+  callee User @relation("CallCallee", fields: [calleeId], references: [id], onDelete: Cascade)
+
+  @@index([calleeId, createdAt(sort: Desc)])
+  @@index([callerId, createdAt(sort: Desc)])
+  @@index([conversationId, createdAt(sort: Desc)])
+  @@map("call")
+}
+
+enum CallStatus {
+  /// Invite sent, waiting for the callee.
+  RINGING
+  /// Accepted and media flowing.
+  CONNECTED
+  /// Hung up by either side after connecting.
+  ENDED
+  /// Rang out without an answer.
+  MISSED
+  /// Callee actively declined.
+  DECLINED
+  /// Caller hung up before it was answered.
+  CANCELLED
+  /// Callee was already in a call.
+  BUSY
+  /// Signalling or ICE never completed — the honest outcome when TURN is
+  /// unavailable and both peers are behind symmetric NAT.
+  FAILED
 }

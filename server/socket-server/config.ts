@@ -50,6 +50,17 @@ export const config = {
     'party:kick': { max: 20, windowMs: 60_000 },
     'party:transfer': { max: 20, windowMs: 60_000 },
     'party:queue': { max: 20, windowMs: 60_000 },
+    // Voice calls. ICE is chatty by nature — a single negotiation emits dozens
+    // of candidates — so it gets a much higher ceiling than the lifecycle
+    // events, which a human presses at most a few times a minute.
+    'call:invite': { max: 20, windowMs: 60_000 },
+    'call:accept': { max: 30, windowMs: 60_000 },
+    'call:decline': { max: 30, windowMs: 60_000 },
+    'call:cancel': { max: 30, windowMs: 60_000 },
+    'call:hangup': { max: 30, windowMs: 60_000 },
+    'call:signal': { max: 60, windowMs: 60_000 },
+    'call:ice': { max: 600, windowMs: 60_000 },
+    'call:mute': { max: 60, windowMs: 60_000 },
     'rmhtype:room:create': { max: 3, windowMs: 60_000 },
     'rmhtype:room:join': { max: 10, windowMs: 60_000 },
     'rmhtype:room:chat': { max: 30, windowMs: 60_000 },

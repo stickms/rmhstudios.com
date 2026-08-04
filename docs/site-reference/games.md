@@ -32,6 +32,7 @@ Generated from `lib/games.ts`, the single source of truth every card on the site
 | **Dream Rift** | [`/dream-rift`](https://rmhstudios.com/dream-rift) | — | — | `Bullet Hell` `Multiplayer` `Danmaku` `Pixel Art` |
 | **RMH Farming Simulator** | [`/rmh-farming-sim`](https://rmhstudios.com/rmh-farming-sim) | — | required | `Simulation` `Farming` `Co-op` `Multiplayer` `3D` |
 | **Gabriel's Horn** | [`/gabriels-horn`](https://rmhstudios.com/gabriels-horn) | Playable | required | `Multiplayer` `Card Game` `Bluffing` `Party` |
+| **Nightrail** | [`/nightrail`](https://rmhstudios.com/nightrail) | Playable | required | `Arcade` `Racing` `3D` `Trick Scoring` |
 | **Massive March** | [`/massive-march`](https://rmhstudios.com/massive-march) | Playable | required | `Multiplayer` `Co-op` `3D` `Exploration` `Puzzle` |
 
 ## Detail
@@ -155,6 +156,12 @@ Claim your own pixelated 3D homestead and grow it from a few seed packets into a
 Three dice are rolled at the start of your turn and everyone at the table can see them except you. They each tell you a total — truthfully or not — and you pick one of them and call it: truth, or lie. Get it right and they draw three cards; get it wrong and you do. Cards are the currency of failure, so playing one costs you a card too: four colours of effect (see your own dice, force a draw, ward yourself, look at a hand) and one rank that matters, the seven, which trades your whole hand with anyone you like. When you think you are lowest you sound the horn — but everyone else gets one last turn to fix their hand, or to take yours, and if you were not strictly lowest when the counting stops the call drops you to last. 2–6 players, real-time, with table talk.
 
 **Route:** `/gabriels-horn` · **Catalog id:** `gabriels-horn` · **Status:** Playable · **Sign-in:** required
+
+### Nightrail
+
+You run night freight on a self-propelling courier train, and it will not slow down for you. Every bend scrubs speed off the railhead unless you drift it, so the game is less about going faster than about refusing to give back what you already have. Switch between parallel rails to thread barriers, oncoming freight and holes in the deck; charge a jump to clear the gaps, and spend the airtime flicking through eight tricks — but land with the rotation unfinished and the combo you were protecting is gone. Grind the edge rails to glue combos together, bank them at checkpoints, and get your crates to the end of five runs: the harbor at dusk, a neon ward, a viaduct in the rain, the tunnels under the city, and a skybridge above the clouds.
+
+**Route:** `/nightrail` · **Catalog id:** `nightrail` · **Status:** Playable · **Sign-in:** required
 
 ### Massive March
 

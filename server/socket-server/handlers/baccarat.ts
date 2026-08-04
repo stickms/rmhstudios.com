@@ -9,7 +9,12 @@
 
 import type { Server, Socket } from 'socket.io';
 import { getPrismaClient } from '../prisma-client';
-import { debitCoinsOn, creditCoinsOn, getBalanceOn } from '../../../lib/economy/ledger-core';
+import {
+  debitCoinsOn,
+  creditCoinsOn,
+  getBalanceOn,
+  getBalancesOn,
+} from '../../../lib/economy/ledger-core';
 import { checkRateLimit } from '../rate-limit';
 import { logger } from '../logger';
 import {
@@ -487,7 +492,19 @@ async function resolveRound(room: BaccaratRoom) {
             note: 'Baccarat payout',
           });
         }
-        balanceMap.set(update.userId, await getBalanceOn(tx, update.userId));
+      }
+      // One balance read for the whole table once every credit has landed,
+      // rather than a lookup per seat interleaved with the credits. Each
+      // player's balance only depends on their own credit, so the values are
+      // identical — this just stops paying a round-trip per seat inside the
+      // settlement transaction. Seats with no profile row still report 0, so
+      // every player continues to receive a BALANCE_UPDATE.
+      const balances = await getBalancesOn(
+        tx,
+        payoutUpdates.map((u) => u.userId),
+      );
+      for (const update of payoutUpdates) {
+        balanceMap.set(update.userId, balances.get(update.userId) ?? 0);
       }
     });
 

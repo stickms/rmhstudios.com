@@ -31,6 +31,7 @@ import idCLockdown from "@/locales/id/c-lockdown.json";
 import idCModeration from "@/locales/id/c-moderation.json";
 import idCNeonDriftway from "@/locales/id/c-neon-driftway.json";
 import idCNews from "@/locales/id/c-news.json";
+import idCNightrail from "@/locales/id/c-nightrail.json";
 import idCPredictions from "@/locales/id/c-predictions.json";
 import idCProfileModules from "@/locales/id/c-profile-modules.json";
 import idCRideshare from "@/locales/id/c-rideshare.json";
@@ -119,6 +120,7 @@ const idResources = {
   "c-moderation": idCModeration,
   "c-neon-driftway": idCNeonDriftway,
   "c-news": idCNews,
+  "c-nightrail": idCNightrail,
   "c-predictions": idCPredictions,
   "c-profile-modules": idCProfileModules,
   "c-rideshare": idCRideshare,

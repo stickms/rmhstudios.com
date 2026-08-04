@@ -178,8 +178,11 @@ export async function createCollection(
     }
   }
 
-  const slug = await uniqueCollectionSlug(slugifyTitle(fields.title));
-  const max = await prisma.libraryCollection.aggregate({ _max: { position: true } });
+  // Independent reads; only the create below depends on both.
+  const [slug, max] = await Promise.all([
+    uniqueCollectionSlug(slugifyTitle(fields.title)),
+    prisma.libraryCollection.aggregate({ _max: { position: true } }),
+  ]);
   const created = await prisma.libraryCollection.create({
     data: {
       slug,

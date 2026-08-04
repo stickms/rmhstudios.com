@@ -26,6 +26,7 @@
 'use client';
 
 import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
+import { rtcConfiguration, type IceServer } from '@/lib/call/ice';
 import { live } from './live';
 import { mm, onVoicePeers, onVoiceSignal } from './net/client';
 import { settings } from './settings';
@@ -52,6 +53,8 @@ interface VoiceRuntime {
   peers: Map<string, Peer>;
   /** Socket id of this client — decides who offers, to avoid glare. */
   selfId: string;
+  /** Minted per session by `/api/calls/ice`; includes a relay when one exists. */
+  iceServers: IceServer[];
   timer: ReturnType<typeof setInterval> | null;
   transmitting: boolean;
   unsubscribe: (() => void)[];
@@ -79,13 +82,29 @@ function setState(next: VoiceState): void {
   for (const handler of listeners) handler(next);
 }
 
-const ICE_SERVERS: RTCIceServer[] = [
-  // Public STUN only. A TURN relay would be needed for the strictest symmetric
-  // NATs; without one those players fall back to text, which the design already
-  // treats as a full alternative rather than a degraded mode.
-  { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
-];
+/**
+ * Fetch this session's ICE servers.
+ *
+ * Shared with the site's voice calls (`lib/call/ice.ts`): public STUN, plus a
+ * short-lived TURN credential bound to this account when a relay is configured.
+ * The relay matters more here than it does for a one-to-one call — a mesh is
+ * only as complete as its worst pair, and one player behind a symmetric NAT is
+ * one player the other eleven cannot hear.
+ *
+ * A failure is not fatal. `rtcConfiguration([])` still produces a working
+ * configuration for peers that can find each other directly, which on most
+ * networks is all of them.
+ */
+async function loadIceServers(): Promise<IceServer[]> {
+  try {
+    const response = await fetch('/api/calls/ice');
+    if (!response.ok) return [];
+    const body = (await response.json()) as { iceServers?: IceServer[] };
+    return body.iceServers ?? [];
+  } catch {
+    return [];
+  }
+}
 
 /**
  * Open the microphone and start meeting people.
@@ -109,6 +128,7 @@ export async function startVoice(selfId: string): Promise<void> {
     local: null,
     peers: new Map(),
     selfId,
+    iceServers: await loadIceServers(),
     timer: null,
     transmitting: false,
     unsubscribe: [],
@@ -197,7 +217,7 @@ function syncPeers(peers: string[]): void {
 
 function createPeer(id: string): Peer {
   const context = runtime!.context;
-  const connection = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+  const connection = new RTCPeerConnection(rtcConfiguration(runtime!.iceServers));
 
   const filter = context.createBiquadFilter();
   filter.type = 'lowpass';

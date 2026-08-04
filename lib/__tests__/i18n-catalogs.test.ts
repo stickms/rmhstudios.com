@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { LOCALES, NAMESPACES, CORE_NAMESPACES } from '@/lib/i18n/config';
+import { LOCALES, NAMESPACES, CORE_NAMESPACES, PENDING_LOCALES } from '@/lib/i18n/config';
 
 function pathFor(locale: string, ns: string): string {
   return join(process.cwd(), 'locales', locale, `${ns}.json`);
@@ -353,6 +353,56 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'view-results-short',
   ],
 };
+
+// ─── Registry parity ────────────────────────────────────────────────────────
+//
+// The checks below guard the two silent failures that catalog *content* tests
+// structurally cannot see, because both make a file invisible rather than wrong:
+//
+//   1. A namespace file that is not in NAMESPACES is never loaded. i18next
+//      serves the `defaultValue` from each t() call instead, so English renders
+//      correctly and every other locale renders English. Nothing throws.
+//   2. A locale directory that is not in LOCALES is translated by the pipeline
+//      and served to nobody.
+//
+// Both had actually happened when these were written: 18 namespaces (every one
+// of them a shipped feature — awards, circle, creator, history, lists,
+// predictions, saves, tournaments, wager, wishlists, theme studio, three
+// settings pages) and 16 locale directories.
+describe('registry parity', () => {
+  const localesDir = join(process.cwd(), 'locales');
+
+  it('NAMESPACES matches locales/en/ exactly', () => {
+    const files = readdirSync(join(localesDir, 'en'))
+      .filter((f) => f.endsWith('.json'))
+      .map((f) => f.replace(/\.json$/, ''))
+      .sort();
+    const registered: string[] = [...NAMESPACES].sort();
+
+    // Unregistered: the file exists, ships in every locale, and is dead weight.
+    expect(files.filter((f) => !registered.includes(f))).toEqual([]);
+    // Unbacked: registered but no English source — i18next requests a 404 chunk.
+    expect(registered.filter((n) => !files.includes(n))).toEqual([]);
+  });
+
+  it('every locales/ directory is either shipped or explicitly pending', () => {
+    const dirs = readdirSync(localesDir)
+      .filter((d) => statSync(join(localesDir, d)).isDirectory())
+      .sort();
+    const known = [...LOCALES, ...PENDING_LOCALES] as readonly string[];
+    expect(dirs.filter((d) => !known.includes(d))).toEqual([]);
+  });
+
+  it('no locale is both shipped and pending', () => {
+    const shipped = LOCALES as readonly string[];
+    expect(PENDING_LOCALES.filter((l) => shipped.includes(l))).toEqual([]);
+  });
+
+  it('CORE_NAMESPACES is a subset of NAMESPACES', () => {
+    const registered = NAMESPACES as readonly string[];
+    expect(CORE_NAMESPACES.filter((ns) => !registered.includes(ns))).toEqual([]);
+  });
+});
 
 describe('catalog integrity', () => {
   // Any namespace a locale provides must cover the English key set — minus the

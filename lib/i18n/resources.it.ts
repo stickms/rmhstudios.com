@@ -31,6 +31,7 @@ import itCLockdown from "@/locales/it/c-lockdown.json";
 import itCModeration from "@/locales/it/c-moderation.json";
 import itCNeonDriftway from "@/locales/it/c-neon-driftway.json";
 import itCNews from "@/locales/it/c-news.json";
+import itCNightrail from "@/locales/it/c-nightrail.json";
 import itCPredictions from "@/locales/it/c-predictions.json";
 import itCProfileModules from "@/locales/it/c-profile-modules.json";
 import itCRideshare from "@/locales/it/c-rideshare.json";
@@ -119,6 +120,7 @@ const itResources = {
   "c-moderation": itCModeration,
   "c-neon-driftway": itCNeonDriftway,
   "c-news": itCNews,
+  "c-nightrail": itCNightrail,
   "c-predictions": itCPredictions,
   "c-profile-modules": itCProfileModules,
   "c-rideshare": itCRideshare,

@@ -149,13 +149,23 @@ export async function saveTiers(creatorId: string, tiers: TierInput[]): Promise<
 
     // Retire tiers the editor dropped. Keep the row (deactivated) if a
     // membership still points at it so the FK/history survives; else delete.
-    for (const ex of existing) {
-      if (!ex.active || keepIds.has(ex.id)) continue;
-      const memberCount = await tx.creatorMembership.count({ where: { tierId: ex.id } });
-      if (memberCount > 0) {
-        await tx.creatorTier.update({ where: { id: ex.id }, data: { active: false } });
-      } else {
-        await tx.creatorTier.delete({ where: { id: ex.id } });
+    // Member counts for every dropped tier come from ONE grouped query rather
+    // than a `count` per tier — inside a transaction each of those was a serial
+    // round-trip on the same connection.
+    const dropped = existing.filter((ex) => ex.active && !keepIds.has(ex.id));
+    if (dropped.length > 0) {
+      const counts = await tx.creatorMembership.groupBy({
+        by: ['tierId'],
+        where: { tierId: { in: dropped.map((d) => d.id) } },
+        _count: { _all: true },
+      });
+      const membersByTier = new Map(counts.map((c) => [c.tierId, c._count._all]));
+      for (const ex of dropped) {
+        if ((membersByTier.get(ex.id) ?? 0) > 0) {
+          await tx.creatorTier.update({ where: { id: ex.id }, data: { active: false } });
+        } else {
+          await tx.creatorTier.delete({ where: { id: ex.id } });
+        }
       }
     }
 

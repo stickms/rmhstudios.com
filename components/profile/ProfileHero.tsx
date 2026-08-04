@@ -29,6 +29,7 @@ import { AddToListSheet } from '@/components/lists/AddToListSheet';
 import { WishButton } from '@/components/wishlist/WishButton';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { Button } from '@/components/ui/button';
+import { CallButton } from '@/components/call/CallButton';
 import { CopyButton } from '@/components/ui/copy-button';
 import { GlassPane } from '@/components/ui/liquid-glass';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
@@ -336,6 +337,17 @@ export function ProfileHero({
                       {t('message', { defaultValue: 'Message' })}
                     </span>
                   </Button>
+                  {/* Voice call. Hides itself when a call can't be placed; the
+                      server still decides whether this person takes calls
+                      from you. */}
+                  <CallButton
+                    user={{
+                      id: profile.id,
+                      name: profile.name ?? null,
+                      image: profile.image ?? null,
+                      handle: profile.handle ?? null,
+                    }}
+                  />
                   <Button
                     variant="outline"
                     size="icon"

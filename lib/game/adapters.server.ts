@@ -157,6 +157,65 @@ const neonDriftway: GameAdapter = {
   },
 };
 
+const nightrail: GameAdapter = {
+  metric: 'highScore',
+  async submit({ userId, score, progress, username, meta }) {
+    // Level 1-5, and the peak combo multiplier the run reached. The multiplier
+    // is stored alongside the score because it is the number that separates a
+    // long careful run from a short brilliant one, and the score alone hides
+    // that difference.
+    const level = Math.min(Math.max(Math.round(meta?.level ?? 1), 1), 5);
+    const multiplier = Math.max(1, Math.round(meta?.multiplier ?? 1));
+    // Only a run that reached the finish line with cargo counts as finished;
+    // the client sends 1/0 and anything else is treated as unfinished.
+    const finished = meta?.finished === 1 ? 1 : 0;
+
+    const existing = await prisma.nightrailPlayer.findUnique({ where: { userId } });
+    if (existing) {
+      await prisma.nightrailPlayer.update({
+        where: { id: existing.id },
+        data: {
+          highScore: Math.max(existing.highScore, score),
+          bestDistance: Math.max(existing.bestDistance, progress),
+          bestMultiplier: Math.max(existing.bestMultiplier, multiplier),
+          bestLevel: Math.max(existing.bestLevel, level),
+          runsFinished: { increment: finished },
+          gamesPlayed: { increment: 1 },
+          updatedAt: new Date(),
+          ...(username ? { username } : {}),
+        },
+      });
+      return;
+    }
+    await prisma.nightrailPlayer.create({
+      data: {
+        userId,
+        username: username ?? `${ANON}-${userId.slice(0, 6)}`,
+        highScore: score,
+        bestDistance: progress,
+        bestMultiplier: multiplier,
+        bestLevel: level,
+        runsFinished: finished,
+        gamesPlayed: 1,
+      },
+    });
+  },
+  async leaderboard(limit) {
+    const rows = await prisma.nightrailPlayer.findMany({
+      take: limit,
+      orderBy: { highScore: 'desc' },
+      select: { username: true, highScore: true, bestDistance: true, userId: true },
+    });
+    return rows.map((r, i) => ({
+      rank: i + 1,
+      username: r.username,
+      score: r.highScore,
+      progress: r.bestDistance,
+      userId: r.userId,
+    }));
+  },
+};
+
 const signalForge: GameAdapter = {
   metric: 'highScore',
   async submit({ userId, score, progress, username }) {
@@ -326,6 +385,7 @@ const sliceIt: GameAdapter = {
 const ADAPTERS: Record<string, GameAdapter> = {
   'void-breaker': voidBreaker,
   'neon-driftway': neonDriftway,
+  nightrail,
   'signal-forge': signalForge,
   'synapse-storm': synapseStorm,
   vega,

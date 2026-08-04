@@ -28,6 +28,7 @@ export default defineConfig({
       'lib/search/__tests__/**/*.test.ts',
       'lib/liquid-gl/__tests__/**/*.test.ts',
       'lib/daily-puzzles/__tests__/**/*.test.ts',
+      'lib/nightrail/__tests__/**/*.test.ts',
       'lib/market/__tests__/**/*.test.ts',
       'lib/versecraft/gen/__tests__/**/*.test.ts',
       'lib/kowloon-knockout/render/__tests__/**/*.test.ts',

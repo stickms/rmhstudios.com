@@ -31,6 +31,7 @@ import viCLockdown from "@/locales/vi/c-lockdown.json";
 import viCModeration from "@/locales/vi/c-moderation.json";
 import viCNeonDriftway from "@/locales/vi/c-neon-driftway.json";
 import viCNews from "@/locales/vi/c-news.json";
+import viCNightrail from "@/locales/vi/c-nightrail.json";
 import viCPredictions from "@/locales/vi/c-predictions.json";
 import viCProfileModules from "@/locales/vi/c-profile-modules.json";
 import viCRideshare from "@/locales/vi/c-rideshare.json";
@@ -119,6 +120,7 @@ const viResources = {
   "c-moderation": viCModeration,
   "c-neon-driftway": viCNeonDriftway,
   "c-news": viCNews,
+  "c-nightrail": viCNightrail,
   "c-predictions": viCPredictions,
   "c-profile-modules": viCProfileModules,
   "c-rideshare": viCRideshare,

@@ -73,11 +73,15 @@ export const Route = createFileRoute('/api/admin/albums/')({
           return Response.json({ error: 'Title is required.' }, { status: 400 });
         }
 
-        const slug = await uniqueAlbumSlug(parsed.data.title);
-        const last = await prisma.album.findFirst({
-          orderBy: { position: 'desc' },
-          select: { position: true },
-        });
+        // Slug allocation and the trailing-position lookup are independent;
+        // only the create below needs both.
+        const [slug, last] = await Promise.all([
+          uniqueAlbumSlug(parsed.data.title),
+          prisma.album.findFirst({
+            orderBy: { position: 'desc' },
+            select: { position: true },
+          }),
+        ]);
         const album = await prisma.album.create({
           data: {
             slug,

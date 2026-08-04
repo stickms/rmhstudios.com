@@ -3,6 +3,8 @@ import {
   standardSeedPositions,
   generateSingleElim,
   generateRoundRobin,
+  resolveBracketRows,
+  type BracketMatch,
 } from '../bracket';
 
 describe('standardSeedPositions', () => {
@@ -58,5 +60,84 @@ describe('generateRoundRobin', () => {
     const pairs = b.matches.map((m) => [m.entrantAId, m.entrantBId].sort().join('-'));
     expect(new Set(pairs).size).toBe(6); // no duplicate pairings
     expect(b.matches.every((m) => m.state === 'READY')).toBe(true);
+  });
+});
+
+describe('resolveBracketRows', () => {
+  // Mirrors the persistence path that this function replaced: insert each match
+  // to learn its id, then walk the bracket again wiring nextKey -> that id.
+  // Any divergence from this reference means the bulk-insert rewrite changed
+  // the shape of a persisted bracket.
+  function referenceTwoPass(matches: BracketMatch[], ids: string[]) {
+    const keyToId = new Map<string, string>();
+    matches.forEach((m, i) => keyToId.set(`${m.round}:${m.slot}`, ids[i]));
+    return matches.map((m, i) => {
+      const id = keyToId.get(`${m.round}:${m.slot}`);
+      const nextId = m.nextKey ? keyToId.get(m.nextKey) : undefined;
+      const wired = !!(m.nextKey && id && nextId);
+      return {
+        id: ids[i],
+        round: m.round,
+        slot: m.slot,
+        entrantAId: m.entrantAId,
+        entrantBId: m.entrantBId,
+        state: m.state,
+        nextMatchId: wired ? (nextId as string) : null,
+        nextSlot: wired ? m.nextSlot : null,
+      };
+    });
+  }
+
+  const seqIds = () => {
+    let n = 0;
+    return () => `m${n++}`;
+  };
+
+  it('matches the previous insert-then-wire behaviour for single elimination', () => {
+    for (const size of [2, 3, 4, 5, 8, 13, 16, 33, 64]) {
+      const entrants = Array.from({ length: size }, (_, i) => `e${i}`);
+      const b = generateSingleElim(entrants);
+      const ids = b.matches.map((_, i) => `m${i}`);
+      expect(resolveBracketRows(b.matches, seqIds())).toEqual(referenceTwoPass(b.matches, ids));
+    }
+  });
+
+  it('matches the previous behaviour for round robin (no next links)', () => {
+    for (const size of [2, 5, 12, 64]) {
+      const entrants = Array.from({ length: size }, (_, i) => `e${i}`);
+      const b = generateRoundRobin(entrants);
+      const ids = b.matches.map((_, i) => `m${i}`);
+      const rows = resolveBracketRows(b.matches, seqIds());
+      expect(rows).toEqual(referenceTwoPass(b.matches, ids));
+      expect(rows.every((r) => r.nextMatchId === null && r.nextSlot === null)).toBe(true);
+    }
+  });
+
+  it('wires every winner path to a real match id', () => {
+    const b = generateSingleElim(Array.from({ length: 16 }, (_, i) => `e${i}`));
+    const rows = resolveBracketRows(b.matches, seqIds());
+    const byId = new Map(rows.map((r) => [r.id, r]));
+
+    expect(new Set(rows.map((r) => r.id)).size).toBe(rows.length); // ids distinct
+
+    for (const row of rows) {
+      if (row.nextMatchId === null) continue;
+      const target = byId.get(row.nextMatchId);
+      expect(target).toBeDefined();
+      // The winner always advances to a strictly later round.
+      expect(target!.round).toBe(row.round + 1);
+      expect(row.nextSlot === 0 || row.nextSlot === 1).toBe(true);
+    }
+
+    // Exactly one match (the final) terminates the bracket.
+    expect(rows.filter((r) => r.nextMatchId === null)).toHaveLength(1);
+  });
+
+  it('scales to the 64-player round-robin cap', () => {
+    const b = generateRoundRobin(Array.from({ length: 64 }, (_, i) => `e${i}`));
+    expect(b.matches).toHaveLength((64 * 63) / 2); // 2016
+    const rows = resolveBracketRows(b.matches, seqIds());
+    expect(rows).toHaveLength(2016);
+    expect(new Set(rows.map((r) => r.id)).size).toBe(2016);
   });
 });

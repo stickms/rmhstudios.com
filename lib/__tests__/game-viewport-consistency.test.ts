@@ -69,6 +69,7 @@ const FULLSCREEN_DIRS = [
   'lights-out',
   'massive-march',
   'neon-driftway',
+  'nightrail',
   'rmh-farming-sim',
   'rmhbox',
   'rmhcalculator',

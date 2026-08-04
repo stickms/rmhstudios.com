@@ -31,6 +31,7 @@ import ruCLockdown from "@/locales/ru/c-lockdown.json";
 import ruCModeration from "@/locales/ru/c-moderation.json";
 import ruCNeonDriftway from "@/locales/ru/c-neon-driftway.json";
 import ruCNews from "@/locales/ru/c-news.json";
+import ruCNightrail from "@/locales/ru/c-nightrail.json";
 import ruCPredictions from "@/locales/ru/c-predictions.json";
 import ruCProfileModules from "@/locales/ru/c-profile-modules.json";
 import ruCRideshare from "@/locales/ru/c-rideshare.json";
@@ -119,6 +120,7 @@ const ruResources = {
   "c-moderation": ruCModeration,
   "c-neon-driftway": ruCNeonDriftway,
   "c-news": ruCNews,
+  "c-nightrail": ruCNightrail,
   "c-predictions": ruCPredictions,
   "c-profile-modules": ruCProfileModules,
   "c-rideshare": ruCRideshare,

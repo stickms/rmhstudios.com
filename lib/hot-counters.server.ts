@@ -19,6 +19,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { mapWithConcurrency } from '@/lib/async-pool';
 import {
   redisEnabled,
   redisIncrBy,
@@ -36,6 +37,10 @@ const VIEW_BUF_PREFIX = 'viewbuf:';
 const VIEW_DIRTY_SET = 'viewbuf:dirty';
 const VIEW_TTL_MS = 60 * 60 * 1000; // safety expiry so an un-flushed key can't leak forever
 const FLUSH_INTERVAL_MS = 10_000;
+/** Redis is cheap and pipelines well, so claims can run fairly wide. */
+const REDIS_CLAIM_CONCURRENCY = 16;
+/** Kept well below the Postgres pool (default 10) — this is background work. */
+const DB_WRITE_CONCURRENCY = 4;
 
 let flushTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -80,18 +85,29 @@ export async function flushBufferedViews(batch = 500): Promise<number> {
   for (;;) {
     const ids = await redisSpop(VIEW_DIRTY_SET, batch);
     if (ids.length === 0) break;
-    for (const id of ids) {
+
+    // Claim every buffered delta in this batch concurrently. These were read one
+    // at a time, so a full 500-id batch cost 500 sequential Redis round-trips
+    // before a single row was written — on a flusher that re-runs every 10s.
+    const deltas = await mapWithConcurrency(ids, REDIS_CLAIM_CONCURRENCY, async (id) => {
       const raw = await redisGetDel(VIEW_BUF_PREFIX + id);
-      const inc = raw ? parseInt(raw, 10) : 0;
-      if (inc > 0) {
-        await prisma.rMHark
-          .update({ where: { id }, data: { viewCount: { increment: inc } } })
-          .catch(() => {
-            /* post may have been deleted; drop the buffered delta */
-          });
-        flushed++;
-      }
-    }
+      return { id, inc: raw ? parseInt(raw, 10) : 0 };
+    });
+
+    // Each post carries its own increment, so these can't collapse into an
+    // updateMany — but they are independent rows and can overlap. Concurrency is
+    // deliberately well under the connection pool: this is background
+    // reconciliation and must not starve request handlers.
+    const pending = deltas.filter((d) => d.inc > 0);
+    await mapWithConcurrency(pending, DB_WRITE_CONCURRENCY, async ({ id, inc }) => {
+      await prisma.rMHark
+        .update({ where: { id }, data: { viewCount: { increment: inc } } })
+        .catch(() => {
+          /* post may have been deleted; drop the buffered delta */
+        });
+    });
+    flushed += pending.length;
+
     if (ids.length < batch) break;
   }
   return flushed;
