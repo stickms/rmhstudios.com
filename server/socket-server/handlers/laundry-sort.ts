@@ -476,63 +476,75 @@ async function persistVersusResults(standings: FinalStanding[]): Promise<void> {
   if (real.length === 0) return;
   const prisma = getPrismaClient();
 
-  for (const s of real) {
-    const won = s.place === 1 ? 1 : 0;
-    try {
-      const existing = await prisma.laundryPlayer.findUnique({ where: { userId: s.userId } });
-      if (existing) {
-        await prisma.laundryPlayer.update({
-          where: { id: existing.id },
-          data: {
-            versusPlayed: { increment: 1 },
-            versusWins: { increment: won },
-            versusBest: Math.max(existing.versusBest, s.score),
-            bestCombo: Math.max(existing.bestCombo, s.bestCombo),
-            totalSorted: { increment: s.sorted },
-          },
-        });
-        continue;
-      }
+  // One read covering every player in the match, then the per-player writes in
+  // parallel. Each row is keyed by a distinct userId and nothing here reads
+  // another player's row, so the previous read-then-write-per-player sequence
+  // was purely serial latency (2 round-trips x lobby size) against a 5-connection
+  // pool. Failures stay per-player: one bad row can't lose the rest.
+  const existingRows = await prisma.laundryPlayer.findMany({
+    where: { userId: { in: real.map((s) => s.userId as string) } },
+  });
+  const existingByUser = new Map(existingRows.map((row) => [row.userId, row]));
 
-      // First match ever for this account. `username` is unique, so a display
-      // name already claimed by someone else falls back to a suffixed form
-      // rather than losing the result.
-      const base = sanitizeUserName(s.name);
+  await Promise.all(
+    real.map(async (s) => {
+      const won = s.place === 1 ? 1 : 0;
       try {
-        await prisma.laundryPlayer.create({
-          data: {
-            userId: s.userId,
-            username: base,
-            gamesPlayed: 0,
-            versusPlayed: 1,
-            versusWins: won,
-            versusBest: s.score,
-            bestCombo: s.bestCombo,
-            totalSorted: s.sorted,
-          },
-        });
-      } catch {
-        await prisma.laundryPlayer.create({
-          data: {
-            userId: s.userId,
-            username: `${base}-${s.userId.slice(0, 6)}`.slice(0, 32),
-            gamesPlayed: 0,
-            versusPlayed: 1,
-            versusWins: won,
-            versusBest: s.score,
-            bestCombo: s.bestCombo,
-            totalSorted: s.sorted,
-          },
+        const existing = existingByUser.get(s.userId as string);
+        if (existing) {
+          await prisma.laundryPlayer.update({
+            where: { id: existing.id },
+            data: {
+              versusPlayed: { increment: 1 },
+              versusWins: { increment: won },
+              versusBest: Math.max(existing.versusBest, s.score),
+              bestCombo: Math.max(existing.bestCombo, s.bestCombo),
+              totalSorted: { increment: s.sorted },
+            },
+          });
+          return;
+        }
+
+        // First match ever for this account. `username` is unique, so a display
+        // name already claimed by someone else falls back to a suffixed form
+        // rather than losing the result.
+        const base = sanitizeUserName(s.name);
+        try {
+          await prisma.laundryPlayer.create({
+            data: {
+              userId: s.userId,
+              username: base,
+              gamesPlayed: 0,
+              versusPlayed: 1,
+              versusWins: won,
+              versusBest: s.score,
+              bestCombo: s.bestCombo,
+              totalSorted: s.sorted,
+            },
+          });
+        } catch {
+          await prisma.laundryPlayer.create({
+            data: {
+              userId: s.userId,
+              username: `${base}-${s.userId.slice(0, 6)}`.slice(0, 32),
+              gamesPlayed: 0,
+              versusPlayed: 1,
+              versusWins: won,
+              versusBest: s.score,
+              bestCombo: s.bestCombo,
+              totalSorted: s.sorted,
+            },
+          });
+        }
+      } catch (error) {
+        logger.warn({
+          event: 'laundry_versus_row_failed',
+          userId: s.userId,
+          error: String(error),
         });
       }
-    } catch (error) {
-      logger.warn({
-        event: 'laundry_versus_row_failed',
-        userId: s.userId,
-        error: String(error),
-      });
-    }
-  }
+    }),
+  );
 }
 
 // ─── Garbage collection ─────────────────────────────────────────────────────

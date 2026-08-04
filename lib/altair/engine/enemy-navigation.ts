@@ -57,6 +57,91 @@ function clamp(n: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, n));
 }
 
+// ─── A* scratch state ───────────────────────────────────────────────────────
+// The search grid is a fixed 37x37, `buildLocalPath` is synchronous and never
+// re-enters, and the engine is single-threaded — so every per-search grid is a
+// module-level buffer reused across calls instead of five fresh typed arrays
+// allocated per path query (this runs per enemy, ~4x/second each).
+//
+// Rather than clearing those buffers per call, each search takes a generation
+// stamp and a cell counts as "visited this search" only when its stamp matches.
+// That turns the old O(cells) reset loop into O(1).
+const NAV_CELL_COUNT = NAV_GRID_SIZE * NAV_GRID_SIZE;
+
+const navBlocked = new Uint8Array(NAV_CELL_COUNT);
+const navGScore = new Float32Array(NAV_CELL_COUNT);
+const navCameFrom = new Int32Array(NAV_CELL_COUNT);
+/** Cached goal heuristic per cell — constant for a given search (see below). */
+const navHScore = new Float32Array(NAV_CELL_COUNT);
+const navSeenStamp = new Int32Array(NAV_CELL_COUNT);
+const navClosedStamp = new Int32Array(NAV_CELL_COUNT);
+const navHStamp = new Int32Array(NAV_CELL_COUNT);
+let navGeneration = 0;
+
+/** Fresh stamp for a new search; resets the buffers only on (never-reached) wrap. */
+function nextNavGeneration(): number {
+  navGeneration++;
+  if (navGeneration === 0x7fffffff) {
+    navSeenStamp.fill(0);
+    navClosedStamp.fill(0);
+    navHStamp.fill(0);
+    navGeneration = 1;
+  }
+  return navGeneration;
+}
+
+// ─── Binary min-heap over (f, cell) ─────────────────────────────────────────
+// Replaces the previous open-set array, which located the lowest-f node with a
+// full linear scan and removed it with `splice` — O(n) each, i.e. O(n^2) over a
+// search. Push/pop here are O(log n). Improved nodes are pushed again rather
+// than decrease-keyed; stale duplicates are skipped on pop via `navClosedStamp`
+// (standard lazy deletion). Capacity covers one entry per directed edge.
+const NAV_HEAP_CAPACITY = NAV_CELL_COUNT * DIRS.length + 1;
+const navHeapF = new Float32Array(NAV_HEAP_CAPACITY);
+const navHeapCell = new Int32Array(NAV_HEAP_CAPACITY);
+let navHeapSize = 0;
+
+function navHeapPush(f: number, cell: number): void {
+  // Full only if a search somehow pushed more than one entry per edge; dropping
+  // the entry degrades the path, never corrupts the search.
+  if (navHeapSize >= NAV_HEAP_CAPACITY) return;
+  let i = navHeapSize++;
+  while (i > 0) {
+    const parent = (i - 1) >> 1;
+    if (navHeapF[parent] <= f) break;
+    navHeapF[i] = navHeapF[parent];
+    navHeapCell[i] = navHeapCell[parent];
+    i = parent;
+  }
+  navHeapF[i] = f;
+  navHeapCell[i] = cell;
+}
+
+/** Lowest-f cell, or -1 when empty. */
+function navHeapPop(): number {
+  if (navHeapSize === 0) return -1;
+  const top = navHeapCell[0];
+  navHeapSize--;
+  if (navHeapSize > 0) {
+    const f = navHeapF[navHeapSize];
+    const cell = navHeapCell[navHeapSize];
+    let i = 0;
+    for (;;) {
+      const left = i * 2 + 1;
+      if (left >= navHeapSize) break;
+      const right = left + 1;
+      const child = right < navHeapSize && navHeapF[right] < navHeapF[left] ? right : left;
+      if (navHeapF[child] >= f) break;
+      navHeapF[i] = navHeapF[child];
+      navHeapCell[i] = navHeapCell[child];
+      i = child;
+    }
+    navHeapF[i] = f;
+    navHeapCell[i] = cell;
+  }
+  return top;
+}
+
 function cellIndex(gx: number, gy: number): number {
   return gy * NAV_GRID_SIZE + gx;
 }
@@ -191,6 +276,7 @@ function findNearestOpenCell(startGX: number, startGY: number, blocked: Uint8Arr
   return -1;
 }
 
+/** Rasterizes obstacles into the shared `navBlocked` grid (cleared per call). */
 function buildBlockedGrid(
   enemyX: number,
   enemyY: number,
@@ -198,7 +284,8 @@ function buildBlockedGrid(
   enemyHalfH: number,
   boxes: ObstacleBox[],
 ): { blocked: Uint8Array; originCellX: number; originCellY: number } {
-  const blocked = new Uint8Array(NAV_GRID_SIZE * NAV_GRID_SIZE);
+  const blocked = navBlocked;
+  blocked.fill(0);
   const originCellX = Math.floor(enemyX / NAV_CELL_SIZE) - NAV_HALF_CELLS;
   const originCellY = Math.floor(enemyY / NAV_CELL_SIZE) - NAV_HALF_CELLS;
   const worldMinX = originCellX * NAV_CELL_SIZE;
@@ -251,6 +338,24 @@ function reconstructPath(
   return path;
 }
 
+/**
+ * Exported for tests only (`lib/__tests__/altair-enemy-navigation.test.ts`).
+ * The A* here reuses module-level scratch grids across calls, and the invariant
+ * that matters — a search is never influenced by the previous one — is not
+ * observable from `computePathVelocity` alone, because the steering layer
+ * smooths differing paths back onto the same trajectory. Tests call this
+ * directly to compare raw path geometry and cost.
+ */
+export const __buildLocalPathForTests = (
+  enemyX: number,
+  enemyY: number,
+  targetX: number,
+  targetY: number,
+  enemyHalfW: number,
+  enemyHalfH: number,
+  boxes: { minX: number; maxX: number; minY: number; maxY: number }[],
+): Point[] => buildLocalPath(enemyX, enemyY, targetX, targetY, enemyHalfW, enemyHalfH, boxes);
+
 function buildLocalPath(
   enemyX: number,
   enemyY: number,
@@ -271,63 +376,67 @@ function buildLocalPath(
   const goalIdx = findNearestOpenCell(goalGX, goalGY, blocked);
   if (startIdx === -1 || goalIdx === -1) return [];
 
-  const gScore = new Float32Array(NAV_GRID_SIZE * NAV_GRID_SIZE);
-  const cameFrom = new Int32Array(NAV_GRID_SIZE * NAV_GRID_SIZE);
-  const inOpen = new Uint8Array(NAV_GRID_SIZE * NAV_GRID_SIZE);
-  const closed = new Uint8Array(NAV_GRID_SIZE * NAV_GRID_SIZE);
-  const open: number[] = [];
+  // Shared buffers + a per-search stamp: an untouched cell is one whose stamp
+  // predates this generation, which stands in for the old "fill with Infinity"
+  // reset pass.
+  const gen = nextNavGeneration();
+  const gScore = navGScore;
+  const cameFrom = navCameFrom;
+  navHeapSize = 0;
 
-  for (let i = 0; i < gScore.length; i++) {
-    gScore[i] = Number.POSITIVE_INFINITY;
-    cameFrom[i] = -1;
-  }
+  const goalXCell = goalIdx % NAV_GRID_SIZE;
+  const goalYCell = Math.floor(goalIdx / NAV_GRID_SIZE);
+
+  // The goal never moves during a search, so each cell's heuristic is a
+  // constant. The old loop recomputed it for every cell in the open set on
+  // every iteration (up to ~1200 x |open| calls per path); now it is computed
+  // at most once per cell and read back from `navHScore`.
+  const heuristicAt = (idx: number): number => {
+    if (navHStamp[idx] === gen) return navHScore[idx];
+    const h = octileHeuristic(
+      idx % NAV_GRID_SIZE,
+      Math.floor(idx / NAV_GRID_SIZE),
+      goalXCell,
+      goalYCell,
+    );
+    navHScore[idx] = h;
+    navHStamp[idx] = gen;
+    return h;
+  };
 
   gScore[startIdx] = 0;
-  open.push(startIdx);
-  inOpen[startIdx] = 1;
+  cameFrom[startIdx] = -1;
+  navSeenStamp[startIdx] = gen;
+  navHeapPush(heuristicAt(startIdx), startIdx);
 
   let expansions = 0;
   let reachedIdx = -1;
   let bestIdx = startIdx;
   let bestHeuristic = Number.POSITIVE_INFINITY;
-  const goalXCell = goalIdx % NAV_GRID_SIZE;
-  const goalYCell = Math.floor(goalIdx / NAV_GRID_SIZE);
 
-  while (open.length > 0 && expansions < NAV_MAX_EXPANSIONS) {
-    let bestOpenI = 0;
-    let bestOpenIdx = open[0];
-    let bestF = Number.POSITIVE_INFINITY;
-
-    for (let i = 0; i < open.length; i++) {
-      const idx = open[i];
-      const gx = idx % NAV_GRID_SIZE;
-      const gy = Math.floor(idx / NAV_GRID_SIZE);
-      const h = octileHeuristic(gx, gy, goalXCell, goalYCell);
-      const f = gScore[idx] + h;
-      if (f < bestF) {
-        bestF = f;
-        bestOpenI = i;
-        bestOpenIdx = idx;
-      }
-    }
-
-    open.splice(bestOpenI, 1);
-    inOpen[bestOpenIdx] = 0;
-    closed[bestOpenIdx] = 1;
+  while (expansions < NAV_MAX_EXPANSIONS) {
+    const currentIdx = navHeapPop();
+    if (currentIdx === -1) break;
+    // Lazy deletion: a cell improved after being queued appears more than once,
+    // so ignore every entry after the first (lowest-f) one pops.
+    if (navClosedStamp[currentIdx] === gen) continue;
+    navClosedStamp[currentIdx] = gen;
     expansions++;
 
-    if (bestOpenIdx === goalIdx) {
-      reachedIdx = bestOpenIdx;
+    if (currentIdx === goalIdx) {
+      reachedIdx = currentIdx;
       break;
     }
 
-    const cx = bestOpenIdx % NAV_GRID_SIZE;
-    const cy = Math.floor(bestOpenIdx / NAV_GRID_SIZE);
-    const hCurrent = octileHeuristic(cx, cy, goalXCell, goalYCell);
+    const cx = currentIdx % NAV_GRID_SIZE;
+    const cy = Math.floor(currentIdx / NAV_GRID_SIZE);
+    const hCurrent = heuristicAt(currentIdx);
     if (hCurrent < bestHeuristic) {
       bestHeuristic = hCurrent;
-      bestIdx = bestOpenIdx;
+      bestIdx = currentIdx;
     }
+
+    const currentG = gScore[currentIdx];
 
     for (const dir of DIRS) {
       const nx = cx + dir.dx;
@@ -335,7 +444,7 @@ function buildLocalPath(
       if (nx < 0 || nx >= NAV_GRID_SIZE || ny < 0 || ny >= NAV_GRID_SIZE) continue;
 
       const nIdx = cellIndex(nx, ny);
-      if (blocked[nIdx] === 1 || closed[nIdx] === 1) continue;
+      if (blocked[nIdx] === 1 || navClosedStamp[nIdx] === gen) continue;
 
       // Prevent corner clipping through diagonal gaps.
       if (dir.dx !== 0 && dir.dy !== 0) {
@@ -344,16 +453,14 @@ function buildLocalPath(
         if (blocked[sideA] === 1 || blocked[sideB] === 1) continue;
       }
 
-      const tentativeG = gScore[bestOpenIdx] + dir.cost;
-      if (tentativeG >= gScore[nIdx]) continue;
+      const tentativeG = currentG + dir.cost;
+      // A cell not yet stamped this generation is unvisited (g = Infinity).
+      if (navSeenStamp[nIdx] === gen && tentativeG >= gScore[nIdx]) continue;
 
-      cameFrom[nIdx] = bestOpenIdx;
+      navSeenStamp[nIdx] = gen;
+      cameFrom[nIdx] = currentIdx;
       gScore[nIdx] = tentativeG;
-
-      if (inOpen[nIdx] === 0) {
-        open.push(nIdx);
-        inOpen[nIdx] = 1;
-      }
+      navHeapPush(tentativeG + heuristicAt(nIdx), nIdx);
     }
   }
 

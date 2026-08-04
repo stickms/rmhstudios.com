@@ -578,15 +578,19 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
 
   const shouldFetchRmharks = filter === 'all' || filter === 'rmhark' || !!search;
 
-  // Only the hidden-author set + follow graph gate the main feed query (they shape
-  // its WHERE), so resolve just those before it. Everything else is NOT an input to
-  // the query — the interest profile only reorders the returned page, and
-  // announcements are interleaved afterward — so kicking those off alongside the
-  // query keeps them off its critical path. Previously a cold interest-profile read
-  // (a likes join) sat in the same batch and delayed the feed query from starting.
-  const [hiddenIds, viewerFollowingIds] = await Promise.all([
+  // Everything that shapes the main feed query's WHERE resolves in ONE batch:
+  // the hidden-author set, the follow graph, the viewer's close-friend circles,
+  // and their muted tags. All four are independent per-viewer reads, so they go
+  // out together — the circle and signal reads used to be awaited one after the
+  // other below, adding two serial round-trips before the feed query could even
+  // start. Everything else is NOT an input to the query — the interest profile
+  // only reorders the returned page, and announcements are interleaved afterward
+  // — so those stay off this batch and run alongside the query instead.
+  const [hiddenIds, viewerFollowingIds, viewerCircleOwnerIds, viewerSignals] = await Promise.all([
     getHiddenAuthorIds(userId),
     userId ? getFollowingIds(userId) : Promise.resolve([] as string[]),
+    circleOwnerIds(userId),
+    getSignals(userId),
   ]);
 
   // In-flight alongside the main query below (neither gates it).
@@ -600,10 +604,9 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
     search || cursor ? Promise.resolve([]) : getAnnouncementItems(filter);
 
   const authorWhere = hiddenIds.length ? { userId: { notIn: hiddenIds } } : {};
-  const viewerCircleOwnerIds = await circleOwnerIds(userId);
   const audWhere = audienceWhere(userId, viewerFollowingIds, [], viewerCircleOwnerIds);
   // Feed controls (§17): hide posts carrying a muted hashtag.
-  const tagWhere = mutedTagWhere((await getSignals(userId)).mutedTags);
+  const tagWhere = mutedTagWhere(viewerSignals.mutedTags);
 
   let dbItems: FeedItem[] = [];
 
