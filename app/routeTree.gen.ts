@@ -288,8 +288,12 @@ import { Route as ApiAdminReportsRouteImport } from './routes/api/admin/reports'
 import { Route as ApiAdminReviewCountsRouteImport } from './routes/api/admin/review-counts'
 import { Route as ApiAdminUsersRouteImport } from './routes/api/admin/users'
 import { Route as ApiAiAskFeedRouteImport } from './routes/api/ai/ask-feed'
+import { Route as ApiAiBioRouteImport } from './routes/api/ai/bio'
 import { Route as ApiAiMessageSuggestRouteImport } from './routes/api/ai/message-suggest'
 import { Route as ApiAiSearchRouteImport } from './routes/api/ai/search'
+import { Route as ApiAiSmartRepliesRouteImport } from './routes/api/ai/smart-replies'
+import { Route as ApiAiSuggestTagsRouteImport } from './routes/api/ai/suggest-tags'
+import { Route as ApiAiTakeawaysRouteImport } from './routes/api/ai/takeaways'
 import { Route as ApiAiTransformRouteImport } from './routes/api/ai/transform'
 import { Route as ApiAltairLeaderboardRouteImport } from './routes/api/altair/leaderboard'
 import { Route as ApiAltairMatchRouteImport } from './routes/api/altair/match'
@@ -2160,6 +2164,11 @@ const ApiAiAskFeedRoute = ApiAiAskFeedRouteImport.update({
   path: '/api/ai/ask-feed',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAiBioRoute = ApiAiBioRouteImport.update({
+  id: '/api/ai/bio',
+  path: '/api/ai/bio',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAiMessageSuggestRoute = ApiAiMessageSuggestRouteImport.update({
   id: '/api/ai/message-suggest',
   path: '/api/ai/message-suggest',
@@ -2168,6 +2177,21 @@ const ApiAiMessageSuggestRoute = ApiAiMessageSuggestRouteImport.update({
 const ApiAiSearchRoute = ApiAiSearchRouteImport.update({
   id: '/api/ai/search',
   path: '/api/ai/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiSmartRepliesRoute = ApiAiSmartRepliesRouteImport.update({
+  id: '/api/ai/smart-replies',
+  path: '/api/ai/smart-replies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiSuggestTagsRoute = ApiAiSuggestTagsRouteImport.update({
+  id: '/api/ai/suggest-tags',
+  path: '/api/ai/suggest-tags',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiTakeawaysRoute = ApiAiTakeawaysRouteImport.update({
+  id: '/api/ai/takeaways',
+  path: '/api/ai/takeaways',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAiTransformRoute = ApiAiTransformRouteImport.update({
@@ -4862,8 +4886,12 @@ export interface FileRoutesByFullPath {
   '/api/admin/review-counts': typeof ApiAdminReviewCountsRoute
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
   '/api/ai/ask-feed': typeof ApiAiAskFeedRoute
+  '/api/ai/bio': typeof ApiAiBioRoute
   '/api/ai/message-suggest': typeof ApiAiMessageSuggestRoute
   '/api/ai/search': typeof ApiAiSearchRoute
+  '/api/ai/smart-replies': typeof ApiAiSmartRepliesRoute
+  '/api/ai/suggest-tags': typeof ApiAiSuggestTagsRoute
+  '/api/ai/takeaways': typeof ApiAiTakeawaysRoute
   '/api/ai/transform': typeof ApiAiTransformRoute
   '/api/altair/leaderboard': typeof ApiAltairLeaderboardRoute
   '/api/altair/match': typeof ApiAltairMatchRoute
@@ -5588,8 +5616,12 @@ export interface FileRoutesByTo {
   '/api/admin/review-counts': typeof ApiAdminReviewCountsRoute
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
   '/api/ai/ask-feed': typeof ApiAiAskFeedRoute
+  '/api/ai/bio': typeof ApiAiBioRoute
   '/api/ai/message-suggest': typeof ApiAiMessageSuggestRoute
   '/api/ai/search': typeof ApiAiSearchRoute
+  '/api/ai/smart-replies': typeof ApiAiSmartRepliesRoute
+  '/api/ai/suggest-tags': typeof ApiAiSuggestTagsRoute
+  '/api/ai/takeaways': typeof ApiAiTakeawaysRoute
   '/api/ai/transform': typeof ApiAiTransformRoute
   '/api/altair/leaderboard': typeof ApiAltairLeaderboardRoute
   '/api/altair/match': typeof ApiAltairMatchRoute
@@ -6340,8 +6372,12 @@ export interface FileRoutesById {
   '/api/admin/review-counts': typeof ApiAdminReviewCountsRoute
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
   '/api/ai/ask-feed': typeof ApiAiAskFeedRoute
+  '/api/ai/bio': typeof ApiAiBioRoute
   '/api/ai/message-suggest': typeof ApiAiMessageSuggestRoute
   '/api/ai/search': typeof ApiAiSearchRoute
+  '/api/ai/smart-replies': typeof ApiAiSmartRepliesRoute
+  '/api/ai/suggest-tags': typeof ApiAiSuggestTagsRoute
+  '/api/ai/takeaways': typeof ApiAiTakeawaysRoute
   '/api/ai/transform': typeof ApiAiTransformRoute
   '/api/altair/leaderboard': typeof ApiAltairLeaderboardRoute
   '/api/altair/match': typeof ApiAltairMatchRoute
@@ -7092,8 +7128,12 @@ export interface FileRouteTypes {
     | '/api/admin/review-counts'
     | '/api/admin/users'
     | '/api/ai/ask-feed'
+    | '/api/ai/bio'
     | '/api/ai/message-suggest'
     | '/api/ai/search'
+    | '/api/ai/smart-replies'
+    | '/api/ai/suggest-tags'
+    | '/api/ai/takeaways'
     | '/api/ai/transform'
     | '/api/altair/leaderboard'
     | '/api/altair/match'
@@ -7818,8 +7858,12 @@ export interface FileRouteTypes {
     | '/api/admin/review-counts'
     | '/api/admin/users'
     | '/api/ai/ask-feed'
+    | '/api/ai/bio'
     | '/api/ai/message-suggest'
     | '/api/ai/search'
+    | '/api/ai/smart-replies'
+    | '/api/ai/suggest-tags'
+    | '/api/ai/takeaways'
     | '/api/ai/transform'
     | '/api/altair/leaderboard'
     | '/api/altair/match'
@@ -8569,8 +8613,12 @@ export interface FileRouteTypes {
     | '/api/admin/review-counts'
     | '/api/admin/users'
     | '/api/ai/ask-feed'
+    | '/api/ai/bio'
     | '/api/ai/message-suggest'
     | '/api/ai/search'
+    | '/api/ai/smart-replies'
+    | '/api/ai/suggest-tags'
+    | '/api/ai/takeaways'
     | '/api/ai/transform'
     | '/api/altair/leaderboard'
     | '/api/altair/match'
@@ -9171,8 +9219,12 @@ export interface RootRouteChildren {
   ApiAdminReviewCountsRoute: typeof ApiAdminReviewCountsRoute
   ApiAdminUsersRoute: typeof ApiAdminUsersRouteWithChildren
   ApiAiAskFeedRoute: typeof ApiAiAskFeedRoute
+  ApiAiBioRoute: typeof ApiAiBioRoute
   ApiAiMessageSuggestRoute: typeof ApiAiMessageSuggestRoute
   ApiAiSearchRoute: typeof ApiAiSearchRoute
+  ApiAiSmartRepliesRoute: typeof ApiAiSmartRepliesRoute
+  ApiAiSuggestTagsRoute: typeof ApiAiSuggestTagsRoute
+  ApiAiTakeawaysRoute: typeof ApiAiTakeawaysRoute
   ApiAiTransformRoute: typeof ApiAiTransformRoute
   ApiAltairLeaderboardRoute: typeof ApiAltairLeaderboardRoute
   ApiAltairMatchRoute: typeof ApiAltairMatchRoute
@@ -11450,6 +11502,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAiAskFeedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ai/bio': {
+      id: '/api/ai/bio'
+      path: '/api/ai/bio'
+      fullPath: '/api/ai/bio'
+      preLoaderRoute: typeof ApiAiBioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/ai/message-suggest': {
       id: '/api/ai/message-suggest'
       path: '/api/ai/message-suggest'
@@ -11462,6 +11521,27 @@ declare module '@tanstack/react-router' {
       path: '/api/ai/search'
       fullPath: '/api/ai/search'
       preLoaderRoute: typeof ApiAiSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai/smart-replies': {
+      id: '/api/ai/smart-replies'
+      path: '/api/ai/smart-replies'
+      fullPath: '/api/ai/smart-replies'
+      preLoaderRoute: typeof ApiAiSmartRepliesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai/suggest-tags': {
+      id: '/api/ai/suggest-tags'
+      path: '/api/ai/suggest-tags'
+      fullPath: '/api/ai/suggest-tags'
+      preLoaderRoute: typeof ApiAiSuggestTagsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai/takeaways': {
+      id: '/api/ai/takeaways'
+      path: '/api/ai/takeaways'
+      fullPath: '/api/ai/takeaways'
+      preLoaderRoute: typeof ApiAiTakeawaysRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/ai/transform': {
@@ -16296,8 +16376,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminReviewCountsRoute: ApiAdminReviewCountsRoute,
   ApiAdminUsersRoute: ApiAdminUsersRouteWithChildren,
   ApiAiAskFeedRoute: ApiAiAskFeedRoute,
+  ApiAiBioRoute: ApiAiBioRoute,
   ApiAiMessageSuggestRoute: ApiAiMessageSuggestRoute,
   ApiAiSearchRoute: ApiAiSearchRoute,
+  ApiAiSmartRepliesRoute: ApiAiSmartRepliesRoute,
+  ApiAiSuggestTagsRoute: ApiAiSuggestTagsRoute,
+  ApiAiTakeawaysRoute: ApiAiTakeawaysRoute,
   ApiAiTransformRoute: ApiAiTransformRoute,
   ApiAltairLeaderboardRoute: ApiAltairLeaderboardRoute,
   ApiAltairMatchRoute: ApiAltairMatchRoute,

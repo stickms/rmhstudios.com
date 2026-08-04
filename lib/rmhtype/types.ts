@@ -116,6 +116,12 @@ export interface SoloResult {
   timeMs: number;
   timedOut: boolean;
   scorePosted?: boolean;
+  /**
+   * The run used an AI passage written for a topic the player chose, so it is
+   * practice: uncalibrated and self-selected, it is never ranked against runs
+   * on the curated passages. `scorePosted` is always false alongside it.
+   */
+  practice?: boolean;
 }
 
 // ─── Errors ─────────────────────────────────────────────────────

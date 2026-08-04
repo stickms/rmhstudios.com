@@ -28,6 +28,7 @@ import { GifPicker } from'./GifPicker';
 import { AIGenerateButton } from'./AIGenerateButton';
 import { AIImageButton } from'./AIImageButton';
 import { ComposeAssist } from'./ComposeAssist';
+import { TagSuggest } from'./TagSuggest';
 import { MentionTextarea } from'./MentionTextarea';
 import { EmojiPickerButton } from'@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from'@/lib/emoji/use-emoji-insert';
@@ -525,6 +526,8 @@ export function ComposeBox({
  />
 
  <ComposeAssist value={content} onChange={setContent} />
+
+ <TagSuggest value={content} onChange={setContent} />
 
  {parseInt(unlockPrice, 10) > 0 && (
  <div className="mt-2 flex flex-wrap items-center gap-2">

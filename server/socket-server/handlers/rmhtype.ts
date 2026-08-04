@@ -13,6 +13,7 @@ import { logger } from '../logger';
 import { awardAppProgress } from '../economy';
 import { PresenceGrace } from '../../shared/presence-grace';
 import { S2C } from '../../../lib/rmhtype/events';
+import { generateTypingPassage } from '../../../lib/ai/text.server';
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -72,6 +73,16 @@ interface TypeRoom {
   progressBroadcastTimer: ReturnType<typeof setInterval> | null;
   nextRoundTimer: ReturnType<typeof setTimeout> | null;
   roundResults: Array<{ rankings: any[] }>;
+  /**
+   * True when the passage was written by the AI for a player-chosen topic.
+   *
+   * Such a run is practice only: it never reaches `persistSoloResult`, and so
+   * never reaches the leaderboard. A generated passage's difficulty is not
+   * comparable to the curated list's — it is whatever the model produced that
+   * second, and it is chosen by the player — so a WPM set on one cannot be
+   * ranked against a WPM set on `hard-10` without making the board meaningless.
+   */
+  aiPassage?: boolean;
 }
 
 interface Passage {
@@ -1648,7 +1659,9 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
 
   // ─── Solo Mode ──────────────────────────────────────────
 
-  socket.on('rmhtype:solo:start', (payload?: { difficulty?: string; passageLength?: string }) => {
+  socket.on(
+    'rmhtype:solo:start',
+    async (payload?: { difficulty?: string; passageLength?: string; topic?: string }) => {
     if (!checkRateLimit(socket.id, 'rmhtype:solo:start')) {
       socket.emit('rmhtype:error', { message: 'Rate limit exceeded' });
       return;
@@ -1671,7 +1684,46 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
       rounds: 1,
     };
 
-    const passage = selectPassage(soloSettings);
+    // A topic asks for a passage written to order. The text is produced HERE,
+    // never accepted from the client: the passage is what scoring is measured
+    // against, so a client-supplied one would be a client-supplied WPM.
+    const topic = typeof payload?.topic === 'string' ? sanitizeString(payload.topic, 80) : '';
+    let passage = selectPassage(soloSettings);
+    let aiPassage = false;
+
+    if (topic) {
+      if (!checkRateLimit(socket.id, 'rmhtype:solo:ai')) {
+        socket.emit('rmhtype:error', { message: 'Too many AI passages — try again in a minute' });
+        return;
+      }
+      socket.emit('rmhtype:solo:generating', { topic });
+      try {
+        const text = await generateTypingPassage({
+          topic,
+          difficulty,
+          length: passageLength,
+        });
+        if (text) {
+          passage = {
+            id: `ai-${Date.now().toString(36)}`,
+            text,
+            difficulty,
+            wordCount: text.split(' ').length,
+          };
+          aiPassage = true;
+        }
+      } catch (err) {
+        // Fall through on the curated passage — the player pressed start and is
+        // owed a run, not an error screen.
+        logger.warn({ event: 'rmhtype_ai_passage_error', userId, error: String(err) });
+      }
+      if (!aiPassage) {
+        socket.emit('rmhtype:solo:aiUnavailable', {});
+      }
+      // The socket can disconnect during a multi-second generation.
+      if (!socket.connected) return;
+    }
+
     const soloRoomId = `solo-${userId}-${Date.now()}`;
 
     const player = createPlayer(socket.id, userId, userName, avatarUrl, true);
@@ -1695,6 +1747,7 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
       nextRoundTimer: null,
       roundResults: [],
       bannedUsers: [],
+      aiPassage,
     };
 
     rooms.set(soloRoomId, soloRoom);
@@ -1739,16 +1792,18 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
               accuracy: Math.round(soloPlayer.accuracy * 100) / 100,
               timeMs: ROUND_TIMEOUT_MS,
               timedOut: true,
-              scorePosted: soloPlayer.accuracy >= MIN_LEADERBOARD_ACCURACY,
+              scorePosted: !aiPassage && soloPlayer.accuracy >= MIN_LEADERBOARD_ACCURACY,
+              practice: aiPassage,
             });
             cleanupSoloRoom(soloRoomId, socket);
           }
         }
       }, ROUND_TIMEOUT_MS);
 
-      logger.info({ event: 'rmhtype_solo_started', userId, passageId: passage.id });
+      logger.info({ event: 'rmhtype_solo_started', userId, passageId: passage.id, aiPassage });
     }, COUNTDOWN_SECONDS * 1000);
-  });
+    },
+  );
 
   socket.on('rmhtype:solo:finish', (payload?: { position?: number; errors?: number }) => {
     const roomId = socketRoomMap.get(socket.id);
@@ -1787,25 +1842,29 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
       accuracy: Math.round(player.accuracy * 100) / 100,
       timeMs: player.finishTime,
       timedOut: false,
-      scorePosted: player.accuracy >= MIN_LEADERBOARD_ACCURACY,
+      scorePosted: !room.aiPassage && player.accuracy >= MIN_LEADERBOARD_ACCURACY,
+      practice: Boolean(room.aiPassage),
     };
 
     socket.emit('rmhtype:solo:result', result);
 
-    // Persist solo result to DB
-    persistSoloResult(
-      userId,
-      userName,
-      room.passageId ?? 'unknown',
-      room.settings.difficulty,
-      room.settings.passageLength,
-      player.wpm,
-      player.accuracy,
-      player.finishTime,
-      position,
-    ).catch((err) => {
-      logger.error({ event: 'rmhtype_solo_persist_error', userId, error: String(err) });
-    });
+    // Persist solo result to DB — except on a generated passage, which is
+    // practice by design (see `TypeRoom.aiPassage`).
+    if (!room.aiPassage) {
+      persistSoloResult(
+        userId,
+        userName,
+        room.passageId ?? 'unknown',
+        room.settings.difficulty,
+        room.settings.passageLength,
+        player.wpm,
+        player.accuracy,
+        player.finishTime,
+        position,
+      ).catch((err) => {
+        logger.error({ event: 'rmhtype_solo_persist_error', userId, error: String(err) });
+      });
+    }
 
     cleanupSoloRoom(roomId, socket);
   });

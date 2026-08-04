@@ -13,6 +13,7 @@ import { useSession, useResolvedUser } from'@/components/Providers';
 import { Button } from'@/components/ui/button';
 import { usePopPresence } from '@/hooks/usePopPresence';
 import { GhostTextArea } from'./GhostTextArea';
+import { SmartReplies } from'./SmartReplies';
 import { PostImageGrid } from'./PostImageGrid';
 import { useMessageSuggestion } from'@/lib/useMessageSuggestion';
 import { useTranslation } from'react-i18next';
@@ -129,6 +130,14 @@ export function ConversationView({
  content: m.content,
  })),
  });
+
+ // The message suggested replies would answer: the newest one, only when it is
+ // theirs and carries text. Null (the common case) renders no chips at all.
+ const newest = messages[messages.length - 1];
+ const replyToMessageId =
+ newest && newest.senderId !== session?.user.id && newest.content.trim()
+ ? newest.id
+ : null;
 
  const scrollToBottom = useCallback(() => {
  messagesEndRef.current?.scrollIntoView({ behavior:'smooth'});
@@ -867,6 +876,19 @@ export function ConversationView({
  className="hidden"
  onChange={(e) => handleImageFiles(e.currentTarget.files)}
  />
+ {/* Suggested replies. Gated on the thread ending with THEIR message: a
+ thread waiting on them has nothing to suggest a reply to, and a
+ media-only message has no text to answer. */}
+ <SmartReplies
+ conversationId={conversationId}
+ replyToMessageId={replyToMessageId}
+ draft={input}
+ onPick={(reply) => {
+ setInput(reply);
+ inputRef.current?.focus();
+ }}
+ />
+
  <div className="flex items-end gap-2">
  <div className="relative flex-1">
  <GhostTextArea

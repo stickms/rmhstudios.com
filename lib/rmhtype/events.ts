@@ -39,6 +39,8 @@ export const S2C = {
   GAME_ROUND_RESULTS:  'rmhtype:game:roundResults',
   GAME_FINAL_RESULTS:  'rmhtype:game:finalResults',
   SOLO_COUNTDOWN:      'rmhtype:solo:countdown',
+  SOLO_GENERATING:     'rmhtype:solo:generating',
+  SOLO_AI_UNAVAILABLE: 'rmhtype:solo:aiUnavailable',
   SOLO_STARTED:        'rmhtype:solo:started',
   SOLO_RESULT:         'rmhtype:solo:result',
   LEADERBOARD_DATA:    'rmhtype:leaderboard:data',

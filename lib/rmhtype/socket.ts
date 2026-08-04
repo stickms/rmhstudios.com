@@ -114,13 +114,30 @@ function registerHandlers(socket: Socket) {
   socket.on(S2C.GAME_FINAL_RESULTS, (data: FinalResults) => store().setFinalResults(data));
 
   // ─── Solo ─────────────────────────────────────────────────────────────
-  socket.on(S2C.SOLO_COUNTDOWN, (data: { seconds: number }) =>
-    store().setSoloCountdown(data.seconds),
+  // The countdown only begins once the server has a passage in hand, so its
+  // first tick is also the end of any generation wait.
+  socket.on(S2C.SOLO_COUNTDOWN, (data: { seconds: number }) => {
+    const s = store();
+    s.setSoloGeneratingTopic(null);
+    s.setSoloCountdown(data.seconds);
+  });
+
+  socket.on(S2C.SOLO_GENERATING, (data: { topic?: string }) =>
+    store().setSoloGeneratingTopic(data?.topic || ''),
   );
+
+  // The topic was accepted but no passage came back (AI off, or an unusable
+  // generation). The run still starts — on a curated passage — so this only
+  // has to correct the expectation the player was given.
+  socket.on(S2C.SOLO_AI_UNAVAILABLE, () => {
+    store().setSoloGeneratingTopic(null);
+    toast.warning('Could not write that passage — using a standard one.');
+  });
 
   socket.on(S2C.SOLO_STARTED, (data: { passage: string; passageId: string }) => {
     const s = store();
     s.setSoloCountdown(null);
+    s.setSoloGeneratingTopic(null);
     s.setSoloPassage(data.passageId, data.passage);
   });
 
