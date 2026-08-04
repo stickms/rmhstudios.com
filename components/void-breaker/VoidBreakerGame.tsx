@@ -11,11 +11,17 @@ import { CANVAS_WIDTH, CANVAS_HEIGHT, MAX_SHARDS, DET_MIN_SHARDS, DASH_COOLDOWN,
 import type { InputState, RunStats, GameState, HUDState } from '@/lib/void-breaker/types';
 import type { UpgradeId } from '@/lib/void-breaker/upgrades';
 import {
-  loadMeta, saveMeta, metaBonuses, buyNode, awardCores, emptyMeta,
+  loadMeta, metaBonuses, buyNode, awardCores, emptyMeta,
   isCharUnlocked, canUnlockChar, unlockChar,
   isWeaponUnlocked, canUnlockWeapon, unlockWeapon,
   type MetaState, type MetaNodeId,
 } from '@/lib/void-breaker/metaProgression';
+import {
+  persistVoidBreakerMeta,
+  summarizeVoidBreakerSave,
+  voidBreakerSave,
+} from '@/lib/void-breaker/cloud';
+import { useCloudSave } from '@/hooks/useCloudSave';
 import { getCharacter, isCharacterId, type CharacterId } from '@/lib/void-breaker/characters';
 import { getWeapon, isWeaponId, type WeaponId } from '@/lib/void-breaker/weapons';
 import { canvasGlowEnabled } from '@/lib/render/canvas2d-fx';
@@ -51,7 +57,11 @@ const EMPTY_HUD: HUDState = {
 };
 
 export function VoidBreakerGame() {
-  const { t } = useTranslation('c-void-breaker');
+  const { t, i18n } = useTranslation('c-void-breaker');
+  const cloud = useCloudSave(voidBreakerSave, {
+    gameName: 'Void Breaker',
+    summarize: (save) => summarizeVoidBreakerSave(save, t, i18n.language),
+  });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<VoidBreakerEngine | null>(null);
   const rendererRef = useRef<VBRenderer | null>(null);
@@ -126,9 +136,17 @@ export function VoidBreakerGame() {
       const storedMods = JSON.parse(localStorage.getItem('vb-mods') ?? '[]');
       if (Array.isArray(storedMods)) setActiveMods(storedMods.filter(isModifierId));
     } catch { /* ignore */ }
-    setMeta(loadMeta());
+    // The Forge's progression is resolved by `cloud` below, not read here —
+    // it can be on the account as well as on this device.
     setSaveInfo(getSaveInfo());
   }, []);
+
+  // Cores, upgrades and unlocks follow the account when there is one. The
+  // mid-run resume above stays local — see `lib/void-breaker/cloud.ts`.
+  useEffect(() => {
+    if (cloud.status !== 'ready') return;
+    setMeta(cloud.save ?? loadMeta());
+  }, [cloud.status, cloud.save]);
 
   // Music + SFX volume sync
   useEffect(() => {
@@ -511,7 +529,7 @@ export function VoidBreakerGame() {
     if (earned > 0) {
       setMeta(prev => {
         const next = { ...prev, cores: prev.cores + earned };
-        saveMeta(next);
+        persistVoidBreakerMeta(next);
         return next;
       });
     }
@@ -523,7 +541,7 @@ export function VoidBreakerGame() {
     sfxRef.current?.play('uiClick');
     setMeta(prev => {
       const next = buyNode(prev, id);
-      if (next !== prev) saveMeta(next);
+      if (next !== prev) persistVoidBreakerMeta(next);
       return next;
     });
   }, []);
@@ -606,7 +624,7 @@ export function VoidBreakerGame() {
     if (!isCharUnlocked(meta, id)) {
       if (canUnlockChar(meta, id)) {
         const next = unlockChar(meta, id);
-        saveMeta(next);
+        persistVoidBreakerMeta(next);
         setMeta(next);
         sfxRef.current?.play('unlock');
         setCharacterId(id);
@@ -624,7 +642,7 @@ export function VoidBreakerGame() {
     if (!isWeaponUnlocked(meta, id)) {
       if (canUnlockWeapon(meta, id)) {
         const next = unlockWeapon(meta, id);
-        saveMeta(next);
+        persistVoidBreakerMeta(next);
         setMeta(next);
         sfxRef.current?.play('unlock');
         setWeaponId(id);
@@ -688,6 +706,10 @@ export function VoidBreakerGame() {
       className="notranslate w-full h-full relative bg-[#050508] flex flex-col items-center justify-center overflow-hidden"
       style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
     >
+      {/* Two Forges that have both been played. `meta` is not applied until this
+          is answered, so nothing below can autosave over the save being offered. */}
+      {cloud.conflictDialog}
+
       {/* Void Breaker UI juice — shared keyframes (consumed by this file + VoidBreakerUI).
           Disabled under prefers-reduced-motion so resting state stays fully visible. */}
       <style>{`

@@ -12,23 +12,18 @@
  * They pass a transport of their own to `createCloudSave` and keep the schema
  * they already have; there is nothing to gain from moving a working save across
  * a migration.
+ *
+ * Games still on `localStorage` alone are absent too, and that is the point of
+ * keeping this list short: an id here is a promise that something writes to it.
+ * Velum 2099's story save, Lights Out's puzzle history, Dream Rift's high
+ * scores, the Altair meta shop and the Farming Sim have not been moved yet —
+ * add the id in the same commit that teaches the game to save, not before.
  */
 export const SHARED_SAVE_GAMES = [
   'cookgame',
   'isleworks',
   'void-breaker',
-  'velum2099',
   'neon-driftway',
-  'lights-out',
-  'dream-rift',
-  'laundry-sort',
-  'kowloon-knockout',
-  'house-always-wins',
-  'rmh-farming-sim',
-  'slice-it',
-  'rochester-offensive',
-  'gabriels-horn',
-  'altair',
 ] as const;
 
 export type SharedSaveGameId = (typeof SHARED_SAVE_GAMES)[number];
