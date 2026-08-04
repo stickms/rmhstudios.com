@@ -73,6 +73,7 @@ import { Route as SiteCommunitiesRouteImport } from './routes/_site/communities'
 import { Route as SiteCreatorStudioRouteImport } from './routes/_site/creator-studio'
 import { Route as SiteDeveloperRouteRouteImport } from './routes/_site/developer/route'
 import { Route as SiteDraftsRouteImport } from './routes/_site/drafts'
+import { Route as SiteEmojiPacksRouteImport } from './routes/_site/emoji-packs'
 import { Route as SiteEventsRouteImport } from './routes/_site/events'
 import { Route as SiteExploreRouteImport } from './routes/_site/explore'
 import { Route as SiteHelpRouteImport } from './routes/_site/help'
@@ -583,6 +584,7 @@ import { Route as ApiDoctrineSahurStatusRouteImport } from './routes/api/doctrin
 import { Route as ApiEmojiPacksSlugIndexRouteImport } from './routes/api/emoji-packs/$slug/index'
 import { Route as ApiEmojiPacksSlugItemsRouteImport } from './routes/api/emoji-packs/$slug/items'
 import { Route as ApiEmojiPacksSlugSubscribeRouteImport } from './routes/api/emoji-packs/$slug/subscribe'
+import { Route as ApiEmojiPacksSlugUploadRouteImport } from './routes/api/emoji-packs/$slug/upload'
 import { Route as ApiEventsIdIndexRouteImport } from './routes/api/events/$id/index'
 import { Route as ApiEventsIdIcsRouteImport } from './routes/api/events/$id/ics'
 import { Route as ApiEventsIdRsvpRouteImport } from './routes/api/events/$id/rsvp'
@@ -1078,6 +1080,11 @@ const SiteDeveloperRouteRoute = SiteDeveloperRouteRouteImport.update({
 const SiteDraftsRoute = SiteDraftsRouteImport.update({
   id: '/drafts',
   path: '/drafts',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteEmojiPacksRoute = SiteEmojiPacksRouteImport.update({
+  id: '/emoji-packs',
+  path: '/emoji-packs',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteEventsRoute = SiteEventsRouteImport.update({
@@ -3683,6 +3690,11 @@ const ApiEmojiPacksSlugSubscribeRoute =
     path: '/api/emoji-packs/$slug/subscribe',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiEmojiPacksSlugUploadRoute = ApiEmojiPacksSlugUploadRouteImport.update({
+  id: '/api/emoji-packs/$slug/upload',
+  path: '/api/emoji-packs/$slug/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiEventsIdIndexRoute = ApiEventsIdIndexRouteImport.update({
   id: '/api/events/$id/',
   path: '/api/events/$id/',
@@ -4673,6 +4685,7 @@ export interface FileRoutesByFullPath {
   '/communities': typeof SiteCommunitiesRoute
   '/creator-studio': typeof SiteCreatorStudioRoute
   '/drafts': typeof SiteDraftsRoute
+  '/emoji-packs': typeof SiteEmojiPacksRoute
   '/events': typeof SiteEventsRoute
   '/explore': typeof SiteExploreRoute
   '/help': typeof SiteHelpRoute
@@ -5170,6 +5183,7 @@ export interface FileRoutesByFullPath {
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
   '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
   '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
+  '/api/emoji-packs/$slug/upload': typeof ApiEmojiPacksSlugUploadRoute
   '/api/events/$id/ics': typeof ApiEventsIdIcsRoute
   '/api/events/$id/rsvp': typeof ApiEventsIdRsvpRoute
   '/api/feed/image/$filename': typeof ApiFeedImageFilenameRoute
@@ -5401,6 +5415,7 @@ export interface FileRoutesByTo {
   '/communities': typeof SiteCommunitiesRoute
   '/creator-studio': typeof SiteCreatorStudioRoute
   '/drafts': typeof SiteDraftsRoute
+  '/emoji-packs': typeof SiteEmojiPacksRoute
   '/events': typeof SiteEventsRoute
   '/explore': typeof SiteExploreRoute
   '/help': typeof SiteHelpRoute
@@ -5896,6 +5911,7 @@ export interface FileRoutesByTo {
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
   '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
   '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
+  '/api/emoji-packs/$slug/upload': typeof ApiEmojiPacksSlugUploadRoute
   '/api/events/$id/ics': typeof ApiEventsIdIcsRoute
   '/api/events/$id/rsvp': typeof ApiEventsIdRsvpRoute
   '/api/feed/image/$filename': typeof ApiFeedImageFilenameRoute
@@ -6150,6 +6166,7 @@ export interface FileRoutesById {
   '/_site/communities': typeof SiteCommunitiesRoute
   '/_site/creator-studio': typeof SiteCreatorStudioRoute
   '/_site/drafts': typeof SiteDraftsRoute
+  '/_site/emoji-packs': typeof SiteEmojiPacksRoute
   '/_site/events': typeof SiteEventsRoute
   '/_site/explore': typeof SiteExploreRoute
   '/_site/help': typeof SiteHelpRoute
@@ -6648,6 +6665,7 @@ export interface FileRoutesById {
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
   '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
   '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
+  '/api/emoji-packs/$slug/upload': typeof ApiEmojiPacksSlugUploadRoute
   '/api/events/$id/ics': typeof ApiEventsIdIcsRoute
   '/api/events/$id/rsvp': typeof ApiEventsIdRsvpRoute
   '/api/feed/image/$filename': typeof ApiFeedImageFilenameRoute
@@ -6903,6 +6921,7 @@ export interface FileRouteTypes {
     | '/communities'
     | '/creator-studio'
     | '/drafts'
+    | '/emoji-packs'
     | '/events'
     | '/explore'
     | '/help'
@@ -7400,6 +7419,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/sahur/status'
     | '/api/emoji-packs/$slug/items'
     | '/api/emoji-packs/$slug/subscribe'
+    | '/api/emoji-packs/$slug/upload'
     | '/api/events/$id/ics'
     | '/api/events/$id/rsvp'
     | '/api/feed/image/$filename'
@@ -7631,6 +7651,7 @@ export interface FileRouteTypes {
     | '/communities'
     | '/creator-studio'
     | '/drafts'
+    | '/emoji-packs'
     | '/events'
     | '/explore'
     | '/help'
@@ -8126,6 +8147,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/sahur/status'
     | '/api/emoji-packs/$slug/items'
     | '/api/emoji-packs/$slug/subscribe'
+    | '/api/emoji-packs/$slug/upload'
     | '/api/events/$id/ics'
     | '/api/events/$id/rsvp'
     | '/api/feed/image/$filename'
@@ -8379,6 +8401,7 @@ export interface FileRouteTypes {
     | '/_site/communities'
     | '/_site/creator-studio'
     | '/_site/drafts'
+    | '/_site/emoji-packs'
     | '/_site/events'
     | '/_site/explore'
     | '/_site/help'
@@ -8877,6 +8900,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/sahur/status'
     | '/api/emoji-packs/$slug/items'
     | '/api/emoji-packs/$slug/subscribe'
+    | '/api/emoji-packs/$slug/upload'
     | '/api/events/$id/ics'
     | '/api/events/$id/rsvp'
     | '/api/feed/image/$filename'
@@ -9410,6 +9434,7 @@ export interface RootRouteChildren {
   ApiDoctrineSahurStatusRoute: typeof ApiDoctrineSahurStatusRoute
   ApiEmojiPacksSlugItemsRoute: typeof ApiEmojiPacksSlugItemsRoute
   ApiEmojiPacksSlugSubscribeRoute: typeof ApiEmojiPacksSlugSubscribeRoute
+  ApiEmojiPacksSlugUploadRoute: typeof ApiEmojiPacksSlugUploadRoute
   ApiEventsIdIcsRoute: typeof ApiEventsIdIcsRoute
   ApiEventsIdRsvpRoute: typeof ApiEventsIdRsvpRoute
   ApiFeedImageFilenameRoute: typeof ApiFeedImageFilenameRoute
@@ -9943,6 +9968,13 @@ declare module '@tanstack/react-router' {
       path: '/drafts'
       fullPath: '/drafts'
       preLoaderRoute: typeof SiteDraftsRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/emoji-packs': {
+      id: '/_site/emoji-packs'
+      path: '/emoji-packs'
+      fullPath: '/emoji-packs'
+      preLoaderRoute: typeof SiteEmojiPacksRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/events': {
@@ -13515,6 +13547,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEmojiPacksSlugSubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/emoji-packs/$slug/upload': {
+      id: '/api/emoji-packs/$slug/upload'
+      path: '/api/emoji-packs/$slug/upload'
+      fullPath: '/api/emoji-packs/$slug/upload'
+      preLoaderRoute: typeof ApiEmojiPacksSlugUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/events/$id/': {
       id: '/api/events/$id/'
       path: '/api/events/$id'
@@ -14853,6 +14892,7 @@ interface SiteRouteChildren {
   SiteCommunitiesRoute: typeof SiteCommunitiesRoute
   SiteCreatorStudioRoute: typeof SiteCreatorStudioRoute
   SiteDraftsRoute: typeof SiteDraftsRoute
+  SiteEmojiPacksRoute: typeof SiteEmojiPacksRoute
   SiteEventsRoute: typeof SiteEventsRoute
   SiteExploreRoute: typeof SiteExploreRoute
   SiteHelpRoute: typeof SiteHelpRoute
@@ -14955,6 +14995,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteCommunitiesRoute: SiteCommunitiesRoute,
   SiteCreatorStudioRoute: SiteCreatorStudioRoute,
   SiteDraftsRoute: SiteDraftsRoute,
+  SiteEmojiPacksRoute: SiteEmojiPacksRoute,
   SiteEventsRoute: SiteEventsRoute,
   SiteExploreRoute: SiteExploreRoute,
   SiteHelpRoute: SiteHelpRoute,
@@ -16536,6 +16577,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDoctrineSahurStatusRoute: ApiDoctrineSahurStatusRoute,
   ApiEmojiPacksSlugItemsRoute: ApiEmojiPacksSlugItemsRoute,
   ApiEmojiPacksSlugSubscribeRoute: ApiEmojiPacksSlugSubscribeRoute,
+  ApiEmojiPacksSlugUploadRoute: ApiEmojiPacksSlugUploadRoute,
   ApiEventsIdIcsRoute: ApiEventsIdIcsRoute,
   ApiEventsIdRsvpRoute: ApiEventsIdRsvpRoute,
   ApiFeedImageFilenameRoute: ApiFeedImageFilenameRoute,

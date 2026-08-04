@@ -72,6 +72,8 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   // here *and* self-canonical while `/store` was too, so one catalog and one
   // pricing table each claimed two canonical URLs.
   { loc: '/achievements', changefreq: 'weekly', priority: 0.5 },
+  // Community-made packs: a public browse surface, so it's indexable.
+  { loc: '/emoji-packs', changefreq: 'weekly', priority: 0.5 },
   { loc: '/groups', changefreq: 'weekly', priority: 0.5 },
   { loc: '/help', changefreq: 'monthly', priority: 0.6 },
   { loc: '/predictions', changefreq: 'daily', priority: 0.5 },
