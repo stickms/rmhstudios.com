@@ -25,6 +25,7 @@ import { auth } from '@/lib/auth';
 import { getUserTier, type Tier } from '@/lib/entitlements';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
+import { MEMBER_FEATURES, type MemberFeature } from '@/lib/entitlements/features';
 import { ShopColumn } from '@/components/feed/ShopColumn';
 import { MarketColumn } from '@/components/market/MarketColumn';
 import type { LiquidTab } from '@/components/ui/liquid-tabs';
@@ -67,9 +68,18 @@ export const Route = createFileRoute('/_site/store/')({
     }),
     links: [buildCanonical('/store')],
   }),
-  validateSearch: (search: Record<string, unknown>): { tab?: StoreTab } => {
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { tab?: StoreTab; feature?: MemberFeature } => {
     const tab = search.tab;
-    return STORE_TABS.includes(tab as StoreTab) ? { tab: tab as StoreTab } : {};
+    // `?feature=` is set by `upgradeHref` when a gated action refuses, so the
+    // membership tab can highlight what the viewer actually came for. Validated
+    // against the registry rather than passed through — it reaches the DOM.
+    const feature = MEMBER_FEATURES.find((f) => f.id === search.feature)?.id;
+    return {
+      ...(STORE_TABS.includes(tab as StoreTab) ? { tab: tab as StoreTab } : {}),
+      ...(feature ? { feature } : {}),
+    };
   },
   component: Store,
 });
@@ -77,7 +87,7 @@ export const Route = createFileRoute('/_site/store/')({
 function Store() {
   const { t } = useTranslation('site');
   const { tier: currentTier, shop, listings, viewerId } = Route.useLoaderData();
-  const { tab = 'membership' } = Route.useSearch();
+  const { tab = 'membership', feature } = Route.useSearch();
   const navigate = useNavigate();
 
   const setTab = useCallback(
@@ -126,6 +136,7 @@ function Store() {
             // The hero's secondary action used to smooth-scroll down this same
             // panel; the coin shop is a sibling tab now, so it switches tabs.
             onCoinShop={() => setTab('shop')}
+            highlightFeature={feature ?? null}
           />
         </div>
       )}

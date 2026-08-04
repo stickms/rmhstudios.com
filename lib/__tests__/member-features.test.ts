@@ -152,3 +152,36 @@ describe('upgrade envelope', () => {
     }
   });
 });
+
+describe('membership page copy', () => {
+  it('has a literal t() call for every feature, and no orphans', async () => {
+    // The registry carries `labelKey`/`blurbKey`, but `t(feature.labelKey)` is a
+    // computed key and `i18next-parser` cannot see it — the keys never reach
+    // `locales/` and every locale serves English forever. `featureCopy()` is the
+    // literal-call workaround; this asserts it stays in step with the registry.
+    const { featureCopy } = await import('@/components/membership/MemberFeatureGrid');
+    const identity = ((_key: string, opts: { defaultValue: string }) =>
+      opts.defaultValue) as unknown as Parameters<typeof featureCopy>[0];
+    const copy = featureCopy(identity);
+
+    const declared = MEMBER_FEATURES.map((f) => f.id).sort();
+    const covered = Object.keys(copy).sort();
+    expect(covered).toEqual(declared);
+
+    for (const f of MEMBER_FEATURES) {
+      expect({ id: f.id, ok: copy[f.id].label.length > 0 && copy[f.id].blurb.length > 0 }).toEqual({
+        id: f.id,
+        ok: true,
+      });
+    }
+  });
+
+  it('every feature key is present in the English catalog', async () => {
+    // Proves the extraction actually happened, rather than trusting that it did.
+    const feed = (await import('../../locales/en/feed.json')).default as Record<string, string>;
+    const missing = MEMBER_FEATURES.flatMap((f) =>
+      [f.labelKey, f.blurbKey].filter((k) => !(k in feed)),
+    );
+    expect(missing).toEqual([]);
+  });
+});
