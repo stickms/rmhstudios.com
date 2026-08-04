@@ -59,6 +59,7 @@ performance-slo
 design-language
 page-consistency
 people
+adsense
 albums-storage
 coins
 translations

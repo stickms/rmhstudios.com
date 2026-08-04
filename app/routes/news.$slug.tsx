@@ -17,6 +17,7 @@ import { liquidVTName } from '@/lib/view-transition';
 import { getCategoryColor } from '@/lib/news-categories';
 import { useTranslation } from 'react-i18next';
 import { markdownComponents } from '@/components/blog/MDXAnimations';
+import { AdSlot } from '@/components/ads/AdSlot';
 
 const fetchArticle = createServerFn({ method: 'GET' })
   .validator((slug: string) => slug)
@@ -171,6 +172,10 @@ function NewsArticlePage() {
         </div>
 
         <hr className="my-12 border-(--site-border)" />
+
+        {/* Below the body, after the reader has the article. Renders nothing
+            for members / un-consented visitors — see lib/ads/adsense.ts. */}
+        <AdSlot placement="article-end" className="mb-12" />
 
         <div className="text-center">
           <p className="text-(--site-text-dim) italic">

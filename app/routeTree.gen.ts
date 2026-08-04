@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SiteRouteImport } from './routes/_site'
 import { Route as AdaptiveIntelligenceRouteImport } from './routes/adaptive-intelligence'
+import { Route as AdsDottxtRouteImport } from './routes/ads[.]txt'
 import { Route as AltairRouteImport } from './routes/altair'
 import { Route as BlackLivesMatterRouteImport } from './routes/black-lives-matter'
 import { Route as CookgameRouteImport } from './routes/cookgame'
@@ -754,6 +755,11 @@ const SiteRoute = SiteRouteImport.update({
 const AdaptiveIntelligenceRoute = AdaptiveIntelligenceRouteImport.update({
   id: '/adaptive-intelligence',
   path: '/adaptive-intelligence',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdsDottxtRoute = AdsDottxtRouteImport.update({
+  id: '/ads.txt',
+  path: '/ads.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AltairRoute = AltairRouteImport.update({
@@ -4538,6 +4544,7 @@ const ApiTournamentsIdMatchesMatchIdReportRoute =
 export interface FileRoutesByFullPath {
   '/': typeof SiteIndexRoute
   '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
+  '/ads.txt': typeof AdsDottxtRoute
   '/altair': typeof AltairRouteWithChildren
   '/black-lives-matter': typeof BlackLivesMatterRoute
   '/cookgame': typeof CookgameRoute
@@ -5275,6 +5282,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
+  '/ads.txt': typeof AdsDottxtRoute
   '/black-lives-matter': typeof BlackLivesMatterRoute
   '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
@@ -5991,6 +5999,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_site': typeof SiteRouteWithChildren
   '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
+  '/ads.txt': typeof AdsDottxtRoute
   '/altair': typeof AltairRouteWithChildren
   '/black-lives-matter': typeof BlackLivesMatterRoute
   '/cookgame': typeof CookgameRoute
@@ -6732,6 +6741,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/adaptive-intelligence'
+    | '/ads.txt'
     | '/altair'
     | '/black-lives-matter'
     | '/cookgame'
@@ -7469,6 +7479,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/adaptive-intelligence'
+    | '/ads.txt'
     | '/black-lives-matter'
     | '/cookgame'
     | '/cookies'
@@ -8184,6 +8195,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_site'
     | '/adaptive-intelligence'
+    | '/ads.txt'
     | '/altair'
     | '/black-lives-matter'
     | '/cookgame'
@@ -8924,6 +8936,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   SiteRoute: typeof SiteRouteWithChildren
   AdaptiveIntelligenceRoute: typeof AdaptiveIntelligenceRoute
+  AdsDottxtRoute: typeof AdsDottxtRoute
   AltairRoute: typeof AltairRouteWithChildren
   BlackLivesMatterRoute: typeof BlackLivesMatterRoute
   CookgameRoute: typeof CookgameRoute
@@ -9351,6 +9364,13 @@ declare module '@tanstack/react-router' {
       path: '/adaptive-intelligence'
       fullPath: '/adaptive-intelligence'
       preLoaderRoute: typeof AdaptiveIntelligenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ads.txt': {
+      id: '/ads.txt'
+      path: '/ads.txt'
+      fullPath: '/ads.txt'
+      preLoaderRoute: typeof AdsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/altair': {
@@ -15952,6 +15972,7 @@ const ApiV1UsersHandleRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   SiteRoute: SiteRouteWithChildren,
   AdaptiveIntelligenceRoute: AdaptiveIntelligenceRoute,
+  AdsDottxtRoute: AdsDottxtRoute,
   AltairRoute: AltairRouteWithChildren,
   BlackLivesMatterRoute: BlackLivesMatterRoute,
   CookgameRoute: CookgameRoute,

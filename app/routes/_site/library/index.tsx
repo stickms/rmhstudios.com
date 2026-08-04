@@ -46,6 +46,7 @@ import { PlaylistsColumn } from '@/components/feed/PlaylistsColumn';
 import { LibraryBlogRow } from '@/components/library/LibraryBlogRow';
 import { LibraryRevealProvider, useReveal } from '@/components/library/LibraryReveal';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { AdSlot } from '@/components/ads/AdSlot';
 import { useSession } from '@/components/Providers';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { suppressNextScrollReset } from '@/hooks/useScrollRestoration';
@@ -693,6 +694,10 @@ function Library() {
           </LibraryRevealProvider>
         </div>
       </div>
+      {/* After the last row of the archive. Renders nothing for members, for
+          anyone who hasn't answered the cookie banner, and when no publisher id
+          is configured — see lib/ads/adsense.ts. */}
+      <AdSlot placement="index-footer" className="mt-(--site-section-gap)" />
       {uploadOpen && (
         <UploadModal isAdmin={isAdmin} onClose={() => setUploadOpen(false)} onUploaded={refresh} />
       )}

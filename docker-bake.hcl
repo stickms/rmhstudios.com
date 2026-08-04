@@ -71,6 +71,15 @@ variable "VITE_DISCORD_ACTIVITY_CLIENT_ID" {
 variable "VITE_CDN_BASE_URL" {
   default = ""
 }
+
+# Google AdSense. Empty in CI and by default — ads stay off unless a deploy
+# supplies real values (see docs/adsense.md).
+variable "VITE_ADSENSE_CLIENT_ID" {
+  default = ""
+}
+variable "VITE_ADSENSE_SLOTS" {
+  default = ""
+}
 variable "DEEPSEEK_API_KEY" {
   default = ""
 }
@@ -100,6 +109,8 @@ function "frontend_args" {
     VITE_RMHTUBE_SOCKET_URL         = VITE_RMHTUBE_SOCKET_URL
     VITE_DISCORD_ACTIVITY_CLIENT_ID = VITE_DISCORD_ACTIVITY_CLIENT_ID
     VITE_CDN_BASE_URL               = VITE_CDN_BASE_URL
+    VITE_ADSENSE_CLIENT_ID          = VITE_ADSENSE_CLIENT_ID
+    VITE_ADSENSE_SLOTS              = VITE_ADSENSE_SLOTS
     DEEPSEEK_API_KEY                = DEEPSEEK_API_KEY
     # Both images derive from the shared vite-builder stage, so the preset must
     # be part of the shared arg set (it keys that stage's cache).

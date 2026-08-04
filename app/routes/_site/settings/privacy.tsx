@@ -10,6 +10,7 @@ import { DataExportPanel } from '@/components/site/DataExportPanel';
 import { DeleteAccountPanel } from '@/components/site/DeleteAccountPanel';
 import { MutedWordsPanel } from '@/components/site/MutedWordsPanel';
 import { PresencePrivacyControls } from '@/components/settings/PresencePrivacyControls';
+import { CookieConsentControls } from '@/components/site/CookieConsentControls';
 import { useSession } from '@/components/Providers';
 
 export const Route = createFileRoute('/_site/settings/privacy')({
@@ -39,6 +40,10 @@ function PrivacySettingsPage() {
             defaultValue: 'Export or delete the data tied to your account.',
           })}
         </p>
+        {/* Above the sign-in gate on purpose. The cookie choice belongs to the
+            browser, not the account, and a signed-out visitor is exactly who
+            needs to be able to withdraw it. */}
+        <CookieConsentControls />
         {!isPending && !session?.user ? (
           <p className="text-sm text-site-text-muted">
             <Link
