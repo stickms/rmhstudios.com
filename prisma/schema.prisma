@@ -80,6 +80,10 @@ model User {
   farmingSimFarm       FarmingSimFarm?
   gabrielsHornProfile  GabrielsHornPlayer?
 
+  // Massive March: campaigns this account owns, and the ones it has walked.
+  massiveMarchCampaigns   MassiveMarchCampaign[]
+  massiveMarchMemberships MassiveMarchMember[]
+
   // Slice-It Library Relations
   uploadedSongs Song[]            @relation("SongUploader")
   songLikes     SongLike[]
@@ -2943,6 +2947,59 @@ model FarmingSimFarm {
   user User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@map("farming_sim_farm")
+}
+
+// ─── Massive March ────────────────────────────────────────────────
+
+// One island, one group's history on it. The campaign save is host-owned by
+// design (§6.1): the host's row IS the world, which is why the host has to be
+// present for a session to continue and why nobody else can start one.
+//
+// The whole world state — puzzle runtimes, tower deposits, keys, unlocks and
+// the day/night clock — is one JSON blob, the same shape `lib/massive-march/
+// campaign.ts#toSave` writes and `fromSave` reads (and `fromSave` is written to
+// survive a blob an older build produced, because a save that stops parsing is
+// somebody's eleven hours). `deposited`, `solved` and `finished` are surfaced as
+// real columns purely so the campaign picker can list saves without
+// deserialising every one of them.
+model MassiveMarchCampaign {
+  id        String   @id @default(cuid())
+  ownerId   String
+  // Short shareable code, the only way in — there is no matchmaking (§4).
+  code      String   @unique
+  name      String
+  // "duo" | "trio" | "band" — the crew size the puzzle layouts are lit for.
+  variant   String   @default("duo")
+  saveData  Json
+  deposited Int      @default(0)
+  solved    Int      @default(0)
+  finished  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  owner   User                 @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members MassiveMarchMember[]
+
+  @@index([ownerId, updatedAt(sort: Desc)], map: "idx_massive_march_owner")
+  @@map("massive_march_campaign")
+}
+
+// Everyone who has ever walked a given campaign. Exists so a player who is not
+// the host can still find their way back to it — they cannot start it, but they
+// should not have to keep the join code in a text file either.
+model MassiveMarchMember {
+  id         String   @id @default(cuid())
+  campaignId String
+  userId     String
+  joinedAt   DateTime @default(now())
+  lastSeenAt DateTime @default(now()) @updatedAt
+
+  campaign MassiveMarchCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user     User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, userId])
+  @@index([userId, lastSeenAt(sort: Desc)], map: "idx_massive_march_member_user")
+  @@map("massive_march_member")
 }
 
 // Tracks which Discord channel was last used for an activity per guild.

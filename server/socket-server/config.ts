@@ -159,6 +159,37 @@ export const config = {
     // rules change twenty times a minute is not a table.
     'gh:houseRules': { max: 20, windowMs: 60_000 },
     'gh:ticket': { max: 20, windowMs: 60_000 },
+    // Massive March. Session control is rare and deliberate; the puzzle verbs
+    // are button presses a human makes a second or two apart. `mm:move` is the
+    // outlier at 15/s by design — it is the position report, and a client that
+    // stops sending it is a player who has stopped existing to everybody else.
+    // `mm:voice:signal` is sized for WebRTC's ICE trickle across a full mesh:
+    // eleven peers, each producing a burst of candidates on connect and again
+    // on every network change.
+    'mm:create': { max: 6, windowMs: 60_000 },
+    'mm:join': { max: 20, windowMs: 60_000 },
+    'mm:resume': { max: 10, windowMs: 60_000 },
+    'mm:list': { max: 30, windowMs: 60_000 },
+    'mm:leave': { max: 20, windowMs: 60_000 },
+    'mm:settings': { max: 30, windowMs: 60_000 },
+    'mm:move': { max: 1200, windowMs: 60_000 },
+    'mm:gesture': { max: 120, windowMs: 60_000 },
+    'mm:chat': { max: 40, windowMs: 60_000 },
+    'mm:board': { max: 30, windowMs: 60_000 },
+    'mm:take': { max: 180, windowMs: 60_000 },
+    'mm:stow': { max: 180, windowMs: 60_000 },
+    'mm:equip': { max: 240, windowMs: 60_000 },
+    'mm:drop': { max: 180, windowMs: 60_000 },
+    'mm:throw': { max: 180, windowMs: 60_000 },
+    'mm:kick': { max: 240, windowMs: 60_000 },
+    'mm:use': { max: 240, windowMs: 60_000 },
+    'mm:pack': { max: 120, windowMs: 60_000 },
+    'mm:act': { max: 240, windowMs: 60_000 },
+    'mm:skip': { max: 20, windowMs: 60_000 },
+    'mm:deposit': { max: 60, windowMs: 60_000 },
+    'mm:cart': { max: 30, windowMs: 60_000 },
+    'mm:voice:signal': { max: 900, windowMs: 60_000 },
+    'mm:voice:state': { max: 600, windowMs: 60_000 },
     // ─── High-frequency relay / movement events ───
     // Movement + per-frame update events were previously unmetered (the rate
     // limiter returns true for events with no rule), so a single socket could

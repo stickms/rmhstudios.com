@@ -1,0 +1,205 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200" viewBox="0 0 800 1200">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#26407a" />
+      <stop offset="42%" stop-color="#7a6a96" />
+      <stop offset="72%" stop-color="#e0865c" />
+      <stop offset="100%" stop-color="#f6c489" />
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1c5f74" />
+      <stop offset="100%" stop-color="#3f9d94" />
+    </linearGradient>
+    <linearGradient id="sand" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c9b78f" />
+      <stop offset="30%" stop-color="#e6d8b8" />
+      <stop offset="100%" stop-color="#dccba6" />
+    </linearGradient>
+  </defs>
+
+  <!-- Sky and sun -->
+  <rect width="800" height="1200" fill="url(#sky)" />
+  <circle cx="596" cy="474" r="52" fill="#ffd9a0" opacity="0.95" />
+  <g opacity="0.5" fill="#f0b48c">
+    <ellipse cx="220" cy="330" rx="180" ry="16" />
+    <ellipse cx="560" cy="286" rx="140" ry="12" />
+    <ellipse cx="410" cy="392" rx="230" ry="14" />
+  </g>
+
+  <!-- The far headland: granite, hazed by distance -->
+  <path d="M0,510 L86,452 L168,486 L250,430 L330,468 L420,436 L520,478 L620,452 L720,486 L800,462 L800,540 L0,540 Z"
+        fill="#736d64" opacity="0.55" />
+
+  <!-- Sea -->
+  <rect x="0" y="518" width="800" height="112" fill="url(#sea)" />
+  <g fill="#eaf4f2" opacity="0.55">
+    <rect x="0" y="614" width="800" height="7" rx="3" />
+    <rect x="60" y="596" width="200" height="4" rx="2" />
+    <rect x="420" y="586" width="260" height="4" rx="2" />
+  </g>
+
+  <!-- Beach -->
+  <path d="M0,626 Q400,600 800,632 L800,1200 L0,1200 Z" fill="url(#sand)" />
+  <path d="M0,626 Q400,600 800,632 L800,652 Q400,624 0,648 Z" fill="#c9b78f" opacity="0.75" />
+
+  <!-- Dune line and scrub -->
+  <path d="M0,724 Q180,684 380,716 Q580,748 800,706 L800,760 L0,760 Z" fill="#a8a765" />
+  <path d="M0,780 Q220,742 460,776 Q640,802 800,764 L800,1200 L0,1200 Z" fill="#6f8a45" />
+
+  <!-- THE BUILT WORLD: flat, primary, far too large -->
+  <!-- The yellow tower -->
+  <g>
+    <rect x="80" y="272" width="120" height="452" fill="#f5b715" />
+    <rect x="98" y="196" width="84" height="80" fill="#f5b715" />
+    <rect x="116" y="140" width="48" height="60" fill="#f5b715" />
+    <circle cx="140" cy="122" r="20" fill="#f2efe6" />
+    <rect x="112" y="654" width="56" height="52" fill="#22201d" />
+    <rect x="72" y="716" width="136" height="12" fill="#d1900a" />
+  </g>
+
+  <!-- The red arch -->
+  <g>
+    <rect x="470" y="470" width="34" height="264" fill="#e03127" />
+    <rect x="686" y="470" width="34" height="270" fill="#e03127" />
+    <rect x="470" y="470" width="250" height="36" fill="#e03127" />
+  </g>
+
+  <!-- A blue block, tipped, because somebody left it there -->
+  <g transform="translate(596 764) rotate(-13)">
+    <rect x="-56" y="-112" width="112" height="112" fill="#1f5fd0" />
+    <rect x="-56" y="-112" width="112" height="26" fill="#16408c" opacity="0.45" />
+  </g>
+
+  <!-- A path worn up off the beach; somebody has walked this before -->
+  <path d="M330,1200 Q368,1020 400,900 Q424,812 470,744" stroke="#e6d8b8" stroke-width="46"
+        fill="none" opacity="0.6" stroke-linecap="round" />
+
+  <!-- Vegetation and rock, drawn over the built things so the land wins -->
+  
+    <g transform="translate(724 812) scale(1.25)">
+      <path d="M-40,0 L-30,-26 L-6,-38 L24,-32 L40,-8 L36,0 Z" fill="#9d968c" />
+      <path d="M-6,-38 L24,-32 L40,-8 L14,-16 Z" fill="#736d64" opacity="0.55" />
+    </g>
+  
+    <g transform="translate(56 848) scale(1.5)">
+      <path d="M-40,0 L-30,-26 L-6,-38 L24,-32 L40,-8 L36,0 Z" fill="#b3a08c" />
+      <path d="M-6,-38 L24,-32 L40,-8 L14,-16 Z" fill="#736d64" opacity="0.55" />
+    </g>
+  
+    <g transform="translate(268 806) scale(0.92)">
+      <path d="M0,0 L-5,-150 L5,-150 Z" fill="#cfc3b0" />
+      <path d="M-3,-96 L-34,-132" stroke="#cfc3b0" stroke-width="5" stroke-linecap="round" fill="none" />
+      <path d="M3,-108 L36,-142" stroke="#cfc3b0" stroke-width="5" stroke-linecap="round" fill="none" />
+      <ellipse cx="-34" cy="-140" rx="26.2384" ry="17.7744" fill="#7f9166" />
+      <ellipse cx="36" cy="-150" rx="29.624" ry="19.467200000000002" fill="#7f9166" />
+      <ellipse cx="0" cy="-146" rx="34.7024" ry="21.16" fill="#7f9166" />
+    </g>
+  
+    <g transform="translate(392 838) scale(1.14)">
+      <path d="M0,0 L-5,-150 L5,-150 Z" fill="#cfc3b0" />
+      <path d="M-3,-96 L-34,-132" stroke="#cfc3b0" stroke-width="5" stroke-linecap="round" fill="none" />
+      <path d="M3,-108 L36,-142" stroke="#cfc3b0" stroke-width="5" stroke-linecap="round" fill="none" />
+      <ellipse cx="-34" cy="-140" rx="32.5128" ry="22.0248" fill="#6d8257" />
+      <ellipse cx="36" cy="-150" rx="36.708" ry="24.1224" fill="#6d8257" />
+      <ellipse cx="0" cy="-178.99999999999997" rx="43.0008" ry="26.22" fill="#6d8257" />
+    </g>
+  
+    <g transform="translate(742 900) scale(1.3)">
+      <path d="M0,0 L-5,-150 L5,-150 Z" fill="#cfc3b0" />
+      <path d="M-3,-96 L-34,-132" stroke="#cfc3b0" stroke-width="5" stroke-linecap="round" fill="none" />
+      <path d="M3,-108 L36,-142" stroke="#cfc3b0" stroke-width="5" stroke-linecap="round" fill="none" />
+      <ellipse cx="-34" cy="-140" rx="37.076" ry="25.116" fill="#8fa377" />
+      <ellipse cx="36" cy="-150" rx="41.86" ry="27.508000000000003" fill="#8fa377" />
+      <ellipse cx="0" cy="-203" rx="49.036" ry="29.900000000000002" fill="#8fa377" />
+    </g>
+  
+    <g transform="translate(122 946) scale(1)">
+      <ellipse cx="0" cy="-14" rx="26" ry="17" fill="#4f6134" />
+      <ellipse cx="-16" cy="-6" rx="17" ry="12" fill="#4f6134" />
+      <ellipse cx="17" cy="-7" rx="15" ry="11" fill="#4f6134" />
+    </g>
+  
+    <g transform="translate(628 968) scale(1.2)">
+      <ellipse cx="0" cy="-14" rx="26" ry="17" fill="#54683a" />
+      <ellipse cx="-16" cy="-6" rx="17" ry="12" fill="#54683a" />
+      <ellipse cx="17" cy="-7" rx="15" ry="11" fill="#54683a" />
+    </g>
+  
+    <g transform="translate(206 1112) scale(1.35)">
+      <ellipse cx="0" cy="-14" rx="26" ry="17" fill="#4f6134" />
+      <ellipse cx="-16" cy="-6" rx="17" ry="12" fill="#4f6134" />
+      <ellipse cx="17" cy="-7" rx="15" ry="11" fill="#4f6134" />
+    </g>
+  
+    <g transform="translate(672 1120) scale(1.15)">
+      <ellipse cx="0" cy="-14" rx="26" ry="17" fill="#5b6f3c" />
+      <ellipse cx="-16" cy="-6" rx="17" ry="12" fill="#5b6f3c" />
+      <ellipse cx="17" cy="-7" rx="15" ry="11" fill="#5b6f3c" />
+    </g>
+
+  <!-- The walk itself -->
+  
+    <g transform="translate(556 838) scale(0.5)">
+      <path d="M-7,0 L-19.8,74" stroke="#22201d" stroke-width="5.5" stroke-linecap="round" />
+      <path d="M7,0 L19.8,74" stroke="#22201d" stroke-width="5.5" stroke-linecap="round" />
+      <g transform="translate(0 -32)">
+        <circle r="32" fill="#f5b715" />
+        <path d="M24,-2 L60,10 L24,20 Z" fill="#d1900a" />
+        <circle cx="17" cy="-10" r="4.6" fill="#22201d" />
+        <circle cx="3" cy="-13" r="4.6" fill="#22201d" />
+        <path d="M-27,2 L-64.8,40" stroke="#22201d" stroke-width="4.6" stroke-linecap="round" />
+        <path d="M27,2 L66.8,34" stroke="#22201d" stroke-width="4.6" stroke-linecap="round" />
+      </g>
+    </g>
+  
+    <g transform="translate(298 962) scale(1.02)">
+      <path d="M-7,0 L-23,74" stroke="#22201d" stroke-width="5.5" stroke-linecap="round" />
+      <path d="M7,0 L23,74" stroke="#22201d" stroke-width="5.5" stroke-linecap="round" />
+      <g transform="translate(0 -32)">
+        <circle r="32" fill="#e03127" />
+        <path d="M24,-2 L60,10 L24,20 Z" fill="#d1900a" />
+        <circle cx="17" cy="-10" r="4.6" fill="#22201d" />
+        <circle cx="3" cy="-13" r="4.6" fill="#22201d" />
+        <path d="M-27,2 L-68,40" stroke="#22201d" stroke-width="4.6" stroke-linecap="round" />
+        <path d="M27,2 L70,34" stroke="#22201d" stroke-width="4.6" stroke-linecap="round" />
+      </g>
+    </g>
+  
+    <g transform="translate(410 986) scale(1.16)">
+      <path d="M-7,0 L9,74" stroke="#22201d" stroke-width="5.5" stroke-linecap="round" />
+      <path d="M7,0 L-9,74" stroke="#22201d" stroke-width="5.5" stroke-linecap="round" />
+      <g transform="translate(0 -32)">
+        <circle r="32" fill="#1f5fd0" />
+        <path d="M24,-2 L60,10 L24,20 Z" fill="#d1900a" />
+        <circle cx="17" cy="-10" r="4.6" fill="#22201d" />
+        <circle cx="3" cy="-13" r="4.6" fill="#22201d" />
+        <path d="M-27,2 L-36,40" stroke="#22201d" stroke-width="4.6" stroke-linecap="round" />
+        <path d="M27,2 L38,34" stroke="#22201d" stroke-width="4.6" stroke-linecap="round" />
+      </g>
+    </g>
+  
+    <g transform="translate(522 958) scale(0.94)">
+      <path d="M-7,0 L-13.4,74" stroke="#22201d" stroke-width="5.5" stroke-linecap="round" />
+      <path d="M7,0 L13.4,74" stroke="#22201d" stroke-width="5.5" stroke-linecap="round" />
+      <g transform="translate(0 -32)">
+        <circle r="32" fill="#2e9e5b" />
+        <path d="M24,-2 L60,10 L24,20 Z" fill="#d1900a" />
+        <circle cx="17" cy="-10" r="4.6" fill="#22201d" />
+        <circle cx="3" cy="-13" r="4.6" fill="#22201d" />
+        <path d="M-27,2 L-58.4,40" stroke="#22201d" stroke-width="4.6" stroke-linecap="round" />
+        <path d="M27,2 L60.4,34" stroke="#22201d" stroke-width="4.6" stroke-linecap="round" />
+      </g>
+    </g>
+
+  <!-- A red round, lying on the sand where somebody dropped it -->
+  <ellipse cx="164" cy="1042" rx="30" ry="9" fill="#22201d" opacity="0.18" />
+  <circle cx="164" cy="1024" r="22" fill="#d81f1a" />
+  <circle cx="157" cy="1017" r="6" fill="#ff7a6a" opacity="0.7" />
+
+  <!-- Title -->
+  <g transform="translate(400 1146)" text-anchor="middle">
+    <rect x="-268" y="-58" width="536" height="76" fill="#f7f3e8" stroke="#22201d" stroke-width="7" />
+    <text y="-6" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+          font-size="50" font-weight="900" letter-spacing="3" fill="#22201d">MASSIVE MARCH</text>
+  </g>
+</svg>

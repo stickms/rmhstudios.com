@@ -369,6 +369,31 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     // Neon signage, bloom, drift sparks and the crash burst all strobe.
     descriptors: ['flashing'],
   },
+  'massive-march': {
+    genre: ['puzzle', 'narrative'],
+    // Online co-op ONLY. There is no single-player mode and no pretending
+    // otherwise: every puzzle on the island needs somebody standing somewhere
+    // you are not, and the campaign cannot be started alone.
+    players: ['online-coop'],
+    maxPlayers: 12, // lib/massive-march/constants.ts MAX_PLAYERS
+    // A microphone is genuinely optional — spatial text is under identical
+    // audibility rules — so it is not an input method the game requires.
+    input: { supported: ['keyboard', 'mouse', 'touch'], required: [] },
+    // A sitting is a leg of the walk, not a round; the campaign runs to eight
+    // hours or more across several of them.
+    sessionMinutes: [30, 120],
+    engine: 'webgl',
+    demanding: true,
+    // MassiveMarchCampaign, owned by the host and written by the socket hub.
+    save: 'own-table',
+    // Two real ones, and no more than two. Every action is rebindable through
+    // the options sheet, and host-enabled challenge skipping is an assist mode
+    // in the literal sense — it exists to step past a challenge that depends on
+    // hearing, speaking, reaction time or precise aim without ending the
+    // campaign (§17). `subtitles` is deliberately NOT claimed: spatial text is a
+    // parallel channel, not a transcription of what anybody said out loud.
+    accessibility: ['remappable-input', 'assist-mode'],
+  },
 };
 
 export function capabilitiesFor(gameId: string): GameCapabilities | undefined {

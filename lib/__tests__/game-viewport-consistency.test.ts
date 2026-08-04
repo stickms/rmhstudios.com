@@ -67,6 +67,7 @@ const FULLSCREEN_DIRS = [
   'kowloon-knockout',
   'laundry-sort',
   'lights-out',
+  'massive-march',
   'neon-driftway',
   'nightrail',
   'rmh-farming-sim',
