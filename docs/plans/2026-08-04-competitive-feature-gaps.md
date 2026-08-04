@@ -30,14 +30,10 @@ re-derive.
 Neither of these is a feature. Both are shipping to production right now and both are cheap
 to fix, so they go first.
 
-### 0(a) — 18 shipped namespaces are not registered, so 16 locales silently serve English
+### 0(a) — 18 shipped namespaces were unregistered, and therefore untested
 
-`CLAUDE.md` §5 warns about exactly this failure mode: _"A new namespace must be added to
-`NAMESPACES` in `lib/i18n/config.ts` — a JSON file dropped into `locales/en/` without that entry
-is never loaded, and the UI silently falls back to its `defaultValue`s."_
-
-It has happened 18 times. `locales/en/` holds 88 namespace files; `lib/i18n/config.ts:19`
-registers 70. The 18 unregistered ones:
+`locales/en/` holds 88 namespace files; `lib/i18n/config.ts:19` registered 70. The 18 that
+were missing:
 
 ```
 c-awards   c-circle   c-creator   c-history   c-layout   c-lists
@@ -49,35 +45,44 @@ settings-notifications   theme-studio
 Read that list against the plan docs: it is **almost exactly the feature set delivered from the
 07-19 and 07-20 specs** — awards, close-friends circle, creator studio, history, lists,
 predictions, profile modules, saves, tournaments, wagers, wishlists, theme studio, and three of
-the rebuilt settings pages. Every one of those features was built with `t()` calls and every one
-of those `t()` calls is currently resolving to its English `defaultValue` in Arabic, Hindi,
-Japanese, Urdu and the other 12 shipped locales. The translation pipeline has been filling
-`locales/<lang>/c-tournaments.json` for weeks and nothing has ever read it.
+the rebuilt settings pages.
 
-**Fix (S, under an hour):**
+> **Correction (verified after the first draft of this document).** The first draft claimed these
+> namespaces were never loaded and that all 16 locales served English for them, citing
+> `CLAUDE.md` §5. **That is not what happens, and the claim was wrong.** Two checks settle it:
+>
+> 1. `buildInitOptions` (`lib/i18n/config.ts`) passes `NAMESPACES` as i18next's `ns`, but `ns` is
+>    a _preload/declare_ list, not an access-control list. With the resource bundle already in
+>    the store and no backend configured, `t()` resolves it either way — confirmed by running an
+>    i18next instance both ways against the same bundle and getting the translated string from
+>    both.
+> 2. The bundles are in fact present: `scripts/gen-i18n-resources.ts` builds each
+>    `lib/i18n/resources.<locale>.ts` by **globbing the locale directory**, not by reading
+>    `NAMESPACES`, and `backfillLocaleRest`/`loadAndSwitch` (`lib/i18n/instances.ts:78-104`)
+>    `addResourceBundle` every entry they find. `resources.zh.ts` already imported
+>    `c-tournaments`, `c-awards`, `c-creator` and the rest.
+>
+> So no user was served English because of this. The registry was wrong; the runtime was not.
 
-1. Add the 18 names to `NAMESPACES` in `lib/i18n/config.ts:19`.
-2. Decide which belong in `CORE_NAMESPACES` (`lib/i18n/config.ts:27`) — `games-hub` and the
-   three `settings-*` namespaces are navigated to from cold, the `c-*` ones are lazy.
-3. Add the guard so it cannot recur — a test that reads `locales/en/` and asserts set equality
-   with `NAMESPACES`:
+**What non-registration actually cost.** `lib/__tests__/i18n-catalogs.test.ts` iterates
+`NAMESPACES` to drive its checks, so those 18 namespaces sat **outside the test net entirely** —
+442 English keys across 15 locales with no coverage for missing keys, orphan keys a locale has
+that English does not, or CLDR plural categories (the check that catches a Russian catalog
+carrying English's `one`/`other` shape and falling back mid-sentence). That is a real gap, and it
+is the kind that hides a genuine translation bug rather than being one.
 
-```ts
-// lib/__tests__/i18n-namespaces.test.ts
-import { readdirSync } from 'node:fs';
-import { NAMESPACES } from '@/lib/i18n/config';
+**Fixed on this branch.** All 18 registered (`lib/i18n/config.ts`), which brought them under the
+existing catalog suite: **2,772 tests pass, up from ~2,300** — roughly 470 new assertions, all
+green on the first run, confirming the catalogs were complete and correct the whole time.
 
-it('every locales/en/*.json is registered in NAMESPACES', () => {
-  const files = readdirSync('locales/en')
-    .filter((f) => f.endsWith('.json'))
-    .map((f) => f.replace(/\.json$/, ''));
-  expect(files.filter((f) => !NAMESPACES.includes(f as never))).toEqual([]);
-  expect(NAMESPACES.filter((n) => !files.includes(n))).toEqual([]);
-});
-```
+`CORE_NAMESPACES` was deliberately **not** extended. It controls what is statically bundled into
+the client entry for first paint (`resources.en-core.ts`), and all 18 are route-scoped surfaces
+most sessions never open — adding them would grow the always-shipped entry to no benefit and push
+against the bundle budgets in `lib/__tests__/performance-guardrails.test.ts`.
 
-This is the highest value-per-minute change in the document: it turns on translations for
-thirteen already-built features in one array edit.
+The guard against recurrence is a new `registry parity` block in the same suite, asserting exact
+set equality between `locales/en/*.json` and `NAMESPACES` in both directions, plus that
+`CORE_NAMESPACES ⊆ NAMESPACES`.
 
 ### 0(b) — 16 locale directories exist on disk and ship to nobody
 
@@ -86,11 +91,23 @@ thirteen already-built features in one array edit.
 pl ro sv ta te th uk` — are translated, versioned, and unreachable. Bengali and Filipino in
 particular are large audiences to be carrying the disk cost for and serving to no one.
 
+**The mechanism, found while fixing 0(a):** `i18next-parser.config.js` carries its **own**
+hardcoded `locales` array of all 32, independent of `LOCALES`. So every `pnpm i18n:extract`
+writes catalogs for 32 languages and every translate pass pays to fill 32, while the app serves 16. The two lists have no link and nothing compares them — which is exactly why the drift grew to
+sixteen without anyone noticing.
+
 **Fix (S, needs one product decision):** either promote them into `LOCALES` (each addition is a
 lazy bundle, so the marginal cost is a build artifact, not a bundle regression) or delete the
-directories and drop them from `scripts/` i18n targets. Carrying them half-wired is the only
-option with no upside. If promoting: check RTL coverage — `fa` and `ur` are RTL and only `ar`/`ur`
-are currently in the RTL set.
+directories and drop them from the parser config. Carrying them half-wired is the only option
+with no upside. If promoting: check RTL coverage — `fa` is RTL and only `ar`/`ur` are currently
+in `RTL_LOCALES`.
+
+**Partially handled on this branch.** Promoting or deleting sixteen languages is a product call,
+not a mechanical one, so this branch does not make it. What it does is stop the drift being
+silent: `PENDING_LOCALES` in `lib/i18n/config.ts` now names all sixteen with the reasoning, and
+the `registry parity` suite asserts `locales/` equals `LOCALES ∪ PENDING_LOCALES` and that the
+two sets are disjoint. A seventeenth orphan now fails CI. **The ship-or-delete decision is still
+open and is the actual fix.**
 
 ---
 
@@ -124,26 +141,26 @@ Everything in this document is **additional** to that list.
 Severity is "distance from the products users compare us to", not internal preference.
 Effort: **S** ≤ 2 days · **M** ≤ 2 weeks · **L** > 2 weeks.
 
-| #      | Feature                                                              | Compared against                    | Sev          | Effort |
-| ------ | -------------------------------------------------------------------- | ----------------------------------- | ------------ | ------ |
-| **0a** | **Register the 18 orphaned i18n namespaces**                         | own contract                        | **Critical** | **S**  |
-| 0b     | Ship or delete the 16 orphan locales                                 | —                                   | Med          | S      |
-| **D1** | **Player-protection suite (limits, reality checks, self-exclusion)** | any operator with cash-out + chance | **Critical** | **M**  |
-| **A1** | **Game capability metadata + faceted arcade browse**                 | Steam, itch.io                      | **High**     | **M**  |
-| **A2** | **Unified input layer — gamepad, remapping, shared touch controls**  | Steam, Poki, Xbox Cloud             | **High**     | **M**  |
-| A3     | Assist & accessibility presets inside games (incl. photosensitivity) | modern console/PC titles            | High         | M      |
-| **E1** | **Personalized recommendations ("because you played…")**             | Steam, Netflix, Spotify             | **High**     | **M**  |
-| C3     | Deck import/export (Anki `.apkg`, Quizlet CSV, Markdown)             | Anki, Quizlet                       | High         | M      |
-| A5     | Player-made content: track/level/loadout sharing                     | Steam Workshop, Mario Maker         | High         | L      |
-| B1     | Clips from watch rooms and replays                                   | Twitch, YouTube Shorts              | Med          | M      |
-| C1     | FSRS scheduler replacing SM-2                                        | Anki 23.10+                         | Med          | S      |
-| C2     | Rich card types (cloze, image occlusion, audio, MCQ)                 | Anki, Quizlet                       | Med          | M      |
-| A4     | Video previews / trailers on game cards                              | Steam, itch.io, App Store           | Med          | S      |
-| B2     | Transcripts, chapters, search-inside-video                           | YouTube                             | Med          | M      |
-| D2     | Playtime wellbeing for the arcade generally                          | Nintendo, Xbox, TikTok              | Med          | S      |
-| B3     | RMHMusic: saved playlists, vote-to-skip, lyrics                      | Spotify Jam, JQBX                   | Med          | M      |
-| F1     | i18n coverage gate in CI (generalises 0a)                            | own contract                        | Med          | S      |
-| F2     | Per-game crash & performance telemetry                               | any game platform                   | Low          | S      |
+| #      | Feature                                                                | Compared against                    | Sev          | Effort |
+| ------ | ---------------------------------------------------------------------- | ----------------------------------- | ------------ | ------ |
+| 0a     | ~~Register the 18 orphaned i18n namespaces~~ — **done on this branch** | own contract                        | Med          | S      |
+| 0b     | Ship or delete the 16 orphan locales — drift gated, **decision open**  | —                                   | Med          | S      |
+| **D1** | **Player-protection suite (limits, reality checks, self-exclusion)**   | any operator with cash-out + chance | **Critical** | **M**  |
+| **A1** | **Game capability metadata + faceted arcade browse**                   | Steam, itch.io                      | **High**     | **M**  |
+| **A2** | **Unified input layer — gamepad, remapping, shared touch controls**    | Steam, Poki, Xbox Cloud             | **High**     | **M**  |
+| A3     | Assist & accessibility presets inside games (incl. photosensitivity)   | modern console/PC titles            | High         | M      |
+| **E1** | **Personalized recommendations ("because you played…")**               | Steam, Netflix, Spotify             | **High**     | **M**  |
+| C3     | Deck import/export (Anki `.apkg`, Quizlet CSV, Markdown)               | Anki, Quizlet                       | High         | M      |
+| A5     | Player-made content: track/level/loadout sharing                       | Steam Workshop, Mario Maker         | High         | L      |
+| B1     | Clips from watch rooms and replays                                     | Twitch, YouTube Shorts              | Med          | M      |
+| C1     | FSRS scheduler replacing SM-2                                          | Anki 23.10+                         | Med          | S      |
+| C2     | Rich card types (cloze, image occlusion, audio, MCQ)                   | Anki, Quizlet                       | Med          | M      |
+| A4     | Video previews / trailers on game cards                                | Steam, itch.io, App Store           | Med          | S      |
+| B2     | Transcripts, chapters, search-inside-video                             | YouTube                             | Med          | M      |
+| D2     | Playtime wellbeing for the arcade generally                            | Nintendo, Xbox, TikTok              | Med          | S      |
+| B3     | RMHMusic: saved playlists, vote-to-skip, lyrics                        | Spotify Jam, JQBX                   | Med          | M      |
+| F1     | i18n coverage gate in CI (generalises 0a)                              | own contract                        | Med          | S      |
+| F2     | Per-game crash & performance telemetry                                 | any game platform                   | Low          | S      |
 
 ---
 
@@ -162,6 +179,14 @@ Everything in this pillar falls out of that one absence.
 
 ## A1 — Game capability metadata + faceted arcade browse — **M**
 
+> **Status: the data layer is built on this branch** — `lib/game-capabilities.ts` (all 20 games)
+> and `lib/__tests__/game-capabilities.test.ts` (18 assertions). The faceted browse UI, the
+> capability chips and the `VideoGame` JSON-LD are **not** built; they are visual changes to a
+> page people read daily and the repo's own rule (08-03 §Part III) is not to make those without a
+> screenshot diff. The spec below is unchanged except where marked, and three of its decisions
+> turned out to be wrong once checked against the code — recorded inline rather than quietly
+> dropped.
+
 ### Competitor anchor
 
 Steam's store page has "Single-player / Online Co-op / Full controller support / Remote Play on
@@ -176,8 +201,30 @@ browse. `/arcade` today is an unfiltered grid.
 - `lib/seo-catalog.ts` derives `head()` for every game root from this catalogue — so any field
   added here reaches SEO for free.
 - Multiplayer support is discoverable only by reading each game's `lib/<game>/multiplayer.ts`.
-  `lib/wager/eligible-games.ts` already maintains a _second_, hand-kept list of which games
-  support head-to-head — a duplicate that A1 should absorb.
+
+> **Correction 1 — do not absorb `lib/wager/eligible-games.ts`.** The first draft called it a
+> duplicate to fold into a `capabilities.wagerEligible` flag. That file's own header rejects
+> exactly that design, and it is right: it carries an `authoritative` flag (does the game report
+> a server-validated winner, or does the stake settle by dual confirmation?) which is a trust
+> property rather than a catalogue one, and **`rmhtype` is in `lib/apps.ts`, not `lib/games.ts`**,
+> so a flag on `GameInfo` cannot express the set. What shipped instead is two cross-registry
+> tests: every wager-eligible id resolves to a real game or app, and every wager-eligible id in
+> the games catalogue declares head-to-head or leaderboard play. The duplication that mattered is
+> now checked; the file stays.
+>
+> **Correction 2 — `minPerfTier: 'low' | 'medium' | 'high'` does not exist.** `lib/perf-tier.ts`
+> is a **binary** switch (`html.perf-lite`, set from capability reads), so a three-level field
+> would have been a vocabulary invented for the metadata and unimplementable against the code.
+> Shipped as `demanding: boolean` — "needs more than a perf-lite device" — which maps onto the
+> switch that actually exists.
+>
+> **Correction 3 — the registry is a separate module, not fields on `GameInfo`.** `games.ts` is
+> already 372 lines and this would have roughly doubled it, for data edited on a different
+> cadence by different reviewers. The repo had already made this call twice — `lib/game/registry.ts`
+> (scoring rules) opens with "`lib/games.ts` is the catalog of what exists (cards, art, copy).
+> This is the catalog of how a game SCORES" — so `lib/game-capabilities.ts` follows the house
+> pattern. The compile-time forcing that co-location would have given is replaced by a parity
+> test: a game in the catalogue with no capability entry fails CI.
 
 ### Data model
 
@@ -267,23 +314,44 @@ explosion. Add the single-facet URLs to the sitemap via `lib/sitemap.ts`.
 
 ### i18n
 
-Genre/mode/input labels are a new `games-hub` namespace concern — note that `games-hub` is one
-of the 18 orphaned namespaces from §0(a), so **fix 0(a) first or these strings ship untranslated
-on arrival**. Never translate the enum values themselves; translate labels keyed off them.
+Genre/mode/input labels are a new `games-hub` namespace concern. `games-hub` was one of the 18
+orphaned namespaces in §0(a) and is now registered, so these strings will be picked up normally.
+Never translate the enum values themselves; translate labels keyed off them.
 
 ### Acceptance criteria
 
-- All 20 games have `capabilities`; `pnpm exec tsc --noEmit` fails if one does not.
-- `lib/wager/eligible-games.ts` is deleted and its consumers read `capabilities.wagerEligible`;
-  a test asserts the set is unchanged from the old list.
-- `/arcade?input=touch` returns only games playable on a phone, SSR'd, with a canonical.
-- A test asserts every `minPerfTier` value is one `lib/perf-tier.ts` actually emits.
+- ✅ All 20 games have capability data; the parity test fails if one does not.
+- ✅ Every mechanically checkable claim is checked against the code rather than restated.
+- ✅ Wager-eligible ids resolve to a real game or app and declare head-to-head play.
+- ⬜ `/arcade?input=touch` returns only games playable on a phone, SSR'd, with a canonical.
+- ⬜ `VideoGame` JSON-LD emitted from the capability data via `lib/schema.ts`.
+
+### What the honesty tests caught immediately
+
+This is the part worth reading, because it is the argument for the tests existing. Writing the
+20 entries from the catalogue's own `longDescription` copy produced **six wrong claims**, all
+caught on the first run:
+
+| Claim                                                         | Reality                                                                                                                                                                                                                |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Forest Explorer, CookGame and House Always Wins support touch | **No touch handling in their source at all.** Three games are desktop-only and nothing on the site said so. Forest Explorer and House Always Wins now declare `required: ['keyboard']`, CookGame `required: ['mouse']` |
+| Neon Driftway holds 8 players                                 | Server says 6 (`MAX_NDW_PLAYERS`)                                                                                                                                                                                      |
+| Slice It! has no realtime module                              | It is the whole of the shared `components/game/` + `lib/game/` module — the convention-based lookup was checking the wrong directory                                                                                   |
+| Slice It! and Velum 2099 have a lobby cap                     | Neither server declares one; `maxPlayers` is now omitted rather than invented, and the test is one-directional to allow that                                                                                           |
+| Altair and the Farming Sim keep no account-side save          | Both do — `AltairMetaProgress` via `api/altair/meta.ts`, `FarmingSimFarm.saveData` upserted by the socket handler                                                                                                      |
+| Synapse Storm and Dream Rift have account saves               | Both rows are **score** records, not resumable progress                                                                                                                                                                |
+
+The touch finding is the one with a user in it: a phone player can currently open three games
+that cannot be played with a finger, and finds out after the load.
 
 ### Risks
 
-Honesty decay — a game changes and the metadata doesn't. Mitigate with cross-checks that are
-mechanical: `cloudSave` asserted against the presence of a `lib/game-saves` registration,
-`input.supported` asserted against the A2 input-map registration once that lands.
+Honesty decay — a game changes and the metadata doesn't. Mitigated by making the checkable claims
+checked: save scope against `SHARED_SAVE_GAMES`, touch against real touch handling, online play
+against a realtime module, `webgl` against a real WebGL reach. The judgement fields (`genre`,
+`sessionMinutes`) cannot be tested and are the ones to re-read when a game changes. `accessibility`
+is deliberately empty almost everywhere — populating it is A3's job, and populating it before A3
+ships would make the one field players would most rely on the least trustworthy.
 
 ---
 
@@ -1368,8 +1436,9 @@ gamepadConnected }` — populated by a `<GameErrorBoundary>` that every game roo
 
 # §3 — Sequencing
 
-**Week 1 — the free wins.** §0(a) (18 namespaces) and §0(b) (orphan locales), then F1 so neither
-recurs. Half a day, and it switches on translations for thirteen shipped features.
+**Week 1 — the free wins.** §0(a), §0(b) and the F1 gate are **done on this branch**; what
+remains from that block is the one product decision §0(b) turns on — ship the sixteen pending
+locales or delete them.
 
 **Weeks 1–3 — D1, in parallel and ahead of everything else.** It is the only item with a risk
 tail rather than a growth curve, and every week the stake surfaces run without it is a week of
