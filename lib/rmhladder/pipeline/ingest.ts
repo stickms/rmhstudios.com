@@ -11,7 +11,10 @@ import type { NormalizedJob } from '../adapters/types';
 
 // ── summarizeDescription ────────────────────────────────────────────────────
 
-export function summarizeDescription(html: string | null): { summary: string | null; text: string } {
+export function summarizeDescription(html: string | null): {
+  summary: string | null;
+  text: string;
+} {
   if (html === null) return { summary: null, text: '' };
   const root = parse(html);
   const raw = root.textContent ?? '';
@@ -37,7 +40,10 @@ export function extractApplicationDeadline(text: string): Date | null {
 type ReviewReason = 'ambiguous_us_location' | 'ambiguous_early_career' | 'low_confidence';
 
 const INTERN_PROGRAM_TYPES = new Set<ProgramType>([
-  'internship', 'summer_analyst', 'summer_associate', 'mba',
+  'internship',
+  'summer_analyst',
+  'summer_associate',
+  'mba',
 ]);
 
 export interface JobAssessmentFields {
@@ -123,7 +129,8 @@ export function assessJob(args: {
   }
 
   // When classification is 'no', null out the graduation/school targets
-  const graduationYearTarget = ecResult.classification === 'no' ? null : ecResult.graduationYearTarget;
+  const graduationYearTarget =
+    ecResult.classification === 'no' ? null : ecResult.graduationYearTarget;
   const schoolYearTarget = ecResult.classification === 'no' ? null : ecResult.schoolYearTarget;
 
   // 5. Build enriched evidence — assessJob is authoritative on usConfirmed
@@ -172,8 +179,9 @@ export function assessJob(args: {
   const hash = dedupeHash(companyName, normalized.title, bucket);
 
   // 11. employmentType: internship for the four program types, else full_time
-  const employmentType: 'internship' | 'full_time' =
-    INTERN_PROGRAM_TYPES.has(ecResult.programType) ? 'internship' : 'full_time';
+  const employmentType: 'internship' | 'full_time' = INTERN_PROGRAM_TYPES.has(ecResult.programType)
+    ? 'internship'
+    : 'full_time';
 
   // Item 2b: country semantics — 'US' only when confirmed US; non-US keeps real code; ambiguous → null.
   const country = locationResult.isUS === true ? 'US' : (normalized.country?.toUpperCase() ?? null);
@@ -185,13 +193,15 @@ export function assessJob(args: {
     : outcome.evidence;
 
   const contentHash = createHash('sha256')
-    .update(JSON.stringify({
-      title: normalized.title,
-      location: normalized.locationRaw,
-      description: text,
-      applyUrl: normalized.applyUrl,
-      requisitionId: normalized.requisitionId,
-    }))
+    .update(
+      JSON.stringify({
+        title: normalized.title,
+        location: normalized.locationRaw,
+        description: text,
+        applyUrl: normalized.applyUrl,
+        requisitionId: normalized.requisitionId,
+      }),
+    )
     .digest('hex');
 
   const fields: JobAssessmentFields = {

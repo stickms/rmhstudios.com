@@ -29,7 +29,18 @@ describe('computeBaseScore', () => {
     expect(b - a).toBe(5);
   });
   it('senior title terms subtract', () => {
-    const r = computeBaseScore({ ...base, title: 'Senior Director, Strategy', programType: 'other', industry: null, companyIsTarget: false, postingDate: null, applicationDeadline: null }, NOW);
+    const r = computeBaseScore(
+      {
+        ...base,
+        title: 'Senior Director, Strategy',
+        programType: 'other',
+        industry: null,
+        companyIsTarget: false,
+        postingDate: null,
+        applicationDeadline: null,
+      },
+      NOW,
+    );
     expect(r.score).toBeLessThan(25);
   });
   it('no deadline → no urgency flag', () => {

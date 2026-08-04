@@ -15,12 +15,7 @@ export interface RoomSettings {
 
 // ─── Room State ─────────────────────────────────────────────────
 
-export type RoomStatus =
-  | 'WAITING'
-  | 'COUNTDOWN'
-  | 'TYPING'
-  | 'ROUND_RESULTS'
-  | 'FINAL_RESULTS';
+export type RoomStatus = 'WAITING' | 'COUNTDOWN' | 'TYPING' | 'ROUND_RESULTS' | 'FINAL_RESULTS';
 
 export interface RoomPlayer {
   userId: string;

@@ -7,7 +7,19 @@ describe('SEED_COMPANIES', () => {
   it('has 300+ firms across all firm types', () => {
     expect(SEED_COMPANIES.length).toBeGreaterThanOrEqual(300);
     const types = new Set(SEED_COMPANIES.map((c) => c.firmType));
-    for (const t of ['bulge_bracket', 'elite_boutique', 'middle_market', 'private_equity', 'venture_capital', 'asset_manager', 'hedge_fund_trading', 'consulting', 'technology', 'fintech_data', 'corporate']) {
+    for (const t of [
+      'bulge_bracket',
+      'elite_boutique',
+      'middle_market',
+      'private_equity',
+      'venture_capital',
+      'asset_manager',
+      'hedge_fund_trading',
+      'consulting',
+      'technology',
+      'fintech_data',
+      'corporate',
+    ]) {
       expect(types).toContain(t);
     }
   });

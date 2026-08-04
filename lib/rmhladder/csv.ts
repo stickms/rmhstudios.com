@@ -10,7 +10,10 @@ export function encodeCsv(rows: Array<Record<string, unknown>>, columns: string[
     const safe = safeSpreadsheetCell(value);
     return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
   };
-  return [columns.map(encode).join(','), ...rows.map((row) => columns.map((column) => encode(row[column])).join(','))].join('\r\n');
+  return [
+    columns.map(encode).join(','),
+    ...rows.map((row) => columns.map((column) => encode(row[column])).join(',')),
+  ].join('\r\n');
 }
 
 export function parseCsv(input: string): string[][] {
@@ -50,4 +53,3 @@ export function parseCsv(input: string): string[][] {
   }
   return rows;
 }
-

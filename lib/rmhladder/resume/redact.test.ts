@@ -3,7 +3,9 @@ import { redactResumePii } from './redact';
 
 describe('redactResumePii', () => {
   it('removes contact PII and a likely contact-header name', () => {
-    const result = redactResumePii(`Alex Example\nalex@example.com | (212) 555-0199\nhttps://linkedin.com/in/alex-example\n123 Main Street\n\nEXPERIENCE\nBuilt payment systems.`);
+    const result = redactResumePii(
+      `Alex Example\nalex@example.com | (212) 555-0199\nhttps://linkedin.com/in/alex-example\n123 Main Street\n\nEXPERIENCE\nBuilt payment systems.`,
+    );
     expect(result.text).not.toContain('Alex Example');
     expect(result.text).not.toContain('alex@example.com');
     expect(result.text).not.toContain('212');

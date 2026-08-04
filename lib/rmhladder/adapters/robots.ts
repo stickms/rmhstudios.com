@@ -1,6 +1,9 @@
 import { politeFetch } from './http';
 
-interface Group { agents: string[]; rules: Array<{ allow: boolean; prefix: string }> }
+interface Group {
+  agents: string[];
+  rules: Array<{ allow: boolean; prefix: string }>;
+}
 
 function parse(robotsTxt: string): Group[] {
   const groups: Group[] = [];
@@ -12,7 +15,10 @@ function parse(robotsTxt: string): Group[] {
     if (!m) continue;
     const [, key, value] = [m[0], m[1].toLowerCase(), m[2].trim()];
     if (key === 'user-agent') {
-      if (!lastWasAgent || !current) { current = { agents: [], rules: [] }; groups.push(current); }
+      if (!lastWasAgent || !current) {
+        current = { agents: [], rules: [] };
+        groups.push(current);
+      }
       current.agents.push(value.toLowerCase());
       lastWasAgent = true;
     } else if ((key === 'disallow' || key === 'allow') && current) {
@@ -43,7 +49,10 @@ export function isPathAllowed(robotsTxt: string, userAgent: string, path: string
       // Bare wildcard has effective length 0; literal rules have their prefix length
       const effLen = effectivePrefix.length;
       // Update verdict if this rule is longer, or if it's a match-all and we had no rule before
-      if (effLen > matchLen || (matchLen === -1 && isMatchAll)) { matchLen = Math.max(effLen, 0); verdict = r.allow; }
+      if (effLen > matchLen || (matchLen === -1 && isMatchAll)) {
+        matchLen = Math.max(effLen, 0);
+        verdict = r.allow;
+      }
     }
   }
   return verdict;

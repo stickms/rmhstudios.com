@@ -67,9 +67,10 @@ export async function setJobAction(
     const application = await prisma.ladderApplication.upsert({
       where: { userId_jobId: { userId, jobId } },
       create: { userId, jobId, status: 'applied', appliedDate: new Date() },
-      update: existing?.status === 'not_applied'
-        ? { status: 'applied', appliedDate: existing.appliedDate ?? new Date() }
-        : {},
+      update:
+        existing?.status === 'not_applied'
+          ? { status: 'applied', appliedDate: existing.appliedDate ?? new Date() }
+          : {},
     });
     if (prisma.ladderApplicationEvent && existing?.status !== 'applied') {
       await prisma.ladderApplicationEvent.create({
@@ -103,8 +104,15 @@ export async function setJobAction(
 }
 
 const APPLICATION_STATUSES = [
-  'not_applied', 'planning', 'applied', 'networking', 'interviewing',
-  'final_round', 'rejected', 'offer', 'withdrawn',
+  'not_applied',
+  'planning',
+  'applied',
+  'networking',
+  'interviewing',
+  'final_round',
+  'rejected',
+  'offer',
+  'withdrawn',
 ] as const;
 
 const MAX_TEXT = { message: 'Maximum length is 2000 characters' };
@@ -161,7 +169,7 @@ export async function updateApplication(
         applicationId: application.id,
         userId,
         type: statusChanged ? 'status_changed' : 'application_updated',
-        fromStatus: statusChanged ? existing?.status ?? null : null,
+        fromStatus: statusChanged ? (existing?.status ?? null) : null,
         toStatus: statusChanged ? validated.status : null,
         data: {
           fields: Object.keys(validated),
@@ -180,18 +188,34 @@ const RESOLUTION_EFFECTS: Record<
 > = {
   verify: {
     jobStatus: 'active',
-    verification: { status: 'verified_probable', confidence: 75, evidence: 'Manually verified via review queue.' },
+    verification: {
+      status: 'verified_probable',
+      confidence: 75,
+      evidence: 'Manually verified via review queue.',
+    },
   },
   expire: {
     jobStatus: 'expired',
-    verification: { status: 'expired', confidence: 90, evidence: 'Manually expired via review queue.' },
+    verification: {
+      status: 'expired',
+      confidence: 90,
+      evidence: 'Manually expired via review queue.',
+    },
   },
   non_us: {
-    verification: { status: 'non_us_role', confidence: 90, evidence: 'Manually classified non-US via review queue.' },
+    verification: {
+      status: 'non_us_role',
+      confidence: 90,
+      evidence: 'Manually classified non-US via review queue.',
+    },
   },
   duplicate: {
     jobStatus: 'expired',
-    verification: { status: 'expired', confidence: 100, evidence: 'Manually removed as a duplicate posting.' },
+    verification: {
+      status: 'expired',
+      confidence: 100,
+      evidence: 'Manually removed as a duplicate posting.',
+    },
   },
 };
 
@@ -208,7 +232,10 @@ export async function resolveReviewTask(
     if (!task.jobId) return { ok: false, error: 'task has no job' };
     const effect = RESOLUTION_EFFECTS[resolution];
     if (effect.jobStatus) {
-      await prisma.ladderJob.update({ where: { id: task.jobId }, data: { status: effect.jobStatus } });
+      await prisma.ladderJob.update({
+        where: { id: task.jobId },
+        data: { status: effect.jobStatus },
+      });
     }
     await prisma.ladderVerification.create({
       data: { jobId: task.jobId, ...effect.verification, checkedAt: new Date() },
@@ -222,13 +249,24 @@ export async function resolveReviewTask(
   return { ok: true };
 }
 
-export async function setCompanyEnabled(prisma: ActionsPrisma, companyId: string, enabled: boolean) {
+export async function setCompanyEnabled(
+  prisma: ActionsPrisma,
+  companyId: string,
+  enabled: boolean,
+) {
   return prisma.ladderCompany.update({ where: { id: companyId }, data: { enabled } });
 }
 
-export async function setCompanyPriority(prisma: ActionsPrisma, companyId: string, priorityLevel: number) {
+export async function setCompanyPriority(
+  prisma: ActionsPrisma,
+  companyId: string,
+  priorityLevel: number,
+) {
   const clamped = Math.max(1, Math.min(5, Math.round(priorityLevel)));
-  return prisma.ladderCompany.update({ where: { id: companyId }, data: { priorityLevel: clamped } });
+  return prisma.ladderCompany.update({
+    where: { id: companyId },
+    data: { priorityLevel: clamped },
+  });
 }
 
 export async function upsertKeyword(
@@ -252,7 +290,9 @@ export async function deleteKeyword(
   type: 'boost' | 'block',
 ) {
   try {
-    await prisma.ladderKeyword.delete({ where: { userId_keyword_type: { userId, keyword, type } } });
+    await prisma.ladderKeyword.delete({
+      where: { userId_keyword_type: { userId, keyword, type } },
+    });
   } catch {
     // P2025 on already-absent row — absence is the goal
   }
@@ -261,17 +301,29 @@ export async function deleteKeyword(
 
 const DIGEST_FREQUENCIES = ['immediate', 'daily', 'weekly'] as const;
 const PROGRAM_TYPES = [
-  'internship', 'summer_analyst', 'summer_associate', 'analyst_program', 'rotational_program',
-  'new_grad', 'leadership_development', 'entry_level', 'mba', 'other',
+  'internship',
+  'summer_analyst',
+  'summer_associate',
+  'analyst_program',
+  'rotational_program',
+  'new_grad',
+  'leadership_development',
+  'entry_level',
+  'mba',
+  'other',
 ] as const;
-const timezoneSchema = z.string().min(1).max(100).refine((value) => {
-  try {
-    new Intl.DateTimeFormat('en-US', { timeZone: value }).format();
-    return true;
-  } catch {
-    return false;
-  }
-}, 'Invalid IANA timezone');
+const timezoneSchema = z
+  .string()
+  .min(1)
+  .max(100)
+  .refine((value) => {
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: value }).format();
+      return true;
+    } catch {
+      return false;
+    }
+  }, 'Invalid IANA timezone');
 
 const prefsPatchSchema = z.object({
   relevanceThreshold: z.number().int().min(0, 'Minimum 0').max(100, 'Maximum is 100').optional(),
@@ -323,7 +375,9 @@ export async function toggleWatchlist(
   if (on && !existing) {
     await prisma.ladderWatchlistEntry.create({ data: { userId, companyId, priority: 3 } });
   } else if (!on && existing) {
-    await prisma.ladderWatchlistEntry.delete({ where: { userId_companyId: { userId, companyId } } });
+    await prisma.ladderWatchlistEntry.delete({
+      where: { userId_companyId: { userId, companyId } },
+    });
   }
   return { isWatchlisted: on };
 }

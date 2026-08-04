@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma.server';
 import { resolveUserDisplay } from '@/lib/user-display';
+import { conversationPreview, type ConversationPreview } from '@/lib/messages/message-view';
 
 export interface ConversationListItem {
   id: string;
@@ -7,6 +8,9 @@ export interface ConversationListItem {
   lastMessage: {
     id: string;
     content: string;
+    /** 'text' | 'voice' | 'image' | 'gif' | 'deleted' | 'empty' — lets the UI say
+     *  "Voice message" or "This message was deleted" in the viewer's language. */
+    previewKind: ConversationPreview['kind'];
     senderId: string;
     read: boolean;
     createdAt: string;
@@ -48,7 +52,7 @@ export async function listConversations(
       messages: {
         orderBy: { createdAt: 'desc' },
         take: 1,
-        select: { id: true, content: true, senderId: true, read: true, createdAt: true, gifUrl: true, imageUrls: true },
+        select: { id: true, content: true, senderId: true, read: true, createdAt: true, gifUrl: true, imageUrls: true, deletedAt: true, audioUrl: true },
       },
     },
   });
@@ -73,7 +77,13 @@ export async function listConversations(
       lastMessage: lastMessage
         ? {
             id: lastMessage.id,
-            content: lastMessage.content,
+            // Redacted through the shared preview helper rather than passed
+            // through raw. An unsent message keeps its content column (so a
+            // report stays reviewable), which means the inbox line would
+            // otherwise still show the text after a reload — the one place
+            // unsend visibly failed to take effect.
+            content: conversationPreview(lastMessage).text,
+            previewKind: conversationPreview(lastMessage).kind,
             senderId: lastMessage.senderId,
             read: lastMessage.read,
             createdAt: lastMessage.createdAt.toISOString(),

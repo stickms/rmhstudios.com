@@ -26,7 +26,12 @@ function makeFakePrisma(sources: AnyRow[]) {
 }
 
 const src = (id: string, companyId: string, name: string, platform: string): AnyRow => ({
-  id, companyId, platform, status: 'unconfigured', consecutiveFailures: 0, company: { name },
+  id,
+  companyId,
+  platform,
+  status: 'unconfigured',
+  consecutiveFailures: 0,
+  company: { name },
 });
 
 describe('probeUnconfiguredSources', () => {
@@ -49,7 +54,11 @@ describe('probeUnconfiguredSources', () => {
     expect(probedSlugs).toEqual(candidateSlugs('Test Co').slice(0, 2));
     expect(updates).toHaveLength(1);
     expect(updates[0]).toMatchObject({
-      id: 's1', slug: secondSlug, status: 'active', consecutiveFailures: 0, nextProbeAt: null,
+      id: 's1',
+      slug: secondSlug,
+      status: 'active',
+      consecutiveFailures: 0,
+      nextProbeAt: null,
     });
     expect(updates[0].lastSuccessAt).toBeInstanceOf(Date);
   });
@@ -145,6 +154,10 @@ describe('probeUnconfiguredSources', () => {
     });
 
     expect(slugs).toEqual(['known-board']);
-    expect(updates[0]).toMatchObject({ status: 'active', consecutiveFailures: 0, nextProbeAt: null });
+    expect(updates[0]).toMatchObject({
+      status: 'active',
+      consecutiveFailures: 0,
+      nextProbeAt: null,
+    });
   });
 });

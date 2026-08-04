@@ -117,14 +117,18 @@ export const resumeListItemSchema = z.object({
   activeVersionId: z.string().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
-  versions: z.array(z.object({
-    id: z.string(),
-    versionNumber: z.number().int(),
-    filename: z.string(),
-    mimeType: z.string(),
-    sizeBytes: z.number().int(),
-    createdAt: z.coerce.date(),
-  })).default([]),
+  versions: z
+    .array(
+      z.object({
+        id: z.string(),
+        versionNumber: z.number().int(),
+        filename: z.string(),
+        mimeType: z.string(),
+        sizeBytes: z.number().int(),
+        createdAt: z.coerce.date(),
+      }),
+    )
+    .default([]),
 });
 
 export type ResumeListItem = z.infer<typeof resumeListItemSchema>;

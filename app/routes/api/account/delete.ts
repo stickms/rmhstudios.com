@@ -88,6 +88,12 @@ export const Route = createFileRoute('/api/account/delete')({
             prisma.ladderWatchlistEntry.deleteMany({ where: { userId } }),
             prisma.ladderKeyword.deleteMany({ where: { userId } }),
             prisma.ladderUserPrefs.deleteMany({ where: { userId } }),
+            // Salary expectations, work authorization and EEO answers. This
+            // record has an onDelete: Cascade relation, but the account delete
+            // ANONYMIZES the user row rather than removing it (step 4 below),
+            // so the cascade never fires and this would otherwise outlive the
+            // account it belongs to.
+            prisma.ladderAnswerBank.deleteMany({ where: { userId } }),
             prisma.ladderResume.deleteMany({ where: { userId } }),
             // 3. Scrub PII from the profile.
             prisma.userProfile.updateMany({

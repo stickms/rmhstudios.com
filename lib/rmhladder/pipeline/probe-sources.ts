@@ -57,7 +57,12 @@ export async function probeUnconfiguredSources(
       OR: [{ nextProbeAt: null }, { nextProbeAt: { lte: now } }],
     },
     include: { company: true },
-    orderBy: [{ nextProbeAt: 'asc' }, { lastProbedAt: 'asc' }, { company: { name: 'asc' } }, { platform: 'asc' }],
+    orderBy: [
+      { nextProbeAt: 'asc' },
+      { lastProbedAt: 'asc' },
+      { company: { name: 'asc' } },
+      { platform: 'asc' },
+    ],
   });
 
   // Group by companyId → platform → source
@@ -65,7 +70,10 @@ export async function probeUnconfiguredSources(
   for (const src of sources) {
     const companyId = src.companyId as string;
     if (!byCompany.has(companyId)) {
-      byCompany.set(companyId, { name: (src.company as AnyRow).name as string, byPlatform: new Map() });
+      byCompany.set(companyId, {
+        name: (src.company as AnyRow).name as string,
+        byPlatform: new Map(),
+      });
     }
     byCompany.get(companyId)!.byPlatform.set(src.platform as ProbePlatform, src);
   }
@@ -87,7 +95,11 @@ export async function probeUnconfiguredSources(
       if (!source) continue;
 
       const configuredSlug = typeof source.slug === 'string' ? source.slug : null;
-      const slugs = [...new Set([configuredSlug, ...candidateSlugs(name)].filter((slug): slug is string => Boolean(slug)))];
+      const slugs = [
+        ...new Set(
+          [configuredSlug, ...candidateSlugs(name)].filter((slug): slug is string => Boolean(slug)),
+        ),
+      ];
       let activated = false;
 
       for (const slug of slugs) {
@@ -100,7 +112,9 @@ export async function probeUnconfiguredSources(
         try {
           probed = await probe(plt, slug);
         } catch (error) {
-          log(`  ${plt}/${slug} → probe failed: ${error instanceof Error ? error.message : String(error)}`);
+          log(
+            `  ${plt}/${slug} → probe failed: ${error instanceof Error ? error.message : String(error)}`,
+          );
           continue;
         }
         log(`  ${plt}/${slug} → live=${probed.live} jobs=${probed.jobCount}`);
@@ -128,9 +142,13 @@ export async function probeUnconfiguredSources(
 
       if (!activated) {
         log(`  - ${plt}: no live slug found`);
-        const previousFailures = typeof source.consecutiveFailures === 'number' ? source.consecutiveFailures : 0;
+        const previousFailures =
+          typeof source.consecutiveFailures === 'number' ? source.consecutiveFailures : 0;
         const failures = previousFailures + 1;
-        const backoff = Math.min(retryAfterMs * 2 ** Math.min(previousFailures, 4), 14 * 24 * 60 * 60 * 1_000);
+        const backoff = Math.min(
+          retryAfterMs * 2 ** Math.min(previousFailures, 4),
+          14 * 24 * 60 * 60 * 1_000,
+        );
         await prisma.ladderSource.update({
           where: { id: source.id },
           data: {

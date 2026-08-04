@@ -25,7 +25,9 @@ describe('normalizeTitle', () => {
 
 describe('locationBucket', () => {
   it('remote beats city; city+state; state only; fallback us', () => {
-    expect(locationBucket({ city: 'New York', state: 'NY', remoteStatus: 'remote_us' })).toBe('remote-us');
+    expect(locationBucket({ city: 'New York', state: 'NY', remoteStatus: 'remote_us' })).toBe(
+      'remote-us',
+    );
     expect(locationBucket({ city: 'New York', state: 'NY' })).toBe('new york-ny');
     expect(locationBucket({ state: 'TX' })).toBe('tx');
     expect(locationBucket({})).toBe('us');
@@ -40,6 +42,8 @@ describe('dedupeHash', () => {
     expect(a).toMatch(/^[0-9a-f]{64}$/);
   });
   it('differs when year differs', () => {
-    expect(dedupeHash('X', 'Summer Analyst 2027', 'us')).not.toBe(dedupeHash('X', 'Summer Analyst 2028', 'us'));
+    expect(dedupeHash('X', 'Summer Analyst 2027', 'us')).not.toBe(
+      dedupeHash('X', 'Summer Analyst 2028', 'us'),
+    );
   });
 });

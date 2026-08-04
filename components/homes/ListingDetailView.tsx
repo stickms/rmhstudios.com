@@ -137,7 +137,8 @@ export function ListingDetailView({ id }: { id: string }) {
 
   const remove = useCallback(async () => {
     if (!listing) return;
-    if (!(await confirm({ title: 'Delete this listing? This cannot be undone.', danger: true }))) return;
+    if (!(await confirm({ title: 'Delete this listing? This cannot be undone.', danger: true })))
+      return;
     try {
       const res = await fetch(`/api/homes/listings/${listing.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Could not delete');
@@ -266,9 +267,7 @@ export function ListingDetailView({ id }: { id: string }) {
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div
-              className="text-3xl font-bold text-site-text font-display"
-            >
+            <div className="text-3xl font-bold text-site-text font-display">
               {formatPrice(listing.price, listing.listingType)}
             </div>
             <h1 className="mt-1 text-lg font-semibold text-site-text">{listing.title}</h1>
@@ -373,9 +372,7 @@ export function ListingDetailView({ id }: { id: string }) {
 
         {/* Description */}
         <div className="mt-5">
-          <h2
-            className="mb-2 text-lg font-semibold text-site-text font-display"
-          >
+          <h2 className="mb-2 text-lg font-semibold text-site-text font-display">
             About this place
           </h2>
           <p className="whitespace-pre-wrap text-site-text-dim">{listing.description}</p>
@@ -384,11 +381,7 @@ export function ListingDetailView({ id }: { id: string }) {
         {/* Amenities */}
         {listing.amenities.length > 0 && (
           <div className="mt-5">
-            <h2
-              className="mb-2 text-lg font-semibold text-site-text font-display"
-            >
-              Amenities
-            </h2>
+            <h2 className="mb-2 text-lg font-semibold text-site-text font-display">Amenities</h2>
             <div className="flex flex-wrap gap-2">
               {listing.amenities.map((a) => (
                 <Badge key={a} variant="outline" size="lg">
@@ -401,11 +394,7 @@ export function ListingDetailView({ id }: { id: string }) {
 
         {/* Map */}
         <div className="mt-5">
-          <h2
-            className="mb-2 text-lg font-semibold text-site-text font-display"
-          >
-            Location
-          </h2>
+          <h2 className="mb-2 text-lg font-semibold text-site-text font-display">Location</h2>
           <ListingsMap
             listings={[listing]}
             center={{ lat: listing.lat, lng: listing.lng, label: location }}

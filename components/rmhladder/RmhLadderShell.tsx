@@ -42,8 +42,9 @@ const ADMIN_NAV: NavItem[] = [
 
 function pageTitle(pathname: string) {
   if (/^\/rmhladder\/jobs\/.+/.test(pathname)) return 'Job details';
-  const item = [...PUBLIC_NAV, ...PERSONAL_NAV, ...ADMIN_NAV]
-    .find(({ to }) => to !== '/rmhladder' && pathname.startsWith(to));
+  const item = [...PUBLIC_NAV, ...PERSONAL_NAV, ...ADMIN_NAV].find(
+    ({ to }) => to !== '/rmhladder' && pathname.startsWith(to),
+  );
   return item?.label ?? 'RMH Ladder';
 }
 
@@ -108,7 +109,12 @@ export default function RmhLadderShell({
             )}
           />
           {!isAuthenticated && (
-            <Button asChild size="sm" variant="accent-outline" className="ml-auto min-h-11 shrink-0">
+            <Button
+              asChild
+              size="sm"
+              variant="accent-outline"
+              className="ml-auto min-h-11 shrink-0"
+            >
               <Link to="/login" search={{ callbackURL: pathname }}>
                 {t('ladder.signIn', { defaultValue: 'Sign in to save jobs' })}
               </Link>

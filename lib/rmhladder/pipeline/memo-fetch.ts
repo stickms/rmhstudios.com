@@ -20,14 +20,17 @@ interface CachedEntry {
 export function memoFetch(fetchImpl?: typeof fetch): typeof fetch {
   const cache = new Map<string, CachedEntry>();
 
-  const memoizedFetch = async function memoizedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const memoizedFetch = async function memoizedFetch(
+    input: RequestInfo | URL,
+    init?: RequestInit,
+  ): Promise<Response> {
     const method = init?.method?.toUpperCase() ?? 'GET';
     const url =
       typeof input === 'string'
         ? input
         : input instanceof URL
-        ? input.toString()
-        : (input as Request).url;
+          ? input.toString()
+          : (input as Request).url;
 
     const networkFetch = async (): Promise<Response> => {
       if (fetchImpl) return fetchImpl(input, init);
@@ -50,7 +53,9 @@ export function memoFetch(fetchImpl?: typeof fetch): typeof fetch {
       return networkFetch();
     }
 
-    const cacheKey = isWorkdayRead ? `${method}:${url}:${init?.body as string}` : `${method}:${url}`;
+    const cacheKey = isWorkdayRead
+      ? `${method}:${url}:${init?.body as string}`
+      : `${method}:${url}`;
     const cached = cache.get(cacheKey);
     if (cached) {
       return new Response(cached.body, { status: cached.status });

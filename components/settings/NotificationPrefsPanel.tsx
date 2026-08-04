@@ -59,7 +59,9 @@ export function NotificationPrefsPanel() {
     } catch {
       setPrefs(previous);
       toast.error(
-        t('settings-notif-save-failed', { defaultValue: 'Could not save that setting. Try again.' })
+        t('settings-notif-save-failed', {
+          defaultValue: 'Could not save that setting. Try again.',
+        }),
       );
     }
   };
@@ -90,7 +92,10 @@ export function NotificationPrefsPanel() {
         const labelId = `notif-pref-${key}-label`;
         const hintId = `notif-pref-${key}-hint`;
         return (
-          <li key={key} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+          <li
+            key={key}
+            className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
+          >
             <div className="min-w-0">
               <p id={labelId} className="text-sm font-medium text-site-text">
                 {t(`settings-notif-${key}`, { defaultValue: COPY[key].label })}

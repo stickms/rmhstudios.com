@@ -21,8 +21,15 @@ export interface UserScoringContext {
 }
 
 const PROGRAM_WEIGHTS: Partial<Record<ProgramType, number>> = {
-  summer_analyst: 30, summer_associate: 25, internship: 25, analyst_program: 25,
-  new_grad: 25, rotational_program: 25, leadership_development: 18, entry_level: 15, mba: 15,
+  summer_analyst: 30,
+  summer_associate: 25,
+  internship: 25,
+  analyst_program: 25,
+  new_grad: 25,
+  rotational_program: 25,
+  leadership_development: 18,
+  entry_level: 15,
+  mba: 15,
 };
 const INDUSTRY_WEIGHTS: Array<[RegExp, number, string]> = [
   [/investment banking/i, 30, 'industry:investment_banking'],
@@ -35,8 +42,11 @@ const INDUSTRY_WEIGHTS: Array<[RegExp, number, string]> = [
   [/business analyst|business operations/i, 20, 'industry:business'],
 ];
 const TITLE_PENALTIES: Array<[RegExp, number]> = [
-  [/\bvp\b|vice president/i, 60], [/\bdirector\b/i, 50], [/\bprincipal\b/i, 50],
-  [/\bsenior\b(?! year)/i, 25], [/\bmanager\b/i, 20],
+  [/\bvp\b|vice president/i, 60],
+  [/\bdirector\b/i, 50],
+  [/\bprincipal\b/i, 50],
+  [/\bsenior\b(?! year)/i, 25],
+  [/\bmanager\b/i, 20],
 ];
 const DAY = 86_400_000;
 
@@ -63,7 +73,10 @@ export const finalRelevance = (base: number, boost: number): number =>
  * Callers must combine with the user boost via finalRelevance(base, boost);
  * never store or threshold-compare the raw base.
  */
-export function computeBaseScore(job: ScorableJob, now = new Date()): { score: number; urgencyFlag: boolean } {
+export function computeBaseScore(
+  job: ScorableJob,
+  now = new Date(),
+): { score: number; urgencyFlag: boolean } {
   let score = 0;
   if (job.isUS) score += job.remoteStatus === 'remote_us' ? 15 : 20;
   score += PROGRAM_WEIGHTS[job.programType] ?? 0;
@@ -76,7 +89,10 @@ export function computeBaseScore(job: ScorableJob, now = new Date()): { score: n
   let urgencyFlag = false;
   if (job.applicationDeadline) {
     const until = job.applicationDeadline.getTime() - now.getTime();
-    if (until >= 0 && until <= 14 * DAY) { score += 10; urgencyFlag = true; }
+    if (until >= 0 && until <= 14 * DAY) {
+      score += 10;
+      urgencyFlag = true;
+    }
   }
   for (const [re, w] of TITLE_PENALTIES) if (re.test(job.title)) score -= w;
   return { score: Math.max(0, score), urgencyFlag };
@@ -97,6 +113,7 @@ export function computeUserBoost(
     boost += k.weight;
   }
   if (ctx.watchlistCompanyIds.has(ctx.companyId)) boost += 20;
-  if (job.city && ctx.preferredCities.some((c) => c.toLowerCase() === job.city!.toLowerCase())) boost += 10;
+  if (job.city && ctx.preferredCities.some((c) => c.toLowerCase() === job.city!.toLowerCase()))
+    boost += 10;
   return { boost, matched, blocked: false };
 }
