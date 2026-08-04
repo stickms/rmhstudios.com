@@ -49,17 +49,19 @@ export class LeaderboardService {
    */
   private async onFetch(socket: Socket, payload: unknown): Promise<void> {
     try {
-      const params = (payload && typeof payload === 'object') ? payload as Record<string, unknown> : {};
+      const params =
+        payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : {};
       const metric = (params.metric as string) || 'score';
       const limit = Math.min(Math.max(Number(params.limit) || 20, 1), 50);
 
       const prisma = getPrismaClient();
 
-      const orderBy = metric === 'wins'
-        ? { totalWins: 'desc' as const }
-        : metric === 'games'
-          ? { totalGamesPlayed: 'desc' as const }
-          : { totalScore: 'desc' as const };
+      const orderBy =
+        metric === 'wins'
+          ? { totalWins: 'desc' as const }
+          : metric === 'games'
+            ? { totalGamesPlayed: 'desc' as const }
+            : { totalScore: 'desc' as const };
 
       const profiles = await prisma.rMHboxProfile.findMany({
         orderBy,
@@ -72,7 +74,8 @@ export class LeaderboardService {
         userId: p.userId,
         userName: p.user?.name ?? 'Unknown',
         avatarUrl: p.user?.image ?? null,
-        value: metric === 'wins' ? p.totalWins : metric === 'games' ? p.totalGamesPlayed : p.totalScore,
+        value:
+          metric === 'wins' ? p.totalWins : metric === 'games' ? p.totalGamesPlayed : p.totalScore,
         gamesPlayed: p.totalGamesPlayed,
         wins: p.totalWins,
       }));
@@ -85,7 +88,12 @@ export class LeaderboardService {
       });
     } catch (err) {
       logger.error({ event: 'leaderboard_fetch_error', error: String(err) });
-      socket.emit(S2C.LEADERBOARD_DATA, { entries: [], total: 0, period: 'all-time', metric: 'score' });
+      socket.emit(S2C.LEADERBOARD_DATA, {
+        entries: [],
+        total: 0,
+        period: 'all-time',
+        metric: 'score',
+      });
     }
   }
 
@@ -127,99 +135,111 @@ export class LeaderboardService {
         },
       });
 
-      // Step 2: For each player ranking, upsert profile and create match player
-      for (const ranking of results.rankings) {
-        const player = players.get(ranking.userId);
-        if (!player) continue;
+      // Step 2: For each player ranking, upsert profile and create match player.
+      // The profile reads are batched into one query and the per-player writes
+      // run concurrently: previously this was findUnique + update/create +
+      // matchPlayer create, all awaited in sequence, i.e. 3 serial round-trips
+      // per player (24 for an 8-player lobby) before the match was recorded.
+      // Every player touches only their own profile row, so there is no
+      // cross-player ordering to preserve.
+      const ranked = results.rankings.filter((r) => players.has(r.userId));
+      const existingProfiles = await prisma.rMHboxProfile.findMany({
+        where: { userId: { in: ranked.map((r) => r.userId) } },
+      });
+      const profileByUser = new Map(existingProfiles.map((p) => [p.userId, p]));
 
-        const isWinner = ranking.rank === 1;
+      await Promise.all(
+        ranked.map(async (ranking) => {
+          const player = players.get(ranking.userId);
+          if (!player) return;
 
-        // Upsert RMHboxProfile
-        const existingProfile = await prisma.rMHboxProfile.findUnique({
-          where: { userId: ranking.userId },
-        });
+          const isWinner = ranking.rank === 1;
 
-        let profileId: string;
+          const existingProfile = profileByUser.get(ranking.userId);
 
-        if (existingProfile) {
-          // Read-modify-write for minigameStats JSON field
-          const currentStats = (existingProfile.minigameStats as unknown as Record<string, MinigameStatEntry>) ?? {};
-          const gameStat: MinigameStatEntry = currentStats[minigameId] ?? {
-            gamesPlayed: 0,
-            wins: 0,
-            bestScore: 0,
-            totalScore: 0,
-            totalRank: 0,
-            averageRank: 0,
-          };
+          let profileId: string;
 
-          gameStat.gamesPlayed++;
-          if (isWinner) gameStat.wins++;
-          gameStat.bestScore = Math.max(gameStat.bestScore, ranking.score);
-          gameStat.totalScore += ranking.score;
-          gameStat.totalRank += ranking.rank;
-          gameStat.averageRank = gameStat.totalRank / gameStat.gamesPlayed;
+          if (existingProfile) {
+            // Read-modify-write for minigameStats JSON field
+            const currentStats =
+              (existingProfile.minigameStats as unknown as Record<string, MinigameStatEntry>) ?? {};
+            const gameStat: MinigameStatEntry = currentStats[minigameId] ?? {
+              gamesPlayed: 0,
+              wins: 0,
+              bestScore: 0,
+              totalScore: 0,
+              totalRank: 0,
+              averageRank: 0,
+            };
 
-          currentStats[minigameId] = gameStat;
+            gameStat.gamesPlayed++;
+            if (isWinner) gameStat.wins++;
+            gameStat.bestScore = Math.max(gameStat.bestScore, ranking.score);
+            gameStat.totalScore += ranking.score;
+            gameStat.totalRank += ranking.rank;
+            gameStat.averageRank = gameStat.totalRank / gameStat.gamesPlayed;
 
-          // Update win streak
-          const newCurrentStreak = isWinner ? existingProfile.currentWinStreak + 1 : 0;
-          const newBestStreak = Math.max(existingProfile.bestWinStreak, newCurrentStreak);
+            currentStats[minigameId] = gameStat;
 
-          await prisma.rMHboxProfile.update({
-            where: { userId: ranking.userId },
+            // Update win streak
+            const newCurrentStreak = isWinner ? existingProfile.currentWinStreak + 1 : 0;
+            const newBestStreak = Math.max(existingProfile.bestWinStreak, newCurrentStreak);
+
+            await prisma.rMHboxProfile.update({
+              where: { userId: ranking.userId },
+              data: {
+                totalGamesPlayed: { increment: 1 },
+                totalWins: isWinner ? { increment: 1 } : undefined,
+                totalScore: { increment: ranking.score },
+                totalPlayTimeMs: { increment: durationMs },
+                minigameStats: currentStats as object,
+                currentWinStreak: newCurrentStreak,
+                bestWinStreak: newBestStreak,
+              },
+            });
+
+            profileId = existingProfile.id;
+          } else {
+            // Create new profile
+            const newProfile = await prisma.rMHboxProfile.create({
+              data: {
+                userId: ranking.userId,
+                totalGamesPlayed: 1,
+                totalWins: isWinner ? 1 : 0,
+                totalScore: ranking.score,
+                totalPlayTimeMs: durationMs,
+                minigameStats: {
+                  [minigameId]: {
+                    gamesPlayed: 1,
+                    wins: isWinner ? 1 : 0,
+                    bestScore: ranking.score,
+                    totalScore: ranking.score,
+                    totalRank: ranking.rank,
+                    averageRank: ranking.rank,
+                  } satisfies MinigameStatEntry,
+                } as object,
+                currentWinStreak: isWinner ? 1 : 0,
+                bestWinStreak: isWinner ? 1 : 0,
+              },
+            });
+            profileId = newProfile.id;
+          }
+
+          // Create RMHboxMatchPlayer record
+          await prisma.rMHboxMatchPlayer.create({
             data: {
-              totalGamesPlayed: { increment: 1 },
-              totalWins: isWinner ? { increment: 1 } : undefined,
-              totalScore: { increment: ranking.score },
-              totalPlayTimeMs: { increment: durationMs },
-              minigameStats: currentStats as object,
-              currentWinStreak: newCurrentStreak,
-              bestWinStreak: newBestStreak,
-            },
-          });
-
-          profileId = existingProfile.id;
-        } else {
-          // Create new profile
-          const newProfile = await prisma.rMHboxProfile.create({
-            data: {
+              matchId: match.id,
+              profileId,
               userId: ranking.userId,
-              totalGamesPlayed: 1,
-              totalWins: isWinner ? 1 : 0,
-              totalScore: ranking.score,
-              totalPlayTimeMs: durationMs,
-              minigameStats: {
-                [minigameId]: {
-                  gamesPlayed: 1,
-                  wins: isWinner ? 1 : 0,
-                  bestScore: ranking.score,
-                  totalScore: ranking.score,
-                  totalRank: ranking.rank,
-                  averageRank: ranking.rank,
-                } satisfies MinigameStatEntry,
-              } as object,
-              currentWinStreak: isWinner ? 1 : 0,
-              bestWinStreak: isWinner ? 1 : 0,
+              userName: player.userName,
+              rank: ranking.rank,
+              score: ranking.score,
+              wasWinner: isWinner,
+              stats: (ranking.deltas ?? {}) as object,
             },
           });
-          profileId = newProfile.id;
-        }
-
-        // Create RMHboxMatchPlayer record
-        await prisma.rMHboxMatchPlayer.create({
-          data: {
-            matchId: match.id,
-            profileId,
-            userId: ranking.userId,
-            userName: player.userName,
-            rank: ranking.rank,
-            score: ranking.score,
-            wasWinner: isWinner,
-            stats: (ranking.deltas ?? {}) as object,
-          },
-        });
-      }
+        }),
+      );
 
       logger.info({
         event: 'match_persisted',

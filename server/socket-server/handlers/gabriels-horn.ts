@@ -1155,58 +1155,68 @@ async function persistResults(standings: FinalStanding[]): Promise<void> {
   if (real.length === 0) return;
   const prisma = getPrismaClient();
 
-  for (const row of real) {
-    const won = row.place === 1 ? 1 : 0;
-    const sounded = row.calledEnd ? 1 : 0;
-    const hornWon = row.calledEnd && !row.endBackfired ? 1 : 0;
-    try {
-      const existing = await prisma.gabrielsHornPlayer.findUnique({
-        where: { userId: row.userId },
-      });
-      if (existing) {
-        await prisma.gabrielsHornPlayer.update({
-          where: { id: existing.id },
-          data: {
-            gamesPlayed: { increment: 1 },
-            wins: { increment: won },
-            hornsSounded: { increment: sounded },
-            hornsWon: { increment: hornWon },
-            bestHand:
-              existing.bestHand === null
-                ? row.handCount
-                : Math.min(existing.bestHand, row.handCount),
-          },
-        });
-        continue;
-      }
+  // One read covering every player in the match, then the per-player writes in
+  // parallel. Rows are keyed by distinct userIds and none of them reads another
+  // player's row, so the old read-then-write-per-player sequence was pure serial
+  // latency. Per-player error handling is unchanged — one failed row still can't
+  // take the others down.
+  const existingRows = await prisma.gabrielsHornPlayer.findMany({
+    where: { userId: { in: real.map((row) => row.userId as string) } },
+  });
+  const existingByUser = new Map(existingRows.map((row) => [row.userId, row]));
 
-      // First finished game for this account. `username` is unique, so a display
-      // name somebody else already claimed falls back to a suffixed form rather
-      // than losing the result.
-      const base = sanitizeUserName(row.name);
-      const data = {
-        userId: row.userId,
-        gamesPlayed: 1,
-        wins: won,
-        hornsSounded: sounded,
-        hornsWon: hornWon,
-        bestHand: row.handCount,
-      };
+  await Promise.all(
+    real.map(async (row) => {
+      const won = row.place === 1 ? 1 : 0;
+      const sounded = row.calledEnd ? 1 : 0;
+      const hornWon = row.calledEnd && !row.endBackfired ? 1 : 0;
       try {
-        await prisma.gabrielsHornPlayer.create({ data: { ...data, username: base } });
-      } catch {
-        await prisma.gabrielsHornPlayer.create({
-          data: { ...data, username: `${base}-${row.userId.slice(0, 6)}`.slice(0, 32) },
+        const existing = existingByUser.get(row.userId as string);
+        if (existing) {
+          await prisma.gabrielsHornPlayer.update({
+            where: { id: existing.id },
+            data: {
+              gamesPlayed: { increment: 1 },
+              wins: { increment: won },
+              hornsSounded: { increment: sounded },
+              hornsWon: { increment: hornWon },
+              bestHand:
+                existing.bestHand === null
+                  ? row.handCount
+                  : Math.min(existing.bestHand, row.handCount),
+            },
+          });
+          return;
+        }
+
+        // First finished game for this account. `username` is unique, so a display
+        // name somebody else already claimed falls back to a suffixed form rather
+        // than losing the result.
+        const base = sanitizeUserName(row.name);
+        const data = {
+          userId: row.userId,
+          gamesPlayed: 1,
+          wins: won,
+          hornsSounded: sounded,
+          hornsWon: hornWon,
+          bestHand: row.handCount,
+        };
+        try {
+          await prisma.gabrielsHornPlayer.create({ data: { ...data, username: base } });
+        } catch {
+          await prisma.gabrielsHornPlayer.create({
+            data: { ...data, username: `${base}-${row.userId.slice(0, 6)}`.slice(0, 32) },
+          });
+        }
+      } catch (error) {
+        logger.warn({
+          event: 'gabriels_horn_row_failed',
+          userId: row.userId,
+          error: String(error),
         });
       }
-    } catch (error) {
-      logger.warn({
-        event: 'gabriels_horn_row_failed',
-        userId: row.userId,
-        error: String(error),
-      });
-    }
-  }
+    }),
+  );
 }
 
 // ─── Garbage collection ─────────────────────────────────────────────────────

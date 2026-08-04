@@ -12,6 +12,7 @@
 
 import { prisma } from '@/lib/prisma.server';
 import { extractTags } from './ranking';
+import { apiCache } from '@/lib/cache';
 import { redisEnabled, redisGetJSON, redisSetJSON } from '@/lib/redis.server';
 
 export interface InterestProfile {
@@ -21,10 +22,13 @@ export interface InterestProfile {
 
 const EMPTY: InterestProfile = { authorAffinity: new Map(), topicInterest: new Map() };
 
-// Per-user in-memory cache (cleared on TTL). Keyed by userId.
-const cache = new Map<string, { profile: InterestProfile; expires: number }>();
+// Per-user L1 cache. This rides the shared `apiCache` rather than a private
+// Map: entries there are TTL-swept and capacity-bounded, whereas the Map this
+// replaced only ever grew — every signed-in viewer who loaded a feed left a
+// profile behind for the life of the process, and nothing evicted expired ones.
 const TTL_MS = 5 * 60 * 1000;
 const SAMPLE_SIZE = 80;
+const cacheKey = (userId: string) => `interest-profile:${userId}`;
 
 function normalize(counts: Map<string, number>): Map<string, number> {
   let max = 0;
@@ -48,15 +52,15 @@ export async function buildInterestProfile(userId: string | null): Promise<Inter
   if (!userId) return EMPTY;
 
   // L1: per-instance cache.
-  const cached = cache.get(userId);
-  if (cached && cached.expires > Date.now()) return cached.profile;
+  const cached = apiCache.get<InterestProfile>(cacheKey(userId));
+  if (cached) return cached;
 
   // L2: shared Redis cache (cross-instance) when configured.
   if (redisEnabled()) {
     const hit = await redisGetJSON<SerializedProfile>(redisKey(userId));
     if (hit) {
       const profile = deserialize(hit);
-      cache.set(userId, { profile, expires: Date.now() + TTL_MS });
+      apiCache.set(cacheKey(userId), profile, TTL_MS);
       return profile;
     }
   }
@@ -90,7 +94,7 @@ export async function buildInterestProfile(userId: string | null): Promise<Inter
       authorAffinity: normalize(authorCounts),
       topicInterest: normalize(topicCounts),
     };
-    cache.set(userId, { profile, expires: Date.now() + TTL_MS });
+    apiCache.set(cacheKey(userId), profile, TTL_MS);
     if (redisEnabled()) await redisSetJSON(redisKey(userId), serialize(profile), TTL_MS);
     return profile;
   } catch (err) {
