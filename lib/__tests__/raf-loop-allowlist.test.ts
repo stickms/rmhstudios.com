@@ -122,6 +122,7 @@ const ALLOW = new Set<string>([
   'components/library/EpubReader.tsx',
   'components/library/LibraryReveal.tsx',
   'components/library/UploadModal.tsx',
+  'components/massive-march/world/WorldView.tsx',
   'components/radial/LiquidGlobe.tsx',
   'components/neon-driftway/NeonDriftwayGame.tsx',
   'components/news/NewsHero.tsx',

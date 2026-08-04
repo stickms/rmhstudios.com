@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 241 routes. 126 render inside the standard site shell (sidebar, nav, context rail); 115 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 242 routes. 126 render inside the standard site shell (sidebar, nav, context rail); 116 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -192,6 +192,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/lights-out` | redirects to `/daily/lights-out` | public | `app/routes/lights-out.tsx` |
 | `/liquid-glass` | — | public | `app/routes/liquid-glass.tsx` |
 | `/login` | Login \| RMH | public | `app/routes/login.tsx` |
+| `/massive-march` | — | public | `app/routes/massive-march.tsx` |
 | `/neon-driftway` | — | public | `app/routes/neon-driftway.tsx` |
 | `/news/:slug` | — | public | `app/routes/news.$slug.tsx` |
 | `/news/rss.xml` | RMH Studios — News | public | `app/routes/news.rss[.]xml.ts` |

@@ -146,6 +146,14 @@ COPY lib/gabriels-horn/constants.ts ./lib/gabriels-horn/constants.ts
 COPY lib/gabriels-horn/deck.ts ./lib/gabriels-horn/deck.ts
 COPY lib/gabriels-horn/house-rules.ts ./lib/gabriels-horn/house-rules.ts
 COPY lib/gabriels-horn/net/events.ts ./lib/gabriels-horn/net/events.ts
+# Massive March goes in whole, unlike the games above, because for this one the
+# hub IS the simulation: the island's height field, its collision, the audibility
+# rule, the puzzle engine, the item catalogue and the campaign save are all
+# shared verbatim with the browser rather than duplicated. Copying a file at a
+# time here would mean re-reading the import graph on every change to the game;
+# the directory is a few hundred KB of import-free TypeScript and nothing else
+# in lib/ depends on it, so it cannot bust anyone else's cache either.
+COPY lib/massive-march ./lib/massive-march/
 # lights-out, doctrine, rmhvibe, rmhark-ai, media and storage were only imported
 # by the Node workers now running in the Go supervisor — no longer copied here so
 # changes to them don't bust this stage's cache.

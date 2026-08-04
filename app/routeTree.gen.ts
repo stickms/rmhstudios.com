@@ -31,6 +31,7 @@ import { Route as LaundrySortRouteImport } from './routes/laundry-sort'
 import { Route as LightsOutRouteImport } from './routes/lights-out'
 import { Route as LiquidGlassRouteImport } from './routes/liquid-glass'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MassiveMarchRouteImport } from './routes/massive-march'
 import { Route as NeonDriftwayRouteImport } from './routes/neon-driftway'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as OptimizationRouteImport } from './routes/optimization'
@@ -362,6 +363,7 @@ import { Route as ApiLibraryQuotaRouteImport } from './routes/api/library/quota'
 import { Route as ApiLibraryUploadRouteImport } from './routes/api/library/upload'
 import { Route as ApiListsIndexRouteImport } from './routes/api/lists/index'
 import { Route as ApiListsIdRouteImport } from './routes/api/lists/$id'
+import { Route as ApiMassiveMarchCampaignsRouteImport } from './routes/api/massive-march/campaigns'
 import { Route as ApiMessagesConversationIdRouteImport } from './routes/api/messages/$conversationId'
 import { Route as ApiMessagesReadAllRouteImport } from './routes/api/messages/read-all'
 import { Route as ApiMessagesSearchRouteImport } from './routes/api/messages/search'
@@ -855,6 +857,11 @@ const LiquidGlassRoute = LiquidGlassRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MassiveMarchRoute = MassiveMarchRouteImport.update({
+  id: '/massive-march',
+  path: '/massive-march',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NeonDriftwayRoute = NeonDriftwayRouteImport.update({
@@ -2526,6 +2533,12 @@ const ApiListsIdRoute = ApiListsIdRouteImport.update({
   path: '/api/lists/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMassiveMarchCampaignsRoute =
+  ApiMassiveMarchCampaignsRouteImport.update({
+    id: '/api/massive-march/campaigns',
+    path: '/api/massive-march/campaigns',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiMessagesConversationIdRoute =
   ApiMessagesConversationIdRouteImport.update({
     id: '/$conversationId',
@@ -4564,6 +4577,7 @@ export interface FileRoutesByFullPath {
   '/lights-out': typeof LightsOutRoute
   '/liquid-glass': typeof LiquidGlassRoute
   '/login': typeof LoginRoute
+  '/massive-march': typeof MassiveMarchRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
   '/optimization': typeof OptimizationRoute
@@ -4858,6 +4872,7 @@ export interface FileRoutesByFullPath {
   '/api/library/quota': typeof ApiLibraryQuotaRoute
   '/api/library/upload': typeof ApiLibraryUploadRoute
   '/api/lists/$id': typeof ApiListsIdRouteWithChildren
+  '/api/massive-march/campaigns': typeof ApiMassiveMarchCampaignsRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
   '/api/messages/read-all': typeof ApiMessagesReadAllRoute
   '/api/messages/search': typeof ApiMessagesSearchRoute
@@ -5298,6 +5313,7 @@ export interface FileRoutesByTo {
   '/lights-out': typeof LightsOutRoute
   '/liquid-glass': typeof LiquidGlassRoute
   '/login': typeof LoginRoute
+  '/massive-march': typeof MassiveMarchRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
   '/optimization': typeof OptimizationRoute
@@ -5573,6 +5589,7 @@ export interface FileRoutesByTo {
   '/api/library/quota': typeof ApiLibraryQuotaRoute
   '/api/library/upload': typeof ApiLibraryUploadRoute
   '/api/lists/$id': typeof ApiListsIdRouteWithChildren
+  '/api/massive-march/campaigns': typeof ApiMassiveMarchCampaignsRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
   '/api/messages/read-all': typeof ApiMessagesReadAllRoute
   '/api/messages/search': typeof ApiMessagesSearchRoute
@@ -6019,6 +6036,7 @@ export interface FileRoutesById {
   '/lights-out': typeof LightsOutRoute
   '/liquid-glass': typeof LiquidGlassRoute
   '/login': typeof LoginRoute
+  '/massive-march': typeof MassiveMarchRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
   '/optimization': typeof OptimizationRoute
@@ -6314,6 +6332,7 @@ export interface FileRoutesById {
   '/api/library/quota': typeof ApiLibraryQuotaRoute
   '/api/library/upload': typeof ApiLibraryUploadRoute
   '/api/lists/$id': typeof ApiListsIdRouteWithChildren
+  '/api/massive-march/campaigns': typeof ApiMassiveMarchCampaignsRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
   '/api/messages/read-all': typeof ApiMessagesReadAllRoute
   '/api/messages/search': typeof ApiMessagesSearchRoute
@@ -6761,6 +6780,7 @@ export interface FileRouteTypes {
     | '/lights-out'
     | '/liquid-glass'
     | '/login'
+    | '/massive-march'
     | '/neon-driftway'
     | '/offline'
     | '/optimization'
@@ -7055,6 +7075,7 @@ export interface FileRouteTypes {
     | '/api/library/quota'
     | '/api/library/upload'
     | '/api/lists/$id'
+    | '/api/massive-march/campaigns'
     | '/api/messages/$conversationId'
     | '/api/messages/read-all'
     | '/api/messages/search'
@@ -7495,6 +7516,7 @@ export interface FileRouteTypes {
     | '/lights-out'
     | '/liquid-glass'
     | '/login'
+    | '/massive-march'
     | '/neon-driftway'
     | '/offline'
     | '/optimization'
@@ -7770,6 +7792,7 @@ export interface FileRouteTypes {
     | '/api/library/quota'
     | '/api/library/upload'
     | '/api/lists/$id'
+    | '/api/massive-march/campaigns'
     | '/api/messages/$conversationId'
     | '/api/messages/read-all'
     | '/api/messages/search'
@@ -8215,6 +8238,7 @@ export interface FileRouteTypes {
     | '/lights-out'
     | '/liquid-glass'
     | '/login'
+    | '/massive-march'
     | '/neon-driftway'
     | '/offline'
     | '/optimization'
@@ -8510,6 +8534,7 @@ export interface FileRouteTypes {
     | '/api/library/quota'
     | '/api/library/upload'
     | '/api/lists/$id'
+    | '/api/massive-march/campaigns'
     | '/api/messages/$conversationId'
     | '/api/messages/read-all'
     | '/api/messages/search'
@@ -8956,6 +8981,7 @@ export interface RootRouteChildren {
   LightsOutRoute: typeof LightsOutRoute
   LiquidGlassRoute: typeof LiquidGlassRoute
   LoginRoute: typeof LoginRoute
+  MassiveMarchRoute: typeof MassiveMarchRoute
   NeonDriftwayRoute: typeof NeonDriftwayRoute
   OfflineRoute: typeof OfflineRoute
   OptimizationRoute: typeof OptimizationRoute
@@ -9101,6 +9127,7 @@ export interface RootRouteChildren {
   ApiLibraryQuotaRoute: typeof ApiLibraryQuotaRoute
   ApiLibraryUploadRoute: typeof ApiLibraryUploadRoute
   ApiListsIdRoute: typeof ApiListsIdRouteWithChildren
+  ApiMassiveMarchCampaignsRoute: typeof ApiMassiveMarchCampaignsRoute
   ApiModerationBlockRoute: typeof ApiModerationBlockRoute
   ApiModerationMuteRoute: typeof ApiModerationMuteRoute
   ApiModerationReportRoute: typeof ApiModerationReportRoute
@@ -9504,6 +9531,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/massive-march': {
+      id: '/massive-march'
+      path: '/massive-march'
+      fullPath: '/massive-march'
+      preLoaderRoute: typeof MassiveMarchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/neon-driftway': {
@@ -11821,6 +11855,13 @@ declare module '@tanstack/react-router' {
       path: '/api/lists/$id'
       fullPath: '/api/lists/$id'
       preLoaderRoute: typeof ApiListsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/massive-march/campaigns': {
+      id: '/api/massive-march/campaigns'
+      path: '/api/massive-march/campaigns'
+      fullPath: '/api/massive-march/campaigns'
+      preLoaderRoute: typeof ApiMassiveMarchCampaignsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/messages/$conversationId': {
@@ -15992,6 +16033,7 @@ const rootRouteChildren: RootRouteChildren = {
   LightsOutRoute: LightsOutRoute,
   LiquidGlassRoute: LiquidGlassRoute,
   LoginRoute: LoginRoute,
+  MassiveMarchRoute: MassiveMarchRoute,
   NeonDriftwayRoute: NeonDriftwayRoute,
   OfflineRoute: OfflineRoute,
   OptimizationRoute: OptimizationRoute,
@@ -16138,6 +16180,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLibraryQuotaRoute: ApiLibraryQuotaRoute,
   ApiLibraryUploadRoute: ApiLibraryUploadRoute,
   ApiListsIdRoute: ApiListsIdRouteWithChildren,
+  ApiMassiveMarchCampaignsRoute: ApiMassiveMarchCampaignsRoute,
   ApiModerationBlockRoute: ApiModerationBlockRoute,
   ApiModerationMuteRoute: ApiModerationMuteRoute,
   ApiModerationReportRoute: ApiModerationReportRoute,

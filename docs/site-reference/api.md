@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 471 files across 119 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 472 files across 120 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -577,6 +577,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/market/listings` | `GET` `POST` | `app/routes/api/market/listings/index.ts` |
 | `/api/market/listings/:id` | `DELETE` | `app/routes/api/market/listings/$id/index.ts` |
 | `/api/market/listings/:id/buy` | `POST` | `app/routes/api/market/listings/$id/buy.ts` |
+
+## `/api/massive-march`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/massive-march/campaigns` | `DELETE` `GET` | `app/routes/api/massive-march/campaigns.ts` |
 
 ## `/api/messages`
 

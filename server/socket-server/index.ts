@@ -73,6 +73,10 @@ import {
   registerGabrielsHornHandlers,
   handleGabrielsHornDisconnect,
 } from './handlers/gabriels-horn';
+import {
+  registerMassiveMarchHandlers,
+  handleMassiveMarchDisconnect,
+} from './handlers/massive-march';
 import { registerSpacesHandlers, handleSpacesDisconnect } from './handlers/spaces';
 import { registerPartyHandlers, handlePartyDisconnect } from './handlers/party';
 
@@ -275,6 +279,7 @@ io.on('connection', (socket) => {
   registerRmhFarmingSimHandlers(io, socket);
   registerLaundrySortHandlers(io, socket);
   registerGabrielsHornHandlers(io, socket);
+  registerMassiveMarchHandlers(io, socket);
 
   // Platform expansion (§4, §5): live Spaces + cross-game party.
   registerSpacesHandlers(io, socket);
@@ -306,6 +311,7 @@ io.on('connection', (socket) => {
     handleRmhFarmingSimDisconnect(io, socket);
     handleLaundrySortDisconnect(io, socket);
     handleGabrielsHornDisconnect(io, socket);
+    handleMassiveMarchDisconnect(io, socket);
 
     cleanupRateLimits(socket.id);
   });
