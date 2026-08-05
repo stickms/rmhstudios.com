@@ -279,6 +279,20 @@ static import makes it fail with the route named.
 
 ### OPT-03 — `modulepreload` the next route's chunk on intent
 
+> **RESOLVED 2026-08-05 — already satisfied; do not implement.** The evidence
+> line below is accurate as a grep and wrong as a conclusion. TanStack Router
+> already fetches the route chunk on intent: the compiled entry lazy-loads all
+> 267 route modules via `lazyRouteComponent`, which sets `.preload` on the
+> component; `runLoader` calls `loadRouteChunk` on the client; and
+> `preloadRoute` — what a `<Link>` fires on hover — reaches the same
+> `loadMatches` path. Vite's `__vitePreload` then emits the `modulepreload`
+> links for that chunk and its dep chain. A hand-written version would be a
+> duplicate fetch path plus a staleable build-time map. The 120 ms delay
+> suggested below is also wrong for the same reason: the data prefetch and the
+> chunk fetch are one call, so raising it would delay the data prefetch to buy
+> nothing. Verified in `@tanstack/react-router` `lazyRouteComponent.js:47` and
+> `@tanstack/router-core@1.171.15` `load-matches.js:357`.
+
 - **Category:** JS delivery · **Impact:** M · **Effort:** M · **Risk:** low
 - **Evidence:** `app/router.tsx` sets `defaultPreload: 'intent'` with a 50 ms
   delay — that preloads route **loader data**. There is no
@@ -941,6 +955,17 @@ which means `contain-intrinsic-size` is wrong.
 ---
 
 ### OPT-15 — `contain: layout paint` on repeated card surfaces
+
+> **REJECTED 2026-08-05 — audited and not applied.** The entry rests on the
+> design language's claim that floating UI is all `.glass-overlay` (L4) and
+> portalled. That claim does not hold in the code: the RMHark overflow menu and
+> the repost menu are anchored `absolute top-full` _inside_ the `.glass-fill`
+> feed card and are not portalled, so `contain: paint` clips them outright. The
+> role is also not only repeated cards — it is `Card`'s default tier, ~150 call
+> sites across 86 files, including a sticky modal footer and an absolutely-placed
+> profile-hero badge. The full audit lives as a comment at the call site in
+> `app/globals.css`. If containment is wanted later, it belongs on a surface
+> already clipping via `overflow: hidden`, where it is a visual no-op.
 
 - **Category:** CSS · **Impact:** M · **Effort:** S · **Risk:** low
 - **Evidence:** No `contain:` declarations in `app/globals.css` outside the
@@ -2548,6 +2573,20 @@ CDN hostname (`cdn.rmhstudios.com`) where objects are immutable, not for HTML.
 ---
 
 ### OPT-45 — Compression dictionaries for versioned JS
+
+> **REJECTED 2026-08-05 — not implemented.** The snippet below assumes a
+> single-bundle app. This build emits **955 JS files** into `/assets/` beside
+> 995 CSS/font/map files, and Nitro's route matcher is segment-based, so the
+> only expressible scope is all of `/assets/**` with one static header value —
+> which would stamp a script-destination dictionary onto woff2 and CSS, and
+> create 955 same-specificity dictionaries so the client deltas against
+> whichever unrelated chunk it stored last. That is the exact "matches too
+> broadly, hit rate collapses" failure this entry's own gotcha 2 warns about. A
+> correct policy needs a per-response header derived from each filename's stable
+> prefix, and the origin still cannot deliver deltas without the CDN feature.
+> Note also that the snippet hardcodes `cache-control`, which would pin the
+> value and stop tracking Nitro's immutable default. Analysis recorded in
+> `vite.config.ts`.
 
 - **Category:** Edge · **Impact:** L · **Effort:** L · **Risk:** medium
 - **Evidence:** `vite.config.ts` pre-compresses static output with gzip and
