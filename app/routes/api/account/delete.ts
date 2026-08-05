@@ -2,11 +2,15 @@
  * POST /api/account/delete — self-service account deletion (GDPR right to erasure).
  *
  * Rather than a hard row delete (which risks foreign-key failures across the
- * ~199-model schema), this performs an irreversible erasure:
- *  - deletes all authentication credentials (sessions, OAuth accounts, passkeys,
- *    push subscriptions) so the account can never be signed into again, and
- *  - scrubs personal data from the profile (name, email, handle, avatar, bio, …),
- *    leaving any authored content attributed to an anonymous "Deleted user".
+ * ~250-model schema), erasure anonymises the row in place: credentials are
+ * destroyed, private data is removed and the profile is scrubbed, leaving any
+ * authored content attributed to an anonymous "Deleted user".
+ *
+ * That erasure is now DEFERRED by a 30-day grace period (B12). It used to run
+ * inline and irreversibly, which meant a deletion made in anger at 2am had no
+ * path back and no prompt to export first. The account is signed out and hidden
+ * straight away; `anonymizeAccount()` runs from the nightly sweep, and signing
+ * back in cancels it.
  *
  * Requires the user to type their own handle/username to confirm.
  */
@@ -16,14 +20,11 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { deleteObject } from '@/lib/storage/s3.server';
-import { DELETED_ACCOUNT_BAN_REASON, DELETED_ACCOUNT_LOCK_UNTIL } from '@/lib/account-lifecycle';
+import { scheduleDeletion, DELETION_GRACE_DAYS } from '@/lib/account/deletion.server';
+import { sendEmail } from '@/lib/email/send.server';
+import { SITE_URL } from '@/lib/seo';
 
 const schema = z.object({ confirm: z.string().min(1).max(120) });
-
-// Sentinel far-future ban keeps the (now credential-less) account locked as
-// defense-in-depth against any lingering session. Shared with the handle
-// backfill, which uses the same marker to leave tombstoned rows alone.
-const LOCK_UNTIL = DELETED_ACCOUNT_LOCK_UNTIL;
 
 export const Route = createFileRoute('/api/account/delete')({
   server: {
@@ -45,6 +46,7 @@ export const Route = createFileRoute('/api/account/delete')({
             where: { id: userId },
             select: { handle: true, username: true, email: true },
           });
+          const email = user?.email ?? null;
           if (!user) {
             return Response.json({ error: 'Account not found' }, { status: 404 });
           }
@@ -70,67 +72,39 @@ export const Route = createFileRoute('/api/account/delete')({
           });
           await Promise.all(resumeObjects.map(({ storageKey }) => deleteObject(storageKey)));
 
-          await prisma.$transaction([
-            // 1. Destroy every way to authenticate as this account.
-            prisma.session.deleteMany({ where: { userId } }),
-            prisma.account.deleteMany({ where: { userId } }),
-            prisma.passkey.deleteMany({ where: { userId } }),
-            prisma.pushSubscription.deleteMany({ where: { userId } }),
-            // 2. Remove all private RMHLadder data. Child resume versions,
-            // reviews, matches, AI tasks, deliveries, and application events
-            // cascade from their owning rows.
-            prisma.ladderAlertEvent.deleteMany({ where: { userId } }),
-            prisma.ladderAlert.deleteMany({ where: { userId } }),
-            prisma.ladderProductEvent.deleteMany({ where: { userId } }),
-            prisma.ladderSavedSearch.deleteMany({ where: { userId } }),
-            prisma.ladderApplication.deleteMany({ where: { userId } }),
-            prisma.ladderJobAction.deleteMany({ where: { userId } }),
-            prisma.ladderWatchlistEntry.deleteMany({ where: { userId } }),
-            prisma.ladderKeyword.deleteMany({ where: { userId } }),
-            prisma.ladderUserPrefs.deleteMany({ where: { userId } }),
-            // Salary expectations, work authorization and EEO answers. This
-            // record has an onDelete: Cascade relation, but the account delete
-            // ANONYMIZES the user row rather than removing it (step 4 below),
-            // so the cascade never fires and this would otherwise outlive the
-            // account it belongs to.
-            prisma.ladderAnswerBank.deleteMany({ where: { userId } }),
-            prisma.ladderResume.deleteMany({ where: { userId } }),
-            // 3. Scrub PII from the profile.
-            prisma.userProfile.updateMany({
-              where: { userId },
-              data: {
-                displayName: null,
-                bio: null,
-                location: null,
-                website: null,
-                customImage: null,
-                profileSongTitle: null,
-                profileSongArtist: null,
-                profileSongSpotifyId: null,
-                profileSongPreviewUrl: null,
-                profileSongAlbumArt: null,
-              },
-            }),
-            // 4. Anonymize + lock the user record.
-            prisma.user.update({
-              where: { id: userId },
-              data: {
-                name: 'Deleted user',
-                email: null,
-                emailVerified: false,
-                username: null,
-                handle: null,
-                image: null,
-                password: null,
-                referralCode: null,
-                botPersona: null,
-                bannedUntil: LOCK_UNTIL,
-                banReason: DELETED_ACCOUNT_BAN_REASON,
-              },
-            }),
-          ]);
+          // Schedule rather than erase (B12). The account is signed out and
+          // hidden immediately, but the anonymisation runs 30 days later, so a
+          // deletion made in anger at 2am is recoverable — by signing back in,
+          // which is the only cancel flow users reliably find.
+          //
+          // The erasure itself lives in `anonymizeAccount()`, which the nightly
+          // sweep also calls, so the immediate and deferred paths cannot drift.
+          const scheduledAt = await scheduleDeletion(userId);
 
-          return Response.json({ success: true });
+          // The address is read BEFORE scheduling (which nulls it), so the
+          // notice can still be delivered. A failed send must not fail the
+          // deletion — the user asked for this and the schedule is written.
+          if (email) {
+            const on = scheduledAt.toISOString().slice(0, 10);
+            await sendEmail({
+              to: email,
+              subject: 'Your RMH Studios account is scheduled for deletion',
+              html:
+                `<p>Your account is scheduled for permanent deletion on <strong>${on}</strong>.</p>` +
+                `<p>Changed your mind? <a href="${SITE_URL}/login">Sign back in</a> any time before ` +
+                `then and the deletion is cancelled automatically.</p>` +
+                `<p>After that date your profile is anonymised and cannot be recovered.</p>`,
+              text:
+                `Your account is scheduled for permanent deletion on ${on}.\n\n` +
+                `Changed your mind? Sign back in at ${SITE_URL}/login any time before then ` +
+                `and the deletion is cancelled automatically.\n\n` +
+                `After that date your profile is anonymised and cannot be recovered.`,
+            }).catch((err) => {
+              console.error('[account] deletion notice failed:', err);
+            });
+          }
+
+          return Response.json({ success: true, scheduledAt, graceDays: DELETION_GRACE_DAYS });
         },
       ),
     },

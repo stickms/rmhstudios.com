@@ -229,6 +229,9 @@ COPY lib/referrals.server.ts ./lib/referrals.server.ts
 COPY lib/seo.ts ./lib/seo.ts
 COPY lib/social/engagement-effects.server.ts ./lib/social/engagement-effects.server.ts
 COPY lib/streak.server.ts ./lib/streak.server.ts
+COPY lib/notify ./lib/notify/
+COPY lib/account ./lib/account/
+COPY lib/account-lifecycle.ts ./lib/account-lifecycle.ts
 COPY lib/shop/equipped.ts ./lib/shop/equipped.ts
 COPY lib/shop/themes.ts ./lib/shop/themes.ts
 # homes-worker (RMHHomes external-listing scraper cron) needs lib/homes for its

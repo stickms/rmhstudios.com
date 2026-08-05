@@ -15,10 +15,14 @@ import type { PgBoss } from 'pg-boss';
 import { prisma } from '@/lib/prisma.server';
 import { drainOutbox, sweepOutbox } from '@/lib/outbox/outbox.server';
 import { sweepIdempotencyKeys } from '@/lib/api/idempotency.server';
+import { flushDueHeldNotifications } from '@/lib/notify/held.server';
+import { finalizeDueDeletions } from '@/lib/account/deletion.server';
 
 export const OUTBOX_DRAIN_QUEUE = 'outbox.drain';
 export const MAINTENANCE_QUEUE = 'platform.maintenance';
 export const RARITY_ROLLUP_QUEUE = 'achievements.rarity';
+export const QUIET_HOURS_FLUSH_QUEUE = 'notify.quiet-hours-flush';
+export const DELETION_SWEEP_QUEUE = 'account.finalize-deletions';
 
 /**
  * Every minute. The outbox is the delivery path for webhooks and
@@ -30,6 +34,15 @@ export const OUTBOX_DRAIN_CRON = '* * * * *';
 export const MAINTENANCE_CRON = '17 * * * *';
 /** Nightly at 03:20 UTC — a full-table count, so it goes in the quiet window. */
 export const RARITY_ROLLUP_CRON = '20 3 * * *';
+/**
+ * Every 15 minutes. Quiet-hours windows end at whatever local time each user
+ * chose, across every timezone, so the job re-checks each held row's own window
+ * rather than trusting its fire time — the schedule only bounds how late a
+ * flush can be, not which rows are due.
+ */
+export const QUIET_HOURS_FLUSH_CRON = '*/15 * * * *';
+/** Daily at 04:10 UTC. Deletions are scheduled 30 days out; a few hours does not matter. */
+export const DELETION_SWEEP_CRON = '10 4 * * *';
 
 /**
  * Recompute achievement rarity (F7).
@@ -93,10 +106,22 @@ export async function registerMaintenanceCrons(boss: PgBoss): Promise<void> {
   await boss.createQueue(OUTBOX_DRAIN_QUEUE);
   await boss.createQueue(MAINTENANCE_QUEUE);
   await boss.createQueue(RARITY_ROLLUP_QUEUE);
+  await boss.createQueue(QUIET_HOURS_FLUSH_QUEUE);
+  await boss.createQueue(DELETION_SWEEP_QUEUE);
 
   await boss.schedule(OUTBOX_DRAIN_QUEUE, OUTBOX_DRAIN_CRON, {}, { tz: 'UTC' });
   await boss.schedule(MAINTENANCE_QUEUE, MAINTENANCE_CRON, {}, { tz: 'UTC' });
   await boss.schedule(RARITY_ROLLUP_QUEUE, RARITY_ROLLUP_CRON, {}, { tz: 'UTC' });
+  await boss.schedule(QUIET_HOURS_FLUSH_QUEUE, QUIET_HOURS_FLUSH_CRON, {}, { tz: 'UTC' });
+  await boss.schedule(DELETION_SWEEP_QUEUE, DELETION_SWEEP_CRON, {}, { tz: 'UTC' });
+
+  await boss.work(QUIET_HOURS_FLUSH_QUEUE, async () => {
+    await flushDueHeldNotifications();
+  });
+
+  await boss.work(DELETION_SWEEP_QUEUE, async () => {
+    await finalizeDueDeletions();
+  });
 
   await boss.work(OUTBOX_DRAIN_QUEUE, async () => {
     // Drain repeatedly within the tick while there is still work, so a backlog

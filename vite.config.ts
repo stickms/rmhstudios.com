@@ -253,11 +253,16 @@ export default defineConfig({
       //  - warmup: per-worker cold-start warmup — opens the Prisma pool and
       //    primes the anon homepage feed + sidebar caches so the first request
       //    after a deploy/restart doesn't pay the full cold cost.
+      //  - drain: the mirror image of warmup — flushes the in-memory activity
+      //    buffer on SIGTERM. The blue/green hotswap stops the old container on
+      //    every deploy, so without it each deploy drops up to 2s of buffered
+      //    activity from every worker.
       plugins: [
         fileURLToPath(new URL('./server/nitro/reflect-metadata.ts', import.meta.url)),
         fileURLToPath(new URL('./server/nitro/security-headers.ts', import.meta.url)),
         fileURLToPath(new URL('./server/nitro/anon-html-cache.ts', import.meta.url)),
         fileURLToPath(new URL('./server/nitro/warmup.ts', import.meta.url)),
+        fileURLToPath(new URL('./server/nitro/drain.ts', import.meta.url)),
       ],
       rollupConfig: {
         external: heavyExternals.map(

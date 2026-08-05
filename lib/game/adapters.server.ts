@@ -10,11 +10,18 @@
  * interface. Everything above this file — validation, progression, leaderboards,
  * the API surface — is then genuinely shared.
  *
- * Adding a scored game means adding an entry here and one in
- * `lib/game/registry.ts`; a test asserts the two stay in step.
+ * A game no longer HAS to be listed here. An id that is in
+ * `lib/game/registry.ts` and absent below falls through to
+ * `genericAdapter(id)`, which stores it in the shared `GameStat` table — so
+ * adding a scored game is one registry entry, and a bespoke adapter is what you
+ * write when a game needs columns of its own. The registry remains the gate:
+ * an id in neither place is still unknown, and `getGameAdapter` still says so
+ * by returning `undefined`.
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { getGameScoreRules, scoredGameIds } from '@/lib/game/registry';
+import { genericAdapter } from '@/lib/game/generic-adapter.server';
 
 /** One row as the unified leaderboard renders it. */
 export interface LeaderboardRow {
@@ -393,18 +400,74 @@ const ADAPTERS: Record<string, GameAdapter> = {
   'slice-it': sliceIt,
 };
 
-export function getGameAdapter(gameId: string): GameAdapter | undefined {
-  return ADAPTERS[gameId];
+/**
+ * True when `gameId` has a hand-written adapter above (its own Prisma model),
+ * as opposed to falling through to the shared `GameStat` table.
+ *
+ * Callers need this to know which storage they are talking to: a `GameStat`
+ * read can be filtered by any where-fragment, while a bespoke model is reachable
+ * only through the `leaderboard(limit)` on this interface, so a caller narrowing
+ * a board to an audience has to do it in memory for those games. It is NOT a
+ * "does this game exist" test — use `getGameAdapter` for that.
+ */
+export function hasBespokeAdapter(gameId: string): boolean {
+  return Object.hasOwn(ADAPTERS, gameId);
 }
 
-/** Every id with an adapter (submit or leaderboard-only). */
+/**
+ * Generic adapters are memoised per id. Not for speed — building one is a
+ * registry lookup and a closure — but so repeated calls return the same object,
+ * which is what callers comparing adapters by identity would expect from a
+ * lookup that used to be a plain property read.
+ */
+const GENERIC_CACHE = new Map<string, GameAdapter>();
+
+/**
+ * The adapter for a game id, or `undefined` when the id is not a game.
+ *
+ * `undefined` is load-bearing and deliberately still reachable: three callers
+ * (`submitGameScore`, `/api/games/$id/leaderboard`, `/api/v1/leaderboards/$game`)
+ * use it as their unknown-game detector. If every id resolved to an adapter,
+ * the score pipeline would accept submissions for arbitrary strings and the
+ * shared `GameStat` table would become a write endpoint for keys nothing reads.
+ * So the fallback is gated on the registry: known id → adapter, anything else →
+ * `undefined`, exactly as before.
+ *
+ * `Object.hasOwn` rather than a bare index, because `ADAPTERS` is an object
+ * literal and `gameId` comes off a URL: `getGameAdapter('constructor')` used to
+ * return `Object.prototype.constructor`, which is truthy, passes an
+ * `if (!adapter)` guard, and then throws when the caller reaches for
+ * `.leaderboard`.
+ */
+export function getGameAdapter(gameId: string): GameAdapter | undefined {
+  if (Object.hasOwn(ADAPTERS, gameId)) return ADAPTERS[gameId];
+  if (!getGameScoreRules(gameId)) return undefined;
+
+  const cached = GENERIC_CACHE.get(gameId);
+  if (cached) return cached;
+  const built = genericAdapter(gameId);
+  GENERIC_CACHE.set(gameId, built);
+  return built;
+}
+
+/**
+ * Every id that resolves to an adapter — bespoke or generic.
+ *
+ * The union matters to the developer API, which prints this list as "supported
+ * games" when it rejects an unknown one. A registry-only game is served there
+ * like any other, so leaving it out of the list would make the error message
+ * lie about what it just refused.
+ */
 export function adapterGameIds(): string[] {
-  return Object.keys(ADAPTERS);
+  return [...new Set([...Object.keys(ADAPTERS), ...scoredGameIds()])];
 }
 
 /** Ids whose adapter accepts score submissions — must match the registry. */
 export function submittableGameIds(): string[] {
-  return Object.entries(ADAPTERS)
+  const bespoke = Object.entries(ADAPTERS)
     .filter(([, a]) => typeof a.submit === 'function')
     .map(([id]) => id);
+  // Every registry id submits: it either has a bespoke adapter with a `submit`
+  // or gets the generic one, which always has it.
+  return [...new Set([...bespoke, ...scoredGameIds()])];
 }

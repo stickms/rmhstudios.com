@@ -131,6 +131,21 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // pnpm i18n:resources` has been run and the catalogs committed.
   'c-ui': ['move-down', 'move-up'],
   feed: [
+    // ── The Next 100 (2026-08-05) ────────────────────────────────────────
+    // Resume-rail strings (B2). English-only until the DeepSeek translate
+    // pipeline runs; the runtime falls back to English per key.
+    'resume-day',
+    'resume-due',
+    'resume-level',
+    'resume-percent',
+    'resume-progress',
+    'resume-rail-label',
+    'resume-scheduled',
+    'resume-score',
+    'resume-time-left',
+    'resume-title',
+    'resume-wave',
+    'resume-words',
     // 2026-07-28 UI audit fixes; see the note below.
     'read-more',
     'buy-item-aria',
