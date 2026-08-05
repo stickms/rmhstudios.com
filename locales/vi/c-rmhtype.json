@@ -74,6 +74,7 @@
   "practice-action": "Practice your worst keys",
   "practice-failed": "Could not build a practice test",
   "practice-ready": "Practice test ready — it does not count toward global boards",
+  "practice-run": "Practice run on a written-to-order passage — not posted to the leaderboard.",
   "private": "Riêng tư",
   "public": "Công khai",
   "public-rooms": "Phòng công khai",
@@ -103,6 +104,10 @@
   "stat-wpm": "Implied WPM",
   "time": "Thời gian",
   "time-ran-out": "Hết thời gian!",
+  "topic-hint": "Leave empty to type a standard passage.",
+  "topic-label": "Topic (optional)",
+  "topic-placeholder": "e.g. deep sea creatures, the Apollo program",
+  "topic-practice-hint": "Written for you — practice only, so it won't post to the leaderboard.",
   "total-score": "Tổng điểm",
   "try-again": "Thử lại",
   "unban": "Bỏ cấm",
@@ -110,5 +115,6 @@
   "waiting-for-others": "Đang chờ người khác...",
   "worst-title": "Worst keys",
   "wpm": "WPM",
+  "writing-passage": "Writing your passage...",
   "you": "(bạn)"
 }

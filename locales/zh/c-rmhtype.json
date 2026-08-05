@@ -74,6 +74,7 @@
   "practice-action": "Practice your worst keys",
   "practice-failed": "Could not build a practice test",
   "practice-ready": "Practice test ready — it does not count toward global boards",
+  "practice-run": "Practice run on a written-to-order passage — not posted to the leaderboard.",
   "private": "私人",
   "public": "公共",
   "public-rooms": "公共房间",
@@ -103,6 +104,10 @@
   "stat-wpm": "Implied WPM",
   "time": "时间",
   "time-ran-out": "时间到了！",
+  "topic-hint": "Leave empty to type a standard passage.",
+  "topic-label": "Topic (optional)",
+  "topic-placeholder": "e.g. deep sea creatures, the Apollo program",
+  "topic-practice-hint": "Written for you — practice only, so it won't post to the leaderboard.",
   "total-score": "总分",
   "try-again": "再试一次",
   "unban": "解封",
@@ -110,5 +115,6 @@
   "waiting-for-others": "等待别人中……",
   "worst-title": "Worst keys",
   "wpm": "WPM",
+  "writing-passage": "Writing your passage...",
   "you": "（你）"
 }

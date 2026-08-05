@@ -50,6 +50,14 @@ export interface RmhTypeStore {
   soloPassageId: string | null;
   soloResult: SoloResult | null;
   soloCountdown: number | null;
+  /**
+   * The topic whose passage is being written right now, or null.
+   *
+   * Solo start is normally instant; asking for a topic puts a multi-second
+   * DeepSeek call in front of the countdown, and this is what the solo page
+   * shows during it so the button press does not look ignored.
+   */
+  soloGeneratingTopic: string | null;
 
   // Actions
   setConnectionStatus: (status: RmhTypeStore['connectionStatus']) => void;
@@ -76,6 +84,7 @@ export interface RmhTypeStore {
   setSoloPassage: (passageId: string, text: string) => void;
   setSoloResult: (result: SoloResult) => void;
   setSoloCountdown: (seconds: number | null) => void;
+  setSoloGeneratingTopic: (topic: string | null) => void;
   clearSolo: () => void;
 
   updateSettings: (partial: Partial<RmhTypeUserSettings>) => void;
@@ -96,6 +105,7 @@ export const useRmhTypeStore = create<RmhTypeStore>()(
       soloPassageId: null,
       soloResult: null,
       soloCountdown: null,
+      soloGeneratingTopic: null,
 
       setConnectionStatus: (status) => set({ connectionStatus: status }),
       setPeersWaiting: (waiting) => set({ peersWaiting: waiting }),
@@ -202,8 +212,15 @@ export const useRmhTypeStore = create<RmhTypeStore>()(
         set({ soloPassageId: passageId, soloPassage: text, soloResult: null }),
       setSoloResult: (result) => set({ soloResult: result }),
       setSoloCountdown: (seconds) => set({ soloCountdown: seconds }),
+      setSoloGeneratingTopic: (topic) => set({ soloGeneratingTopic: topic }),
       clearSolo: () =>
-        set({ soloPassage: null, soloPassageId: null, soloResult: null, soloCountdown: null }),
+        set({
+          soloPassage: null,
+          soloPassageId: null,
+          soloResult: null,
+          soloCountdown: null,
+          soloGeneratingTopic: null,
+        }),
 
       updateSettings: (partial) => {
         set((state) => ({
@@ -225,6 +242,7 @@ export const useRmhTypeStore = create<RmhTypeStore>()(
           soloPassageId: null,
           soloResult: null,
           soloCountdown: null,
+          soloGeneratingTopic: null,
         }),
     }),
     {
