@@ -222,104 +222,103 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
           headers: nextCursor ? { 'X-Next-Cursor': nextCursor } : {},
         });
       }),
-      POST: defineHandler({}, async ({ request, params, session }) => {
-        const ban = await getActiveBan(session.user.id);
-        if (ban) {
-          return Response.json(
-            { error: `Your account is suspended${ban.reason ? `: ${ban.reason}` : ''}` },
-            { status: 403 },
+      // `idempotent: true` — the offline outbox (B10) may queue and replay a
+      // comment, so the write is deduplicated by `Idempotency-Key`. The wrapper
+      // consumes the body to hash it, which is why validation moved to `body:`:
+      // a second `request.json()` in the handler would throw on a used stream.
+      POST: defineHandler(
+        { body: createCommentSchema, verboseValidationErrors: true, idempotent: true },
+        async ({ request, params, session, body: input }) => {
+          const ban = await getActiveBan(session.user.id);
+          if (ban) {
+            return Response.json(
+              { error: `Your account is suspended${ban.reason ? `: ${ban.reason}` : ''}` },
+              { status: 403 },
+            );
+          }
+
+          const ip = getClientIp(request);
+          const { allowed, retryAfter } = rateLimit(ip, {
+            limit: 10,
+            windowMs: 60_000,
+            prefix: 'rmhark-comment',
+          });
+          if (!allowed) {
+            return Response.json(
+              { error: 'Too many requests' },
+              { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+            );
+          }
+
+          const { id } = params;
+
+          // Enforce the author's reply control (anti-harassment). The author can
+          // always reply to their own post.
+          const target = await prisma.rMHark.findUnique({
+            where: { id },
+            select: { userId: true, replyControl: true, content: true },
+          });
+          if (!target) {
+            return Response.json({ error: 'Post not found' }, { status: 404 });
+          }
+          const mayReply = await canReplyToPost(
+            {
+              userId: target.userId,
+              replyControl: target.replyControl as ReplyControl,
+              content: target.content,
+            },
+            session.user.id,
           );
-        }
+          if (!mayReply) {
+            return Response.json(
+              { error: 'The author limited who can reply to this post' },
+              { status: 403 },
+            );
+          }
 
-        const ip = getClientIp(request);
-        const { allowed, retryAfter } = rateLimit(ip, {
-          limit: 10,
-          windowMs: 60_000,
-          prefix: 'rmhark-comment',
-        });
-        if (!allowed) {
+          // Delegate to the shared engagement service (counters, SSE, notifications,
+          // mention fan-out, XP, quests, achievements, and webhooks all live there).
+          const result = await createComment({
+            userId: session.user.id,
+            postId: id,
+            content: input.content,
+            parentId: input.parentId ?? null,
+          });
+          if (!result.found || !result.comment) {
+            return Response.json({ error: 'Post not found' }, { status: 404 });
+          }
+          const comment = result.comment;
+
+          // Maintain the parent comment's denormalized reply tally when this is a
+          // reply. Atomic column increment (best-effort — the counter is reconciled
+          // out-of-band, so a rare failure here must not fail the reply itself).
+          if (input.parentId) {
+            await prisma.rMHarkComment
+              .update({
+                where: { id: input.parentId },
+                data: { replyCount: { increment: 1 } },
+              })
+              .catch(() => {});
+          }
+
           return Response.json(
-            { error: 'Too many requests' },
-            { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+            {
+              ...comment,
+              user: resolveUser(comment.user),
+              likeCount: 0,
+              repostCount: 0,
+              viewCount: 0,
+              liked: false,
+              reposted: false,
+              replies: [],
+              deletedAt: null,
+              deletedByAdmin: false,
+              reactions: [],
+            },
+            { status: 201 },
           );
-        }
-
-        const { id } = params;
-        const body = await request.json();
-        const parsed = createCommentSchema.safeParse(body);
-        if (!parsed.success) {
-          return Response.json(
-            { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-            { status: 400 },
-          );
-        }
-
-        // Enforce the author's reply control (anti-harassment). The author can
-        // always reply to their own post.
-        const target = await prisma.rMHark.findUnique({
-          where: { id },
-          select: { userId: true, replyControl: true, content: true },
-        });
-        if (!target) {
-          return Response.json({ error: 'Post not found' }, { status: 404 });
-        }
-        const mayReply = await canReplyToPost(
-          {
-            userId: target.userId,
-            replyControl: target.replyControl as ReplyControl,
-            content: target.content,
-          },
-          session.user.id,
-        );
-        if (!mayReply) {
-          return Response.json(
-            { error: 'The author limited who can reply to this post' },
-            { status: 403 },
-          );
-        }
-
-        // Delegate to the shared engagement service (counters, SSE, notifications,
-        // mention fan-out, XP, quests, achievements, and webhooks all live there).
-        const result = await createComment({
-          userId: session.user.id,
-          postId: id,
-          content: parsed.data.content,
-          parentId: parsed.data.parentId ?? null,
-        });
-        if (!result.found || !result.comment) {
-          return Response.json({ error: 'Post not found' }, { status: 404 });
-        }
-        const comment = result.comment;
-
-        // Maintain the parent comment's denormalized reply tally when this is a
-        // reply. Atomic column increment (best-effort — the counter is reconciled
-        // out-of-band, so a rare failure here must not fail the reply itself).
-        if (parsed.data.parentId) {
-          await prisma.rMHarkComment
-            .update({
-              where: { id: parsed.data.parentId },
-              data: { replyCount: { increment: 1 } },
-            })
-            .catch(() => {});
-        }
-
-        return Response.json(
-          {
-            ...comment,
-            user: resolveUser(comment.user),
-            likeCount: 0,
-            repostCount: 0,
-            viewCount: 0,
-            liked: false,
-            reposted: false,
-            replies: [],
-            deletedAt: null,
-            deletedByAdmin: false,
-            reactions: [],
-          },
-          { status: 201 },
-        );
-      }),
+        },
+      ),
     },
   },
 });

@@ -28,6 +28,13 @@
 import { io, type Socket, type ManagerOptions, type SocketOptions } from 'socket.io-client';
 import { ensureTrailingSlash } from '@/lib/url';
 import type { RealtimeStatus } from './types';
+import {
+  PROTOCOL_AUTH_KEY,
+  PROTOCOL_OUTDATED_EVENT,
+  PROTOCOL_OUTDATED_REASON,
+  PROTOCOL_VERSION,
+  type ProtocolOutdated,
+} from './protocol';
 
 /** Credentials handed to the server on every (re)connection attempt. */
 export type AuthResolver = () => Promise<Record<string, unknown>> | Record<string, unknown>;
@@ -56,11 +63,30 @@ export interface RealtimeClientOptions {
   bind?: (socket: Socket) => void;
   /** Max queued emits; beyond this the oldest are dropped. */
   outboxLimit?: number;
+  /**
+   * The hub told us this tab is running an out-of-date protocol (E2).
+   *
+   * Render a "a new version is available — reload to keep playing" prompt.
+   * **Do not reload from here.** Dropping someone mid-round to fix a mismatch
+   * they were surviving is the worse outcome — see `protocolOutdated`.
+   */
+  onProtocolOutdated?: (info: ProtocolOutdated) => void;
 }
 
 export interface RealtimeClient {
   readonly socket: Socket;
   readonly status: RealtimeStatus;
+  /**
+   * Set once the hub has said this tab's protocol is out of date (E2); null
+   * otherwise.
+   *
+   * Read it to render the reload prompt. The client stops retrying when this is
+   * set — an outdated version fails identically forever — so `status` will be
+   * `error` with reason `protocol-outdated`. Nothing here reloads the page:
+   * the whole point of surfacing it as state is that the PLAYER picks the
+   * moment, not the socket layer mid-round.
+   */
+  readonly protocolOutdated: ProtocolOutdated | null;
   /**
    * Send an event. Returns true if it went out on the wire.
    *
@@ -103,6 +129,7 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
     onConnect,
     bind,
     outboxLimit = DEFAULT_OUTBOX_LIMIT,
+    onProtocolOutdated,
   } = options;
 
   if (!url) {
@@ -116,6 +143,7 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
   /** Distinguishes a cold start from a recovery. */
   let hasConnected = false;
   let destroyed = false;
+  let protocolOutdated: ProtocolOutdated | null = null;
   const outbox: { event: string; data?: unknown }[] = [];
 
   const setStatus = (next: RealtimeStatus, reason?: string) => {
@@ -132,19 +160,48 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
     auth: (cb) => {
       // Resolved per attempt so a reconnect after a token refresh carries the
       // new token rather than the one that just expired.
+      //
+      // The protocol version (E2) is stamped on AFTER the app's credentials, so
+      // an app cannot shadow it with an `auth` key of its own — that handshake
+      // field is the hub's only way to know this tab is current.
       Promise.resolve()
         .then(auth)
-        .then((credentials) => cb(credentials))
+        .then((credentials) => cb({ ...credentials, [PROTOCOL_AUTH_KEY]: PROTOCOL_VERSION }))
         .catch((error) => {
           console.error(`[${name}] Could not resolve credentials`, error);
-          // Handing back an empty object lets the server reject cleanly, which
+          // Handing back only the version lets the server reject cleanly, which
           // surfaces as `connect_error` below rather than hanging the attempt.
-          cb({});
+          cb({ [PROTOCOL_AUTH_KEY]: PROTOCOL_VERSION });
         });
     },
   });
 
   bind?.(socket);
+
+  // ─── Protocol version (E2) ──────────────────────────────────────────────
+
+  /**
+   * Latch the "you are running an old bundle" verdict.
+   *
+   * Retrying is stopped for the same reason an auth failure stops it: an
+   * outdated version fails identically forever, so every retry is a wasted
+   * handshake and a wasted log line. What is deliberately NOT done here is
+   * `location.reload()`. The client is by definition mid-something when this
+   * arrives — a hand of poker, a typing race, a match point — and reloading
+   * ends that instantly to fix a mismatch the player was, at worst, about to
+   * notice. The app renders the prompt; the player picks the moment.
+   */
+  const markOutdated = (info: Partial<ProtocolOutdated> | undefined) => {
+    if (protocolOutdated || destroyed) return;
+    protocolOutdated = { expected: info?.expected ?? '', received: info?.received ?? '' };
+    socket.io.reconnection(false);
+    setStatus('error', PROTOCOL_OUTDATED_REASON);
+    onProtocolOutdated?.(protocolOutdated);
+  };
+
+  socket.on(PROTOCOL_OUTDATED_EVENT, (info: Partial<ProtocolOutdated> | undefined) => {
+    markOutdated(info);
+  });
 
   // ─── Lifecycle ──────────────────────────────────────────────────────────
 
@@ -184,6 +241,15 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
 
   socket.on('connect_error', (error) => {
     const message = error?.message ?? '';
+    // A protocol mismatch is checked FIRST, and by exact reason rather than by
+    // the fuzzy regex below: "protocol-outdated" would otherwise have to miss
+    // /auth|token|unauthor/ by luck, and the two need very different prompts —
+    // "sign in again" is exactly the wrong thing to tell someone whose only
+    // problem is a stale tab.
+    if (message === PROTOCOL_OUTDATED_REASON) {
+      markOutdated((error as { data?: Partial<ProtocolOutdated> })?.data);
+      return;
+    }
     // An auth failure will fail identically forever, so retrying is just noise
     // — surface it and let the app re-authenticate.
     if (/auth|token|unauthor/i.test(message)) {
@@ -234,6 +300,9 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
     socket,
     get status() {
       return status;
+    },
+    get protocolOutdated() {
+      return protocolOutdated;
     },
     emit(event, data, emitOptions) {
       if (socket.connected) {

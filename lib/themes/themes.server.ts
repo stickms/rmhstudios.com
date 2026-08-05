@@ -9,14 +9,9 @@
  */
 import { prisma } from '@/lib/prisma.server';
 import { transferCoins, InsufficientFundsError } from '@/lib/economy/ledger.server';
-import {
-  canPublish,
-  THEME_PRICE_MIN,
-  THEME_PRICE_MAX,
-  type ThemeTokens,
-  type UserThemeView,
-} from '@/lib/themes/tokens';
-import { themeTokensSchema, upcastTokens, readTokens } from '@/lib/themes/tokens-schema';
+import { type ThemeTokens, type UserThemeView } from '@/lib/themes/tokens';
+import { readTokens } from '@/lib/themes/tokens-schema';
+import { validateTheme, validateThemeForPublish } from '@/lib/themes/validate';
 import { getUserTier } from '@/lib/entitlements';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 
@@ -26,10 +21,22 @@ export class ThemeError extends Error {}
 
 const inventoryItemId = (themeId: string) => `user:${themeId}`;
 
+/**
+ * The ledger dedupe token for a theme sale. Stable per (buyer, theme) because
+ * ownership is boolean — buying twice is never a legitimate intent, so a repeat
+ * is always a retry or a double-click.
+ */
+export const themeBuyRefId = (buyerId: string, themeId: string) => `theme-buy:${buyerId}:${themeId}`;
+
+/**
+ * Storage gate — the closed token contract plus a safety check on the DERIVED
+ * `--site-*` map (see `./validate`). Drafts are allowed to be illegible; the
+ * contrast gate belongs to publish, not to save.
+ */
 function parseTokens(raw: unknown): ThemeTokens {
-  const parsed = themeTokensSchema.safeParse(raw);
-  if (!parsed.success) throw new ThemeError('INVALID_TOKENS');
-  return parsed.data;
+  const result = validateTheme(raw);
+  if (!result.ok) throw new ThemeError(result.code);
+  return result.tokens;
 }
 
 /**
@@ -137,12 +144,13 @@ export async function deleteOrDelistTheme(authorId: string, id: string): Promise
 
 export async function publishTheme(authorId: string, id: string, priceCoins: number): Promise<void> {
   await requireMember(authorId);
-  if (priceCoins < THEME_PRICE_MIN || priceCoins > THEME_PRICE_MAX) throw new ThemeError('PRICE_RANGE');
   const theme = await prisma.userTheme.findUnique({ where: { id }, select: { authorId: true, tokens: true } });
   if (!theme) throw new ThemeError('NOT_FOUND');
   if (theme.authorId !== authorId) throw new ThemeError('FORBIDDEN');
-  // Upcast v1 drafts before the gate; the gate is pure math on v2 token values.
-  if (!canPublish(upcastTokens(theme.tokens))) throw new ThemeError('CONTRAST_GATE');
+  // One gate for price, token safety and WCAG AA. v1 drafts upcast inside it,
+  // so an old draft is held to the same legibility bar as a new one.
+  const result = validateThemeForPublish(theme.tokens, priceCoins);
+  if (!result.ok) throw new ThemeError(result.code === 'CONTRAST' ? 'CONTRAST_GATE' : result.code);
   await prisma.userTheme.update({ where: { id }, data: { status: 'PUBLISHED', priceCoins } });
 }
 
@@ -162,33 +170,52 @@ export async function buyTheme(buyerId: string, id: string): Promise<BuyResult> 
   const price = theme.priceCoins;
   const payout = price - Math.floor(price * FEE_RATE);
 
-  return prisma.$transaction(async (tx) => {
-    // One transfer replaces the debit/credit pair AND the two ledger rows it
-    // used to write. Those rows double-counted the buyer: they recorded the
-    // buyer as sender of `payout` *and* as recipient of `-price`, so summing
-    // the ledger overstated the spend by the payout every time.
-    try {
-      await transferCoins(buyerId, theme.authorId, price, {
+  try {
+    return await prisma.$transaction(async (tx) => {
+      // One transfer replaces the debit/credit pair AND the two ledger rows it
+      // used to write. Those rows double-counted the buyer: they recorded the
+      // buyer as sender of `payout` *and* as recipient of `-price`, so summing
+      // the ledger overstated the spend by the payout every time.
+      //
+      // The idempotency key is what makes a double-submit safe. `isOwned` above
+      // is a read-then-write check: two concurrent buys both observe "not
+      // owned" and both used to charge. The key is unique per (buyer, theme) —
+      // a user can own a theme exactly once — so the second transaction
+      // collides on it and unwinds instead of charging again.
+      const paid = await transferCoins(buyerId, theme.authorId, price, {
         tx,
         fee: price - payout,
         type: 'PURCHASE',
         entityType: 'user_theme',
         entityId: id,
         note: `Theme: ${theme.name}`,
+        idempotencyKey: themeBuyRefId(buyerId, id),
       });
-    } catch (err) {
-      if (err instanceof InsufficientFundsError) throw new ThemeError('INSUFFICIENT_COINS');
-      throw err;
-    }
-    const buyer = await tx.userProfile.findUnique({ where: { userId: buyerId }, select: { coins: true } });
-    await tx.userInventory.upsert({
-      where: { userId_itemId: { userId: buyerId, itemId: inventoryItemId(id) } },
-      create: { userId: buyerId, itemId: inventoryItemId(id), kind: 'THEME' },
-      update: {},
+
+      // A replay means the buyer already paid for this theme. Re-granting the
+      // entitlement is harmless (the upsert is a no-op) but re-counting the
+      // sale is not, so the increment is conditional on money having moved.
+      await tx.userInventory.upsert({
+        where: { userId_itemId: { userId: buyerId, itemId: inventoryItemId(id) } },
+        create: { userId: buyerId, itemId: inventoryItemId(id), kind: 'THEME' },
+        update: {},
+      });
+      if (paid.applied) {
+        await tx.userTheme.update({ where: { id }, data: { sales: { increment: 1 } } });
+      }
+
+      const buyer = await tx.userProfile.findUnique({ where: { userId: buyerId }, select: { coins: true } });
+      return { balance: buyer?.coins ?? 0 };
     });
-    await tx.userTheme.update({ where: { id }, data: { sales: { increment: 1 } } });
-    return { balance: buyer?.coins ?? 0 };
-  });
+  } catch (err) {
+    if (err instanceof InsufficientFundsError) throw new ThemeError('INSUFFICIENT_COINS');
+    // The loser of a concurrent double-submit collides on the idempotency key
+    // or the inventory unique — both mean "already bought", not a server error.
+    if (typeof err === 'object' && err !== null && (err as { code?: string }).code === 'P2002') {
+      throw new ThemeError('ALREADY_OWNED');
+    }
+    throw err;
+  }
 }
 
 /** Themes the viewer owns (bought or authored) — the inventory shelf (§14.2). */

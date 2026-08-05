@@ -1,20 +1,27 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { validateImageBuffer, detectImageExt } from '@/lib/slice-it/upload-validation';
-import { putObject } from '@/lib/storage/s3.server';
-import {
-  feedImageKey,
-  feedImageUrl,
-  contentTypeForFilename,
-  withImageDimensions,
-} from '@/lib/storage/keys';
-import { optimizeImage, imageDimensions } from '@/lib/image-optimize';
+import { ingest, IngestError } from '@/lib/media/ingest.server';
 
-// Cap stored dimensions; feed images never need to be larger than this.
-const MAX_DIMENSION = 2048;
-const WEBP_QUALITY = 82;
+/**
+ * POST /api/rmharks/image — the site's image upload endpoint.
+ *
+ * Despite the name it is not feed-only: the composer, the DM and group-chat
+ * views, the announcement editor and the homes listing uploader all post here.
+ *
+ * Validation, metadata stripping, the WebP encode, the key and the store are
+ * `lib/media/ingest.server.ts` under the `post` policy (C10) — this route used
+ * to spell all five out, and so did five other upload routes, with slightly
+ * different answers each time.
+ *
+ * One deliberate behaviour change came with that: an image sharp cannot decode
+ * is now REFUSED. The old code caught the conversion failure and stored the
+ * original bytes, which is the one path on this route that put un-re-encoded
+ * camera output into public storage — GPS EXIF and all. The storage layer only
+ * reliably strips JPEG (`compressForStorage`), so that fallback was the leak.
+ * An image the encoder cannot read is a broken upload, and the honest answer is
+ * to say so rather than to publish it intact.
+ */
 
-const FEED_IMAGE_MAX_BYTES = 5 * 1024 * 1024; // 5 MB per image
 const MAX_IMAGES = 4;
 
 export const Route = createFileRoute('/api/rmharks/image')({
@@ -29,7 +36,7 @@ export const Route = createFileRoute('/api/rmharks/image')({
             message: 'Too many uploads. Try again later.',
           },
         },
-        async ({ request, session }) => {
+        async ({ request, userId }) => {
           const formData = await request.formData();
           const files = formData
             .getAll('images')
@@ -45,62 +52,18 @@ export const Route = createFileRoute('/api/rmharks/image')({
           }
 
           const urls: string[] = [];
-          for (const file of files) {
-            if (file.size > FEED_IMAGE_MAX_BYTES) {
-              return Response.json(
-                {
-                  error: `Image too large. Maximum size is ${FEED_IMAGE_MAX_BYTES / 1024 / 1024} MB.`,
-                },
-                { status: 400 },
-              );
+          try {
+            // Sequential, as before: sharp is heavy, and four concurrent decodes
+            // of 5 MB inputs is the shape of an out-of-memory report.
+            for (const file of files) {
+              const stored = await ingest(file, 'post', { userId });
+              urls.push(stored.url);
             }
-            const buffer = Buffer.from(await file.arrayBuffer());
-            const validation = validateImageBuffer(buffer);
-            if (!validation.ok) {
-              return Response.json({ error: validation.error }, { status: 400 });
+          } catch (err) {
+            if (err instanceof IngestError) {
+              return Response.json({ error: err.message }, { status: err.status });
             }
-            const ext = detectImageExt(buffer);
-            if (!ext) {
-              return Response.json({ error: 'Unsupported image format.' }, { status: 400 });
-            }
-
-            // Compress to WebP before storing (smaller files, faster loads).
-            // Animated GIFs become animated WebP; static images are auto-oriented
-            // from EXIF. Fall back to the original bytes if conversion fails so an
-            // upload never breaks on an odd image.
-            let outBuffer: Buffer = buffer;
-            let outExt: string = ext;
-            let outContentType = contentTypeForFilename(`x${ext}`);
-            // Encoded pixel dimensions so the feed can reserve exact layout space
-            // (prevents the images-load-then-jump layout shift).
-            let dims: { width: number; height: number } | null = null;
-            try {
-              const optimized = await optimizeImage(buffer, {
-                width: MAX_DIMENSION,
-                height: MAX_DIMENSION,
-                quality: WEBP_QUALITY,
-                format: 'webp',
-                animated: ext === '.gif',
-                autoOrient: ext !== '.gif',
-              });
-              outBuffer = optimized.buffer;
-              outExt = '.webp';
-              outContentType = optimized.contentType;
-              dims = { width: optimized.width, height: optimized.height };
-            } catch (err) {
-              console.warn('[rmhark-image] webp conversion failed, storing original:', err);
-              // Still tag dimensions off the original so the reserve-space path works.
-              dims = await imageDimensions(buffer);
-            }
-
-            const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-            const filename = withImageDimensions(
-              `${session.user.id}-${uniqueSuffix}${outExt}`,
-              dims?.width,
-              dims?.height,
-            );
-            await putObject(feedImageKey(filename), outBuffer, outContentType);
-            urls.push(feedImageUrl(filename));
+            throw err;
           }
 
           return Response.json({ urls });

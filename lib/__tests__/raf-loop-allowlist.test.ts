@@ -107,6 +107,10 @@ const ALLOW = new Set<string>([
   'components/breakpoint/GameView.tsx',
   'components/cursed-logic/MinigameOverlay.tsx',
   'components/dream-rift/MenuBackdrop.tsx',
+  // One-shot, not a loop: a single deferred frame that restores the caret after
+  // a smart-paste rewrites the textarea value (B16). It schedules no successor,
+  // so it settles by construction.
+  'components/feed/ComposeBox.tsx',
   'components/feed/GhostTextArea.tsx',
   'components/feed/HandleInput.tsx',
   'components/feed/MentionTextarea.tsx',

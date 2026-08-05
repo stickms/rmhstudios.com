@@ -67,6 +67,16 @@ export async function compressVideo(input: Buffer): Promise<CompressedVideo> {
       '-hide_banner',
       '-loglevel', 'error',
       '-i', inPath,
+      // Drop the container's global metadata. ffmpeg's DEFAULT is
+      // `-map_metadata 0` — it copies the input's metadata into the output —
+      // and a clip straight off a phone carries
+      // `com.apple.quicktime.location.ISO6709` (or an Android `location` tag):
+      // the coordinates where it was filmed. Nothing downstream removes it,
+      // because `compressForStorage` treats every `video/*` body as
+      // incompressible and returns it untouched. Same policy as the image path
+      // (`lib/media/ingest.server.ts` — `strip` is declared, never inherited);
+      // this is where a video's copy of it lives.
+      '-map_metadata', '-1',
       '-vf', scale,
       '-c:v', 'libx264',
       '-preset', 'veryfast',

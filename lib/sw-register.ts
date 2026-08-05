@@ -9,6 +9,7 @@
 // NOT from '@/lib/discord-sdk' — see that module's re-export note; importing it
 // here would drag the Activity SDK onto every page's critical path.
 import { isDiscordActivity } from '@/lib/discord-activity';
+import { initOfflineOutbox } from '@/lib/offline/outbox';
 
 export function registerServiceWorker(): void {
   if (!import.meta.env.PROD) return;
@@ -19,6 +20,9 @@ export function registerServiceWorker(): void {
   const register = () => {
     navigator.serviceWorker
       .register('/sw.js', { scope: '/' })
+      // The worker's offline outbox (B10) needs a page-side listener for its
+      // progress messages, and a replay nudge where Background Sync is absent.
+      .then(() => initOfflineOutbox())
       .catch((err) => console.error('[sw] registration failed:', err));
   };
   if (document.readyState === 'complete') register();

@@ -130,6 +130,7 @@ COPY lib/call/state.ts ./lib/call/state.ts
 # room's countdown and the client's countdown can't disagree. Import-free
 # types + constants, so a single-file copy resolves.
 COPY lib/shared/realtime/types.ts ./lib/shared/realtime/types.ts
+COPY lib/shared/realtime/contract.ts ./lib/shared/realtime/contract.ts
 # RMHType's event names. The socket-server handler imports them rather than
 # inlining the strings (the repo-wide rule — see server/CLAUDE.md), and the
 # module is a bare constant map, so copy just the file rather than the whole

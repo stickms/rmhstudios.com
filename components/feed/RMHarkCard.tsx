@@ -28,6 +28,7 @@ import { useResolvedUser, useSession } from'@/components/Providers';
 import { useFreshUser } from'@/stores/userDisplayStore';
 import { relativeTimeShort } from'@/lib/utils';
 import { RelativeTime } from'@/components/ui/RelativeTime';
+import { EditHistoryButton } from'./EditHistory';
 import { useTranslation } from'react-i18next';
 import { useLocaleStore } from'@/stores/localeStore';
 import { LOCALE_TO_LANGUAGE_NAME } from'@/lib/i18n/config';
@@ -365,11 +366,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  ·{' '}
  <RelativeTime date={item.createdAt} format={relativeTimeShort} />
  </span>
- {item.edited && (
- <span className="text-site-text-dim shrink-0"title="Edited">
- · {t('edited', { defaultValue:'edited'})}
- </span>
- )}
+ {item.edited && <EditHistoryButton postId={actualId} />}
  </div>
 
  {/* Locked (paid) post — show paywall instead of content/media */}

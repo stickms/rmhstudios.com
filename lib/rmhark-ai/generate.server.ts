@@ -83,10 +83,12 @@ const BASE_POST_RULES = [
  *   If the user has already started typing, their `draft` is built upon rather
  *   than ignored — same intent, specifics, and voice, just finished.
  */
-export async function generatePost(opts: {
-  persona?: string;
-  draft?: string;
-} = {}): Promise<string> {
+export async function generatePost(
+  opts: {
+    persona?: string;
+    draft?: string;
+  } = {},
+): Promise<string> {
   const shape = randomItem(POST_SHAPES);
   const draft = opts.draft?.trim();
 
@@ -103,7 +105,7 @@ export async function generatePost(opts: {
     : [
         'You help a user draft a post for their social feed.',
         draft
-          ? "The user has already started writing. Build on their draft: keep their intent, topic, specifics, and tone, and finish/refine it into a complete post. Do not change the subject."
+          ? 'The user has already started writing. Build on their draft: keep their intent, topic, specifics, and tone, and finish/refine it into a complete post. Do not change the subject.'
           : 'Write something authentic, specific, and a little interesting — the kind of thing that sparks replies.',
         BASE_POST_RULES,
       ].join('\n');
@@ -208,14 +210,11 @@ export async function generatePoll(opts: {
  * post it is quoting. Stays in character with `persona`. Never repeats the
  * quoted text; returns a body clamped to the post limit.
  */
-export async function generateQuote(opts: {
-  persona?: string;
-  quoted: string;
-}): Promise<string> {
+export async function generateQuote(opts: { persona?: string; quoted: string }): Promise<string> {
   const system = [
     opts.persona
       ? [
-          'You are roleplaying as a specific person quote-reposting someone else\'s post. Stay completely in character.',
+          "You are roleplaying as a specific person quote-reposting someone else's post. Stay completely in character.",
           'Never reveal or hint that you are an AI. Follow the VOICE rules exactly:',
           '',
           opts.persona,
@@ -229,7 +228,10 @@ export async function generateQuote(opts: {
   const raw = await chat(
     [
       { role: 'system', content: system },
-      { role: 'user', content: `The post you are quoting:\n"""${opts.quoted.slice(0, 280)}"""\n\nWrite your quote-repost comment.` },
+      {
+        role: 'user',
+        content: `The post you are quoting:\n"""${opts.quoted.slice(0, 280)}"""\n\nWrite your quote-repost comment.`,
+      },
     ],
     { maxTokens: 160, temperature: 1.05 },
   );
@@ -252,7 +254,9 @@ export interface GeneratedCommunity {
  * parsed into a usable community. Fields are clamped to the Community schema's
  * caps (name 60, description 500, icon 8).
  */
-export async function generateCommunity(opts: { seed?: string } = {}): Promise<GeneratedCommunity | null> {
+export async function generateCommunity(
+  opts: { seed?: string } = {},
+): Promise<GeneratedCommunity | null> {
   const system = [
     'You invent a small online community / sub-forum people would actually join. Output STRICT JSON only — no prose, no markdown fences.',
     'Schema: {"name": string, "description": string, "icon": string}',
@@ -274,9 +278,17 @@ export async function generateCommunity(opts: { seed?: string } = {}): Promise<G
       { maxTokens: 160, temperature: 1.15 },
     );
     const parsed = JSON.parse(stripJson(raw)) as Partial<GeneratedCommunity>;
-    const name = typeof parsed.name === 'string' ? parsed.name.trim().replace(/^#+|^c\//i, '').trim().slice(0, 60) : '';
+    const name =
+      typeof parsed.name === 'string'
+        ? parsed.name
+            .trim()
+            .replace(/^#+|^c\//i, '')
+            .trim()
+            .slice(0, 60)
+        : '';
     if (name.length < 2) return null;
-    const description = typeof parsed.description === 'string' ? parsed.description.trim().slice(0, 500) : '';
+    const description =
+      typeof parsed.description === 'string' ? parsed.description.trim().slice(0, 500) : '';
     // Keep whole code points within the icon column's 8-unit cap (no split
     // surrogate pairs), falling back to a default emoji.
     let icon = '';
@@ -310,7 +322,10 @@ export async function generateGifQuery(opts: { text: string }): Promise<string> 
     const raw = await chat(
       [
         { role: 'system', content: system },
-        { role: 'user', content: `Post:\n"""${opts.text.trim().slice(0, 280)}"""\n\nGive the GIF search query.` },
+        {
+          role: 'user',
+          content: `Post:\n"""${opts.text.trim().slice(0, 280)}"""\n\nGive the GIF search query.`,
+        },
       ],
       { maxTokens: 16, temperature: 0.8 },
     );

@@ -99,6 +99,10 @@ export const Route = createFileRoute('/api/rmharks/$id')({
           type: 'rmhark',
           createdAt: rmhark.createdAt.toISOString(),
           content: isDeleted ? deletedMessage : locked ? '' : rmhark.content,
+          // F23: the detail view needs to know an edit happened to offer the
+          // history affordance. Without it the marker seeded from the feed card
+          // vanished the moment this response landed.
+          edited: !isDeleted && !!rmhark.editedAt,
           user: resolveUser(rmhark.user),
           likeCount: rmhark.likeCount,
           commentCount: rmhark.commentCount,

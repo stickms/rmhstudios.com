@@ -34,6 +34,7 @@ import { LinkPreview } from'./LinkPreview';
 import { UserAvatar } from'./UserAvatar';
 import { ThreadSummary } from'./ThreadSummary';
 import { RelatedPosts } from'./RelatedPosts';
+import { EditHistoryButton } from'./EditHistory';
 
 interface PostDetailProps {
  postId: string;
@@ -417,7 +418,10 @@ export function PostDetail({ postId }: PostDetailProps) {
  )}
 
  {/* Full timestamp */}
- <p className="text-sm text-site-text-dim mb-3">{formatFullDate(post.createdAt)}</p>
+ <p className="text-sm text-site-text-dim mb-3">
+ {formatFullDate(post.createdAt)}
+ {post.edited && !post.deletedAt ? <EditHistoryButton postId={postId} className="text-sm"/> : null}
+ </p>
 
  {/* Engagement stats bar. `flex-wrap` + `whitespace-nowrap` per stat: on a
  320px screen this row used to break INSIDE a stat, stranding "reRMHarks"

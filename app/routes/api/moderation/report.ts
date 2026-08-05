@@ -2,28 +2,14 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { notifyAdminsOfReview } from '@/lib/admin-review.server';
-import { z } from 'zod';
+// The reason taxonomy and the length cap live in a client-safe module so the
+// report dialog validates against the same declaration this route enforces.
+import { reportSchema } from '@/lib/moderation/report-schema';
 
 /**
  * POST /api/moderation/report — file a content report for admin review.
  * Deduplicates: a user can only have one open report per entity.
  */
-const reportSchema = z.object({
-  entityType: z.enum(['rmhark', 'comment', 'user', 'build', 'dm']),
-  entityId: z.string().min(1).max(64),
-  reason: z.enum([
-    'SPAM',
-    'HARASSMENT',
-    'HATE',
-    'VIOLENCE',
-    'SEXUAL',
-    'SELF_HARM',
-    'MISINFORMATION',
-    'ILLEGAL',
-    'OTHER',
-  ]),
-  details: z.string().max(1000).optional(),
-});
 
 /** Best-effort lookup of who owns the reported content, for triage. */
 async function resolveTargetUser(entityType: string, entityId: string): Promise<string | null> {

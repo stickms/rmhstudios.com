@@ -14,15 +14,20 @@ import (
 type dashboard struct {
 	prober    *Prober
 	startedAt time.Time
+	slo       SLOConfig
 }
 
 // newDashboard constructs the handler mux for the status service. startedAt is
 // the process/service start time, used to report /health uptime as Node does.
-func newDashboard(p *Prober, startedAt time.Time) http.Handler {
-	d := &dashboard{prober: p, startedAt: startedAt}
+func newDashboard(p *Prober, startedAt time.Time, slo SLOConfig) http.Handler {
+	d := &dashboard{prober: p, startedAt: startedAt, slo: slo}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", d.handleRoot)
 	mux.HandleFunc("/api/status", d.handleAPIStatus)
+	// A SEPARATE endpoint, not extra keys on /api/status: that payload is
+	// byte-compatible with the Node original this service replaced, and staying
+	// that way is the reason nothing downstream had to change when it did.
+	mux.HandleFunc("/api/slo", d.handleAPISLO)
 	mux.HandleFunc("/health", d.handleHealth)
 	return mux
 }
@@ -34,10 +39,31 @@ func (d *dashboard) handleRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	snap := d.prober.Snapshot()
+	slo := d.prober.SLO(d.slo, time.Now())
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, renderHTML(snap, d.prober))
+	fmt.Fprint(w, renderHTML(snap, d.prober, slo))
+}
+
+// handleAPISLO serves the multi-window burn-rate report at /api/slo (E14).
+//
+// Publishing the remaining error budget is not decoration. A budget nobody can
+// see is a budget nobody defends; a number on the public status page is a
+// forcing function, and it is the same number the paging rule reads, so the
+// alert and the page can never disagree about how much is left.
+func (d *dashboard) handleAPISLO(w http.ResponseWriter, r *http.Request) {
+	report := d.prober.SLO(d.slo, time.Now())
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
+	// 200 even when Page is true. This endpoint reports a BUDGET position, and a
+	// non-2xx here would make every uptime checker pointed at it treat "we are
+	// burning budget" as "the status service is down".
+	w.WriteHeader(http.StatusOK)
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	_ = enc.Encode(report)
 }
 
 // handleAPIStatus serves the JSON API at /api/status.
@@ -385,7 +411,95 @@ func renderCards(snap Snapshot, p *Prober, span string) string {
 	return sb.String()
 }
 
-func renderHTML(snap Snapshot, p *Prober) string {
+// budgetStatus maps a remaining-budget fraction onto the page's existing status
+// vocabulary, so the error-budget section inherits the same colours as
+// everything else instead of inventing a second language for the same idea.
+//
+// The bands are deliberately pessimistic: a quarter of the budget left is
+// already a bad month, and reporting that in the same green as "untouched" is
+// how a budget gets spent without anyone noticing. Paging overrides the band —
+// burning fast on a full budget is still the thing you were paged for.
+func budgetStatus(s ServiceSLO) Status {
+	switch {
+	case s.Page || s.BudgetRemaining <= 0:
+		return StatusDown
+	case s.BudgetRemaining < 0.25:
+		return StatusDegraded
+	default:
+		return StatusUp
+	}
+}
+
+// renderBudget emits the error-budget section (E14): one row per service with
+// the fraction of its budget still unspent and the two burn-rate windows.
+func renderBudget(slo SLOReport) string {
+	if len(slo.Services) == 0 {
+		return ""
+	}
+
+	headline := fmt.Sprintf("%.1f%% target · %s budget window · pages when the %s and %s burn rates both exceed %.1f× and %.1f×",
+		slo.Target*100, slo.BudgetWindow, slo.FastWindow, slo.SlowWindow,
+		FastBurnThreshold, SlowBurnThreshold)
+
+	var sb strings.Builder
+	sb.WriteString(`<section class="tier"><h2 class="tier__label">Error budget</h2>`)
+	sb.WriteString(fmt.Sprintf(`<p class="tier__note">%s</p>`, html.EscapeString(headline)))
+	sb.WriteString(`<ul class="tier__list">`)
+
+	for _, s := range slo.Services {
+		st := budgetStatus(s)
+		remaining := fmt.Sprintf("%.1f%%", s.BudgetRemaining*100)
+
+		// "no data" rather than "0.0×": a window the prober has not filled yet
+		// is unknown, and rendering unknown as a number invites someone to act
+		// on it. Matches burnRate(), which returns 0 for an empty window
+		// precisely so nothing pages on absence.
+		burn := "no data"
+		if s.SlowSamples > 0 {
+			burn = fmt.Sprintf("%.1f× / %.1f×", s.BurnFast, s.BurnSlow)
+		}
+
+		pill := "Within budget"
+		switch st {
+		case StatusDown:
+			if s.Page {
+				pill = "Paging"
+			} else {
+				pill = "Exhausted"
+			}
+		case StatusDegraded:
+			pill = "Running low"
+		}
+
+		sb.WriteString(fmt.Sprintf(`<li class="svc glass-fill" data-status="%s">
+<div class="svc__head">
+<span class="svc__dot" aria-hidden="true"></span>
+<div class="svc__id">
+<h3 class="svc__name">%s</h3>
+<p class="svc__desc">%s of the %s error budget remaining</p>
+</div>
+<div class="svc__meta">
+<span class="svc__latency" title="Burn rate over %s / %s">%s</span>
+<span class="svc__pill">%s</span>
+</div>
+</div>
+</li>`,
+			st,
+			html.EscapeString(s.Name),
+			html.EscapeString(remaining),
+			html.EscapeString(slo.BudgetWindow),
+			html.EscapeString(slo.FastWindow),
+			html.EscapeString(slo.SlowWindow),
+			html.EscapeString(burn),
+			html.EscapeString(pill),
+		))
+	}
+
+	sb.WriteString(`</ul></section>`)
+	return sb.String()
+}
+
+func renderHTML(snap Snapshot, p *Prober, slo SLOReport) string {
 	overall := overallStatus(snap)
 	meta := statusMetaMap[overall]
 	checkedAtISO := latestCheckedAt(snap)
@@ -479,12 +593,12 @@ func renderHTML(snap Snapshot, p *Prober) string {
 </div>
 </section>
 
-` + renderCards(snap, p, span) + `
+` + renderCards(snap, p, span) + renderBudget(slo) + `
 </main>
 
 <footer class="foot">
 <p>Last checked ` + timeHTML + ` · refreshes every 30s</p>
-<p><a href="/api/status">status.json</a> · <a href="https://rmhstudios.com/">rmhstudios.com</a></p>
+<p><a href="/api/status">status.json</a> · <a href="/api/slo">slo.json</a> · <a href="https://rmhstudios.com/">rmhstudios.com</a></p>
 </footer>
 <script>` + dashboardJS + `</script>
 </body>
@@ -1012,6 +1126,17 @@ body {
   display: flex;
   flex-direction: column;
   gap: clamp(0.6rem, 2vw, 0.85rem);
+}
+/* The error-budget section's subheading (E14) — states the target, the window
+   the remaining budget is measured over, and what would page. Sits between the
+   tier label and its list, so it inherits the label's left inset rather than
+   starting a second alignment. */
+.tier__note {
+  margin: -0.45rem 0 0.85rem;
+  padding-left: 0.15rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--site-text-dim);
 }
 
 /* L1 · the repeated glass tier (globals.css §.glass-fill): tint + hairline +

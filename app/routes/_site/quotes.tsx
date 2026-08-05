@@ -3,20 +3,17 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { buildCanonical, buildMeta } from '@/lib/seo';
+import { definePage } from '@/lib/route/define-page';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Reveal } from '@/components/motion';
 
 export const Route = createFileRoute('/_site/quotes')({
-  head: () => ({
-    meta: buildMeta({
-      title: 'Steve Jobs Quotes | RMH Studios',
-      description:
-        'A collection of the most inspiring Steve Jobs quotes on innovation, design, life, and technology.',
-      path: '/quotes',
-    }),
-    links: [buildCanonical('/quotes')],
+  head: definePage({
+    path: '/quotes',
+    title: 'Steve Jobs Quotes | RMH Studios',
+    description:
+      'A collection of the most inspiring Steve Jobs quotes on innovation, design, life, and technology.',
   }),
   component: QuotesPage,
 });

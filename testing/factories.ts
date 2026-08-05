@@ -161,6 +161,9 @@ export function aPost(overrides: Partial<RMHark> = {}): RMHark {
   return {
     id: idFor('post', n),
     userId: SEED_USER_ID,
+    // Non-null with a default in the schema (F1 post kinds), so the factory
+    // must supply it or every RMHark fixture stops matching the model type.
+    kind: 'standard',
     content: `Test post ${n}`,
     gifUrl: null,
     imageUrls: [],

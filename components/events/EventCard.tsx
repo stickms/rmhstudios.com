@@ -2,21 +2,14 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  CalendarPlus,
-  Clock,
-  Gamepad2,
-  Link as LinkIcon,
-  MapPin,
-  Radio,
-  Trophy,
-  Users,
-} from 'lucide-react';
+import { Clock, Gamepad2, Link as LinkIcon, MapPin, Radio, Trophy, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { SITE_URL } from '@/lib/seo';
 import { safeHref } from '@/lib/url-safety';
 import { cn } from '@/lib/utils';
 import type { EventDTO, EventVenueKindValue, RsvpResult } from '@/lib/events.server';
+import { EventTime } from './EventTime';
 import { RsvpButton } from './RsvpButton';
 
 const VENUE_META: Record<
@@ -40,19 +33,13 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
   const canceled = !!event.canceledAt;
   const past = useMemo(() => new Date(event.startsAt).getTime() < Date.now(), [event.startsAt]);
 
-  // Localized in the viewer's own timezone/locale. Suppressed for hydration
-  // because the SSR pass formats with the server's timezone.
-  const when = useMemo(() => {
-    const start = new Date(event.startsAt);
-    const fmt = new Intl.DateTimeFormat(undefined, {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
-    return fmt.format(start);
-  }, [event.startsAt]);
+  // One location line, reused by the venue chip and by the calendar entries, so
+  // an event added to somebody's calendar says where it is.
+  const location = useMemo(() => {
+    if (event.venueKind === 'URL') return event.venueRef;
+    if (event.venueRef) return `${event.venueKind}: ${event.venueRef}`;
+    return event.community?.name ?? null;
+  }, [event.venueKind, event.venueRef, event.community]);
 
   const venue = VENUE_META[event.venueKind];
   const VenueIcon = venue.icon;
@@ -93,11 +80,24 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
             )}
           </div>
           <h3 className="mt-2 truncate text-base font-bold text-site-text">{event.title}</h3>
+          {/* Always the viewer's zone, always labelled — plus the organiser's
+              in parentheses when the two clocks differ (B24). */}
           <p className="mt-1 flex items-center gap-1.5 text-sm text-site-text-muted">
             <Clock className="h-4 w-4 shrink-0" aria-hidden />
-            <time dateTime={event.startsAt} suppressHydrationWarning>
-              {when}
-            </time>
+            <EventTime
+              startsAt={event.startsAt}
+              endsAt={event.endsAt}
+              eventId={event.id}
+              calendar={{
+                title: event.title,
+                description: event.description,
+                location,
+                url:
+                  event.venueKind === 'URL' && event.venueRef
+                    ? event.venueRef
+                    : `${SITE_URL}/events`,
+              }}
+            />
           </p>
         </div>
       </div>
@@ -149,14 +149,8 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
         </div>
 
         <div className="flex items-center gap-3">
-          <a
-            href={`/api/events/${event.id}/ics`}
-            className="inline-flex items-center gap-1 text-xs font-medium text-site-text-muted hover:text-site-accent"
-            aria-label={t('event-add-to-calendar', { defaultValue: 'Add to calendar' })}
-          >
-            <CalendarPlus className="h-4 w-4" aria-hidden />
-            {t('event-calendar', { defaultValue: 'Calendar' })}
-          </a>
+          {/* The add-to-calendar menu moved up beside the time (B24): it is a
+              property of *when*, and splitting them made it easy to miss. */}
           {!canceled && !past && (
             <RsvpButton
               eventId={event.id}

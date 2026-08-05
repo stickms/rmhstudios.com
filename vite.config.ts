@@ -263,6 +263,11 @@ export default defineConfig({
         fileURLToPath(new URL('./server/nitro/anon-html-cache.ts', import.meta.url)),
         fileURLToPath(new URL('./server/nitro/warmup.ts', import.meta.url)),
         fileURLToPath(new URL('./server/nitro/drain.ts', import.meta.url)),
+        //  - otel: W3C trace context per request (E1) — adopts the inbound
+        //    `traceparent`, binds it to the request's async context, echoes it
+        //    back as `Server-Timing` (which is how lib/rum.ts stamps the RUM
+        //    beacon), and opens/closes the per-request query budget (E3).
+        fileURLToPath(new URL('./server/nitro/otel.ts', import.meta.url)),
       ],
       rollupConfig: {
         external: heavyExternals.map(

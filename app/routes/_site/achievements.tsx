@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { PageFrame } from '@/components/feed/PageLayout';
-import { buildCanonical, buildMeta } from '@/lib/seo';
+import { definePage } from '@/lib/route/define-page';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { Trophy } from 'lucide-react';
@@ -24,14 +24,11 @@ const fetchAchievements = createServerFn({ method: 'GET' }).handler(async () => 
 });
 
 export const Route = createFileRoute('/_site/achievements')({
-  head: () => ({
-    meta: buildMeta({
-      title: 'Achievements | RMH Studios',
-      description:
-        'Every achievement on RMH Studios: what unlocks it, what it is worth, and who has earned it.',
-      path: '/achievements',
-    }),
-    links: [buildCanonical('/achievements')],
+  head: definePage({
+    path: '/achievements',
+    title: 'Achievements | RMH Studios',
+    description:
+      'Every achievement on RMH Studios: what unlocks it, what it is worth, and who has earned it.',
   }),
   loader: () => fetchAchievements(),
   component: AchievementsPage,

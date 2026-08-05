@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
+import local from './eslint-local-rules/index.js';
 
 export default tseslint.config(
   // ── Global ignores ────────────────────────────────────────────────────────
@@ -168,6 +169,19 @@ export default tseslint.config(
       'jsx-a11y/heading-has-content': 'warn',
       'jsx-a11y/label-has-associated-control': 'warn',
       'jsx-a11y/no-static-element-interactions': 'warn',
+    },
+  },
+
+  // ── Repo-local rules ──────────────────────────────────────────────────────
+  // Conventions no published plugin can know about. Kept at "warn" for the same
+  // reason as the jsx-a11y backlog above: there are existing violations, and a
+  // rule that turns the build red on the day it lands gets disabled rather than
+  // driven to zero. Promote to "error" once the count reaches zero.
+  {
+    files: ['**/*.{ts,tsx}'],
+    plugins: { local },
+    rules: {
+      'local/no-adhoc-user-select': 'warn',
     },
   },
 

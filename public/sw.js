@@ -22,6 +22,38 @@ const IMAGE_CACHE = `rmh-images-${VERSION}`;
 const OFFLINE_URL = '/offline';
 const IMAGE_CACHE_LIMIT = 80;
 
+/* ─── Offline write queue (B10) ────────────────────────────────────
+ *
+ * Writes made with no signal used to fail with a toast. They are now parked in
+ * IndexedDB and replayed by Background Sync (or, where that does not exist, by
+ * the page on its next load — see `lib/offline/outbox.ts`).
+ *
+ * Three rules keep this from being worse than the failure it replaces:
+ *
+ * 1. **Allowlist only.** Queueing is opt-in per endpoint and limited to
+ *    CREATE-shaped writes. A toggle (like, bookmark, RSVP) must never be queued:
+ *    replaying "flip it" an hour later is not the same request the user made.
+ * 2. **No key, no queue.** A request without an `Idempotency-Key` header is
+ *    passed straight through and allowed to fail. Replaying an unkeyed create
+ *    after a partial success double-posts, and `defineHandler`'s `idempotent`
+ *    replay is keyed on exactly that header.
+ * 3. **Only network failure queues.** A 4xx/5xx is a real answer from the
+ *    server and is handed back to the caller untouched.
+ */
+const OUTBOX_DB = 'rmh-outbox';
+const OUTBOX_STORE = 'requests';
+const OUTBOX_SYNC_TAG = 'rmh-outbox';
+/** Entries older than this are dropped rather than posted into a stale context. */
+const OUTBOX_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+/** Per-entry replay attempts before it is abandoned. */
+const OUTBOX_MAX_ATTEMPTS = 8;
+
+/** Paths whose POST bodies are safe to queue and replay. */
+const QUEUEABLE = [/^\/api\/rmharks$/, /^\/api\/rmharks\/[^/]+\/comment$/];
+
+/** Request headers worth carrying across a replay (auth rides the cookie). */
+const REPLAYED_HEADERS = ['content-type', 'idempotency-key'];
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
@@ -55,6 +87,188 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+/* ─── Outbox storage ───────────────────────────────────────────────────────── */
+
+function openOutbox() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(OUTBOX_DB, 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(OUTBOX_STORE)) {
+        db.createObjectStore(OUTBOX_STORE, { keyPath: 'id', autoIncrement: true });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function outboxTx(db, mode, run) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(OUTBOX_STORE, mode);
+    const store = tx.objectStore(OUTBOX_STORE);
+    let result;
+    try {
+      result = run(store);
+    } catch (err) {
+      reject(err);
+      return;
+    }
+    tx.oncomplete = () => resolve(result && result.__req ? result.__req.result : result);
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+}
+
+async function outboxAll() {
+  const db = await openOutbox();
+  try {
+    const rows = await outboxTx(db, 'readonly', (store) => ({ __req: store.getAll() }));
+    return Array.isArray(rows) ? rows : [];
+  } finally {
+    db.close();
+  }
+}
+
+async function outboxPut(entry) {
+  const db = await openOutbox();
+  try {
+    return await outboxTx(db, 'readwrite', (store) => ({ __req: store.put(entry) }));
+  } finally {
+    db.close();
+  }
+}
+
+async function outboxDelete(id) {
+  const db = await openOutbox();
+  try {
+    await outboxTx(db, 'readwrite', (store) => {
+      store.delete(id);
+    });
+  } finally {
+    db.close();
+  }
+}
+
+async function outboxCount() {
+  const db = await openOutbox();
+  try {
+    const n = await outboxTx(db, 'readonly', (store) => ({ __req: store.count() }));
+    return typeof n === 'number' ? n : 0;
+  } finally {
+    db.close();
+  }
+}
+
+/** Tell every open tab what the queue is doing, so it can be shown, not guessed. */
+async function notifyClients(message) {
+  const pending = await outboxCount().catch(() => 0);
+  const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  for (const client of clientList) {
+    client.postMessage({ ...message, pending });
+  }
+}
+
+/** Snapshot a request (body included) into the queue. */
+async function enqueue(request) {
+  const headers = {};
+  for (const name of REPLAYED_HEADERS) {
+    const value = request.headers.get(name);
+    if (value) headers[name] = value;
+  }
+  const entry = {
+    url: request.url,
+    method: request.method,
+    headers,
+    body: await request.clone().text(),
+    idempotencyKey: headers['idempotency-key'] || null,
+    createdAt: Date.now(),
+    attempts: 0,
+  };
+  await outboxPut(entry);
+  return entry;
+}
+
+/**
+ * Replay the queue oldest-first.
+ *
+ * Stops at the first network failure (still offline — the remaining entries stay
+ * queued and the sync is retried by the browser). A 4xx that is not 408/429 is
+ * the server's final answer, so the entry is dropped and the tabs are told:
+ * silently retrying a rejected post forever is the failure mode this feature is
+ * supposed to remove, not introduce.
+ */
+async function replayOutbox() {
+  const entries = (await outboxAll().catch(() => [])).sort((a, b) => a.createdAt - b.createdAt);
+  let stalled = false;
+
+  for (const entry of entries) {
+    if (Date.now() - entry.createdAt > OUTBOX_MAX_AGE_MS) {
+      await outboxDelete(entry.id);
+      await notifyClients({
+        type: 'RMH_OUTBOX_FAILED',
+        key: entry.idempotencyKey,
+        reason: 'expired',
+      });
+      continue;
+    }
+
+    let response;
+    try {
+      response = await fetch(entry.url, {
+        method: entry.method,
+        headers: entry.headers,
+        body: entry.body,
+        credentials: 'include',
+      });
+    } catch (_) {
+      // Still no network. Leave this and everything after it queued.
+      entry.attempts = (entry.attempts || 0) + 1;
+      if (entry.attempts >= OUTBOX_MAX_ATTEMPTS) {
+        await outboxDelete(entry.id);
+        await notifyClients({
+          type: 'RMH_OUTBOX_FAILED',
+          key: entry.idempotencyKey,
+          reason: 'unreachable',
+        });
+        continue;
+      }
+      await outboxPut(entry);
+      stalled = true;
+      break;
+    }
+
+    if (response.ok) {
+      const body = await response.text().catch(() => '');
+      await outboxDelete(entry.id);
+      await notifyClients({ type: 'RMH_OUTBOX_SENT', key: entry.idempotencyKey, body });
+      continue;
+    }
+
+    // 408/429 and 5xx are transient — keep the entry and try again later.
+    if (response.status === 408 || response.status === 429 || response.status >= 500) {
+      entry.attempts = (entry.attempts || 0) + 1;
+      if (entry.attempts < OUTBOX_MAX_ATTEMPTS) {
+        await outboxPut(entry);
+        stalled = true;
+        break;
+      }
+    }
+
+    await outboxDelete(entry.id);
+    await notifyClients({
+      type: 'RMH_OUTBOX_FAILED',
+      key: entry.idempotencyKey,
+      reason: 'rejected',
+      status: response.status,
+    });
+  }
+
+  await notifyClients({ type: 'RMH_OUTBOX_STATE' });
+  // Rejecting tells Background Sync to schedule another attempt.
+  if (stalled) throw new Error('outbox still has queued writes');
+}
+
 /** Trim a cache to at most `limit` entries (oldest first). */
 async function trimCache(cacheName, limit) {
   const cache = await caches.open(cacheName);
@@ -65,6 +279,46 @@ async function trimCache(cacheName, limit) {
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+
+  // Queueable writes are handled before the GET-only gate below; everything
+  // else about the caching strategy is untouched.
+  if (request.method === 'POST') {
+    const postUrl = new URL(request.url);
+    if (postUrl.origin !== self.location.origin) return;
+    if (!QUEUEABLE.some((re) => re.test(postUrl.pathname))) return;
+    // No idempotency key means a replay could double-post. Let it fail instead.
+    if (!request.headers.get('idempotency-key')) return;
+
+    event.respondWith(
+      (async () => {
+        try {
+          return await fetch(request.clone());
+        } catch (_) {
+          // Network-level failure only — a 4xx/5xx is returned above untouched.
+          try {
+            const entry = await enqueue(request);
+            if (self.registration.sync) {
+              await self.registration.sync.register(OUTBOX_SYNC_TAG).catch(() => {});
+            }
+            await notifyClients({ type: 'RMH_OUTBOX_QUEUED', key: entry.idempotencyKey });
+            return new Response(JSON.stringify({ queued: true, key: entry.idempotencyKey }), {
+              status: 202,
+              headers: { 'Content-Type': 'application/json' },
+            });
+          } catch (_err) {
+            // Queueing itself failed (private mode, quota). Surface the failure
+            // rather than pretending the write is safe.
+            return new Response(JSON.stringify({ error: 'offline' }), {
+              status: 503,
+              headers: { 'Content-Type': 'application/json' },
+            });
+          }
+        }
+      })(),
+    );
+    return;
+  }
+
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
@@ -184,6 +438,26 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
+/* ─── Outbox replay triggers ───────────────────────────────────────────────── */
+
+self.addEventListener('sync', (event) => {
+  if (event.tag !== OUTBOX_SYNC_TAG) return;
+  event.waitUntil(replayOutbox());
+});
+
 self.addEventListener('message', (event) => {
-  if (event.data === 'SKIP_WAITING') self.skipWaiting();
+  if (event.data === 'SKIP_WAITING') {
+    self.skipWaiting();
+    return;
+  }
+  const type = event.data && event.data.type;
+  // Safari has no Background Sync, so the page asks for a replay on load and
+  // whenever it comes back online. Harmless where sync does exist.
+  if (type === 'RMH_OUTBOX_REPLAY') {
+    event.waitUntil(replayOutbox().catch(() => {}));
+    return;
+  }
+  if (type === 'RMH_OUTBOX_STATUS') {
+    event.waitUntil(notifyClients({ type: 'RMH_OUTBOX_STATE' }));
+  }
 });

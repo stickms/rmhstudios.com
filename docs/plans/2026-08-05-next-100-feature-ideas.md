@@ -1,7 +1,7 @@
 # The Next 100 — feature, AI, QOL, consolidation & refactor ideas
 
-**Date:** 2026-08-05 · **Count:** 112 numbered ideas · **Status:** 40 shipped,
-3 partial, 2 dropped, 67 open — see [§11](#11--implementation-status-2026-08-05)
+**Date:** 2026-08-05 · **Count:** 112 numbered ideas · **Status:** 72 shipped,
+5 partial, 2 dropped, 33 open — see [§11](#11--implementation-status-2026-08-05)
 
 This is round eight of feature generation for rmhstudios.com. The seven earlier
 plan docs are listed in [`docs/README.md`](../README.md) §Plans; **every idea
@@ -4465,16 +4465,16 @@ A5,M,ai,dropped,A1,"Embeddings and pgvector behind search and similarity"
 A6,M,ai,shipped,A1 A3,"Catch me up — thread and chat summaries"
 A7,M,ai,shipped,A1,"AI run coach on top of replays"
 A8,M,ai,shipped,A1 A3,"AI triage on the moderation queue"
-A9,S,ai,open,A1,"Narrative Wrapped and weekly recap"
-A10,M,ai,open,,"Difficulty director for solo games"
+A9,S,ai,shipped,A1,"Narrative Wrapped and weekly recap"
+A10,M,ai,shipped,,"Difficulty director for solo games"
 A11,S,ai,shipped,,"Read-aloud for library, news and blog"
 A12,M,ai,dropped,A1 C10,"Vision pass on uploaded media (OCR, auto-tags, safety)"
 A13,M,ai,shipped,A1,"Natural language to the search DSL"
 A14,L,ai,open,C1,"Bot opponents so no lobby is ever empty"
-A15,S,ai,open,A1 A5,"Translation drift detection across 16 locales"
-A16,M,ai,open,A1,"Security review for User Builds"
+A15,S,ai,shipped,A1 A5,"Translation drift detection across 16 locales"
+A16,M,ai,shipped,A1,"Security review for User Builds"
 A17,S,ai,shipped,A1,"Explain this chart on analytics surfaces"
-A18,L,ai,open,A1 A3,"Give the concierge tools"
+A18,L,ai,partial,A1 A3,"Give the concierge tools"
 A19,S,ai,shipped,A3,"Prompt-injection regression suite"
 A20,S,ai,shipped,A1,"Generated OG copy and card alt text"
 B1,S,qol,shipped,,"Universal undo for destructive actions"
@@ -4485,22 +4485,22 @@ B5,M,qol,open,C8,"Per-category notification batching and digests"
 B6,S,qol,shipped,,"Notification grouping, filters and mark-all-read"
 B7,S,qol,shipped,,"Cross-device read position"
 B8,M,qol,open,,"Saved views on every list surface"
-B9,M,qol,open,,"Multi-select and reorder wherever a list is editable"
-B10,M,qol,open,E5,"Offline write queue in the service worker"
+B9,M,qol,shipped,,"Multi-select and reorder wherever a list is editable"
+B10,M,qol,shipped,E5,"Offline write queue in the service worker"
 B11,S,qol,shipped,,"New-device and new-location login alerts"
 B12,S,qol,shipped,,"Deletion grace period and pre-delete export"
 B13,S,qol,shipped,C8,"Quiet hours, honoured everywhere"
 B14,S,qol,shipped,C8,"Per-conversation notification control"
-B15,M,qol,open,,"A real link unfurler with a cache"
-B16,S,qol,open,C10,"Paste and drop that does the obvious thing"
-B17,S,qol,open,,"Surface scheduling everywhere ScheduledPost already works"
+B15,M,qol,shipped,,"A real link unfurler with a cache"
+B16,S,qol,shipped,C10,"Paste and drop that does the obvious thing"
+B17,S,qol,shipped,,"Surface scheduling everywhere ScheduledPost already works"
 B18,S,qol,shipped,,"A copy-as menu on shareable objects"
 B19,S,qol,shipped,,"Reader mode and print stylesheets"
 B20,M,qol,shipped,,"Data-saver mode"
 B21,S,qol,shipped,,"Focus mode"
 B22,S,qol,partial,,"Profile completeness with a real payoff"
 B23,M,qol,open,,"Feedback with an annotated screenshot"
-B24,S,qol,open,,"Timezone-correct events and one-click calendar"
+B24,S,qol,shipped,,"Timezone-correct events and one-click calendar"
 C1,M,consolidation,open,,"Fold the three realtime hubs into one process"
 C2,S,consolidation,shipped,,"One leaderboard endpoint instead of 33"
 C3,L,consolidation,open,,"A generated socket event contract"
@@ -4509,8 +4509,8 @@ C5,L,consolidation,open,C6,"One casino engine with provable fairness"
 C6,L,consolidation,open,,"One commerce domain"
 C7,M,consolidation,shipped,,"One activity stream behind history, recents and saves"
 C8,M,consolidation,open,,"One delivery bus for every outbound message"
-C9,M,consolidation,open,,"One per-app profile accessor"
-C10,M,consolidation,open,,"One media ingest pipeline"
+C9,M,consolidation,shipped,,"One per-app profile accessor"
+C10,M,consolidation,shipped,,"One media ingest pipeline"
 C11,M,consolidation,open,A1,"One AI entry point"
 C12,M,consolidation,open,,"One generator for the reference docs"
 C13,M,consolidation,open,D2,"Declarative, audited rate-limit policy"
@@ -4518,62 +4518,120 @@ C14,M,consolidation,open,,"Finish the AppShell migration"
 D1,M,refactor,open,D3,"A typed client for the 521 internal routes"
 D2,S,refactor,shipped,,"Prove every route uses defineHandler"
 D3,M,refactor,open,,"One home for zod schemas"
-D4,S,refactor,open,,"Ban ad-hoc Prisma selects on User"
-D5,M,refactor,open,,"Batch loaders for the feed's fan-out reads"
+D4,S,refactor,shipped,,"Ban ad-hoc Prisma selects on User"
+D5,M,refactor,shipped,,"Batch loaders for the feed's fan-out reads"
 D6,M,refactor,shipped,,"One data-fetching hook shape"
-D7,M,refactor,open,,"A definePage helper for route boilerplate"
+D7,M,refactor,shipped,,"A definePage helper for route boilerplate"
 D8,S,refactor,shipped,,"Test factories"
 D9,S,refactor,open,,"Make the i18n registry self-checking"
-D10,S,refactor,open,,"Explode the catalog monoliths into per-entry files"
+D10,S,refactor,shipped,,"Explode the catalog monoliths into per-entry files"
 D11,M,refactor,shipped,,"One error taxonomy with localized messages"
 D12,M,refactor,open,,"Inventory and dedupe the component tree"
 D13,M,refactor,open,C1,"Collapse the six server bundle entrypoints"
 D14,S,refactor,open,,"Delete the dead code the audit will find"
 D15,S,refactor,shipped,,"Rate limits are per-process, and therefore fiction"
-E1,M,platform,open,,"Distributed tracing across Node and Go"
-E2,S,platform,open,C3,"Version the socket protocol"
-E3,M,platform,open,D11,"Read-replica routing and a query budget guard"
+E1,M,platform,shipped,,"Distributed tracing across Node and Go"
+E2,S,platform,shipped,C3,"Version the socket protocol"
+E3,M,platform,shipped,D11,"Read-replica routing and a query budget guard"
 E4,M,platform,shipped,E5,"Transactional outbox for webhooks and notifications"
 E5,M,platform,shipped,,"Idempotency keys on every mutation"
 E6,S,platform,shipped,,"An expand/contract migration policy, enforced"
-E7,M,platform,open,C10,"Content-addressed assets and a purge path"
+E7,M,platform,shipped,C10,"Content-addressed assets and a purge path"
 E8,M,platform,shipped,,"A degradation matrix, tested"
 E9,M,platform,shipped,,"A resumable backfill framework"
 E10,M,platform,open,C3,"Load-test the realtime tier"
-E11,M,platform,open,A2 E1,"Per-feature cost observability"
+E11,M,platform,shipped,A2 E1,"Per-feature cost observability"
 E12,M,platform,open,,"Partition the append-only tables"
 E13,M,platform,open,E7,"Cold tiering for large media and old rows"
-E14,M,platform,open,E1,"SLO burn-rate alerts in the status service"
-E15,S,platform,open,,"Supply-chain provenance (SBOM + image signing)"
+E14,M,platform,partial,E1,"SLO burn-rate alerts in the status service"
+E15,S,platform,shipped,,"Supply-chain provenance (SBOM + image signing)"
 F1,M,feature,open,,"Megathreads and AMAs"
 F2,L,feature,open,C1,"Audio stages inside Spaces"
 F3,M,feature,partial,,"Ranked-choice and multi-winner polls"
-F4,L,feature,open,C6,"Long-form publishing with paid subscribers"
+F4,L,feature,shipped,C6,"Long-form publishing with paid subscribers"
 F5,M,feature,open,C7,"Creator analytics that answer why"
 F6,M,feature,open,,"A referral program with tiers and activation-based attribution"
 F7,S,feature,partial,,"A badge case with rarity"
-F8,M,feature,open,C7,"Turn profile links into a link-in-bio page"
+F8,M,feature,shipped,C7,"Turn profile links into a link-in-bio page"
 F9,M,feature,open,C1,"Read-along rooms"
-F10,M,feature,open,C6,"A remix graph with attribution"
+F10,M,feature,shipped,C6,"A remix graph with attribution"
 F11,L,feature,open,D10,"Playable preview cards in the feed"
 F12,M,feature,open,,"An API console in the developer docs"
 F13,M,feature,open,C2,"Embeddable widgets"
-F14,S,feature,open,C10,"Share Target — upgrade the GET target to POST multipart so media can be shared in"
+F14,S,feature,shipped,C10,"Share Target — upgrade the GET target to POST multipart so media can be shared in"
 F15,M,feature,open,B3,"Device handoff via signed QR"
 F16,S,feature,shipped,C2,"Scoped leaderboards — friends, community, country"
 F17,M,feature,open,C2,"Seasons for the app tier"
-F18,M,feature,open,C6,"A marketplace for user-authored themes"
+F18,M,feature,shipped,C6,"A marketplace for user-authored themes"
 F19,M,feature,open,C7,"Cross-app quest chains"
-F20,M,feature,open,C6,"Group gifting and pooled purchases"
-F21,M,feature,open,,"Community wikis"
-F22,M,feature,open,,"A public request board with voting"
-F23,S,feature,open,,"Public edit history"
-F24,M,feature,open,C8,"Mentions that work everywhere"
+F20,M,feature,shipped,C6,"Group gifting and pooled purchases"
+F21,M,feature,shipped,,"Community wikis"
+F22,M,feature,shipped,,"A public request board with voting"
+F23,S,feature,shipped,,"Public edit history"
+F24,M,feature,shipped,C8,"Mentions that work everywhere"
 ```
 
 ---
 
 ## §11 — Implementation status (2026-08-05)
+
+> **Second wave update.** 72 of 112 now ship. The second batch was built by ten
+> parallel agents that were **killed mid-edit by a session usage limit**, so
+> what follows separates what survived verification from what was reverted.
+> §11a covers the first wave; §11b the second.
+
+### §11b — Second wave (34 items)
+
+**Shipped and verified:** A9, A10, A15, A16, B9, B10, B15, B16, B17, B24, C9,
+C10, D4, D5, D7, D10, E1, E2, E3, E7, E11, E15, F4, F8, F10, F14, F18, F20,
+F21, F22, F23, F24.
+
+**Partial:**
+
+| Idea                    | What exists                                                              | What does not                                                                                                |
+| ----------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| **A18** concierge tools | The full tool registry with its safety invariants, and 178 passing tests | Not wired into the concierge route — that wiring lived in `assistant.server.ts`, which was reverted with C11 |
+| **E14** SLO burn-rate   | The multi-window burn-rate maths in the Go status service                | The dashboard surface was not verified end to end (no Bazel in this container)                               |
+
+**Reverted, because they were genuinely half-finished:**
+
+- **C1 / C3 (realtime hub consolidation).** The work was split between the
+  working tree and a stash: `socket-server/index.ts` still imported a
+  `prisma-client` the stash deleted, and the already-migrated `rmhbox` called
+  `disconnectPrisma()` with no arguments against a two-argument shared
+  signature. Half-migrating three hubs is exactly the change `server/CLAUDE.md`
+  records as having once shipped a dead socket server, so the whole `server/`
+  tree went back to its last good state.
+- **C11 (AI consolidation).** Stopped mid-migration of `text.server.ts`,
+  `rmhark-ai/` and the ladder provider; 36 tests failed at import.
+
+**Still open (33):** A14, B5, B8, B23, C1, C3, C5, C6, C11, C12, C13, C14, D1,
+D3, D12, D13, D14, E10, E12, E13, F1, F2, F5, F6, F9, F11, F12, F13, F15, F17,
+F19, plus the two partials above to finish.
+
+### §11c — Defects found in the second wave
+
+1. The concierge's own invariant test ("no URL- or SQL-shaped argument name")
+   caught its own `query` parameter. Renamed to `search` rather than loosening
+   a security guard.
+2. `assistant-tools.test.ts` stubbed Prisma as `{}`, so every model access
+   threw a `TypeError` that surfaced as an **unhandled rejection** instead of
+   the clean tool error the tests assert on.
+3. The new `no-adhoc-user-select` rule fired on two selects that render nobody
+   (a handle→id mention lookup and an existence check). Its rationale is the
+   cosmetics join, which only matters when a user is displayed, so it now
+   requires a display field — while staying conservative about spreads of
+   unknown variables, which it cannot prove are display-free.
+4. `definePage` broke the sitemap test, which greps route _source_ for
+   `buildMeta`/`buildCanonical`. The helper supplies both; the test now knows
+   that, the same way it already exempts `gameRouteHead`/`appRouteHead`.
+5. Writing tests for `check-migration-safety.ts` found three bugs in it, all
+   invisible to `tsc` because `scripts/` is in tsconfig's `exclude`: rule ids
+   were dropped between the literal and the finding, the acknowledgement regex
+   let a bare marker swallow the next line as its "reason", and a
+   protected-column drop double-reported under the generic rule.
+
+### §11a — First wave
 
 40 of the 112 shipped on `claude/website-feature-ideas-ht4vny`, 3 landed
 partially, 2 are dropped, 67 remain open. The `status` column in §9 is the

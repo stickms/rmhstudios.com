@@ -6,13 +6,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { toast } from 'sonner';
+import { TIP_MIN, TIP_NOTE_MAX, tipSchema, type TipEntityType } from '@/lib/economy/tip-schema';
 
 interface TipDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   recipientId: string;
   recipientName?: string | null;
-  entityType?: 'rmhark' | 'profile';
+  entityType?: TipEntityType;
   entityId?: string;
 }
 
@@ -26,14 +27,26 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
   const [submitting, setSubmitting] = useState(false);
 
   const submit = async () => {
-    if (amount < 1) return;
+    // Validate with the schema the route enforces, so the two bounds cannot
+    // disagree — an over-cap tip would otherwise 400 with no field context.
+    const parsed = tipSchema.safeParse({
+      recipientId,
+      amount,
+      note: note.trim() || undefined,
+      entityType,
+      entityId,
+    });
+    if (!parsed.success) {
+      toast.error(t("tip-invalid", { defaultValue: "That tip amount isn't allowed." }));
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch('/api/coins/tip', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ recipientId, amount, note: note.trim() || undefined, entityType, entityId }),
+        body: JSON.stringify(parsed.data),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
@@ -89,7 +102,7 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          maxLength={280}
+          maxLength={TIP_NOTE_MAX}
           rows={2}
           placeholder={t("note-placeholder", { defaultValue: "Add a note (optional)" })}
           className="w-full resize-none rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
@@ -97,7 +110,7 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>{t("cancel", { defaultValue: "Cancel" })}</Button>
-          <Button variant="accent" onClick={submit} disabled={submitting || amount < 1}>
+          <Button variant="accent" onClick={submit} disabled={submitting || amount < TIP_MIN}>
             {submitting ? t("sending", { defaultValue: "Sending…" }) : (<span className="inline-flex items-center gap-1">{t("tip-btn", { defaultValue: "Tip" })} <CoinIcon className="h-4 w-4" /> {amount}</span>)}
           </Button>
         </DialogFooter>

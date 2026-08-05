@@ -65,10 +65,7 @@ import {
   registerRmhFarmingSimHandlers,
   handleRmhFarmingSimDisconnect,
 } from './handlers/rmh-farming-sim';
-import {
-  registerLaundrySortHandlers,
-  handleLaundrySortDisconnect,
-} from './handlers/laundry-sort';
+import { registerLaundrySortHandlers, handleLaundrySortDisconnect } from './handlers/laundry-sort';
 import {
   registerGabrielsHornHandlers,
   handleGabrielsHornDisconnect,
