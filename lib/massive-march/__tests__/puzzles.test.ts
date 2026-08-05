@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { WorldVariant } from '../constants';
+import { WORLD_VARIANTS, type WorldVariant } from '../constants';
 import {
   act,
   activePads,
@@ -9,13 +9,14 @@ import {
   evaluate,
   restoreRuntimes,
   revealFor,
+  isHardLock,
   scoreHoop,
   statusOf,
   type PuzzleContext,
   type PuzzlePlayer,
   type PuzzleRuntime,
 } from '../puzzles';
-import { puzzleSite, type PuzzleSite, type SymbolId } from '../world/sites';
+import { PUZZLE_SITES, puzzleSite, type PuzzleSite, type SymbolId } from '../world/sites';
 
 /**
  * The puzzle engine, played through.
@@ -441,5 +442,85 @@ describe('saves', () => {
     const c = createRuntime(site('sealed-booth'), 5678, 'duo');
     expect(a.sequence).toEqual(b.sequence);
     expect(a.sequence).not.toEqual(c.sequence);
+  });
+});
+
+describe('hard locks versus advice', () => {
+  /**
+   * `key` and `night` are the site refusing to run. `crew` is the site telling
+   * you something. The HUD used to treat all three the same and hide the
+   * console, the totems and the dig button whenever ANY lock was set — so an
+   * undersized group arriving at the Final March got the crew note with nothing
+   * to press, even though reading the sequence and turning the totems are
+   * one-person jobs the server accepts. The ending was unreachable from the UI.
+   *
+   * These pin the two apart. The one that matters is the last: whatever the HUD
+   * uses to decide, it has to agree with what `act()` will actually do.
+   */
+
+  it('separates a refusal from a note', () => {
+    expect(isHardLock('key')).toBe(true);
+    expect(isHardLock('night')).toBe(true);
+    expect(isHardLock('crew')).toBe(false);
+    expect(isHardLock(null)).toBe(false);
+  });
+
+  it('still reports the crew note, because that is the useful half', () => {
+    const final = site('final-march');
+    const alone = [at(0, final.x, final.z)];
+    const status = statusOf(final, createRuntime(final, SEED, 'band'), ctx(alone, { variant: 'band' }));
+    expect(status.lockedBy).toBe('crew');
+    // Advice, not a refusal: the site is live, so it is not in the locked state.
+    expect(status.state).not.toBe('locked');
+  });
+
+  it('lets one person start the Final March that their crew is too small for', () => {
+    const final = site('final-march');
+    const runtime = createRuntime(final, SEED, 'band');
+    const console_ = final.console!;
+    const alone = [at(0, console_.x, console_.z)];
+    const context = ctx(alone, { variant: 'band' });
+
+    expect(statusOf(final, runtime, context).lockedBy).toBe('crew');
+
+    // Stage 0 is one person at a console. The crew note must not stop it.
+    for (const symbol of runtime.sequence) {
+      const result = act(final, runtime, context, actor(alone[0]), {
+        action: 'press',
+        symbol,
+      });
+      expect(result.rejected).toBeUndefined();
+    }
+    expect(runtime.stage).toBe(1);
+  });
+
+  it('agrees with the server everywhere a lock can appear', () => {
+    // The regression in one assertion: whatever the HUD gates on has to match
+    // what `act()` does, for every site, variant and crew size.
+    for (const target of PUZZLE_SITES) {
+      if (!target.console) continue;
+      for (const variant of WORLD_VARIANTS) {
+        for (const crew of [1, 2, 3, 4, 5]) {
+          const runtime = createRuntime(target, SEED, variant);
+          const spot = target.console;
+          const players = Array.from({ length: crew }, (_, i) => at(i, spot.x, spot.z));
+          const context = ctx(players, { variant });
+          const status = statusOf(target, runtime, context);
+
+          const result = act(target, runtime, context, actor(players[0]), {
+            action: 'press',
+            symbol: runtime.sequence[0],
+          });
+          const serverRefused = result.rejected === 'key' || result.rejected === 'night';
+
+          expect(
+            isHardLock(status.lockedBy ?? null),
+            `${target.id} / ${variant} / ${crew}p: HUD hides the controls but the server ${
+              serverRefused ? 'also refuses' : 'ACCEPTS the press'
+            }`,
+          ).toBe(serverRefused);
+        }
+      }
+    }
   });
 });

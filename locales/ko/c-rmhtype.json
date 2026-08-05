@@ -74,6 +74,7 @@
   "practice-action": "Practice your worst keys",
   "practice-failed": "Could not build a practice test",
   "practice-ready": "Practice test ready — it does not count toward global boards",
+  "practice-run": "Practice run on a written-to-order passage — not posted to the leaderboard.",
   "private": "비공개",
   "public": "공개",
   "public-rooms": "공개방",
@@ -103,6 +104,10 @@
   "stat-wpm": "Implied WPM",
   "time": "시간",
   "time-ran-out": "시간이 초과되었습니다!",
+  "topic-hint": "Leave empty to type a standard passage.",
+  "topic-label": "Topic (optional)",
+  "topic-placeholder": "e.g. deep sea creatures, the Apollo program",
+  "topic-practice-hint": "Written for you — practice only, so it won't post to the leaderboard.",
   "total-score": "총 점수",
   "try-again": "다시 시도",
   "unban": "차단 해제",
@@ -110,5 +115,6 @@
   "waiting-for-others": "다른 사람을 기다리는 중...",
   "worst-title": "Worst keys",
   "wpm": "WPM",
+  "writing-passage": "Writing your passage...",
   "you": "(당신)"
 }

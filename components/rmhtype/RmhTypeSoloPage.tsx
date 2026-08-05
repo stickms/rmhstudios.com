@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { RotateCcw, Trophy, User } from 'lucide-react';
+import { RotateCcw, Sparkles, Trophy, User } from 'lucide-react';
 import { connectToRmhType, emit } from '@/lib/rmhtype/socket';
 import { useRmhTypeStore } from '@/lib/rmhtype/store';
 import { C2S } from '@/lib/rmhtype/events';
@@ -21,6 +21,7 @@ export default function RmhTypeSolo() {
   const soloPassageId = useRmhTypeStore((s) => s.soloPassageId);
   const soloResult = useRmhTypeStore((s) => s.soloResult);
   const soloCountdown = useRmhTypeStore((s) => s.soloCountdown);
+  const soloGeneratingTopic = useRmhTypeStore((s) => s.soloGeneratingTopic);
   const settings = useRmhTypeStore((s) => s.settings);
   const updateSettings = useRmhTypeStore((s) => s.updateSettings);
   const connectionStatus = useRmhTypeStore((s) => s.connectionStatus);
@@ -28,6 +29,9 @@ export default function RmhTypeSolo() {
   const [soloDifficulty, setSoloDifficulty] = useState<Difficulty>(settings.soloDifficulty);
   const [soloLength, setSoloLength] = useState<PassageLength>(settings.soloPassageLength);
   const [started, setStarted] = useState(false);
+  // Empty = the curated passage list. Anything else asks the server to write a
+  // passage about it, which makes the run practice-only (no leaderboard).
+  const [topic, setTopic] = useState('');
 
   const { t } = useTranslation("c-rmhtype");
 
@@ -99,8 +103,9 @@ export default function RmhTypeSolo() {
     emit(C2S.SOLO_START, {
       difficulty: soloDifficulty,
       passageLength: soloLength,
+      topic: topic.trim() || undefined,
     });
-  }, [soloDifficulty, soloLength, updateSettings]);
+  }, [soloDifficulty, soloLength, topic, updateSettings]);
 
   const handleTyping = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (!soloPassage || finished) return;
@@ -131,8 +136,10 @@ export default function RmhTypeSolo() {
     emit(C2S.SOLO_START, {
       difficulty: settings.soloDifficulty,
       passageLength: settings.soloPassageLength,
+      // Retry means "again, like that one" — a fresh passage on the same topic.
+      topic: topic.trim() || undefined,
     });
-  }, [settings.soloDifficulty, settings.soloPassageLength]);
+  }, [settings.soloDifficulty, settings.soloPassageLength, topic]);
 
   const handleBackToSettings = useCallback(() => {
     useRmhTypeStore.getState().clearSolo();
@@ -200,6 +207,37 @@ export default function RmhTypeSolo() {
                   </div>
                 </div>
 
+                <div>
+                  <label
+                    htmlFor="rmhtype-topic"
+                    className="mb-2 flex items-center gap-1.5 text-sm font-medium text-(--app-text-muted)"
+                  >
+                    <Sparkles className="h-4 w-4 text-(--app-accent)" aria-hidden />
+                    {t("topic-label", { defaultValue: "Topic (optional)" })}
+                  </label>
+                  <input
+                    id="rmhtype-topic"
+                    type="text"
+                    value={topic}
+                    onChange={(e) => setTopic(e.target.value)}
+                    maxLength={80}
+                    placeholder={t("topic-placeholder", {
+                      defaultValue: "e.g. deep sea creatures, the Apollo program",
+                    })}
+                    className="w-full px-3 py-2 rounded-lg text-sm border border-(--app-border) bg-(--app-bg) text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent)"
+                  />
+                  <p className="mt-1.5 text-xs text-(--app-text-muted)">
+                    {topic.trim()
+                      ? t("topic-practice-hint", {
+                          defaultValue:
+                            "Written for you — practice only, so it won't post to the leaderboard.",
+                        })
+                      : t("topic-hint", {
+                          defaultValue: "Leave empty to type a standard passage.",
+                        })}
+                  </p>
+                </div>
+
                 <button
                   onClick={handleSoloStart}
                   disabled={connectionStatus !== 'connected'}
@@ -244,11 +282,19 @@ export default function RmhTypeSolo() {
                 <p className="text-sm text-(--app-text-muted) mb-4">{t("time-ran-out", { defaultValue: "Time ran out!" })}</p>
               )}
 
-              {soloResult.scorePosted === false && (
+              {/* A practice run has its own reason for not posting, and it is
+                  not a failure — so it must not wear the failure colour. */}
+              {soloResult.practice ? (
+                <p className="text-sm text-(--app-text-muted) mb-4">
+                  {t("practice-run", {
+                    defaultValue: "Practice run on a written-to-order passage — not posted to the leaderboard.",
+                  })}
+                </p>
+              ) : soloResult.scorePosted === false ? (
                 <p className="text-sm text-red-400 mb-4">
                   {t("score-not-posted", { defaultValue: "Score not posted — 90% accuracy required for leaderboard" })}
                 </p>
-              )}
+              ) : null}
 
               <div className="grid grid-cols-3 gap-4 mb-6">
                 <div className="p-4 rounded-lg bg-(--app-bg)">
@@ -297,7 +343,11 @@ export default function RmhTypeSolo() {
           {!soloPassage ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="animate-pulse text-(--app-text-muted)">
-                {connectionStatus === 'connecting' ? t("connecting", { defaultValue: "Connecting..." }) : t("loading-passage", { defaultValue: "Loading passage..." })}
+                {connectionStatus === 'connecting'
+                  ? t("connecting", { defaultValue: "Connecting..." })
+                  : soloGeneratingTopic !== null
+                    ? t("writing-passage", { defaultValue: "Writing your passage..." })
+                    : t("loading-passage", { defaultValue: "Loading passage..." })}
               </div>
             </div>
           ) : (

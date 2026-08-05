@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 517 files across 128 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 521 files across 128 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -85,13 +85,17 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/ai`
 
-4 routes.
+8 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/ai/ask-feed` | `POST` | `app/routes/api/ai/ask-feed.ts` |
+| `/api/ai/bio` | `POST` | `app/routes/api/ai/bio.ts` |
 | `/api/ai/message-suggest` | `POST` | `app/routes/api/ai/message-suggest.ts` |
 | `/api/ai/search` | `POST` | `app/routes/api/ai/search.ts` |
+| `/api/ai/smart-replies` | `POST` | `app/routes/api/ai/smart-replies.ts` |
+| `/api/ai/suggest-tags` | `POST` | `app/routes/api/ai/suggest-tags.ts` |
+| `/api/ai/takeaways` | `GET` | `app/routes/api/ai/takeaways.ts` |
 | `/api/ai/transform` | `POST` | `app/routes/api/ai/transform.ts` |
 
 ## `/api/albums`

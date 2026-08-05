@@ -22,6 +22,7 @@ import { AdSlot } from '@/components/ads/AdSlot';
 import { Badge } from '@/components/ui/badge';
 import { BlurImage } from '@/components/ui/BlurImage';
 import { ShareButton } from '@/components/blog/ShareButton';
+import { ArticleTakeaways } from '@/components/blog/ArticleTakeaways';
 import { markdownComponents } from '@/components/blog/MDXAnimations';
 import { getPostBySlug } from '@/lib/blog';
 import { buildCanonical, buildMeta, ogCardPath, SITE_URL } from '@/lib/seo';
@@ -146,6 +147,11 @@ function BlogPost() {
             />
           </div>
         )}
+
+        {/* Above the body, because its whole job is to help someone decide
+            whether to read it. Renders nothing until (and unless) the
+            takeaways arrive. */}
+        <ArticleTakeaways slug={slug} />
 
         {/* `markdownComponents` carries all of this body's styling — the old
             `prose prose-invert …` wrapper was inert (no typography plugin) and

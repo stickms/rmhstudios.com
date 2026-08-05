@@ -19,6 +19,26 @@ type Tx = Prisma.TransactionClient;
 const TAG_RE = /#([\p{L}\p{N}_]{1,64})/gu;
 const MAX_TAGS_PER_POST = 10;
 
+/**
+ * Fold one raw tag string into exactly the form stored in the hashtag table, or
+ * `''` when nothing usable is left.
+ *
+ * Anything that does not come out of `TAG_RE` — a tag typed into a picker, or
+ * one suggested by `suggestHashtags` in `lib/ai/text.server` — has to pass
+ * through here first, so a suggested `#Rust Lang!` becomes the same `rustlang`
+ * row that writing `#rustlang` in a post would have created. Without a shared
+ * normalizer the two paths drift and the tag feed splits in half.
+ */
+export function normalizeTag(raw: string): string {
+  const tag = raw
+    .replace(/^#+/, '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}_]/gu, '')
+    .slice(0, 64);
+  // Pure-number tags are dropped by `extractHashtags` too — not topical.
+  return /^\d+$/.test(tag) ? '' : tag;
+}
+
 /** Parse distinct, normalized (lowercased) hashtags from post content. */
 export function extractHashtags(content: string): string[] {
   const out = new Set<string>();

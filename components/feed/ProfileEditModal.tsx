@@ -45,6 +45,7 @@ import { MAX_PROFILE_LINKS } from'@/lib/profile-schema';
 import { cn } from'@/lib/utils';
 import { ImageCropModal } from'./ImageCropModal';
 import { SpotifySongSearch, type SpotifyTrack } from'./SpotifySongSearch';
+import { BioAssist } from'./BioAssist';
 
 interface ProfileSongData {
  profileSongSpotifyId: string | null;
@@ -835,6 +836,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  <div className="mt-1 flex justify-between">
  <EmojiPickerButton direction="down"onSelect={insertBioEmoji} />
  </div>
+ <BioAssist value={bio} onChange={setBio} maxChars={MAX_BIO} />
  </div>
  </div>
  ) : null}

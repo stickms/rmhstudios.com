@@ -67,6 +67,10 @@ export const config = {
     'rmhtype:game:progress': { max: 600, windowMs: 60_000 },
     'rmhtype:game:start': { max: 10, windowMs: 60_000 },
     'rmhtype:solo:start': { max: 10, windowMs: 60_000 },
+    // Not a wire event: a second bucket the solo:start handler charges only when
+    // the request carries a topic, because that path costs a DeepSeek call while
+    // a plain solo start costs an array lookup.
+    'rmhtype:solo:ai': { max: 4, windowMs: 60_000 },
     'rmhstudy:room:create': { max: 3, windowMs: 60_000 },
     'rmhstudy:room:join': { max: 10, windowMs: 60_000 },
     'rmhstudy:room:chat': { max: 30, windowMs: 60_000 },

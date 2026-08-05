@@ -78,6 +78,7 @@
   "practice-action": "Practice your worst keys",
   "practice-failed": "Could not build a practice test",
   "practice-ready": "Practice test ready — it does not count toward global boards",
+  "practice-run": "Practice run on a written-to-order passage — not posted to the leaderboard.",
   "private": "Privado",
   "public": "Público",
   "public-rooms": "Salas Públicas",
@@ -111,6 +112,10 @@
   "stat-wpm": "Implied WPM",
   "time": "Tempo",
   "time-ran-out": "O tempo acabou!",
+  "topic-hint": "Leave empty to type a standard passage.",
+  "topic-label": "Topic (optional)",
+  "topic-placeholder": "e.g. deep sea creatures, the Apollo program",
+  "topic-practice-hint": "Written for you — practice only, so it won't post to the leaderboard.",
   "total-score": "Pontuação Total",
   "try-again": "Tentar Novamente",
   "unban": "Desbanir",
@@ -118,5 +123,6 @@
   "waiting-for-others": "Aguardando outros...",
   "worst-title": "Worst keys",
   "wpm": "PPM",
+  "writing-passage": "Writing your passage...",
   "you": "(você)"
 }

@@ -135,6 +135,11 @@ COPY lib/shared/realtime/types.ts ./lib/shared/realtime/types.ts
 # module is a bare constant map, so copy just the file rather than the whole
 # browser-side lib/rmhtype dir.
 COPY lib/rmhtype/events.ts ./lib/rmhtype/events.ts
+# The shared AI text helpers, for RMHType's write-me-a-passage-about-X mode. The
+# generation runs on the hub, not the web tier, because the passage is what
+# scoring is measured against — a client-supplied one would be a client-supplied
+# WPM. The module's only import is the `openai` SDK, which stays external.
+COPY lib/ai/text.server.ts ./lib/ai/text.server.ts
 # Laundry Sort's versus handler needs its wire protocol and the shared match
 # constants (durations, difficulties, lobby size) so the server validates
 # against the same values the client offers. Both are import-free constant/type

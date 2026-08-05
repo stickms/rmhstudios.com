@@ -76,6 +76,7 @@
   "practice-action": "Practice your worst keys",
   "practice-failed": "Could not build a practice test",
   "practice-ready": "Practice test ready — it does not count toward global boards",
+  "practice-run": "Practice run on a written-to-order passage — not posted to the leaderboard.",
   "private": "نجی",
   "public": "عوامی",
   "public-rooms": "عوامی کمرے",
@@ -107,6 +108,10 @@
   "stat-wpm": "Implied WPM",
   "time": "وقت",
   "time-ran-out": "وقت ختم ہو گیا!",
+  "topic-hint": "Leave empty to type a standard passage.",
+  "topic-label": "Topic (optional)",
+  "topic-placeholder": "e.g. deep sea creatures, the Apollo program",
+  "topic-practice-hint": "Written for you — practice only, so it won't post to the leaderboard.",
   "total-score": "کل اسکور",
   "try-again": "دوبارہ کوشش کریں",
   "unban": "غیر پابند کریں",
@@ -114,5 +119,6 @@
   "waiting-for-others": "دوسروں کا انتظار ہو رہا ہے...",
   "worst-title": "Worst keys",
   "wpm": "WPM",
+  "writing-passage": "Writing your passage...",
   "you": "(آپ)"
 }
