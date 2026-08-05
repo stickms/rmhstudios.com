@@ -227,6 +227,26 @@ export function lockReason(site: PuzzleSite, ctx: PuzzleContext): LockReason {
   return null;
 }
 
+/**
+ * Does this lock stop the site from running, or is it just telling you something?
+ *
+ * `key` and `night` are the site refusing: `evaluate` returns early and `act`
+ * rejects, so nothing a player does can move it. `crew` is advice — the site is
+ * live and every action still works, there are simply more places to stand than
+ * there are of you, and you deserve to be told that rather than left guessing.
+ *
+ * The distinction has to be one function because it is enforced in three places
+ * that must agree. When the HUD had its own copy — "hide the controls if there
+ * is a lock at all" — an undersized crew reaching the Final March was shown the
+ * crew note with the console and totems REMOVED, even though reading the
+ * sequence and turning the totems are one-person jobs the server would have
+ * accepted. Only the last stage of that site needs the whole group, so the game
+ * ended in a panel with nothing on it.
+ */
+export function isHardLock(reason: LockReason): reason is 'key' | 'night' {
+  return reason === 'key' || reason === 'night';
+}
+
 function needsCrew(site: PuzzleSite): boolean {
   return site.kind === 'pads' || site.kind === 'final';
 }
@@ -271,7 +291,7 @@ export function evaluate(site: PuzzleSite, runtime: PuzzleRuntime, ctx: PuzzleCo
     events.push({ kind: 'discovered', site: site.id });
   }
 
-  if (lockReason(site, ctx) === 'key' || lockReason(site, ctx) === 'night') {
+  if (isHardLock(lockReason(site, ctx))) {
     // A locked site still notices you walked past it; it just will not run.
     return { changed, solved: false, events };
   }
@@ -423,7 +443,7 @@ export function act(
 ): ActionResult {
   if (runtime.solved || runtime.skipped) return { ...NOTHING, rejected: 'done' };
   const locked = lockReason(site, ctx);
-  if (locked === 'key' || locked === 'night') return { ...NOTHING, rejected: locked };
+  if (isHardLock(locked)) return { ...NOTHING, rejected: locked };
 
   switch (action.action) {
     case 'press':
@@ -547,7 +567,7 @@ export function statusOf(site: PuzzleSite, runtime: PuzzleRuntime, ctx: PuzzleCo
     ? 'solved'
     : runtime.skipped
       ? 'skipped'
-      : locked === 'key' || locked === 'night'
+      : isHardLock(locked)
         ? 'locked'
         : ctx.players.some((p) => atSite(site, p))
           ? 'active'
