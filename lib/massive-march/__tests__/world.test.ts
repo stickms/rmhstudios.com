@@ -1,7 +1,9 @@
+import { PerspectiveCamera, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 
 import { MEGAPHONE_RANGE, VOICE_RANGE } from '../constants';
 import { audibility, boothAt, garble, terrainOcclusion } from '../world/audio';
+import { strafeAxis } from '../world/heading';
 import { COLLIDERS, growScatter, regionAt, resolveCollisions, STRUCTURES } from '../world/regions';
 import { PUZZLE_SITES, RADIO_LOCAL_RANGE, TOWERS, TOTAL_ORBS, TOTAL_THRESHOLD } from '../world/sites';
 import { clampToLand, groundY, isWater, PADS, raycastGround, SEA_LEVEL } from '../world/terrain';
@@ -271,6 +273,66 @@ describe('the authored world', () => {
     expect(named.length).toBeGreaterThan(6);
     for (const structure of named) {
       expect(structure.color.startsWith('#')).toBe(true);
+    }
+  });
+});
+
+describe('heading', () => {
+  /**
+   * The strafe axis is anchored to three.js' own idea of which way is right,
+   * not to arithmetic repeated here — a test that recomputed the cross product
+   * would have agreed with the sign error it is meant to catch.
+   *
+   * `camera.matrixWorld` column 0 IS the camera's right hand in world space, so
+   * comparing against it asks the renderer the same question the player asks
+   * when they press D.
+   */
+  const cameraRight = (yaw: number, pitch: number) => {
+    const camera = new PerspectiveCamera();
+    camera.rotation.order = 'YXZ';
+    camera.rotation.set(pitch, yaw, 0);
+    camera.updateMatrixWorld(true);
+    const right = new Vector3().setFromMatrixColumn(camera.matrixWorld, 0);
+    const forward = camera.getWorldDirection(new Vector3());
+    forward.y = 0;
+    forward.normalize();
+    return { right, forward };
+  };
+
+  it('points along +X for a camera at rest, not −X', () => {
+    // The whole bug in one assertion: looking down −Z, right is +X.
+    expect(strafeAxis(0, -1)).toEqual({ x: 1, z: 0 });
+  });
+
+  it('agrees with the camera three.js actually renders, at every yaw', () => {
+    for (let step = 0; step < 16; step++) {
+      const yaw = (step / 16) * Math.PI * 2;
+      const { right, forward } = cameraRight(yaw, 0);
+      const axis = strafeAxis(forward.x, forward.z);
+      expect(axis.x).toBeCloseTo(right.x, 6);
+      expect(axis.z).toBeCloseTo(right.z, 6);
+    }
+  });
+
+  it('ignores pitch — you strafe across the hill, not into it', () => {
+    const level = cameraRight(0.9, 0).forward;
+    const expected = strafeAxis(level.x, level.z);
+    for (const pitch of [-1.2, -0.4, 0.4, 1.2]) {
+      const { forward } = cameraRight(0.9, pitch);
+      const axis = strafeAxis(forward.x, forward.z);
+      expect(axis.x).toBeCloseTo(expected.x, 6);
+      expect(axis.z).toBeCloseTo(expected.z, 6);
+    }
+  });
+
+  it('stays perpendicular to the facing and unit length', () => {
+    for (let step = 0; step < 12; step++) {
+      const yaw = (step / 12) * Math.PI * 2;
+      const fx = -Math.sin(yaw);
+      const fz = -Math.cos(yaw);
+      const axis = strafeAxis(fx, fz);
+      expect(axis.x * fx + axis.z * fz).toBeCloseTo(0, 9);
+      expect(Math.hypot(axis.x, axis.z)).toBeCloseTo(1, 9);
     }
   });
 });
