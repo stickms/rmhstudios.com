@@ -265,6 +265,25 @@ export function atSite(site: PuzzleSite, player: { x: number; z: number }): bool
   return Math.hypot(player.x - site.x, player.z - site.z) <= site.radius;
 }
 
+/**
+ * A compass point and a distance, for somebody who cannot see where they are.
+ *
+ * Eight points rather than a heading in degrees, matching the totem facings the
+ * lookout reads, so the two things a player is ever told about direction are
+ * told the same way. North is −Z, which is where a camera at rest looks.
+ */
+function bearing(
+  from: { x: number; z: number },
+  to: { x: number; z: number },
+): { compass: number; distance: number } {
+  const angle = Math.atan2(to.x - from.x, -(to.z - from.z));
+  const turns = angle / (Math.PI * 2);
+  return {
+    compass: ((Math.round(turns * 8) % 8) + 8) % 8,
+    distance: Math.round(Math.hypot(to.x - from.x, to.z - from.z)),
+  };
+}
+
 /** Pads must be held together for this long, so a run-through does not count. */
 const PAD_HOLD_MS = 450;
 
@@ -677,13 +696,20 @@ export function revealFor(
   }
 
   if (site.kind === 'blind' && site.plates) {
-    // Everyone at the site except the person wearing the bucket.
-    if (player.blinded || runtime.wearer === null) return null;
+    // Everyone at the site except the person wearing the bucket — unless there
+    // is nobody else, in which case the wearer gets it and a bearing with it.
+    const alone = ctx.variant === 'solo';
+    if (player.blinded && !alone) return null;
+    if (runtime.wearer === null) return null;
     if (!atSite(site, player)) return null;
     const index = runtime.order[runtime.plateIndex];
     const plate = site.plates[index];
     if (!plate) return null;
-    return { kind: 'plate', site: site.id, plate: plate.id, index: runtime.plateIndex };
+    const reveal: Reveal = { kind: 'plate', site: site.id, plate: plate.id, index: runtime.plateIndex };
+    if (alone && player.blinded) {
+      return { ...reveal, guide: bearing(player, plate) };
+    }
+    return reveal;
   }
 
   if (site.kind === 'hunt' && player.hasFinder) {

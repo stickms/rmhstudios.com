@@ -41,7 +41,7 @@ export function MainMenu({ connecting }: { connecting: boolean }) {
 
   const [tab, setTab] = useState<'start' | 'join'>('start');
   const [name, setName] = useState('');
-  const [variant, setVariant] = useState<WorldVariant>('duo');
+  const [variant, setVariant] = useState<WorldVariant>('solo');
   const [allowSkip, setAllowSkip] = useState(false);
   const [code, setCode] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -76,7 +76,7 @@ export function MainMenu({ connecting }: { connecting: boolean }) {
           <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed opacity-85">
             {t('tagline', {
               defaultValue:
-                'Two to twelve friends, one handcrafted island, and no way to solve anything without telling somebody what you can see.',
+                'One handcrafted island, on your own or with up to eleven friends, and no way to solve anything without telling somebody what you can see.',
             })}
           </p>
         </header>
@@ -138,6 +138,13 @@ export function MainMenu({ connecting }: { connecting: boolean }) {
                   onChange={setVariant}
                   options={[
                     {
+                      value: 'solo',
+                      label: t('variant-solo', { defaultValue: 'Just me' }),
+                      hint: t('variant-solo-hint', {
+                        defaultValue: 'The whole island, one pair of hands. Nobody to wait for.',
+                      }),
+                    },
+                    {
                       value: 'duo',
                       label: t('variant-duo', { defaultValue: 'Two' }),
                       hint: t('variant-duo-hint', { defaultValue: 'Focused. Everyone is essential.' }),
@@ -177,10 +184,15 @@ export function MainMenu({ connecting }: { connecting: boolean }) {
                   : t('create', { defaultValue: 'Open the island' })}
               </MarchButton>
               <p className="text-xs opacity-70">
-                {t('variant-crew', {
-                  defaultValue: 'Puzzles will light up for {{count}} people at a time.',
-                  count: VARIANT_MIN_CREW[variant],
-                })}
+                {variant === 'solo'
+                  ? t('variant-crew-solo', {
+                      defaultValue:
+                        'Puzzles will light up one place at a time. Friends can still join — the island just will not wait for them.',
+                    })
+                  : t('variant-crew', {
+                      defaultValue: 'Puzzles will light up for {{count}} people at a time.',
+                      count: VARIANT_MIN_CREW[variant],
+                    })}
               </p>
             </div>
           ) : (

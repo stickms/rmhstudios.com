@@ -3,9 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { WORLD_VARIANTS, type WorldVariant } from '../constants';
 import {
   act,
+  activeCount,
   activePads,
   activeTotems,
   createRuntime,
+  lockReason,
   evaluate,
   restoreRuntimes,
   revealFor,
@@ -16,7 +18,15 @@ import {
   type PuzzlePlayer,
   type PuzzleRuntime,
 } from '../puzzles';
-import { PUZZLE_SITES, puzzleSite, type PuzzleSite, type SymbolId } from '../world/sites';
+import {
+  PUZZLE_SITES,
+  puzzleSite,
+  TOTAL_ORBS,
+  TOTAL_THRESHOLD,
+  type KeyId,
+  type PuzzleSite,
+  type SymbolId,
+} from '../world/sites';
 
 /**
  * The puzzle engine, played through.
@@ -522,5 +532,111 @@ describe('hard locks versus advice', () => {
         }
       }
     }
+  });
+});
+
+describe('one person, the whole island', () => {
+  /**
+   * The floor used to be two, and a floor of two means most people who open the
+   * game cannot play it: somebody arrives, finds a lobby that needs a second
+   * human, and leaves — indistinguishable from the game not working.
+   *
+   * These pin the promise the solo variant makes. Not "there is a solo option"
+   * — that is a menu entry — but that a single player can actually reach the
+   * end: every site has a one-person layout, none of them silently needs a
+   * body that is not there, and the island still produces enough red rounds to
+   * satisfy every tower.
+   */
+  const soloCtx = (players: PuzzlePlayer[]): PuzzleContext => ({
+    now: 1_000_000,
+    variant: 'solo',
+    keys: new Set<KeyId>(['yellow', 'blue', 'red']),
+    night: true,
+    players,
+  });
+
+  const alone = (x: number, z: number, extra: Partial<PuzzlePlayer> = {}): PuzzlePlayer => ({
+    slot: 0,
+    x,
+    z,
+    blinded: false,
+    hasFinder: false,
+    ...extra,
+  });
+
+  it('gives every site a one-person layout', () => {
+    for (const site of PUZZLE_SITES) {
+      expect(activeCount(site, 'solo'), `${site.id} has no solo layout`).toBeGreaterThan(0);
+      expect(activeCount(site, 'solo')).toBeLessThanOrEqual(activeCount(site, 'duo'));
+    }
+  });
+
+  it('never asks a lone player for a body that is not there', () => {
+    // `crew` is advice rather than a hard lock, but a solo campaign that shows
+    // "you need more people" on every site is a solo campaign in name only.
+    const ctx = soloCtx([alone(0, 0)]);
+    for (const site of PUZZLE_SITES) {
+      const players = [alone(site.x, site.z)];
+      expect(lockReason(site, { ...ctx, players }), `${site.id} wants a crew`).not.toBe('crew');
+    }
+  });
+
+  it('lights exactly one pad, which one person can stand on', () => {
+    const pads = PUZZLE_SITES.filter((s) => s.kind === 'pads');
+    expect(pads.length).toBeGreaterThan(2);
+    for (const site of pads) {
+      const lit = activePads(site, 'solo');
+      expect(lit.length, `${site.id}`).toBe(1);
+
+      // Standing on it, held past the debounce, solves it — with one player.
+      const runtime = createRuntime(site, 1234, 'solo');
+      const here = [alone(lit[0].x, lit[0].z)];
+      evaluate(site, runtime, { ...soloCtx(here), now: 1_000_000 });
+      const outcome = evaluate(site, runtime, { ...soloCtx(here), now: 1_000_000 + 900 });
+      expect(outcome.solved, `${site.id} unsolvable alone`).toBe(true);
+    }
+  });
+
+  it('reads the bucket route to the person wearing it, and to nobody else', () => {
+    const site = PUZZLE_SITES.find((s) => s.kind === 'blind')!;
+    const runtime = createRuntime(site, 99, 'solo');
+    const wearer = alone(site.x, site.z, { blinded: true });
+
+    // Register the wearer, the way a server tick does.
+    evaluate(site, runtime, soloCtx([wearer]));
+
+    const solo = revealFor(site, runtime, soloCtx([wearer]), wearer);
+    expect(solo?.kind).toBe('plate');
+    // A bearing, because they cannot see — not a map.
+    expect(solo && 'guide' in solo ? solo.guide : undefined).toBeDefined();
+
+    // The same player in a duo campaign gets nothing: the asymmetry is the game.
+    const duo = revealFor(site, runtime, { ...soloCtx([wearer]), variant: 'duo' }, wearer);
+    expect(duo).toBeNull();
+  });
+
+  it('points the bearing at the plate rather than away from it', () => {
+    const site = PUZZLE_SITES.find((s) => s.kind === 'blind')!;
+    const runtime = createRuntime(site, 7, 'solo');
+    const wearer = alone(site.x, site.z, { blinded: true });
+    evaluate(site, runtime, soloCtx([wearer]));
+
+    const reveal = revealFor(site, runtime, soloCtx([wearer]), wearer);
+    if (reveal?.kind !== 'plate' || !reveal.guide) throw new Error('no guide');
+    const plate = site.plates!.find((p) => p.id === reveal.plate)!;
+
+    // Walk the compass point it gave us and we should end up closer, not further.
+    const angle = (reveal.guide.compass / 8) * Math.PI * 2;
+    const stepped = { x: wearer.x + Math.sin(angle) * 5, z: wearer.z - Math.cos(angle) * 5 };
+    const before = Math.hypot(plate.x - wearer.x, plate.z - wearer.z);
+    const after = Math.hypot(plate.x - stepped.x, plate.z - stepped.z);
+    expect(after).toBeLessThan(before);
+    expect(reveal.guide.distance).toBeCloseTo(Math.round(before), 0);
+  });
+
+  it('still produces more red rounds than the towers ask for', () => {
+    // Solo removes hands, not sites — so the campaign is finishable, not merely
+    // startable. If a future variant ever drops a site this is what catches it.
+    expect(TOTAL_ORBS).toBeGreaterThan(TOTAL_THRESHOLD);
   });
 });

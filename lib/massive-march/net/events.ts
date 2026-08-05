@@ -285,8 +285,22 @@ export type Reveal =
   | { kind: 'booth'; site: string; booth: string; symbols: SymbolId[]; offset: number }
   /** Target facings, legible only from the lookout. */
   | { kind: 'totems'; site: string; facings: number[] }
-  /** Which plate the blinded player must reach next — never sent to them. */
-  | { kind: 'plate'; site: string; plate: string; index: number }
+  /**
+   * Which plate the blinded player must reach next.
+   *
+   * Normally never sent to them — that asymmetry IS the puzzle. Solo is the one
+   * exception: there is nobody to hand it to, so it goes to the wearer with a
+   * `guide` (compass point + metres) and nothing else. They still cannot see,
+   * still have to walk it, and still lose the route by stepping on the wrong
+   * plate; what they no longer need is a second person to read it out.
+   */
+  | {
+      kind: 'plate';
+      site: string;
+      plate: string;
+      index: number;
+      guide?: { compass: number; distance: number };
+    }
   /** Distance to the nearest unfound marker, for whoever holds the finder. */
   | { kind: 'finder'; site: string; distance: number }
   /** Nothing to show any more — clears whatever was on screen. */

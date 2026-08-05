@@ -20,7 +20,7 @@ import { TOY } from '@/lib/massive-march/palette';
 import { Glyph } from '../Glyph';
 import { BOARD, INK, Panel } from '../ui';
 
-const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+export const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 
 export function RevealPanel({ reveal }: { reveal: Reveal }) {
   const { t } = useTranslation('c-massive-march');
