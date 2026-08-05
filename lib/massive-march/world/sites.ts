@@ -384,6 +384,35 @@ export function puzzleSite(id: string): PuzzleSite | undefined {
 /** Every red round the island can produce. Comfortably more than is needed. */
 export const TOTAL_ORBS = PUZZLE_SITES.reduce((sum, s) => sum + s.reward, 0);
 
+/**
+ * The mast planted at every installation.
+ *
+ * Travel time is the game (§7), which only works if there is something to walk
+ * TOWARD. Eight of the twelve sites had nothing above the 3.15m sign that stands
+ * at the edge of them — legible at forty metres, invisible at two hundred — so
+ * an island crossing was a search of open hillside rather than a walk to a thing
+ * you had spotted. The one tall marker the sites did have was the red flag, and
+ * it went up on completion: you were handed the landmark exactly when you had
+ * finished needing it.
+ *
+ * So the mast is now always there and the FLAG carries the state. Red still
+ * means done, unchanged and still readable across a valley; cream means a site
+ * nobody has finished. Nothing else moves — the map still refuses to say where
+ * you are, and a site is still discovered by standing in it.
+ */
+export const SITE_MAST_HEIGHT = 11;
+
+export interface SiteMarker {
+  /** Ground to the top of the pole, in metres. */
+  height: number;
+  /** Flag colour. Red is the existing "we have been here" signal. */
+  flag: 'open' | 'done';
+}
+
+export function siteMarker(solved: boolean): SiteMarker {
+  return { height: SITE_MAST_HEIGHT, flag: solved ? 'done' : 'open' };
+}
+
 // ─── Towers ─────────────────────────────────────────────────────────────────
 
 export type KeyId = 'yellow' | 'blue' | 'red';
