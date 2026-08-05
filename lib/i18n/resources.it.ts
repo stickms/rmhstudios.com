@@ -64,6 +64,7 @@ import itCVoidBreaker from "@/locales/it/c-void-breaker.json";
 import itCWager from "@/locales/it/c-wager.json";
 import itCWishlist from "@/locales/it/c-wishlist.json";
 import itCommon from "@/locales/it/common.json";
+import itErrors from "@/locales/it/errors.json";
 import itFeed from "@/locales/it/feed.json";
 import itGamesHub from "@/locales/it/games-hub.json";
 import itGroups from "@/locales/it/groups.json";
@@ -154,6 +155,7 @@ const itResources = {
   "c-wager": itCWager,
   "c-wishlist": itCWishlist,
   "common": itCommon,
+  "errors": itErrors,
   "feed": itFeed,
   "games-hub": itGamesHub,
   "groups": itGroups,

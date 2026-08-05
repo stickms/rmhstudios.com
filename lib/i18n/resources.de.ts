@@ -64,6 +64,7 @@ import deCVoidBreaker from "@/locales/de/c-void-breaker.json";
 import deCWager from "@/locales/de/c-wager.json";
 import deCWishlist from "@/locales/de/c-wishlist.json";
 import deCommon from "@/locales/de/common.json";
+import deErrors from "@/locales/de/errors.json";
 import deFeed from "@/locales/de/feed.json";
 import deGamesHub from "@/locales/de/games-hub.json";
 import deGroups from "@/locales/de/groups.json";
@@ -154,6 +155,7 @@ const deResources = {
   "c-wager": deCWager,
   "c-wishlist": deCWishlist,
   "common": deCommon,
+  "errors": deErrors,
   "feed": deFeed,
   "games-hub": deGamesHub,
   "groups": deGroups,

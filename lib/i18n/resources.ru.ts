@@ -64,6 +64,7 @@ import ruCVoidBreaker from "@/locales/ru/c-void-breaker.json";
 import ruCWager from "@/locales/ru/c-wager.json";
 import ruCWishlist from "@/locales/ru/c-wishlist.json";
 import ruCommon from "@/locales/ru/common.json";
+import ruErrors from "@/locales/ru/errors.json";
 import ruFeed from "@/locales/ru/feed.json";
 import ruGamesHub from "@/locales/ru/games-hub.json";
 import ruGroups from "@/locales/ru/groups.json";
@@ -154,6 +155,7 @@ const ruResources = {
   "c-wager": ruCWager,
   "c-wishlist": ruCWishlist,
   "common": ruCommon,
+  "errors": ruErrors,
   "feed": ruFeed,
   "games-hub": ruGamesHub,
   "groups": ruGroups,

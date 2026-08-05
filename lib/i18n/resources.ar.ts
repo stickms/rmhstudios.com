@@ -65,6 +65,7 @@ import arCVoidBreaker from "@/locales/ar/c-void-breaker.json";
 import arCWager from "@/locales/ar/c-wager.json";
 import arCWishlist from "@/locales/ar/c-wishlist.json";
 import arCommon from "@/locales/ar/common.json";
+import arErrors from "@/locales/ar/errors.json";
 import arFeed from "@/locales/ar/feed.json";
 import arGamesHub from "@/locales/ar/games-hub.json";
 import arGroups from "@/locales/ar/groups.json";
@@ -157,6 +158,7 @@ const arResources = {
   "c-wager": arCWager,
   "c-wishlist": arCWishlist,
   "common": arCommon,
+  "errors": arErrors,
   "feed": arFeed,
   "games-hub": arGamesHub,
   "groups": arGroups,

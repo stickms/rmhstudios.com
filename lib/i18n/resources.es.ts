@@ -64,6 +64,7 @@ import esCVoidBreaker from "@/locales/es/c-void-breaker.json";
 import esCWager from "@/locales/es/c-wager.json";
 import esCWishlist from "@/locales/es/c-wishlist.json";
 import esCommon from "@/locales/es/common.json";
+import esErrors from "@/locales/es/errors.json";
 import esFeed from "@/locales/es/feed.json";
 import esGamesHub from "@/locales/es/games-hub.json";
 import esGroups from "@/locales/es/groups.json";
@@ -154,6 +155,7 @@ const esResources = {
   "c-wager": esCWager,
   "c-wishlist": esCWishlist,
   "common": esCommon,
+  "errors": esErrors,
   "feed": esFeed,
   "games-hub": esGamesHub,
   "groups": esGroups,

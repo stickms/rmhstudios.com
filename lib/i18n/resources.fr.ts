@@ -64,6 +64,7 @@ import frCVoidBreaker from "@/locales/fr/c-void-breaker.json";
 import frCWager from "@/locales/fr/c-wager.json";
 import frCWishlist from "@/locales/fr/c-wishlist.json";
 import frCommon from "@/locales/fr/common.json";
+import frErrors from "@/locales/fr/errors.json";
 import frFeed from "@/locales/fr/feed.json";
 import frGamesHub from "@/locales/fr/games-hub.json";
 import frGroups from "@/locales/fr/groups.json";
@@ -154,6 +155,7 @@ const frResources = {
   "c-wager": frCWager,
   "c-wishlist": frCWishlist,
   "common": frCommon,
+  "errors": frErrors,
   "feed": frFeed,
   "games-hub": frGamesHub,
   "groups": frGroups,
