@@ -150,6 +150,7 @@
   "call-answer-hint": "Answering asks for microphone access.",
   "call-connecting": "Connecting…",
   "call-decline": "Decline",
+  "call-dialing": "Calling…",
   "call-ended": "Call ended",
   "call-ended-busy": "They’re on another call",
   "call-ended-cancelled": "Call cancelled",
