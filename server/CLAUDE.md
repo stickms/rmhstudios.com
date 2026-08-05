@@ -103,8 +103,10 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
 - **`nitro/`** — not a service: Nitro startup plugins for the web tier,
   registered in `vite.config.ts`. `reflect-metadata.ts` (required by the
   Better Auth passkey plugin — do not remove), `security-headers.ts`
-  (defense-in-depth response headers), `anon-html-cache.ts` (marks the
-  anonymous default-locale homepage HTML edge-cacheable), and `warmup.ts`
+  (defense-in-depth response headers), `anon-html-cache.ts` (marks anonymous
+  default-locale HTML on an audited path allowlist edge-cacheable, and
+  authenticated HTML `private, no-cache` — never `no-store`, which would cost
+  every signed-in page its back/forward-cache eligibility), and `warmup.ts`
   (per-worker cold-start warmup: opens the Prisma pool + primes the anon
   homepage feed/sidebar caches so the first request after a deploy/restart
   isn't cold).

@@ -247,9 +247,12 @@ export default defineConfig({
       //    auth/passkey chunk (which needs it via tsyringe).
       //  - security-headers: adds baseline security headers to every response as
       //    defense-in-depth (mirrors the edge/Traefik policy for non-proxied paths).
-      //  - anon-html-cache: marks the anonymous, default-locale homepage HTML
-      //    edge-cacheable (and authenticated HTML no-store); inert until the
-      //    matching Cloudflare cache rule is created.
+      //  - anon-html-cache: marks anonymous, default-locale HTML on an audited
+      //    path allowlist edge-cacheable, and authenticated HTML
+      //    `private, no-cache` — NOT `no-store`, which would disqualify every
+      //    signed-in page from the back/forward cache. Gated by the matching
+      //    Cloudflare cache rule (deploy/apply-cloudflare-cache-rules.sh); a
+      //    test keeps the two path lists in sync.
       //  - warmup: per-worker cold-start warmup — opens the Prisma pool and
       //    primes the anon homepage feed + sidebar caches so the first request
       //    after a deploy/restart doesn't pay the full cold cost.
