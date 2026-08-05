@@ -100,6 +100,7 @@ mobile-friendliness-audit
 :glob:
 
 full-rewrite-design-2026-07-18
+optimization-ideas-2026-08-05
 website-improvement-plan
 plans/**
 feed/**
