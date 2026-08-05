@@ -1,7 +1,16 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Replays the committed migrations (`prisma migrate deploy`) against a fresh
-# PostgreSQL and reports `prisma migrate status`. Surfaces migrations that fail to
-# apply or a schema that has drifted from the migration history. Report-only.
+# PostgreSQL, then diffs the resulting database against `schema.prisma`.
+#
+# This used to be report-only — every command ended in `|| true` and the output
+# went to the step summary — and a migration that could not apply AT ALL shipped
+# to main under a green tick, alongside a model that had no migration behind it.
+# `deploy.sh` runs `prisma migrate deploy` against production, so a history that
+# does not replay is a broken deploy, not a note in a summary. It gates now.
+#
+# It also watches `prisma/schema.prisma`: a model added without a migration
+# leaves the file and the history disagreeing, which the migrations path alone
+# never sees.
 # ─────────────────────────────────────────────────────────────────────────────
 name: prisma-migrate-status
 
@@ -9,6 +18,7 @@ on:
   pull_request:
     paths:
       - "prisma/migrations/**"
+      - "prisma/schema.prisma"
       - ".github/workflows/prisma-migrate-status.yml"
   schedule:
     - cron: "0 6 * * 3"
@@ -49,15 +59,57 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Deploy migrations + status
+      # Hard gate. If the committed history cannot build an empty database, the
+      # production deploy cannot either.
+      - name: Replay migrations onto an empty database
         run: |
           set -uo pipefail
+          # Capture rather than pipe: the summary needs its closing fence written
+          # even on the failure this step exists to catch.
+          set +e
+          out=$(pnpm exec prisma migrate deploy 2>&1)
+          status=$?
+          set -e
           {
-            echo '### prisma migrate deploy + status'
+            echo '### prisma migrate deploy'
             echo ''
             echo '```'
-            pnpm exec prisma migrate deploy 2>&1 | head -100 || true
-            echo '---'
-            pnpm exec prisma migrate status 2>&1 | head -100 || true
+            echo "$out" | tail -60
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+          echo "$out"
+          exit "$status"
+      # Hard gate. `migrate status` catches a history the database disagrees
+      # with; the diff catches a model that never got a migration at all.
+      - name: Schema matches the replayed history
+        run: |
+          set -euo pipefail
+          pnpm exec prisma migrate status
+          pnpm exec prisma migrate diff \
+            --from-config-datasource --to-schema prisma/schema.prisma --script > drift.sql
+          # `rmheet.content_tsv` and its GIN index are raw-SQL search
+          # infrastructure from 20260717110700_add_search_trgm_fts. Prisma cannot
+          # model a generated tsvector column, so it proposes dropping them on
+          # every diff — and that migration says in as many words never to apply
+          # those DROPs. They are the ONLY expected difference; anything else is
+          # a model without a migration.
+          grep -vE '^(--.*)?$' drift.sql \
+            | grep -vxF 'DROP INDEX "rmheet_content_tsv_idx";' \
+            | grep -vxF 'ALTER TABLE "rmheet" DROP COLUMN "content_tsv";' \
+            > unexpected.sql || true
+          if [ -s unexpected.sql ]; then
+            {
+              echo '### Schema drift'
+              echo ''
+              echo '`prisma/schema.prisma` does not match the migration history.'
+              echo 'Add a migration (`pnpm db:migrate`) for the models below and commit it.'
+              echo ''
+              echo '```sql'
+              cat unexpected.sql
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo '::error::Schema drift — schema.prisma has changes with no migration behind them.'
+            cat unexpected.sql
+            exit 1
+          fi
+          echo 'Migration history replays cleanly and matches schema.prisma.'

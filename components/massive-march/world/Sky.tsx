@@ -24,6 +24,33 @@ import { daylight } from '@/lib/massive-march/constants';
 import { currentDayFraction, live } from '@/lib/massive-march/live';
 import { WORLD_EXTENT } from '@/lib/massive-march/world/terrain';
 
+/**
+ * The sky shell, and the far plane it has to live inside.
+ *
+ * These are not free numbers: a dome drawn beyond `CAMERA_FAR` is clipped by the
+ * frustum and the sky becomes a disc floating on the clear colour — which is
+ * exactly what shipped. The ordering that has to hold is
+ *
+ *   ocean half-extent (WORLD_EXTENT * 1.7)  <  DOME_RADIUS  <  CAMERA_FAR
+ *
+ * with the stars just inside the dome so they are never the thing that pokes
+ * through it. `WorldView` reads `CAMERA_FAR` for the camera, so the two cannot
+ * drift apart.
+ */
+export const CAMERA_FAR = 3400;
+
+/**
+ * Half-width of the shadow box that follows the player.
+ *
+ * Big enough to hold a whole puzzle installation and the people standing around
+ * it; small enough that 2048 texels across it is a real shadow rather than a
+ * suggestion. Everything beyond it is simply unshadowed, which at this scale
+ * nobody notices.
+ */
+const SHADOW_BOX = 70;
+const DOME_RADIUS = WORLD_EXTENT * 2.4;
+const STAR_RADIUS = WORLD_EXTENT * 2.1;
+
 const KEYS = {
   night: { top: new Color(SKY.night.top), bottom: new Color(SKY.night.bottom), sun: new Color(SKY.night.sun), fog: new Color(SKY.night.fog) },
   dawn: { top: new Color(SKY.dawn.top), bottom: new Color(SKY.dawn.bottom), sun: new Color(SKY.dawn.sun), fog: new Color(SKY.dawn.fog) },
@@ -87,7 +114,7 @@ export function Sky({ quality }: { quality: QualityFlags }) {
       // Upper hemisphere only; the lower half is under the island.
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(Math.random() * 0.94);
-      const r = WORLD_EXTENT * 2.6;
+      const r = STAR_RADIUS;
       positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       positions[i * 3 + 1] = r * Math.cos(phi);
       positions[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
@@ -154,17 +181,15 @@ export function Sky({ quality }: { quality: QualityFlags }) {
         shadow-mapSize={[quality.shadowMapSize, quality.shadowMapSize]}
         shadow-camera-near={1}
         shadow-camera-far={620}
-        // A tight shadow box that follows the player. Wide enough to hold a
-        // puzzle installation, narrow enough that the texels are worth having.
-        shadow-camera-left={-70}
-        shadow-camera-right={70}
-        shadow-camera-top={70}
-        shadow-camera-bottom={-70}
+        shadow-camera-left={-SHADOW_BOX}
+        shadow-camera-right={SHADOW_BOX}
+        shadow-camera-top={SHADOW_BOX}
+        shadow-camera-bottom={-SHADOW_BOX}
         shadow-bias={-0.0007}
       />
 
       <mesh ref={dome} scale={[-1, 1, 1]}>
-        <sphereGeometry args={[WORLD_EXTENT * 3, 24, 16]} />
+        <sphereGeometry args={[DOME_RADIUS, 24, 16]} />
         <meshBasicMaterial side={BackSide} fog={false} depthWrite={false} />
       </mesh>
 

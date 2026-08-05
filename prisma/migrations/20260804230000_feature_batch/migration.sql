@@ -3,8 +3,10 @@
 -- speedruns, and the RMHLadder answer bank.
 
 -- ── Recycle bin: who deleted it. Only 'author' is restorable. ───────────────
-ALTER TABLE "rmhark" ADD COLUMN "deletedBy" VARCHAR(12);
-ALTER TABLE "rmhark_comment" ADD COLUMN "deletedBy" VARCHAR(12);
+-- NOTE: the models are RMHark/RMHarkComment but they `@@map` to the original
+-- `rmheet` table names — the product rename never touched the schema.
+ALTER TABLE "rmheet" ADD COLUMN "deletedBy" VARCHAR(12);
+ALTER TABLE "rmheet_comment" ADD COLUMN "deletedBy" VARCHAR(12);
 
 -- ── Messages: edit, unsend, voice notes. ───────────────────────────────────
 ALTER TABLE "direct_message" ADD COLUMN "editedAt" TIMESTAMP(3);

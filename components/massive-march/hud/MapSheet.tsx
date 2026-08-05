@@ -16,7 +16,8 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LAND, TOY } from '@/lib/massive-march/palette';
-import { useMmStore } from '@/lib/massive-march/store';
+import type { PuzzleStatus, TowerStatus } from '@/lib/massive-march/net/events';
+import { none, useMmStore } from '@/lib/massive-march/store';
 import { LANDMARKS, REGIONS } from '@/lib/massive-march/world/regions';
 import { PUZZLE_SITES, TOWERS } from '@/lib/massive-march/world/sites';
 import { shoreAt, WORLD_EXTENT } from '@/lib/massive-march/world/terrain';
@@ -32,9 +33,9 @@ function project(x: number, z: number): [number, number] {
 
 export function MapSheet({ hasMap }: { hasMap: boolean }) {
   const { t } = useTranslation('c-massive-march');
-  const discovered = useMmStore((s) => s.world?.discovered ?? []);
-  const puzzles = useMmStore((s) => s.world?.puzzles ?? []);
-  const towers = useMmStore((s) => s.world?.towers ?? []);
+  const discovered = useMmStore((s) => s.world?.discovered ?? none<string>());
+  const puzzles = useMmStore((s) => s.world?.puzzles ?? none<PuzzleStatus>());
+  const towers = useMmStore((s) => s.world?.towers ?? none<TowerStatus>());
 
   const coast = useMemo(() => {
     const points: string[] = [];
