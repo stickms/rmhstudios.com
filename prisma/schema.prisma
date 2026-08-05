@@ -374,8 +374,27 @@ model User {
   callsPlaced   Call[] @relation("CallCaller")
   callsReceived Call[] @relation("CallCallee")
 
+  // ─── The Next 100 (2026-08-05) ───────────────────────────────────────────
+  /// Set by POST /api/account/delete. The account is signed out and hidden
+  /// immediately, but the anonymisation runs 30 days later — so a deletion at
+  /// 2am in anger is recoverable by simply signing back in (B12).
+  deletionScheduledAt DateTime?
+
+  aiUsage             AiUsage[]
+  activities          Activity[]
+  gameStats           GameStat[]
+  readPositions       ReadPosition[]
+  heldNotifications   HeldNotification[]
+  conversationPrefs   ConversationPref[]
+  idempotencyKeys     SiteIdempotencyKey[]
+  featureRequests     FeatureRequest[]
+  featureRequestVotes FeatureRequestVote[]
+
   @@index([isBot])
   @@index([followerCount])
+  // Backs the nightly finalize-deletion sweep; partial in effect since the
+  // column is null for every live account.
+  @@index([deletionScheduledAt])
   // Backs the "online now" fallback count (WHERE lastSeenAt >= cutoff). The
   // fast path is a Redis presence set; this keeps the DB fallback sane.
   @@index([lastSeenAt])
@@ -488,9 +507,21 @@ model Session {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  /// Coarse device family ("Chrome on macOS") — NOT a tracking identifier.
+  /// A sign-in whose (userId, deviceFp) pair has never been seen triggers the
+  /// new-device alert (B11). Deliberately low-entropy: the goal is "is this
+  /// familiar to the account owner", not "is this the same physical machine".
+  deviceFp  String?   @db.VarChar(80)
+  /// Hashed via lib/hash-ip.server — raw addresses are never stored here.
+  ipHash    String?   @db.VarChar(64)
+  /// Set once the owner has been told about this device, so an alert fires at
+  /// most once per device rather than on every session refresh.
+  alertedAt DateTime?
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([userId, deviceFp])
   @@map("session")
 }
 
@@ -780,20 +811,20 @@ model NeonDriftwayPlayer {
 }
 
 model NightrailPlayer {
-  id       String @id @default(uuid())
-  username String @unique
+  id             String   @id @default(uuid())
+  username       String   @unique
   /// Best single-run score across every level.
-  highScore Int @default(0)
+  highScore      Int      @default(0)
   /// Furthest distance covered in one run, metres.
-  bestDistance Int @default(0)
+  bestDistance   Int      @default(0)
   /// Highest combo multiplier ever reached — the trick-skill number.
-  bestMultiplier Int @default(1)
+  bestMultiplier Int      @default(1)
   /// Highest level reached, so the level select can be restored per account.
-  bestLevel   Int @default(1)
+  bestLevel      Int      @default(1)
   /// Runs that reached the finish line with cargo still aboard.
-  runsFinished Int @default(0)
-  gamesPlayed Int @default(1)
-  updatedAt   DateTime @default(now()) @updatedAt
+  runsFinished   Int      @default(0)
+  gamesPlayed    Int      @default(1)
+  updatedAt      DateTime @default(now()) @updatedAt
 
   userId String? @unique
   user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1856,6 +1887,9 @@ model RMHarkPollVote {
   id        String   @id @default(cuid())
   optionId  String
   userId    String
+  /// 1 = first preference. Null on single-choice polls, which keeps every
+  /// existing row valid and lets both methods share one table.
+  rank      Int?
   createdAt DateTime @default(now())
 
   option RMHarkPollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
@@ -1863,6 +1897,7 @@ model RMHarkPollVote {
 
   @@unique([optionId, userId])
   @@index([optionId])
+  @@index([userId, rank])
   @@map("rmheet_poll_vote")
 }
 
@@ -6585,4 +6620,290 @@ model LadderAnswerBank {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("ladder_answer_bank")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// The Next 100 — 2026-08-05
+// (docs/plans/2026-08-05-next-100-feature-ideas.md)
+//
+// All new tables here follow the R0-T7 PK policy: append-only / high-volume
+// tables take a BigInt identity rather than a cuid(), so inserts stay local and
+// a scan does not need a second (fk, createdAt) index.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Site-route idempotency replay (E5).
+///
+/// The developer API's `ApiIdempotencyKey` is keyed to a `DeveloperApiKey`, so
+/// it cannot serve the site's own mutations. This is the user-scoped twin, with
+/// the same request-hash conflict rule: the same key sent with a different body
+/// is a 409, not a silent replay of the wrong response.
+model SiteIdempotencyKey {
+  id           String   @id @default(cuid())
+  userId       String
+  idempotency  String   @db.VarChar(255)
+  method       String   @db.VarChar(8)
+  path         String   @db.VarChar(255)
+  requestHash  String   @db.VarChar(64)
+  /// Null while the first request is still in flight — the row is claimed
+  /// BEFORE the handler runs so a concurrent duplicate loses the race rather
+  /// than executing twice.
+  statusCode   Int?
+  responseBody String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, idempotency])
+  @@index([createdAt])
+  @@map("site_idempotency_key")
+}
+
+/// Per-call AI metering (A2). One row per model call, append-only.
+model AiUsage {
+  id         BigInt   @id @default(autoincrement())
+  userId     String?
+  /// An `AiTask` from lib/ai/provider.server.ts.
+  task       String   @db.VarChar(40)
+  provider   String   @db.VarChar(20)
+  model      String   @db.VarChar(60)
+  /// Prompt id + version from the registry, so a quality regression is a query.
+  promptId   String?  @db.VarChar(60)
+  promptVer  Int?
+  inTokens   Int      @default(0)
+  outTokens  Int      @default(0)
+  /// Micro-dollars — integer, so a month's SUM has no float drift.
+  costMicros Int      @default(0)
+  ok         Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+  @@map("ai_usage")
+}
+
+/// Cross-device read position for long-form content (B7).
+model ReadPosition {
+  userId    String
+  /// 'library' | 'news' | 'blog' | 'docs'
+  kind      String   @db.VarChar(20)
+  entityId  String
+  /// 0–1. Paired with an anchor so a reflow at a different width still lands.
+  fraction  Float    @default(0)
+  anchorId  String?  @db.VarChar(120)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, kind, entityId])
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("read_position")
+}
+
+/// The unified activity stream (C7).
+///
+/// History, recents, saves and bookmarks each answered "things this user
+/// touched" with a different storage strategy. This is the append-only source
+/// the resume rail (B2), cross-app quest chains (F19) and the "now" profile
+/// block (F8) all project from. Writes are buffered — a view event per scroll
+/// against a synchronous insert would be catastrophic.
+model Activity {
+  id       BigInt       @id @default(autoincrement())
+  userId   String
+  verb     ActivityVerb
+  /// 'post' | 'game' | 'doc' | 'video' | 'deck' | 'build' | …
+  kind     String       @db.VarChar(24)
+  entityId String
+  meta     Json         @default("{}")
+  at       DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, at(sort: Desc)])
+  @@index([userId, verb, at(sort: Desc)])
+  @@index([kind, entityId, at(sort: Desc)])
+  @@map("activity")
+}
+
+enum ActivityVerb {
+  VIEWED
+  PLAYED
+  SAVED
+  COMPLETED
+  RATED
+  SHARED
+}
+
+/// The default per-game stat row (C4).
+///
+/// `lib/game/adapters.server.ts` is right that rewriting the ~12 bespoke
+/// `*Player` tables would be a large migration for no user benefit. The cost of
+/// leaving it there is that every NEW scored game still needs a table, a
+/// migration and an adapter. This is what a new game uses instead; the bespoke
+/// adapters are untouched.
+model GameStat {
+  id        BigInt   @id @default(autoincrement())
+  gameId    String   @db.VarChar(60)
+  userId    String
+  username  String?  @db.VarChar(60)
+  score     Int      @default(0)
+  progress  Int      @default(0)
+  plays     Int      @default(1)
+  /// Game-specific numeric extras, so a new game needs no migration at all.
+  meta      Json     @default("{}")
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, userId])
+  @@index([gameId, score(sort: Desc)])
+  @@map("game_stat")
+}
+
+/// Held deliveries awaiting a quiet-hours window close (B13).
+///
+/// `lib/notify/dispatch.server.ts` already suppresses push during quiet hours —
+/// but it DROPS the notification rather than holding it, so a user with quiet
+/// hours on simply never learns about anything that happened overnight. These
+/// rows are flushed as one grouped delivery when the window ends.
+model HeldNotification {
+  id        BigInt    @id @default(autoincrement())
+  userId    String
+  category  String    @db.VarChar(40)
+  channel   String    @db.VarChar(10)
+  payload   Json
+  /// Collapses duplicates inside a window — same key, one delivery.
+  dedupeKey String?   @db.VarChar(160)
+  heldAt    DateTime  @default(now())
+  flushedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, flushedAt, heldAt])
+  @@map("held_notification")
+}
+
+/// Per-conversation notification control (B14).
+///
+/// `mentionsOnly` is the setting people actually want out of a busy group and
+/// almost no product offers; it is deliberately the middle option of three
+/// rather than something buried under a mute submenu.
+model ConversationPref {
+  userId       String
+  /// Discriminated: 'dm:<id>' | 'group:<id>' | 'space:<id>'
+  scopeKey     String    @db.VarChar(80)
+  /// Null = not muted. A far-future date = muted indefinitely.
+  muteUntil    DateTime?
+  mentionsOnly Boolean   @default(false)
+  pinned       Boolean   @default(false)
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, scopeKey])
+  @@index([userId, pinned])
+  @@map("conversation_pref")
+}
+
+/// Transactional outbox (E4).
+///
+/// Webhook and notification delivery ran inside the request that caused the
+/// event, so a crash between the commit and the send lost it with no trace.
+/// Writing the intent in the same transaction as the state change makes
+/// delivery at-least-once — which is why E5's idempotency keys are a
+/// prerequisite and not a nicety.
+model OutboxEvent {
+  id          BigInt    @id @default(autoincrement())
+  /// 'webhook.post.created' | 'notify.mention' | 'delivery.email' | …
+  topic       String    @db.VarChar(80)
+  payload     Json
+  attempts    Int       @default(0)
+  nextAttempt DateTime  @default(now())
+  deliveredAt DateTime?
+  /// Set when attempts are exhausted; the row stays for inspection.
+  deadAt      DateTime?
+  lastError   String?   @db.VarChar(500)
+  createdAt   DateTime  @default(now())
+
+  @@index([deliveredAt, deadAt, nextAttempt])
+  @@index([topic, createdAt(sort: Desc)])
+  @@map("outbox_event")
+}
+
+/// Resumable backfill checkpoints (E9).
+model BackfillCheckpoint {
+  name      String    @id @db.VarChar(80)
+  cursor    String?
+  processed Int       @default(0)
+  startedAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  doneAt    DateTime?
+
+  @@map("backfill_checkpoint")
+}
+
+/// Nightly achievement rarity rollup (F7).
+///
+/// Rarity is the entire psychology of a badge case: an achievement 0.4% of
+/// players hold is worth displaying, one 90% hold is not. Computed nightly
+/// rather than per request — it is a full-table count.
+model AchievementRarity {
+  achievementId String   @id @db.VarChar(80)
+  holders       Int      @default(0)
+  /// Share of non-banned accounts holding it, 0–1.
+  pct           Float    @default(0)
+  computedAt    DateTime @default(now())
+
+  @@index([pct])
+  @@map("achievement_rarity")
+}
+
+/// Public feature requests with voting (F22).
+///
+/// The `declined` and `shipped` statuses REQUIRE `officialNote` — enforced in
+/// `lib/requests/`, not by the database, because Prisma cannot express a
+/// conditional NOT NULL. A board where things quietly rot in `open` is worse
+/// than no board: it converts hope into resentment.
+model FeatureRequest {
+  id           String        @id @default(cuid())
+  authorId     String
+  title        String        @db.VarChar(120)
+  body         String        @db.Text
+  status       RequestStatus @default(OPEN)
+  officialNote String?       @db.Text
+  /// Duplicate handling — votes follow the merge target.
+  mergedIntoId String?
+  voteCount    Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  author     User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  mergedInto FeatureRequest?      @relation("RequestMerge", fields: [mergedIntoId], references: [id], onDelete: SetNull)
+  duplicates FeatureRequest[]     @relation("RequestMerge")
+  votes      FeatureRequestVote[]
+
+  @@index([status, voteCount(sort: Desc)])
+  @@index([authorId, createdAt(sort: Desc)])
+  @@map("feature_request")
+}
+
+model FeatureRequestVote {
+  requestId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  request FeatureRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([requestId, userId])
+  @@map("feature_request_vote")
+}
+
+enum RequestStatus {
+  OPEN
+  PLANNED
+  IN_PROGRESS
+  SHIPPED
+  DECLINED
 }

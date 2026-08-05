@@ -46,7 +46,7 @@ export const RTL_LOCALES: ReadonlySet<Locale> = new Set<Locale>(["ar", "ur"]);
  */
 export const NAMESPACES = [
   // Site-wide + section namespaces.
-  "common", "nav", "admin", "builds", "feed", "games-hub", "groups",
+  "common", "nav", "admin", "builds", "errors", "feed", "games-hub", "groups",
   "library", "pages", "rideshare", "search", "settings-appearance",
   "settings-content", "settings-notifications", "shared", "site",
   "theme-studio", "user-builds", "v",

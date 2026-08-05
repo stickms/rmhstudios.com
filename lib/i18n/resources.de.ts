@@ -28,6 +28,7 @@ import deCLibrary from "@/locales/de/c-library.json";
 import deCLightsOut from "@/locales/de/c-lights-out.json";
 import deCLists from "@/locales/de/c-lists.json";
 import deCLockdown from "@/locales/de/c-lockdown.json";
+import deCMassiveMarch from "@/locales/de/c-massive-march.json";
 import deCModeration from "@/locales/de/c-moderation.json";
 import deCNeonDriftway from "@/locales/de/c-neon-driftway.json";
 import deCNews from "@/locales/de/c-news.json";
@@ -117,6 +118,7 @@ const deResources = {
   "c-lights-out": deCLightsOut,
   "c-lists": deCLists,
   "c-lockdown": deCLockdown,
+  "c-massive-march": deCMassiveMarch,
   "c-moderation": deCModeration,
   "c-neon-driftway": deCNeonDriftway,
   "c-news": deCNews,

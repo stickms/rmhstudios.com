@@ -28,6 +28,7 @@ import idCLibrary from "@/locales/id/c-library.json";
 import idCLightsOut from "@/locales/id/c-lights-out.json";
 import idCLists from "@/locales/id/c-lists.json";
 import idCLockdown from "@/locales/id/c-lockdown.json";
+import idCMassiveMarch from "@/locales/id/c-massive-march.json";
 import idCModeration from "@/locales/id/c-moderation.json";
 import idCNeonDriftway from "@/locales/id/c-neon-driftway.json";
 import idCNews from "@/locales/id/c-news.json";
@@ -117,6 +118,7 @@ const idResources = {
   "c-lights-out": idCLightsOut,
   "c-lists": idCLists,
   "c-lockdown": idCLockdown,
+  "c-massive-march": idCMassiveMarch,
   "c-moderation": idCModeration,
   "c-neon-driftway": idCNeonDriftway,
   "c-news": idCNews,

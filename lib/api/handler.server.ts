@@ -40,14 +40,13 @@
  * ```
  */
 
+import { createHash } from 'node:crypto';
 import type { z } from 'zod';
 import { auth } from '@/lib/auth';
-import {
-  withRateLimit,
-  type RateLimitPolicy,
-  type WithRateLimitOptions,
-} from '@/lib/rate-limit';
+import type { RateLimitPolicy, WithRateLimitOptions } from '@/lib/rate-limit';
+import { withRateLimitAsync } from '@/lib/rate-limit.server';
 import { canUse, upgradeRequiredBody, type MemberFeature } from '@/lib/entitlements/features';
+import { isAppError } from '@/lib/errors/codes';
 
 /* -------------------------------------------------------------------------- */
 /* Session                                                                    */
@@ -153,6 +152,22 @@ export interface HandlerOptions<
    * first, because "sign in" is the more useful next step than "subscribe".
    */
   feature?: MemberFeature;
+  /**
+   * Honour an `Idempotency-Key` request header, replaying the first response
+   * for a repeated key instead of running the handler twice.
+   *
+   * `ApiIdempotencyKey` and this behaviour already existed for `/api/v1/**`
+   * via `withDeveloperApi`; the site's own mutations had none. That was
+   * survivable while every write was a deliberate click, and stops being
+   * survivable the moment writes are retried automatically — the service
+   * worker's offline outbox and the at-least-once outbox delivery both replay
+   * requests by design, so a double-post or a double-spend becomes a matter of
+   * when, not whether.
+   *
+   * Only meaningful on mutations. Requests without the header are unaffected,
+   * so turning this on is never a breaking change for an existing client.
+   */
+  idempotent?: boolean;
 }
 
 type Parsed<S extends z.ZodType | undefined> = S extends z.ZodType ? z.infer<S> : undefined;
@@ -195,14 +210,36 @@ export const forbidden = (message = 'Forbidden') => apiError(message, 403);
 export const notFound = (message = 'Not found') => apiError(message, 404);
 export const badRequest = (message = 'Invalid input') => apiError(message, 400);
 
+/**
+ * SHA-256 of the raw request body, for idempotency conflict detection.
+ *
+ * Kept here rather than imported from `idempotency.server` so the wrapper's
+ * module graph does not pull in Prisma for every route — the idempotency store
+ * itself is imported lazily, only on routes that opt in.
+ */
+function hashRequestBody(raw: string): string {
+  return createHash('sha256').update(raw).digest('hex');
+}
+
 /* -------------------------------------------------------------------------- */
 /* Wrapper                                                                    */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Resolve the route's rate limit.
+ *
+ * Routed through `withRateLimitAsync` — the Redis-backed path — rather than the
+ * synchronous `withRateLimit`, because the in-process `Map` behind the latter
+ * is per-process. This deployment runs the web tier plus six workers, and a
+ * blue/green hotswap has 7005 and 7015 live at the same time, so the effective
+ * ceiling was `limit × RATE_LIMIT_MULTIPLIER × processes`. Every route wrapped
+ * here now shares one counter when `REDIS_URL` is set, and falls back to the
+ * per-process limiter (looser, never absent) when it is not.
+ */
 function resolveRateLimit(request: Request, spec: RateLimitSpec, userId: string | null) {
-  if (typeof spec === 'string') return withRateLimit(request, spec, {});
+  if (typeof spec === 'string') return withRateLimitAsync(request, spec, {});
   const { policy = 'write', scope, ...rest } = spec;
-  return withRateLimit(request, policy, {
+  return withRateLimitAsync(request, policy, {
     ...rest,
     // Only user-scope when we actually have a user; otherwise fall back to the
     // IP-only bucket rather than sharing one global `null:` bucket between all
@@ -273,7 +310,7 @@ export function defineHandler<
 
       /* 2. Rate limit ---------------------------------------------------- */
       if (options.rateLimit) {
-        const limited = resolveRateLimit(request, options.rateLimit, userId);
+        const limited = await resolveRateLimit(request, options.rateLimit, userId);
         if (limited) return limited;
       }
 
@@ -282,9 +319,28 @@ export function defineHandler<
       const reason = (err: z.ZodError, fallback: string) =>
         options.verboseValidationErrors ? (err.issues[0]?.message ?? fallback) : fallback;
 
+      // Read the body ONCE as text. `request.json()` consumes the stream, and
+      // the idempotency claim below needs the same bytes to hash — a second
+      // read would throw, and re-serializing the parsed object would hash a
+      // different string than the client sent (key order, number formatting).
+      let rawBodyText: string | null = null;
+      const needsBody = Boolean(options.body) || (options.idempotent && userId);
+      if (needsBody) {
+        rawBodyText = await request.text().catch(() => null);
+      }
+
       let body: unknown;
       if (options.body) {
-        const raw = await request.json().catch(() => (options.allowEmptyBody ? {} : null));
+        let raw: unknown = null;
+        if (rawBodyText) {
+          try {
+            raw = JSON.parse(rawBodyText);
+          } catch {
+            raw = options.allowEmptyBody ? {} : null;
+          }
+        } else if (options.allowEmptyBody) {
+          raw = {};
+        }
         const parsed = options.body.safeParse(raw);
         if (!parsed.success) return badRequest(reason(parsed.error, 'Invalid input'));
         body = parsed.data;
@@ -298,8 +354,40 @@ export function defineHandler<
         query = parsed.data;
       }
 
+      /* 3b. Idempotency claim -------------------------------------------- */
+      // Claimed AFTER validation (no point reserving a key for a malformed
+      // request) and BEFORE the handler, so a concurrent duplicate loses the
+      // unique-constraint race instead of executing twice.
+      const idemKey =
+        options.idempotent && userId ? request.headers.get('idempotency-key')?.trim() : null;
+      const pathname = new URL(request.url).pathname;
+
+      if (idemKey && userId) {
+        const { claimIdempotency } = await import('@/lib/api/idempotency.server');
+        const claim = await claimIdempotency(
+          userId,
+          idemKey,
+          request.method,
+          pathname,
+          hashRequestBody(rawBodyText ?? ''),
+        );
+        if (claim.kind === 'invalid') return badRequest('Idempotency-Key is too long');
+        if (claim.kind === 'conflict') {
+          return apiError('This Idempotency-Key was already used with a different request', 409);
+        }
+        if (claim.kind === 'in-flight') {
+          return apiError('This request is already being processed', 409, { 'Retry-After': '1' });
+        }
+        if (claim.kind === 'replay') {
+          return new Response(claim.body, {
+            status: claim.status,
+            headers: { 'Content-Type': 'application/json', 'Idempotency-Replayed': 'true' },
+          });
+        }
+      }
+
       /* 4. Handler ------------------------------------------------------- */
-      return await handler({
+      const ctx: ApiCtx<A, B, Q> = {
         request,
         params: (params ?? {}) as Record<string, string>,
         session: session as SessionFor<A>,
@@ -308,10 +396,38 @@ export function defineHandler<
         isAdmin,
         body: body as Parsed<B>,
         query: query as Parsed<Q>,
-      });
+      };
+
+      let response: Response;
+      try {
+        response = await handler(ctx);
+      } catch (handlerError) {
+        // Release the claim so a genuine retry can run — a failed request must
+        // not burn its key for the next 24 hours.
+        if (idemKey && userId) {
+          const { releaseIdempotency } = await import('@/lib/api/idempotency.server');
+          await releaseIdempotency(userId, idemKey);
+        }
+        throw handlerError;
+      }
+
+      if (idemKey && userId) {
+        // Buffer the body so it can be stored AND still returned. Cloning is
+        // required: a Response body is a one-shot stream.
+        const stored = await response.clone().text();
+        const { recordIdempotency } = await import('@/lib/api/idempotency.server');
+        await recordIdempotency(userId, idemKey, response.status, stored);
+      }
+
+      return response;
     } catch (error) {
-      // The message is never echoed to the caller: a Prisma error can carry
-      // column names, connection strings and row contents.
+      // A named failure carries its own status and code; everything else is an
+      // unnamed exception and becomes a bare 500. The message is never echoed
+      // to the caller: a Prisma error can carry column names, connection
+      // strings and row contents.
+      if (isAppError(error)) {
+        return Response.json(error.toBody(), { status: error.status });
+      }
       const label = options.label ?? `${request.method} ${new URL(request.url).pathname}`;
       console.error(`[api] ${label} failed:`, error);
       return apiError('Internal Server Error', 500);
