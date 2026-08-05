@@ -18,6 +18,7 @@ import { getBoss, PROGRESSION_QUEUE } from '@/lib/jobs/boss.server';
 import { runProgression, type ProgressionJob } from '@/lib/social/engagement-effects.server';
 import { registerEventReminderWorker } from '@/lib/events.server';
 import { registerDigestCron } from '@/lib/digest/pipeline.server';
+import { registerMaintenanceCrons } from '@/lib/jobs/maintenance.server';
 
 const log = createLogger('jobs');
 
@@ -63,6 +64,21 @@ async function main() {
     log.error({
       event: 'jobs.register_failed',
       queue: 'email.weekly-digest',
+      err: (e as Error)?.message,
+    });
+  }
+
+  // Platform maintenance (2026-08-05 batch): the outbox drain (E4), the hourly
+  // idempotency/outbox sweeps (E5), and the nightly achievement-rarity rollup
+  // (F7). The outbox drain is the latency-sensitive one — it is the delivery
+  // path for webhooks and notifications, so it runs every minute.
+  try {
+    await registerMaintenanceCrons(boss);
+    log.info({ event: 'jobs.started', queue: 'platform.maintenance' });
+  } catch (e) {
+    log.error({
+      event: 'jobs.register_failed',
+      queue: 'platform.maintenance',
       err: (e as Error)?.message,
     });
   }

@@ -196,6 +196,39 @@ COPY lib/push/send.server.ts ./lib/push/send.server.ts
 COPY lib/redis.server.ts ./lib/redis.server.ts
 COPY lib/user-display.ts ./lib/user-display.ts
 COPY lib/shop/catalog.ts ./lib/shop/catalog.ts
+
+# ── jobs worker (pg-boss async backbone) ────────────────────────────────────
+# server/jobs/index.ts was in package.json's build script and in
+# docker-compose.yml's `command:` but was NEVER in this stage's esbuild list, so
+# the image shipped without dist-server/server/jobs/index.cjs and the jobs
+# container failed to start. Engagement progression has an inline fallback in
+# the web tier and so degraded quietly; the weekly digest and event reminders
+# are worker-only and simply never fired. Adding the entrypoint below requires
+# every lib/ module it reaches to be copied here — that set is what follows, and
+# lib/__tests__/server-bundle-copies.test.ts holds this list to the real import
+# graph.
+COPY lib/jobs ./lib/jobs/
+COPY lib/digest ./lib/digest/
+COPY lib/outbox ./lib/outbox/
+COPY lib/webhooks ./lib/webhooks/
+COPY lib/xp ./lib/xp/
+COPY lib/achievements/catalog.ts ./lib/achievements/catalog.ts
+COPY lib/achievements/engine.server.ts ./lib/achievements/engine.server.ts
+COPY lib/api/idempotency.server.ts ./lib/api/idempotency.server.ts
+COPY lib/async-pool.ts ./lib/async-pool.ts
+COPY lib/coins.server.ts ./lib/coins.server.ts
+COPY lib/communities/access.server.ts ./lib/communities/access.server.ts
+COPY lib/economy/ledger.server.ts ./lib/economy/ledger.server.ts
+COPY lib/email/send.server.ts ./lib/email/send.server.ts
+COPY lib/email/unsubscribe.ts ./lib/email/unsubscribe.ts
+COPY lib/events.server.ts ./lib/events.server.ts
+COPY lib/og/static-cards.ts ./lib/og/static-cards.ts
+COPY lib/quests/engine.server.ts ./lib/quests/engine.server.ts
+COPY lib/rate-limit.ts ./lib/rate-limit.ts
+COPY lib/referrals.server.ts ./lib/referrals.server.ts
+COPY lib/seo.ts ./lib/seo.ts
+COPY lib/social/engagement-effects.server.ts ./lib/social/engagement-effects.server.ts
+COPY lib/streak.server.ts ./lib/streak.server.ts
 COPY lib/shop/equipped.ts ./lib/shop/equipped.ts
 COPY lib/shop/themes.ts ./lib/shop/themes.ts
 # homes-worker (RMHHomes external-listing scraper cron) needs lib/homes for its
@@ -214,6 +247,7 @@ RUN pnpm exec esbuild \
     server/rmhtube/index.ts \
     server/ladder-worker/index.ts \
     server/homes-worker/index.ts \
+    server/jobs/index.ts \
     --bundle --platform=node --target=node24 \
     --outdir=dist-server --outbase=. \
     --format=cjs --out-extension:.js=.cjs --packages=external --tree-shaking=true \
@@ -223,7 +257,8 @@ RUN test -f dist-server/server/socket-server/index.cjs && \
     test -f dist-server/server/rmhbox/index.cjs && \
     test -f dist-server/server/rmhtube/index.cjs && \
     test -f dist-server/server/ladder-worker/index.cjs && \
-    test -f dist-server/server/homes-worker/index.cjs
+    test -f dist-server/server/homes-worker/index.cjs && \
+    test -f dist-server/server/jobs/index.cjs
 
 # ── Stage 2b: Pre-build the hosted vibe packages (cached as a layer) ──────────
 # scripts/build-vibe-packages.ts bundles the ~14 "hosted" vibe libs (three, pixi,
