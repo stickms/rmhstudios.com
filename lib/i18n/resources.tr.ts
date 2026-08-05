@@ -28,6 +28,7 @@ import trCLibrary from "@/locales/tr/c-library.json";
 import trCLightsOut from "@/locales/tr/c-lights-out.json";
 import trCLists from "@/locales/tr/c-lists.json";
 import trCLockdown from "@/locales/tr/c-lockdown.json";
+import trCMassiveMarch from "@/locales/tr/c-massive-march.json";
 import trCModeration from "@/locales/tr/c-moderation.json";
 import trCNeonDriftway from "@/locales/tr/c-neon-driftway.json";
 import trCNews from "@/locales/tr/c-news.json";
@@ -117,6 +118,7 @@ const trResources = {
   "c-lights-out": trCLightsOut,
   "c-lists": trCLists,
   "c-lockdown": trCLockdown,
+  "c-massive-march": trCMassiveMarch,
   "c-moderation": trCModeration,
   "c-neon-driftway": trCNeonDriftway,
   "c-news": trCNews,
