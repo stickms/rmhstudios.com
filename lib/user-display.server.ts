@@ -16,12 +16,19 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
-import { cached, invalidateCached } from '@/lib/cached.server';
+import { cachedMany, invalidateCached } from '@/lib/cached.server';
+import { hashTagged } from '@/lib/redis.server';
 import { userDisplaySelect, resolveUser, type ResolvedUser } from '@/lib/user-display';
 
 const USER_DISPLAY_TTL_MS = 60_000;
-const userDisplayKey = (id: string) => `user-display:${id}`;
+
+/**
+ * Hash-tagged (`{user-display}:<id>`) so the whole family shares one Redis
+ * Cluster slot: the batched read below is an `MGET`, which a cluster only
+ * answers when every key in the batch hashes to the same slot. Single instance
+ * today; this is what keeps that from becoming a migration-day surprise.
+ */
+const userDisplayKey = (id: string) => hashTagged('user-display', id);
 
 /**
  * Resolve display objects for a set of author ids. Nulls/undefined/dupes are
@@ -35,43 +42,40 @@ export async function getUserDisplayMap(
   const ids = [...new Set(userIds.filter((v): v is string => !!v))];
   if (ids.length === 0) return map;
 
-  // Batch the cold path: any id absent from the in-process L1 cache is loaded in
-  // ONE `findMany({ id: { in } })` here, instead of N parallel `findUnique`s
-  // (perf audit §2.9 — a 20-item feed page can reference ~40 distinct authors, so
-  // after each 60s TTL expiry the old code fired ~40 point queries that queued
-  // 4-deep on the pool). The per-id `cached()` calls below then resolve their
-  // loader from this prefetch map, so the DB is touched at most once per call.
-  const l1Misses = ids.filter((id) => apiCache.get(userDisplayKey(id)) === undefined);
-  const prefetched = new Map<string, ResolvedUser | null>();
-  if (l1Misses.length > 0) {
-    const rows = await prisma.user.findMany({
-      where: { id: { in: l1Misses } },
-      select: userDisplaySelect,
-    });
-    for (const row of rows) prefetched.set(row.id, resolveUser(row));
-    for (const id of l1Misses) if (!prefetched.has(id)) prefetched.set(id, null);
-  }
+  const idByKey = new Map(ids.map((id) => [userDisplayKey(id), id]));
 
-  // Resolve each id through the shared L1(in-process)+L2(Redis) cache. Warm L1
-  // ids resolve with zero work; L1-cold ids consult L2, then fall back to the
-  // batched prefetch above (no per-id DB). Routing through `cached()` keeps the
-  // cross-instance invalidation subscription and L2 write-through intact.
-  // Missing users (hard-deleted between queries) resolve to null and are neither
-  // cached nor added to the map.
-  const resolved = await Promise.all(
-    ids.map((id) =>
-      cached<ResolvedUser | null>(
-        userDisplayKey(id),
-        USER_DISPLAY_TTL_MS,
-        async () => prefetched.get(id) ?? null,
-        { shouldCache: (v) => v !== null },
-      ),
-    ),
+  // Three batched steps, in cost order: L1 for everything, ONE Redis MGET for
+  // the L1 misses, ONE `findMany({ id: { in } })` for whatever neither layer
+  // had (perf audit §2.9 — a 20-item feed page can reference ~40 distinct
+  // authors).
+  //
+  // The previous shape ran a `cached()` per id inside a `Promise.all`, which
+  // meant ~40 individual Redis round trips per cold page, and prefetched the
+  // *L1* misses from Postgres — so every id that Redis was already holding was
+  // queried from the database anyway. `cachedMany` orders the layers properly:
+  // the loader below only ever sees ids that are in neither cache.
+  //
+  // Ids with no matching user resolve to a cached miss (short negative TTL), so
+  // a hard-deleted author stops widening this `IN (…)` list on every request.
+  const resolved = await cachedMany<ResolvedUser>(
+    [...idByKey.keys()],
+    USER_DISPLAY_TTL_MS,
+    async (missingKeys) => {
+      const missingIds = missingKeys.flatMap((key) => {
+        const id = idByKey.get(key);
+        return id ? [id] : [];
+      });
+      const rows = await prisma.user.findMany({
+        where: { id: { in: missingIds } },
+        select: userDisplaySelect,
+      });
+      return new Map(rows.map((row) => [userDisplayKey(row.id), resolveUser(row)]));
+    },
   );
 
-  for (let i = 0; i < ids.length; i++) {
-    const r = resolved[i];
-    if (r) map.set(ids[i], r);
+  for (const [key, id] of idByKey) {
+    const user = resolved.get(key);
+    if (user) map.set(id, user);
   }
 
   return map;
@@ -81,6 +85,13 @@ export async function getUserDisplayMap(
  * Drop the cached display object for a user. Call after they edit their profile
  * (name/avatar) or equip/unequip cosmetics so their own next feed read reflects
  * the change immediately instead of waiting out the TTL.
+ *
+ * This also clears a cached *miss*, but no create path needs to call it for
+ * that reason: the key is the user id, a `cuid()` minted by the insert itself,
+ * so nothing can have looked the id up — and therefore cached its absence —
+ * before the row existed. Negative entries here can only ever come from an id
+ * that WAS real (a hard-deleted account still referenced by an old row), which
+ * never becomes real again.
  */
 export function invalidateUserDisplay(userId: string): void {
   // Fire-and-forget: drops the local L1 copy synchronously and broadcasts the
