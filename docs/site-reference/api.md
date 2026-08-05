@@ -6,18 +6,25 @@
 
 # API routes
 
-Every server route in the app tier — 480 files across 122 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 517 files across 128 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
 ## `/api/account`
 
-4 routes.
+11 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/account/delete` | `POST` | `app/routes/api/account/delete.ts` |
 | `/api/account/export` | `GET` | `app/routes/api/account/export.ts` |
+| `/api/account/recovery/codes` | `GET` `POST` | `app/routes/api/account/recovery/codes.ts` |
+| `/api/account/recovery/complete` | `POST` | `app/routes/api/account/recovery/complete.ts` |
+| `/api/account/recovery/contacts` | `GET` `POST` | `app/routes/api/account/recovery/contacts.ts` |
+| `/api/account/recovery/contacts/:id` | `DELETE` `POST` | `app/routes/api/account/recovery/contacts/$id.ts` |
+| `/api/account/recovery/hold` | `GET` | `app/routes/api/account/recovery/hold.ts` |
+| `/api/account/recovery/requests` | `GET` `POST` | `app/routes/api/account/recovery/requests.ts` |
+| `/api/account/recovery/requests/:id` | `DELETE` `POST` | `app/routes/api/account/recovery/requests/$id.ts` |
 | `/api/account/standing` | `GET` | `app/routes/api/account/standing.ts` |
 | `/api/account/strikes/:id/appeal` | `POST` | `app/routes/api/account/strikes/$id/appeal.ts` |
 
@@ -174,6 +181,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/builds/cover/:file` | `GET` | `app/routes/api/builds/cover/$file.ts` |
+
+## `/api/bulk`
+
+3 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/bulk` | `GET` `POST` | `app/routes/api/bulk/index.ts` |
+| `/api/bulk/:id` | `DELETE` `GET` | `app/routes/api/bulk/$id.ts` |
+| `/api/bulk/preview` | `POST` | `app/routes/api/bulk/preview.ts` |
 
 ## `/api/calls`
 
@@ -349,7 +366,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/emoji-packs`
 
-5 routes.
+6 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -357,6 +374,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/emoji-packs/:slug` | `GET` | `app/routes/api/emoji-packs/$slug/index.ts` |
 | `/api/emoji-packs/:slug/items` | `DELETE` `POST` | `app/routes/api/emoji-packs/$slug/items.ts` |
 | `/api/emoji-packs/:slug/subscribe` | `DELETE` `POST` | `app/routes/api/emoji-packs/$slug/subscribe.ts` |
+| `/api/emoji-packs/:slug/upload` | `POST` | `app/routes/api/emoji-packs/$slug/upload.ts` |
 | `/api/emoji-packs/installed` | `GET` | `app/routes/api/emoji-packs/installed.ts` |
 
 ## `/api/events`
@@ -494,6 +512,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/handle/check` | `GET` | `app/routes/api/handle/check.ts` |
 
+## `/api/handles`
+
+3 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/handles/change` | `GET` `POST` | `app/routes/api/handles/change.ts` |
+| `/api/handles/history` | `GET` | `app/routes/api/handles/history.ts` |
+| `/api/handles/impersonation` | `GET` `POST` | `app/routes/api/handles/impersonation.ts` |
+
 ## `/api/health`
 
 1 route.
@@ -610,20 +638,27 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/messages`
 
-10 routes.
+17 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/messages` | `GET` `POST` | `app/routes/api/messages.ts` |
 | `/api/messages/:conversationId` | `GET` `POST` | `app/routes/api/messages/$conversationId.ts` |
+| `/api/messages/:conversationId/edit` | `POST` | `app/routes/api/messages/$conversationId/edit.ts` |
+| `/api/messages/:conversationId/hide` | `POST` | `app/routes/api/messages/$conversationId/hide.ts` |
+| `/api/messages/:conversationId/mutations` | `GET` | `app/routes/api/messages/$conversationId/mutations.ts` |
 | `/api/messages/:conversationId/react` | `POST` | `app/routes/api/messages/$conversationId/react.ts` |
 | `/api/messages/:conversationId/read` | `POST` | `app/routes/api/messages/$conversationId/read.ts` |
+| `/api/messages/:conversationId/thread` | `GET` | `app/routes/api/messages/$conversationId/thread.ts` |
 | `/api/messages/:conversationId/typing` | `POST` | `app/routes/api/messages/$conversationId/typing.ts` |
+| `/api/messages/:conversationId/unsend` | `POST` | `app/routes/api/messages/$conversationId/unsend.ts` |
+| `/api/messages/:conversationId/voice` | `POST` | `app/routes/api/messages/$conversationId/voice.ts` |
 | `/api/messages/read-all` | `POST` | `app/routes/api/messages/read-all.ts` |
 | `/api/messages/search` | `GET` | `app/routes/api/messages/search.ts` |
 | `/api/messages/sidebar` | `GET` | `app/routes/api/messages/sidebar.ts` |
 | `/api/messages/stream` | `GET` | `app/routes/api/messages/stream.ts` |
 | `/api/messages/unread-count` | `GET` | `app/routes/api/messages/unread-count.ts` |
+| `/api/messages/voice/:filename` | `GET` | `app/routes/api/messages/voice/$filename.ts` |
 
 ## `/api/moderation`
 
@@ -780,6 +815,17 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/profile/layout` | `GET` `PUT` | `app/routes/api/profile/layout.ts` |
 | `/api/profile/me` | `GET` | `app/routes/api/profile/me.ts` |
 | `/api/profile/status` | `DELETE` `PUT` | `app/routes/api/profile/status.ts` |
+
+## `/api/profile-links`
+
+4 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/profile-links` | `GET` `POST` | `app/routes/api/profile-links/index.ts` |
+| `/api/profile-links/:id` | `DELETE` `PATCH` | `app/routes/api/profile-links/$id/index.ts` |
+| `/api/profile-links/:id/verify` | `POST` | `app/routes/api/profile-links/$id/verify.ts` |
+| `/api/profile-links/reverify` | `POST` | `app/routes/api/profile-links/reverify.ts` |
 
 ## `/api/progress`
 
@@ -957,14 +1003,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/rmhladder`
 
-9 routes.
+11 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/rmhladder/answers` | `DELETE` `GET` `PUT` | `app/routes/api/rmhladder/answers.ts` |
 | `/api/rmhladder/calendar` | `GET` | `app/routes/api/rmhladder/calendar.ts` |
 | `/api/rmhladder/events` | `POST` | `app/routes/api/rmhladder/events.ts` |
 | `/api/rmhladder/export` | `GET` | `app/routes/api/rmhladder/export.ts` |
 | `/api/rmhladder/import` | `POST` | `app/routes/api/rmhladder/import.ts` |
+| `/api/rmhladder/prep` | `POST` | `app/routes/api/rmhladder/prep.ts` |
 | `/api/rmhladder/resume` | `GET` `POST` | `app/routes/api/rmhladder/resume/index.ts` |
 | `/api/rmhladder/resume/:id` | `DELETE` `GET` | `app/routes/api/rmhladder/resume/$id.ts` |
 | `/api/rmhladder/resume/:id/analyze` | `POST` | `app/routes/api/rmhladder/resume/$id/analyze.ts` |
@@ -990,6 +1038,15 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/rmhtube/oembed` | `GET` | `app/routes/api/rmhtube/oembed.ts` |
 | `/api/rmhtube/subscribe/:channelId` | `POST` | `app/routes/api/rmhtube/subscribe/$channelId.ts` |
+
+## `/api/rmhtype`
+
+2 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/rmhtype/keystats` | `DELETE` `GET` `POST` | `app/routes/api/rmhtype/keystats.ts` |
+| `/api/rmhtype/practice-test` | `POST` | `app/routes/api/rmhtype/practice-test.ts` |
 
 ## `/api/rum`
 
@@ -1088,6 +1145,18 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/spaces/:id/end` | `POST` | `app/routes/api/spaces/$id/end.ts` |
 | `/api/spaces/:id/start` | `POST` | `app/routes/api/spaces/$id/start.ts` |
 | `/api/spaces/live` | `GET` | `app/routes/api/spaces/live.ts` |
+
+## `/api/speedrun`
+
+5 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/speedrun/categories` | `GET` `POST` | `app/routes/api/speedrun/categories.ts` |
+| `/api/speedrun/leaderboard` | `GET` | `app/routes/api/speedrun/leaderboard.ts` |
+| `/api/speedrun/replays` | `GET` | `app/routes/api/speedrun/replays.ts` |
+| `/api/speedrun/runs` | `GET` `POST` | `app/routes/api/speedrun/runs.ts` |
+| `/api/speedrun/verify` | `GET` `POST` | `app/routes/api/speedrun/verify.ts` |
 
 ## `/api/spotify`
 
@@ -1207,6 +1276,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/tournaments/:id/register` | `POST` | `app/routes/api/tournaments/$id/register.ts` |
 | `/api/tournaments/:id/start` | `POST` | `app/routes/api/tournaments/$id/start.ts` |
 | `/api/tournaments/:id/withdraw` | `POST` | `app/routes/api/tournaments/$id/withdraw.ts` |
+
+## `/api/trash`
+
+3 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/trash` | `GET` | `app/routes/api/trash/index.ts` |
+| `/api/trash/:kind/:id` | `DELETE` | `app/routes/api/trash/$kind/$id.ts` |
+| `/api/trash/restore` | `POST` | `app/routes/api/trash/restore.ts` |
 
 ## `/api/user-builds`
 

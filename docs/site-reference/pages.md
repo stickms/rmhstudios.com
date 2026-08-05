@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 243 routes. 126 render inside the standard site shell (sidebar, nav, context rail); 117 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 246 routes. 129 render inside the standard site shell (sidebar, nav, context rail); 117 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -54,6 +54,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/creator-studio` | redirects to `/create?tab=earnings` | public | `app/routes/_site/creator-studio.tsx` |
 | `/developer` | Developer API | public | `app/routes/_site/developer/index.tsx` |
 | `/drafts` | Drafts | public | `app/routes/_site/drafts.tsx` |
+| `/emoji-packs` | Emoji & sticker packs | public | `app/routes/_site/emoji-packs.tsx` |
 | `/events` | redirects to `/communities?tab=events` | public | `app/routes/_site/events.tsx` |
 | `/explore` | Explore | public | `app/routes/_site/explore.tsx` |
 | `/games` | Games | public | `app/routes/_site/games/index.tsx` |
@@ -121,6 +122,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/shop` | redirects to `/store?tab=shop` | public | `app/routes/_site/shop.tsx` |
 | `/spaces` | redirects to `/communities?tab=spaces` | public | `app/routes/_site/spaces.index.tsx` |
 | `/spaces/:id` | — | public | `app/routes/_site/spaces.$id.tsx` |
+| `/speedruns` | Speedruns | public | `app/routes/_site/speedruns.tsx` |
 | `/store` | Store — RMH Studios | public | `app/routes/_site/store/index.tsx` |
 | `/store/:userid` | Store | public | `app/routes/_site/store/$userid.tsx` |
 | `/studio/themes` | redirects to `/settings/themes` | public | `app/routes/_site/studio/themes.tsx` |
@@ -131,6 +133,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/thread/:rootId` | — | public | `app/routes/_site/thread/$rootId.tsx` |
 | `/tournaments` | Tournaments | public | `app/routes/_site/tournaments.index.tsx` |
 | `/tournaments/:id` | — | public | `app/routes/_site/tournaments.$id.tsx` |
+| `/trash` | Trash | public | `app/routes/_site/trash.tsx` |
 | `/u/:userid` | User Not Found \| RMH | public | `app/routes/_site/u/$userid/index.tsx` |
 | `/u/:userid/post/:postid` | Post Not Found \| RMH | public | `app/routes/_site/u/$userid/post/$postid.tsx` |
 | `/user-builds` | redirects to `/builds` | public | `app/routes/_site/user-builds/index.tsx` |
