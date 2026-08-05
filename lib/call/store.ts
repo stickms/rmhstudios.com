@@ -24,7 +24,7 @@ import {
   type CallEndReason,
   type CallPeer as CallPeerInfo,
 } from '@/lib/call/events';
-import { IDLE, reduce, type CallEvent, type CallState } from '@/lib/call/state';
+import { IDLE, isBusy, reduce, type CallEvent, type CallState } from '@/lib/call/state';
 import { CallPeer, callSupported } from '@/lib/call/peer';
 import type { IceServer } from '@/lib/call/ice';
 
@@ -114,8 +114,13 @@ export function initCalls(): void {
     url: import.meta.env.VITE_SOCKET_URL,
     path: '/socket/',
     auth: async () => {
+      // `token`, not a user id: the hub authenticates the Better Auth session
+      // token against the `session` table and derives the user from it. A
+      // client-supplied id would be an impersonation hole, so the server
+      // ignores one — leaving the socket anonymous, which silently disables
+      // every call handler and the `user:<id>` room an incoming call rings.
       const session = await authClient.getSession();
-      return { userId: session?.data?.user?.id ?? null };
+      return { token: session?.data?.session?.token };
     },
   });
 
@@ -137,6 +142,20 @@ export function initCalls(): void {
       });
     },
   );
+
+  socket.on(CALL_S2C.RINGING, ({ callId }: { callId: string }) => {
+    const s = store();
+    if (s.phase === 'outgoing' && s.callId === null) {
+      s.dispatch({ type: 'ringing', callId });
+      return;
+    }
+    // Already ours: a duplicate confirmation, nothing to do.
+    if (s.callId === callId) return;
+    // We gave up (or the mic failed) while the invite was still in flight. The
+    // server has since created the call and is ringing them, so cancel it —
+    // otherwise the callee rings for 45 seconds at a caller who has left.
+    client?.emit(CALL_C2S.CANCEL, { callId });
+  });
 
   socket.on(CALL_S2C.ACCEPTED, async ({ callId }: { callId: string }) => {
     const s = store();
@@ -199,23 +218,24 @@ export function initCalls(): void {
 export async function startCall(callee: CallPeerInfo, conversationId?: string): Promise<void> {
   initCalls();
   const s = store();
-  if (s.phase !== 'idle' && s.phase !== 'ended') return;
+  if (isBusy(s)) return;
 
   s.setMicDenied(false);
   s.setPeer(callee);
-  iceServers = await loadIceServers();
-  client?.emit(CALL_C2S.INVITE, { calleeId: callee.id, conversationId });
+  // Dial before the round trip, so the overlay is on screen while we wait and
+  // so a refusal has a call to end. The server answers with `ringing` (which
+  // carries the real call id) or `rejected`.
+  s.dispatch({ type: 'dial', peerId: callee.id, conversationId: conversationId ?? null });
 
-  // The server answers with `ringing` (which carries the real call id) or
-  // `rejected`. Until then the UI shows a dialling state driven by `peer`.
-  client?.socket.once(CALL_S2C.RINGING, ({ callId }: { callId: string }) => {
-    store().dispatch({
-      type: 'invite',
-      callId,
-      peerId: callee.id,
-      conversationId: conversationId ?? null,
-    });
-  });
+  iceServers = await loadIceServers();
+  // Hanging up during that fetch is a normal thing to do, and an invite sent
+  // afterwards would ring someone we already stopped calling.
+  if (store().phase !== 'outgoing') return;
+
+  // `emit` returns false when the socket is down, and drops the event. Saying
+  // so beats dialling forever against a reply that is never coming.
+  const sent = client?.emit(CALL_C2S.INVITE, { calleeId: callee.id, conversationId }) ?? false;
+  if (!sent) store().dispatch({ type: 'end', reason: 'failed' });
 }
 
 /** Answer a ringing call. Opens the microphone — this is the permission moment. */
