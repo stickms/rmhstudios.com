@@ -192,8 +192,24 @@ export const RUN_COACH: PromptSpec = {
   maxChars: 900,
 };
 
+export const TOOL_SELECT: PromptSpec = {
+  id: 'tool-select',
+  version: 1,
+  task: 'concierge',
+  instructions: [
+    'You choose at most ONE tool to answer a question about this platform, or no tool at all.',
+    'Return ONLY a JSON object: {"tool":"<name>","args":{...}} or {"tool":null}',
+    'Choose a tool ONLY when the question asks about the signed-in person’s own',
+    'state or needs a live lookup. General "how does X work" questions need no tool.',
+    'Use only the tool names listed. Never invent a name, an argument, or a value.',
+    'If a required argument is not present in the question, return {"tool":null}.',
+  ].join('\n'),
+  maxChars: 300,
+};
+
 /** Everything registered. The injection and contract suites iterate this. */
 export const ALL_PROMPTS: readonly PromptSpec[] = [
+  TOOL_SELECT,
   SUMMARIZE_THREAD,
   CATCH_UP,
   MODERATION_TRIAGE,
