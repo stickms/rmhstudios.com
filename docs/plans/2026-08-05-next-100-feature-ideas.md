@@ -1,7 +1,7 @@
 # The Next 100 — feature, AI, QOL, consolidation & refactor ideas
 
-**Date:** 2026-08-05 · **Status:** idea inventory, nothing committed to a
-release · **Count:** 112 numbered ideas
+**Date:** 2026-08-05 · **Count:** 112 numbered ideas · **Status:** 40 shipped,
+3 partial, 2 dropped, 67 open — see [§11](#11--implementation-status-2026-08-05)
 
 This is round eight of feature generation for rmhstudios.com. The seven earlier
 plan docs are listed in [`docs/README.md`](../README.md) §Plans; **every idea
@@ -2057,9 +2057,7 @@ model GameStat {
 ```ts
 // lib/game/adapters.server.ts
 /** Used by any game without a bespoke adapter. New games should need nothing else. */
-export const genericAdapter = (gameId: string): GameAdapter => ({
-  /* read/write GameStat */
-});
+export const genericAdapter = (gameId: string): GameAdapter => ({/* read/write GameStat */});
 
 export function getGameAdapter(id: string): GameAdapter {
   return BESPOKE[id] ?? genericAdapter(id);
@@ -2589,9 +2587,7 @@ it on others.
 
 ```ts
 // lib/user-display.ts
-export const userDisplaySelect = {
-  /* … existing … */
-} satisfies Prisma.UserSelect;
+export const userDisplaySelect = {/* … existing … */} satisfies Prisma.UserSelect;
 /** Adds counts + verification; for profile headers. */
 export const userProfileSelect = { ...userDisplaySelect /* … */ } satisfies Prisma.UserSelect;
 /** Minimal; for author chips in dense lists. */
@@ -4446,125 +4442,212 @@ is a space-separated list of ideas that should land first (empty = none).
 `area` is one of `ai` · `qol` · `consolidation` · `refactor` · `platform` ·
 `feature`. `size` is `S` · `M` · `L`.
 
+`status` is one of:
+
+- **`shipped`** — built, tested and on `claude/website-feature-ideas-ht4vny`.
+- **`partial`** — the logic and its tests exist; the UI or an endpoint does not.
+  Named precisely in §11.
+- **`dropped`** — cannot be built without a provider this project will not add.
+  Both entries need embeddings or vision, which DeepSeek does not offer.
+- **`open`** — not started.
+
 CSV rather than YAML deliberately: Prettier reflows long YAML flow-mappings
 across several lines, which breaks the one-row-per-idea property this block
 exists for.
 
 ```csv
-id,size,area,deps,title
-A1,M,ai,,"One AI provider seam — promote lib/rmhladder/ai/provider.server.ts into lib/ai/, keyed by task"
-A2,S,ai,A1,"AI spend ledger and per-tier budgets"
-A3,M,ai,A1,"Prompt registry with versions and golden-output evals"
-A4,S,ai,A1,"Stream every AI response over SSE"
-A5,M,ai,A1,"Embeddings and pgvector behind search and similarity"
-A6,M,ai,A1 A3,"Catch me up — thread and chat summaries"
-A7,M,ai,A1,"AI run coach on top of replays"
-A8,M,ai,A1 A3,"AI triage on the moderation queue"
-A9,S,ai,A1,"Narrative Wrapped and weekly recap"
-A10,M,ai,,"Difficulty director for solo games"
-A11,S,ai,,"Read-aloud for library, news and blog"
-A12,M,ai,A1 C10,"Vision pass on uploaded media (OCR, auto-tags, safety)"
-A13,M,ai,A1,"Natural language to the search DSL"
-A14,L,ai,C1,"Bot opponents so no lobby is ever empty"
-A15,S,ai,A1 A5,"Translation drift detection across 16 locales"
-A16,M,ai,A1,"Security review for User Builds"
-A17,S,ai,A1,"Explain this chart on analytics surfaces"
-A18,L,ai,A1 A3,"Give the concierge tools"
-A19,S,ai,A3,"Prompt-injection regression suite"
-A20,S,ai,A1,"Generated OG copy and card alt text"
-B1,S,qol,,"Universal undo for destructive actions"
-B2,M,qol,C7,"Jump back in — a resume rail"
-B3,S,qol,,"Draft autosave for every long-form input"
-B4,M,qol,,"One keyboard-shortcut registry"
-B5,M,qol,C8,"Per-category notification batching and digests"
-B6,S,qol,,"Notification grouping, filters and mark-all-read"
-B7,S,qol,,"Cross-device read position"
-B8,M,qol,,"Saved views on every list surface"
-B9,M,qol,,"Multi-select and reorder wherever a list is editable"
-B10,M,qol,E5,"Offline write queue in the service worker"
-B11,S,qol,,"New-device and new-location login alerts"
-B12,S,qol,,"Deletion grace period and pre-delete export"
-B13,S,qol,C8,"Quiet hours, honoured everywhere"
-B14,S,qol,C8,"Per-conversation notification control"
-B15,M,qol,,"A real link unfurler with a cache"
-B16,S,qol,C10,"Paste and drop that does the obvious thing"
-B17,S,qol,,"Surface scheduling everywhere ScheduledPost already works"
-B18,S,qol,,"A copy-as menu on shareable objects"
-B19,S,qol,,"Reader mode and print stylesheets"
-B20,M,qol,,"Data-saver mode"
-B21,S,qol,,"Focus mode"
-B22,S,qol,,"Profile completeness with a real payoff"
-B23,M,qol,,"Feedback with an annotated screenshot"
-B24,S,qol,,"Timezone-correct events and one-click calendar"
-C1,M,consolidation,,"Fold the three realtime hubs into one process"
-C2,S,consolidation,,"One leaderboard endpoint instead of 33"
-C3,L,consolidation,,"A generated socket event contract"
-C4,S,consolidation,D10,"A default stat table so new games stop adding tables"
-C5,L,consolidation,C6,"One casino engine with provable fairness"
-C6,L,consolidation,,"One commerce domain"
-C7,M,consolidation,,"One activity stream behind history, recents and saves"
-C8,M,consolidation,,"One delivery bus for every outbound message"
-C9,M,consolidation,,"One per-app profile accessor"
-C10,M,consolidation,,"One media ingest pipeline"
-C11,M,consolidation,A1,"One AI entry point"
-C12,M,consolidation,,"One generator for the reference docs"
-C13,M,consolidation,D2,"Declarative, audited rate-limit policy"
-C14,M,consolidation,,"Finish the AppShell migration"
-D1,M,refactor,D3,"A typed client for the 521 internal routes"
-D2,S,refactor,,"Prove every route uses defineHandler"
-D3,M,refactor,,"One home for zod schemas"
-D4,S,refactor,,"Ban ad-hoc Prisma selects on User"
-D5,M,refactor,,"Batch loaders for the feed's fan-out reads"
-D6,M,refactor,,"One data-fetching hook shape"
-D7,M,refactor,,"A definePage helper for route boilerplate"
-D8,S,refactor,,"Test factories"
-D9,S,refactor,,"Make the i18n registry self-checking"
-D10,S,refactor,,"Explode the catalog monoliths into per-entry files"
-D11,M,refactor,,"One error taxonomy with localized messages"
-D12,M,refactor,,"Inventory and dedupe the component tree"
-D13,M,refactor,C1,"Collapse the six server bundle entrypoints"
-D14,S,refactor,,"Delete the dead code the audit will find"
-D15,S,refactor,,"Rate limits are per-process, and therefore fiction"
-E1,M,platform,,"Distributed tracing across Node and Go"
-E2,S,platform,C3,"Version the socket protocol"
-E3,M,platform,D11,"Read-replica routing and a query budget guard"
-E4,M,platform,E5,"Transactional outbox for webhooks and notifications"
-E5,M,platform,,"Idempotency keys on every mutation"
-E6,S,platform,,"An expand/contract migration policy, enforced"
-E7,M,platform,C10,"Content-addressed assets and a purge path"
-E8,M,platform,,"A degradation matrix, tested"
-E9,M,platform,,"A resumable backfill framework"
-E10,M,platform,C3,"Load-test the realtime tier"
-E11,M,platform,A2 E1,"Per-feature cost observability"
-E12,M,platform,,"Partition the append-only tables"
-E13,M,platform,E7,"Cold tiering for large media and old rows"
-E14,M,platform,E1,"SLO burn-rate alerts in the status service"
-E15,S,platform,,"Supply-chain provenance (SBOM + image signing)"
-F1,M,feature,,"Megathreads and AMAs"
-F2,L,feature,C1,"Audio stages inside Spaces"
-F3,M,feature,,"Ranked-choice and multi-winner polls"
-F4,L,feature,C6,"Long-form publishing with paid subscribers"
-F5,M,feature,C7,"Creator analytics that answer why"
-F6,M,feature,,"A referral program with tiers and activation-based attribution"
-F7,S,feature,,"A badge case with rarity"
-F8,M,feature,C7,"Turn profile links into a link-in-bio page"
-F9,M,feature,C1,"Read-along rooms"
-F10,M,feature,C6,"A remix graph with attribution"
-F11,L,feature,D10,"Playable preview cards in the feed"
-F12,M,feature,,"An API console in the developer docs"
-F13,M,feature,C2,"Embeddable widgets"
-F14,S,feature,C10,"Share Target — upgrade the GET target to POST multipart so media can be shared in"
-F15,M,feature,B3,"Device handoff via signed QR"
-F16,S,feature,C2,"Scoped leaderboards — friends, community, country"
-F17,M,feature,C2,"Seasons for the app tier"
-F18,M,feature,C6,"A marketplace for user-authored themes"
-F19,M,feature,C7,"Cross-app quest chains"
-F20,M,feature,C6,"Group gifting and pooled purchases"
-F21,M,feature,,"Community wikis"
-F22,M,feature,,"A public request board with voting"
-F23,S,feature,,"Public edit history"
-F24,M,feature,C8,"Mentions that work everywhere"
+id,size,area,status,deps,title
+A1,M,ai,shipped,,"One AI provider seam — promote lib/rmhladder/ai/provider.server.ts into lib/ai/, keyed by task"
+A2,S,ai,shipped,A1,"AI spend ledger and per-tier budgets"
+A3,M,ai,shipped,A1,"Prompt registry with versions and golden-output evals"
+A4,S,ai,shipped,A1,"Stream every AI response over SSE"
+A5,M,ai,dropped,A1,"Embeddings and pgvector behind search and similarity"
+A6,M,ai,shipped,A1 A3,"Catch me up — thread and chat summaries"
+A7,M,ai,shipped,A1,"AI run coach on top of replays"
+A8,M,ai,shipped,A1 A3,"AI triage on the moderation queue"
+A9,S,ai,open,A1,"Narrative Wrapped and weekly recap"
+A10,M,ai,open,,"Difficulty director for solo games"
+A11,S,ai,shipped,,"Read-aloud for library, news and blog"
+A12,M,ai,dropped,A1 C10,"Vision pass on uploaded media (OCR, auto-tags, safety)"
+A13,M,ai,shipped,A1,"Natural language to the search DSL"
+A14,L,ai,open,C1,"Bot opponents so no lobby is ever empty"
+A15,S,ai,open,A1 A5,"Translation drift detection across 16 locales"
+A16,M,ai,open,A1,"Security review for User Builds"
+A17,S,ai,shipped,A1,"Explain this chart on analytics surfaces"
+A18,L,ai,open,A1 A3,"Give the concierge tools"
+A19,S,ai,shipped,A3,"Prompt-injection regression suite"
+A20,S,ai,shipped,A1,"Generated OG copy and card alt text"
+B1,S,qol,shipped,,"Universal undo for destructive actions"
+B2,M,qol,shipped,C7,"Jump back in — a resume rail"
+B3,S,qol,shipped,,"Draft autosave for every long-form input"
+B4,M,qol,shipped,,"One keyboard-shortcut registry"
+B5,M,qol,open,C8,"Per-category notification batching and digests"
+B6,S,qol,shipped,,"Notification grouping, filters and mark-all-read"
+B7,S,qol,shipped,,"Cross-device read position"
+B8,M,qol,open,,"Saved views on every list surface"
+B9,M,qol,open,,"Multi-select and reorder wherever a list is editable"
+B10,M,qol,open,E5,"Offline write queue in the service worker"
+B11,S,qol,shipped,,"New-device and new-location login alerts"
+B12,S,qol,shipped,,"Deletion grace period and pre-delete export"
+B13,S,qol,shipped,C8,"Quiet hours, honoured everywhere"
+B14,S,qol,shipped,C8,"Per-conversation notification control"
+B15,M,qol,open,,"A real link unfurler with a cache"
+B16,S,qol,open,C10,"Paste and drop that does the obvious thing"
+B17,S,qol,open,,"Surface scheduling everywhere ScheduledPost already works"
+B18,S,qol,shipped,,"A copy-as menu on shareable objects"
+B19,S,qol,shipped,,"Reader mode and print stylesheets"
+B20,M,qol,shipped,,"Data-saver mode"
+B21,S,qol,shipped,,"Focus mode"
+B22,S,qol,partial,,"Profile completeness with a real payoff"
+B23,M,qol,open,,"Feedback with an annotated screenshot"
+B24,S,qol,open,,"Timezone-correct events and one-click calendar"
+C1,M,consolidation,open,,"Fold the three realtime hubs into one process"
+C2,S,consolidation,shipped,,"One leaderboard endpoint instead of 33"
+C3,L,consolidation,open,,"A generated socket event contract"
+C4,S,consolidation,shipped,D10,"A default stat table so new games stop adding tables"
+C5,L,consolidation,open,C6,"One casino engine with provable fairness"
+C6,L,consolidation,open,,"One commerce domain"
+C7,M,consolidation,shipped,,"One activity stream behind history, recents and saves"
+C8,M,consolidation,open,,"One delivery bus for every outbound message"
+C9,M,consolidation,open,,"One per-app profile accessor"
+C10,M,consolidation,open,,"One media ingest pipeline"
+C11,M,consolidation,open,A1,"One AI entry point"
+C12,M,consolidation,open,,"One generator for the reference docs"
+C13,M,consolidation,open,D2,"Declarative, audited rate-limit policy"
+C14,M,consolidation,open,,"Finish the AppShell migration"
+D1,M,refactor,open,D3,"A typed client for the 521 internal routes"
+D2,S,refactor,shipped,,"Prove every route uses defineHandler"
+D3,M,refactor,open,,"One home for zod schemas"
+D4,S,refactor,open,,"Ban ad-hoc Prisma selects on User"
+D5,M,refactor,open,,"Batch loaders for the feed's fan-out reads"
+D6,M,refactor,shipped,,"One data-fetching hook shape"
+D7,M,refactor,open,,"A definePage helper for route boilerplate"
+D8,S,refactor,shipped,,"Test factories"
+D9,S,refactor,open,,"Make the i18n registry self-checking"
+D10,S,refactor,open,,"Explode the catalog monoliths into per-entry files"
+D11,M,refactor,shipped,,"One error taxonomy with localized messages"
+D12,M,refactor,open,,"Inventory and dedupe the component tree"
+D13,M,refactor,open,C1,"Collapse the six server bundle entrypoints"
+D14,S,refactor,open,,"Delete the dead code the audit will find"
+D15,S,refactor,shipped,,"Rate limits are per-process, and therefore fiction"
+E1,M,platform,open,,"Distributed tracing across Node and Go"
+E2,S,platform,open,C3,"Version the socket protocol"
+E3,M,platform,open,D11,"Read-replica routing and a query budget guard"
+E4,M,platform,shipped,E5,"Transactional outbox for webhooks and notifications"
+E5,M,platform,shipped,,"Idempotency keys on every mutation"
+E6,S,platform,shipped,,"An expand/contract migration policy, enforced"
+E7,M,platform,open,C10,"Content-addressed assets and a purge path"
+E8,M,platform,shipped,,"A degradation matrix, tested"
+E9,M,platform,shipped,,"A resumable backfill framework"
+E10,M,platform,open,C3,"Load-test the realtime tier"
+E11,M,platform,open,A2 E1,"Per-feature cost observability"
+E12,M,platform,open,,"Partition the append-only tables"
+E13,M,platform,open,E7,"Cold tiering for large media and old rows"
+E14,M,platform,open,E1,"SLO burn-rate alerts in the status service"
+E15,S,platform,open,,"Supply-chain provenance (SBOM + image signing)"
+F1,M,feature,open,,"Megathreads and AMAs"
+F2,L,feature,open,C1,"Audio stages inside Spaces"
+F3,M,feature,partial,,"Ranked-choice and multi-winner polls"
+F4,L,feature,open,C6,"Long-form publishing with paid subscribers"
+F5,M,feature,open,C7,"Creator analytics that answer why"
+F6,M,feature,open,,"A referral program with tiers and activation-based attribution"
+F7,S,feature,partial,,"A badge case with rarity"
+F8,M,feature,open,C7,"Turn profile links into a link-in-bio page"
+F9,M,feature,open,C1,"Read-along rooms"
+F10,M,feature,open,C6,"A remix graph with attribution"
+F11,L,feature,open,D10,"Playable preview cards in the feed"
+F12,M,feature,open,,"An API console in the developer docs"
+F13,M,feature,open,C2,"Embeddable widgets"
+F14,S,feature,open,C10,"Share Target — upgrade the GET target to POST multipart so media can be shared in"
+F15,M,feature,open,B3,"Device handoff via signed QR"
+F16,S,feature,shipped,C2,"Scoped leaderboards — friends, community, country"
+F17,M,feature,open,C2,"Seasons for the app tier"
+F18,M,feature,open,C6,"A marketplace for user-authored themes"
+F19,M,feature,open,C7,"Cross-app quest chains"
+F20,M,feature,open,C6,"Group gifting and pooled purchases"
+F21,M,feature,open,,"Community wikis"
+F22,M,feature,open,,"A public request board with voting"
+F23,S,feature,open,,"Public edit history"
+F24,M,feature,open,C8,"Mentions that work everywhere"
 ```
+
+---
+
+## §11 — Implementation status (2026-08-05)
+
+40 of the 112 shipped on `claude/website-feature-ideas-ht4vny`, 3 landed
+partially, 2 are dropped, 67 remain open. The `status` column in §9 is the
+machine-readable form of this.
+
+### Dropped, and why
+
+**A5 (embeddings/pgvector)** and **A12 (vision pass on media)** both require a
+provider this project will not add: DeepSeek offers neither an embeddings
+endpoint nor a vision model. They are not deferred, they are unbuildable under
+the current provider policy. The lexical paths they were meant to replace
+(`lib/feed/similarity.ts`, `lib/assistant/knowledge.server.ts`) stay as they
+are.
+
+Consequently **A15** (translation drift) is open rather than shipped — its
+scoring step depends on A5.
+
+### Partial
+
+| Idea                         | What exists                                                                                                                                                                                                                    | What does not                                                                                               |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| **B22** profile completeness | `lib/profile/completeness.ts` + tests: the step table, weights, the single next-step selector, the one-time coin grants and their ledger refs                                                                                  | No API route and no ring on the profile page. The coin grant is declared, not wired to `awardCoins`.        |
+| **F3** ranked-choice polls   | `lib/feed/poll-count.ts` + 14 tests: instant-runoff with a deterministic tie-break, exhausted-ballot handling, and `ballotsFromVotes` so votes cast before a poll became ranked still count. `RMHarkPollVote.rank` is migrated | No composer control for ranking, no round-by-round UI, and the vote endpoint still writes one row per voter |
+| **F7** badge rarity          | `lib/achievements/rarity.ts` + tests, and the nightly `achievements.rarity` rollup on the jobs worker                                                                                                                          | No badge case UI and no showcase pinning                                                                    |
+
+### Defects found and fixed while building
+
+These were not on the list. Each was found by a guard that had to be written
+first, which is the argument for writing the guards.
+
+1. **The jobs worker was never built into the production image.**
+   `server/jobs/index.ts` is in `package.json`'s build script and is what
+   `docker-compose.yml` runs, but was absent from the Dockerfile's esbuild
+   entrypoints. Engagement progression has an inline fallback and degraded
+   quietly; `event.reminder` and `email.weekly-digest` are worker-only and have
+   never fired in production.
+
+2. **`getGameAdapter` was a bare object index on a URL-supplied id**, so
+   `getGameAdapter('constructor')` returned `Object.prototype.constructor` —
+   truthy, so it passed every `if (!adapter)` guard and then threw on
+   `.leaderboard`, 500-ing the v1 developer API.
+
+3. **`prisma migrate dev` proposes dropping `rmheet.content_tsv`** on every
+   run. It is a GENERATED tsvector Prisma cannot model, consumed by raw SQL in
+   `lib/search/posts.server.ts`; accepting the drop destroys post full-text
+   search. Removed from this batch's migration, matching the precedent in
+   `20260728130000_sync_wager_tournament_drift`.
+
+4. **The held-notification flush pulled all 16 locale catalogs into the jobs
+   bundle** (10.5 MB → 119 KB once removed) to render three strings it resolved
+   at `DEFAULT_LOCALE` — i.e. English — anyway.
+
+5. **File-level migration-safety acknowledgements were too blunt.** As first
+   written, acknowledging a small-table index build would also have silenced a
+   `DROP COLUMN` added to the same file later. Now scoped per rule id.
+
+### Corrections to this document
+
+- **D15 overstated the work.** The distributed limiter already existed at
+  `lib/rate-limit.server.ts` (`checkRateLimit`); it simply was not wired into
+  `defineHandler`. The diagnosis was right and the fix was smaller than
+  described.
+- **§1 ranked A1 as promoting RMHLadder's provider.** That is what shipped, but
+  with DeepSeek as the only backend — the Anthropic path in
+  `lib/rmhladder/ai/provider.server.ts` is untouched and nothing new routes to
+  it.
+
+### What the guards now hold
+
+`lib/__tests__/api-handler-adoption.test.ts` records the real adoption backlog:
+**106** of 521 API route files never adopted `defineHandler`, and a further
+**73** use a wrapper but still call `auth.api.getSession` by hand — most of
+those being `auth: 'none'` plus a manual check, which is a one-word fix. Both
+allowlists have staleness tests, so they can only shrink.
 
 ---
 
