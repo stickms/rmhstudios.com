@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
+import { pingIndexNow } from '@/lib/seo/indexnow.server';
 
 export const Route = createFileRoute('/api/admin/blog')({
   server: {
@@ -74,6 +75,12 @@ export const Route = createFileRoute('/api/admin/blog')({
           targetId: slug,
           detail: title,
         });
+
+        // The post is live at /blog/<slug> the moment the upsert commits, and
+        // every blogPost row is in the sitemap unconditionally (see
+        // lib/sitemap.server.ts). Tell IndexNow now rather than waiting for the
+        // next crawl. Fire-and-forget by contract — never awaited, never throws.
+        pingIndexNow([`/blog/${slug}`]);
 
         return Response.json({ success: true, slug });
       }),

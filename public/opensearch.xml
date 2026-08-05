@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  OpenSearch description for rmhstudios.com (OPT-63).
+
+  Lets a browser register the site as a search engine: type "rmhstudios.com" in
+  the address bar, press Tab, and search the site directly. Linked from the
+  document head in app/routes/__root.tsx.
+
+  There is deliberately NO <Url type="application/x-suggestions+json"> element.
+  That element needs an endpoint returning the bare OpenSearch array format
+  (["query", ["suggestion", ...]]), and the site has no such endpoint:
+  /api/search requires a session and answers in the site's own JSON envelope,
+  and app/routes/api/search/ holds only the saved-search routes. Pointing at a
+  URL that 404s (or answers 401) would make the address bar drop the engine, so
+  the HTML <Url> ships alone. Add the suggestions element at the same time as
+  the endpoint, not before.
+-->
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/"
+                       xmlns:moz="http://www.mozilla.org/2006/browser/search/">
+  <ShortName>RMH Studios</ShortName>
+  <Description>Search games, apps, posts and the library on RMH Studios</Description>
+  <InputEncoding>UTF-8</InputEncoding>
+  <Image width="16" height="16" type="image/svg+xml">https://rmhstudios.com/favicon.svg</Image>
+  <Url type="text/html" method="get" template="https://rmhstudios.com/search?q={searchTerms}"/>
+  <moz:SearchForm>https://rmhstudios.com/search</moz:SearchForm>
+</OpenSearchDescription>
