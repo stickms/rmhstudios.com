@@ -371,10 +371,12 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
   },
   'massive-march': {
     genre: ['puzzle', 'narrative'],
-    // Online co-op ONLY. There is no single-player mode and no pretending
-    // otherwise: every puzzle on the island needs somebody standing somewhere
-    // you are not, and the campaign cannot be started alone.
-    players: ['online-coop'],
+    // Co-op first, but no longer co-op ONLY. Every site has a one-person layout
+    // (`crew.solo` in world/sites.ts), so the island is the same island alone —
+    // fewer pads lit, one totem to turn, and the bucket route read to the person
+    // walking it because there is nobody else to read it. What solo removes is
+    // the second pair of hands, never the walk or the puzzle.
+    players: ['single', 'online-coop'],
     maxPlayers: 12, // lib/massive-march/constants.ts MAX_PLAYERS
     // A microphone is genuinely optional — spatial text is under identical
     // audibility rules — so it is not an input method the game requires.

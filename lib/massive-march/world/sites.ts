@@ -139,7 +139,7 @@ export const PUZZLE_SITES: readonly PuzzleSite[] = (() => {
       z: tideBells.z,
       radius: 26,
       reward: 1,
-      crew: { duo: 2, trio: 3, band: 4 },
+      crew: { solo: 1, duo: 2, trio: 3, band: 4 },
       sign: 'ALL AT ONCE',
       // Close together and in plain sight: the first site anybody finds should
       // be solvable by two people shouting "three, two, one" at each other.
@@ -155,7 +155,7 @@ export const PUZZLE_SITES: readonly PuzzleSite[] = (() => {
       z: sealedBooth.z,
       radius: 30,
       reward: 1,
-      crew: { duo: 2, trio: 2, band: 2 },
+      crew: { solo: 1, duo: 2, trio: 2, band: 2 },
       sign: 'ONE READS · ONE PRESSES',
       // The booth is soundproof and the console is behind it, so the reader can
       // neither be heard nor point at what they can see. Four glyphs, six
@@ -174,7 +174,7 @@ export const PUZZLE_SITES: readonly PuzzleSite[] = (() => {
       z: bucketWalk.z,
       radius: 32,
       reward: 1,
-      crew: { duo: 2, trio: 3, band: 3 },
+      crew: { solo: 1, duo: 2, trio: 3, band: 3 },
       sign: 'EYES OFF · FEET ON',
       // Five plates, lit one at a time and only for the people who are not
       // wearing the bucket. "Your left" versus "left" is learned here.
@@ -196,7 +196,7 @@ export const PUZZLE_SITES: readonly PuzzleSite[] = (() => {
       z: hoopBall.z,
       radius: 34,
       reward: 1,
-      crew: { duo: 2, trio: 2, band: 2 },
+      crew: { solo: 1, duo: 2, trio: 2, band: 2 },
       sign: 'THROUGH · NOT OVER',
       // Physical comedy with a scoreboard. Three passes, because the first one
       // is always luck and everybody knows it.
@@ -212,7 +212,7 @@ export const PUZZLE_SITES: readonly PuzzleSite[] = (() => {
       z: cairns.z,
       radius: 40,
       reward: 2,
-      crew: { duo: 3, trio: 4, band: 5 },
+      crew: { solo: 2, duo: 3, trio: 4, band: 5 },
       sign: 'THE DEVICE ONLY SAYS WARMER',
       // Deliberately larger than a group can sweep together. Fanning out and
       // keeping a chain of voices open is the mechanic; the detector is a
@@ -229,7 +229,7 @@ export const PUZZLE_SITES: readonly PuzzleSite[] = (() => {
       z: threeTotems.z,
       radius: 38,
       reward: 2,
-      crew: { duo: 2, trio: 3, band: 3 },
+      crew: { solo: 1, duo: 2, trio: 3, band: 3 },
       requiresKey: 'yellow',
       sign: 'THE ANSWER IS NOT HERE',
       // The target facings are painted on the hillside and legible only from
@@ -252,7 +252,7 @@ export const PUZZLE_SITES: readonly PuzzleSite[] = (() => {
       z: splitGlass.z,
       radius: 34,
       reward: 2,
-      crew: { duo: 2, trio: 3, band: 3 },
+      crew: { solo: 1, duo: 2, trio: 3, band: 3 },
       requiresKey: 'yellow',
       sign: 'HALF EACH',
       // The same idea as the Sealed Booth with the sequence cut in two and the
@@ -274,7 +274,7 @@ export const PUZZLE_SITES: readonly PuzzleSite[] = (() => {
       z: longRelay.z,
       radius: 60,
       reward: 2,
-      crew: { duo: 2, trio: 3, band: 4 },
+      crew: { solo: 1, duo: 2, trio: 3, band: 4 },
       requiresKey: 'blue',
       sign: 'ALL AT ONCE · STILL',
       // The Tide Bells again, except the pads are sixty metres apart behind
@@ -291,7 +291,7 @@ export const PUZZLE_SITES: readonly PuzzleSite[] = (() => {
       z: nightLamps.z,
       radius: 44,
       reward: 2,
-      crew: { duo: 2, trio: 3, band: 3 },
+      crew: { solo: 1, duo: 2, trio: 3, band: 3 },
       nightOnly: true,
       sign: 'AFTER DARK ONLY',
       // Same shape, in the dark, on a ridge, with the lamps as the only thing
@@ -309,7 +309,7 @@ export const PUZZLE_SITES: readonly PuzzleSite[] = (() => {
       z: deepMaze.z,
       radius: 34,
       reward: 2,
-      crew: { duo: 2, trio: 3, band: 4 },
+      crew: { solo: 1, duo: 2, trio: 3, band: 4 },
       requiresKey: 'blue',
       sign: 'EYES OFF · SIX PLATES',
       // The bucket walk with a longer route and a wall in the middle, so the
@@ -333,7 +333,7 @@ export const PUZZLE_SITES: readonly PuzzleSite[] = (() => {
       z: highWindow.z,
       radius: 36,
       reward: 2,
-      crew: { duo: 2, trio: 3, band: 3 },
+      crew: { solo: 1, duo: 2, trio: 3, band: 3 },
       requiresKey: 'red',
       sign: 'LOOK THROUGH · NOT AT',
       // The lookout is a slot in a wall two hundred metres off, so the observer
@@ -356,7 +356,7 @@ export const PUZZLE_SITES: readonly PuzzleSite[] = (() => {
       z: finalMarch.z,
       radius: 52,
       reward: 3,
-      crew: { duo: 2, trio: 3, band: 4 },
+      crew: { solo: 1, duo: 2, trio: 3, band: 4 },
       requiresKey: 'red',
       sign: 'READ · TURN · STAND',
       // The synthesis (§12.11). Three stages, in order, and the group has to
@@ -383,6 +383,35 @@ export function puzzleSite(id: string): PuzzleSite | undefined {
 
 /** Every red round the island can produce. Comfortably more than is needed. */
 export const TOTAL_ORBS = PUZZLE_SITES.reduce((sum, s) => sum + s.reward, 0);
+
+/**
+ * The mast planted at every installation.
+ *
+ * Travel time is the game (§7), which only works if there is something to walk
+ * TOWARD. Eight of the twelve sites had nothing above the 3.15m sign that stands
+ * at the edge of them — legible at forty metres, invisible at two hundred — so
+ * an island crossing was a search of open hillside rather than a walk to a thing
+ * you had spotted. The one tall marker the sites did have was the red flag, and
+ * it went up on completion: you were handed the landmark exactly when you had
+ * finished needing it.
+ *
+ * So the mast is now always there and the FLAG carries the state. Red still
+ * means done, unchanged and still readable across a valley; cream means a site
+ * nobody has finished. Nothing else moves — the map still refuses to say where
+ * you are, and a site is still discovered by standing in it.
+ */
+export const SITE_MAST_HEIGHT = 11;
+
+export interface SiteMarker {
+  /** Ground to the top of the pole, in metres. */
+  height: number;
+  /** Flag colour. Red is the existing "we have been here" signal. */
+  flag: 'open' | 'done';
+}
+
+export function siteMarker(solved: boolean): SiteMarker {
+  return { height: SITE_MAST_HEIGHT, flag: solved ? 'done' : 'open' };
+}
 
 // ─── Towers ─────────────────────────────────────────────────────────────────
 

@@ -5,7 +5,15 @@ import { MEGAPHONE_RANGE, VOICE_RANGE } from '../constants';
 import { audibility, boothAt, garble, terrainOcclusion } from '../world/audio';
 import { strafeAxis } from '../world/heading';
 import { COLLIDERS, growScatter, regionAt, resolveCollisions, STRUCTURES } from '../world/regions';
-import { PUZZLE_SITES, RADIO_LOCAL_RANGE, TOWERS, TOTAL_ORBS, TOTAL_THRESHOLD } from '../world/sites';
+import {
+  PUZZLE_SITES,
+  RADIO_LOCAL_RANGE,
+  SITE_MAST_HEIGHT,
+  siteMarker,
+  TOWERS,
+  TOTAL_ORBS,
+  TOTAL_THRESHOLD,
+} from '../world/sites';
 import { clampToLand, groundY, isWater, PADS, raycastGround, SEA_LEVEL } from '../world/terrain';
 import { PLAYER_RADIUS } from '../constants';
 
@@ -333,6 +341,49 @@ describe('heading', () => {
       const axis = strafeAxis(fx, fz);
       expect(axis.x * fx + axis.z * fz).toBeCloseTo(0, 9);
       expect(Math.hypot(axis.x, axis.z)).toBeCloseTo(1, 9);
+    }
+  });
+});
+
+describe('finding a site at all', () => {
+  /**
+   * Eight of the twelve installations had nothing above the 3.15m sign at their
+   * edge — readable at forty metres, invisible at two hundred. The one tall
+   * marker they had was the red flag, and it went up on COMPLETION, so the
+   * island handed you the landmark exactly when you had finished needing it.
+   *
+   * These pin the mast to being unconditional. The game is a walk toward things
+   * you can see (§7); a marker that only appears once you no longer need it is
+   * the same as no marker.
+   */
+
+  it('marks a site you have not finished exactly as tall as one you have', () => {
+    expect(siteMarker(false).height).toBe(siteMarker(true).height);
+  });
+
+  it('keeps red for done, so the existing signal still means what it did', () => {
+    expect(siteMarker(true).flag).toBe('done');
+    expect(siteMarker(false).flag).toBe('open');
+  });
+
+  it('stands well clear of the sign it has to be seen past', () => {
+    // The sign is a 2.2m post carrying a board centred at 2.5m — about 3.15m to
+    // its top. A marker worth walking toward is not a marker the size of that.
+    expect(SITE_MAST_HEIGHT).toBeGreaterThan(3.15 * 2);
+  });
+
+  it('does not out-rank the towers you navigate the island by', () => {
+    // The four towers are 34–52m and are the coarse compass. A site mast is a
+    // local landmark, not competition for them.
+    const towerHeights = STRUCTURES.filter((s) => s.landmark && s.h >= 26).map((s) => s.h);
+    expect(towerHeights.length).toBeGreaterThan(3);
+    expect(SITE_MAST_HEIGHT).toBeLessThan(Math.min(...towerHeights));
+  });
+
+  it('plants one at every site, on dry land, above the waterline', () => {
+    for (const site of PUZZLE_SITES) {
+      expect(isWater(site.x, site.z), `${site.id} mast is in the sea`).toBe(false);
+      expect(groundY(site.x, site.z) + SITE_MAST_HEIGHT).toBeGreaterThan(SEA_LEVEL + 3.15 * 2);
     }
   });
 });

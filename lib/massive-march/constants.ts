@@ -21,13 +21,20 @@ export const MAX_PLAYERS = 12;
  * World variants, named for the smallest crew they are authored around. The
  * host picks the one matching the group that will *reliably* show up; a larger
  * group in a smaller variant is fine, the reverse strands puzzles.
+ *
+ * `solo` exists because the floor used to be two, and a floor of two means most
+ * people who open the game cannot play it. Somebody arrives, finds a lobby that
+ * needs a second human, and leaves — which is indistinguishable from the game
+ * not working. Every site has a one-person layout; what solo removes is the
+ * SECOND PAIR OF HANDS, never the walk, the island, or the puzzle.
  */
-export type WorldVariant = 'duo' | 'trio' | 'band';
+export type WorldVariant = 'solo' | 'duo' | 'trio' | 'band';
 
-export const WORLD_VARIANTS: readonly WorldVariant[] = ['duo', 'trio', 'band'];
+export const WORLD_VARIANTS: readonly WorldVariant[] = ['solo', 'duo', 'trio', 'band'];
 
 /** Minimum crew each variant's puzzle layouts assume. */
 export const VARIANT_MIN_CREW: Record<WorldVariant, number> = {
+  solo: 1,
   duo: 2,
   trio: 3,
   band: 4,

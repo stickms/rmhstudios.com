@@ -56,7 +56,10 @@ export const IDLE: CallState = {
 };
 
 export type CallEvent =
-  | { type: 'invite'; callId: string; peerId: string; conversationId: string | null }
+  /** We pressed call. The server has not answered yet, so there is no id. */
+  | { type: 'dial'; peerId: string; conversationId: string | null }
+  /** The server placed the invite and named it; it is ringing on their side. */
+  | { type: 'ringing'; callId: string }
   | { type: 'incoming'; callId: string; peerId: string; conversationId: string | null }
   /** The callee pressed accept (either side observes this). */
   | { type: 'accepted' }
@@ -89,17 +92,27 @@ export function wantsMicrophone(phase: CallPhase): boolean {
  */
 export function reduce(state: CallState, event: CallEvent): CallState {
   switch (event.type) {
-    case 'invite':
-      // A second invite while busy is dropped; the caller's UI already reflects
+    case 'dial':
+      // A second dial while busy is dropped; the caller's UI already reflects
       // the call in progress.
       if (isBusy(state)) return state;
+      // `outgoing` starts here rather than when the server confirms, because
+      // every way an invite can be refused — offline, busy, privacy, a block —
+      // arrives as an `end`, and `end` is a no-op from `idle`. Without a state
+      // to end, a call that could never be placed showed the caller nothing.
       return {
         ...IDLE,
         phase: 'outgoing',
-        callId: event.callId,
+        callId: null,
         peerId: event.peerId,
         conversationId: event.conversationId,
       };
+
+    case 'ringing':
+      // Fills in the id we were dialling without one. It never starts a call,
+      // so a stray `ringing` cannot resurrect an ended one or rename a live one.
+      if (state.phase !== 'outgoing' || state.callId !== null) return state;
+      return { ...state, callId: event.callId };
 
     case 'incoming':
       if (isBusy(state)) return state;

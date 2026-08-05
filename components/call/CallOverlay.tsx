@@ -76,6 +76,7 @@ function endReasonLabel(
 export function CallOverlay() {
   const { t } = useTranslation('feed');
   const phase = useCallStore((s) => s.phase);
+  const callId = useCallStore((s) => s.callId);
   const peer = useCallStore((s) => s.peer);
   const muted = useCallStore((s) => s.muted);
   const peerMuted = useCallStore((s) => s.peerMuted);
@@ -162,9 +163,14 @@ export function CallOverlay() {
   }
 
   /* ── Otherwise: a bar, so the site stays usable while talking ────────── */
+  // No call id yet means the server has not confirmed the invite, so it is not
+  // ringing anywhere — claiming otherwise would put a phantom ring on screen for
+  // a call that may be refused outright.
   const status =
     phase === 'outgoing'
-      ? t('call-ringing', { defaultValue: 'Ringing…' })
+      ? callId
+        ? t('call-ringing', { defaultValue: 'Ringing…' })
+        : t('call-dialing', { defaultValue: 'Calling…' })
       : phase === 'connecting'
         ? t('call-connecting', { defaultValue: 'Connecting…' })
         : phase === 'ended'

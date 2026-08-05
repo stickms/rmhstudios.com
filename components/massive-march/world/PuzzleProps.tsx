@@ -21,7 +21,7 @@ import { CanvasTexture, LinearFilter, type Group, type Mesh } from 'three';
 import { LAND, TOY } from '@/lib/massive-march/palette';
 import { useMmStore } from '@/lib/massive-march/store';
 import type { PuzzleStatus } from '@/lib/massive-march/net/events';
-import { PUZZLE_SITES, type PuzzleSite } from '@/lib/massive-march/world/sites';
+import { PUZZLE_SITES, siteMarker, type PuzzleSite } from '@/lib/massive-march/world/sites';
 import { groundY } from '@/lib/massive-march/world/terrain';
 
 const PAD_IDLE = LAND.granite;
@@ -249,29 +249,42 @@ function SiteProps({ site, status }: { site: PuzzleSite; status: PuzzleStatus | 
       {/* A cairn at the centre of a finished hunt, so the area reads as done. */}
       {site.hunt && done ? <Cairn x={site.x} z={site.z} /> : null}
 
-      {/* A red flag over anything already solved: from a distance, that is how
-          the group remembers where they have been. */}
-      {done ? <SolvedFlag x={site.x} z={site.z} /> : null}
+      {/* The mast. Always up, because a site you cannot see from the next ridge
+          is a site nobody walks to; the flag is what says whether it is done. */}
+      <SiteMast x={site.x} z={site.z} solved={done} />
     </group>
   );
 }
 
-function SolvedFlag({ x, z }: { x: number; z: number }) {
+/**
+ * The mast over an installation — the thing you spot from the next ridge and
+ * decide to walk to.
+ *
+ * Deliberately plain: a pole and a flag, in the same language as the `mast`
+ * landmarks already on the island, so it reads as part of the world rather than
+ * as a quest marker floating over it. Red is done, cream is not — which is the
+ * meaning the red flag already carried, just no longer the only state that gets
+ * a pole.
+ */
+function SiteMast({ x, z, solved }: { x: number; z: number; solved: boolean }) {
   const flag = useRef<Mesh>(null);
   const y = groundY(x, z);
+  const { height, flag: state } = siteMarker(solved);
+
   useFrame(({ clock }) => {
     if (!flag.current) return;
     flag.current.rotation.y = Math.sin(clock.elapsedTime * 1.6) * 0.22;
   });
+
   return (
     <group position={[x, y, z]}>
-      <mesh position={[0, 2.4, 0]} castShadow>
-        <cylinderGeometry args={[0.08, 0.08, 4.8, 6]} />
+      <mesh position={[0, height / 2, 0]} castShadow>
+        <cylinderGeometry args={[0.1, 0.13, height, 6]} />
         <meshLambertMaterial color={TOY.white} />
       </mesh>
-      <mesh ref={flag} position={[0.6, 4.3, 0]} castShadow>
-        <boxGeometry args={[1.2, 0.8, 0.06]} />
-        <meshLambertMaterial color={TOY.red} />
+      <mesh ref={flag} position={[0.75, height - 0.9, 0]} castShadow>
+        <boxGeometry args={[1.5, 1, 0.06]} />
+        <meshLambertMaterial color={state === 'done' ? TOY.red : TOY.concrete} />
       </mesh>
     </group>
   );

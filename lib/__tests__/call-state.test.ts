@@ -19,8 +19,11 @@ import {
   TURN_CREDENTIAL_TTL_SEC,
 } from '@/lib/call/ice';
 
+function dialing(): CallState {
+  return reduce(IDLE, { type: 'dial', peerId: 'them', conversationId: null });
+}
 function outgoing(): CallState {
-  return reduce(IDLE, { type: 'invite', callId: 'c1', peerId: 'them', conversationId: null });
+  return reduce(dialing(), { type: 'ringing', callId: 'c1' });
 }
 function incoming(): CallState {
   return reduce(IDLE, { type: 'incoming', callId: 'c1', peerId: 'them', conversationId: 'conv1' });
@@ -38,11 +41,38 @@ describe('call state machine', () => {
     expect(isBusy(IDLE)).toBe(false);
   });
 
-  it('rings out on invite', () => {
+  it('goes outgoing the moment we dial, before the server has answered', () => {
+    const s = dialing();
+    expect(s.phase).toBe('outgoing');
+    expect(s.callId).toBeNull();
+    expect(isBusy(s)).toBe(true);
+  });
+
+  it('takes the call id from the server on ringing', () => {
     const s = outgoing();
     expect(s.phase).toBe('outgoing');
     expect(s.callId).toBe('c1');
-    expect(isBusy(s)).toBe(true);
+  });
+
+  it('ends a dialling call that was refused before it could ring', () => {
+    // The whole reason `dial` exists. Offline/busy/privacy/blocked all arrive
+    // before a call id does, and `end` is a no-op from `idle` — so without a
+    // dialling state the caller was shown nothing at all.
+    for (const reason of ['offline', 'busy', 'privacy', 'blocked'] as const) {
+      const refused = reduce(dialing(), { type: 'end', reason });
+      expect(refused.phase).toBe('ended');
+      expect(refused.endReason).toBe(reason);
+    }
+  });
+
+  it('ignores a ringing that does not belong to a call we are dialling', () => {
+    // A late confirmation for an invite we already gave up on must not revive
+    // it, and must not rename the call we have since started.
+    const ended = reduce(dialing(), { type: 'end', reason: 'cancelled' });
+    expect(reduce(ended, { type: 'ringing', callId: 'c9' })).toBe(ended);
+    const live = outgoing();
+    expect(reduce(live, { type: 'ringing', callId: 'c9' })).toBe(live);
+    expect(reduce(IDLE, { type: 'ringing', callId: 'c9' })).toBe(IDLE);
   });
 
   it('rings in on incoming, carrying the conversation', () => {
@@ -61,14 +91,9 @@ describe('call state machine', () => {
 
   // ── Races. Every one of these is a real thing that happens on a phone call. ──
 
-  it('ignores a second invite while already busy', () => {
+  it('ignores a second dial while already busy', () => {
     const s = outgoing();
-    const again = reduce(s, {
-      type: 'invite',
-      callId: 'c2',
-      peerId: 'other',
-      conversationId: null,
-    });
+    const again = reduce(s, { type: 'dial', peerId: 'other', conversationId: null });
     expect(again).toBe(s);
   });
 

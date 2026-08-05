@@ -65,9 +65,13 @@ export default tseslint.config(
     },
   },
 
-  // ── Service worker (browser ServiceWorkerGlobalScope) ─────────────────────
+  // ── Service workers (browser ServiceWorkerGlobalScope) ────────────────────
+  // Matched by a glob, not by filename: `public/sw.js` was named literally, so
+  // the SECOND service worker added (`sw-share-target.js`, the POST share
+  // target) fell through to the DOM-microsite block below and tripped no-undef
+  // on `self` and `Response`. Any `public/sw*.js` is a worker.
   {
-    files: ['public/sw.js'],
+    files: ['public/sw*.js'],
     languageOptions: {
       globals: {
         self: 'readonly',
@@ -88,6 +92,12 @@ export default tseslint.config(
         clearTimeout: 'readonly',
         setInterval: 'readonly',
         clearInterval: 'readonly',
+        // Used by the offline write outbox (B10) and the share-target handler.
+        indexedDB: 'readonly',
+        IDBKeyRange: 'readonly',
+        FormData: 'readonly',
+        Blob: 'readonly',
+        crypto: 'readonly',
       },
     },
   },
@@ -99,7 +109,7 @@ export default tseslint.config(
   // trips no-undef. `public/sw.js` keeps its own service-worker block above.
   {
     files: ['public/**/*.js'],
-    ignores: ['public/sw.js'],
+    ignores: ['public/sw*.js'],
     languageOptions: {
       globals: {
         window: 'readonly',
