@@ -280,10 +280,15 @@ export async function cachedNullable<T>(
   opts: CachedNullableOptions = {},
 ): Promise<T | null> {
   const negativeTtlMs = Math.min(opts.negativeTtlMs ?? NEGATIVE_TTL_MS, ttlMs);
-  const stored = await cached<T | NegativeEntry>(key, ttlMs, async () => (await loader()) ?? NEGATIVE, {
-    l2: opts.l2,
-    ttlFor: (value) => (isNegative(value) ? negativeTtlMs : ttlMs),
-  });
+  const stored = await cached<T | NegativeEntry>(
+    key,
+    ttlMs,
+    async () => (await loader()) ?? NEGATIVE,
+    {
+      l2: opts.l2,
+      ttlFor: (value) => (isNegative(value) ? negativeTtlMs : ttlMs),
+    },
+  );
   return isNegative(stored) ? null : (stored as T);
 }
 
