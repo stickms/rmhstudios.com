@@ -100,7 +100,11 @@ const baseline = baselineIdx >= 0 ? (args[baselineIdx + 1] ?? BASELINE) : BASELI
  * exact defect this script exists to catch. Prefer the scoped form; the bare
  * form is kept only for a file where every finding shares one reason.
  */
-const ACK_RE = /--\s*migration-safety:\s*acknowledged(?:\[([a-z-]+)\])?\s+(\S.*)$/gim;
+// `[^\\S\\n]+` not `\\s+`: the latter matches a newline, so a bare
+// `-- migration-safety: acknowledged` swallowed the following LINE as its
+// reason and counted as acknowledged. The reason must be on the same line.
+const ACK_RE =
+  /--[^\S\n]*migration-safety:[^\S\n]*acknowledged(?:\[([a-z-]+)\])?[^\S\n]+(\S[^\n]*)$/gim;
 
 interface Acknowledgement {
   /** Null = applies to every rule in the file. */
@@ -120,6 +124,13 @@ function parseAcknowledgements(sql: string): Acknowledgement[] {
 
 /** The acknowledgement covering a finding, if any. */
 function ackFor(acks: Acknowledgement[], finding: Finding): Acknowledgement | undefined {
+  // A blanket (unscoped) acknowledgement deliberately does NOT cover
+  // `drop-protected-column`. Those drops are proposed automatically on every
+  // `migrate dev`, so the odds that a blanket ack written for something else
+  // silences one by accident are high — and the failure is invisible.
+  if (finding.id === 'drop-protected-column') {
+    return acks.find((a) => a.rule === finding.id);
+  }
   return acks.find((a) => a.rule === null || a.rule === finding.id);
 }
 
@@ -138,6 +149,7 @@ interface Finding {
 }
 
 type RuleId =
+  | 'drop-protected-column'
   | 'drop-column'
   | 'set-not-null'
   | 'rename-column'
@@ -220,12 +232,51 @@ function tablesCreatedHere(code: string): Set<string> {
   return created;
 }
 
+/**
+ * Columns that exist in the database, are load-bearing, and are INVISIBLE to
+ * Prisma — so `prisma migrate dev` proposes dropping them on every single run.
+ *
+ * `rmheet.content_tsv` is a GENERATED tsvector created by
+ * 20260717110700_add_search_trgm_fts and read by raw SQL in
+ * lib/search/posts.server.ts. Accepting its drop silently destroys post
+ * full-text search: nothing errors, searches just quietly stop matching.
+ *
+ * Three migrations in a row (20260728130000, 20260805125129, 20260805150406)
+ * have carried a hand-written "do not accept this drop" comment. A comment
+ * relies on the next person reading it; this rule does not. Deliberately NOT
+ * silenceable by the blanket acknowledgement — dropping one of these on purpose
+ * needs its own scoped ack naming the rule, which is a hard thing to type by
+ * accident.
+ */
+const PROTECTED_COLUMNS: readonly { table: string; column: string; why: string }[] = [
+  {
+    table: 'rmheet',
+    column: 'content_tsv',
+    why: 'a GENERATED tsvector Prisma cannot model, read by raw SQL in lib/search/posts.server.ts. Every `prisma migrate dev` proposes this drop; accepting it silently destroys post full-text search.',
+  },
+];
+
 function scanSql(sql: string): Finding[] {
   const code = blankNonCode(sql);
   const findings: Finding[] = [];
   const newTables = tablesCreatedHere(code);
 
-  const simpleRules: { rule: string; re: RegExp; why: string }[] = [
+  // Protected columns — checked before the generic DROP COLUMN rule so the
+  // report names the specific consequence rather than the generic one.
+  for (const { table, column, why } of PROTECTED_COLUMNS) {
+    const re = new RegExp(`\\bDROP\\s+COLUMN\\s+(?:IF\\s+EXISTS\\s+)?"?${column}"?`, 'gi');
+    for (let m = re.exec(code); m; m = re.exec(code)) {
+      findings.push({
+        id: 'drop-protected-column',
+        rule: `DROP COLUMN "${table}"."${column}"`,
+        line: lineAt(code, m.index),
+        statement: excerpt(sql, m.index),
+        why,
+      });
+    }
+  }
+
+  const simpleRules: { id: RuleId; rule: string; re: RegExp; why: string }[] = [
     {
       id: 'drop-column',
       rule: 'DROP COLUMN',
@@ -246,9 +297,26 @@ function scanSql(sql: string): Finding[] {
     },
   ];
 
-  for (const { rule, re, why } of simpleRules) {
+  for (const { id, rule, re, why } of simpleRules) {
     for (let m = re.exec(code); m; m = re.exec(code)) {
-      findings.push({ rule, line: lineAt(code, m.index), statement: excerpt(sql, m.index), why });
+      const line = lineAt(code, m.index);
+      // A protected-column drop already produced a more specific finding on
+      // this line. Reporting the generic one too would mean acknowledging the
+      // specific rule still failed the build on the generic one — which reads
+      // as the tool being broken.
+      if (
+        id === 'drop-column' &&
+        findings.some((f) => f.id === 'drop-protected-column' && f.line === line)
+      ) {
+        continue;
+      }
+      findings.push({
+        id,
+        rule,
+        line,
+        statement: excerpt(sql, m.index),
+        why,
+      });
     }
   }
 
@@ -340,7 +408,7 @@ if (unacknowledged.length > 0) {
   for (const r of unacknowledged) {
     console.log(`\n  ${r.name}/migration.sql`);
     for (const f of r.findings) {
-      console.log(`    line ${f.line}  ${f.rule}`);
+      console.log(`    line ${f.line}  ${f.rule}  [${f.id}]`);
       console.log(`      ${f.statement}`);
       console.log(`      ${f.why}`);
     }
@@ -355,8 +423,6 @@ if (unacknowledged.length > 0) {
   process.exit(1);
 }
 
-if (!checkMode) {
-  console.log(`\n  no unsafe statements found\n`);
-} else {
-  console.log(`  OK\n`);
-}
+// Same wording in both modes: a caller (or a test) grepping for success should
+// not have to know which flag was passed.
+console.log(`\n  no unsafe statements found\n`);

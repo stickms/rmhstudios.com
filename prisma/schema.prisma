@@ -390,6 +390,17 @@ model User {
   featureRequests     FeatureRequest[]
   featureRequestVotes FeatureRequestVote[]
 
+  creatorPosts           CreatorPost[]
+  referralMilestones     ReferralMilestone[]
+  profileBlocks          ProfileBlock[]
+  readingRooms           ReadingRoom[]
+  remixEdges             RemixEdge[]
+  appSeasonStats         AppSeasonStat[]
+  questChainProgresses   QuestChainProgress[]
+  pools                  Pool[]
+  poolContributions      PoolContribution[]
+  communityPageRevisions CommunityPageRevision[]
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the nightly finalize-deletion sweep; partial in effect since the
@@ -1465,6 +1476,15 @@ model Feedback {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
+  /// B23 — client context captured at submit: route, viewport, theme, locale,
+  /// build sha and the last few client errors. A bug report without this is
+  /// expensive to action and users rarely attach it by hand.
+  context Json?
+  /// Storage key of a user-reviewed, user-redactable screenshot. Never
+  /// captured silently — the image is shown before upload, because a
+  /// screenshot tool that uploads without showing you is a privacy incident.
+  shotKey String? @db.VarChar(300)
+
   @@index([userId])
   @@index([createdAt(sort: Desc)])
   @@map("feedback")
@@ -1669,8 +1689,13 @@ model RMHark {
   // post's id in `threadRootId` (null on the root and on standalone posts) so
   // the feed can show only the root; the root carries `threadReplyCount` (number
   // of follow-ups) to render a "show this thread" affordance.
-  threadRootId     String?
-  threadReplyCount Int     @default(0)
+  threadRootId         String?
+  /// F1 — 'standard' | 'megathread' | 'ama'. Changes how the comment tree
+  /// renders and sorts, not what a post IS, so it is a column rather than a
+  /// separate model. Defaults keep every existing row a standard post.
+  kind                 String               @default("standard") @db.VarChar(16)
+  threadReplyCount     Int                  @default(0)
+  postAnalyticsDailies PostAnalyticsDaily[]
 
   @@index([userId])
   @@index([createdAt(sort: Desc)])
@@ -4735,12 +4760,13 @@ model Community {
   createdById String
   createdAt   DateTime @default(now())
 
-  createdBy     User                    @relation("CommunityCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  members       CommunityMember[]
-  posts         RMHark[]
-  announcements CommunityAnnouncement[]
-  spaces        Space[]
-  events        CommunityEvent[]
+  createdBy      User                    @relation("CommunityCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members        CommunityMember[]
+  posts          RMHark[]
+  announcements  CommunityAnnouncement[]
+  spaces         Space[]
+  events         CommunityEvent[]
+  communityPages CommunityPage[]
 
   @@index([memberCount(sort: Desc)])
   @@map("community")
@@ -5383,8 +5409,16 @@ model Media {
   createdAt   DateTime    @default(now())
   attachedAt  DateTime?
 
-  user User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post RMHark? @relation(fields: [postId], references: [id], onDelete: SetNull)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post         RMHark?   @relation(fields: [postId], references: [id], onDelete: SetNull)
+  /// E13 — last time the assets service served this object. Written at most
+  /// once a day per key, so the tiering sweep has something to sort on without
+  /// a write per request.
+  lastAccessAt DateTime?
+  /// 'hot' | 'cold'. A cold object is served from infrequent-access storage and
+  /// restores on first request; the UI must SAY so ("archived · loads in a
+  /// moment") rather than letting it look broken.
+  tier         String    @default("hot") @db.VarChar(8)
 
   @@index([status, createdAt])
   @@index([postId])
@@ -5817,8 +5851,9 @@ model CreatorTier {
   active     Boolean  @default(true)
   createdAt  DateTime @default(now())
 
-  creator     User                @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  memberships CreatorMembership[]
+  creator      User                @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  memberships  CreatorMembership[]
+  creatorPosts CreatorPost[]
 
   @@index([creatorId, active])
   @@map("creator_tier")
@@ -6256,9 +6291,21 @@ model SavedSearch {
   lastRunAt DateTime?
   createdAt DateTime  @default(now())
 
+  /// B8 — which list surface this view belongs to ('search' | 'ladder' |
+  /// 'homes' | 'market' | 'arcade' | an admin queue). Defaults to 'search' so
+  /// every existing row keeps meaning exactly what it meant.
+  surface String  @default("search") @db.VarChar(24)
+  /// Filter state, validated per surface at READ time rather than write time —
+  /// so a filter removed from a surface degrades to "drop the unknown key"
+  /// instead of crashing the page on a stale view.
+  payload Json    @default("{}")
+  /// User-given name. Null keeps the old behaviour of labelling by query text.
+  name    String? @db.VarChar(60)
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([userId, surface])
   @@map("saved_search")
 }
 
@@ -6906,4 +6953,299 @@ enum RequestStatus {
   IN_PROGRESS
   SHIPPED
   DECLINED
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// The Next 100 — batch 2 (F4, F5, F6, F8, F9, F10, F17, F19, F20, F21, E13)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Creator-authored long-form with per-tier gating (F4).
+///
+/// `BlogPost` is admin-authored; `CreatorMembership`/`CreatorTier` already let
+/// creators charge. The missing piece was anything long enough to be worth the
+/// money. The paywall is enforced in the loader — the gated body is NEVER sent
+/// to the client and hidden with CSS, which is the mistake this shape exists to
+/// make impossible.
+model CreatorPost {
+  id           String    @id @default(cuid())
+  authorId     String
+  title        String    @db.VarChar(160)
+  slug         String    @db.VarChar(160)
+  bodyMarkdown String    @db.Text
+  /// Null = public. Otherwise the minimum CreatorTier required to read it.
+  minTierId    String?
+  /// The free preview above the paywall — the actual conversion lever, and
+  /// what makes the page indexable without cloaking.
+  teaser       String?   @db.Text
+  coverKey     String?   @db.VarChar(300)
+  publishedAt  DateTime?
+  emailedAt    DateTime?
+  viewCount    Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  author  User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  minTier CreatorTier? @relation(fields: [minTierId], references: [id], onDelete: SetNull)
+
+  @@unique([authorId, slug])
+  @@index([authorId, publishedAt(sort: Desc)])
+  @@index([publishedAt(sort: Desc)])
+  @@map("creator_post")
+}
+
+/// Nightly per-post analytics rollup (F5).
+///
+/// Totals tell a creator what happened and never why. These are the three
+/// views that change behaviour — where readers leave, where they came from,
+/// and whether the post won or lost followers. Rolled up nightly rather than
+/// computed per request: it is an aggregate over RMHarkView.
+model PostAnalyticsDaily {
+  id             BigInt   @id @default(autoincrement())
+  postId         String
+  day            DateTime @db.Date
+  views          Int      @default(0)
+  uniques        Int      @default(0)
+  /// Share of viewers still present at each 10% depth — where people leave.
+  retention      Json     @default("[]")
+  /// { feed, profile, search, external, notification, share } → count
+  sources        Json     @default("{}")
+  followsGained  Int      @default(0)
+  followsLost    Int      @default(0)
+  /// Median seconds on post, split first-time vs returning.
+  dwellFirst     Int      @default(0)
+  dwellReturning Int      @default(0)
+
+  post RMHark @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, day])
+  @@index([day])
+  @@map("post_analytics_daily")
+}
+
+/// Referral milestones, paid on ACTIVATION rather than signup (F6).
+///
+/// `Referral` already records who invited whom. What was missing is the loop:
+/// a referrer who brings ten active people and one who brings ten bounces were
+/// indistinguishable. Rewarding activation is also the anti-fraud posture —
+/// signup is free to fake, three separate active days is not.
+model ReferralMilestone {
+  id        String   @id @default(cuid())
+  userId    String
+  /// Count of ACTIVATED referrals this milestone was granted for.
+  threshold Int
+  coins     Int      @default(0)
+  cosmetic  String?  @db.VarChar(60)
+  grantedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, threshold])
+  @@index([userId])
+  @@map("referral_milestone")
+}
+
+/// Ordered blocks for the link-in-bio page (F8).
+///
+/// `ProfileLink` stays the source of truth for links (it carries the `rel=me`
+/// verification). This is the *layout* around them, which is why a block can
+/// reference a link, embed a platform object, or render a live "now playing"
+/// pulled from the Activity stream — the one thing no link-in-bio service can
+/// offer.
+model ProfileBlock {
+  id        String   @id @default(cuid())
+  userId    String
+  /// 'link' | 'heading' | 'embed' | 'now'
+  kind      String   @db.VarChar(12)
+  position  Int      @default(0)
+  /// Shape depends on kind; validated by lib/profile-links/blocks.ts.
+  config    Json     @default("{}")
+  clicks    Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, position])
+  @@map("profile_block")
+}
+
+/// Synchronised reading (F9).
+///
+/// `RmhTubeRoom` synchronises a playhead; this synchronises a *position*.
+/// Followers who scroll away enter an independent state with a "back to host"
+/// affordance rather than being yanked — automatic re-sync fighting the
+/// reader's scroll is the failure mode every implementation of this hits.
+model ReadingRoom {
+  id        String   @id @default(cuid())
+  docId     String
+  hostId    String
+  /// Host's anchor: { page, fraction, anchorId }.
+  anchor    Json     @default("{}")
+  /// Per-user positions, so "I'm ahead" is visible instead of a scroll fight.
+  positions Json     @default("{}")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  host User @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
+  @@index([docId, active])
+  @@index([hostId])
+  @@map("reading_room")
+}
+
+/// Lineage for derived works (F10).
+///
+/// Builds, themes, playlists and worlds are all forkable in principle and none
+/// recorded a parent, so a derivative credited nothing and the original author
+/// saw no benefit from being built on. One edge table serves every kind, and
+/// gives `lib/commerce` a chain to route a revenue share up.
+model RemixEdge {
+  id        BigInt   @id @default(autoincrement())
+  /// 'build' | 'theme' | 'playlist' | 'world' | 'level'
+  kind      String   @db.VarChar(16)
+  sourceId  String
+  derivedId String
+  authorId  String
+  createdAt DateTime @default(now())
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  /// A work has exactly one parent — that is what makes the ancestry walk
+  /// terminate and the revenue share computable.
+  @@unique([kind, derivedId])
+  @@index([kind, sourceId])
+  @@map("remix_edge")
+}
+
+/// Seasonal aggregates for the app tier (F17).
+///
+/// The games have `UserSeasonProgress`; RMHType, RMHStudy and RMHTube have
+/// all-time stats only, so a user who peaked eight months ago has nothing to
+/// play for — the exact case seasons exist to solve. All-time boards stay:
+/// replacing them would erase people's best results.
+model AppSeasonStat {
+  seasonId  String   @db.VarChar(40)
+  appId     String   @db.VarChar(24)
+  userId    String
+  /// App-defined: WPM peak, cards reviewed, minutes watched.
+  primary   Int      @default(0)
+  secondary Int      @default(0)
+  /// Materialised nightly, not computed per request.
+  rank      Int?
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([seasonId, appId, userId])
+  @@index([seasonId, appId, primary(sort: Desc)])
+  @@map("app_season_stat")
+}
+
+/// Cross-app quest chain progress (F19).
+///
+/// `UserQuest` tracks per-game objectives; nothing spanned the platform, so
+/// nobody discovered the app tier from the arcade or the reverse — the biggest
+/// internal cross-sell opportunity, unused. Chains are deliberately relaxed in
+/// pace: a cross-app chain on a daily cadence becomes an obligation, and
+/// obligation is what makes people leave.
+model QuestChainProgress {
+  userId    String
+  chainId   String    @db.VarChar(40)
+  /// Per-step counters keyed by step index.
+  steps     Json      @default("{}")
+  claimedAt DateTime?
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, chainId])
+  @@map("quest_chain_progress")
+}
+
+/// Group gifting and pooled purchases (F20).
+///
+/// Contributions are ESCROWED, not spent. The refund path must be correct
+/// before launch, not after: a pool that fails and quietly keeps the coins is
+/// the fastest way to lose economy trust.
+model Pool {
+  id         String    @id @default(cuid())
+  creatorId  String
+  /// 'membership-gift' | 'tournament-prize' | 'creator-tip'
+  purpose    String    @db.VarChar(24)
+  /// The gift recipient / tournament / creator, depending on purpose.
+  targetId   String?
+  goalCoins  Int
+  raised     Int       @default(0)
+  expiresAt  DateTime
+  settledAt  DateTime?
+  /// Set when the pool expired short of its goal and contributions were
+  /// returned. Distinguishes "refunded" from "still open" without a status enum
+  /// that would need migrating every time a purpose is added.
+  refundedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  creator       User               @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  contributions PoolContribution[]
+
+  @@index([expiresAt, settledAt, refundedAt])
+  @@index([creatorId])
+  @@map("pool")
+}
+
+model PoolContribution {
+  id         BigInt    @id @default(autoincrement())
+  poolId     String
+  userId     String
+  coins      Int
+  /// Set when this specific contribution was returned, so a partial refund
+  /// sweep is resumable and can never pay the same person twice.
+  refundedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  pool Pool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([poolId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("pool_contribution")
+}
+
+/// Collaboratively edited community pages (F21).
+///
+/// Deliberately shaped like `GameGuide`/`GameGuideRevision` rather than as a
+/// second revision system — which also means the anti-vandalism story is the
+/// one already proven on guides.
+model CommunityPage {
+  id          String   @id @default(cuid())
+  communityId String
+  slug        String   @db.VarChar(60)
+  title       String   @db.VarChar(120)
+  body        String   @db.Text
+  /// 'mods' | 'members' | 'trusted' (member 30d+ with no strikes)
+  editPolicy  String   @default("mods") @db.VarChar(10)
+  pinned      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  community Community               @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  revisions CommunityPageRevision[]
+
+  @@unique([communityId, slug])
+  @@index([communityId, pinned])
+  @@map("community_page")
+}
+
+model CommunityPageRevision {
+  id        BigInt   @id @default(autoincrement())
+  pageId    String
+  editorId  String
+  body      String   @db.Text
+  summary   String?  @db.VarChar(200)
+  createdAt DateTime @default(now())
+
+  page   CommunityPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  editor User          @relation(fields: [editorId], references: [id], onDelete: Cascade)
+
+  @@index([pageId, createdAt(sort: Desc)])
+  @@map("community_page_revision")
 }
