@@ -1,7 +1,11 @@
 export const LADDER_USER_AGENT =
   process.env.LADDER_USER_AGENT ?? 'rmhladder-bot/0.1 (+https://rmhstudios.com)';
 
-export interface PoliteResponse { ok: boolean; status: number; body: string }
+export interface PoliteResponse {
+  ok: boolean;
+  status: number;
+  body: string;
+}
 
 type Sleep = (ms: number) => Promise<void>;
 
@@ -136,7 +140,12 @@ export function parseSafeLadderUrl(value: string): URL | null {
   const hostname = url.hostname.toLowerCase();
   if (url.protocol !== 'https:' || url.username || url.password) return null;
   if (!hostname || BLOCKED_HOSTS.has(hostname)) return null;
-  if (hostname.endsWith('.localhost') || hostname.endsWith('.local') || hostname.endsWith('.internal')) return null;
+  if (
+    hostname.endsWith('.localhost') ||
+    hostname.endsWith('.local') ||
+    hostname.endsWith('.internal')
+  )
+    return null;
   if (isBlockedIpv4(hostname) || isBlockedIpv6(hostname)) return null;
   return url;
 }
@@ -164,7 +173,9 @@ export async function politeFetch(
   try {
     const fetchHandlesRateLimit = Boolean(
       fetchImpl &&
-      (fetchImpl as typeof fetch & { [LADDER_FETCH_HANDLES_RATE_LIMIT]?: boolean })[LADDER_FETCH_HANDLES_RATE_LIMIT],
+      (fetchImpl as typeof fetch & { [LADDER_FETCH_HANDLES_RATE_LIMIT]?: boolean })[
+        LADDER_FETCH_HANDLES_RATE_LIMIT
+      ],
     );
     if (!fetchHandlesRateLimit) await rateLimiter.wait(safeUrl);
     const headers = new Headers(init.headers);
@@ -190,7 +201,11 @@ export async function politeFetch(
       });
     }
 
-    return { ok: res.ok, status: res.status, body: await readResponseBodyLimited(res, maxResponseBytes) };
+    return {
+      ok: res.ok,
+      status: res.status,
+      body: await readResponseBodyLimited(res, maxResponseBytes),
+    };
   } catch {
     return { ok: false, status: 0, body: '' };
   }

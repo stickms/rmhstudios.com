@@ -8,11 +8,13 @@ describe('RMHLadder CSV helpers', () => {
   });
 
   it('round-trips commas, quotes, and newlines', () => {
-    const csv = encodeCsv([{ title: 'Analyst, Markets', notes: 'A "great"\nrole' }], ['title', 'notes']);
+    const csv = encodeCsv(
+      [{ title: 'Analyst, Markets', notes: 'A "great"\nrole' }],
+      ['title', 'notes'],
+    );
     expect(parseCsv(csv)).toEqual([
       ['title', 'notes'],
       ['Analyst, Markets', 'A "great"\nrole'],
     ]);
   });
 });
-

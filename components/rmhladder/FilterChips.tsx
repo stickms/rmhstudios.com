@@ -13,26 +13,26 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 
 const PRESETS: { value: NonNullable<ListJobsFilters['preset']>; label: string }[] = [
-  { value: 'new',        label: 'New'        },
-  { value: 'finance',    label: 'Finance'    },
+  { value: 'new', label: 'New' },
+  { value: 'finance', label: 'Finance' },
   { value: 'consulting', label: 'Consulting' },
-  { value: 'tech',       label: 'Tech'       },
-  { value: 'expiring',   label: 'Expiring'   },
-  { value: 'remote',     label: 'Remote'     },
-  { value: 'saved',      label: 'Saved'      },
-  { value: 'ignored',    label: 'Ignored'    },
+  { value: 'tech', label: 'Tech' },
+  { value: 'expiring', label: 'Expiring' },
+  { value: 'remote', label: 'Remote' },
+  { value: 'saved', label: 'Saved' },
+  { value: 'ignored', label: 'Ignored' },
 ];
 
 const PROGRAM_TYPES: { value: string; label: string }[] = [
-  { value: 'internship',            label: 'Internship'  },
-  { value: 'summer_analyst',        label: 'SA'          },
-  { value: 'summer_associate',      label: 'Assoc'       },
-  { value: 'analyst_program',       label: 'Analyst Pgm' },
-  { value: 'rotational_program',    label: 'Rotational'  },
-  { value: 'new_grad',              label: 'New Grad'    },
-  { value: 'leadership_development',label: 'LDP'         },
-  { value: 'entry_level',           label: 'Entry Level' },
-  { value: 'mba',                   label: 'MBA'         },
+  { value: 'internship', label: 'Internship' },
+  { value: 'summer_analyst', label: 'SA' },
+  { value: 'summer_associate', label: 'Assoc' },
+  { value: 'analyst_program', label: 'Analyst Pgm' },
+  { value: 'rotational_program', label: 'Rotational' },
+  { value: 'new_grad', label: 'New Grad' },
+  { value: 'leadership_development', label: 'LDP' },
+  { value: 'entry_level', label: 'Entry Level' },
+  { value: 'mba', label: 'MBA' },
 ];
 
 interface FilterChipsProps {
@@ -96,17 +96,21 @@ export function FilterChips({ search, onUpdate, showPersonalPresets = false }: F
 
   function toggleProgramType(pt: string) {
     const current = search.programTypes ?? [];
-    const next = current.includes(pt)
-      ? current.filter((v) => v !== pt)
-      : [...current, pt];
+    const next = current.includes(pt) ? current.filter((v) => v !== pt) : [...current, pt];
     onUpdate({ programTypes: next.length ? next : undefined });
   }
 
   return (
-    <div className="mb-5 space-y-3 rounded-site border border-site-border bg-site-surface p-3" role="search" aria-label={t('ladder.jobFilters', { defaultValue: 'Job filters' })}>
+    <div
+      className="mb-5 space-y-3 rounded-site border border-site-border bg-site-surface p-3"
+      role="search"
+      aria-label={t('ladder.jobFilters', { defaultValue: 'Job filters' })}
+    >
       {/* Preset chips */}
       <div className="flex flex-wrap gap-2">
-        {PRESETS.filter(({ value }) => showPersonalPresets || (value !== 'saved' && value !== 'ignored')).map(({ value, label }) => (
+        {PRESETS.filter(
+          ({ value }) => showPersonalPresets || (value !== 'saved' && value !== 'ignored'),
+        ).map(({ value, label }) => (
           <Button
             key={value}
             type="button"
@@ -160,7 +164,9 @@ export function FilterChips({ search, onUpdate, showPersonalPresets = false }: F
           type="search"
           placeholder={t('ladder.searchJobs', { defaultValue: 'Search jobs or companies…' })}
           value={inputValue}
-          aria-label={t('ladder.searchJobTitles', { defaultValue: 'Search jobs, companies, and locations' })}
+          aria-label={t('ladder.searchJobTitles', {
+            defaultValue: 'Search jobs, companies, and locations',
+          })}
           onChange={(e) => {
             isUserTypingRef.current = true;
             setInputValue(e.target.value);

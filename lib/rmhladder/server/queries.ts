@@ -54,8 +54,13 @@ const PUBLIC_COMPANY_SELECT = {
 } as const;
 
 const FINANCE_INDUSTRIES = [
-  'Investment Banking', 'Private Equity', 'Venture Capital', 'Asset Management',
-  'Markets / Sales & Trading', 'FinTech', 'finance',
+  'Investment Banking',
+  'Private Equity',
+  'Venture Capital',
+  'Asset Management',
+  'Markets / Sales & Trading',
+  'FinTech',
+  'finance',
 ];
 const CONSULTING_INDUSTRIES = ['Management Consulting', 'consulting'];
 const TECH_INDUSTRIES = ['Technology', 'tech'];
@@ -192,15 +197,17 @@ export async function listJobs(
       break;
   }
   if (filters.q) {
-    where.AND = [{
-      OR: [
-        { title: { contains: filters.q, mode: 'insensitive' } },
-        { roleCategory: { contains: filters.q, mode: 'insensitive' } },
-        { locationRaw: { contains: filters.q, mode: 'insensitive' } },
-        { descriptionSummary: { contains: filters.q, mode: 'insensitive' } },
-        { company: { name: { contains: filters.q, mode: 'insensitive' } } },
-      ],
-    }];
+    where.AND = [
+      {
+        OR: [
+          { title: { contains: filters.q, mode: 'insensitive' } },
+          { roleCategory: { contains: filters.q, mode: 'insensitive' } },
+          { locationRaw: { contains: filters.q, mode: 'insensitive' } },
+          { descriptionSummary: { contains: filters.q, mode: 'insensitive' } },
+          { company: { name: { contains: filters.q, mode: 'insensitive' } } },
+        ],
+      },
+    ];
   }
   if (filters.cities?.length) where.city = { in: filters.cities };
   const programTypes = filters.programTypes?.length
@@ -237,7 +244,8 @@ export async function listJobs(
         (filters.includeNonUS === true && verificationStatus === 'non_us_role')
       : false;
     if (!latest || !eligibleVerification) continue;
-    if (!filters.includeNonUS && latest && NON_US_STATUSES.includes(latest.status as string)) continue;
+    if (!filters.includeNonUS && latest && NON_US_STATUSES.includes(latest.status as string))
+      continue;
 
     const storedAction = actionByJob.get(job.id as string) ?? null;
     if (filters.preset === 'saved' && storedAction !== 'saved') continue;
@@ -259,9 +267,7 @@ export async function listJobs(
     rows.push({
       ...toPublicJob(job),
       latestVerification: latest,
-      userAction: ['saved', 'ignored'].includes(storedAction ?? '')
-        ? storedAction!
-        : null,
+      userAction: ['saved', 'ignored'].includes(storedAction ?? '') ? storedAction! : null,
       applicationStatus: applicationByJob.get(job.id as string) ?? null,
       finalRelevance: score,
     });
@@ -279,8 +285,12 @@ export async function listJobs(
   } else {
     // deadline asc, nulls last
     rows.sort((a, b) => {
-      const ad = a.applicationDeadline ? new Date(a.applicationDeadline as Date).getTime() : Infinity;
-      const bd = b.applicationDeadline ? new Date(b.applicationDeadline as Date).getTime() : Infinity;
+      const ad = a.applicationDeadline
+        ? new Date(a.applicationDeadline as Date).getTime()
+        : Infinity;
+      const bd = b.applicationDeadline
+        ? new Date(b.applicationDeadline as Date).getTime()
+        : Infinity;
       return ad - bd;
     });
   }
@@ -374,10 +384,12 @@ export async function getOverview(
   const deadlineThreshold = new Date(now.getTime() + 14 * DAY);
 
   return {
-    newThisWeek: eligible.filter((job) => new Date(job.discoveredAt as Date) >= freshThreshold).length,
+    newThisWeek: eligible.filter((job) => new Date(job.discoveredAt as Date) >= freshThreshold)
+      .length,
     verifiedActive: eligible.length,
     expiringSoon: eligible.filter(
-      (job) => job.applicationDeadline && new Date(job.applicationDeadline as Date) <= deadlineThreshold,
+      (job) =>
+        job.applicationDeadline && new Date(job.applicationDeadline as Date) <= deadlineThreshold,
     ).length,
     openReviewTasks: openTasks.length,
     lastRun: runs[0]
@@ -405,7 +417,9 @@ export async function listReviewTasks(prisma: QueriesPrisma, filters: { status?:
     where: { status: filters.status ?? 'open' },
     orderBy: [{ createdAt: 'desc' }],
     include: {
-      job: { include: { company: true, verifications: { orderBy: { checkedAt: 'desc' }, take: 1 } } },
+      job: {
+        include: { company: true, verifications: { orderBy: { checkedAt: 'desc' }, take: 1 } },
+      },
       source: true,
     },
   });
@@ -443,11 +457,7 @@ export async function listStaleSources(prisma: QueriesPrisma, now = new Date()) 
   return prisma.ladderSource.findMany({
     where: {
       status: { in: ['active', 'error'] },
-      OR: [
-        { status: 'error' },
-        { lastSuccessAt: null },
-        { lastSuccessAt: { lt: threshold } },
-      ],
+      OR: [{ status: 'error' }, { lastSuccessAt: null }, { lastSuccessAt: { lt: threshold } }],
     },
     include: { company: true },
   });

@@ -8,10 +8,13 @@ import { readTextBodyLimited, RequestBodyTooLargeError } from '@/lib/http-body.s
 const eventSchema = z.object({
   type: z.enum(['job_impression', 'job_detail', 'save', 'ignore', 'apply_click', 'match_feedback']),
   jobId: z.string().min(1).max(100).optional(),
-  metadata: z.record(
-    z.string().min(1).max(64),
-    z.union([z.string().max(500), z.number().finite(), z.boolean(), z.null()]),
-  ).refine((value) => Object.keys(value).length <= 20, 'Too many metadata fields').optional(),
+  metadata: z
+    .record(
+      z.string().min(1).max(64),
+      z.union([z.string().max(500), z.number().finite(), z.boolean(), z.null()]),
+    )
+    .refine((value) => Object.keys(value).length <= 20, 'Too many metadata fields')
+    .optional(),
 });
 
 const MAX_EVENT_BODY_BYTES = 16 * 1024;
@@ -26,10 +29,13 @@ export const Route = createFileRoute('/api/rmhladder/events')({
           windowMs: 60_000,
         });
         if (!limited.allowed) {
-          return Response.json({ error: 'Too many events' }, {
-            status: 429,
-            headers: { 'Retry-After': String(limited.retryAfter) },
-          });
+          return Response.json(
+            { error: 'Too many events' },
+            {
+              status: 429,
+              headers: { 'Retry-After': String(limited.retryAfter) },
+            },
+          );
         }
 
         let rawBody: string;
@@ -40,7 +46,11 @@ export const Route = createFileRoute('/api/rmhladder/events')({
           return Response.json({ error: 'Event payload too large' }, { status: 413 });
         }
         let body: unknown = null;
-        try { body = JSON.parse(rawBody); } catch { /* handled by schema */ }
+        try {
+          body = JSON.parse(rawBody);
+        } catch {
+          /* handled by schema */
+        }
         const parsed = eventSchema.safeParse(body);
         if (!parsed.success) return Response.json({ error: 'Invalid event' }, { status: 400 });
         const session = await auth.api.getSession({ headers: request.headers });

@@ -97,9 +97,7 @@ export function ListingCard({
 
       <div className="flex flex-1 flex-col gap-2 p-3.5">
         <div className="flex items-baseline justify-between gap-2">
-          <span
-            className="text-lg font-bold text-site-text font-display"
-          >
+          <span className="text-lg font-bold text-site-text font-display">
             {formatPrice(listing.price, listing.listingType)}
           </span>
           <Badge variant="outline" size="sm">

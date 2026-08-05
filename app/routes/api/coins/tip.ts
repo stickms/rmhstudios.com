@@ -6,6 +6,7 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { createNotification } from '@/lib/notifications.server';
 import { grantAchievement } from '@/lib/achievements/engine.server';
+import { assertNoRecoveryHold } from '@/lib/recovery/hold.server';
 
 /**
  * POST /api/coins/tip — send coins to another user (a "tip jar").
@@ -41,6 +42,12 @@ export const Route = createFileRoute('/api/coins/tip')({
           if (recipientId === senderId) {
             return Response.json({ error: 'You cannot tip yourself' }, { status: 400 });
           }
+
+          // A recovered account is held for 72h before it can move value.
+          // Without this the hold is reported and not enforced, and account
+          // recovery becomes the cheapest route into the economy.
+          const held = await assertNoRecoveryHold(senderId);
+          if (held) return held;
 
           const recipient = await prisma.user.findUnique({ where: { id: recipientId }, select: { id: true, handle: true } });
           if (!recipient) return Response.json({ error: 'Recipient not found' }, { status: 404 });

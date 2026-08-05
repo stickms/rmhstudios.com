@@ -82,7 +82,10 @@ function ApplicationCard({
       <span className="rl-app-card__title">{(job?.title as string) ?? 'Untitled role'}</span>
       {app.appliedDate ? (
         <span className="rl-mono rl-app-card__date">
-          {new Date(app.appliedDate as Date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+          {new Date(app.appliedDate as Date).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+          })}
         </span>
       ) : null}
     </button>
@@ -124,7 +127,9 @@ export function PipelineLadder({
             >
               <span className={`rl-ladder__label${isOffer ? ' rl-display' : ' rl-eyebrow'}`}>
                 {STAGE_LABELS[stage]}
-                {apps.length > 0 && <span className="rl-mono rl-ladder__count"> · {apps.length}</span>}
+                {apps.length > 0 && (
+                  <span className="rl-mono rl-ladder__count"> · {apps.length}</span>
+                )}
               </span>
               <div className="rl-ladder__cards">
                 {apps.map((app) => (

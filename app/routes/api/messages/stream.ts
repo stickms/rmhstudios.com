@@ -82,6 +82,15 @@ export const Route = createFileRoute('/api/messages/stream')({
                 send('typing', JSON.stringify(event.typing));
                 return;
               }
+              if (event.type === 'message-edited' || event.type === 'message-deleted') {
+                // An edit or an unsend changes what is on the recipient's
+                // screen but not how many messages are unread, so it forwards
+                // like typing does — straight through, no recount. Without
+                // this the recipient keeps reading a message the sender has
+                // already retracted until the next poll.
+                send(event.type, JSON.stringify(event.mutation));
+                return;
+              }
               if (event.type === 'message-reaction') {
                 // Reactions don't affect unread counts either.
                 send(

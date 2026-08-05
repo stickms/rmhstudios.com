@@ -356,8 +356,19 @@ model User {
   savedSearches       SavedSearch[]
 
   // ─── Emoji & sticker packs (2026-08-04) ──────────────────────────────────
-  emojiPacks    EmojiPack[]
-  emojiPackSubs EmojiPackSubscription[]
+  emojiPacks       EmojiPack[]
+  bulkOperations   BulkOperation[]
+  recoveryCodes    RecoveryCode[]
+  trustedContacts  TrustedContact[]        @relation("TrustedContactOwner")
+  trustedFor       TrustedContact[]        @relation("TrustedContactPerson")
+  recoveryRequests RecoveryRequest[]
+  messageHides     DirectMessageHide[]
+  typingKeyStats   RmhTypeKeyStat[]
+  profileLinks     ProfileLink[]
+  handleChanges    HandleChange[]
+  speedrunEntries  SpeedrunEntry[]
+  ladderAnswers    LadderAnswerBank?
+  emojiPackSubs    EmojiPackSubscription[]
 
   // ─── Voice calls ─────────────────────────────────────────────────────────
   callsPlaced   Call[] @relation("CallCaller")
@@ -1596,6 +1607,9 @@ model RMHark {
   repostedBy RMHark[] @relation("RMHarkReposts")
 
   deletedAt      DateTime?
+  /// 'author' | 'moderator' | 'system'. Only 'author' is restorable from the
+  /// recycle bin — moderation must not be undone by the person moderated.
+  deletedBy      String?   @db.VarChar(12)
   deletedByAdmin Boolean   @default(false)
 
   // Audience: who can see this post.
@@ -1702,6 +1716,9 @@ model RMHarkComment {
   views   RMHarkCommentView[]
 
   deletedAt      DateTime?
+  /// 'author' | 'moderator' | 'system'. Only 'author' is restorable from the
+  /// recycle bin — moderation must not be undone by the person moderated.
+  deletedBy      String?   @db.VarChar(12)
   deletedByAdmin Boolean   @default(false)
 
   reactions RMHarkCommentReaction[]
@@ -2420,17 +2437,29 @@ model Conversation {
 }
 
 model DirectMessage {
-  id             String   @id @default(cuid())
-  conversationId String
-  senderId       String
-  content        String   @db.VarChar(2000)
+  id              String    @id @default(cuid())
+  conversationId  String
+  senderId        String
+  content         String    @db.VarChar(2000)
   // Optional rich media — mirrors RMHark posts. A message can be text, media,
   // or both. gifUrl is a single GIF (KLIPY/Tenor/Giphy/direct); imageUrls are
   // up to 4 feed-image URLs owned by the sender.
-  gifUrl         String?  @db.Text
-  imageUrls      String[] @default([])
-  read           Boolean  @default(false)
-  createdAt      DateTime @default(now())
+  gifUrl          String?   @db.Text
+  imageUrls       String[]  @default([])
+  read            Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  /// Edited within a short window; renders an "edited" marker.
+  editedAt        DateTime?
+  /// Unsent. The row is tombstoned rather than removed so the thread still
+  /// shows that something was there — otherwise unsend becomes a gaslighting
+  /// tool — and so a report survives the deletion.
+  deletedAt       DateTime?
+  deletedBy       String?   @db.VarChar(12)
+  /// Voice note. Peaks are a downsampled waveform so the bubble can render
+  /// without fetching the audio.
+  audioUrl        String?   @db.VarChar(500)
+  audioDurationMs Int?
+  audioPeaks      Float[]   @default([])
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
@@ -2626,17 +2655,29 @@ model GroupChatMember {
 }
 
 model GroupMessage {
-  id           String   @id @default(cuid())
-  groupId      String
-  senderId     String
-  content      String   @db.VarChar(2000)
+  id              String    @id @default(cuid())
+  groupId         String
+  senderId        String
+  content         String    @db.VarChar(2000)
   // Optional rich media (mirrors DMs): a single GIF and/or up to 4 images.
-  gifUrl       String?  @db.Text
-  imageUrls    String[] @default([])
+  gifUrl          String?   @db.Text
+  imageUrls       String[]  @default([])
   // Optional inline poll: a question + 2–6 option labels (votes in GroupPollVote).
-  pollQuestion String?  @db.VarChar(300)
-  pollOptions  String[] @default([])
-  createdAt    DateTime @default(now())
+  pollQuestion    String?   @db.VarChar(300)
+  pollOptions     String[]  @default([])
+  createdAt       DateTime  @default(now())
+  /// Edited within a short window; renders an "edited" marker.
+  editedAt        DateTime?
+  /// Unsent. The row is tombstoned rather than removed so the thread still
+  /// shows that something was there — otherwise unsend becomes a gaslighting
+  /// tool — and so a report survives the deletion.
+  deletedAt       DateTime?
+  deletedBy       String?   @db.VarChar(12)
+  /// Voice note. Peaks are a downsampled waveform so the bubble can render
+  /// without fetching the audio.
+  audioUrl        String?   @db.VarChar(500)
+  audioDurationMs Int?
+  audioPeaks      Float[]   @default([])
 
   group     GroupChat       @relation(fields: [groupId], references: [id], onDelete: Cascade)
   sender    User            @relation(fields: [senderId], references: [id], onDelete: Cascade)
@@ -6321,4 +6362,227 @@ enum CallStatus {
   /// Signalling or ICE never completed — the honest outcome when TURN is
   /// unavailable and both peers are behind symmetric NAT.
   FAILED
+}
+
+/// A long-running content operation the user asked for in bulk.
+///
+/// Job-backed because a 4,000-row delete must not run inside a request, and
+/// because the preview count the UI showed has to be the count that actually
+/// runs. Deletes go through the same soft delete as a single one, so a bulk
+/// delete is undoable from the recycle bin for its retention window.
+model BulkOperation {
+  id         String    @id @default(cuid())
+  userId     String
+  /// 'delete-posts' | 'delete-comments' | 'unfollow' | 'clear-history' | 'clear-bookmarks'
+  kind       String    @db.VarChar(24)
+  /// { olderThanDays?, before?, maxLikes?, onlyReplies?, tag? }
+  filter     Json
+  /// PENDING | RUNNING | DONE | CANCELLED | FAILED
+  status     String    @default("PENDING") @db.VarChar(12)
+  total      Int       @default(0)
+  processed  Int       @default(0)
+  error      String?   @db.VarChar(300)
+  createdAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status, createdAt])
+  @@map("bulk_operation")
+}
+
+/// Single-use account recovery codes. Hashed at rest — a plaintext recovery
+/// code is a password that never expires.
+model RecoveryCode {
+  id        String    @id @default(cuid())
+  userId    String
+  codeHash  String    @db.VarChar(200)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("recovery_code")
+}
+
+/// People who can vouch for a recovery request.
+model TrustedContact {
+  id          String    @id @default(cuid())
+  userId      String
+  contactId   String
+  /// The contact has to accept; an unconfirmed nomination cannot vouch.
+  confirmedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  user    User @relation("TrustedContactOwner", fields: [userId], references: [id], onDelete: Cascade)
+  contact User @relation("TrustedContactPerson", fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contactId])
+  @@index([contactId])
+  @@map("trusted_contact")
+}
+
+/// An in-flight account recovery. Deliberately slow: a mandatory delay and a
+/// notification to every existing session, or this is a social-engineering
+/// vector rather than a recovery path.
+model RecoveryRequest {
+  id         String   @id @default(cuid())
+  userId     String
+  /// PENDING | APPROVED | REJECTED | EXPIRED | USED
+  status     String   @default("PENDING") @db.VarChar(12)
+  approvals  Int      @default(0)
+  /// Who has vouched, so nobody can vouch twice.
+  approvedBy String[] @default([])
+  tokenHash  String   @db.VarChar(200)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status, expiresAt])
+  @@map("recovery_request")
+}
+
+/// "Delete for me" — hides one message for one side of a conversation.
+model DirectMessageHide {
+  messageId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, userId])
+  @@index([userId])
+  @@map("direct_message_hide")
+}
+
+/// Per-key typing aggregates.
+///
+/// Aggregate ONLY, per single character, never ordered — so this table cannot
+/// reconstruct anything that was typed. A bigram or sequence table could, and
+/// no typing statistic is worth shipping a keylogger for.
+model RmhTypeKeyStat {
+  userId    String
+  key       String   @db.VarChar(4)
+  layout    String   @default("qwerty") @db.VarChar(16)
+  attempts  Int      @default(0)
+  errors    Int      @default(0)
+  totalMs   Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, key, layout])
+  @@map("rmhtype_key_stat")
+}
+
+/// A profile link, promoted out of the JSON blob it used to live in so it can
+/// carry verification state and be indexed by.
+model ProfileLink {
+  id            String    @id @default(cuid())
+  userId        String
+  url           String    @db.VarChar(300)
+  label         String?   @db.VarChar(60)
+  position      Int       @default(0)
+  /// Set when the target page links back with rel="me" to this profile.
+  verifiedAt    DateTime?
+  lastCheckedAt DateTime?
+  /// Normalised host, so "which accounts claim this domain?" is one query —
+  /// which is what an impersonation investigation actually runs.
+  host          String?   @db.VarChar(200)
+  createdAt     DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, position])
+  @@index([host])
+  @@map("profile_link")
+}
+
+/// Handle history. An account can build trust as @alice and hand the handle
+/// over; without this the history is gone.
+model HandleChange {
+  id        String   @id @default(cuid())
+  userId    String
+  oldHandle String   @db.VarChar(30)
+  newHandle String   @db.VarChar(30)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([oldHandle])
+  @@map("handle_change")
+}
+
+/// A speedrun category — "any%", "no-shards" — per game.
+model SpeedrunCategory {
+  id      String  @id @default(cuid())
+  game    String  @db.VarChar(32)
+  slug    String  @db.VarChar(32)
+  name    String  @db.VarChar(60)
+  rules   String  @db.VarChar(2000)
+  /// 'time' | 'score'
+  metric  String  @default("time") @db.VarChar(12)
+  /// Leaderboards are per game version: an update invalidates old replays, and
+  /// silently mixing versions is how a speedrun board loses its meaning.
+  version String  @db.VarChar(16)
+  active  Boolean @default(true)
+
+  entries SpeedrunEntry[]
+
+  @@unique([game, slug, version])
+  @@index([game, active])
+  @@map("speedrun_category")
+}
+
+/// A submitted run. Verified by re-simulating the stored replay's inputs —
+/// which is why the run must reference a replay rather than a claimed time.
+model SpeedrunEntry {
+  id           String    @id @default(cuid())
+  categoryId   String
+  userId       String
+  replayId     String    @unique
+  timeMs       Int
+  score        Int?
+  /// pending | verified | rejected
+  status       String    @default("pending") @db.VarChar(10)
+  rejectReason String?   @db.VarChar(200)
+  verifiedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  category SpeedrunCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId, status, timeMs])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("speedrun_entry")
+}
+
+/// The answers every ATS asks, stored once.
+///
+/// This is sensitive personal data — salary expectations and EEO answers above
+/// all — so it belongs in the account export and delete flows from day one.
+model LadderAnswerBank {
+  userId             String   @id
+  workAuthorization  String?  @db.VarChar(120)
+  needsSponsorship   Boolean?
+  noticePeriod       String?  @db.VarChar(60)
+  salaryExpectation  String?  @db.VarChar(60)
+  locationPreference String?  @db.VarChar(120)
+  linkedinUrl        String?  @db.VarChar(300)
+  portfolioUrl       String?  @db.VarChar(300)
+  /// [{ question, answer }] — the essays that repeat across applications.
+  essays             Json     @default("[]")
+  /// [{ title, situation, task, action, result }] — matched to a posting by
+  /// the prep sheet.
+  stories            Json     @default("[]")
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ladder_answer_bank")
 }

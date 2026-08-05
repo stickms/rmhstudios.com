@@ -42,7 +42,10 @@ function ThemePreviewSwatch({ styleId }: { styleId: string }) {
             className="mt-1 h-1.5 w-4/5 rounded-full"
             style={{ background: 'var(--site-text-dim)' }}
           />
-          <div className="mt-2 h-3.5 w-9 rounded-full" style={{ background: 'var(--site-accent)' }} />
+          <div
+            className="mt-2 h-3.5 w-9 rounded-full"
+            style={{ background: 'var(--site-accent)' }}
+          />
         </div>
       </div>
     </div>
@@ -123,7 +126,7 @@ export function ThemeGallery() {
                     'overflow-hidden rounded-site border text-left transition-colors',
                     active
                       ? 'border-site-accent ring-2 ring-site-accent'
-                      : 'border-site-border hover:border-site-text/40'
+                      : 'border-site-border hover:border-site-text/40',
                   )}
                 >
                   <ThemePreviewSwatch styleId={s.id} />

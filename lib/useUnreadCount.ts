@@ -20,7 +20,13 @@ import { useIdleReady } from '@/hooks/useIdleReady';
  * The connection opens on the first subscriber and closes when the last leaves.
  */
 
-export type MessageStreamEventType = 'unread' | 'new-message' | 'typing' | 'message-reaction';
+export type MessageStreamEventType =
+  | 'unread'
+  | 'new-message'
+  | 'typing'
+  | 'message-reaction'
+  | 'message-edited'
+  | 'message-deleted';
 export type MessageStreamHandler = (type: MessageStreamEventType, data: unknown) => void;
 
 const STREAM_URL = '/api/messages/stream';
@@ -29,6 +35,8 @@ const STREAM_EVENTS: MessageStreamEventType[] = [
   'new-message',
   'typing',
   'message-reaction',
+  'message-edited',
+  'message-deleted',
 ];
 const MAX_RECONNECT_DELAY = 15_000;
 

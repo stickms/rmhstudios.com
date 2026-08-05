@@ -109,6 +109,7 @@ export const Route = createFileRoute('/api/account/export')({
             }),
             Promise.all([
               prisma.ladderUserPrefs.findUnique({ where: { userId } }),
+              prisma.ladderAnswerBank.findUnique({ where: { userId } }),
               prisma.ladderKeyword.findMany({ where: { userId }, take: CAP }),
               prisma.ladderWatchlistEntry.findMany({ where: { userId }, take: CAP }),
               prisma.ladderJobAction.findMany({ where: { userId }, take: CAP }),
@@ -160,6 +161,7 @@ export const Route = createFileRoute('/api/account/export')({
 
           const [
             ladderPrefs,
+            ladderAnswerBank,
             ladderKeywords,
             ladderWatchlist,
             ladderActions,
@@ -189,6 +191,10 @@ export const Route = createFileRoute('/api/account/export')({
             sessions,
             rmhLadder: {
               preferences: ladderPrefs,
+              // Salary expectations, work authorization and EEO answers — the
+              // most sensitive rows RMHLadder holds, so they belong in the
+              // export as much as in the delete.
+              answerBank: ladderAnswerBank,
               keywords: ladderKeywords,
               watchlist: ladderWatchlist,
               actions: ladderActions,
