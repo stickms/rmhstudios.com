@@ -28,6 +28,7 @@ import ptCLibrary from "@/locales/pt/c-library.json";
 import ptCLightsOut from "@/locales/pt/c-lights-out.json";
 import ptCLists from "@/locales/pt/c-lists.json";
 import ptCLockdown from "@/locales/pt/c-lockdown.json";
+import ptCMassiveMarch from "@/locales/pt/c-massive-march.json";
 import ptCModeration from "@/locales/pt/c-moderation.json";
 import ptCNeonDriftway from "@/locales/pt/c-neon-driftway.json";
 import ptCNews from "@/locales/pt/c-news.json";
@@ -117,6 +118,7 @@ const ptResources = {
   "c-lights-out": ptCLightsOut,
   "c-lists": ptCLists,
   "c-lockdown": ptCLockdown,
+  "c-massive-march": ptCMassiveMarch,
   "c-moderation": ptCModeration,
   "c-neon-driftway": ptCNeonDriftway,
   "c-news": ptCNews,

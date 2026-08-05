@@ -28,6 +28,7 @@ import arCLibrary from "@/locales/ar/c-library.json";
 import arCLightsOut from "@/locales/ar/c-lights-out.json";
 import arCLists from "@/locales/ar/c-lists.json";
 import arCLockdown from "@/locales/ar/c-lockdown.json";
+import arCMassiveMarch from "@/locales/ar/c-massive-march.json";
 import arCModeration from "@/locales/ar/c-moderation.json";
 import arCNeonDriftway from "@/locales/ar/c-neon-driftway.json";
 import arCNews from "@/locales/ar/c-news.json";
@@ -119,6 +120,7 @@ const arResources = {
   "c-lights-out": arCLightsOut,
   "c-lists": arCLists,
   "c-lockdown": arCLockdown,
+  "c-massive-march": arCMassiveMarch,
   "c-moderation": arCModeration,
   "c-neon-driftway": arCNeonDriftway,
   "c-news": arCNews,
