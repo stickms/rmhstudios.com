@@ -224,6 +224,49 @@ export default defineConfig({
       // default. Lighthouse flagged that as an inefficient cache lifetime. 30 days
       // (no `immutable`, so a redeploy that changes an image still revalidates)
       // eliminates the repeat downloads without risking long-lived staleness.
+      //
+      // NO `use-as-dictionary` HERE (OPT-45), and this is the note explaining
+      // why so it isn't re-derived — or pasted in from the spec, whose snippet
+      // does not survive contact with this build's output.
+      //
+      // Compression Dictionary Transport would let a returning user download
+      // only the delta between `Foo-<oldhash>.js` and `Foo-<newhash>.js`. Three
+      // things stop `routeRules` from being the way to ask for it:
+      //
+      //  1. A route rule is a static path pattern → a static header value, and
+      //     Nitro's matcher is SEGMENT-based (the generated routing table
+      //     compares `path.split('/')[1] === 'assets'` — there is no
+      //     partial-segment pattern like `/assets/vendor-react-*.js`). So the
+      //     only expressible scope is all of `/assets/**`, and the only
+      //     expressible `match` is one pattern shared by every file under it.
+      //  2. Under `/assets/` this build emits ~955 JS chunks and ~995 CSS,
+      //     woff2 and .map files. The rule would stamp
+      //     `Use-As-Dictionary: match-dest=("script")` onto the fonts and
+      //     stylesheets too — registering a woff2 as a dictionary for future
+      //     script requests, which is not a weaker version of the win, it is
+      //     wrong.
+      //  3. ~955 responses advertising the SAME match pattern means ~955 stored
+      //     dictionaries of identical specificity; the client then picks the
+      //     most recently stored one for any matching request, i.e. deltas
+      //     between unrelated chunks. That is precisely the "matches too
+      //     broadly → hit rate collapses" failure OPT-45 itself warns about;
+      //     the spec's snippet is written for a single-bundle app.
+      //
+      // A correct policy needs a per-RESPONSE header derived from the
+      // filename's stable prefix (`match="/assets/Foo-*.js"` on `Foo-*.js`),
+      // which is a Nitro response plugin, not a route rule. And even then the
+      // origin cannot deliver the win alone: it serves pre-gzipped static files
+      // and has no `dcb`/`dcz` encoder, so the delta encoding has to happen at
+      // the CDN, behind an edge feature we are not enabling here. Emitting the
+      // header today would cost client storage and buy nothing measurable.
+      //
+      // If a future rule for `/assets/**` is ever added here anyway: do NOT
+      // give it a `cache-control`. Nitro's vite plugin does
+      // `routeRules['/assets/**'] ??= {}` and then fills in
+      // `public, max-age=31536000, immutable` only when the rule carries no
+      // `cache-control` of its own, spreading the rest through — so an added
+      // header keeps the immutable default, while a hand-copied one pins the
+      // value and stops tracking it.
       routeRules: {
         '/images/**': { headers: { 'cache-control': 'public, max-age=2592000' } },
       },
