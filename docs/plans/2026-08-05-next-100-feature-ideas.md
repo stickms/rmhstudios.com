@@ -1,7 +1,7 @@
 # The Next 100 — feature, AI, QOL, consolidation & refactor ideas
 
-**Date:** 2026-08-05 · **Count:** 112 numbered ideas · **Status:** 72 shipped,
-5 partial, 2 dropped, 33 open — see [§11](#11--implementation-status-2026-08-05)
+**Date:** 2026-08-05 · **Count:** 112 numbered ideas · **Status:** 75 shipped,
+4 partial, 2 dropped, 31 open — see [§11](#11--implementation-status-2026-08-05)
 
 This is round eight of feature generation for rmhstudios.com. The seven earlier
 plan docs are listed in [`docs/README.md`](../README.md) §Plans; **every idea
@@ -4474,7 +4474,7 @@ A14,L,ai,open,C1,"Bot opponents so no lobby is ever empty"
 A15,S,ai,shipped,A1 A5,"Translation drift detection across 16 locales"
 A16,M,ai,shipped,A1,"Security review for User Builds"
 A17,S,ai,shipped,A1,"Explain this chart on analytics surfaces"
-A18,L,ai,partial,A1 A3,"Give the concierge tools"
+A18,L,ai,shipped,A1 A3,"Give the concierge tools"
 A19,S,ai,shipped,A3,"Prompt-injection regression suite"
 A20,S,ai,shipped,A1,"Generated OG copy and card alt text"
 B1,S,qol,shipped,,"Universal undo for destructive actions"
@@ -4484,7 +4484,7 @@ B4,M,qol,shipped,,"One keyboard-shortcut registry"
 B5,M,qol,open,C8,"Per-category notification batching and digests"
 B6,S,qol,shipped,,"Notification grouping, filters and mark-all-read"
 B7,S,qol,shipped,,"Cross-device read position"
-B8,M,qol,open,,"Saved views on every list surface"
+B8,M,qol,shipped,,"Saved views on every list surface"
 B9,M,qol,shipped,,"Multi-select and reorder wherever a list is editable"
 B10,M,qol,shipped,E5,"Offline write queue in the service worker"
 B11,S,qol,shipped,,"New-device and new-location login alerts"
@@ -4545,7 +4545,7 @@ E12,M,platform,open,,"Partition the append-only tables"
 E13,M,platform,open,E7,"Cold tiering for large media and old rows"
 E14,M,platform,partial,E1,"SLO burn-rate alerts in the status service"
 E15,S,platform,shipped,,"Supply-chain provenance (SBOM + image signing)"
-F1,M,feature,open,,"Megathreads and AMAs"
+F1,M,feature,shipped,,"Megathreads and AMAs"
 F2,L,feature,open,C1,"Audio stages inside Spaces"
 F3,M,feature,partial,,"Ranked-choice and multi-winner polls"
 F4,L,feature,shipped,C6,"Long-form publishing with paid subscribers"
@@ -4578,7 +4578,9 @@ F24,M,feature,shipped,C8,"Mentions that work everywhere"
 > **Second wave update.** 72 of 112 now ship. The second batch was built by ten
 > parallel agents that were **killed mid-edit by a session usage limit**, so
 > what follows separates what survived verification from what was reverted.
-> §11a covers the first wave; §11b the second.
+> §11a covers the first wave; §11b the second. **A18, F1 and B8 have since
+> landed** — A18's tools are wired into the concierge, and F1/B8 were the two
+> items an earlier commit message wrongly claimed.
 
 ### §11b — Second wave (34 items)
 
