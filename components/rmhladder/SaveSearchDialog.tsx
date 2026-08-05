@@ -62,7 +62,9 @@ export function SaveSearchDialog({ filters }: { filters: ListJobsFilters }) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Save this search</DialogTitle>
-          <DialogDescription>Reuse these filters and get notified when new verified roles match.</DialogDescription>
+          <DialogDescription>
+            Reuse these filters and get notified when new verified roles match.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-2">
@@ -79,14 +81,26 @@ export function SaveSearchDialog({ filters }: { filters: ListJobsFilters }) {
             />
           </div>
           <label className="flex min-h-11 items-center gap-3 rounded-site-sm border border-site-border p-3 text-sm text-site-text">
-            <input type="checkbox" checked={alertsOn} onChange={(event) => setAlertsOn(event.target.checked)} />
+            <input
+              type="checkbox"
+              checked={alertsOn}
+              onChange={(event) => setAlertsOn(event.target.checked)}
+            />
             <BellRing className="size-4 text-site-text-muted" aria-hidden />
             Alert me about new matches
           </label>
         </div>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button type="button" loading={saving} loadingText="Saving…" disabled={!name.trim()} onClick={() => void save()}>
+          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            loading={saving}
+            loadingText="Saving…"
+            disabled={!name.trim()}
+            onClick={() => void save()}
+          >
             Save search
           </Button>
         </DialogFooter>

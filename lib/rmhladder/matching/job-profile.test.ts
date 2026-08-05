@@ -4,8 +4,15 @@ import { profileJobDeterministically } from './job-profile';
 describe('profileJobDeterministically', () => {
   it('extracts explicit requirements without making AI calls', () => {
     const result = profileJobDeterministically({
-      title: 'Software Engineer Intern', company: { name: 'Acme' }, city: 'New York', state: 'NY', remoteStatus: 'hybrid', programType: 'internship', earlyCareerClassification: 'yes',
-      fullDescription: '<p>Minimum qualifications: 1+ years using TypeScript and SQL. Preferred: AWS and Docker. Bachelor\'s degree.</p>',
+      title: 'Software Engineer Intern',
+      company: { name: 'Acme' },
+      city: 'New York',
+      state: 'NY',
+      remoteStatus: 'hybrid',
+      programType: 'internship',
+      earlyCareerClassification: 'yes',
+      fullDescription:
+        "<p>Minimum qualifications: 1+ years using TypeScript and SQL. Preferred: AWS and Docker. Bachelor's degree.</p>",
     });
     expect(result.requiredSkills).toEqual(expect.arrayContaining(['TypeScript', 'SQL']));
     expect(result.preferredSkills).toEqual(expect.arrayContaining(['AWS', 'Docker']));

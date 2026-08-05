@@ -25,7 +25,8 @@ import { avatarColor, TOY } from '@/lib/massive-march/palette';
 import { GESTURES } from '@/lib/massive-march/gestures';
 import { live, type LivePlayer } from '@/lib/massive-march/live';
 import { BIT } from '@/lib/massive-march/net/events';
-import { useMmStore } from '@/lib/massive-march/store';
+import type { MemberInfo } from '@/lib/massive-march/net/events';
+import { none, useMmStore } from '@/lib/massive-march/store';
 import { EYE_HEIGHT } from '@/lib/massive-march/constants';
 
 const nameTextures = new Map<string, CanvasTexture>();
@@ -306,7 +307,7 @@ function applyGesture(
  * right four — a torch fifty metres away contributes nothing you can see.
  */
 export function Avatars() {
-  const members = useMmStore((s) => s.session?.members ?? []);
+  const members = useMmStore((s) => s.session?.members ?? none<MemberInfo>());
   const selfSlot = useMmStore((s) => s.selfSlot);
 
   return (

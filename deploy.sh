@@ -763,34 +763,32 @@ for i in $(seq 1 $MIGRATION_RETRIES); do
     sleep "$MIGRATION_DELAY"
 done
 
-# Run baseline-resolve, any failed-migration rollback, and `migrate deploy` in a
-# SINGLE container instead of 2–3 separate `dc run --rm` invocations. Each run on
-# this image boots node + prisma (~5–10s of pure overhead), so collapsing them
-# shaves real time off every deploy.
+# Run baseline-resolve and `migrate deploy` in a SINGLE container rather than
+# separate `dc run --rm` invocations. Each run on this image boots node + prisma
+# (~5–10s of pure overhead), so collapsing them shaves real time off every deploy.
 #
 #   - resolve --applied 0_baseline: on first run the _prisma_migrations table or
 #     baseline may not be recorded; mark it applied so Prisma doesn't try to
 #     re-create existing tables. Idempotent + ignored on later runs.
-#   - resolve --rolled-back <name>: if the prior `migrate status` reported a
-#     failed migration, mark it rolled back so `migrate deploy` can retry it.
-# `prisma migrate status` exits 0 ONLY when the schema is already up to date
-# (no pending and no failed migrations). In that case there is nothing to apply,
-# so skip the resolve+deploy container entirely — saving a full node+prisma boot
-# (~5-10s) on every deploy that doesn't introduce a new migration (the common
-# case). A non-zero exit here means the loop above confirmed the DB is reachable
-# but reported pending/failed migrations, so we run the full resolve+deploy.
+#
+# `prisma migrate status` exits 0 ONLY when the schema is already up to date, so
+# a zero exit means there is nothing to apply and the whole container boot can be
+# skipped — the common case on a deploy that adds no migration. A non-zero exit
+# means the loop above confirmed the DB is reachable but there is work to do.
+#
+# Failed-migration recovery is driven off `migrate deploy`, NOT off the
+# `migrate status` output. It used to be the other way round: deploy.sh scraped
+# status for the `prisma migrate resolve --rolled-back "<name>"` hint that older
+# Prisma printed. Prisma 7's `migrate status` does not report failed migrations
+# at ALL — it lists only unapplied ones — so that scrape could never match and
+# the recovery path was dead code. The first migration to actually fail in
+# production proved it: status reported one pending migration and said nothing
+# about the failure, deploy then died P3009, and every subsequent deploy died the
+# same way until someone resolved it by hand. `migrate deploy`'s own P3009 names
+# the migration, so that is what we parse now.
 if [ "${MIGRATE_EXIT:-1}" -eq 0 ]; then
     log "  Schema already up to date — skipping migrate deploy (no pending migrations)."
 else
-    MIGRATE_CMD='npx prisma migrate resolve --applied 0_baseline 2>/dev/null || true'
-
-    FAILED_MIGRATION=$(echo "$MIGRATE_OUTPUT" | grep -oP '(?<=resolve --rolled-back ")[^"]+' || true)
-    if [ -n "$FAILED_MIGRATION" ]; then
-        log "  Will resolve failed migration '$FAILED_MIGRATION' as rolled back before deploy."
-        MIGRATE_CMD="$MIGRATE_CMD; npx prisma migrate resolve --rolled-back \"$FAILED_MIGRATION\" || true"
-    fi
-    MIGRATE_CMD="$MIGRATE_CMD; npx prisma migrate deploy"
-
     # Migration lock safety (audit §1.7). Without a lock_timeout, a migration's
     # ALTER/CREATE INDEX takes an ACCESS EXCLUSIVE lock and — if the table is
     # busy — can queue behind (and then block) ALL reads/writes on that table for
@@ -802,9 +800,53 @@ else
     # migrate connection; scoped to THIS container via `-e` so it never affects
     # the running app. (If a future Prisma engine ignores PGOPTIONS, the
     # equivalent is `?options=-c%20lock_timeout%3D5s` on the migrate DATABASE_URL.)
-    if ! dc run --rm --no-deps \
-        -e PGOPTIONS='-c lock_timeout=5s -c statement_timeout=0' \
-        web sh -c "$MIGRATE_CMD"; then
+    run_migrate_container() {
+        dc run --rm --no-deps \
+            -e PGOPTIONS='-c lock_timeout=5s -c statement_timeout=0' \
+            web sh -c "$1" 2>&1
+    }
+
+    # Captured rather than streamed, because the P3009 recovery below has to read
+    # it. Echoed straight back out so the deploy log is unchanged.
+    set +e
+    MIGRATE_DEPLOY_OUTPUT=$(run_migrate_container \
+        'npx prisma migrate resolve --applied 0_baseline 2>/dev/null || true; npx prisma migrate deploy')
+    MIGRATE_DEPLOY_EXIT=$?
+    set -e
+    printf '%s\n' "$MIGRATE_DEPLOY_OUTPUT"
+
+    # P3009: an earlier deploy left a migration recorded as failed, and Prisma
+    # refuses to apply anything else until it is resolved. PostgreSQL runs each
+    # migration inside a transaction, so a failed one committed NOTHING — marking
+    # it rolled back and letting `migrate deploy` re-apply it is the documented
+    # recovery and is safe to do unattended. Bounded, and never the same migration
+    # twice: a migration that fails again on re-apply reports P3018 (a different
+    # message this does not match), so it stops here and the deploy fails loudly.
+    RESOLVED_MIGRATIONS=""
+    RECOVERY_ATTEMPTS=0
+    while [ "$MIGRATE_DEPLOY_EXIT" -ne 0 ] && [ "$RECOVERY_ATTEMPTS" -lt 3 ]; do
+        FAILED_MIGRATION=$(printf '%s\n' "$MIGRATE_DEPLOY_OUTPUT" \
+            | sed -n 's/^The `\([^`]*\)` migration started at .* failed$/\1/p' | head -1)
+        [ -n "$FAILED_MIGRATION" ] || break
+        case " $RESOLVED_MIGRATIONS " in
+            *" $FAILED_MIGRATION "*)
+                log "  Migration '$FAILED_MIGRATION' failed again after being resolved — not retrying."
+                break
+                ;;
+        esac
+        RESOLVED_MIGRATIONS="$RESOLVED_MIGRATIONS $FAILED_MIGRATION"
+        RECOVERY_ATTEMPTS=$((RECOVERY_ATTEMPTS + 1))
+        log "  Migration '$FAILED_MIGRATION' is recorded as failed (P3009); marking it rolled back and retrying."
+
+        set +e
+        MIGRATE_DEPLOY_OUTPUT=$(run_migrate_container \
+            "npx prisma migrate resolve --rolled-back \"$FAILED_MIGRATION\" && npx prisma migrate deploy")
+        MIGRATE_DEPLOY_EXIT=$?
+        set -e
+        printf '%s\n' "$MIGRATE_DEPLOY_OUTPUT"
+    done
+
+    if [ "$MIGRATE_DEPLOY_EXIT" -ne 0 ]; then
         log "ERROR: Database migration failed."
         update_deploy_status fail "database migration failed"
         exit 1

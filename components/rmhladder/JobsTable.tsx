@@ -32,8 +32,11 @@ function VerificationBadge({ status }: { status: string | null | undefined }) {
 
 function formatDate(value: unknown) {
   if (!value) return '—';
-  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-    .format(new Date(value as Date | string));
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(value as Date | string));
 }
 
 function Deadline({ value }: { value: unknown }) {
@@ -74,40 +77,55 @@ function JobActions({
     {
       value: 'saved' as const,
       icon: Bookmark,
-      label: userAction === 'saved'
-        ? t('ladder.unsave', { defaultValue: 'Unsave job' })
-        : t('ladder.save', { defaultValue: 'Save job' }),
+      label:
+        userAction === 'saved'
+          ? t('ladder.unsave', { defaultValue: 'Unsave job' })
+          : t('ladder.save', { defaultValue: 'Save job' }),
     },
     {
       value: 'applied' as const,
       icon: CheckCircle,
-      label: applicationStatus && applicationStatus !== 'not_applied'
-        ? t('ladder.applied', { defaultValue: 'Applied' })
-        : t('ladder.markApplied', { defaultValue: 'Mark as applied' }),
+      label:
+        applicationStatus && applicationStatus !== 'not_applied'
+          ? t('ladder.applied', { defaultValue: 'Applied' })
+          : t('ladder.markApplied', { defaultValue: 'Mark as applied' }),
     },
     {
       value: 'ignored' as const,
       icon: EyeOff,
-      label: userAction === 'ignored'
-        ? t('ladder.unignore', { defaultValue: 'Unignore job' })
-        : t('ladder.ignore', { defaultValue: 'Ignore job' }),
+      label:
+        userAction === 'ignored'
+          ? t('ladder.unignore', { defaultValue: 'Unignore job' })
+          : t('ladder.ignore', { defaultValue: 'Ignore job' }),
     },
   ];
 
   return (
-    <div className="flex flex-wrap items-center gap-1" role="group" aria-label={t('ladder.jobActions', { defaultValue: 'Job tracking actions' })}>
+    <div
+      className="flex flex-wrap items-center gap-1"
+      role="group"
+      aria-label={t('ladder.jobActions', { defaultValue: 'Job tracking actions' })}
+    >
       {actions.map(({ value, icon: Icon, label }) => (
         <Button
           key={value}
           type="button"
           size={compact ? 'icon-sm' : 'sm'}
-          variant={value === 'applied'
-            ? applicationStatus && applicationStatus !== 'not_applied' ? 'accent' : 'outline'
-            : userAction === value ? 'accent' : 'outline'}
+          variant={
+            value === 'applied'
+              ? applicationStatus && applicationStatus !== 'not_applied'
+                ? 'accent'
+                : 'outline'
+              : userAction === value
+                ? 'accent'
+                : 'outline'
+          }
           aria-label={label}
-          aria-pressed={value === 'applied'
-            ? Boolean(applicationStatus && applicationStatus !== 'not_applied')
-            : userAction === value}
+          aria-pressed={
+            value === 'applied'
+              ? Boolean(applicationStatus && applicationStatus !== 'not_applied')
+              : userAction === value
+          }
           onClick={(event) => toggle(value, event)}
           className={compact ? undefined : 'min-h-11'}
         >
@@ -155,11 +173,19 @@ export function JobsTable({ rows, onRowClick, onAction }: JobsTableProps) {
               <CardHeader className="gap-3 px-5">
                 <div className="flex flex-wrap items-center gap-2">
                   <VerificationBadge status={job.verification?.status} />
-                  <Badge variant="outline" size="sm">{job.program}</Badge>
-                  {job.applyUrl && <Badge variant="outline" size="sm">{sourceDomain(job.applyUrl)}</Badge>}
+                  <Badge variant="outline" size="sm">
+                    {job.program}
+                  </Badge>
+                  {job.applyUrl && (
+                    <Badge variant="outline" size="sm">
+                      {sourceDomain(job.applyUrl)}
+                    </Badge>
+                  )}
                 </div>
                 <button type="button" className="text-left" onClick={() => onRowClick(row)}>
-                  <CardTitle className="text-base leading-snug text-site-text">{job.title}</CardTitle>
+                  <CardTitle className="text-base leading-snug text-site-text">
+                    {job.title}
+                  </CardTitle>
                   <p className="mt-1 text-sm font-medium text-site-text-muted">{job.company}</p>
                 </button>
               </CardHeader>
@@ -170,11 +196,19 @@ export function JobsTable({ rows, onRowClick, onAction }: JobsTableProps) {
                 </p>
                 <div className="flex items-center gap-2 text-sm text-site-text-muted">
                   <RungMeter score={row.finalRelevance} size="sm" />
-                  <span>{t('ladder.relevance', { defaultValue: 'Relevance' })}: {row.finalRelevance}</span>
+                  <span>
+                    {t('ladder.relevance', { defaultValue: 'Relevance' })}: {row.finalRelevance}
+                  </span>
                 </div>
               </CardContent>
               <CardFooter className="flex-wrap justify-between gap-2 px-5">
-                <JobActions jobId={job.id} userAction={row.userAction} applicationStatus={row.applicationStatus} onAction={onAction} compact />
+                <JobActions
+                  jobId={job.id}
+                  userAction={row.userAction}
+                  applicationStatus={row.applicationStatus}
+                  onAction={onAction}
+                  compact
+                />
                 {job.applyUrl && (
                   <Button asChild size="sm" className="min-h-11">
                     <a
@@ -183,7 +217,10 @@ export function JobsTable({ rows, onRowClick, onAction }: JobsTableProps) {
                       rel="noopener noreferrer"
                       onClick={() => trackApplyClick(job.id, job.applyUrl!)}
                     >
-                      {t('ladder.applyOn', { defaultValue: 'Apply on {{domain}}', domain: sourceDomain(job.applyUrl) })}
+                      {t('ladder.applyOn', {
+                        defaultValue: 'Apply on {{domain}}',
+                        domain: sourceDomain(job.applyUrl),
+                      })}
                       <ExternalLink aria-hidden />
                     </a>
                   </Button>
@@ -195,16 +232,33 @@ export function JobsTable({ rows, onRowClick, onAction }: JobsTableProps) {
       </div>
 
       <div className="hidden overflow-x-auto rounded-site border border-site-border bg-site-surface md:block">
-        <table className="w-full border-collapse text-left text-sm" aria-label={t('ladder.jobPostings', { defaultValue: 'Job postings' })}>
+        <table
+          className="w-full border-collapse text-left text-sm"
+          aria-label={t('ladder.jobPostings', { defaultValue: 'Job postings' })}
+        >
           <thead className="border-b border-site-border bg-site-surface-hover text-xs uppercase tracking-wide text-site-text-muted">
             <tr>
-              <th scope="col" className="px-4 py-3">{t('ladder.titleCompany', { defaultValue: 'Title / Company' })}</th>
-              <th scope="col" className="px-4 py-3">{t('ladder.location', { defaultValue: 'Location' })}</th>
-              <th scope="col" className="px-4 py-3">{t('ladder.program', { defaultValue: 'Program' })}</th>
-              <th scope="col" className="px-4 py-3">{t('ladder.deadline', { defaultValue: 'Deadline' })}</th>
-              <th scope="col" className="px-4 py-3">{t('ladder.status', { defaultValue: 'Status' })}</th>
-              <th scope="col" className="px-4 py-3">{t('ladder.match', { defaultValue: 'Match' })}</th>
-              <th scope="col" className="px-4 py-3">{t('ladder.actions', { defaultValue: 'Actions' })}</th>
+              <th scope="col" className="px-4 py-3">
+                {t('ladder.titleCompany', { defaultValue: 'Title / Company' })}
+              </th>
+              <th scope="col" className="px-4 py-3">
+                {t('ladder.location', { defaultValue: 'Location' })}
+              </th>
+              <th scope="col" className="px-4 py-3">
+                {t('ladder.program', { defaultValue: 'Program' })}
+              </th>
+              <th scope="col" className="px-4 py-3">
+                {t('ladder.deadline', { defaultValue: 'Deadline' })}
+              </th>
+              <th scope="col" className="px-4 py-3">
+                {t('ladder.status', { defaultValue: 'Status' })}
+              </th>
+              <th scope="col" className="px-4 py-3">
+                {t('ladder.match', { defaultValue: 'Match' })}
+              </th>
+              <th scope="col" className="px-4 py-3">
+                {t('ladder.actions', { defaultValue: 'Actions' })}
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-site-border">
@@ -214,35 +268,60 @@ export function JobsTable({ rows, onRowClick, onAction }: JobsTableProps) {
                 <tr key={job.id} className="transition-colors hover:bg-site-surface-hover">
                   <td className="px-4 py-4">
                     <button type="button" className="text-left" onClick={() => onRowClick(row)}>
-                      <span className="block font-semibold text-site-text hover:text-site-accent">{job.title}</span>
+                      <span className="block font-semibold text-site-text hover:text-site-accent">
+                        {job.title}
+                      </span>
                       <span className="mt-1 block text-xs text-site-text-muted">{job.company}</span>
                     </button>
                   </td>
                   <td className="px-4 py-4 text-site-text-muted">{job.location}</td>
-                  <td className="px-4 py-4"><Badge variant="outline" size="sm">{job.program}</Badge></td>
-                  <td className="px-4 py-4 text-site-text-muted"><Deadline value={row.applicationDeadline} /></td>
+                  <td className="px-4 py-4">
+                    <Badge variant="outline" size="sm">
+                      {job.program}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-4 text-site-text-muted">
+                    <Deadline value={row.applicationDeadline} />
+                  </td>
                   <td className="px-4 py-4">
                     <div className="flex flex-col items-start gap-1">
                       <VerificationBadge status={job.verification?.status} />
-                      {job.applyUrl && <span className="text-xs text-site-text-dim">{sourceDomain(job.applyUrl)}</span>}
+                      {job.applyUrl && (
+                        <span className="text-xs text-site-text-dim">
+                          {sourceDomain(job.applyUrl)}
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="flex items-center gap-2"><RungMeter score={row.finalRelevance} size="sm" /><span>{row.finalRelevance}</span></div>
+                    <div className="flex items-center gap-2">
+                      <RungMeter score={row.finalRelevance} size="sm" />
+                      <span>{row.finalRelevance}</span>
+                    </div>
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-2">
-                      <JobActions jobId={job.id} userAction={row.userAction} applicationStatus={row.applicationStatus} onAction={onAction} compact />
+                      <JobActions
+                        jobId={job.id}
+                        userAction={row.userAction}
+                        applicationStatus={row.applicationStatus}
+                        onAction={onAction}
+                        compact
+                      />
                       {job.applyUrl && (
                         <Button asChild size="xs">
                           <a
                             href={job.applyUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            aria-label={t('ladder.applyOn', { defaultValue: 'Apply on {{domain}}', domain: sourceDomain(job.applyUrl) })}
+                            aria-label={t('ladder.applyOn', {
+                              defaultValue: 'Apply on {{domain}}',
+                              domain: sourceDomain(job.applyUrl),
+                            })}
                             onClick={() => trackApplyClick(job.id, job.applyUrl!)}
                           >
-                            {t('ladder.apply', { defaultValue: 'Apply' })}<ExternalLink aria-hidden />
+                            {t('ladder.apply', { defaultValue: 'Apply' })}
+                            <ExternalLink aria-hidden />
                           </a>
                         </Button>
                       )}

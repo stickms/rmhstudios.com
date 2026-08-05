@@ -80,12 +80,14 @@ describe('seedLadder', () => {
     const statuses = new Set(Array.from(sources.values()).map((s) => s.status));
     expect(statuses.has('unconfigured')).toBe(true);
     if (manualCount > 0) expect(statuses.has('active')).toBe(true);
-    expect([...sources.values()]).toContainEqual(expect.objectContaining({
-      platform: 'workday',
-      slug: 'workday:Workday',
-      status: 'active',
-      url: 'https://workday.wd5.myworkdayjobs.com/Workday',
-    }));
+    expect([...sources.values()]).toContainEqual(
+      expect.objectContaining({
+        platform: 'workday',
+        slug: 'workday:Workday',
+        status: 'active',
+        url: 'https://workday.wd5.myworkdayjobs.com/Workday',
+      }),
+    );
   });
 
   it('is idempotent — re-running creates nothing new', async () => {

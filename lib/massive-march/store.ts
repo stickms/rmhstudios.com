@@ -28,6 +28,31 @@ import { CHAT_HISTORY } from './constants';
 
 export type Screen = 'menu' | 'lobby' | 'world' | 'ending';
 
+/**
+ * The empty list every optional-list selector falls back to.
+ *
+ * Zustand v5 is a thin wrapper over `useSyncExternalStore`, which decides
+ * whether to re-render by comparing the selector's result to the previous one
+ * **by identity**. So `useMmStore((s) => s.session?.members ?? [])` is not the
+ * harmless idiom it looks like: every call with no session returns a brand-new
+ * `[]`, nothing ever compares equal, and React re-renders until it gives up with
+ * "Maximum update depth exceeded".
+ *
+ * One frozen array, shared by every such selector, makes the fallback a stable
+ * reference. Frozen because a caller that mutated it would be mutating the
+ * fallback for the whole app.
+ */
+const EMPTY: readonly never[] = Object.freeze([]);
+
+/**
+ * Typed accessor for it. Returns the SAME frozen array every call — that is the
+ * entire point — while letting each call site say what the list would have held,
+ * so `?? none<string>()` still types as `readonly string[]`.
+ */
+export function none<T>(): readonly T[] {
+  return EMPTY as readonly T[];
+}
+
 /** A transient line of feedback. Not sonner: this UI owns its whole viewport. */
 export interface Notice {
   id: number;

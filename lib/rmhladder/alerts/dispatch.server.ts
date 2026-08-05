@@ -6,24 +6,52 @@ import { listJobs, type QueriesPrisma } from '../server/queries';
 import { formatInUserTimezone, isDigestDue, isQuietTime, localDateKey } from './schedule';
 
 type AlertChannel = 'in_app' | 'email' | 'discord';
-type AlertType = 'immediate' | 'daily_digest' | 'weekly_digest' | 'deadline' | 'saved_search' | 'follow_up' | 'interview';
+type AlertType =
+  | 'immediate'
+  | 'daily_digest'
+  | 'weekly_digest'
+  | 'deadline'
+  | 'saved_search'
+  | 'follow_up'
+  | 'interview';
 
 const queriesPrisma = prisma as unknown as QueriesPrisma;
 const savedSearchFiltersSchema = z.object({
   preset: z.enum(['new', 'finance', 'consulting', 'tech', 'expiring', 'remote']).optional(),
   q: z.string().max(200).optional(),
   cities: z.array(z.string().max(100)).max(50).optional(),
-  programTypes: z.array(z.enum([
-    'internship', 'summer_analyst', 'summer_associate', 'analyst_program', 'rotational_program',
-    'new_grad', 'leadership_development', 'entry_level', 'mba', 'other',
-  ])).max(10).optional(),
+  programTypes: z
+    .array(
+      z.enum([
+        'internship',
+        'summer_analyst',
+        'summer_associate',
+        'analyst_program',
+        'rotational_program',
+        'new_grad',
+        'leadership_development',
+        'entry_level',
+        'mba',
+        'other',
+      ]),
+    )
+    .max(10)
+    .optional(),
   sort: z.enum(['relevance', 'posted', 'deadline']).optional(),
 });
 
 function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/g, (character) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  })[character] ?? character);
+  return value.replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      })[character] ?? character,
+  );
 }
 
 function enabledChannels(prefs: {
@@ -79,8 +107,9 @@ async function sendDiscord(input: { discordUserId: string; text: string; link: s
     signal: AbortSignal.timeout(10_000),
   });
   if (!dm.ok) return { status: 'failed' as const, error: `Discord DM HTTP ${dm.status}` };
-  const channel = await dm.json() as { id?: string };
-  if (!channel.id) return { status: 'failed' as const, error: 'Discord did not return a DM channel' };
+  const channel = (await dm.json()) as { id?: string };
+  if (!channel.id)
+    return { status: 'failed' as const, error: 'Discord did not return a DM channel' };
 
   const sent = await fetch(`https://discord.com/api/v10/channels/${channel.id}/messages`, {
     method: 'POST',
@@ -117,15 +146,21 @@ async function ensureEvent(input: {
     },
     update: { payload: input.payload as Prisma.InputJsonValue },
   });
-  await Promise.all(input.channels.map((channel) => prisma.ladderAlertDelivery.upsert({
-    where: { alertId_channel: { alertId: event.id, channel } },
-    create: { alertId: event.id, channel },
-    update: {},
-  })));
+  await Promise.all(
+    input.channels.map((channel) =>
+      prisma.ladderAlertDelivery.upsert({
+        where: { alertId_channel: { alertId: event.id, channel } },
+        create: { alertId: event.id, channel },
+        update: {},
+      }),
+    ),
+  );
   return event.id;
 }
 
-export async function deliverPendingLadderAlerts(limit = 100): Promise<{ sent: number; failed: number; skipped: number }> {
+export async function deliverPendingLadderAlerts(
+  limit = 100,
+): Promise<{ sent: number; failed: number; skipped: number }> {
   const deliveries = await prisma.ladderAlertDelivery.findMany({
     where: { status: { in: ['pending', 'failed'] }, attempts: { lt: 3 } },
     orderBy: { createdAt: 'asc' },
@@ -148,7 +183,10 @@ export async function deliverPendingLadderAlerts(limit = 100): Promise<{ sent: n
     const company = String(payload.company ?? job?.company.name ?? 'an employer');
     const text = String(payload.text ?? `${title} at ${company}`);
     const base = process.env.BETTER_AUTH_URL ?? 'https://rmhstudios.com';
-    const link = new URL(String(payload.link ?? `/rmhladder/jobs/${delivery.alert.jobId ?? ''}`), base).toString();
+    const link = new URL(
+      String(payload.link ?? `/rmhladder/jobs/${delivery.alert.jobId ?? ''}`),
+      base,
+    ).toString();
 
     let outcome: { status: 'sent' | 'failed' | 'skipped'; error?: string };
     try {
@@ -165,9 +203,15 @@ export async function deliverPendingLadderAlerts(limit = 100): Promise<{ sent: n
         });
         outcome = { status: 'sent' };
       } else if (delivery.channel === 'email') {
-        outcome = delivery.alert.user.email && delivery.alert.user.emailVerified
-          ? await sendEmail({ to: delivery.alert.user.email, subject: `RMHLadder: ${title}`, text, link })
-          : { status: 'skipped', error: 'User has no email' };
+        outcome =
+          delivery.alert.user.email && delivery.alert.user.emailVerified
+            ? await sendEmail({
+                to: delivery.alert.user.email,
+                subject: `RMHLadder: ${title}`,
+                text,
+                link,
+              })
+            : { status: 'skipped', error: 'User has no email' };
       } else if (delivery.channel === 'discord') {
         const discordUserId = String(payload.discordUserId ?? '');
         outcome = discordUserId
@@ -213,9 +257,10 @@ export async function generateLadderMatchAlerts(now = new Date()): Promise<numbe
   for (const prefs of prefsRows) {
     if (!isDigestDue(prefs, now)) continue;
     const linkedDiscordId = prefs.user.accounts[0]?.accountId ?? null;
-    const channels = enabledChannels(prefs).filter((channel) =>
-      (channel !== 'email' || prefs.user.emailVerified)
-      && (channel !== 'discord' || Boolean(linkedDiscordId)),
+    const channels = enabledChannels(prefs).filter(
+      (channel) =>
+        (channel !== 'email' || prefs.user.emailVerified) &&
+        (channel !== 'discord' || Boolean(linkedDiscordId)),
     );
     if (channels.length === 0) continue;
     const result = await listJobs(queriesPrisma, prefs.userId, {
@@ -224,21 +269,25 @@ export async function generateLadderMatchAlerts(now = new Date()): Promise<numbe
       take: 100,
     });
     const type = alertTypeForDigest(prefs.digestFrequency);
-    const matchRows: Array<{ row: (typeof result.rows)[number]; resumeMatch: { score: number } | null }> = [];
+    const matchRows: Array<{
+      row: (typeof result.rows)[number];
+      resumeMatch: { score: number } | null;
+    }> = [];
     for (const row of result.rows) {
       if (row.finalRelevance < prefs.relevanceThreshold) continue;
       const jobId = row.id as string;
-      const resumeMatch = prefs.resumeMatchThreshold == null
-        ? null
-        : await prisma.ladderJobMatch.findFirst({
-            where: {
-              userId: prefs.userId,
-              jobId,
-              score: { gte: prefs.resumeMatchThreshold },
-              resumeVersion: { confirmedAt: { not: null } },
-            },
-            orderBy: { score: 'desc' },
-          });
+      const resumeMatch =
+        prefs.resumeMatchThreshold == null
+          ? null
+          : await prisma.ladderJobMatch.findFirst({
+              where: {
+                userId: prefs.userId,
+                jobId,
+                score: { gte: prefs.resumeMatchThreshold },
+                resumeVersion: { confirmedAt: { not: null } },
+              },
+              orderBy: { score: 'desc' },
+            });
       if (prefs.resumeMatchThreshold != null && !resumeMatch) continue;
       matchRows.push({ row, resumeMatch });
     }
@@ -247,7 +296,7 @@ export async function generateLadderMatchAlerts(now = new Date()): Promise<numbe
       for (const { row, resumeMatch } of matchRows) {
         const jobId = row.id as string;
         const title = row.title as string;
-        const company = ((row.company as { name?: string } | undefined)?.name ?? 'an employer');
+        const company = (row.company as { name?: string } | undefined)?.name ?? 'an employer';
         await ensureEvent({
           userId: prefs.userId,
           jobId,
@@ -273,7 +322,10 @@ export async function generateLadderMatchAlerts(now = new Date()): Promise<numbe
         type,
         fingerprint: `${type}:${period}`,
         payload: {
-          title: type === 'daily_digest' ? 'Your daily RMHLadder digest' : 'Your weekly RMHLadder digest',
+          title:
+            type === 'daily_digest'
+              ? 'Your daily RMHLadder digest'
+              : 'Your weekly RMHLadder digest',
           text: `${matchRows.length} new verified role${matchRows.length === 1 ? '' : 's'} match your preferences.`,
           link: '/rmhladder/jobs?preset=new',
           jobs: matchRows.slice(0, 20).map(({ row }) => ({ id: row.id, title: row.title })),
@@ -296,8 +348,8 @@ export async function generateLadderMatchAlerts(now = new Date()): Promise<numbe
         ...parsedFilters.data,
         take: 100,
       });
-      const recent = result.rows.filter((row) =>
-        new Date(row.discoveredAt as Date).getTime() >= now.getTime() - 7 * 86_400_000,
+      const recent = result.rows.filter(
+        (row) => new Date(row.discoveredAt as Date).getTime() >= now.getTime() - 7 * 86_400_000,
       );
       if (prefs.digestFrequency !== 'immediate' && recent.length > 0) {
         await ensureEvent({
@@ -320,7 +372,7 @@ export async function generateLadderMatchAlerts(now = new Date()): Promise<numbe
       for (const row of recent) {
         const jobId = row.id as string;
         const title = row.title as string;
-        const company = ((row.company as { name?: string } | undefined)?.name ?? 'an employer');
+        const company = (row.company as { name?: string } | undefined)?.name ?? 'an employer';
         await ensureEvent({
           userId: prefs.userId,
           jobId,
@@ -359,7 +411,9 @@ export async function generateLadderPipelineReminders(now = new Date()): Promise
   });
   let generated = 0;
   for (const application of applications) {
-    const prefs = await prisma.ladderUserPrefs.findUnique({ where: { userId: application.userId } });
+    const prefs = await prisma.ladderUserPrefs.findUnique({
+      where: { userId: application.userId },
+    });
     if (!prefs || isQuietTime(prefs, now)) continue;
     const linkedDiscord = prefs.channelDiscord
       ? await prisma.account.findFirst({
@@ -368,11 +422,15 @@ export async function generateLadderPipelineReminders(now = new Date()): Promise
         })
       : null;
     const emailOwner = prefs.channelEmail
-      ? await prisma.user.findUnique({ where: { id: application.userId }, select: { emailVerified: true } })
+      ? await prisma.user.findUnique({
+          where: { id: application.userId },
+          select: { emailVerified: true },
+        })
       : null;
-    const channels = enabledChannels(prefs).filter((channel) =>
-      (channel !== 'email' || emailOwner?.emailVerified === true)
-      && (channel !== 'discord' || Boolean(linkedDiscord?.accountId)),
+    const channels = enabledChannels(prefs).filter(
+      (channel) =>
+        (channel !== 'email' || emailOwner?.emailVerified === true) &&
+        (channel !== 'discord' || Boolean(linkedDiscord?.accountId)),
     );
     const label = `${application.job.title} at ${application.job.company.name}`;
     const basePayload = {
@@ -382,7 +440,11 @@ export async function generateLadderPipelineReminders(now = new Date()): Promise
       discordUserId: linkedDiscord?.accountId ?? null,
     };
     const followUpHorizon = new Date(now.getTime() + 4 * 60 * 60 * 1000);
-    if (application.followUpDate && application.followUpDate >= lookback && application.followUpDate <= followUpHorizon) {
+    if (
+      application.followUpDate &&
+      application.followUpDate >= lookback &&
+      application.followUpDate <= followUpHorizon
+    ) {
       await ensureEvent({
         userId: application.userId,
         jobId: application.jobId,
@@ -402,7 +464,10 @@ export async function generateLadderPipelineReminders(now = new Date()): Promise
         jobId: application.jobId,
         type: 'interview',
         fingerprint: `interview:24h:${application.id}:${interview.toISOString()}`,
-        payload: { ...basePayload, text: `Interview for ${label} is ${formatInUserTimezone(interview, prefs.timezone)}.` },
+        payload: {
+          ...basePayload,
+          text: `Interview for ${label} is ${formatInUserTimezone(interview, prefs.timezone)}.`,
+        },
         channels,
       });
       generated++;
@@ -416,7 +481,10 @@ export async function generateLadderPipelineReminders(now = new Date()): Promise
         jobId: application.jobId,
         type: 'deadline',
         fingerprint: `deadline:3d:${application.jobId}:${deadline.toISOString()}`,
-        payload: { ...basePayload, text: `${label} closes in ${days} day${days === 1 ? '' : 's'}.` },
+        payload: {
+          ...basePayload,
+          text: `${label} closes in ${days} day${days === 1 ? '' : 's'}.`,
+        },
         channels,
       });
       generated++;

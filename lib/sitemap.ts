@@ -72,6 +72,10 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   // here *and* self-canonical while `/store` was too, so one catalog and one
   // pricing table each claimed two canonical URLs.
   { loc: '/achievements', changefreq: 'weekly', priority: 0.5 },
+  // Community-made packs: a public browse surface, so it's indexable.
+  { loc: '/emoji-packs', changefreq: 'weekly', priority: 0.5 },
+  // Public per-game speedrun boards.
+  { loc: '/speedruns', changefreq: 'daily', priority: 0.5 },
   { loc: '/groups', changefreq: 'weekly', priority: 0.5 },
   { loc: '/help', changefreq: 'monthly', priority: 0.6 },
   { loc: '/predictions', changefreq: 'daily', priority: 0.5 },
@@ -201,6 +205,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/saves': 'personal',
   '/share': 'personal',
   '/wallet': 'personal',
+  '/trash': 'personal',
   '/wishlist': 'redirect', // → /saves?tab=wishlist
   '/wrapped': 'personal',
   '/creator-studio': 'personal',

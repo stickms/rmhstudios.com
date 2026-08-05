@@ -3,15 +3,34 @@ import { ensureCachedJobProfile, extractJobProfileWithAi } from './job-profile.s
 import type { LadderAiProvider } from './provider.server';
 
 const job = {
-  id: 'job-1', title: 'Analyst Intern', company: { name: 'Acme' }, locationRaw: 'New York, NY', city: 'New York', state: 'NY',
-  remoteStatus: 'hybrid' as const, programType: 'internship', earlyCareerClassification: 'yes',
-  descriptionSummary: 'Required: Excel. Preferred: SQL.', fullDescription: 'Required: Excel. Preferred: SQL.',
+  id: 'job-1',
+  title: 'Analyst Intern',
+  company: { name: 'Acme' },
+  locationRaw: 'New York, NY',
+  city: 'New York',
+  state: 'NY',
+  remoteStatus: 'hybrid' as const,
+  programType: 'internship',
+  earlyCareerClassification: 'yes',
+  descriptionSummary: 'Required: Excel. Preferred: SQL.',
+  fullDescription: 'Required: Excel. Preferred: SQL.',
 };
 
 const aiProfile = {
-  title: 'Analyst Intern', company: 'Acme', summary: 'Early-career analyst internship.', requiredSkills: ['Excel'], preferredSkills: ['SQL'],
-  keywords: ['analyst'], responsibilities: [], minYearsExperience: null, maxYearsExperience: null, educationLevels: [], locations: ['New York, NY'],
-  remoteStatus: 'hybrid', programType: 'internship', earlyCareer: true,
+  title: 'Analyst Intern',
+  company: 'Acme',
+  summary: 'Early-career analyst internship.',
+  requiredSkills: ['Excel'],
+  preferredSkills: ['SQL'],
+  keywords: ['analyst'],
+  responsibilities: [],
+  minYearsExperience: null,
+  maxYearsExperience: null,
+  educationLevels: [],
+  locations: ['New York, NY'],
+  remoteStatus: 'hybrid',
+  programType: 'internship',
+  earlyCareer: true,
 };
 
 describe('job profile AI cache', () => {
@@ -26,7 +45,9 @@ describe('job profile AI cache', () => {
 
   it('reuses the shared source-hash cache without calling AI', async () => {
     const upsert = vi.fn();
-    const prisma = { ladderJobProfile: { findFirst: vi.fn().mockResolvedValue({ profile: aiProfile }), upsert } };
+    const prisma = {
+      ladderJobProfile: { findFirst: vi.fn().mockResolvedValue({ profile: aiProfile }), upsert },
+    };
     const client: LadderAiProvider = { name: 'deepseek', model: 'test', completeJson: vi.fn() };
     const result = await ensureCachedJobProfile(prisma, job, { allowAi: true, client });
     expect(result.title).toBe('Analyst Intern');
@@ -48,8 +69,10 @@ describe('job profile AI cache', () => {
     await ensureCachedJobProfile(prisma, job, { allowAi: true, client });
 
     expect(completeJson).toHaveBeenCalledOnce();
-    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({
-      update: expect.objectContaining({ provider: 'deepseek', model: 'test' }),
-    }));
+    expect(upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: expect.objectContaining({ provider: 'deepseek', model: 'test' }),
+      }),
+    );
   });
 });

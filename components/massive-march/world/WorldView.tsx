@@ -32,11 +32,13 @@ import { live } from '@/lib/massive-march/live';
 import { mm } from '@/lib/massive-march/net/client';
 import { BIT } from '@/lib/massive-march/net/events';
 import { settings, useMmSettings } from '@/lib/massive-march/settings';
-import { useMmStore } from '@/lib/massive-march/store';
+import type { MemberInfo } from '@/lib/massive-march/net/events';
+import { none, useMmStore } from '@/lib/massive-march/store';
 import { isTransmitting, setTransmitting } from '@/lib/massive-march/voice';
 import { LAND } from '@/lib/massive-march/palette';
 import { Hud } from '../hud/Hud';
 import { Scene } from './Scene';
+import { CAMERA_FAR } from './Sky';
 import { useDesktopInput } from './PlayerController';
 
 export function WorldView() {
@@ -49,7 +51,7 @@ export function WorldView() {
   const setOverlay = useMmStore((s) => s.setOverlay);
   const chatOpen = useMmStore((s) => s.chatOpen);
   const setChatOpen = useMmStore((s) => s.setChatOpen);
-  const members = useMmStore((s) => s.session?.members ?? []);
+  const members = useMmStore((s) => s.session?.members ?? none<MemberInfo>());
   const world = useMmStore((s) => s.world);
   const variant = useMmStore((s) => s.session?.variant ?? 'duo');
   const notify = useMmStore((s) => s.notify);
@@ -264,7 +266,7 @@ export function WorldView() {
         shadows={quality.shadows}
         dpr={dpr}
         gl={{ antialias: quality.antialias, powerPreference: 'high-performance' }}
-        camera={{ fov: useMmSettings.getState().fov, near: 0.1, far: 1400 }}
+        camera={{ fov: useMmSettings.getState().fov, near: 0.1, far: CAMERA_FAR }}
         onPointerDown={grab}
       >
         <AdaptiveQuality onDownscale={downscale} />

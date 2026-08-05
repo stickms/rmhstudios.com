@@ -68,7 +68,14 @@ export interface RmhTypeStore {
   addChatMessage: (msg: ChatMessage) => void;
   setPassage: (passageId: string, text: string, round: number, totalRounds: number) => void;
   updateProgress: (progress: PlayerProgress) => void;
-  markPlayerFinished: (result: { userId: string; userName: string; wpm: number; accuracy: number; timeMs: number; rank: number }) => void;
+  markPlayerFinished: (result: {
+    userId: string;
+    userName: string;
+    wpm: number;
+    accuracy: number;
+    timeMs: number;
+    rank: number;
+  }) => void;
   setRoundResults: (results: RoundResults) => void;
   setFinalResults: (results: FinalResults) => void;
   setCountdown: (seconds: number | null) => void;
@@ -201,11 +208,19 @@ export const useRmhTypeStore = create<RmhTypeStore>()(
       },
 
       // Solo
-      setSoloPassage: (passageId, text) => set({ soloPassageId: passageId, soloPassage: text, soloResult: null }),
+      setSoloPassage: (passageId, text) =>
+        set({ soloPassageId: passageId, soloPassage: text, soloResult: null }),
       setSoloResult: (result) => set({ soloResult: result }),
       setSoloCountdown: (seconds) => set({ soloCountdown: seconds }),
       setSoloGeneratingTopic: (topic) => set({ soloGeneratingTopic: topic }),
-      clearSolo: () => set({ soloPassage: null, soloPassageId: null, soloResult: null, soloCountdown: null, soloGeneratingTopic: null }),
+      clearSolo: () =>
+        set({
+          soloPassage: null,
+          soloPassageId: null,
+          soloResult: null,
+          soloCountdown: null,
+          soloGeneratingTopic: null,
+        }),
 
       updateSettings: (partial) => {
         set((state) => ({
@@ -213,20 +228,22 @@ export const useRmhTypeStore = create<RmhTypeStore>()(
         }));
       },
 
-      leaveRoom: () => set({
-        room: null,
-      }),
+      leaveRoom: () =>
+        set({
+          room: null,
+        }),
 
-      reset: () => set({
-        connectionStatus: 'disconnected',
-        peersWaiting: null,
-        room: null,
-        soloPassage: null,
-        soloPassageId: null,
-        soloResult: null,
-        soloCountdown: null,
-        soloGeneratingTopic: null,
-      }),
+      reset: () =>
+        set({
+          connectionStatus: 'disconnected',
+          peersWaiting: null,
+          room: null,
+          soloPassage: null,
+          soloPassageId: null,
+          soloResult: null,
+          soloCountdown: null,
+          soloGeneratingTopic: null,
+        }),
     }),
     {
       name: 'rmhtype-settings',

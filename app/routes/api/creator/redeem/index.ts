@@ -3,6 +3,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { requestRedemptionSchema } from '@/lib/creator/redemption-schema';
+import { assertNoRecoveryHold } from '@/lib/recovery/hold.server';
 import {
   getCreatorEarnings,
   listMyRedemptions,
@@ -40,6 +41,12 @@ export const Route = createFileRoute('/api/creator/redeem/')({
               { status: 400 },
             );
           }
+          // A recovered account is held for 72h before it can move value. Without
+          // this the hold is reported and not enforced, and account recovery
+          // becomes the cheapest route into the economy.
+          const held = await assertNoRecoveryHold(session.user.id);
+          if (held) return held;
+
           const req = await requestRedemption({
             userId: session.user.id,
             input: parsed.data,

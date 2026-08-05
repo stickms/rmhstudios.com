@@ -17,10 +17,14 @@ export class LadderAiConfigurationError extends Error {
 }
 
 function jsonFromModelText(raw: string): unknown {
-  const trimmed = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+  const trimmed = raw
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/, '');
   const firstBrace = trimmed.indexOf('{');
   const lastBrace = trimmed.lastIndexOf('}');
-  if (firstBrace < 0 || lastBrace <= firstBrace) throw new Error('AI provider returned no JSON object');
+  if (firstBrace < 0 || lastBrace <= firstBrace)
+    throw new Error('AI provider returned no JSON object');
   return JSON.parse(trimmed.slice(firstBrace, lastBrace + 1));
 }
 
@@ -31,7 +35,12 @@ function openAiCompatibleProvider(args: {
   model: string;
 }): LadderAiProvider {
   if (!args.apiKey) throw new LadderAiConfigurationError(args.name);
-  const client = new OpenAI({ apiKey: args.apiKey, baseURL: args.baseURL, maxRetries: 1, timeout: 45_000 });
+  const client = new OpenAI({
+    apiKey: args.apiKey,
+    baseURL: args.baseURL,
+    maxRetries: 1,
+    timeout: 45_000,
+  });
   return {
     name: args.name,
     model: args.model,
@@ -75,7 +84,8 @@ function anthropicProvider(): LadderAiProvider {
 }
 
 export function configuredLadderAiProvider(
-  requested: LadderAiProviderName = (process.env.LADDER_AI_PROVIDER as LadderAiProviderName | undefined) ?? 'deepseek',
+  requested: LadderAiProviderName = (process.env.LADDER_AI_PROVIDER as
+    LadderAiProviderName | undefined) ?? 'deepseek',
 ): LadderAiProvider {
   if (requested === 'deepseek') {
     return openAiCompatibleProvider({
@@ -101,4 +111,3 @@ export function ladderAiProviderConfigured(provider: LadderAiProviderName): bool
   if (provider === 'openai') return Boolean(process.env.OPENAI_API_KEY);
   return Boolean(process.env.ANTHROPIC_API_KEY);
 }
-

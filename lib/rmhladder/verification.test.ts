@@ -2,10 +2,20 @@ import { describe, expect, it } from 'vitest';
 import { computeVerification, passesAlertGate } from './verification';
 
 const good = {
-  fetched: true, httpStatus: 200, apiSource: true, companyMatch: true, titleMatch: true,
-  usConfirmed: true, applyPresent: true, reqIdPresent: true, closedLanguage: false,
-  blocked: false, isSearchResultsPage: false,
-  companyName: 'Stripe', jobTitle: 'Product Management Intern', locationLabel: 'New York, NY',
+  fetched: true,
+  httpStatus: 200,
+  apiSource: true,
+  companyMatch: true,
+  titleMatch: true,
+  usConfirmed: true,
+  applyPresent: true,
+  reqIdPresent: true,
+  closedLanguage: false,
+  blocked: false,
+  isSearchResultsPage: false,
+  companyName: 'Stripe',
+  jobTitle: 'Product Management Intern',
+  locationLabel: 'New York, NY',
   platform: 'greenhouse',
 };
 
@@ -32,13 +42,23 @@ describe('computeVerification', () => {
     expect(r.evidence).toContain('Product Management Intern');
   });
   it('fetch failure → broken_link', () => {
-    expect(computeVerification({ ...good, fetched: false, httpStatus: 404, apiSource: false }).status).toBe('broken_link');
+    expect(
+      computeVerification({ ...good, fetched: false, httpStatus: 404, apiSource: false }).status,
+    ).toBe('broken_link');
   });
   it('search results page → needs_manual_review', () => {
-    expect(computeVerification({ ...good, isSearchResultsPage: true }).status).toBe('needs_manual_review');
+    expect(computeVerification({ ...good, isSearchResultsPage: true }).status).toBe(
+      'needs_manual_review',
+    );
   });
   it('weak evidence → needs_manual_review', () => {
-    const r = computeVerification({ ...good, apiSource: false, titleMatch: false, applyPresent: false, reqIdPresent: false });
+    const r = computeVerification({
+      ...good,
+      apiSource: false,
+      titleMatch: false,
+      applyPresent: false,
+      reqIdPresent: false,
+    });
     expect(r.status).toBe('needs_manual_review');
     expect(r.confidence).toBeLessThan(60);
   });
@@ -46,8 +66,15 @@ describe('computeVerification', () => {
 
 describe('passesAlertGate', () => {
   const ok: Parameters<typeof passesAlertGate>[0] = {
-    status: 'verified_active', confidence: 90, isUS: true, earlyCareer: 'yes',
-    finalRelevance: 75, userThreshold: 60, alreadyAlerted: false, blockedKeyword: false };
+    status: 'verified_active',
+    confidence: 90,
+    isUS: true,
+    earlyCareer: 'yes',
+    finalRelevance: 75,
+    userThreshold: 60,
+    alreadyAlerted: false,
+    blockedKeyword: false,
+  };
   it('passes the happy path', () => expect(passesAlertGate(ok)).toBe(true));
   it.each([
     ['unverified status', { ...ok, status: 'unverified' as const }],

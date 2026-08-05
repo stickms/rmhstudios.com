@@ -17,7 +17,8 @@ import { TOY } from '@/lib/massive-march/palette';
 import { live } from '@/lib/massive-march/live';
 import { BIT } from '@/lib/massive-march/net/events';
 import { useMmSettings } from '@/lib/massive-march/settings';
-import { useMmStore } from '@/lib/massive-march/store';
+import type { MemberInfo } from '@/lib/massive-march/net/events';
+import { none, useMmStore } from '@/lib/massive-march/store';
 import { siteHere, towerHere } from '@/lib/massive-march/interaction';
 import { raycastGround } from '@/lib/massive-march/world/terrain';
 import { Avatars, SelfHands } from './Avatars';
@@ -60,7 +61,7 @@ function ProximityWatcher() {
  */
 function LaserDots() {
   const dots = useRef<Group>(null);
-  const members = useMmStore((s) => s.session?.members ?? []);
+  const members = useMmStore((s) => s.session?.members ?? none<MemberInfo>());
   const slots = useMemo(() => members.map((m) => m.slot), [members]);
 
   return (

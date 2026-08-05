@@ -288,7 +288,21 @@ function WorldItem({ id, litIds }: { id: number; litIds: RefObject<Set<number>> 
  * torch behind a hill contributes nothing but cost.
  */
 export function Items3D() {
-  const ids = useMmStore((s) => [...s.itemMeta.keys()]);
+  // Subscribe to the Map itself, then derive the id list.
+  //
+  // NOT `useMmStore((s) => [...s.itemMeta.keys()])`. Zustand v5 is a thin
+  // `useSyncExternalStore`, which compares the selector's result to the previous
+  // one by identity to decide whether to re-render — so a selector that builds a
+  // fresh array every call never compares equal, re-renders forever, and dies as
+  // "Maximum update depth exceeded" the moment the first world snapshot lands.
+  // That is precisely what happened on walking out of the lobby: the error
+  // boundary caught it and the game showed a crash screen instead of an island.
+  //
+  // The Map's identity is stable between world snapshots (`applyWorld` rebuilds
+  // it only when one arrives), so this re-renders when the set of objects
+  // genuinely changes and not otherwise.
+  const itemMeta = useMmStore((s) => s.itemMeta);
+  const ids = useMemo(() => [...itemMeta.keys()], [itemMeta]);
   const lit = useRef<Set<number>>(new Set());
 
   useFrame(() => {

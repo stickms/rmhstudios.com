@@ -7,8 +7,10 @@ export interface RedactionResult {
 
 const EMAIL_RE = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
 const PHONE_RE = /(?<!\d)(?:\+?1[\s.-]?)?(?:\(?\d{3}\)?[\s.-]?)\d{3}[\s.-]?\d{4}(?!\d)/g;
-const URL_RE = /\b(?:https?:\/\/|www\.)[^\s<>()]+|\b(?:linkedin\.com\/in|github\.com)\/[^\s<>()]+/gi;
-const ADDRESS_RE = /\b\d{1,6}\s+[A-Za-z0-9.' -]{2,60}\s(?:street|st|avenue|ave|road|rd|boulevard|blvd|drive|dr|lane|ln|court|ct|way|parkway|pkwy)\b[^\n,]*/gi;
+const URL_RE =
+  /\b(?:https?:\/\/|www\.)[^\s<>()]+|\b(?:linkedin\.com\/in|github\.com)\/[^\s<>()]+/gi;
+const ADDRESS_RE =
+  /\b\d{1,6}\s+[A-Za-z0-9.' -]{2,60}\s(?:street|st|avenue|ave|road|rd|boulevard|blvd|drive|dr|lane|ln|court|ct|way|parkway|pkwy)\b[^\n,]*/gi;
 
 function replaceAndCount(
   value: string,
@@ -54,8 +56,10 @@ export function redactResumePii(raw: string): RedactionResult {
   PHONE_RE.lastIndex = 0;
   URL_RE.lastIndex = 0;
   const nameTokens = likelyName.split(/\s+/).filter(Boolean);
-  const looksLikeName = nameTokens.length >= 2 && nameTokens.length <= 5
-    && nameTokens.every((token) => /^[\p{L}][\p{L}'’-]*\.?$/u.test(token));
+  const looksLikeName =
+    nameTokens.length >= 2 &&
+    nameTokens.length <= 5 &&
+    nameTokens.every((token) => /^[\p{L}][\p{L}'’-]*\.?$/u.test(token));
   if (looksLikeName && hasContact && likelyName) {
     text = text.replace(likelyName, '[NAME]');
     counts.name = 1;
@@ -72,5 +76,11 @@ export function redactResumePii(raw: string): RedactionResult {
     counts[kind] = result.count;
   }
 
-  return { text: text.replace(/[ \t]+$/gm, '').replace(/\n{4,}/g, '\n\n\n').trim(), counts };
+  return {
+    text: text
+      .replace(/[ \t]+$/gm, '')
+      .replace(/\n{4,}/g, '\n\n\n')
+      .trim(),
+    counts,
+  };
 }

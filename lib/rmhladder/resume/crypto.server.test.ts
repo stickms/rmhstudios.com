@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { decryptResumeFile, decryptResumeText, encryptResumeFile, encryptResumeText } from './crypto.server';
+import {
+  decryptResumeFile,
+  decryptResumeText,
+  encryptResumeFile,
+  encryptResumeText,
+} from './crypto.server';
 
 describe('resume text encryption', () => {
   const secret = 'test-only-resume-encryption-secret-that-is-long-enough';

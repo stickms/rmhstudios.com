@@ -29,7 +29,10 @@ export interface SeedPrisma {
 const API_PLATFORMS = ['greenhouse', 'lever', 'ashby', 'smartrecruiters'] as const;
 
 /** Recorded, verified Workday tenant/site URLs. Add entries only after a live CXS fixture check. */
-export const WORKDAY_SOURCES: Record<string, { slug: string; url: string; config: Record<string, string> }> = {
+export const WORKDAY_SOURCES: Record<
+  string,
+  { slug: string; url: string; config: Record<string, string> }
+> = {
   Workday: {
     slug: 'workday:Workday',
     url: 'https://workday.wd5.myworkdayjobs.com/Workday',
@@ -52,17 +55,31 @@ export async function seedLadder(
       // note: update intentionally omits name/URLs — re-seeding won't overwrite dashboard edits; refresh URLs via Plan 2 prober
       update: { industry: c.industry, firmType: c.firmType, priorityLevel: c.priorityLevel },
       create: {
-        name: c.name, normalizedName, industry: c.industry,
-        firmType: c.firmType, priorityLevel: c.priorityLevel,
+        name: c.name,
+        normalizedName,
+        industry: c.industry,
+        firmType: c.firmType,
+        priorityLevel: c.priorityLevel,
         usEarlyCareerUrl: MANUAL_EARLY_CAREER_URLS[c.name],
       },
     });
     companies++;
     for (const platform of API_PLATFORMS) {
       await prisma.ladderSource.upsert({
-        where: { companyId_platform_slug: { companyId: company.id, platform, slug: normalizedName.replace(/ /g, '') } },
+        where: {
+          companyId_platform_slug: {
+            companyId: company.id,
+            platform,
+            slug: normalizedName.replace(/ /g, ''),
+          },
+        },
         update: {},
-        create: { companyId: company.id, platform, slug: normalizedName.replace(/ /g, ''), status: 'unconfigured' },
+        create: {
+          companyId: company.id,
+          platform,
+          slug: normalizedName.replace(/ /g, ''),
+          status: 'unconfigured',
+        },
       });
     }
     const workday = WORKDAY_SOURCES[c.name];
@@ -88,7 +105,9 @@ export async function seedLadder(
     }
     const manualUrl = MANUAL_EARLY_CAREER_URLS[c.name];
     if (manualUrl) {
-      const existing = await prisma.ladderSource.findFirst({ where: { companyId: company.id, platform: 'manual' } });
+      const existing = await prisma.ladderSource.findFirst({
+        where: { companyId: company.id, platform: 'manual' },
+      });
       if (!existing) {
         await prisma.ladderSource.create({
           data: { companyId: company.id, platform: 'manual', url: manualUrl, status: 'active' },

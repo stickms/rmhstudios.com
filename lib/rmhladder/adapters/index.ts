@@ -11,7 +11,10 @@ export { checkRobots } from './robots';
 export { politeFetch, LADDER_USER_AGENT, type PoliteResponse } from './http';
 export { verifyGenericUrl } from './generic';
 
-export const ADAPTERS: Record<'greenhouse' | 'lever' | 'ashby' | 'smartrecruiters' | 'workday', SourceAdapter> = {
+export const ADAPTERS: Record<
+  'greenhouse' | 'lever' | 'ashby' | 'smartrecruiters' | 'workday',
+  SourceAdapter
+> = {
   greenhouse: greenhouseAdapter,
   lever: leverAdapter,
   ashby: ashbyAdapter,

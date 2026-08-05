@@ -22,9 +22,13 @@ export function trackApplyClick(jobId: string, destination: string) {
     jobId,
     metadata: { sourceDomain: sourceDomain(destination) },
   });
-  const sent = typeof navigator.sendBeacon === 'function'
-    ? navigator.sendBeacon('/api/rmhladder/events', new Blob([body], { type: 'application/json' }))
-    : false;
+  const sent =
+    typeof navigator.sendBeacon === 'function'
+      ? navigator.sendBeacon(
+          '/api/rmhladder/events',
+          new Blob([body], { type: 'application/json' }),
+        )
+      : false;
   if (!sent) {
     void fetch('/api/rmhladder/events', {
       method: 'POST',
