@@ -28,6 +28,7 @@ import koCLibrary from "@/locales/ko/c-library.json";
 import koCLightsOut from "@/locales/ko/c-lights-out.json";
 import koCLists from "@/locales/ko/c-lists.json";
 import koCLockdown from "@/locales/ko/c-lockdown.json";
+import koCMassiveMarch from "@/locales/ko/c-massive-march.json";
 import koCModeration from "@/locales/ko/c-moderation.json";
 import koCNeonDriftway from "@/locales/ko/c-neon-driftway.json";
 import koCNews from "@/locales/ko/c-news.json";
@@ -117,6 +118,7 @@ const koResources = {
   "c-lights-out": koCLightsOut,
   "c-lists": koCLists,
   "c-lockdown": koCLockdown,
+  "c-massive-march": koCMassiveMarch,
   "c-moderation": koCModeration,
   "c-neon-driftway": koCNeonDriftway,
   "c-news": koCNews,

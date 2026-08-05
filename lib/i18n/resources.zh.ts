@@ -28,6 +28,7 @@ import zhCLibrary from "@/locales/zh/c-library.json";
 import zhCLightsOut from "@/locales/zh/c-lights-out.json";
 import zhCLists from "@/locales/zh/c-lists.json";
 import zhCLockdown from "@/locales/zh/c-lockdown.json";
+import zhCMassiveMarch from "@/locales/zh/c-massive-march.json";
 import zhCModeration from "@/locales/zh/c-moderation.json";
 import zhCNeonDriftway from "@/locales/zh/c-neon-driftway.json";
 import zhCNews from "@/locales/zh/c-news.json";
@@ -119,6 +120,7 @@ const zhResources = {
   "c-lights-out": zhCLightsOut,
   "c-lists": zhCLists,
   "c-lockdown": zhCLockdown,
+  "c-massive-march": zhCMassiveMarch,
   "c-moderation": zhCModeration,
   "c-neon-driftway": zhCNeonDriftway,
   "c-news": zhCNews,

@@ -28,6 +28,7 @@ import hiCLibrary from "@/locales/hi/c-library.json";
 import hiCLightsOut from "@/locales/hi/c-lights-out.json";
 import hiCLists from "@/locales/hi/c-lists.json";
 import hiCLockdown from "@/locales/hi/c-lockdown.json";
+import hiCMassiveMarch from "@/locales/hi/c-massive-march.json";
 import hiCModeration from "@/locales/hi/c-moderation.json";
 import hiCNeonDriftway from "@/locales/hi/c-neon-driftway.json";
 import hiCNews from "@/locales/hi/c-news.json";
@@ -117,6 +118,7 @@ const hiResources = {
   "c-lights-out": hiCLightsOut,
   "c-lists": hiCLists,
   "c-lockdown": hiCLockdown,
+  "c-massive-march": hiCMassiveMarch,
   "c-moderation": hiCModeration,
   "c-neon-driftway": hiCNeonDriftway,
   "c-news": hiCNews,
