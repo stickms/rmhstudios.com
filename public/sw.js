@@ -54,6 +54,25 @@ const QUEUEABLE = [/^\/api\/rmharks$/, /^\/api\/rmharks\/[^/]+\/comment$/];
 /** Request headers worth carrying across a replay (auth rides the cookie). */
 const REPLAYED_HEADERS = ['content-type', 'idempotency-key'];
 
+/* ─── App badge (OPT-65) ───────────────────────────────────────────────────
+ *
+ * The Badging API paints the unread count on the installed app's icon. The page
+ * half is `lib/useAppBadge.ts`; this half exists because a push can arrive with
+ * the app closed, and a badge that only updates while the app is open is a
+ * badge that is wrong exactly when someone looks at it.
+ *
+ * The worker keeps its own copy of the count in IndexedDB (separate DB from the
+ * outbox, so the badge can never interfere with queued writes). It is a
+ * baseline, not a source of truth: the page publishes the real count whenever
+ * it is open (`RMH_BADGE_SET`), and a push either carries an authoritative
+ * `badgeCount` or increments what we last knew.
+ */
+const BADGE_DB = 'rmh-badge';
+const BADGE_STORE = 'state';
+const BADGE_KEY = 'unread';
+/** Past this the number is illegible on every platform; the OS caps it anyway. */
+const BADGE_MAX = 999;
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
@@ -160,6 +179,114 @@ async function outboxCount() {
   }
 }
 
+/* ─── Badge storage ────────────────────────────────────────────────────────
+ *
+ * Its own database on purpose. Bumping the outbox DB's version to add a store
+ * would run an upgrade on every installed client that has queued writes, and a
+ * cosmetic counter is not worth putting a migration in front of a user's
+ * unsent post.
+ */
+
+function openBadgeDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(BADGE_DB, 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(BADGE_STORE)) db.createObjectStore(BADGE_STORE);
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function badgeTx(db, mode, run) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(BADGE_STORE, mode);
+    const store = tx.objectStore(BADGE_STORE);
+    let result;
+    try {
+      result = run(store);
+    } catch (err) {
+      reject(err);
+      return;
+    }
+    tx.oncomplete = () => resolve(result && result.__req ? result.__req.result : result);
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+}
+
+/** Last count we know about. 0 when unknown — never a guess. */
+async function readBadgeCount() {
+  const db = await openBadgeDb();
+  try {
+    const value = await badgeTx(db, 'readonly', (store) => ({ __req: store.get(BADGE_KEY) }));
+    return typeof value === 'number' && value > 0 ? value : 0;
+  } finally {
+    db.close();
+  }
+}
+
+async function writeBadgeCount(count) {
+  const db = await openBadgeDb();
+  try {
+    await badgeTx(db, 'readwrite', (store) => {
+      store.put(count, BADGE_KEY);
+    });
+  } finally {
+    db.close();
+  }
+}
+
+/**
+ * Paint (or clear) the icon badge.
+ *
+ * Clearing at zero is the half that matters: a badge nobody can clear is worse
+ * than no badge, because it stops meaning anything. Absent API (Firefox, Safari
+ * on macOS, any non-installed context) is a silent no-op so callers never
+ * branch on support.
+ */
+function applyBadge(count) {
+  try {
+    const result =
+      count > 0
+        ? navigator.setAppBadge && navigator.setAppBadge(count)
+        : navigator.clearAppBadge && navigator.clearAppBadge();
+    if (result && typeof result.catch === 'function') result.catch(() => {});
+  } catch (_) {
+    // Badging blocked by policy — cosmetic, never worth an exception.
+  }
+}
+
+/** Store and paint a count. Never throws: the badge is never the point. */
+async function setBadge(count) {
+  const safe = Number.isFinite(count) && count > 0 ? Math.min(Math.floor(count), BADGE_MAX) : 0;
+  await writeBadgeCount(safe).catch(() => {});
+  applyBadge(safe);
+}
+
+/**
+ * Move the badge for one incoming push.
+ *
+ * `badgeCount` in the payload wins when the server sends one — that is the only
+ * number that is actually right. Until it does (see the follow-up on
+ * `PushPayload`), a push with the app closed means one more thing to read, so
+ * the stored baseline is incremented. The page overwrites both with the real
+ * count the moment it opens.
+ */
+async function bumpBadge(payload) {
+  try {
+    const explicit = payload && payload.badgeCount;
+    if (typeof explicit === 'number' && Number.isFinite(explicit) && explicit >= 0) {
+      await setBadge(explicit);
+      return;
+    }
+    await setBadge((await readBadgeCount()) + 1);
+  } catch (_) {
+    // IndexedDB unavailable (private mode) — the notification still shows.
+  }
+}
+
 /** Tell every open tab what the queue is doing, so it can be shown, not guessed. */
 async function notifyClients(message) {
   const pending = await outboxCount().catch(() => 0);
@@ -197,6 +324,9 @@ async function enqueue(request) {
  * the server's final answer, so the entry is dropped and the tabs are told:
  * silently retrying a rejected post forever is the failure mode this feature is
  * supposed to remove, not introduce.
+ *
+ * The one 4xx that is not final is **401**: it says the session died, not that
+ * the write was refused. Those entries are kept and surfaced (see below).
  */
 async function replayOutbox() {
   const entries = (await outboxAll().catch(() => [])).sort((a, b) => a.createdAt - b.createdAt);
@@ -243,6 +373,25 @@ async function replayOutbox() {
       await outboxDelete(entry.id);
       await notifyClients({ type: 'RMH_OUTBOX_SENT', key: entry.idempotencyKey, body });
       continue;
+    }
+
+    // 401 is not a verdict on the write, it is a verdict on the session — which
+    // expired while the entry sat in the queue. Dropping it here would delete a
+    // post the user actually wrote, so the entry stays put, the drain stops
+    // (every entry behind it would 401 for the same reason) and the tabs are
+    // told a sign-in is what unblocks it. Background Sync is deliberately NOT
+    // asked to retry: no amount of retrying changes the answer, only signing in
+    // does, and the replay on the next launch/`online` will pick this back up.
+    if (response.status === 401) {
+      entry.needsAuth = true;
+      entry.blockedAt = Date.now();
+      await outboxPut(entry);
+      await notifyClients({
+        type: 'RMH_OUTBOX_BLOCKED',
+        key: entry.idempotencyKey,
+        reason: 'auth',
+      });
+      break;
     }
 
     // 408/429 and 5xx are transient — keep the entry and try again later.
@@ -411,7 +560,11 @@ self.addEventListener('push', (event) => {
     tag: payload.tag || undefined,
     data: { url: payload.url || '/notifications' },
   };
-  event.waitUntil(self.registration.showNotification(title, options));
+  // The badge moves with the notification, not with the next app launch: a push
+  // that arrives with the app closed is precisely the case the icon count is for.
+  event.waitUntil(
+    Promise.all([self.registration.showNotification(title, options), bumpBadge(payload)])
+  );
 });
 
 self.addEventListener('notificationclick', (event) => {
@@ -445,6 +598,20 @@ self.addEventListener('sync', (event) => {
   event.waitUntil(replayOutbox());
 });
 
+/**
+ * The cross-browser floor.
+ *
+ * Background Sync is Chromium-only, so the page also asks for a replay on load
+ * and on `online` (`lib/offline/outbox.ts`). This listener is the same nudge
+ * from inside the worker for the case where it is already running when the
+ * connection returns — the page's version is what covers a cold start.
+ */
+self.addEventListener('online', () => {
+  replayOutbox().catch(() => {
+    /* still stalled — the page-side nudge and Background Sync both retry */
+  });
+});
+
 self.addEventListener('message', (event) => {
   if (event.data === 'SKIP_WAITING') {
     self.skipWaiting();
@@ -459,5 +626,11 @@ self.addEventListener('message', (event) => {
   }
   if (type === 'RMH_OUTBOX_STATUS') {
     event.waitUntil(notifyClients({ type: 'RMH_OUTBOX_STATE' }));
+    return;
+  }
+  // The page knows the real unread count; the worker only ever had a baseline.
+  // Whenever a tab publishes one, it wins — including the zero that clears.
+  if (type === 'RMH_BADGE_SET') {
+    event.waitUntil(setBadge(Number(event.data.count)));
   }
 });
