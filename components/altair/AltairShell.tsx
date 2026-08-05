@@ -83,7 +83,11 @@ export default function AltairShell({ children }: { children: React.ReactNode })
     };
     document.addEventListener('pointerdown', unlockOnce, true);
     document.addEventListener('keydown', unlockOnce, true);
-    document.addEventListener('touchstart', unlockOnce, true);
+    // Passive (OPT-39): the audio unlock only calls `altairSfx.prime()` — it
+    // never cancels the gesture, and a non-passive capture-phase touchstart on
+    // `document` makes the browser wait for it before scrolling anything on the
+    // page. Passive does not affect the user-activation that unlocks WebAudio.
+    document.addEventListener('touchstart', unlockOnce, { capture: true, passive: true });
 
     const onClick = (e: MouseEvent) => {
       const el = findInteractive(e.target);

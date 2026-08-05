@@ -30,6 +30,7 @@ import { Spinner } from'@/components/ui/spinner';
 import { Reveal } from'@/components/motion';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';
 import { NOTIFICATIONS_READ_EVENT } from'@/lib/useNotificationCount';
+import { yieldToMain } from'@/lib/scheduler';
 import { usePushSubscription } from'@/lib/usePushSubscription';
 import { ColumnHeader } from'./ColumnHeader';
 
@@ -325,6 +326,12 @@ export function NotificationsColumn({
 
  const markAllRead = async () => {
  setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+ // OPT-34. "Mark all read" rebuilds every notification object in the list and
+ // re-renders the whole column — the unread dots and tinted rows all clear at
+ // once, and that is the entire visible result of the tap. The POST and the
+ // badge-refresh event below change nothing on screen. Yield so the cleared
+ // list paints before the request is built rather than after it.
+ await yieldToMain();
  await fetch('/api/notifications/read', {
  method:'POST',
  headers: {'Content-Type':'application/json'},

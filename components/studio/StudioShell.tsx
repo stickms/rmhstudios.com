@@ -539,7 +539,11 @@ export default function StudioShell() {
       window.removeEventListener('touchstart', handler);
     };
     window.addEventListener('click', handler);
-    window.addEventListener('touchstart', handler);
+    // Passive (OPT-39): this only boots the audio engine on the first tap; it
+    // cancels nothing, so say so and let touch scrolling start immediately.
+    // Passive listeners still carry user activation, which is what WebAudio's
+    // `resume()` needs.
+    window.addEventListener('touchstart', handler, { passive: true });
     return () => {
       window.removeEventListener('click', handler);
       window.removeEventListener('touchstart', handler);

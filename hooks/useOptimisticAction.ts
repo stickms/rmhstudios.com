@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { yieldToMain } from '@/lib/scheduler';
 
 /**
  * Shared optimistic-action primitive.
@@ -21,6 +22,22 @@ import { useCallback, useRef, useState } from 'react';
  *
  * Returns `true` on success, `false` on failure, so callers can branch if they
  * need to.
+ *
+ * ## The yield between `apply` and `commit` (OPT-34)
+ *
+ * `apply()` is the whole reason the user tapped: the heart fills, the count
+ * moves. `commit()` is bookkeeping they never see — building headers, an
+ * idempotency key, `JSON.stringify`, handing the request to a service worker
+ * that may intercept it. Run back to back they are one task, and the paint
+ * waits for the end of it on every like in a 30-card feed.
+ *
+ * `yieldToMain()` between them makes the optimistic render its own task, so it
+ * reaches the screen first and the request leaves in the next one. Nothing here
+ * reads layout and no call site is a cancelable-event handler (these are all
+ * `onClick` bodies that have already returned by the time `run` continues), so
+ * both of the yield's hazards are absent. One yield, not three — the guard is
+ * taken and `apply()` has run before it, so an interleaved second tap is still
+ * refused exactly as before.
  */
 export interface OptimisticRun {
   /** Optimistic UI mutation, applied immediately. */
@@ -47,6 +64,8 @@ export function useOptimisticAction() {
       apply();
       setPending(true);
       try {
+        // Let the optimistic update paint before the request is assembled.
+        await yieldToMain();
         const res = await commit();
         if (!res.ok) {
           rollback();

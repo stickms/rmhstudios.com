@@ -40,6 +40,7 @@ import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { ScheduleControl } from '@/components/ui/schedule-control';
 import { useSmartPaste, type MediaRejection } from '@/hooks/useSmartPaste';
 import { postWithOutbox, subscribeOutbox } from '@/lib/offline/outbox';
+import { yieldToMain } from '@/lib/scheduler';
 import { useFeedStore } from '@/stores/feedStore';
 import {
   MAX_RMHARK_LENGTH,
@@ -409,6 +410,20 @@ export function ComposeBox({
     const draft = snapshotDraft();
     prependItem(optimistic);
     resetForm();
+
+    // OPT-34. Posting is the site's heaviest single interaction: the two calls
+    // above insert a card at the head of the timeline and tear the composer
+    // back down (text, media previews, poll rows, the schedule control), which
+    // is a large React commit — and `postWithOutbox` then installs the service
+    // worker message bridge and stringifies the whole body, including base64
+    // media, before the request leaves. All of that in one task means the post
+    // the user just wrote does not appear until the upload has been assembled.
+    // Yield once, here: the optimistic card and the emptied composer are the
+    // frame the user is waiting for, and everything after this line is work
+    // they never see. No layout is read after the yield, and this is not a
+    // cancelable-event handler — the Cmd+Enter path deliberately lets the
+    // keystroke through, and the button path is a plain click.
+    await yieldToMain();
 
     try {
       const { response, data, queued, idempotencyKey } = await postWithOutbox<
