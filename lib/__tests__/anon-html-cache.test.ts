@@ -344,3 +344,59 @@ describe('anon-html-cache — the allowlist matches the route tree', () => {
     expect(empty, 'These prefixes are edge-cached but match no route.').toEqual([]);
   });
 });
+
+/**
+ * The origin decides what MAY be shared; the Cloudflare cache rule decides what
+ * the edge actually stores. They are written in two different languages in two
+ * different files, so nothing but a test keeps them aligned.
+ *
+ * Drift in one direction is harmless and in the other is merely wasteful:
+ *   - edge NARROWER than origin → the extra origin paths are never cached, so
+ *     the plugin change is silently inert (this is exactly what happened when
+ *     the path set was widened and the rule was left scoped to "/").
+ *   - edge WIDER than origin  → the origin still refuses to mark those
+ *     responses `public`, and the rule respects origin Cache-Control, so
+ *     nothing unsafe is stored — it just never hits.
+ *
+ * Neither is a data leak, which is why this is a plain equality check rather
+ * than a safety assertion. It exists so the inert case is caught at CI time
+ * instead of by wondering why the cache-hit ratio never moved.
+ */
+describe('cloudflare cache rule stays in sync with the origin allowlist', () => {
+  const script = readFileSync(
+    join(process.cwd(), 'deploy/apply-cloudflare-cache-rules.sh'),
+    'utf8',
+  );
+  const htmlRule = script
+    .split('\n')
+    .find((line) => line.includes('"expression"') && line.includes('session_token'));
+
+  it('has an HTML cache rule to check', () => {
+    expect(htmlRule, 'No cookie-gated HTML rule found in the Cloudflare script.').toBeDefined();
+  });
+
+  it('matches every exact path the origin will mark public', () => {
+    const missing = [...CACHEABLE_ANON_PATHS].filter(
+      (path) => !htmlRule?.includes(`\\"${path}\\"`),
+    );
+    expect(
+      missing,
+      'The origin marks these edge-cacheable but the Cloudflare rule does not match them, so they are never cached.',
+    ).toEqual([]);
+  });
+
+  it('matches every prefix the origin will mark public', () => {
+    const missing = CACHEABLE_ANON_PREFIXES.filter(
+      (prefix) => !htmlRule?.includes(`starts_with(http.request.uri.path, \\"${prefix}\\")`),
+    );
+    expect(
+      missing,
+      'These prefixes are edge-cacheable at the origin but unmatched at the edge.',
+    ).toEqual([]);
+  });
+
+  it('still bypasses cache on the session and locale cookies', () => {
+    expect(htmlRule).toContain('session_token');
+    expect(htmlRule).toContain('rmh-lang=');
+  });
+});
