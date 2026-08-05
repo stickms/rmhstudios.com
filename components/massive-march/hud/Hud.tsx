@@ -36,7 +36,7 @@ import { ChatInput, ChatLog } from './ChatPanel';
 import { GestureWheel } from './GestureWheel';
 import { carriedItems, InventorySheet, InventoryStrip } from './Inventory';
 import { MapSheet } from './MapSheet';
-import { RevealPanel } from './RevealPanel';
+import { COMPASS, RevealPanel } from './RevealPanel';
 import { SettingsSheet } from './SettingsSheet';
 import { SitePanel } from './SitePanel';
 import { TouchControls } from './TouchControls';
@@ -219,18 +219,26 @@ export function Hud({
 
       {/* ── Blindfold ─────────────────────────────────────────────────────── */}
       {blinded ? (
-        <div
-          className="absolute inset-0"
-          style={{ background: '#0b0a09', opacity: 0.985 }}
-          aria-hidden
-        >
-          <p
-            className="absolute bottom-24 left-1/2 -translate-x-1/2 text-center text-xs font-black tracking-[0.2em] uppercase"
-            style={{ color: 'rgba(247,243,232,0.45)' }}
-          >
-            {t('bucket-on', { defaultValue: 'You have a bucket on your head' })}
-          </p>
-        </div>
+        <>
+          <div
+            className="absolute inset-0"
+            style={{ background: '#0b0a09', opacity: 0.985 }}
+            aria-hidden
+          />
+          {/* Sibling rather than child: the blackout is decorative and hidden
+              from assistive tech, and the bearing below must not go with it. */}
+          <div className="absolute inset-x-0 bottom-24 flex flex-col items-center gap-3 px-4 text-center">
+            {reveal?.kind === 'plate' && reveal.guide ? (
+              <BucketGuide guide={reveal.guide} index={reveal.index} />
+            ) : null}
+            <p
+              className="text-xs font-black tracking-[0.2em] uppercase"
+              style={{ color: 'rgba(247,243,232,0.45)' }}
+            >
+              {t('bucket-on', { defaultValue: 'You have a bucket on your head' })}
+            </p>
+          </div>
+        </>
       ) : null}
 
       {touch && !modal ? <TouchControls onInteract={onInteract} /> : null}
@@ -430,4 +438,43 @@ function useIsTouch(): boolean {
     if (typeof window === 'undefined') return false;
     return window.matchMedia('(pointer: coarse)').matches;
   }, []);
+}
+
+/**
+ * The bearing painted on the inside of the bucket, in a solo campaign.
+ *
+ * Only ever rendered when the server sent a `guide`, which it only does when
+ * there is nobody else on the island to read the route out. It is a direction
+ * and a distance, not a map: you still cannot see, you still have to walk it,
+ * and you still lose the route by standing on the wrong plate.
+ */
+function BucketGuide({
+  guide,
+  index,
+}: {
+  guide: { compass: number; distance: number };
+  index: number;
+}) {
+  const { t } = useTranslation('c-massive-march');
+  return (
+    <div className="flex flex-col items-center gap-1.5" style={{ color: 'rgba(247,243,232,0.82)' }}>
+      <p className="text-[11px] font-black tracking-[0.2em] uppercase opacity-60">
+        {t('bucket-plate', { defaultValue: 'Plate {{n}}', n: index + 1 })}
+      </p>
+      <span
+        aria-hidden
+        className="text-3xl leading-none"
+        style={{ transform: `rotate(${(guide.compass / 8) * 360}deg)` }}
+      >
+        ↑
+      </span>
+      <p className="text-sm font-black">
+        {t('bucket-bearing', {
+          defaultValue: '{{compass}} · {{distance}}m',
+          compass: COMPASS[guide.compass % 8],
+          distance: guide.distance,
+        })}
+      </p>
+    </div>
+  );
 }
