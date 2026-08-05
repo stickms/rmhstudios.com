@@ -41,6 +41,7 @@ import { live, smooth } from '@/lib/massive-march/live';
 import { BIT } from '@/lib/massive-march/net/events';
 import { mm } from '@/lib/massive-march/net/client';
 import { settings } from '@/lib/massive-march/settings';
+import { strafeAxis } from '@/lib/massive-march/world/heading';
 import { COLLIDERS, resolveCollisions } from '@/lib/massive-march/world/regions';
 import { clampToLand, groundY, slopeAt } from '@/lib/massive-march/world/terrain';
 import { pad } from '@/lib/massive-march/world/terrain';
@@ -113,7 +114,8 @@ export function PlayerController({ onInteract }: { onInteract: () => void }) {
     scratch.forward.y = 0;
     if (scratch.forward.lengthSq() < 1e-6) scratch.forward.set(0, 0, -1);
     scratch.forward.normalize();
-    scratch.right.set(scratch.forward.z, 0, -scratch.forward.x);
+    const right = strafeAxis(scratch.forward.x, scratch.forward.z);
+    scratch.right.set(right.x, 0, right.z);
 
     let inputX = input.moveX;
     let inputY = input.moveY;
