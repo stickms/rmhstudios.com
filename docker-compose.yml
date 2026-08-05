@@ -78,6 +78,11 @@ x-build: &build-common
     # (target runner) doesn't reference it, so carrying it here is harmless.
     WEB_IMAGE: ${WEB_IMAGE:-runner}
     DATABASE_URL: ${DATABASE_URL}
+    # Bypasses the connection pooler. `prisma migrate` MUST use this — its lock
+    # is a session-scoped advisory lock and transaction pooling silently drops
+    # it, which would let two concurrent deploys migrate at the same time. Unset
+    # is the pre-pooler shape and falls back to DATABASE_URL (prisma.config.ts).
+    DATABASE_DIRECT_URL: ${DATABASE_DIRECT_URL:-}
     BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
     BETTER_AUTH_URL: ${BETTER_AUTH_URL}
     VITE_BETTER_AUTH_URL: ${VITE_BETTER_AUTH_URL}
@@ -94,6 +99,85 @@ x-build: &build-common
     DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
 
 services:
+  # ─── Connection Pooler (optional) ───────────────────────────────────────────
+  # PgBouncer in TRANSACTION mode, sitting between the container fleet and the
+  # Postgres running on the VPS host.
+  #
+  # WHY: Postgres allocates a backend process (~10 MB) per connection, and this
+  # fleet opens seven independent Prisma pools — web, socket, rmhbox, rmhtube,
+  # ladder-worker, homes-worker, jobs — plus pg-boss's own. Blue/green runs TWO
+  # web containers at once during every hotswap, so the largest pool doubles
+  # exactly when traffic is being cut over. Transaction pooling multiplexes all
+  # of that onto DEFAULT_POOL_SIZE real backends.
+  #
+  # SAFE HERE, verified rather than assumed (lib/__tests__/pgbouncer-safety.test.ts
+  # keeps it true): every query goes out as an UNNAMED prepared statement, because
+  # @prisma/adapter-pg only names one when `statementNameGenerator` is set and we
+  # never set it — so the classic "prepared statement s0 already exists" failure
+  # cannot occur and `?pgbouncer=true` is NOT needed. The only advisory locks in
+  # the app and in pg-boss are `pg_advisory_xact_lock` (transaction-scoped).
+  # pg-boss runs with `useListenNotify` at its default of false, so it polls and
+  # needs no LISTEN. Nothing issues a session-scoped SET.
+  #
+  # NOT safe through here: `prisma migrate`, whose lock IS session-scoped. It
+  # uses DATABASE_DIRECT_URL — see prisma.config.ts.
+  #
+  # OPTIONAL BY CONSTRUCTION: nothing points at this service until DATABASE_URL
+  # is changed to use it, so bringing the container up changes no behaviour and
+  # rolling back is an env var, not a redeploy.
+  pgbouncer:
+    image: edoburu/pgbouncer:v1.24.1-p1
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-pgbouncer
+    restart: unless-stopped
+    # OPT-IN. A profiled service is skipped by a plain `docker compose up`, so
+    # this cannot crash-loop on empty credentials for anyone not using it, and
+    # `docker compose config` still validates with the vars unset (CI copies
+    # .env.example, where they are commented out). Start it with:
+    #   docker compose --profile pgbouncer up -d pgbouncer
+    profiles: ['pgbouncer']
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    environment:
+      # Upstream = the Postgres on the VPS host — the same target DATABASE_URL
+      # pointed at before the pooler existed.
+      DB_HOST: ${PGBOUNCER_DB_HOST:-host.docker.internal}
+      DB_PORT: ${PGBOUNCER_DB_PORT:-5432}
+      DB_USER: ${PGBOUNCER_DB_USER:-}
+      DB_PASSWORD: ${PGBOUNCER_DB_PASSWORD:-}
+      DB_NAME: ${PGBOUNCER_DB_NAME:-rmhstudios}
+      # Transaction mode is the whole point — session mode would pin a backend
+      # per client and buy nothing.
+      POOL_MODE: transaction
+      # Client-side slots are cheap (PgBouncer-side bookkeeping, not backends).
+      MAX_CLIENT_CONN: ${PGBOUNCER_MAX_CLIENT_CONN:-500}
+      # REAL Postgres backends. This is the number that must stay under the
+      # host's max_connections with headroom for psql, backups and the Go fleet.
+      DEFAULT_POOL_SIZE: ${PGBOUNCER_DEFAULT_POOL_SIZE:-25}
+      RESERVE_POOL_SIZE: ${PGBOUNCER_RESERVE_POOL_SIZE:-5}
+      RESERVE_POOL_TIMEOUT: 3
+      # Return idle backends to Postgres rather than holding them open.
+      SERVER_IDLE_TIMEOUT: 240
+      # scram-sha-256 is what a modern Postgres negotiates; md5 fails against it.
+      AUTH_TYPE: ${PGBOUNCER_AUTH_TYPE:-scram-sha-256}
+      IGNORE_STARTUP_PARAMETERS: extra_float_digits,options
+    # Bound the pooler itself — it is a small single-threaded process and must
+    # never compete with web for memory.
+    mem_limit: 256m
+    mem_reservation: 64m
+    cpus: 0.5
+    healthcheck:
+      test:
+        ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -p 6432 -U ${PGBOUNCER_DB_USER:-postgres} || exit 1']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+
   # ─── Vite/Nitro Web App ─────────────────────────────────────────────────────
   web:
     <<: *common

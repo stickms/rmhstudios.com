@@ -305,11 +305,55 @@ function poolSize(envVar: string, fallback: number): number {
   return Number.isFinite(raw) && raw > 0 ? raw : fallback;
 }
 
+/**
+ * Ports a transaction-mode pooler conventionally listens on. Used only to
+ * recognise a likely-pooled URL for the warning below — never to change
+ * behaviour, because a pooler can listen anywhere and guessing wrong either way
+ * would be worse than not guessing.
+ */
+const POOLER_PORTS = new Set(['6432', '5433']);
+
+/**
+ * Warn when the runtime URL looks pooled but no direct URL is configured.
+ *
+ * Runtime traffic through PgBouncer is fine — every query this app issues is a
+ * transaction-mode-safe unnamed statement (see
+ * `lib/__tests__/pgbouncer-safety.test.ts`). What is NOT fine is `prisma
+ * migrate` running through the pooler: its lock is a session-scoped advisory
+ * lock, which transaction pooling silently discards, so two concurrent deploys
+ * can migrate at once.
+ *
+ * `prisma.config.ts` prefers `DATABASE_DIRECT_URL`, so the correct setup is
+ * automatic — this only catches the half-configured one, where someone pointed
+ * `DATABASE_URL` at the pooler and never set the direct URL. It warns rather
+ * than throws: a false positive (a Postgres genuinely listening on 6432) must
+ * not take the site down, and the failure it guards against happens at deploy
+ * time, not at boot.
+ */
+function warnIfPooledWithoutDirect(connectionString: string): void {
+  if (process.env.DATABASE_DIRECT_URL) return;
+  let port: string | null = null;
+  try {
+    port = new URL(connectionString).port || null;
+  } catch {
+    return; // not parseable as a URL — nothing to say
+  }
+  if (!port || !POOLER_PORTS.has(port)) return;
+  console.warn(
+    `[prisma] DATABASE_URL points at port ${port}, which looks like a connection pooler, ` +
+      'but DATABASE_DIRECT_URL is unset. Runtime queries are safe through a pooler; ' +
+      '`prisma migrate` is NOT — its advisory lock is session-scoped and transaction ' +
+      'pooling drops it, so concurrent deploys can migrate simultaneously. Set ' +
+      'DATABASE_DIRECT_URL to the real Postgres (see .env.example).',
+  );
+}
+
 function createPrismaClient(): PrismaClient {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error('DATABASE_URL environment variable is required');
   }
+  warnIfPooledWithoutDirect(connectionString);
 
   const client = new PrismaClient({
     adapter: createAdapter(connectionString, poolSize('DATABASE_POOL_SIZE', 20)),
