@@ -36,6 +36,15 @@ export const Route = createFileRoute('/api/gabriels-horn/leaderboard')({
           auth: 'none',
           rateLimit: { limit: 30, windowMs: 60_000, prefix: 'gabriels-horn-leaderboard' },
           query: querySchema,
+          // Anonymous-invariant: one global board, keyed only by `?limit`, which
+          // is part of the URL. The rows are the display names and counters the
+          // game already shows at the table.
+          cache: {
+            visibility: 'public',
+            maxAge: 30,
+            sMaxAge: 60,
+            staleWhileRevalidate: 300,
+          },
         },
         async ({ query }) => {
           const rows = await prisma.gabrielsHornPlayer.findMany({

@@ -193,7 +193,95 @@ const queryBudgetExtension = Prisma.defineExtension({
   },
 });
 
+/* ─── Unbounded-read guard (OPT-50) ─────────────────────────────────────────
+ *
+ * `schema.prisma` is 252 models. A `findMany` with no `select` returns every
+ * scalar column — on wide models (posts with bodies, users with settings blobs)
+ * that is the dominant cost of the query — and one with no `take` returns every
+ * row that matches. Both are invisible at the call site, and today a deliberate
+ * unbounded read of a small config table looks exactly like an accidental
+ * unbounded read of `rmhark`.
+ *
+ * So: make them visible. This WARNS, it does not throw — some unbounded reads
+ * are correct, and a guard that breaks a page the day it ships is a guard that
+ * gets reverted. Same reasoning as the query budget above, and the same
+ * intended use: the log is the inventory to work through.
+ */
+
+/** `model → call site` pairs already reported, so a hot loop logs once. */
+const reportedUnboundedReads = new Set<string>();
+
+/**
+ * The frames worth showing.
+ *
+ * A raw `new Error().stack` taken from inside a client extension opens with
+ * Prisma's own machinery, which names no call site at all — so drop
+ * `node_modules` and node internals and keep the first application frames.
+ * Falls back to the raw trace if that filter leaves nothing.
+ */
+function callSite(): string {
+  const frames = new Error().stack?.split('\n').slice(2) ?? [];
+  const app = frames.filter((f) => !f.includes('node_modules') && !f.includes('node:internal'));
+  return (app.length > 0 ? app : frames).slice(0, 3).join('\n');
+}
+
+/**
+ * Report one unbounded read, unless we are in production or have said it before.
+ *
+ * Exported as the guard's testable seam: the extension below is a two-line
+ * wrapper around it, and this is where the "development only" rule actually
+ * lives. Returns whether it warned.
+ */
+export function reportUnboundedRead(
+  model: string | undefined,
+  args: { select?: unknown; take?: unknown },
+): boolean {
+  if (process.env.NODE_ENV === 'production') return false;
+  if (args.select !== undefined || args.take !== undefined) return false;
+
+  const where = callSite();
+  const seen = `${model ?? 'unknown'}|${where}`;
+  if (reportedUnboundedReads.has(seen)) return false;
+  reportedUnboundedReads.add(seen);
+
+  console.warn(`[prisma] unbounded findMany on ${model ?? 'unknown model'} — no select, no take`);
+  if (where) console.warn(where);
+  return true;
+}
+
+const unboundedReadExtension = Prisma.defineExtension({
+  name: 'unbounded-read-guard',
+  query: {
+    $allModels: {
+      async findMany({ model, args, query }) {
+        reportUnboundedRead(model, (args ?? {}) as { select?: unknown; take?: unknown });
+        return query(args);
+      },
+    },
+  },
+});
+
 /* ─── Clients ───────────────────────────────────────────────────────────── */
+
+/**
+ * Compose the extensions onto a raw client, and cast back.
+ *
+ * Additive: the budget extension stays first (it counts `$allOperations`,
+ * including the raw queries no per-model hook sees), and the dev-only guard is
+ * layered on top rather than replacing it. In production the guard is not
+ * composed at all, so it costs nothing there — not even the `NODE_ENV` read.
+ *
+ * The cast is the same one the budget extension has always needed, for the same
+ * reason: every existing annotation and every `typeof prisma` in the codebase
+ * keeps its meaning, and the only client members `$extends` drops are `$on` and
+ * `$use`, neither of which this repo calls.
+ */
+function withExtensions(client: PrismaClient): PrismaClient {
+  const budgeted = client.$extends(queryBudgetExtension);
+  const extended =
+    process.env.NODE_ENV === 'production' ? budgeted : budgeted.$extends(unboundedReadExtension);
+  return extended as unknown as PrismaClient;
+}
 
 function createAdapter(connectionString: string, poolSize: number): PrismaPg {
   // PrismaPg wraps a pg Pool — configure pool sizing for predictable behaviour under load.
@@ -217,18 +305,62 @@ function poolSize(envVar: string, fallback: number): number {
   return Number.isFinite(raw) && raw > 0 ? raw : fallback;
 }
 
+/**
+ * Ports a transaction-mode pooler conventionally listens on. Used only to
+ * recognise a likely-pooled URL for the warning below — never to change
+ * behaviour, because a pooler can listen anywhere and guessing wrong either way
+ * would be worse than not guessing.
+ */
+const POOLER_PORTS = new Set(['6432', '5433']);
+
+/**
+ * Warn when the runtime URL looks pooled but no direct URL is configured.
+ *
+ * Runtime traffic through PgBouncer is fine — every query this app issues is a
+ * transaction-mode-safe unnamed statement (see
+ * `lib/__tests__/pgbouncer-safety.test.ts`). What is NOT fine is `prisma
+ * migrate` running through the pooler: its lock is a session-scoped advisory
+ * lock, which transaction pooling silently discards, so two concurrent deploys
+ * can migrate at once.
+ *
+ * `prisma.config.ts` prefers `DATABASE_DIRECT_URL`, so the correct setup is
+ * automatic — this only catches the half-configured one, where someone pointed
+ * `DATABASE_URL` at the pooler and never set the direct URL. It warns rather
+ * than throws: a false positive (a Postgres genuinely listening on 6432) must
+ * not take the site down, and the failure it guards against happens at deploy
+ * time, not at boot.
+ */
+function warnIfPooledWithoutDirect(connectionString: string): void {
+  if (process.env.DATABASE_DIRECT_URL) return;
+  let port: string | null = null;
+  try {
+    port = new URL(connectionString).port || null;
+  } catch {
+    return; // not parseable as a URL — nothing to say
+  }
+  if (!port || !POOLER_PORTS.has(port)) return;
+  console.warn(
+    `[prisma] DATABASE_URL points at port ${port}, which looks like a connection pooler, ` +
+      'but DATABASE_DIRECT_URL is unset. Runtime queries are safe through a pooler; ' +
+      '`prisma migrate` is NOT — its advisory lock is session-scoped and transaction ' +
+      'pooling drops it, so concurrent deploys can migrate simultaneously. Set ' +
+      'DATABASE_DIRECT_URL to the real Postgres (see .env.example).',
+  );
+}
+
 function createPrismaClient(): PrismaClient {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error('DATABASE_URL environment variable is required');
   }
+  warnIfPooledWithoutDirect(connectionString);
 
   const client = new PrismaClient({
     adapter: createAdapter(connectionString, poolSize('DATABASE_POOL_SIZE', 20)),
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 
-  return client.$extends(queryBudgetExtension) as unknown as PrismaClient;
+  return withExtensions(client);
 }
 
 function createReadClient(): PrismaClient | null {
@@ -243,7 +375,7 @@ function createReadClient(): PrismaClient | null {
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 
-  return client.$extends(queryBudgetExtension) as unknown as PrismaClient;
+  return withExtensions(client);
 }
 
 /** The primary. Every write, and every read that must see its own write. */

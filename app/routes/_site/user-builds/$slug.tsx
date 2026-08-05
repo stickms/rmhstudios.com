@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { createServerFn } from '@tanstack/react-start';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { BuildDetail } from '@/components/user-builds';
+import { blurImagePreload } from '@/components/ui/BlurImage';
 import { stripTrailingSlash } from '@/lib/url';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 
@@ -43,7 +44,24 @@ export const Route = createFileRoute('/_site/user-builds/$slug')({
           type: 'article',
         })
       : [{ title: 'Build Not Found' }],
-    links: [buildCanonical(`/user-builds/${params.slug}`)],
+    links: [
+      buildCanonical(`/user-builds/${params.slug}`),
+      // `BuildDetail` renders the thumbnail as this page's LCP element with
+      // `priority`; the loader already has the URL, so the fetch starts from the
+      // HTML. `blurImagePreload` mirrors the component's own candidate list, so
+      // preload and <img> resolve to one download. Props must match the
+      // <BlurImage> in `components/user-builds/BuildDetail.tsx`.
+      ...(loaderData?.thumbnailUrl
+        ? [
+            blurImagePreload({
+              src: loaderData.thumbnailUrl,
+              width: 1280,
+              quality: 85,
+              sizes: '100vw',
+            }),
+          ]
+        : []),
+    ],
   }),
   component: BuildPage,
 });

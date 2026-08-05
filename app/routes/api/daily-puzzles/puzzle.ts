@@ -15,6 +15,16 @@ export const Route = createFileRoute('/api/daily-puzzles/puzzle')({
         {
           auth: 'none',
           rateLimit: { limit: 60, windowMs: 60_000, prefix: 'daily-puzzle-content' },
+          // Anonymous-invariant and immutable once generated: the body is a pure
+          // function of (gameMode, date), both of which are in the query string.
+          // Nobody's score or progress appears here — that lives on
+          // `/api/daily-puzzles/results`, which stays uncached.
+          cache: {
+            visibility: 'public',
+            maxAge: 300,
+            sMaxAge: 3600,
+            staleWhileRevalidate: 3600,
+          },
         },
         async ({ request }) => {
           try {
@@ -42,13 +52,7 @@ export const Route = createFileRoute('/api/daily-puzzles/puzzle')({
 
             const { data } = await getOrCreateDailyPuzzle(gameMode, dateKey);
 
-            return Response.json(
-              { puzzle: data },
-              {
-                // Stable per (mode, date): safe to cache briefly at the edge/browser.
-                headers: { 'Cache-Control': 'public, max-age=300, s-maxage=3600' },
-              },
-            );
+            return Response.json({ puzzle: data });
           } catch (e) {
             console.error('Daily puzzle content fetch failed:', e);
             return Response.json({ error: 'Internal Server Error' }, { status: 500 });

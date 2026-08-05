@@ -20,7 +20,7 @@ import { Calendar } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AdSlot } from '@/components/ads/AdSlot';
 import { Badge } from '@/components/ui/badge';
-import { BlurImage } from '@/components/ui/BlurImage';
+import { BlurImage, blurImagePreload } from '@/components/ui/BlurImage';
 import { ShareButton } from '@/components/blog/ShareButton';
 import { ArticleTakeaways } from '@/components/blog/ArticleTakeaways';
 import { markdownComponents } from '@/components/blog/MDXAnimations';
@@ -73,6 +73,14 @@ export const Route = createFileRoute('/_site/blog/$slug')({
       }),
       links: [
         buildCanonical(`/blog/${params.slug}`),
+        // The cover is this page's LCP element (a full-bleed 1280px image above
+        // the body copy), and the loader already knows its URL — so the fetch
+        // can start from the HTML instead of waiting for layout to reach the
+        // <img>. `blurImagePreload` derives href/imagesrcset/imagesizes from the
+        // same helpers `BlurImage` uses, so the preload and the <img> resolve to
+        // the same candidate and the image is downloaded once. The props below
+        // must stay in sync with the <BlurImage> in the body.
+        ...(image ? [blurImagePreload({ src: image, width: 1280, quality: 85, sizes: '100vw' })] : []),
         {
           rel: 'alternate',
           type: 'application/rss+xml',
@@ -144,6 +152,9 @@ function BlogPost() {
               sizes="100vw"
               className="w-full"
               imgClassName="w-full"
+              // The only priority image on this page — see the preload in
+              // `head()` above, which must be given these same props.
+              priority
             />
           </div>
         )}

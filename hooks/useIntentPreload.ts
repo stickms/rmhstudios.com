@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef } from 'react';
+import { prefersLessData } from '@/lib/viewport-prefetch';
 
 /**
  * A resource to warm ahead of a navigation. A bare string is treated as an
@@ -13,11 +14,21 @@ export type PreloadResource = string | { url: string; as?: 'image' | 'fetch' };
 // cards that share an asset) never kicks off a second download.
 const warmed = new Set<string>();
 
-/** Skip preloading when the user (or their network) has asked us to conserve data. */
+/**
+ * Skip preloading when the user (or their network) has asked us to conserve
+ * data. Shares `prefersLessData` with the viewport prefetcher so both
+ * speculative paths honour one policy — Save-Data *and*
+ * `prefers-reduced-data: reduce`, which is what browsers that dropped the
+ * Save-Data header expose instead.
+ *
+ * Only the user-preference half is applied here, not the viewport prefetcher's
+ * `effectiveType === '4g'` gate: this fires on a real hover, which is committed
+ * intent, and a slow connection is exactly when warming the destination's
+ * images pays off most.
+ */
 function shouldSkip(): boolean {
   if (typeof navigator === 'undefined') return true;
-  const conn = (navigator as { connection?: { saveData?: boolean } }).connection;
-  return Boolean(conn?.saveData);
+  return prefersLessData();
 }
 
 function warmImage(url: string) {
@@ -45,7 +56,7 @@ function warm(resource: PreloadResource) {
   const url = typeof resource === 'string' ? resource : resource.url;
   if (!url || warmed.has(url)) return;
   warmed.add(url);
-  const as = typeof resource === 'string' ? 'image' : resource.as ?? 'image';
+  const as = typeof resource === 'string' ? 'image' : (resource.as ?? 'image');
   if (as === 'fetch') warmFetch(url);
   else warmImage(url);
 }
@@ -59,7 +70,8 @@ function warm(resource: PreloadResource) {
  * Spread the returned handlers onto a `<Link>` (or any element). Warming waits a
  * short beat (matching the router's 50ms `defaultPreloadDelay`) so brushing past
  * a link doesn't trigger downloads, cancels if the pointer leaves first, and only
- * ever fetches each URL once. No-ops on the server and when Save-Data is on.
+ * ever fetches each URL once. No-ops on the server and whenever the user has
+ * asked for less data (Save-Data or `prefers-reduced-data: reduce`).
  *
  * @param resources The asset(s) to warm — image URLs by default; wrap non-image
  *   files as `{ url, as: 'fetch' }`.
@@ -69,9 +81,7 @@ export function useIntentPreload(resources: PreloadResource[], delay = 50) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Snapshot by URL so the handlers stay stable across renders unless the actual
   // targets change (avoids re-warming just because a parent re-rendered).
-  const key = resources
-    .map((r) => (typeof r === 'string' ? r : r.url))
-    .join('|');
+  const key = resources.map((r) => (typeof r === 'string' ? r : r.url)).join('|');
 
   const clear = () => {
     if (timer.current) {

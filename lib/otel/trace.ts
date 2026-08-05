@@ -28,7 +28,17 @@
  * parse/format helpers the tests exercise directly; treat the filename as a
  * convention exception, not a licence to import it from a component.
  *
+ * ## What rides along
+ *
+ * The request-scoped store here is a `TraceScope`, not a bare `SpanContext`:
+ * the ids plus a mutable bag of phase durations (`lib/otel/timing.ts`, OPT-49).
+ * One `AsyncLocalStorage` carries both on purpose — a second one for timings
+ * would double the per-request context cost and, worse, could drift out of
+ * step with this one at exactly the moments (early returns, error paths) where
+ * a timing needs its trace id to mean anything.
+ *
  * @see server/nitro/otel.ts — the one place that starts a request span
+ * @see lib/otel/timing.ts — the phase durations that share this scope
  * @see docs/performance-slo.md §Trace correlation
  */
 
@@ -146,7 +156,30 @@ export function spanFromHeader(header: string | null | undefined): SpanContext {
   return startSpan(parseTraceparent(header));
 }
 
-const storage = new AsyncLocalStorage<SpanContext>();
+/**
+ * Everything one traced unit of work carries: the ids, and what it spent.
+ *
+ * `span` is immutable — it is what goes on the wire. `timings` is deliberately
+ * mutable and shared by reference, because the whole point is that a layer deep
+ * inside a request (a Prisma extension, `cached()`) can add to it without
+ * threading a parameter through every frame between there and the response
+ * hook that reads it.
+ */
+export interface TraceScope {
+  /** The ids for this unit of work. */
+  span: SpanContext;
+  /** Phase name → accumulated milliseconds. Written via `lib/otel/timing.ts`. */
+  timings: Map<string, number>;
+  /** `performance.now()` when the scope opened — the origin for the total. */
+  startedAt: number;
+}
+
+/** A fresh scope around `span`, with no phases recorded yet. */
+export function newScope(span: SpanContext): TraceScope {
+  return { span, timings: new Map(), startedAt: performance.now() };
+}
+
+const storage = new AsyncLocalStorage<TraceScope>();
 
 /**
  * Run `fn` inside a span.
@@ -160,7 +193,7 @@ export function withTrace<T>(span: SpanContext, fn: () => T): T;
 export function withTrace<T>(spanOrFn: SpanContext | (() => T), maybeFn?: () => T): T {
   const span = typeof spanOrFn === 'function' ? startSpan() : spanOrFn;
   const fn = typeof spanOrFn === 'function' ? spanOrFn : maybeFn!;
-  return storage.run(span, fn);
+  return storage.run(newScope(span), fn);
 }
 
 /**
@@ -176,19 +209,31 @@ export function withTrace<T>(spanOrFn: SpanContext | (() => T), maybeFn?: () => 
  * outlive the request it was set for. That is tolerable for a correlation id
  * (a stale id mislabels a log line) and would NOT be for anything
  * authorisation-shaped.
+ *
+ * Returns the scope it entered, so a hook-shaped host can hold onto it for the
+ * response side without a second lookup — the same shape as
+ * `enterQueryBudget()` in `lib/prisma.server.ts`, and for the same reason: by
+ * the time the response hook runs, the async context may no longer be ours.
  */
-export function enterTrace(span: SpanContext): void {
-  storage.enterWith(span);
+export function enterTrace(span: SpanContext): TraceScope {
+  const scope = newScope(span);
+  storage.enterWith(scope);
+  return scope;
+}
+
+/** The scope for the current async context, if one was entered. */
+export function currentScope(): TraceScope | undefined {
+  return storage.getStore();
 }
 
 /** The span for the current async context, if one was entered. */
 export function currentSpan(): SpanContext | undefined {
-  return storage.getStore();
+  return storage.getStore()?.span;
 }
 
 /** The current trace id, or `undefined` outside any traced scope. */
 export function currentTraceId(): string | undefined {
-  return storage.getStore()?.traceId;
+  return storage.getStore()?.span.traceId;
 }
 
 /**
@@ -198,7 +243,7 @@ export function currentTraceId(): string | undefined {
  * everywhere and never emits `traceId: undefined` keys into the log stream.
  */
 export function traceFields(): { traceId?: string; spanId?: string } {
-  const span = storage.getStore();
+  const span = storage.getStore()?.span;
   return span ? { traceId: span.traceId, spanId: span.spanId } : {};
 }
 
@@ -210,7 +255,7 @@ export function traceFields(): { traceId?: string; spanId?: string } {
  * do. Empty outside a traced scope.
  */
 export function traceHeaders(): Record<string, string> {
-  const span = storage.getStore();
+  const span = storage.getStore()?.span;
   if (!span) return {};
   return { traceparent: formatTraceparent(startSpan(span)) };
 }
@@ -223,6 +268,12 @@ export function traceHeaders(): Record<string, string> {
  * .serverTiming`), which is what lets `lib/rum.ts` stamp the beacon with the
  * server's trace id without a meta tag, an inline script, or an import of this
  * module. The name is short because the header is sent on every response.
+ *
+ * This is ONE entry in a list header. The phase durations (`lib/otel/timing.ts`)
+ * ride in the same header beside it; `serverTimingHeader()` there composes both
+ * and is what the Nitro plugin actually sends. `desc` is used here — and ONLY
+ * here — because a trace id is a random value we minted, not anything derived
+ * from the request.
  */
 export function serverTimingTrace(span: SpanContext): string {
   return `trace;desc="${span.traceId}"`;

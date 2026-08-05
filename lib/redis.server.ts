@@ -219,6 +219,66 @@ export async function redisRateLimit(
   }
 }
 
+/**
+ * Wrap a key family in a Redis Cluster **hash tag**, e.g.
+ * `hashTagged('user-display', id)` → `{user-display}:abc123`.
+ *
+ * Only the substring between the first `{` and the following `}` is hashed to a
+ * slot, so every key in a family lands in the SAME slot. On a single instance
+ * (what `docker-compose.yml` runs today) this is cosmetic; on a cluster it is
+ * the difference between `MGET` working and `MGET` failing with CROSSSLOT for
+ * any batch that spans more than one node. Tagging from the start is the cheap
+ * half of that migration — see `redisCacheMGet` below.
+ */
+export function hashTagged(family: string, id: string): string {
+  return `{${family}}:${id}`;
+}
+
+/** Parse one MGET/GET reply, treating anything unusable as "not cached". */
+function parseCached<T>(raw: string | null): T | undefined {
+  if (raw === null || raw === undefined) return undefined;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    // A poisoned entry (truncated write, a value written by an older schema) is
+    // a MISS, never an exception: the caller's fallback is to consult the
+    // origin, which is exactly the right answer for an entry we cannot read.
+    return undefined;
+  }
+}
+
+/**
+ * Fetch many keys in ONE round trip (OPT-48).
+ *
+ * With a 1 ms RTT, 20 sequential `GET`s cost 20 ms of pure latency for work that
+ * takes microseconds; one `MGET` costs ~1 ms. That latency, not Redis CPU, is
+ * what makes a fanned-out cache read slower than the database it is meant to
+ * spare — see the `getUserDisplayMap` note in this file's `enableOfflineQueue`
+ * comment, where the anonymous homepage issued ~40 separate L2 reads.
+ *
+ * Returns a **same-length, positionally-aligned** array so callers can zip it
+ * against their key list, with `undefined` for everything the cache cannot
+ * supply: a miss, an unparseable entry, a failed command, or no Redis at all.
+ * Collapsing those four is deliberate — for a read-through cache they all mean
+ * "go to the origin". A caller that must tell "Redis is off" from "the key is
+ * absent" wants `redisMGetJSON` instead, which signals the former with a null
+ * array.
+ *
+ * **Cluster caveat:** `MGET` on a Redis Cluster requires every key in one hash
+ * slot. Build keys with `hashTagged()` so a family co-locates; a batch mixing
+ * families would fail with CROSSSLOT the day clustering appears.
+ */
+export async function redisCacheMGet<T>(keys: string[]): Promise<(T | undefined)[]> {
+  init();
+  if (!publisher || keys.length === 0) return keys.map(() => undefined);
+  try {
+    const raws = await publisher.mget(...keys);
+    return raws.map((raw) => parseCached<T>(raw));
+  } catch {
+    return keys.map(() => undefined);
+  }
+}
+
 /** Get a JSON value from the shared cache, or null. No-op when Redis is off. */
 export async function redisGetJSON<T>(key: string): Promise<T | null> {
   init();

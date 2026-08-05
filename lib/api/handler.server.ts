@@ -13,6 +13,7 @@
  *   2. rate limit (`withRateLimit`, per-IP)    → 429 + `Retry-After`
  *   3. zod `safeParse` of body and/or query    → 400
  *   4. handler, wrapped in try/catch           → 500 (never leaks internals)
+ *   5. cache headers + weak `ETag`/`304`       → only on a successful GET/HEAD
  *
  * Response bodies are byte-identical to what the hand-rolled routes returned
  * (`{ error: 'Unauthorized' }`, `{ error: 'Too many requests' }`, …) so this is
@@ -100,6 +101,263 @@ export type RateLimitSpec =
       scope?: 'ip' | 'user';
     });
 
+/* -------------------------------------------------------------------------- */
+/* HTTP caching                                                               */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Declarative response caching. Omitted → the historical behaviour: no
+ * `Cache-Control`, no `Vary`, no `ETag`, i.e. uncacheable at every layer.
+ *
+ * `visibility` is the safety-critical field and deliberately has **no default**:
+ * a handler must SAY whether its response is per-user. `'private'` responses are
+ * never stored by a shared cache; `'public'` responses must be byte-identical
+ * for every caller, which in practice means `auth: 'none'` — or `'optional'`
+ * with genuinely no user-dependent branch anywhere in the handler.
+ *
+ * The `'public'` + authenticated combination is not merely discouraged, it is
+ * rejected at module load (see {@link assertCacheSpec}), because the failure
+ * mode is one user's response being served to another from the CDN.
+ *
+ * A declaration is authoritative: when a route declares `cache`, the wrapper
+ * writes `Cache-Control` and `Vary` on every successful GET/HEAD response,
+ * replacing anything the handler set. That is the point — one policy per route,
+ * in one place. A route whose policy varies per response should not declare a
+ * static spec at all and should set the headers itself.
+ */
+export interface CacheSpec {
+  /**
+   * `'public'` → any cache (browser, CDN, proxy) may store and SHARE it.
+   * `'private'` → the caller's own browser only.
+   */
+  visibility: 'public' | 'private';
+  /** Browser freshness, seconds. */
+  maxAge: number;
+  /** Shared-cache (CDN) freshness, seconds. Ignored when visibility is private. */
+  sMaxAge?: number;
+  /**
+   * Serve-stale window while revalidating, seconds.
+   *
+   * Note what this buys the caller and costs the reader: a client can see data
+   * up to `sMaxAge + staleWhileRevalidate` old. Anything a user can change and
+   * then immediately expects to see changed does not want a long window here.
+   */
+  staleWhileRevalidate?: number;
+  /** Request headers the response varies on, beyond the always-on defaults. */
+  vary?: string[];
+}
+
+/**
+ * Above this many bytes, hashing the body to produce an `ETag` costs more CPU
+ * than the saved bandwidth is worth — a 304 only pays off when the render was
+ * going to happen anyway and the payload is the expensive part. 256 KB is well
+ * past every JSON page this API serves (the largest feed page is ~40 KB), so in
+ * practice this only fires on an unexpected payload, which is exactly the case
+ * where the guard should win.
+ */
+const MAX_ETAG_BYTES = 256 * 1024;
+
+/** Cacheable request methods — a mutation never gets a cache header. */
+function isCacheableMethod(method: string): boolean {
+  return method === 'GET' || method === 'HEAD';
+}
+
+/**
+ * Render a {@link CacheSpec} into the headers it implies.
+ *
+ * Exported for tests and for the rare route that must emit the same policy from
+ * outside the wrapper; routes should prefer the `cache` option.
+ */
+export function buildCacheHeaders(spec: CacheSpec): Record<string, string> {
+  const parts = [spec.visibility, `max-age=${spec.maxAge}`];
+  // `s-maxage` is only read by shared caches, and a private response is by
+  // definition never in one — emitting it would read as a contradiction.
+  if (spec.visibility === 'public' && spec.sMaxAge != null) parts.push(`s-maxage=${spec.sMaxAge}`);
+  if (spec.staleWhileRevalidate != null) {
+    parts.push(`stale-while-revalidate=${spec.staleWhileRevalidate}`);
+  }
+  return {
+    'cache-control': parts.join(', '),
+    // Two always-on entries, for two different failure modes:
+    //  • `Accept-Encoding` — without it a cache can hand a gzip body to a client
+    //    that never asked for one.
+    //  • `Cookie` on a private response — the belt to `private`'s braces. It is
+    //    what stops any intermediary that ignores `private` from keying one
+    //    user's response for the next. Cheap, and always correct.
+    vary: [
+      'Accept-Encoding',
+      ...(spec.visibility === 'private' ? ['Cookie'] : []),
+      ...(spec.vary ?? []),
+    ].join(', '),
+  };
+}
+
+/**
+ * The file:line of the `defineHandler` call, for a definition-time error.
+ *
+ * A module-load throw has no request and no route context, so without this the
+ * message would name nothing and the developer would be left grepping. Only
+ * called on the throw path, so the stack capture is never in the hot path.
+ */
+function definitionSite(): string {
+  const frames = (new Error().stack ?? '').split('\n').slice(1);
+  for (const frame of frames) {
+    const text = frame.trim();
+    // Skip this module's own frames (`definitionSite`, `assertCacheSpec`,
+    // `defineHandler`) — the first frame past them is the route file.
+    if (!text || text.includes('handler.server')) continue;
+    return text.replace(/^at\s+/, '');
+  }
+  return 'unknown call site';
+}
+
+/**
+ * Reject an unshippable cache declaration **at module load**, not at request
+ * time.
+ *
+ * This is the whole safety story of the feature. A `public` response from an
+ * authenticated route is a data leak: the CDN stores the first caller's body
+ * under a URL key and serves it to everyone else who asks. A request-time check
+ * would fail only on the paths that get exercised, in an environment that has a
+ * CDN in front of it — i.e. in production, after the leak. `defineHandler` runs
+ * at import time for every route in the bundle, so throwing here means the
+ * server does not boot and the mistake cannot reach a deploy.
+ */
+function assertCacheSpec(
+  spec: CacheSpec,
+  mode: AuthMode,
+  feature: MemberFeature | undefined,
+): void {
+  const fail = (why: string): never => {
+    throw new Error(`[api] invalid cache declaration at ${definitionSite()}: ${why}`);
+  };
+
+  if (spec.visibility !== 'public' && spec.visibility !== 'private') {
+    fail(`cache.visibility must be 'public' or 'private' (got ${JSON.stringify(spec.visibility)})`);
+  }
+  if (!Number.isFinite(spec.maxAge) || spec.maxAge < 0) {
+    fail(`cache.maxAge must be a non-negative number of seconds (got ${String(spec.maxAge)})`);
+  }
+  for (const [field, value] of [
+    ['sMaxAge', spec.sMaxAge],
+    ['staleWhileRevalidate', spec.staleWhileRevalidate],
+  ] as const) {
+    if (value != null && (!Number.isFinite(value) || value < 0)) {
+      fail(`cache.${field} must be a non-negative number of seconds (got ${String(value)})`);
+    }
+  }
+
+  if (spec.visibility !== 'public') return;
+
+  if (mode === 'required' || mode === 'admin') {
+    fail(
+      `cache.visibility 'public' with auth '${mode}'. A shared cache keys on the URL, ` +
+        `not on the session — the first caller's response would be served to every ` +
+        `other caller. Use visibility 'private' (browser-only, Vary: Cookie), or ` +
+        `drop the route to auth 'none'/'optional' if the body really is the same ` +
+        `for everyone.`,
+    );
+  }
+  if (feature) {
+    fail(
+      `cache.visibility 'public' with feature '${feature}'. A membership-gated ` +
+        `response is per-account by construction and must never be shared. Use ` +
+        `visibility 'private'.`,
+    );
+  }
+}
+
+/**
+ * Weak `ETag` over the response body, or `null` when the body must not be
+ * hashed.
+ *
+ * Weak (`W/`) because no byte-for-byte guarantee is made across compression or
+ * field ordering — semantic equivalence is what a conditional request needs, and
+ * a strong ETag would additionally promise range requests this API never serves.
+ *
+ * Two things it refuses to do, both of which turn a bandwidth optimisation into
+ * an outage:
+ *
+ *  • **Buffer a stream.** An SSE response never ends, so hashing it would hang
+ *    the request forever. Known streaming shapes are refused outright, and the
+ *    read below is size-capped so anything else that turns out to be unbounded
+ *    is abandoned after {@link MAX_ETAG_BYTES} rather than held in memory.
+ *  • **Hash compressed bytes.** A body the handler already encoded hashes to
+ *    something the next caller's encoding would not match, so the ETag would
+ *    never hit. Compression belongs downstream of this.
+ */
+async function weakEtag(response: Response): Promise<string | null> {
+  const contentType = response.headers.get('content-type') ?? '';
+  if (contentType.startsWith('text/event-stream')) return null;
+  if (response.headers.get('content-encoding')) return null;
+  if (response.headers.get('transfer-encoding')) return null;
+
+  const declaredLength = Number(response.headers.get('content-length'));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_ETAG_BYTES) return null;
+
+  // Clone so the caller's response body stays intact — a body is a one-shot
+  // stream, and reading the original would leave nothing to send.
+  const stream = response.clone().body;
+  if (!stream) return null;
+
+  const reader = stream.getReader();
+  // Never awaited: `clone()` tees, and a tee branch's cancel() promise only
+  // settles once BOTH branches are cancelled — awaiting it here would hang on
+  // the branch the caller is still going to send.
+  const release = () => void reader.cancel().catch(() => {});
+
+  const hash = createHash('sha1');
+  let bytes = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+      bytes += value.byteLength;
+      if (bytes > MAX_ETAG_BYTES) {
+        release();
+        return null;
+      }
+      hash.update(value);
+    }
+  } catch {
+    release();
+    return null;
+  }
+  return `W/"${hash.digest('base64url')}"`;
+}
+
+/**
+ * RFC 9110 §13.1.2 `If-None-Match` matching: `*` matches any representation,
+ * otherwise the header is a comma-separated list compared with the **weak**
+ * comparison function — so `W/"abc"` and `"abc"` are a match.
+ */
+function ifNoneMatchMatches(header: string, etag: string): boolean {
+  const value = header.trim();
+  if (value === '*') return true;
+  const opaque = (tag: string) => tag.trim().replace(/^W\//, '');
+  const target = opaque(etag);
+  return value.split(',').some((candidate) => opaque(candidate) === target);
+}
+
+/** Set a header, tolerating a Response whose headers are immutable (guarded). */
+function withHeaders(response: Response, extra: Record<string, string>): Response {
+  try {
+    for (const [name, value] of Object.entries(extra)) response.headers.set(name, value);
+    return response;
+  } catch {
+    // A Response that came back from `fetch()` has an immutable header guard.
+    // Rebuild around the same body rather than dropping the policy.
+    const headers = new Headers(response.headers);
+    for (const [name, value] of Object.entries(extra)) headers.set(name, value);
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  }
+}
+
 export interface HandlerOptions<
   A extends AuthMode = 'required',
   B extends z.ZodType | undefined = undefined,
@@ -168,6 +426,34 @@ export interface HandlerOptions<
    * so turning this on is never a breaking change for an existing client.
    */
   idempotent?: boolean;
+  /**
+   * Declare the response's cache policy. See {@link CacheSpec}.
+   *
+   * Applied to **successful GET/HEAD responses only** — never to a mutation,
+   * never to a 4xx/5xx. An invalid or unsafe declaration throws at module load.
+   *
+   * ```ts
+   * GET: defineHandler(
+   *   { auth: 'none', cache: { visibility: 'public', maxAge: 60, sMaxAge: 300 } },
+   *   async () => Response.json(await listPublicGames()),
+   * )
+   * ```
+   */
+  cache?: CacheSpec;
+  /**
+   * Emit a weak `ETag` on 200 GET/HEAD responses and answer a matching
+   * `If-None-Match` with a 304.
+   *
+   * Defaults to **on when `cache` is declared**, off otherwise: a route that has
+   * thought about its freshness has, by the same act, told us its body is a
+   * finite in-memory payload worth hashing. Set it explicitly either way —
+   * `true` to get conditional requests without a freshness policy (the shape
+   * that makes a rate limit survivable, per GitHub's REST API), `false` to opt a
+   * cached route out because its body is large, streamed, or contains a
+   * timestamp that changes the hash on every call and makes the whole mechanism
+   * inert.
+   */
+  etag?: boolean;
 }
 
 type Parsed<S extends z.ZodType | undefined> = S extends z.ZodType ? z.infer<S> : undefined;
@@ -269,6 +555,12 @@ export function defineHandler<
   // in every child route (`$id/cancel`, `$id/matches/$matchId/report`, …).
 ): (args: { request: Request; params: Record<string, string> }) => Promise<Response> {
   const mode = (options.auth ?? 'required') as AuthMode;
+
+  // Definition time, not request time. `defineHandler` is called while the route
+  // module is being imported, so an unshippable cache declaration takes the
+  // process down at boot instead of quietly leaking on the first cache hit.
+  if (options.cache) assertCacheSpec(options.cache, mode, options.feature);
+  const wantsEtag = options.etag ?? Boolean(options.cache);
 
   return async ({ request, params }) => {
     try {
@@ -419,7 +711,33 @@ export function defineHandler<
         await recordIdempotency(userId, idemKey, response.status, stored);
       }
 
-      return response;
+      /* 5. Caching -------------------------------------------------------- */
+      // Last, and deliberately narrow. A cache header on a mutation or on an
+      // error is the kind of bug that is invisible locally and permanent at the
+      // edge, so the gate is the method AND the status, checked here rather than
+      // trusted to each route.
+      if (!isCacheableMethod(request.method) || !response.ok) return response;
+
+      const cacheHeaders = options.cache ? buildCacheHeaders(options.cache) : null;
+
+      if (wantsEtag && response.status === 200) {
+        const etag = await weakEtag(response);
+        if (etag) {
+          const inm = request.headers.get('if-none-match');
+          if (inm && ifNoneMatchMatches(inm, etag)) {
+            // A 304 MUST repeat the caching headers (RFC 9110 §15.4.5). Omit
+            // them and the client's stored entry keeps expiring on whatever
+            // policy it first saw — which is how a quiet revalidation turns back
+            // into a full request storm one TTL later.
+            const body = response.body;
+            if (body) void body.cancel().catch(() => {});
+            return new Response(null, { status: 304, headers: { etag, ...(cacheHeaders ?? {}) } });
+          }
+          response = withHeaders(response, { etag });
+        }
+      }
+
+      return cacheHeaders ? withHeaders(response, cacheHeaders) : response;
     } catch (error) {
       // A named failure carries its own status and code; everything else is an
       // unnamed exception and becomes a bare 500. The message is never echoed

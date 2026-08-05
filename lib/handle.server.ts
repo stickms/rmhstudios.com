@@ -10,6 +10,7 @@
 
 import { randomBytes } from 'node:crypto';
 import { prisma } from '@/lib/prisma.server';
+import { invalidateProfileLookup } from '@/lib/profile.server';
 import { DELETED_ACCOUNT_BAN_REASON } from '@/lib/account-lifecycle';
 import { HANDLE_MAX_LENGTH, deriveHandleBase, isValidHandle, suffixHandle } from '@/lib/handle';
 
@@ -150,6 +151,9 @@ export async function backfillMissingHandles(
 
       try {
         await prisma.user.update({ where: { id: user.id }, data: { handle } });
+        // A handle that has just started resolving must not keep 404ing for the
+        // rest of the profile negative-cache window (OPT-47).
+        invalidateProfileLookup(handle);
         result.assigned++;
         onAssign?.(user, handle);
       } catch {
