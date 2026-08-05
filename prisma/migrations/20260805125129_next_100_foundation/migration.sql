@@ -8,6 +8,19 @@
 -- lib/search/posts.server.ts. Prisma cannot model it, so every `migrate dev`
 -- proposes the drop; accepting it silently destroys post full-text search.
 -- Keep removing these two statements whenever they reappear.
+--
+-- migration-safety: acknowledged[create-index-not-concurrent] the three indexes on
+-- pre-existing tables (session, user, rmheet_poll_vote) are built with a plain
+-- CREATE INDEX to match this repo's existing index migrations and because Prisma
+-- applies each migration inside a transaction, where CREATE INDEX CONCURRENTLY
+-- cannot run (see 20260716000000_add_rmhark_feed_partial_index, which documents
+-- the same trade-off). Each builds a small two-column b-tree and holds a SHARE
+-- lock only for the build. If any of these tables has grown enough for that to
+-- matter, build the index manually with CREATE INDEX CONCURRENTLY and then
+-- `prisma migrate resolve --applied 20260805125129_next_100_foundation`.
+--
+-- Scoped to the index rule ON PURPOSE: a DROP COLUMN or a SET NOT NULL added to
+-- this file later must still fail the check.
 
 -- CreateEnum
 CREATE TYPE "ActivityVerb" AS ENUM ('VIEWED', 'PLAYED', 'SAVED', 'COMPLETED', 'RATED', 'SHARED');
