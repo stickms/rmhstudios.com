@@ -672,13 +672,31 @@
 
 .spatial-whats-new {
   gap: 0;
-  overflow: hidden;
+  /* Was `overflow: hidden`, and that is the whole bug this rule now fixes: the
+     announcement is taller than a phone (a full-bleed intro, then a card per
+     item, then the footer), the Dialog primitive caps every overlay at the
+     visible viewport (`.glass-overlay` max-block-size), and `hidden` meant the
+     part that did not fit was simply gone — cards and the "Got it" button both,
+     with nothing to scroll. `auto` clips to the rounded corners exactly the same
+     way (a scroll container is still a clipping context) and gives the overflow
+     somewhere to go. The x axis stays clipped so the intro's decorative circle,
+     which is deliberately positioned outside the box, never mints a horizontal
+     scrollbar. */
+  overflow-x: hidden;
+  overflow-y: auto;
+  /* A flick that reaches the end of the sheet must not hand the scroll to the
+     page behind the scrim. */
+  overscroll-behavior: contain;
   padding: 0;
 }
 
 .spatial-whats-new__intro {
   position: relative;
-  min-height: 18rem;
+  /* Fixed at 18rem this ate a phone's entire screen before the first card, so
+     the sheet opened on a title and nothing else. It is a proportion of the
+     viewport now, and only grows to the intended height where there is room —
+     which also covers a landscape phone, where 18rem IS the whole screen. */
+  min-height: min(18rem, 38dvh);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -846,7 +864,7 @@
   }
 
   .spatial-whats-new__intro {
-    min-height: 22rem;
+    min-height: min(22rem, 42dvh);
     padding: 2.25rem;
   }
 

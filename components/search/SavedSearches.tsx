@@ -102,7 +102,7 @@ export function SavedSearches({ currentQuery }: { currentQuery: string }) {
               key={s.id}
               className="glass-fill inline-flex items-center gap-1 rounded-full py-1 ps-3 pe-1 text-sm"
             >
-              <a href={`/search?q=${encodeURIComponent(s.query)}`} className="max-w-[180px] truncate text-site-text hover:underline">
+              <a href={`/explore?q=${encodeURIComponent(s.query)}`} className="max-w-[180px] truncate text-site-text hover:underline">
                 {s.query}
               </a>
               <IconButton

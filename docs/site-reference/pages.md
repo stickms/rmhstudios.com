@@ -103,9 +103,9 @@ Standard pages, rendered inside the sidebar shell.
 | `/rmhladder/resume` | — | sign-in | `app/routes/_site/rmhladder/resume.tsx` |
 | `/rmhladder/review` | — | admin | `app/routes/_site/rmhladder/review.tsx` |
 | `/rmhladder/settings` | — | sign-in | `app/routes/_site/rmhladder/settings.tsx` |
-| `/roadmap` | Roadmap | public | `app/routes/_site/roadmap.tsx` |
+| `/roadmap` | Roadmap & requests | public | `app/routes/_site/roadmap.tsx` |
 | `/saves` | Saved | public | `app/routes/_site/saves/index.tsx` |
-| `/search` | Search | public | `app/routes/_site/search.tsx` |
+| `/search` | redirects to `/explore` | public | `app/routes/_site/search.tsx` |
 | `/services` | Services | public | `app/routes/_site/services.tsx` |
 | `/settings` | Settings | public | `app/routes/_site/settings/index.tsx` |
 | `/settings/account-status` | Account status | public | `app/routes/_site/settings/account-status.tsx` |

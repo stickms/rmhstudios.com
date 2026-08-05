@@ -1,260 +1,316 @@
 'use client';
 
-import { useEffect, useState, useRef } from'react';
-import { useTranslation } from'react-i18next';
-import { Link } from'@tanstack/react-router';
-import { Compass, Hash, Sparkles, TrendingUp, Coins } from'lucide-react';
-import { MemoRMHarkCard } from'./VirtualPostList';
-import { ColumnHeader } from'./ColumnHeader';
-import { RevealGroup, RevealItem } from'@/components/motion';
-import { Spinner } from'@/components/ui/spinner';
-import { UserAvatar } from'@/components/ui/UserAvatar';
-import { Button } from'@/components/ui/button';
-import type { FeedItem } from'@/lib/feed-types';
-import { LIFT_CARD } from'@/components/feed/motionHelpers';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from '@tanstack/react-router';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
+import { PostListSkeleton } from '@/components/ui/skeletons/PostCardSkeleton';
+import { SearchHitSection, useKindHeading } from '@/components/search/SearchHitRow';
+import { ExploreAsk } from './ExploreAsk';
+import {
+  ExploreRecommendations,
+  type DiscoveryData,
+  type DiscoveryOfficialBuild,
+  type DiscoveryUserBuild,
+  type DiscoveryBlogPost,
+  type ExploreTab,
+} from './ExploreRecommendations';
+import { PageTabs } from './PageTabs';
+import { SearchField } from '@/components/ui/search-field';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import {
+  SEARCH_TAB_KINDS,
+  SEARCH_TABS,
+  type SearchHit,
+  type SearchResponse,
+  type SearchTab,
+} from '@/lib/search/types';
 
-interface ExploreData {
- trendingTags: { tag: string; count: number }[];
- hotPosts: FeedItem[];
- suggestedUsers: {
- id: string;
- name: string | null;
- image: string | null;
- handle: string | null;
- followerCount: number;
- }[];
+/** Tabs the discovery panel understands; the rest fall back to its `top` mix. */
+const EXPLORE_TABS: ReadonlySet<string> = new Set(['top', 'people', 'posts', 'builds', 'blog']);
+
+const EMPTY: SearchResponse = {
+  people: [],
+  posts: [],
+  builds: [],
+  blog: [],
+  top: [],
+  groups: {},
+  meta: { normalized: '', topScore: 0, confidence: 'low', total: 0 },
+};
+
+/**
+ * Debounce before searching, and the extra pause before spending a model call.
+ * The assist pass is deliberately a *second* request: a query mid-typing looks
+ * "weak" on every keystroke, and paying for expansion each time would make the
+ * fast path as slow as the slow one.
+ */
+const SEARCH_DEBOUNCE_MS = 250;
+const ASSIST_DELAY_MS = 500;
+/** Below this many hits, a weak query is worth a model-assisted retry. */
+const ASSIST_RESULT_THRESHOLD = 3;
+
+/**
+ * Tab labels, one static `t()` call each.
+ *
+ * A computed key (``t(`tab-${id}`)``) is invisible to `i18next-parser`, so the
+ * key never reaches `locales/` and every non-English locale quietly serves the
+ * English default. The four `tab-*` keys that already existed were only in the
+ * catalog because older code happened to call them statically elsewhere.
+ */
+function useTabLabel(): (tab: SearchTab) => string {
+  const { t } = useTranslation('feed');
+  return (tab) => {
+    switch (tab) {
+      case 'top':
+        return t('tab-top', { defaultValue: 'Top' });
+      case 'people':
+        return t('tab-people', { defaultValue: 'People' });
+      case 'posts':
+        return t('tab-posts', { defaultValue: 'Posts' });
+      case 'builds':
+        return t('tab-builds', { defaultValue: 'Builds' });
+      case 'blog':
+        return t('tab-writing', { defaultValue: 'Writing' });
+      case 'library':
+        return t('tab-library', { defaultValue: 'Library' });
+      case 'places':
+        return t('tab-places', { defaultValue: 'Games & Apps' });
+    }
+  };
 }
 
+/**
+ * The Explore column: discovery when there is no query, results when there is,
+ * and the AI slot between the field and both.
+ *
+ * This is the merged page. Explore and Search were two destinations doing one
+ * job — both titled "Explore", one reachable from the nav and one only from the
+ * 404 page, with overlapping recommendations, two AI boxes and a search field
+ * on the one that the nav did NOT link to. `/search` is a redirect now, and the
+ * field, the tabs and the recommendations all live here: typing filters, and
+ * clearing the field puts discovery back.
+ */
 export function ExploreColumn({
- initialData,
+  initialQuery = '',
+  initialTab = 'top',
+  discovery,
+  officialBuilds = [],
+  userBuilds = [],
+  blogPosts = [],
 }: {
- /** Explore payload prefetched by the route loader. */
- initialData?: ExploreData | null;
-} = {}) {
- // Seed from the loader when provided so the page paints immediately and the
- // mount fetch is skipped.
- const seeded = useRef(initialData !== undefined && initialData !== null);
- const [data, setData] = useState<ExploreData | null>(initialData ?? null);
- const [loading, setLoading] = useState(!seeded.current);
- const [tipLeaders, setTipLeaders] = useState<
- {
- user: { id: string; name: string | null; image: string | null; handle: string | null };
- total: number;
- }[]
- >([]);
+  initialQuery?: string;
+  initialTab?: SearchTab;
+  /** Discovery payload prefetched by the route loader (SSR at first paint). */
+  discovery?: DiscoveryData | null;
+  officialBuilds?: DiscoveryOfficialBuild[];
+  userBuilds?: DiscoveryUserBuild[];
+  blogPosts?: DiscoveryBlogPost[];
+}) {
+  const { t } = useTranslation('feed');
+  const tabLabel = useTabLabel();
+  const kindHeading = useKindHeading();
+  const navigate = useNavigate();
+  const [query, setQuery] = useState(initialQuery);
+  const [tab, setTabState] = useState<SearchTab>(initialTab);
+  const [results, setResults] = useState<SearchResponse>(EMPTY);
+  const [loading, setLoading] = useState(false);
+  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Guards the assist pass so a query is only ever expanded once.
+  const assisted = useRef<string | null>(null);
+  // Discards responses that arrive after a newer request was issued.
+  const requestId = useRef(0);
 
- // Ask-the-feed widget state
- const { t } = useTranslation('feed');
+  /**
+   * Focus the field only where a keyboard is already attached.
+   *
+   * `autoFocus` was right for a page whose only purpose was searching. This one
+   * is also the browse destination — the nav's "Explore" — so on a phone that
+   * same prop would throw the on-screen keyboard over the recommendations
+   * someone came to read, on every visit. Imperative rather than a conditional
+   * `autoFocus` because the prop only acts on the initial mount, and the media
+   * query does not resolve until after hydration (`useMediaQuery` reports false
+   * on the server so it can't mismatch).
+   */
+  const fieldRef = useRef<HTMLInputElement | null>(null);
+  const hasKeyboard = useMediaQuery('(pointer: fine)');
+  useEffect(() => {
+    if (hasKeyboard) fieldRef.current?.focus();
+  }, [hasKeyboard]);
 
- const [question, setQuestion] = useState('');
- const [answer, setAnswer] = useState<string | null>(null);
- const [asking, setAsking] = useState(false);
+  // Persist the active tab to the URL (alongside any query) so the selection
+  // survives refresh and is shareable, matching the rest of the app's tabs.
+  const setTab = useCallback(
+    (next: SearchTab) => {
+      setTabState(next);
+      void navigate({
+        to: '/explore',
+        search: (prev) => ({ ...prev, q: prev.q ?? '', tab: next }),
+        replace: true,
+      });
+    },
+    [navigate],
+  );
 
- useEffect(() => {
- let active = true;
- // The primary payload is seeded by the loader; only fetch it here on the
- // client fallback path.
- if (!seeded.current) {
- fetch('/api/explore', { credentials:'include'})
- .then((r) => (r.ok ? r.json() : null))
- .then((d) => active && setData(d))
- .finally(() => active && setLoading(false));
- }
- fetch('/api/tips/leaderboard?range=week')
- .then((r) => (r.ok ? r.json() : { leaders: [] }))
- .then((d) => active && setTipLeaders(d.leaders ?? []))
- .catch(() => {});
- return () => {
- active = false;
- };
- }, []);
+  const run = useCallback(async (q: string, type: SearchTab, assist: boolean) => {
+    if (q.trim().length < 2) {
+      setResults(EMPTY);
+      return;
+    }
+    const id = ++requestId.current;
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ q, tab: type });
+      if (assist) params.set('assist', '1');
+      const res = await fetch(`/api/search?${params}`, { credentials: 'include' });
+      if (!res.ok) return;
+      const data: SearchResponse = await res.json();
+      // A slower earlier request must not overwrite a newer one's results.
+      if (id === requestId.current) setResults(data);
+    } catch {
+      // Offline or aborted — keep whatever is on screen.
+    } finally {
+      if (id === requestId.current) setLoading(false);
+    }
+  }, []);
 
- const ask = async () => {
- if (question.trim().length < 3) return;
- setAsking(true);
- setAnswer(null);
- try {
- const res = await fetch('/api/ai/ask-feed', {
- method:'POST',
- headers: {'Content-Type':'application/json'},
- credentials:'include',
- body: JSON.stringify({ question: question.trim() }),
- });
- const d = await res.json().catch(() => ({}));
- if (res.ok) setAnswer(d.answer);
- else if (res.status === 401)
- setAnswer(t('ask-sign-in', { defaultValue:'Sign in to ask the feed.'}));
- else setAnswer(d.error || t('ask-error', { defaultValue:'Could not answer.'}));
- } finally {
- setAsking(false);
- }
- };
+  useEffect(() => {
+    if (debounce.current) clearTimeout(debounce.current);
+    debounce.current = setTimeout(() => run(query, tab, false), SEARCH_DEBOUNCE_MS);
+    return () => {
+      if (debounce.current) clearTimeout(debounce.current);
+    };
+  }, [query, tab, run]);
 
- return (
- <div className="min-h-screen">
- <ColumnHeader icon={Compass} title={t('explore-title', { defaultValue:'Explore'})} />
+  // Second pass: when the lexical search came back thin, give the server
+  // permission to spend a model call widening the query. Only after the user has
+  // stopped typing, and only once per query+tab.
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2 || loading) return;
+    const weak = results.meta.confidence === 'low' || results.meta.total < ASSIST_RESULT_THRESHOLD;
+    if (!weak || results.meta.expandedWith) return;
+    const key = `${tab}:${q}`;
+    if (assisted.current === key) return;
+    const timer = setTimeout(() => {
+      assisted.current = key;
+      void run(q, tab, true);
+    }, ASSIST_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [query, tab, loading, results.meta, run]);
 
- {/* Ask the feed */}
- <section className="m-4 rounded-tr-[2.5rem] rounded-bl-[2.5rem] rounded-tl-site rounded-br-site border border-site-border bg-site-surface p-5 shadow-site-sm">
- <label
- htmlFor="ask-feed"
- className="mb-3 flex items-center gap-2 font-display text-lg font-bold text-site-text"
- >
- <Sparkles className="h-4 w-4 text-site-text"/>{''}
- {t('ask-the-feed', { defaultValue:'Ask the feed'})}
- </label>
- {/* `min-w-0` on the input and `shrink-0` on the button: a flex child's
- default min-width is its CONTENT, so this ~250px placeholder forced the
- row wider than the card and pushed the Ask button off the card at 390px
- and off the viewport entirely at 320px. An ancestor clipped it, so the
- overflow never showed up in a scrollWidth check either. Below 360px the
- two stack, where a full-width button is the better shape anyway. */}
- <div className="flex flex-col gap-2 min-[360px]:flex-row">
- <input
- id="ask-feed"
- value={question}
- onChange={(e) => setQuestion(e.target.value)}
- onKeyDown={(e) => e.key ==='Enter'&& ask()}
- placeholder={t('ask-placeholder', { defaultValue:"What's everyone talking about?"})}
- className="w-full min-w-0 flex-1 rounded-full border border-site-border bg-site-bg px-4 py-2 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-text focus:outline-none"
- />
- <Button
- variant="accent"
- onClick={ask}
- loading={asking}
- disabled={question.trim().length < 3}
- className="shrink-0 rounded-full px-5"
- >
- {t('ask-button', { defaultValue:'Ask'})}
- </Button>
- </div>
- {answer && (
- <p className="mt-3 whitespace-pre-line rounded-site border border-site-border bg-site-bg-subtle p-4 text-sm text-site-text leading-relaxed">
- {answer}
- </p>
- )}
- </section>
+  const trimmed = query.trim();
+  const hasQuery = trimmed.length >= 2;
+  const { meta, top, groups } = results;
 
- {loading ? (
- <div className="flex justify-center py-20">
- <Spinner />
- </div>
- ) : (
- <RevealGroup>
- {/* Trending tags */}
- {data && data.trendingTags.length > 0 && (
- <RevealItem as="section"className="border-b border-site-border p-4">
- <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-muted">
- <TrendingUp className="h-3.5 w-3.5"/> {t('trending', { defaultValue:'Trending'})}
- </h2>
- <div className="flex flex-wrap gap-2">
- {data.trendingTags.map((t) => (
- <Link
- key={t.tag}
- to={`/tag/${t.tag}`as string}
- className="inline-flex min-h-11 items-center gap-1 rounded-full border border-site-border bg-site-surface px-3.5 py-1 text-sm text-site-text transition-colors duration-site hover:border-site-accent/50"
- >
- <Hash className="h-3 w-3 text-site-accent"/>
- {t.tag}
- <span className="text-xs text-site-text-muted">{t.count}</span>
- </Link>
- ))}
- </div>
- </RevealItem>
- )}
+  // Top interleaves every corpus by score; a focused tab renders its kinds as
+  // labelled sections in the order declared by SEARCH_TAB_KINDS.
+  const sections = useMemo(() => {
+    if (tab === 'top') return [];
+    return SEARCH_TAB_KINDS[tab]
+      .map((kind) => ({ kind, hits: groups[kind] ?? [] }))
+      .filter((s) => s.hits.length > 0);
+  }, [tab, groups]);
 
- {/* Who to follow */}
- {data && data.suggestedUsers.length > 0 && (
- <RevealItem as="section"className="border-b border-site-border p-4">
- <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-muted">
- {t('who-to-follow', { defaultValue:'Who to follow'})}
- </h2>
- <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
- {data.suggestedUsers.map((u) => (
- <Link
- key={u.id}
- to={`/u/${u.handle || u.id}`as string}
- className={`flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}
- >
- <UserAvatar
- src={u.image}
- alt={u.name || t('user-fallback', { defaultValue:'User'})}
- size={36}
- fallbackName={u.name ||'U'}
- />
- <div className="min-w-0">
- <p className="truncate text-sm font-semibold text-site-text">
- {u.name || u.handle}
- </p>
- <p className="truncate text-xs text-site-text-muted">
- {t('follower-count', {
- count: u.followerCount,
- defaultValue:'{{count}} followers',
- })}
- </p>
- </div>
- </Link>
- ))}
- </div>
- </RevealItem>
- )}
+  // The Top tab separates confident hits from the tail, so "we found something
+  // exact" and "this is the closest we have" don't read as one flat list.
+  const { strong, weak } = useMemo(() => {
+    const s: SearchHit[] = [];
+    const w: SearchHit[] = [];
+    for (const hit of top) (hit.confidence === 'low' ? w : s).push(hit);
+    return { strong: s, weak: w };
+  }, [top]);
 
- {/* Top supported creators */}
- {tipLeaders.length > 0 && (
- <RevealItem as="section"className="border-b border-site-border p-4">
- <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-muted">
- <Coins className="h-3.5 w-3.5 text-site-warning"/>{''}
- {t('top-supported-this-week', { defaultValue:'Top supported this week'})}
- </h2>
- <div className="space-y-1.5">
- {tipLeaders.slice(0, 5).map((l, i) => (
- <Link
- key={l.user.id}
- to={`/u/${l.user.handle || l.user.id}`as string}
- className="flex items-center gap-3 rounded-site-sm px-2 py-1.5 hover:bg-site-surface-hover"
- >
- <span className="w-5 text-center text-sm font-bold text-site-text-dim">
- {i + 1}
- </span>
- <UserAvatar
- src={l.user.image}
- alt={l.user.name || t('user-fallback', { defaultValue:'User'})}
- size={28}
- fallbackName={l.user.name ||'U'}
- />
- <span className="min-w-0 flex-1 truncate text-sm font-medium text-site-text">
- {l.user.name || l.user.handle}
- </span>
- <span className="inline-flex items-center gap-1 text-sm font-semibold text-site-warning">
- <Coins className="h-3.5 w-3.5"/> {l.total.toLocaleString()}
- </span>
- </Link>
- ))}
- </div>
- </RevealItem>
- )}
+  const hasResults = tab === 'top' ? top.length > 0 : sections.length > 0;
+  const exploreTab: ExploreTab = (EXPLORE_TABS.has(tab) ? tab : 'top') as ExploreTab;
 
- {/* Hot posts — the feed cards keep their own entrance; the section
- block reveals once as a unit (no per-card reveal). */}
- {data && data.hotPosts.length > 0 && (
- <RevealItem as="section">
- <h2 className="px-4 pt-4 text-xs font-semibold uppercase tracking-wide text-site-text-muted">
- {t('hot-this-week', { defaultValue:'Hot this week'})}
- </h2>
- {/* Short teaser list nested in animated sections — a memoized row +
- content-visibility rather than full windowing (which would be
- low-reward and finicky against the reveal transforms above). */}
- <div>
- {data.hotPosts.map((item) => (
- <div key={item.id} className="feed-card-cv">
- <MemoRMHarkCard item={item} />
- </div>
- ))}
- </div>
- </RevealItem>
- )}
- </RevealGroup>
- )}
- </div>
- );
+  return (
+    <div className="min-h-screen">
+      {/* Tabs first, then the field — the shared page order (`PageTabs`). The
+          field is an ordinary control that filters within whichever tab is
+          selected, not the page's header; the title is `PageLayout`'s. */}
+      <PageTabs
+        tabs={SEARCH_TABS.map((id) => ({ id, label: tabLabel(id) }))}
+        value={tab}
+        onChange={(id) => setTab(id as SearchTab)}
+        aria-label={t('search-categories-aria-label', { defaultValue: 'Search categories' })}
+        search={
+          <SearchField
+            ref={fieldRef}
+            value={query}
+            onValueChange={setQuery}
+            aria-label={t('search-input-aria-label', {
+              defaultValue: 'Search people, posts, builds, and blog',
+            })}
+            placeholder={t('search-placeholder-universal', {
+              defaultValue: 'Search anything — people, posts, games, writing…',
+            })}
+            trailing={loading ? <Spinner size={16} className="text-site-text-dim" /> : undefined}
+          />
+        }
+      />
+
+      {/* One AI slot, two forms — see `ExploreAsk`. */}
+      <ExploreAsk query={hasQuery ? trimmed : ''} />
+
+      {/* "Did you mean" — offered whenever the best match is not convincing, so
+          a near-miss (a typo, or the wrong name for a game) is one tap from the
+          right query instead of a dead end. */}
+      {hasQuery && meta.suggestion && (
+        <div className="border-b border-site-border px-4 py-2 text-sm text-site-text-muted">
+          {t('search-did-you-mean', { defaultValue: 'Did you mean' })}{' '}
+          <button
+            onClick={() => setQuery(meta.suggestion!)}
+            className="font-semibold text-site-accent hover:underline"
+          >
+            {meta.suggestion}
+          </button>
+        </div>
+      )}
+
+      {!hasQuery ? (
+        <ExploreRecommendations
+          tab={exploreTab}
+          initialData={discovery}
+          officialBuilds={officialBuilds}
+          userBuilds={userBuilds}
+          blogPosts={blogPosts}
+        />
+      ) : loading && !hasResults ? (
+        <PostListSkeleton count={6} />
+      ) : !hasResults && !loading ? (
+        <EmptyState
+          description={t('no-results', {
+            query: trimmed,
+            defaultValue: 'No results for "{{query}}".',
+          })}
+        />
+      ) : (
+        <div className="divide-y divide-site-border">
+          {tab === 'top' ? (
+            <>
+              <SearchHitSection hits={strong} />
+              <SearchHitSection
+                heading={t('search-less-certain', { defaultValue: 'Less certain matches' })}
+                hits={weak}
+              />
+            </>
+          ) : (
+            sections.map(({ kind, hits }) => (
+              <SearchHitSection
+                key={kind}
+                heading={
+                  // A single-kind tab is already labelled by the tab itself.
+                  sections.length > 1 ? kindHeading(kind) : undefined
+                }
+                hits={hits}
+                showKind={sections.length > 1}
+              />
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
 }

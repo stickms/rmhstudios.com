@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from'react';
+import { useEffect, useRef, useState } from'react';
 import { Link } from'@tanstack/react-router';
-import { Hash, TrendingUp, Users, Package, BookOpen } from'lucide-react';
+import { Hash, TrendingUp, Users, Package, BookOpen, Coins } from'lucide-react';
 import { useTranslation } from'react-i18next';
 import { RMHarkCard } from'./RMHarkCard';
 import { RevealGroup, RevealItem } from'@/components/motion';
@@ -23,11 +23,17 @@ interface Community {
  memberCount: number;
 }
 
-interface ExploreData {
+/** The `/api/explore` payload — also what the route loader prefetches for SSR. */
+export interface DiscoveryData {
  trendingTags: { tag: string; count: number }[];
  hotPosts: FeedItem[];
  suggestedUsers: { id: string; name: string | null; image: string | null; handle: string | null; followerCount: number }[];
  communities: Community[];
+}
+
+interface TipLeader {
+ user: { id: string; name: string | null; image: string | null; handle: string | null };
+ total: number;
 }
 
 export interface DiscoveryOfficialBuild {
@@ -56,13 +62,19 @@ export type ExploreTab ='top'|'people'|'posts'|'builds'|'blog';
 interface ExploreRecommendationsProps {
  /** Active search tab — discovery content is filtered to match it. */
  tab?: ExploreTab;
+ /**
+ * Discovery payload from the route loader. Seeding it means the page paints
+ * its recommendations server-side instead of flashing a spinner while the
+ * client re-fetches what SSR already had.
+ */
+ initialData?: DiscoveryData | null;
  officialBuilds?: DiscoveryOfficialBuild[];
  userBuilds?: DiscoveryUserBuild[];
  blogPosts?: DiscoveryBlogPost[];
 }
 
 /**
- * Discovery content shown on the Explore/Search page when no query is active.
+ * Discovery content shown on the Explore page when no query is active.
  * The active tab filters which sections appear, so the tab bar stays functional
  * even before the user types: People → who to follow + communities, Posts →
  * trending tags + hot posts, Builds → builds to try, Blog → recent writing, and
@@ -70,13 +82,16 @@ interface ExploreRecommendationsProps {
  */
 export function ExploreRecommendations({
  tab ='top',
+ initialData,
  officialBuilds = [],
  userBuilds = [],
  blogPosts = [],
 }: ExploreRecommendationsProps) {
  const { t } = useTranslation('feed');
- const [data, setData] = useState<ExploreData | null>(null);
- const [loading, setLoading] = useState(true);
+ const seeded = useRef(initialData != null);
+ const [data, setData] = useState<DiscoveryData | null>(initialData ?? null);
+ const [loading, setLoading] = useState(!seeded.current);
+ const [tipLeaders, setTipLeaders] = useState<TipLeader[]>([]);
 
  // The social discovery sections (trending/people/communities/hot) come from
  // /api/explore; the Builds and Blog tabs render from props, so they don't need
@@ -85,10 +100,20 @@ export function ExploreRecommendations({
 
  useEffect(() => {
  let active = true;
+ // Only the client fallback path fetches: with a loader-seeded payload this
+ // request would re-ask for what is already on screen.
+ if (!seeded.current) {
  fetch('/api/explore', { credentials:'include'})
  .then((r) => (r.ok ? r.json() : null))
  .then((d) => active && setData(d))
  .finally(() => active && setLoading(false));
+ }
+ // The tips leaderboard is its own endpoint and stays client-fetched — it is
+ // below the fold and must not hold up the page's blocking loader.
+ fetch('/api/tips/leaderboard?range=week')
+ .then((r) => (r.ok ? r.json() : { leaders: [] }))
+ .then((d) => active && setTipLeaders(d.leaders ?? []))
+ .catch(() => {});
  return () => {
  active = false;
  };
@@ -151,6 +176,40 @@ export function ExploreRecommendations({
  <p className="truncate text-sm font-semibold text-site-text">{u.name || u.handle}</p>
  <p className="truncate text-xs text-site-text-muted">{t('follower-count', { count: u.followerCount, defaultValue:'{{count}} followers'})}</p>
  </div>
+ </Link>
+ ))}
+ </div>
+ </RevealItem>
+ )}
+
+ {/* Top supported creators — a people section, so it follows the same tab
+ gate as "who to follow" rather than being a fourth thing on Top only. */}
+ {showPeople && tipLeaders.length > 0 && (
+ <RevealItem as="section"className="border-b border-site-border p-4">
+ <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <Coins className="h-3.5 w-3.5 text-site-warning"/>{''}
+ {t('top-supported-this-week', { defaultValue:'Top supported this week'})}
+ </h2>
+ <div className="space-y-1.5">
+ {tipLeaders.slice(0, 5).map((l, i) => (
+ <Link
+ key={l.user.id}
+ to={`/u/${l.user.handle || l.user.id}`as string}
+ className="flex items-center gap-3 rounded-site-sm px-2 py-1.5 hover:bg-site-surface-hover"
+ >
+ <span className="w-5 text-center text-sm font-bold text-site-text-dim">{i + 1}</span>
+ <UserAvatar
+ src={l.user.image}
+ alt={l.user.name || t('user-alt', { defaultValue:'User'})}
+ size={28}
+ fallbackName={l.user.name ||'U'}
+ />
+ <span className="min-w-0 flex-1 truncate text-sm font-medium text-site-text">
+ {l.user.name || l.user.handle}
+ </span>
+ <span className="inline-flex items-center gap-1 text-sm font-semibold text-site-warning">
+ <Coins className="h-3.5 w-3.5"/> {l.total.toLocaleString()}
+ </span>
  </Link>
  ))}
  </div>

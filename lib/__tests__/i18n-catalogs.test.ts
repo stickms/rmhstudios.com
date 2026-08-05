@@ -103,6 +103,10 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'rarity-rare',
     'rarity-uncommon',
     'undo',
+    // The 404's single discovery link, after Explore and Search became one
+    // page (`notFound.explore` + `notFound.search` were two buttons to the
+    // same destination). English-only until the translate pipeline runs.
+    'notFound.explore-search',
   ],
   // ── 2026-07-28 UI audit fixes ──────────────────────────────────────────
   // New English strings from the audit remediation (empty states, a11y labels,

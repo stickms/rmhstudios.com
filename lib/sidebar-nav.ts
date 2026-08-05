@@ -62,14 +62,13 @@ export const isNavGroup = (item: NavItem): item is NavGroup => 'group' in item;
 // below is the default rail order; users can reorder/hide it (§15).
 export const SIDEBAR_NAV: NavItem[] = [
   { id: '/', href: '/', tKey: 'nav-home', label: 'Home', icon: Home },
-  // Explore points at `/explore` (the recommendations page), not `/search`.
-  // They were two "Explore" surfaces: the nav sent people to `/search`, which
-  // titles itself "Explore" and is `noindex` in the sitemap because a results
-  // page is thin by construction, while `/explore` — the one with the actual
-  // discovery content — was listed at priority 0.8 and reachable only from the
-  // 404 page. The `id` stays `/search`: it is the customization key validated
-  // against `SIDEBAR_NAV_IDS` (`lib/home-widgets.ts`), so renaming it would
-  // silently drop this entry from every user's saved rail order.
+  // `/explore` is now the only discovery destination — search, tabs and the AI
+  // ask live on it, and `/search` redirects in. (They were two "Explore"
+  // surfaces: the nav sent people to one, the sitemap listed the other, and
+  // each had half the feature.) The `id` stays `/search`: it is the
+  // customization key validated against `SIDEBAR_NAV_IDS`
+  // (`lib/home-widgets.ts`), so renaming it would silently drop this entry from
+  // every user's saved rail order.
   { id: '/search', href: '/explore', tKey: 'nav-explore', label: 'Explore', icon: Compass },
   {
     id: '/messages',

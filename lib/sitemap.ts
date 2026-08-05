@@ -282,12 +282,12 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/playlists': 'redirect', // → /library?view=music
   '/spaces': 'redirect', // → /communities?tab=spaces
   '/v': 'redirect', // → /create?tab=pages
+  '/search': 'redirect', // → /explore (the two pages were merged)
   // Admin-gated: signed-in non-admins are redirected to /rmhladder.
   '/rmhladder/companies': 'admin',
 
   // ── public but not for the index ──
   '/offline': 'noindex', // the service worker's offline shell
-  '/search': 'noindex', // a search results page is thin by construction
   '/music-trivia': 'noindex', // an in-page widget, not a destination
   '/discord/lights-out': 'noindex', // Discord Activity surface, minimal head
   '/discord/rmhbox': 'noindex',

@@ -569,7 +569,7 @@ export function CovidPage() {
             <span>Office of Platform Integrity</span>
           </a>
 
-          <a className="mast-search" href="/search" aria-label="Search RMH Studios">
+          <a className="mast-search" href="/explore" aria-label="Search RMH Studios">
             <span>Search</span>
             <Search aria-hidden="true" />
           </a>

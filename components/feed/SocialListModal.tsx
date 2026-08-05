@@ -140,7 +140,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
 
  return (
  <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
- <DialogContent className="max-w-md p-0 gap-0 bg-site-bg flex flex-col max-h-[80vh] overflow-hidden">
+ <DialogContent className="max-w-md p-0 gap-0 bg-site-bg flex flex-col max-h-[80dvh] overflow-hidden">
  {/* Header */}
  <div className="flex items-center justify-between px-5 py-4 border-b border-site-border shrink-0">
  <DialogTitle className="font-display font-bold text-lg text-site-text">
