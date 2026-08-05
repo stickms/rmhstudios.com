@@ -28,6 +28,7 @@ import frCLibrary from "@/locales/fr/c-library.json";
 import frCLightsOut from "@/locales/fr/c-lights-out.json";
 import frCLists from "@/locales/fr/c-lists.json";
 import frCLockdown from "@/locales/fr/c-lockdown.json";
+import frCMassiveMarch from "@/locales/fr/c-massive-march.json";
 import frCModeration from "@/locales/fr/c-moderation.json";
 import frCNeonDriftway from "@/locales/fr/c-neon-driftway.json";
 import frCNews from "@/locales/fr/c-news.json";
@@ -117,6 +118,7 @@ const frResources = {
   "c-lights-out": frCLightsOut,
   "c-lists": frCLists,
   "c-lockdown": frCLockdown,
+  "c-massive-march": frCMassiveMarch,
   "c-moderation": frCModeration,
   "c-neon-driftway": frCNeonDriftway,
   "c-news": frCNews,

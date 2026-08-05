@@ -28,6 +28,7 @@ import viCLibrary from "@/locales/vi/c-library.json";
 import viCLightsOut from "@/locales/vi/c-lights-out.json";
 import viCLists from "@/locales/vi/c-lists.json";
 import viCLockdown from "@/locales/vi/c-lockdown.json";
+import viCMassiveMarch from "@/locales/vi/c-massive-march.json";
 import viCModeration from "@/locales/vi/c-moderation.json";
 import viCNeonDriftway from "@/locales/vi/c-neon-driftway.json";
 import viCNews from "@/locales/vi/c-news.json";
@@ -117,6 +118,7 @@ const viResources = {
   "c-lights-out": viCLightsOut,
   "c-lists": viCLists,
   "c-lockdown": viCLockdown,
+  "c-massive-march": viCMassiveMarch,
   "c-moderation": viCModeration,
   "c-neon-driftway": viCNeonDriftway,
   "c-news": viCNews,

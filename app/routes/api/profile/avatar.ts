@@ -1,17 +1,25 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { validateImageBuffer } from '@/lib/slice-it/upload-validation';
-import { optimizeImage } from '@/lib/image-optimize';
-import { putObject, deleteObject, s3Configured } from '@/lib/storage/s3.server';
-import { userAvatarKey, userAvatarUrl, userAvatarFilename } from '@/lib/storage/keys';
+import { ingest, IngestError } from '@/lib/media/ingest.server';
+import { deleteObject, s3Configured } from '@/lib/storage/s3.server';
+import { userAvatarKey, userAvatarFilename } from '@/lib/storage/keys';
 import { purgeFromCdn } from '@/lib/storage/cdn.server';
 import { invalidateUserDisplay } from '@/lib/user-display.server';
 
-const AVATAR_MAX_BYTES = 5 * 1024 * 1024; // 5 MB per image
+/**
+ * The size ceiling, the accepted formats, the square WebP re-encode, the
+ * `user-avatars/` key and the store are all the `avatar` policy in
+ * `lib/media/ingest.server.ts` (C10). This route keeps only what is genuinely
+ * its own: the global storage cap, retiring the previous avatar, and the
+ * profile row.
+ *
+ * `strip: 'all'` on that policy is the part worth naming. An avatar is the one
+ * image a member uploads *of themselves*, usually straight off a phone camera
+ * roll, and it is public to everyone who can see any of their posts.
+ */
+
 const TOTAL_AVATAR_STORAGE_LIMIT_BYTES = 10 * 1024 * 1024 * 1024; // 10 GB
-// Square avatar, matching the persona-avatar pipeline (lib/personas/avatar.server.ts).
-const AVATAR_SIZE = 512;
 
 /** Best-effort removal of an avatar object from storage + CDN edge, by stored URL. */
 async function removeStoredAvatar(url: string | null | undefined): Promise<void> {
@@ -41,24 +49,9 @@ export const Route = createFileRoute('/api/profile/avatar')({
         },
         async ({ request, session }) => {
           const formData = await request.formData();
-          const file = formData.get('avatar') as File;
-          if (!file || file.size === 0) {
+          const file = formData.get('avatar');
+          if (!(file instanceof File) || file.size === 0) {
             return Response.json({ error: 'No file provided' }, { status: 400 });
-          }
-
-          if (file.size > AVATAR_MAX_BYTES) {
-            return Response.json(
-              {
-                error: `Avatar too large. Maximum size is ${AVATAR_MAX_BYTES / 1024 / 1024} MB.`,
-              },
-              { status: 400 },
-            );
-          }
-
-          const rawBuffer = Buffer.from(await file.arrayBuffer());
-          const validation = validateImageBuffer(rawBuffer);
-          if (!validation.ok) {
-            return Response.json({ error: validation.error }, { status: 400 });
           }
 
           // Avatars are served from object storage (R2) behind cdn.rmhstudios.com — never
@@ -73,51 +66,50 @@ export const Route = createFileRoute('/api/profile/avatar')({
             );
           }
 
-          // Compress every upload to a square WebP regardless of source format — shrinks
-          // storage/bandwidth and normalizes content type (matches persona avatars).
-          const { buffer, contentType } = await optimizeImage(rawBuffer, {
-            width: AVATAR_SIZE,
-            height: AVATAR_SIZE,
-            format: 'webp',
-            quality: 82,
-            autoOrient: true,
-          });
-
-          // Enforce total avatar storage cap against the COMPRESSED size we'll store.
-          const { _sum } = await prisma.userProfile.aggregate({
-            _sum: { customImageSizeBytes: true },
-          });
-          const currentTotal = _sum?.customImageSizeBytes ?? 0;
-          if (currentTotal + buffer.length > TOTAL_AVATAR_STORAGE_LIMIT_BYTES) {
-            return Response.json(
-              { error: 'Total avatar storage limit reached. Please try again later.' },
-              { status: 413 },
-            );
+          let stored;
+          try {
+            stored = await ingest(file, 'avatar', {
+              userId: session.user.id,
+              // The global cap is measured against the bytes about to be
+              // WRITTEN, not the bytes that arrived — a 5 MB JPEG lands as a
+              // ~60 KB WebP. `reserve` runs after the encode and before the
+              // put, so a refusal leaves nothing behind in storage.
+              reserve: async (bytes) => {
+                const { _sum } = await prisma.userProfile.aggregate({
+                  _sum: { customImageSizeBytes: true },
+                });
+                return (_sum?.customImageSizeBytes ?? 0) + bytes > TOTAL_AVATAR_STORAGE_LIMIT_BYTES
+                  ? 'Total avatar storage limit reached. Please try again later.'
+                  : null;
+              },
+            });
+          } catch (err) {
+            if (err instanceof IngestError) {
+              return Response.json({ error: err.message }, { status: err.status });
+            }
+            throw err;
           }
 
-          // Remove the previous avatar object (if any) so storage doesn't accumulate.
+          // Retire the previous avatar object so storage doesn't accumulate.
+          // After the new one is stored, not before: deleting first meant a
+          // failed upload left the member with no avatar at all.
           const existingProfile = await prisma.userProfile.findUnique({
             where: { userId: session.user.id },
             select: { customImage: true },
           });
           await removeStoredAvatar(existingProfile?.customImage);
 
-          const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-          const fileName = `${session.user.id}-${uniqueSuffix}.webp`;
-          await putObject(userAvatarKey(fileName), buffer, contentType);
-          const imageUrl = userAvatarUrl(fileName);
-
-          // Upsert UserProfile with custom image
+          const imageUrl = stored.url;
           await prisma.userProfile.upsert({
             where: { userId: session.user.id },
             create: {
               userId: session.user.id,
               customImage: imageUrl,
-              customImageSizeBytes: buffer.length,
+              customImageSizeBytes: stored.bytes,
             },
             update: {
               customImage: imageUrl,
-              customImageSizeBytes: buffer.length,
+              customImageSizeBytes: stored.bytes,
             },
           });
 

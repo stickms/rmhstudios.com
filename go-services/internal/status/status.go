@@ -20,6 +20,10 @@ type Config struct {
 	// Logger receives non-fatal warnings (e.g. history persistence problems).
 	// nil disables logging.
 	Logger Warner
+	// SLO parameterises the multi-window burn-rate report (E14) served at
+	// /api/slo and rendered on the dashboard. The zero value takes the defaults
+	// in SLOConfig.normalise (99.9% over 1h/6h windows, a 30-day budget).
+	SLO SLOConfig
 }
 
 // Service orchestrates probing and HTTP serving.
@@ -81,5 +85,5 @@ func (s *Service) Start(ctx context.Context) {
 
 // Handler returns the HTTP mux for the status service.
 func (s *Service) Handler() http.Handler {
-	return newDashboard(s.prober, s.startedAt)
+	return newDashboard(s.prober, s.startedAt, s.cfg.SLO)
 }

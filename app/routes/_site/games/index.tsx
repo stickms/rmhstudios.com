@@ -25,24 +25,19 @@ import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { CuratedBuildsTab } from '@/components/creator-studio/BuildsTab';
 import { listCuratedBuilds } from '@/lib/builds/curated';
-import { buildCanonical, buildMeta } from '@/lib/seo';
-import { breadcrumbSchema, jsonLdScript } from '@/lib/schema';
+import { definePage } from '@/lib/route/define-page';
+import { breadcrumbSchema } from '@/lib/schema';
 import { catalogItemListSchema } from '@/lib/seo-catalog';
 
 export const Route = createFileRoute('/_site/games/')({
-  head: () => ({
-    meta: buildMeta({
-      title: 'Games | RMH Studios',
-      description:
-        'Every game made at RMH Studios — party games, puzzles, city builders, racers and multiplayer arenas. Free to play in the browser, no install.',
-      path: '/games',
-    }),
-    links: [buildCanonical('/games')],
-    scripts: [
-      jsonLdScript([
-        catalogItemListSchema('game'),
-        breadcrumbSchema([{ name: 'Games', path: '/games' }]),
-      ]),
+  head: definePage({
+    path: '/games',
+    title: 'Games | RMH Studios',
+    description:
+      'Every game made at RMH Studios — party games, puzzles, city builders, racers and multiplayer arenas. Free to play in the browser, no install.',
+    jsonLd: () => [
+      catalogItemListSchema('game'),
+      breadcrumbSchema([{ name: 'Games', path: '/games' }]),
     ],
   }),
   component: GamesIndexPage,

@@ -281,8 +281,12 @@ describe('every indexable page can be found and described', () => {
       const files = filesFor(path);
       if (files.length === 0) continue; // server-rendered page, checked separately
       const src = files.map(sourceFor).join('\n');
-      // `gameRouteHead`/`appRouteHead` supply both from the catalog.
-      const viaHelper = /gameRouteHead|appRouteHead/.test(src);
+      // Helpers that supply BOTH on the route's behalf, so the route source
+      // legitimately names neither: `gameRouteHead`/`appRouteHead` build them
+      // from the catalog, and `definePage` (lib/route/define-page.ts) exists
+      // precisely because a route calling `buildMeta` alone looks complete
+      // while silently having no canonical — it always emits both.
+      const viaHelper = /gameRouteHead|appRouteHead|definePage/.test(src);
       const hasDescription = viaHelper || /buildMeta|name: 'description'/.test(src);
       const hasCanonical = viaHelper || /buildCanonical|rel: 'canonical'/.test(src);
       if (!hasDescription || !hasCanonical) {

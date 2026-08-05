@@ -3,7 +3,10 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { transferCoins } from '@/lib/economy/ledger.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { z } from 'zod';
+// The amount bounds and the note cap live in a client-safe module so the tip
+// dialog validates against the same declaration this route enforces.
+import { tipSchema } from '@/lib/economy/tip-schema';
+import { userChipSelect } from '@/lib/user-display';
 import { createNotification } from '@/lib/notifications.server';
 import { grantAchievement } from '@/lib/achievements/engine.server';
 import { assertNoRecoveryHold } from '@/lib/recovery/hold.server';
@@ -12,13 +15,7 @@ import { assertNoRecoveryHold } from '@/lib/recovery/hold.server';
  * POST /api/coins/tip — send coins to another user (a "tip jar").
  * Body: { recipientId, amount, note?, entityType?, entityId? }.
  */
-const schema = z.object({
-  recipientId: z.string().min(1).max(64),
-  amount: z.number().int().min(1).max(100_000),
-  note: z.string().max(280).optional(),
-  entityType: z.enum(['rmhark', 'profile']).optional(),
-  entityId: z.string().max(64).optional(),
-});
+const schema = tipSchema;
 
 export const Route = createFileRoute('/api/coins/tip')({
   server: {
@@ -49,7 +46,7 @@ export const Route = createFileRoute('/api/coins/tip')({
           const held = await assertNoRecoveryHold(senderId);
           if (held) return held;
 
-          const recipient = await prisma.user.findUnique({ where: { id: recipientId }, select: { id: true, handle: true } });
+          const recipient = await prisma.user.findUnique({ where: { id: recipientId }, select: userChipSelect });
           if (!recipient) return Response.json({ error: 'Recipient not found' }, { status: 404 });
 
           // Debit, credit and ledger row in one atomic transfer. The balance

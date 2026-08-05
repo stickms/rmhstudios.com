@@ -38,7 +38,7 @@ export const Route = createFileRoute('/api/ai/message-suggest')({
                   (m: unknown): m is { author: string; content: string } =>
                     !!m &&
                     typeof (m as { author?: unknown }).author === 'string' &&
-                    typeof (m as { content?: unknown }).content === 'string'
+                    typeof (m as { content?: unknown }).content === 'string',
                 )
                 .slice(-20)
                 .map((m: { author: string; content: string }) => ({

@@ -5,8 +5,15 @@ import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import {
+  REPORT_DETAILS_MAX,
+  REPORT_REASONS,
+  reportSchema,
+  type ReportReason,
+} from '@/lib/moderation/report-schema';
 
-export type ReportEntityType = 'rmhark' | 'comment' | 'user' | 'build' | 'dm';
+export type { ReportEntityType } from '@/lib/moderation/report-schema';
+import type { ReportEntityType } from '@/lib/moderation/report-schema';
 
 interface ReportDialogProps {
   open: boolean;
@@ -21,21 +28,25 @@ interface ReportDialogProps {
  */
 export function ReportDialog({ open, onOpenChange, entityType, entityId }: ReportDialogProps) {
   const { t } = useTranslation("c-moderation");
-  const [reason, setReason] = useState<string>('');
+  const [reason, setReason] = useState<ReportReason | ''>('');
   const [details, setDetails] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const REASONS: { value: string; label: string }[] = [
-    { value: 'SPAM', label: t("reason-spam", { defaultValue: "Spam or scam" }) },
-    { value: 'HARASSMENT', label: t("reason-harassment", { defaultValue: "Harassment or bullying" }) },
-    { value: 'HATE', label: t("reason-hate", { defaultValue: "Hate speech" }) },
-    { value: 'VIOLENCE', label: t("reason-violence", { defaultValue: "Violence or threats" }) },
-    { value: 'SEXUAL', label: t("reason-sexual", { defaultValue: "Sexual or explicit content" }) },
-    { value: 'SELF_HARM', label: t("reason-self-harm", { defaultValue: "Self-harm" }) },
-    { value: 'MISINFORMATION', label: t("reason-misinformation", { defaultValue: "Misinformation" }) },
-    { value: 'ILLEGAL', label: t("reason-illegal", { defaultValue: "Illegal content" }) },
-    { value: 'OTHER', label: t("reason-other", { defaultValue: "Something else" }) },
-  ];
+  // Labels only. The reason VALUES come from the shared schema, and the
+  // `Record<ReportReason, string>` annotation means adding a reason server-side
+  // fails to compile here until it has a label — instead of shipping a taxonomy
+  // the dialog cannot offer.
+  const REASON_LABELS: Record<ReportReason, string> = {
+    SPAM: t("reason-spam", { defaultValue: "Spam or scam" }),
+    HARASSMENT: t("reason-harassment", { defaultValue: "Harassment or bullying" }),
+    HATE: t("reason-hate", { defaultValue: "Hate speech" }),
+    VIOLENCE: t("reason-violence", { defaultValue: "Violence or threats" }),
+    SEXUAL: t("reason-sexual", { defaultValue: "Sexual or explicit content" }),
+    SELF_HARM: t("reason-self-harm", { defaultValue: "Self-harm" }),
+    MISINFORMATION: t("reason-misinformation", { defaultValue: "Misinformation" }),
+    ILLEGAL: t("reason-illegal", { defaultValue: "Illegal content" }),
+    OTHER: t("reason-other", { defaultValue: "Something else" }),
+  };
 
   const reset = () => {
     setReason('');
@@ -45,13 +56,25 @@ export function ReportDialog({ open, onOpenChange, entityType, entityId }: Repor
 
   const submit = async () => {
     if (!reason) return;
+    // Validate with the schema the route enforces, so a limit can never be
+    // enforced on one side only — the 400 would arrive with no field context.
+    const parsed = reportSchema.safeParse({
+      entityType,
+      entityId,
+      reason,
+      details: details.trim() || undefined,
+    });
+    if (!parsed.success) {
+      toast.error(t("toast-invalid", { defaultValue: "That report is missing something. Please check and try again." }));
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch('/api/moderation/report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ entityType, entityId, reason, details: details.trim() || undefined }),
+        body: JSON.stringify(parsed.data),
       });
       if (res.ok) {
         toast.success(t("toast-success", { defaultValue: "Thanks — our team will review this." }));
@@ -80,11 +103,11 @@ export function ReportDialog({ open, onOpenChange, entityType, entityId }: Repor
         </DialogHeader>
 
         <fieldset className="space-y-1.5">
-          {REASONS.map((r) => (
+          {REPORT_REASONS.map((value) => (
             <label
-              key={r.value}
+              key={value}
               className={`flex cursor-pointer items-center gap-3 rounded-site-sm border px-3 py-2 text-sm transition-colors ${
-                reason === r.value
+                reason === value
                   ? 'border-site-accent bg-site-accent-dim text-site-text'
                   : 'border-site-border text-site-text-muted hover:bg-site-surface-hover'
               }`}
@@ -92,12 +115,12 @@ export function ReportDialog({ open, onOpenChange, entityType, entityId }: Repor
               <input
                 type="radio"
                 name="report-reason"
-                value={r.value}
-                checked={reason === r.value}
-                onChange={() => setReason(r.value)}
+                value={value}
+                checked={reason === value}
+                onChange={() => setReason(value)}
                 className="accent-(--site-accent)"
               />
-              {r.label}
+              {REASON_LABELS[value]}
             </label>
           ))}
         </fieldset>
@@ -105,7 +128,7 @@ export function ReportDialog({ open, onOpenChange, entityType, entityId }: Repor
         <textarea
           value={details}
           onChange={(e) => setDetails(e.target.value)}
-          maxLength={1000}
+          maxLength={REPORT_DETAILS_MAX}
           placeholder={t("details-placeholder", { defaultValue: "Add any details (optional)" })}
           rows={3}
           className="w-full resize-none rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"

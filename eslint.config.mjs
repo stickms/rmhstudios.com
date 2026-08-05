@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
+import local from './eslint-local-rules/index.js';
 
 export default tseslint.config(
   // ── Global ignores ────────────────────────────────────────────────────────
@@ -64,9 +65,13 @@ export default tseslint.config(
     },
   },
 
-  // ── Service worker (browser ServiceWorkerGlobalScope) ─────────────────────
+  // ── Service workers (browser ServiceWorkerGlobalScope) ────────────────────
+  // Matched by a glob, not by filename: `public/sw.js` was named literally, so
+  // the SECOND service worker added (`sw-share-target.js`, the POST share
+  // target) fell through to the DOM-microsite block below and tripped no-undef
+  // on `self` and `Response`. Any `public/sw*.js` is a worker.
   {
-    files: ['public/sw.js'],
+    files: ['public/sw*.js'],
     languageOptions: {
       globals: {
         self: 'readonly',
@@ -87,6 +92,12 @@ export default tseslint.config(
         clearTimeout: 'readonly',
         setInterval: 'readonly',
         clearInterval: 'readonly',
+        // Used by the offline write outbox (B10) and the share-target handler.
+        indexedDB: 'readonly',
+        IDBKeyRange: 'readonly',
+        FormData: 'readonly',
+        Blob: 'readonly',
+        crypto: 'readonly',
       },
     },
   },
@@ -98,7 +109,7 @@ export default tseslint.config(
   // trips no-undef. `public/sw.js` keeps its own service-worker block above.
   {
     files: ['public/**/*.js'],
-    ignores: ['public/sw.js'],
+    ignores: ['public/sw*.js'],
     languageOptions: {
       globals: {
         window: 'readonly',
@@ -168,6 +179,19 @@ export default tseslint.config(
       'jsx-a11y/heading-has-content': 'warn',
       'jsx-a11y/label-has-associated-control': 'warn',
       'jsx-a11y/no-static-element-interactions': 'warn',
+    },
+  },
+
+  // ── Repo-local rules ──────────────────────────────────────────────────────
+  // Conventions no published plugin can know about. Kept at "warn" for the same
+  // reason as the jsx-a11y backlog above: there are existing violations, and a
+  // rule that turns the build red on the day it lands gets disabled rather than
+  // driven to zero. Promote to "error" once the count reaches zero.
+  {
+    files: ['**/*.{ts,tsx}'],
+    plugins: { local },
+    rules: {
+      'local/no-adhoc-user-select': 'warn',
     },
   },
 

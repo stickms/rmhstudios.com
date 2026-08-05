@@ -84,6 +84,26 @@ const KNOWN_PARTIAL_PLURALS: Record<string, string[]> = {
 // orphan key a locale has that English does not — still fails the suite. Shrink
 // this map (ideally to {}) the moment the translate pipeline is run.
 const KNOWN_UNTRANSLATED: Record<string, string[]> = {
+  // ── The Next 100 (2026-08-05) ──────────────────────────────────────────
+  // Badge-rarity tiers (F7), profile-completeness steps (B22) and the shared
+  // Undo affordance (B1). English-only until `pnpm i18n:translate &&
+  // pnpm i18n:resources` runs — the pipeline needs DEEPSEEK_API_KEY, which is
+  // not available in this environment. Runtime falls back to English per key.
+  common: [
+    'profile-completeness',
+    'profile-step-avatar',
+    'profile-step-bio',
+    'profile-step-follow',
+    'profile-step-links',
+    'profile-step-post',
+    'profile-step-theme',
+    'rarity-common',
+    'rarity-epic',
+    'rarity-legendary',
+    'rarity-rare',
+    'rarity-uncommon',
+    'undo',
+  ],
   // ── 2026-07-28 UI audit fixes ──────────────────────────────────────────
   // New English strings from the audit remediation (empty states, a11y labels,
   // validation copy, the RMHLadder overview's first pass through t()). Runtime
@@ -111,6 +131,21 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // pnpm i18n:resources` has been run and the catalogs committed.
   'c-ui': ['move-down', 'move-up'],
   feed: [
+    // ── The Next 100 (2026-08-05) ────────────────────────────────────────
+    // Resume-rail strings (B2). English-only until the DeepSeek translate
+    // pipeline runs; the runtime falls back to English per key.
+    'resume-day',
+    'resume-due',
+    'resume-level',
+    'resume-percent',
+    'resume-progress',
+    'resume-rail-label',
+    'resume-scheduled',
+    'resume-score',
+    'resume-time-left',
+    'resume-title',
+    'resume-wave',
+    'resume-words',
     // 2026-07-28 UI audit fixes; see the note below.
     'read-more',
     'buy-item-aria',

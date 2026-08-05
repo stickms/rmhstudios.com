@@ -138,10 +138,29 @@ const PREF_FIELD: Record<
   SYSTEM: 'system',
 };
 
+/**
+ * Notification kinds that ignore preferences entirely.
+ *
+ * These are not "important" notices — they are notices whose whole purpose is
+ * defeated by being suppressible. A user who turned system notifications off
+ * months ago has not consented to never hearing that someone signed into their
+ * account from an unfamiliar device; they have consented to fewer achievement
+ * pings. Keep this list short and keep the bar at "suppressing this harms the
+ * user".
+ */
+const UNMUTABLE_ENTITY_TYPES: ReadonlySet<string> = new Set([
+  // A user cannot opt out of moderation notices.
+  'strike',
+  // New-device / new-location sign-in alerts (B11). The email goes out
+  // regardless; this is what puts the matching row in the notification centre.
+  'security',
+]);
+
 /** True when the recipient has this notification type turned off. */
 async function isMuted(input: CreateNotificationInput): Promise<boolean> {
-  // Moderation notices always deliver — a user can't opt out of strikes.
-  if (input.type === 'SYSTEM' && input.entityType === 'strike') return false;
+  if (input.type === 'SYSTEM' && input.entityType && UNMUTABLE_ENTITY_TYPES.has(input.entityType)) {
+    return false;
+  }
   const prefs = await prisma.notificationPreference.findUnique({
     where: { userId: input.userId },
   });

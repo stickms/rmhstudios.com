@@ -16,6 +16,9 @@ import { isAITextConfigured } from '@/lib/ai/text.server';
 import { getUserTier, type Tier } from '@/lib/entitlements';
 import { searchKnowledge, type KnowledgeEntry } from '@/lib/assistant/knowledge.server';
 import { redisIncrBy } from '@/lib/redis.server';
+import { runTaskJson } from '@/lib/ai/provider.server';
+import { asData, systemFor, TOOL_SELECT } from '@/lib/ai/prompts';
+import { describeTools, runTool, type ToolOutcome } from '@/lib/assistant/tools.server';
 
 // Reuse the configured DeepSeek key — identical client to lib/ai/text.server.ts.
 const deepseek = new OpenAI({
@@ -168,9 +171,62 @@ function trimHistory(
 }
 
 /**
- * Answer a platform question. Read-only: enforces a per-day quota, retrieves
- * grounding, and returns `{ answer, links }`. Never throws for expected paths
- * (quota, model unavailable) — it returns a graceful answer instead.
+ * Pick at most one tool for a question, and run it (A18).
+ *
+ * **Why a structured-JSON selection rather than OpenAI function calling.**
+ * DeepSeek supports the `tools` parameter, and using it would be less code.
+ * It would also mean opening a second raw client here — bypassing
+ * `lib/ai/provider.server.ts`, and with it the `AiUsage` ledger, the per-tier
+ * budget and the versioned prompt registry, all three at once. A selection step
+ * that goes through `runTaskJson` keeps every model call behind the one door
+ * that meters them. `describeTools()` renders the catalog the model chooses
+ * from.
+ *
+ * Returns `null` whenever anything is uncertain — no tool named, an unknown
+ * name, a malformed payload, or a failure. The caller then answers from the
+ * knowledge corpus alone, which is exactly what it did before tools existed.
+ */
+async function selectAndRunTool(userId: string, question: string): Promise<ToolOutcome | null> {
+  try {
+    const raw = await runTaskJson(
+      'concierge',
+      systemFor(TOOL_SELECT),
+      `Available tools:\n${describeTools()}\n\nQuestion:\n${asData(question)}`,
+      (value) => value as { tool?: unknown; args?: unknown },
+      { userId, promptId: TOOL_SELECT.id, promptVer: TOOL_SELECT.version },
+    );
+    if (typeof raw?.tool !== 'string' || !raw.tool) return null;
+
+    // `runTool` is the only entry point: it re-checks the name against the
+    // allowlist, parses the arguments with that tool's own schema (dropping
+    // anything undeclared), content-screens them, and never throws.
+    const outcome = await runTool(raw.tool, raw.args, { userId });
+    return outcome.kind === 'error' ? null : outcome;
+  } catch (err) {
+    console.warn('[assistant] tool selection failed:', (err as Error)?.message);
+    return null;
+  }
+}
+
+/** Render a tool outcome as grounding the answering model can read. */
+function toolContext(outcome: ToolOutcome | null): string {
+  if (!outcome) return '';
+  if (outcome.kind === 'result') {
+    return `\n\nLive data from ${outcome.tool} (authoritative — prefer it over the entries above):\n${JSON.stringify(outcome.data).slice(0, 1500)}`;
+  }
+  if (outcome.kind === 'proposal') {
+    // A confirm-tool never executed. Say so plainly, so the model describes the
+    // action as something the reader must press rather than as something done.
+    return `\n\nA confirmable action is available but HAS NOT been performed: ${outcome.proposal.summary}. Tell the user they can confirm it; never say it is done.`;
+  }
+  return '';
+}
+
+/**
+ * Answer a platform question. Enforces a per-day quota, retrieves grounding,
+ * optionally runs ONE read tool for live state, and returns `{ answer, links }`.
+ * Never throws for expected paths (quota, model unavailable) — it returns a
+ * graceful answer instead.
  */
 export async function answerQuestion(params: {
   userId: string;
@@ -205,6 +261,11 @@ export async function answerQuestion(params: {
     return { answer, links, remaining };
   }
 
+  // One tool at most, and only when the question needs live state. It is run
+  // before the answering call so its result becomes grounding rather than a
+  // second round trip the reader waits through.
+  const outcome = await selectAndRunTool(userId, question);
+
   try {
     const res = await deepseek.chat.completions.create({
       model: MODEL,
@@ -213,7 +274,7 @@ export async function answerQuestion(params: {
         ...trimHistory(params.history),
         {
           role: 'user',
-          content: `Knowledge entries:\n${context || '(none found)'}\n\nUser question: ${question}`,
+          content: `Knowledge entries:\n${context || '(none found)'}${toolContext(outcome)}\n\nUser question: ${question}`,
         },
       ],
       max_tokens: 500,

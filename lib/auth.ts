@@ -195,6 +195,34 @@ export const auth = betterAuth({
         },
       },
     },
+    session: {
+      create: {
+        after: async (session, ctx) => {
+          const request = ctx?.request;
+          if (!request) return;
+
+          // Both are deliberately un-awaited. Neither may sit in front of the
+          // sign-in response: a slow email send or a stray database hiccup
+          // would turn "sign in" into "sign in, eventually". Both swallow their
+          // own errors, so a rejection here can never surface as a failed
+          // login.
+
+          // B11 — fingerprint the device and alert the owner the first time an
+          // unfamiliar one signs in. Sessions were listable but never
+          // announced, which only helps someone who already suspects a problem.
+          void import('@/lib/auth/session-alert.server')
+            .then((m) => m.onSessionCreated(session, request))
+            .catch((err) => console.error('[auth] session alert failed:', err));
+
+          // B12 — signing back in is the cancel flow for a scheduled deletion.
+          // It is the only one users reliably find, so it has to be the one
+          // that works.
+          void import('@/lib/account/deletion.server')
+            .then((m) => m.cancelDeletion(session.userId))
+            .catch((err) => console.error('[auth] deletion cancel failed:', err));
+        },
+      },
+    },
   },
   plugins: [
     // WebAuthn/passkey sign-in. rpID/origin default from baseURL; override

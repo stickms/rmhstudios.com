@@ -25,11 +25,14 @@ import {
   rateLimit,
   getClientIp,
   RATE_LIMIT_MULTIPLIER,
+  RATE_LIMIT_POLICIES,
   type RateLimitResult,
+  type RateLimitPolicy,
+  type WithRateLimitOptions,
 } from '@/lib/rate-limit';
 
 export { getClientIp };
-export type { RateLimitResult };
+export type { RateLimitResult, RateLimitPolicy, WithRateLimitOptions };
 
 export interface CheckRateLimitOptions {
   limit: number;
@@ -69,4 +72,61 @@ export async function checkRateLimit(
   // internal ×MULTIPLIER, yields opts.limit.
   const raw = Math.max(1, Math.round(opts.limit / RATE_LIMIT_MULTIPLIER));
   return rateLimit(identity, { limit: raw, windowMs: opts.windowMs, prefix: opts.prefix });
+}
+
+/**
+ * True when the shared backplane is configured, so limits are actually
+ * enforceable across processes.
+ *
+ * This deployment runs the web tier plus six worker processes, and a
+ * blue/green hotswap has 7005 and 7015 live simultaneously. With this `false`,
+ * every named policy below is really `limit × RATE_LIMIT_MULTIPLIER ×
+ * processes` — which is why `withRateLimitAsync` exists and why the degradation
+ * test asserts the fallback is *looser*, never absent.
+ */
+export function distributedLimitsAvailable(): boolean {
+  return Boolean(
+    process.env.REDIS_URL || process.env.REDIS_CONNECTION_STRING || process.env.REDIS_STATE_URL,
+  );
+}
+
+/**
+ * The async twin of `withRateLimit` — same contract, shared counters.
+ *
+ * `defineHandler` calls this instead of the synchronous `withRateLimit`, so
+ * every wrapped route gets cross-process limiting without changing its own
+ * code. The key is still always derived from `getClientIp(request)`; callers
+ * get `scope` and nothing else, which is the invariant that stopped routes
+ * reaching for the wrong request field in the first place.
+ *
+ * Returns a ready-to-return 429 `Response`, or `null` to proceed.
+ */
+export async function withRateLimitAsync(
+  request: Request,
+  policy: RateLimitPolicy,
+  opts: WithRateLimitOptions = {},
+): Promise<Response | null> {
+  const preset = RATE_LIMIT_POLICIES[policy];
+  const ip = getClientIp(request);
+  const identity = opts.scope ? `${opts.scope}:${ip}` : ip;
+
+  const result = await checkRateLimit(identity, {
+    limit: opts.limit ?? preset.limit,
+    windowMs: opts.windowMs ?? preset.windowMs,
+    prefix: opts.prefix ?? policy,
+  });
+
+  if (result.allowed) return null;
+  return Response.json(
+    { error: opts.message ?? 'Too many requests' },
+    {
+      status: 429,
+      headers: {
+        'Retry-After': String(result.retryAfter),
+        'X-RateLimit-Limit': String(result.limit),
+        'X-RateLimit-Remaining': String(result.remaining),
+        'X-RateLimit-Reset': String(Math.ceil(result.reset / 1000)),
+      },
+    },
+  );
 }

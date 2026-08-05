@@ -28,6 +28,7 @@ import esCLibrary from "@/locales/es/c-library.json";
 import esCLightsOut from "@/locales/es/c-lights-out.json";
 import esCLists from "@/locales/es/c-lists.json";
 import esCLockdown from "@/locales/es/c-lockdown.json";
+import esCMassiveMarch from "@/locales/es/c-massive-march.json";
 import esCModeration from "@/locales/es/c-moderation.json";
 import esCNeonDriftway from "@/locales/es/c-neon-driftway.json";
 import esCNews from "@/locales/es/c-news.json";
@@ -117,6 +118,7 @@ const esResources = {
   "c-lights-out": esCLightsOut,
   "c-lists": esCLists,
   "c-lockdown": esCLockdown,
+  "c-massive-march": esCMassiveMarch,
   "c-moderation": esCModeration,
   "c-neon-driftway": esCNeonDriftway,
   "c-news": esCNews,

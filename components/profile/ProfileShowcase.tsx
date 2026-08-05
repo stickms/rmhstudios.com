@@ -1,18 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Check, Pencil, Plus, Trash2 } from 'lucide-react';
 
 import { WidgetFrame } from '@/components/ui/widget-frame';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { IconButton } from '@/components/ui/icon-button';
+import { SelectionBar } from '@/components/ui/selection-bar';
 import { SortableList } from '@/components/ui/sortable-list';
+import { useMultiSelect } from '@/hooks/useMultiSelect';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
 import { StatusBadge } from '@/components/feed/StatusBadge';
-import { MODULE_KINDS, MODULE_LABELS, MAX_MODULES, type ProfileModule, type ModuleKind } from '@/lib/profile/modules';
+import {
+  MODULE_KINDS,
+  MODULE_LABELS,
+  MAX_MODULES,
+  type ProfileModule,
+  type ModuleKind,
+} from '@/lib/profile/modules';
 import type { UserStatus } from '@/lib/profile/status';
 import type { WishlistItemView } from '@/lib/wishlist/types';
 
@@ -48,6 +56,21 @@ export function ProfileShowcase({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Rows carry a stable id so the sortable primitive and the selection (B9) key
+  // off the same thing.
+  const rows = useMemo(
+    () => modules.map((m, i) => ({ id: `${m.kind}-${i}`, module: m, index: i })),
+    [modules],
+  );
+  const selection = useMultiSelect(rows);
+  const { selectedIds, clear: clearSelection } = selection;
+
+  const removeSelected = useCallback(() => {
+    const doomed = new Set(selectedIds);
+    setModules((prev) => prev.filter((m, i) => !doomed.has(`${m.kind}-${i}`)));
+    clearSelection();
+  }, [selectedIds, clearSelection]);
+
   if (modules.length === 0 && !isOwner) return null;
 
   const usedKinds = new Set(modules.map((m) => m.kind));
@@ -61,7 +84,11 @@ export function ProfileShowcase({
     setModules((prev) => prev.filter((_, i) => i !== index));
   }
   function setAboutText(index: number, text: string) {
-    setModules((prev) => prev.map((m, i) => (i === index && m.kind === 'about' ? { kind: 'about', config: { text } } : m)));
+    setModules((prev) =>
+      prev.map((m, i) =>
+        i === index && m.kind === 'about' ? { kind: 'about', config: { text } } : m,
+      ),
+    );
   }
 
   async function save() {
@@ -108,25 +135,68 @@ export function ProfileShowcase({
               {t('empty-editor', { defaultValue: 'Add blocks to build your showcase.' })}
             </p>
           ) : (
-            <SortableList
-              items={modules.map((m, i) => ({ id: `${m.kind}-${i}`, module: m, index: i }))}
-              onReorder={(next) => setModules(next.map((n) => n.module))}
-              itemLabel={(it) => MODULE_LABELS[it.module.kind]}
-              renderItem={(it) => (
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm text-site-text">
-                    {t(`module-${it.module.kind}`, { defaultValue: MODULE_LABELS[it.module.kind] })}
-                  </span>
-                  <IconButton
-                    icon={Trash2}
-                    size="icon-xs"
-                    variant="ghost"
-                    onClick={() => removeAt(it.index)}
-                    label={t('remove', { defaultValue: 'Remove' })}
-                  />
-                </div>
-              )}
-            />
+            <>
+              <SortableList
+                items={rows}
+                onReorder={(next) => setModules(next.map((n) => n.module))}
+                itemLabel={(it) => MODULE_LABELS[it.module.kind]}
+                renderItem={(it) => {
+                  const label = t(`module-${it.module.kind}`, {
+                    defaultValue: MODULE_LABELS[it.module.kind],
+                  });
+                  const picked = selection.isSelected(it.id);
+                  return (
+                    <div className="flex items-center justify-between gap-2">
+                      {/* Click replaces, ctrl/cmd-click toggles, shift-click ranges
+                          — and Space / Enter / shift-arrows do the same from the
+                          keyboard (hooks/useMultiSelect). */}
+                      <button
+                        type="button"
+                        aria-pressed={picked}
+                        onClick={(e) => selection.onItemClick(it.id, e)}
+                        onKeyDown={(e) => selection.onItemKeyDown(it.id, e)}
+                        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                      >
+                        <span
+                          aria-hidden
+                          className={`flex size-4 shrink-0 items-center justify-center rounded-site-sm border ${
+                            picked
+                              ? 'border-site-accent bg-site-accent text-site-accent-fg'
+                              : 'border-site-border'
+                          }`}
+                        >
+                          {picked ? <Check className="size-3" /> : null}
+                        </span>
+                        <span className="truncate text-sm text-site-text">{label}</span>
+                      </button>
+                      <IconButton
+                        icon={Trash2}
+                        size="icon-xs"
+                        variant="ghost"
+                        onClick={() => removeAt(it.index)}
+                        label={t('remove', { defaultValue: 'Remove' })}
+                      />
+                    </div>
+                  );
+                }}
+              />
+
+              <SelectionBar
+                count={selection.count}
+                allSelected={selection.allSelected}
+                onSelectAll={selection.selectAll}
+                onClear={selection.clear}
+                actions={[
+                  {
+                    id: 'remove',
+                    label: t('remove-selected', { defaultValue: 'Remove selected' }),
+                    icon: Trash2,
+                    variant: 'danger',
+                    onClick: removeSelected,
+                  },
+                ]}
+              />
+            </>
           )}
 
           {/* About text config (when present). */}
@@ -175,7 +245,9 @@ function ModuleBlock({ module, profile }: { module: ProfileModule; profile: Show
     if (!module.config.text) return null;
     return (
       <WidgetFrame title={title}>
-        <p className="whitespace-pre-wrap break-words text-sm text-site-text">{module.config.text}</p>
+        <p className="whitespace-pre-wrap break-words text-sm text-site-text">
+          {module.config.text}
+        </p>
       </WidgetFrame>
     );
   }
@@ -202,7 +274,11 @@ function ModuleBlock({ module, profile }: { module: ProfileModule; profile: Show
 
   if (module.kind === 'status') {
     return (
-      <WidgetFrame title={title} empty={!profile.status} emptyTitle={t('no-status', { defaultValue: 'No status set' })}>
+      <WidgetFrame
+        title={title}
+        empty={!profile.status}
+        emptyTitle={t('no-status', { defaultValue: 'No status set' })}
+      >
         {profile.status ? <StatusBadge status={profile.status} /> : null}
       </WidgetFrame>
     );
@@ -223,7 +299,9 @@ function WishlistModule({ title, userId }: { title: string; userId: string }) {
     let cancelled = false;
     fetch(`/api/users/${userId}/wishlist`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { items: WishlistItemView[] } | null) => !cancelled && setItems(data?.items ?? []))
+      .then(
+        (data: { items: WishlistItemView[] } | null) => !cancelled && setItems(data?.items ?? []),
+      )
       .catch(() => !cancelled && setItems([]));
     return () => {
       cancelled = true;

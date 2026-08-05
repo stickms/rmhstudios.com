@@ -5851,3 +5851,190 @@ html.reduce-motion .u-parallax {
 :where([data-contrast='inverse'], .site-inverse) {
   color: var(--site-inverse-text);
 }
+
+/* ==========================================================================
+   Print (B19) — the paper rendering of a page
+   ------------------------------------------------------------------------
+   Printing (and "Save as PDF", which is the same code path and is how people
+   actually keep a receipt, a guide, an article or a ladder answer) was never
+   designed for, so it inherited the screen design in the worst possible way:
+   the aurora backdrop and every glass surface printed as solid ink, the nav
+   ring / top bar / rails each took a column of paper and repeated on every
+   page, and a dark theme printed a black page.
+
+   Four decisions, all of them the opposite of the screen rules elsewhere in
+   this file, and deliberately so:
+
+   1. **Literal colours, not `--site-*` tokens.** The token contract exists so
+      every THEME works; paper is not a theme. Whatever the visitor chose,
+      ink is black and the sheet is white — resolving `--site-bg` here is how
+      you print a black rectangle. This is the one place in the stylesheet
+      where a hardcoded colour is the correct answer.
+   2. **Chrome is deleted, not restyled.** Navigation is not actionable on
+      paper. `[data-print='hide']` is the opt-in hook for anything else a page
+      knows is screen-only (a composer, a vote widget, an ad slot).
+   3. **The material comes off.** `.glass-*` carries blur, tint, rim glints and
+      shadows; every one of those costs toner and lowers contrast, and none
+      survives a monochrome printer as anything but grey mud. The layout the
+      class also carries stays; only the material goes.
+   4. **Link targets are printed.** A URL that only exists as an underline is
+      lost the moment the page is paper. Restricted to prose containers
+      (`p`, `li`, `blockquote`) on purpose: doing it for every `a` would print
+      a URL after every card, avatar and icon button on the page.
+
+   Unlayered on purpose — these rules must beat the utilities in `@layer`.
+   ========================================================================== */
+@media print {
+  @page {
+    margin: 1.5cm;
+  }
+
+  /* ── 1. Chrome, decoration and floating UI ─────────────────────────────── */
+  /* `.site-ring` / `.site-topbar` are the plan's names for the shell chrome;
+     the shipped classes are the `radial-*` / `rad-rail` set. Both are listed so
+     the rule survives a rename in either direction. */
+  .site-ring,
+  .site-topbar,
+  .glass-chrome,
+  .radial-skip,
+  .radial-backdrop,
+  .radial-topbar,
+  .radial-hub,
+  .radial-globe,
+  .rad-rail,
+  .glass-scrim,
+  [data-sonner-toaster],
+  [data-print='hide'] {
+    display: none !important;
+  }
+
+  /* ── 2. Ink ────────────────────────────────────────────────────────────── */
+  html {
+    /* Stop the UA from re-deriving a dark form-control palette from the theme. */
+    color-scheme: light;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* ── 3. Strip the glass material ───────────────────────────────────────── */
+  .glass-fill,
+  .glass-pane,
+  .glass-overlay,
+  .glass-inset,
+  .glass-opaque,
+  .glass-interactive,
+  .glass-refract,
+  .glass-liquid,
+  .glass-bevel-sm,
+  .glass-sheen-hover {
+    background: none !important;
+    background-image: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+    /* A hairline the printer can actually resolve; the token border is a
+       translucent rim that disappears on paper. */
+    border-color: #bbb !important;
+  }
+
+  /* The three decorative pseudo-elements the material hangs its rim glint,
+     refraction and liquid sheen on (the same set `perf-lite`, high-contrast and
+     `reduce-transparency` already switch off above). */
+  .glass-chrome--aside::before,
+  .glass-refract::before,
+  .glass-refract--prism::before,
+  .glass-liquid::after {
+    display: none !important;
+  }
+
+  /* ── 4. Give the content the whole sheet ───────────────────────────────── */
+  main,
+  #main-content,
+  .radial-shell,
+  .radial-shell__main,
+  .radial-frame,
+  .page-root,
+  [data-slot='site-main-column'] {
+    display: block !important;
+    width: auto !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    /* Sticky/fixed positioning repeats an element on every printed page. */
+    position: static !important;
+  }
+
+  /* Any remaining sticky element inside the article (column headers, tab
+     strips, action bars) flows with the text instead of following the page. */
+  .sticky,
+  .fixed {
+    position: static !important;
+  }
+
+  /* ── 5. Typography and page breaks ─────────────────────────────────────── */
+  body {
+    /* Points, not px: print output is a physical medium. */
+    font-size: 11pt;
+    line-height: 1.45;
+  }
+
+  p,
+  li,
+  blockquote {
+    orphans: 3;
+    widows: 3;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    break-after: avoid-page;
+  }
+
+  figure,
+  img,
+  pre,
+  blockquote,
+  table {
+    break-inside: avoid;
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* ── 6. Print where the links went ─────────────────────────────────────── */
+  main p a[href^='http']::after,
+  main li a[href^='http']::after,
+  main blockquote a[href^='http']::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.85em;
+    word-break: break-all;
+  }
+
+  /* Site-relative links need the origin added or the printout is unusable
+     away from the browser that made it. */
+  main p a[href^='/']::after,
+  main li a[href^='/']::after,
+  main blockquote a[href^='/']::after {
+    content: ' (rmhstudios.com' attr(href) ')';
+    font-size: 0.85em;
+    word-break: break-all;
+  }
+
+  /* In-page jumps have no destination off the screen. */
+  main a[href^='#']::after {
+    content: none;
+  }
+}

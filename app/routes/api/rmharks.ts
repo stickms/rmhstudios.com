@@ -98,348 +98,348 @@ export const Route = createFileRoute('/api/rmharks')({
 
         return Response.json(result);
       }),
-      POST: defineHandler({}, async ({ request, session }) => {
-        const ban = await getActiveBan(session.user.id);
-        if (ban) {
-          return Response.json(
-            { error: `Your account is suspended${ban.reason ? `: ${ban.reason}` : ''}` },
-            { status: 403 },
-          );
-        }
-
-        const ip = getClientIp(request);
-        const { allowed, retryAfter } = rateLimit(ip, {
-          limit: 10,
-          windowMs: 60_000,
-          prefix: 'rmhark-create',
-        });
-        if (!allowed) {
-          return Response.json(
-            { error: 'Too many requests' },
-            { status: 429, headers: { 'Retry-After': String(retryAfter) } },
-          );
-        }
-
-        const body = await request.json();
-        const parsed = createRMHarkSchema.safeParse(body);
-        if (!parsed.success) {
-          return Response.json(
-            { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-            { status: 400 },
-          );
-        }
-
-        const {
-          content,
-          poll,
-          gifUrl,
-          imageUrls,
-          imageAlts,
-          originalId,
-          audience,
-          isSensitive,
-          replyControl,
-          unlockPrice,
-          communityId,
-        } = parsed.data;
-
-        if (imageUrls?.length && !imageUrls.every((u) => ownsFeedImageUrl(u, session.user.id))) {
-          return Response.json({ error: 'Invalid image reference' }, { status: 400 });
-        }
-
-        // Trim alt text and clamp to the number of images so the two arrays stay
-        // index-aligned even if the client sends a longer/whitespace-only list.
-        const cleanImageAlts = (imageAlts ?? [])
-          .slice(0, imageUrls?.length ?? 0)
-          .map((a) => a.trim());
-
-        // Posting into a community requires membership.
-        if (communityId) {
-          const member = await prisma.communityMember.findUnique({
-            where: { communityId_userId: { communityId, userId: session.user.id } },
-            select: { id: true },
-          });
-          if (!member) {
-            return Response.json({ error: 'Join the community to post in it' }, { status: 403 });
+      // `idempotent: true` — this is one of the endpoints the service worker's
+      // offline outbox (B10) may queue and replay, and a replayed create without
+      // key-based deduplication is a double post. The wrapper reads the body once
+      // (to hash it for the key), so validation MUST go through `body:` here: a
+      // second `request.json()` inside the handler would throw on a used stream.
+      POST: defineHandler(
+        { body: createRMHarkSchema, verboseValidationErrors: true, idempotent: true },
+        async ({ request, session, body: input }) => {
+          const ban = await getActiveBan(session.user.id);
+          if (ban) {
+            return Response.json(
+              { error: `Your account is suspended${ban.reason ? `: ${ban.reason}` : ''}` },
+              { status: 403 },
+            );
           }
-        }
 
-        // Validate the quoted post exists (and isn't itself a quote, to avoid chains).
-        let quotedOriginalId: string | null = null;
-        if (originalId) {
-          const orig = await prisma.rMHark.findUnique({
-            where: { id: originalId },
-            select: { id: true, deletedAt: true, originalId: true },
+          const ip = getClientIp(request);
+          const { allowed, retryAfter } = rateLimit(ip, {
+            limit: 10,
+            windowMs: 60_000,
+            prefix: 'rmhark-create',
           });
-          if (!orig || orig.deletedAt) {
-            return Response.json({ error: 'Quoted post not found' }, { status: 400 });
+          if (!allowed) {
+            return Response.json(
+              { error: 'Too many requests' },
+              { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+            );
           }
-          quotedOriginalId = orig.originalId ?? orig.id; // quote the root, not a quote
-        }
 
-        // Captured from the in-transaction user update so the deferred achievements
-        // block can read the author's post total without a separate COUNT(*).
-        let newPostCount = 0;
-        const rmhark = await prisma.$transaction(async (tx) => {
-          const created = await tx.rMHark.create({
-            data: {
-              content: content.trim(),
-              gifUrl: gifUrl ?? null,
-              imageUrls: imageUrls ?? [],
-              imageAlts: cleanImageAlts,
-              userId: session.user.id,
-              originalId: quotedOriginalId,
-              audience: audience ?? 'PUBLIC',
-              isSensitive: isSensitive ?? false,
-              replyControl: replyControl ?? 'EVERYONE',
-              unlockPrice: unlockPrice && unlockPrice > 0 ? unlockPrice : null,
-              communityId: communityId ?? null,
-            },
-            include: {
-              user: { select: userDisplaySelect },
-            },
-          });
+          const {
+            content,
+            poll,
+            gifUrl,
+            imageUrls,
+            imageAlts,
+            originalId,
+            audience,
+            isSensitive,
+            replyControl,
+            unlockPrice,
+            communityId,
+          } = input;
 
-          // Extract @hashtags once at write time into the normalized hashtag /
-          // post_hashtag tables (indexed lookups for trending + tag feeds) instead
-          // of scanning `content` with ILIKE on read. Same tx as the post insert.
-          await linkPostHashtags(tx, created.id, created.content);
+          if (imageUrls?.length && !imageUrls.every((u) => ownsFeedImageUrl(u, session.user.id))) {
+            return Response.json({ error: 'Invalid image reference' }, { status: 400 });
+          }
 
-          // Maintain the author's denormalized post count atomically with the
-          // insert (profile pages read this column instead of COUNT(*)).
-          const updatedUser = await tx.user.update({
-            where: { id: session.user.id },
-            data: { postCount: { increment: 1 } },
-            select: { postCount: true },
-          });
-          newPostCount = updatedUser.postCount;
+          // Trim alt text and clamp to the number of images so the two arrays stay
+          // index-aligned even if the client sends a longer/whitespace-only list.
+          const cleanImageAlts = (imageAlts ?? [])
+            .slice(0, imageUrls?.length ?? 0)
+            .map((a) => a.trim());
 
-          // Maintain the community's denormalized post count in the same tx so the
-          // community page reads this column instead of COUNT(*) over rmheet.
+          // Posting into a community requires membership.
           if (communityId) {
-            await tx.community.update({
-              where: { id: communityId },
-              data: { postCount: { increment: 1 } },
+            const member = await prisma.communityMember.findUnique({
+              where: { communityId_userId: { communityId, userId: session.user.id } },
+              select: { id: true },
             });
+            if (!member) {
+              return Response.json({ error: 'Join the community to post in it' }, { status: 403 });
+            }
           }
 
-          if (quotedOriginalId) {
-            await tx.rMHark.update({
-              where: { id: quotedOriginalId },
-              data: { repostCount: { increment: 1 } },
+          // Validate the quoted post exists (and isn't itself a quote, to avoid chains).
+          let quotedOriginalId: string | null = null;
+          if (originalId) {
+            const orig = await prisma.rMHark.findUnique({
+              where: { id: originalId },
+              select: { id: true, deletedAt: true, originalId: true },
             });
+            if (!orig || orig.deletedAt) {
+              return Response.json({ error: 'Quoted post not found' }, { status: 400 });
+            }
+            quotedOriginalId = orig.originalId ?? orig.id; // quote the root, not a quote
           }
 
-          if (poll) {
-            await tx.rMHarkPoll.create({
+          // Captured from the in-transaction user update so the deferred achievements
+          // block can read the author's post total without a separate COUNT(*).
+          let newPostCount = 0;
+          const rmhark = await prisma.$transaction(async (tx) => {
+            const created = await tx.rMHark.create({
               data: {
-                rmheetId: created.id,
-                question: poll.question.trim(),
-                multiSelect: poll.multiSelect,
-                closesAt: poll.durationHours
-                  ? new Date(Date.now() + poll.durationHours * 60 * 60 * 1000)
-                  : null,
-                options: {
-                  create: poll.options.map((text, i) => ({
-                    text: text.trim(),
-                    position: i,
-                  })),
+                content: content.trim(),
+                gifUrl: gifUrl ?? null,
+                imageUrls: imageUrls ?? [],
+                imageAlts: cleanImageAlts,
+                userId: session.user.id,
+                originalId: quotedOriginalId,
+                audience: audience ?? 'PUBLIC',
+                isSensitive: isSensitive ?? false,
+                replyControl: replyControl ?? 'EVERYONE',
+                unlockPrice: unlockPrice && unlockPrice > 0 ? unlockPrice : null,
+                communityId: communityId ?? null,
+              },
+              include: {
+                user: { select: userDisplaySelect },
+              },
+            });
+
+            // Extract @hashtags once at write time into the normalized hashtag /
+            // post_hashtag tables (indexed lookups for trending + tag feeds) instead
+            // of scanning `content` with ILIKE on read. Same tx as the post insert.
+            await linkPostHashtags(tx, created.id, created.content);
+
+            // Maintain the author's denormalized post count atomically with the
+            // insert (profile pages read this column instead of COUNT(*)).
+            const updatedUser = await tx.user.update({
+              where: { id: session.user.id },
+              data: { postCount: { increment: 1 } },
+              select: { postCount: true },
+            });
+            newPostCount = updatedUser.postCount;
+
+            // Maintain the community's denormalized post count in the same tx so the
+            // community page reads this column instead of COUNT(*) over rmheet.
+            if (communityId) {
+              await tx.community.update({
+                where: { id: communityId },
+                data: { postCount: { increment: 1 } },
+              });
+            }
+
+            if (quotedOriginalId) {
+              await tx.rMHark.update({
+                where: { id: quotedOriginalId },
+                data: { repostCount: { increment: 1 } },
+              });
+            }
+
+            if (poll) {
+              await tx.rMHarkPoll.create({
+                data: {
+                  rmheetId: created.id,
+                  question: poll.question.trim(),
+                  multiSelect: poll.multiSelect,
+                  closesAt: poll.durationHours
+                    ? new Date(Date.now() + poll.durationHours * 60 * 60 * 1000)
+                    : null,
+                  options: {
+                    create: poll.options.map((text, i) => ({
+                      text: text.trim(),
+                      position: i,
+                    })),
+                  },
                 },
-              },
-              include: { options: true },
+                include: { options: true },
+              });
+            }
+
+            return created;
+          });
+
+          // Fire-and-forget AI pre-screen for policy violations. Never blocks or
+          // delays the post; only files a report for human review if clearly abusive.
+          if (rmhark.content.trim()) {
+            void screenNewContent({
+              entityType: 'rmhark',
+              entityId: rmhark.id,
+              authorId: session.user.id,
+              text: rmhark.content,
             });
           }
 
-          return created;
-        });
+          // Re-fetch with poll data if poll was created
+          let pollData: FeedItem['poll'] | undefined;
+          if (poll) {
+            const createdPoll = await prisma.rMHarkPoll.findUnique({
+              where: { rmheetId: rmhark.id },
+              include: {
+                options: { orderBy: { position: 'asc' } },
+              },
+            });
+            if (createdPoll) {
+              pollData = {
+                id: createdPoll.id,
+                question: createdPoll.question,
+                multiSelect: createdPoll.multiSelect,
+                totalVotes: 0,
+                options: createdPoll.options.map((o) => ({
+                  id: o.id,
+                  text: o.text,
+                  voteCount: 0,
+                })),
+                myVotes: [],
+              };
+            }
+          }
 
-        // Fire-and-forget AI pre-screen for policy violations. Never blocks or
-        // delays the post; only files a report for human review if clearly abusive.
-        if (rmhark.content.trim()) {
-          void screenNewContent({
-            entityType: 'rmhark',
-            entityId: rmhark.id,
+          const item: FeedItem = {
+            id: rmhark.id,
+            type: 'rmhark',
+            createdAt: rmhark.createdAt.toISOString(),
+            content: rmhark.content,
+            user: resolveUser(rmhark.user),
+            likeCount: 0,
+            commentCount: 0,
+            repostCount: 0,
+            viewCount: 0,
+            liked: false,
+            reposted: false,
+            poll: pollData,
+            gifUrl: rmhark.gifUrl ?? undefined,
+            imageUrls: rmhark.imageUrls,
+            imageAlts: rmhark.imageAlts,
+            isSensitive: rmhark.isSensitive,
+            replyControl: rmhark.replyControl,
+            reactions: [],
+          };
+
+          // Attach the quoted original so the card renders it inline immediately.
+          if (quotedOriginalId) {
+            const orig = await prisma.rMHark.findUnique({
+              where: { id: quotedOriginalId },
+              select: {
+                id: true,
+                content: true,
+                createdAt: true,
+                likeCount: true,
+                commentCount: true,
+                repostCount: true,
+                viewCount: true,
+                gifUrl: true,
+                imageUrls: true,
+                unlockPrice: true,
+                audience: true,
+                user: { select: userDisplaySelect },
+              },
+            });
+            if (orig) {
+              // Match timeline mapOriginal: only free public originals show media.
+              const showMedia = (orig.unlockPrice ?? 0) === 0 && orig.audience === 'PUBLIC';
+              item.original = {
+                id: orig.id,
+                type: 'rmhark',
+                createdAt: orig.createdAt.toISOString(),
+                content: orig.content,
+                user: resolveUser(orig.user),
+                likeCount: orig.likeCount,
+                commentCount: orig.commentCount,
+                repostCount: orig.repostCount,
+                viewCount: orig.viewCount,
+                gifUrl: showMedia ? (orig.gifUrl ?? undefined) : undefined,
+                imageUrls: showMedia ? orig.imageUrls : undefined,
+              };
+
+              // Tell the quoted author. Links to the QUOTE so they see the commentary.
+              void createNotification({
+                userId: orig.user.id,
+                actorId: session.user.id,
+                type: 'REPOST',
+                entityType: 'rmhark',
+                entityId: item.id,
+                preview: content.trim().slice(0, 140) || null,
+                link: `/u/${item.user?.handle ?? '_'}/post/${item.id}`,
+              });
+            }
+          }
+
+          // Publish to the SSE bus. The stream endpoint targets this to each
+          // viewer's follow graph using `authorId` (Phase 3) instead of blindly
+          // prepending onto every open client.
+          // Paid posts must broadcast a locked teaser — never the unlocked content,
+          // since the SSE payload reaches the author's followers.
+          const broadcastItem =
+            unlockPrice && unlockPrice > 0
+              ? {
+                  ...item,
+                  content: '',
+                  imageUrls: undefined,
+                  imageAlts: undefined,
+                  gifUrl: undefined,
+                  poll: undefined,
+                  locked: true,
+                  unlockPrice,
+                }
+              : item;
+          feedEventBus.publishPostCreated({
+            type: 'rmhark.created',
+            rmharkId: item.id,
+            payload: broadcastItem,
+            timestamp: item.createdAt,
             authorId: session.user.id,
-            text: rmhark.content,
           });
-        }
 
-        // Re-fetch with poll data if poll was created
-        let pollData: FeedItem['poll'] | undefined;
-        if (poll) {
-          const createdPoll = await prisma.rMHarkPoll.findUnique({
-            where: { rmheetId: rmhark.id },
-            include: {
-              options: { orderBy: { position: 'asc' } },
-            },
-          });
-          if (createdPoll) {
-            pollData = {
-              id: createdPoll.id,
-              question: createdPoll.question,
-              multiSelect: createdPoll.multiSelect,
-              totalVotes: 0,
-              options: createdPoll.options.map((o) => ({
-                id: o.id,
-                text: o.text,
-                voteCount: 0,
-              })),
-              myVotes: [],
-            };
-          }
-        }
-
-        const item: FeedItem = {
-          id: rmhark.id,
-          type: 'rmhark',
-          createdAt: rmhark.createdAt.toISOString(),
-          content: rmhark.content,
-          user: resolveUser(rmhark.user),
-          likeCount: 0,
-          commentCount: 0,
-          repostCount: 0,
-          viewCount: 0,
-          liked: false,
-          reposted: false,
-          poll: pollData,
-          gifUrl: rmhark.gifUrl ?? undefined,
-          imageUrls: rmhark.imageUrls,
-          imageAlts: rmhark.imageAlts,
-          isSensitive: rmhark.isSensitive,
-          replyControl: rmhark.replyControl,
-          reactions: [],
-        };
-
-        // Attach the quoted original so the card renders it inline immediately.
-        if (quotedOriginalId) {
-          const orig = await prisma.rMHark.findUnique({
-            where: { id: quotedOriginalId },
-            select: {
-              id: true,
-              content: true,
-              createdAt: true,
-              likeCount: true,
-              commentCount: true,
-              repostCount: true,
-              viewCount: true,
-              gifUrl: true,
-              imageUrls: true,
-              unlockPrice: true,
-              audience: true,
-              user: { select: userDisplaySelect },
-            },
-          });
-          if (orig) {
-            // Match timeline mapOriginal: only free public originals show media.
-            const showMedia = (orig.unlockPrice ?? 0) === 0 && orig.audience === 'PUBLIC';
-            item.original = {
-              id: orig.id,
-              type: 'rmhark',
-              createdAt: orig.createdAt.toISOString(),
-              content: orig.content,
-              user: resolveUser(orig.user),
-              likeCount: orig.likeCount,
-              commentCount: orig.commentCount,
-              repostCount: orig.repostCount,
-              viewCount: orig.viewCount,
-              gifUrl: showMedia ? (orig.gifUrl ?? undefined) : undefined,
-              imageUrls: showMedia ? orig.imageUrls : undefined,
-            };
-
-            // Tell the quoted author. Links to the QUOTE so they see the commentary.
-            void createNotification({
-              userId: orig.user.id,
-              actorId: session.user.id,
-              type: 'REPOST',
-              entityType: 'rmhark',
-              entityId: item.id,
-              preview: content.trim().slice(0, 140) || null,
-              link: `/u/${item.user?.handle ?? '_'}/post/${item.id}`,
-            });
-          }
-        }
-
-        // Publish to the SSE bus. The stream endpoint targets this to each
-        // viewer's follow graph using `authorId` (Phase 3) instead of blindly
-        // prepending onto every open client.
-        // Paid posts must broadcast a locked teaser — never the unlocked content,
-        // since the SSE payload reaches the author's followers.
-        const broadcastItem =
-          unlockPrice && unlockPrice > 0
-            ? {
-                ...item,
-                content: '',
-                imageUrls: undefined,
-                imageAlts: undefined,
-                gifUrl: undefined,
-                poll: undefined,
-                locked: true,
-                unlockPrice,
-              }
-            : item;
-        feedEventBus.publishPostCreated({
-          type: 'rmhark.created',
-          rmharkId: item.id,
-          payload: broadcastItem,
-          timestamp: item.createdAt,
-          authorId: session.user.id,
-        });
-
-        // Notify mentioned users (persisted MENTION notification + live SSE toast).
-        // Best-effort: never let notification fan-out fail the post creation.
-        try {
-          const author = item.user;
-          if (author) {
-            await notifyMentions({
-              content: rmhark.content,
-              author: {
-                id: author.id,
-                name: author.name ?? null,
-                image: author.image ?? null,
-                handle: author.handle ?? null,
-              },
-              postId: item.id,
-              entityType: 'rmhark',
-              entityId: item.id,
-              link: `/u/${author.handle ?? author.id}/post/${item.id}`,
-              timestamp: item.createdAt,
-            });
-          }
-        } catch (err) {
-          console.error('Mention notification error:', err);
-        }
-
-        // Achievements + progression (posting milestones, night-owl easter egg, XP,
-        // quests) are best-effort and don't shape the response, so run them as a
-        // fire-and-forget background task. Awaiting them here added ~6 serial DB
-        // round-trips before the 201. The post total comes from the denormalized
-        // User.postCount captured in the transaction (no separate COUNT(*)).
-        void (async () => {
+          // Notify mentioned users (persisted MENTION notification + live SSE toast).
+          // Best-effort: never let notification fan-out fail the post creation.
           try {
-            const count = newPostCount;
-            await progressAchievement(session.user.id, 'social.first_post', {
-              setProgress: count,
-            });
-            await progressAchievement(session.user.id, 'social.posts_10', { setProgress: count });
-            await progressAchievement(session.user.id, 'social.posts_100', {
-              setProgress: count,
-            });
-            const hour = new Date().getHours();
-            if (hour >= 2 && hour < 5) await grantAchievement(session.user.id, 'special.night_owl');
-            if (poll) await grantAchievement(session.user.id, 'social.first_poll');
-            if (originalId) await grantAchievement(session.user.id, 'social.first_quote');
-            if (unlockPrice && unlockPrice > 0)
-              await grantAchievement(session.user.id, 'creator.first_paid_post');
-            // Progression: XP + quests for posting.
-            await awardXp(session.user.id, 25);
-            await progressQuests(session.user.id, 'post');
-          } catch (e) {
-            console.error('post achievement error:', e);
+            const author = item.user;
+            if (author) {
+              await notifyMentions({
+                content: rmhark.content,
+                author: {
+                  id: author.id,
+                  name: author.name ?? null,
+                  image: author.image ?? null,
+                  handle: author.handle ?? null,
+                },
+                postId: item.id,
+                entityType: 'rmhark',
+                entityId: item.id,
+                link: `/u/${author.handle ?? author.id}/post/${item.id}`,
+                timestamp: item.createdAt,
+              });
+            }
+          } catch (err) {
+            console.error('Mention notification error:', err);
           }
-        })();
 
-        return Response.json(item, { status: 201 });
-      }),
+          // Achievements + progression (posting milestones, night-owl easter egg, XP,
+          // quests) are best-effort and don't shape the response, so run them as a
+          // fire-and-forget background task. Awaiting them here added ~6 serial DB
+          // round-trips before the 201. The post total comes from the denormalized
+          // User.postCount captured in the transaction (no separate COUNT(*)).
+          void (async () => {
+            try {
+              const count = newPostCount;
+              await progressAchievement(session.user.id, 'social.first_post', {
+                setProgress: count,
+              });
+              await progressAchievement(session.user.id, 'social.posts_10', { setProgress: count });
+              await progressAchievement(session.user.id, 'social.posts_100', {
+                setProgress: count,
+              });
+              const hour = new Date().getHours();
+              if (hour >= 2 && hour < 5)
+                await grantAchievement(session.user.id, 'special.night_owl');
+              if (poll) await grantAchievement(session.user.id, 'social.first_poll');
+              if (originalId) await grantAchievement(session.user.id, 'social.first_quote');
+              if (unlockPrice && unlockPrice > 0)
+                await grantAchievement(session.user.id, 'creator.first_paid_post');
+              // Progression: XP + quests for posting.
+              await awardXp(session.user.id, 25);
+              await progressQuests(session.user.id, 'post');
+            } catch (e) {
+              console.error('post achievement error:', e);
+            }
+          })();
+
+          return Response.json(item, { status: 201 });
+        },
+      ),
     },
   },
 });

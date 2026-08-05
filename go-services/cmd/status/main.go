@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -89,6 +90,22 @@ func main() {
 
 	targets := buildTargets(urls, probeTimeout)
 
+	// Multi-window burn-rate alerting (E14). The defaults are the standard
+	// Google SRE pair — 99.9% availability, 1h/6h windows, a 30-day budget —
+	// which is also what docs/performance-slo.md publishes, so the page and the
+	// document cannot drift without someone changing an env var on purpose.
+	//
+	// STATUS_SLO_TARGET is a FRACTION (0.999), not a percentage: a status page
+	// that quietly reads "99.9" as 99.9× the error budget would report a full
+	// budget forever. Out-of-range values fall back to the default rather than
+	// producing a nonsense report.
+	sloCfg := status.SLOConfig{
+		Target:       sloTarget("STATUS_SLO_TARGET", 0.999),
+		FastWindow:   config.GetDuration("STATUS_SLO_FAST_WINDOW", time.Hour),
+		SlowWindow:   config.GetDuration("STATUS_SLO_SLOW_WINDOW", 6*time.Hour),
+		BudgetWindow: config.GetDuration("STATUS_SLO_BUDGET_WINDOW", 30*24*time.Hour),
+	}
+
 	cfg := status.Config{
 		Targets:       targets,
 		ProbeInterval: probeInterval,
@@ -97,6 +114,7 @@ func main() {
 		MaxBuckets:    maxBuckets,
 		HistoryPath:   status.ResolveHistoryPath(config.GetString("STATUS_DATA_DIR", "")),
 		Logger:        logger,
+		SLO:           sloCfg,
 	}
 
 	svc := status.New(cfg)
@@ -262,6 +280,26 @@ func buildTargets(u probeURLs, probeTimeout time.Duration) []status.Target {
 	)
 
 	return targets
+}
+
+// sloTarget reads an availability target as a FRACTION in (0, 1).
+//
+// pkg/config has no float getter and this is the only place in the fleet that
+// wants one, so it is parsed here rather than widening a shared package for one
+// caller. Anything outside the open interval — "99.9", "1", "0", a typo —
+// falls back to the default: a target of 1.0 makes the error budget zero and
+// every burn rate infinite, and 99.9 makes it negative, either of which turns
+// the whole report into confident nonsense.
+func sloTarget(key string, fallback float64) float64 {
+	raw, ok := os.LookupEnv(key)
+	if !ok || raw == "" {
+		return fallback
+	}
+	v, err := strconv.ParseFloat(strings.TrimSpace(raw), 64)
+	if err != nil || v <= 0 || v >= 1 {
+		return fallback
+	}
+	return v
 }
 
 // originOf returns the scheme://host origin of a URL (stripping any path/query),
