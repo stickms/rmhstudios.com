@@ -16,7 +16,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { Lock, MoonStar, Users } from 'lucide-react';
-import { activePads, activeTotems } from '@/lib/massive-march/puzzles';
+import { activePads, activeTotems, isHardLock } from '@/lib/massive-march/puzzles';
 import { live } from '@/lib/massive-march/live';
 import { mm } from '@/lib/massive-march/net/client';
 import type { PuzzleStatus } from '@/lib/massive-march/net/events';
@@ -66,7 +66,11 @@ export function SitePanel({ siteId, variant }: { siteId: string; variant: WorldV
         </>
       ) : null}
 
-      {!done && !status.lockedBy ? (
+      {/* A `crew` lock is advice, not a refusal — the server accepts every one of
+          these actions, and at the Final March reading the sequence and turning
+          the totems are one-person jobs. Only `key`/`night` actually stop a
+          site running, so only those take the controls away. */}
+      {!done && !isHardLock(status.lockedBy ?? null) ? (
         <Controls site={site} status={status} variant={variant} />
       ) : null}
 
