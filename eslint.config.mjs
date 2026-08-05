@@ -195,6 +195,24 @@ export default tseslint.config(
     },
   },
 
+  // ── NOT ENABLED: raw <img> dimension rule (OPT-29) ────────────────────────
+  // The proposed rule is:
+  //
+  //   'no-restricted-syntax': ['warn', {
+  //     selector:
+  //       "JSXOpeningElement[name.name='img']:not(:has(JSXAttribute[name.name='width'])):not(:has(JSXAttribute[name.name='srcSet']))",
+  //     message: 'Raw <img> needs width+height (CLS) — or use <OptimizedImage>.',
+  //   }]
+  //
+  // Measured on 2026-08-05 it fires **98 times** across `app/` and
+  // `components/`. The quality bar in CONTRIBUTING.md is "add no new warnings
+  // relative to the base branch", so landing it here would hand every
+  // subsequent PR a 98-warning inheritance and the rule would be deleted rather
+  // than driven to zero — the failure mode the jsx-a11y block above is written
+  // to avoid. It belongs in its own change that fixes the 98 sites and enables
+  // the rule in the same commit. Left here as the record of the measurement so
+  // the next person does not have to re-derive it.
+
   // ── Project-wide rule overrides ───────────────────────────────────────────
   {
     rules: {

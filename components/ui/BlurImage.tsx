@@ -37,6 +37,54 @@ interface BlurImageProps extends Omit<
  * can reserve space for them.
  */
  onNaturalSize?: (width: number, height: number) => void;
+ /**
+ * Mark this image as the page's LCP candidate: `fetchpriority=high`, eager
+ * loading, synchronous decode — and no blur-up. The placeholder is dropped
+ * (it would be a second request racing the one that matters) and the image
+ * paints at full opacity instead of fading in, because Chrome does not treat
+ * an element at `opacity: 0` as an LCP candidate: the fade would move the
+ * recorded paint to the END of the transition and make the metric worse than
+ * doing nothing.
+ *
+ * **At most one per page**, and never on a list item — see `OptimizedImage`.
+ * Pair it with `blurImagePreload()` in the route's `head()` whenever the
+ * loader already knows the URL.
+ */
+ priority?: boolean;
+}
+
+/**
+ * The `<link rel="preload">` descriptor for the image a `priority` `BlurImage`
+ * with these props will request. Built from the same helpers the component
+ * uses so the two cannot drift: a preload whose `href` / `imagesrcset` /
+ * `imagesizes` disagree with the `<img>` by even one candidate downloads the
+ * image TWICE, which is the usual way this optimization backfires.
+ *
+ * Defaults mirror `BlurImage`'s own (`width` 800, `quality` 80, `sizes`
+ * `'100vw'`) — pass it exactly what the component is passed.
+ */
+export function blurImagePreload({
+ src,
+ width,
+ quality = 80,
+ sizes = '100vw',
+}: {
+ src: string;
+ width?: number;
+ quality?: number;
+ sizes?: string;
+}) {
+ const optimizable = isOptimizable(src);
+ return {
+ rel: 'preload' as const,
+ as: 'image' as const,
+ href: optimizable ? buildOptimizedUrl(src, width || 800, quality) : src,
+ // Only when the component will actually emit a srcSet. It drops `sizes` in
+ // the non-optimizable case, and a preload carrying `imagesizes` for an
+ // `<img>` that has no `sizes` is exactly the mismatch described above.
+ ...(optimizable ? { imageSrcSet: generateSrcSet(src, quality), imageSizes: sizes } : {}),
+ fetchPriority: 'high' as const,
+ };
 }
 
 // A tiny, heavily-compressed variant used as the blurred placeholder.
@@ -65,6 +113,7 @@ export function BlurImage({
  onLoad,
  onNaturalSize,
  style,
+ priority = false,
  ...rest
 }: BlurImageProps) {
  const imgRef = useRef<HTMLImageElement>(null);
@@ -92,9 +141,17 @@ export function BlurImage({
  const optimizable = isOptimizable(src);
  const fullSrc = optimizable ? buildOptimizedUrl(src, width || 800, quality) : src;
  const srcSet = optimizable ? generateSrcSet(src, quality) : undefined;
- const placeholderSrc = optimizable
+ // No blur-up for the LCP candidate: the placeholder is a second request
+ // competing with the one being prioritised, and the fade it exists to cover
+ // is itself what would delay the measured paint.
+ const placeholderSrc =
+ optimizable && !priority
  ? buildOptimizedUrl(src, PLACEHOLDER_WIDTH, PLACEHOLDER_QUALITY)
  : undefined;
+ // `loaded` still tracks the real load (the skeleton and `onNaturalSize`
+ // depend on it); `visible` is only about opacity, and a priority image is
+ // never hidden.
+ const visible = loaded || priority;
 
  // With a known ratio the wrapper reserves the box and the image fills it, so
  // the layout is stable before/after load. Without one, the image sizes itself.
@@ -133,8 +190,9 @@ export function BlurImage({
  srcSet={srcSet}
  sizes={srcSet ? sizes : undefined}
  alt={alt}
- loading={loading}
- decoding="async"
+ fetchPriority={priority ? 'high' : undefined}
+ loading={priority ? 'eager' : loading}
+ decoding={priority ? 'sync' : 'async'}
  onLoad={(e) => {
  setLoaded(true);
  reportSize(e.currentTarget);
@@ -143,7 +201,7 @@ export function BlurImage({
  className={cn(
  fitClass,
  'transition-opacity duration-site-slow',
- loaded ? 'opacity-100' : 'opacity-0',
+ visible ? 'opacity-100' : 'opacity-0',
  reserve && 'absolute inset-0 h-full w-full',
  imgClassName,
  )}

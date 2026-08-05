@@ -1,7 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { LRUCache } from 'lru-cache';
-import { optimizeImage, parseFormat, negotiateFormat } from '@/lib/image-optimize';
+import {
+  optimizeImage,
+  parseFormat,
+  negotiateFormat,
+  getCachedVariant,
+  setCachedVariant,
+  variantCacheKey,
+} from '@/lib/image-optimize';
 import { safeFetch, SsrfError } from '@/lib/ssrf-guard.server';
 import {
   isDiscordAvatarUrl,
@@ -15,15 +21,10 @@ const MAX_UPSTREAM_BYTES = 10 * 1024 * 1024; // 10 MB
 // cache it by default and every browser's first request for each avatar/width
 // hit sharp on the single web event loop. This absorbs the repeats at origin:
 // a cache hit skips the upstream fetch AND the decode/resize/encode entirely.
-// Bounded by total bytes (optimized avatars are ~5-20KB, so this holds many
-// thousands) and kept well under the container memory limit; per-process, so it
-// complements — doesn't replace — the recommended Cloudflare cache rule.
-type CachedImage = { buffer: Uint8Array; contentType: string };
-const imageCache = new LRUCache<string, CachedImage>({
-  maxSize: 64 * 1024 * 1024, // 64 MB of optimized image bytes
-  sizeCalculation: (v) => v.buffer.byteLength + v.contentType.length + 64,
-  ttl: 60 * 60_000, // 1 hour
-});
+// The pool itself now lives in `lib/image-optimize` and is shared with the other
+// on-demand resize routes, so the byte budget is one number for the container
+// rather than one per endpoint; per-process, so it complements — doesn't
+// replace — the recommended Cloudflare cache rule.
 
 export const Route = createFileRoute('/api/image-proxy')({
   server: {
@@ -50,8 +51,8 @@ export const Route = createFileRoute('/api/image-proxy')({
           const quality = qParam ? Math.min(Math.max(parseInt(qParam, 10), 1), 100) : 80;
           const format = parseFormat(fParam) ?? negotiateFormat(request.headers.get('accept'));
 
-          const cacheKey = `${src}|w=${width ?? ''}|h=${height ?? ''}|q=${quality}|f=${format ?? ''}`;
-          const hit = imageCache.get(cacheKey);
+          const cacheKey = variantCacheKey('proxy', src, { width, height, quality, format });
+          const hit = getCachedVariant(cacheKey);
           if (hit) {
             return new Response(hit.buffer as unknown as BodyInit, {
               status: 200,
@@ -104,7 +105,7 @@ export const Route = createFileRoute('/api/image-proxy')({
 
           // Populate the origin cache so repeat requests for this (url,w,h,q,f) skip
           // both the upstream fetch and the sharp transcode.
-          imageCache.set(cacheKey, { buffer: result.buffer, contentType: result.contentType });
+          setCachedVariant(cacheKey, { buffer: result.buffer, contentType: result.contentType });
 
           return new Response(result.buffer as unknown as BodyInit, {
             status: 200,

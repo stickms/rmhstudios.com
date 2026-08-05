@@ -15,6 +15,18 @@ interface OptimizedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 
  quality?: number;
  /** Output format override (auto-negotiated via Accept header if omitted) */
  format?: 'webp' | 'avif' | 'jpeg' | 'png';
+ /**
+ * Mark this image as the page's LCP candidate: `fetchpriority=high`, eager
+ * loading and a synchronous decode. Without it the browser has to finish
+ * layout before it learns a hero image matters, and that wait IS what LCP
+ * measures.
+ *
+ * **At most one per page.** A second "priority" image splits the bandwidth the
+ * first one was given and halves the benefit; `decoding="sync"` on a large
+ * image also blocks the main thread, which is only ever worth it for the one
+ * element the metric is about. Never set it on a list item.
+ */
+ priority?: boolean;
 }
 
 // Breakpoints for responsive srcSet
@@ -86,6 +98,7 @@ function OptimizedImageImpl({
  format,
  className,
  loading = 'lazy',
+ priority = false,
  ...rest
 }: OptimizedImageProps) {
  if (!src) return null;
@@ -112,8 +125,12 @@ function OptimizedImageImpl({
  alt={alt}
  width={layout !== 'fullWidth' ? width : undefined}
  height={layout !== 'fullWidth' ? height : undefined}
- loading={loading}
- decoding="async"
+ // `priority` overrides the lazy/async defaults rather than reading them:
+ // an eager fetch that the browser still schedules at Low priority buys
+ // nothing, so the three attributes move together or not at all.
+ fetchPriority={priority ? 'high' : undefined}
+ loading={priority ? 'eager' : loading}
+ decoding={priority ? 'sync' : 'async'}
  className={className}
  {...rest}
  />

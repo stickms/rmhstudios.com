@@ -380,6 +380,11 @@ export function PostDetail({ postId }: PostDetailProps) {
  urls={post.imageUrls}
  alts={post.imageAlts}
  heroName={postMediaVTName(postId)}
+ // This is the single-post page, so the post's first image is the
+ // largest element on it and therefore the LCP candidate. No
+ // `<link rel=preload>` to pair with: the post body is fetched on
+ // the client, so the URL does not exist at head() time.
+ priority
  />
  )}
  </SensitiveMedia>

@@ -16,6 +16,15 @@ interface PostImageGridProps {
  /** When set, tags the first image with this `view-transition-name`so it can
  * morph between the feed card and the post detail (see lib/view-transition). */
  heroName?: string;
+ /**
+ * Treat the FIRST image as the page's LCP candidate (eager, `fetchpriority=
+ * high`, no blur-up). Opt-in and off everywhere by default: this grid also
+ * renders inside feed cards, group chats and announcement lists, where a
+ * prioritised image would be one of many and would take bandwidth from
+ * whatever the real LCP element is. Only a page showing a SINGLE post should
+ * pass it.
+ */
+ priority?: boolean;
 }
 
 // A lone image is capped at this share of the viewport height, matching the
@@ -23,7 +32,13 @@ interface PostImageGridProps {
 // dominate the column.
 const SINGLE_MAX_VH = 80;
 
-export function PostImageGrid({ urls, alts, className ='', heroName }: PostImageGridProps) {
+export function PostImageGrid({
+ urls,
+ alts,
+ className ='',
+ heroName,
+ priority = false,
+}: PostImageGridProps) {
  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
  // §5.48: liquidly expand the clicked thumbnail into the lightbox (same-document
  // VT). Names are unique per (grid instance, index) and set only at open time.
@@ -44,6 +59,9 @@ export function PostImageGrid({ urls, alts, className ='', heroName }: PostImage
  alt={alts?.[i]?.trim() || undefined}
  single={single}
  heroName={i === 0 ? heroName : undefined}
+ // Only the first tile — a second priority image would halve the
+ // bandwidth advantage this one was granted.
+ priority={priority && i === 0}
  onOpen={(el) => runLiquidOpen(el, imgVTName(i), () => setLightboxIndex(i))}
  />
  ))}
@@ -68,12 +86,14 @@ function GridImage({
  alt,
  single,
  heroName,
+ priority = false,
  onOpen,
 }: {
  url: string;
  alt?: string;
  single: boolean;
  heroName?: string;
+ priority?: boolean;
  onOpen: (el: HTMLElement) => void;
 }) {
  const { t } = useTranslation('feed');
@@ -117,6 +137,7 @@ function GridImage({
  sizes="(max-width: 640px) 50vw, 300px"
  className="h-full w-full"
  imgClassName="transition-transform duration-site group-hover:scale-[1.02]"
+ priority={priority}
  />
  </button>
  );
@@ -145,6 +166,7 @@ function GridImage({
  aspectRatio={ratio}
  sizes="(max-width: 640px) 100vw, 600px"
  className="w-full"
+ priority={priority}
  />
  </button>
  );
@@ -172,6 +194,7 @@ function GridImage({
  className="mx-auto block w-fit max-w-full rounded-site-sm"
  imgClassName="max-h-[80vh] max-w-full"
  onNaturalSize={onNaturalSize}
+ priority={priority}
  />
  </button>
  );
