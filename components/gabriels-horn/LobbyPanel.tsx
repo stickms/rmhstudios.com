@@ -10,9 +10,10 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Check, Copy, Crown, LogOut, Play, RefreshCw, UserX } from 'lucide-react';
+import { ArrowLeft, Check, Copy, Crown, Link2, LogOut, Play, RefreshCw, UserX } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useLobbyLink } from '@/hooks/useLobbyLink';
 import { MAX_PLAYERS, MIN_PLAYERS } from '@/lib/gabriels-horn/constants';
 import { useHornStore } from '@/lib/gabriels-horn/store';
 import { hornNet } from '@/lib/gabriels-horn/net/client';
@@ -81,6 +82,7 @@ export function LobbyPanel({ onLeave, onRules }: { onLeave: () => void; onRules:
   const countdown = useHornStore((s) => s.countdown);
   const error = useHornStore((s) => s.error);
   const [copied, setCopied] = useState(false);
+  const { copied: linkCopied, copyLink } = useLobbyLink({ code: lobby?.code });
 
   if (!lobby) return null;
 
@@ -97,6 +99,12 @@ export function LobbyPanel({ onLeave, onRules }: { onLeave: () => void; onRules:
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
       toast.error(t('copy-failed', { defaultValue: 'Could not copy the code.' }));
+    }
+  };
+
+  const copyInviteLink = async () => {
+    if (!(await copyLink())) {
+      toast.error(t('copy-link-failed', { defaultValue: 'Could not copy the link.' }));
     }
   };
 
@@ -130,6 +138,16 @@ export function LobbyPanel({ onLeave, onRules }: { onLeave: () => void; onRules:
               <Copy className="size-4 text-(--app-text-dim)" aria-hidden="true" />
             )}
           </button>
+          <div className="mt-1">
+            <HornButton variant="ghost" size="sm" onClick={copyInviteLink}>
+              {linkCopied ? (
+                <Check className="size-3.5 text-(--app-success)" aria-hidden="true" />
+              ) : (
+                <Link2 className="size-3.5" aria-hidden="true" />
+              )}
+              {t('copy-invite-link', { defaultValue: 'Copy invite link' })}
+            </HornButton>
+          </div>
         </div>
 
         {countdown !== null ? (

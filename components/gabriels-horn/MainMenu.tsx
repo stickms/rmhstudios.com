@@ -18,6 +18,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, BookOpen, Dices, ListOrdered, Plus, Users } from 'lucide-react';
+import { useLobbyInvite } from '@/hooks/useLobbyLink';
+import { lobbyReturnPath } from '@/lib/lobby-link';
 import { MAX_PLAYERS, MIN_PLAYERS, MIRROR_NAME } from '@/lib/gabriels-horn/constants';
 import { HornLeaderboard } from './Leaderboard';
 import { HornButton, Panel } from './ui';
@@ -40,6 +42,8 @@ export function MainMenu({
   onRules: () => void;
 }) {
   const { t } = useTranslation('c-gabriels-horn');
+  // Signing in is a detour, not a change of plan: come back to the invite.
+  const invite = useLobbyInvite();
   const [code, setCode] = useState('');
 
   return (
@@ -85,7 +89,7 @@ export function MainMenu({
             </p>
             <Link
               to="/login"
-              search={{ callbackURL: '/gabriels-horn' }}
+              search={{ callbackURL: lobbyReturnPath('/gabriels-horn', invite) }}
               className="mt-3 inline-flex w-full items-center justify-center rounded-[var(--app-radius-sm)] bg-(--app-accent) px-4 py-2.5 text-sm font-semibold text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover)"
             >
               {t('sign-in', { defaultValue: 'Sign in' })}

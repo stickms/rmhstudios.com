@@ -12,6 +12,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { authClient } from '@/lib/auth-client';
+import { useLobbyInvite } from '@/hooks/useLobbyLink';
 import { useDreamRift } from '@/lib/dream-rift/store';
 import { LocalTransport, SocketTransport } from '@/lib/dream-rift/net/transport';
 import { disconnectDreamRift, leaveLobby, setStartHandler } from '@/lib/dream-rift/net/connection';
@@ -63,6 +64,15 @@ function ScreenRouter() {
         });
         return () => setStartHandler(null);
     }, []);
+
+    // An invite link opens on the multiplayer side; the browser screen connects
+    // and joins the rift it names.
+    const invite = useLobbyInvite();
+    useEffect(() => {
+        if (!invite) return;
+        setMode('multi');
+        setScreen('lobby-browser');
+    }, [invite, setMode, setScreen]);
 
     const startSingle = useCallback(
         (char: PlayerId, difficulty: Difficulty) => {

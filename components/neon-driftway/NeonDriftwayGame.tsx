@@ -32,6 +32,7 @@ import {
   summarizeNeonDriftwaySave,
 } from '@/lib/neon-driftway/cloud';
 import { useCloudSave } from '@/hooks/useCloudSave';
+import { useLobbyInvite } from '@/hooks/useLobbyLink';
 import { NeonDriftwayEngine } from '@/lib/neon-driftway/game';
 import { NeonDriftwayRenderer3D } from '@/lib/neon-driftway/renderer3d';
 import { GyroTracker, gyroPermissionGateExists, type GyroStatus } from '@/lib/neon-driftway/gyro';
@@ -628,6 +629,13 @@ export function NeonDriftwayGame() {
   }, []);
 
   const handleGoToMultiplayer = useCallback(() => setUiState('multiplayerMenu'), []);
+
+  // An invite link goes straight past the title screen — the lobby it opens
+  // joins on its own.
+  const invite = useLobbyInvite();
+  useEffect(() => {
+    if (invite) setUiState('multiplayerMenu');
+  }, [invite]);
 
   const handleMultiplayerGameStart = useCallback((roomId: string, levelId: LevelId) => {
     const game = gameRef.current;
