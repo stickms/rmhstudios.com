@@ -39,6 +39,7 @@ export const config = {
   SOCKET_RATE_LIMITS: {
     // Live Spaces (§4) + Party (§5)
     'space:join': { max: 20, windowMs: 60_000 },
+    'space:leave': { max: 30, windowMs: 60_000 },
     'space:chat': { max: 30, windowMs: 60_000 },
     'space:react': { max: 60, windowMs: 60_000 },
     'space:pin': { max: 20, windowMs: 60_000 },
