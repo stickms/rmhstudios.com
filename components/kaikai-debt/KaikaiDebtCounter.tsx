@@ -21,6 +21,7 @@ import { DebtFx } from './DebtFx';
 import { DebtLog, LedgerSubtotal } from './DebtLog';
 import { AddDebtForm, type AddDebtResult } from './AddDebtForm';
 import { AskDebtPanel } from './AskDebtPanel';
+import { DebtDesks } from './DebtDesks';
 import { SoundToggle } from './SoundToggle';
 import './kaikai-debt.css';
 
@@ -224,6 +225,8 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
               })}
             </p>
           )}
+
+          <DebtDesks />
 
           <section className="flex flex-col gap-3">
             <div className="flex flex-wrap items-baseline justify-between gap-2">

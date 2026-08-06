@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 247 routes. 129 render inside the standard site shell (sidebar, nav, context rail); 118 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 250 routes. 131 render inside the standard site shell (sidebar, nav, context rail); 119 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -40,6 +40,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/security-reports` | Security Reports | admin | `app/routes/_site/admin/security-reports.tsx` |
 | `/admin/user-builds` | — | admin | `app/routes/_site/admin/user-builds.tsx` |
 | `/admin/users` | — | admin | `app/routes/_site/admin/users.tsx` |
+| `/alexdebtcounter` | redirects to `/kaikaidebtcounter` | public | `app/routes/_site/alexdebtcounter.tsx` |
 | `/analytics` | Creator Analytics | public | `app/routes/_site/analytics.tsx` |
 | `/apps` | Apps | public | `app/routes/_site/apps/index.tsx` |
 | `/arcade` | redirects to `/create?tab=games` | public | `app/routes/_site/arcade.tsx` |
@@ -70,6 +71,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/homes/saved` | RMHHomes — Saved | public | `app/routes/_site/homes/saved.tsx` |
 | `/homes/submit` | RMHHomes — Post a listing | public | `app/routes/_site/homes/submit.tsx` |
 | `/homes/watches` | RMHHomes — My alerts | public | `app/routes/_site/homes/watches.tsx` |
+| `/kaikaidebtcounter` | The Kaikai Debt Counter | public | `app/routes/_site/kaikaidebtcounter.tsx` |
 | `/leaderboard` | redirects to `/create?tab=games&sub=leaderboard` | public | `app/routes/_site/leaderboard.tsx` |
 | `/library` | Library | public | `app/routes/_site/library/index.tsx` |
 | `/lists` | redirects to `/saves?tab=lists` | public | `app/routes/_site/lists/index.tsx` |
@@ -248,6 +250,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/sitemap.xml` | — | public | `app/routes/sitemap[.]xml.ts` |
 | `/sitemaps/:name` | — | public | `app/routes/sitemaps.$name.ts` |
 | `/slice-it` | — | public | `app/routes/slice-it/index.tsx` |
+| `/sohumbum` | Is Sohum Joshi A Bum Yet? | public | `app/routes/sohumbum.tsx` |
 | `/strategies` | — | public | `app/routes/strategies/index.tsx` |
 | `/strategies/incidents` | — | public | `app/routes/strategies/incidents.tsx` |
 | `/strategies/profile` | — | public | `app/routes/strategies/profile/index.tsx` |
