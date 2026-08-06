@@ -11,7 +11,9 @@
  *   totalDuration: number — Total round duration for progress calculation
  *   mySubmissions: Submission[] — Current player's submitted words
  *   submissionCounts: PlayerSubmissionCount[] — Per-player submission tallies
- *   maxSubmissions?: number — Max submissions allowed (default 30)
+ *   maxSubmissions?: number — Max submissions allowed. The host can set this
+ *     anywhere in 10–50, so the parent passes the value the server reported;
+ *     the default is only the pre-connection fallback.
  *   onSubmit: (word: string) => void — Callback when a word is submitted
  */
 'use client';
@@ -157,7 +159,7 @@ export default function RhymeTimeInput({
           <Users className="h-3.5 w-3.5" /> {t("submissions", { defaultValue: "Submissions" })}
         </h3>
         <ul className="space-y-1.5">
-          {submissionCounts
+          {[...submissionCounts]
             .sort((a, b) => b.count - a.count)
             .map((p) => (
               <li key={p.userId} className="flex items-center justify-between text-sm text-(--app-text)">

@@ -123,5 +123,5 @@ temple-of-joy/**
 void-breaker/**
 daily-puzzles/**
 rmhpoetry/**
-liquid-bot/**
+alex-tamagotchi/**
 ```

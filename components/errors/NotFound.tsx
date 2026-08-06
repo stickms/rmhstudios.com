@@ -1,5 +1,5 @@
 import { Link } from'@tanstack/react-router';
-import { Compass, Home, Search } from'lucide-react';
+import { Compass, Home } from'lucide-react';
 import { useTranslation } from'react-i18next';
 
 /**
@@ -42,20 +42,16 @@ export function NotFound() {
  <Home className="size-4"aria-hidden="true"/>
  {t('notFound.home', { defaultValue:'Go home'})}
  </Link>
+ {/* One link, because Explore and Search are one page now: this used to
+ offer both, side by side, which was the clearest symptom of the split
+ — two buttons, two icons, same destination's worth of content. */}
  <Link
  to="/explore"
- className="inline-flex items-center justify-center gap-2 rounded-full border border-site-border bg-transparent px-5 py-3 text-sm font-semibold text-site-text transition hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-site-text/25"
- >
- <Compass className="size-4"aria-hidden="true"/>
- {t('notFound.explore', { defaultValue:'Explore'})}
- </Link>
- <Link
- to="/search"
  search={{ q:'', tab:'top'}}
  className="inline-flex items-center justify-center gap-2 rounded-full border border-site-border bg-transparent px-5 py-3 text-sm font-semibold text-site-text transition hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-site-text/25"
  >
- <Search className="size-4"aria-hidden="true"/>
- {t('notFound.search', { defaultValue:'Search'})}
+ <Compass className="size-4"aria-hidden="true"/>
+ {t('notFound.explore-search', { defaultValue:'Explore & search'})}
  </Link>
  </div>
  </div>

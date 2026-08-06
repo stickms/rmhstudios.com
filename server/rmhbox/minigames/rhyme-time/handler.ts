@@ -298,10 +298,14 @@ export class RhymeTimeMinigame extends BaseMinigame {
     const playerSubs = this.state.submissions[userId];
     if (!playerSubs) return; // not a participant
 
-    if (playerSubs.length >= this.getSetting('maxSubmissions', RT_MAX_SUBMISSIONS)) {
+    const maxSubmissions = this.getSetting('maxSubmissions', RT_MAX_SUBMISSIONS);
+
+    if (playerSubs.length >= maxSubmissions) {
       this.context.sendToPlayer(userId, 'rmhbox:game:action', {
         type: 'RT_RHYME_REJECTED',
         reason: 'max_submissions',
+        word,
+        maxSubmissions,
       });
       return;
     }
@@ -311,6 +315,8 @@ export class RhymeTimeMinigame extends BaseMinigame {
       this.context.sendToPlayer(userId, 'rmhbox:game:action', {
         type: 'RT_RHYME_REJECTED',
         reason: 'duplicate',
+        word,
+        maxSubmissions,
       });
       return;
     }
@@ -345,25 +351,31 @@ export class RhymeTimeMinigame extends BaseMinigame {
       isMultiSyllable: multiSyllable,
     });
 
-    // Notify the submitter
-    this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+    // The points this word will cost at scoring time, so the client can label
+    // the pill with the real number instead of guessing at the constant. Only
+    // the penalty is known up front — a valid word's score depends on how many
+    // other players find it, which is not decided until the round ends.
+    const penalty = isValid
+      ? 0
+      : invalidReason === 'not_in_dictionary'
+        ? 0
+        : this.getSetting('invalidPenalty', RT_INVALID_PENALTY);
+
+    const submittedPayload = {
       type: 'RT_RHYME_SUBMITTED',
       word,
       isValid,
       invalidReason,
+      penalty,
       submissionCount: playerSubs.length,
-      maxSubmissions: this.getSetting('maxSubmissions', RT_MAX_SUBMISSIONS),
-    });
+      maxSubmissions,
+    };
+
+    // Notify the submitter
+    this.context.sendToPlayer(userId, 'rmhbox:game:action', submittedPayload);
 
     // Mirror to spectators following this player
-    this.context.sendToSpectatorFollowers(userId, 'rmhbox:game:action', {
-      type: 'RT_RHYME_SUBMITTED',
-      word,
-      isValid,
-      invalidReason,
-      submissionCount: playerSubs.length,
-      maxSubmissions: this.getSetting('maxSubmissions', RT_MAX_SUBMISSIONS),
-    });
+    this.context.sendToSpectatorFollowers(userId, 'rmhbox:game:action', submittedPayload);
 
     // Broadcast valid submission count to all
     const validCount = playerSubs.filter((s) => s.isValid).length;
@@ -503,6 +515,20 @@ export class RhymeTimeMinigame extends BaseMinigame {
 
   // ─── State Masking ───────────────────────────────────────────
 
+  /**
+   * Host-configurable numbers the client needs in order to render honestly:
+   * the submission cap drives the "n / max" counter and the input's disabled
+   * state, and the penalty is shown on rejected words. Both ship with every
+   * snapshot so a reconnect or a join-in-progress doesn't fall back to the
+   * defaults after the host changed them.
+   */
+  private get clientSettings(): { maxSubmissions: number; invalidPenalty: number } {
+    return {
+      maxSubmissions: this.getSetting('maxSubmissions', RT_MAX_SUBMISSIONS),
+      invalidPenalty: this.getSetting('invalidPenalty', RT_INVALID_PENALTY),
+    };
+  }
+
   getStateForPlayer(userId: string): unknown {
     const base = {
       phase: this.state.phase,
@@ -511,6 +537,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
       rootWord: this.state.rootWord,
       timeRemaining: this.state.timeRemaining,
       scores: this.state.scores,
+      ...this.clientSettings,
     };
 
     if (this.state.phase === RhymeTimePhase.INPUT) {
@@ -537,6 +564,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
       rootWord: this.state.rootWord,
       timeRemaining: this.state.timeRemaining,
       scores: this.state.scores,
+      ...this.clientSettings,
     };
 
     if (this.state.phase === RhymeTimePhase.INPUT) {

@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
 import { config } from './config';
+import { TRANSIENT_DISCORD_ID_PREFIX } from '../../lib/rmhbox/utils';
 import type { Socket } from 'socket.io';
 import type { ExtendedError } from 'socket.io';
 
@@ -99,9 +100,11 @@ async function validateDiscordToken(discordToken: string): Promise<ValidatedIden
     };
   }
 
-  // No linked account — use Discord identity directly
+  // No linked account — use the Discord identity directly. This ID has no row
+  // in `user`, so anything persisting per-user data must skip it
+  // (`isTransientDiscordIdentity` in lib/rmhbox/utils).
   return {
-    userId: `discord:${discordId}`,
+    userId: `${TRANSIENT_DISCORD_ID_PREFIX}${discordId}`,
     userName: discordName,
     avatarUrl: discordAvatar,
   };

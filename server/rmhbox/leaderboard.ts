@@ -14,6 +14,7 @@
 import { Socket } from 'socket.io';
 import { logger } from './logger';
 import { S2C } from '../../lib/rmhbox/events';
+import { isTransientDiscordIdentity } from '../../lib/rmhbox/utils';
 import { getPrismaClient } from './prisma-client';
 import type { RMHboxPlayer } from './types';
 import type { MinigameResults } from './minigames/base-minigame';
@@ -120,6 +121,15 @@ export class LeaderboardService {
       const winnerRanking = results.rankings.find((r) => r.rank === 1);
       const winnerUserId = winnerRanking?.userId ?? null;
 
+      // Discord Activity players whose Discord account isn't linked to a site
+      // account get an in-memory `discord:<id>` identity with no `user` row, so
+      // RMHboxProfile's foreign key rejects them. They still play, they just
+      // have nowhere to store a profile.
+      const persistable = results.rankings.filter(
+        (r) => players.has(r.userId) && !isTransientDiscordIdentity(r.userId),
+      );
+      const skipped = results.rankings.length - persistable.length;
+
       // Step 1: Create RMHboxMatch record
       const match = await prisma.rMHboxMatch.create({
         data: {
@@ -142,13 +152,18 @@ export class LeaderboardService {
       // per player (24 for an 8-player lobby) before the match was recorded.
       // Every player touches only their own profile row, so there is no
       // cross-player ordering to preserve.
-      const ranked = results.rankings.filter((r) => players.has(r.userId));
-      const existingProfiles = await prisma.rMHboxProfile.findMany({
-        where: { userId: { in: ranked.map((r) => r.userId) } },
-      });
+      const ranked = persistable;
+      const existingProfiles = ranked.length
+        ? await prisma.rMHboxProfile.findMany({
+            where: { userId: { in: ranked.map((r) => r.userId) } },
+          })
+        : [];
       const profileByUser = new Map(existingProfiles.map((p) => [p.userId, p]));
 
-      await Promise.all(
+      // allSettled, not all: one player's write failing (a deleted account, a
+      // unique-constraint race) must not discard every other player's stats for
+      // the match, which is what a rejected Promise.all did here.
+      const settled = await Promise.allSettled(
         ranked.map(async (ranking) => {
           const player = players.get(ranking.userId);
           if (!player) return;
@@ -241,12 +256,26 @@ export class LeaderboardService {
         }),
       );
 
+      for (const outcome of settled) {
+        if (outcome.status === 'rejected') {
+          logger.error({
+            event: 'match_player_persist_error',
+            matchId: match.id,
+            lobbyId,
+            minigameId,
+            error: String(outcome.reason),
+          });
+        }
+      }
+
       logger.info({
         event: 'match_persisted',
         matchId: match.id,
         lobbyId,
         minigameId,
         playerCount: results.rankings.length,
+        persistedCount: settled.filter((o) => o.status === 'fulfilled').length,
+        skippedGuestCount: skipped,
       });
     } catch (err) {
       // Fire-and-forget — log but NEVER throw

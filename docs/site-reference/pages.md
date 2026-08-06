@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 246 routes. 129 render inside the standard site shell (sidebar, nav, context rail); 117 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 247 routes. 129 render inside the standard site shell (sidebar, nav, context rail); 118 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -103,9 +103,9 @@ Standard pages, rendered inside the sidebar shell.
 | `/rmhladder/resume` | — | sign-in | `app/routes/_site/rmhladder/resume.tsx` |
 | `/rmhladder/review` | — | admin | `app/routes/_site/rmhladder/review.tsx` |
 | `/rmhladder/settings` | — | sign-in | `app/routes/_site/rmhladder/settings.tsx` |
-| `/roadmap` | Roadmap | public | `app/routes/_site/roadmap.tsx` |
+| `/roadmap` | Roadmap & requests | public | `app/routes/_site/roadmap.tsx` |
 | `/saves` | Saved | public | `app/routes/_site/saves/index.tsx` |
-| `/search` | Search | public | `app/routes/_site/search.tsx` |
+| `/search` | redirects to `/explore` | public | `app/routes/_site/search.tsx` |
 | `/services` | Services | public | `app/routes/_site/services.tsx` |
 | `/settings` | Settings | public | `app/routes/_site/settings/index.tsx` |
 | `/settings/account-status` | Account status | public | `app/routes/_site/settings/account-status.tsx` |
@@ -186,6 +186,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/forest-explorer/explore` | — | public | `app/routes/forest-explorer/explore.tsx` |
 | `/forest-explorer/story` | — | public | `app/routes/forest-explorer/story.tsx` |
 | `/gabriels-horn` | Gabriel | public | `app/routes/gabriels-horn.tsx` |
+| `/handle` | — | public | `app/routes/handle.ts` |
 | `/house-always-wins` | — | public | `app/routes/house-always-wins.tsx` |
 | `/isleworks` | Isleworks — isometric island city builder | public | `app/routes/isleworks.tsx` |
 | `/kowloon-knockout` | — | public | `app/routes/kowloon-knockout/index.tsx` |

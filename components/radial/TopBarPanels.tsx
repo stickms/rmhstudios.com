@@ -127,7 +127,7 @@ export function SearchPanel({ open, onClose, anchorRef }: PanelProps) {
       const q = query.trim();
       if (!q) return;
       onClose();
-      void navigate({ to: '/search', search: { q, tab: 'top' } });
+      void navigate({ to: '/explore', search: { q, tab: 'top' } });
     },
     [query, navigate, onClose],
   );
@@ -144,7 +144,7 @@ export function SearchPanel({ open, onClose, anchorRef }: PanelProps) {
       anchorRef={anchorRef}
       more={
         <Link
-          to="/search"
+          to="/explore"
           search={{ q: query.trim(), tab: 'top' }}
           className="rad-panel__more"
           onClick={onClose}

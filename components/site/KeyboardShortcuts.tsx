@@ -31,7 +31,7 @@ const SEQUENCE_TIMEOUT_MS = 1500;
 // "g then <key>" navigation targets.
 const GO_TARGETS: Array<{ key: string; href: string; tKey: string; label: string }> = [
   { key: 'h', href: '/', tKey: 'kbd-go-home', label: 'Home' },
-  { key: 'e', href: '/search', tKey: 'kbd-go-explore', label: 'Explore & search' },
+  { key: 'e', href: '/explore', tKey: 'kbd-go-explore', label: 'Explore & search' },
   { key: 'n', href: '/notifications', tKey: 'kbd-go-notifications', label: 'Notifications' },
   { key: 'm', href: '/messages', tKey: 'kbd-go-messages', label: 'Messages' },
   { key: 'b', href: '/saves', tKey: 'kbd-go-bookmarks', label: 'Saved' },

@@ -113,7 +113,11 @@ export function WhatsNewModal() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="spatial-whats-new max-w-[58rem] gap-0 overflow-hidden p-0">
+      {/* No `overflow-hidden` here: the sheet is taller than a phone and has to
+          scroll. The clipping the class name implies is `.spatial-whats-new`'s
+          job (overflow-x + a rounded scroll container), so the utility only ever
+          overrode the primitive's `overflow-y-auto` and stranded the cards. */}
+      <DialogContent className="spatial-whats-new max-w-[58rem] gap-0 p-0">
         <div className="spatial-whats-new__intro">
           <div className="spatial-whats-new__meta">
             <span>{t('whats-new', { defaultValue: 'What’s new' })}</span>

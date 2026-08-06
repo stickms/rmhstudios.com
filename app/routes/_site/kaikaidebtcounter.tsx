@@ -1,0 +1,58 @@
+/**
+ * /kaikaidebtcounter — the live, compounding record of what Kaikai owes.
+ *
+ * Three things happen on this page:
+ *
+ *  1. **The counter ticks.** Continuously compounded interest on everything on
+ *     the books, evaluated in the browser against a scalar basis the server
+ *     hands over. Interest is the only growth mechanism — see
+ *     `lib/kaikai-debt/debt.ts` for why that factorises into one number.
+ *  2. **Anyone signed in can add to it.** DeepSeek appraises the claim, prices
+ *     it between $5 and $250, and the line is logged against its author forever.
+ *  3. **The log never ends.** Scrolling pages backwards through his history;
+ *     past the end of what exists, DeepSeek writes more and it is cached in
+ *     Postgres, so each stretch of history is generated once for everyone.
+ *
+ * A `_site` route, so it keeps the site shell and the `--site-*` theme contract.
+ * The fire/aura/laser layer declares its own scoped palette under `.kd-root`
+ * (`components/kaikai-debt/kaikai-debt.css`) rather than bending theme tokens
+ * into flame colours.
+ *
+ * The loader renders the snapshot server-side so the first paint already shows a
+ * populated counter and the first page of the log — a debt counter that boots at
+ * $0.00 and then jumps has told the reader the number is fake.
+ */
+
+import { createFileRoute } from '@tanstack/react-router';
+import { createServerFn } from '@tanstack/react-start';
+import { definePage } from '@/lib/route/define-page';
+import { KaikaiDebtCounter } from '@/components/kaikai-debt/KaikaiDebtCounter';
+import type { DebtSnapshot } from '@/lib/kaikai-debt/debt';
+import { getSnapshot } from '@/lib/kaikai-debt/ledger.server';
+
+/**
+ * `canGenerate: false` — SSR never calls DeepSeek.
+ *
+ * A model call on the render path would put a multi-second, third-party
+ * dependency in front of the first byte of a page that is otherwise a database
+ * read. The log extends itself on scroll, from the client, where a slow response
+ * is a spinner at the bottom of a list instead of a blank page.
+ */
+const fetchSnapshot = createServerFn({ method: 'GET' }).handler(async (): Promise<DebtSnapshot> =>
+  getSnapshot({ canGenerate: false }),
+);
+
+export const Route = createFileRoute('/_site/kaikaidebtcounter')({
+  head: definePage({
+    path: '/kaikaidebtcounter',
+    title: 'The Kaikai Debt Counter | RMH Studios',
+    description:
+      'A live, compounding, permanently public record of everything Kaikai owes. Anyone can add to it. Nobody can pay it down.',
+  }),
+  loader: () => fetchSnapshot(),
+  component: KaikaiDebtCounterPage,
+});
+
+function KaikaiDebtCounterPage() {
+  return <KaikaiDebtCounter snapshot={Route.useLoaderData()} />;
+}

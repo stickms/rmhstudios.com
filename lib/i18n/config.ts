@@ -55,6 +55,7 @@ export const NAMESPACES = [
   "c-creator", "c-cursed-logic", "c-daily-puzzles", "c-doctrine",
   "c-dream-rift", "c-economy", "c-forest-explorer", "c-gabriels-horn",
   "c-game", "c-groupcall", "c-history", "c-house-always-wins", "c-isleworks",
+  "c-kaikai-debt",
   "c-kowloon-knockout", "c-laundry-sort", "c-layout", "c-library",
   "c-lights-out", "c-lists", "c-lockdown", "c-massive-march", "c-moderation", "c-neon-driftway",
   "c-news", "c-nightrail", "c-predictions", "c-profile-modules", "c-rideshare",
@@ -66,8 +67,8 @@ export const NAMESPACES = [
   "c-versecraft", "c-void-breaker", "c-wager", "c-wishlist",
   // Route namespaces.
   "r-altair", "r-discord", "r-forest-explorer", "r-kowloon-knockout",
-  "r-rmhbox", "r-rmhcode", "r-secret", "r-slice-it", "r-strategies",
-  "r-studio",
+  "r-rmhbox", "r-rmhcode", "r-secret", "r-slice-it", "r-sohumbum",
+  "r-strategies", "r-studio",
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 

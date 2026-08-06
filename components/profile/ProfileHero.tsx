@@ -10,6 +10,7 @@ import {
   Calendar,
   Coins,
   Gift,
+  Hourglass,
   Link as LinkIcon,
   MapPin,
   MessageCircle,
@@ -36,6 +37,7 @@ import { GlassPane } from '@/components/ui/liquid-glass';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
 import { safeHref } from '@/lib/url-safety';
+import { getFeaturedProfileLink } from '@/lib/profile/featured-links';
 import { SITE_URL } from '@/lib/seo';
 import type { ProfileData } from './profile-types';
 
@@ -180,6 +182,9 @@ export function ProfileHero({
     new Date(profile.createdAt),
   );
   const shareUrl = `${SITE_URL}/u/${profile.handle || profile.id}`;
+  // A link the site pins to this profile, distinct from the owner-editable
+  // `profile.links`. Null for everyone who isn't in the registry.
+  const featuredLink = getFeaturedProfileLink(profile.handle);
   const progress = profile.tipGoal
     ? Math.min(100, ((profile.tipsThisMonth ?? 0) / profile.tipGoal) * 100)
     : 0;
@@ -486,12 +491,21 @@ export function ProfileHero({
             </span>
           </div>
 
-          {profile.links?.length ? (
+          {featuredLink || profile.links?.length ? (
             <div
               className="mt-4 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap"
               aria-label={t('profile-links', { defaultValue: 'Profile links' })}
             >
-              {profile.links.map((link, index) => (
+              {featuredLink ? (
+                <Link
+                  to={featuredLink.to}
+                  className="touch-target glass-fill glass-interactive inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-site-text"
+                >
+                  <Hourglass className="size-3.5" aria-hidden />
+                  <span className="max-w-48 truncate">{featuredLink.label}</span>
+                </Link>
+              ) : null}
+              {profile.links?.map((link, index) => (
                 <a
                   key={`${link.url}-${index}`}
                   href={safeHref(link.url)}

@@ -197,6 +197,9 @@ const FULLSCREEN_TIER_DIRS = new Set([
   'render',
   'rmh-capital',
   'rmh-pmc',
+  // A single-purpose page that pastiches another site's fixed palette. It has
+  // no theme to be consistent with — that is the whole point of it.
+  'sohumbum',
 ]);
 
 /** Top-level route trees that are full-screen experiences, not `_site` pages. */
@@ -226,6 +229,7 @@ const FULLSCREEN_ROUTE_SEGMENTS = new Set([
   'rochester-offensive',
   'secret',
   'slice-it',
+  'sohumbum',
   'strategies',
   'studio',
   'synapse-storm',

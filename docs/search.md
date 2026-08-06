@@ -6,8 +6,9 @@
 
 Search covers **nine corpora** on one relevance scale: people, posts, user
 builds, blog posts, news articles, library documents, games, apps, and the
-site's destination pages. `/search`, the ⌘K palette, the top-bar quick panel and
-`/api/ai/search` all read the same ranking.
+site's destination pages. `/explore` (the search page — `/search` redirects to
+it), the ⌘K palette, the top-bar quick panel and `/api/ai/search` all read the
+same ranking.
 
 ---
 

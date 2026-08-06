@@ -20,6 +20,8 @@ const CORE_PREFIXES = [
   '/u',
   '/messages',
   '/saves',
+  // Merged into /explore; kept so a beacon from a client still on the old URL
+  // is classified the same way as the page it redirects to.
   '/search',
 ];
 const CONTENT_PREFIXES = ['/blog', '/news', '/library', '/textbook', '/indonesia-history'];

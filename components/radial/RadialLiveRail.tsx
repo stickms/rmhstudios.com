@@ -197,7 +197,7 @@ export function RadialLiveRail({ children }: { children?: ReactNode }) {
           </section>
         )}
 
-        <Link to="/search" search={{ q: '', tab: 'top' }} className="rad-live__explore">
+        <Link to="/explore" search={{ q: '', tab: 'top' }} className="rad-live__explore">
           <Sparkles aria-hidden />
           {t('explore-more', { defaultValue: 'Explore everything' })}
         </Link>

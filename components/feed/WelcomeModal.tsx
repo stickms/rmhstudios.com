@@ -15,7 +15,7 @@ const LANG_PICKED_KEY ='rmh-lang-picked-v1';
 const LANG_PICKED_EVENT ='rmh:lang-picked';
 
 const STEP_ICONS = [Sparkles, Gamepad2, Search, UserCircle];
-const STEP_TOS = [undefined,'/games','/search','/profile'];
+const STEP_TOS = [undefined,'/games','/explore','/profile'];
 
 /**
  * First-run onboarding. Shown once to signed-in users who haven't seen it

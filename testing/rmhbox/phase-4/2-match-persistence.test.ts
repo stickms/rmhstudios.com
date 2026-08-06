@@ -312,6 +312,59 @@ describe('Match-End Persistence (§2)', () => {
     expect(mockPrisma.rMHboxMatchPlayer.create).toHaveBeenCalledTimes(1);
   });
 
+  it('should skip transient Discord identities, which have no user row', async () => {
+    const alice = createPlayer(MOCK_USERS.alice);
+    const guest = createPlayer({
+      ...MOCK_USERS.bob,
+      userId: 'discord:1234567890',
+      userName: 'Guest',
+    });
+    const players = new Map([
+      [alice.userId, alice],
+      [guest.userId, guest],
+    ]);
+    const results = createMockResults([alice, guest]);
+
+    mockPrisma.rMHboxMatch.create.mockResolvedValue({ id: 'match-guest' });
+    mockPrisma.rMHboxProfile.findMany.mockResolvedValue([]);
+    mockPrisma.rMHboxProfile.create.mockResolvedValue({
+      id: 'profile-alice',
+      userId: alice.userId,
+    });
+
+    await service.persistMatchResults('LOBBY01', 'rhyme-time', results, players, null);
+
+    // The guest is never looked up or written — RMHboxProfile.userId is a
+    // foreign key to User, so a `discord:` id would raise P2003.
+    const lookup = mockPrisma.rMHboxProfile.findMany.mock.calls[0][0];
+    expect(lookup.where.userId.in).toEqual([alice.userId]);
+    expect(mockPrisma.rMHboxProfile.create).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.rMHboxProfile.create.mock.calls[0][0].data.userId).toBe(alice.userId);
+    expect(mockPrisma.rMHboxMatchPlayer.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('should still persist the other players when one player write fails', async () => {
+    const alice = createPlayer(MOCK_USERS.alice);
+    const bob = createPlayer(MOCK_USERS.bob);
+    const players = new Map([
+      [alice.userId, alice],
+      [bob.userId, bob],
+    ]);
+    const results = createMockResults([alice, bob]);
+
+    mockPrisma.rMHboxMatch.create.mockResolvedValue({ id: 'match-partial' });
+    mockPrisma.rMHboxProfile.findMany.mockResolvedValue([]);
+    mockPrisma.rMHboxProfile.create
+      .mockRejectedValueOnce(new Error('deleted account'))
+      .mockResolvedValueOnce({ id: 'profile-bob', userId: bob.userId });
+
+    await service.persistMatchResults('LOBBY01', 'rhyme-time', results, players, null);
+
+    // Alice's failure must not take Bob's row down with it.
+    expect(mockPrisma.rMHboxMatchPlayer.create).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.rMHboxMatchPlayer.create.mock.calls[0][0].data.userId).toBe(bob.userId);
+  });
+
   it('should store gameLog when provided', async () => {
     const alice = createPlayer(MOCK_USERS.alice);
     const players = new Map([[alice.userId, alice]]);
