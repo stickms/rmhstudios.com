@@ -400,6 +400,7 @@ model User {
   pools                  Pool[]
   poolContributions      PoolContribution[]
   communityPageRevisions CommunityPageRevision[]
+  kaikaiDebtEntries      KaikaiDebtEntry[]
 
   @@index([isBot])
   @@index([followerCount])
@@ -7248,4 +7249,69 @@ model CommunityPageRevision {
 
   @@index([pageId, createdAt(sort: Desc)])
   @@map("community_page_revision")
+}
+
+/// One line of the Kaikai Debt Counter's ledger (/kaikaidebtcounter).
+///
+/// **One table, two provenances.** A member entry and a generated receipt are
+/// the same thing to every reader of this table — a dated line item with an
+/// amount and a reason — and the page's infinite scroll is a single
+/// `createdAt DESC` walk across both. Splitting them would mean merging two
+/// keyset cursors in application code for no gain; `source` discriminates where
+/// it matters (author, provenance badge) and nowhere else.
+///
+///  - `source = 'member'` — a signed-in person added it. `addedById` is set and
+///    `claim` holds what they actually typed.
+///  - `source = 'ledger'` — DeepSeek generated it to extend the history below
+///    the fold, and it was cached here so it is generated exactly once for
+///    everyone, ever. No author, no claim.
+///
+/// Append-only by construction: nothing in the product edits or deletes a row,
+/// because the counter's premise is that the pile only grows. A row that has to
+/// go (abuse, a name that shouldn't be there) is a moderation action against the
+/// author, not an `UPDATE` here.
+///
+/// `amountCents` is clamped to [MIN_ENTRY_CENTS, MAX_ENTRY_CENTS] — $5 to $250 —
+/// before insert. It is the exact, auditable figure; the live counter's
+/// compounded projection is derived from it at read time and is deliberately
+/// never written back (see `lib/kaikai-debt/debt.ts`).
+model KaikaiDebtEntry {
+  /// UUIDv7 per the new-table PK policy — append-only and read newest-first, so
+  /// a time-sortable key gives insert locality and makes the keyset scan cheap.
+  id          String   @id @default(uuid(7))
+  /// 'member' | 'ledger'. See the note above; VarChar rather than an enum
+  /// because two values do not earn a type that needs a migration to extend.
+  source      String   @default("member") @db.VarChar(8)
+  /// What he owes. The headline of the log row.
+  item        String   @db.VarChar(80)
+  /// Why he owes it — the one-line justification. This is the "log" part.
+  note        String   @db.VarChar(180)
+  /// One of DEBT_CATEGORIES in `lib/kaikai-debt/debt.ts`. VarChar rather than an
+  /// enum: the list is a joke and will be edited, and a Postgres enum makes
+  /// every edit a migration.
+  category    String   @db.VarChar(16)
+  amountCents Int
+  /// What the submitter actually typed, kept verbatim; null on generated rows.
+  /// The appraisal is a model output and can be wrong, or funny in the wrong
+  /// direction; without the source text there is no way to tell which, and no
+  /// way to re-run an appraisal.
+  claim       String?  @db.VarChar(500)
+  addedById   String?
+  /// Member rows use `now()`. Generated rows are back-dated, walking away from
+  /// DEBT_EPOCH_MS in RECEIPT_STRIDE_MS steps, so the infinite scroll reads as
+  /// history rather than as a pile of rows all stamped the same second. The
+  /// stride is deterministic because uniqueness here is what keeps keyset
+  /// pagination total — a tie is a page boundary that drops or repeats a row.
+  createdAt   DateTime @default(now())
+
+  addedBy User? @relation(fields: [addedById], references: [id], onDelete: Cascade)
+
+  /// The one read this table serves: the infinite ledger, newest first.
+  /// `id` breaks ties so the cursor can never stall on duplicate timestamps.
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
+  /// "what has this person put on his tab" — also the per-author rate check.
+  @@index([addedById, createdAt(sort: Desc)])
+  /// Backs the member-only subtotal and the frontier lookup for generation.
+  @@index([source, createdAt])
+  @@map("kaikai_debt_entry")
 }

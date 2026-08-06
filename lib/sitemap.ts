@@ -79,6 +79,10 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/groups', changefreq: 'weekly', priority: 0.5 },
   { loc: '/help', changefreq: 'monthly', priority: 0.6 },
   { loc: '/predictions', changefreq: 'daily', priority: 0.5 },
+  // The Kaikai Debt Counter. `daily` rather than `weekly` despite being a joke:
+  // the log grows every time anyone adds a line or scrolls past the frontier,
+  // so the page's content genuinely changes faster than most of this list.
+  { loc: '/kaikaidebtcounter', changefreq: 'daily', priority: 0.4 },
   { loc: '/quotes', changefreq: 'weekly', priority: 0.4 },
   { loc: '/ranked', changefreq: 'daily', priority: 0.5 },
   { loc: '/rideshare', changefreq: 'weekly', priority: 0.5 },
@@ -197,6 +201,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/bookmarks': 'redirect', // → /saves
   '/drafts': 'personal',
   '/history': 'personal',
+  '/alexdebtcounter': 'redirect', // → /kaikaidebtcounter (the counter's subject is Kaikai)
   '/lists': 'redirect', // → /saves?tab=lists
   '/messages': 'personal',
   '/notifications': 'personal',
