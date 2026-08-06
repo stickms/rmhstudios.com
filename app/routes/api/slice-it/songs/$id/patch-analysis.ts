@@ -71,7 +71,7 @@ export const Route = createFileRoute('/api/slice-it/songs/$id/patch-analysis')({
           const incomingVersion = incoming.analysisVersion ?? 1;
           const currentVersion =
             typeof (current as { analysisVersion?: unknown })?.analysisVersion === 'number'
-              ? ((current as { analysisVersion: number }).analysisVersion)
+              ? (current as { analysisVersion: number }).analysisVersion
               : 0;
           if (current && incomingVersion <= currentVersion) {
             return Response.json({ success: true, updated: false, reason: 'not_newer' });

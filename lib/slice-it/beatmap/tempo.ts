@@ -121,8 +121,7 @@ export function estimateTempo(odf: Float32Array, frameDuration: number): TempoEs
   }
 
   const meanScore = scoreCount > 0 ? scoreSum / scoreCount : 0;
-  const confidence =
-    bestScore > 0 && meanScore > 0 ? Math.min(1, 1 - meanScore / bestScore) : 0;
+  const confidence = bestScore > 0 && meanScore > 0 ? Math.min(1, 1 - meanScore / bestScore) : 0;
 
   return {
     bpm: 60 / (bestLag * frameDuration),

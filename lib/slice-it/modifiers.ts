@@ -38,24 +38,32 @@ export const DEFAULT_MODIFIERS: Modifiers = {
   difficulty: 'normal',
 };
 
+/**
+ * Every field is `.optional()` before its transform, and that is load-bearing.
+ *
+ * In zod v4 a bare `z.unknown()` inside `z.object()` produces a **required**
+ * key — the v3 behaviour, where `unknown` made a key optional, was dropped.
+ * Without `.optional()`, parsing a partial object (`{ speed: 1.5 }`, or a
+ * `modifiers` blob stored before some flag existed) fails the whole object,
+ * the outer `.catch()` swallows the failure, and every field silently reverts
+ * to its default — including the one the caller was setting.
+ */
+const optionalUnknown = z.unknown().optional();
+
 /** Speed, rounded to the 0.1 steps the slider offers and clamped to range. */
-const SpeedZ = z
-  .unknown()
-  .transform((raw) => {
-    const n = typeof raw === 'number' && Number.isFinite(raw) ? raw : 1;
-    const stepped = Math.round(n * 10) / 10;
-    return Math.min(MAX_SPEED, Math.max(MIN_SPEED, stepped));
-  });
+const SpeedZ = optionalUnknown.transform((raw) => {
+  const n = typeof raw === 'number' && Number.isFinite(raw) ? raw : 1;
+  const stepped = Math.round(n * 10) / 10;
+  return Math.min(MAX_SPEED, Math.max(MIN_SPEED, stepped));
+});
 
-const BoolZ = z.unknown().transform((raw) => raw === true);
+const BoolZ = optionalUnknown.transform((raw) => raw === true);
 
-const DifficultyZ = z
-  .unknown()
-  .transform((raw): Difficulty =>
-    typeof raw === 'string' && (DIFFICULTIES as readonly string[]).includes(raw)
-      ? (raw as Difficulty)
-      : 'normal',
-  );
+const DifficultyZ = optionalUnknown.transform((raw): Difficulty =>
+  typeof raw === 'string' && (DIFFICULTIES as readonly string[]).includes(raw)
+    ? (raw as Difficulty)
+    : 'normal',
+);
 
 /**
  * Parses anything into a valid {@link Modifiers}.

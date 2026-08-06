@@ -4,10 +4,10 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { fadeRise, popIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
-import { GameEngine } from '@/lib/game/GameEngine';
-import { useGameStore } from '@/lib/store/useGameStore';
+import { GameEngine } from '@/lib/slice-it/engine';
+import { useSliceItStore } from '@/lib/slice-it/store';
 import { AudioManager } from '@/lib/audio/AudioManager';
-import { Slice, Difficulty } from '@/lib/game/types';
+import type { Slice } from '@/lib/slice-it/types';
 import { HUD } from './HUD';
 import { GameOver } from './GameOver';
 import { MainMenu } from './MainMenu';
@@ -16,8 +16,9 @@ import { Slider } from '@/components/ui/slider';
 import { Settings, X } from 'lucide-react';
 import { MultiplayerSidebar } from './MultiplayerSidebar';
 import { MatchResults } from './MatchResults';
-import { MultiplayerFactory } from '@/lib/game/MultiplayerFactory';
-import { authClient } from '@/lib/auth-client';
+import { addMatchListener, leaveLobby } from '@/lib/slice-it/net/client';
+import type { PausePayload } from '@/lib/slice-it/net/events';
+import { toast } from 'sonner';
 import { canvasGlowEnabled } from '@/lib/render/canvas2d-fx';
 import { gameSurfaceDpr } from '@/lib/display-scale';
 
@@ -147,17 +148,13 @@ export function GameCanvas() {
     audioOffset,
     setAudioOffset,
     setKeybinds,
-    multiplayerResults,
-  } = useGameStore();
+  } = useSliceItStore();
 
-  // Multiplayer lobby tracking
-  const [multiplayerLobbyId, setMultiplayerLobbyId] = useState<string | null>(null);
-  const [multiplayerHostId, setMultiplayerHostId] = useState<string | null>(null);
+  // Per-player chart-load progress, from the server's `slice:loading` tick.
+  const loadingPlayers = useSliceItStore((s) => s.loadingPlayers);
+  // Non-null while the room is held for a player who dropped mid-song.
+  const pause = useSliceItStore((s) => s.pause);
 
-  // Per-player loading state for multiplayer
-  const [loadingPlayers, setLoadingPlayers] = useState<
-    { id: string; name: string; loaded: boolean }[]
-  >([]);
   const keybindsRef = useRef(keybinds);
   useEffect(() => {
     keybindsRef.current = keybinds;
@@ -172,9 +169,6 @@ export function GameCanvas() {
   useEffect(() => {
     listeningForKeyRef.current = listeningForKey;
   }, [listeningForKey]);
-
-  // Score submission guard
-  const hasSubmittedScoreRef = useRef(false);
 
   // Sync volume store value → AudioManager
   useEffect(() => {
@@ -283,7 +277,7 @@ export function GameCanvas() {
     (lane: number) => {
       if (!engine) return;
       // Block input during countdown
-      if (useGameStore.getState().countdown > 0) return;
+      if (useSliceItStore.getState().countdown > 0) return;
       const audio = AudioManager.getInstance();
       if (audio.getContext()?.state === 'suspended') {
         audio.getContext()?.resume();
@@ -312,7 +306,7 @@ export function GameCanvas() {
     let animId: number;
     const poll = () => {
       const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-      const store = useGameStore.getState();
+      const store = useSliceItStore.getState();
 
       for (const gp of gamepads) {
         if (!gp) continue;
@@ -409,7 +403,7 @@ export function GameCanvas() {
     // Pause audio when tab is hidden, resume when visible again
     const handleVisibilityChange = () => {
       const audio = AudioManager.getInstance();
-      const store = useGameStore.getState();
+      const store = useSliceItStore.getState();
       if (document.hidden) {
         if (store.status === 'PLAYING' && !store.isPaused && !store.isMultiplayer) {
           newEngine.pause();
@@ -431,99 +425,110 @@ export function GameCanvas() {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       AudioManager.getInstance().stop();
-      useGameStore.getState().reset();
+      useSliceItStore.getState().resetRun();
     };
   }, []);
 
-  // ── Multiplayer Sync Listeners ─────────────────────────────────────────────
+  // ── Multiplayer match wiring ───────────────────────────────────────────────
+  //
+  // The server owns the match clock: the countdown, the pause when someone
+  // drops, and the resume after they return. Everything below renders that
+  // decision rather than making one — including the pause, which used to have
+  // no client-side representation at all because the protocol had no way to
+  // express it.
   useEffect(() => {
-    const mp = MultiplayerFactory.getInstance();
+    if (!engine) return;
 
-    const onStartCountdown = ({ countdownSeconds }: { countdownSeconds: number }) => {
-      let remaining = countdownSeconds;
-      setCountdown(remaining);
-      // Play beep for the first tick
-      const sfxVol = useGameStore.getState().sfxVolume / 100;
-      AudioManager.getInstance().playSfX(660, 'sine', 0.12, sfxVol * 0.6);
-      const interval = setInterval(() => {
-        remaining--;
-        if (remaining <= 0) {
-          clearInterval(interval);
-          setCountdown(0);
-          // Higher-pitched beep for "Go!"
-          AudioManager.getInstance().playSfX(880, 'sine', 0.15, sfxVol * 0.8);
-          engine?.start();
-        } else {
-          setCountdown(remaining);
-          // Beep on each countdown second
-          AudioManager.getInstance().playSfX(660, 'sine', 0.12, sfxVol * 0.6);
+    const beep = (frequency: number, gain: number) => {
+      const sfxVolume = useSliceItStore.getState().sfxVolume / 100;
+      AudioManager.getInstance().playSfX(frequency, 'sine', 0.12, sfxVolume * gain);
+    };
+
+    /**
+     * Count down to a server timestamp, then run `onZero`.
+     *
+     * Against the server's clock, not a local `setInterval` chain: two clients
+     * whose clocks differ by a second would otherwise start a second apart,
+     * having each counted "3, 2, 1" perfectly.
+     */
+    const countTo = (startsAt: number, onZero: () => void) => {
+      let lastSecond = -1;
+      const tick = () => {
+        const remaining = Math.max(0, Math.ceil((startsAt - Date.now()) / 1000));
+        if (remaining !== lastSecond) {
+          lastSecond = remaining;
+          useSliceItStore.getState().setCountdown(remaining);
+          if (remaining > 0) beep(660, 0.6);
         }
-      }, 1000);
+        if (Date.now() >= startsAt) {
+          clearInterval(timer);
+          useSliceItStore.getState().setCountdown(0);
+          beep(880, 0.8);
+          onZero();
+        }
+      };
+      const timer = setInterval(tick, 100);
+      tick();
+      return () => clearInterval(timer);
     };
 
-    mp.on('start_countdown', onStartCountdown);
+    let cancelCountdown: (() => void) | null = null;
 
-    const onInitLoading = () => {
-      // Reset per-player loading status when a new loading round starts
-      setLoadingPlayers([]);
-    };
-    mp.on('init_loading', onInitLoading);
+    const unsubscribe = addMatchListener({
+      onCountdown: ({ startsAt }) => {
+        cancelCountdown?.();
+        const store = useSliceItStore.getState();
+        store.setIsLoadingSong(false);
+        cancelCountdown = countTo(startsAt, () => {
+          useSliceItStore.getState().setIsPaused(false);
+          engine.start();
+        });
+      },
 
-    const onLoadingUpdate = (data: {
-      players: { id: string; name: string; loaded: boolean }[];
-    }) => {
-      setLoadingPlayers(data.players);
-    };
-    mp.on('loading_update', onLoadingUpdate);
+      onPause: () => {
+        cancelCountdown?.();
+        cancelCountdown = null;
+        engine.pause();
+      },
 
-    const onGameStarted = () => {
-      const store = useGameStore.getState();
-      store.setIsLoadingSong(false);
-      store.setCountdown(0);
-    };
-    mp.on('game_started', onGameStarted);
+      onResume: ({ resumeAt }) => {
+        cancelCountdown?.();
+        cancelCountdown = countTo(resumeAt, () => {
+          useSliceItStore.getState().setIsPaused(false);
+          engine.resume();
+        });
+      },
 
-    const onMatchResults = (data: { players: any[] }) => {
-      useGameStore.getState().setMultiplayerResults(data.players);
-    };
-    mp.on('match_results', onMatchResults);
-
-    const onReturnToLobby = () => {
-      // Reset game state but keep multiplayer connection alive
-      useGameStore.getState().setMultiplayerResults(null);
-      useGameStore.getState().setStatus('MENU');
-      // Keep isMultiplayer true — MainMenu will show the lobby
-      // The lobby_update that follows will re-trigger the MultiplayerLobby flow
-      engine?.reset();
-    };
-    mp.on('return_to_lobby', onReturnToLobby);
-
-    const onLobbyUpdate = (data: { lobbyId: string; hostId: string }) => {
-      setMultiplayerLobbyId(data.lobbyId);
-      setMultiplayerHostId(data.hostId);
-    };
-    mp.on('lobby_update', onLobbyUpdate);
-
-    const onPlayerFinished = (data: { id: string; finalScore: number }) => {
-      // Update the player's score in the live results if we have them
-      const store = useGameStore.getState();
-      if (data.id !== mp.getSocketId()) {
-        store.setOpponent(data.id, { score: data.finalScore });
-      }
-    };
-    mp.on('player_finished', onPlayerFinished);
+      onKicked: (reason) => {
+        cancelCountdown?.();
+        toast.error(
+          reason === 'removed_by_host'
+            ? t('kicked-by-host', { defaultValue: 'The host removed you from the lobby.' })
+            : t('kicked-generic', { defaultValue: 'You left the lobby.' }),
+        );
+        const store = useSliceItStore.getState();
+        store.setStatus('MENU');
+        engine.reset();
+      },
+    });
 
     return () => {
-      mp.off('start_countdown', onStartCountdown);
-      mp.off('init_loading', onInitLoading);
-      mp.off('loading_update', onLoadingUpdate);
-      mp.off('game_started', onGameStarted);
-      mp.off('match_results', onMatchResults);
-      mp.off('player_finished', onPlayerFinished);
-      mp.off('return_to_lobby', onReturnToLobby);
-      mp.off('lobby_update', onLobbyUpdate);
+      unsubscribe();
+      cancelCountdown?.();
     };
-  }, [engine, setCountdown]);
+  }, [engine, t]);
+
+  // Returning to the lobby after results: the server flips the lobby back to
+  // `waiting`, which is the cue to tear the run down and show the menu again.
+  const lobbyState = useSliceItStore((s) => s.lobby?.state ?? null);
+  useEffect(() => {
+    if (lobbyState !== 'waiting' || !engine) return;
+    const store = useSliceItStore.getState();
+    if (store.status === 'MENU') return;
+    store.setMatchResults(null);
+    store.setStatus('MENU');
+    engine.reset();
+  }, [lobbyState, engine]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -547,16 +552,16 @@ export function GameCanvas() {
             setShowSettings((prev) => !prev);
           } else {
             // Singleplayer: toggle pause
-            const store = useGameStore.getState();
+            const store = useSliceItStore.getState();
             if (store.isPaused) engine?.resume();
             else engine?.pause();
           }
         }
         return;
       }
-      if (useGameStore.getState().isPaused) return;
+      if (useSliceItStore.getState().isPaused) return;
       if (status !== 'PLAYING') return;
-      if (useGameStore.getState().countdown > 0) return;
+      if (useSliceItStore.getState().countdown > 0) return;
       if (e.repeat) return; // Block held-key repeats: one press = one note
       if (e.code === keybinds.lane1) handleInput(0);
       else if (e.code === keybinds.lane2) handleInput(1);
@@ -564,7 +569,7 @@ export function GameCanvas() {
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (useGameStore.getState().isPaused) return;
+      if (useSliceItStore.getState().isPaused) return;
       if (status !== 'PLAYING') return;
       if (e.code === keybinds.lane1) handleInputRelease(0);
       else if (e.code === keybinds.lane2) handleInputRelease(1);
@@ -597,10 +602,10 @@ export function GameCanvas() {
       if ((e.target as HTMLElement).closest('[data-mobile-btn]')) return;
       if ((e.target as HTMLElement).tagName === 'BUTTON') return;
       if ((e.target as HTMLElement).closest('[data-settings-panel]')) return;
-      if (useGameStore.getState().isPaused) return;
+      if (useSliceItStore.getState().isPaused) return;
       if (isMultiplayer && showSettings) return;
       if (status !== 'PLAYING') return;
-      if (useGameStore.getState().countdown > 0) return;
+      if (useSliceItStore.getState().countdown > 0) return;
 
       if (e instanceof MouseEvent) {
         // Use keybind mapping to determine lane
@@ -634,7 +639,7 @@ export function GameCanvas() {
         const kb = keybindsRef.current;
         if (btnCode !== kb.lane1 && btnCode !== kb.lane2) return;
       }
-      if (useGameStore.getState().isPaused) return;
+      if (useSliceItStore.getState().isPaused) return;
       if (status !== 'PLAYING') return;
 
       if (e instanceof MouseEvent) {
@@ -685,8 +690,8 @@ export function GameCanvas() {
 
   useEffect(() => {
     if (status === 'MENU' && engine) {
-      engine.setLobbyId(null);
-      useGameStore.getState().setIsMultiplayer(false);
+      useSliceItStore.getState().setIsMultiplayer(false);
+      engine.setMultiplayer(false);
       engine.reset();
     }
   }, [status, engine]);
@@ -757,7 +762,7 @@ export function GameCanvas() {
     const h = H / dpr;
 
     // Spin modifier: slowly slowly rotate counter-clockwise based on song time
-    const isSpinMod = useGameStore.getState().modifiers.spin;
+    const isSpinMod = useSliceItStore.getState().modifiers.spin;
     if (isSpinMod) {
       const t = AudioManager.getInstance().getCurrentTime();
       // Slow counter-clockwise rotation based on seconds
@@ -782,8 +787,8 @@ export function GameCanvas() {
     // Constants - SCALING UPDATE
     // We want ~3 seconds visibility at 1.0x speed.
     // PPS = scroll-axis-length / 3.0, scaled by speed modifier.
-    const speedMod = useGameStore.getState().modifiers.speed || 1.0;
-    const isOneTrack = useGameStore.getState().modifiers.oneTrack;
+    const speedMod = useSliceItStore.getState().modifiers.speed || 1.0;
+    const isOneTrack = useSliceItStore.getState().modifiers.oneTrack;
     const isMobileV = h > w; // portrait canvas = mobile vertical mode
     const currentTime = AudioManager.getInstance().getCurrentTime();
 
@@ -973,7 +978,7 @@ export function GameCanvas() {
         // Invisible modifier: notes fade out as they approach the hit line
         // Similar to osu! Hidden — notes appear, then fade to invisible
         // Fade starts at ~60% of the visible distance, fully invisible at ~30%
-        const isInvisibleMod = useGameStore.getState().modifiers.invisible;
+        const isInvisibleMod = useSliceItStore.getState().modifiers.invisible;
         if (isInvisibleMod && slice.type !== 'BOMB') {
           const timeUntilHit = slice.time - currentTime; // audio-seconds until hit
           const visibleWindow = 3.0 / speedMod; // total visible window in audio-seconds
@@ -1303,7 +1308,9 @@ export function GameCanvas() {
           moves to the container so it can't clamp one axis of the ratio. */}
       <div
         className={`min-w-0 flex-1 bg-slice-shadow-dark/30 ${
-          isPortrait ? 'flex items-center justify-center p-1' : 'app-stage-fit mx-auto max-w-[1400px] p-4'
+          isPortrait
+            ? 'flex items-center justify-center p-1'
+            : 'app-stage-fit mx-auto max-w-[1400px] p-4'
         }`}
       >
         <div
@@ -1383,7 +1390,7 @@ export function GameCanvas() {
                 if (isMultiplayer) {
                   setShowSettings((prev) => !prev);
                 } else {
-                  const store = useGameStore.getState();
+                  const store = useSliceItStore.getState();
                   // Never pause in multiplayer — only toggle settings panel
                   if (store.isPaused) engine?.resume();
                   else engine?.pause();
@@ -1429,15 +1436,15 @@ export function GameCanvas() {
                         {t('effects', { defaultValue: 'Effects' })}
                       </span>
                       <span className="text-sm font-bold text-blue-500">
-                        {useGameStore.getState().sfxVolume}%
+                        {useSliceItStore.getState().sfxVolume}%
                       </span>
                     </div>
                     <Slider
-                      value={[useGameStore.getState().sfxVolume]}
+                      value={[useSliceItStore.getState().sfxVolume]}
                       min={0}
                       max={100}
                       step={1}
-                      onValueChange={([v]) => useGameStore.getState().setSfxVolume(v)}
+                      onValueChange={([v]) => useSliceItStore.getState().setSfxVolume(v)}
                       className="w-full"
                     />
                   </div>
@@ -1534,11 +1541,12 @@ export function GameCanvas() {
                   className="w-full text-red-400 hover:text-red-500 hover:bg-transparent"
                   onClick={() => {
                     setListeningForKey(null);
-                    useGameStore.getState().setStatus('MENU');
-                    useGameStore.getState().setIsMultiplayer(false);
+                    useSliceItStore.getState().setStatus('MENU');
+                    useSliceItStore.getState().setIsMultiplayer(false);
                     setIsPaused(false);
+                    engine?.setMultiplayer(false);
                     engine?.reset();
-                    engine?.setLobbyId(null);
+                    leaveLobby();
                   }}
                 >
                   {t('quit', { defaultValue: 'QUIT' })}
@@ -1660,10 +1668,11 @@ export function GameCanvas() {
                 className="w-full text-red-400 hover:text-red-500 hover:bg-transparent text-xs font-black"
                 onClick={() => {
                   setShowSettings(false);
-                  useGameStore.getState().setStatus('MENU');
-                  useGameStore.getState().setIsMultiplayer(false);
-                  engine?.setLobbyId(null);
+                  useSliceItStore.getState().setStatus('MENU');
+                  useSliceItStore.getState().setIsMultiplayer(false);
+                  engine?.setMultiplayer(false);
                   engine?.reset();
+                  leaveLobby();
                 }}
               >
                 {t('exit-game', { defaultValue: 'EXIT GAME' })}
@@ -1688,7 +1697,7 @@ export function GameCanvas() {
                 <div className="h-4 bg-slice-bg rounded-full shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)] p-1">
                   <div
                     className="h-full bg-linear-to-r from-blue-500 to-pink-500 w-full origin-left transition-transform duration-300 shadow-[0_0_15px_rgba(59,130,246,0.5)]"
-                    style={{ transform: `scaleX(${(loadingProgress) / 100})` }}
+                    style={{ transform: `scaleX(${loadingProgress / 100})` }}
                   />
                 </div>
 
@@ -1710,7 +1719,7 @@ export function GameCanvas() {
                     <div className="flex flex-col gap-1.5">
                       {loadingPlayers.map((p) => (
                         <div
-                          key={p.id}
+                          key={p.socketId}
                           className="flex items-center justify-between bg-slice-bg px-3 py-2 rounded-xl shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]"
                         >
                           <span className="text-xs font-bold text-slice-text-darker truncate">
@@ -1752,14 +1761,23 @@ export function GameCanvas() {
             </div>
           )}
 
+          {/*
+            Someone dropped mid-song and the room is holding for them. The
+            countdown is rendered against the server's `kickAt`, so every player
+            sees the same number — including the one reconnecting, whose client
+            is retrying continuously behind this overlay.
+          */}
+          {status === 'PLAYING' && pause && <PauseOverlay pause={pause} />}
+
           {status === 'FINISHED' && isMultiplayer && (
             <MatchResults
-              isHost={multiplayerHostId === MultiplayerFactory.getInstance().getSocketId()}
-              lobbyId={multiplayerLobbyId}
               onBack={() => {
-                useGameStore.getState().setMultiplayerResults(null);
-                useGameStore.getState().setStatus('MENU');
+                const store = useSliceItStore.getState();
+                store.setMatchResults(null);
+                store.setStatus('MENU');
+                engine?.setMultiplayer(false);
                 engine?.reset();
+                leaveLobby();
               }}
             />
           )}
@@ -1771,15 +1789,15 @@ export function GameCanvas() {
                 engine.reset();
                 setCountdown(3);
                 setTimeout(() => {
-                  if (useGameStore.getState().status === 'FINISHED') setCountdown(2);
+                  if (useSliceItStore.getState().status === 'FINISHED') setCountdown(2);
                 }, 1000);
                 setTimeout(() => {
-                  if (useGameStore.getState().status === 'FINISHED') setCountdown(1);
+                  if (useSliceItStore.getState().status === 'FINISHED') setCountdown(1);
                 }, 2000);
                 setTimeout(() => {
                   setCountdown(0);
-                  if (useGameStore.getState().status === 'FINISHED') {
-                    useGameStore.getState().setStatus('PLAYING');
+                  if (useSliceItStore.getState().status === 'FINISHED') {
+                    useSliceItStore.getState().setStatus('PLAYING');
                     engine.start();
                   }
                 }, 3000);
@@ -1861,6 +1879,64 @@ export function GameCanvas() {
       {(status === 'PLAYING' || (status === 'FINISHED' && isMultiplayer)) && isMultiplayer && (
         <MultiplayerSidebar />
       )}
+    </div>
+  );
+}
+
+/**
+ * "Waiting for <name> — 27s".
+ *
+ * The countdown is derived from the server's `kickAt` timestamp on every tick
+ * rather than from a local `setInterval` started at pause time: two clients
+ * whose clocks differ, or one whose tab was throttled while backgrounded, would
+ * otherwise show numbers that disagree with each other and with the moment the
+ * server actually gives up.
+ */
+function PauseOverlay({ pause }: { pause: PausePayload }) {
+  const { t } = useTranslation('c-game');
+  const [remaining, setRemaining] = useState(() =>
+    Math.max(0, Math.ceil((pause.kickAt - Date.now()) / 1000)),
+  );
+
+  useEffect(() => {
+    const tick = () => setRemaining(Math.max(0, Math.ceil((pause.kickAt - Date.now()) / 1000)));
+    tick();
+    const timer = setInterval(tick, 250);
+    return () => clearInterval(timer);
+  }, [pause.kickAt]);
+
+  const names = pause.peers.map((peer) => peer.userName).join(', ');
+
+  return (
+    <div
+      className="absolute inset-0 z-80 flex items-center-safe justify-center-safe bg-slice-bg/85 backdrop-blur-sm p-6"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="text-center max-w-sm">
+        <p className="text-xs font-black uppercase tracking-[0.3em] text-amber-500 mb-3">
+          {t('match-paused', { defaultValue: 'Match Paused' })}
+        </p>
+        <h2 className="text-2xl font-black text-slice-text-darker mb-2">
+          {t('waiting-for-player', {
+            defaultValue: 'Waiting for {{names}} to reconnect',
+            names: names || t('a-player', { defaultValue: 'a player' }),
+          })}
+        </h2>
+        <p className="text-5xl font-black font-mono text-slice-text tabular-nums">{remaining}s</p>
+        <p className="text-xs text-slice-text-muted mt-4">
+          {t('pause-resume-hint', {
+            defaultValue: 'The match resumes as soon as they are back, or when the timer runs out.',
+          })}
+        </p>
+        {pause.pausesLeft <= 1 && (
+          <p className="text-[10px] font-bold uppercase tracking-widest text-orange-400 mt-3">
+            {pause.pausesLeft === 0
+              ? t('pauses-exhausted', { defaultValue: 'No pauses left after this one' })
+              : t('pauses-left', { defaultValue: '1 pause left' })}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

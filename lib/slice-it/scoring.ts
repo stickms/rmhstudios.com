@@ -42,9 +42,8 @@ export function calculateScoreMultiplier(modifiers: Partial<Modifiers> | null | 
   if (modifiers.strictTiming) mult += MODIFIER_BONUSES.strictTiming;
   if (modifiers.oneTrack) mult += MODIFIER_BONUSES.oneTrack;
 
-  const speed = typeof modifiers.speed === 'number' && Number.isFinite(modifiers.speed)
-    ? modifiers.speed
-    : 1;
+  const speed =
+    typeof modifiers.speed === 'number' && Number.isFinite(modifiers.speed) ? modifiers.speed : 1;
   if (speed > 1) mult += (speed - 1) * SPEED_BONUS_PER_X;
 
   return mult;

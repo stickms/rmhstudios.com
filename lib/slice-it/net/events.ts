@@ -281,10 +281,18 @@ export interface LobbyError {
  * the score endpoint re-derives its own bounds from the song's real duration.
  */
 const clampedNumber = (max: number, min = 0) =>
-  z.unknown().transform((raw) => {
-    const n = typeof raw === 'number' && Number.isFinite(raw) ? raw : min;
-    return Math.max(min, Math.min(n, max));
-  });
+  // `.optional()` matters: in zod v4 a bare `z.unknown()` inside `z.object()`
+  // makes the key REQUIRED, so a client that omits one field — an older bundle,
+  // a field added since — fails the whole parse, which `bindEvents` answers
+  // with `protocol:error` and a disconnect. Mid-song. Clamping a missing field
+  // to its floor is the behaviour this schema is supposed to have.
+  z
+    .unknown()
+    .optional()
+    .transform((raw) => {
+      const n = typeof raw === 'number' && Number.isFinite(raw) ? raw : min;
+      return Math.max(min, Math.min(n, max));
+    });
 
 export const ScoreReportZ = z.object({
   score: clampedNumber(Number.MAX_SAFE_INTEGER).transform((n) => Math.floor(n)),
@@ -294,16 +302,14 @@ export const ScoreReportZ = z.object({
   health: clampedNumber(100),
 });
 
-const CodeZ = z
-  .unknown()
-  .transform((raw) =>
-    typeof raw === 'string'
-      ? raw
-          .toUpperCase()
-          .replace(/[^A-Z0-9]/g, '')
-          .slice(0, LOBBY_CODE_LENGTH)
-      : '',
-  );
+const CodeZ = z.unknown().transform((raw) =>
+  typeof raw === 'string'
+    ? raw
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, '')
+        .slice(0, LOBBY_CODE_LENGTH)
+    : '',
+);
 
 /**
  * For the events whose payload the server ignores entirely.
@@ -461,7 +467,10 @@ export const EVENTS = defineEvents({
   'slice:score': { c2s: ScoreReportZ },
   'slice:finish': { c2s: ScoreReportZ },
   'slice:rematch': { c2s: IgnoredZ },
-  'slice:chat': { c2s: z.object({ text: z.string().max(CHAT_MAX_LENGTH * 4) }) },
+  'slice:chat': {
+    c2s: z.object({ text: z.string().max(CHAT_MAX_LENGTH * 4) }),
+    s2c: ChatMessageZ,
+  },
   'slice:kick': { c2s: z.object({ socketId: z.string().max(64) }) },
 
   /**

@@ -219,8 +219,7 @@ export const useSliceItStore = create<SliceItState>()(
         }),
       setLoadingPlayers: (loadingPlayers) => set({ loadingPlayers }),
       setMatchResults: (matchResults) => set({ matchResults }),
-      pushChat: (message) =>
-        set((state) => ({ chat: [...state.chat, message].slice(-CHAT_KEEP) })),
+      pushChat: (message) => set((state) => ({ chat: [...state.chat, message].slice(-CHAT_KEEP) })),
       setPublicLobbies: (publicLobbies) => set({ publicLobbies }),
       setLobbyError: (lobbyError) => set({ lobbyError }),
       setPause: (pause) => set({ pause }),

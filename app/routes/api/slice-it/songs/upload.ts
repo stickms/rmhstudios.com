@@ -116,7 +116,9 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
         if ((mine._sum.fileSizeBytes ?? 0) + buffer.length > PER_USER_STORAGE_LIMIT_BYTES) {
           const limitMb = Math.round(PER_USER_STORAGE_LIMIT_BYTES / 1024 / 1024);
           return Response.json(
-            { error: `You have reached your ${limitMb} MB upload limit. Delete a track to free space.` },
+            {
+              error: `You have reached your ${limitMb} MB upload limit. Delete a track to free space.`,
+            },
             { status: 507 },
           );
         }
@@ -253,5 +255,8 @@ function extensionOf(name: string): string {
 }
 
 function stripExtension(name: string): string {
-  return name.replace(/\.[^/.]+$/, '').trim().slice(0, 200);
+  return name
+    .replace(/\.[^/.]+$/, '')
+    .trim()
+    .slice(0, 200);
 }

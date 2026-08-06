@@ -300,7 +300,10 @@ function buildSlices(
     // 3. Respect same-lane spacing; fall back to the other lane, then drop.
     if (note.time - lastTimeInLane[lane] < tier.laneMinGap || note.time < holdEndInLane[lane]) {
       const other = 1 - lane;
-      if (note.time - lastTimeInLane[other] >= tier.laneMinGap && note.time >= holdEndInLane[other]) {
+      if (
+        note.time - lastTimeInLane[other] >= tier.laneMinGap &&
+        note.time >= holdEndInLane[other]
+      ) {
         lane = other;
       } else {
         continue;
@@ -317,8 +320,8 @@ function buildSlices(
       const available = nextInLane - note.time - tier.laneMinGap;
       const wanted = Math.min(note.sustain, note.beatLength * 4);
       // Quantise the tail to half-beats so a hold ends somewhere musical.
-      const stepped = Math.floor(Math.min(wanted, available) / (note.beatLength / 2)) *
-        (note.beatLength / 2);
+      const stepped =
+        Math.floor(Math.min(wanted, available) / (note.beatLength / 2)) * (note.beatLength / 2);
       if (stepped >= minHold) {
         type = 'LONG';
         duration = stepped;
@@ -369,11 +372,7 @@ export interface ChartResult {
  * clear frequency bias) reproducible, so re-analysing a song yields the same
  * chart and two clients that generate locally agree.
  */
-export function buildCharts(
-  notes: QuantizedNote[],
-  duration: number,
-  seed: string,
-): ChartResult {
+export function buildCharts(notes: QuantizedNote[], duration: number, seed: string): ChartResult {
   const slices = {} as Record<Difficulty, Slice[]>;
   const noteCounts = {} as Record<Difficulty, number>;
 

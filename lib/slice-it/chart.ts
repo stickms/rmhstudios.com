@@ -16,11 +16,7 @@
  * produce the same chart — on a retry, and on every machine in a lobby.
  */
 
-import {
-  BOMB_CONVERSION_RATE,
-  SWITCH_CONVERSION_RATE,
-  type Difficulty,
-} from './constants';
+import { BOMB_CONVERSION_RATE, SWITCH_CONVERSION_RATE, type Difficulty } from './constants';
 import type { BeatMap, Modifiers, Slice } from './types';
 
 /** mulberry32 seeded from a string — small, fast, and stable across engines. */

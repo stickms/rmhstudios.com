@@ -113,7 +113,10 @@ const MAX_SLICES = 20_000;
 
 const SliceZ = z.object({
   id: z.string().max(64),
-  time: z.number().min(0).max(MAX_SONG_DURATION_SEC * 2),
+  time: z
+    .number()
+    .min(0)
+    .max(MAX_SONG_DURATION_SEC * 2),
   type: z.enum(['STANDARD', 'MOVING', 'LONG', 'SILENT', 'SPEED', 'BOMB', 'SWITCH']),
   lane: z.number().int().min(0).max(1),
   duration: z.number().min(0).max(120).optional(),

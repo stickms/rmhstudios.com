@@ -59,7 +59,7 @@ let client: RealtimeClient | null = null;
 let pendingCode: string | null = null;
 
 /** Listeners for the events the UI reacts to imperatively (audio cues, chart load). */
-type MatchListeners = {
+export type MatchListeners = {
   onStart?: (payload: MatchStartPayload) => void;
   onCountdown?: (payload: CountdownPayload) => void;
   onKicked?: (reason: string) => void;
@@ -68,7 +68,26 @@ type MatchListeners = {
   /** Restart the engine at `resumeAt`, after the re-countdown. */
   onResume?: (payload: ResumePayload) => void;
 };
-let matchListeners: MatchListeners = {};
+
+/**
+ * A set, not a single object.
+ *
+ * Two components need these: the menu loads the chart on `onStart`, and the
+ * canvas drives the engine on `onCountdown`/`onPause`/`onResume`. With one
+ * slot, whichever mounted second silently replaced the first — and the symptom
+ * would be a match that starts but never pauses, or pauses but never loads.
+ */
+const matchListeners = new Set<MatchListeners>();
+
+function notify<K extends keyof MatchListeners>(
+  key: K,
+  invoke: (listener: NonNullable<MatchListeners[K]>) => void,
+): void {
+  for (const listener of matchListeners) {
+    const handler = listener[key];
+    if (handler) invoke(handler as NonNullable<MatchListeners[K]>);
+  }
+}
 
 const store = () => useSliceItStore.getState();
 
@@ -120,7 +139,6 @@ export function disconnectSliceIt(): void {
   client?.destroy();
   client = null;
   pendingCode = null;
-  matchListeners = {};
   store().resetMultiplayer();
   store().setConnection('idle');
 }
@@ -134,16 +152,18 @@ export function selfSocketId(): string | null {
 }
 
 /**
- * Register the imperative callbacks the canvas needs.
+ * Subscribe to the match events the UI must react to imperatively.
  *
- * Countdown beeps and chart loading are side effects with timing, not state —
- * routing them through the store and a `useEffect` would fire them a frame late
- * and, worse, again on every unrelated re-render.
+ * Countdown beeps, chart loading and pause/resume are side effects with timing,
+ * not state — routing them through the store and a `useEffect` would fire them
+ * a frame late and, worse, again on every unrelated re-render.
+ *
+ * Returns an unsubscribe.
  */
-export function setMatchListeners(listeners: MatchListeners): () => void {
-  matchListeners = listeners;
+export function addMatchListener(listeners: MatchListeners): () => void {
+  matchListeners.add(listeners);
   return () => {
-    matchListeners = {};
+    matchListeners.delete(listeners);
   };
 }
 
@@ -178,14 +198,14 @@ function registerHandlers(socket: Socket): void {
 
   socket.on(S2C.COUNTDOWN, (payload: CountdownPayload) => {
     store().setCountdown(Math.max(0, Math.ceil(payload?.seconds ?? 0)));
-    matchListeners.onCountdown?.(payload);
+    notify('onCountdown', (fn) => fn(payload));
   });
 
   socket.on(S2C.START, (payload: MatchStartPayload) => {
     const s = store();
     s.setMatchResults(null);
     s.setLiveScores([]);
-    matchListeners.onStart?.(payload);
+    notify('onStart', (fn) => fn(payload));
   });
 
   socket.on(S2C.SCORES, (scores: LiveScore[]) => {
@@ -203,19 +223,19 @@ function registerHandlers(socket: Socket): void {
   socket.on(S2C.KICKED, (payload: { reason: string }) => {
     pendingCode = null;
     store().resetMultiplayer();
-    matchListeners.onKicked?.(payload?.reason ?? 'removed');
+    notify('onKicked', (fn) => fn(payload?.reason ?? 'removed'));
   });
 
   socket.on(S2C.PAUSE, (payload: PausePayload) => {
     const s = store();
     s.setPause(payload ?? null);
     s.setIsPaused(true);
-    matchListeners.onPause?.(payload);
+    notify('onPause', (fn) => fn(payload));
   });
 
   socket.on(S2C.RESUME, (payload: ResumePayload) => {
     store().setPause(null);
-    matchListeners.onResume?.(payload);
+    notify('onResume', (fn) => fn(payload));
   });
 }
 

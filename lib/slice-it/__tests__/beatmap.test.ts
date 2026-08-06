@@ -222,7 +222,7 @@ describe('tempo and beat tracking', () => {
     const middle = beats.slice(2, -2);
     expect(middle.length).toBeGreaterThan(20);
     const offsets = middle.map((t) => {
-      const phase = ((t - 0.25) % interval + interval) % interval;
+      const phase = (((t - 0.25) % interval) + interval) % interval;
       return Math.min(phase, interval - phase);
     });
     const meanOffset = offsets.reduce((a, b) => a + b, 0) / offsets.length;
@@ -255,10 +255,7 @@ describe('quantisation', () => {
   });
 
   it('snaps to eighths, sixteenths and triplets', () => {
-    const notes = quantizeOnsets(
-      [onsetAt(1.25), onsetAt(2.125), onsetAt(3 + 0.5 / 3)],
-      beats,
-    );
+    const notes = quantizeOnsets([onsetAt(1.25), onsetAt(2.125), onsetAt(3 + 0.5 / 3)], beats);
     expect(notes.map((n) => Number(n.fraction.toFixed(3)))).toEqual([0.5, 0.25, 0.333]);
   });
 

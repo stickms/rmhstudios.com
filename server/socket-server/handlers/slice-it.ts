@@ -153,7 +153,9 @@ let gcInterval: ReturnType<typeof setInterval> | null = null;
 
 /* ─── Helpers ───────────────────────────────────────────────────────────── */
 
-function identity(socket: Socket): { userId: string; name: string; avatarUrl: string | null } | null {
+function identity(
+  socket: Socket,
+): { userId: string; name: string; avatarUrl: string | null } | null {
   const userId = socket.data?.userId;
   if (typeof userId !== 'string' || !userId) return null;
   return {
@@ -855,9 +857,7 @@ export function registerSliceItHandlers(io: Server, socket: Socket): void {
       // Fullest-first, so quickplay concentrates people into a few busy lobbies
       // rather than scattering them one to a room.
       const open = Array.from(lobbies.values())
-        .filter(
-          (l) => l.isPublic && l.state === 'waiting' && l.seats.size < MAX_LOBBY_PLAYERS,
-        )
+        .filter((l) => l.isPublic && l.state === 'waiting' && l.seats.size < MAX_LOBBY_PLAYERS)
         .sort((a, b) => b.seats.size - a.seats.size);
 
       const lobby = open[0] ?? createLobby(who, true);
@@ -1089,7 +1089,8 @@ export function handleSliceItDisconnect(io: Server, socket: Socket): void {
   seat.socketId = null;
   seat.disconnectedAt = Date.now();
 
-  const inMatch = lobby.state === 'playing' || lobby.state === 'countdown' || lobby.state === 'loading';
+  const inMatch =
+    lobby.state === 'playing' || lobby.state === 'countdown' || lobby.state === 'loading';
   const graceMs = inMatch ? MATCH_DISCONNECT_GRACE_MS : LOBBY_DISCONNECT_GRACE_MS;
 
   if (seat.graceTimer) clearTimeout(seat.graceTimer);

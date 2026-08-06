@@ -48,10 +48,7 @@ function buildFilterbank(
 ): { edges: Int32Array; freqs: Float64Array; count: number } {
   const nyquist = sampleRate / 2;
   const top = Math.min(MAX_FREQ, nyquist * 0.98);
-  const bandCount = Math.max(
-    1,
-    Math.floor(Math.log2(top / MIN_FREQ) * BANDS_PER_OCTAVE),
-  );
+  const bandCount = Math.max(1, Math.floor(Math.log2(top / MIN_FREQ) * BANDS_PER_OCTAVE));
 
   const centres: number[] = [];
   for (let i = 0; i <= bandCount; i++) {
