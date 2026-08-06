@@ -21,6 +21,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/components/Providers';
 import { ConnectionBanner } from '@/components/shared/ConnectionStatus';
+import { useLobbyInviteJoin } from '@/hooks/useLobbyLink';
 import { SCORE_PUBLISH_MS } from '@/lib/laundry-sort/constants';
 import { LaundryMatch, type MatchEvent } from '@/lib/laundry-sort/match';
 import { randomSeed } from '@/lib/laundry-sort/rng';
@@ -101,6 +102,14 @@ export function LaundryGame() {
       cancelled = true;
     };
   }, [partyTicket, signedIn, ensureConnected]);
+
+  // An invite link instead of a code read out over voice chat. Same join the
+  // menu makes, so a full or expired lobby fails the same way it always did.
+  useLobbyInviteJoin(signedIn, (code) => {
+    void (async () => {
+      if (await ensureConnected()) laundryNet.join(code.toUpperCase());
+    })();
+  });
 
   // ── Errors ────────────────────────────────────────────────────────────────
 

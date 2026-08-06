@@ -2,11 +2,13 @@
 
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLobbyInviteJoin } from '@/hooks/useLobbyLink';
 import { Circle, Loader2 } from 'lucide-react';
 import { connectToHoldem, disconnectFromHoldem, getHoldemSocket, onHoldemBalanceUpdate } from '@/lib/holdem/socket';
 import { useHoldemStore } from '@/lib/holdem/store';
 import { C2S } from '@/lib/holdem/events';
 import { HoldemLobby } from './HoldemLobby';
+import { TableInvite } from './TableInvite';
 import { HoldemTable } from './HoldemTable';
 import { HoldemControls } from './HoldemControls';
 import { HoldemSessionStats } from './HoldemSessionStats';
@@ -45,6 +47,13 @@ export function HoldemGame({ coins, setCoins }: Props) {
       disconnectFromHoldem();
     };
   }, []);
+
+  // Arrived on a table invite link — sit down at the named table instead of
+  // showing the room list. The server rejects a code that no longer exists, and
+  // the lobby's own error path says so.
+  useLobbyInviteJoin(connectionStatus === 'connected' && !roomInfo, (code) => {
+    getHoldemSocket()?.emit(C2S.JOIN_ROOM, { joinCode: code.toUpperCase() });
+  });
 
   useEffect(() => {
     return onHoldemBalanceUpdate((newBalance) => setCoins(newBalance));
@@ -100,6 +109,7 @@ export function HoldemGame({ coins, setCoins }: Props) {
           <h3 className="text-sm font-bold text-site-text truncate">{roomInfo.name}</h3>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {roomInfo.joinCode && <TableInvite game="holdem" joinCode={roomInfo.joinCode} />}
           <span className="text-[10px] sm:text-xs text-site-text-dim">
             {roomInfo.smallBlind}/{roomInfo.bigBlind}
           </span>

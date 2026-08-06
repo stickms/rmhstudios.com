@@ -14,6 +14,7 @@ import { useRouterState } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import AppShell from '@/components/shared/AppShell';
 import { useSession } from '@/components/Providers';
+import { useLobbyInvite, useLobbyInviteJoin } from '@/hooks/useLobbyLink';
 import { useHornStore } from '@/lib/gabriels-horn/store';
 import {
   connectHorn,
@@ -89,6 +90,16 @@ export function GabrielsHornGame() {
     };
   }, [partyTicket, signedIn, ensureConnected]);
 
+  // An invite link. Same join the code field makes, minus the eight characters
+  // somebody would otherwise have to read out and somebody else mistype.
+  const invite = useLobbyInvite();
+
+  useLobbyInviteJoin(signedIn, (code) => {
+    void (async () => {
+      if (await ensureConnected()) hornNet.join(code.toUpperCase());
+    })();
+  });
+
   // Walk straight back into a table this tab was already at.
   //
   // A socket drop recovers on its own — the module is still loaded and the
@@ -97,8 +108,11 @@ export function GabrielsHornGame() {
   // window either way; this is the half that tells it which table we mean. A
   // refused rejoin (grace expired, table gone) lands on the menu via the error
   // handler, so a stale code costs nothing.
+  //
+  // An invite link outranks it: being handed a table is a deliberate choice to
+  // sit at THAT one, not at whichever one this tab was last at.
   useEffect(() => {
-    if (!signedIn || partyTicket?.token) return;
+    if (!signedIn || partyTicket?.token || invite) return;
     const code = storedTableCode();
     if (!code) return;
     let cancelled = false;
@@ -111,7 +125,7 @@ export function GabrielsHornGame() {
     return () => {
       cancelled = true;
     };
-  }, [signedIn, partyTicket, ensureConnected]);
+  }, [signedIn, partyTicket, invite, ensureConnected]);
 
   // The rejoin landed (any screen but the menu) or was refused (the error
   // handler already sent us to the menu and cleared the stored code).

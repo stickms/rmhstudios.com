@@ -6,7 +6,9 @@ vi.mock('@/lib/prisma.server', () => ({ prisma: {} }));
 import {
   TIER_RANK,
   mapPlanToTier,
+  parseTier,
   tierFromSubscription,
+  hasAdFree,
   hasApiAccess,
   hasBadge,
 } from '@/lib/entitlements';
@@ -37,12 +39,40 @@ describe('tierFromSubscription', () => {
   });
 });
 
+describe('parseTier', () => {
+  it('accepts exactly the known tiers', () => {
+    expect(parseTier('free')).toBe('free');
+    expect(parseTier('starter')).toBe('starter');
+    expect(parseTier('pro')).toBe('pro');
+    expect(parseTier('enterprise')).toBe('enterprise');
+  });
+  it('returns null for anything else, rather than rounding down to free', () => {
+    // Callers decide what an unknown tier means; silently calling it `free`
+    // would hand a paid account the free-tier experience.
+    expect(parseTier('bogus')).toBeNull();
+    // Inherited object keys are not tiers. `'toString' in TIER_RANK` is true.
+    expect(parseTier('toString')).toBeNull();
+    expect(parseTier('constructor')).toBeNull();
+    expect(parseTier('Pro')).toBeNull();
+    expect(parseTier(' pro')).toBeNull();
+    expect(parseTier('')).toBeNull();
+    expect(parseTier(null)).toBeNull();
+    expect(parseTier(undefined)).toBeNull();
+  });
+});
+
 describe('gating helpers', () => {
   it('hasApiAccess is starter and above', () => {
     expect(hasApiAccess('free')).toBe(false);
     expect(hasApiAccess('starter')).toBe(true);
     expect(hasApiAccess('pro')).toBe(true);
     expect(hasApiAccess('enterprise')).toBe(true);
+  });
+  it('hasAdFree is every paid tier', () => {
+    expect(hasAdFree('free')).toBe(false);
+    expect(hasAdFree('starter')).toBe(true);
+    expect(hasAdFree('pro')).toBe(true);
+    expect(hasAdFree('enterprise')).toBe(true);
   });
   it('hasBadge is pro and above', () => {
     expect(hasBadge('free')).toBe(false);

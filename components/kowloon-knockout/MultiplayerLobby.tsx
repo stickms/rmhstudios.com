@@ -4,6 +4,7 @@ import { m as motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useCallback } from 'react';
 import { useGameStore } from '@/lib/kowloon-knockout/store';
+import { useLobbyInviteJoin, useLobbyLink } from '@/hooks/useLobbyLink';
 import { networkClient, type ServerMessage, type LobbyListing } from '@/lib/kowloon-knockout/net/client';
 import { CLASS_DISPLAY, ALL_FIGHTERS } from '@/lib/kowloon-knockout/game/fighters/stats';
 import { TEAM_COLORS } from '@/lib/kowloon-knockout/game/config';
@@ -21,8 +22,16 @@ export default function MultiplayerLobby() {
     const [createPublic, setCreatePublic] = useState(true);
     const [lobbies, setLobbies] = useState<LobbyListing[]>([]);
     const [connecting, setConnecting] = useState(false);
+    const [connected, setConnected] = useState(false);
 
     const inRoom = lobbySeats.length > 0;
+    const { copied: linkCopied, copyLink } = useLobbyLink({ code: roomCode });
+
+    // Arrived on an invite link: join the moment the socket is up. Emitting into
+    // a socket that has not connected yet is a join that quietly never happened.
+    useLobbyInviteJoin(connected && !inRoom, (code) => {
+        networkClient.joinRoom(code.toUpperCase(), useGameStore.getState().selectedClass);
+    });
 
     // Connect on mount and keep the public lobby list fresh while browsing.
     useEffect(() => {
@@ -37,6 +46,7 @@ export default function MultiplayerLobby() {
             try { await networkClient.connect(); } catch { /* shown via button states */ }
             if (!alive) return;
             setConnecting(false);
+            setConnected(networkClient.connected);
             networkClient.listLobbies();
             timer = setInterval(() => {
                 if (!useGameStore.getState().lobbySeats.length) networkClient.listLobbies();
@@ -156,11 +166,14 @@ export default function MultiplayerLobby() {
                         style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, width: '100%', maxWidth: 560 }}>
 
                         {roomCode && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 10 }}>
                                 <div className="lobby-room-code">{roomCode}</div>
                                 <button className="neon-button neon-button-controls"
                                     onClick={() => { if (roomCode) { navigator.clipboard.writeText(roomCode); setCopied(true); setTimeout(() => setCopied(false), 1500); } }}>
                                     {copied ? t('copied', { defaultValue: 'COPIED!' }) : t('copy-code', { defaultValue: 'COPY CODE' })}
+                                </button>
+                                <button className="neon-button neon-button-controls" onClick={() => void copyLink()}>
+                                    {linkCopied ? t('copied', { defaultValue: 'COPIED!' }) : t('copy-link', { defaultValue: 'COPY LINK' })}
                                 </button>
                                 <span className="lobby-visibility" style={{ color: isPublic ? '#33ff99' : '#888' }}>
                                     {isPublic ? t('public', { defaultValue: 'PUBLIC' }) : t('private', { defaultValue: 'PRIVATE' })}

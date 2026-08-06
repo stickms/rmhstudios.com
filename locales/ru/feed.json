@@ -416,6 +416,8 @@
   "failed-to-upload-image": "Не удалось загрузить изображение",
   "failed-upload-avatar": "Не удалось загрузить аватар",
   "failed-upload-banner": "Не удалось загрузить баннер",
+  "feature-ad-free": "No ads",
+  "feature-ad-free-blurb": "Free accounts are paid for by ads. A membership removes them everywhere — and the ad script is never even fetched, so nothing is loaded to be blocked.",
   "feature-api-access": "Developer API",
   "feature-api-access-blurb": "Programmatic access to the platform, with webhooks and image upload.",
   "feature-bulk-content": "Bulk content tools",

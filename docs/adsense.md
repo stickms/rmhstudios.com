@@ -25,16 +25,18 @@ requests to Google.
 
 ## Files
 
-| File                                        | What it is                                                                                   |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `lib/ads/adsense.ts`                        | Config + the pure gate (`adsAllowed`, `adsPersonalized`, placements, the excluded-path list) |
-| `lib/ads/loader.ts`                         | Lazy script injection, the personalisation flag, `pushAd()`                                  |
-| `hooks/useAdsEnabled.ts`                    | Resolves the live inputs (path, tier, consent, Discord) and re-evaluates on change           |
-| `components/ads/AdSlot.tsx`                 | The unit itself: viewport-deferred load, reserved height, unfilled collapse, the label       |
-| `app/routes/ads[.]txt.ts`                   | `/ads.txt`, generated from the publisher id                                                  |
-| `components/site/CookieConsent.tsx`         | The banner whose answer gates all of the above, plus `clearCookieConsent()`                  |
-| `components/site/CookieConsentControls.tsx` | Settings → Privacy: change or withdraw that answer                                           |
-| `lib/__tests__/adsense.test.ts`             | The gate's test — every "an ad must not appear here" rule is pinned there                    |
+| File                                        | What it is                                                                                                                  |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `lib/ads/adsense.ts`                        | Config + the pure gate (`adsAllowed`, `isAdFreeTier`, `resolveTier`, `adsPersonalized`, placements, the excluded-path list) |
+| `lib/ads/loader.ts`                         | Lazy script injection, the personalisation flag, `pushAd()`                                                                 |
+| `lib/entitlements/tiers.ts`                 | `hasAdFree()` — which tiers have paid for the site, and `parseTier()`                                                       |
+| `lib/entitlements/features.ts`              | The `ad-free` member feature, which is what the membership page advertises                                                  |
+| `hooks/useAdsEnabled.ts`                    | Resolves the live inputs (path, tier, whether the tier is KNOWN, consent, Discord)                                          |
+| `components/ads/AdSlot.tsx`                 | The unit itself: viewport-deferred load, reserved height, unfilled collapse, the label                                      |
+| `app/routes/ads[.]txt.ts`                   | `/ads.txt`, generated from the publisher id                                                                                 |
+| `components/site/CookieConsent.tsx`         | The banner whose answer gates all of the above, plus `clearCookieConsent()`                                                 |
+| `components/site/CookieConsentControls.tsx` | Settings → Privacy: change or withdraw that answer                                                                          |
+| `lib/__tests__/adsense.test.ts`             | The gate's test — every "an ad must not appear here" rule is pinned there                                                   |
 
 ## When an ad may render
 
@@ -46,19 +48,72 @@ requests to Google.
    waits behind the choice the banner exists to collect. This is also why the
    gate can't be evaluated during SSR: the answer lives in `localStorage`, so
    slots appear after mount, in space the layout already reserved.
-3. **The viewer is not on a paid plan.** `starter`, `pro` and `enterprise` see
+3. **The viewer's entitlement is known.** The session resolves _after_ the first
+   client render, so for a moment a member is indistinguishable from a
+   signed-out visitor. `sessionResolved: false` means "don't know yet", which is
+   not "free" — see [Ad-free membership](#ad-free-membership) below.
+4. **The viewer is not on a paid plan.** `starter`, `pro` and `enterprise` see
    no ads — including coin-funded gift memberships, which `getUserTier()`
    already folds into the same value.
-4. **The path is not excluded.** `/login`, `/settings`, `/wallet`, `/checkout`,
+5. **The path is not excluded.** `/login`, `/settings`, `/wallet`, `/checkout`,
    `/messages`, `/discord`, `/embed`, `/offline`, `/secret`, `/api`. Some of
    these are policy (Google prohibits ads behind a sign-in wall and beside
    payment forms), some are mechanical (Discord's iframe CSP blocks the tag
    outright), some are simply "there is no publisher content here".
-5. **Not inside a Discord Activity iframe.**
+6. **Not inside a Discord Activity iframe.**
 
 Placements are explicit, so in practice a unit only exists where one was
 written; the excluded-path list is the second lock, for the case where a
 placement is added to a shared component that later appears somewhere new.
+
+### Ad-free membership
+
+Removing ads is one of the things a membership is sold on, so it is a registered
+member feature (`ad-free` in `lib/entitlements/features.ts`) and not a private
+list of tier names inside the ad code. That buys three things: the membership
+page renders the "No ads" card from the same declaration the gate reads, the
+gate and the card cannot drift apart (`lib/__tests__/member-features.test.ts`
+pins them together), and a tier added above `starter` later is ad-free the day
+it exists, because `hasAdFree()` is a rank comparison rather than a set.
+
+The subtle half is **when the tier is known**, which is what `sessionResolved`
+above is for. Three states, and only the first two are answers:
+
+| State                                     | Ads           | Why                                                                               |
+| ----------------------------------------- | ------------- | --------------------------------------------------------------------------------- |
+| No user (`tier` absent, session ready)    | on            | A signed-out visitor. This is the traffic the free tier is funded by.             |
+| A known tier                              | `hasAdFree()` | `free` sees ads; every paid tier does not.                                        |
+| Session pending, or a tier we can't parse | off           | Not evidence of a free account. Guessing wrong here bills a paying member in ads. |
+
+Two paths lead to that third row and both are real: the client session is still
+in flight on first render, and `components/Providers` renders a persisted session
+snapshot (`localStorage`) while it loads — a snapshot written by an older build
+can lack the `tier` field entirely. Both read as "signed-in, entitlement
+unknown", and both must show nothing.
+
+#### Where the tier comes from
+
+Failing closed on an unknown tier is only affordable if the tier is rarely
+unknown, so `useAdsEnabled` reads it from two places and `resolveTier()`
+reconciles them:
+
+| Source                                           | Timely?                                      | Authoritative?                      |
+| ------------------------------------------------ | -------------------------------------------- | ----------------------------------- |
+| The live client session (`useSession`)           | No — resolves a round trip after first paint | Yes — reflects a sign-in or upgrade |
+| The root loader payload (`__root.tsx`, from SSR) | Yes — arrives with the document              | As of document render               |
+
+Live wins whenever it has an answer; the server's covers the window before that.
+Gating on the live session alone would delay every ad on the site, including for
+the signed-out majority who were never going to have a tier — so
+`getInitialUser` sends `tier` down with the SSR-resolved user, and the first
+client render already knows. Gating on the server's answer alone would keep
+serving ads to someone who subscribed thirty seconds ago, since the root loader
+holds its data for five minutes.
+
+Both are read defensively. A payload that is missing, reshaped, or from a
+session lookup that timed out yields "no answer" rather than a guess, and the
+gate waits for the client session — the failure direction is _an ad is late_,
+never _an ad leaks_.
 
 ### Personalisation
 
@@ -181,7 +236,10 @@ A blank slot is the normal outcome of several unrelated things. In order:
 1. **Nothing in the DOM at all** — the gate said no. Check, in order: is
    `VITE_ADSENSE_CLIENT_ID` set _in the build_ (not just the running env)? Has
    this browser answered the cookie banner (`localStorage['rmh-cookie-consent']`)?
-   Is the session on a paid tier? Is the path excluded?
+   Is the session on a paid tier? Is the path excluded? For a signed-in account
+   that should be seeing ads, check `localStorage['rmh-auth-user']` actually
+   carries a `tier` — a signed-in user whose entitlement can't be read is
+   treated as unknown, and unknown shows nothing.
 2. **`<ins>` present, no `data-ad-status`** — the tag never loaded. Almost
    always an ad blocker; also check the CSP report for a `script-src` violation.
    `AdSlot` treats this as an ordinary outcome and collapses the frame.

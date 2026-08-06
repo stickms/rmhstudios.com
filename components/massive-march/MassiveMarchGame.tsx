@@ -13,7 +13,9 @@ import { lazy, Suspense, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { useSession } from '@/components/Providers';
-import { connectMassiveMarch, disconnectMassiveMarch } from '@/lib/massive-march/net/client';
+import { useLobbyInvite, useLobbyInviteJoin } from '@/hooks/useLobbyLink';
+import { lobbyReturnPath } from '@/lib/lobby-link';
+import { connectMassiveMarch, disconnectMassiveMarch, mm } from '@/lib/massive-march/net/client';
 import { useMmStore } from '@/lib/massive-march/store';
 import { stopVoice } from '@/lib/massive-march/voice';
 import { LAND } from '@/lib/massive-march/palette';
@@ -44,6 +46,15 @@ export function MassiveMarchGame() {
     };
   }, [signedIn]);
 
+  // Somebody was sent a link instead of a code. Walk them over as soon as the
+  // socket is up — a refused join (host offline, walk full) lands on the menu
+  // with the usual error, exactly as typing the code would have.
+  useLobbyInviteJoin(signedIn && connection === 'connected', (code) => mm.join(code));
+
+  // …and the person opening that link is very often signed out, so login has to
+  // come back to the walk they were invited to rather than the front screen.
+  const invite = useLobbyInvite();
+
   if (isPending) {
     return <Standby>{t('loading', { defaultValue: 'Getting your boots…' })}</Standby>;
   }
@@ -64,7 +75,7 @@ export function MassiveMarchGame() {
                 'A campaign is a save, and a save belongs to an account — so you need to be signed in before you can start one or walk somebody else’s.',
             })}
           </p>
-          <Link to="/login" search={{ callbackURL: '/massive-march' }}>
+          <Link to="/login" search={{ callbackURL: lobbyReturnPath('/massive-march', invite) }}>
             <MarchButton tone="primary" className="w-full">
               {t('signin-action', { defaultValue: 'Sign in' })}
             </MarchButton>

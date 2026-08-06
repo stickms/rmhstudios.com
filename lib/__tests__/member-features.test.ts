@@ -12,7 +12,7 @@ import {
   type MemberFeature,
 } from '@/lib/entitlements/features';
 import { isUpgradeRequired } from '@/lib/entitlements/upsell';
-import { TIER_RANK, hasApiAccess, hasBadge, type Tier } from '@/lib/entitlements/tiers';
+import { TIER_RANK, hasAdFree, hasApiAccess, hasBadge, type Tier } from '@/lib/entitlements/tiers';
 
 const TIERS: Tier[] = ['free', 'starter', 'pro', 'enterprise'];
 
@@ -76,6 +76,8 @@ describe('member feature registry', () => {
     expect(requiredTier('bulk-content')).toBe('pro');
     expect(requiredTier('custom-emoji')).toBe('starter');
     expect(requiredTier('sticker-packs')).toBe('starter');
+    // Every paid tier is ad-free — there is no plan that sees fewer ads.
+    expect(requiredTier('ad-free')).toBe('starter');
     // Free-for-everyone features: voice messages and speedruns are usable
     // without a membership, members just get more.
     expect(requiredTier('voice-messages')).toBe('free');
@@ -105,6 +107,10 @@ describe('member feature registry', () => {
         tier,
         badge: hasBadge(tier),
       });
+      // `lib/ads/adsense.ts` gates on `hasAdFree`, and the card below advertises
+      // `canUse(tier, 'ad-free')`. If those ever disagree, the membership page
+      // sells an ad-free plan that still serves ads.
+      expect({ tier, adFree: canUse(tier, 'ad-free') }).toEqual({ tier, adFree: hasAdFree(tier) });
     }
   });
 
