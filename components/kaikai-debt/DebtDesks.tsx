@@ -4,13 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { Landmark, ShieldCheck } from 'lucide-react';
 
 /**
- * Who issues the paper and who clears the payments.
+ * Who issues the paper, who clears the payments, and who works the debt out.
  *
- * The counter above says what Kaikai owes; this says who books it. Two desks
- * inside RMH Capital: the Debt Capital Markets team in Investment Banking
- * issues the instruments each line on the tab represents, and Counterparty
- * Treasury & Risk Management handles repayments and the exposure they leave
- * behind.
+ * The counter above says what Kaikai owes; this says who books it. Both desks
+ * sit inside **RMH Capital** — Debt Capital Markets under Investment Banking,
+ * and Counterparty Treasury & Risk Management under Treasury Management — and
+ * the point of the closing line is that neither runs the workout alone: one
+ * prices the paper, the other prices the man behind it, and a restructuring
+ * needs both marks.
  *
  * Static prose, deliberately. Nothing here reads the ledger — attaching live
  * numbers to it would put a second subscriber on a stream whose whole design is
@@ -30,9 +31,9 @@ export function DebtDesks() {
           {t('desks.title', { defaultValue: 'Who issues it, who settles it' })}
         </h2>
         <p className="text-sm text-site-text-muted">
-          {t('desks.lede', {
+          {t('desks.ledeCapital', {
             defaultValue:
-              'The tab is public, but the paper behind it is not self-issued. Two desks stand between a line in the log and the number at the top of this page.',
+              'The tab is public, but the paper behind it is not self-issued. Two RMH Capital desks stand between a line in the log and the number at the top of this page.',
           })}
         </p>
       </div>
@@ -59,9 +60,9 @@ export function DebtDesks() {
         />
         <Desk
           icon={ShieldCheck}
-          role={t('desks.settlement.role', { defaultValue: 'Settlement and exposure' })}
-          name={t('desks.settlement.name', {
-            defaultValue: 'Counterparty Treasury & Risk Management',
+          role={t('desks.settlement.roleTreasury', { defaultValue: 'Treasury Management' })}
+          name={t('desks.settlement.nameCapital', {
+            defaultValue: 'RMH Capital — Counterparty Treasury & Risk Management',
           })}
           body={t('desks.settlement.body', {
             defaultValue:
@@ -69,6 +70,13 @@ export function DebtDesks() {
           })}
         />
       </div>
+
+      <p className="glass-inset rounded-site-sm p-3 text-xs text-site-text-muted">
+        {t('desks.workout', {
+          defaultValue:
+            'Neither desk works this out alone. Debt Capital Markets and Counterparty Treasury run the workout jointly — one marks the paper, the other marks the man behind it, and no restructuring clears without both. Kaikai has not been offered one.',
+        })}
+      </p>
     </section>
   );
 }
