@@ -8,6 +8,18 @@ import (
 	"time"
 )
 
+// fixtureSLO is the SLO report these render tests pass to renderHTML.
+//
+// The zero SLOConfig is deliberate rather than lazy: normalise() fills in the
+// documented defaults (99.9%, 1h/6h windows, 30d budget capped by retained
+// history), so this is the same shape of report the handler builds in
+// production without pinning the tests to numbers they do not assert on. Every
+// test in this file is about the rendered document — escaping, structure, the
+// never-probed state — not about burn rate.
+func fixtureSLO(p *Prober) SLOReport {
+	return p.SLO(SLOConfig{}, time.Now())
+}
+
 // fixtureProber builds a prober with a realistic multi-tier snapshot and a half
 // window of bucket history, so the render is exercised against real content
 // (every tier, every state, a partly-filled uptime strip) rather than an empty
@@ -72,7 +84,7 @@ func fixtureProber(t *testing.T) (*Prober, Snapshot) {
 // every later pin to the wrong place on the sphere).
 func TestRenderHTMLStructure(t *testing.T) {
 	p, snap := fixtureProber(t)
-	out := renderHTML(snap, p)
+	out := renderHTML(snap, p, fixtureSLO(p))
 
 	if !strings.HasPrefix(out, "<!doctype html>") {
 		t.Fatal("render must be a complete document")
@@ -94,8 +106,20 @@ func TestRenderHTMLStructure(t *testing.T) {
 		}
 	}
 
-	if got := strings.Count(out, `<li class="svc glass-fill"`); got != len(snap.Services) {
+	// The error-budget section (E14) reuses the .svc card markup for its own
+	// per-service rows, so counting across the whole document counts every
+	// service twice. Split at its heading and assert each list separately —
+	// "one card per service" is what this always meant, and asserting it on
+	// both halves catches a section that renders a partial roster.
+	tiers, budget, found := strings.Cut(out, `<h2 class="tier__label">Error budget</h2>`)
+	if !found {
+		t.Fatal("missing the error-budget section heading")
+	}
+	if got := strings.Count(tiers, `<li class="svc glass-fill"`); got != len(snap.Services) {
 		t.Errorf("rendered %d service cards, want %d", got, len(snap.Services))
+	}
+	if got := strings.Count(budget, `<li class="svc glass-fill"`); got != len(snap.Services) {
+		t.Errorf("rendered %d error-budget rows, want one per service (%d)", got, len(snap.Services))
 	}
 	if got := strings.Count(out, `<li class="globe__pin"`); got != len(snap.Services) {
 		t.Errorf("rendered %d globe pins, want one per service (%d)", got, len(snap.Services))
@@ -134,7 +158,7 @@ func TestRenderHTMLStructure(t *testing.T) {
 // destination, not a dependency, and nothing loads from it.)
 func TestRenderHTMLIsSelfContained(t *testing.T) {
 	p, snap := fixtureProber(t)
-	out := renderHTML(snap, p)
+	out := renderHTML(snap, p, fixtureSLO(p))
 
 	for _, forbidden := range []string{
 		"fonts.googleapis.com", "fonts.gstatic.com", "<script src", "unpkg.com", "jsdelivr",
@@ -192,7 +216,7 @@ func TestRenderHTMLEscapesServiceText(t *testing.T) {
 		Detail:      `<img src=x onerror=alert(3)>`,
 		CheckedAt:   "2026-08-01T00:00:00.000Z",
 	}
-	out := renderHTML(p.Snapshot(), p)
+	out := renderHTML(p.Snapshot(), p, fixtureSLO(p))
 
 	for _, injected := range []string{"<script>alert(1)", `onload="alert(2)`, "<img src=x onerror"} {
 		if strings.Contains(out, injected) {
@@ -209,7 +233,7 @@ func TestRenderHTMLEscapesServiceText(t *testing.T) {
 // serves for the first few seconds of every restart.
 func TestRenderHTMLNeverChecked(t *testing.T) {
 	p := NewProber([]Target{{Name: "Website", Group: "Core"}})
-	out := renderHTML(p.Snapshot(), p)
+	out := renderHTML(p.Snapshot(), p, fixtureSLO(p))
 
 	if strings.Contains(out, "1970") {
 		t.Error("the epoch sentinel leaked into the page as a date")
@@ -229,7 +253,7 @@ func TestDumpDashboard(t *testing.T) {
 		t.Skip("set STATUS_RENDER_DUMP=<file> to dump the rendered dashboard")
 	}
 	p, snap := fixtureProber(t)
-	if err := os.WriteFile(path, []byte(renderHTML(snap, p)), 0o600); err != nil {
+	if err := os.WriteFile(path, []byte(renderHTML(snap, p, fixtureSLO(p))), 0o600); err != nil {
 		t.Fatal(err)
 	}
 }
