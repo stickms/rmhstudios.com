@@ -8,6 +8,7 @@ import {
 } from "@aws-sdk/client-s3";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { brotliDecompressSync } from "node:zlib";
 import { contentTypeForFilename } from "./keys";
 import { compressForStorage } from "./compress.server";
 
@@ -172,7 +173,53 @@ export async function putObject(
   );
 }
 
+/**
+ * Read an object, **decoded**.
+ *
+ * `putObject` Brotli-compresses text-shaped bodies (SVG, JSON, XML, plain text)
+ * and records `ContentEncoding: br` on the object. Reading one back therefore
+ * yields compressed bytes, and a caller that hands those to a `Response`
+ * without the matching `Content-Encoding` header serves a broken file — an SVG
+ * that renders as nothing, a JSON body that will not parse. Worse, a caller
+ * that feeds them to `sharp` (the album asset route resizes on demand) throws
+ * on input it cannot identify.
+ *
+ * Every one of the call sites did exactly that: not one forwarded the header.
+ * So the encoding is undone here rather than being a rule each route has to
+ * remember, on the same principle as compressing inside `putObject` — the
+ * storage layer's compression should be invisible to everyone above it.
+ *
+ * That trades a little egress: forwarding `br` to a browser that accepts it
+ * would be smaller on the wire than re-sending the decoded bytes. Nothing was
+ * collecting that saving anyway (no route sent the header), and
+ * correct-by-default is the right way round for a function whose failure mode
+ * is silent corruption. {@link getObjectEncoded} is there for a route that
+ * wants to opt back in deliberately.
+ */
 export async function getObject(
+  key: string
+): Promise<{ body: Buffer; contentType: string } | null> {
+  const stored = await getObjectEncoded(key);
+  if (!stored) return null;
+  if (stored.contentEncoding !== "br") {
+    return { body: stored.body, contentType: stored.contentType };
+  }
+  try {
+    return { body: brotliDecompressSync(stored.body), contentType: stored.contentType };
+  } catch {
+    // An object labelled `br` that will not inflate is corrupt either way;
+    // returning the raw bytes at least lets a caller see something.
+    return { body: stored.body, contentType: stored.contentType };
+  }
+}
+
+/**
+ * Read an object exactly as stored, including its `contentEncoding`.
+ *
+ * For a caller that will forward `Content-Encoding` to the client and wants the
+ * wire saving. If you are not setting that header, use {@link getObject}.
+ */
+export async function getObjectEncoded(
   key: string
 ): Promise<{ body: Buffer; contentType: string; contentEncoding?: string } | null> {
   if (!s3Configured()) return localGet(key);

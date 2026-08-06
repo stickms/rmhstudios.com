@@ -303,24 +303,27 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
 
           {/* Header Bar */}
           <div className="flex items-center justify-between shrink-0 bg-slice-bg px-4 py-3 border-b border-slice-shadow-dark/50">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-slice-shadow-dark shadow-inner flex items-center justify-center text-slice-text-muted font-black text-xl">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 shrink-0 rounded-full bg-slice-shadow-dark shadow-inner flex items-center justify-center text-slice-text-muted font-black text-xl">
                 {userName ? userName.charAt(0).toUpperCase() : '?'}
               </div>
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black text-slice-text-light uppercase tracking-wider">
+              {/* `min-w-0` + truncate: a long display name used to push the
+                  multiplayer button and the two icon buttons off the right edge
+                  of a phone rather than eliding itself. */}
+              <div className="flex flex-col min-w-0">
+                <span className="hidden sm:block text-[10px] font-black text-slice-text-light uppercase tracking-wider">
                   {t('system-operator', { defaultValue: 'System Operator' })}
                 </span>
-                <div className="font-black text-slice-text text-base uppercase tracking-tight">
+                <div className="font-black text-slice-text text-sm sm:text-base uppercase tracking-tight truncate">
                   {userName || 'GUEST'}
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
               <Button
                 variant="outline"
-                className="h-10 bg-linear-to-r from-violet-500 to-blue-500 text-white border-none hover:from-violet-400 hover:to-blue-400 font-black px-5 rounded-lg transition-colors uppercase tracking-wide text-xs shadow-[0_0_12px_rgba(139,92,246,0.5)] hover:shadow-[0_0_20px_rgba(139,92,246,0.7)] animate-pulse hover:animate-none"
+                className="h-10 shrink-0 bg-linear-to-r from-violet-500 to-blue-500 text-white border-none hover:from-violet-400 hover:to-blue-400 font-black px-3 sm:px-5 rounded-lg transition-colors uppercase tracking-wide text-xs shadow-[0_0_12px_rgba(139,92,246,0.5)] hover:shadow-[0_0_20px_rgba(139,92,246,0.7)] animate-pulse hover:animate-none"
                 onClick={() => setShowMultiplayer(true)}
               >
                 <svg
@@ -340,7 +343,9 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                   <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
                   <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
-                {t('multiplayer', { defaultValue: 'MULTIPLAYER' })}
+                <span className="hidden sm:inline">
+                  {t('multiplayer', { defaultValue: 'MULTIPLAYER' })}
+                </span>
               </Button>
               <Button
                 variant="ghost"
@@ -381,26 +386,38 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
           </div>
 
           <div className="flex-1 min-h-0 flex relative">
-            {/* Auth Overlay */}
+            {/* Auth overlay.
+                `items-center-safe`/`justify-center-safe` + `overflow-y-auto`:
+                plain `items-center` centres the panel and then clips it at BOTH
+                ends once it is taller than the box, putting the heading and the
+                Log In button out of reach with no way to scroll to them. On a
+                landscape phone (844×390 leaves ~320px of stage) this card was
+                ~420px tall, so that was every landscape session.
+
+                The splash sizes are gated on width AND height rather than on
+                `sm:` alone. `sm:` is a width test, and a landscape phone passes
+                it with 320px of stage — which is how the Log In button ended up
+                below the fold of the screen whose only purpose is that button.
+                Scrolling now reaches it; sizing it means you don't have to. */}
             {!session.data && !session.isPending && (
-              <div className="absolute inset-0 z-60 bg-slice-bg/90 flex items-center justify-center p-8 backdrop-blur-xl rounded-[4rem] shadow-[inset_15px_15px_40px_var(--slice-shadow-dark),inset_-15px_-15px_40px_var(--slice-shadow-light)]">
+              <div className="absolute inset-0 z-60 bg-slice-bg/90 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain p-6 sm:p-8 backdrop-blur-xl rounded-[4rem] shadow-[inset_15px_15px_40px_var(--slice-shadow-dark),inset_-15px_-15px_40px_var(--slice-shadow-light)]">
                 <motion.div
-                  className="w-full max-w-md space-y-10 text-center"
+                  className="w-full max-w-md space-y-4 [@media(min-width:640px)_and_(min-height:620px)]:space-y-10 text-center"
                   variants={scaleIn}
                   initial="initial"
                   animate="animate"
                 >
-                  <h3 className="text-3xl sm:text-5xl font-black tracking-tighter uppercase italic text-slice-text">
+                  <h3 className="text-2xl [@media(min-width:640px)_and_(min-height:620px)]:text-5xl font-black tracking-tighter uppercase italic text-slice-text">
                     {t('connect-to-start', { defaultValue: 'Connect to Start' })}
                   </h3>
-                  <p className="text-slice-text-muted font-bold uppercase text-xs tracking-[0.5em] opacity-60">
+                  <p className="text-slice-text-muted font-bold uppercase text-[10px] sm:text-xs tracking-[0.35em] sm:tracking-[0.5em] opacity-60">
                     {t('auth-required', {
                       defaultValue: 'Authentication is required for leaderboard ranking',
                     })}
                   </p>
                   <div className="space-y-6">
                     <Button
-                      className="w-full py-6 sm:py-12 text-xl sm:text-3xl font-black tracking-widest bg-blue-500 hover:bg-blue-400 text-white shadow-[15px_15px_30px_rgba(59,130,246,0.4),-15px_-15px_30px_var(--slice-shadow-light)] rounded-[2.5rem] transition-colors transform hover:scale-[1.03] active:scale-95 uppercase"
+                      className="w-full py-4 [@media(min-width:640px)_and_(min-height:620px)]:py-12 text-lg [@media(min-width:640px)_and_(min-height:620px)]:text-3xl font-black tracking-widest bg-blue-500 hover:bg-blue-400 text-white shadow-[15px_15px_30px_rgba(59,130,246,0.4),-15px_-15px_30px_var(--slice-shadow-light)] rounded-[2.5rem] transition-colors transform hover:scale-[1.03] active:scale-95 uppercase"
                       onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
                     >
                       {t('log-in', { defaultValue: 'Log In' })}

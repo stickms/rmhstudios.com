@@ -61,7 +61,6 @@ const FULLSCREEN_DIRS = [
   'dream-rift',
   'forest-explorer',
   'gabriels-horn',
-  'game', // Slice It
   'house-always-wins',
   'isleworks',
   'kowloon-knockout',

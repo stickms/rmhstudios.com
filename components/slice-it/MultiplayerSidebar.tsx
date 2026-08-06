@@ -6,7 +6,7 @@ import { CheckCircle2 } from 'lucide-react';
 import { useSliceItStore } from '@/lib/slice-it/store';
 
 /**
- * The live opponent board, shown beside the playfield during a match.
+ * The live opponent board.
  *
  * Reads the server's batched score tick rather than a locally-maintained
  * `opponents` record. That record was written from two different events and
@@ -14,6 +14,14 @@ import { useSliceItStore } from '@/lib/slice-it/store';
  * their last score until the page was reloaded — and because scores arrived one
  * message per player per note hit, the ordering flickered continuously instead
  * of settling twice a second.
+ *
+ * ## Two layouts, because 288px is most of a phone
+ *
+ * This was a fixed `w-72` column beside the playfield at every width. On a
+ * 360px handset that left 72px of game — the lanes were unplayable, which is a
+ * strange way to lose a rhythm game. Below `lg` it becomes a horizontal strip
+ * of compact chips above the playfield instead: same information, ranked the
+ * same way, in one line the player can glance at without giving up the field.
  */
 export function MultiplayerSidebar() {
   const { t } = useTranslation('c-game');
@@ -30,17 +38,45 @@ export function MultiplayerSidebar() {
       .sort((a, b) => b.score - a.score);
   }, [liveScores, lobby, selfSocketId]);
 
-  return (
-    <aside className="w-72 bg-slice-bg border-l border-slice-shadow-dark/50 p-4 flex flex-col gap-4 shadow-[-5px_0_15px_rgba(0,0,0,0.05)] z-10 shrink-0">
-      <h3 className="font-black text-slice-text-light text-xs tracking-widest uppercase mb-2">
-        {t('opponents', { defaultValue: 'OPPONENTS' })}
-      </h3>
-
-      {rows.length === 0 ? (
+  if (rows.length === 0) {
+    return (
+      <aside className="hidden lg:flex w-72 bg-slice-bg border-l border-slice-shadow-dark/50 p-4 flex-col gap-4 z-10 shrink-0">
+        <h3 className="font-black text-slice-text-light text-xs tracking-widest uppercase mb-2">
+          {t('opponents', { defaultValue: 'OPPONENTS' })}
+        </h3>
         <p className="text-center text-slice-text-light text-sm mt-10 italic opacity-50">
           {t('no-active-opponents', { defaultValue: 'No active opponents' })}
         </p>
-      ) : (
+      </aside>
+    );
+  }
+
+  return (
+    <>
+      {/* Phones and small tablets: one scrollable line above the playfield. */}
+      <ol className="lg:hidden order-first flex gap-2 overflow-x-auto shrink-0 px-3 py-2 border-b border-slice-shadow-dark/50 bg-slice-bg z-10">
+        {rows.map((row, index) => (
+          <li
+            key={row.socketId}
+            className="shrink-0 px-3 py-1.5 rounded-xl bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]"
+          >
+            <span className="flex items-center gap-1.5 text-[10px] font-bold text-slice-text-light">
+              <span>#{index + 1}</span>
+              <span className="max-w-24 truncate text-slice-text">{row.name}</span>
+              {row.done && <CheckCircle2 className="w-3 h-3 text-green-500" aria-hidden />}
+            </span>
+            <span className="block text-sm font-black text-blue-600 leading-tight tabular-nums">
+              {row.score.toLocaleString()}
+            </span>
+          </li>
+        ))}
+      </ol>
+
+      <aside className="hidden lg:flex w-72 bg-slice-bg border-l border-slice-shadow-dark/50 p-4 flex-col gap-4 shadow-[-5px_0_15px_rgba(0,0,0,0.05)] z-10 shrink-0">
+        <h3 className="font-black text-slice-text-light text-xs tracking-widest uppercase mb-2">
+          {t('opponents', { defaultValue: 'OPPONENTS' })}
+        </h3>
+
         <ul className="flex flex-col gap-3 overflow-y-auto flex-1 pr-1">
           {rows.map((row, index) => (
             <li
@@ -93,7 +129,7 @@ export function MultiplayerSidebar() {
             </li>
           ))}
         </ul>
-      )}
-    </aside>
+      </aside>
+    </>
   );
 }

@@ -1296,7 +1296,10 @@ export function GameCanvas() {
   };
 
   return (
-    <div className="flex w-full h-full bg-slice-bg">
+    // Column below `lg` so the opponent board can sit as a strip ABOVE the
+    // playfield; a row above it so the board is the familiar right-hand column.
+    // As a row at every width, that 288px column was most of a 360px phone.
+    <div className="flex flex-col lg:flex-row w-full h-full bg-slice-bg">
       {/* Game Area Container - Flex Grow.
           Landscape used `aspect-video` capped at `min(1400px, (100vh - 6rem) * 16/9)`
           — a hand-derived fit with two problems. `100vh` on a phone is the
@@ -1305,9 +1308,20 @@ export function GameCanvas() {
           screen and the 16:9 box overran the visible area; and the `6rem` was a
           guess at this container's own chrome that no longer had to match it.
           `.app-stage-fit` measures the real box instead, and the 1400px ceiling
-          moves to the container so it can't clamp one axis of the ratio. */}
+          moves to the container so it can't clamp one axis of the ratio.
+
+          `w-full` is load-bearing, not decoration. Below `lg` the parent is a
+          COLUMN, so `flex-1` sizes the height and the width would come from
+          `align-items: stretch` — except `mx-auto` is an auto margin on the
+          cross axis, and an auto cross margin cancels stretch. The item then
+          takes its fit-content width, and `container-type: size` means size
+          containment, so its contents contribute NOTHING to that: the stage
+          measured 32px (its own `p-4`) and `100cqw` was 0, collapsing the
+          playfield and the whole menu inside it to zero on any landscape phone.
+          In row mode `flex-1`'s `flex-basis: 0%` wins over `width`, so this is
+          inert there. */}
       <div
-        className={`min-w-0 flex-1 bg-slice-shadow-dark/30 ${
+        className={`w-full min-w-0 flex-1 bg-slice-shadow-dark/30 ${
           isPortrait
             ? 'flex items-center justify-center p-1'
             : 'app-stage-fit mx-auto max-w-[1400px] p-4'
@@ -1559,7 +1573,7 @@ export function GameCanvas() {
           {showSettings && status === 'PLAYING' && isMultiplayer && (
             <div
               data-settings-panel
-              className="absolute top-14 right-3 z-50 w-72 bg-slice-bg rounded-[20px] shadow-[9px_9px_16px_var(--slice-shadow-dark),-9px_-9px_16px_var(--slice-shadow-light)] flex flex-col gap-3 p-4 duration-200"
+              className="absolute top-14 right-3 z-50 w-[min(18rem,calc(100vw-1.5rem))] bg-slice-bg rounded-[20px] shadow-[9px_9px_16px_var(--slice-shadow-dark),-9px_-9px_16px_var(--slice-shadow-light)] flex flex-col gap-3 p-4 duration-200"
               onMouseDown={(e) => e.stopPropagation()}
               onTouchStart={(e) => e.stopPropagation()}
             >
@@ -1754,7 +1768,7 @@ export function GameCanvas() {
           {status === 'PLAYING' && countdown > 0 && (
             <div className="absolute inset-0 z-70 flex items-center justify-center pointer-events-none">
               <motion.div key={countdown} variants={popIn} initial="initial" animate="animate">
-                <span className="text-[12rem] font-black italic text-slice-text soft-glow-text drop-shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
+                <span className="text-[7rem] sm:text-[12rem] font-black italic text-slice-text soft-glow-text drop-shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
                   {countdown}
                 </span>
               </motion.div>
@@ -1923,7 +1937,9 @@ function PauseOverlay({ pause }: { pause: PausePayload }) {
             names: names || t('a-player', { defaultValue: 'a player' }),
           })}
         </h2>
-        <p className="text-5xl font-black font-mono text-slice-text tabular-nums">{remaining}s</p>
+        <p className="text-4xl sm:text-5xl font-black font-mono text-slice-text tabular-nums">
+          {remaining}s
+        </p>
         <p className="text-xs text-slice-text-muted mt-4">
           {t('pause-resume-hint', {
             defaultValue: 'The match resumes as soon as they are back, or when the timer runs out.',

@@ -306,13 +306,13 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
             <CardTitle className="text-2xl font-black text-center text-slice-text-darker flex flex-col items-center gap-2">
               <span>{t('lobby-code', { defaultValue: 'LOBBY CODE' })}</span>
               <span className="flex items-center gap-3">
-                <span className="text-4xl tracking-widest text-blue-500 bg-slice-bg px-4 py-2 rounded-2xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] font-mono">
+                <span className="text-3xl sm:text-4xl tracking-widest text-blue-500 bg-slice-bg px-3 sm:px-4 py-2 rounded-2xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] font-mono">
                   {lobby.code}
                 </span>
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-12 w-12 rounded-2xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)]"
+                  className="h-12 w-12 shrink-0 rounded-2xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)]"
                   onClick={handleCopyInvite}
                   title={t('copy-invite-link', { defaultValue: 'Copy Invite Link' })}
                   aria-label={t('copy-invite-link', { defaultValue: 'Copy Invite Link' })}
@@ -595,7 +595,7 @@ function IconToggle({
     <Button
       variant="ghost"
       size="icon"
-      className="h-10 w-10 text-slice-text-muted hover:text-slice-text rounded-lg"
+      className="h-10 w-10 shrink-0 text-slice-text-muted hover:text-slice-text rounded-lg"
       onClick={onClick}
       title={label}
       aria-label={label}
@@ -700,7 +700,7 @@ function PlayerRow({
           <Button
             size="icon"
             variant="ghost"
-            className="h-7 w-7 text-slice-text-light hover:text-red-500"
+            className="h-7 w-7 shrink-0 touch-target text-slice-text-light hover:text-red-500"
             onClick={onKick}
             title={t('kick-player', { defaultValue: 'Remove from lobby' })}
             aria-label={t('kick-player', { defaultValue: 'Remove from lobby' })}

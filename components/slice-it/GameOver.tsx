@@ -37,7 +37,7 @@ export function GameOver({ onRetry }: GameOverProps) {
     <div className="absolute inset-0 z-50 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain bg-slice-bg/80 backdrop-blur-sm p-4">
       <Card className="w-full max-w-md bg-slice-bg text-slice-text shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] border-none rounded-[2rem] overflow-hidden">
         <CardHeader className="text-center pb-2 pt-8">
-          <CardTitle className="text-5xl font-black tracking-tight text-blue-500">
+          <CardTitle className="text-4xl sm:text-5xl font-black tracking-tight text-blue-500">
             {t('complete', { defaultValue: 'COMPLETE' })}
           </CardTitle>
           {isUnranked && (
@@ -63,7 +63,7 @@ export function GameOver({ onRetry }: GameOverProps) {
                 })}
               </div>
             )}
-            <div className="text-6xl font-bold text-slice-text relative inline-block">
+            <div className="text-4xl sm:text-6xl font-bold text-slice-text relative inline-block tabular-nums">
               {score.toLocaleString()}
               {isNewBest && (
                 <motion.div

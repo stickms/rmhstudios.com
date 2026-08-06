@@ -63,7 +63,7 @@ describe("s3 wrapper", () => {
     expect(sendMock.mock.calls[1][0].input).not.toHaveProperty("ContentEncoding");
   });
 
-  it("getObject returns body+contentType+contentEncoding from the stream", async () => {
+  it("getObject returns body+contentType from the stream", async () => {
     sendMock.mockResolvedValue({
       ContentType: "application/pdf",
       ContentEncoding: "gzip",
@@ -72,8 +72,50 @@ describe("s3 wrapper", () => {
     const { getObject } = await import("@/lib/storage/s3.server");
     const result = await getObject("library/a.pdf");
     expect(result?.contentType).toBe("application/pdf");
-    expect(result?.contentEncoding).toBe("gzip");
+    // Only `br` is the storage layer's own encoding; anything else the caller
+    // put there (the library's gzip) passes through as bytes untouched.
     expect(Array.from(result!.body)).toEqual([1, 2, 3]);
+  });
+
+  it("getObject inflates a Brotli'd object, so callers never see stored bytes", async () => {
+    // The failure this prevents is silent: an SVG stored Brotli'd and served
+    // raw renders as nothing, and feeding those bytes to sharp throws.
+    const { brotliCompressSync } = await import("node:zlib");
+    const original = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>');
+    sendMock.mockResolvedValue({
+      ContentType: "image/svg+xml",
+      ContentEncoding: "br",
+      Body: {
+        transformToByteArray: async () => new Uint8Array(brotliCompressSync(original)),
+      },
+    });
+    const { getObject } = await import("@/lib/storage/s3.server");
+    const result = await getObject("albums/a/logo.svg");
+    expect(result!.body.toString()).toBe(original.toString());
+  });
+
+  it("getObjectEncoded hands back the stored bytes and the encoding", async () => {
+    const { brotliCompressSync } = await import("node:zlib");
+    const compressed = brotliCompressSync(Buffer.from("{}"));
+    sendMock.mockResolvedValue({
+      ContentType: "application/json",
+      ContentEncoding: "br",
+      Body: { transformToByteArray: async () => new Uint8Array(compressed) },
+    });
+    const { getObjectEncoded } = await import("@/lib/storage/s3.server");
+    const result = await getObjectEncoded("x/a.json");
+    expect(result?.contentEncoding).toBe("br");
+    expect(Array.from(result!.body)).toEqual(Array.from(compressed));
+  });
+
+  it("getObject survives an object mislabelled as Brotli", async () => {
+    sendMock.mockResolvedValue({
+      ContentType: "application/json",
+      ContentEncoding: "br",
+      Body: { transformToByteArray: async () => new Uint8Array([1, 2, 3]) },
+    });
+    const { getObject } = await import("@/lib/storage/s3.server");
+    expect(Array.from((await getObject("x/a.json"))!.body)).toEqual([1, 2, 3]);
   });
 
   it("getObject returns null when the key is missing", async () => {

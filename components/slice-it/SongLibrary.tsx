@@ -211,14 +211,18 @@ export function SongLibrary({
   return (
     <div className="w-full h-full bg-slice-bg flex flex-col">
       <div className="flex gap-2 items-center shrink-0 p-3 border-b border-slice-shadow-dark/50">
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-0">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-slice-text-light w-4 h-4"
             aria-hidden
           />
+          {/* `pointer-coarse:h-11` rather than `.touch-target`: that utility
+              grows the hit area with an `::after`, and neither a replaced
+              `<input>` nor a `<select>` renders one. These two controls can be
+              44px, so on a coarse pointer they are. */}
           <Input
             placeholder={t('search-placeholder', { defaultValue: 'Search songs, artists...' })}
-            className="pl-9 bg-slice-card-bg border border-slice-shadow-dark/50 rounded-lg h-9 text-sm text-slice-text"
+            className="pl-9 bg-slice-card-bg border border-slice-shadow-dark/50 rounded-lg h-9 pointer-coarse:h-11 text-sm text-slice-text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             aria-label={t('search-placeholder', { defaultValue: 'Search songs, artists...' })}
@@ -228,7 +232,7 @@ export function SongLibrary({
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value as SongSort)}
-          className="h-9 rounded-lg bg-slice-card-bg border border-slice-shadow-dark/50 text-xs font-bold text-slice-text px-2"
+          className="h-9 pointer-coarse:h-11 shrink-0 max-w-28 rounded-lg bg-slice-card-bg border border-slice-shadow-dark/50 text-xs font-bold text-slice-text px-2"
           aria-label={t('sort-by', { defaultValue: 'Sort by' })}
         >
           {SONG_SORTS.map((option) => (
@@ -242,7 +246,7 @@ export function SongLibrary({
           <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
             <DialogTrigger asChild>
               <Button
-                className="h-9 w-9 rounded-lg bg-blue-500 text-white hover:bg-blue-600 p-0"
+                className="h-9 w-9 shrink-0 rounded-lg bg-blue-500 text-white hover:bg-blue-600 p-0 touch-target"
                 aria-label={t('upload-track-title', { defaultValue: 'UPLOAD TRACK' })}
               >
                 <Upload className="w-4 h-4" />
@@ -297,7 +301,7 @@ export function SongLibrary({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="w-8 h-8 rounded-full bg-slice-shadow-dark text-blue-500 shrink-0"
+                    className="w-8 h-8 rounded-full bg-slice-shadow-dark text-blue-500 shrink-0 touch-target"
                     onClick={(e) => {
                       e.stopPropagation();
                       togglePreview(song);
@@ -369,7 +373,11 @@ export function SongLibrary({
                         e.stopPropagation();
                         setDeleteId(song.id);
                       }}
-                      className="h-8 w-8 rounded-lg opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                      // Visible by default and hover-revealed only where hover
+                      // exists. `opacity-0 group-hover:opacity-100` alone meant
+                      // the control was invisible on every touch device while
+                      // still taking its 32px of a row that had none to spare.
+                      className="h-8 w-8 rounded-lg touch-target sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
                       aria-label={t('delete-song', { defaultValue: 'Delete Song' })}
                     >
                       <X className="w-4 h-4" />
@@ -379,7 +387,7 @@ export function SongLibrary({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className={`h-8 w-8 rounded-lg shrink-0 ${
+                      className={`h-8 w-8 rounded-lg shrink-0 touch-target ${
                         song.isLiked ? 'text-red-500' : 'text-slice-text-light'
                       }`}
                       onClick={(e) => void handleLike(e, song)}
@@ -400,7 +408,7 @@ export function SongLibrary({
                         stopPreview();
                         onSelect(song);
                       }}
-                      className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-3 h-8 rounded-lg text-xs"
+                      className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-3 h-8 rounded-lg text-xs touch-target"
                     >
                       {t('play', { defaultValue: 'PLAY' })}
                     </Button>
