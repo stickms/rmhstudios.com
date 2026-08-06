@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PartyPopper, Trophy, Gamepad2 } from 'lucide-react';
-import type { DiscordContext } from '@/lib/discord-sdk';
+import { setActivityStatus, type DiscordContext } from '@/lib/discord-sdk';
 import { connectToRMHbox, getSocket, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { S2C, C2S } from '@/lib/rmhbox/events';
@@ -19,6 +19,7 @@ import ResultsScreen from '@/components/rmhbox/ResultsScreen';
 import SpectatorBanner from '@/components/rmhbox/SpectatorBanner';
 import MinigameRenderer from '@/components/rmhbox/minigames/MinigameRenderer';
 import GameShell from '@/components/rmhbox/GameShell';
+import RMHboxHeader from '@/components/rmhbox/RMHboxHeader';
 
 // Discord embedded app layout modes
 const LAYOUT_FOCUSED = 0;
@@ -173,8 +174,19 @@ export function RMHboxDiscordActivity({ discord }: Props) {
     }, [lobby]);
 
     // ─── Socket connection ─────────────────────────────────────
+    // The game-lifecycle listeners below are the only source for the
+    // instructions / preload / countdown / results screens, so they are wired
+    // unconditionally and torn down on unmount. They used to sit behind an
+    // early `if (lobby) return`, which meant a remount while the socket
+    // singleton was still alive (it outlives this component — nothing calls
+    // disconnectFromRMHbox in the Activity) left the Activity subscribed to
+    // nothing: the lobby rendered, then every phase after "start game" was a
+    // blank screen because no INSTRUCTIONS / COUNTDOWN / ROUND_RESULTS event
+    // was ever handled.
     useEffect(() => {
         mountedRef.current = true;
+        let cleanup: (() => void) | null = null;
+        let cancelled = false;
 
         async function connect() {
             try {
@@ -182,27 +194,20 @@ export function RMHboxDiscordActivity({ discord }: Props) {
                     channelId: discord.channelId,
                     guildId: discord.guildId,
                 });
-                if (!mountedRef.current) return;
+                if (cancelled) return;
 
-                // If already in a lobby from a reconnect, stay there
-                const existingLobby = useRMHboxStore.getState().lobby;
-                if (existingLobby) return;
-
-                socket.on(S2C.LOBBY_CREATED, (data: { lobbyId: string }) => {
-                    if (!mountedRef.current) return;
+                const onLobbyCreated = (data: { lobbyId: string }) => {
                     // Join the lobby we just created
                     emit(C2S.LOBBY_JOIN, { lobbyId: data.lobbyId });
-                });
+                };
 
-                socket.on(S2C.GAME_VOTE_STARTED, (data: { candidates: VoteCandidate[]; durationSeconds: number; endsAt: number }) => {
-                    if (!mountedRef.current) return;
+                const onVoteStarted = (data: { candidates: VoteCandidate[]; durationSeconds: number; endsAt: number }) => {
                     setVoteCandidates(data.candidates);
                     setVoteDuration(data.durationSeconds);
                     setVoteEndsAt(data.endsAt);
-                });
+                };
 
-                socket.on(S2C.GAME_INSTRUCTIONS, (data: { title: string; description: string; rules?: string[]; tips?: string[]; durationSeconds: number }) => {
-                    if (!mountedRef.current) return;
+                const onInstructions = (data: { title: string; description: string; rules?: string[]; tips?: string[]; durationSeconds: number }) => {
                     setInstructions({
                         title: data.title,
                         description: data.description,
@@ -210,60 +215,68 @@ export function RMHboxDiscordActivity({ discord }: Props) {
                         tips: data.tips ?? [],
                         durationSeconds: data.durationSeconds,
                     });
-                });
+                };
 
-                socket.on(S2C.GAME_PRELOAD_PROGRESS, (data: { players: { userId: string; userName: string; ready: boolean }[] }) => {
-                    if (mountedRef.current) setPreloadPlayers(data.players);
-                });
+                const onPreloadProgress = (data: { players: { userId: string; userName: string; ready: boolean }[] }) => {
+                    setPreloadPlayers(data.players);
+                };
 
-                socket.on(S2C.GAME_PRELOAD_START, () => {
-                    if (mountedRef.current) setPreloadPlayers([]);
-                });
+                const onPreloadStart = () => setPreloadPlayers([]);
+                const onCountdown = (data: { seconds: number }) => setCountdownValue(data.seconds);
+                const onRoundResults = (data: RoundResultsPayload) => setRoundResults(data);
+                const onSessionResults = (data: { standings: SessionStanding[]; matchHistory: MatchSummary[] }) => setSessionResults(data);
+                const onLeftLobby = () => useRMHboxStore.getState().leaveLobby();
+                const onError = (data: { code?: string }) => {
+                    if (data.code === 'LOBBY_NOT_FOUND') useRMHboxStore.getState().leaveLobby();
+                };
 
-                socket.on(S2C.GAME_COUNTDOWN, (data: { seconds: number }) => {
-                    if (mountedRef.current) setCountdownValue(data.seconds);
-                });
+                socket.on(S2C.LOBBY_CREATED, onLobbyCreated);
+                socket.on(S2C.GAME_VOTE_STARTED, onVoteStarted);
+                socket.on(S2C.GAME_INSTRUCTIONS, onInstructions);
+                socket.on(S2C.GAME_PRELOAD_PROGRESS, onPreloadProgress);
+                socket.on(S2C.GAME_PRELOAD_START, onPreloadStart);
+                socket.on(S2C.GAME_COUNTDOWN, onCountdown);
+                socket.on(S2C.GAME_ROUND_RESULTS, onRoundResults);
+                socket.on(S2C.GAME_SESSION_RESULTS, onSessionResults);
+                socket.on(S2C.LOBBY_KICKED, onLeftLobby);
+                socket.on(S2C.LOBBY_DISBANDED, onLeftLobby);
+                socket.on(S2C.ERROR, onError);
 
-                socket.on(S2C.GAME_ROUND_RESULTS, (data: RoundResultsPayload) => {
-                    if (mountedRef.current) setRoundResults(data);
-                });
-
-                socket.on(S2C.GAME_SESSION_RESULTS, (data: { standings: SessionStanding[]; matchHistory: MatchSummary[] }) => {
-                    if (mountedRef.current) setSessionResults(data);
-                });
-
-                socket.on(S2C.LOBBY_KICKED, () => {
-                    if (!mountedRef.current) return;
-                    useRMHboxStore.getState().leaveLobby();
-                });
-
-                socket.on(S2C.LOBBY_DISBANDED, () => {
-                    if (!mountedRef.current) return;
-                    useRMHboxStore.getState().leaveLobby();
-                });
-
-                socket.on(S2C.ERROR, (data: { code?: string }) => {
-                    if (!mountedRef.current) return;
-                    if (data.code === 'LOBBY_NOT_FOUND') {
-                        useRMHboxStore.getState().leaveLobby();
-                    }
-                });
+                cleanup = () => {
+                    socket.off(S2C.LOBBY_CREATED, onLobbyCreated);
+                    socket.off(S2C.GAME_VOTE_STARTED, onVoteStarted);
+                    socket.off(S2C.GAME_INSTRUCTIONS, onInstructions);
+                    socket.off(S2C.GAME_PRELOAD_PROGRESS, onPreloadProgress);
+                    socket.off(S2C.GAME_PRELOAD_START, onPreloadStart);
+                    socket.off(S2C.GAME_COUNTDOWN, onCountdown);
+                    socket.off(S2C.GAME_ROUND_RESULTS, onRoundResults);
+                    socket.off(S2C.GAME_SESSION_RESULTS, onSessionResults);
+                    socket.off(S2C.LOBBY_KICKED, onLeftLobby);
+                    socket.off(S2C.LOBBY_DISBANDED, onLeftLobby);
+                    socket.off(S2C.ERROR, onError);
+                };
 
                 // QoL: everyone who opens the Activity from the same Discord voice
                 // channel is auto-connected to the same lobby — no room code needed.
                 // Users without a voice channel fall through to the manual browser.
-                if (discord.channelId) {
+                // Skipped when the store already has a lobby: the hub re-attaches
+                // a returning socket to its slot on its own.
+                if (discord.channelId && !useRMHboxStore.getState().lobby) {
                     emit(C2S.LOBBY_AUTO_JOIN);
                 }
 
             } catch (err) {
-                if (mountedRef.current) toast.error(err instanceof Error ? err.message : 'Connection failed');
+                if (!cancelled) toast.error(err instanceof Error ? err.message : 'Connection failed');
             }
         }
 
         connect();
-        return () => { mountedRef.current = false; };
-    }, [discord.accessToken]);
+        return () => {
+            cancelled = true;
+            mountedRef.current = false;
+            cleanup?.();
+        };
+    }, [discord.accessToken, discord.channelId, discord.guildId]);
 
     // ─── Clear stale round results on new game ─────────────────
     useEffect(() => {
@@ -272,13 +285,43 @@ export function RMHboxDiscordActivity({ discord }: Props) {
         }
     }, [lobby?.state]);
 
+    // ─── Discord rich presence ─────────────────────────────────
+    // Without this the Activity shows only the generic app name in the party
+    // header and on every player's profile — the same gap Lights Out already
+    // fills via setActivityStatus.
+    const lobbyState = lobby?.state ?? null;
+    const currentGameName = lobby?.currentGame?.displayName ?? null;
+    const partyCount = lobby?.players.length ?? 0;
+    const partyMax = lobby?.settings.maxPlayers ?? 0;
+    const roomCode = lobby?.lobbyId ?? null;
+
+    useEffect(() => {
+        if (!lobbyState) {
+            setActivityStatus(discord.sdk, t("presence-browsing", { defaultValue: "Picking a lobby" }));
+            return;
+        }
+
+        const state = currentGameName && (lobbyState === 'PLAYING' || lobbyState === 'COUNTDOWN' || lobbyState === 'INSTRUCTIONS' || lobbyState === 'PRELOADING')
+            ? t("presence-playing", { defaultValue: "Playing {{game}}", game: currentGameName })
+            : lobbyState === 'VOTING'
+                ? t("presence-voting", { defaultValue: "Voting on the next game" })
+                : lobbyState === 'ROUND_RESULTS' || lobbyState === 'SESSION_RESULTS'
+                    ? t("presence-results", { defaultValue: "Looking at the scores" })
+                    : t("presence-waiting", { defaultValue: "In the lobby" });
+
+        setActivityStatus(discord.sdk, state, {
+            details: roomCode ? t("presence-room", { defaultValue: "Room {{code}}", code: roomCode }) : undefined,
+            partySize: partyCount > 0 && partyMax > 0 ? [partyCount, partyMax] : undefined,
+        });
+    }, [discord.sdk, t, lobbyState, currentGameName, partyCount, partyMax, roomCode]);
+
     const handleCreateLobby = useCallback(() => emit(C2S.LOBBY_CREATE, {}), []);
 
     const handleJoinLobby = useCallback((code: string) => {
         const trimmed = code.trim().toUpperCase();
         if (trimmed.length !== 6) { toast.warning(t("room-code-length-error", { defaultValue: "Room code must be 6 characters" })); return; }
         emit(C2S.LOBBY_JOIN, { lobbyId: trimmed });
-    }, []);
+    }, [t]);
 
     // ─── Render ────────────────────────────────────────────────
 
@@ -289,11 +332,27 @@ export function RMHboxDiscordActivity({ discord }: Props) {
     const lobbyId = lobby?.lobbyId ?? '';
     const spectatorMode = lobby?.currentGame?.spectatorMode ?? null;
 
+    // The header owns the phase timer ring and the host's pause / skip / end
+    // controls. The standalone /rmhbox lobby page has always rendered it; the
+    // Activity did not, so Discord players had no countdown for instructions,
+    // countdown or results — and a Discord host had no way to pause or skip.
+    // Only the 'game' context is used here: the others render a back link to
+    // /rmhbox, which would navigate the iframe out of the Activity.
+    const isGamePhase = !!lobby && (
+        lobby.state === 'INSTRUCTIONS' || lobby.state === 'PRELOADING' ||
+        lobby.state === 'COUNTDOWN' || lobby.state === 'PLAYING' ||
+        lobby.state === 'ROUND_RESULTS' || lobby.state === 'GAME_SETTINGS'
+    );
+
     return (
         <RMHboxShell>
             {isPip && <PipOverlay gameStatus={pipStatusText} />}
 
             <div className="app-viewport">
+                {isGamePhase && (
+                    <RMHboxHeader context="game" title={lobby?.currentGame?.displayName} />
+                )}
+
                 {/* Connecting state — no lobby yet */}
                 {!lobby && (connectionStatus === 'connecting' || connectionStatus === 'disconnected') && (
                     <div className="flex flex-1 items-center justify-center">
