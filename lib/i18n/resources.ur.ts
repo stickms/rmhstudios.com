@@ -21,6 +21,7 @@ import urCGame from "@/locales/ur/c-game.json";
 import urCHistory from "@/locales/ur/c-history.json";
 import urCHouseAlwaysWins from "@/locales/ur/c-house-always-wins.json";
 import urCIsleworks from "@/locales/ur/c-isleworks.json";
+import urCKaikaiDebt from "@/locales/ur/c-kaikai-debt.json";
 import urCKowloonKnockout from "@/locales/ur/c-kowloon-knockout.json";
 import urCLaundrySort from "@/locales/ur/c-laundry-sort.json";
 import urCLayout from "@/locales/ur/c-layout.json";
@@ -64,6 +65,7 @@ import urCVoidBreaker from "@/locales/ur/c-void-breaker.json";
 import urCWager from "@/locales/ur/c-wager.json";
 import urCWishlist from "@/locales/ur/c-wishlist.json";
 import urCommon from "@/locales/ur/common.json";
+import urErrors from "@/locales/ur/errors.json";
 import urFeed from "@/locales/ur/feed.json";
 import urGamesHub from "@/locales/ur/games-hub.json";
 import urGroups from "@/locales/ur/groups.json";
@@ -77,6 +79,7 @@ import urRRmhbox from "@/locales/ur/r-rmhbox.json";
 import urRRmhcode from "@/locales/ur/r-rmhcode.json";
 import urRSecret from "@/locales/ur/r-secret.json";
 import urRSliceIt from "@/locales/ur/r-slice-it.json";
+import urRSohumbum from "@/locales/ur/r-sohumbum.json";
 import urRStrategies from "@/locales/ur/r-strategies.json";
 import urRStudio from "@/locales/ur/r-studio.json";
 import urRideshare from "@/locales/ur/rideshare.json";
@@ -111,6 +114,7 @@ const urResources = {
   "c-history": urCHistory,
   "c-house-always-wins": urCHouseAlwaysWins,
   "c-isleworks": urCIsleworks,
+  "c-kaikai-debt": urCKaikaiDebt,
   "c-kowloon-knockout": urCKowloonKnockout,
   "c-laundry-sort": urCLaundrySort,
   "c-layout": urCLayout,
@@ -154,6 +158,7 @@ const urResources = {
   "c-wager": urCWager,
   "c-wishlist": urCWishlist,
   "common": urCommon,
+  "errors": urErrors,
   "feed": urFeed,
   "games-hub": urGamesHub,
   "groups": urGroups,
@@ -167,6 +172,7 @@ const urResources = {
   "r-rmhcode": urRRmhcode,
   "r-secret": urRSecret,
   "r-slice-it": urRSliceIt,
+  "r-sohumbum": urRSohumbum,
   "r-strategies": urRStrategies,
   "r-studio": urRStudio,
   "rideshare": urRideshare,

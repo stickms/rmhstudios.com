@@ -1,0 +1,18 @@
+{
+  "aiBudget": "Bạn đã dùng hết hạn mức AI của tháng này",
+  "aiUnavailable": "Các tính năng AI đang ngoại tuyến",
+  "conflict": "Người khác đã thay đổi điều này trước đó",
+  "forbidden": "Bạn không có quyền truy cập vào đây",
+  "gone": "Mục này đã hết hạn",
+  "insufficientCoins": "Bạn không có đủ xu",
+  "internal": "Đã xảy ra sự cố từ phía chúng tôi",
+  "invalidInput": "Kiểm tra biểu mẫu và thử lại",
+  "notFound": "Mục này không tồn tại (hoặc đã bị xóa)",
+  "queryBudget": "Yêu cầu đó quá tốn kém để xử lý",
+  "quotaExceeded": "Bạn đã hết dung lượng lưu trữ",
+  "rateLimited": "Hãy chậm lại một chút",
+  "stakeLimit": "Bạn đã đạt đến giới hạn bạn đặt ra",
+  "storageUnavailable": "Tính năng tải lên tạm thời không khả dụng",
+  "unauthorized": "Đăng nhập để tiếp tục",
+  "upgradeRequired": "Tính năng này yêu cầu gói thành viên"
+}
