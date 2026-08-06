@@ -5,6 +5,7 @@ import { Crown, Gamepad2, LogOut, UserPlus, Users, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { VoiceRoomBanner } from '@/components/groupcall/VoiceRoomBanner';
 import { cn } from '@/lib/utils';
 import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 import { usePopPresence } from '@/hooks/usePopPresence';
@@ -93,6 +94,8 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
       <span className="px-1 text-xs text-site-text-muted">
         {party.members.length}/{party.maxSize}
       </span>
+
+      <VoiceRoomBanner origin="party" originId={party.id} className="min-w-0" />
 
       <div className="relative">
         <Button
@@ -185,7 +188,7 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
             })}
           </p>
         </div>
-        <div className="flex items-center gap-2">{core}</div>
+        <div className="flex flex-wrap items-center gap-2">{core}</div>
       </section>
     );
   }
