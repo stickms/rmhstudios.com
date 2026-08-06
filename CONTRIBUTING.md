@@ -16,12 +16,34 @@ for the current priorities.
 ```bash
 pnpm install
 pnpm db:push          # apply the Prisma schema to your local DB
+pnpm hooks:install    # once per clone — wires the commit gate into git
 pnpm dev              # Vite SSR app + WebSocket servers → http://localhost:7005
 ```
+
+## Before every commit
+
+```bash
+pnpm check:consistency        # the commit gate
+```
+
+This is the one command that keeps the site looking and behaving like one
+product. It scans the added lines for the rules CI fails on (raw palette
+colours, hardcoded radii, `transition-all`, dead `tailwindcss-animate` classes,
+hand-rolled tab strips), runs the executable design/consistency gates in
+`lib/__tests__/`, lints the files you changed, typechecks, verifies the
+generated docs are current, and then prints the handful of things no script can
+check — the three themes, the switcher that is really a tab strip.
+
+`pnpm hooks:install` points git's `core.hooksPath` at `.githooks/`, so the gate
+runs on `git commit` without being remembered. (Coding agents get the same gate
+through `.claude/settings.json` → `.claude/hooks/commit-gate.sh`.) A failing
+gate is **fixed, not bypassed**; if a rule is genuinely wrong for your change,
+change the rule in the same commit and say why in the message.
 
 ## Before you open a PR
 
 ```bash
+pnpm check:consistency --base main   # gate the whole branch, not just the last commit
 pnpm exec tsc --noEmit   # typecheck — don't add new errors vs. the base branch
 pnpm lint                # ESLint (incl. jsx-a11y at "warn")
 pnpm format              # Prettier (optional but appreciated for files you touch)
@@ -36,6 +58,12 @@ Run the relevant tests too (`pnpm exec vitest run`, or `make test` for Go). See
 
 ## Conventions
 
+- **Design language.** Every colour, radius, shadow, font and duration comes
+  from the `--site-*` token utilities (`--app-*` inside a full-screen app);
+  surfaces take a glass elevation class by role; UI is built from
+  `components/ui/` primitives and `PageLayout`. The definition of done is
+  [`docs/design-language.md`](docs/design-language.md) §0 and the per-page
+  checklist is [`docs/page-consistency.md`](docs/page-consistency.md) §3.
 - **Routing.** Add routes as files under `app/routes/`. After adding an **API**
   route (`app/routes/api/*`), the router tree (`app/routeTree.gen.ts`) must be
   regenerated — running `pnpm dev` or a build does this. API routes use
@@ -62,8 +90,11 @@ Run the relevant tests too (`pnpm exec vitest run`, or `make test` for Go). See
 ## Commits & PRs
 
 - Keep commits focused; write a clear message explaining *why*.
+- Every commit passes `pnpm check:consistency` (see above).
 - The PR template (`.github/pull_request_template.md`) has a checklist — fill it in.
 - Don't commit secrets. `.env` is gitignored; keep it that way.
+- Don't hand-edit generated files: `app/routeTree.gen.ts` (dev/build regenerates
+  it) or `lib/i18n/resources.<locale>.ts` (`pnpm i18n:resources`).
 
 ## Go services
 
