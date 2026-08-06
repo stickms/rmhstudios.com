@@ -64,6 +64,7 @@ import hiCVoidBreaker from "@/locales/hi/c-void-breaker.json";
 import hiCWager from "@/locales/hi/c-wager.json";
 import hiCWishlist from "@/locales/hi/c-wishlist.json";
 import hiCommon from "@/locales/hi/common.json";
+import hiErrors from "@/locales/hi/errors.json";
 import hiFeed from "@/locales/hi/feed.json";
 import hiGamesHub from "@/locales/hi/games-hub.json";
 import hiGroups from "@/locales/hi/groups.json";
@@ -77,6 +78,7 @@ import hiRRmhbox from "@/locales/hi/r-rmhbox.json";
 import hiRRmhcode from "@/locales/hi/r-rmhcode.json";
 import hiRSecret from "@/locales/hi/r-secret.json";
 import hiRSliceIt from "@/locales/hi/r-slice-it.json";
+import hiRSohumbum from "@/locales/hi/r-sohumbum.json";
 import hiRStrategies from "@/locales/hi/r-strategies.json";
 import hiRStudio from "@/locales/hi/r-studio.json";
 import hiRideshare from "@/locales/hi/rideshare.json";
@@ -154,6 +156,7 @@ const hiResources = {
   "c-wager": hiCWager,
   "c-wishlist": hiCWishlist,
   "common": hiCommon,
+  "errors": hiErrors,
   "feed": hiFeed,
   "games-hub": hiGamesHub,
   "groups": hiGroups,
@@ -167,6 +170,7 @@ const hiResources = {
   "r-rmhcode": hiRRmhcode,
   "r-secret": hiRSecret,
   "r-slice-it": hiRSliceIt,
+  "r-sohumbum": hiRSohumbum,
   "r-strategies": hiRStrategies,
   "r-studio": hiRStudio,
   "rideshare": hiRideshare,
