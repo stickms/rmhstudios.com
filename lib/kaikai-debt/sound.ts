@@ -29,7 +29,6 @@
 'use client';
 
 import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
-import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 
 const STORAGE_KEY = 'rmh-kaikai-debt-muted';
 
@@ -170,7 +169,7 @@ function tone(ctx: AudioContext, spec: ToneSpec): void {
   // with no references is collectable, and the handler itself is a reference.
 }
 
-/** A short burst of filtered noise — the "fire" part of the fire. */
+/** A short burst of filtered noise — the sizzle under a cash-register hit. */
 function noise(ctx: AudioContext, duration: number, level: number, sweepTo: number): void {
   const start = ctx.currentTime;
   const frames = Math.max(1, Math.floor(ctx.sampleRate * duration));
@@ -200,7 +199,7 @@ function noise(ctx: AudioContext, duration: number, level: number, sweepTo: numb
 /* The sounds                                                                 */
 /* -------------------------------------------------------------------------- */
 
-/** A member's debt lands: cash-register two-note, then a laser crack. */
+/** A member's debt lands: a cash-register two-note, then a downward crack. */
 export function playDebtAdded(): void {
   const ctx = audio();
   if (!ctx) return;
@@ -239,21 +238,4 @@ export function playAnswerStart(): void {
   const ctx = audio();
   if (!ctx) return;
   tone(ctx, { type: 'sine', from: 1200, to: 1600, duration: 0.07, level: 0.3 });
-}
-
-/**
- * The ambient laser/fire crackle, fired on a loose interval by the FX layer.
- *
- * Silent under reduced motion. Somebody who has asked the OS to stop things
- * moving has not asked for the accompanying soundtrack either — and unlike the
- * event sounds above, this one is not a response to anything they did, which is
- * exactly the category that becomes irritating rather than fun.
- */
-export function playAmbientCrackle(): void {
-  if (prefersReducedMotion()) return;
-  const ctx = audio();
-  if (!ctx) return;
-  const pitch = 900 + Math.random() * 1500;
-  tone(ctx, { type: 'sawtooth', from: pitch, to: pitch * 0.25, duration: 0.13, level: 0.16 });
-  noise(ctx, 0.11, 0.1, 400);
 }

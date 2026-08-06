@@ -27,6 +27,7 @@ import { Route as GabrielsHornRouteImport } from './routes/gabriels-horn'
 import { Route as HandleRouteImport } from './routes/handle'
 import { Route as HouseAlwaysWinsRouteImport } from './routes/house-always-wins'
 import { Route as IsleworksRouteImport } from './routes/isleworks'
+import { Route as KaikaidebtcounterRouteImport } from './routes/kaikaidebtcounter'
 import { Route as KowloonKnockoutRouteImport } from './routes/kowloon-knockout'
 import { Route as LaundrySortRouteImport } from './routes/laundry-sort'
 import { Route as LightsOutRouteImport } from './routes/lights-out'
@@ -81,7 +82,6 @@ import { Route as SiteEventsRouteImport } from './routes/_site/events'
 import { Route as SiteExploreRouteImport } from './routes/_site/explore'
 import { Route as SiteHelpRouteImport } from './routes/_site/help'
 import { Route as SiteHistoryRouteImport } from './routes/_site/history'
-import { Route as SiteKaikaidebtcounterRouteImport } from './routes/_site/kaikaidebtcounter'
 import { Route as SiteLeaderboardRouteImport } from './routes/_site/leaderboard'
 import { Route as SiteMarketRouteImport } from './routes/_site/market'
 import { Route as SiteMusicTriviaRouteImport } from './routes/_site/music-trivia'
@@ -390,6 +390,7 @@ import { Route as ApiKaikaiDebtIndexRouteImport } from './routes/api/kaikai-debt
 import { Route as ApiKaikaiDebtAskRouteImport } from './routes/api/kaikai-debt/ask'
 import { Route as ApiKaikaiDebtEntriesRouteImport } from './routes/api/kaikai-debt/entries'
 import { Route as ApiKaikaiDebtLedgerRouteImport } from './routes/api/kaikai-debt/ledger'
+import { Route as ApiKaikaiDebtStatsRouteImport } from './routes/api/kaikai-debt/stats'
 import { Route as ApiKaikaiDebtStreamRouteImport } from './routes/api/kaikai-debt/stream'
 import { Route as ApiLaundrySortLeaderboardRouteImport } from './routes/api/laundry-sort/leaderboard'
 import { Route as ApiLaundrySortScoreRouteImport } from './routes/api/laundry-sort/score'
@@ -922,6 +923,11 @@ const IsleworksRoute = IsleworksRouteImport.update({
   path: '/isleworks',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KaikaidebtcounterRoute = KaikaidebtcounterRouteImport.update({
+  id: '/kaikaidebtcounter',
+  path: '/kaikaidebtcounter',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const KowloonKnockoutRoute = KowloonKnockoutRouteImport.update({
   id: '/kowloon-knockout',
   path: '/kowloon-knockout',
@@ -1192,11 +1198,6 @@ const SiteHelpRoute = SiteHelpRouteImport.update({
 const SiteHistoryRoute = SiteHistoryRouteImport.update({
   id: '/history',
   path: '/history',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteKaikaidebtcounterRoute = SiteKaikaidebtcounterRouteImport.update({
-  id: '/kaikaidebtcounter',
-  path: '/kaikaidebtcounter',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteLeaderboardRoute = SiteLeaderboardRouteImport.update({
@@ -2748,6 +2749,11 @@ const ApiKaikaiDebtEntriesRoute = ApiKaikaiDebtEntriesRouteImport.update({
 const ApiKaikaiDebtLedgerRoute = ApiKaikaiDebtLedgerRouteImport.update({
   id: '/api/kaikai-debt/ledger',
   path: '/api/kaikai-debt/ledger',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiKaikaiDebtStatsRoute = ApiKaikaiDebtStatsRouteImport.update({
+  id: '/api/kaikai-debt/stats',
+  path: '/api/kaikai-debt/stats',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiKaikaiDebtStreamRoute = ApiKaikaiDebtStreamRouteImport.update({
@@ -5085,6 +5091,7 @@ export interface FileRoutesByFullPath {
   '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
+  '/kaikaidebtcounter': typeof KaikaidebtcounterRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
@@ -5138,7 +5145,6 @@ export interface FileRoutesByFullPath {
   '/explore': typeof SiteExploreRoute
   '/help': typeof SiteHelpRoute
   '/history': typeof SiteHistoryRoute
-  '/kaikaidebtcounter': typeof SiteKaikaidebtcounterRoute
   '/leaderboard': typeof SiteLeaderboardRoute
   '/market': typeof SiteMarketRoute
   '/music-trivia': typeof SiteMusicTriviaRoute
@@ -5407,6 +5413,7 @@ export interface FileRoutesByFullPath {
   '/api/kaikai-debt/ask': typeof ApiKaikaiDebtAskRoute
   '/api/kaikai-debt/entries': typeof ApiKaikaiDebtEntriesRoute
   '/api/kaikai-debt/ledger': typeof ApiKaikaiDebtLedgerRoute
+  '/api/kaikai-debt/stats': typeof ApiKaikaiDebtStatsRoute
   '/api/kaikai-debt/stream': typeof ApiKaikaiDebtStreamRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
@@ -5905,6 +5912,7 @@ export interface FileRoutesByTo {
   '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
+  '/kaikaidebtcounter': typeof KaikaidebtcounterRoute
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
   '/liquid-glass': typeof LiquidGlassRoute
@@ -5940,7 +5948,6 @@ export interface FileRoutesByTo {
   '/explore': typeof SiteExploreRoute
   '/help': typeof SiteHelpRoute
   '/history': typeof SiteHistoryRoute
-  '/kaikaidebtcounter': typeof SiteKaikaidebtcounterRoute
   '/leaderboard': typeof SiteLeaderboardRoute
   '/market': typeof SiteMarketRoute
   '/music-trivia': typeof SiteMusicTriviaRoute
@@ -6207,6 +6214,7 @@ export interface FileRoutesByTo {
   '/api/kaikai-debt/ask': typeof ApiKaikaiDebtAskRoute
   '/api/kaikai-debt/entries': typeof ApiKaikaiDebtEntriesRoute
   '/api/kaikai-debt/ledger': typeof ApiKaikaiDebtLedgerRoute
+  '/api/kaikai-debt/stats': typeof ApiKaikaiDebtStatsRoute
   '/api/kaikai-debt/stream': typeof ApiKaikaiDebtStreamRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
@@ -6710,6 +6718,7 @@ export interface FileRoutesById {
   '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
+  '/kaikaidebtcounter': typeof KaikaidebtcounterRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
@@ -6763,7 +6772,6 @@ export interface FileRoutesById {
   '/_site/explore': typeof SiteExploreRoute
   '/_site/help': typeof SiteHelpRoute
   '/_site/history': typeof SiteHistoryRoute
-  '/_site/kaikaidebtcounter': typeof SiteKaikaidebtcounterRoute
   '/_site/leaderboard': typeof SiteLeaderboardRoute
   '/_site/market': typeof SiteMarketRoute
   '/_site/music-trivia': typeof SiteMusicTriviaRoute
@@ -7033,6 +7041,7 @@ export interface FileRoutesById {
   '/api/kaikai-debt/ask': typeof ApiKaikaiDebtAskRoute
   '/api/kaikai-debt/entries': typeof ApiKaikaiDebtEntriesRoute
   '/api/kaikai-debt/ledger': typeof ApiKaikaiDebtLedgerRoute
+  '/api/kaikai-debt/stats': typeof ApiKaikaiDebtStatsRoute
   '/api/kaikai-debt/stream': typeof ApiKaikaiDebtStreamRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
@@ -7537,6 +7546,7 @@ export interface FileRouteTypes {
     | '/handle'
     | '/house-always-wins'
     | '/isleworks'
+    | '/kaikaidebtcounter'
     | '/kowloon-knockout'
     | '/laundry-sort'
     | '/lights-out'
@@ -7590,7 +7600,6 @@ export interface FileRouteTypes {
     | '/explore'
     | '/help'
     | '/history'
-    | '/kaikaidebtcounter'
     | '/leaderboard'
     | '/market'
     | '/music-trivia'
@@ -7859,6 +7868,7 @@ export interface FileRouteTypes {
     | '/api/kaikai-debt/ask'
     | '/api/kaikai-debt/entries'
     | '/api/kaikai-debt/ledger'
+    | '/api/kaikai-debt/stats'
     | '/api/kaikai-debt/stream'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
@@ -8357,6 +8367,7 @@ export interface FileRouteTypes {
     | '/handle'
     | '/house-always-wins'
     | '/isleworks'
+    | '/kaikaidebtcounter'
     | '/laundry-sort'
     | '/lights-out'
     | '/liquid-glass'
@@ -8392,7 +8403,6 @@ export interface FileRouteTypes {
     | '/explore'
     | '/help'
     | '/history'
-    | '/kaikaidebtcounter'
     | '/leaderboard'
     | '/market'
     | '/music-trivia'
@@ -8659,6 +8669,7 @@ export interface FileRouteTypes {
     | '/api/kaikai-debt/ask'
     | '/api/kaikai-debt/entries'
     | '/api/kaikai-debt/ledger'
+    | '/api/kaikai-debt/stats'
     | '/api/kaikai-debt/stream'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
@@ -9161,6 +9172,7 @@ export interface FileRouteTypes {
     | '/handle'
     | '/house-always-wins'
     | '/isleworks'
+    | '/kaikaidebtcounter'
     | '/kowloon-knockout'
     | '/laundry-sort'
     | '/lights-out'
@@ -9214,7 +9226,6 @@ export interface FileRouteTypes {
     | '/_site/explore'
     | '/_site/help'
     | '/_site/history'
-    | '/_site/kaikaidebtcounter'
     | '/_site/leaderboard'
     | '/_site/market'
     | '/_site/music-trivia'
@@ -9484,6 +9495,7 @@ export interface FileRouteTypes {
     | '/api/kaikai-debt/ask'
     | '/api/kaikai-debt/entries'
     | '/api/kaikai-debt/ledger'
+    | '/api/kaikai-debt/stats'
     | '/api/kaikai-debt/stream'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
@@ -9987,6 +9999,7 @@ export interface RootRouteChildren {
   HandleRoute: typeof HandleRoute
   HouseAlwaysWinsRoute: typeof HouseAlwaysWinsRoute
   IsleworksRoute: typeof IsleworksRoute
+  KaikaidebtcounterRoute: typeof KaikaidebtcounterRoute
   KowloonKnockoutRoute: typeof KowloonKnockoutRouteWithChildren
   LaundrySortRoute: typeof LaundrySortRoute
   LightsOutRoute: typeof LightsOutRoute
@@ -10155,6 +10168,7 @@ export interface RootRouteChildren {
   ApiKaikaiDebtAskRoute: typeof ApiKaikaiDebtAskRoute
   ApiKaikaiDebtEntriesRoute: typeof ApiKaikaiDebtEntriesRoute
   ApiKaikaiDebtLedgerRoute: typeof ApiKaikaiDebtLedgerRoute
+  ApiKaikaiDebtStatsRoute: typeof ApiKaikaiDebtStatsRoute
   ApiKaikaiDebtStreamRoute: typeof ApiKaikaiDebtStreamRoute
   ApiLaundrySortLeaderboardRoute: typeof ApiLaundrySortLeaderboardRoute
   ApiLaundrySortScoreRoute: typeof ApiLaundrySortScoreRoute
@@ -10581,6 +10595,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IsleworksRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/kaikaidebtcounter': {
+      id: '/kaikaidebtcounter'
+      path: '/kaikaidebtcounter'
+      fullPath: '/kaikaidebtcounter'
+      preLoaderRoute: typeof KaikaidebtcounterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/kowloon-knockout': {
       id: '/kowloon-knockout'
       path: '/kowloon-knockout'
@@ -10957,13 +10978,6 @@ declare module '@tanstack/react-router' {
       path: '/history'
       fullPath: '/history'
       preLoaderRoute: typeof SiteHistoryRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/kaikaidebtcounter': {
-      id: '/_site/kaikaidebtcounter'
-      path: '/kaikaidebtcounter'
-      fullPath: '/kaikaidebtcounter'
-      preLoaderRoute: typeof SiteKaikaidebtcounterRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/leaderboard': {
@@ -13120,6 +13134,13 @@ declare module '@tanstack/react-router' {
       path: '/api/kaikai-debt/ledger'
       fullPath: '/api/kaikai-debt/ledger'
       preLoaderRoute: typeof ApiKaikaiDebtLedgerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/kaikai-debt/stats': {
+      id: '/api/kaikai-debt/stats'
+      path: '/api/kaikai-debt/stats'
+      fullPath: '/api/kaikai-debt/stats'
+      preLoaderRoute: typeof ApiKaikaiDebtStatsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/kaikai-debt/stream': {
@@ -16335,7 +16356,6 @@ interface SiteRouteChildren {
   SiteExploreRoute: typeof SiteExploreRoute
   SiteHelpRoute: typeof SiteHelpRoute
   SiteHistoryRoute: typeof SiteHistoryRoute
-  SiteKaikaidebtcounterRoute: typeof SiteKaikaidebtcounterRoute
   SiteLeaderboardRoute: typeof SiteLeaderboardRoute
   SiteMarketRoute: typeof SiteMarketRoute
   SiteMusicTriviaRoute: typeof SiteMusicTriviaRoute
@@ -16442,7 +16462,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteExploreRoute: SiteExploreRoute,
   SiteHelpRoute: SiteHelpRoute,
   SiteHistoryRoute: SiteHistoryRoute,
-  SiteKaikaidebtcounterRoute: SiteKaikaidebtcounterRoute,
   SiteLeaderboardRoute: SiteLeaderboardRoute,
   SiteMarketRoute: SiteMarketRoute,
   SiteMusicTriviaRoute: SiteMusicTriviaRoute,
@@ -17764,6 +17783,7 @@ const rootRouteChildren: RootRouteChildren = {
   HandleRoute: HandleRoute,
   HouseAlwaysWinsRoute: HouseAlwaysWinsRoute,
   IsleworksRoute: IsleworksRoute,
+  KaikaidebtcounterRoute: KaikaidebtcounterRoute,
   KowloonKnockoutRoute: KowloonKnockoutRouteWithChildren,
   LaundrySortRoute: LaundrySortRoute,
   LightsOutRoute: LightsOutRoute,
@@ -17933,6 +17953,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiKaikaiDebtAskRoute: ApiKaikaiDebtAskRoute,
   ApiKaikaiDebtEntriesRoute: ApiKaikaiDebtEntriesRoute,
   ApiKaikaiDebtLedgerRoute: ApiKaikaiDebtLedgerRoute,
+  ApiKaikaiDebtStatsRoute: ApiKaikaiDebtStatsRoute,
   ApiKaikaiDebtStreamRoute: ApiKaikaiDebtStreamRoute,
   ApiLaundrySortLeaderboardRoute: ApiLaundrySortLeaderboardRoute,
   ApiLaundrySortScoreRoute: ApiLaundrySortScoreRoute,

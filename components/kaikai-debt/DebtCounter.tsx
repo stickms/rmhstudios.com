@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { Flame, TrendingUp } from 'lucide-react';
+import { Receipt, TrendingUp } from 'lucide-react';
 import {
   ANNUAL_INTEREST_RATE,
   describeVelocity,
@@ -188,10 +188,8 @@ export function DebtCounter({ basisCents, asOfMs }: DebtCounterProps) {
 
   return (
     <div ref={containerRef} className="relative flex flex-col items-center gap-3 py-6 text-center">
-      <div className="kd-counter-glow" aria-hidden />
-
       <p className="site-kicker flex items-center gap-2 text-site-text-muted">
-        <Flame className="size-4" aria-hidden />
+        <Receipt className="size-4" aria-hidden />
         {t('counter.kicker', { defaultValue: 'Kaikai currently owes' })}
       </p>
 

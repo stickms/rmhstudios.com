@@ -1,27 +1,22 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Flame, ScrollText, Users } from 'lucide-react';
-import { PageLayout } from '@/components/feed/PageLayout';
+import { Link } from '@tanstack/react-router';
+import { ArrowLeft, Receipt, ScrollText, Users } from 'lucide-react';
 import {
   formatDebt,
   type DebtEntryDto,
   type DebtSnapshot,
   type DebtStreamEvent,
 } from '@/lib/kaikai-debt/debt';
-import {
-  getMutedServerSnapshot,
-  isMuted,
-  playRemoteDebt,
-  subscribeMuted,
-} from '@/lib/kaikai-debt/sound';
+import { playRemoteDebt } from '@/lib/kaikai-debt/sound';
 import { DebtCounter } from './DebtCounter';
-import { DebtFx } from './DebtFx';
 import { DebtLog, LedgerSubtotal } from './DebtLog';
 import { AddDebtForm, type AddDebtResult } from './AddDebtForm';
 import { AskDebtPanel } from './AskDebtPanel';
 import { DebtDesks } from './DebtDesks';
+import { DebtAnalytics } from './stats/DebtAnalytics';
 import { SoundToggle } from './SoundToggle';
 import './kaikai-debt.css';
 
@@ -55,8 +50,6 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
 
   const [liveEntries, setLiveEntries] = useState<DebtEntryDto[]>([]);
   const [freshIds, setFreshIds] = useState<ReadonlySet<string>>(() => new Set());
-
-  const soundEnabled = !useSyncExternalStore(subscribeMuted, isMuted, getMutedServerSnapshot);
 
   // Ids this tab has already rendered, so an echo of our own POST arriving back
   // over SSE does not add the row twice or re-fire the sound.
@@ -164,21 +157,49 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
   );
 
   return (
-    <div className="kd-root">
-      <DebtFx soundEnabled={soundEnabled} />
+    <div className="kd-root kd-page">
+      {/* Its own chrome, because this route is deliberately outside the site
+          shell — no rail, no dock, nothing to navigate away into while you are
+          reading a ledger. What it is NOT is a different design system: the bar
+          is the same `.glass-chrome` every sticky header on the site uses, at
+          the same measure, in the same tokens. */}
+      <header className="glass-chrome sticky top-0 z-20 border-b border-site-border">
+        <div className="mx-auto flex w-full max-w-3xl items-center gap-3 px-4 py-3">
+          <Link
+            to="/"
+            className="flex items-center gap-1.5 rounded-site-sm px-1.5 py-1 text-sm text-site-text-muted transition-colors hover:text-site-text"
+          >
+            <ArrowLeft className="size-4" aria-hidden />
+            {t('page.back', { defaultValue: 'RMH Studios' })}
+          </Link>
+          <span aria-hidden className="text-site-text-dim">
+            /
+          </span>
+          <span className="min-w-0 truncate text-sm font-medium text-site-text">
+            {t('page.title', { defaultValue: 'The Kaikai Debt Counter' })}
+          </span>
+          <div className="ml-auto shrink-0">
+            <SoundToggle />
+          </div>
+        </div>
+      </header>
 
-      <PageLayout
-        title={t('page.title', { defaultValue: 'The Kaikai Debt Counter' })}
-        description={t('page.description', {
-          defaultValue:
-            'A live, compounding, permanently public record of everything Kaikai owes. Anyone can add to it. Nobody can pay it down.',
-        })}
-        headerRight={<SoundToggle />}
-      >
-        {/* `relative z-10` on every band: the FX layer is `position: fixed` at
-            z-index 0 behind the page, and content without a stacking context of
-            its own would render underneath the fire. */}
-        <div className="relative z-10 flex flex-col gap-6">
+      <main id="main-content" className="mx-auto w-full max-w-3xl px-4 py-6">
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
+            <p className="site-kicker text-site-text-dim">
+              {t('page.kicker', { defaultValue: 'RMH Studios presents' })}
+            </p>
+            <h1 className="font-display text-3xl font-semibold text-balance text-site-text sm:text-4xl">
+              {t('page.title', { defaultValue: 'The Kaikai Debt Counter' })}
+            </h1>
+            <p className="max-w-prose text-sm text-pretty text-site-text-muted">
+              {t('page.description', {
+                defaultValue:
+                  'A live, compounding, permanently public record of everything Kaikai owes. Anyone can add to it. Nobody can pay it down.',
+              })}
+            </p>
+          </div>
           <section className="glass-pane rounded-site px-4 py-2">
             <DebtCounter basisCents={basisCents} asOfMs={snapshot.asOfMs} />
 
@@ -193,7 +214,7 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
                 })}
               />
               <Stat
-                icon={Flame}
+                icon={Receipt}
                 label={t('stats.members', { defaultValue: 'Added by members' })}
                 value={formatDebt(memberPrincipalCents)}
                 detail={t('stats.membersDetail', {
@@ -228,6 +249,17 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
 
           <DebtDesks />
 
+          {/* The analytics panel reads its own aggregates from
+              `/api/kaikai-debt/stats` rather than from this component's live
+              state, and deliberately so: the totals up here are updated by
+              every SSE event, and re-deriving a dozen charts on each one would
+              re-render the whole panel — including three canvas renderers —
+              every time somebody, anywhere, adds a burrito. It takes the boot
+              snapshot only for the values its first paint needs (the basis and
+              the server's clock), which is what keeps SSR and hydration
+              producing identical markup. */}
+          <DebtAnalytics snapshot={snapshot} />
+
           <section className="flex flex-col gap-3">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="font-display text-xl font-semibold text-site-text">
@@ -251,7 +283,7 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
             />
           </section>
         </div>
-      </PageLayout>
+      </main>
     </div>
   );
 }
@@ -262,7 +294,7 @@ function Stat({
   value,
   detail,
 }: {
-  icon: typeof Flame;
+  icon: typeof Receipt;
   label: string;
   value: string;
   detail: string;

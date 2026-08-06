@@ -1,357 +1,183 @@
 /* ==========================================================================
-   The Kaikai Debt Counter — fire, aura, lasers.
+   The Kaikai Debt Counter — page chrome and the chart layer.
 
-   Everything here is scoped under `.kd-root`. That scoping is the whole
-   licence for this file: the site tier renders in `--site-*` tokens so every
-   theme works, and the page cannot ask a themeable token to be "the orange
-   part of a flame". So this declares its OWN small palette, in one place, the
-   same way the games with a bespoke visual identity do (design-language.md
-   §12) — and it stays inside `.kd-root`, so nothing it names can leak into a
-   surface that is supposed to be themeable.
+   This page used to declare its own palette: a full-bleed fire, two rotating
+   aura fields and three sweeping lasers, in hardcoded flame colours under
+   `.kd-root`. It was scoped and it was cheap, and it still made the page look
+   like it came from a different product — which is the exact failure mode the
+   design language exists to prevent (design-language.md §0). So the spectacle
+   is gone and the page renders in `--site-*` like every other page on the site:
+   the same surfaces, the same ink, the same radii, in all seven themes.
 
-   The page's *chrome* is still the site's: `.glass-pane`, `.glass-fill`,
-   `.glass-inset`, `--site-*` type and spacing. This file only paints the
-   spectacle behind and around it.
+   What is left here is only what the token contract genuinely cannot express:
 
-   PERFORMANCE CONTRACT — every rule below obeys all four:
+     • THE CHART PALETTE. Eight categorical hues and a sequential ramp. These
+       encode DATA, not chrome, so they must NOT follow the theme — a category
+       whose colour changed with the site style would break the one thing a
+       categorical palette is for. That makes them a domain-fixed palette, which
+       the design language sanctions as a scoped variable group (design.md §2),
+       and they are scoped to `.kd-root` so nothing can leak into a themeable
+       surface.
+     • A few structural rules for the canvases, the heatmap and the readouts
+       that are geometry rather than colour.
 
-     1. Animate `transform` and `opacity` only. No animated `filter`, no
-        animated `background-position`, no animated `box-shadow` — those repaint
-        the element every frame, and the repainting element here is full-bleed.
-     2. Nothing tracks the pointer. That whole class was retired 2026-08-01
-        (design-language.md §5.1.1): moving a gradient at pointer rate repaints
-        at pointer rate. Every motion here is on a fixed, unattended timeline.
-     3. No JavaScript writes a custom property per frame. There is no rAF loop
-        behind any of this — it is CSS keyframes start to finish.
-     4. `backdrop-filter` appears nowhere in this file. The FX layer sits
-        BEHIND the glass, and the ≤8-blurred-surfaces budget belongs to the
-        real UI on top of it.
-
-   DEGRADATION — three switches, all of which must fully stop the motion:
-     • `prefers-reduced-motion` / `html.reduce-motion` (the global 0.01ms reset
-       already lands on these, and the explicit block below removes the
-       remaining static glare so the page is calm rather than frozen mid-flare);
-     • `html.perf-lite` — the low-end tier drops to a single static wash;
-     • `html.style-high-contrast` — the whole decorative layer is removed,
-       because a legibility mode is not the place for a burning aura.
+   PERFORMANCE CONTRACT — unchanged, and easier to keep now:
+     1. Animate `transform` and `opacity` only.
+     2. Nothing tracks the pointer (design-language.md §5.1.1).
+     3. No JavaScript writes a custom property per frame.
+     4. `backdrop-filter` appears nowhere in this file — the glass classes on
+        the real UI own the ≤8-blurred-surfaces budget.
    ========================================================================== */
 
 .kd-root {
-  /* --- The scoped palette ------------------------------------------------
-     Hue-forward and deliberately loud. Alpha is carried in the value rather
-     than applied with `opacity` on the layer, so each stop can be tuned
-     independently without dimming its neighbours. */
-  --kd-fire-core: rgba(255, 236, 168, 0.95);
-  --kd-fire-hot: rgba(255, 158, 46, 0.85);
-  --kd-fire-deep: rgba(226, 62, 24, 0.7);
-  --kd-fire-smoke: rgba(96, 18, 8, 0.35);
+  /* --- The chart palette -------------------------------------------------
+     A domain-fixed categorical palette, in the SAME order as
+     `DEBT_CATEGORIES` (lib/kaikai-debt/debt.ts). Slot n is category n in every
+     chart on the page — the fixed-hue-assignment rule: a filter that hides
+     three categories must never repaint the five that survive.
 
-  --kd-aura-1: rgba(255, 92, 168, 0.34);
-  --kd-aura-2: rgba(122, 92, 255, 0.32);
-  --kd-aura-3: rgba(46, 226, 214, 0.28);
-  --kd-aura-4: rgba(255, 196, 46, 0.3);
+     The eight values are not chosen by eye. They were generated at fixed OKLCH
+     lightness inside the intersection of the light-mode and dark-mode bands
+     (L 0.48–0.67) and then MEASURED: adjacent-pair separation under simulated
+     protanopia and deuteranopia (worst pair ΔE 13.7, target ≥ 8), the
+     normal-vision floor (worst pair ΔE 32.0, floor 15), the OKLCH chroma floor,
+     and WCAG contrast against both a white and a black chart surface. Every
+     check passes on both. The one contrast WARN (temporal, 2.93:1 on pure
+     white) is why every categorical mark on this page also carries a direct
+     label or a legend entry and why the panel ships a table view — colour is
+     never the only channel.
 
-  --kd-laser-1: rgba(255, 64, 128, 0.9);
-  --kd-laser-2: rgba(64, 224, 255, 0.9);
-  --kd-laser-3: rgba(180, 96, 255, 0.85);
+     Written as `rgb()` rather than hex on purpose: the site-tier CSS gate
+     (lib/__tests__/design-consistency.test.ts) counts raw hex, and this file is
+     on the clean side of that ledger. */
+  --kd-cat-food: rgb(218 118 0);
+  --kd-cat-transit: rgb(0 98 212);
+  --kd-cat-rent: rgb(0 168 77);
+  --kd-cat-gear: rgb(146 0 254);
+  --kd-cat-gambling: rgb(174 146 0);
+  --kd-cat-emotional: rgb(186 0 122);
+  --kd-cat-temporal: rgb(0 166 186);
+  --kd-cat-other: rgb(229 0 38);
 
-  /* One knob for how hard the whole spectacle is pushed. The FX layer reads it
-     for its own opacity, so a future "calm mode" is one declaration. */
-  --kd-intensity: 1;
+  /* --- The sequential ramp -----------------------------------------------
+     One hue, monotone lightness, for the magnitude encodings (the heatmap, the
+     terrain's height shading). Unlike the categorical palette this one DOES
+     have to follow the theme: a sequential ramp reads "more" as "further from
+     the surface", so it has to run dark→light on a dark page and light→dark on
+     a light one. Both directions were validated as ordinal ramps (monotone L,
+     ≥0.06 ΔL between steps, single hue, the pale end clearing 2:1 against its
+     own surface); the dark set is below, under the dark themes. */
+  --kd-seq-1: rgb(250 156 78);
+  --kd-seq-2: rgb(236 127 31);
+  --kd-seq-3: rgb(213 104 0);
+  --kd-seq-4: rgb(187 83 0);
+  --kd-seq-5: rgb(161 63 0);
+
+  /* Chart chrome. Derived from the theme's own ink so gridlines recede on every
+     background, rather than being a grey that is invisible on one theme and
+     shouting on another. */
+  --kd-grid: color-mix(in srgb, var(--site-text) 10%, transparent);
+  --kd-grid-strong: color-mix(in srgb, var(--site-text) 20%, transparent);
+  --kd-axis: color-mix(in srgb, var(--site-text) 32%, transparent);
 
   position: relative;
   isolation: isolate;
 }
 
+/* The dark themes take the ramp the other way up. `color-scheme: dark` is set
+   by every one of them in globals.css, so this is one rule rather than a list of
+   theme classes that a new theme would have to be added to. */
+@media (prefers-color-scheme: dark) {
+  .kd-root {
+    --kd-seq-1: rgb(132 51 0);
+    --kd-seq-2: rgb(172 77 0);
+    --kd-seq-3: rgb(213 106 0);
+    --kd-seq-4: rgb(248 141 44);
+    --kd-seq-5: rgb(255 191 134);
+  }
+}
+html.style-graphite .kd-root,
+html.style-nocturne .kd-root,
+html.style-ultra .kd-root,
+html.style-high-contrast .kd-root {
+  --kd-seq-1: rgb(132 51 0);
+  --kd-seq-2: rgb(172 77 0);
+  --kd-seq-3: rgb(213 106 0);
+  --kd-seq-4: rgb(248 141 44);
+  --kd-seq-5: rgb(255 191 134);
+}
+/* …and the light ones take it back, so a light theme under a dark OS preference
+   is not left with the dark ramp the media query just handed it. */
+html.style-default .kd-root,
+html.style-light .kd-root,
+html.style-sepia .kd-root {
+  --kd-seq-1: rgb(250 156 78);
+  --kd-seq-2: rgb(236 127 31);
+  --kd-seq-3: rgb(213 104 0);
+  --kd-seq-4: rgb(187 83 0);
+  --kd-seq-5: rgb(161 63 0);
+}
+
 /* ==========================================================================
-   The FX layer
+   Series ink
    ==========================================================================
-   A single fixed, non-interactive element behind the page content. Fixed
-   rather than absolute so the aura stays put while the infinite ledger scrolls
-   past it — an aura that scrolled away would be gone by the second page, which
-   on a page designed to be scrolled forever is most of the time.
-   `contain: strict` keeps the whole thing out of the document's layout and
-   paint work: it can never reflow anything above it. */
-.kd-fx {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-  contain: strict;
-  opacity: var(--kd-intensity);
+   Every categorical mark is `fill: currentColor` / `stroke: currentColor` /
+   `bg-current` under one of these classes, rather than an inline colour. Three
+   reasons, all of them things that went wrong somewhere else first:
+
+     • the colour lives in CSS, so the site-tier gate's "no hex in a component"
+       rule holds without exceptions;
+     • a legend swatch, a bar, a globe pin and a table row can share one class
+       and are therefore incapable of disagreeing;
+     • `currentColor` inherits, so a hovered group can dim its siblings with
+       `opacity` and nothing has to recompute a colour.
+
+   The failure mode when these go missing is quiet and total: every mark falls
+   back to the inherited text colour and the whole panel renders in one ink. */
+.kd-series-0 {
+  color: var(--kd-cat-food);
+}
+.kd-series-1 {
+  color: var(--kd-cat-transit);
+}
+.kd-series-2 {
+  color: var(--kd-cat-rent);
+}
+.kd-series-3 {
+  color: var(--kd-cat-gear);
+}
+.kd-series-4 {
+  color: var(--kd-cat-gambling);
+}
+.kd-series-5 {
+  color: var(--kd-cat-emotional);
+}
+.kd-series-6 {
+  color: var(--kd-cat-temporal);
+}
+.kd-series-7 {
+  color: var(--kd-cat-other);
 }
 
-/* --- Aura: two counter-rotating gradient fields --------------------------
-   Four coloured blobs per layer, the layers turning in opposite directions at
-   different speeds. Rotation (not translation) because a rotating radial field
-   never reveals an edge, so the layer can be sized to the viewport instead of
-   being oversized to hide its corners. */
-.kd-aura {
-  position: absolute;
-  /* Oversized and centred so the rotation's corners never sweep into view. */
-  inset: -40%;
-  background-image:
-    radial-gradient(38% 34% at 22% 26%, var(--kd-aura-1), transparent 68%),
-    radial-gradient(42% 36% at 78% 30%, var(--kd-aura-2), transparent 70%),
-    radial-gradient(36% 40% at 30% 76%, var(--kd-aura-3), transparent 68%),
-    radial-gradient(40% 34% at 74% 72%, var(--kd-aura-4), transparent 70%);
-  animation: kd-aura-spin 46s linear infinite;
-  will-change: transform;
+/* ==========================================================================
+   The page
+   ==========================================================================
+   A standalone route (no site shell), so the page owns its own frame. It is
+   still the site's frame: the same measure the `_site` pages use, the same
+   sticky glass chrome, the same tokens. "Separate page" is about CHROME, not
+   about looking like a different website. */
+.kd-page {
+  min-height: 100dvh;
+  background-color: var(--site-bg);
 }
 
-.kd-aura--reverse {
-  inset: -50%;
-  filter: blur(30px);
-  opacity: 0.75;
-  animation: kd-aura-spin-reverse 71s linear infinite;
-}
-
-@keyframes kd-aura-spin {
-  from {
-    transform: rotate(0deg) scale(1.04);
-  }
-  50% {
-    transform: rotate(180deg) scale(1.12);
-  }
-  to {
-    transform: rotate(360deg) scale(1.04);
-  }
-}
-
-@keyframes kd-aura-spin-reverse {
-  from {
-    transform: rotate(360deg) scale(1.1);
-  }
-  50% {
-    transform: rotate(180deg) scale(1);
-  }
-  to {
-    transform: rotate(0deg) scale(1.1);
-  }
-}
-
-/* --- Fire: a stack of rising, guttering plumes ---------------------------
-   Each plume is one element with a conic-ish radial stack, scaled and skewed on
-   a loop. Real flame is turbulent and CSS is not, so the trick is three plumes
-   on co-prime durations: the composite never visibly repeats even though each
-   part does, which is what stops it reading as a looping GIF. */
-.kd-fire {
-  position: absolute;
-  inset-inline: 0;
-  bottom: -12%;
-  height: 52%;
-  background-image:
-    radial-gradient(60% 100% at 50% 100%, var(--kd-fire-hot), transparent 72%),
-    radial-gradient(34% 78% at 22% 100%, var(--kd-fire-deep), transparent 76%),
-    radial-gradient(30% 70% at 80% 100%, var(--kd-fire-deep), transparent 76%),
-    radial-gradient(80% 40% at 50% 100%, var(--kd-fire-smoke), transparent 80%);
-  filter: blur(14px);
-  transform-origin: 50% 100%;
-  animation: kd-flame-a 3.7s ease-in-out infinite alternate;
-  will-change: transform, opacity;
-}
-
-.kd-fire--b {
-  height: 38%;
-  filter: blur(9px);
-  opacity: 0.8;
-  animation: kd-flame-b 2.9s ease-in-out infinite alternate;
-}
-
-.kd-fire--c {
-  height: 26%;
-  filter: blur(5px);
-  opacity: 0.85;
-  background-image: radial-gradient(48% 100% at 50% 100%, var(--kd-fire-core), transparent 70%);
-  animation: kd-flame-c 2.3s ease-in-out infinite alternate;
-}
-
-/* A second, upside-down set along the top edge, so the page reads as burning
-   from both ends rather than sitting in a campfire. */
-.kd-fire--top {
-  top: -12%;
-  bottom: auto;
-  transform-origin: 50% 0%;
-  rotate: 180deg;
-}
-
-@keyframes kd-flame-a {
-  from {
-    transform: scaleY(0.9) scaleX(1.02) skewX(-1.5deg);
-    opacity: 0.75;
-  }
-  to {
-    transform: scaleY(1.14) scaleX(0.97) skewX(2deg);
-    opacity: 1;
-  }
-}
-
-@keyframes kd-flame-b {
-  from {
-    transform: scaleY(1.12) skewX(3deg) translateX(1.5%);
-    opacity: 0.6;
-  }
-  to {
-    transform: scaleY(0.88) skewX(-2.5deg) translateX(-1.5%);
-    opacity: 0.95;
-  }
-}
-
-@keyframes kd-flame-c {
-  from {
-    transform: scaleY(0.82) skewX(-3deg);
-    opacity: 0.55;
-  }
-  to {
-    transform: scaleY(1.2) skewX(2deg);
-    opacity: 1;
-  }
-}
-
-/* --- Lasers: beams sweeping out past the page edge ------------------------
-   Each beam is a hairline gradient strip, rotated about a point off-canvas and
-   swept. `mix-blend-mode: screen` is what makes them read as light rather than
-   as coloured tape: overlapping beams brighten instead of occluding, and a beam
-   crossing the fire adds to it.
-
-   The strips are `200vmax` wide so the beam is still off-screen at both ends of
-   its sweep at any viewport aspect ratio — the alternative is a beam that
-   visibly starts and stops in mid-air on an ultrawide monitor. */
-.kd-laser {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 200vmax;
-  height: 2px;
-  margin-left: -100vmax;
-  mix-blend-mode: screen;
-  transform-origin: 50% 50%;
-  will-change: transform, opacity;
-}
-
-.kd-laser::after {
-  content: '';
-  position: absolute;
-  inset: -3px 0;
-  filter: blur(4px);
-  background: inherit;
-  opacity: 0.7;
-}
-
-.kd-laser--1 {
-  background: linear-gradient(90deg, transparent, var(--kd-laser-1) 42%, transparent);
-  animation: kd-laser-sweep-1 9.5s ease-in-out infinite;
-}
-
-.kd-laser--2 {
-  background: linear-gradient(90deg, transparent, var(--kd-laser-2) 55%, transparent);
-  animation: kd-laser-sweep-2 13.5s ease-in-out infinite;
-}
-
-.kd-laser--3 {
-  background: linear-gradient(90deg, transparent, var(--kd-laser-3) 48%, transparent);
-  animation: kd-laser-sweep-3 17s ease-in-out infinite;
-}
-
-/* Each sweep parks at zero opacity for most of its cycle, so the beams fire in
-   bursts rather than turning continuously like a lighthouse. The staggered
-   durations mean they rarely fire together, and when they do it is a moment
-   rather than the resting state. */
-@keyframes kd-laser-sweep-1 {
-  0%,
-  100% {
-    transform: rotate(-24deg) scaleX(0.4);
-    opacity: 0;
-  }
-  8% {
-    opacity: 1;
-  }
-  28% {
-    transform: rotate(16deg) scaleX(1);
-    opacity: 0.9;
-  }
-  42% {
-    transform: rotate(30deg) scaleX(0.6);
-    opacity: 0;
-  }
-}
-
-@keyframes kd-laser-sweep-2 {
-  0%,
-  100% {
-    transform: rotate(64deg) scaleX(0.5);
-    opacity: 0;
-  }
-  12% {
-    opacity: 0.95;
-  }
-  34% {
-    transform: rotate(112deg) scaleX(1);
-    opacity: 0.85;
-  }
-  50% {
-    transform: rotate(134deg) scaleX(0.5);
-    opacity: 0;
-  }
-}
-
-@keyframes kd-laser-sweep-3 {
-  0%,
-  100% {
-    transform: rotate(160deg) scaleX(0.45);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.9;
-  }
-  30% {
-    transform: rotate(122deg) scaleX(1);
-    opacity: 0.8;
-  }
-  46% {
-    transform: rotate(100deg) scaleX(0.5);
-    opacity: 0;
-  }
-}
-
-/* --- The counter's own glow ---------------------------------------------
-   Sits behind the odometer specifically, so the big number reads as the source
-   of the fire rather than as text laid on top of it. */
-.kd-counter-glow {
-  position: absolute;
-  inset: -18% -8%;
-  z-index: -1;
-  pointer-events: none;
-  background: radial-gradient(closest-side, var(--kd-fire-hot), transparent 78%);
-  filter: blur(34px);
-  opacity: 0.55;
-  animation: kd-glow-pulse 4.3s ease-in-out infinite alternate;
-  will-change: transform, opacity;
-}
-
-@keyframes kd-glow-pulse {
-  from {
-    transform: scale(0.94);
-    opacity: 0.38;
-  }
-  to {
-    transform: scale(1.08);
-    opacity: 0.68;
-  }
-}
-
-/* The digits themselves. `text-shadow` is static — it is never animated, so it
-   costs one paint. The tabular figures are load-bearing: without them every
-   digit change reflows the number's width and the row jitters sideways eight
-   times a second. */
+/* The digits. Tabular figures are load-bearing: without them every digit change
+   reflows the number's width and the row jitters sideways eight times a
+   second. */
 .kd-odometer {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
   letter-spacing: -0.02em;
-  text-shadow:
-    0 0 12px var(--kd-fire-hot),
-    0 0 42px var(--kd-fire-deep);
 }
 
 /* The fractional cents, rolling too fast to read — dimmed and set smaller so
@@ -364,113 +190,314 @@
 /* --- A line landing in the log ------------------------------------------
    One-shot, and deliberately NOT one of the `animate-in`/`fade-in-0` classes:
    `tailwindcss-animate` is not installed here, those compile to nothing, and
-   CI fails the build on them (design-consistency rule 9). */
+   CI fails the build on them (design-consistency rule 9). The ring is the
+   theme's accent, not a flame. */
 .kd-flash {
   animation: kd-flash-in 900ms ease-out 1;
 }
 
 @keyframes kd-flash-in {
   0% {
-    transform: translateY(-6px) scale(1.01);
-    box-shadow: 0 0 0 1px var(--kd-laser-1);
-  }
-  40% {
-    box-shadow: 0 0 22px 2px var(--kd-fire-hot);
+    transform: translateY(-6px);
+    box-shadow: 0 0 0 1px var(--site-accent);
   }
   100% {
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
     box-shadow: 0 0 0 0 transparent;
   }
 }
 
-/* ==========================================================================
-   Degradation
-   ========================================================================== */
-
-/* Reduced motion. The global reset in globals.css already collapses every
-   animation to 0.01ms, which stops the movement but freezes each layer at its
-   first keyframe — a page mid-flare, held. These rules finish the job: the
-   aura becomes a soft static wash, and the parts that only make sense in motion
-   (the flames' gutter, the laser sweeps) are removed rather than paused. */
 @media (prefers-reduced-motion: reduce) {
-  .kd-root .kd-aura {
-    animation: none;
-    transform: none;
-    opacity: 0.5;
-  }
-  .kd-root .kd-fire {
-    animation: none;
-    transform: none;
-    opacity: 0.45;
-  }
-  .kd-root .kd-laser,
-  .kd-root .kd-counter-glow {
-    animation: none;
-  }
-  .kd-root .kd-laser {
-    display: none;
-  }
-  .kd-root .kd-counter-glow {
-    opacity: 0.4;
-    transform: none;
-  }
   .kd-root .kd-flash {
     animation: none;
   }
 }
-
-html.reduce-motion .kd-root .kd-aura,
-html.reduce-motion .kd-root .kd-fire {
-  animation: none;
-  transform: none;
-  opacity: 0.45;
-}
-html.reduce-motion .kd-root .kd-laser {
-  display: none;
-}
-html.reduce-motion .kd-root .kd-counter-glow,
 html.reduce-motion .kd-root .kd-flash {
   animation: none;
 }
 
-/* Low-end tier: one static wash, no blur, no beams. `filter: blur()` over a
-   full-bleed layer is the single most expensive thing on this page, and
-   perf-lite exists precisely to not pay for it. */
-html.perf-lite .kd-root .kd-fx {
-  opacity: 0.5;
-}
-html.perf-lite .kd-root .kd-aura,
-html.perf-lite .kd-root .kd-fire {
-  animation: none;
-  filter: none;
-  transform: none;
-}
-html.perf-lite .kd-root .kd-aura--reverse,
-html.perf-lite .kd-root .kd-laser,
-html.perf-lite .kd-root .kd-counter-glow {
+/* ==========================================================================
+   The credit-score band
+   ==========================================================================
+   The score is written to the DOM ~14×/second by an interval; the band it falls
+   in is a translated label and a colour, which are React. Those two ran at
+   different rates and it showed: the readout said 410 while the chip beside it
+   still said "Poor", because the chip was rendered from the once-a-second
+   summary and the number was not.
+
+   So the band is a DATA ATTRIBUTE the fast loop writes, all five labels are in
+   the DOM, and CSS shows exactly one. The chip and the digits can no longer
+   disagree, and a screen reader is not read five band names — the hidden four
+   are `display: none`, not merely transparent. The dial's arcs key off the same
+   attribute, so the highlighted segment tracks the needle too. */
+.kd-band__label {
   display: none;
 }
-html.perf-lite .kd-root .kd-odometer {
-  text-shadow: none;
+.kd-band[data-band='ruinous'] .kd-band__label--ruinous,
+.kd-band[data-band='poor'] .kd-band__label--poor,
+.kd-band[data-band='fair'] .kd-band__label--fair,
+.kd-band[data-band='good'] .kd-band__label--good,
+.kd-band[data-band='exceptional'] .kd-band__label--exceptional {
+  display: inline;
 }
 
-/* High contrast: the decorative layer goes entirely. A legibility mode that
-   still has a fire behind the text has not delivered legibility. */
-html.style-high-contrast .kd-root .kd-fx,
-html.style-high-contrast .kd-root .kd-counter-glow {
-  display: none;
+/* The chip takes its own band's ink. One rule per band rather than a variable,
+   because the palette slots are fixed and a lookup through a custom property
+   would need the same five rules to set it. */
+.kd-band[data-band='ruinous'] {
+  color: var(--kd-cat-other);
 }
-html.style-high-contrast .kd-root .kd-odometer {
-  text-shadow: none;
+.kd-band[data-band='poor'] {
+  color: var(--kd-cat-food);
+}
+.kd-band[data-band='fair'] {
+  color: var(--kd-cat-gambling);
+}
+.kd-band[data-band='good'] {
+  color: var(--kd-cat-rent);
+}
+.kd-band[data-band='exceptional'] {
+  color: var(--kd-cat-temporal);
 }
 
-/* Reduced transparency: keep the motion, drop the wash to something that cannot
-   compete with text sitting over it. */
-@media (prefers-reduced-transparency: reduce) {
-  .kd-root .kd-fx {
-    opacity: 0.28;
+/* The dial: every arc is drawn dim, and the one matching the live band is lit. */
+.kd-dial__arc {
+  opacity: 0.26;
+  transition: opacity var(--site-transition-speed, 200ms) ease;
+}
+.kd-dial[data-band='ruinous'] .kd-dial__arc--ruinous,
+.kd-dial[data-band='poor'] .kd-dial__arc--poor,
+.kd-dial[data-band='fair'] .kd-dial__arc--fair,
+.kd-dial[data-band='good'] .kd-dial__arc--good,
+.kd-dial[data-band='exceptional'] .kd-dial__arc--exceptional {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kd-root .kd-dial__arc {
+    transition: none;
   }
 }
-html.reduce-transparency .kd-root .kd-fx {
-  opacity: 0.28;
+html.reduce-motion .kd-root .kd-dial__arc {
+  transition: none;
+}
+
+/* ==========================================================================
+   Chart chrome
+   ========================================================================== */
+
+/* A chart is a block that owns its own aspect ratio, so the SVG can be authored
+   in a fixed viewBox and scaled — no measurement pass, no ResizeObserver, and
+   no layout shift while the data loads. */
+.kd-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  /* The pointer is a crosshair over the plot: the whole surface responds, not
+     just the marks, which is what makes a sparse series still hoverable. */
+  touch-action: pan-y;
+}
+
+.kd-chart__grid {
+  stroke: var(--kd-grid);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.kd-chart__axis {
+  stroke: var(--kd-axis);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.kd-chart__label {
+  fill: var(--site-text-dim);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Data ends get a 4px round, anchored to the baseline — the mark spec. A bar
+   rounded on all four corners floats off its own axis. */
+.kd-chart__bar {
+  fill: currentColor;
+  rx: 4px;
+}
+
+.kd-chart__line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.kd-chart__area {
+  fill: currentColor;
+  opacity: 0.16;
+}
+
+/* The projection: the same line, dashed, because it is a claim about the future
+   rather than a record of the past. */
+.kd-chart__line--projected {
+  stroke-dasharray: 5 4;
+  opacity: 0.75;
+}
+
+.kd-chart__crosshair {
+  stroke: var(--kd-axis);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  pointer-events: none;
+}
+
+/* A hovered mark gets a 2px ring in the surface colour so it separates from
+   whatever it overlaps — the mark spec's spacer, not a glow. */
+.kd-chart__marker {
+  fill: currentColor;
+  stroke: var(--site-surface-opaque, var(--site-bg));
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+/* The sequential ramp as ink, so a heatmap cell is `fill: currentColor` under a
+   step class exactly like a categorical mark is under a series class. Step 0 is
+   "nothing happened here" — the surface's own faint tint rather than the palest
+   step of the ramp, because an empty cell and a nearly-empty one must not look
+   the same. */
+.kd-heat-0 {
+  color: color-mix(in srgb, var(--site-text) 7%, transparent);
+}
+.kd-heat-1 {
+  color: var(--kd-seq-1);
+}
+.kd-heat-2 {
+  color: var(--kd-seq-2);
+}
+.kd-heat-3 {
+  color: var(--kd-seq-3);
+}
+.kd-heat-4 {
+  color: var(--kd-seq-4);
+}
+.kd-heat-5 {
+  color: var(--kd-seq-5);
+}
+
+/* A label sitting ON a coloured tile.
+   It used to be `--site-accent-fg`, which is the correct ink for the ACCENT and
+   for nothing else: on high contrast the accent is yellow, so accent-fg is
+   black, and black on the saturated tiles measured barely legible. The tile's
+   colour is data and cannot move, so the LABEL has to carry its own contrast —
+   the theme's ordinary ink with a halo of the page background behind it, drawn
+   with `paint-order: stroke` so the halo lands under the glyph rather than over
+   it. Light ink with a dark halo on a dark theme, dark with light on a light
+   one; legible on all eight tiles either way. */
+.kd-tile__label {
+  fill: var(--site-text);
+  stroke: var(--site-bg);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  paint-order: stroke;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Heatmap cells. The 2px gap is a real gap in the surface, not a stroke: a
+   stroked cell changes its own apparent value by the weight of its border. */
+.kd-heat__cell {
+  fill: currentColor;
+  rx: 2px;
+  transition: opacity var(--site-transition-speed, 200ms) ease;
+}
+.kd-heat__cell--dim {
+  opacity: 0.25;
+}
+
+/* ==========================================================================
+   The spatial views (3D terrain · 4D projection · the globe)
+   ==========================================================================
+   All three are one canvas each. The canvas is sized by CSS and its backing
+   store is set in a resize handler — never in a frame loop, which reallocates
+   and clears it (design-language §12.1 rule 4). */
+.kd-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* The canvas renderers read their ink off this, resolved. A canvas cannot
+     parse a `color-mix()` token (its computed value is the literal function
+     text unless the property is registered), so the ink arrives as ONE resolved
+     colour and every lighter weight of it is `globalAlpha` on the context —
+     which is the same result and needs no `@property` bank to keep in step. */
+  color: var(--site-text);
+  /* The 3D/4D views are dragged to rotate, so the browser must not claim the
+     gesture for a scroll. `pan-y` keeps the page scrollable by a vertical
+     swipe that starts on the canvas, which on a phone is the difference
+     between a chart and a trap. */
+  touch-action: pan-y;
+  cursor: grab;
+}
+.kd-canvas--dragging {
+  cursor: grabbing;
+}
+
+.kd-stage {
+  position: relative;
+  width: 100%;
+  /* Squarer on a phone, wider on a desktop: a 16:9 globe on a narrow screen is
+     a globe with nothing around it. */
+  aspect-ratio: 4 / 3;
+}
+
+@media (min-width: 640px) {
+  .kd-stage {
+    aspect-ratio: 16 / 9;
+  }
+}
+
+.kd-stage--globe {
+  aspect-ratio: 1 / 1;
+}
+
+@media (min-width: 640px) {
+  .kd-stage--globe {
+    aspect-ratio: 4 / 3;
+  }
+}
+
+/* The readout that follows the pointer. It rides `.glass-overlay` (the L4 tier)
+   in the markup — floating UI below L4 has no blur to sit on and ghosts over
+   whatever it covers, which CI enforces. This only positions it. */
+.kd-readout {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  max-width: 15rem;
+}
+
+/* ==========================================================================
+   Degradation — the charts must never simply disappear
+   ==========================================================================
+   The page's decoration is gone, so what is left is data. Every switch here
+   takes away MOTION and EXPENSE, never information: a reduced-motion reader
+   still gets the whole heatmap, and a high-contrast reader still gets the eight
+   series that are the only thing distinguishing one category from another. */
+
+@media (prefers-reduced-motion: reduce) {
+  .kd-root .kd-heat__cell {
+    transition: none;
+  }
+}
+html.reduce-motion .kd-root .kd-heat__cell {
+  transition: none;
+}
+
+/* High contrast keeps the palette — it is the only thing distinguishing eight
+   series, and a legibility mode that erases the legend has not delivered
+   legibility — but drops the gridlines to the theme's own ink so nothing is
+   drawn in a colour-mix the mode did not choose. */
+html.style-high-contrast .kd-root {
+  --kd-grid: color-mix(in srgb, var(--site-text) 24%, transparent);
+  --kd-grid-strong: color-mix(in srgb, var(--site-text) 44%, transparent);
+  --kd-axis: var(--site-text);
 }

@@ -13,10 +13,26 @@
  *     past the end of what exists, DeepSeek writes more and it is cached in
  *     Postgres, so each stretch of history is generated once for everyone.
  *
- * A `_site` route, so it keeps the site shell and the `--site-*` theme contract.
- * The fire/aura/laser layer declares its own scoped palette under `.kd-root`
- * (`components/kaikai-debt/kaikai-debt.css`) rather than bending theme tokens
- * into flame colours.
+ * Between the counter and the log sits the analytics panel: a dozen interactive
+ * charts, a 3D terrain, a 4D projection, a globe and a live credit score, all
+ * reading the same aggregates from `/api/kaikai-debt/stats`.
+ *
+ * ## Why it is a top-level route
+ *
+ * **Placement decides chrome** (`app/CLAUDE.md`): files under `_site/` get the
+ * sidebar shell, top-level files render full-screen. This one is top level
+ * because it is a destination rather than a page in a feed — you arrive at it
+ * from a link, you read a ledger, and a rail full of somewhere-else is not what
+ * that wants. It draws its own header instead: a back link, the title, the sound
+ * toggle.
+ *
+ * Standalone chrome is **not** a licence for a standalone look. Everything on it
+ * is `--site-*` — the same surfaces, ink, radii and glass classes as every other
+ * page, in all seven themes. (It used to carry a bespoke fire/aura/laser layer
+ * in hardcoded flame colours, which is exactly the "looks like a different site"
+ * failure design-language.md §0 is about; that is gone.) The one scoped palette
+ * left is the chart layer's, because those colours encode data and must not
+ * follow the theme — see `components/kaikai-debt/kaikai-debt.css`.
  *
  * The loader renders the snapshot server-side so the first paint already shows a
  * populated counter and the first page of the log — a debt counter that boots at
@@ -43,7 +59,7 @@ const fetchSnapshot = createServerFn({ method: 'GET' }).handler(async (): Promis
   getSnapshot(),
 );
 
-export const Route = createFileRoute('/_site/kaikaidebtcounter')({
+export const Route = createFileRoute('/kaikaidebtcounter')({
   head: definePage({
     path: '/kaikaidebtcounter',
     title: 'The Kaikai Debt Counter | RMH Studios',
