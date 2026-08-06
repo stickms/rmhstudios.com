@@ -53,8 +53,14 @@ yarn-error.log*
 # CI incremental caches (tsc .tsbuildinfo + eslint result cache; see web-ci.yml)
 .cache/
 
-# claude
-.claude
+# claude — personal session state stays local, but the SHARED project config is
+# checked in: settings.json wires the commit gate into every agent session, and
+# .claude/hooks/ holds the script it runs. Without these two, a fresh clone has
+# no commit gate for agents (see CLAUDE.md → "The commit gate").
+.claude/*
+!.claude/settings.json
+!.claude/hooks/
+.claude/settings.local.json
 
 /lib/generated/prisma
 db/**/*

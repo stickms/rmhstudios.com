@@ -196,3 +196,25 @@ history if a rollback ever needs it.
    `lib/__tests__/server-bundle-copies.test.ts` walks the real import graph
    (following `@/…` as well as relative specifiers) and catches this in
    `web-ci`, before it reaches main.
+
+## Before you commit to `server/`
+
+`pnpm check:consistency` (repo `CLAUDE.md` → "The commit gate") runs before
+every commit; it includes `lib/__tests__/server-bundle-copies.test.ts`, which
+is the only thing standing between a new `lib/` import and a service that dies
+on boot. Also confirm:
+
+- [ ] **Relative imports into `lib/`, never `@/`** (gotcha 7) — a relative
+      specifier fails loudly at build time; `@/` can ship a bundle that throws
+      `MODULE_NOT_FOUND` on start.
+- [ ] **A new `lib/` import has its matching `COPY` in the Dockerfile**
+      (gotcha 8) — `pnpm build` passing says nothing about the image build.
+- [ ] **The event name lives in `lib/<app>/events.ts`** and both sides use it;
+      per-socket rate-limit rule maps in each `config.ts` are the de-facto
+      event allowlist, so a new event needs an entry or it is silently dropped.
+- [ ] **Auth strictness matches the hub** (socket-server soft; rmhbox / rmhtube
+      / rmhmusic hard), and gameplay never blocks on a leaderboard/match write.
+- [ ] **No new cron in the web tier** — background work belongs in a worker
+      process or the Go supervisor.
+- [ ] The service still starts: `pnpm dev` boots all six workers/hubs, and a
+      broken import surfaces immediately there.

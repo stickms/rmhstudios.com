@@ -171,3 +171,21 @@ make images         # build + load every service image into Docker (Bazel)
    the five `discord_alex_*` / `discord_chat_session` tables are back
    (migration `20260806120000_restore_alex_bot`, which un-does
    `20260803120000_retire_alex_bot` going forward).
+
+## Before you commit Go changes
+
+`pnpm check:consistency` (repo `CLAUDE.md` → "The commit gate") flags Go
+sources committed without a `BUILD.bazel` update, but the Go fleet's own gate
+is Bazel:
+
+- [ ] `make gazelle` run after adding, renaming or moving any `.go` file — the
+      `BUILD.bazel` changes belong in the same commit.
+- [ ] `make test` green (`bazelisk test --build_tests_only //go-services/...`,
+      which is exactly what `go-microservices.yml` runs).
+- [ ] Config through `pkg/config`, logging through `pkg/log`, session
+      validation through `pkg/auth` against the shared `session` table — a
+      service that reads `os.Getenv` or prints straight to stdout is the drift
+      those packages exist to prevent.
+- [ ] A new binary is wired where it actually ships: the root `Dockerfile`
+      `go-builder` stage builds `./cmd/...` for the Compose path, and
+      `images/BUILD.bazel` is the truth for what Bazel can build.

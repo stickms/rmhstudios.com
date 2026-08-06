@@ -180,3 +180,35 @@ don't remove that plugin.
   `components/`.
 - Separate: `pnpm epic:test` (`vitest.epic.config.ts`, 60s timeout, spawns
   Chromium) for `scripts/epic/`.
+- **`lib/__tests__/` is where the repo's consistency is executable.** The
+  design/tab-strip gate, the game-viewport contract, the filter-cost budget,
+  the theme-token and colour-vision contracts, the API-handler adoption
+  backlog, the i18n catalog/namespace integrity, the rAF-loop allowlist and the
+  server-bundle copy check all live there, and `pnpm check:consistency` runs
+  that subset on every commit. When you fix one of their backlog entries,
+  **delete the entry in the same commit** — those lists are one-directional and
+  each has a test that fails when an entry no longer violates its rule, so a
+  stale allowlist cannot quietly become permanent.
+
+## Before you commit to `lib/`
+
+`pnpm check:consistency` (repo `CLAUDE.md` → "The commit gate") runs before
+every commit. On top of what it checks:
+
+- [ ] **`.server` discipline:** anything touching Prisma, `node:*`, secrets or
+      heavy Node deps is named `*.server.ts`, the specifier literally contains
+      `.server`, and no client component imports it (it fails at *runtime* with
+      `undefined` exports, not at build time).
+- [ ] **One way to do each thing:** coins only through `awardCoins()`, user
+      shapes through `userDisplaySelect`/`resolveUser`, user-supplied URLs
+      through `safeFetch`, SSE through `createBus`, audio through
+      `getAudioContext()`. A second path is the drift this directory exists to
+      prevent.
+- [ ] **Schema changes carry a migration** (`pnpm db:migrate`) — `db:push` is
+      dev-only, and deploys run `prisma migrate deploy`. New high-volume tables
+      take a time-sortable key (rewrite R0-T7).
+- [ ] **i18n edits keep the registry honest:** a new `locales/en/<ns>.json`
+      needs its `NAMESPACES` entry in `lib/i18n/config.ts` in the same commit,
+      or nothing ever loads it.
+- [ ] **Colocated tests still pass** — `lib/rmhladder/` in particular is
+      heavily unit-tested, and its suite is the contract for the pipeline.
