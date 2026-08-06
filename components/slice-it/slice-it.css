@@ -19,7 +19,17 @@
     --slice-input-border: rgba(163, 177, 198, 0.8);
   }
 
-  .dark .slice-theme {
+  /*
+   * Two selectors, two sources of "dark".
+   *
+   * `.dark .slice-theme` is the site theme, inherited from <html>.
+   * `.slice-theme.dark` is the game's own toggle, which `DarkModeWrapper` puts
+   * on its wrapper — it used to write to <html> instead, overriding the
+   * player's site-wide theme for as long as the game was open and clearing it
+   * on the way out.
+   */
+  .dark .slice-theme,
+  .slice-theme.dark {
     --slice-bg: #16161a;
     --slice-text: #f0f0f0;
     --slice-text-darker: #ffffff;
@@ -45,14 +55,16 @@
 
 .neumorphic {
   background: var(--slice-bg);
-  box-shadow: 9px 9px 16px var(--slice-shadow-dark),
+  box-shadow:
+    9px 9px 16px var(--slice-shadow-dark),
     -9px -9px 16px var(--slice-shadow-light);
   border-radius: 20px;
 }
 
 .neumorphic-inset {
   background: var(--slice-bg);
-  box-shadow: inset 6px 6px 10px var(--slice-shadow-dark),
+  box-shadow:
+    inset 6px 6px 10px var(--slice-shadow-dark),
     inset -6px -6px 10px var(--slice-shadow-light);
   border-radius: 15px;
 }

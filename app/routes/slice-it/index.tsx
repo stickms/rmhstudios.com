@@ -1,16 +1,18 @@
-import { lazy, Suspense } from 'react'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useTranslation } from 'react-i18next'
-import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
-import { DarkModeWrapper } from '@/components/slice-it/DarkModeWrapper'
-import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
-import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
+import { lazy, Suspense } from 'react';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import { DarkModeWrapper } from '@/components/slice-it/DarkModeWrapper';
+import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
+import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 
-const GameCanvas = lazy(() => import('@/components/game/GameCanvas').then(m => ({ default: m.GameCanvas })))
+const GameCanvas = lazy(() =>
+  import('@/components/slice-it/GameCanvas').then((m) => ({ default: m.GameCanvas })),
+);
 
 function SliceItPage() {
-  const { t } = useTranslation("r-slice-it")
+  const { t } = useTranslation('r-slice-it');
   return (
     <DarkModeWrapper>
       <main className="fixed inset-0 slice-theme overflow-hidden flex flex-col bg-slice-bg transition-colors duration-300">
@@ -23,11 +25,17 @@ function SliceItPage() {
               className="text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/20 transition-colors rounded-lg text-xs"
             >
               <ArrowLeft className="w-3 h-3 mr-1" />
-              <span className="hidden sm:inline font-bold">{t("back-to-builds", { defaultValue: "Back to Builds" })}</span>
+              <span className="hidden sm:inline font-bold">
+                {t('back-to-builds', { defaultValue: 'Back to Builds' })}
+              </span>
             </Button>
           </Link>
-          <span className="text-xs font-black text-slice-text-light uppercase tracking-widest hidden sm:inline">|</span>
-          <span className="text-sm font-black text-slice-text uppercase tracking-widest hidden sm:inline">Slice-It</span>
+          <span className="text-xs font-black text-slice-text-light uppercase tracking-widest hidden sm:inline">
+            |
+          </span>
+          <span className="text-sm font-black text-slice-text uppercase tracking-widest hidden sm:inline">
+            Slice-It
+          </span>
         </div>
 
         {/* Game Canvas — occupies remaining space */}
@@ -40,9 +48,9 @@ function SliceItPage() {
         </div>
       </main>
     </DarkModeWrapper>
-  )
+  );
 }
 
 export const Route = createFileRoute('/slice-it/')({
   component: SliceItPage,
-})
+});

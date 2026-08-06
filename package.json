@@ -45,6 +45,7 @@
     "docs:site": "pnpm exec tsx scripts/generate-site-reference.ts",
     "docs:site:check": "pnpm exec tsx scripts/generate-site-reference.ts --check",
     "albums:migrate": "pnpm exec tsx scripts/migrate-albums-to-storage.ts",
+    "media:migrate": "pnpm exec tsx scripts/migrate-media-to-r2.ts",
     "audit": "pnpm audit --audit-level=moderate",
     "epic:test": "node_modules/.bin/vitest run --config vitest.epic.config.ts",
     "epic:build": "node_modules/.bin/tsx scripts/epic/build-epic.ts",

@@ -118,6 +118,27 @@ export const config = {
     'holdem:sit_out': { max: 60, windowMs: 60_000 },
     'holdem:rebuy': { max: 60, windowMs: 60_000 },
     'holdem:show_cards': { max: 100, windowMs: 60_000 },
+    // Slice It. `slice:score` is the only high-frequency one — clients publish
+    // on a ~500ms timer, so 240/min leaves headroom for a reconnect burst
+    // without letting a socket flood the room. These events had NO entry here
+    // at all before, which per server/CLAUDE.md §Gotchas 5 also meant they were
+    // missing from the hub's de-facto event allowlist.
+    'slice:create': { max: 10, windowMs: 60_000 },
+    'slice:join': { max: 30, windowMs: 60_000 },
+    'slice:quickplay': { max: 20, windowMs: 60_000 },
+    'slice:browse': { max: 30, windowMs: 60_000 },
+    'slice:leave': { max: 30, windowMs: 60_000 },
+    'slice:ready': { max: 60, windowMs: 60_000 },
+    'slice:song': { max: 60, windowMs: 60_000 },
+    'slice:settings': { max: 60, windowMs: 60_000 },
+    'slice:mods': { max: 120, windowMs: 60_000 },
+    'slice:start': { max: 20, windowMs: 60_000 },
+    'slice:loaded': { max: 20, windowMs: 60_000 },
+    'slice:score': { max: 240, windowMs: 60_000 },
+    'slice:finish': { max: 20, windowMs: 60_000 },
+    'slice:rematch': { max: 30, windowMs: 60_000 },
+    'slice:chat': { max: 30, windowMs: 60_000 },
+    'slice:kick': { max: 20, windowMs: 60_000 },
     'dr:create': { max: 10, windowMs: 60_000 },
     'dr:join': { max: 30, windowMs: 60_000 },
     'dr:quickplay': { max: 20, windowMs: 60_000 },
