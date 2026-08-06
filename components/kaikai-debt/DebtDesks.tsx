@@ -1,0 +1,97 @@
+import type { ReactNode } from 'react';
+import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
+import { Landmark, ShieldCheck } from 'lucide-react';
+
+/**
+ * Who issues the paper and who clears the payments.
+ *
+ * The counter above says what Kaikai owes; this says who books it. Two desks
+ * inside RMH Capital: the Debt Capital Markets team in Investment Banking
+ * issues the instruments each line on the tab represents, and Counterparty
+ * Treasury & Risk Management handles repayments and the exposure they leave
+ * behind.
+ *
+ * Static prose, deliberately. Nothing here reads the ledger — attaching live
+ * numbers to it would put a second subscriber on a stream whose whole design is
+ * that one component owns the basis and the odometer is the only thing that
+ * repaints (`KaikaiDebtCounter`).
+ */
+export function DebtDesks() {
+  const { t } = useTranslation('c-kaikai-debt');
+
+  return (
+    <section
+      className="glass-pane flex flex-col gap-3 rounded-site p-4"
+      aria-labelledby="kd-desks-title"
+    >
+      <div className="flex flex-col gap-1">
+        <h2 id="kd-desks-title" className="font-display text-lg font-semibold text-site-text">
+          {t('desks.title', { defaultValue: 'Who issues it, who settles it' })}
+        </h2>
+        <p className="text-sm text-site-text-muted">
+          {t('desks.lede', {
+            defaultValue:
+              'The tab is public, but the paper behind it is not self-issued. Two desks stand between a line in the log and the number at the top of this page.',
+          })}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Desk
+          icon={Landmark}
+          role={t('desks.issuer.role', { defaultValue: 'Investment Banking' })}
+          body={t('desks.issuer.body', {
+            defaultValue:
+              'Structures and issues every instrument written against this balance. Each line on the tab below is originated here, priced at the appraiser’s mark, and placed on the books the moment it clears.',
+          })}
+          name={
+            <Link
+              to="/rmh-capital/businesses"
+              hash="investment-banking"
+              className="text-site-accent underline-offset-4 hover:underline"
+            >
+              {t('desks.issuer.name', {
+                defaultValue: 'RMH Capital — Debt Capital Markets',
+              })}
+            </Link>
+          }
+        />
+        <Desk
+          icon={ShieldCheck}
+          role={t('desks.settlement.role', { defaultValue: 'Settlement and exposure' })}
+          name={t('desks.settlement.name', {
+            defaultValue: 'Counterparty Treasury & Risk Management',
+          })}
+          body={t('desks.settlement.body', {
+            defaultValue:
+              'Books the repayments and carries the counterparty risk on a borrower whose balance has only ever gone one way. Anything Kaikai pays down settles through this team; so far it has had nothing to settle.',
+          })}
+        />
+      </div>
+    </section>
+  );
+}
+
+function Desk({
+  icon: Icon,
+  name,
+  role,
+  body,
+}: {
+  icon: typeof Landmark;
+  name: ReactNode;
+  role: string;
+  body: string;
+}) {
+  return (
+    <article className="glass-fill flex flex-col gap-1.5 rounded-site p-3">
+      <p className="flex items-center gap-1.5 text-xs text-site-text-dim">
+        <Icon className="size-3.5 shrink-0" aria-hidden />
+        {role}
+      </p>
+      <h3 className="font-display text-sm font-semibold text-balance text-site-text">{name}</h3>
+      <p className="text-xs text-site-text-muted">{body}</p>
+    </article>
+  );
+}
