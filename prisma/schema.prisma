@@ -374,6 +374,10 @@ model User {
   callsPlaced   Call[] @relation("CallCaller")
   callsReceived Call[] @relation("CallCallee")
 
+  // ─── Group voice calls ───────────────────────────────────────────────────
+  groupCallsHosted GroupCall[]            @relation("GroupCallHost")
+  groupCalls       GroupCallParticipant[]
+
   // ─── The Next 100 (2026-08-05) ───────────────────────────────────────────
   /// Set by POST /api/account/delete. The account is signed out and hidden
   /// immediately, but the anonymisation runs 30 days later — so a deletion at
@@ -4767,6 +4771,7 @@ model Community {
   spaces         Space[]
   events         CommunityEvent[]
   communityPages CommunityPage[]
+  groupCalls     GroupCall[]
 
   @@index([memberCount(sort: Desc)])
   @@map("community")
@@ -7248,4 +7253,154 @@ model CommunityPageRevision {
 
   @@index([pageId, createdAt(sort: Desc)])
   @@map("community_page_revision")
+}
+
+// ─── Group voice calls ─────────────────────────────────────────────────────
+/// Where a group call came from — which is also the only thing that decides how
+/// people get into it.
+enum GroupCallOrigin {
+  /// Started from a DM or a profile. Invitees are RUNG: they get an incoming
+  /// call and accept or decline. The starter is the host.
+  ADHOC
+  /// An open voice room scoped to a community. Nobody is rung; eligible members
+  /// walk in, and the roster is whoever has joined.
+  COMMUNITY
+  /// An open voice room scoped to a party. Same admission rule as COMMUNITY.
+  PARTY
+}
+
+enum GroupCallStatus {
+  /// Ad-hoc only: rung, and nobody but the host has joined yet.
+  RINGING
+  /// The room is live. Named ACTIVE rather than CONNECTED (the 1:1 `CallStatus`
+  /// word) on purpose: in a mesh "connected" is N-1 separate facts, not one, so
+  /// a room is not something that can be connected.
+  ACTIVE
+  /// Finished normally — the host ended it, or the last person left.
+  ENDED
+  /// Ad-hoc: rang out and nobody joined.
+  MISSED
+  /// Ad-hoc: everyone who was rung declined.
+  DECLINED
+  /// Signalling or ICE never completed for anyone — the honest outcome when
+  /// TURN is unavailable and the peers are behind symmetric NAT.
+  FAILED
+}
+
+/// A group voice call: one room, up to MAX_GROUP_CALL_PARTICIPANTS (8) people.
+///
+/// Media never touches our servers. This is a full WebRTC mesh — every
+/// participant holds a direct connection to every other participant — so there
+/// is no SFU and no media relay to run, which is also why the cap is eight and
+/// not eighty (each client uploads N-1 copies of its own microphone; see
+/// `lib/groupcall/events.ts`). What is persisted here is only the call *record*
+/// — who was in it, when, and how it ended — so a DM thread can show "Missed
+/// group call" and a community can show its voice history.
+///
+/// No audio is recorded, and there is nowhere for it to be recorded to.
+///
+/// Separate from `Call` rather than a nullable extension of it: the two have
+/// different admission rules, different lifecycles (a 1:1 call cannot be joined
+/// mid-flight), and a different cardinality of participant. Sharing the table
+/// would mean every 1:1 query carrying a roster join it never needs.
+model GroupCall {
+  /// Time-sortable rather than `cuid()`, per the new-table policy (R0-T7): rows
+  /// are only ever appended, and the id is public only to the handful of people
+  /// in the room, so the creation time it encodes leaks nothing that `createdAt`
+  /// on the same row does not.
+  id     String          @id @default(uuid(7))
+  hostId String
+  origin GroupCallOrigin
+
+  /// Set when `origin` is COMMUNITY. A real relation — communities are rows.
+  communityId    String?
+  /// Set when `origin` is PARTY. Deliberately NOT a relation: parties are
+  /// ephemeral and have no schema at all (in-memory Maps in
+  /// `server/socket-server/handlers/party.ts` — a hub restart dissolves them),
+  /// so there is no table to point a foreign key at. Indexed so the live room
+  /// for a party is still one lookup, and left dangling once the party is gone,
+  /// which is correct: the call record outlives the party it happened in.
+  partyId        String? @db.VarChar(64)
+  /// The DM thread this started from, when it did. Null for a call started from
+  /// a profile or scoped to a community/party. Matches `Call.conversationId` —
+  /// a plain indexed column rather than a relation, for the same reason.
+  conversationId String?
+
+  status GroupCallStatus @default(RINGING)
+
+  createdAt        DateTime  @default(now())
+  /// When the room actually opened (the host's own join). Null only for a room
+  /// that was refused before it ever ran.
+  startedAt        DateTime?
+  endedAt          DateTime?
+  /// The most people in the room at once. Denormalised on each join so the
+  /// history row can say "5 people" without replaying the participant rows, and
+  /// so the mesh cap can be audited after the fact.
+  peakParticipants Int       @default(0)
+
+  host         User                   @relation("GroupCallHost", fields: [hostId], references: [id], onDelete: Cascade)
+  community    Community?             @relation(fields: [communityId], references: [id], onDelete: SetNull)
+  participants GroupCallParticipant[]
+
+  @@index([hostId, createdAt(sort: Desc)])
+  @@index([conversationId, createdAt(sort: Desc)])
+  /// "Is there a live room for this community/party?" — the LOOKUP query.
+  @@index([communityId, status])
+  @@index([partyId, status])
+  /// Backs the janitor sweep that closes rooms orphaned by a hub restart
+  /// (WHERE status IN (RINGING, ACTIVE)).
+  @@index([status, createdAt(sort: Desc)])
+  @@map("group_call")
+}
+
+enum GroupCallParticipantStatus {
+  /// Ad-hoc: rung, still deciding. Never used for an open room.
+  INVITED
+  /// In the room right now.
+  JOINED
+  /// Was in the room and left.
+  LEFT
+  /// Ad-hoc: actively refused the ring.
+  DECLINED
+  /// Ad-hoc: the ring timed out without an answer.
+  MISSED
+  /// Joined, but their media never came up — the per-person record of the
+  /// symmetric-NAT case, and the only way to see that one participant could
+  /// never be heard.
+  FAILED
+}
+
+/// One person's membership of one group call.
+///
+/// Append-only and higher-volume than `GroupCall` — up to eight rows per call,
+/// written once and then updated in place — so per the R0-T7 new-table policy it
+/// takes a `BigInt` identity rather than a `cuid()`: insert locality without a
+/// second index, and the same shape as the other high-volume child tables here
+/// (`PoolContribution`, `CommunityPageRevision`). The id is never exposed to a
+/// client; every read addresses a row by `(callId, userId)` or scans by user, so
+/// nothing needs an opaque public handle and `BigInt`'s awkward JSON
+/// serialisation never reaches the wire.
+model GroupCallParticipant {
+  id     BigInt @id @default(autoincrement())
+  callId String
+  userId String
+
+  status GroupCallParticipantStatus @default(INVITED)
+
+  /// When they were rung (ad-hoc) or when the row was created on join (open
+  /// room). Always set, so a user's call history has one column to sort on.
+  invitedAt   DateTime  @default(now())
+  joinedAt    DateTime?
+  leftAt      DateTime?
+  /// Denormalised time in the room, in seconds. 0 unless they joined.
+  durationSec Int       @default(0)
+
+  call GroupCall @relation(fields: [callId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// One row per person per call. Also serves as the `callId` prefix index that
+  /// loads a roster, so no separate `@@index([callId])` is needed.
+  @@unique([callId, userId])
+  @@index([userId, invitedAt(sort: Desc)])
+  @@map("group_call_participant")
 }
