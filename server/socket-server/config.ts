@@ -61,6 +61,32 @@ export const config = {
     'call:signal': { max: 60, windowMs: 60_000 },
     'call:ice': { max: 600, windowMs: 60_000 },
     'call:mute': { max: 60, windowMs: 60_000 },
+    // Group voice calls (`gcall:*`). Sized from the `call:*` rules above and
+    // then multiplied where the mesh multiplies: a room of eight is seven peer
+    // connections per participant, so one person joining trickles ICE seven
+    // times over and renegotiates seven times over. The lifecycle events do not
+    // scale that way — a human presses join once however many people are in the
+    // room — so they keep the 1:1 numbers.
+    //   signal: 60 (the 1:1 ceiling, per leg) × 7 legs = 420.
+    //   ice:    1800, i.e. ~257 candidates per leg per minute. Not the literal
+    //           600 × 7 = 4200, which as an ABUSE ceiling is far too generous:
+    //           a real negotiation trickles tens of candidates per leg, and
+    //           `mm:voice:signal` covers an eleven-peer mesh's signal AND ice
+    //           in 900. 1800 leaves room for the whole room reconnecting after
+    //           a network change without leaving a socket a usable flood pipe.
+    'gcall:start': { max: 20, windowMs: 60_000 },
+    'gcall:invite': { max: 20, windowMs: 60_000 },
+    'gcall:join': { max: 30, windowMs: 60_000 },
+    'gcall:decline': { max: 30, windowMs: 60_000 },
+    'gcall:leave': { max: 30, windowMs: 60_000 },
+    'gcall:end': { max: 20, windowMs: 60_000 },
+    'gcall:signal': { max: 420, windowMs: 60_000 },
+    'gcall:ice': { max: 1800, windowMs: 60_000 },
+    // One broadcast per press, not one per leg — mute is a fact about a person.
+    'gcall:state': { max: 60, windowMs: 60_000 },
+    // Presence is pushed, not polled; this covers a client moving between
+    // communities, plus a reconnect re-asking for each one it has on screen.
+    'gcall:lookup': { max: 30, windowMs: 60_000 },
     'rmhtype:room:create': { max: 3, windowMs: 60_000 },
     'rmhtype:room:join': { max: 10, windowMs: 60_000 },
     'rmhtype:room:chat': { max: 30, windowMs: 60_000 },

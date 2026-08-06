@@ -124,6 +124,13 @@ COPY lib/spaces ./lib/spaces/
 # shared state machine (peer.ts/store.ts are client-only and never reached).
 COPY lib/call/events.ts ./lib/call/events.ts
 COPY lib/call/state.ts ./lib/call/state.ts
+# Group voice calls, the same two files for the same reason: the mesh handler
+# needs the event names and the shared state machine (admission, persistence
+# mapping, the offer/answer compare). Single files rather than the directory —
+# `mesh.ts` and `store.ts` next to them are browser code the hub never reaches,
+# and copying them would rebuild this layer every time the call UI changes.
+COPY lib/groupcall/events.ts ./lib/groupcall/events.ts
+COPY lib/groupcall/state.ts ./lib/groupcall/state.ts
 # The realtime status/grace contract, shared by BOTH sides of the wire: the
 # client's connection states and the 15s disconnect window that
 # server/shared/presence-grace.ts and server/rmhbox/config.ts both read, so a

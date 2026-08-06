@@ -77,6 +77,7 @@ import {
 import { registerSpacesHandlers, handleSpacesDisconnect } from './handlers/spaces';
 import { registerPartyHandlers, handlePartyDisconnect } from './handlers/party';
 import { registerCallHandlers, handleCallDisconnect } from './handlers/call';
+import { registerGroupCallHandlers, handleGroupCallDisconnect } from './handlers/group-call';
 
 // ─── Startup validation ─────────────────────────────────────────
 
@@ -283,6 +284,7 @@ io.on('connection', (socket) => {
   registerSpacesHandlers(io, socket);
   registerPartyHandlers(io, socket);
   registerCallHandlers(io, socket);
+  registerGroupCallHandlers(io, socket);
 
   // Disconnect cleanup
   socket.on('disconnect', (reason) => {
@@ -291,6 +293,7 @@ io.on('connection', (socket) => {
     handleSpacesDisconnect(io, socket);
     handlePartyDisconnect(io, socket);
     void handleCallDisconnect(io, socket);
+    void handleGroupCallDisconnect(io, socket);
     handleSynapseStormDisconnect(io, socket);
     handleSliceItDisconnect(io, socket);
     handleNeonDriftwayDisconnect(io, socket);

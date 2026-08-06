@@ -55,8 +55,12 @@
  * ## Rate limits
  *
  * Every inbound name below must appear in `SOCKET_RATE_LIMITS`
- * (`server/socket-server/config.ts`) — that map doubles as the inbound-event
- * allowlist, so an unlisted event is silently dropped.
+ * (`server/socket-server/config.ts`). That map is the de-facto catalogue of
+ * inbound events, but note what it is NOT: `check()` returns `true` for a
+ * name it does not know (`server/shared/rate-limit.ts`), so an unlisted event
+ * is *unmetered*, not dropped. Forgetting to add one here does not disable
+ * it — it ships it without a rate limit. A mesh makes that worse than it is
+ * for a 1:1 call, since one sender's flood fans out to N-1 recipients.
  *
  * This is a plain, client-safe module: no server-only imports, no `node:*`, no
  * Prisma. Both bundles import the same strings so they can never drift.
