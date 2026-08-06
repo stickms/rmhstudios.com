@@ -473,10 +473,31 @@ function checkRunTiming(
  */
 function chartNoteCount(analysis: unknown, difficulty: Difficulty | undefined): number | undefined {
   const slices = (analysis as { slices?: unknown } | null)?.slices;
-  if (Array.isArray(slices)) return slices.length;
+  if (Array.isArray(slices)) return judgedEvents(slices);
   if (slices && typeof slices === 'object') {
     const tier = (slices as Record<string, unknown>)[difficulty ?? 'normal'];
-    if (Array.isArray(tier)) return tier.length;
+    if (Array.isArray(tier)) return judgedEvents(tier);
   }
   return undefined;
+}
+
+/**
+ * How many judgements a chart can produce — not how many notes it holds.
+ *
+ * Since G5 a LONG note is judged twice: once on the head, once on the release.
+ * `checkConsistency` bounds `notesResolved` against this number, so counting
+ * heads only rejects honest runs on hold-heavy charts. An 800-note chart that
+ * is 30% LONG resolves 1040 judgements against a head-only ceiling of 848, and
+ * the player sees a 422 for playing the chart as written.
+ *
+ * Deliberately counts the release even for a note the player never released:
+ * the hold-timeout sweep judges that as a MISS, which is still a judgement.
+ */
+function judgedEvents(slices: unknown[]): number {
+  let total = 0;
+  for (const slice of slices) {
+    total += 1;
+    if ((slice as { type?: unknown } | null)?.type === 'LONG') total += 1;
+  }
+  return total;
 }

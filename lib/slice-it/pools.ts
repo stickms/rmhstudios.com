@@ -59,6 +59,12 @@ export const CHALLENGE_MODIFIERS = [
   'invisible',
   'spin',
   'strictTiming',
+  // A9. Lenient Timing widens every window by 1.4x, so it belongs here for the
+  // same reason Strict does — it changes what a press resolves to. It is
+  // unranked and pays no bonus, but "unranked" is a separate axis from "which
+  // board": a run that never reaches the board still has to be classified, or
+  // the backfill and `poolOfStoredRow` disagree about a row nothing filed.
+  'lenientTiming',
   'oneTrack',
   'switching',
   'bombs',
@@ -141,6 +147,10 @@ export function poolOfStoredRow(row: {
   const speedJson = typeof modifiers.speed === 'number' ? modifiers.speed : 1;
   if (
     modifiers.suddenDeath === true ||
+    // M6. Perfect-or-die sits beside Sudden Death for the same reason: all it
+    // can do is end the run early. It never reveals, moves or re-times a note,
+    // so a run that survived it is a run of the same chart played the same way.
+    modifiers.perfectionist === true ||
     modifiers.healthGauge === true ||
     speedColumn !== 1 ||
     speedJson !== 1

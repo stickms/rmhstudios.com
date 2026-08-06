@@ -9,27 +9,27 @@ Working notes — regenerate rather than hand-edit.
 | `G2` | Four-key and six-key lane modes | L | open |  |
 | `G3` | Chords as a first-class chart element | M | open |  |
 | `G4` | Directional slices | L | open |  |
-| `G5` | Judged hold releases | S | in flight | w4 |
+| `G5` | Judged hold releases | S | shipped | w4 |
 | `G6` | Rolls and repeat notes | M | open |  |
-| `G7` | Chart-native mines | S | in flight | w4 |
+| `G7` | Chart-native mines | S | open | deferred in w4 — needs charter.ts AND chart.ts together; half of it bakes unavoidable bombs into every run |
 | `G8` | Quantisation colouring | S | shipped | w1 |
 | `G9` | Scroll speed as a player setting | S | shipped | w3 |
-| `G10` | Scroll-velocity gimmicks | M | in flight | w4 |
+| `G10` | Scroll-velocity gimmicks | M | shipped | w4 |
 | `G11` | Downscroll, upscroll and playfield layout | M | open |  |
 | `G12` | Note-attack sound feedback (key sounds) | M | open |  |
 | `G13` | Combo tiers with mechanical weight | M | open |  |
 | `G14` | Section-aware note density | M | open |  |
 | `C1` | A chart editor | L | shipped | w1-3 |
 | `C2` | Multiple charts per song | L | open |  |
-| `C3` | A computed difficulty rating | M | in flight | w4 |
+| `C3` | A computed difficulty rating | M | shipped | w4 |
 | `C4` | Stem separation for melody-aware charts | L | blocked | needs a source-separation model + GPU-class worker; only the seam is buildable here |
-| `C5` | Section detection | M | in flight | w4 |
-| `C6` | A real timing map instead of one BPM | M | in flight | w4 |
+| `C5` | Section detection | M | shipped | w4 |
+| `C6` | A real timing map instead of one BPM | M | shipped | w4 |
 | `C7` | Preview points | S | open |  |
 | `C8` | Chart regeneration on demand | M | open |  |
 | `C9` | Import external chart formats | L | open |  |
 | `C10` | Uploader density override | S | open |  |
-| `C11` | Chart linting | S | in flight | w4 |
+| `C11` | Chart linting | S | shipped | w4 |
 | `C12` | Deterministic chart hashing | S | open |  |
 | `P1` | Practice mode | M | open |  |
 | `P2` | Failed-section drilling | M | open |  |
@@ -49,7 +49,7 @@ Working notes — regenerate rather than hand-edit.
 | `A6` | Automatic output-latency detection | S | open |  |
 | `A7` | Motion sensitivity controls | S | open |  |
 | `A8` | Haptic hit feedback | S | open |  |
-| `A9` | Adjustable judgement windows | S | in flight | w4 |
+| `A9` | Adjustable judgement windows | S | shipped | w4 |
 | `A10` | Chart content warnings | S | open |  |
 | `H1` | An early/late hit-error bar | S | shipped | w1 |
 | `H2` | Distinct combo-break feedback | S | shipped | w1 |
@@ -66,7 +66,7 @@ Working notes — regenerate rather than hand-edit.
 | `M3` | A family of visibility mods | M | shipped | w3 |
 | `M4` | Chart-level double time | M | open |  |
 | `M5` | Holds as taps | S | open |  |
-| `M6` | Perfect-or-die | S | in flight | w4 |
+| `M6` | Perfect-or-die | S | shipped | w4 |
 | `M7` | Modifier presets | S | open |  |
 | `M8` | A weekly modifier roulette | M | open |  |
 | `M9` | Rebalanced modifier economics | M | open |  |
@@ -96,7 +96,7 @@ Working notes — regenerate rather than hand-edit.
 | `N11` | Tournaments | L | blocked | depends on a platform tournaments hub that does not exist yet |
 | `N12` | Rejoin a match in progress | M | open |  |
 | `R1` | Split the leaderboard by chart and mod pool | M | shipped | w2 |
-| `R2` | A global skill rating | L | in flight | w4 |
+| `R2` | A global skill rating | L | shipped (dormant) | w4 — nothing calls promoteToRanked() outside tests, so no chart is ranked and every rating is 0 |
 | `R3` | Actually record replays | M | shipped | w3 |
 | `R4` | Watch replays | M | shipped | w3 |
 | `R5` | Leaderboard scopes | S | shipped | w2 |
@@ -104,14 +104,14 @@ Working notes — regenerate rather than hand-edit.
 | `R7` | A review surface for what integrity already flags | M | open |  |
 | `R8` | Server-side replay verification | L | shipped | w3 |
 | `R9` | First clear and clear rate | S | shipped | w2 |
-| `R10` | A ranked chart pool | L | in flight | w4 |
+| `R10` | A ranked chart pool | L | shipped (dormant) | w4 — no admin surface calls promoteToRanked() |
 | `L1` | Genres and tags | M | open |  |
 | `L2` | Curated shelves | M | open |  |
 | `L3` | Chart reviews | M | open |  |
 | `L4` | Follow uploaders and charters | S | open |  |
 | `L5` | Timestamped comments | S | open |  |
 | `L6` | An uploader dashboard | M | open |  |
-| `L7` | Waveform scrubbing in the details panel | M | in flight | w4 |
+| `L7` | Waveform scrubbing in the details panel | M | shipped | w4 |
 | `L8` | Metadata autofill | M | open |  |
 | `L9` | Reporting and takedowns | M | open |  |
 | `L10` | Chart packs | M | open |  |
