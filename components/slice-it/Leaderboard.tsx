@@ -3,6 +3,7 @@
 import { memo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 import {
   Bomb,
   Crosshair,
@@ -10,10 +11,12 @@ import {
   Ghost,
   HeartPulse,
   Layers,
+  PlayCircle,
   RefreshCw,
   RotateCcw,
 } from 'lucide-react';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { ReplayViewer } from './ReplayViewer';
 import { DIFFICULTIES, type Difficulty } from '@/lib/slice-it/constants';
 import { MOD_POOLS, type ModPool } from '@/lib/slice-it/pools';
 import type { LeaderboardEntry } from '@/lib/slice-it/types';
@@ -73,6 +76,17 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
   const [scope, setScope] = useState<Scope>('global');
   const [timeWindow, setTimeWindow] = useState<TimeWindow>('all');
 
+  /**
+   * `userId → GameReplay.id` for the rows currently on screen (`R4`).
+   *
+   * Fetched in one request after the board loads rather than joined into the
+   * leaderboard response: `LeaderboardEntry` is the contract the multiplayer
+   * sidebar and the results screen also read, and a replay is a property of a
+   * *run artefact*, not of a rank. Rows without one simply do not get a button.
+   */
+  const [replays, setReplays] = useState<Record<string, string>>({});
+  const [watching, setWatching] = useState<string | null>(null);
+
   useEffect(() => {
     const controller = new AbortController();
 
@@ -109,6 +123,38 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
     void load();
     return () => controller.abort();
   }, [songId, difficulty, modPool, scope, timeWindow]);
+
+  // Which of the visible players have a replay stored on this song. Keyed off
+  // the ids actually rendered, so switching tier or page re-asks for exactly the
+  // rows on screen and nothing else.
+  const shownIds = [...entries.map((entry) => entry.userId), ...(self ? [self.userId] : [])].join(
+    ',',
+  );
+
+  useEffect(() => {
+    if (!songId || !shownIds) {
+      setReplays({});
+      return;
+    }
+    const controller = new AbortController();
+
+    const load = async () => {
+      try {
+        const params = new URLSearchParams({ songId, userIds: shownIds });
+        const res = await fetch(`/api/slice-it/replay?${params}`, { signal: controller.signal });
+        if (!res.ok) return;
+        const data = (await res.json()) as { replays?: Record<string, string> };
+        setReplays(data.replays ?? {});
+      } catch {
+        // A board without watch buttons is a board. This lookup is decoration on
+        // a list that has already rendered, and it never gets to log an error
+        // over it.
+      }
+    };
+
+    void load();
+    return () => controller.abort();
+  }, [songId, shownIds]);
 
   // Only draw the self row when it is not already on screen; otherwise the
   // player sees themselves twice, with two different rank numbers.
@@ -190,17 +236,37 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
         ) : (
           <>
             {entries.map((entry) => (
-              <Row key={`${entry.userId}-${entry.rank}`} entry={entry} />
+              <Row
+                key={`${entry.userId}-${entry.rank}`}
+                entry={entry}
+                replayId={replays[entry.userId]}
+                onWatch={setWatching}
+              />
             ))}
             {showSelf && (
               <>
                 <div className="h-px bg-slice-shadow-dark/40 my-1" role="presentation" />
-                <Row entry={self} />
+                <Row entry={self} replayId={replays[self.userId]} onWatch={setWatching} />
               </>
             )}
           </>
         )}
       </div>
+
+      <DialogPrimitive.Root
+        open={watching !== null}
+        onOpenChange={(open) => !open && setWatching(null)}
+      >
+        <DialogPrimitive.Portal>
+          <DialogPrimitive.Overlay className="fixed inset-0 z-100 bg-black/50 backdrop-blur-sm" />
+          <DialogPrimitive.Content className="slice-theme bg-slice-bg fixed left-1/2 top-1/2 z-100 w-[min(48rem,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-2xl shadow-2xl">
+            <DialogPrimitive.Title className="sr-only">
+              {ts('replay-title', { defaultValue: 'Replay' })}
+            </DialogPrimitive.Title>
+            {watching && <ReplayViewer replayId={watching} onClose={() => setWatching(null)} />}
+          </DialogPrimitive.Content>
+        </DialogPrimitive.Portal>
+      </DialogPrimitive.Root>
     </div>
   );
 });
@@ -242,8 +308,18 @@ function FilterSelect({
   );
 }
 
-function Row({ entry }: { entry: LeaderboardEntry }) {
+function Row({
+  entry,
+  replayId,
+  onWatch,
+}: {
+  entry: LeaderboardEntry;
+  /** Present only when this run has a stored input log (`R3`). */
+  replayId?: string;
+  onWatch?: (replayId: string) => void;
+}) {
   const { t } = useTranslation('c-game');
+  const { t: ts } = useTranslation('r-slice-it');
   const rank = entry.rank;
 
   return (
@@ -264,6 +340,22 @@ function Row({ entry }: { entry: LeaderboardEntry }) {
       <span className="text-slice-text-light w-5 text-center font-bold shrink-0">{rank}.</span>
 
       <PlayerName entry={entry} />
+
+      {replayId && onWatch && (
+        <Tooltip content={ts('replay-watch', { defaultValue: 'Watch this run' })}>
+          <button
+            type="button"
+            onClick={() => onWatch(replayId)}
+            className="text-slice-text-light hover:text-blue-500 shrink-0"
+            aria-label={ts('replay-watch-of', {
+              defaultValue: "Watch {{name}}'s run",
+              name: entry.username,
+            })}
+          >
+            <PlayCircle className="h-4 w-4" />
+          </button>
+        </Tooltip>
+      )}
 
       <div className="flex flex-col items-end shrink-0 gap-0.5">
         <div className="flex items-center gap-1 mb-0.5">

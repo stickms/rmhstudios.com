@@ -13,6 +13,7 @@
 import { create } from 'zustand';
 import { DIFFICULTIES } from '@/lib/slice-it/constants';
 import type { Command } from './commands';
+import type { GeneratePlan } from './generate';
 import { singleTimingPoint } from './types';
 import type {
   Charts,
@@ -87,6 +88,25 @@ interface EditorState {
   playbackRate: number;
   /** Loop markers for A/B practice inside the editor (P1's mechanism). Phase 4. */
   loop: { start: number; end: number } | null;
+  /**
+   * True while the real `GameEngine` is playing the working chart (§10).
+   *
+   * A flag rather than the session itself: the session is a module singleton in
+   * `playtest.ts` (the draw loop reads it every frame and must not re-render to
+   * do so), and what the React tree needs from it is only "is one running".
+   */
+  playtesting: boolean;
+
+  /* ── Generation ───────────────────────────────────────────────────────── */
+  /**
+   * The proposed result of a regenerate, uncommitted (§8.3).
+   *
+   * Preview before apply, always: the timeline draws this plan's additions in
+   * green and its removals struck through, and nothing reaches `charts` until
+   * Apply. A regenerate that silently ate an author's work once is a feature they
+   * will never press again.
+   */
+  preview: GeneratePlan | null;
 
   /* ── Tools ────────────────────────────────────────────────────────────── */
   tool: EditorTool;
@@ -121,6 +141,9 @@ interface EditorState {
   setZoom: (zoom: number) => void;
   setPlaying: (playing: boolean) => void;
   setPlaybackRate: (rate: number) => void;
+  setLoop: (loop: { start: number; end: number } | null) => void;
+  setPlaytesting: (playtesting: boolean) => void;
+  setPreview: (preview: GeneratePlan | null) => void;
   setTool: (tool: EditorTool) => void;
   setSnap: (snap: SnapDivision) => void;
   setSnapEnabled: (enabled: boolean) => void;
@@ -183,6 +206,8 @@ const initial = {
   playing: false,
   playbackRate: 1,
   loop: null,
+  playtesting: false,
+  preview: null as GeneratePlan | null,
   tool: 'select' as EditorTool,
   snap: 4 as SnapDivision,
   snapEnabled: true,
@@ -259,7 +284,10 @@ export const useEditorStore = create<EditorState>()((set) => ({
       const undoStack = merged
         ? [...state.undoStack.slice(0, -1), merged]
         : [...state.undoStack, command].slice(-HISTORY_LIMIT);
-      return { charts, undoStack, redoStack: [], revision: state.revision + 1 };
+      // Any edit invalidates a pending preview: the plan was computed against the
+      // chart as it was, so applying it afterwards would silently revert the edit
+      // that has just landed.
+      return { charts, undoStack, redoStack: [], revision: state.revision + 1, preview: null };
     }),
 
   undo: () =>
@@ -271,6 +299,7 @@ export const useEditorStore = create<EditorState>()((set) => ({
         undoStack: state.undoStack.slice(0, -1),
         redoStack: [...state.redoStack, command],
         revision: state.revision + 1,
+        preview: null,
       };
     }),
 
@@ -283,6 +312,7 @@ export const useEditorStore = create<EditorState>()((set) => ({
         undoStack: [...state.undoStack, command],
         redoStack: state.redoStack.slice(0, -1),
         revision: state.revision + 1,
+        preview: null,
       };
     }),
 
@@ -294,6 +324,14 @@ export const useEditorStore = create<EditorState>()((set) => ({
   setZoom: (zoom) => set({ zoom: Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom)) }),
   setPlaying: (playing) => set({ playing }),
   setPlaybackRate: (rate) => set({ playbackRate: Math.max(0.25, Math.min(2, rate)) }),
+  setLoop: (loop) =>
+    set(
+      loop && loop.end > loop.start
+        ? { loop: { start: loop.start, end: loop.end } }
+        : { loop: null },
+    ),
+  setPlaytesting: (playtesting) => set({ playtesting }),
+  setPreview: (preview) => set({ preview }),
   setTool: (tool) => set({ tool }),
   setSnap: (snap) => set({ snap }),
   setSnapEnabled: (snapEnabled) => set({ snapEnabled }),

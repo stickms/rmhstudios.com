@@ -53,7 +53,9 @@ export const Route = createFileRoute('/slice-it/player/$handle')({
         description: `${name}'s Slice It! scores: personal bests, clear lamps and recent runs.`,
         path: `/slice-it/player/${canonicalSegment}`,
       }),
-      links: [{ rel: 'canonical', href: buildCanonical(`/slice-it/player/${canonicalSegment}`) }],
+      // `buildCanonical` already returns the whole `{ rel, href }` link object —
+      // wrapping it in another one nests the object into `href`.
+      links: [buildCanonical(`/slice-it/player/${canonicalSegment}`)],
     };
   },
   component: PlayerPage,
@@ -77,7 +79,11 @@ const LAMP_COLORS: Record<Lamp, string> = {
 
 function PlayerPage() {
   const { t } = useTranslation('r-slice-it');
+  // The loader throws `notFound()` rather than returning nothing, so this is
+  // only ever undefined in the type — never at runtime. Narrow instead of
+  // asserting: a `!` here would be a lie that outlives whoever wrote it.
   const profile = Route.useLoaderData();
+  if (!profile) return null;
 
   return (
     <main className="min-h-dvh px-4 py-8 sm:px-8">

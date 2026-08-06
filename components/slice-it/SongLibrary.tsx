@@ -119,7 +119,7 @@ export function SongLibrary({
   const setFilters = React.useCallback(
     (patch: Partial<LibrarySearch>) => {
       void navigate({
-        to: '/slice-it/',
+        to: '/slice-it',
         // A filter change is a refinement of the same view, not a new page —
         // `replace` keeps the back button one press per *navigation*, not one
         // press per sort click.

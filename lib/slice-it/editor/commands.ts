@@ -24,7 +24,7 @@
 import type { Charts, Difficulty, EditorNote, SliceType } from './types';
 
 export type CommandKind =
-  'place' | 'delete' | 'move' | 'retype' | 'set-duration' | 'select' | 'composite';
+  'place' | 'delete' | 'move' | 'retype' | 'set-duration' | 'select' | 'composite' | 'generate';
 
 export interface Command {
   readonly kind: CommandKind;
@@ -271,6 +271,32 @@ function replacementCommand(
     label,
     apply: (charts) => withNotes(charts, difficulty, swap(next)),
     invert: (charts) => withNotes(charts, difficulty, swap(originals)),
+  };
+}
+
+/**
+ * Swap a difficulty's whole note list — what Apply in the AUTO panel commits.
+ *
+ * The one command that carries a snapshot rather than a delta, and deliberately:
+ * a regenerate rewrites most of the chart, so the "delta" IS the list, and the
+ * two arrays it holds are the two the editor already has in memory (the plan is
+ * built before Apply is pressed). Undo has to restore the previous chart
+ * exactly, `auto` flags included, or Ctrl+Z after a regenerate would leave every
+ * surviving note claiming to be the author's.
+ */
+export function replaceChartNotes(
+  difficulty: Difficulty,
+  before: readonly EditorNote[],
+  after: readonly EditorNote[],
+  label = 'Generate notes',
+): Command {
+  const previous = before.slice();
+  const next = after.slice();
+  return {
+    kind: 'generate',
+    label,
+    apply: (charts) => withNotes(charts, difficulty, () => next.slice()),
+    invert: (charts) => withNotes(charts, difficulty, () => previous.slice()),
   };
 }
 

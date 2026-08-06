@@ -31,6 +31,7 @@ import { SNAP_DIVISIONS } from '@/lib/slice-it/editor/types';
 import type { EditorTool, SliceType, SnapDivision } from '@/lib/slice-it/editor/types';
 import { useEditorStore } from '@/lib/slice-it/editor/store';
 import { formatTime } from './Timeline';
+import { PlaytestControls } from './PlaytestControls';
 
 interface ToolbarProps {
   onSave: () => void;
@@ -182,6 +183,8 @@ export function Toolbar({ onSave }: ToolbarProps) {
         </button>
       </div>
 
+      <PlaytestControls />
+
       <button
         type="button"
         className="neumorphic-sm ml-auto flex h-9 items-center gap-2 px-3 text-sm disabled:opacity-40"
@@ -195,12 +198,6 @@ export function Toolbar({ onSave }: ToolbarProps) {
             ? t('editor-save', { defaultValue: 'Save' })
             : t('editor-saved', { defaultValue: 'Saved' })}
       </button>
-
-      {/*
-        TODO(phase 4 — §10): Play / loop-selection transport lands here, driving
-        `GameEngine` on the edited chart rather than a second simulation.
-        TODO(phase 5 — §8): the AUTO panel's trigger sits next to Save.
-      */}
     </div>
   );
 }

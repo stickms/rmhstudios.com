@@ -166,6 +166,11 @@ COPY lib/slice-it/constants.ts ./lib/slice-it/constants.ts
 COPY lib/slice-it/types.ts ./lib/slice-it/types.ts
 COPY lib/slice-it/modifiers.ts ./lib/slice-it/modifiers.ts
 COPY lib/slice-it/scoring.ts ./lib/slice-it/scoring.ts
+# The leaderboard's board key (R1). The socket hub's persistResults has to file
+# a multiplayer score on the same board /api/slice-it/score would, and two
+# implementations of that would put the same run on two different boards
+# depending on which door it came through.
+COPY lib/slice-it/pools.ts ./lib/slice-it/pools.ts
 COPY lib/slice-it/net/events.ts ./lib/slice-it/net/events.ts
 # Massive March goes in whole, unlike the games above, because for this one the
 # hub IS the simulation: the island's height field, its collision, the audibility

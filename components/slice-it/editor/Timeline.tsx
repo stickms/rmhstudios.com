@@ -30,6 +30,8 @@ import { barBeatAt, gridLines, quantizationOf, snapTime } from '@/lib/slice-it/e
 import { BASE_PIXELS_PER_SECOND, editorState, useEditorStore } from '@/lib/slice-it/editor/store';
 import type { EditorNote, TimingPoint } from '@/lib/slice-it/editor/types';
 import { newNoteId } from '@/lib/slice-it/editor/uuid';
+import { activePlaytest } from '@/lib/slice-it/editor/playtest';
+import type { DifficultyPlan } from '@/lib/slice-it/editor/generate';
 import { QUANT_COLORS, readEditorTheme, type EditorTheme } from './theme';
 
 /** Left gutter, in CSS pixels, holding the bar/beat ruler (§4.2). */
@@ -202,6 +204,8 @@ export function Timeline() {
   const timingPoints = useEditorStore((s) => s.timingPoints);
   const snap = useEditorStore((s) => s.snap);
   const tool = useEditorStore((s) => s.tool);
+  const preview = useEditorStore((s) => s.preview);
+  const playtesting = useEditorStore((s) => s.playtesting);
 
   /* ── Sizing ───────────────────────────────────────────────────────────── */
   useEffect(() => {
@@ -247,7 +251,7 @@ export function Timeline() {
   /* ── Repaint on any state the drawing depends on ──────────────────────── */
   useEffect(() => {
     dirtyRef.current = true;
-  }, [active, notes, keys, playhead, zoom, timingPoints, snap, tool]);
+  }, [active, notes, keys, playhead, zoom, timingPoints, snap, tool, preview, playtesting]);
 
   /* ── Draw loop ────────────────────────────────────────────────────────── */
   useEffect(() => {
@@ -276,7 +280,14 @@ export function Timeline() {
         hover: hoverRef.current,
         drag: dragRef.current,
         duration: state.song?.duration ?? 0,
+        preview: state.preview?.byDifficulty[state.active] ?? null,
+        loop: state.loop,
       });
+
+      // A running playtest moves the world every frame: the playhead is written
+      // by the transport's own loop, and the hit marks it draws fade on wall
+      // time, so this canvas is never clean while one is playing.
+      if (state.playtesting) dirtyRef.current = true;
     };
     frame = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frame);
@@ -582,7 +593,19 @@ interface DrawOptions {
   hover: { x: number; y: number } | null;
   drag: DragState | null;
   duration: number;
+  /** The uncommitted regenerate for this difficulty, if one is being previewed. */
+  preview: DifficultyPlan | null;
+  loop: { start: number; end: number } | null;
 }
+
+/** Preview colours. Fixed, like the quantisation palette, and for the same reason. */
+const PREVIEW_ADDED = '#22c55e';
+const PREVIEW_REMOVED = '#ef4444';
+/** Hit highlights (§4.4a): the game's own judgement colours, hit and miss. */
+const HIT_COLOR = '#22d3ee';
+const MISS_COLOR = '#ef4444';
+/** How long a hit mark stays on the timeline, ms. */
+const HIT_FADE_MS = 900;
 
 function draw(
   ctx: CanvasRenderingContext2D,
@@ -596,15 +619,114 @@ function draw(
   ctx.fillRect(0, 0, view.width, view.height);
 
   drawLanes(ctx, view, theme);
+  drawLoop(ctx, view, theme, options.loop);
   drawBeatGrid(ctx, view, points, theme, options.snap);
+  // Removals draw UNDER the chart: a struck-through note is still a note the
+  // author can see in place, with a line through it, rather than a gap they have
+  // to infer.
+  drawPreview(ctx, view, options.preview);
   drawNotes(ctx, view, notes, points, theme, options.hover);
+  drawHitMarks(ctx, view, notes);
   drawSelectionBox(ctx, theme, options.drag);
   drawPlayhead(ctx, view, theme);
 
-  // TODO(phase 4 — §4.4a): the playtest hit overlay draws here, reading the
-  // engine's own `hit`/`hitTime` fields off the resolved slices.
   // TODO(phase 6 — §6): the waveform + onset-ghost strips flank this canvas.
   // TODO(phase 8 — §4.4b): the aggregate miss-rate heat tint, once O1 exists.
+}
+
+/**
+ * The uncommitted regenerate (§8.3).
+ *
+ * Added notes in green, removed notes struck through — and both drawn in outline
+ * rather than filled, so a preview can never be mistaken for the chart. Nothing
+ * on this canvas is the document until Apply.
+ */
+function drawPreview(ctx: CanvasRenderingContext2D, view: ViewWindow, plan: DifficultyPlan | null) {
+  if (!plan) return;
+  const width = Math.min(96, laneWidth(view) * 0.72);
+
+  ctx.save();
+  ctx.lineWidth = 2;
+  ctx.setLineDash([5, 3]);
+  ctx.strokeStyle = PREVIEW_ADDED;
+  for (const note of plan.added) {
+    const cy = yOf(view, note.time);
+    if (cy < -NOTE_H || cy > view.height + NOTE_H) continue;
+    noteShape(ctx, note, laneCenterX(view, note.lane), cy, width + 6);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  ctx.save();
+  ctx.strokeStyle = PREVIEW_REMOVED;
+  ctx.lineWidth = 2;
+  for (const note of plan.removed) {
+    const cy = yOf(view, note.time);
+    if (cy < -NOTE_H || cy > view.height + NOTE_H) continue;
+    const cx = laneCenterX(view, note.lane);
+    ctx.globalAlpha = 0.9;
+    ctx.beginPath();
+    ctx.moveTo(cx - width / 2 - 4, cy);
+    ctx.lineTo(cx + width / 2 + 4, cy);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/**
+ * Playtest hit highlights (§4.4a).
+ *
+ * Read straight off the engine's resolved slices — `hit` and `hitTime` are
+ * already written there by `resolve()` and the miss sweep — so the ring an author
+ * sees is the judgement that was actually made, not a second opinion computed
+ * from note positions. That is the whole loop this feature exists for: place a
+ * note, play the bar, see the judgement land on it, adjust.
+ */
+function drawHitMarks(
+  ctx: CanvasRenderingContext2D,
+  view: ViewWindow,
+  notes: readonly EditorNote[],
+) {
+  const session = activePlaytest();
+  if (!session) return;
+  const { from, to } = visibleRange(notes, view.startTime, view.endTime);
+  const width = Math.min(96, laneWidth(view) * 0.72);
+  const now = performance.now();
+
+  ctx.save();
+  ctx.lineWidth = 3;
+  for (let i = from; i < to; i++) {
+    const note = notes[i];
+    const mark = session.hitOf(note.id);
+    if (!mark) continue;
+    const age = now - mark.at;
+    if (age > HIT_FADE_MS) continue;
+    const cy = yOf(view, note.time);
+    if (cy < -NOTE_H || cy > view.height + NOTE_H) continue;
+    ctx.globalAlpha = 1 - age / HIT_FADE_MS;
+    ctx.strokeStyle = mark.hit ? HIT_COLOR : MISS_COLOR;
+    noteShape(ctx, note, laneCenterX(view, note.lane), cy, width + 14);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/** The A/B loop range Ctrl+Space plays (§10). */
+function drawLoop(
+  ctx: CanvasRenderingContext2D,
+  view: ViewWindow,
+  theme: EditorTheme,
+  loop: { start: number; end: number } | null,
+) {
+  if (!loop) return;
+  const top = yOf(view, loop.end);
+  const bottom = yOf(view, loop.start);
+  if (bottom < 0 || top > view.height) return;
+  ctx.save();
+  ctx.globalAlpha = 0.12;
+  ctx.fillStyle = theme.accent;
+  ctx.fillRect(GUTTER, top, view.width - GUTTER, bottom - top);
+  ctx.restore();
 }
 
 function drawLanes(ctx: CanvasRenderingContext2D, view: ViewWindow, theme: EditorTheme) {

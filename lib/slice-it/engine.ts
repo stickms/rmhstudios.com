@@ -49,6 +49,17 @@ import {
 import type { BeatMap, HitResult, RunStats, Slice } from './types';
 import { MIN_TIMING_SAMPLES, type TimingSummary } from './integrity';
 import { prepareChart, scorableNoteCount } from './chart';
+import {
+  buildReplayInputs,
+  JUDGMENT_CODE,
+  NOT_RECORDED,
+  REPLAY_MAX_INPUTS,
+  REPLAY_TO_HIT_RESULT,
+  replayMods,
+  replaySeed,
+  type ReplayInput,
+} from './replay';
+import type { SliceItReplay } from '@/lib/game/replay';
 import { useSliceItStore } from './store';
 import {
   accuracyOf,
@@ -192,6 +203,45 @@ export class GameEngine {
    */
   private comboBreak: { at: number; magnitude: number } | null = null;
 
+  /* ── Replay capture (R3) ───────────────────────────────────────────────── *
+   *
+   * Three pre-sized typed arrays, not an array of objects. Recording happens
+   * inside `resolve`, which is on the input path and — for the miss sweep — on
+   * the frame path, and this is a rhythm game: a `push({t, lane, judgment})` per
+   * note is an object literal, a string, and an amortised array grow in the one
+   * place where a GC pause costs the player the next note. Parallel arrays of
+   * numbers write into memory that was allocated once, before the song started.
+   * The objects the schema wants are materialised once, at submission, by
+   * {@link getReplayLog}.
+   *
+   * Bounded at the schema's own {@link REPLAY_MAX_INPUTS}: a chart dense enough
+   * to overflow it is past `MAX_NOTES_PER_SECOND` anyway, and truncating is
+   * better than sending a payload that will be rejected whole.
+   * ----------------------------------------------------------------------- */
+  private readonly replayTimes = new Int32Array(REPLAY_MAX_INPUTS);
+  private readonly replayLanes = new Uint8Array(REPLAY_MAX_INPUTS);
+  private readonly replayJudgments = new Uint8Array(REPLAY_MAX_INPUTS);
+  private replayCount = 0;
+  /** True once a run has produced more resolutions than the log can hold. */
+  private replayTruncated = false;
+
+  /* ── Replay playback (R4) ──────────────────────────────────────────────── */
+
+  /** Non-null while this engine is *playing back* a log rather than a player. */
+  private replayInput: ReplayInput[] | null = null;
+  private replayCursor = 0;
+  /**
+   * Playback position in seconds, driven by the viewer.
+   *
+   * Playback does not read the audio clock. `AudioManager` can start and stop
+   * but cannot seek (there is no public way to set its `pauseTime`), so a
+   * viewer that scrubbed would have a chart at one position and audio at
+   * another — which is worse than silence. The viewer owns the timeline
+   * instead and the engine follows it; see `docs/_handoff/replay-requests.md`
+   * for the one-method change to `AudioManager` that would let audio follow too.
+   */
+  private replayTime = 0;
+
   constructor() {
     this.audioManager = AudioManager.getInstance();
   }
@@ -280,6 +330,11 @@ export class GameEngine {
     this.offsetRing.times.fill(0);
     this.offsetHead = 0;
     this.comboBreak = null;
+    // The log is emptied by moving one integer: the arrays keep their memory for
+    // the next run, which is the whole reason they are pre-sized.
+    this.replayCount = 0;
+    this.replayTruncated = false;
+    this.replayCursor = 0;
 
     for (const slice of this.slices) {
       slice.hit = false;
@@ -314,8 +369,17 @@ export class GameEngine {
     }
   }
 
-  /** Current playback position, adjusted by the player's calibration offset. */
+  /**
+   * Current playback position, adjusted by the player's calibration offset.
+   *
+   * During playback the position is the viewer's, and the calibration offset is
+   * deliberately not applied: it describes the *watcher's* audio hardware, and
+   * subtracting it would re-time somebody else's run to this machine's latency —
+   * the logged judgements would then land against notes they were not made
+   * against.
+   */
   private now(): number {
+    if (this.replayInput !== null) return this.replayTime;
     const offsetSeconds = (useSliceItStore.getState().audioOffset || 0) / 1000;
     return this.audioManager.getCurrentTime() - offsetSeconds;
   }
@@ -371,6 +435,11 @@ export class GameEngine {
     }
 
     if (this.slices.length === 0) return;
+
+    // Before the hold accrual and before the miss sweep: a logged input has to
+    // resolve its note while the note still exists, or the sweep expires it and
+    // the replay shows a miss the run never had.
+    if (this.replayInput !== null) this.stepReplay(currentTime);
 
     const scoreMultiplier = this.runMultiplier();
     const missWindow = this.missWindow;
@@ -561,7 +630,10 @@ export class GameEngine {
       maxCombo: this.maxCombo,
       accuracy: accuracyOf(this.hitPoints, this.notesResolved),
       multiplier: this.speedMultiplier,
-      currentTime: this.audioManager.getCurrentTime(),
+      // The viewer's clock during playback; the audio clock otherwise. A
+      // renderer asking "where are we" must get the position the notes are being
+      // judged against, and in a replay that is not the audio element's.
+      currentTime: this.replayInput !== null ? this.replayTime : this.audioManager.getCurrentTime(),
       health: this.health,
       gaugeBroken: this.gaugeBroken,
       failed: this.failed,
@@ -636,6 +708,18 @@ export class GameEngine {
 
     const offset = offsetSeconds ?? this.now() - slice.time;
     if (result !== 'MISS') this.recordOffset(offset);
+    // For a hit, `slice.time + offset` is the moment the input happened — the
+    // same reconstruction `submitInput` judged from, not the moment the engine
+    // got around to it. Recording the clock instead would bake this machine's
+    // frame pacing and event-queue latency into the log, and R8 re-judges
+    // against the chart with these numbers.
+    //
+    // For a miss there was no input, and the sweep's clock reading is a full
+    // miss-window *after* the note — far enough on a dense chart to sit nearer
+    // the following note than its own, which is exactly the ambiguity a
+    // re-judge cannot resolve. A missed note is logged at the note's own time,
+    // which is the one unambiguous thing about it.
+    this.recordReplay(lane, result, offsetSeconds === undefined ? slice.time : slice.time + offset);
     this.pushFeedback(result, lane, FEEDBACK_COLORS[result], offset);
     // Last, so the histogram and the combo are already updated if this ends the
     // run — the results screen must describe the note that killed you.
@@ -780,6 +864,215 @@ export class GameEngine {
   /** The hit-window scale this run is being judged at. Widest window × this. */
   getTimingScale(): number {
     return timingScale(useSliceItStore.getState().modifiers);
+  }
+
+  /* ── Replay capture (R3) ───────────────────────────────────────────────── */
+
+  /**
+   * Append one resolution to the input log.
+   *
+   * Every write here is a number into an array that already exists — no
+   * allocation, no string, no property lookup on a fresh object — because this
+   * runs inside `resolve`, which runs on the input path and on the frame path.
+   *
+   * Two clamps, both of which exist so the log passes the schema that will read
+   * it back rather than being rejected whole at submission:
+   *
+   * - **Monotonic `t`.** `verifySliceIt` rejects a log whose timestamps go
+   *   backwards, and they legitimately can by a few milliseconds: the miss sweep
+   *   stamps a note at the current clock while a press in the same frame stamps
+   *   itself at its own `event.timeStamp`, which is a little earlier. That is
+   *   dispatch latency, not tampering, so it is flattened to the previous value
+   *   instead of being allowed to fail an honest run's replay.
+   * - **Bounded `t`.** The schema caps a replay at one hour of track.
+   *
+   * @param atSeconds When the input happened, in audio time.
+   */
+  private recordReplay(lane: number, result: HitResult, atSeconds: number): void {
+    // Playback re-runs `resolve` for every logged input; re-recording them would
+    // be writing the log back over itself.
+    if (this.replayInput !== null) return;
+
+    const code = JUDGMENT_CODE[result];
+    if (code === NOT_RECORDED) return;
+
+    const index = this.replayCount;
+    if (index >= REPLAY_MAX_INPUTS) {
+      this.replayTruncated = true;
+      return;
+    }
+
+    const bounded = atSeconds > 0 ? (atSeconds < 3600 ? atSeconds : 3600) : 0;
+    const ms = Math.round(bounded * 1000);
+    const previous = index > 0 ? this.replayTimes[index - 1] : 0;
+    this.replayTimes[index] = ms < previous ? previous : ms;
+    this.replayLanes[index] = lane > 0 ? (lane < 7 ? lane : 7) : 0;
+    this.replayJudgments[index] = code;
+    this.replayCount = index + 1;
+  }
+
+  /** How many resolutions the log holds, and whether it hit its ceiling. */
+  getReplayStats(): { count: number; truncated: boolean } {
+    return { count: this.replayCount, truncated: this.replayTruncated };
+  }
+
+  /** The recorded log, materialised into the shape the shared schema stores. */
+  getReplayLog(): ReplayInput[] {
+    return buildReplayInputs(
+      this.replayTimes,
+      this.replayLanes,
+      this.replayJudgments,
+      this.replayCount,
+    );
+  }
+
+  /**
+   * The full replay payload for this run, or null when there is nothing to
+   * store.
+   *
+   * Assembled here rather than at the call site because the engine is the only
+   * thing that holds all four parts at once: the track it loaded, the log it
+   * recorded, and — through the store — the modifier set the chart was generated
+   * under, which is what makes the log replayable at all.
+   */
+  getReplay(): SliceItReplay | null {
+    if (this.replayCount === 0 || !this.songId) return null;
+    const modifiers = useSliceItStore.getState().modifiers;
+    return {
+      track: this.songId,
+      seed: replaySeed(this.songId, modifiers),
+      mods: replayMods(modifiers),
+      inputs: this.getReplayLog(),
+    };
+  }
+
+  /* ── Replay playback (R4) ──────────────────────────────────────────────── */
+
+  /**
+   * Put this engine into playback: the log becomes the input device.
+   *
+   * This is autoplay with a different oracle. Autoplay resolves each note at its
+   * own time with a perfect judgement; a replay resolves at the *logged* time
+   * with the *logged* judgement, through the same `resolve` every real press
+   * goes through — which is why the score, the combo, the health gauge, the
+   * feedback text and the timing bar all come out of a replay the way they came
+   * out of the run, without a second implementation of any of them.
+   *
+   * The chart must already be loaded (`loadMap`) under the replay's modifiers,
+   * or the notes the log refers to are not the notes on screen.
+   */
+  loadReplay(inputs: ReplayInput[]): void {
+    this.replayInput = inputs;
+    this.replayCursor = 0;
+    this.replayTime = 0;
+  }
+
+  /** True while this engine is playing a log back. */
+  isReplay(): boolean {
+    return this.replayInput !== null;
+  }
+
+  /**
+   * Advance playback to `seconds` and resolve everything the log says happened
+   * up to it. Called once per frame by the viewer, which owns the clock.
+   */
+  advanceReplay(seconds: number): void {
+    if (this.replayInput === null) return;
+    // Never backwards: `update` and the miss sweep both assume a clock that only
+    // moves forward. Going back in time is `seekReplay`, which re-simulates.
+    this.replayTime = Math.max(this.replayTime, seconds);
+    this.update();
+  }
+
+  /**
+   * Scrub to `seconds`.
+   *
+   * Re-simulates from the beginning rather than trying to unwind: the run's
+   * state at a moment is a function of every input before it (combo, health, the
+   * accuracy denominator, which holds are open), and the only honest way to get
+   * that state is to replay the inputs that produced it. A three-minute log is a
+   * few thousand array reads, which is a fraction of one frame — cheap enough
+   * that scrubbing does not need to be incremental, and correct in a way that an
+   * incremental version would have to keep proving.
+   */
+  seekReplay(seconds: number): void {
+    const log = this.replayInput;
+    if (log === null) return;
+
+    const target = Math.max(0, seconds);
+    // `update` refuses to run unless the store says a run is live, which is
+    // correct for a game and wrong for a scrub: seeking a *paused* replay is the
+    // normal case. The two flags are forced for the duration of the
+    // re-simulation and put back exactly as they were.
+    const before = useSliceItStore.getState();
+    const wasPaused = before.isPaused;
+    const wasStatus = before.status;
+
+    // `reset` clears the cursor and every counter. It does not clear the log —
+    // in playback the log is the input device, not run state.
+    this.reset();
+    this.replayCursor = 0;
+    this.replayTime = 0;
+
+    const store = useSliceItStore.getState();
+    store.setStatus('PLAYING');
+    store.setIsPaused(false);
+
+    // Step the clock to each logged input in turn, so the miss sweep and the
+    // hold accrual see the same sequence of times they saw live. Landing
+    // straight on `target` would resolve every input in one frame and pay a
+    // three-minute hold at a single billing step.
+    for (const input of log) {
+      const at = input.t / 1000;
+      if (at > target) break;
+      this.replayTime = at;
+      this.update();
+    }
+    this.replayTime = target;
+    this.update();
+
+    const after = useSliceItStore.getState();
+    if (wasStatus !== 'PLAYING') after.setStatus(wasStatus);
+    if (wasPaused) after.setIsPaused(true);
+  }
+
+  /** Playback position in seconds, for a scrubber. */
+  getReplayTime(): number {
+    return this.replayTime;
+  }
+
+  /**
+   * Resolve every logged input at or before `now`.
+   *
+   * Holds are the one thing the log cannot describe: it records resolutions, and
+   * a release is not one. A LONG note whose head was hit is therefore released
+   * here at its own end time, which is what a run that scored `HOLD OK` did —
+   * left alone it would sit open until the sweep expired it and break a combo
+   * the run never broke.
+   */
+  private stepReplay(now: number): void {
+    const log = this.replayInput;
+    if (log === null) return;
+
+    for (const [lane, slice] of this.activeHolds) {
+      if (now >= slice.time + (slice.duration ?? 0)) this.submitRelease(lane);
+    }
+
+    while (this.replayCursor < log.length) {
+      const input = log[this.replayCursor];
+      const at = input.t / 1000;
+      if (at > now) break;
+      this.replayCursor++;
+
+      const lane = input.lane ?? 0;
+      const slice = this.getTargetedSlice(lane);
+      // No note under this input means the log and the chart disagree — a
+      // different difficulty, an edited chart, a modifier set the payload did
+      // not carry. Skipped rather than forced: inventing a resolution would make
+      // the viewer show a run that never happened.
+      if (!slice) continue;
+      this.resolve(slice, REPLAY_TO_HIT_RESULT[input.judgment], lane, at - slice.time);
+    }
   }
 
   /* ── Derived run state ─────────────────────────────────────────────────── */

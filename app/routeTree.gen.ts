@@ -502,6 +502,7 @@ import { Route as ApiSignalForgeSaveRouteImport } from './routes/api/signal-forg
 import { Route as ApiSignalForgeScoreRouteImport } from './routes/api/signal-forge/score'
 import { Route as ApiSliceItChartsRouteImport } from './routes/api/slice-it/charts'
 import { Route as ApiSliceItLeaderboardRouteImport } from './routes/api/slice-it/leaderboard'
+import { Route as ApiSliceItReplayRouteImport } from './routes/api/slice-it/replay'
 import { Route as ApiSliceItScoreRouteImport } from './routes/api/slice-it/score'
 import { Route as ApiSliceItSongsRouteImport } from './routes/api/slice-it/songs'
 import { Route as ApiSpacesIndexRouteImport } from './routes/api/spaces/index'
@@ -739,6 +740,7 @@ import { Route as ApiSavesFoldersIdRouteImport } from './routes/api/saves/folder
 import { Route as ApiScheduledIdPublishRouteImport } from './routes/api/scheduled/$id/publish'
 import { Route as ApiSearchSavedIdRouteImport } from './routes/api/search/saved.$id'
 import { Route as ApiSliceItChartsIdRouteImport } from './routes/api/slice-it/charts/$id'
+import { Route as ApiSliceItReplayIdRouteImport } from './routes/api/slice-it/replay/$id'
 import { Route as ApiSliceItSongsIdRouteImport } from './routes/api/slice-it/songs/$id'
 import { Route as ApiSliceItSongsUploadRouteImport } from './routes/api/slice-it/songs/upload'
 import { Route as ApiSpacesIdIndexRouteImport } from './routes/api/spaces/$id/index'
@@ -3327,6 +3329,11 @@ const ApiSliceItLeaderboardRoute = ApiSliceItLeaderboardRouteImport.update({
   path: '/api/slice-it/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSliceItReplayRoute = ApiSliceItReplayRouteImport.update({
+  id: '/api/slice-it/replay',
+  path: '/api/slice-it/replay',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSliceItScoreRoute = ApiSliceItScoreRouteImport.update({
   id: '/api/slice-it/score',
   path: '/api/slice-it/score',
@@ -4567,6 +4574,11 @@ const ApiSliceItChartsIdRoute = ApiSliceItChartsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiSliceItChartsRoute,
 } as any)
+const ApiSliceItReplayIdRoute = ApiSliceItReplayIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiSliceItReplayRoute,
+} as any)
 const ApiSliceItSongsIdRoute = ApiSliceItSongsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -5541,6 +5553,7 @@ export interface FileRoutesByFullPath {
   '/api/signal-forge/score': typeof ApiSignalForgeScoreRoute
   '/api/slice-it/charts': typeof ApiSliceItChartsRouteWithChildren
   '/api/slice-it/leaderboard': typeof ApiSliceItLeaderboardRoute
+  '/api/slice-it/replay': typeof ApiSliceItReplayRouteWithChildren
   '/api/slice-it/score': typeof ApiSliceItScoreRoute
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/spaces/live': typeof ApiSpacesLiveRoute
@@ -5811,6 +5824,7 @@ export interface FileRoutesByFullPath {
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/search/saved/$id': typeof ApiSearchSavedIdRoute
   '/api/slice-it/charts/$id': typeof ApiSliceItChartsIdRouteWithChildren
+  '/api/slice-it/replay/$id': typeof ApiSliceItReplayIdRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/spaces/$id/end': typeof ApiSpacesIdEndRoute
@@ -6347,6 +6361,7 @@ export interface FileRoutesByTo {
   '/api/signal-forge/score': typeof ApiSignalForgeScoreRoute
   '/api/slice-it/charts': typeof ApiSliceItChartsRouteWithChildren
   '/api/slice-it/leaderboard': typeof ApiSliceItLeaderboardRoute
+  '/api/slice-it/replay': typeof ApiSliceItReplayRouteWithChildren
   '/api/slice-it/score': typeof ApiSliceItScoreRoute
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/spaces/live': typeof ApiSpacesLiveRoute
@@ -6617,6 +6632,7 @@ export interface FileRoutesByTo {
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/search/saved/$id': typeof ApiSearchSavedIdRoute
   '/api/slice-it/charts/$id': typeof ApiSliceItChartsIdRouteWithChildren
+  '/api/slice-it/replay/$id': typeof ApiSliceItReplayIdRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/spaces/$id/end': typeof ApiSpacesIdEndRoute
@@ -7179,6 +7195,7 @@ export interface FileRoutesById {
   '/api/signal-forge/score': typeof ApiSignalForgeScoreRoute
   '/api/slice-it/charts': typeof ApiSliceItChartsRouteWithChildren
   '/api/slice-it/leaderboard': typeof ApiSliceItLeaderboardRoute
+  '/api/slice-it/replay': typeof ApiSliceItReplayRouteWithChildren
   '/api/slice-it/score': typeof ApiSliceItScoreRoute
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/spaces/live': typeof ApiSpacesLiveRoute
@@ -7449,6 +7466,7 @@ export interface FileRoutesById {
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/search/saved/$id': typeof ApiSearchSavedIdRoute
   '/api/slice-it/charts/$id': typeof ApiSliceItChartsIdRouteWithChildren
+  '/api/slice-it/replay/$id': typeof ApiSliceItReplayIdRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/spaces/$id/end': typeof ApiSpacesIdEndRoute
@@ -8011,6 +8029,7 @@ export interface FileRouteTypes {
     | '/api/signal-forge/score'
     | '/api/slice-it/charts'
     | '/api/slice-it/leaderboard'
+    | '/api/slice-it/replay'
     | '/api/slice-it/score'
     | '/api/slice-it/songs'
     | '/api/spaces/live'
@@ -8281,6 +8300,7 @@ export interface FileRouteTypes {
     | '/api/scheduled/$id/publish'
     | '/api/search/saved/$id'
     | '/api/slice-it/charts/$id'
+    | '/api/slice-it/replay/$id'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
     | '/api/spaces/$id/end'
@@ -8817,6 +8837,7 @@ export interface FileRouteTypes {
     | '/api/signal-forge/score'
     | '/api/slice-it/charts'
     | '/api/slice-it/leaderboard'
+    | '/api/slice-it/replay'
     | '/api/slice-it/score'
     | '/api/slice-it/songs'
     | '/api/spaces/live'
@@ -9087,6 +9108,7 @@ export interface FileRouteTypes {
     | '/api/scheduled/$id/publish'
     | '/api/search/saved/$id'
     | '/api/slice-it/charts/$id'
+    | '/api/slice-it/replay/$id'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
     | '/api/spaces/$id/end'
@@ -9648,6 +9670,7 @@ export interface FileRouteTypes {
     | '/api/signal-forge/score'
     | '/api/slice-it/charts'
     | '/api/slice-it/leaderboard'
+    | '/api/slice-it/replay'
     | '/api/slice-it/score'
     | '/api/slice-it/songs'
     | '/api/spaces/live'
@@ -9918,6 +9941,7 @@ export interface FileRouteTypes {
     | '/api/scheduled/$id/publish'
     | '/api/search/saved/$id'
     | '/api/slice-it/charts/$id'
+    | '/api/slice-it/replay/$id'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
     | '/api/spaces/$id/end'
@@ -10306,6 +10330,7 @@ export interface RootRouteChildren {
   ApiSignalForgeScoreRoute: typeof ApiSignalForgeScoreRoute
   ApiSliceItChartsRoute: typeof ApiSliceItChartsRouteWithChildren
   ApiSliceItLeaderboardRoute: typeof ApiSliceItLeaderboardRoute
+  ApiSliceItReplayRoute: typeof ApiSliceItReplayRouteWithChildren
   ApiSliceItScoreRoute: typeof ApiSliceItScoreRoute
   ApiSliceItSongsRoute: typeof ApiSliceItSongsRouteWithChildren
   ApiSpacesLiveRoute: typeof ApiSpacesLiveRoute
@@ -13981,6 +14006,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSliceItLeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/slice-it/replay': {
+      id: '/api/slice-it/replay'
+      path: '/api/slice-it/replay'
+      fullPath: '/api/slice-it/replay'
+      preLoaderRoute: typeof ApiSliceItReplayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/slice-it/score': {
       id: '/api/slice-it/score'
       path: '/api/slice-it/score'
@@ -15639,6 +15671,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/slice-it/charts/$id'
       preLoaderRoute: typeof ApiSliceItChartsIdRouteImport
       parentRoute: typeof ApiSliceItChartsRoute
+    }
+    '/api/slice-it/replay/$id': {
+      id: '/api/slice-it/replay/$id'
+      path: '/$id'
+      fullPath: '/api/slice-it/replay/$id'
+      preLoaderRoute: typeof ApiSliceItReplayIdRouteImport
+      parentRoute: typeof ApiSliceItReplayRoute
     }
     '/api/slice-it/songs/$id': {
       id: '/api/slice-it/songs/$id'
@@ -17525,6 +17564,17 @@ const ApiSliceItChartsRouteChildren: ApiSliceItChartsRouteChildren = {
 const ApiSliceItChartsRouteWithChildren =
   ApiSliceItChartsRoute._addFileChildren(ApiSliceItChartsRouteChildren)
 
+interface ApiSliceItReplayRouteChildren {
+  ApiSliceItReplayIdRoute: typeof ApiSliceItReplayIdRoute
+}
+
+const ApiSliceItReplayRouteChildren: ApiSliceItReplayRouteChildren = {
+  ApiSliceItReplayIdRoute: ApiSliceItReplayIdRoute,
+}
+
+const ApiSliceItReplayRouteWithChildren =
+  ApiSliceItReplayRoute._addFileChildren(ApiSliceItReplayRouteChildren)
+
 interface ApiSliceItSongsIdRouteChildren {
   ApiSliceItSongsIdCommentsRoute: typeof ApiSliceItSongsIdCommentsRoute
   ApiSliceItSongsIdCoverRoute: typeof ApiSliceItSongsIdCoverRoute
@@ -18154,6 +18204,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSignalForgeScoreRoute: ApiSignalForgeScoreRoute,
   ApiSliceItChartsRoute: ApiSliceItChartsRouteWithChildren,
   ApiSliceItLeaderboardRoute: ApiSliceItLeaderboardRoute,
+  ApiSliceItReplayRoute: ApiSliceItReplayRouteWithChildren,
   ApiSliceItScoreRoute: ApiSliceItScoreRoute,
   ApiSliceItSongsRoute: ApiSliceItSongsRouteWithChildren,
   ApiSpacesLiveRoute: ApiSpacesLiveRoute,
@@ -18379,3 +18430,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

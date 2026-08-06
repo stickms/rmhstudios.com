@@ -5,11 +5,12 @@
  *
  * Design doc: `docs/slice-it-chart-editor.md` §3.1, §12.4, §13, §14.
  *
- * Phases 1–3 of §16: the document loads, the timeline draws it, edits go through
- * the command stack, four difficulties stay nested, and the work survives a
- * closed tab. Playtest (§10), auto-generate (§8), the waveform (§6), the linter
- * (§9) and timing points (§8 of the phase table) are marked with TODOs at the
- * points they attach to.
+ * Phases 1–5 of §16: the document loads, the timeline draws it, edits go through
+ * the command stack, four difficulties stay nested, the work survives a closed
+ * tab, the real `GameEngine` plays the edited chart from the playhead (§10), and
+ * the generator can be re-run at four scopes with a preview (§8). The waveform
+ * (§6), the linter (§9) and timing points are marked with TODOs at the points
+ * they attach to.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -22,10 +23,12 @@ import { loadEditorDocument, saveChart } from '@/lib/slice-it/editor/api-client'
 import { retypeNotes } from '@/lib/slice-it/editor/commands';
 import { nestedDelete, nestedMove } from '@/lib/slice-it/editor/nesting';
 import { meterAt, snapStepSeconds } from '@/lib/slice-it/editor/snap';
+import { startEditorPlaytest, stopEditorPlaytest } from '@/lib/slice-it/editor/playtest';
 import { editorState, useEditorStore } from '@/lib/slice-it/editor/store';
 import { SNAP_DIVISIONS, toSlices } from '@/lib/slice-it/editor/types';
 import type { Difficulty, EditorNote, SliceType, SnapDivision } from '@/lib/slice-it/editor/types';
 import { DifficultyTabs } from './DifficultyTabs';
+import { GeneratePanel } from './GeneratePanel';
 import { NoteInspector } from './NoteInspector';
 import { ShortcutSheet } from './ShortcutSheet';
 import { Timeline } from './Timeline';
@@ -175,6 +178,29 @@ export function ChartEditor({ songId }: { songId: string }) {
       const selection = chart.notes.filter((note) => note.selected);
       const mod = event.ctrlKey || event.metaKey;
       const step = snapStepSeconds(state.playhead, state.snap, state.timingPoints);
+
+      /* Playtest owns the keyboard while it runs (§10, §13). Space starts it from
+       * the playhead — never from the start of the song — and Ctrl+Space loops the
+       * selection; both stop it. Everything else is forwarded to the engine by
+       * `PlaytestControls`, so an editing shortcut cannot fire mid-run and leave
+       * the author playing a chart that is no longer the one on screen. */
+      if (event.code === 'Space') {
+        event.preventDefault();
+        if (state.playtesting) {
+          stopEditorPlaytest();
+          announce(t('editor-announce-playtest-stopped', { defaultValue: 'Playtest stopped' }));
+        } else {
+          void startEditorPlaytest({ loop: mod });
+        }
+        return;
+      }
+      if (state.playtesting) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          stopEditorPlaytest();
+        }
+        return;
+      }
 
       const move = (deltaTime: number, deltaLane: number) => {
         if (selection.length === 0) return false;
@@ -411,11 +437,8 @@ export function ChartEditor({ songId }: { songId: string }) {
         </div>
         <aside className="hidden w-72 shrink-0 flex-col gap-3 overflow-y-auto lg:flex">
           <NoteInspector />
-          {/*
-            TODO(phase 5 — §8): the AUTO panel (scope, density bias, tiers,
-            preview-before-apply) is the next card in this rail.
-            TODO(phase 7 — §9): the LINT panel is the one after it.
-          */}
+          <GeneratePanel />
+          {/* TODO(phase 7 — §9): the LINT panel is the next card in this rail. */}
         </aside>
       </div>
 

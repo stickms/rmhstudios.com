@@ -8,8 +8,9 @@
  * surface that is otherwise a canvas — so it has to be discoverable from inside
  * the editor rather than from a docs page.
  *
- * Only the bindings phases 1–3 actually implement are listed. A sheet that
- * advertises `Space` before playtest exists teaches a shortcut that does nothing.
+ * Only the bindings the editor actually implements are listed — a sheet that
+ * advertises a shortcut that does nothing is worse than no sheet. `Space` and
+ * `Ctrl+Space` joined the list when playtest shipped (§10).
  */
 
 import { useTranslation } from 'react-i18next';
@@ -46,6 +47,14 @@ export function ShortcutSheet({ open, onOpenChange }: ShortcutSheetProps) {
     { keys: 'Ctrl+Z / Ctrl+Y', action: t('editor-key-undo', { defaultValue: 'Undo / redo' }) },
     { keys: 'Ctrl+S', action: t('editor-key-save', { defaultValue: 'Save revision' }) },
     { keys: 'Tab', action: t('editor-key-tab', { defaultValue: 'Next difficulty' }) },
+    {
+      keys: 'Space',
+      action: t('editor-shortcut-playtest', { defaultValue: 'Playtest from the playhead' }),
+    },
+    {
+      keys: 'Ctrl+Space',
+      action: t('editor-shortcut-playtest-loop', { defaultValue: 'Loop the selection' }),
+    },
     { keys: '?', action: t('editor-key-sheet', { defaultValue: 'This sheet' }) },
   ];
 

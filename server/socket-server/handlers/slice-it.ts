@@ -81,6 +81,10 @@ import {
   SCORE_TICK_MS,
 } from '../../../lib/slice-it/constants';
 import { DEFAULT_MODIFIERS, forMultiplayer } from '../../../lib/slice-it/modifiers';
+// The one definition of which board a run belongs to, shared with
+// `/api/slice-it/score`. Two implementations of this would silently file the
+// same run on two different boards depending on which door it came through.
+import { poolOf } from '../../../lib/slice-it/pools';
 import {
   calculateScoreMultiplier,
   maxPlausibleCombo,
@@ -933,8 +937,27 @@ async function persistResults(lobby: Lobby, standings: FinalStanding[]): Promise
         continue;
       }
 
+      // The board is keyed by (songId, difficulty, modPool, userId) — R1. This
+      // path addressed the old `songId_userId` pair, which the rekey migration
+      // dropped: it would have thrown on every match result, and before that it
+      // would have filed every multiplayer score under whatever board the
+      // column defaults happened to name rather than the one it was set on.
+      //
+      // Per-seat modifiers are the reason this matters here specifically:
+      // players in one lobby pick their own difficulty, so a single match can
+      // write to four different boards.
+      const difficulty = standing.modifiers.difficulty;
+      const modPool = poolOf(standing.modifiers);
+
       const existing = await prisma.songLeaderboard.findUnique({
-        where: { songId_userId: { songId, userId: standing.userId } },
+        where: {
+          songId_difficulty_modPool_userId: {
+            songId,
+            difficulty,
+            modPool,
+            userId: standing.userId,
+          },
+        },
         select: { id: true, score: true },
       });
       if (existing && existing.score >= standing.score) continue;
@@ -951,7 +974,7 @@ async function persistResults(lobby: Lobby, standings: FinalStanding[]): Promise
         await prisma.songLeaderboard.update({ where: { id: existing.id }, data });
       } else {
         await prisma.songLeaderboard.create({
-          data: { songId, userId: standing.userId, ...data },
+          data: { songId, userId: standing.userId, difficulty, modPool, ...data },
         });
       }
     }

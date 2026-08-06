@@ -87,11 +87,23 @@ export type LibraryView = (typeof LIBRARY_VIEWS)[number];
  */
 export const librarySearchSchema = z
   .object({
-    q: z.string().trim().max(120).catch(''),
-    sort: z.enum(LIBRARY_SORTS).catch('recent'),
+    /**
+     * `.default()` on every field, and it is load-bearing for the whole app —
+     * not a style choice.
+     *
+     * TanStack derives a `Link`'s required `search` prop from this schema's
+     * INPUT type. Without a default, `q` is a required input, so every
+     * `<Link to="/slice-it">` anywhere in the codebase must pass a full filter
+     * object — which broke three unrelated files (the chart editor's back link,
+     * the library's own navigate, the player profile) the moment this route
+     * gained `validateSearch`. `.default()` makes the input optional and the
+     * output defined, so a bare link still works and readers still get a value.
+     */
+    q: z.string().trim().max(120).default('').catch(''),
+    sort: z.enum(LIBRARY_SORTS).default('recent').catch('recent'),
     /** Only meaningful for the table's per-column toggle; the grid ignores it. */
     dir: z.enum(SORT_DIRECTIONS).optional().catch(undefined),
-    view: z.enum(LIBRARY_VIEWS).catch('grid'),
+    view: z.enum(LIBRARY_VIEWS).default('grid').catch('grid'),
   })
   .passthrough()
   /**
