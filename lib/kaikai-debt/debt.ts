@@ -34,15 +34,27 @@
  * bookkeeping in the browser. It is also what makes an *infinite* ledger
  * affordable: the counter never needs to hold, or even know about, the rows.
  *
+ * ## He starts at zero
+ *
+ * There is no opening balance. The counter begins at $0.00 and every cent on it
+ * was put there by somebody — which means the number is *earned*, and the log
+ * below it is a complete explanation of the total rather than a footnote to a
+ * seeded figure.
+ *
+ * The consequence, stated plainly because it is visible on day one: the growth
+ * rate is `total · r`, so an empty ledger grows at exactly nothing and a small
+ * one grows slowly. At $50 of logged debt the fourth decimal moves about once a
+ * minute. That is not a bug to paper over with a fake drip — it is what "he
+ * starts at zero and only interest grows it" means. {@link odometerDecimals}
+ * handles the *presentation* side by showing more precision while the pile is
+ * small, so the counter reads as alive at every scale, but the economics are
+ * left honest: no debt, no growth.
+ *
  * ## Why there are three numbers on the page, not one
  *
- * Exponential growth and small line items cannot share a single readout. The
- * counter's growth rate is `total · r`, so visibly rolling digits require a pile
- * in the hundreds of thousands — at which point a $6 burrito is invisible in it.
- * Shrink the pile until the burrito shows and the digits stop moving, and the
- * page looks broken. There is no rate that fixes this; it is the shape of `e^x`.
- *
- * So the page states all three honestly and lets each do its own job:
+ * Exponential growth and small line items still cannot share a single readout —
+ * once the pile is large, a $6 burrito is invisible in it. So the page states
+ * all three and lets each do its own job:
  *
  *  - **the counter** — `projectDebtCents`, interest on everything, the spectacle;
  *  - **itemised** — face value of every receipt on the books, which is what
@@ -76,18 +88,19 @@
 export const DEBT_EPOCH_MS = Date.UTC(2026, 0, 1);
 
 /**
- * The balance already on the books when the counter switched on, in cents.
+ * The balance on the books before anyone added anything: **zero**.
  *
- * Contributed to the basis at the epoch, so it compounds exactly like every
- * other line. It is a constant rather than a row because it has no author and
- * no itemisation — it is the aggregate the receipts below the fold are slowly
- * explaining, one $6 line at a time.
+ * Kaikai starts clean. Every cent the counter shows is traceable to a row in
+ * the log, which is what makes the log an explanation of the total rather than
+ * a decorative list next to a made-up number.
  *
- * Sized, per the note above, so that interest alone moves the cents column
- * about eight times a second on day one. Interest is the only motor; this is
- * the flywheel it turns.
+ * Kept as a named constant rather than deleted, because it is still the place
+ * the basis starts from (`ledger.server.ts` folds it in exactly once) and
+ * because "the opening balance is zero, deliberately" is a fact worth being
+ * able to point at. Setting it non-zero would work — it would just be a debt
+ * nobody can account for.
  */
-export const SEED_DEBT_CENTS = 100_000_000;
+export const SEED_DEBT_CENTS = 0;
 
 /**
  * Continuously compounded annual rate. 1.25 ≈ 249% APY, which is a number no
@@ -105,15 +118,15 @@ const SECONDS_PER_YEAR = 365.2425 * 24 * 60 * 60;
 /* --- Line items ----------------------------------------------------------- */
 
 /**
- * What one debt can be worth, in cents: five dollars to two hundred and fifty.
+ * The band the **generated** receipts are drawn from: $5 to $250.
  *
- * The floor is the point of the whole bit — Kaikai's debt is not one dramatic
- * loan, it is two thousand small ones. The ceiling exists so a single entry
- * cannot swamp the ledger, and both are enforced server-side after the model
- * answers, because a prompt is a request and a clamp is a guarantee.
+ * This is the texture of his back history — not one dramatic loan, a few
+ * thousand small ones. It applies only to `sampleDebtCents`; a debt a real
+ * person adds is priced by the appraiser and is not bounded by it (see
+ * {@link MAX_STORABLE_CENTS}).
  */
-export const MIN_ENTRY_CENTS = 500;
-export const MAX_ENTRY_CENTS = 25_000;
+export const MIN_RECEIPT_CENTS = 500;
+export const MAX_RECEIPT_CENTS = 25_000;
 
 /**
  * How hard the sampled distribution leans on the floor. See
@@ -121,6 +134,29 @@ export const MAX_ENTRY_CENTS = 25_000;
  * $100 genuinely rare.
  */
 const AMOUNT_SKEW = 3;
+
+/**
+ * The smallest debt that can be logged. One cent — the floor exists only to
+ * stop a zero or a negative, either of which would be a credit rather than a
+ * debt and would let the counter go *down*.
+ */
+export const MIN_ENTRY_CENTS = 1;
+
+/**
+ * The largest amount that can be stored, in cents — **not a policy limit**.
+ *
+ * There is deliberately no cap on what a member's debt can be appraised at: if
+ * the appraiser decides Kaikai owes you a car, it owes you a car. This number is
+ * the `Int` column's ceiling (`2^31 − 1` cents ≈ $21.47M) and exists so an
+ * absurd appraisal is clamped instead of throwing on insert. A ceiling imposed
+ * by the storage type is worth naming as exactly that, so nobody later reads it
+ * as an editorial judgement about how much he is allowed to owe.
+ *
+ * Widening it means migrating the column to `BigInt`, at which point the basis
+ * arithmetic (doubles) becomes the next limit — around $90 trillion, which is
+ * comfortably past the point where the joke has stopped being legible anyway.
+ */
+export const MAX_STORABLE_CENTS = 2_147_483_647;
 
 /** Length ceilings, enforced on both the model's output and the user's input. */
 export const MAX_CLAIM_CHARS = 500;
@@ -130,6 +166,35 @@ export const MAX_NOTE_CHARS = 180;
 
 /** How many rows one page of the infinite ledger carries. */
 export const LEDGER_PAGE_SIZE = 20;
+
+/**
+ * How many receipts one generation writes: six pages' worth.
+ *
+ * Batching is what makes the scroll seamless. A batch per page means the reader
+ * waits on DeepSeek every twenty rows — a visible stall, six times a minute, on
+ * the one interaction this page exists for. One call for six pages amortises
+ * that latency across the whole run, and because the result is cached forever
+ * the cost per page *falls* as the batch grows.
+ *
+ * The ceiling is the model's output window: at ~110 tokens a line, 120 lines is
+ * a ~13k-token completion, which is comfortable for `deepseek-chat` and still
+ * well inside the provider timeout.
+ */
+export const GENERATION_BATCH_SIZE = 120;
+
+/**
+ * Start generating when fewer than this many rows remain past the current page.
+ *
+ * Generation is triggered by *proximity*, not by running out: waiting for an
+ * empty page means the stall has already started by the time the work begins.
+ *
+ * Sized to a full batch, deliberately. At half a batch the reader consumes the
+ * runway faster than the throttle allows the next batch to be bought, catches
+ * the frontier, and takes a hard wait on a model call — which is precisely the
+ * stall the buffer exists to prevent. Keeping a whole batch in reserve means
+ * prefetch always has a batch's worth of scrolling to complete in.
+ */
+export const GENERATE_AHEAD_ROWS = GENERATION_BATCH_SIZE;
 
 /**
  * How far apart generated receipts sit in time, walking backwards from the
@@ -240,6 +305,45 @@ export function debtVelocityCentsPerSecond(basisCents: number, atMs: number): nu
   return (projectDebtCents(basisCents, atMs) * ANNUAL_INTEREST_RATE) / SECONDS_PER_YEAR;
 }
 
+/** The window a growth rate is quoted over. */
+export type VelocityUnit = 'second' | 'minute' | 'hour' | 'day';
+
+const VELOCITY_WINDOWS: readonly { unit: VelocityUnit; seconds: number }[] = [
+  { unit: 'second', seconds: 1 },
+  { unit: 'minute', seconds: 60 },
+  { unit: 'hour', seconds: 3_600 },
+  { unit: 'day', seconds: 86_400 },
+];
+
+/**
+ * The growth rate, quoted over whatever window makes it a readable number.
+ *
+ * Without an opening balance the rate spans orders of magnitude: a young ledger
+ * grows by a fraction of a cent per second, a mature one by dollars. Quoting
+ * everything per-second means the honest early answer renders as "+$0.00 every
+ * second", which tells the reader the counter is broken rather than that it is
+ * young. So the window widens until the figure has something in it — cents per
+ * second at scale, dollars per day at the start.
+ *
+ * Returns the `second` window for a zero rate: "nothing per second" is the
+ * correct statement for a debt of nothing, and widening the window would not
+ * make it any less zero.
+ */
+export function describeVelocity(
+  basisCents: number,
+  atMs: number,
+): { cents: number; unit: VelocityUnit } {
+  const perSecond = debtVelocityCentsPerSecond(basisCents, atMs);
+  if (!Number.isFinite(perSecond) || perSecond <= 0) return { cents: 0, unit: 'second' };
+  for (const { unit, seconds } of VELOCITY_WINDOWS) {
+    const scaled = perSecond * seconds;
+    // One cent is the smallest thing `formatDebt` can show, so that is the bar
+    // for a window being worth quoting.
+    if (scaled >= 1 || unit === 'day') return { cents: scaled, unit };
+  }
+  return { cents: perSecond, unit: 'second' };
+}
+
 /**
  * Draw one debt amount in cents, skewed hard toward the $5 floor.
  *
@@ -256,15 +360,26 @@ export function debtVelocityCentsPerSecond(basisCents: number, atMs: number): nu
  */
 export function sampleDebtCents(random: () => number = Math.random): number {
   const u = Math.min(1, Math.max(0, random()));
-  const ratio = MAX_ENTRY_CENTS / MIN_ENTRY_CENTS;
-  const cents = Math.round(MIN_ENTRY_CENTS * Math.pow(ratio, Math.pow(u, AMOUNT_SKEW)));
-  return clampEntryCents(cents);
+  const ratio = MAX_RECEIPT_CENTS / MIN_RECEIPT_CENTS;
+  const cents = Math.round(MIN_RECEIPT_CENTS * Math.pow(ratio, Math.pow(u, AMOUNT_SKEW)));
+  return Math.min(MAX_RECEIPT_CENTS, Math.max(MIN_RECEIPT_CENTS, cents));
 }
 
-/** Force any proposed amount into the allowed band. Non-finite input floors to the minimum. */
+/**
+ * Make an appraised amount storable.
+ *
+ * Not a policy clamp — there is no upper limit on what a member's debt may be
+ * worth. This only enforces the two things the database and the arithmetic
+ * genuinely require: a positive whole number of cents, and one that fits the
+ * column ({@link MAX_STORABLE_CENTS}).
+ *
+ * Non-finite input floors to the minimum rather than saturating at the maximum.
+ * Non-finite means the appraisal came back garbage, and garbage should buy the
+ * smallest possible entry, never the largest.
+ */
 export function clampEntryCents(cents: number): number {
   if (!Number.isFinite(cents)) return MIN_ENTRY_CENTS;
-  return Math.min(MAX_ENTRY_CENTS, Math.max(MIN_ENTRY_CENTS, Math.round(cents)));
+  return Math.min(MAX_STORABLE_CENTS, Math.max(MIN_ENTRY_CENTS, Math.round(cents)));
 }
 
 /* -------------------------------------------------------------------------- */
@@ -294,9 +409,62 @@ export function formatDebt(cents: number): string {
 /** `1500` cents → `"$15.00"`. Same formatter; named for the call sites that mean "a price". */
 export const formatCents = formatDebt;
 
+/**
+ * Sub-cent digits the odometer shows, beyond the two in {@link formatDebt}.
+ *
+ * With no opening balance the counter has to work across an enormous range: on
+ * launch day the whole debt might be $12, and a year of people adding to it
+ * could put it in the millions. Growth is `total · r`, so a fixed precision is
+ * wrong at one end or the other — two decimals on a $12 debt is a display that
+ * changes once an hour and reads as broken, while six decimals on a $2M debt is
+ * four columns of pure noise.
+ *
+ * So the precision follows the number: enough digits that the last one turns a
+ * few times a second, and no more. It is presentation only — nothing about the
+ * debt itself changes — and because the total only ever grows, the digit count
+ * only ever shrinks, one column at a time, and never oscillates.
+ *
+ * Returns 0 for a zero (or non-finite) total: nothing is accruing, and
+ * `$0.000000` would be pretending otherwise.
+ */
+export function odometerDecimals(totalCents: number): number {
+  const velocity = (totalCents * ANNUAL_INTEREST_RATE) / SECONDS_PER_YEAR;
+  if (!Number.isFinite(velocity) || velocity <= 0) return 0;
+  const needed = Math.ceil(Math.log10(TARGET_TICKS_PER_SECOND / velocity));
+  return Math.min(MAX_ODOMETER_DECIMALS, Math.max(0, needed));
+}
+
+/** How often the last displayed digit should turn over, in Hz. Fast enough to blur. */
+const TARGET_TICKS_PER_SECOND = 4;
+
+/**
+ * Four extra columns is the most that still reads as a number rather than as a
+ * hash. Below roughly $200 of total debt the last digit turns slower than the
+ * target — correctly, because at that point there is barely any debt to accrue.
+ */
+const MAX_ODOMETER_DECIMALS = 4;
+
+/**
+ * The sub-cent digits themselves, zero-padded — e.g. `1234.5678` cents with
+ * `digits = 3` → `"567"`. Rendered small and dim next to {@link formatDebt}.
+ */
+export function formatMicroDigits(cents: number, digits: number): string {
+  if (digits <= 0) return '';
+  const fraction = cents - Math.floor(cents);
+  return String(Math.floor(fraction * 10 ** digits)).padStart(digits, '0');
+}
+
 /* -------------------------------------------------------------------------- */
 /* Wire contract                                                              */
 /* -------------------------------------------------------------------------- */
+
+/** A member as the log renders them — the author of a line, or its creditor. */
+export interface DebtPerson {
+  id: string;
+  name: string | null;
+  handle: string | null;
+  image: string | null;
+}
 
 /** One line of the debt log, as the API serialises it. */
 export interface DebtEntryDto {
@@ -312,12 +480,14 @@ export interface DebtEntryDto {
   claim: string | null;
   /** Epoch millis — a number, not an ISO string, because the client does maths with it. */
   createdAtMs: number;
-  addedBy: {
-    id: string;
-    name: string | null;
-    handle: string | null;
-    image: string | null;
-  } | null;
+  /** Who logged it. Null on a generated row — nobody wrote it. */
+  addedBy: DebtPerson | null;
+  /**
+   * Who he owes it to. The author on a member row; a real member picked at
+   * random on a generated one, so the archive names actual people. Null only
+   * when the account has since been deleted.
+   */
+  creditor: DebtPerson | null;
 }
 
 /** One page of the infinite ledger. */
