@@ -37,3 +37,22 @@ export function sanitizeString(raw: unknown, maxLength: number): string {
 export function generateRoomCode(): string {
   return generateCode();
 }
+
+/**
+ * Prefix of the transient identity the hub mints for a Discord Activity player
+ * whose Discord account isn't linked to a site account (`server/rmhbox/auth.ts`).
+ */
+export const TRANSIENT_DISCORD_ID_PREFIX = 'discord:';
+
+/**
+ * Whether a userId is a transient Discord Activity identity rather than a real
+ * site account.
+ *
+ * These IDs exist only in hub memory — there is no `user` row behind them — so
+ * anything that writes a row keyed on `userId` (RMHboxProfile has a foreign key
+ * to User) must skip them. Persisting one raises a foreign-key error, which
+ * previously took the whole lobby's stats down with it.
+ */
+export function isTransientDiscordIdentity(userId: string): boolean {
+  return userId.startsWith(TRANSIENT_DISCORD_ID_PREFIX);
+}

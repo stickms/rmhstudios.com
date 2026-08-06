@@ -16,6 +16,7 @@ import {
   createMockContext,
   findActionBroadcasts,
   findLastActionBroadcast,
+  findPlayerEvents,
   type MockContextData,
 } from './setup';
 
@@ -36,6 +37,8 @@ describe('Rhyme Time Server Handler (§5.1)', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    // Some cases pin Math.random to make root-word selection deterministic.
+    vi.restoreAllMocks();
   });
 
   describe('State Initialization', () => {
@@ -113,6 +116,119 @@ describe('Rhyme Time Server Handler (§5.1)', () => {
       );
       expect(spectatorSubmission).toBeDefined();
       expect((spectatorSubmission!.data as Record<string, unknown>).word).toBe('testword');
+    });
+  });
+
+  describe('Host-configured settings reach the client', () => {
+    /**
+     * `selectRootWord` picks at random; pinning Math.random to 0 selects the
+     * first entry of root-words.json ("three"), so "dog" is reliably a known
+     * word that does not rhyme and "zzzzq" is reliably absent from the CMU
+     * dictionary.
+     */
+    function createPinnedGame(gameSettings: Record<string, boolean | number | string> = {}) {
+      vi.spyOn(Math, 'random').mockReturnValue(0);
+      const ctx = createMockContext();
+      ctx.context.gameSettings = gameSettings;
+      const game = new RhymeTimeMinigame(ctx.context);
+      game.start();
+      vi.advanceTimersByTime(3000); // into INPUT
+      return { game, ...ctx };
+    }
+
+    it('rejects a duplicate with the word and the live submission cap', () => {
+      const { game, playerLog } = createPinnedGame({ maxSubmissions: 10 });
+      const userId = MOCK_USERS.alice.userId;
+
+      game.handleInput(userId, 'SUBMIT_RHYME', { word: 'dog' });
+      game.handleInput(userId, 'SUBMIT_RHYME', { word: 'dog' });
+
+      const rejected = findPlayerEvents(playerLog, userId).find(
+        (e) => (e.data as Record<string, unknown>).type === 'RT_RHYME_REJECTED',
+      );
+      expect(rejected).toBeDefined();
+      const data = rejected!.data as Record<string, unknown>;
+      expect(data.reason).toBe('duplicate');
+      expect(data.word).toBe('dog');
+      expect(data.maxSubmissions).toBe(10);
+    });
+
+    it('enforces the host cap rather than the default, and says so', () => {
+      const { game, playerLog } = createPinnedGame({ maxSubmissions: 10 });
+      const userId = MOCK_USERS.alice.userId;
+
+      for (let i = 0; i < 12; i++) {
+        game.handleInput(userId, 'SUBMIT_RHYME', { word: `word${String.fromCharCode(97 + i)}` });
+      }
+
+      const accepted = findPlayerEvents(playerLog, userId).filter(
+        (e) => (e.data as Record<string, unknown>).type === 'RT_RHYME_SUBMITTED',
+      );
+      const rejected = findPlayerEvents(playerLog, userId).filter(
+        (e) => (e.data as Record<string, unknown>).type === 'RT_RHYME_REJECTED',
+      );
+      expect(accepted.length).toBe(10);
+      expect(rejected.length).toBe(2);
+      for (const r of rejected) {
+        expect((r.data as Record<string, unknown>).reason).toBe('max_submissions');
+        expect((r.data as Record<string, unknown>).maxSubmissions).toBe(10);
+      }
+      for (const a of accepted) {
+        expect((a.data as Record<string, unknown>).maxSubmissions).toBe(10);
+      }
+    });
+
+    it('reports the configured penalty on a non-rhyming word, and none on a dictionary miss', () => {
+      const { game, playerLog } = createPinnedGame({ invalidPenalty: -20 });
+      const userId = MOCK_USERS.alice.userId;
+
+      game.handleInput(userId, 'SUBMIT_RHYME', { word: 'dog' });
+      game.handleInput(userId, 'SUBMIT_RHYME', { word: 'zzzzq' });
+
+      const submitted = findPlayerEvents(playerLog, userId)
+        .map((e) => e.data as Record<string, unknown>)
+        .filter((d) => d.type === 'RT_RHYME_SUBMITTED');
+
+      const doesNotRhyme = submitted.find((d) => d.word === 'dog');
+      expect(doesNotRhyme?.invalidReason).toBe('does_not_rhyme');
+      expect(doesNotRhyme?.penalty).toBe(-20);
+
+      const notInDictionary = submitted.find((d) => d.word === 'zzzzq');
+      expect(notInDictionary?.invalidReason).toBe('not_in_dictionary');
+      expect(notInDictionary?.penalty).toBe(0);
+    });
+
+    it('rejects a padded phrase instead of scoring it as a fresh word', () => {
+      const { game, playerLog } = createPinnedGame();
+      const userId = MOCK_USERS.alice.userId;
+
+      // "tree" rhymes with the pinned root "three". Padding it would slip past
+      // the duplicate check while `rhyming-part` scored the same last word.
+      game.handleInput(userId, 'SUBMIT_RHYME', { word: 'tree' });
+      game.handleInput(userId, 'SUBMIT_RHYME', { word: 'a tree' });
+      game.handleInput(userId, 'SUBMIT_RHYME', { word: 'tree!' });
+
+      const events = findPlayerEvents(playerLog, userId).map((e) => e.data as Record<string, unknown>);
+      const submitted = events.filter((d) => d.type === 'RT_RHYME_SUBMITTED');
+      const rejected = events.filter((d) => d.type === 'RT_RHYME_REJECTED');
+
+      expect(submitted.length).toBe(1);
+      expect(submitted[0].word).toBe('tree');
+      expect(submitted[0].isValid).toBe(true);
+      expect(rejected.length).toBe(2);
+      for (const r of rejected) expect(r.reason).toBe('invalid_input');
+    });
+
+    it('ships the cap and penalty in player and spectator snapshots', () => {
+      const { game } = createPinnedGame({ maxSubmissions: 15, invalidPenalty: -20 });
+
+      const playerState = game.getStateForPlayer(MOCK_USERS.alice.userId) as Record<string, unknown>;
+      expect(playerState.maxSubmissions).toBe(15);
+      expect(playerState.invalidPenalty).toBe(-20);
+
+      const spectatorState = game.getStateForSpectator() as Record<string, unknown>;
+      expect(spectatorState.maxSubmissions).toBe(15);
+      expect(spectatorState.invalidPenalty).toBe(-20);
     });
   });
 
