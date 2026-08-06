@@ -64,6 +64,7 @@ import koCVoidBreaker from "@/locales/ko/c-void-breaker.json";
 import koCWager from "@/locales/ko/c-wager.json";
 import koCWishlist from "@/locales/ko/c-wishlist.json";
 import koCommon from "@/locales/ko/common.json";
+import koErrors from "@/locales/ko/errors.json";
 import koFeed from "@/locales/ko/feed.json";
 import koGamesHub from "@/locales/ko/games-hub.json";
 import koGroups from "@/locales/ko/groups.json";
@@ -77,6 +78,7 @@ import koRRmhbox from "@/locales/ko/r-rmhbox.json";
 import koRRmhcode from "@/locales/ko/r-rmhcode.json";
 import koRSecret from "@/locales/ko/r-secret.json";
 import koRSliceIt from "@/locales/ko/r-slice-it.json";
+import koRSohumbum from "@/locales/ko/r-sohumbum.json";
 import koRStrategies from "@/locales/ko/r-strategies.json";
 import koRStudio from "@/locales/ko/r-studio.json";
 import koRideshare from "@/locales/ko/rideshare.json";
@@ -154,6 +156,7 @@ const koResources = {
   "c-wager": koCWager,
   "c-wishlist": koCWishlist,
   "common": koCommon,
+  "errors": koErrors,
   "feed": koFeed,
   "games-hub": koGamesHub,
   "groups": koGroups,
@@ -167,6 +170,7 @@ const koResources = {
   "r-rmhcode": koRRmhcode,
   "r-secret": koRSecret,
   "r-slice-it": koRSliceIt,
+  "r-sohumbum": koRSohumbum,
   "r-strategies": koRStrategies,
   "r-studio": koRStudio,
   "rideshare": koRideshare,
