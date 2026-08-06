@@ -15,7 +15,7 @@
  *   web+rmh://app/rmhtube      → /rmhtube
  *   web+rmh://user/rmh         → /u/rmh
  *   web+rmh://post/<id>        → /thread/<id>
- *   web+rmh://page/search      → /search
+ *   web+rmh://page/search      → /explore      (search lives on Explore)
  *
  * Three rules make that safe:
  *
@@ -70,7 +70,9 @@ const PAGES: Readonly<Record<string, string>> = {
   home: '/',
   feed: '/',
   explore: '/explore',
-  search: '/search',
+  // Both names resolve to the one page: Explore and Search were merged, and
+  // an OS-level link authored against either spelling should still work.
+  search: '/explore',
   games: '/games',
   apps: '/apps',
   daily: '/daily',
