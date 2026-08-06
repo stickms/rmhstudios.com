@@ -15,6 +15,7 @@
   "submit-report": "Enviar denúncia",
   "submitting": "Enviando…",
   "toast-error": "Não foi possível enviar a denúncia. Tente novamente.",
+  "toast-invalid": "That report is missing something. Please check and try again.",
   "toast-sign-in": "Faça login para denunciar conteúdo.",
   "toast-success": "Obrigado — nossa equipe analisará isso."
 }

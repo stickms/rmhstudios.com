@@ -1,6 +1,12 @@
 {
   "connecting-to-discord": "Discord'a bağlanılıyor...",
   "connection-failed": "Bağlantı Başarısız",
+  "gateway-follow": "Pick the same game as whoever started this Activity to play together.",
+  "gateway-follow-named": "{{name}} started this Activity — pick the same game to play together.",
+  "gateway-participant-count_one": "{{count}} people in this Activity",
+  "gateway-participant-count_other": "{{count}} people in this Activity",
+  "gateway-players-hint": "{{range}} players",
+  "gateway-title": "What are we playing?",
   "loading-game": "Oyun yükleniyor...",
   "loading-rmhbox": "RMHBox yükleniyor...",
   "run-inside-discord-activity": "Bunu bir Discord Etkinliği içinde çalıştırdığınızdan emin olun."

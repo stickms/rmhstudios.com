@@ -18,6 +18,7 @@
   "tip-dialog-description": "Invia monete{{recipient}} per mostrare apprezzamento.",
   "tip-dialog-title": "Invia una mancia",
   "tip-error": "Impossibile inviare la mancia",
+  "tip-invalid": "That tip amount isn't allowed.",
   "tip-sign-in": "Accedi per lasciare una mancia.",
   "tip-success": "Inviate {{amount}} monete{{recipient}} come mancia!"
 }

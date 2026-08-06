@@ -18,6 +18,7 @@
   "tip-dialog-description": "Kirim koin{{recipient}} untuk menunjukkan apresiasi.",
   "tip-dialog-title": "Kirim tip",
   "tip-error": "Gagal mengirim tip",
+  "tip-invalid": "That tip amount isn't allowed.",
   "tip-sign-in": "Silakan masuk untuk memberi tip.",
   "tip-success": "Berhasil memberi tip {{amount}} koin{{recipient}}!"
 }

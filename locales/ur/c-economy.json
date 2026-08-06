@@ -18,6 +18,7 @@
   "tip-dialog-description": "تعریف ظاہر کرنے کے لیے {{recipient}} کو سکے بھیجیں۔",
   "tip-dialog-title": "ٹپ بھیجیں",
   "tip-error": "ٹپ نہیں بھیجی جا سکی",
+  "tip-invalid": "That tip amount isn't allowed.",
   "tip-sign-in": "براہ کرم ٹپ دینے کے لیے سائن ان کریں۔",
   "tip-success": "{{recipient}} کو {{amount}} سکے ٹپ کیے گئے!"
 }

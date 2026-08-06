@@ -18,6 +18,7 @@
   "tip-dialog-description": "发送{{recipient}}一些代币以表感谢。",
   "tip-dialog-title": "发送小费",
   "tip-error": "无法发送小费",
+  "tip-invalid": "That tip amount isn't allowed.",
   "tip-sign-in": "请登录以打赏。",
   "tip-success": "给{{recipient}}打赏了{{amount}}个金币！"
 }

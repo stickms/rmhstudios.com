@@ -15,6 +15,7 @@
   "submit-report": "報告を送信",
   "submitting": "送信中…",
   "toast-error": "報告を送信できませんでした。もう一度お試しください。",
+  "toast-invalid": "That report is missing something. Please check and try again.",
   "toast-sign-in": "コンテンツを報告するにはログインしてください。",
   "toast-success": "ありがとうございます — チームで確認いたします。"
 }

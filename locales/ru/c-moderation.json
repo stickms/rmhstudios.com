@@ -15,6 +15,7 @@
   "submit-report": "Отправить жалобу",
   "submitting": "Отправка…",
   "toast-error": "Не удалось отправить жалобу. Пожалуйста, попробуйте снова.",
+  "toast-invalid": "That report is missing something. Please check and try again.",
   "toast-sign-in": "Пожалуйста, войдите, чтобы пожаловаться на контент.",
   "toast-success": "Спасибо — наша команда рассмотрит это."
 }

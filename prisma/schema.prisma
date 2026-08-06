@@ -91,6 +91,7 @@ model User {
   songComments  SongComment[]
   songScores    SongLeaderboard[]
   songPlays     SongPlay[]
+  authoredCharts Chart[]           @relation("ChartAuthor")
 
   // RmhTube Relations
   rmhtubeHostedRooms RmhTubeRoom[]       @relation("RmhTubeHostedRooms")
@@ -904,6 +905,7 @@ model Song {
   scores    SongLeaderboard[]
   likes     SongLike[]
   songPlays SongPlay[]
+  charts    Chart[]
 
   @@unique([uploadedBy, contentHash])
   @@index([title])
@@ -986,6 +988,100 @@ model SongPlay {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([songId, userId])
+}
+
+/// A playable Slice It chart. One row per (song, difficulty, key count, author).
+///
+/// See `docs/slice-it-chart-editor.md` §1.1. `Song.analysisData` remains the
+/// generated fallback and is NOT migrated into this table — a song with no Chart
+/// row plays exactly as it does today. That keeps the editor additive: nothing
+/// breaks for the ~all songs that never get hand-edited, and regeneration (C8)
+/// can overwrite `analysisData` freely because no human work is in it.
+model Chart {
+  /// UUID, `@db.Uuid` — the new-table PK policy in `lib/CLAUDE.md` §Database
+  /// wants a time-sortable key rather than `cuid()`. The design doc asks for
+  /// `uuid_generate_v7()`; that function is not installed in this database and
+  /// creating it needs a hand-written migration, so the *value* is generated
+  /// application-side by `uuidv7()` in `lib/slice-it/editor/uuid.ts` (which IS
+  /// time-sortable) and this default is only the fallback for a row inserted
+  /// without one.
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  songId String
+  song   Song   @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation("ChartAuthor", fields: [authorId], references: [id])
+
+  difficulty String @db.VarChar(16) // 'easy' | 'normal' | 'hard' | 'expert'
+  /// 2 today. G2 (4K/6K) is the reason this is a column and not an assumption.
+  keys       Int    @default(2)
+
+  /// Display name — "Expert", but also "Expert (Vocal)" for an alternate take.
+  name String @db.VarChar(64)
+
+  /// The note list. Shape is `Slice[]`, NOT the `Record<Difficulty, Slice[]>`
+  /// that `analysisData` uses: one row is one difficulty, so the record wrapper
+  /// would be a single-key object on every row.
+  notes Json
+
+  /// Timing points (C6) and scroll-velocity points (G10). Null falls back to
+  /// the song's single `bpm`, which is what every generated chart uses today.
+  timingPoints Json?
+  svPoints     Json?
+
+  /// SHA-256 over the canonicalised note list — C12. Leaderboard rows will carry
+  /// it so a chart edit is visible as a chart edit rather than as everyone's
+  /// scores silently becoming incomparable.
+  chartHash String @db.Char(64)
+
+  /// Computed difficulty rating (C3). Null until the rater has run.
+  rating Float?
+
+  /// 'draft' → only the author can see or play it.
+  /// 'public' → in the library, own leaderboard.
+  /// 'ranked' → contributes to global rating (R10).
+  status String @default("draft") @db.VarChar(16)
+
+  /// True when this row was seeded from the generator and has not been edited
+  /// since. Drives the "Auto" badge and lets C8 regenerate it in place.
+  isGenerated Boolean @default(true)
+
+  /// BEATMAP_VERSION the seed came from, so C8 can find stale generated rows.
+  generatorVersion Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  revisions ChartRevision[]
+
+  @@unique([songId, authorId, difficulty, keys, name])
+  @@index([songId, status])
+  @@index([authorId, updatedAt(sort: Desc)])
+}
+
+/// Autosave + undo across sessions + a restore path. Append-only.
+///
+/// Bounded by a trigger-free sweep in the jobs worker rather than by a count
+/// check on write: keeping the last 50 per chart means the sweep is one
+/// DELETE ... WHERE id NOT IN (...) per chart per day, not a read-modify-write
+/// on the hot path of every autosave.
+model ChartRevision {
+  id      BigInt @id @default(autoincrement())
+  chartId String @db.Uuid
+  chart   Chart  @relation(fields: [chartId], references: [id], onDelete: Cascade)
+
+  /// Full note list. Charts are small (a 1200-note Expert is ~90 KB of JSON,
+  /// ~12 KB gzipped); a diff format would be a correctness liability for a
+  /// space saving nobody needs at this scale.
+  notes Json
+
+  /// 'autosave' | 'manual' | 'publish'
+  kind      String   @db.VarChar(16)
+  label     String?  @db.VarChar(120)
+  createdAt DateTime @default(now())
+
+  @@index([chartId, createdAt(sort: Desc)])
 }
 
 model SynapseStormPlayer {

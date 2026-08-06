@@ -18,6 +18,7 @@
   "tip-dialog-description": "감사를 표시하려면 {{recipient}}에게 코인을 보내세요.",
   "tip-dialog-title": "팁 보내기",
   "tip-error": "팁을 보낼 수 없습니다",
+  "tip-invalid": "That tip amount isn't allowed.",
   "tip-sign-in": "팁을 보내려면 로그인해 주세요.",
   "tip-success": "{{recipient}}에게 {{amount}}코인을 팁으로 보냈습니다!"
 }

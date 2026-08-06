@@ -15,6 +15,7 @@
   "submit-report": "رپورٹ جمع کروائیں",
   "submitting": "جمع کر رہا ہے…",
   "toast-error": "رپورٹ جمع نہیں ہو سکی۔ براہ کرم دوبارہ کوشش کریں۔",
+  "toast-invalid": "That report is missing something. Please check and try again.",
   "toast-sign-in": "مواد کی رپورٹ کرنے کے لیے براہ کرم سائن ان کریں۔",
   "toast-success": "شکریہ — ہماری ٹیم اس کا جائزہ لے گی۔"
 }

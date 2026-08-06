@@ -83,6 +83,26 @@ export function canPlayWebAudio(): boolean {
   return Boolean(w.AudioContext ?? w.webkitAudioContext);
 }
 
+/**
+ * The page's output audio latency, in milliseconds, or `null` when unknown.
+ *
+ * `outputLatency` is the real end-to-end number and is Firefox/Chrome-only;
+ * `baseLatency` (the processing buffer) is available almost everywhere but is
+ * a fraction of the real figure. Prefer the former, fall back to the latter,
+ * and treat `0` as "unknown" rather than "none" — Safari reports 0 and it is
+ * not true.
+ *
+ * Does not create an `AudioContext` — call `getAudioContext()` first (or let a
+ * caller that already did, like `AudioManager`) so this never has the side
+ * effect of spinning one up just to measure it.
+ */
+export function outputLatencyMs(): number | null {
+  const ctx = sharedContext;
+  if (!ctx) return null;
+  const latency = ctx.outputLatency || ctx.baseLatency || 0;
+  return latency > 0 ? Math.round(latency * 1000) : null;
+}
+
 /* ─── Haptics ───────────────────────────────────────────────────────────── */
 
 /**

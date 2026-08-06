@@ -18,6 +18,7 @@
   "tip-dialog-description": "Envía monedas{{recipient}} para mostrar agradecimiento.",
   "tip-dialog-title": "Enviar una propina",
   "tip-error": "No se pudo enviar la propina",
+  "tip-invalid": "That tip amount isn't allowed.",
   "tip-sign-in": "Inicia sesión para dar propina.",
   "tip-success": "¡{{amount}} monedas de propina enviadas{{recipient}}!"
 }

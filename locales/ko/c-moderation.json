@@ -15,6 +15,7 @@
   "submit-report": "신고 제출",
   "submitting": "제출 중…",
   "toast-error": "신고를 제출할 수 없습니다. 다시 시도해 주세요.",
+  "toast-invalid": "That report is missing something. Please check and try again.",
   "toast-sign-in": "콘텐츠를 신고하려면 로그인해 주세요.",
   "toast-success": "감사합니다 — 팀에서 검토하겠습니다."
 }

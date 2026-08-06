@@ -15,6 +15,7 @@
   "submit-report": "تقديم التقرير",
   "submitting": "جاري الإرسال…",
   "toast-error": "تعذر إرسال التقرير. يرجى المحاولة مرة أخرى.",
+  "toast-invalid": "That report is missing something. Please check and try again.",
   "toast-sign-in": "يرجى تسجيل الدخول للإبلاغ عن المحتوى.",
   "toast-success": "شكرًا — سيراجع فريقنا هذا."
 }
