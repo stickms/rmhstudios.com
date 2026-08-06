@@ -22,6 +22,7 @@ import { lintWireChart } from '@/lib/slice-it/editor/lint';
 import type { TimingPoint } from '@/lib/slice-it/editor/types';
 import { chartHashOf } from '@/lib/slice-it/editor/hash.server';
 import { toChartDto } from '@/lib/slice-it/editor/seed.server';
+import { rateAndStoreChart } from '@/lib/slice-it/rating.server';
 
 /** `POST /api/slice-it/charts/$id` — the §9 publish gate. */
 const PublishZ = z.object({
@@ -140,7 +141,16 @@ export const Route = createFileRoute('/api/slice-it/charts/$id')({
             return row;
           });
 
-          return Response.json(toChartDto(updated));
+          // C3. The notes just changed, so the stored rating describes a chart
+          // that no longer exists. Rating here — outside the transaction — is
+          // deliberate: the rating is derived data and losing it costs a stale
+          // number until the next save or the next `rerateStaleCharts()` sweep,
+          // whereas holding a transaction open across a second read plus two
+          // writes on an endpoint that fires every 20 seconds per open editor
+          // is a lock held for an autosave.
+          const rated = await rateAndStoreChart(chart.id);
+
+          return Response.json({ ...toChartDto(updated), rating: rated });
         },
       ),
 
@@ -190,7 +200,10 @@ export const Route = createFileRoute('/api/slice-it/charts/$id')({
           } else {
             const notes = (chart.notes ?? []) as unknown as LintNote[];
             if (!Array.isArray(notes) || notes.length === 0) {
-              return Response.json({ error: 'An empty chart cannot be published' }, { status: 422 });
+              return Response.json(
+                { error: 'An empty chart cannot be published' },
+                { status: 422 },
+              );
             }
             const blocking = lintWireChart({
               difficulty: chart.difficulty as Difficulty,
@@ -229,7 +242,15 @@ export const Route = createFileRoute('/api/slice-it/charts/$id')({
             return row;
           });
 
-          return Response.json(toChartDto(updated));
+          // C3. `syncSongChartRating` counts `public` charts only, so both
+          // directions of this transition move `Song.chartRating` — publishing
+          // an Expert chart can make the song the hardest thing in the library,
+          // and pulling it back to draft must take that claim away again.
+          // `rateAndStoreChart` refreshes both the chart and the song, and is
+          // idempotent, so it is the one call that covers either direction.
+          const rated = await rateAndStoreChart(chart.id);
+
+          return Response.json({ ...toChartDto(updated), rating: rated });
         },
       ),
 

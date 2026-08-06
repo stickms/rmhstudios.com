@@ -172,19 +172,61 @@ export async function clearRate(chartId: string): Promise<number | null> {
  * note list the linter walks in O(n).
  */
 export async function evaluateQualification(chartId: string): Promise<QualificationReport> {
-  const chart = await prisma.chart.findUnique({
-    where: { id: chartId },
-    select: {
-      id: true,
-      notes: true,
-      status: true,
-      rankStatus: true,
-      difficulty: true,
-      song: { select: { duration: true } },
-    },
-  });
+  const chart = await prisma.chart.findUnique({ where: { id: chartId }, select: GATE_SELECT });
 
-  const empty = (blocker: QualifyBlocker, status: RankStatus): QualificationReport => ({
+  if (!chart) return emptyReport(chartId, 'not-found', DEFAULT_RANK_STATUS);
+
+  const status = toRankStatus(chart.rankStatus);
+  // A ranked chart is out of scope for the automatic gate, in both directions.
+  if (status === 'ranked') return emptyReport(chartId, 'wrong-state', status);
+
+  const [plays, playerGroups, rate] = await Promise.all([
+    prisma.sliceRun.count({ where: { chartId } }),
+    prisma.sliceRun.groupBy({ by: ['userId'], where: { chartId } }),
+    clearRate(chartId),
+  ]);
+
+  const report = buildReport(chart, plays, playerGroups.length, rate);
+  const next: RankStatus = report.eligible ? 'qualified' : 'unranked';
+
+  if (next !== status) {
+    await prisma.chart.update({
+      where: { id: chart.id },
+      // `rankStatusBy` stays null: there is no actor. That null is how the audit
+      // trail distinguishes an automatic transition from a moderator's decision.
+      data: { rankStatus: next, rankStatusAt: new Date(), rankStatusBy: null },
+      select: { id: true },
+    });
+  }
+
+  return { ...report, status: next };
+}
+
+/** Everything the gate reads off a chart row. One shape, two callers. */
+const GATE_SELECT = {
+  id: true,
+  notes: true,
+  status: true,
+  rankStatus: true,
+  difficulty: true,
+  song: { select: { duration: true } },
+} as const;
+
+type GateChart = {
+  id: string;
+  notes: unknown;
+  status: string;
+  rankStatus: string;
+  difficulty: string;
+  song: { duration: number };
+};
+
+function emptyReport(
+  chartId: string,
+  blocker: QualifyBlocker,
+  status: RankStatus,
+): QualificationReport {
+  return {
     chartId,
     eligible: false,
     blockers: [blocker],
@@ -193,21 +235,23 @@ export async function evaluateQualification(chartId: string): Promise<Qualificat
     clearRate: null,
     lintErrors: 0,
     status,
-  });
+  };
+}
 
-  if (!chart) return empty('not-found', DEFAULT_RANK_STATUS);
-
-  const status = toRankStatus(chart.rankStatus);
-  // A ranked chart is out of scope for the automatic gate, in both directions.
-  if (status === 'ranked') return empty('wrong-state', status);
-
-  const [plays, playerGroups, rate] = await Promise.all([
-    prisma.sliceRun.count({ where: { chartId } }),
-    prisma.sliceRun.groupBy({ by: ['userId'], where: { chartId } }),
-    clearRate(chartId),
-  ]);
-  const players = playerGroups.length;
-
+/**
+ * Score one chart against every gate. **Reads nothing and writes nothing** —
+ * the counts are handed in, so the same rules serve the automatic transition
+ * and the moderator's read-only view without either being able to drift.
+ *
+ * `status` is the chart's *current* state; applying a transition is the
+ * caller's business.
+ */
+function buildReport(
+  chart: GateChart,
+  plays: number,
+  players: number,
+  rate: number | null,
+): QualificationReport {
   const findings = lintNotes({
     difficulty: normaliseDifficulty(chart.difficulty),
     notes: asLintNotes(chart.notes),
@@ -229,20 +273,84 @@ export async function evaluateQualification(chartId: string): Promise<Qualificat
   if (rate === null) blockers.push('clear-rate-unknown');
   else if (rate < QUALIFY_MIN_CLEAR_RATE) blockers.push('clear-rate-too-low');
 
-  const eligible = blockers.length === 0;
-  const next: RankStatus = eligible ? 'qualified' : 'unranked';
+  return {
+    chartId: chart.id,
+    eligible: blockers.length === 0,
+    blockers,
+    players,
+    plays,
+    clearRate: rate,
+    lintErrors,
+    status: toRankStatus(chart.rankStatus),
+  };
+}
 
-  if (next !== status) {
-    await prisma.chart.update({
-      where: { id: chart.id },
-      // `rankStatusBy` stays null: there is no actor. That null is how the audit
-      // trail distinguishes an automatic transition from a moderator's decision.
-      data: { rankStatus: next, rankStatusAt: new Date(), rankStatusBy: null },
-      select: { id: true },
-    });
+/**
+ * The same evidence {@link evaluateQualification} decides on, for a page of
+ * charts, **without applying anything**.
+ *
+ * This is what an admin surface reads. Two properties it needs and the
+ * evaluating version cannot give it:
+ *
+ * **It does not write.** A moderator opening a list must not silently demote
+ * every `qualified` chart whose statistics dipped since the last submission —
+ * a page load is not a state transition, and a `GET` that moves rows is a
+ * `GET` nobody can safely refresh.
+ *
+ * **It reports on `ranked` charts too.** {@link evaluateQualification} answers
+ * `wrong-state` for those because the automatic gate genuinely has nothing to
+ * say about them; a human deciding whether to *demote* one needs exactly the
+ * numbers that put it there.
+ *
+ * Four queries for the whole page rather than four per chart: the run counts
+ * are grouped across every id at once. That matters because the alternative
+ * (calling the single-chart path in a loop) is the shape that makes an admin
+ * list quietly become the slowest query in the application as the game grows.
+ */
+export async function inspectCharts(chartIds: readonly string[]): Promise<QualificationReport[]> {
+  const ids = [...new Set(chartIds)];
+  if (ids.length === 0) return [];
+
+  const [charts, playGroups, playerGroups, clearedGroups] = await Promise.all([
+    prisma.chart.findMany({ where: { id: { in: ids } }, select: GATE_SELECT }),
+    prisma.sliceRun.groupBy({
+      by: ['chartId'],
+      where: { chartId: { in: ids } },
+      _count: { _all: true },
+    }),
+    // Grouping by the pair is how "distinct players" is counted without a raw
+    // query; the row count per chart is the distinct count.
+    prisma.sliceRun.groupBy({ by: ['chartId', 'userId'], where: { chartId: { in: ids } } }),
+    prisma.sliceRun.groupBy({
+      by: ['chartId'],
+      where: { chartId: { in: ids }, cleared: true },
+      _count: { _all: true },
+    }),
+  ]);
+
+  const plays = new Map<string, number>();
+  for (const group of playGroups) {
+    if (group.chartId) plays.set(group.chartId, group._count._all);
+  }
+  const cleared = new Map<string, number>();
+  for (const group of clearedGroups) {
+    if (group.chartId) cleared.set(group.chartId, group._count._all);
+  }
+  const players = new Map<string, number>();
+  for (const group of playerGroups) {
+    if (group.chartId) players.set(group.chartId, (players.get(group.chartId) ?? 0) + 1);
   }
 
-  return { chartId, eligible, blockers, players, plays, clearRate: rate, lintErrors, status: next };
+  const byId = new Map(charts.map((chart) => [chart.id, chart]));
+  return ids.map((id) => {
+    const chart = byId.get(id);
+    if (!chart) return emptyReport(id, 'not-found', DEFAULT_RANK_STATUS);
+    const total = plays.get(id) ?? 0;
+    // Same null-vs-zero distinction `clearRate()` draws: nobody has tried is
+    // not the same fact as nobody could finish.
+    const rate = total === 0 ? null : (cleared.get(id) ?? 0) / total;
+    return buildReport(chart, total, players.get(id) ?? 0, rate);
+  });
 }
 
 /**

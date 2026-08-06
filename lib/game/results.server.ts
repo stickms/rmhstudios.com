@@ -27,6 +27,13 @@ export interface GameResultPayload {
   score?: number;
   won?: boolean;
   cleared?: number;
+  /**
+   * The result came from a mode-specific daily challenge (S1) rather than a
+   * free play. Only a caller that *is* the daily sets this — a payload flag and
+   * not a score threshold, because "the thing everyone is playing today" is not
+   * a quantity and cannot be inferred from one.
+   */
+  daily?: boolean;
 }
 
 /**
@@ -55,6 +62,13 @@ function evaluate(
     case 'plays': {
       const next = Math.min(prevProgress + 1, challenge.target);
       return { progress: next, completed: next >= challenge.target };
+    }
+    case 'daily': {
+      // Terminal, like `win`: either the result was a daily attempt or it was
+      // not. A free play must not creep this bar upward, so `prevProgress` is
+      // returned untouched when the flag is absent.
+      const completed = payload.daily === true;
+      return { progress: completed ? challenge.target : prevProgress, completed };
     }
     default:
       return { progress: prevProgress, completed: false };

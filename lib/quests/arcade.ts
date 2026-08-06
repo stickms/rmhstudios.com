@@ -11,7 +11,15 @@
  * `lib/game/results.server.ts` for the write side.
  */
 
-export type ArcadeMetric = 'score' | 'win' | 'plays' | 'clear';
+/**
+ * `daily` is a **mode** metric, not a quantity: it is satisfied only by a
+ * result that reports it explicitly (today, only Slice It's S1 daily challenge,
+ * via `daily.server.ts` → `reportGameResult`). It exists because the other four
+ * metrics can all be satisfied by any run of any chart, which is what made the
+ * old Slice It entry a participation trophy — there was no vocabulary here for
+ * "the specific thing everyone is playing today".
+ */
+export type ArcadeMetric = 'score' | 'win' | 'plays' | 'clear' | 'daily';
 
 export interface ArcadeChallengeDef {
   /** Game id — must match an `id` in `lib/games.ts`. */
@@ -126,6 +134,20 @@ const POOL: ArcadeChallengeDef[] = [
     target: 5000,
     xp: 50,
     coins: 12,
+  },
+  {
+    // S1. The only entry in this pool that names a *specific* thing to play:
+    // the daily challenge is one chart, one difficulty, one modifier set and
+    // one attempt, identical for everybody, chosen by hashing the day key in
+    // `lib/slice-it/daily.server.ts`. Top of the reward band because it is the
+    // only challenge here you cannot re-roll by picking an easier song, and the
+    // only one you get exactly one try at.
+    game: 'slice-it',
+    title: "Play today's Slice It! daily challenge",
+    metric: 'daily',
+    target: 1,
+    xp: 70,
+    coins: 20,
   },
   {
     game: 'synapse-storm',

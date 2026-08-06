@@ -29,6 +29,10 @@ export const Route = createFileRoute('/_site/admin/')({
 
 function AdminDashboardPage() {
   const { t } = useTranslation("admin");
+  // The ranked-pool card's strings live with the rest of Slice It's catalogue
+  // rather than in `admin`, so the game's vocabulary ("ranked pool", "chart")
+  // is translated once, in the namespace that already defines it.
+  const { t: tSlice } = useTranslation("r-slice-it");
   // The dashboard is admin-gated (beforeLoad), so the viewer is always an admin.
   const { counts } = useAdminReviewCount(true);
   return (
@@ -188,6 +192,16 @@ function AdminDashboardPage() {
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("albums-title", { defaultValue: "Library Albums" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
               {t("albums-description", { defaultValue: "Create photo/video albums and bulk-upload media. Images are compressed to WebP and videos transcoded, then stored in object storage." })}
+            </p>
+          </Link>
+
+          <Link
+            to="/admin/slice-it"
+            className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
+          >
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{tSlice("admin-rank-card-title", { defaultValue: "Slice It Ranked Pool" })}</h2>
+            <p className="text-site-text-muted text-sm mt-2">
+              {tSlice("admin-rank-card-description", { defaultValue: "Review charts that passed the automatic qualification gate and promote them into the ranked pool, or take one back out. Only ranked charts feed players' skill ratings." })}
             </p>
           </Link>
 

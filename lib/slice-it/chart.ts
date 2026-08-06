@@ -14,10 +14,68 @@
  * charts and compared scores anyway. Here the conversions run through a seeded
  * PRNG keyed by `(songId, difficulty, modifiers)`, so the same settings always
  * produce the same chart — on a retry, and on every machine in a lobby.
+ *
+ * ## G7 — chart-native mines are opt-in, and this file is what makes them so
+ *
+ * `placeMines()` in `beatmap/charter.ts` writes `BOMB` slices into the *stored*
+ * chart, at musical rests. They are new notes at new timestamps, not converted
+ * existing ones, so the `modifiers.bombs` conversion below never sees them and
+ * cannot filter them — which would make them unavoidable for every player on
+ * every run, including everyone who never switched the modifier on. Bombs are
+ * supposed to be a choice.
+ *
+ * So the gate lives here instead: {@link applyChartModifiers} **strips every
+ * chart-native mine when `modifiers.bombs` is off**, before anything else runs.
+ * The two halves are a pair; neither is safe alone.
  */
 
 import { BOMB_CONVERSION_RATE, SWITCH_CONVERSION_RATE, type Difficulty } from './constants';
 import type { BeatMap, Modifiers, Slice } from './types';
+
+/* ─── G7: the chart-native mine marker ───────────────────────────────────── */
+
+/**
+ * Prefix on the `id` of a `BOMB` slice the charter placed, as opposed to one
+ * the `bombs` modifier converted at play time.
+ *
+ * The marker is carried on `id` rather than as a new field on `Slice` for one
+ * reason that outranks tidiness: `id` is the only property every path through
+ * this codebase preserves. A chart is JSON in a `Json` column, is re-read
+ * through several hand-written coercions (`asSlices` in `rating.server.ts`,
+ * `asLintNotes` in `ranking.server.ts`, `LintNote` in `beatmap/lint.ts`), and
+ * each of those rebuilds a note from a fixed list of fields. A boolean flag
+ * would survive none of them; a prefix on a required field survives all of
+ * them, and survives a round trip through any chart editor that does not
+ * invent new ids.
+ *
+ * The consequence to know: a player who *renames* a note id destroys the mark.
+ * Nothing in the editor does that, and the failure mode if something did is a
+ * mine that behaves like a converted one — permanent rather than opt-in, which
+ * is why {@link isChartNativeMine} is the only reader and it is used in exactly
+ * one place.
+ */
+export const CHART_MINE_ID_PREFIX = 'mine:';
+
+/** True for a `BOMB` the charter placed (G7), false for a converted note. */
+export function isChartNativeMine(slice: Pick<Slice, 'id' | 'type'>): boolean {
+  return (
+    slice.type === 'BOMB' &&
+    typeof slice.id === 'string' &&
+    slice.id.startsWith(CHART_MINE_ID_PREFIX)
+  );
+}
+
+/**
+ * Strip chart-native mines from a note list.
+ *
+ * Exported for the places that need the chart *as the player will see it*
+ * without preparing a whole run — the note count a difficulty advertises, a
+ * preview render, a test. Converted bombs are untouched: they only exist when
+ * the modifier that produced them is on.
+ */
+export function withoutChartMines(slices: Slice[]): Slice[] {
+  return slices.filter((slice) => !isChartNativeMine(slice));
+}
 
 /** mulberry32 seeded from a string — small, fast, and stable across engines. */
 export function createSeededRandom(seed: string): () => number {
@@ -71,18 +129,30 @@ export function resolveSlices(map: BeatMap, difficulty: Difficulty): Slice[] {
  *
  * Order matters and is not arbitrary:
  *
- * 1. **One Track** first, because collapsing to a single lane changes which
- *    notes a later switch would collide with.
+ * 0. **Chart-native mines (G7)** are dropped first when `bombs` is off, so the
+ *    rest of the pipeline never sees a note the player did not agree to. Doing
+ *    it first also keeps them out of the same-lane conflict scan in step 2 and
+ *    out of the note stream `oneTrack` collapses.
+ * 1. **One Track**, because collapsing to a single lane changes which notes a
+ *    later switch would collide with.
  * 2. **Switching**, which needs to know where LONG notes sit so it never sends
  *    a note into a lane that is mid-hold — an unhittable note.
  * 3. **Bombs** last, so a note that just became a SWITCH is not also a bomb.
+ *
+ * The mine strip runs **before** any call to `random()`, so it cannot shift the
+ * PRNG sequence: a chart with mines and the same chart without them produce
+ * identical conversions for every other note. That is what keeps `bombs: false`
+ * on a mined chart byte-identical to `bombs: false` on an unmined one.
  */
 export function applyChartModifiers(
   slices: Slice[],
   modifiers: Modifiers,
   random: () => number,
 ): Slice[] {
-  let out = slices;
+  // G7. The whole opt-in guarantee, in one line: a mine the charter placed is
+  // part of the stored chart, and the stored chart is not what gets played
+  // unless the player asked for bombs.
+  let out = modifiers.bombs ? slices : withoutChartMines(slices);
 
   if (modifiers.oneTrack) {
     out = out.map((slice) => ({ ...slice, lane: 0 }));
@@ -112,6 +182,11 @@ export function applyChartModifiers(
   if (modifiers.bombs) {
     out = out.map((slice) => {
       if (slice.type === 'SWITCH' || slice.type === 'LONG') return slice;
+      // G7. A chart-native mine is already a bomb; converting it again is a
+      // no-op that would still burn a draw from the PRNG and shift every
+      // conversion after it. Skipping keeps a mined chart's converted bombs in
+      // the same places an unmined chart's would be.
+      if (slice.type === 'BOMB') return slice;
       if (random() >= BOMB_CONVERSION_RATE) return slice;
       return { ...slice, type: 'BOMB' as const, duration: undefined };
     });

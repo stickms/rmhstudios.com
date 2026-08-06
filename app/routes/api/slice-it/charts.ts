@@ -14,6 +14,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { ChartListQueryZ, ChartSeedZ } from '@/lib/slice-it/editor/api-schemas';
 import { ensureCharts, toChartDto } from '@/lib/slice-it/editor/seed.server';
+import { rateAndStoreChart } from '@/lib/slice-it/rating.server';
 
 /**
  * Who may author a chart for a song.
@@ -91,7 +92,25 @@ export const Route = createFileRoute('/api/slice-it/charts')({
           }
 
           const result = await ensureCharts(song.id, userId, body.keys);
-          return Response.json(result);
+
+          // C3. A chart gets its computed difficulty rating the moment it
+          // exists, not the moment somebody tries to rank it. `rateChart()` is
+          // a pure O(n) pass over the note list, so this is cheap — and it is
+          // filtered to unrated rows, which makes it free on every open after
+          // the first (`ensureCharts` is called on each one). The editor
+          // already rates live on the client from the same function; this is
+          // what makes the stored number agree with the one on screen, and
+          // what puts something in the column `Song.chartRating` and the
+          // library's difficulty sort read.
+          const unrated = result.charts.filter((chart) => chart.rating === null);
+          for (const chart of unrated) await rateAndStoreChart(chart.id);
+
+          if (unrated.length === 0) return Response.json(result);
+          // Re-read rather than patching the DTOs by hand: `rateAndStoreChart`
+          // also writes `ratingVersion`/`ratedAt` and refreshes the song's
+          // denormalised value, and a response that disagreed with the row
+          // would show the author a rating their next reload contradicts.
+          return Response.json(await ensureCharts(song.id, userId, body.keys));
         },
       ),
     },

@@ -5,7 +5,7 @@ import { scaleIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
-import { Moon, Sun } from 'lucide-react';
+import { CalendarDays, ListMusic, Moon, Sun } from 'lucide-react';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import { GameEngine } from '@/lib/slice-it/engine';
 import { asset } from '@/lib/storage/asset';
@@ -27,6 +27,19 @@ import { SongLibrary } from '@/components/slice-it/SongLibrary';
 import { CalibrationScreen } from '@/components/slice-it/CalibrationScreen';
 import { MultiplayerLobby } from '@/components/slice-it/MultiplayerLobby';
 import { SongDetailsPanel } from '@/components/slice-it/SongDetailsPanel';
+import { DailyPanel } from '@/components/slice-it/modes/DailyPanel';
+import { SetlistPanel } from '@/components/slice-it/modes/SetlistPanel';
+
+/**
+ * Which solo surface the menu is showing.
+ *
+ * The library is the default and always has been; `daily` (S1) and `setlists`
+ * (S8, which also hosts S2's courses) are the two modes that need an entry
+ * point here. A mode nothing links to is a mode nobody plays — `R2` and `R10`
+ * shipped without one and sat dormant, which is the mistake this exists to
+ * avoid repeating.
+ */
+type SoloMode = 'library' | 'daily' | 'setlists';
 
 interface MainMenuProps {
   engine: GameEngine | null;
@@ -159,7 +172,7 @@ const ToggleRow = ({
  * no shared panel being switched, only N buttons where turning one on means
  * the others are understood to be off.
  */
-const ChoiceRow = <T extends string,>({
+const ChoiceRow = <T extends string>({
   label,
   description,
   value,
@@ -226,6 +239,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
   const [showSettings, setShowSettings] = React.useState(false);
   const [showCalibration, setShowCalibration] = React.useState(false);
   const [showMultiplayer, setShowMultiplayer] = React.useState(false);
+  const [soloMode, setSoloMode] = React.useState<SoloMode>('library');
   const [previewingSound, setPreviewingSound] = React.useState<string | null>(null);
   const [loadingSound, setLoadingSound] = React.useState<string | null>(null);
 
@@ -430,6 +444,37 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+              {/* S1 / S8 entry points. Plain buttons rather than a tab strip:
+                  each one swaps the whole stage for a different mode, and only
+                  one of the three is ever the current view. */}
+              <Button
+                variant="ghost"
+                className={`h-10 shrink-0 rounded-lg font-black px-2.5 sm:px-4 uppercase tracking-wide text-xs transition-colors ${
+                  soloMode === 'daily'
+                    ? 'neumorphic-inset text-slice-text'
+                    : 'text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/20'
+                }`}
+                onClick={() => setSoloMode(soloMode === 'daily' ? 'library' : 'daily')}
+              >
+                <CalendarDays className="w-4 h-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">
+                  {ts('daily-challenge', { defaultValue: 'Daily Challenge' })}
+                </span>
+              </Button>
+              <Button
+                variant="ghost"
+                className={`h-10 shrink-0 rounded-lg font-black px-2.5 sm:px-4 uppercase tracking-wide text-xs transition-colors ${
+                  soloMode === 'setlists'
+                    ? 'neumorphic-inset text-slice-text'
+                    : 'text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/20'
+                }`}
+                onClick={() => setSoloMode(soloMode === 'setlists' ? 'library' : 'setlists')}
+              >
+                <ListMusic className="w-4 h-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">
+                  {ts('setlists', { defaultValue: 'Setlists' })}
+                </span>
+              </Button>
               <Button
                 variant="outline"
                 className="h-10 shrink-0 bg-linear-to-r from-violet-500 to-blue-500 text-white border-none hover:from-violet-400 hover:to-blue-400 font-black px-3 sm:px-5 rounded-lg transition-colors uppercase tracking-wide text-xs shadow-[0_0_12px_rgba(139,92,246,0.5)] hover:shadow-[0_0_20px_rgba(139,92,246,0.7)] animate-pulse hover:animate-none"
@@ -536,14 +581,32 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
               </div>
             )}
 
-            {/* Song Library - Full Width */}
+            {/* The stage: library, daily challenge (S1), or setlists/courses
+                (S8/S2). One at a time — each is a different mode, not a filter
+                over the same list. */}
             <div className="w-full flex flex-col overflow-hidden">
-              <SongLibrary
-                onSelect={handleStartGame}
-                onHighlight={handleSelectSong}
-                selectedSongId={selectedSong?.id ?? null}
-                onStopPreviewRef={stopPreviewRef}
-              />
+              {soloMode === 'daily' && (
+                <DailyPanel
+                  engine={engine}
+                  onPlay={(songId) => startRun(songId)}
+                  onBack={() => setSoloMode('library')}
+                />
+              )}
+              {soloMode === 'setlists' && (
+                <SetlistPanel
+                  engine={engine}
+                  onPlay={(songId) => startRun(songId)}
+                  onBack={() => setSoloMode('library')}
+                />
+              )}
+              {soloMode === 'library' && (
+                <SongLibrary
+                  onSelect={handleStartGame}
+                  onHighlight={handleSelectSong}
+                  selectedSongId={selectedSong?.id ?? null}
+                  onStopPreviewRef={stopPreviewRef}
+                />
+              )}
             </div>
 
             {/* Sidebar - Song Details */}

@@ -93,6 +93,8 @@ model User {
   songPlays     SongPlay[]
   sliceRuns     SliceRun[]
   authoredCharts Chart[]           @relation("ChartAuthor")
+  sliceDailyEntries SliceDailyEntry[]
+  sliceSetlists     SliceSetlist[]
 
   // RmhTube Relations
   rmhtubeHostedRooms RmhTubeRoom[]       @relation("RmhTubeHostedRooms")
@@ -953,6 +955,7 @@ model Song {
   songPlays SongPlay[]
   charts    Chart[]
   runs      SliceRun[]
+  dailyEntries SliceDailyEntry[]
 
   @@unique([uploadedBy, contentHash])
   @@index([title])
@@ -1287,6 +1290,112 @@ model Chart {
   /// "everything rated by an old version".
   @@index([rating(sort: Desc)])
   @@index([ratingVersion])
+}
+
+/// **S1 — one ranked attempt at the daily challenge.**
+///
+/// The day's song, difficulty and modifier set are NOT stored anywhere: they are
+/// a pure function of the day key (`lib/slice-it/daily.server.ts`), so every web
+/// process, every worker and the client agree on them without a coordinating
+/// table and without a write ever happening at midnight. What has to be stored
+/// is the thing a function cannot derive — who played, what they scored, and
+/// that they only got one go.
+///
+/// `@@unique([dayKey, userId])` **is** the one-attempt rule. A UI that hides the
+/// Play button is a suggestion; a second `INSERT` failing is the rule. The
+/// submit path therefore uses a plain `create` and treats P2002 as "already
+/// played today" rather than checking first — a check-then-insert loses the race
+/// with a second tab, which is exactly the client that would be trying.
+///
+/// Time-sortable `BigInt` identity rather than `cuid()`, per the new-table PK
+/// policy in `lib/CLAUDE.md` §Database: one row per player per day forever, and
+/// every read of it is ordered by day.
+model SliceDailyEntry {
+  id BigInt @id @default(autoincrement())
+
+  /// UTC "YYYY-MM-DD" — the same key `arcadeDayKey()` produces, so the daily
+  /// challenge and the Arcade Pass roll over at the same instant.
+  dayKey String @db.VarChar(10)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Denormalised from the day key's selection at submit time. Derivable, but
+  /// stored so a board row can be rendered without re-running the selection for
+  /// a past day whose eligible pool has since changed — the pool is a live
+  /// query, so yesterday's answer is not reproducible tomorrow.
+  songId String
+  song   Song   @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  /// Null when the day's pick resolved to a song with no `Chart` row (the
+  /// generated `analysisData` fallback) — see `SongLeaderboard.chartId`.
+  chartId String? @db.Uuid
+
+  score    Int
+  accuracy Float
+  maxCombo Int
+  /// Did the run reach the end? The daily's fixed modifier set includes the
+  /// gauge, so a failed attempt is a real outcome and still consumes the day.
+  cleared  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  /// The rule, not a UI check.
+  @@unique([dayKey, userId])
+  /// The board: one day, ordered by score.
+  @@index([dayKey, score(sort: Desc)])
+  @@map("slice_daily_entry")
+}
+
+/// **S8 — a user-made, ordered collection of songs.**
+///
+/// ## Why an array column and not a join table
+///
+/// A setlist is read whole (you open it and see all of it), written whole (the
+/// editor sends the new order), and its **order is the data**. A join table
+/// would need a `position` column, a transaction to reorder, and a `GROUP BY`
+/// to read one list — three mechanisms to express what an array expresses by
+/// existing. The cost is that a deleted song leaves a dangling id; readers
+/// filter to the songs that resolve, which is also what you want visually (a
+/// setlist quietly shrinks rather than 500ing).
+///
+/// ## Why `songIds` and not `chartIds`
+///
+/// The plan sketch says `chartIds`. Everything that actually starts a run in
+/// this game takes a **song** id — `useStartRun(songId)`, `/api/slice-it/songs/
+/// $id`, the library's `onSelect`. A setlist of chart ids would not be playable
+/// without a new run path, and the difficulty a player wants is the one already
+/// selected in their modifiers. Song ids are `cuid()`, so this is `String[]`
+/// with no `@db.Uuid`.
+model SliceSetlist {
+  /// UUID rather than `cuid()` per the new-table PK policy. Same compromise the
+  /// `Chart` model documents: `uuid_generate_v7()` is not installed in this
+  /// database, so the time-sortable value is generated application-side by
+  /// `uuidv7()` and this default is only the fallback for a row inserted
+  /// without one.
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  name        String  @db.VarChar(80)
+  description String? @db.VarChar(300)
+
+  /// Shared by URL. Private is the default: a collection you made is yours
+  /// until you say otherwise.
+  isPublic Boolean @default(false)
+
+  /// Ordered song ids. The order IS the data — see the model doc.
+  songIds String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// "My setlists", newest first.
+  @@index([ownerId, createdAt(sort: Desc)])
+  /// The public browse.
+  @@index([isPublic, createdAt(sort: Desc)])
+  @@map("slice_setlist")
 }
 
 /// Autosave + undo across sessions + a restore path. Append-only.
