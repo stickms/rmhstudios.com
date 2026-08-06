@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { popIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 import { useSliceItStore } from '@/lib/slice-it/store';
+import type { GameEngine } from '@/lib/slice-it/engine';
 import { useRunSummary, useSubmitScore } from '@/lib/slice-it/useSubmitScore';
 import { gradeFor } from '@/lib/slice-it/scoring';
 import { RANKED_MIN_SPEED } from '@/lib/slice-it/constants';
@@ -11,15 +12,21 @@ import { RotateCcw, Home, Trophy } from 'lucide-react';
 
 interface GameOverProps {
   onRetry?: () => void;
+  /**
+   * The engine that produced this run. It is the only thing that knows the
+   * run's note count and hit-timing distribution, which the score endpoint
+   * checks; without it the submission just carries less evidence.
+   */
+  engine?: GameEngine | null;
 }
 
-export function GameOver({ onRetry }: GameOverProps) {
+export function GameOver({ onRetry, engine }: GameOverProps) {
   const { t } = useTranslation('c-game');
   const { score, multiplier, maxCombo, accuracy, modifiers, resetRun } = useSliceItStore();
 
   // Submission (and its once-only guard) lives in one place now — both results
   // screens used to carry their own copy with different guards.
-  const summary = useRunSummary(false);
+  const summary = useRunSummary(false, engine);
   const { isNewBest, previousBest } = useSubmitScore(summary);
   const isUnranked = modifiers.speed < RANKED_MIN_SPEED;
 

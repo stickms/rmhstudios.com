@@ -32,7 +32,14 @@ export const Route = createFileRoute('/api/slice-it/songs/$id/play')({
           }
 
           const [song] = await Promise.all([
-            prisma.song.update({ where: { id }, data: { plays: { increment: 1 } } }),
+            // `select` matters here: without it Prisma returns every scalar,
+            // and `analysisData` is the chart — up to megabytes of JSON,
+            // de-TOASTed and parsed on every play, to read one integer.
+            prisma.song.update({
+              where: { id },
+              data: { plays: { increment: 1 } },
+              select: { plays: true },
+            }),
             userId
               ? prisma.songPlay.upsert({
                   where: { songId_userId: { songId: id, userId } },

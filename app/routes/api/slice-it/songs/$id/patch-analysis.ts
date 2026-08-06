@@ -30,8 +30,11 @@ import { BEATMAP_VERSION, isStaleAnalysis } from '@/lib/slice-it/beatmap';
  * - **Only the uploader could fix a song.** A chart is not authorship, and a
  *   library where a song is unplayable until one specific person comes back is
  *   a library with dead songs in it. Any signed-in player may supply a chart
- *   for a song that has none or has a stale one; nobody may overwrite a current
- *   one except the uploader.
+ *   for a song that has **none**; replacing a chart that already plays is the
+ *   uploader's (or an admin's) call. Letting a stranger upgrade a *stale* chart
+ *   sounded generous and was really "first stranger to post wins, permanently"
+ *   — their v2 makes the song current, and current charts are owner-only from
+ *   then on — over the artefact every future player of that track downloads.
  */
 export const Route = createFileRoute('/api/slice-it/songs/$id/patch-analysis')({
   server: {
@@ -41,7 +44,7 @@ export const Route = createFileRoute('/api/slice-it/songs/$id/patch-analysis')({
           body: AnalysisBackfillZ,
           rateLimit: { limit: 10, windowMs: 60_000, prefix: 'slice-analysis', scope: 'user' },
         },
-        async ({ params, body, userId }) => {
+        async ({ params, body, userId, isAdmin }) => {
           const song = await prisma.song.findUnique({
             where: { id: params.id },
             select: {
@@ -59,9 +62,24 @@ export const Route = createFileRoute('/api/slice-it/songs/$id/patch-analysis')({
           const current = song.analysisData;
           const stale = isStaleAnalysis(current);
           const isOwner = song.uploadedBy === userId;
+          const missing = current === null || current === undefined;
 
-          if (!stale && !isOwner) {
-            return Response.json({ success: true, updated: false, reason: 'current' });
+          // A stranger may chart a song that has NO chart — that is the dead-song
+          // case this route exists for, and the alternative is a song nobody can
+          // play until one specific person comes back.
+          //
+          // A stranger may not *replace* a chart that already plays, even a v1
+          // one. Whoever writes a v2 makes the song current, and current charts
+          // are owner-only from then on — so "upgrade a stale chart" was really
+          // "first stranger to post wins, permanently", and the thing they win
+          // is what every future player of that track downloads and plays. A v1
+          // chart is worse than a v2; it is not broken.
+          if (!missing && !isOwner && !isAdmin) {
+            return Response.json({
+              success: true,
+              updated: false,
+              reason: stale ? 'owner_only' : 'current',
+            });
           }
 
           const incoming = body.analysisData;
@@ -79,6 +97,8 @@ export const Route = createFileRoute('/api/slice-it/songs/$id/patch-analysis')({
 
           await prisma.song.update({
             where: { id: song.id },
+            // Without a `select`, the write returns the chart it just stored.
+            select: { id: true },
             data: {
               // The id inside the blob is whatever the generator was handed;
               // pin it to the row so a chart cannot claim to belong to another

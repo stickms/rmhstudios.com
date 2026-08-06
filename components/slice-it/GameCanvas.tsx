@@ -8,6 +8,7 @@ import { GameEngine } from '@/lib/slice-it/engine';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import { AudioManager } from '@/lib/audio/AudioManager';
 import type { Slice } from '@/lib/slice-it/types';
+import { longestHoldSeconds, visibleSliceRange } from '@/lib/slice-it/visible-window';
 import { HUD } from './HUD';
 import { GameOver } from './GameOver';
 import { MainMenu } from './MainMenu';
@@ -273,8 +274,14 @@ export function GameCanvas() {
   }, []);
 
   // ── Input ──────────────────────────────────────────────────────────────────
+  /**
+   * @param pressTime  The originating event's `timeStamp` — when the input
+   *   actually happened, as opposed to when this handler got to run. On a busy
+   *   frame those differ by 5-15 ms, and 15 ms is the whole MARVELOUS window,
+   *   so without it the engine charges main-thread latency to the player.
+   */
   const handleInput = useCallback(
-    (lane: number) => {
+    (lane: number, pressTime?: number) => {
       if (!engine) return;
       // Block input during countdown
       if (useSliceItStore.getState().countdown > 0) return;
@@ -285,7 +292,7 @@ export function GameCanvas() {
       } else if (audio.getCurrentTime() === 0) {
         engine.start();
       }
-      engine.submitInput(lane);
+      engine.submitInput(lane, pressTime);
     },
     [engine],
   );
@@ -337,6 +344,11 @@ export function GameCanvas() {
           if (store.isPaused) return;
           if (store.countdown > 0) return;
 
+          // No press timestamp here, and there cannot be one: the Gamepad API
+          // is polled rather than evented, so a press is only observable on the
+          // next frame and `gamepad.timestamp` is neither in `performance.now()`
+          // units nor consistent across browsers. Pad players pay up to one
+          // frame; keyboard and touch do not.
           if (GAMEPAD_LANE0_BUTTONS.includes(btnIdx)) handleInput(0);
           else if (GAMEPAD_LANE1_BUTTONS.includes(btnIdx)) handleInput(1);
         });
@@ -384,14 +396,12 @@ export function GameCanvas() {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // RENDER FIRST (Even if update fails, we want to see something)
+        // Update first, then render what it produced. The other order showed a
+        // frame of stale state — a note that had just expired still drawn as
+        // live — and the `update()` call was duplicated below it, so everything
+        // in the engine that accumulates over time ran twice per frame.
+        newEngine.update();
         render(ctx, newEngine, keybindsRef.current);
-
-        // Then Update
-        newEngine.update();
-
-        // Then Update
-        newEngine.update();
       } catch (e: any) {
         console.error('GameCanvas Render Error:', e);
         setDebugInfo((prev) => ({ ...prev, error: e.message || 'Unknown Error' }));
@@ -563,8 +573,8 @@ export function GameCanvas() {
       if (status !== 'PLAYING') return;
       if (useSliceItStore.getState().countdown > 0) return;
       if (e.repeat) return; // Block held-key repeats: one press = one note
-      if (e.code === keybinds.lane1) handleInput(0);
-      else if (e.code === keybinds.lane2) handleInput(1);
+      if (e.code === keybinds.lane1) handleInput(0, e.timeStamp);
+      else if (e.code === keybinds.lane2) handleInput(1, e.timeStamp);
       if (e.code === 'Space') e.preventDefault();
     };
 
@@ -611,8 +621,8 @@ export function GameCanvas() {
         // Use keybind mapping to determine lane
         const btnCode = `Mouse${(e as MouseEvent).button}`;
         const kb = keybindsRef.current;
-        if (btnCode === kb.lane1) handleInput(0);
-        else if (btnCode === kb.lane2) handleInput(1);
+        if (btnCode === kb.lane1) handleInput(0, e.timeStamp);
+        else if (btnCode === kb.lane2) handleInput(1, e.timeStamp);
         return;
       }
 
@@ -630,7 +640,7 @@ export function GameCanvas() {
         : touch.clientY - rect.top < rect.height / 2
           ? 0
           : 1;
-      handleInput(lane);
+      handleInput(lane, e.timeStamp);
     };
 
     const handleGlobalRelease = (e: MouseEvent | TouchEvent) => {
@@ -732,11 +742,23 @@ export function GameCanvas() {
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
+  /** Wall-clock seconds since the previous rendered frame. See `lastFrameAt`. */
+  const lastFrameAt = useRef(0);
+
   const render = (
     ctx: CanvasRenderingContext2D,
     engine: GameEngine,
     currentKeybinds: { lane1: string; lane2: string },
   ) => {
+    // Anything that integrates over time uses this rather than assuming a
+    // frame is 1/60 s. Clamped so a tab that was backgrounded for a minute does
+    // not teleport every particle off screen on the frame it comes back.
+    const nowMs = performance.now();
+    const frameDelta = lastFrameAt.current
+      ? Math.min(0.1, (nowMs - lastFrameAt.current) / 1000)
+      : 1 / 60;
+    lastFrameAt.current = nowMs;
+
     const W = ctx.canvas.width;
     const H = ctx.canvas.height;
     // The same ratio the drawing buffer was sized with — see `sync()` above.
@@ -897,14 +919,36 @@ export function GameCanvas() {
       ctx.shadowOffsetX = 4;
       ctx.shadowOffsetY = 4;
 
-      // Determine the targeted (next hittable) note per lane for glow
-      const targetedIds = new Set<string>();
-      const targeted0 = engine.getTargetedSlice(0);
-      const targeted1 = engine.getTargetedSlice(1);
-      if (targeted0) targetedIds.add(targeted0.id);
-      if (targeted1) targetedIds.add(targeted1.id);
+      // Determine the targeted (next hittable) note per lane for glow.
+      // Two ids, compared a few thousand times a frame — string equality beats
+      // allocating a Set per frame to hold them.
+      const targeted0 = engine.getTargetedSlice(0)?.id;
+      const targeted1 = engine.getTargetedSlice(1)?.id;
 
-      (map.slices as Slice[]).forEach((slice) => {
+      // ── Visible window ────────────────────────────────────────────────────
+      //
+      // The loop below walked EVERY note in the chart on EVERY frame and let
+      // each one cull itself. An expert chart is ~2000 notes, so that was
+      // ~120 000 scroll-position computations a second to draw the twenty that
+      // are actually on screen — paid on the weakest device running the game.
+      //
+      // `slices` is sorted by time (`charter.ts` sorts it, `prepareChart`
+      // preserves the order), so the visible span is a contiguous range and
+      // binary search finds it. The bounds come from the same thresholds the
+      // per-note cull uses, widened by the longest hold in the chart and a
+      // second of slack — a note wrongly skipped is a note that does not
+      // render, so the window errs outward and the per-note culls still decide.
+      const slices = map.slices as Slice[];
+      const { from, to } = visibleSliceRange(slices, currentTime, {
+        pixelsPerSecond: PPS,
+        axisLength: isMobileV ? h : w,
+        cursorPosition: CURSOR_MAIN,
+        vertical: isMobileV,
+        longestHold: longestHoldSeconds(map, slices),
+      });
+
+      for (let si = from; si < to; si++) {
+        const slice = slices[si];
         ctx.globalAlpha = 1;
 
         // Compute scroll position along the movement axis
@@ -925,7 +969,7 @@ export function GameCanvas() {
         if (slice.hit && slice.type !== 'LONG') {
           const elapsed = performance.now() - (slice.hitTime ?? 0);
           noteAlpha = Math.max(0, 1 - elapsed / 50);
-          if (noteAlpha <= 0) return; // Fully faded
+          if (noteAlpha <= 0) continue; // Fully faded
         } else {
           // Check if note is behind the cursor
           const distBehind = isMobileV
@@ -934,15 +978,15 @@ export function GameCanvas() {
           if (distBehind > 0 && !isHeldActive) {
             const fadeDist = (isMobileV ? h : w) * 0.08;
             noteAlpha *= Math.max(0, 1 - distBehind / fadeDist);
-            if (noteAlpha <= 0) return;
+            if (noteAlpha <= 0) continue;
           }
         }
 
         // Cull off-screen in the "future" direction
         if (isMobileV) {
-          if (scrollVal < -100) return; // above screen
+          if (scrollVal < -100) continue; // above screen
         } else {
-          if (scrollVal > w + 100) return; // right of screen
+          if (scrollVal > w + 100) continue; // right of screen
         }
 
         // Compute effective lane (SWITCH notes flip lanes near the hit line)
@@ -987,7 +1031,7 @@ export function GameCanvas() {
           if (travelRatio < 0.08) {
             ctx.globalAlpha = 0;
             // Skip rendering entirely
-            return;
+            continue;
           } else if (travelRatio < 0.2) {
             ctx.globalAlpha = noteAlpha * ((travelRatio - 0.08) / 0.12); // 0→1 over the fade range
           } else {
@@ -1015,7 +1059,7 @@ export function GameCanvas() {
         ctx.fillStyle = color;
 
         // Soft glow around the targeted (next hittable) note per lane
-        const isTargeted = targetedIds.has(slice.id);
+        const isTargeted = slice.id === targeted0 || slice.id === targeted1;
         if (isTargeted && slice.type !== 'BOMB') {
           ctx.save();
           ctx.shadowColor = color;
@@ -1162,17 +1206,23 @@ export function GameCanvas() {
           ctx.arc(nx - size * 0.15, ny - size * 0.15, size / 4, 0, Math.PI * 2);
           ctx.fill();
         }
-      });
+      }
       ctx.shadowColor = 'transparent'; // Reset
     }
 
     // 4. Update & Draw Particles
+    //
+    // Integrated against wall-clock time, not frames. `p.x += p.vx` per frame
+    // means the burst falls 2.4x faster on a 144 Hz display than on a 60 Hz one
+    // and in slow motion on a device that is struggling — the velocities below
+    // are per-60Hz-frame, so `step` converts them without changing the tuning.
+    const step = frameDelta * 60;
     for (let i = particlesRef.current.length - 1; i >= 0; i--) {
       const p = particlesRef.current[i];
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 0.2; // Gravity
-      p.life -= 0.05;
+      p.x += p.vx * step;
+      p.y += p.vy * step;
+      p.vy += 0.2 * step; // Gravity
+      p.life -= 0.05 * step;
 
       if (p.life <= 0) {
         particlesRef.current.splice(i, 1);
@@ -1341,7 +1391,7 @@ export function GameCanvas() {
                 className="pointer-events-auto flex-1 h-full flex items-end justify-center pb-4 opacity-0 active:opacity-30 transition-opacity"
                 onTouchStart={(e) => {
                   e.preventDefault();
-                  handleInput(0);
+                  handleInput(0, e.timeStamp);
                 }}
                 onTouchEnd={(e) => {
                   e.preventDefault();
@@ -1349,7 +1399,7 @@ export function GameCanvas() {
                 }}
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  handleInput(0);
+                  handleInput(0, e.timeStamp);
                 }}
                 onMouseUp={(e) => {
                   e.preventDefault();
@@ -1369,7 +1419,7 @@ export function GameCanvas() {
                 className="pointer-events-auto flex-1 h-full flex items-end justify-center pb-4 opacity-0 active:opacity-30 transition-opacity"
                 onTouchStart={(e) => {
                   e.preventDefault();
-                  handleInput(1);
+                  handleInput(1, e.timeStamp);
                 }}
                 onTouchEnd={(e) => {
                   e.preventDefault();
@@ -1377,7 +1427,7 @@ export function GameCanvas() {
                 }}
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  handleInput(1);
+                  handleInput(1, e.timeStamp);
                 }}
                 onMouseUp={(e) => {
                   e.preventDefault();
@@ -1785,6 +1835,7 @@ export function GameCanvas() {
 
           {status === 'FINISHED' && isMultiplayer && (
             <MatchResults
+              engine={engine}
               onBack={() => {
                 const store = useSliceItStore.getState();
                 store.setMatchResults(null);
@@ -1798,6 +1849,7 @@ export function GameCanvas() {
 
           {status === 'FINISHED' && !isMultiplayer && (
             <GameOver
+              engine={engine}
               onRetry={() => {
                 if (!engine) return;
                 engine.reset();

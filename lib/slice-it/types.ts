@@ -115,13 +115,27 @@ export interface SliceSong {
   createdAt: string;
   /** Present only on the single-song read. */
   analysisData?: BeatMap | null;
+  /**
+   * Signed receipt that this run started now, returned to a signed-in caller by
+   * the single-song read and handed back with the score. See
+   * `lib/slice-it/run-token.server.ts`.
+   */
+  runToken?: string;
 }
 
 export interface SongPage {
   songs: SliceSong[];
   /** Opaque cursor for the next page, or null at the end. */
   nextCursor: string | null;
-  total: number;
+  /**
+   * Total matching rows — present on the FIRST page only.
+   *
+   * It exists for one label ("Load more (N total)"), and computing it means an
+   * unindexable `ILIKE '%…%'` count under a search term. Every page of a given
+   * query would return the same number, so it is paid for once and the client
+   * keeps it.
+   */
+  total?: number;
 }
 
 export interface LeaderboardEntry {

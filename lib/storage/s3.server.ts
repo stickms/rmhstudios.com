@@ -243,6 +243,105 @@ export async function getObjectEncoded(
   }
 }
 
+export interface ObjectRange {
+  body: Buffer;
+  contentType: string;
+  /** Byte offset of the first byte returned. */
+  start: number;
+  /** Byte offset of the last byte returned, inclusive. */
+  end: number;
+  /** Size of the whole object, from `Content-Range`. */
+  total: number;
+}
+
+/**
+ * Read a byte range of an object.
+ *
+ * The alternative — fetch the whole object and slice it — is what the audio
+ * stream route was doing, and it costs a full object GET plus the whole file
+ * resident in memory for every request, including a `Range: bytes=0-1`. That is
+ * an egress and memory amplifier: the response is two bytes and the work behind
+ * it is fifty megabytes, repeatable as fast as a caller can ask.
+ *
+ * Returns null if the object is missing, if the range is unsatisfiable, or if
+ * the object is Brotli-encoded — a range of compressed bytes is meaningless to
+ * a caller that asked for a range of the file, so those fall back to
+ * {@link getObject}, which decodes.
+ */
+export async function getObjectRange(
+  key: string,
+  start: number,
+  end: number
+): Promise<ObjectRange | null> {
+  if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end < start) {
+    return null;
+  }
+
+  if (!s3Configured()) {
+    const stored = await localGet(key);
+    if (!stored) return null;
+    const total = stored.body.length;
+    if (start >= total) return null;
+    const last = Math.min(end, total - 1);
+    return {
+      body: stored.body.subarray(start, last + 1),
+      contentType: stored.contentType,
+      start,
+      end: last,
+      total,
+    };
+  }
+
+  try {
+    const res = await getClient().send(
+      new GetObjectCommand({
+        Bucket: getBucket(),
+        Key: key,
+        Range: `bytes=${start}-${end}`,
+      })
+    );
+    if (res.ContentEncoding === "br") return null;
+
+    const bytes = await (res.Body as {
+      transformToByteArray: () => Promise<Uint8Array>;
+    }).transformToByteArray();
+
+    // `Content-Range: bytes <start>-<end>/<total>` is the authority on what the
+    // store actually returned — it clamps an over-long end for us.
+    const parsed = /bytes (\d+)-(\d+)\/(\d+)/.exec(res.ContentRange ?? "");
+    const body = Buffer.from(bytes);
+    return {
+      body,
+      contentType: res.ContentType || contentTypeForFilename(key),
+      start: parsed ? Number(parsed[1]) : start,
+      end: parsed ? Number(parsed[2]) : start + body.length - 1,
+      total: parsed ? Number(parsed[3]) : body.length,
+    };
+  } catch (err) {
+    const name = (err as { name?: string })?.name;
+    if (err instanceof NoSuchKey || name === "NoSuchKey") return null;
+    // 416 from the store — the caller asked past the end of the object.
+    if (name === "InvalidRange") return null;
+    throw err;
+  }
+}
+
+/** Size of an object without transferring it. Null when it does not exist. */
+export async function getObjectSize(key: string): Promise<number | null> {
+  if (!s3Configured()) {
+    const stored = await localGet(key);
+    return stored ? stored.body.length : null;
+  }
+  try {
+    const res = await getClient().send(
+      new HeadObjectCommand({ Bucket: getBucket(), Key: key })
+    );
+    return typeof res.ContentLength === "number" ? res.ContentLength : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function deleteObject(key: string): Promise<void> {
   if (!s3Configured()) return localDelete(key);
   await getClient().send(
