@@ -28,6 +28,7 @@
   "pagination-next": "Tiếp theo",
   "pagination-previous": "Trước",
   "pagination-range": "{{from}}–{{to}} trong tổng số {{total}}",
+  "player-count_one": "{{count}} người chơi",
   "player-count_other": "{{count}} người chơi",
   "player-range": "{{minPlayers}}–{{maxPlayers}} người chơi",
   "pts": "điểm",
