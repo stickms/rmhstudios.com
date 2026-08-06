@@ -18,9 +18,56 @@
  */
 
 import { quantizeOnsets, type QuantizedNote } from '@/lib/slice-it/beatmap/charter';
+import type { AnalysisArtefacts, StoredOnset } from '@/lib/slice-it/beatmap';
+import { decodeEnvelope, ENVELOPE_RATE } from '@/lib/slice-it/beatmap/envelope';
+import type { Section } from '@/lib/slice-it/beatmap/sections';
 import type { Onset } from '@/lib/slice-it/beatmap/onsets';
 import { syntheticBeats } from '@/lib/slice-it/beatmap/tempo';
 import type { BeatMap, Difficulty, Slice } from '@/lib/slice-it/types';
+
+/**
+ * A detected onset the editor can draw and promote (§6).
+ *
+ * `kept: false` is the interesting case — the generator considered this moment
+ * and rejected it, and clicking its ghost is the single most-used interaction
+ * in the editor. Only present for songs analysed by a generator that persists
+ * artefacts; there is no way to recover them for an older song short of a
+ * re-analysis, because the spectrogram they came from is long gone.
+ */
+export interface GhostOnset {
+  time: number;
+  strength: number;
+  /** The lane the charter's own frequency-band rule would have put it on. */
+  lane: number;
+  kept: boolean;
+}
+
+/**
+ * The charter's lane rule, applied to a stored onset.
+ *
+ * Duplicated thresholds, knowingly: `LOW_LANE_BIAS` / `HIGH_LANE_BIAS` are
+ * private to `charter.ts`, which another agent owns this wave, so exporting
+ * them is a cross-boundary change recorded in
+ * `docs/_handoff/editor-phase678-requests.md`. The values are copied exactly
+ * and the *only* consequence of drift is that a promoted ghost lands on the
+ * lane the generator would not have chosen — visible, and one drag to fix,
+ * rather than silent.
+ *
+ * The charter's later passes (anti-jack alternation, same-lane spacing) are
+ * deliberately NOT reproduced: they are properties of a whole chart being
+ * generated, and a single promoted note has no run to alternate against.
+ */
+const LOW_LANE_BIAS = 0.42;
+const HIGH_LANE_BIAS = 0.3;
+
+export function suggestLane(onset: { l: number; h: number }, keys = 2): number {
+  if (onset.l >= LOW_LANE_BIAS) return 0;
+  if (onset.h >= HIGH_LANE_BIAS) return Math.min(1, keys - 1);
+  // Mid-range: the charter alternates here. With no run to alternate against,
+  // the deterministic answer is the lower lane — an author moves it in one drag
+  // and, unlike a random choice, it does not move when they undo and redo.
+  return 0;
+}
 
 export interface EditorArtefacts {
   songId: string;
@@ -29,6 +76,12 @@ export interface EditorArtefacts {
   beats: number[];
   /** The candidate pool the charter selects from, densest tier first. */
   pool: QuantizedNote[];
+  /** Peak envelope bytes (0–255) and their rate — empty when not stored (§6). */
+  envelope: { bytes: Uint8Array; rate: number };
+  /** Every detected onset, kept and rejected, in time order. */
+  ghosts: GhostOnset[];
+  /** Structure (C5). Empty when the song predates artefact persistence. */
+  sections: Section[];
   /**
    * Where the pool came from, so the panel can be honest about it.
    *
@@ -44,6 +97,7 @@ export interface EditorArtefacts {
 interface StoredAnalysis extends BeatMap {
   beats?: number[];
   analysisVersion?: number;
+  artefacts?: AnalysisArtefacts;
 }
 
 interface SongResponse {
@@ -123,11 +177,28 @@ export function buildArtefacts(
   const source: 'analysis' | 'chart' = stored.length > 0 ? 'analysis' : 'chart';
   const slices = stored.length > 0 ? stored : input.fallbackSlices;
 
+  const artefacts = analysis?.artefacts ?? null;
+  const rawOnsets: StoredOnset[] = Array.isArray(artefacts?.onsets) ? artefacts.onsets : [];
+
   return {
     songId: input.songId,
     duration: input.duration,
     beats,
     pool: poolFromSlices(slices, beats),
+    envelope: {
+      bytes: decodeEnvelope(artefacts?.envelope),
+      rate: artefacts?.envelope?.rate ?? ENVELOPE_RATE,
+    },
+    ghosts: rawOnsets
+      .filter((onset) => Number.isFinite(onset?.t))
+      .map((onset) => ({
+        time: onset.t,
+        strength: Number.isFinite(onset.s) ? onset.s : 0.5,
+        lane: suggestLane({ l: onset.l ?? 0, h: onset.h ?? 0 }),
+        kept: Boolean(onset.k),
+      }))
+      .sort((a, b) => a.time - b.time),
+    sections: Array.isArray(artefacts?.sections) ? artefacts.sections : [],
     source,
   };
 }

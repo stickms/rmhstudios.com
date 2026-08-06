@@ -30,12 +30,26 @@ import { barBeatAt, gridLines, quantizationOf, snapTime } from '@/lib/slice-it/e
 import { BASE_PIXELS_PER_SECOND, editorState, useEditorStore } from '@/lib/slice-it/editor/store';
 import type { EditorNote, TimingPoint } from '@/lib/slice-it/editor/types';
 import { newNoteId } from '@/lib/slice-it/editor/uuid';
+import { envelopePeak } from '@/lib/slice-it/beatmap/envelope';
+import type { EditorArtefacts, GhostOnset } from '@/lib/slice-it/editor/artefacts';
 import { activePlaytest } from '@/lib/slice-it/editor/playtest';
 import type { DifficultyPlan } from '@/lib/slice-it/editor/generate';
 import { QUANT_COLORS, readEditorTheme, type EditorTheme } from './theme';
 
 /** Left gutter, in CSS pixels, holding the bar/beat ruler (§4.2). */
 const GUTTER = 58;
+/**
+ * Width of the waveform strip between the ruler and the lanes (§6).
+ *
+ * Drawn INSIDE this canvas rather than as the separate element §6 sketches: a
+ * second canvas beside this one is a second surface to size, a second device
+ * pixel ratio to clamp, and — the part that actually bites — a second draw loop
+ * that has to stay in lockstep with this one's scroll or the waveform lags the
+ * notes by a frame while dragging. One canvas, one loop, one scroll position.
+ */
+const WAVE_W = 30;
+/** Left edge of the playable lanes. */
+const LANES_X = GUTTER + WAVE_W;
 /** Where the playhead sits vertically, as a fraction of the canvas height. */
 const PLAYHEAD_FRACTION = 0.78;
 /** Note body height in CSS pixels. Constant — zoom changes spacing, not size. */
@@ -44,6 +58,12 @@ const NOTE_H = 15;
 const HIT_SLOP = 9;
 /** A drag has to travel this far before it stops being a click. */
 const DRAG_THRESHOLD = 4;
+/**
+ * How close a charted note has to be for an onset to count as already charted,
+ * seconds. 30 ms is the onset detector's own minimum gap — closer than that and
+ * the two were never distinguishable as separate events in the first place.
+ */
+const GHOST_MATCH_S = 0.03;
 
 interface ViewWindow {
   width: number;
@@ -74,10 +94,10 @@ function buildView(width: number, height: number, playhead: number, zoom: number
 
 const yOf = (view: ViewWindow, time: number) => view.playheadY - (time - view.playhead) * view.pps;
 const timeOf = (view: ViewWindow, y: number) => view.playhead + (view.playheadY - y) / view.pps;
-const laneWidth = (view: ViewWindow) => (view.width - GUTTER) / Math.max(1, view.keys);
-const laneCenterX = (view: ViewWindow, lane: number) => GUTTER + laneWidth(view) * (lane + 0.5);
+const laneWidth = (view: ViewWindow) => (view.width - LANES_X) / Math.max(1, view.keys);
+const laneCenterX = (view: ViewWindow, lane: number) => LANES_X + laneWidth(view) * (lane + 0.5);
 const laneOf = (view: ViewWindow, x: number) =>
-  Math.max(0, Math.min(view.keys - 1, Math.floor((x - GUTTER) / laneWidth(view))));
+  Math.max(0, Math.min(view.keys - 1, Math.floor((x - LANES_X) / laneWidth(view))));
 
 /** Index range of notes inside `[startTime, endTime]`, widened for hold tails. */
 function visibleRange(notes: readonly EditorNote[], start: number, end: number) {
@@ -206,6 +226,8 @@ export function Timeline() {
   const tool = useEditorStore((s) => s.tool);
   const preview = useEditorStore((s) => s.preview);
   const playtesting = useEditorStore((s) => s.playtesting);
+  const artefacts = useEditorStore((s) => s.artefacts);
+  const showGhosts = useEditorStore((s) => s.showGhosts);
 
   /* ── Sizing ───────────────────────────────────────────────────────────── */
   useEffect(() => {
@@ -251,7 +273,20 @@ export function Timeline() {
   /* ── Repaint on any state the drawing depends on ──────────────────────── */
   useEffect(() => {
     dirtyRef.current = true;
-  }, [active, notes, keys, playhead, zoom, timingPoints, snap, tool, preview, playtesting]);
+  }, [
+    active,
+    notes,
+    keys,
+    playhead,
+    zoom,
+    timingPoints,
+    snap,
+    tool,
+    preview,
+    playtesting,
+    artefacts,
+    showGhosts,
+  ]);
 
   /* ── Draw loop ────────────────────────────────────────────────────────── */
   useEffect(() => {
@@ -282,6 +317,8 @@ export function Timeline() {
         duration: state.song?.duration ?? 0,
         preview: state.preview?.byDifficulty[state.active] ?? null,
         loop: state.loop,
+        artefacts: state.artefacts,
+        showGhosts: state.showGhosts,
       });
 
       // A running playtest moves the world every frame: the playhead is written
@@ -316,6 +353,40 @@ export function Timeline() {
     return best;
   }, []);
 
+  /**
+   * The ghost under the pointer, if any (§6).
+   *
+   * Deliberately checked only where no note was hit: a ghost sitting under a
+   * charted note must never win the click, or an author trying to select a note
+   * would place a duplicate on top of it.
+   */
+  const ghostAt = useCallback((view: ViewWindow, x: number, y: number): GhostOnset | null => {
+    const state = editorState();
+    const ghosts = state.artefacts?.ghosts;
+    if (!ghosts || ghosts.length === 0 || !state.showGhosts) return null;
+
+    const notes = state.charts[state.active].notes;
+    const time = timeOf(view, y);
+    const lane = laneOf(view, x);
+    const tolerance = (NOTE_H / 2 + HIT_SLOP) / view.pps;
+
+    let best: GhostOnset | null = null;
+    let bestDistance = tolerance;
+    for (const ghost of ghosts) {
+      if (ghost.time < time - tolerance) continue;
+      if (ghost.time > time + tolerance) break;
+      if (hasNoteNear(notes, ghost.time)) continue;
+      // Lane is a suggestion, so a click in the wrong lane still promotes — it
+      // just promotes onto the lane the author clicked, which is what they meant.
+      const distance = Math.abs(ghost.time - time);
+      if (distance <= bestDistance) {
+        bestDistance = distance;
+        best = { ...ghost, lane };
+      }
+    }
+    return best;
+  }, []);
+
   const viewNow = useCallback(() => {
     const state = editorState();
     const { width, height } = sizeRef.current;
@@ -332,7 +403,7 @@ export function Timeline() {
     if (event.button !== 0 && event.button !== 2) return;
     const view = viewNow();
     const { x, y } = localPoint(event);
-    if (x < GUTTER) return;
+    if (x < LANES_X) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     event.currentTarget.focus();
 
@@ -361,6 +432,30 @@ export function Timeline() {
       };
       dirtyRef.current = true;
       return;
+    }
+
+    /* Promote an onset ghost (§6) — one click turns "the generator missed the
+     * snare in bar 2" into a note. Placed at the onset's OWN time, not the
+     * snapped one: the whole point of a rejected candidate is that the music
+     * put it off the grid, and rounding it back onto the grid would place it
+     * where the generator already decided nothing was happening. The linter
+     * flags it as off-grid, which is the honest description of what it is. */
+    if (!hit && (state.tool === 'select' || state.tool === 'place')) {
+      const ghost = ghostAt(view, x, y);
+      if (ghost) {
+        const note: EditorNote = {
+          id: newNoteId(),
+          time: Math.max(0, ghost.time),
+          lane: ghost.lane,
+          type: state.tool === 'place' ? state.placeType : 'STANDARD',
+          auto: false,
+          selected: true,
+        };
+        state.apply(nestedPlace(state.nestingMode, state.charts, state.active, note));
+        state.setSelection([note.id], 'replace');
+        dirtyRef.current = true;
+        return;
+      }
     }
 
     if (state.tool === 'place' || state.tool === 'hold') {
@@ -596,6 +691,9 @@ interface DrawOptions {
   /** The uncommitted regenerate for this difficulty, if one is being previewed. */
   preview: DifficultyPlan | null;
   loop: { start: number; end: number } | null;
+  /** Waveform, ghosts and sections (§6). Null for a song with no stored artefacts. */
+  artefacts: EditorArtefacts | null;
+  showGhosts: boolean;
 }
 
 /** Preview colours. Fixed, like the quantisation palette, and for the same reason. */
@@ -619,8 +717,13 @@ function draw(
   ctx.fillRect(0, 0, view.width, view.height);
 
   drawLanes(ctx, view, theme);
+  drawWaveform(ctx, view, theme, options.artefacts);
+  drawSections(ctx, view, theme, options.artefacts);
   drawLoop(ctx, view, theme, options.loop);
   drawBeatGrid(ctx, view, points, theme, options.snap);
+  // Ghosts UNDER the notes: a rejected candidate that has since been charted
+  // must never draw on top of the note that supersedes it.
+  if (options.showGhosts) drawGhosts(ctx, view, theme, options.artefacts, notes);
   // Removals draw UNDER the chart: a struck-through note is still a note the
   // author can see in place, with a line through it, rather than a gap they have
   // to infer.
@@ -630,8 +733,145 @@ function draw(
   drawSelectionBox(ctx, theme, options.drag);
   drawPlayhead(ctx, view, theme);
 
-  // TODO(phase 6 — §6): the waveform + onset-ghost strips flank this canvas.
   // TODO(phase 8 — §4.4b): the aggregate miss-rate heat tint, once O1 exists.
+}
+
+/**
+ * The waveform strip (§6).
+ *
+ * One column per device-independent pixel, each the PEAK over the time that
+ * column covers — not the envelope sample nearest it. Nearest-sampling a
+ * 48 000-point envelope into 900 columns aliases, and the transient the author
+ * is scrolling to find blinks in and out as the view moves. Taking the max is
+ * both cheaper to reason about and stable under scroll.
+ */
+function drawWaveform(
+  ctx: CanvasRenderingContext2D,
+  view: ViewWindow,
+  theme: EditorTheme,
+  artefacts: EditorArtefacts | null,
+) {
+  const bytes = artefacts?.envelope.bytes;
+  const rate = artefacts?.envelope.rate ?? 0;
+  if (!bytes || bytes.length === 0 || rate <= 0) return;
+
+  const centre = GUTTER + WAVE_W / 2;
+  const secondsPerPixel = 1 / view.pps;
+
+  ctx.save();
+  ctx.fillStyle = theme.primary;
+  ctx.globalAlpha = 0.5;
+  for (let y = 0; y < view.height; y++) {
+    const time = timeOf(view, y);
+    if (time < 0) continue;
+    const peak = envelopePeak(bytes, rate, time - secondsPerPixel, time);
+    if (peak <= 0) continue;
+    const half = (peak * (WAVE_W - 6)) / 2;
+    ctx.fillRect(centre - half, y, half * 2, 1);
+  }
+  ctx.restore();
+}
+
+/**
+ * Section boundaries and their labels (C5).
+ *
+ * A line across the whole surface, not a marker in the gutter: the boundary is
+ * a fact about the music at that instant, and the author is looking at the
+ * notes, not at the ruler. The label sits in the waveform strip where there is
+ * room for it and nothing to overlap.
+ */
+function drawSections(
+  ctx: CanvasRenderingContext2D,
+  view: ViewWindow,
+  theme: EditorTheme,
+  artefacts: EditorArtefacts | null,
+) {
+  const sections = artefacts?.sections;
+  if (!sections || sections.length === 0) return;
+
+  ctx.save();
+  ctx.setLineDash([2, 6]);
+  ctx.strokeStyle = theme.accent;
+  ctx.lineWidth = 1;
+  ctx.font = '600 10px ui-monospace, monospace';
+  ctx.textBaseline = 'top';
+
+  for (const section of sections) {
+    if (section.start < view.startTime || section.start > view.endTime) continue;
+    const y = Math.round(yOf(view, section.start)) + 0.5;
+    ctx.globalAlpha = 0.55;
+    ctx.beginPath();
+    ctx.moveTo(GUTTER, y);
+    ctx.lineTo(view.width, y);
+    ctx.stroke();
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = theme.accent;
+    ctx.fillText(section.label, GUTTER + 3, y + 2);
+  }
+  ctx.restore();
+}
+
+/**
+ * Onset ghosts (§6) — the highest-value part of this phase.
+ *
+ * Every onset the analyser detected that this difficulty does not chart, drawn
+ * as a faint outline at its time and its suggested lane. Most of them are the
+ * candidates the 55 ms quantisation filter REJECTED, which is exactly the
+ * information a human editor wants and the one thing they cannot re-derive:
+ * these are the notes the generator considered and turned down.
+ *
+ * Opacity tracks detection strength, so a strong rejected transient (a missed
+ * snare) is visibly different from the weak ones the generator was right about.
+ */
+function drawGhosts(
+  ctx: CanvasRenderingContext2D,
+  view: ViewWindow,
+  theme: EditorTheme,
+  artefacts: EditorArtefacts | null,
+  notes: readonly EditorNote[],
+) {
+  const ghosts = artefacts?.ghosts;
+  if (!ghosts || ghosts.length === 0) return;
+
+  const width = Math.min(96, laneWidth(view) * 0.72);
+  ctx.save();
+  ctx.strokeStyle = theme.textMuted;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([3, 3]);
+
+  for (const ghost of ghosts) {
+    if (ghost.time < view.startTime || ghost.time > view.endTime) continue;
+    // Already charted here? Then it is not a ghost, it is a note — and the note
+    // is drawn a few functions later, on top of where this would have been.
+    if (hasNoteNear(notes, ghost.time)) continue;
+    const cy = yOf(view, ghost.time);
+    const cx = laneCenterX(view, Math.min(view.keys - 1, ghost.lane));
+    ctx.globalAlpha = 0.18 + 0.35 * Math.min(1, ghost.strength);
+    roundRect(ctx, cx - width / 2, cy - NOTE_H / 2, width, NOTE_H, NOTE_H / 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/**
+ * Is this moment already charted?
+ *
+ * Its own binary search rather than `visibleRange`, which deliberately backs off
+ * 60 seconds so hold tails still draw — harmless for one call per frame, and a
+ * full scan of the chart per ghost per frame if it were reused here.
+ */
+function hasNoteNear(notes: readonly EditorNote[], time: number): boolean {
+  let lo = 0;
+  let hi = notes.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (notes[mid].time < time - GHOST_MATCH_S) lo = mid + 1;
+    else hi = mid;
+  }
+  for (let i = lo; i < notes.length && notes[i].time <= time + GHOST_MATCH_S; i++) {
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -725,7 +965,7 @@ function drawLoop(
   ctx.save();
   ctx.globalAlpha = 0.12;
   ctx.fillStyle = theme.accent;
-  ctx.fillRect(GUTTER, top, view.width - GUTTER, bottom - top);
+  ctx.fillRect(LANES_X, top, view.width - LANES_X, bottom - top);
   ctx.restore();
 }
 
@@ -736,7 +976,7 @@ function drawLanes(ctx: CanvasRenderingContext2D, view: ViewWindow, theme: Edito
   ctx.strokeStyle = theme.shadowDark;
   ctx.lineWidth = 1;
   for (let lane = 0; lane <= view.keys; lane++) {
-    const x = Math.round(GUTTER + w * lane) + 0.5;
+    const x = Math.round(LANES_X + w * lane) + 0.5;
     ctx.beginPath();
     ctx.moveTo(x, 0);
     ctx.lineTo(x, view.height);
@@ -768,7 +1008,7 @@ function drawBeatGrid(
     ctx.strokeStyle = line.weight === 'measure' ? theme.textMuted : theme.shadowDark;
     ctx.lineWidth = line.weight === 'measure' ? 1.5 : 1;
     ctx.beginPath();
-    ctx.moveTo(line.weight === 'sub' ? GUTTER + 8 : GUTTER, y);
+    ctx.moveTo(line.weight === 'sub' ? LANES_X + 8 : GUTTER, y);
     ctx.lineTo(view.width, y);
     ctx.stroke();
 

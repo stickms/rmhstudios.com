@@ -57,6 +57,21 @@ export const HIT_WINDOWS: Record<Exclude<HitResult, 'MISS' | 'NONE'>, number> = 
 /** Strict Timing shrinks every window to this fraction of its normal size. */
 export const STRICT_TIMING_FACTOR = 0.7;
 
+/**
+ * A9 — the mirror of {@link STRICT_TIMING_FACTOR}: Lenient Timing widens every
+ * window instead of shrinking it. There was a way to make the game harder
+ * (Strict Timing) and none to make it easier; this is that knob turned the
+ * other way, sized as the same distance from 1.0 in the other direction
+ * (0.7 shrinks by 0.3, 1.4 grows by the matching 0.4-ish headroom a widened
+ * window needs to actually feel different rather than merely nominal).
+ *
+ * Unranked (see `timingScale` in `scoring.ts` and `MODIFIER_BONUSES`, which
+ * deliberately has no entry for it) — not because a wider window is
+ * illegitimate, but because a run played on it is not comparable to one
+ * played on the stock windows.
+ */
+export const LENIENT_TIMING_FACTOR = 1.4;
+
 /** Base points per judgement, before the combo and modifier multipliers. */
 export const HIT_POINTS: Record<Exclude<HitResult, 'MISS' | 'NONE'>, number> = {
   MARVELOUS: 250,
@@ -79,7 +94,28 @@ export const ACCURACY_WEIGHTS: Record<Exclude<HitResult, 'NONE'>, number> = {
   MISS: 0,
 };
 
-/** Bonus for releasing a LONG note inside its release window. */
+/**
+ * G5 — the window scale a hold's RELEASE is judged at, relative to the scale
+ * a tap uses (`HIT_WINDOWS` × this).
+ *
+ * Wider than 1.0 on purpose: letting go is a less precise motor action than
+ * pressing, and judging a release on the exact same windows as a press made
+ * an LN chart feel arbitrary rather than hard. See `GameEngine.submitRelease`
+ * and the `releaseTimingScale` it's read through.
+ */
+export const RELEASE_WINDOW_SCALE = 1.5;
+/**
+ * Legacy flat bonus for releasing a LONG note inside its release window.
+ *
+ * No longer read by live scoring — `submitRelease` (G5) now judges a release
+ * through the same `judge()`/`pointsFor()` path as a tap, at
+ * {@link RELEASE_WINDOW_SCALE}, so its payout scales with combo and judgement
+ * quality like any other note rather than paying this flat amount. Kept
+ * (rather than deleted) because `lib/slice-it/integrity.ts` still reads it as
+ * one term of its server-side score ceiling — see
+ * `docs/_handoff/note-vocab-requests.md` for why that ceiling is now looser
+ * than it needs to be rather than wrong.
+ */
 export const HOLD_RELEASE_POINTS = 100;
 /**
  * Points accrued per **second of audio** while a LONG note is held correctly.
@@ -194,7 +230,26 @@ export const MODIFIER_BONUSES = {
    * be lost mid-run: draining to zero forfeits it (see `calculateScoreMultiplier`).
    */
   healthGauge: 0.2,
+  /**
+   * M6 — perfect-or-die. `suddenDeath` sits below it in the same exclusion
+   * group (`applyExclusions` in `modifiers.ts` drops `suddenDeath` when both
+   * are set, so this is never stacked on top of a second "one mistake ends
+   * it" bonus) but currently has no bonus of its own to be worth more than —
+   * see `docs/_handoff/note-vocab-requests.md`. Sized well above every other
+   * entry here because the run this pays for is qualitatively harder than
+   * "don't miss": every GREAT or worse, not just a MISS, ends it.
+   */
+  perfectionist: 0.75,
 } as const;
+
+/**
+ * A9 — deliberately absent: Lenient Timing has no entry here. It makes the
+ * game easier, and an unranked modifier that also paid a bonus (or, worse,
+ * a penalty) would either buy score with difficulty removed or punish a
+ * player for needing the accommodation. `calculateScoreMultiplier` never
+ * reads `modifiers.lenientTiming`, so the run's multiplier is exactly what it
+ * would have been without the toggle.
+ */
 
 /** Speed above 1.0x adds this much multiplier per 1.0x of extra rate. */
 export const SPEED_BONUS_PER_X = 0.5;

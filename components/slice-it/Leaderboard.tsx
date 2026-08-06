@@ -49,10 +49,36 @@ import type { LeaderboardEntry } from '@/lib/slice-it/types';
  * it does not, which is also how a viewer tells a guest (`X10`) from a member.
  */
 
+/**
+ * ## The global board ranks skill, not volume (R2)
+ *
+ * It used to be `ORDER BY "totalScore" DESC` — the sum of every score the
+ * account had ever submitted — so it ranked **how much you had played**: an
+ * account grinding an easy chart outranked a better player who did not. The
+ * number in the score column of that board is now the skill rating: best per
+ * *ranked* chart, weighted by the chart's computed difficulty (`C3`) and by
+ * accuracy, decayed so the top ~50 dominate. Lifetime total is still shown, as
+ * the statistic it always was rather than as the ranking.
+ */
+
+/**
+ * A global-board row, which carries three fields a song row does not.
+ *
+ * Optional, because one component renders both boards out of one piece of
+ * state, and because a client deployed against an older server does not receive
+ * them — in which case the extra chips do not render and the row is exactly what
+ * it was.
+ */
+type BoardEntry = LeaderboardEntry & {
+  skillRating?: number;
+  totalScore?: number;
+  rankedPlays?: number;
+};
+
 interface LeaderboardResponse {
-  entries?: LeaderboardEntry[];
+  entries?: BoardEntry[];
   total?: number;
-  self?: LeaderboardEntry | null;
+  self?: BoardEntry | null;
   scopeUnavailable?: 'signed-out' | 'no-location';
 }
 
@@ -66,8 +92,8 @@ interface LeaderboardProps {
 export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProps) {
   const { t } = useTranslation('c-game');
   const { t: ts } = useTranslation('r-slice-it');
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-  const [self, setSelf] = useState<LeaderboardEntry | null>(null);
+  const [entries, setEntries] = useState<BoardEntry[]>([]);
+  const [self, setSelf] = useState<BoardEntry | null>(null);
   const [unavailable, setUnavailable] = useState<LeaderboardResponse['scopeUnavailable']>();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -95,8 +121,9 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
       try {
         const params = new URLSearchParams();
         if (songId) params.set('songId', songId);
-        // The filters only mean anything on a song board — the global career
-        // board is one list of lifetime totals with no tier and no modifiers.
+        // The filters only mean anything on a song board — the global board is
+        // one list of skill ratings with no tier and no modifiers, because a
+        // skill rating is already an aggregate across every tier and pool.
         if (songId && difficulty !== 'all') params.set('difficulty', difficulty);
         if (songId && modPool !== 'all') params.set('modPool', modPool);
         if (songId && scope !== 'global') params.set('scope', scope);
@@ -170,6 +197,18 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
           ? t('song-leaderboard', { defaultValue: 'Song Leaderboard' })
           : t('global-leaderboard', { defaultValue: 'Global Leaderboard' })}
       </label>
+
+      {!songId && (
+        // Said once, at the top, rather than in a tooltip on every row: the
+        // number in this column changed meaning, and a player who read it as a
+        // lifetime total last week will otherwise read it as one this week.
+        <p className="text-[11px] text-slice-text-light leading-relaxed shrink-0">
+          {ts('board-skill-explainer', {
+            defaultValue:
+              'Ranked by skill rating: your best run on each ranked chart, weighted by how hard the chart is and how accurately you played it. Playing more does not raise it — playing better does.',
+          })}
+        </p>
+      )}
 
       {songId && (
         <div className="flex flex-wrap gap-1.5 shrink-0">
@@ -313,7 +352,7 @@ function Row({
   replayId,
   onWatch,
 }: {
-  entry: LeaderboardEntry;
+  entry: BoardEntry;
   /** Present only when this run has a stored input log (`R3`). */
   replayId?: string;
   onWatch?: (replayId: string) => void;
@@ -381,6 +420,47 @@ function Row({
             <span className="text-[9px] font-black uppercase text-slice-text-muted">
               {entry.difficulty}
             </span>
+          )}
+          {/*
+            Global board only — `skillRating` is the field that tells the two
+            boards apart, and it is what the score column above is showing. The
+            lifetime total moved down here: it is still a real statistic, it is
+            just no longer the ranking, and showing it beside the rating is what
+            makes that legible rather than surprising.
+          */}
+          {typeof entry.skillRating === 'number' && (
+            <>
+              {typeof entry.rankedPlays === 'number' && (
+                <Tooltip
+                  content={ts('ranked-charts-tooltip', {
+                    defaultValue: '{{count}} ranked charts count toward this rating',
+                    count: entry.rankedPlays,
+                  })}
+                >
+                  <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded-full bg-slice-shadow-dark text-slice-text-muted">
+                    {ts('ranked-charts-chip', {
+                      defaultValue: '{{count}} charts',
+                      count: entry.rankedPlays,
+                    })}
+                  </span>
+                </Tooltip>
+              )}
+              {typeof entry.totalScore === 'number' && (
+                <Tooltip
+                  content={ts('lifetime-total-tooltip', {
+                    defaultValue:
+                      'Lifetime score: every point ever submitted. It measures how much you have played, not how well, which is why it no longer sets the rank.',
+                  })}
+                >
+                  <span className="text-[10px] font-mono text-slice-text-light italic">
+                    {ts('lifetime-total-chip', {
+                      defaultValue: 'lifetime {{total}}',
+                      total: entry.totalScore.toLocaleString(),
+                    })}
+                  </span>
+                </Tooltip>
+              )}
+            </>
           )}
           {entry.accuracy !== null && (
             <Tooltip

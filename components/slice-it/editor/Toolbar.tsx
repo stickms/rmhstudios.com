@@ -14,6 +14,8 @@
 import { useTranslation } from 'react-i18next';
 import {
   Eraser,
+  Gauge,
+  Ghost,
   MousePointer2,
   Plus,
   Redo2,
@@ -56,6 +58,8 @@ export function Toolbar({ onSave }: ToolbarProps) {
   const canRedo = useEditorStore((s) => s.redoStack.length > 0);
   const saving = useEditorStore((s) => s.saving);
   const dirty = useEditorStore((s) => s.revision !== s.lastSavedRevision);
+  const showGhosts = useEditorStore((s) => s.showGhosts);
+  const setShowGhosts = useEditorStore((s) => s.setShowGhosts);
 
   const tools: { id: EditorTool; label: string; icon: typeof MousePointer2 }[] = [
     {
@@ -66,6 +70,8 @@ export function Toolbar({ onSave }: ToolbarProps) {
     { id: 'place', label: t('editor-tool-place', { defaultValue: 'Place' }), icon: Plus },
     { id: 'hold', label: t('editor-tool-hold', { defaultValue: 'Hold' }), icon: Timer },
     { id: 'erase', label: t('editor-tool-erase', { defaultValue: 'Erase' }), icon: Eraser },
+    // Selecting the timing tool is what opens the timing/SV panel in the rail.
+    { id: 'timing', label: t('editor-tool-timing', { defaultValue: 'Timing' }), icon: Gauge },
   ];
 
   return (
@@ -182,6 +188,22 @@ export function Toolbar({ onSave }: ToolbarProps) {
           <span className="sr-only">{t('editor-redo', { defaultValue: 'Redo' })}</span>
         </button>
       </div>
+
+      {/* Ghosts are dense on a busy track, and sometimes the author wants to see
+          the chart they have rather than every candidate for one (§6). */}
+      <button
+        type="button"
+        aria-pressed={showGhosts}
+        title={t('editor-ghosts', { defaultValue: 'Onset ghosts' })}
+        onClick={() => setShowGhosts(!showGhosts)}
+        className={cn(
+          'flex h-9 w-9 items-center justify-center transition-colors',
+          showGhosts ? 'neumorphic-active' : 'neumorphic-sm',
+        )}
+      >
+        <Ghost className="h-4 w-4" aria-hidden />
+        <span className="sr-only">{t('editor-ghosts', { defaultValue: 'Onset ghosts' })}</span>
+      </button>
 
       <PlaytestControls />
 

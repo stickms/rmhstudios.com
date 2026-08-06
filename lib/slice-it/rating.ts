@@ -41,6 +41,7 @@
  * `rating.server.ts`.
  */
 
+import type { SliceType } from './constants';
 import type { Slice } from './types';
 
 /**
@@ -53,12 +54,20 @@ import type { Slice } from './types';
  * make a chart harder — that is priced by the modifier bonus in `scoring.ts`,
  * not here.
  *
- * Local rather than imported from `constants.ts` on purpose: this is a
- * statement about what the RATER counts, not about what the engine spawns, and
- * the two are allowed to diverge. `SLICE_TYPES` growing a new entry should not
- * silently change every rating in the library.
+ * Enumerated positively — the types that DO count — rather than as
+ * `SLICE_TYPES` minus an exclusion list. The difference matters when a new type
+ * is added: an exclusion list silently opts it in and changes every rating in
+ * the library, while this fails to count it until somebody decides it should be
+ * counted. Typed against `SliceType`, so a type that is renamed or removed is a
+ * compile error here rather than a set entry that quietly matches nothing.
  */
-const RATED_TYPES = new Set(['TAP', 'LONG', 'DOUBLE']);
+const RATED_TYPES: ReadonlySet<SliceType> = new Set<SliceType>([
+  'STANDARD',
+  'MOVING',
+  'LONG',
+  'SILENT',
+  'SWITCH',
+]);
 
 /**
  * Same-lane gap under which two consecutive notes read as a jack rather than as
@@ -224,7 +233,16 @@ export function rateChartDetailed(notes: readonly Slice[], duration = 0): Rating
   const compressed = COMPRESSION_SCALE * Math.pow(Math.max(0, raw), COMPRESSION_EXPONENT);
   const rating = round1(Math.min(MAX_RATING, compressed));
 
-  return { peakNps, sustainedNps, jackDensity, burstScore, holdShare, ratedNotes: rated.length, raw, rating };
+  return {
+    peakNps,
+    sustainedNps,
+    jackDensity,
+    burstScore,
+    holdShare,
+    ratedNotes: rated.length,
+    raw,
+    rating,
+  };
 }
 
 /**
@@ -293,7 +311,10 @@ function percentileOverWindow(
 function countJacks(notes: readonly Slice[]): number {
   let n = 0;
   for (let i = 1; i < notes.length; i++) {
-    if (notes[i].lane === notes[i - 1].lane && notes[i].time - notes[i - 1].time < JACK_WINDOW_SEC) {
+    if (
+      notes[i].lane === notes[i - 1].lane &&
+      notes[i].time - notes[i - 1].time < JACK_WINDOW_SEC
+    ) {
       n++;
     }
   }
@@ -313,6 +334,108 @@ function longestRun(times: readonly number[], gap: number): number {
 
 function round1(value: number): number {
   return Math.round(value * 10) / 10;
+}
+
+/* ══ R2 — the skill weighting ═════════════════════════════════════════════ */
+
+/**
+ * The weighting that turns a set of per-chart bests into one skill number.
+ *
+ * It lives here, beside the chart rating, for two reasons. It is pure
+ * arithmetic over numbers — no database, no session, nothing server-shaped — so
+ * it can be tested without a Postgres, which the repository does not have. And
+ * a results screen wanting to say "this run is worth 47 rating" needs it on the
+ * client. The database half (which rows count, and writing the answer back) is
+ * `rating.server.ts`.
+ *
+ * The same disclaimer as the file header applies to every constant below.
+ */
+
+/**
+ * Geometric decay applied down the sorted list of per-chart contributions.
+ *
+ * This is what makes the number a skill measure rather than a play counter: a
+ * player's 200th-best chart contributes `0.95^199 ≈ 0.004` of its value, so a
+ * hundred more easy clears move the total by less than one good run on a hard
+ * chart does. The top ~50 are effectively the whole number.
+ */
+export const SKILL_DECAY = 0.95;
+
+/**
+ * Accuracy is raised to this power before it multiplies the chart rating.
+ *
+ * The top of the accuracy range is where all the difficulty is. 99% is not
+ * 1.03× as good as 96% — it is several orders more practice — and a linear
+ * weight would say otherwise. At 12: 99% keeps 89% of a chart's value, 96%
+ * keeps 61%, 90% keeps 28%, 80% keeps 7%. Scraping a clear on a hard chart is
+ * worth something, and is worth much less than playing it well.
+ */
+export const SKILL_ACCURACY_EXPONENT = 12;
+
+/** Scales the result into human-readable territory. Cosmetic, not structural. */
+export const SKILL_SCALE = 100;
+
+/**
+ * How many per-chart contributions are considered.
+ *
+ * At {@link SKILL_DECAY}, contribution 500 is weighted `0.95^499 ≈ 1e-11`;
+ * anything past a few hundred is arithmetically absent. The cap exists so the
+ * query behind it is bounded for a player with thousands of ranked scores, not
+ * because the tail would otherwise matter.
+ */
+export const SKILL_CONTRIBUTION_CAP = 500;
+
+/** One chart's best performance, as the skill rating sees it. */
+export interface SkillContribution {
+  /** The chart's C3 rating, 0–{@link MAX_RATING}. */
+  chartRating: number;
+  /** 0–1. */
+  accuracy: number;
+}
+
+/**
+ * One entry's value before decay. Also the comparison key for "best per chart".
+ *
+ * Both inputs are floored through {@link nonNegative}/{@link clamp01} rather
+ * than trusted. `Math.max(0, NaN)` is `NaN`, and one NaN anywhere in the list
+ * propagates through the sum to make the player's entire rating NaN — which
+ * then goes into a `Float` column that the global board's `ORDER BY` reads. A
+ * single malformed `Chart.rating` must not be able to erase one account from
+ * the leaderboard.
+ */
+export function contributionOf(c: SkillContribution): number {
+  return (
+    nonNegative(c.chartRating) *
+    Math.pow(clamp01(c.accuracy), SKILL_ACCURACY_EXPONENT) *
+    SKILL_SCALE
+  );
+}
+
+/**
+ * The skill rating for a set of per-chart bests.
+ *
+ * Pure and total: it sorts a copy, never mutates the input, and returns 0 for
+ * an empty list.
+ *
+ * Input must be **one entry per chart**. That rule is what stops a chart played
+ * four hundred times from counting four hundred times, and this function cannot
+ * enforce it because it cannot see chart identity — `collectContributions()` in
+ * `rating.server.ts` is what guarantees it.
+ */
+export function skillRating(best: readonly SkillContribution[]): number {
+  return best
+    .map(contributionOf)
+    .sort((a, b) => b - a)
+    .slice(0, SKILL_CONTRIBUTION_CAP)
+    .reduce((sum, value, i) => sum + value * Math.pow(SKILL_DECAY, i), 0);
+}
+
+function clamp01(value: number): number {
+  return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
+}
+
+function nonNegative(value: number): number {
+  return Number.isFinite(value) ? Math.max(0, value) : 0;
 }
 
 /**

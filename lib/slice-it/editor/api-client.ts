@@ -11,7 +11,14 @@ import type { SliceSong } from '@/lib/slice-it/types';
 import type { ChartDto, ChartRevisionDto } from './api-schemas';
 import { emptyChart } from './store';
 import type { EditorLoadPayload } from './store';
-import { toEditorNotes, type Charts, type Difficulty, type Slice } from './types';
+import {
+  toEditorNotes,
+  type Charts,
+  type Difficulty,
+  type Slice,
+  type SvPoint,
+  type TimingPoint,
+} from './types';
 import { sortNotes } from './commands';
 
 export class ChartApiError extends Error {
@@ -62,10 +69,14 @@ export function toLoadPayload(song: SliceSong, dtos: readonly ChartDto[]): Edito
   const keys = dtos[0]?.keys ?? 2;
   const charts = {} as Charts;
   const chartIds = {} as Record<Difficulty, string | null>;
+  const chartStatus = {} as Record<Difficulty, string>;
 
   for (const difficulty of DIFFICULTIES) {
     const dto = dtos.find((chart) => chart.difficulty === difficulty);
     chartIds[difficulty] = dto?.id ?? null;
+    // 'draft' for a difficulty with no row yet: nothing exists, so nothing is
+    // published, and the publish button must not offer to un-publish it.
+    chartStatus[difficulty] = dto?.status ?? 'draft';
     if (!dto) {
       charts[difficulty] = emptyChart(difficulty, keys);
       continue;
@@ -96,14 +107,42 @@ export function toLoadPayload(song: SliceSong, dtos: readonly ChartDto[]): Edito
     keys,
     charts,
     chartIds,
+    chartStatus,
     timingPoints: first?.timingPoints ?? [],
     svPoints: first?.svPoints ?? [],
   };
 }
 
+/**
+ * Publish or un-publish one difficulty (§9, §16 phase 7).
+ *
+ * The server lints again before it accepts a publish and answers 422 with the
+ * blocking issues. That is not redundancy with the editor's own panel: the
+ * panel is what the author sees, this endpoint is what is true, and the panel
+ * runs on a debounce that a fast click can outrun.
+ */
+export async function publishChart(chartId: string, status: 'public' | 'draft'): Promise<ChartDto> {
+  return json<ChartDto>(
+    await fetch(`/api/slice-it/charts/${encodeURIComponent(chartId)}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ status }),
+    }),
+  );
+}
+
 export interface SaveChartInput {
   chartId: string;
   notes: Slice[];
+  /**
+   * The timing map and SV markers (§4.2, phase 8).
+   *
+   * Sent on every write rather than only when they changed: they live on each
+   * `Chart` row, the route replaces them wholesale, and omitting them on a note
+   * save would be indistinguishable from clearing them.
+   */
+  timingPoints?: TimingPoint[];
+  svPoints?: SvPoint[];
   kind?: 'autosave' | 'manual' | 'publish';
   /**
    * `keepalive` on the unload path. A normal fetch is cancelled when the
@@ -119,7 +158,12 @@ export async function saveChart(input: SaveChartInput): Promise<ChartDto> {
     await fetch(`/api/slice-it/charts/${encodeURIComponent(input.chartId)}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ notes: input.notes, kind: input.kind ?? 'autosave' }),
+      body: JSON.stringify({
+        notes: input.notes,
+        kind: input.kind ?? 'autosave',
+        ...(input.timingPoints ? { timingPoints: input.timingPoints } : {}),
+        ...(input.svPoints ? { svPoints: input.svPoints } : {}),
+      }),
       keepalive: input.keepalive,
       signal: input.signal,
     }),

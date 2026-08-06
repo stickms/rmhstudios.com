@@ -107,17 +107,23 @@ const EMPTY_STRETCH_SECONDS = 8;
 const LEAD_IN_SECONDS = 2;
 
 /**
- * How far off the nearest grid position a note may sit, as a fraction of the
- * beat. Matches the charter's own snap tolerance in spirit: it accepts up to a
- * ~0.18-beat error when quantising, and a note further from the grid than that
- * was not written against the grid at all.
+ * On-grid, exactly as the editor already defines it.
+ *
+ * `quantizationOf()` in `editor/snap.ts` buckets a note by the finest of these
+ * divisions it lands within 0.02 of a beat of, and calls anything else
+ * "off-grid" — that is the note the timeline already draws grey. Reusing the
+ * same divisions and the same tolerance here means the grey note and the lint
+ * warning cannot disagree; a second, stricter definition living in the linter
+ * would produce warnings about notes the editor is colouring as perfectly fine.
+ *
+ * The tolerance is purely fractional, with no absolute floor, for a reason
+ * worth writing down: a 55 ms floor (the charter's, which is right for a
+ * *quantiser*) makes this rule unreachable above ~85 BPM, because at those
+ * tempos no position in a beat is more than 42 ms from some subdivision of it.
+ * A rule that cannot fire is worse than no rule, because it reads as passing.
  */
-const OFF_GRID_FRACTION = 0.18;
-/** …with an absolute floor, so a 200 BPM track does not get a stricter rule. */
-const OFF_GRID_SECONDS = 0.055;
-
-/** Grid positions within a beat that count as on-grid, as fractions. */
-const GRID_FRACTIONS = [0, 1 / 4, 1 / 3, 1 / 2, 2 / 3, 3 / 4, 1];
+const GRID_DIVISIONS = [1, 2, 3, 4, 6, 8];
+const OFF_GRID_BEAT_TOLERANCE = 0.02;
 
 const guardSeconds = INPUT_COOLDOWN_MS / 1000;
 
@@ -189,7 +195,7 @@ export function lintNotes(input: LintInput): LintFinding[] {
     /* Off the grid. */
     if (input.beats && input.beats.length >= 2) {
       const error = gridError(note.time, input.beats);
-      if (error && error.seconds > Math.min(OFF_GRID_SECONDS, error.beatLength * OFF_GRID_FRACTION)) {
+      if (error && error.seconds > error.beatLength * OFF_GRID_BEAT_TOLERANCE) {
         findings.push({
           noteId: note.id,
           time: note.time,
@@ -308,8 +314,9 @@ function gridError(
 
   const fraction = (time - start) / beatLength;
   let best = Infinity;
-  for (const candidate of GRID_FRACTIONS) {
-    best = Math.min(best, Math.abs(fraction - candidate));
+  for (const division of GRID_DIVISIONS) {
+    const scaled = fraction * division;
+    best = Math.min(best, Math.abs(scaled - Math.round(scaled)) / division);
   }
   return { seconds: best * beatLength, beatLength };
 }

@@ -38,13 +38,12 @@ import {
   HEALTH_DELTA,
   HEALTH_MAX,
   HIT_WINDOWS,
-  HOLD_RELEASE_POINTS,
   HOLD_TICK_MAX_STEP_SEC,
   HOLD_TICK_POINTS_PER_SECOND,
   INPUT_COOLDOWN_MS,
   JUDGEMENT_COLORS,
   JUDGEMENT_ORDER,
-  STRICT_TIMING_FACTOR,
+  RELEASE_WINDOW_SCALE,
 } from './constants';
 import type { BeatMap, HitResult, RunStats, Slice } from './types';
 import { MIN_TIMING_SAMPLES, type TimingSummary } from './integrity';
@@ -171,8 +170,10 @@ export class GameEngine {
   private failMode: 'fail' | 'survive' = 'fail';
   /** Sticky: once the gauge has touched zero, its score bonus is gone. */
   private gaugeBroken = false;
-  /** True when the gauge ended this run. Solo only. */
+  /** True when a fail-condition modifier ended this run. Solo only. */
   private failed = false;
+  /** Which one. `null` until {@link failed} is true — see {@link fail}. */
+  private failReason: 'health' | 'perfectionist' | null = null;
 
   /** Running mean/variance of hit timing error (Welford). See `recordOffset`. */
   private offsetCount = 0;
@@ -283,7 +284,13 @@ export class GameEngine {
     this.slices = prepareChart(map, modifiers).sort((a, b) => a.time - b.time);
     // Bombs and silent notes never enter the accuracy denominator, so neither do
     // they count toward "misses left for grade X" — see `missesAllowedFor`.
-    this.totalNotes = scorableNoteCount(this.slices);
+    //
+    // G5 — a LONG note's release is now judged (and counted) separately from
+    // its head, so a chart's maximum reachable `notesResolved` is one *more*
+    // than its note count for every LONG note in it. Sized here, once, rather
+    // than recomputed on every frame `missesAllowedFor` reads it.
+    const releasableHolds = this.slices.filter((s) => s.type === 'LONG' && !!s.duration).length;
+    this.totalNotes = scorableNoteCount(this.slices) + releasableHolds;
 
     this.reset();
     store.setSongId(map.id);
@@ -323,6 +330,7 @@ export class GameEngine {
     this.health = HEALTH_MAX;
     this.gaugeBroken = false;
     this.failed = false;
+    this.failReason = null;
     this.offsetCount = 0;
     this.offsetMean = 0;
     this.offsetM2 = 0;
@@ -384,10 +392,6 @@ export class GameEngine {
     return this.audioManager.getCurrentTime() - offsetSeconds;
   }
 
-  private get strictFactor(): number {
-    return useSliceItStore.getState().modifiers.strictTiming ? STRICT_TIMING_FACTOR : 1;
-  }
-
   /**
    * The score multiplier this run is currently earning.
    *
@@ -401,9 +405,27 @@ export class GameEngine {
     });
   }
 
-  /** The full miss window in seconds, at the current speed and strictness. */
+  /**
+   * The full miss window in seconds, at the current speed and timing factor.
+   *
+   * Routed through the shared `timingScale()` (A9) rather than a local
+   * `strictFactor` getter that only knew about Strict Timing — this is also
+   * `getTimingScale()`'s own formula, so "how far off can a press be and still
+   * target something" and "how far off can a press be and still judge as
+   * something" never drift apart just because one of them forgot Lenient
+   * Timing exists.
+   */
   private get missWindow(): number {
-    return HIT_WINDOWS.BAD * this.strictFactor * this.speedMultiplier;
+    return HIT_WINDOWS.BAD * timingScale(useSliceItStore.getState().modifiers);
+  }
+
+  /**
+   * G5 — the window scale a hold's RELEASE is judged at: wider than a tap's
+   * by {@link RELEASE_WINDOW_SCALE}, on top of whatever the run's own timing
+   * factor and speed already do to it.
+   */
+  private releaseTimingScale(): number {
+    return timingScale(useSliceItStore.getState().modifiers) * RELEASE_WINDOW_SCALE;
   }
 
   /**
@@ -455,16 +477,25 @@ export class GameEngine {
     if (this.activeHolds.size > 0) {
       for (const [lane, slice] of this.activeHolds) {
         const holdEnd = slice.time + (slice.duration ?? 0);
-        if (currentTime > holdEnd + missWindow) {
+        // G5 — the timeout boundary is the RELEASE window, not the tap one: a
+        // hold nobody let go of is judged exactly like a release that landed
+        // outside `releaseTimingScale()`'s BAD window, because that is what it
+        // is. Using the narrower tap `missWindow` here would fire this sweep
+        // before `submitRelease` (had the player actually released late) would
+        // itself have called it a MISS.
+        if (currentTime > holdEnd + HIT_WINDOWS.BAD * this.releaseTimingScale()) {
           this.activeHolds.delete(lane);
           this.holdBilledTo.delete(lane);
+          // A release nobody made is now a judged event like any other — the
+          // whole point of G5 is that an unjudged tail no longer exists.
+          this.notesResolved++;
+          this.hitPoints += accuracyWeight('MISS');
+          this.judgements.MISS += 1;
           this.breakCombo();
           this.pushFeedback('MISS', lane, FEEDBACK_COLORS.MISS);
-          // Not a judgement — the head was already resolved and counted — but it
-          // is a dropped note, so the gauge treats it as one.
           this.applyHealth('MISS');
-          store.setScore(this.score, this.combo, this.speedMultiplier);
-          store.setMaxCombo(this.maxCombo);
+          this.checkFailConditions('MISS');
+          this.commit();
         } else if (currentTime < holdEnd) {
           const billedTo = this.holdBilledTo.get(lane) ?? currentTime;
           // Clamped: a stall must not pay out the time the player was absent.
@@ -557,6 +588,19 @@ export class GameEngine {
     this.resolve(targeted, result, this.getEffectiveLane(targeted, currentTime), offset);
   }
 
+  /**
+   * G5 — judge a hold's RELEASE the same way a tap is judged: through the
+   * shared `judge()`, at a wider window (`releaseTimingScale`), folded into
+   * the same accuracy denominator and judgement histogram.
+   *
+   * Before this, releasing anywhere inside a flat window paid a fixed bonus
+   * and releasing outside it paid partial credit for how much of the hold was
+   * completed — binary either way, and invisible to accuracy: a hold's tail
+   * was never judged at all, so an LN chart's accuracy read the same whether
+   * every release was dead-center or barely inside the window. Now it is one
+   * more judgement like any other, which is the actual point: there is
+   * something to improve at.
+   */
   submitRelease(lane: number): void {
     const held = this.activeHolds.get(lane);
     if (!held) return;
@@ -566,21 +610,23 @@ export class GameEngine {
     const currentTime = this.now();
     const holdEnd = held.time + (held.duration ?? 0);
     const scoreMultiplier = this.runMultiplier();
-    const window = this.missWindow;
-    const comboFactor = this.combo > 0 ? this.combo : 1;
 
-    if (currentTime >= holdEnd - window && currentTime <= holdEnd + window) {
-      this.score += Math.floor(HOLD_RELEASE_POINTS * comboFactor * scoreMultiplier);
-      this.pushFeedback('HOLD OK', lane, '#0891b2');
-    } else {
-      // Dropped early — partial credit for the part you held, but the combo
-      // goes, because the note was not completed.
-      const total = held.duration ?? 0;
-      const ratio = total > 0 ? Math.min(1, Math.max(0, (currentTime - held.time) / total)) : 0;
-      this.score += Math.floor(HOLD_RELEASE_POINTS * ratio * comboFactor * scoreMultiplier);
+    const offset = currentTime - holdEnd;
+    const result = judge(offset, this.releaseTimingScale());
+
+    this.notesResolved++;
+    this.hitPoints += accuracyWeight(result);
+    this.judgements[result] += 1;
+    // `pointsFor` already returns 0 for MISS/BAD, so this is safe unconditional
+    // — combo is read, not advanced: the LONG note's head already spent its one
+    // combo increment, and the release only decides whether that chain survives.
+    this.score += pointsFor(result, this.combo, scoreMultiplier);
+
+    if (result === 'MISS' || result === 'BAD') {
       this.breakCombo();
-      this.pushFeedback('DROPPED', lane, '#64748b');
     }
+    this.pushFeedback(result, lane, FEEDBACK_COLORS[result], offset);
+    this.checkFailConditions(result);
     this.commit();
   }
 
@@ -723,7 +769,10 @@ export class GameEngine {
     this.pushFeedback(result, lane, FEEDBACK_COLORS[result], offset);
     // Last, so the histogram and the combo are already updated if this ends the
     // run — the results screen must describe the note that killed you.
-    if (result !== 'NONE') this.applyHealth(result);
+    if (result !== 'NONE') {
+      this.applyHealth(result);
+      this.checkFailConditions(result);
+    }
     this.commit();
   }
 
@@ -783,18 +832,60 @@ export class GameEngine {
     if (this.health > 0) return;
 
     this.gaugeBroken = true;
-    // Multiplayer: the run continues, the multiplier does not.
-    if (this.failMode === 'survive') return;
+    this.fail('health');
+  }
 
+  /**
+   * End the run outright for a fail-condition modifier — the health gauge
+   * draining to zero, or (M6) Perfectionist landing below PERFECT.
+   *
+   * The multiplayer guard and the `finished` re-entrancy check live here once
+   * rather than in every caller, so a second fail condition tripping in the
+   * same frame (the gauge breaking on the same judgement that also failed
+   * Perfectionist) can't re-run the "stop the song, flip the status" sequence
+   * twice or overwrite the reason that actually got there first.
+   */
+  private fail(reason: 'health' | 'perfectionist'): void {
+    // Multiplayer: the run continues, the multiplier does not. Perfectionist
+    // never reaches here in a match at all — `forMultiplayer` (`modifiers.ts`)
+    // strips it before the modifiers ever land in the store — but the guard
+    // stays, for the same reason `checkFailConditions` re-checks the modifier
+    // itself rather than trusting that upstream cleanup ran.
+    if (this.failMode === 'survive') return;
     if (this.finished) return;
+
     this.finished = true;
     this.failed = true;
+    this.failReason = reason;
     this.audioManager.stop();
     // `FINISHED`, not a new `FAILED` status. The store's `GameStatus` is read by
     // every screen in the game and a third value would have to be handled by all
-    // of them; what the results screen needs to say "you failed" is the flag on
-    // this engine, which it already holds. See `getRunStats().failed`.
+    // of them; what the results screen needs to say "you failed" — and why —
+    // is the flag on this engine, which it already holds. See
+    // `getRunStats().failed`/`.failReason`.
     useSliceItStore.getState().setStatus('FINISHED');
+  }
+
+  /**
+   * M6 — Perfect-or-die. Anything below PERFECT ends the run.
+   *
+   * Called from every place a `HitResult` is produced for a real note — a tap,
+   * a hold release, and the hold-timeout sweep's synthetic MISS — so the rule
+   * is "any judged note", not "any tapped note". A ghost tap and a sliced
+   * bomb don't produce a `HitResult` at all and so never reach here, which is
+   * correct: neither is a note the chart asked the player to judge.
+   */
+  private checkFailConditions(result: Exclude<HitResult, 'NONE'>): void {
+    const modifiers = useSliceItStore.getState().modifiers;
+    if (modifiers.perfectionist && result !== 'MARVELOUS' && result !== 'PERFECT') {
+      this.fail('perfectionist');
+    }
+    // Sudden Death has no engine-side effect to guard here: `suddenDeath` ends
+    // nothing today (see `docs/_handoff/note-vocab-requests.md`). The
+    // exclusion that keeps Perfectionist from double-paying its bonus if
+    // Sudden Death is ever wired up lives at the modifier level regardless —
+    // `applyExclusions` in `modifiers.ts` — so this function needs no update
+    // when that lands.
   }
 
   /**
@@ -1104,6 +1195,7 @@ export class GameEngine {
       health: this.health,
       gaugeBroken: this.gaugeBroken,
       failed: this.failed,
+      failReason: this.failReason,
       isFullCombo: this.isFullCombo,
       isPerfect: this.isPerfect,
     };

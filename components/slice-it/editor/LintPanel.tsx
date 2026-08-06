@@ -15,17 +15,28 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, OctagonAlert } from 'lucide-react';
+import { toast } from 'sonner';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+  OctagonAlert,
+  Upload,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { publishChart } from '@/lib/slice-it/editor/api-client';
 import { useEditorStore } from '@/lib/slice-it/editor/store';
 import { groupFindings, type LintCode, type ScopedFinding } from '@/lib/slice-it/editor/lint';
-import type { Difficulty } from '@/lib/slice-it/editor/types';
 import { formatTime } from './Timeline';
 
 /** How many findings one expanded group lists before it stops. */
 const ROWS_PER_GROUP = 12;
 
-export function LintPanel() {
+export function LintPanel({
+  onBeforePublish,
+}: { onBeforePublish?: () => Promise<void> | void } = {}) {
   const { t } = useTranslation('r-slice-it');
   const lint = useEditorStore((s) => s.lint);
   const active = useEditorStore((s) => s.active);
@@ -33,8 +44,12 @@ export function LintPanel() {
   const setPlayhead = useEditorStore((s) => s.setPlayhead);
   const setSelection = useEditorStore((s) => s.setSelection);
   const setLintFocus = useEditorStore((s) => s.setLintFocus);
+  const chartId = useEditorStore((s) => s.chartIds[s.active]);
+  const status = useEditorStore((s) => s.chartStatus[s.active]);
+  const setChartStatus = useEditorStore((s) => s.setChartStatus);
   const [scopeAll, setScopeAll] = useState(false);
   const [expanded, setExpanded] = useState<LintCode | null>(null);
+  const [publishing, setPublishing] = useState(false);
 
   const groups = groupFindings(lint, scopeAll ? undefined : active);
   const errors = groups.reduce(
@@ -62,6 +77,42 @@ export function LintPanel() {
     setPlayhead(finding.time);
     setLintFocus({ code: finding.code, time: finding.time });
     if (finding.noteId) setSelection([finding.noteId]);
+  };
+
+  const activeErrors = lint.perDifficulty[active]?.errors ?? 0;
+  const published = status === 'public' || status === 'ranked';
+
+  /**
+   * Publish the open difficulty.
+   *
+   * Saves first, always. Publishing flips a flag on the row the SERVER holds,
+   * and unsaved edits are not in that row — an author who fixed the last error
+   * and hit Publish would otherwise publish the version that still had it, and
+   * the endpoint would lint the old notes and refuse for a reason that is no
+   * longer on screen.
+   */
+  const onPublish = async () => {
+    if (!chartId || publishing) return;
+    setPublishing(true);
+    try {
+      await onBeforePublish?.();
+      const next = published ? 'draft' : 'public';
+      const dto = await publishChart(chartId, next);
+      setChartStatus(active, dto.status);
+      toast.success(
+        next === 'public'
+          ? t('editor-publish-ok', { defaultValue: 'Chart published' })
+          : t('editor-unpublish-ok', { defaultValue: 'Chart returned to draft' }),
+      );
+    } catch (cause: unknown) {
+      toast.error(
+        cause instanceof Error
+          ? cause.message
+          : t('editor-publish-failed', { defaultValue: 'Could not publish this chart' }),
+      );
+    } finally {
+      setPublishing(false);
+    }
   };
 
   return (
@@ -174,6 +225,31 @@ export function LintPanel() {
           })}
         </ul>
       )}
+
+      <div className="flex flex-col gap-1.5">
+        <button
+          type="button"
+          onClick={() => void onPublish()}
+          disabled={!chartId || publishing || (!published && activeErrors > 0)}
+          className="neumorphic-sm flex h-9 items-center justify-center gap-2 px-3 text-sm disabled:opacity-40"
+        >
+          {publishing ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          ) : (
+            <Upload className="h-4 w-4" aria-hidden />
+          )}
+          {published
+            ? t('editor-unpublish', { defaultValue: 'Return to draft' })
+            : t('editor-publish', { defaultValue: 'Publish this difficulty' })}
+        </button>
+        {!published && activeErrors > 0 && (
+          <p className="text-xs opacity-70">
+            {t('editor-publish-blocked', {
+              defaultValue: 'Errors block publishing; warnings do not.',
+            })}
+          </p>
+        )}
+      </div>
     </section>
   );
 }

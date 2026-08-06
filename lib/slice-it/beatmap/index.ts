@@ -45,8 +45,54 @@ import { computeSpectrogram } from './spectrum';
 import { detectOnsets, onsetStrengthSignal } from './onsets';
 import { bpmFromBeats, estimateTempo, syntheticBeats, trackBeats } from './tempo';
 import { buildCharts, quantizeOnsets } from './charter';
+import { computeEnvelope, type PeakEnvelope } from './envelope';
+import { detectSections, type Section } from './sections';
 
 export type { AudioLike } from './audio';
+export type { PeakEnvelope } from './envelope';
+export type { Section } from './sections';
+
+/**
+ * One detected onset, as persisted for the editor (§6).
+ *
+ * `kept: false` is the valuable half. Those are the candidates the 55 ms
+ * quantisation filter in `charter.ts` rejected — the moments the generator
+ * considered and turned down — and they are exactly what a human editor wants
+ * to see, because "the generator missed the snare in bar 2" becomes one click
+ * on a ghost instead of a manual placement. They cannot be recovered later at
+ * any price: the spectrogram they came from is gone.
+ *
+ * Field names are one character because there are ~1500 of these in a 4-minute
+ * track and this is JSON in a database column: `{"t":12.34,"s":0.8,...}` is
+ * ~34 bytes against ~70 for the spelled-out version, which is the difference
+ * between a 50 KB and a 105 KB blob for no information at all.
+ */
+export interface StoredOnset {
+  /** Time, seconds. */
+  t: number;
+  /** Detection strength, 0–1. */
+  s: number;
+  /** Fraction of the frame's energy below 250 Hz — the charter's lane bias. */
+  l: number;
+  /** Fraction above 2 kHz. */
+  h: number;
+  /** True when this onset survived quantisation and could become a note. */
+  k: boolean;
+}
+
+/**
+ * What the editor needs and the analyser would otherwise discard (§6).
+ *
+ * Budget, for a 4-minute track: envelope ~64 KB base64, onsets ~50 KB,
+ * sections well under 1 KB. That is the whole reason the spectrogram itself is
+ * not here — it is ~40 MB, and `analysisData` is a JSON column on a row that is
+ * read whenever anyone opens the song.
+ */
+export interface AnalysisArtefacts {
+  envelope: PeakEnvelope;
+  onsets: StoredOnset[];
+  sections: Section[];
+}
 
 /**
  * Bumped whenever the pipeline changes in a way that produces different charts.
@@ -66,6 +112,8 @@ export interface GeneratedBeatmap extends BeatMap {
   /** 0–1 from the tempo estimator; low means the grid is a guess. */
   tempoConfidence: number;
   slices: Record<Difficulty, Slice[]>;
+  /** Editor artefacts — §6. Optional so an older stored blob is still valid. */
+  artefacts?: AnalysisArtefacts;
 }
 
 export interface GenerateOptions {
@@ -135,6 +183,18 @@ export function generateBeatmap(audio: AudioLike, options: GenerateOptions): Gen
   const onsets = detectOnsets(spec, odf, { maxSustainSeconds: (60 / bpm) * 4 });
   let quantized = quantizeOnsets(onsets, beats);
 
+  /* Which candidates survived quantisation, by spectrogram frame.
+   *
+   * Frame, not time: `quantizeOnsets` SNAPS the time it returns, so comparing
+   * output times to input times would match nothing exactly and everything
+   * approximately. The frame index is carried through untouched, and peak
+   * picking guarantees one onset per frame (its 30 ms minimum gap is larger
+   * than the 11.6 ms hop), so it is a faithful identity. This has to be read
+   * from the FIRST quantisation: the metronome fallback below replaces the
+   * pool with synthetic notes whose frame is 0, and every real onset would
+   * then read as rejected. */
+  const keptFrames = new Set(quantized.map((note) => note.frame));
+
   // Nothing survived quantisation — a spoken-word track, or pure ambience.
   // Chart the grid itself so the song is playable at all.
   if (quantized.length < 8) {
@@ -164,6 +224,21 @@ export function generateBeatmap(audio: AudioLike, options: GenerateOptions): Gen
     noteCounts,
     tempoConfidence: Number(tempo.confidence.toFixed(3)),
     analysisVersion: BEATMAP_VERSION,
+    artefacts: {
+      envelope: computeEnvelope(samples, sampleRate),
+      // Rounded on the way out: three decimals is a millisecond, which is finer
+      // than the 11.6 ms hop these times came from, and two decimals of strength
+      // is finer than the strip can draw. Full float precision here would be a
+      // third again as much JSON expressing noise.
+      onsets: onsets.map((onset) => ({
+        t: Number(onset.time.toFixed(3)),
+        s: Number(onset.strength.toFixed(2)),
+        l: Number(onset.lowRatio.toFixed(2)),
+        h: Number(onset.highRatio.toFixed(2)),
+        k: keptFrames.has(onset.frame),
+      })),
+      sections: detectSections(spec, beats, duration),
+    },
   };
 }
 

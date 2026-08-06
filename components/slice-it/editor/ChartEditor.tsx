@@ -5,12 +5,17 @@
  *
  * Design doc: `docs/slice-it-chart-editor.md` §3.1, §12.4, §13, §14.
  *
- * Phases 1–5 of §16: the document loads, the timeline draws it, edits go through
+ * Phases 1–8 of §16: the document loads, the timeline draws it, edits go through
  * the command stack, four difficulties stay nested, the work survives a closed
- * tab, the real `GameEngine` plays the edited chart from the playhead (§10), and
- * the generator can be re-run at four scopes with a preview (§8). The waveform
- * (§6), the linter (§9) and timing points are marked with TODOs at the points
- * they attach to.
+ * tab, the real `GameEngine` plays the edited chart from the playhead (§10), the
+ * generator can be re-run at four scopes with a preview (§8), the analyser's
+ * waveform and rejected onset candidates are drawn and clickable (§6), the
+ * linter runs off the edit path and gates publish (§9), and timing/SV markers
+ * are editable (§4.2).
+ *
+ * What remains is recorded in `docs/_handoff/editor-phase678-requests.md`: the
+ * engine does not yet READ the SV markers this shell can author, and the miss
+ * heatmap (§4.4b) waits on `O1`.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -19,6 +24,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { ArrowLeft, Keyboard, Loader2 } from 'lucide-react';
 import { DIFFICULTIES } from '@/lib/slice-it/constants';
+import { loadArtefacts } from '@/lib/slice-it/editor/artefacts';
 import { loadEditorDocument, saveChart } from '@/lib/slice-it/editor/api-client';
 import { retypeNotes } from '@/lib/slice-it/editor/commands';
 import { nestedDelete, nestedMove } from '@/lib/slice-it/editor/nesting';
@@ -27,9 +33,12 @@ import { startEditorPlaytest, stopEditorPlaytest } from '@/lib/slice-it/editor/p
 import { editorState, useEditorStore } from '@/lib/slice-it/editor/store';
 import { SNAP_DIVISIONS, toSlices } from '@/lib/slice-it/editor/types';
 import type { Difficulty, EditorNote, SliceType, SnapDivision } from '@/lib/slice-it/editor/types';
+import { useLintRunner } from '@/lib/slice-it/editor/useLint';
 import { DifficultyTabs } from './DifficultyTabs';
 import { GeneratePanel } from './GeneratePanel';
+import { LintPanel } from './LintPanel';
 import { NoteInspector } from './NoteInspector';
+import { TimingPanel } from './TimingPanel';
 import { ShortcutSheet } from './ShortcutSheet';
 import { Timeline } from './Timeline';
 import { Toolbar } from './Toolbar';
@@ -53,6 +62,15 @@ export function ChartEditor({ songId }: { songId: string }) {
   const error = useEditorStore((s) => s.error);
   const song = useEditorStore((s) => s.song);
   const lastSavedAt = useEditorStore((s) => s.lastSavedAt);
+  // The timing panel is the timing TOOL's inspector, not a permanent card: a
+  // rail with four cards in it pushes the generate panel off the bottom on a
+  // laptop, and timing is edited in bursts and then left alone for hours.
+  const tool = useEditorStore((s) => s.tool);
+
+  /* The linter runs off the edit path in a worker (§9). Mounted here, once, so
+   * the result is available to the timeline's note rings and the tab badges
+   * whether or not the lint panel itself is on screen. */
+  useLintRunner();
 
   /* ── Load ─────────────────────────────────────────────────────────────── */
   useEffect(() => {
@@ -72,6 +90,37 @@ export function ChartEditor({ songId }: { songId: string }) {
       cancelled = true;
     };
   }, [songId]);
+
+  /* ── Analysis artefacts (§6) ──────────────────────────────────────────── */
+  //
+  // Fetched once the document is open, not before: the waveform is an aid, not
+  // a prerequisite, so blocking the editor on a few hundred KB of envelope
+  // would trade the thing that makes it feel instant for the thing that makes
+  // it feel informed. Failure is silent by design — a song analysed before
+  // artefacts were persisted simply has no waveform and no ghosts.
+  useEffect(() => {
+    if (loadState !== 'ready') return;
+    let cancelled = false;
+    const state = editorState();
+    if (!state.song) return;
+    const densest =
+      state.charts.expert.notes.length > 0 ? state.charts.expert : state.charts[state.active];
+    void loadArtefacts({
+      songId: state.song.id,
+      duration: state.song.duration,
+      bpm: state.song.bpm,
+      fallbackSlices: toSlices(densest.notes),
+    })
+      .then((loaded) => {
+        if (!cancelled) editorState().setArtefacts(loaded);
+      })
+      .catch(() => {
+        /* No waveform, no ghosts. The editor works without them. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [loadState, songId]);
 
   /* ── Saving ───────────────────────────────────────────────────────────── */
   /**
@@ -109,6 +158,11 @@ export function ChartEditor({ songId }: { songId: string }) {
             saveChart({
               chartId: state.chartIds[difficulty] as string,
               notes: toSlices(state.charts[difficulty].notes),
+              // Every row carries the same timing map (§4.2): it is a property
+              // of the song, and a tier saved without it would describe a grid
+              // the other three no longer use.
+              timingPoints: state.timingPoints,
+              svPoints: state.svPoints,
               kind,
               keepalive: options?.keepalive,
             }),
@@ -437,8 +491,9 @@ export function ChartEditor({ songId }: { songId: string }) {
         </div>
         <aside className="hidden w-72 shrink-0 flex-col gap-3 overflow-y-auto lg:flex">
           <NoteInspector />
+          <LintPanel onBeforePublish={() => save('manual')} />
+          {tool === 'timing' && <TimingPanel />}
           <GeneratePanel />
-          {/* TODO(phase 7 — §9): the LINT panel is the next card in this rail. */}
         </aside>
       </div>
 

@@ -10,7 +10,13 @@ import { useSliceItStore } from '@/lib/slice-it/store';
 import { GameEngine } from '@/lib/slice-it/engine';
 import { asset } from '@/lib/storage/asset';
 import { Slider } from '@/components/ui/slider';
-import { MAX_SCROLL_SPEED, MIN_SCROLL_SPEED } from '@/lib/slice-it/constants';
+import {
+  HIT_WINDOWS,
+  JUDGEMENT_COLORS,
+  MAX_SCROLL_SPEED,
+  MIN_SCROLL_SPEED,
+} from '@/lib/slice-it/constants';
+import { timingScale } from '@/lib/slice-it/scoring';
 import { AudioManager } from '@/lib/audio/AudioManager';
 import { addMatchListener } from '@/lib/slice-it/net/client';
 import { useStartRun } from '@/lib/slice-it/useStartRun';
@@ -723,6 +729,61 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                   value={mirror}
                   onChange={setMirror}
                 />
+                {/* M6 — same family as Health Gauge above: a fail condition the
+                    player opts into, not a thing that happens to them. */}
+                <ToggleRow
+                  label={ts('mod-perfectionist', { defaultValue: 'Perfectionist' })}
+                  description={ts('mod-perfectionist-hint', {
+                    defaultValue:
+                      'Anything short of PERFECT ends the run — not just a MISS. Same family as Sudden Death, and mutually exclusive with it: turning this on turns that off. The biggest score bonus in the game.',
+                  })}
+                  value={!!modifiers.perfectionist}
+                  onChange={(next) => setModifiers({ ...modifiers, perfectionist: next })}
+                />
+              </div>
+            </div>
+
+            {/* A9 — Lenient Timing and the windows it produces. Kept as its own
+                section rather than folded into Gameplay: the whole point is to
+                make the abstraction visible, and a toggle sitting right above
+                the numbers it changes is what makes that legible. */}
+            <div className="space-y-4">
+              <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">
+                {ts('timing-windows', { defaultValue: 'Judgement Windows' })}
+              </label>
+              <div className="space-y-3">
+                <ToggleRow
+                  label={ts('mod-lenient-timing', { defaultValue: 'Lenient Timing' })}
+                  description={ts('mod-lenient-timing-hint', {
+                    defaultValue:
+                      'Widens every window instead of shrinking it — the mirror of Strict Timing. Unranked: a run played on wider windows is not comparable to one played on the stock ones, not because it is any less real.',
+                  })}
+                  value={!!modifiers.lenientTiming}
+                  onChange={(next) => setModifiers({ ...modifiers, lenientTiming: next })}
+                />
+                <div className="bg-slice-bg p-6 rounded-3xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]">
+                  <div className="text-[10px] text-slice-text-light font-bold leading-snug mb-3">
+                    {ts('timing-windows-hint', {
+                      defaultValue:
+                        'The actual size of each window right now, at this speed and these modifiers.',
+                    })}
+                  </div>
+                  <dl className="space-y-1.5">
+                    {Object.entries(HIT_WINDOWS).map(([name, seconds]) => (
+                      <div key={name} className="flex items-center justify-between gap-3">
+                        <dt
+                          className="text-[10px] font-black uppercase tracking-wider"
+                          style={{ color: JUDGEMENT_COLORS[name as keyof typeof JUDGEMENT_COLORS] }}
+                        >
+                          {name}
+                        </dt>
+                        <dd className="font-mono text-xs font-bold text-slice-text-darker tabular-nums">
+                          ±{Math.round(seconds * timingScale(modifiers) * 1000)} ms
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
               </div>
             </div>
 

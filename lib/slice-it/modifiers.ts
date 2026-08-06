@@ -27,7 +27,19 @@ import {
 } from './constants';
 import type { Modifiers } from './types';
 
-export const DEFAULT_MODIFIERS: Modifiers = {
+/**
+ * `satisfies Modifiers`, not `: Modifiers` — the two optional fields
+ * (`lenientTiming`, `perfectionist`) are `?:` on the type so a persisted blob
+ * from before they existed keeps loading, but that same optionality would
+ * leak into every reader of `{ ...DEFAULT_MODIFIERS }` (the `.catch()` below,
+ * `store.ts`'s initial state, `normalizeModifiers`'s fallback) if this were
+ * annotated `: Modifiers`: TypeScript widens a spread to the *declared* type
+ * of its source, so `lenientTiming` would read back out as `boolean |
+ * undefined` even though the literal below always sets it. `satisfies` keeps
+ * the literal's own — fully required — inferred shape while still checking it
+ * against `Modifiers`.
+ */
+export const DEFAULT_MODIFIERS = {
   invisible: false,
   speed: 1.0,
   suddenDeath: false,
@@ -41,7 +53,12 @@ export const DEFAULT_MODIFIERS: Modifiers = {
   // be the one where finishing the song is guaranteed.
   healthGauge: false,
   difficulty: 'normal',
-};
+  // A9 / M6 — both off by default, same reasoning as `healthGauge` above: a run
+  // that plays on different windows, or that can end on a GREAT, is a thing a
+  // player opts into.
+  lenientTiming: false,
+  perfectionist: false,
+} satisfies Modifiers;
 
 /**
  * Every field is `.optional()` before its transform, and that is load-bearing.
@@ -89,6 +106,11 @@ export const ModifiersZ: z.ZodType<Modifiers> = z
     oneTrack: BoolZ,
     healthGauge: BoolZ,
     difficulty: DifficultyZ,
+    // A9 / M6 — `BoolZ` already defaults a missing or malformed key to `false`
+    // (see its definition above), which is exactly the safe-when-absent
+    // behaviour a new field needs to avoid a `store.ts` migration.
+    lenientTiming: BoolZ,
+    perfectionist: BoolZ,
   })
   .catch(() => ({ ...DEFAULT_MODIFIERS }));
 
@@ -108,12 +130,32 @@ export function normalizeModifiers(raw: unknown): Modifiers {
  * Enabling both asks the chart to do two contradictory things, and the engine
  * resolves it by silently ignoring one — so resolve it here instead, where the
  * player's most recent intent is still visible.
+ *
+ * A9 — Strict and Lenient Timing are opposite ends of the same knob
+ * (`scoring.ts` `timingScale` already breaks the tie strict-first if both
+ * somehow arrive true), so holding both is resolved here the same way: the
+ * loser is turned off rather than left silently inert, so a badge or a toggle
+ * showing "on" is never lying about what the run is actually doing.
+ *
+ * M6 — Perfectionist (anything below PERFECT ends the run) strictly implies
+ * Sudden Death (anything at MISS ends the run): every condition that fails a
+ * Sudden Death run also fails a Perfectionist one. Holding both would pay the
+ * "one mistake ends it" bonus twice for the one exclusion group, so Sudden
+ * Death is dropped — Perfectionist is the strictly harder claim, and keeps
+ * its own, larger bonus (`MODIFIER_BONUSES.perfectionist`).
  */
 export function applyExclusions(modifiers: Modifiers): Modifiers {
-  if (modifiers.switching && modifiers.oneTrack) {
-    return { ...modifiers, switching: false };
+  let result = modifiers;
+  if (result.switching && result.oneTrack) {
+    result = { ...result, switching: false };
   }
-  return modifiers;
+  if (result.strictTiming && result.lenientTiming) {
+    result = { ...result, lenientTiming: false };
+  }
+  if (result.perfectionist && result.suddenDeath) {
+    result = { ...result, suddenDeath: false };
+  }
+  return result;
 }
 
 /**
@@ -137,6 +179,10 @@ export function forMultiplayer(modifiers: Modifiers): Modifiers {
     ...modifiers,
     speed: Math.max(MULTIPLAYER_MIN_SPEED, modifiers.speed),
     suddenDeath: false,
+    // M6 — Perfectionist is dropped for exactly the reason Sudden Death is:
+    // ending a race at note one and then spectating four minutes of other
+    // people's scores is not a mode anyone chose by ticking a box.
+    perfectionist: false,
   });
 }
 
@@ -197,6 +243,8 @@ export function activeModifierKeys(modifiers: Modifiers): (keyof Modifiers)[] {
   if (modifiers.oneTrack) keys.push('oneTrack');
   if (modifiers.healthGauge) keys.push('healthGauge');
   if (modifiers.suddenDeath) keys.push('suddenDeath');
+  if (modifiers.lenientTiming) keys.push('lenientTiming');
+  if (modifiers.perfectionist) keys.push('perfectionist');
   if (modifiers.speed !== 1) keys.push('speed');
   return keys;
 }

@@ -35,8 +35,35 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { rateChart, RATING_VERSION } from './rating';
+import {
+  contributionOf,
+  rateChart,
+  skillRating,
+  RATING_VERSION,
+  SKILL_CONTRIBUTION_CAP,
+  type SkillContribution,
+} from './rating';
 import type { Slice } from './types';
+
+/**
+ * The weighting itself lives in `rating.ts`, which imports nothing.
+ *
+ * Not for the client's benefit — nothing on the client computes a skill rating
+ * today — but because this module cannot be imported without a `DATABASE_URL`,
+ * and there is no Postgres in this repository's test environment. Arithmetic
+ * that can only be exercised against a live database is arithmetic that is not
+ * exercised. Re-exported so a caller reading about the skill rating here can
+ * import it from here.
+ */
+export {
+  skillRating,
+  contributionOf,
+  SKILL_DECAY,
+  SKILL_ACCURACY_EXPONENT,
+  SKILL_SCALE,
+  SKILL_CONTRIBUTION_CAP,
+  type SkillContribution,
+} from './rating';
 
 /* ══ C3 — writing a rating onto a chart ═══════════════════════════════════ */
 
@@ -159,77 +186,6 @@ function asSlices(notes: unknown): Slice[] {
 /* ══ R2 — the global skill rating ═════════════════════════════════════════ */
 
 /**
- * Geometric decay applied down the sorted list of per-chart contributions.
- *
- * This is what makes the number a skill measure rather than a play counter: a
- * player's 200th-best chart contributes `0.95^199 ≈ 0.004` of its value, so a
- * hundred more easy clears move the total by less than one good run on a hard
- * chart does. The top ~50 are effectively the whole number (they carry ~92% of
- * the maximum possible sum).
- */
-export const SKILL_DECAY = 0.95;
-
-/**
- * Accuracy is raised to this power before it multiplies the chart rating.
- *
- * The top of the accuracy range is where all the difficulty is. 99% is not
- * 1.03× as good as 96% — it is several orders more practice — and a linear
- * weight would say otherwise. At 12: 99% keeps 89% of a chart's value, 96%
- * keeps 61%, 90% keeps 28%, 80% keeps 7%. Scraping a clear on a hard chart is
- * worth something and is worth much less than playing it well.
- *
- * Like everything in `rating.ts`, this exponent is a judgement awaiting real
- * data, not a derivation.
- */
-export const SKILL_ACCURACY_EXPONENT = 12;
-
-/** Scales the result into human-readable territory. Cosmetic, not structural. */
-export const SKILL_SCALE = 100;
-
-/**
- * How many per-chart contributions are considered.
- *
- * At `SKILL_DECAY`, contribution 500 is weighted `0.95^499 ≈ 1e-11`; anything
- * past a few hundred is arithmetically absent. The cap exists so the query is
- * bounded for a player with thousands of ranked scores, not because the tail
- * would otherwise matter.
- */
-export const SKILL_CONTRIBUTION_CAP = 500;
-
-/** One chart's best performance, as the skill rating sees it. */
-export interface SkillContribution {
-  /** The chart's C3 rating, 0–20. */
-  chartRating: number;
-  /** 0–1. */
-  accuracy: number;
-}
-
-/**
- * The skill rating for a set of per-chart bests.
- *
- * Pure and total: it sorts a copy, never mutates the input, and returns 0 for an
- * empty list. Exported separately from the database read so the weighting can be
- * tested without a Postgres.
- *
- * Input is expected to be **one entry per chart** — the "best per chart" rule is
- * what stops a chart played four hundred times from counting four hundred times,
- * and this function cannot enforce it because it cannot see chart identity.
- * {@link collectContributions} is what guarantees it.
- */
-export function skillRating(best: readonly SkillContribution[]): number {
-  return best
-    .map(
-      (b) =>
-        Math.max(0, b.chartRating) *
-        Math.pow(Math.max(0, Math.min(1, b.accuracy)), SKILL_ACCURACY_EXPONENT) *
-        SKILL_SCALE,
-    )
-    .sort((a, b) => b - a)
-    .slice(0, SKILL_CONTRIBUTION_CAP)
-    .reduce((sum, value, i) => sum + value * Math.pow(SKILL_DECAY, i), 0);
-}
-
-/**
  * A player's best performance on each ranked chart.
  *
  * ## Only `ranked` charts, and only the `none` pool
@@ -292,11 +248,6 @@ export async function collectContributions(userId: string): Promise<SkillContrib
   }
 
   return [...bestByChart.values()];
-}
-
-/** One entry's value before decay. The comparison key for "best per chart". */
-function contributionOf(c: SkillContribution): number {
-  return c.chartRating * Math.pow(Math.max(0, Math.min(1, c.accuracy)), SKILL_ACCURACY_EXPONENT);
 }
 
 /**

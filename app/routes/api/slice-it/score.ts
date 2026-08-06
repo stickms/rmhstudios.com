@@ -17,6 +17,8 @@ import {
 } from '@/lib/slice-it/integrity';
 import { verifyRunToken } from '@/lib/slice-it/run-token.server';
 import { poolOf } from '@/lib/slice-it/pools';
+import { evaluateQualification, toRankStatus } from '@/lib/slice-it/ranking.server';
+import { scheduleSkillRecompute } from '@/lib/slice-it/rating.server';
 import { gradeFor } from '@/lib/slice-it/scoring';
 import type { Difficulty } from '@/lib/slice-it/constants';
 import type { SuspicionCode } from '@/lib/slice-it/integrity';
@@ -300,11 +302,35 @@ export const Route = createFileRoute('/api/slice-it/score')({
             });
           }
 
+          // ── R2/R10: the ranking axis ──────────────────────────────────────
+          //
+          // Two separate things happen here, and neither is on the response's
+          // critical path.
+          //
+          // **The skill rating (R2)** is recomputed only on a NEW BEST, and only
+          // on a ranked chart in the `none` pool. That is the whole anti-grind
+          // property in one condition: a run that did not improve on the
+          // player's best for that chart cannot move their rating, so replaying
+          // a chart you have already beaten is worth exactly nothing. It is
+          // fired and not awaited — the score is already stored, and a slow
+          // aggregate must not turn a successful submission into a 500.
+          //
+          // **Qualification (R10)** is re-evaluated on every run, best or not,
+          // because the gates it reads (play count, distinct players, clear
+          // rate) move on every run and not only on good ones. It is reversible
+          // in both directions, so a stale evaluation self-corrects.
+          const chartRankStatus = toRankStatus(chart?.rankStatus);
+          if (isNewBest && modPool === 'none' && chartRankStatus === 'ranked') {
+            scheduleSkillRecompute(userId);
+          }
+
           // Progression is best-effort: a quest engine hiccup must not turn a
           // successful run into a 500 and lose the score the player just set.
+          // The qualification pass joins them for the same reason.
           await Promise.allSettled([
             recordGamePlay(userId),
             reportGameResult(userId, { game: 'slice-it', score }),
+            chart ? evaluateQualification(chart.id) : Promise.resolve(null),
           ]);
 
           return Response.json({
@@ -317,6 +343,8 @@ export const Route = createFileRoute('/api/slice-it/score')({
             grade: gradeFor(accuracy),
             difficulty,
             modPool,
+            /** R10 — whether this run counted toward the global skill rating. */
+            rankStatus: chartRankStatus,
             previousBest: previous?.score ?? null,
             totalScore: profile.totalScore,
             gamesPlayed: profile.gamesPlayed,
@@ -345,11 +373,11 @@ export const Route = createFileRoute('/api/slice-it/score')({
 async function resolveChart(
   chartId: string | undefined,
   songId: string,
-): Promise<{ id: string; chartHash: string } | null> {
+): Promise<{ id: string; chartHash: string; rankStatus: string } | null> {
   if (!chartId) return null;
   const chart = await prisma.chart.findFirst({
     where: { id: chartId, songId },
-    select: { id: true, chartHash: true },
+    select: { id: true, chartHash: true, rankStatus: true },
   });
   return chart ?? null;
 }

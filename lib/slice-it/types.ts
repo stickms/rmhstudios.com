@@ -82,6 +82,27 @@ export interface Modifiers {
   healthGauge: boolean;
   /** Note density. */
   difficulty: Difficulty;
+  /**
+   * A9 — the mirror of {@link strictTiming}: widens every hit window instead
+   * of shrinking it. **Optional**, and must stay that way: a widened window is
+   * not comparable to a stock one, so it earns no score bonus (see
+   * `MODIFIER_BONUSES`), and being optional is what lets a modifier blob
+   * persisted before this field existed keep loading without a `store.ts`
+   * migration — an absent key is `undefined`, which every reader here treats
+   * as falsy. Always unranked (`timingScale`'s pool sorts it away from stock
+   * runs) — not because a wider window is illegitimate, but because it plays
+   * a different game.
+   */
+  lenientTiming?: boolean;
+  /**
+   * M6 — perfect-or-die. Anything below PERFECT ends the run outright, same
+   * as `suddenDeath` but stricter: a GREAT is already a loss, not just a BAD
+   * or a MISS. Same exclusion group as `suddenDeath` (`applyExclusions` drops
+   * `suddenDeath` when both are set, so the "one mistake ends it" bonus is
+   * never paid twice for the same run). **Optional** for the same
+   * store-migration reason as {@link lenientTiming}.
+   */
+  perfectionist?: boolean;
 }
 
 /** The tally the engine keeps and the score route re-derives its checks from. */
@@ -90,7 +111,14 @@ export interface RunStats {
   maxCombo: number;
   /** 0–1. */
   accuracy: number;
-  /** Non-bomb, non-silent notes that were resolved one way or the other. */
+  /**
+   * Non-bomb, non-silent notes that were resolved one way or the other.
+   *
+   * G5: a LONG note's release is judged separately from its head and counts
+   * here too, so this can exceed the chart's own note count for an LN-heavy
+   * chart — see `totalNotes` in `engine.ts`'s `loadMap`, which accounts for
+   * the same doubling when it sizes the HUD's denominator.
+   */
   notesResolved: number;
   /** Judgement histogram, for the results screen. */
   judgements: Record<Exclude<HitResult, 'NONE'>, number>;
@@ -98,8 +126,14 @@ export interface RunStats {
   health: number;
   /** True once the opt-in gauge has touched zero. Forfeits its score bonus. */
   gaugeBroken: boolean;
-  /** True when the gauge ended the run — solo only; multiplayer never fails. */
+  /** True when a fail-condition modifier ended the run — solo only; multiplayer never fails. */
   failed: boolean;
+  /**
+   * Which fail-condition modifier ended the run, or `null` when {@link failed}
+   * is false. Distinct from `failed` so the results screen can say *why*
+   * rather than assuming it was always the health gauge.
+   */
+  failReason: 'health' | 'perfectionist' | null;
   /**
    * Nothing missed and nothing BAD. Derived from {@link judgements} rather than
    * tracked as its own flag, so it cannot drift out of step with the histogram

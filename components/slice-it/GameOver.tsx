@@ -87,7 +87,9 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
             }`}
           >
             {stats?.failed
-              ? ts('gauge-failed', { defaultValue: 'GAUGE EMPTY' })
+              ? stats.failReason === 'perfectionist'
+                ? ts('perfectionist-failed', { defaultValue: 'NOT PERFECT' })
+                : ts('gauge-failed', { defaultValue: 'GAUGE EMPTY' })
               : t('complete', { defaultValue: 'COMPLETE' })}
           </CardTitle>
           {isUnranked && (

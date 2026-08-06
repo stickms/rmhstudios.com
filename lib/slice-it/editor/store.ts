@@ -12,6 +12,7 @@
 
 import { create } from 'zustand';
 import { DIFFICULTIES } from '@/lib/slice-it/constants';
+import type { EditorArtefacts } from './artefacts';
 import type { Command } from './commands';
 import type { GeneratePlan } from './generate';
 import { EMPTY_LINT, type LintResult } from './lint';
@@ -53,6 +54,7 @@ export interface EditorLoadPayload {
   keys: number;
   charts: Charts;
   chartIds: Record<Difficulty, string | null>;
+  chartStatus: Record<Difficulty, string>;
   timingPoints: TimingPoint[];
   svPoints: SvPoint[];
 }
@@ -62,6 +64,8 @@ interface EditorState {
   song: EditorSong | null;
   keys: number;
   chartIds: Record<Difficulty, string | null>;
+  /** `'draft' | 'public'` per difficulty — the publish gate's other half (§9). */
+  chartStatus: Record<Difficulty, string>;
   /**
    * All four difficulties, always. The nesting invariant (§7.2) is a
    * cross-difficulty property, so the editor cannot hold one at a time.
@@ -108,6 +112,18 @@ interface EditorState {
    * will never press again.
    */
   preview: GeneratePlan | null;
+
+  /* ── Analysis artefacts (§6) ──────────────────────────────────────────── */
+  /**
+   * Waveform envelope, onset ghosts and sections, once fetched.
+   *
+   * Null until the fetch lands, and it stays null for a song analysed before
+   * artefacts were persisted — every consumer draws nothing rather than
+   * blocking, because the editor has to work on the back catalogue.
+   */
+  artefacts: EditorArtefacts | null;
+  /** Ghost onsets hidden — they are dense, and sometimes you want the chart. */
+  showGhosts: boolean;
 
   /* ── Lint (§9) ────────────────────────────────────────────────────────── */
   /**
@@ -162,8 +178,13 @@ interface EditorState {
   setLoop: (loop: { start: number; end: number } | null) => void;
   setPlaytesting: (playtesting: boolean) => void;
   setPreview: (preview: GeneratePlan | null) => void;
+  setTimingPoints: (points: TimingPoint[]) => void;
+  setSvPoints: (points: SvPoint[]) => void;
+  setArtefacts: (artefacts: EditorArtefacts | null) => void;
+  setShowGhosts: (show: boolean) => void;
   setLint: (lint: LintResult) => void;
   setLintFocus: (focus: { code: string; time: number } | null) => void;
+  setChartStatus: (difficulty: Difficulty, status: string) => void;
   setTool: (tool: EditorTool) => void;
   setSnap: (snap: SnapDivision) => void;
   setSnapEnabled: (enabled: boolean) => void;
@@ -213,6 +234,10 @@ const initial = {
     Difficulty,
     string | null
   >,
+  chartStatus: { easy: 'draft', normal: 'draft', hard: 'draft', expert: 'draft' } as Record<
+    Difficulty,
+    string
+  >,
   charts: emptyCharts(),
   active: 'normal' as Difficulty,
   timingPoints: singleTimingPoint(120),
@@ -228,6 +253,8 @@ const initial = {
   loop: null,
   playtesting: false,
   preview: null as GeneratePlan | null,
+  artefacts: null as EditorArtefacts | null,
+  showGhosts: true,
   lint: EMPTY_LINT,
   lintFocus: null as { code: string; time: number } | null,
   tool: 'select' as EditorTool,
@@ -270,6 +297,7 @@ export const useEditorStore = create<EditorState>()((set) => ({
       keys: payload.keys,
       charts: payload.charts,
       chartIds: payload.chartIds,
+      chartStatus: payload.chartStatus,
       timingPoints:
         payload.timingPoints.length > 0
           ? payload.timingPoints
@@ -287,6 +315,7 @@ export const useEditorStore = create<EditorState>()((set) => ({
       // panel would show another song's findings forever.
       lint: EMPTY_LINT,
       lintFocus: null,
+      artefacts: null,
     }),
 
   fail: (message) => set({ loadState: 'error', error: message }),
@@ -360,6 +389,32 @@ export const useEditorStore = create<EditorState>()((set) => ({
   setPlaytesting: (playtesting) => set({ playtesting }),
   setPreview: (preview) => set({ preview }),
   /**
+   * Timing and SV edits (§4.2, phase 8).
+   *
+   * They mark every difficulty dirty, not just the open one: the timing map is
+   * a property of the SONG, but it is stored on each `Chart` row, so a change
+   * that only saved the open tier would leave the other three describing a grid
+   * that no longer exists. They deliberately do NOT go through the command
+   * stack — undo operates on notes, and a timing map that could be undone
+   * independently of the notes snapped to it is a chart that silently comes
+   * apart. The request to extend the stack to cover them is in
+   * `docs/_handoff/editor-phase678-requests.md`.
+   */
+  setTimingPoints: (timingPoints) =>
+    set((state) => ({
+      timingPoints,
+      charts: markAllDirty(state.charts),
+      revision: state.revision + 1,
+    })),
+  setSvPoints: (svPoints) =>
+    set((state) => ({
+      svPoints,
+      charts: markAllDirty(state.charts),
+      revision: state.revision + 1,
+    })),
+  setArtefacts: (artefacts) => set({ artefacts }),
+  setShowGhosts: (showGhosts) => set({ showGhosts }),
+  /**
    * A result older than the one already held is dropped.
    *
    * The runner coalesces, but a worker message and a `flush()` on the main
@@ -369,6 +424,8 @@ export const useEditorStore = create<EditorState>()((set) => ({
    */
   setLint: (lint) => set((state) => (lint.revision < state.lint.revision ? state : { lint })),
   setLintFocus: (lintFocus) => set({ lintFocus }),
+  setChartStatus: (difficulty, status) =>
+    set((state) => ({ chartStatus: { ...state.chartStatus, [difficulty]: status } })),
   setTool: (tool) => set({ tool }),
   setSnap: (snap) => set({ snap }),
   setSnapEnabled: (snapEnabled) => set({ snapEnabled }),
@@ -402,6 +459,15 @@ export const useEditorStore = create<EditorState>()((set) => ({
 
   reset: () => set({ ...initial, charts: emptyCharts() }),
 }));
+
+/** Every tier dirty — see `setTimingPoints`. */
+function markAllDirty(charts: Charts): Charts {
+  const out = { ...charts };
+  for (const difficulty of DIFFICULTIES) {
+    if (!out[difficulty].dirty) out[difficulty] = { ...out[difficulty], dirty: true };
+  }
+  return out;
+}
 
 function markClean(
   charts: Charts,
