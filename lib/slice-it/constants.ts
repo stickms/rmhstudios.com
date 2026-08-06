@@ -102,6 +102,37 @@ export const HOLD_TICK_MAX_STEP_SEC = 0.25;
 /** Score penalty for slicing a bomb. */
 export const BOMB_PENALTY = 500;
 
+/* ─── Health gauge ───────────────────────────────────────────────────────── */
+
+/** Full gauge. Also what a run with the gauge switched off always reports. */
+export const HEALTH_MAX = 100;
+
+/**
+ * Drain per judgement.
+ *
+ * GREAT is deliberately ~neutral: the gauge should punish *missing*, not punish
+ * being imperfect. A player who hits every note and is merely a few milliseconds
+ * loose can hold a gauge indefinitely; a player who drops six notes in a row
+ * cannot. The asymmetry between the gains (≤ +1.2) and MISS (−6) is what makes
+ * it a gauge rather than a slowly-filling bar.
+ */
+export const HEALTH_DELTA: Record<Exclude<HitResult, 'NONE'>, number> = {
+  MARVELOUS: 1.2,
+  PERFECT: 1.0,
+  GREAT: 0.2,
+  GOOD: -1.5,
+  BAD: -3,
+  MISS: -6,
+};
+
+/**
+ * Health lost for slicing a bomb.
+ *
+ * Worse than a MISS, because a bomb is a note the chart told you not to hit —
+ * the mistake is bigger than being absent for one.
+ */
+export const HEALTH_BOMB_DRAIN = 8;
+
 /** Fraction of eligible notes converted to bombs when the Bombs modifier is on. */
 export const BOMB_CONVERSION_RATE = 0.05;
 /** Fraction of eligible notes converted to lane switches when Switching is on. */
@@ -109,6 +140,22 @@ export const SWITCH_CONVERSION_RATE = 0.15;
 
 /** Per-lane input debounce, ms. One press must never resolve two notes. */
 export const INPUT_COOLDOWN_MS = 50;
+
+/**
+ * Combo below which breaking it is not news.
+ *
+ * A miss produces the same text popup whether it broke a 300-chain or was the
+ * first note of the song, and those are not the same event. Below 25 the player
+ * is still learning the chart and a heavier reaction would be nagging; above it,
+ * something was lost.
+ */
+export const COMBO_BREAK_THRESHOLD = 25;
+
+/** How long the combo-break reaction lasts, ms. */
+export const COMBO_BREAK_FEEDBACK_MS = 400;
+
+/** Combo at which a break's reaction reaches full intensity. */
+export const COMBO_BREAK_FULL_INTENSITY = 300;
 
 export const MIN_SPEED = 0.5;
 export const MAX_SPEED = 2.0;
@@ -141,6 +188,12 @@ export const MODIFIER_BONUSES = {
   spin: 0.15,
   strictTiming: 0.25,
   oneTrack: 0.15,
+  /**
+   * The opt-in health gauge. Worth less than Strict Timing (0.25) because it
+   * costs consistency rather than precision — and it is the one bonus that can
+   * be lost mid-run: draining to zero forfeits it (see `calculateScoreMultiplier`).
+   */
+  healthGauge: 0.2,
 } as const;
 
 /** Speed above 1.0x adds this much multiplier per 1.0x of extra rate. */
@@ -302,3 +355,48 @@ export const GRADE_THRESHOLDS: readonly { grade: string; min: number }[] = [
   { grade: 'D', min: 0.6 },
   { grade: 'F', min: 0 },
 ];
+
+/* ─── Shared presentation ────────────────────────────────────────────────── */
+
+/**
+ * Colour per judgement.
+ *
+ * Here rather than in a component because four separate surfaces have to agree
+ * on it — the engine's floating feedback text, the canvas hit-error bar, the
+ * HUD and the results-screen histogram — and this is the only module all four
+ * can import without pulling the engine (and therefore Web Audio) in with it.
+ * They are deliberately fixed rather than `--slice-*` tokens: a judgement colour
+ * is a piece of *vocabulary* the player learns, and it has to mean the same
+ * thing in both themes.
+ */
+export const JUDGEMENT_COLORS: Record<HitResult, string> = {
+  MARVELOUS: '#0891b2',
+  PERFECT: '#B4954A',
+  GREAT: '#15803d',
+  GOOD: '#1d4ed8',
+  BAD: '#7e22ce',
+  MISS: '#64748b',
+  NONE: '#64748b',
+};
+
+/** The judgements a results-screen histogram lists, best to worst. */
+export const JUDGEMENT_ORDER = [
+  'MARVELOUS',
+  'PERFECT',
+  'GREAT',
+  'GOOD',
+  'BAD',
+  'MISS',
+] as const satisfies readonly Exclude<HitResult, 'NONE'>[];
+
+/**
+ * Note colour by beat subdivision — StepMania's palette, which two decades of
+ * players in this genre already read fluently: red on the beat, blue on the
+ * eighth, purple on a triplet, yellow on the sixteenth. Keyed by `Slice.quant`.
+ */
+export const QUANT_COLORS: Record<number, string> = {
+  1: '#ef4444',
+  2: '#3b82f6',
+  3: '#a855f7',
+  4: '#eab308',
+};

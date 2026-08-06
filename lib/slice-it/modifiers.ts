@@ -35,6 +35,10 @@ export const DEFAULT_MODIFIERS: Modifiers = {
   spin: false,
   strictTiming: false,
   oneTrack: false,
+  // Off. The gauge is a thing a player asks for, never a thing that happens to
+  // them — a run that can end early is a different game, and the default has to
+  // be the one where finishing the song is guaranteed.
+  healthGauge: false,
   difficulty: 'normal',
 };
 
@@ -82,6 +86,7 @@ export const ModifiersZ: z.ZodType<Modifiers> = z
     spin: BoolZ,
     strictTiming: BoolZ,
     oneTrack: BoolZ,
+    healthGauge: BoolZ,
     difficulty: DifficultyZ,
   })
   .catch(() => ({ ...DEFAULT_MODIFIERS }));
@@ -118,6 +123,13 @@ export function applyExclusions(modifiers: Modifiers): Modifiers {
  * multiplier only rewards going *faster*, so a 0.5x seat is a free easy mode.
  * Sudden Death is likewise dropped — dying at 12 seconds and then watching four
  * minutes of other people's scores is not a game mode anyone chose.
+ *
+ * The **health gauge survives that same reasoning rather than failing it**, and
+ * is deliberately left on. It is not stripped here because it does not have to
+ * be: the gauge is only a fail state where the engine says it is, and in a match
+ * the engine clamps it to `'survive'` (see `GameEngine.setMultiplayer`). Draining
+ * to zero in a race costs the run its multiplier bonus and nothing else, so a
+ * player who wants the tension can race with it and nobody ends up spectating.
  */
 export function forMultiplayer(modifiers: Modifiers): Modifiers {
   return applyExclusions({
@@ -136,6 +148,7 @@ export function activeModifierKeys(modifiers: Modifiers): (keyof Modifiers)[] {
   if (modifiers.spin) keys.push('spin');
   if (modifiers.strictTiming) keys.push('strictTiming');
   if (modifiers.oneTrack) keys.push('oneTrack');
+  if (modifiers.healthGauge) keys.push('healthGauge');
   if (modifiers.suddenDeath) keys.push('suddenDeath');
   if (modifiers.speed !== 1) keys.push('speed');
   return keys;

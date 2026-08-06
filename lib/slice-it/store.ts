@@ -47,6 +47,13 @@ interface SliceItState {
   /** Milliseconds. Positive means the audio runs ahead of the visuals. */
   audioOffset: number;
   isDarkMode: boolean;
+  /**
+   * Colour notes by the beat subdivision they snapped to (`Slice.quant`) rather
+   * than by lane. On by default, because it is the genre standard and the lane a
+   * note is in is already legible from its position — but a setting, because it
+   * is a real change to what the playfield looks like.
+   */
+  quantColors: boolean;
   modifiers: Modifiers;
 
   /* ── Run state ────────────────────────────────────────────────────── */
@@ -100,6 +107,7 @@ interface SliceItState {
   setHitSound: (hitSound: string) => void;
   setAudioOffset: (offset: number) => void;
   setIsDarkMode: (isDark: boolean) => void;
+  setQuantColors: (value: boolean) => void;
   setModifiers: (modifiers: Modifiers) => void;
 
   setStatus: (status: GameStatus) => void;
@@ -182,6 +190,7 @@ export const useSliceItStore = create<SliceItState>()(
       hitSound: 'default',
       audioOffset: 0,
       isDarkMode: true,
+      quantColors: true,
       modifiers: { ...DEFAULT_MODIFIERS },
 
       ...runDefaults,
@@ -196,6 +205,7 @@ export const useSliceItStore = create<SliceItState>()(
       setAudioOffset: (audioOffset) =>
         set({ audioOffset: Math.max(-500, Math.min(500, Math.round(audioOffset))) }),
       setIsDarkMode: (isDarkMode) => set({ isDarkMode }),
+      setQuantColors: (quantColors) => set({ quantColors }),
       setModifiers: (modifiers) => set({ modifiers: applyExclusions(modifiers) }),
 
       setStatus: (status) => set({ status }),
@@ -237,7 +247,7 @@ export const useSliceItStore = create<SliceItState>()(
     }),
     {
       name: 'slice-it-storage',
-      version: 2,
+      version: 3,
       // Settings only. Run and lobby state are per-session by definition, and
       // persisting a lobby snapshot would restore a room that no longer exists.
       partialize: (state) => ({
@@ -248,18 +258,36 @@ export const useSliceItStore = create<SliceItState>()(
         hitSound: state.hitSound,
         audioOffset: state.audioOffset,
         isDarkMode: state.isDarkMode,
+        quantColors: state.quantColors,
         modifiers: state.modifiers,
       }),
       /**
-       * v1 stored the same settings minus `modifiers`, which lived in
-       * un-persisted run state. Carrying the old keys forward and filling in
-       * the new one keeps every existing player's keybinds and calibration
-       * offset — the two settings nobody wants to re-enter.
+       * Every migration here has the same job: carry the old keys forward
+       * untouched and fill in only what is new. Keybinds and the calibration
+       * offset are the two settings nobody wants to re-enter, and they have been
+       * in this blob since v1.
+       *
+       * - **v1 → v2** stored the same settings minus `modifiers`, which lived in
+       *   un-persisted run state.
+       * - **v2 → v3** added `healthGauge` to `modifiers` and `quantColors`
+       *   alongside it. `modifiers` is persisted as a whole object and zustand
+       *   replaces it wholesale on rehydrate, so a v2 blob would restore a
+       *   modifier set with `healthGauge: undefined` — falsy, and therefore
+       *   harmless today, but a shape that does not match its own type. Merging
+       *   over the defaults fills that and any field a future version adds.
        */
       migrate: (persisted, version) => {
-        const state = (persisted ?? {}) as Record<string, unknown>;
+        let state = (persisted ?? {}) as Record<string, unknown>;
         if (version < 2) {
-          return { ...state, modifiers: { ...DEFAULT_MODIFIERS } };
+          state = { ...state, modifiers: { ...DEFAULT_MODIFIERS } };
+        }
+        if (version < 3) {
+          const stored = (state.modifiers ?? {}) as Partial<Modifiers>;
+          state = {
+            ...state,
+            modifiers: { ...DEFAULT_MODIFIERS, ...stored },
+            quantColors: true,
+          };
         }
         return state;
       },

@@ -54,6 +54,45 @@ export interface QuantizedNote {
   beatLength: number;
 }
 
+/**
+ * Beat subdivision each snap position represents, as a denominator: 1 on the
+ * beat, 2 on the eighth, 3 on a triplet, 4 on the sixteenth.
+ *
+ * This is the highest-value readability signal the analyser produces and it used
+ * to be computed and thrown away one function before it could be used. The
+ * renderer colours notes by it (`Slice.quant`), which is how every game in this
+ * genre communicates rhythm.
+ */
+const QUANT_BY_FRACTION: readonly { fraction: number; quant: number }[] = [
+  { fraction: 0, quant: 1 },
+  { fraction: 1 / 4, quant: 4 },
+  { fraction: 1 / 3, quant: 3 },
+  { fraction: 1 / 2, quant: 2 },
+  { fraction: 2 / 3, quant: 3 },
+  { fraction: 3 / 4, quant: 4 },
+];
+
+/**
+ * The subdivision denominator for a snapped within-beat position.
+ *
+ * Nearest match rather than an exact lookup, because two of the six positions
+ * are thirds: `{[1/3]: 3}` is a key of `"0.3333333333333333"` and any arithmetic
+ * that produces a different last bit misses it silently, which would tag every
+ * triplet in the chart as a downbeat.
+ */
+export function quantOf(fraction: number): number {
+  let quant = 1;
+  let bestError = Infinity;
+  for (const entry of QUANT_BY_FRACTION) {
+    const error = Math.abs(fraction - entry.fraction);
+    if (error < bestError) {
+      bestError = error;
+      quant = entry.quant;
+    }
+  }
+  return quant;
+}
+
 /** Index of the last beat at or before `time`, or -1. */
 function beatIndexAt(beats: number[], time: number): number {
   let lo = 0;
@@ -334,6 +373,7 @@ function buildSlices(
       time: Number(note.time.toFixed(4)),
       type,
       lane,
+      quant: quantOf(note.fraction),
       ...(duration !== undefined ? { duration: Number(duration.toFixed(4)) } : {}),
     });
 

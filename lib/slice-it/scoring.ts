@@ -24,13 +24,30 @@ import {
 } from './constants';
 import type { Modifiers } from './types';
 
+/** Run-state the multiplier depends on but the modifier set cannot express. */
+export interface ScoreMultiplierOptions {
+  /**
+   * True once the opt-in health gauge has drained to zero this run.
+   *
+   * Only the engine can know this, and only the engine passes it. The server
+   * deliberately does **not**: its job is to compute a *ceiling*, and the
+   * ceiling for a run that declared `healthGauge` is the version where the
+   * gauge held. Passing the flag server-side would tighten the bound below what
+   * an honest run can score and reject it.
+   */
+  gaugeBroken?: boolean;
+}
+
 /**
  * The multiplier a run's settings are worth.
  *
  * Difficulty multiplies; individual modifiers add. See
  * {@link MODIFIER_BONUSES} for why.
  */
-export function calculateScoreMultiplier(modifiers: Partial<Modifiers> | null | undefined): number {
+export function calculateScoreMultiplier(
+  modifiers: Partial<Modifiers> | null | undefined,
+  options?: ScoreMultiplierOptions,
+): number {
   if (!modifiers) return 1;
 
   const difficulty = (modifiers.difficulty ?? 'normal') as Difficulty;
@@ -42,6 +59,10 @@ export function calculateScoreMultiplier(modifiers: Partial<Modifiers> | null | 
   if (modifiers.spin) mult += MODIFIER_BONUSES.spin;
   if (modifiers.strictTiming) mult += MODIFIER_BONUSES.strictTiming;
   if (modifiers.oneTrack) mult += MODIFIER_BONUSES.oneTrack;
+  // A broken gauge forfeits the bonus, not the run. Everything the run scored
+  // before it broke keeps the higher multiplier — the points are already banked
+  // — which is the same shape as a combo: you lose it going forward.
+  if (modifiers.healthGauge && !options?.gaugeBroken) mult += MODIFIER_BONUSES.healthGauge;
 
   const speed =
     typeof modifiers.speed === 'number' && Number.isFinite(modifiers.speed) ? modifiers.speed : 1;
@@ -92,6 +113,47 @@ export function gradeFor(accuracy: number): string {
     if (accuracy >= min) return grade;
   }
   return 'F';
+}
+
+/**
+ * The next grade up from an accuracy, or null once there is nothing above.
+ *
+ * `GRADE_THRESHOLDS.find((g) => g.min > accuracy)` is the obvious spelling and
+ * it is wrong: the list is ordered highest-first, so it answers "SS" for every
+ * accuracy below 1.0. What is wanted is the *lowest* threshold still out of
+ * reach.
+ */
+export function nextGradeAbove(accuracy: number): { grade: string; min: number } | null {
+  const value = Number.isFinite(accuracy) ? accuracy : 0;
+  let best: { grade: string; min: number } | null = null;
+  for (const tier of GRADE_THRESHOLDS) {
+    if (tier.min > value && (best === null || tier.min < best.min)) best = tier;
+  }
+  return best;
+}
+
+/**
+ * How many more notes this run may drop entirely and still land at
+ * `targetAccuracy`.
+ *
+ * Accuracy is `hitPoints / (notes * 100)`, so with `total - resolved` notes left
+ * the best still-reachable total is `hitPoints + remaining * 100`. Every MISS
+ * from here costs a full 100 of that budget, so the answer is how much slack the
+ * budget has over the target, in units of 100.
+ *
+ * Returns null when the chart's note count is unknown — a "0 misses left"
+ * readout that is really "we do not know" is worse than no readout.
+ */
+export function missesAllowedFor(
+  hitPoints: number,
+  notesResolved: number,
+  totalNotes: number,
+  targetAccuracy: number,
+): number | null {
+  if (!Number.isFinite(totalNotes) || totalNotes <= 0) return null;
+  const resolved = Math.max(0, Math.min(totalNotes, notesResolved));
+  const best = hitPoints + (totalNotes - resolved) * 100;
+  return Math.max(0, Math.floor((best - targetAccuracy * totalNotes * 100) / 100));
 }
 
 /* ─── Server-side plausibility ───────────────────────────────────────────── */

@@ -101,10 +101,59 @@ const KeybindInput = ({
   );
 };
 
+/**
+ * A settings row that is a single on/off decision.
+ *
+ * Neumorphic depth rule (chart-editor doc §12.1): the container is inset, the
+ * thing you can press is raised — and pressed-in when it is on, so the state is
+ * legible from the shadow rather than from a colour alone.
+ */
+const ToggleRow = ({
+  label,
+  description,
+  value,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  value: boolean;
+  onChange: (next: boolean) => void;
+}) => (
+  <button
+    type="button"
+    aria-pressed={value}
+    onClick={() => onChange(!value)}
+    className={`w-full flex items-center justify-between gap-4 text-left p-4 rounded-2xl bg-slice-bg transition-shadow ${
+      value
+        ? 'shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)]'
+        : 'shadow-[4px_4px_10px_var(--slice-shadow-dark),-4px_-4px_10px_var(--slice-shadow-light)]'
+    }`}
+  >
+    <span className="min-w-0">
+      <span className="block text-sm font-black text-slice-text-darker">{label}</span>
+      <span className="block text-[10px] text-slice-text-light font-bold leading-snug mt-0.5">
+        {description}
+      </span>
+    </span>
+    <span
+      className={`shrink-0 text-[10px] font-black uppercase tracking-[0.2em] ${
+        value ? 'text-blue-500' : 'text-slice-text-light'
+      }`}
+    >
+      {value ? 'ON' : 'OFF'}
+    </span>
+  </button>
+);
+
 export function MainMenu({ engine: propEngine }: MainMenuProps) {
   const { t } = useTranslation('c-game');
+  const { t: ts } = useTranslation('r-slice-it');
   const { setUserName, userName, keybinds, setKeybinds, volume, setVolume, hitSound, setHitSound } =
     useSliceItStore();
+  const modifiers = useSliceItStore((state) => state.modifiers);
+  const setModifiers = useSliceItStore((state) => state.setModifiers);
+  const quantColors = useSliceItStore((state) => state.quantColors);
+  const setQuantColors = useSliceItStore((state) => state.setQuantColors);
   const setSongId = useSliceItStore((state) => state.setSongId);
   const setIsMultiplayer = useSliceItStore((state) => state.setIsMultiplayer);
   const isDarkMode = useSliceItStore((state) => state.isDarkMode);
@@ -584,6 +633,33 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                     Offset: {useSliceItStore.getState().audioOffset}ms
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Gameplay toggles */}
+            <div className="space-y-4">
+              <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">
+                {ts('gameplay', { defaultValue: 'Gameplay' })}
+              </label>
+              <div className="space-y-3">
+                <ToggleRow
+                  label={ts('health-gauge', { defaultValue: 'Health Gauge' })}
+                  description={ts('health-gauge-hint', {
+                    defaultValue:
+                      'Misses drain a gauge. Solo, emptying it ends the run; in a match it only costs the bonus. Worth a score multiplier.',
+                  })}
+                  value={modifiers.healthGauge}
+                  onChange={(next) => setModifiers({ ...modifiers, healthGauge: next })}
+                />
+                <ToggleRow
+                  label={ts('quant-colors', { defaultValue: 'Rhythm Colours' })}
+                  description={ts('quant-colors-hint', {
+                    defaultValue:
+                      'Colour notes by where they land in the beat — red on the beat, blue on eighths, purple on triplets, yellow on sixteenths.',
+                  })}
+                  value={quantColors}
+                  onChange={setQuantColors}
+                />
               </div>
             </div>
 

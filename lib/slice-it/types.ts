@@ -21,6 +21,16 @@ export interface Slice {
   lane: number;
   /** SPEED notes only. */
   speedMultiplier?: number;
+  /**
+   * Denominator of the beat subdivision this note snapped to: 1 = on the beat,
+   * 2 = eighth, 3 = triplet, 4 = sixteenth.
+   *
+   * Set by the charter, which computes the snap anyway. Optional because every
+   * chart generated before it existed has none — the renderer treats a missing
+   * value as "unknown" rather than as "on the beat", so an old chart keeps its
+   * lane colours instead of silently claiming everything is a downbeat.
+   */
+  quant?: number;
   hit?: boolean;
   /** `performance.now()` when it was resolved, for the fade-out. */
   hitTime?: number;
@@ -61,6 +71,14 @@ export interface Modifiers {
   strictTiming: boolean;
   /** Every note arrives on one lane. */
   oneTrack: boolean;
+  /**
+   * Opt-in health gauge, **off by default**.
+   *
+   * On, judgements move a gauge and the run pays a score bonus for the risk.
+   * What hitting zero costs depends on where the run is happening: solo it ends
+   * the run, in multiplayer it only forfeits the bonus — see `forMultiplayer`.
+   */
+  healthGauge: boolean;
   /** Note density. */
   difficulty: Difficulty;
 }
@@ -75,6 +93,20 @@ export interface RunStats {
   notesResolved: number;
   /** Judgement histogram, for the results screen. */
   judgements: Record<Exclude<HitResult, 'NONE'>, number>;
+  /** 0–`HEALTH_MAX`. Pinned at full unless the gauge modifier is on. */
+  health: number;
+  /** True once the opt-in gauge has touched zero. Forfeits its score bonus. */
+  gaugeBroken: boolean;
+  /** True when the gauge ended the run — solo only; multiplayer never fails. */
+  failed: boolean;
+  /**
+   * Nothing missed and nothing BAD. Derived from {@link judgements} rather than
+   * tracked as its own flag, so it cannot drift out of step with the histogram
+   * the results screen prints beside it.
+   */
+  isFullCombo: boolean;
+  /** Every resolved note was MARVELOUS. */
+  isPerfect: boolean;
 }
 
 /**

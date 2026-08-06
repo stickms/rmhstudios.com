@@ -32,16 +32,23 @@ import { AudioManager } from '../audio/AudioManager';
 import { asset } from '@/lib/storage/asset';
 import {
   BOMB_PENALTY,
+  COMBO_BREAK_FULL_INTENSITY,
+  COMBO_BREAK_THRESHOLD,
+  HEALTH_BOMB_DRAIN,
+  HEALTH_DELTA,
+  HEALTH_MAX,
   HIT_WINDOWS,
   HOLD_RELEASE_POINTS,
   HOLD_TICK_MAX_STEP_SEC,
   HOLD_TICK_POINTS_PER_SECOND,
   INPUT_COOLDOWN_MS,
+  JUDGEMENT_COLORS,
+  JUDGEMENT_ORDER,
   STRICT_TIMING_FACTOR,
 } from './constants';
-import type { BeatMap, HitResult, Slice } from './types';
+import type { BeatMap, HitResult, RunStats, Slice } from './types';
 import { MIN_TIMING_SAMPLES, type TimingSummary } from './integrity';
-import { prepareChart } from './chart';
+import { prepareChart, scorableNoteCount } from './chart';
 import { useSliceItStore } from './store';
 import {
   accuracyOf,
@@ -54,15 +61,24 @@ import {
 import { reportFinish, reportScore } from './net/client';
 
 /** Colours the feedback text is drawn in, per judgement. */
-const FEEDBACK_COLORS: Record<HitResult, string> = {
-  MARVELOUS: '#0891b2',
-  PERFECT: '#B4954A',
-  GREAT: '#15803d',
-  GOOD: '#1d4ed8',
-  BAD: '#7e22ce',
-  MISS: '#64748b',
-  NONE: '#64748b',
-};
+const FEEDBACK_COLORS: Record<HitResult, string> = JUDGEMENT_COLORS;
+
+/**
+ * How many recent hit offsets the error bar can draw.
+ *
+ * A fixed ring rather than a growing array: this is written on the input path
+ * and read every frame, and a rhythm game is the last place to allocate on
+ * either. 64 at even a dense 8 notes/second is the last eight seconds, which is
+ * more history than the bar is legible with.
+ */
+const OFFSET_RING_SIZE = 64;
+
+/** A blank judgement histogram. */
+function emptyJudgements(): Record<Exclude<HitResult, 'NONE'>, number> {
+  const out = {} as Record<Exclude<HitResult, 'NONE'>, number>;
+  for (const judgement of JUDGEMENT_ORDER) out[judgement] = 0;
+  return out;
+}
 
 /**
  * How often a live score is published to the lobby, ms.
@@ -121,15 +137,60 @@ export class GameEngine {
   private notesResolved = 0;
   private hitPoints = 0;
   private songId = '';
+  /** Notes in the prepared chart that count toward accuracy. */
+  private totalNotes = 0;
+  /** Judgement histogram, for the HUD and the results screen. */
+  private judgements = emptyJudgements();
 
   private inMultiplayer = false;
   private lastReportAt = 0;
   private finished = false;
 
+  /* ── The health gauge (opt-in; see `Modifiers.healthGauge`) ────────────── */
+
+  /** 0–{@link HEALTH_MAX}. Stays pinned at full while the gauge is off. */
+  private health = HEALTH_MAX;
+  /**
+   * What draining to zero costs.
+   *
+   * `'fail'` solo, `'survive'` in a match — set by {@link setMultiplayer}, and
+   * the reason the modifier does not need a multiplayer clamp of its own. See
+   * the note on `forMultiplayer` in `modifiers.ts`.
+   */
+  private failMode: 'fail' | 'survive' = 'fail';
+  /** Sticky: once the gauge has touched zero, its score bonus is gone. */
+  private gaugeBroken = false;
+  /** True when the gauge ended this run. Solo only. */
+  private failed = false;
+
   /** Running mean/variance of hit timing error (Welford). See `recordOffset`. */
   private offsetCount = 0;
   private offsetMean = 0;
   private offsetM2 = 0;
+
+  /**
+   * The last {@link OFFSET_RING_SIZE} signed hit offsets and when each landed,
+   * for the early/late bar. Kept beside the Welford accumulator rather than
+   * derived from it — a mean and a variance cannot be drawn as a tick cloud.
+   *
+   * One stable object, returned by reference from {@link getRecentOffsets}, so
+   * reading it every frame allocates nothing.
+   */
+  private readonly offsetRing = {
+    /** Signed seconds; negative is early. `0` marks an unused slot. */
+    offsets: new Float32Array(OFFSET_RING_SIZE),
+    /** `performance.now()` at the hit, for the fade. */
+    times: new Float32Array(OFFSET_RING_SIZE),
+  };
+  private offsetHead = 0;
+
+  /**
+   * The last combo break worth reacting to, or null.
+   *
+   * `magnitude` is 0–1, so the renderer's reaction scales with what was actually
+   * lost rather than firing identically for a 25-chain and a 400-chain.
+   */
+  private comboBreak: { at: number; magnitude: number } | null = null;
 
   constructor() {
     this.audioManager = AudioManager.getInstance();
@@ -147,9 +208,18 @@ export class GameEngine {
     return this.processedSliceIds;
   }
 
-  /** True while this run is part of a multiplayer match. */
+  /**
+   * True while this run is part of a multiplayer match.
+   *
+   * Also decides what the health gauge means. In a race the gauge never ends a
+   * run: the cost of dying is not losing, it is sitting out the remaining three
+   * minutes of a song everyone else is still playing — the same reasoning that
+   * drops Sudden Death from a lobby. Draining to zero there forfeits the
+   * modifier's bonus and the run plays on.
+   */
   setMultiplayer(value: boolean): void {
     this.inMultiplayer = value;
+    this.failMode = value ? 'survive' : 'fail';
   }
 
   async loadMap(map: BeatMap, preloadedBuffer?: AudioBuffer): Promise<void> {
@@ -161,6 +231,9 @@ export class GameEngine {
     // Deterministic: same song + same settings ⇒ same notes, on a retry and on
     // every machine in a lobby.
     this.slices = prepareChart(map, modifiers).sort((a, b) => a.time - b.time);
+    // Bombs and silent notes never enter the accuracy denominator, so neither do
+    // they count toward "misses left for grade X" — see `missesAllowedFor`.
+    this.totalNotes = scorableNoteCount(this.slices);
 
     this.reset();
     store.setSongId(map.id);
@@ -196,9 +269,17 @@ export class GameEngine {
     this.hitPoints = 0;
     this.finished = false;
     this.lastReportAt = 0;
+    this.judgements = emptyJudgements();
+    this.health = HEALTH_MAX;
+    this.gaugeBroken = false;
+    this.failed = false;
     this.offsetCount = 0;
     this.offsetMean = 0;
     this.offsetM2 = 0;
+    this.offsetRing.offsets.fill(0);
+    this.offsetRing.times.fill(0);
+    this.offsetHead = 0;
+    this.comboBreak = null;
 
     for (const slice of this.slices) {
       slice.hit = false;
@@ -243,6 +324,19 @@ export class GameEngine {
     return useSliceItStore.getState().modifiers.strictTiming ? STRICT_TIMING_FACTOR : 1;
   }
 
+  /**
+   * The score multiplier this run is currently earning.
+   *
+   * Read per payout rather than cached because it can change mid-run: a broken
+   * health gauge drops its bonus from here on, and everything banked before that
+   * keeps the rate it was scored at.
+   */
+  private runMultiplier(): number {
+    return calculateScoreMultiplier(useSliceItStore.getState().modifiers, {
+      gaugeBroken: this.gaugeBroken,
+    });
+  }
+
   /** The full miss window in seconds, at the current speed and strictness. */
   private get missWindow(): number {
     return HIT_WINDOWS.BAD * this.strictFactor * this.speedMultiplier;
@@ -278,8 +372,7 @@ export class GameEngine {
 
     if (this.slices.length === 0) return;
 
-    const modifiers = store.modifiers;
-    const scoreMultiplier = calculateScoreMultiplier(modifiers);
+    const scoreMultiplier = this.runMultiplier();
     const missWindow = this.missWindow;
 
     // Holds accrue while held and expire if held too far past their end.
@@ -296,8 +389,11 @@ export class GameEngine {
         if (currentTime > holdEnd + missWindow) {
           this.activeHolds.delete(lane);
           this.holdBilledTo.delete(lane);
-          this.combo = 0;
+          this.breakCombo();
           this.pushFeedback('MISS', lane, FEEDBACK_COLORS.MISS);
+          // Not a judgement — the head was already resolved and counted — but it
+          // is a dropped note, so the gauge treats it as one.
+          this.applyHealth('MISS');
           store.setScore(this.score, this.combo, this.speedMultiplier);
           store.setMaxCombo(this.maxCombo);
         } else if (currentTime < holdEnd) {
@@ -365,7 +461,7 @@ export class GameEngine {
     if (!targeted || Math.abs(targeted.time - currentTime) > this.missWindow) {
       // Ghost tap. Breaks the combo but does not count against accuracy — you
       // did not miss a note, you hit nothing.
-      this.combo = 0;
+      this.breakCombo();
       this.pushFeedback('MISS', lane, FEEDBACK_COLORS.MISS);
       this.commit();
       return;
@@ -373,16 +469,23 @@ export class GameEngine {
 
     if (targeted.type === 'BOMB') {
       this.processedSliceIds.add(targeted.id);
-      this.combo = 0;
+      this.breakCombo();
       this.score = Math.max(0, this.score - BOMB_PENALTY);
       this.pushFeedback('BOMB!', lane, '#ff0000');
       this.audioManager.playSfX(150, 'sawtooth', 0.3, store.sfxVolume / 100);
+      this.drainHealth(HEALTH_BOMB_DRAIN);
       this.commit();
       return;
     }
 
-    const result = judge(currentTime - targeted.time, timingScale(store.modifiers));
-    this.resolve(targeted, result, this.getEffectiveLane(targeted, currentTime));
+    // The offset the judgement was made from, not one re-read from the clock a
+    // few statements later. It carries the dispatch-latency correction above,
+    // which is the whole reason the judgement is fair — a timing summary that
+    // did not carry it would tell the player to calibrate away the browser's
+    // event queue, and `integrity.ts` would see a mean skewed late on every run.
+    const offset = currentTime - targeted.time;
+    const result = judge(offset, timingScale(store.modifiers));
+    this.resolve(targeted, result, this.getEffectiveLane(targeted, currentTime), offset);
   }
 
   submitRelease(lane: number): void {
@@ -391,10 +494,9 @@ export class GameEngine {
     this.activeHolds.delete(lane);
     this.holdBilledTo.delete(lane);
 
-    const store = useSliceItStore.getState();
     const currentTime = this.now();
     const holdEnd = held.time + (held.duration ?? 0);
-    const scoreMultiplier = calculateScoreMultiplier(store.modifiers);
+    const scoreMultiplier = this.runMultiplier();
     const window = this.missWindow;
     const comboFactor = this.combo > 0 ? this.combo : 1;
 
@@ -407,7 +509,7 @@ export class GameEngine {
       const total = held.duration ?? 0;
       const ratio = total > 0 ? Math.min(1, Math.max(0, (currentTime - held.time) / total)) : 0;
       this.score += Math.floor(HOLD_RELEASE_POINTS * ratio * comboFactor * scoreMultiplier);
-      this.combo = 0;
+      this.breakCombo();
       this.pushFeedback('DROPPED', lane, '#64748b');
     }
     this.commit();
@@ -450,12 +552,21 @@ export class GameEngine {
   getState() {
     return {
       notesResolved: this.notesResolved,
+      /** Notes in the chart that count toward accuracy — the HUD's denominator. */
+      totalNotes: this.totalNotes,
+      /** Accuracy weight banked so far, out of `notesResolved * 100`. */
+      hitPoints: this.hitPoints,
       score: this.score,
       combo: this.combo,
       maxCombo: this.maxCombo,
       accuracy: accuracyOf(this.hitPoints, this.notesResolved),
       multiplier: this.speedMultiplier,
       currentTime: this.audioManager.getCurrentTime(),
+      health: this.health,
+      gaugeBroken: this.gaugeBroken,
+      failed: this.failed,
+      isFullCombo: this.isFullCombo,
+      isPerfect: this.isPerfect,
     };
   }
 
@@ -478,19 +589,25 @@ export class GameEngine {
     return Math.min(delayMs, MAX_INPUT_DISPATCH_SEC * 1000) / 1000;
   }
 
-  private resolve(slice: Slice, result: HitResult, lane: number): void {
+  /**
+   * @param offsetSeconds The signed error the judgement was made from. Omitted
+   *   by the miss sweep, which has no press to measure and falls back to the
+   *   clock.
+   */
+  private resolve(slice: Slice, result: HitResult, lane: number, offsetSeconds?: number): void {
     this.processedSliceIds.add(slice.id);
     slice.hit = result !== 'MISS';
     slice.hitTime = performance.now();
 
     const store = useSliceItStore.getState();
-    const scoreMultiplier = calculateScoreMultiplier(store.modifiers);
+    const scoreMultiplier = this.runMultiplier();
 
     this.notesResolved++;
     this.hitPoints += accuracyWeight(result);
+    if (result !== 'NONE') this.judgements[result] += 1;
 
     if (result === 'MISS' || result === 'BAD') {
-      this.combo = 0;
+      this.breakCombo();
     } else {
       this.combo++;
       this.maxCombo = Math.max(this.maxCombo, this.combo);
@@ -517,10 +634,83 @@ export class GameEngine {
       }
     }
 
-    const offset = this.now() - slice.time;
+    const offset = offsetSeconds ?? this.now() - slice.time;
     if (result !== 'MISS') this.recordOffset(offset);
     this.pushFeedback(result, lane, FEEDBACK_COLORS[result], offset);
+    // Last, so the histogram and the combo are already updated if this ends the
+    // run — the results screen must describe the note that killed you.
+    if (result !== 'NONE') this.applyHealth(result);
     this.commit();
+  }
+
+  /**
+   * Drop the combo, and say so when there was something to drop.
+   *
+   * Every path that zeroes the combo goes through here — a missed note, a ghost
+   * tap, a sliced bomb, a dropped hold — because otherwise "the combo broke" is
+   * an event with five separate definitions and the feedback only fires for
+   * some of them.
+   *
+   * Below {@link COMBO_BREAK_THRESHOLD} nothing is recorded at all: the run is
+   * still finding its feet and a reaction to every early miss is nagging, not
+   * information.
+   */
+  private breakCombo(): void {
+    const lost = this.combo;
+    this.combo = 0;
+    if (lost < COMBO_BREAK_THRESHOLD) return;
+
+    this.comboBreak = {
+      at: performance.now(),
+      magnitude: Math.min(1, lost / COMBO_BREAK_FULL_INTENSITY),
+    };
+    // A low square tone, not a sample: there is no combo-break asset in the
+    // repo, and adding a fetch to the miss path is how a missed note becomes a
+    // frame hitch that costs the next one too.
+    this.audioManager.playSfX(110, 'square', 0.22, useSliceItStore.getState().sfxVolume / 100);
+  }
+
+  /**
+   * The most recent combo break worth drawing, or null. Read once per frame by
+   * the renderer, which decides for itself when it has gone stale.
+   */
+  getComboBreak(): { at: number; magnitude: number } | null {
+    return this.comboBreak;
+  }
+
+  /* ── Health gauge ──────────────────────────────────────────────────────── */
+
+  /** Move the gauge by a judgement's delta. A no-op while the modifier is off. */
+  private applyHealth(result: Exclude<HitResult, 'NONE'>): void {
+    this.drainHealth(-HEALTH_DELTA[result]);
+  }
+
+  /**
+   * Move the gauge by `amount` points of drain (negative heals), and act on
+   * zero.
+   *
+   * Recovery above zero is allowed after a break because the gauge is a *live*
+   * readout, but {@link gaugeBroken} is sticky: the bonus is forfeited for the
+   * rest of the run whatever the bar does afterwards.
+   */
+  private drainHealth(amount: number): void {
+    if (!useSliceItStore.getState().modifiers.healthGauge) return;
+    this.health = Math.max(0, Math.min(HEALTH_MAX, this.health - amount));
+    if (this.health > 0) return;
+
+    this.gaugeBroken = true;
+    // Multiplayer: the run continues, the multiplier does not.
+    if (this.failMode === 'survive') return;
+
+    if (this.finished) return;
+    this.finished = true;
+    this.failed = true;
+    this.audioManager.stop();
+    // `FINISHED`, not a new `FAILED` status. The store's `GameStatus` is read by
+    // every screen in the game and a third value would have to be handled by all
+    // of them; what the results screen needs to say "you failed" is the flag on
+    // this engine, which it already holds. See `getRunStats().failed`.
+    useSliceItStore.getState().setStatus('FINISHED');
   }
 
   /**
@@ -540,6 +730,13 @@ export class GameEngine {
     const delta = offsetSeconds - this.offsetMean;
     this.offsetMean += delta / this.offsetCount;
     this.offsetM2 += delta * (offsetSeconds - this.offsetMean);
+
+    // …and the last few samples verbatim, which the summary cannot reconstruct
+    // and the error bar needs. Client-side only: the submission still carries
+    // three numbers, not a per-note payload. See `integrity.ts`.
+    this.offsetRing.offsets[this.offsetHead] = offsetSeconds;
+    this.offsetRing.times[this.offsetHead] = performance.now();
+    this.offsetHead = (this.offsetHead + 1) % OFFSET_RING_SIZE;
   }
 
   /**
@@ -548,10 +745,74 @@ export class GameEngine {
    */
   getTimingSummary(): TimingSummary | null {
     if (this.offsetCount < MIN_TIMING_SAMPLES) return null;
+    return this.getTimingStats();
+  }
+
+  /**
+   * The same numbers, ungated.
+   *
+   * {@link getTimingSummary} withholds a summary below {@link MIN_TIMING_SAMPLES}
+   * because a mean over five notes is noise and the server should not be asked
+   * to reason about it. The renderer has the opposite problem: the error bar's
+   * mean marker has to be somewhere from the first hit. `samples` is returned so
+   * every caller can apply its own threshold — and P5's offset suggestion
+   * deliberately applies a stricter one than this.
+   */
+  getTimingStats(): TimingSummary {
     return {
       samples: this.offsetCount,
-      meanMs: this.offsetMean * 1000,
-      stdDevMs: Math.sqrt(Math.max(0, this.offsetM2 / this.offsetCount)) * 1000,
+      meanMs: this.offsetCount > 0 ? this.offsetMean * 1000 : 0,
+      stdDevMs:
+        this.offsetCount > 0 ? Math.sqrt(Math.max(0, this.offsetM2 / this.offsetCount)) * 1000 : 0,
+    };
+  }
+
+  /**
+   * The recent signed hit offsets, for the early/late bar.
+   *
+   * Returned by reference and never copied — the caller reads it once per frame.
+   * A slot whose `times` entry is 0 was never written.
+   */
+  getRecentOffsets(): { readonly offsets: Float32Array; readonly times: Float32Array } {
+    return this.offsetRing;
+  }
+
+  /** The hit-window scale this run is being judged at. Widest window × this. */
+  getTimingScale(): number {
+    return timingScale(useSliceItStore.getState().modifiers);
+  }
+
+  /* ── Derived run state ─────────────────────────────────────────────────── */
+
+  /**
+   * Nothing missed and nothing BAD.
+   *
+   * Derived from the histogram rather than tracked as its own flag: a separate
+   * boolean is a second source of truth that can disagree with the numbers
+   * printed next to it, and this one would be read mid-run on every frame.
+   */
+  get isFullCombo(): boolean {
+    return this.judgements.MISS === 0 && this.judgements.BAD === 0;
+  }
+
+  /** Every resolved note was MARVELOUS. False before anything is resolved. */
+  get isPerfect(): boolean {
+    return this.notesResolved > 0 && this.judgements.MARVELOUS === this.notesResolved;
+  }
+
+  /** The full run tally, for the results screen. */
+  getRunStats(): RunStats {
+    return {
+      score: this.score,
+      maxCombo: this.maxCombo,
+      accuracy: accuracyOf(this.hitPoints, this.notesResolved),
+      notesResolved: this.notesResolved,
+      judgements: { ...this.judgements },
+      health: this.health,
+      gaugeBroken: this.gaugeBroken,
+      failed: this.failed,
+      isFullCombo: this.isFullCombo,
+      isPerfect: this.isPerfect,
     };
   }
 
@@ -592,7 +853,11 @@ export class GameEngine {
       combo: this.combo,
       maxCombo: this.maxCombo,
       accuracy: accuracyOf(this.hitPoints, this.notesResolved),
-      health: 100,
+      // The real gauge, or a full bar when the modifier is off — which is what
+      // the sidebar has been drawing all along, except now it means something
+      // for the seats that opted in. It never reaches zero *and* ends a run
+      // here: `failMode` is `'survive'` for the whole of a match.
+      health: this.health,
     };
 
     // `reportFinish` queues through the client's outbox, so a drop in the last

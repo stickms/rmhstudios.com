@@ -22,6 +22,13 @@ import type { PausePayload } from '@/lib/slice-it/net/events';
 import { toast } from 'sonner';
 import { canvasGlowEnabled } from '@/lib/render/canvas2d-fx';
 import { gameSurfaceDpr } from '@/lib/display-scale';
+import {
+  COMBO_BREAK_FEEDBACK_MS,
+  HIT_WINDOWS,
+  JUDGEMENT_COLORS,
+  QUANT_COLORS,
+} from '@/lib/slice-it/constants';
+import { judge } from '@/lib/slice-it/scoring';
 
 // Neumorphic Palette (dark-mode-aware colors are read from CSS vars at render time)
 const COLORS = {
@@ -53,6 +60,86 @@ function interpolateHex(hex1: string, hex2: string, ratio: number): string {
   const b = Math.round(b1 + (b2 - b1) * ratio);
 
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+/**
+ * How long a tick stays on the hit-error bar, ms.
+ *
+ * Long enough to read a cloud out of, short enough that the cloud describes what
+ * you are doing now rather than what you did at the start of the song — which is
+ * the difference between a feedback loop and a statistic.
+ */
+const ERROR_BAR_FADE_MS = 2000;
+
+/**
+ * The early/late hit-error bar.
+ *
+ * A tick per recent hit at its signed offset, fading out, plus a marker at the
+ * run's mean error. The engine has computed the signed offset since input
+ * judging moved onto the event's own `timeStamp` — this only draws it.
+ *
+ * The bar spans ±BAD, the widest window, so a tick's distance from the centre is
+ * directly comparable to the judgement it produced. Scaling to ±GREAT would look
+ * livelier and would clip every GOOD to the edge, which teaches nothing.
+ *
+ * The mean marker is the actionable half: the tick cloud tells you your spread,
+ * the marker tells you which way to move your audio offset — and it is the same
+ * number the results screen offers to apply for you.
+ */
+function drawErrorBar(
+  ctx: CanvasRenderingContext2D,
+  engine: GameEngine,
+  w: number,
+  y: number,
+  glow: number,
+  markerColor: string,
+): void {
+  const timing = engine.getTimingStats();
+  if (timing.samples === 0) return;
+
+  const { offsets, times } = engine.getRecentOffsets();
+  const scale = engine.getTimingScale();
+  const halfWidth = Math.min(w * 0.18, 180);
+  const pxPerSecond = halfWidth / (HIT_WINDOWS.BAD * scale);
+  const now = performance.now();
+
+  ctx.save();
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+
+  // The track, and a centre notch for "exactly on time".
+  ctx.globalAlpha = 0.35;
+  ctx.fillStyle = markerColor;
+  ctx.fillRect(w / 2 - halfWidth, y - 1, halfWidth * 2, 2);
+  ctx.globalAlpha = 0.6;
+  ctx.fillRect(w / 2 - 1, y - 7, 2, 14);
+
+  for (let i = 0; i < offsets.length; i++) {
+    const at = times[i];
+    if (at === 0) continue;
+    const age = (now - at) / ERROR_BAR_FADE_MS;
+    if (age < 0 || age >= 1) continue;
+
+    const offset = offsets[i];
+    const x = w / 2 + Math.max(-halfWidth, Math.min(halfWidth, offset * pxPerSecond));
+    ctx.globalAlpha = 0.15 + 0.75 * (1 - age);
+    ctx.fillStyle = JUDGEMENT_COLORS[judge(offset, scale)];
+    ctx.fillRect(x - 1, y - 6, 2, 12);
+  }
+
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = markerColor;
+  if (glow) {
+    ctx.shadowColor = markerColor;
+    ctx.shadowBlur = glow * 4;
+  }
+  const meanX =
+    w / 2 + Math.max(-halfWidth, Math.min(halfWidth, (timing.meanMs / 1000) * pxPerSecond));
+  ctx.fillRect(meanX - 1, y - 10, 2, 20);
+  ctx.restore();
+  ctx.globalAlpha = 1;
 }
 
 // Gamepad button indices (Standard Gamepad mapping)
@@ -811,6 +898,7 @@ export function GameCanvas() {
     // PPS = scroll-axis-length / 3.0, scaled by speed modifier.
     const speedMod = useSliceItStore.getState().modifiers.speed || 1.0;
     const isOneTrack = useSliceItStore.getState().modifiers.oneTrack;
+    const quantColorsOn = useSliceItStore.getState().quantColors;
     const isMobileV = h > w; // portrait canvas = mobile vertical mode
     const currentTime = AudioManager.getInstance().getCurrentTime();
 
@@ -1053,7 +1141,14 @@ export function GameCanvas() {
         }
         // @ts-expect-error — COLORS.slice is typed loosely
         else if (COLORS.slice[slice.type]) color = COLORS.slice[slice.type];
-        else if (slice.lane === 0) color = COLORS.lane1;
+        // Quantisation colour, when the chart carries one and the player has not
+        // turned it off. Applied only to plain taps: BOMB, SWITCH, SPEED and
+        // LONG each already use colour to say what KIND of note they are, and
+        // that meaning outranks the rhythm one. A tap has no such claim on it,
+        // so on a tap the colour is free to say "this is the sixteenth".
+        else if (quantColorsOn && slice.quant && QUANT_COLORS[slice.quant]) {
+          color = QUANT_COLORS[slice.quant];
+        } else if (slice.lane === 0) color = COLORS.lane1;
         else color = COLORS.lane2;
 
         ctx.fillStyle = color;
@@ -1210,6 +1305,29 @@ export function GameCanvas() {
       ctx.shadowColor = 'transparent'; // Reset
     }
 
+    // 3b. Combo break — the colour drains out of the playfield.
+    //
+    // A grey wash rather than `ctx.filter = 'saturate(…)'`, which is what the
+    // effect literally wants: setting `ctx.filter` makes the browser rasterise
+    // every subsequent draw to a scratch surface and composite it, on the one
+    // screen in the app where frame timing IS the gameplay. This is one
+    // `fillRect` and reads the same way — the field goes flat for a moment.
+    //
+    // Gated on `theme.glow`, which is false under reduced motion and on
+    // `perf-lite` devices: a screen-wide tint appearing on a miss is exactly the
+    // kind of thing that preference is asking not to happen.
+    const comboBreak = glow ? engine.getComboBreak() : null;
+    if (comboBreak) {
+      const age = (nowMs - comboBreak.at) / COMBO_BREAK_FEEDBACK_MS;
+      if (age >= 0 && age < 1) {
+        ctx.save();
+        ctx.globalAlpha = 0.2 * comboBreak.magnitude * (1 - age);
+        ctx.fillStyle = theme.shadowDark;
+        ctx.fillRect(0, 0, w, h);
+        ctx.restore();
+      }
+    }
+
     // 4. Update & Draw Particles
     //
     // Integrated against wall-clock time, not frames. `p.x += p.vx` per frame
@@ -1341,6 +1459,13 @@ export function GameCanvas() {
         drawCursor(cx, cy, color, label);
       });
     }
+
+    // 6. Hit-error bar
+    //
+    // Drawn below the playfield rather than on the judgement line: the eye that
+    // is reading notes must not have to also read a moving tick cloud in the
+    // same place, and the bar is for glancing at between phrases.
+    drawErrorBar(ctx, engine, w, isMobileV ? h * 0.955 : h * 0.93, glow, theme.textColor);
 
     ctx.restore();
   };
@@ -1744,7 +1869,7 @@ export function GameCanvas() {
             </div>
           )}
 
-          {status === 'PLAYING' && <HUD />}
+          {status === 'PLAYING' && <HUD engine={engine} />}
 
           {/* Synchronized Loading Overlay */}
           {status === 'PLAYING' && isLoadingSong && (
