@@ -14,6 +14,7 @@ import { create } from 'zustand';
 import { DIFFICULTIES } from '@/lib/slice-it/constants';
 import type { Command } from './commands';
 import type { GeneratePlan } from './generate';
+import { EMPTY_LINT, type LintResult } from './lint';
 import { singleTimingPoint } from './types';
 import type {
   Charts,
@@ -108,6 +109,23 @@ interface EditorState {
    */
   preview: GeneratePlan | null;
 
+  /* ── Lint (§9) ────────────────────────────────────────────────────────── */
+  /**
+   * The last lint result, carrying the `revision` it was computed from.
+   *
+   * Held in the store rather than in the panel so the timeline can ring a bad
+   * note and the difficulty tabs can badge a bad tier without the panel being
+   * open — a chart is not less broken because you closed the drawer.
+   *
+   * Deliberately NOT written onto the notes themselves: notes are replaced by
+   * reference on every command (that is how `markSaved` detects a race), and
+   * decorating them with issues would make every lint run look like an edit and
+   * schedule an autosave.
+   */
+  lint: LintResult;
+  /** Which lint finding the author is currently looking at, if any. */
+  lintFocus: { code: string; time: number } | null;
+
   /* ── Tools ────────────────────────────────────────────────────────────── */
   tool: EditorTool;
   snap: SnapDivision;
@@ -144,6 +162,8 @@ interface EditorState {
   setLoop: (loop: { start: number; end: number } | null) => void;
   setPlaytesting: (playtesting: boolean) => void;
   setPreview: (preview: GeneratePlan | null) => void;
+  setLint: (lint: LintResult) => void;
+  setLintFocus: (focus: { code: string; time: number } | null) => void;
   setTool: (tool: EditorTool) => void;
   setSnap: (snap: SnapDivision) => void;
   setSnapEnabled: (enabled: boolean) => void;
@@ -208,6 +228,8 @@ const initial = {
   loop: null,
   playtesting: false,
   preview: null as GeneratePlan | null,
+  lint: EMPTY_LINT,
+  lintFocus: null as { code: string; time: number } | null,
   tool: 'select' as EditorTool,
   snap: 4 as SnapDivision,
   snapEnabled: true,
@@ -260,6 +282,11 @@ export const useEditorStore = create<EditorState>()((set) => ({
       revision: 0,
       lastSavedRevision: 0,
       playhead: 0,
+      // Revisions restart at 0 for a new document, so a stale result from the
+      // previous one would out-rank every result this document produces and the
+      // panel would show another song's findings forever.
+      lint: EMPTY_LINT,
+      lintFocus: null,
     }),
 
   fail: (message) => set({ loadState: 'error', error: message }),
@@ -332,6 +359,16 @@ export const useEditorStore = create<EditorState>()((set) => ({
     ),
   setPlaytesting: (playtesting) => set({ playtesting }),
   setPreview: (preview) => set({ preview }),
+  /**
+   * A result older than the one already held is dropped.
+   *
+   * The runner coalesces, but a worker message and a `flush()` on the main
+   * thread can still cross: without this, clicking Publish (which flushes) and
+   * then receiving the older worker reply would restore the findings the flush
+   * had just superseded, and the button would flicker between enabled and not.
+   */
+  setLint: (lint) => set((state) => (lint.revision < state.lint.revision ? state : { lint })),
+  setLintFocus: (lintFocus) => set({ lintFocus }),
   setTool: (tool) => set({ tool }),
   setSnap: (snap) => set({ snap }),
   setSnapEnabled: (snapEnabled) => set({ snapEnabled }),

@@ -725,16 +725,47 @@ model DailyPuzzle {
 
 // Slice It Player Model
 model Player {
-  id          String   @id @default(cuid())
-  username    String   @unique
-  totalScore  Int      @default(0)
-  gamesPlayed Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id       String @id @default(cuid())
+  username String @unique
+
+  /// **Lifetime volume, not skill.** The sum of every score this account has
+  /// ever submitted, incremented on every run forever.
+  ///
+  /// It is kept exactly as it was, and deliberately NOT repurposed: it is a real
+  /// statistic ("how much have I played"), it is what the profile card shows,
+  /// and rewriting its meaning under a shipped column would silently change
+  /// every number already displayed. `skillRating` is the ranking axis; this is
+  /// the odometer. See `lib/slice-it/ranking.server.ts`.
+  totalScore  Int @default(0)
+  gamesPlayed Int @default(0)
+
+  /// R2 — the global skill rating. Best performance per **ranked** chart,
+  /// weighted by the chart's computed rating (C3) and by accuracy, summed with
+  /// geometric decay so the top ~50 dominate and grinding cannot substitute for
+  /// playing well. Computed by `recomputeSkillRating()`.
+  ///
+  /// Zero means "never computed, or no scores on ranked charts" — the two are
+  /// indistinguishable and do not need distinguishing, because both rank last.
+  skillRating Float @default(0)
+
+  /// How many ranked charts contributed to `skillRating`, so the board can show
+  /// "42 ranked charts" beside the number and a player can tell a small rating
+  /// from an unrecomputed one.
+  rankedPlays Int @default(0)
+
+  /// When `skillRating` was last recomputed. Null until the first recompute.
+  /// The re-rate sweep uses it to find rows stale against a weight change.
+  skillRatedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Link to Auth User
   userId String? @unique
   user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// The global skill board's only read: order by rating, page.
+  @@index([skillRating(sort: Desc)])
 }
 
 model VegaPlayer {
@@ -898,6 +929,20 @@ model Song {
   isPublic Boolean @default(true)
   plays    Int     @default(0)
 
+  /// C3 — the highest computed rating among this song's playable charts,
+  /// denormalised so the library can sort by difficulty.
+  ///
+  /// Denormalised rather than joined because the library list is a paged,
+  /// filtered, cursor-sorted read over the whole table: sorting it by an
+  /// aggregate over a related table means a join and a GROUP BY on every page
+  /// of every browse, and the value changes only when a chart is saved.
+  /// Maintained by `syncSongChartRating()` in `lib/slice-it/rating.server.ts`.
+  ///
+  /// Null means "no chart of this song has been rated", which is every song
+  /// today — the generated `Song.analysisData` fallback is not a `Chart` row and
+  /// has no rating. A null must sort last, not as a zero.
+  chartRating Float?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -916,6 +961,8 @@ model Song {
   /// The library's default sort is `createdAt desc`; without this it was a full
   /// scan and sort of the table on every open.
   @@index([isPublic, createdAt(sort: Desc)])
+  /// C3's "sort by difficulty" over the same filtered set.
+  @@index([isPublic, chartRating(sort: Desc)])
 }
 
 model SongLike {
@@ -1172,13 +1219,47 @@ model Chart {
   /// scores silently becoming incomparable.
   chartHash String @db.Char(64)
 
-  /// Computed difficulty rating (C3). Null until the rater has run.
+  /// Computed difficulty rating (C3), 0–20. Null until the rater has run.
+  /// Produced by `rateChart()` in `lib/slice-it/rating.ts` — read the header of
+  /// that file before treating this number as authoritative; the weights behind
+  /// it are a starting point awaiting calibration against clear-rate data.
   rating Float?
 
-  /// 'draft' → only the author can see or play it.
-  /// 'public' → in the library, own leaderboard.
-  /// 'ranked' → contributes to global rating (R10).
+  /// `RATING_VERSION` of the algorithm that produced `rating`, so a library
+  /// holding ratings from three different weight sets can be found and re-rated
+  /// instead of being silently unsortable.
+  ratingVersion Int?
+  ratedAt       DateTime?
+
+  /// **Visibility.** 'draft' → only the author can see or play it. 'public' →
+  /// in the library, own leaderboard.
+  ///
+  /// 'ranked' was originally listed here too. It is now `rankStatus` below: the
+  /// two are orthogonal axes (a chart can be public and unranked, and every
+  /// public chart starts that way), and collapsing them meant a single column
+  /// that four call sites already read as visibility — `player.server.ts`,
+  /// `api/slice-it/charts.ts`, `charts/$id.ts`, `editor/seed.server.ts`. Those
+  /// still match `status: { in: ['public', 'ranked'] }`, which stays correct
+  /// and becomes redundant; nothing writes 'ranked' here any more.
   status String @default("draft") @db.VarChar(16)
+
+  /// **R10 — the ranked pool.** 'unranked' → 'qualified' → 'ranked'.
+  ///
+  /// Only `ranked` charts feed the R2 skill rating. Without this axis every
+  /// uploaded chart feeds the global total, and a player can upload a
+  /// 15-minute track that charts into an enormous note count and farm it — the
+  /// plausibility bound in `scoring.ts` scales WITH duration, so it does not
+  /// stop this. The pool is the structural fix.
+  ///
+  /// `qualified` is awarded automatically by `evaluateQualification()` and is
+  /// reversible; `ranked` is only ever set by a human. See
+  /// `lib/slice-it/ranking.server.ts`.
+  rankStatus String @default("unranked") @db.VarChar(16)
+
+  /// When `rankStatus` last changed, and who changed it — null for the
+  /// automatic qualify/unqualify transitions, which have no actor.
+  rankStatusAt DateTime?
+  rankStatusBy String?
 
   /// True when this row was seeded from the generator and has not been edited
   /// since. Drives the "Auto" badge and lets C8 regenerate it in place.
@@ -1200,6 +1281,12 @@ model Chart {
   @@unique([songId, authorId, difficulty, keys, name])
   @@index([songId, status])
   @@index([authorId, updatedAt(sort: Desc)])
+  /// The R2 aggregation: every ranked chart, and only those.
+  @@index([rankStatus, rating])
+  /// The library's "sort by difficulty" (C3), and the re-rate sweep's
+  /// "everything rated by an old version".
+  @@index([rating(sort: Desc)])
+  @@index([ratingVersion])
 }
 
 /// Autosave + undo across sessions + a restore path. Append-only.

@@ -7,7 +7,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import type { Difficulty } from '@/lib/slice-it/constants';
 import { ChartPatchZ } from '@/lib/slice-it/editor/api-schemas';
+import { lintWireChart } from '@/lib/slice-it/editor/lint';
 import { chartHashOf } from '@/lib/slice-it/editor/hash.server';
 import { toChartDto } from '@/lib/slice-it/editor/seed.server';
 
@@ -36,7 +38,14 @@ export const Route = createFileRoute('/api/slice-it/charts/$id')({
         async ({ userId, params, body }) => {
           const chart = await prisma.chart.findUnique({
             where: { id: params.id },
-            select: { id: true, authorId: true, status: true, songId: true },
+            select: {
+              id: true,
+              authorId: true,
+              status: true,
+              songId: true,
+              difficulty: true,
+              song: { select: { duration: true, bpm: true } },
+            },
           });
           if (!chart) return Response.json({ error: 'Not found' }, { status: 404 });
           if (chart.authorId !== userId) {
@@ -48,11 +57,33 @@ export const Route = createFileRoute('/api/slice-it/charts/$id')({
           // what C12 exists to make impossible.
           const chartHash = chartHashOf(body.notes);
 
-          // TODO(phase 7 — `docs/slice-it-chart-editor.md` §9): run `lintChart`
-          // here and refuse a write to a NON-draft chart that has errors (422
-          // with the issue list). A draft may hold anything, because a draft is a
-          // work in progress by definition, so nothing is gated until publish
-          // exists — which is the same phase.
+          // §9: errors block, warnings do not — and a DRAFT is exempt entirely,
+          // because a draft is a work in progress by definition and an autosave
+          // that refuses to save half-finished work is an autosave that loses
+          // it. Once a chart is visible to other players it has to stay
+          // playable, so the same rules the editor showed the author are
+          // re-checked here rather than trusted from the client: the client is
+          // where a caller who never opened the editor sends their `PATCH`.
+          if (chart.status !== 'draft') {
+            const findings = lintWireChart({
+              difficulty: chart.difficulty as Difficulty,
+              notes: body.notes,
+              duration: chart.song.duration,
+              timingPoints: body.timingPoints,
+              bpm: chart.song.bpm,
+            });
+            const blocking = findings.filter((finding) => finding.severity === 'error');
+            if (blocking.length > 0) {
+              return Response.json(
+                {
+                  error: 'Chart has errors that must be fixed before saving a published chart',
+                  issues: blocking.slice(0, 50),
+                  issueCount: blocking.length,
+                },
+                { status: 422 },
+              );
+            }
+          }
 
           const updated = await prisma.$transaction(async (tx) => {
             const row = await tx.chart.update({
