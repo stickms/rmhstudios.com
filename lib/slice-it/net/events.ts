@@ -54,6 +54,12 @@ export const C2S = {
   JOIN: 'slice:join',
   QUICKPLAY: 'slice:quickplay',
   BROWSE: 'slice:browse',
+  /**
+   * Watch a lobby without taking one of its eight seats (`N1`). A spectator
+   * joins a parallel `:spec` room and receives the same broadcasts; they never
+   * appear in the roster and never affect whether a match can start.
+   */
+  SPECTATE: 'slice:spectate',
   LEAVE: 'slice:leave',
   READY: 'slice:ready',
   /** Host picks a track. Payload is an id; the server resolves the row. */
@@ -104,9 +110,31 @@ export const S2C = {
 
 export type LobbyState = 'waiting' | 'loading' | 'countdown' | 'playing' | 'results';
 
+/**
+ * A guest identity, as it exists for exactly one session.
+ *
+ * Sourced from a Discord Activity token the hub verified against Discord; held
+ * in the lobby's memory and gone the moment the seat is. Nothing here is ever
+ * written to a table or copied into object storage — see `X10` in
+ * `docs/plans/2026-08-06-slice-it-feature-ideas.md` for why a shadow `User` row
+ * is the wrong answer to "let them play".
+ */
+export interface GuestIdentity {
+  /** Discord display name, shown as-is. Never written to any table. */
+  name: string;
+  /** Discord CDN avatar URL. Referenced, never copied into our storage. */
+  avatarUrl: string | null;
+}
+
 export interface LobbyPlayer {
   socketId: string;
-  userId: string;
+  /**
+   * Null for a guest seat — see {@link LobbyPlayer.guest}. A guest has no site
+   * account, so there is no id to give them and nothing to attribute a score to.
+   */
+  userId: string | null;
+  /** Present exactly when `userId` is null. */
+  guest?: GuestIdentity;
   name: string;
   avatarUrl: string | null;
   ready: boolean;
@@ -174,7 +202,7 @@ export interface MatchStartPayload {
   song: LobbySong;
   /** Server epoch-ms the match began. Display only, never used for scoring. */
   startedAt: number;
-  roster: { socketId: string; userId: string; name: string; avatarUrl: string | null }[];
+  roster: { socketId: string; userId: string | null; name: string; avatarUrl: string | null }[];
 }
 
 /** A player's own claim about their run, published on a timer. */
@@ -196,7 +224,12 @@ export interface LiveScore extends ScoreReport {
 
 export interface FinalStanding {
   socketId: string;
-  userId: string;
+  /**
+   * Null for a guest. Their placing, score and accuracy are real and are shown;
+   * the row simply has nowhere to be written down, and `persistResults` skips
+   * it for exactly that reason.
+   */
+  userId: string | null;
   name: string;
   avatarUrl: string | null;
   score: number;
@@ -225,7 +258,7 @@ export interface MatchResults {
  * flapping player is about to stop being waited for.
  */
 export interface PausePayload {
-  peers: { userId: string; userName: string }[];
+  peers: { userId: string | null; userName: string }[];
   /** Server epoch-ms at which the room stops waiting and plays on. */
   kickAt: number;
   pausesLeft: number;
@@ -258,7 +291,16 @@ export type LobbyErrorCode =
   | 'auth_required'
   | 'rate_limited'
   | 'lobby_limit'
-  | 'song_unavailable';
+  | 'song_unavailable'
+  /**
+   * `slice:create` was asked for a specific code and somebody already holds it.
+   * Answered explicitly rather than by quietly minting a random one, because
+   * the caller asked for that code for a reason (a Discord voice channel
+   * derives it from its own id) and the useful next move is to *join* it.
+   */
+  | 'code_taken'
+  /** The requested code is not a well-formed lobby code. Nothing was created. */
+  | 'invalid_code';
 
 export interface LobbyError {
   code: LobbyErrorCode;
@@ -320,9 +362,25 @@ const CodeZ = z.unknown().transform((raw) =>
  */
 const IgnoredZ = z.unknown();
 
-const LobbySettingsPatchZ = z
-  .object({ isPublic: z.boolean().optional().catch(undefined) })
-  .catch({});
+const LobbySettingsShape = z.object({ isPublic: z.boolean().optional().catch(undefined) });
+
+const LobbySettingsPatchZ = LobbySettingsShape.catch({});
+
+/**
+ * `slice:create`, with an optional *preferred* code (`X9`).
+ *
+ * A Discord Activity derives one deterministic code from its voice channel id
+ * so a whole call converges on one lobby with nothing typed; without a way to
+ * ask for it, only whoever created the room first ever landed there. The
+ * preference is a request, not a claim: the server still owns the code space
+ * and answers `code_taken` when the code is already held (see
+ * {@link LobbyErrorCode}).
+ *
+ * `.catch({})` for the same reason the settings patch has it — `slice:create`
+ * is routinely emitted with `{}` or with nothing at all, and a schema that can
+ * fail on a payload the server barely reads is a disconnect waiting to happen.
+ */
+const LobbyCreateZ = LobbySettingsShape.extend({ code: CodeZ.optional() }).catch({});
 
 const LobbySongZ = z.object({
   id: z.string(),
@@ -333,9 +391,15 @@ const LobbySongZ = z.object({
   bpm: z.number(),
 });
 
+const GuestIdentityZ = z.object({ name: z.string(), avatarUrl: z.string().nullable() });
+
 const LobbyPlayerZ = z.object({
   socketId: z.string(),
-  userId: z.string(),
+  // Nullable, not removed: a guest seat is a real seat with no account behind
+  // it. Every other field keeps the strictness it had — this relaxation is
+  // exactly one field wide.
+  userId: z.string().nullable(),
+  guest: GuestIdentityZ.optional(),
   name: z.string(),
   avatarUrl: z.string().nullable(),
   ready: z.boolean(),
@@ -377,7 +441,7 @@ const MatchStartZ = z.object({
   roster: z.array(
     z.object({
       socketId: z.string(),
-      userId: z.string(),
+      userId: z.string().nullable(),
       name: z.string(),
       avatarUrl: z.string().nullable(),
     }),
@@ -388,7 +452,7 @@ const LiveScoreZ = ScoreReportZ.extend({ socketId: z.string(), done: z.boolean()
 
 const FinalStandingZ = z.object({
   socketId: z.string(),
-  userId: z.string(),
+  userId: z.string().nullable(),
   name: z.string(),
   avatarUrl: z.string().nullable(),
   score: z.number(),
@@ -425,12 +489,14 @@ const LobbyErrorZ = z.object({
     'rate_limited',
     'lobby_limit',
     'song_unavailable',
+    'code_taken',
+    'invalid_code',
   ]),
   message: z.string(),
 });
 
 const PauseZ = z.object({
-  peers: z.array(z.object({ userId: z.string(), userName: z.string() })),
+  peers: z.array(z.object({ userId: z.string().nullable(), userName: z.string() })),
   kickAt: z.number(),
   pausesLeft: z.number().int(),
 });
@@ -454,10 +520,11 @@ const ResumeZ = z.object({
  */
 export const EVENTS = defineEvents({
   // ─── Client → server ──────────────────────────────────────────────────
-  'slice:create': { c2s: LobbySettingsPatchZ },
+  'slice:create': { c2s: LobbyCreateZ },
   'slice:join': { c2s: z.object({ code: CodeZ }) },
   'slice:quickplay': { c2s: IgnoredZ },
   'slice:browse': { c2s: IgnoredZ },
+  'slice:spectate': { c2s: z.object({ code: CodeZ }) },
   'slice:leave': { c2s: IgnoredZ },
   'slice:ready': { c2s: z.object({ ready: z.boolean().optional() }).catch({}) },
   'slice:song': { c2s: z.object({ songId: z.string().max(64) }) },
@@ -503,6 +570,19 @@ export type SliceS2C = ServerToClient<typeof EVENTS>;
 /** Every player in a lobby shares a socket.io room named for its code. */
 export function lobbyRoom(code: string): string {
   return `${ROOM_PREFIX}${code}`;
+}
+
+/**
+ * Spectators of a lobby share a second room (`N1`).
+ *
+ * A separate room rather than a flag on the seat: the score broadcast already
+ * targets a room, so fanning out to watchers is one extra `emit` per tick
+ * instead of a filter over the roster on every tick. It also keeps a spectator
+ * out of `MAX_LOBBY_PLAYERS`, out of the ready check, and out of the set of
+ * people a match waits for — which is the whole point of the role.
+ */
+export function specRoom(code: string): string {
+  return `${ROOM_PREFIX}${code}:spec`;
 }
 
 export { MAX_LOBBY_PLAYERS };

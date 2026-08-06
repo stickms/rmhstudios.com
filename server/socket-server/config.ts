@@ -127,6 +127,8 @@ export const config = {
     'slice:join': { max: 30, windowMs: 60_000 },
     'slice:quickplay': { max: 20, windowMs: 60_000 },
     'slice:browse': { max: 30, windowMs: 60_000 },
+    // Spectating is a join that takes no seat, so it gets a join's budget.
+    'slice:spectate': { max: 30, windowMs: 60_000 },
     'slice:leave': { max: 30, windowMs: 60_000 },
     'slice:ready': { max: 60, windowMs: 60_000 },
     'slice:song': { max: 60, windowMs: 60_000 },
@@ -232,6 +234,16 @@ export const config = {
 
   // ─── Database ───
   DATABASE_URL: envString('DATABASE_URL', ''),
+
+  // ─── Discord Activity auth ───
+  //
+  // The *same* application id `app/routes/api/discord/token.ts` exchanges codes
+  // for. The hub needs only the id, never the secret: the code→token exchange
+  // (the one operation that requires the secret) happens on the web tier, and
+  // the hub only ever *verifies* an already-issued token. Leaving this unset
+  // disables the Discord auth path entirely rather than accepting tokens the
+  // hub cannot check the audience of — see `softAuthMiddleware`.
+  DISCORD_ACTIVITY_CLIENT_ID: envString('DISCORD_ACTIVITY_CLIENT_ID', ''),
 
   // ─── Disconnect Grace Period ───
   DISCONNECT_GRACE_PERIOD_MS: envInt('SOCKET_GRACE_MS', 120_000),
