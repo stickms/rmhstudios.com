@@ -44,6 +44,8 @@
   "credit.factors": "What is dragging it down",
   "credit.gaugeDesc": "A dial from 300 to 850 divided into five bands, with a needle at the current score.",
   "credit.gaugeTitle": "Credit score dial",
+  "credit.heroKicker": "His credit score",
+  "credit.heroNote": "Recomputed from the books against the clock, and about as steady as his finances. Everyone watching sees the same number at the same instant.",
   "credit.hint": "Recomputed continuously from the books, and about as stable as his finances. Everyone watching sees the same number at the same instant — it is a function of the clock, not a random walk in your tab.",
   "credit.pause": "Freeze",
   "credit.penalty": "−{{points}} pts",

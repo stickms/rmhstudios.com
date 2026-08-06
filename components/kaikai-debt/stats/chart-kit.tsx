@@ -391,7 +391,7 @@ export function Legend({
             <Swatch seriesIndex={item.seriesIndex} />
             <span className="truncate">{item.label}</span>
             {item.value && (
-              <span className="text-site-text-dim tabular-nums">{item.value}</span>
+              <span className="text-site-text-muted tabular-nums">{item.value}</span>
             )}
           </>
         );
@@ -405,7 +405,7 @@ export function Legend({
                 className={cn(
                   'flex min-w-0 items-center gap-1.5 rounded-site-sm px-1.5 py-1 text-xs transition-colors',
                   'hover:bg-site-surface-active focus-visible:bg-site-surface-active',
-                  active ? 'text-site-text' : 'text-site-text-dim opacity-45',
+                  active ? 'text-site-text' : 'text-site-text-muted opacity-45',
                 )}
               >
                 {content}
@@ -451,11 +451,11 @@ export function ChartCard({
   className?: string;
 }) {
   return (
-    <section className={cn('glass-fill flex flex-col gap-3 rounded-site p-3 sm:p-4', className)}>
+    <section className={cn('glass-fill flex flex-col gap-3 rounded-site p-2.5 sm:p-4', className)}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col gap-0.5">
           <h3 className="font-display text-sm font-semibold text-site-text">{title}</h3>
-          {hint && <p className="text-xs text-pretty text-site-text-dim">{hint}</p>}
+          {hint && <p className="text-xs text-pretty text-site-text-muted">{hint}</p>}
         </div>
         {controls && <div className="flex shrink-0 flex-wrap items-center gap-2">{controls}</div>}
       </div>

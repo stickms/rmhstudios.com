@@ -38,21 +38,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { Activity, AlertTriangle, Pause, Play, Zap } from 'lucide-react';
+import { Activity, Pause, Play, Zap } from 'lucide-react';
 import {
-  CREDIT_BANDS,
   CREDIT_MAX,
   CREDIT_MIN,
   CREDIT_REDUCED_TICK_MS,
   CREDIT_TICK_MS,
   CREDIT_WINDOWS,
-  bandTrack,
   creditBand,
   creditFactors,
   creditScoreAt,
   creditStats,
   sampleCredit,
-  type CreditBand,
   type CreditFactor,
   type CreditInputs,
 } from '@/lib/kaikai-debt/credit';
@@ -62,57 +59,24 @@ import { Slider } from '@/components/ui/slider';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { cn } from '@/lib/utils';
 import { ChartToggle, Readout, ReadoutRow, makePlot, pointerInViewBox } from './chart-kit';
+import { BAND_SERIES, CreditDial, bandLabel } from './CreditDial';
 
 /* -------------------------------------------------------------------------- */
 /* Geometry                                                                   */
 /* -------------------------------------------------------------------------- */
 
-const GAUGE = { size: 260, cx: 130, cy: 140, radius: 104, thickness: 16 };
-/** The dial spans 220°, opening downward — the shape everyone reads as a gauge. */
-const GAUGE_START = 160;
-const GAUGE_SWEEP = 220;
-
+/**
+ * The rolling chart's plot box. The DIAL's geometry is not here — it moved to
+ * `CreditDial`, which is the one component that draws a credit score on this
+ * site (the hero renders the same one, smaller).
+ */
 const SPARK = makePlot(720, 180, { left: 44, right: 10, top: 12, bottom: 20 });
 /** Samples across the rolling chart. One per ~3px at full width. */
 const SPARK_SAMPLES = 240;
 
-const angleFor = (score: number): number =>
-  GAUGE_START + ((score - CREDIT_MIN) / (CREDIT_MAX - CREDIT_MIN)) * GAUGE_SWEEP;
-
-/** Polar → cartesian on the gauge's own centre. */
-function onDial(angleDeg: number, radius: number): { x: number; y: number } {
-  const a = (angleDeg * Math.PI) / 180;
-  return { x: GAUGE.cx + Math.cos(a) * radius, y: GAUGE.cy + Math.sin(a) * radius };
-}
-
-/** An arc of the dial as an SVG path, from `fromScore` to `toScore`. */
-function dialArc(fromScore: number, toScore: number, radius: number): string {
-  const a0 = angleFor(fromScore);
-  const a1 = angleFor(toScore);
-  const p0 = onDial(a0, radius);
-  const p1 = onDial(a1, radius);
-  const large = Math.abs(a1 - a0) > 180 ? 1 : 0;
-  return `M${p0.x.toFixed(2)} ${p0.y.toFixed(2)}A${radius} ${radius} 0 ${large} 1 ${p1.x.toFixed(2)} ${p1.y.toFixed(2)}`;
-}
-
 /* -------------------------------------------------------------------------- */
 /* Labels                                                                     */
 /* -------------------------------------------------------------------------- */
-
-function bandLabel(band: CreditBand, t: TFunction): string {
-  switch (band) {
-    case 'exceptional':
-      return t('credit.band.exceptional', { defaultValue: 'Exceptional' });
-    case 'good':
-      return t('credit.band.good', { defaultValue: 'Good' });
-    case 'fair':
-      return t('credit.band.fair', { defaultValue: 'Fair' });
-    case 'poor':
-      return t('credit.band.poor', { defaultValue: 'Poor' });
-    default:
-      return t('credit.band.ruinous', { defaultValue: 'Ruinous' });
-  }
-}
 
 function factorLabel(id: CreditFactor['id'], t: TFunction): string {
   switch (id) {
@@ -156,15 +120,6 @@ function factorValue(factor: CreditFactor, t: TFunction): string {
   }
 }
 
-/** Which palette slot a band takes. Fixed, so the dial never repaints. */
-const BAND_SERIES: Record<CreditBand, number> = {
-  ruinous: 7,
-  poor: 0,
-  fair: 4,
-  good: 2,
-  exceptional: 6,
-};
-
 /* -------------------------------------------------------------------------- */
 /* The viewer                                                                 */
 /* -------------------------------------------------------------------------- */
@@ -195,23 +150,8 @@ export function CreditScore({ inputs, asOfMs }: CreditScoreProps) {
     };
   });
 
-  const scoreRef = useRef<HTMLSpanElement>(null);
-  const deltaRef = useRef<HTMLSpanElement>(null);
-  const needleRef = useRef<SVGGElement>(null);
   const lineRef = useRef<SVGPathElement>(null);
   const areaRef = useRef<SVGPathElement>(null);
-  /**
-   * The band chip and the dial, driven by a `data-band` attribute the fast loop
-   * writes rather than by React state.
-   *
-   * They used to render from the once-a-second summary while the digits came
-   * from the 14Hz interval, and the two visibly disagreed — the readout saying
-   * 410 next to a chip still saying "Poor". All five labels are in the DOM and
-   * CSS shows the one matching the attribute (`.kd-band` in kaikai-debt.css), so
-   * the chip cannot lag the number it is describing.
-   */
-  const bandRef = useRef<HTMLParagraphElement>(null);
-  const dialRef = useRef<SVGGElement>(null);
 
   // The loop reads these rather than being torn down and restarted whenever a
   // control moves — a restarting interval drops a frame every time you touch a
@@ -267,47 +207,25 @@ export function CreditScore({ inputs, asOfMs }: CreditScoreProps) {
     const period = reduced ? CREDIT_REDUCED_TICK_MS : CREDIT_TICK_MS;
     let interval: ReturnType<typeof setInterval> | null = null;
     let lastSummaryAt = 0;
-    let previous = creditScoreAt(inputs, asOfMs);
     let onScreen = true;
 
     const paint = () => {
       const options = optionsRef.current;
       if (options.paused) return;
       const now = Date.now();
-      const score = creditScoreAt(options.inputs, now, { volatility: options.volatility });
-
-      if (scoreRef.current) scoreRef.current.textContent = String(Math.round(score));
-      if (deltaRef.current) {
-        const delta = score - previous;
-        deltaRef.current.textContent = `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}`;
-        deltaRef.current.dataset.direction = delta >= 0 ? 'up' : 'down';
-      }
-      previous = score;
-
-      if (needleRef.current) {
-        needleRef.current.setAttribute(
-          'transform',
-          `rotate(${angleFor(score).toFixed(2)} ${GAUGE.cx} ${GAUGE.cy})`,
-        );
-      }
-
-      // The band travels with the digits, not with the once-a-second summary.
-      const live = creditBand(score);
-      if (bandRef.current?.dataset.band !== live) {
-        if (bandRef.current) bandRef.current.dataset.band = live;
-        dialRef.current?.setAttribute('data-band', live);
-      }
-
       const paths = buildPaths(now, options.windowMs, options.volatility, options.inputs);
       lineRef.current?.setAttribute('d', paths.line);
       areaRef.current?.setAttribute('d', paths.area);
 
-      // The prose under the gauge moves once a second — it is read, not watched.
+      // The prose under the chart moves once a second — it is read, not watched.
+      // The DIAL is not driven from here at all: it owns its own interval and
+      // writes its own needle, digits and band (see `CreditDial`), which is what
+      // keeps one component responsible for one number.
       if (now - lastSummaryAt > 1_000) {
         lastSummaryAt = now;
         setSummary({
           atMs: now,
-          score,
+          score: creditScoreAt(options.inputs, now, { volatility: options.volatility }),
           stats: creditStats(paths.samples),
           factors: creditFactors(options.inputs, now),
         });
@@ -330,7 +248,7 @@ export function CreditScore({ inputs, asOfMs }: CreditScoreProps) {
     };
 
     let observer: IntersectionObserver | null = null;
-    const host = scoreRef.current;
+    const host = lineRef.current;
     if (host && typeof IntersectionObserver !== 'undefined') {
       observer = new IntersectionObserver((records) => {
         onScreen = records.some((record) => record.isIntersecting);
@@ -350,17 +268,19 @@ export function CreditScore({ inputs, asOfMs }: CreditScoreProps) {
     // leaving it spinning on a no-op — a paused readout should cost nothing.
   }, [reduced, paused, inputs, asOfMs, buildPaths]);
 
+  // The chart's ink follows the band of the once-a-second summary, not of the
+  // instantaneous score: a line that changed colour fourteen times a second
+  // would be a strobe, and unlike the digits it is a shape you read over time.
   const band = creditBand(summary.score);
-  const track = useMemo(() => bandTrack(), []);
 
   return (
-    <section className="glass-pane flex flex-col gap-4 rounded-site p-4">
+    <section className="glass-pane flex flex-col gap-4 rounded-site p-3 sm:p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-0.5">
           <h3 className="font-display text-base font-semibold text-site-text">
             {t('credit.title', { defaultValue: 'Live credit score' })}
           </h3>
-          <p className="max-w-prose text-xs text-pretty text-site-text-dim">
+          <p className="max-w-prose text-xs text-pretty text-site-text-muted">
             {t('credit.hint', {
               defaultValue:
                 'Recomputed continuously from the books, and about as stable as his finances. Everyone watching sees the same number at the same instant — it is a function of the clock, not a random walk in your tab.',
@@ -378,102 +298,14 @@ export function CreditScore({ inputs, asOfMs }: CreditScoreProps) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,260px)_minmax(0,1fr)]">
-        {/* ── The dial ────────────────────────────────────────────────── */}
         <div className="flex flex-col items-center gap-2">
-          <svg
-            viewBox={`0 0 ${GAUGE.size} ${GAUGE.size - 60}`}
-            className="w-full max-w-[260px]"
-            role="img"
-          >
-            <title>{t('credit.gaugeTitle', { defaultValue: 'Credit score dial' })}</title>
-            <desc>
-              {t('credit.gaugeDesc', {
-                defaultValue:
-                  'A dial from 300 to 850 divided into five bands, with a needle at the current score.',
-              })}
-            </desc>
-            <g ref={dialRef} className="kd-dial" data-band={creditBand(initial.score)}>
-              {track.map((segment) => (
-                <path
-                  key={segment.band}
-                  className={`kd-dial__arc kd-dial__arc--${segment.band} kd-series-${BAND_SERIES[segment.band]}`}
-                  d={dialArc(segment.from, segment.to, GAUGE.radius)}
-                  stroke="currentColor"
-                  strokeWidth={GAUGE.thickness}
-                  strokeLinecap="butt"
-                  fill="none"
-                />
-              ))}
-            </g>
-            {/* The needle is one group with a transform, so the ~14Hz update is
-                a single compositor-friendly attribute write. */}
-            <g
-              ref={needleRef}
-              transform={`rotate(${angleFor(initial.score).toFixed(2)} ${GAUGE.cx} ${GAUGE.cy})`}
-            >
-              <line
-                x1={GAUGE.cx}
-                y1={GAUGE.cy}
-                x2={GAUGE.cx + GAUGE.radius - GAUGE.thickness}
-                y2={GAUGE.cy}
-                stroke="currentColor"
-                strokeWidth={3}
-                strokeLinecap="round"
-                className="text-site-text"
-              />
-            </g>
-            <circle cx={GAUGE.cx} cy={GAUGE.cy} r={6} className="fill-site-text" />
-            <text
-              x={onDial(GAUGE_START, GAUGE.radius).x}
-              y={onDial(GAUGE_START, GAUGE.radius).y + 22}
-              className="kd-chart__label"
-              textAnchor="middle"
-            >
-              {CREDIT_MIN}
-            </text>
-            <text
-              x={onDial(GAUGE_START + GAUGE_SWEEP, GAUGE.radius).x}
-              y={onDial(GAUGE_START + GAUGE_SWEEP, GAUGE.radius).y + 22}
-              className="kd-chart__label"
-              textAnchor="middle"
-            >
-              {CREDIT_MAX}
-            </text>
-          </svg>
-
-          {/* `aria-live="off"`: a value that changes fourteen times a second
-              would flood a screen reader with an unusable stream of numbers.
-              The summary sentence below carries the same information at a
-              readable cadence — the same choice the odometer makes. */}
-          <p className="flex items-baseline gap-2" aria-live="off">
-            <span
-              ref={scoreRef}
-              className="kd-odometer font-display text-[clamp(2.4rem,10vw,3.4rem)] leading-none font-bold text-site-text tabular-nums"
-            >
-              {Math.round(initial.score)}
-            </span>
-            <span
-              ref={deltaRef}
-              data-direction="up"
-              className="text-xs text-site-text-dim tabular-nums"
-            >
-              +0.0
-            </span>
-          </p>
-          <p
-            ref={bandRef}
-            data-band={creditBand(initial.score)}
-            className="kd-band flex items-center gap-1.5 rounded-full bg-current/12 px-2.5 py-1 text-xs font-medium"
-          >
-            <AlertTriangle className="size-3.5" aria-hidden />
-            <span className="text-site-text">
-              {CREDIT_BANDS.map((name) => (
-                <span key={name} className={`kd-band__label kd-band__label--${name}`}>
-                  {bandLabel(name, t)}
-                </span>
-              ))}
-            </span>
-          </p>
+          <CreditDial
+            inputs={inputs}
+            asOfMs={asOfMs}
+            volatility={volatility}
+            paused={paused}
+            size="lg"
+          />
           <p className="sr-only">
             {t('credit.screenReader', {
               defaultValue:
@@ -511,7 +343,7 @@ export function CreditScore({ inputs, asOfMs }: CreditScoreProps) {
               }))}
             />
             <div className="flex min-w-0 flex-1 items-center gap-2">
-              <label htmlFor="kd-credit-volatility" className="shrink-0 text-xs text-site-text-dim">
+              <label htmlFor="kd-credit-volatility" className="shrink-0 text-xs text-site-text-muted">
                 <Zap className="mr-1 inline size-3.5" aria-hidden />
                 {t('credit.stress', { defaultValue: 'Stress test' })}
               </label>
@@ -527,7 +359,7 @@ export function CreditScore({ inputs, asOfMs }: CreditScoreProps) {
                 onValueChange={([next]) => setVolatility((next ?? 100) / 100)}
                 aria-label={t('credit.stress', { defaultValue: 'Stress test' })}
               />
-              <span className="w-9 shrink-0 text-right text-xs text-site-text-dim tabular-nums">
+              <span className="w-9 shrink-0 text-right text-xs text-site-text-muted tabular-nums">
                 {volatility.toFixed(1)}×
               </span>
             </div>
@@ -656,9 +488,9 @@ export function CreditScore({ inputs, asOfMs }: CreditScoreProps) {
               <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-xs">
                 <span className="text-site-text">
                   {factorLabel(factor.id, t)}{' '}
-                  <span className="text-site-text-dim">{formatShare(factor.weight)}</span>
+                  <span className="text-site-text-muted">{formatShare(factor.weight)}</span>
                 </span>
-                <span className="text-site-text-dim">{factorValue(factor, t)}</span>
+                <span className="text-site-text-muted">{factorValue(factor, t)}</span>
                 <span className="shrink-0 font-medium text-site-text tabular-nums">
                   {t('credit.penalty', {
                     defaultValue: '−{{points}} pts',
@@ -678,7 +510,7 @@ export function CreditScore({ inputs, asOfMs }: CreditScoreProps) {
             </li>
           ))}
         </ul>
-        <p className="text-xs text-pretty text-site-text-dim">
+        <p className="text-xs text-pretty text-site-text-muted">
           {t('credit.utilisationNote', {
             defaultValue:
               'Utilisation is measured against a notional $500 limit — a limit large enough for the ratio to ever fall under 100% is a limit nobody would extend to this borrower. Payment history is not an estimate: there is no repayment path in this system at all, so “never” is the literal state of the data.',
@@ -692,7 +524,7 @@ export function CreditScore({ inputs, asOfMs }: CreditScoreProps) {
 function Mini({ label, value }: { label: string; value: string }) {
   return (
     <div className="glass-fill flex flex-col gap-0.5 rounded-site-sm px-2.5 py-2">
-      <dt className="text-xs text-site-text-dim">{label}</dt>
+      <dt className="text-xs text-site-text-muted">{label}</dt>
       <dd className="font-display text-sm font-semibold text-site-text tabular-nums">{value}</dd>
     </div>
   );

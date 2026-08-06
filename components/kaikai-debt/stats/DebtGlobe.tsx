@@ -547,7 +547,7 @@ export function DebtGlobe({
         </>
       }
       footer={
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('stats.globe.legend', {
             defaultValue:
               'Newest month faces you at rest; the archive runs backwards round the far side. Faint spikes are on the hemisphere you cannot see yet.',

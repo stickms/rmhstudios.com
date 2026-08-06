@@ -546,7 +546,7 @@ export function SourceSplit({
       </div>
       <dl className="grid grid-cols-2 gap-2 text-xs">
         <div className="flex flex-col gap-0.5">
-          <dt className="flex items-center gap-1.5 text-site-text-dim">
+          <dt className="flex items-center gap-1.5 text-site-text-muted">
             <Swatch seriesIndex={4} />
             {t('stats.source.member', { defaultValue: 'Put there by people' })}
           </dt>
@@ -555,7 +555,7 @@ export function SourceSplit({
           </dd>
         </div>
         <div className="flex flex-col gap-0.5">
-          <dt className="flex items-center gap-1.5 text-site-text-dim">
+          <dt className="flex items-center gap-1.5 text-site-text-muted">
             <Swatch seriesIndex={1} />
             {t('stats.source.ledger', { defaultValue: 'Recovered from his history' })}
           </dt>

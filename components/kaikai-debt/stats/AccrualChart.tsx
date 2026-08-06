@@ -219,7 +219,7 @@ export function AccrualChart({
       }
     >
       {empty ? (
-        <p className="py-10 text-center text-sm text-site-text-dim">
+        <p className="py-10 text-center text-sm text-site-text-muted">
           {t('stats.empty', { defaultValue: 'Nothing on the books yet — add a line and it appears here.' })}
         </p>
       ) : (

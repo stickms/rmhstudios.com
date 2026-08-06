@@ -54,14 +54,14 @@ export function PersonLeaderboard({
   }, [people, nowMs]);
 
   return (
-    <section className="glass-fill flex flex-col gap-3 rounded-site p-3 sm:p-4">
+    <section className="glass-fill flex flex-col gap-3 rounded-site p-2.5 sm:p-4">
       <div className="flex flex-col gap-0.5">
         <h3 className="font-display text-sm font-semibold text-site-text">{title}</h3>
-        <p className="text-xs text-pretty text-site-text-dim">{hint}</p>
+        <p className="text-xs text-pretty text-site-text-muted">{hint}</p>
       </div>
 
       {rows.measured.length === 0 ? (
-        <p className="py-6 text-center text-sm text-site-text-dim">{emptyLabel}</p>
+        <p className="py-6 text-center text-sm text-site-text-muted">{emptyLabel}</p>
       ) : (
         <ol className="flex flex-col gap-1.5">
           {rows.measured.map((row, index) => {
@@ -70,7 +70,7 @@ export function PersonLeaderboard({
             return (
               <li key={row.stat.person.id} className="flex flex-col gap-1">
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="w-4 shrink-0 text-site-text-dim tabular-nums">{index + 1}</span>
+                  <span className="w-4 shrink-0 text-site-text-muted tabular-nums">{index + 1}</span>
                   <UserAvatar
                     src={row.stat.person.image}
                     alt=""
@@ -91,7 +91,7 @@ export function PersonLeaderboard({
                   <span className="ml-auto shrink-0 font-medium text-site-text tabular-nums">
                     {formatDebt(row.value)}
                   </span>
-                  <span className="w-14 shrink-0 text-right text-site-text-dim tabular-nums">
+                  <span className="w-14 shrink-0 text-right text-site-text-muted tabular-nums">
                     {t('stats.readout.linesShort', {
                       defaultValue: '{{count}} lines',
                       count: row.stat.count,

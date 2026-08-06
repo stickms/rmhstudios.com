@@ -86,7 +86,7 @@ function Desk({
 }) {
   return (
     <article className="glass-fill flex flex-col gap-1.5 rounded-site p-3">
-      <p className="flex items-center gap-1.5 text-xs text-site-text-dim">
+      <p className="flex items-center gap-1.5 text-xs text-site-text-muted">
         <Icon className="size-3.5 shrink-0" aria-hidden />
         {role}
       </p>

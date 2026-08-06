@@ -110,7 +110,7 @@ export function RhythmHeatmap({
           'Every line on the books by UTC weekday and hour. Darker means busier; an untinted cell means nothing has ever been logged in that hour.',
       })}
       footer={
-        <div className="flex flex-wrap items-center gap-3 text-xs text-site-text-dim">
+        <div className="flex flex-wrap items-center gap-3 text-xs text-site-text-muted">
           <span className="flex items-center gap-1.5">
             {t('stats.rhythm.less', { defaultValue: 'Fewer' })}
             {Array.from({ length: STEPS + 1 }, (_, i) => (

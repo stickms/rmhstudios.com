@@ -354,7 +354,7 @@ export function HyperCube4D({
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {axes.map((axis) => (
-              <label key={axis.key} className="flex flex-col gap-1 text-xs text-site-text-dim">
+              <label key={axis.key} className="flex flex-col gap-1 text-xs text-site-text-muted">
                 {axis.label}
                 <Select
                   controlSize="sm"
@@ -388,7 +388,7 @@ export function HyperCube4D({
                   <span
                     className={cn(
                       'w-8 shrink-0 font-mono text-xs',
-                      isW ? 'text-site-accent' : 'text-site-text-dim',
+                      isW ? 'text-site-accent' : 'text-site-text-muted',
                     )}
                   >
                     {planeLabel(plane)}
@@ -404,14 +404,14 @@ export function HyperCube4D({
                       plane: planeLabel(plane),
                     })}
                   />
-                  <span className="w-9 shrink-0 text-right text-xs text-site-text-dim tabular-nums">
+                  <span className="w-9 shrink-0 text-right text-xs text-site-text-muted tabular-nums">
                     {degrees}°
                   </span>
                 </div>
               );
             })}
           </div>
-          <p className="text-xs text-site-text-dim">
+          <p className="text-xs text-site-text-muted">
             {t('stats.hyper.note', {
               defaultValue:
                 'XY, XZ and YZ are the rotations you already know — they leave W alone. XW, YW and ZW trade a visible axis for the invisible one, which is why the shape appears to turn inside out without anything actually deforming.',

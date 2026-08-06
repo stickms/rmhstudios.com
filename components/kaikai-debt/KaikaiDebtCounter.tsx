@@ -11,8 +11,10 @@ import {
   type DebtStreamEvent,
 } from '@/lib/kaikai-debt/debt';
 import { playRemoteDebt } from '@/lib/kaikai-debt/sound';
+import { DebtBackdrop } from './DebtBackdrop';
 import { DebtCounter } from './DebtCounter';
 import { DebtLog, LedgerSubtotal } from './DebtLog';
+import { CreditDial } from './stats/CreditDial';
 import { AddDebtForm, type AddDebtResult } from './AddDebtForm';
 import { AskDebtPanel } from './AskDebtPanel';
 import { DebtDesks } from './DebtDesks';
@@ -156,23 +158,44 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
     [],
   );
 
+  /**
+   * What the credit meter under the counter reads.
+   *
+   * Straight off the boot snapshot, so the dial renders its true value on the
+   * FIRST paint — server and client alike. The model is a pure function of the
+   * ledger and the clock (`lib/kaikai-debt/credit.ts`), so feeding it a
+   * placeholder until a second request landed would render one score and then
+   * visibly jump to another, which is the hydration mismatch the whole design
+   * is built to avoid.
+   */
+  const creditInputs = {
+    basisCents,
+    principalCents,
+    entryCount,
+    memberEntryCount,
+    oldestMs: snapshot.oldestMs,
+    categoriesUsed: snapshot.categoryCount,
+  };
+
   return (
     <div className="kd-root kd-page">
+      <DebtBackdrop />
+
       {/* Its own chrome, because this route is deliberately outside the site
           shell — no rail, no dock, nothing to navigate away into while you are
           reading a ledger. What it is NOT is a different design system: the bar
           is the same `.glass-chrome` every sticky header on the site uses, at
           the same measure, in the same tokens. */}
       <header className="glass-chrome sticky top-0 z-20 border-b border-site-border">
-        <div className="mx-auto flex w-full max-w-3xl items-center gap-3 px-4 py-3">
+        <div className="mx-auto flex w-full max-w-3xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
           <Link
             to="/"
-            className="flex items-center gap-1.5 rounded-site-sm px-1.5 py-1 text-sm text-site-text-muted transition-colors hover:text-site-text"
+            className="flex shrink-0 items-center gap-1.5 rounded-site-sm px-1.5 py-1 text-sm whitespace-nowrap text-site-text-muted transition-colors hover:text-site-text"
           >
             <ArrowLeft className="size-4" aria-hidden />
             {t('page.back', { defaultValue: 'RMH Studios' })}
           </Link>
-          <span aria-hidden className="text-site-text-dim">
+          <span aria-hidden className="shrink-0 text-site-text-muted">
             /
           </span>
           <span className="min-w-0 truncate text-sm font-medium text-site-text">
@@ -184,13 +207,13 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
         </div>
       </header>
 
-      <main id="main-content" className="mx-auto w-full max-w-3xl px-4 py-6">
-        <div className="flex flex-col gap-6">
+      <main id="main-content" className="mx-auto w-full max-w-3xl px-3 py-5 sm:px-4 sm:py-8">
+        <div className="flex flex-col gap-5 sm:gap-7">
           <div className="flex flex-col gap-2">
-            <p className="site-kicker text-site-text-dim">
+            <p className="site-kicker text-site-text-muted">
               {t('page.kicker', { defaultValue: 'RMH Studios presents' })}
             </p>
-            <h1 className="font-display text-3xl font-semibold text-balance text-site-text sm:text-4xl">
+            <h1 className="font-display text-2xl font-semibold text-balance text-site-text sm:text-4xl">
               {t('page.title', { defaultValue: 'The Kaikai Debt Counter' })}
             </h1>
             <p className="max-w-prose text-sm text-pretty text-site-text-muted">
@@ -200,10 +223,26 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
               })}
             </p>
           </div>
-          <section className="glass-pane rounded-site px-4 py-2">
+          <section className="glass-pane rounded-site px-3 py-2 sm:px-4">
             <DebtCounter basisCents={basisCents} asOfMs={snapshot.asOfMs} />
 
-            <dl className="grid grid-cols-1 gap-3 border-t border-site-border pt-4 pb-2 sm:grid-cols-3">
+            {/* The credit score, directly under the total it is a consequence
+                of. The same dial the analytics panel draws, smaller — one
+                component owns the number, so the two can never disagree. */}
+            <div className="flex flex-col items-center gap-1 border-t border-site-border pt-4">
+              <p className="site-kicker text-site-text-muted">
+                {t('credit.heroKicker', { defaultValue: 'His credit score' })}
+              </p>
+              <CreditDial inputs={creditInputs} asOfMs={snapshot.asOfMs} size="sm" />
+              <p className="max-w-prose text-center text-xs text-pretty text-site-text-muted">
+                {t('credit.heroNote', {
+                  defaultValue:
+                    'Recomputed from the books against the clock, and about as steady as his finances. Everyone watching sees the same number at the same instant.',
+                })}
+              </p>
+            </div>
+
+            <dl className="grid grid-cols-1 gap-2 border-t border-site-border pt-4 pb-2 sm:grid-cols-3 sm:gap-3">
               <Stat
                 icon={ScrollText}
                 label={t('stats.itemised', { defaultValue: 'Itemised on the books' })}
@@ -301,12 +340,12 @@ function Stat({
 }) {
   return (
     <div className="glass-fill flex flex-col gap-1 rounded-site p-3">
-      <dt className="flex items-center gap-1.5 text-xs text-site-text-dim">
+      <dt className="flex items-center gap-1.5 text-xs text-site-text-muted">
         <Icon className="size-3.5" aria-hidden />
         {label}
       </dt>
       <dd className="font-display text-lg font-semibold text-site-text tabular-nums">{value}</dd>
-      <p className="text-xs text-site-text-dim">{detail}</p>
+      <p className="text-xs text-site-text-muted">{detail}</p>
     </div>
   );
 }

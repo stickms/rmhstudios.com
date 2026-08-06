@@ -75,7 +75,7 @@ export function StatTiles({ stats, nowMs }: { stats: DebtStats; nowMs: number })
   }, [stats, nowMs]);
 
   return (
-    <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+    <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4">
       <Tile
         icon={Coins}
         label={t('stats.tile.balance', { defaultValue: 'Compounded balance' })}
@@ -205,15 +205,15 @@ function Tile({
   className?: string;
 }) {
   return (
-    <div className={cn('glass-fill flex flex-col gap-1 rounded-site p-3', className)}>
-      <dt className="flex items-center gap-1.5 text-xs text-site-text-dim">
+    <div className={cn('glass-fill flex flex-col gap-1 rounded-site p-2.5 sm:p-3', className)}>
+      <dt className="flex items-center gap-1.5 text-xs text-site-text-muted">
         <Icon className="size-3.5 shrink-0" aria-hidden />
         <span className="min-w-0 truncate">{label}</span>
       </dt>
       <dd className="font-display text-lg leading-tight font-semibold text-site-text tabular-nums">
         {value}
       </dd>
-      <p className="text-xs text-pretty text-site-text-dim">{detail}</p>
+      <p className="text-xs text-pretty text-site-text-muted">{detail}</p>
     </div>
   );
 }

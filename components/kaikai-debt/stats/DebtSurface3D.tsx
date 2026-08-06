@@ -392,7 +392,7 @@ export function DebtSurface3D({ grid, nowMs, selected }: DebtSurface3DProps) {
       footer={
         <div className="flex items-center gap-3">
           <label
-            className="shrink-0 text-xs text-site-text-dim"
+            className="shrink-0 text-xs text-site-text-muted"
             htmlFor="kd-terrain-zoom"
           >
             {t('stats.control.zoom', { defaultValue: 'Zoom' })}

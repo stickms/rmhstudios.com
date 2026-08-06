@@ -28,12 +28,12 @@ export function StatsTable({ stats, nowMs }: { stats: DebtStats; nowMs: number }
   const total = Math.max(1, valueNow(stats.totals, nowMs));
 
   return (
-    <div className="glass-fill flex flex-col gap-3 rounded-site p-3 sm:p-4">
+    <div className="glass-fill flex flex-col gap-3 rounded-site p-2.5 sm:p-4">
       <div className="flex flex-col gap-0.5">
         <h3 className="font-display text-sm font-semibold text-site-text">
           {t('stats.table.title', { defaultValue: 'Every number on this page' })}
         </h3>
-        <p className="text-xs text-pretty text-site-text-dim">
+        <p className="text-xs text-pretty text-site-text-muted">
           {t('stats.table.hint', {
             defaultValue:
               'The same figures the charts are drawn from. Colour is never the only thing telling you which row is which.',
@@ -51,7 +51,7 @@ export function StatsTable({ stats, nowMs }: { stats: DebtStats; nowMs: number }
             })}
           </caption>
           <thead>
-            <tr className="text-site-text-dim">
+            <tr className="text-site-text-muted">
               <th scope="col" className="py-1.5 pr-3 font-medium">
                 {t('stats.table.category', { defaultValue: 'Category' })}
               </th>

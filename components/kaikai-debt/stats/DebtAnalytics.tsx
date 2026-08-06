@@ -165,7 +165,7 @@ export function DebtAnalytics({ snapshot }: { snapshot: DebtSnapshot }) {
   ];
 
   return (
-    <section className="flex flex-col gap-4" aria-labelledby="kd-analytics-title">
+    <section className="flex flex-col gap-3 sm:gap-4" aria-labelledby="kd-analytics-title">
       <div className="flex flex-col gap-1">
         <h2 id="kd-analytics-title" className="font-display text-xl font-semibold text-site-text">
           {t('stats.title', { defaultValue: 'The books, in detail' })}
@@ -182,7 +182,7 @@ export function DebtAnalytics({ snapshot }: { snapshot: DebtSnapshot }) {
 
       <StatTiles stats={scoped} nowMs={nowMs} />
 
-      <div className="glass-fill flex flex-col gap-3 rounded-site p-3 sm:p-4">
+      <div className="glass-fill flex flex-col gap-3 rounded-site p-2.5 sm:p-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h3 className="text-xs font-medium text-site-text-muted">
             {t('stats.filter.title', { defaultValue: 'Filter every chart' })}
@@ -246,7 +246,7 @@ export function DebtAnalytics({ snapshot }: { snapshot: DebtSnapshot }) {
           role="tabpanel"
           id={`kd-analytics-panel-${tab}`}
           aria-labelledby={`kd-analytics-tab-${tab}`}
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-3 sm:gap-4"
         >
           {tab === 'overview' && (
             <>
@@ -261,7 +261,7 @@ export function DebtAnalytics({ snapshot }: { snapshot: DebtSnapshot }) {
                 horizon={horizon}
                 onHorizonChange={setHorizon}
               />
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
                 <PersonLeaderboard
                   people={stats.creditors}
                   nowMs={nowMs}
