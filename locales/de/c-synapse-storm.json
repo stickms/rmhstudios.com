@@ -13,6 +13,7 @@
   "connect": "VERBINDEN",
   "connected-as": "Verbunden als {{name}}",
   "copy-code": "Code kopieren",
+  "copy-invite-link": "Einladungslink kopieren",
   "create-lobby": "LOBBY ERSTELLEN",
   "disconnected": "Getrennt",
   "display-name": "ANZEIGENAME",
