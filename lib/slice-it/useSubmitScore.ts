@@ -17,8 +17,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { RANKED_MIN_SPEED } from './constants';
+import type { GameEngine } from './engine';
 import { useSliceItStore } from './store';
 import type { Modifiers } from './types';
+import type { TimingSummary } from './integrity';
 
 export interface SubmitResult {
   status: 'idle' | 'submitting' | 'ok' | 'unranked' | 'failed';
@@ -33,6 +35,12 @@ export interface RunSummary {
   accuracy: number;
   modifiers: Modifiers;
   multiplayer: boolean;
+  /** Notes the engine actually resolved — cross-checked against the chart. */
+  notesResolved?: number;
+  /** Signed receipt from the song read; see `run-token.server.ts`. */
+  runToken?: string;
+  /** Hit-timing distribution; see `integrity.ts`. */
+  timing?: TimingSummary;
 }
 
 /**
@@ -106,14 +114,27 @@ export function useSubmitScore(run: RunSummary | null): SubmitResult {
 }
 
 /** Build a {@link RunSummary} from the store's current run state. */
-export function useRunSummary(multiplayer: boolean): RunSummary | null {
+export function useRunSummary(multiplayer: boolean, engine?: GameEngine | null): RunSummary | null {
   const status = useSliceItStore((s) => s.status);
   const songId = useSliceItStore((s) => s.songId);
   const score = useSliceItStore((s) => s.score);
   const maxCombo = useSliceItStore((s) => s.maxCombo);
   const accuracy = useSliceItStore((s) => s.accuracy);
   const modifiers = useSliceItStore((s) => s.modifiers);
+  const runToken = useSliceItStore((s) => s.runToken);
 
   if (status !== 'FINISHED' || !songId) return null;
-  return { songId, score, maxCombo, accuracy, modifiers, multiplayer };
+  return {
+    songId,
+    score,
+    maxCombo,
+    accuracy,
+    modifiers,
+    multiplayer,
+    ...(runToken ? { runToken } : {}),
+    // The engine is the only thing that knows these; a caller without one
+    // submits without them and the server simply has less to check.
+    ...(engine ? { notesResolved: engine.getState().notesResolved } : {}),
+    ...(engine?.getTimingSummary() ? { timing: engine.getTimingSummary()! } : {}),
+  };
 }

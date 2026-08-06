@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { readSongAudio } from '@/lib/slice-it/songs.server';
+import { readSongAudio, readSongAudioRange, songAudioSize } from '@/lib/slice-it/songs.server';
 
 /**
  * Audio streaming, with byte ranges so the player can seek.
@@ -23,68 +23,106 @@ import { readSongAudio } from '@/lib/slice-it/songs.server';
  *   hands back a Buffer, so slicing it is the same memory and much less
  *   machinery.
  * - There were no cache headers, so replaying a song re-fetched megabytes.
+ * - **A range request read the whole object.** It fetched the entire track from
+ *   storage and sliced the buffer, so `Range: bytes=0-1` cost a full 50 MB GET
+ *   and held 50 MB resident to answer with two bytes — repeatable as fast as a
+ *   caller could ask, on a route that had no rate limit either. Ranges go to
+ *   the store as ranges now, and the route is rate-limited.
  */
 export const Route = createFileRoute('/api/slice-it/songs/stream/$id')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ request, params, userId }) => {
-        const song = await prisma.song.findUnique({
-          where: { id: params.id },
-          select: { audioUrl: true, isPublic: true, uploadedBy: true },
-        });
+      GET: defineHandler(
+        { auth: 'optional', rateLimit: 'read' },
+        async ({ request, params, userId }) => {
+          const song = await prisma.song.findUnique({
+            where: { id: params.id },
+            select: { audioUrl: true, isPublic: true, uploadedBy: true },
+          });
 
-        // 404 rather than 403 for a private song: whether a given id exists is
-        // itself information, and no legitimate caller needs it.
-        if (!song || (!song.isPublic && userId !== song.uploadedBy)) {
-          return Response.json({ error: 'Not found' }, { status: 404 });
-        }
+          // 404 rather than 403 for a private song: whether a given id exists is
+          // itself information, and no legitimate caller needs it.
+          if (!song || (!song.isPublic && userId !== song.uploadedBy)) {
+            return Response.json({ error: 'Not found' }, { status: 404 });
+          }
 
-        const file = await readSongAudio(song.audioUrl);
-        if (!file) {
-          return Response.json({ error: 'Audio unavailable' }, { status: 404 });
-        }
+          // A song's audio never changes once uploaded — a re-upload is a new
+          // id — so it is safe to cache indefinitely. Private songs stay out of
+          // shared caches.
+          const cacheControl = song.isPublic
+            ? 'public, max-age=31536000, immutable'
+            : 'private, max-age=3600';
 
-        const total = file.body.length;
-        // A song's audio never changes once uploaded — a re-upload is a new id
-        // — so it is safe to cache indefinitely. Private songs stay out of
-        // shared caches.
-        const cacheControl = song.isPublic
-          ? 'public, max-age=31536000, immutable'
-          : 'private, max-age=3600';
+          const rangeHeader = request.headers.get('range');
 
-        const range = request.headers.get('range');
-        if (!range) {
-          return new Response(new Uint8Array(file.body), {
+          if (rangeHeader) {
+            // HEAD-then-range: two small calls instead of one whole-object read.
+            // Legacy on-disk rows return null here and fall through to the full
+            // read below, which is the only way to serve them anyway.
+            const size = await songAudioSize(song.audioUrl);
+            if (size !== null) {
+              const parsed = parseRange(rangeHeader, size);
+              if (!parsed) {
+                return new Response(null, {
+                  status: 416,
+                  headers: { 'Content-Range': `bytes */${size}`, 'Accept-Ranges': 'bytes' },
+                });
+              }
+              const part = await readSongAudioRange(song.audioUrl, parsed.start, parsed.end);
+              if (part) {
+                return new Response(new Uint8Array(part.body), {
+                  status: 206,
+                  headers: {
+                    'Content-Type': part.contentType,
+                    'Content-Range': `bytes ${part.start}-${part.end}/${part.total}`,
+                    'Content-Length': String(part.body.length),
+                    'Accept-Ranges': 'bytes',
+                    'Cache-Control': cacheControl,
+                  },
+                });
+              }
+            }
+          }
+
+          const file = await readSongAudio(song.audioUrl);
+          if (!file) {
+            return Response.json({ error: 'Audio unavailable' }, { status: 404 });
+          }
+
+          const total = file.body.length;
+          if (!rangeHeader) {
+            return new Response(new Uint8Array(file.body), {
+              headers: {
+                'Content-Type': file.contentType,
+                'Content-Length': String(total),
+                'Accept-Ranges': 'bytes',
+                'Cache-Control': cacheControl,
+              },
+            });
+          }
+
+          const parsed = parseRange(rangeHeader, total);
+          if (!parsed) {
+            return new Response(null, {
+              status: 416,
+              headers: { 'Content-Range': `bytes */${total}`, 'Accept-Ranges': 'bytes' },
+            });
+          }
+
+          const { start, end } = parsed;
+          const chunk = file.body.subarray(start, end + 1);
+          return new Response(new Uint8Array(chunk), {
+            status: 206,
             headers: {
               'Content-Type': file.contentType,
-              'Content-Length': String(total),
+              'Content-Range': `bytes ${start}-${end}/${total}`,
+              'Content-Length': String(chunk.length),
               'Accept-Ranges': 'bytes',
               'Cache-Control': cacheControl,
             },
           });
-        }
-
-        const parsed = parseRange(range, total);
-        if (!parsed) {
-          return new Response(null, {
-            status: 416,
-            headers: { 'Content-Range': `bytes */${total}`, 'Accept-Ranges': 'bytes' },
-          });
-        }
-
-        const { start, end } = parsed;
-        const chunk = file.body.subarray(start, end + 1);
-        return new Response(new Uint8Array(chunk), {
-          status: 206,
-          headers: {
-            'Content-Type': file.contentType,
-            'Content-Range': `bytes ${start}-${end}/${total}`,
-            'Content-Length': String(chunk.length),
-            'Accept-Ranges': 'bytes',
-            'Cache-Control': cacheControl,
-          },
-        });
-      }),
+        },
+      ),
     },
   },
 });

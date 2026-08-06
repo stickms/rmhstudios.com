@@ -34,11 +34,13 @@ import {
   BOMB_PENALTY,
   HIT_WINDOWS,
   HOLD_RELEASE_POINTS,
-  HOLD_TICK_POINTS,
+  HOLD_TICK_MAX_STEP_SEC,
+  HOLD_TICK_POINTS_PER_SECOND,
   INPUT_COOLDOWN_MS,
   STRICT_TIMING_FACTOR,
 } from './constants';
 import type { BeatMap, HitResult, Slice } from './types';
+import { MIN_TIMING_SAMPLES, type TimingSummary } from './integrity';
 import { prepareChart } from './chart';
 import { useSliceItStore } from './store';
 import {
@@ -62,8 +64,22 @@ const FEEDBACK_COLORS: Record<HitResult, string> = {
   NONE: '#64748b',
 };
 
-/** How often a live score is published to the lobby, ms. */
-const SCORE_REPORT_INTERVAL_MS = 400;
+/**
+ * How often a live score is published to the lobby, ms.
+ *
+ * Halved from 400: the opponent board is the only thing in a match that tells
+ * you whether you are winning, and at 400 ms of client staleness plus a 500 ms
+ * server tick it could be nearly a second behind. See `SCORE_TICK_MS`.
+ */
+const SCORE_REPORT_INTERVAL_MS = 200;
+
+/**
+ * Largest input-dispatch delay the judge will credit back, seconds.
+ *
+ * 100 ms is far more than a real event queue costs and less than any hit window
+ * at any speed, so a clamped value can never turn a miss into a hit.
+ */
+const MAX_INPUT_DISPATCH_SEC = 0.1;
 
 export interface Feedback {
   id: number;
@@ -83,6 +99,10 @@ export class GameEngine {
   private processedSliceIds = new Set<string>();
   /** lane → the LONG note currently being held. */
   private activeHolds = new Map<number, Slice>();
+  /** lane → audio time that lane's hold has already been paid for. */
+  private holdBilledTo = new Map<number, number>();
+  /** Sub-point remainder carried between hold accruals, so it is not lost. */
+  private holdCredit = 0;
   private lastInputTime = new Map<number, number>();
 
   /**
@@ -105,6 +125,11 @@ export class GameEngine {
   private inMultiplayer = false;
   private lastReportAt = 0;
   private finished = false;
+
+  /** Running mean/variance of hit timing error (Welford). See `recordOffset`. */
+  private offsetCount = 0;
+  private offsetMean = 0;
+  private offsetM2 = 0;
 
   constructor() {
     this.audioManager = AudioManager.getInstance();
@@ -159,6 +184,8 @@ export class GameEngine {
   reset(): void {
     this.processedSliceIds.clear();
     this.activeHolds.clear();
+    this.holdBilledTo.clear();
+    this.holdCredit = 0;
     this.lastInputTime.clear();
     this.feedbackQueue.length = 0;
     this.cursor = 0;
@@ -169,6 +196,9 @@ export class GameEngine {
     this.hitPoints = 0;
     this.finished = false;
     this.lastReportAt = 0;
+    this.offsetCount = 0;
+    this.offsetMean = 0;
+    this.offsetM2 = 0;
 
     for (const slice of this.slices) {
       slice.hit = false;
@@ -253,19 +283,37 @@ export class GameEngine {
     const missWindow = this.missWindow;
 
     // Holds accrue while held and expire if held too far past their end.
+    //
+    // Accrual is per second of AUDIO, not per frame. It used to be a flat
+    // `+= HOLD_TICK_POINTS` per `update()`, which made a hold worth 2.4x as much
+    // on a 144 Hz display as on a 60 Hz one, worth less on a device that
+    // stuttered, and — because `update()` was being called twice per frame —
+    // twice what it was meant to be on all of them. Audio time is the only clock
+    // in here that is the same for everybody.
     if (this.activeHolds.size > 0) {
       for (const [lane, slice] of this.activeHolds) {
         const holdEnd = slice.time + (slice.duration ?? 0);
         if (currentTime > holdEnd + missWindow) {
           this.activeHolds.delete(lane);
+          this.holdBilledTo.delete(lane);
           this.combo = 0;
           this.pushFeedback('MISS', lane, FEEDBACK_COLORS.MISS);
           store.setScore(this.score, this.combo, this.speedMultiplier);
           store.setMaxCombo(this.maxCombo);
         } else if (currentTime < holdEnd) {
-          this.score += Math.floor(
-            HOLD_TICK_POINTS * (this.combo > 0 ? this.combo : 1) * scoreMultiplier,
-          );
+          const billedTo = this.holdBilledTo.get(lane) ?? currentTime;
+          // Clamped: a stall must not pay out the time the player was absent.
+          const dt = Math.min(Math.max(0, currentTime - billedTo), HOLD_TICK_MAX_STEP_SEC);
+          this.holdBilledTo.set(lane, currentTime);
+          this.holdCredit +=
+            HOLD_TICK_POINTS_PER_SECOND * dt * (this.combo > 0 ? this.combo : 1) * scoreMultiplier;
+          // Whole points only, with the fraction carried — otherwise a 60 Hz
+          // update at combo 1 floors to zero every time and holds score nothing.
+          const whole = Math.floor(this.holdCredit);
+          if (whole > 0) {
+            this.score += whole;
+            this.holdCredit -= whole;
+          }
         }
       }
     }
@@ -289,7 +337,18 @@ export class GameEngine {
     if (this.inMultiplayer) this.publish(false);
   }
 
-  submitInput(lane: number): void {
+  /**
+   * Resolve a press.
+   *
+   * `pressTime` is the event's own `timeStamp` — a `performance.now()`-domain
+   * reading of when the input actually happened, taken by the browser before the
+   * event was queued. Judging against `this.now()` alone judges when JavaScript
+   * got *around* to the press, which on a busy frame is 5–15 ms later; 15 ms is
+   * the width of the MARVELOUS window, so that latency was being charged to the
+   * player as if they had hit late. Reconstructing the audio position at the
+   * moment of the press removes the main thread from the judgement.
+   */
+  submitInput(lane: number, pressTime?: number): void {
     const store = useSliceItStore.getState();
     if (store.isPaused) return;
 
@@ -300,7 +359,7 @@ export class GameEngine {
 
     if (!this.beatMap) return;
 
-    const currentTime = this.now();
+    const currentTime = this.now() - this.dispatchDelaySeconds(pressTime, now);
     const targeted = this.getTargetedSlice(lane);
 
     if (!targeted || Math.abs(targeted.time - currentTime) > this.missWindow) {
@@ -330,6 +389,7 @@ export class GameEngine {
     const held = this.activeHolds.get(lane);
     if (!held) return;
     this.activeHolds.delete(lane);
+    this.holdBilledTo.delete(lane);
 
     const store = useSliceItStore.getState();
     const currentTime = this.now();
@@ -389,6 +449,7 @@ export class GameEngine {
 
   getState() {
     return {
+      notesResolved: this.notesResolved,
       score: this.score,
       combo: this.combo,
       maxCombo: this.maxCombo,
@@ -399,6 +460,23 @@ export class GameEngine {
   }
 
   /* ─── Internals ───────────────────────────────────────────────────────── */
+
+  /**
+   * How long ago the press really happened, in seconds.
+   *
+   * Bounded on both sides on purpose. Below zero is nonsense (a clock that
+   * disagrees with itself), and above {@link MAX_INPUT_DISPATCH_SEC} is either a
+   * genuinely enormous stall — where crediting the full gap would let a press
+   * resolve a note that had already scrolled past — or a synthetic event with a
+   * `timeStamp` chosen to make a late press look early. Both get clamped, so the
+   * correction can only ever recover real dispatch latency.
+   */
+  private dispatchDelaySeconds(pressTime: number | undefined, now: number): number {
+    if (pressTime === undefined || !Number.isFinite(pressTime)) return 0;
+    const delayMs = now - pressTime;
+    if (!(delayMs > 0)) return 0;
+    return Math.min(delayMs, MAX_INPUT_DISPATCH_SEC * 1000) / 1000;
+  }
 
   private resolve(slice: Slice, result: HitResult, lane: number): void {
     this.processedSliceIds.add(slice.id);
@@ -420,7 +498,10 @@ export class GameEngine {
 
     if (result !== 'MISS') {
       this.score += pointsFor(result, this.combo, scoreMultiplier);
-      if (slice.type === 'LONG') this.activeHolds.set(lane, slice);
+      if (slice.type === 'LONG') {
+        this.activeHolds.set(lane, slice);
+        this.holdBilledTo.set(lane, this.now());
+      }
 
       const sfxVolume = store.sfxVolume / 100;
       const hitSound = store.hitSound;
@@ -436,8 +517,42 @@ export class GameEngine {
       }
     }
 
-    this.pushFeedback(result, lane, FEEDBACK_COLORS[result], this.now() - slice.time);
+    const offset = this.now() - slice.time;
+    if (result !== 'MISS') this.recordOffset(offset);
+    this.pushFeedback(result, lane, FEEDBACK_COLORS[result], offset);
     this.commit();
+  }
+
+  /**
+   * Record how far a hit landed from its note, for the run's timing summary.
+   *
+   * A person's timing errors scatter: even an expert's offsets have a standard
+   * deviation of 10–25 ms, and the distribution drifts as a song goes on. A
+   * program pressing at `slice.time` has a standard deviation near zero, and no
+   * amount of skill produces that. Keeping the summary — not the samples — is
+   * enough to tell those apart and is a few numbers on the wire.
+   */
+  private recordOffset(offsetSeconds: number): void {
+    if (!Number.isFinite(offsetSeconds)) return;
+    this.offsetCount++;
+    // Welford, so the variance is stable and needs no second pass over samples
+    // we are deliberately not keeping.
+    const delta = offsetSeconds - this.offsetMean;
+    this.offsetMean += delta / this.offsetCount;
+    this.offsetM2 += delta * (offsetSeconds - this.offsetMean);
+  }
+
+  /**
+   * The run's timing summary, or null when too few notes were hit to say
+   * anything. Sent with the score; see `lib/slice-it/integrity.ts`.
+   */
+  getTimingSummary(): TimingSummary | null {
+    if (this.offsetCount < MIN_TIMING_SAMPLES) return null;
+    return {
+      samples: this.offsetCount,
+      meanMs: this.offsetMean * 1000,
+      stdDevMs: Math.sqrt(Math.max(0, this.offsetM2 / this.offsetCount)) * 1000,
+    };
   }
 
   private pushFeedback(text: string, lane: number, color: string, offset?: number): void {

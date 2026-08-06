@@ -7,11 +7,14 @@ import { transcodeAudioToAac } from '@/lib/audio/transcode.server';
 import decode from '@audio/decode';
 import {
   COVER_SIZE,
+  MAX_DECODED_PCM_BYTES,
   MAX_SONG_DURATION_SEC,
   MIN_SONG_DURATION_SEC,
   PER_USER_STORAGE_LIMIT_BYTES,
   TOTAL_STORAGE_LIMIT_BYTES,
+  UPLOAD_BODY_MAX_BYTES,
 } from '@/lib/slice-it/constants';
+import { estimatedPcmBytes, probeAudioDuration } from '@/lib/audio/probe';
 import { UploadFieldsZ } from '@/lib/slice-it/api-schemas';
 import { validateAudioBuffer, validateImageBuffer } from '@/lib/slice-it/upload-validation';
 import { deleteSongAssets, storeSongAudio, storeSongCover } from '@/lib/slice-it/songs.server';
@@ -44,12 +47,24 @@ import { generateBeatmap, type AudioLike } from '@/lib/slice-it/beatmap';
  * - Re-uploading the same file created a second row and a second copy against
  *   both quotas. The source bytes are hashed and a duplicate is refused.
  * - Duration was `parseFloat(formData.get('duration'))` — a client-declared
- *   number, which then bounded nothing. It is measured from the decoded audio.
+ *   number, which then bounded nothing. It is read from the container headers
+ *   before decoding and confirmed against the decoded audio after.
+ * - The body is size-checked before `formData()` buffers it, and the audio is
+ *   length-checked before `decode()` allocates it. Both were previously checked
+ *   only after the allocation they were meant to prevent — see the decode guard
+ *   below for what that cost.
  */
 export const Route = createFileRoute('/api/slice-it/songs/upload')({
   server: {
     handlers: {
       POST: defineHandler({ rateLimit: 'upload' }, async ({ request, userId }) => {
+        // Before `formData()`, which buffers the entire body into memory. The
+        // site-wide Apache ceiling is 1.5 GB; this route accepts 62.
+        const declaredLength = Number(request.headers.get('content-length') ?? 0);
+        if (Number.isFinite(declaredLength) && declaredLength > UPLOAD_BODY_MAX_BYTES) {
+          return Response.json({ error: 'Upload too large.' }, { status: 413 });
+        }
+
         const formData = await request.formData();
 
         const file = formData.get('file');
@@ -123,9 +138,44 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
           );
         }
 
-        // Decode before storing anything. A file that passes the magic-byte
-        // check but cannot actually be decoded should fail here, rather than
-        // leaving an unplayable row and an orphaned object behind it.
+        // ── Decode guard ──────────────────────────────────────────────────
+        //
+        // The length check has to happen HERE, from the container headers,
+        // because `decode()` allocates the whole waveform before it returns and
+        // compressed audio expands without bound: a valid 8 kbps MPEG-2.5 file
+        // decodes to 32x its own size, so 4 MB of upload measured 128 MB of PCM
+        // and 530 MB of RSS, and the 50 MB ceiling bought 14.6 hours of audio —
+        // about 1.6 GB — from one request. Checking `MAX_SONG_DURATION_SEC`
+        // against the decoder's answer, as this did, is checking it after the
+        // allocation the check exists to prevent.
+        //
+        // A file we cannot read a length from is refused rather than decoded
+        // hopefully. Every format the magic-byte check just accepted is one the
+        // probe understands, so `null` here means the headers are damaged.
+        const probe = probeAudioDuration(buffer);
+        if (!probe) {
+          return Response.json(
+            { error: 'That file could not be read. Try MP3, WAV, OGG or FLAC.' },
+            { status: 400 },
+          );
+        }
+        if (probe.durationSec > MAX_SONG_DURATION_SEC) {
+          return Response.json(
+            { error: `Tracks must be under ${MAX_SONG_DURATION_SEC / 60} minutes.` },
+            { status: 400 },
+          );
+        }
+        if (estimatedPcmBytes(probe) > MAX_DECODED_PCM_BYTES) {
+          // Short but enormous — a high sample rate, many channels, or both.
+          return Response.json(
+            { error: 'That file is too large to process. Try a standard stereo mixdown.' },
+            { status: 400 },
+          );
+        }
+
+        // A file that passes the magic-byte check but cannot actually be
+        // decoded should fail here, rather than leaving an unplayable row and
+        // an orphaned object behind it.
         let audio: AudioLike;
         try {
           audio = decodedToAudioLike(await decode(buffer));
@@ -136,6 +186,9 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
           );
         }
 
+        // Re-checked against the decoded truth. The probe is a bound, not a
+        // measurement — a CBR estimate can be a little off, and the value
+        // stored on the row is the one a score ceiling gets derived from.
         const duration = audio.length / (audio.sampleRate || 44100);
         if (!(duration >= MIN_SONG_DURATION_SEC)) {
           return Response.json(

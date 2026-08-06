@@ -58,7 +58,11 @@ import {
   SCORE_TICK_MS,
 } from '../../../lib/slice-it/constants';
 import { DEFAULT_MODIFIERS, forMultiplayer } from '../../../lib/slice-it/modifiers';
-import { calculateScoreMultiplier } from '../../../lib/slice-it/scoring';
+import {
+  calculateScoreMultiplier,
+  maxPlausibleCombo,
+  maxPlausibleScore,
+} from '../../../lib/slice-it/scoring';
 import type { Modifiers } from '../../../lib/slice-it/types';
 import {
   EVENTS,
@@ -141,6 +145,8 @@ interface Lobby {
   loadTimer: ReturnType<typeof setTimeout> | null;
   countdownTimer: ReturnType<typeof setTimeout> | null;
   scoreTimer: ReturnType<typeof setInterval> | null;
+  /** Last broadcast score frame, so an unchanged one is not re-sent. */
+  lastScoreDigest: string;
   deadlineTimer: ReturnType<typeof setTimeout> | null;
   pauseTimer: ReturnType<typeof setTimeout> | null;
 }
@@ -269,6 +275,7 @@ function createLobby(host: { userId: string; name: string }, isPublic: boolean):
     loadTimer: null,
     countdownTimer: null,
     scoreTimer: null,
+    lastScoreDigest: '',
     deadlineTimer: null,
     pauseTimer: null,
   };
@@ -616,6 +623,9 @@ function startMatch(io: Server, lobby: Lobby): void {
  */
 function startScoreTicker(io: Server, lobby: Lobby): void {
   if (lobby.scoreTimer) clearInterval(lobby.scoreTimer);
+  // A fresh match — or a resumed one — must not be silenced by the digest the
+  // previous run left behind.
+  lobby.lastScoreDigest = '';
   lobby.scoreTimer = setInterval(() => {
     const current = lobbies.get(lobby.code);
     if (!current || current.state !== 'playing' || current.pausedAt !== null) return;
@@ -624,8 +634,34 @@ function startScoreTicker(io: Server, lobby: Lobby): void {
       ...seat.report,
       done: seat.done,
     }));
-    io.to(lobbyRoom(current.code)).emit(S2C.SCORES, scores);
+
+    // Nothing moved — usually everyone finished and the room is waiting on one
+    // straggler. Sending the same numbers again is bandwidth the match is not
+    // using for anything.
+    const digest = scoreDigest(scores);
+    if (digest === current.lastScoreDigest) return;
+    current.lastScoreDigest = digest;
+
+    // `volatile`: drop rather than queue when a client's socket is backed up.
+    //
+    // Without it, a player on a bad connection accumulates a backlog of score
+    // frames and then receives them all at once, rendering each in turn — so
+    // the opponent board replays the last few seconds in fast-forward and
+    // arrives late anyway. A live score has no value once a newer one exists;
+    // the right thing to do with a stale one is throw it away. Nothing else in
+    // this handler is volatile, because everything else is a state transition
+    // that must not be lost.
+    io.to(lobbyRoom(current.code)).volatile.emit(S2C.SCORES, scores);
   }, SCORE_TICK_MS);
+}
+
+/** Cheap change detector for a score frame — see {@link startScoreTicker}. */
+function scoreDigest(scores: LiveScore[]): string {
+  let out = '';
+  for (const s of scores) {
+    out += `${s.socketId}:${s.score}:${s.combo}:${s.accuracy.toFixed(4)}:${s.done ? 1 : 0}|`;
+  }
+  return out;
 }
 
 function armDeadline(io: Server, lobby: Lobby): void {
@@ -700,20 +736,49 @@ function buildStandings(lobby: Lobby): FinalStanding[] {
  * Write personal bests, fire-and-forget.
  *
  * Never blocks the results screen and never throws into the hub: a database
- * hiccup must not cost the room its match. These rows are *reported* scores —
- * the authoritative, bounds-checked path is `/api/slice-it/score`, which each
- * client also posts to. Recording them here as well is what makes a multiplayer
- * result show up on the song's board even if a client closes the tab on the
- * results screen.
+ * hiccup must not cost the room its match. Recording results here as well as at
+ * `/api/slice-it/score` is what makes a multiplayer result show up on the song's
+ * board even if a client closes the tab on the results screen.
+ *
+ * **These are client-reported scores, so they get the same ceiling the HTTP
+ * route applies.** `ScoreReportZ` bounds a live report only at
+ * `Number.MAX_SAFE_INTEGER` — the live number is cosmetic, it drives the
+ * opponent board and nothing else, and clamping it hard would make a legitimate
+ * high scorer's board readout wrong. That is fine right up until the same
+ * number is written to a leaderboard, which is what this function does: one
+ * `slice:score` emit of `{score: 9e15}` in a lobby of one was a permanent global
+ * first place, straight past every bound `/api/slice-it/score` exists to
+ * enforce. The song's duration comes from the database (`resolveSong`), so the
+ * ceiling here is derived from the same facts as the HTTP one.
  */
 async function persistResults(lobby: Lobby, standings: FinalStanding[]): Promise<void> {
   const songId = lobby.song?.id;
+  const duration = lobby.song?.duration ?? 0;
   if (!songId || standings.length === 0) return;
 
   try {
     const prisma = getPrismaClient();
     for (const standing of standings) {
       if (standing.score <= 0 || !standing.finished) continue;
+
+      const scoreCeiling = maxPlausibleScore(duration, standing.modifiers);
+      const comboCeiling = maxPlausibleCombo(duration);
+      if (standing.score > scoreCeiling || standing.maxCombo > comboCeiling) {
+        // Logged, not silently dropped: a legitimate run tripping this means
+        // the ceiling is wrong, and the only way to learn that is to see it.
+        logger.warn({
+          event: 'slice_implausible_score_rejected',
+          code: lobby.code,
+          userId: standing.userId,
+          songId,
+          score: standing.score,
+          scoreCeiling,
+          maxCombo: standing.maxCombo,
+          comboCeiling,
+        });
+        continue;
+      }
+
       const existing = await prisma.songLeaderboard.findUnique({
         where: { songId_userId: { songId, userId: standing.userId } },
         select: { id: true, score: true },

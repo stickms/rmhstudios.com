@@ -28,7 +28,13 @@
 import path from 'node:path';
 import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
-import { deleteObject, getObject, putObject } from '@/lib/storage/s3.server';
+import {
+  deleteObject,
+  getObject,
+  getObjectRange,
+  getObjectSize,
+  putObject,
+} from '@/lib/storage/s3.server';
 import { audioContentTypeForFilename } from '@/lib/audio/transcode.server';
 import { contentTypeForFilename } from '@/lib/storage/keys';
 import { resolveUserDisplay } from '@/lib/user-display';
@@ -112,7 +118,41 @@ export interface StoredFile {
   contentType: string;
 }
 
-/** Read a song's audio, from the object store or the legacy disk path. */
+/**
+ * Read a byte range of a song's audio.
+ *
+ * The point is that a seek costs the bytes it asks for. Reading the whole track
+ * and slicing it — which is what the stream route did — makes a `Range:
+ * bytes=0-1` cost a full 50 MB object GET and hold that 50 MB resident, at
+ * whatever rate a caller cares to repeat it.
+ *
+ * Returns null for a legacy on-disk row (the caller falls back to the whole
+ * file) or an unsatisfiable range.
+ */
+export async function readSongAudioRange(
+  audioUrl: string,
+  start: number,
+  end: number,
+): Promise<{
+  body: Buffer;
+  contentType: string;
+  start: number;
+  end: number;
+  total: number;
+} | null> {
+  if (!isObjectKey(audioUrl)) return null;
+  const range = await getObjectRange(audioUrl, start, end);
+  if (!range) return null;
+  return { ...range, contentType: audioContentTypeForFilename(audioUrl) };
+}
+
+/** Size of a song's audio without transferring it. */
+export async function songAudioSize(audioUrl: string): Promise<number | null> {
+  if (!isObjectKey(audioUrl)) return null;
+  return getObjectSize(audioUrl);
+}
+
+/** Read a song's audio in full, from the object store or the legacy disk path. */
 export async function readSongAudio(audioUrl: string): Promise<StoredFile | null> {
   if (isObjectKey(audioUrl)) {
     const object = await getObject(audioUrl);

@@ -60,6 +60,9 @@ export function useStartRun(engine: GameEngine | null) {
         const response = await fetch(`/api/slice-it/songs/${songId}`);
         if (!response.ok) throw new Error(`Song fetch failed: ${response.status}`);
         const song = (await response.json()) as SliceSong;
+        // The run's receipt, minted by that read. Null for a signed-out player,
+        // whose score is not going on a leaderboard anyway.
+        store.setRunToken(song.runToken ?? null);
 
         if (options.countPlay !== false) {
           // Fire-and-forget: a play count is not worth delaying a song for.

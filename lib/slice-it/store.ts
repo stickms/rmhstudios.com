@@ -52,6 +52,11 @@ interface SliceItState {
   /* ── Run state ────────────────────────────────────────────────────── */
   status: GameStatus;
   songId: string;
+  /**
+   * The current run's signed receipt, from the song read. Handed back with the
+   * score so the server can tell how long the run took by its own clock.
+   */
+  runToken: string | null;
   score: number;
   combo: number;
   maxCombo: number;
@@ -99,6 +104,7 @@ interface SliceItState {
 
   setStatus: (status: GameStatus) => void;
   setSongId: (songId: string) => void;
+  setRunToken: (token: string | null) => void;
   setScore: (score: number, combo: number, multiplier?: number) => void;
   setMaxCombo: (maxCombo: number) => void;
   setAccuracy: (accuracy: number) => void;
@@ -140,6 +146,7 @@ const CHAT_KEEP = 50;
 const runDefaults = {
   status: 'MENU' as GameStatus,
   songId: '',
+  runToken: null,
   score: 0,
   combo: 0,
   maxCombo: 0,
@@ -193,6 +200,7 @@ export const useSliceItStore = create<SliceItState>()(
 
       setStatus: (status) => set({ status }),
       setSongId: (songId) => set({ songId }),
+      setRunToken: (runToken) => set({ runToken }),
       setScore: (score, combo, multiplier) =>
         set((state) => ({ score, combo, multiplier: multiplier ?? state.multiplier })),
       setMaxCombo: (maxCombo) => set({ maxCombo }),

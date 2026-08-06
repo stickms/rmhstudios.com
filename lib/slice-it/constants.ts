@@ -81,8 +81,24 @@ export const ACCURACY_WEIGHTS: Record<Exclude<HitResult, 'NONE'>, number> = {
 
 /** Bonus for releasing a LONG note inside its release window. */
 export const HOLD_RELEASE_POINTS = 100;
-/** Points accrued per frame while a LONG note is being held correctly. */
-export const HOLD_TICK_POINTS = 1;
+/**
+ * Points accrued per **second of audio** while a LONG note is held correctly.
+ *
+ * Was per rendered frame, which made a hold worth 2.4x as much on a 144 Hz
+ * display as on a 60 Hz one and worth less on a device that stuttered. 60/s is
+ * the old per-frame value at the refresh rate most players had, so holds are
+ * worth what they always were and now the number does not depend on hardware.
+ */
+export const HOLD_TICK_POINTS_PER_SECOND = 60;
+/**
+ * Largest audio-time step a single hold accrual may bill for.
+ *
+ * A stall — a tab backgrounded, a long GC, a slow first frame — leaves a big gap
+ * between updates, and billing it in full would hand out the points the player
+ * did not stay present for. Clamping costs an honest player a few points after a
+ * hitch and denies an attacker the "suspend, wait, resume" payout.
+ */
+export const HOLD_TICK_MAX_STEP_SEC = 0.25;
 /** Score penalty for slicing a bomb. */
 export const BOMB_PENALTY = 500;
 
@@ -137,8 +153,16 @@ export const MIN_VERSUS_PLAYERS = 2;
 export const LOBBY_CODE_LENGTH = 6;
 /** Countdown the server runs once every client reports its chart is loaded. */
 export const COUNTDOWN_SECONDS = 3;
-/** Batched live-score broadcast cadence, ms. */
-export const SCORE_TICK_MS = 500;
+/**
+ * Batched live-score broadcast cadence, ms.
+ *
+ * Halved from 500. With the client publishing every 200 ms, the opponent board
+ * used to be up to 900 ms behind the run it was describing — long enough that in
+ * a close match it was telling you about a lead you no longer had. The extra
+ * traffic is paid for by the ticker skipping frames in which nothing changed,
+ * which is most of them once players start finishing.
+ */
+export const SCORE_TICK_MS = 250;
 /**
  * How long the lobby waits for the slowest client to finish loading before
  * starting anyway.
@@ -216,6 +240,33 @@ export const PER_USER_STORAGE_LIMIT_BYTES = 1024 * 1024 * 1024;
 export const MIN_SONG_DURATION_SEC = 5;
 /** And a rhythm game does not want your three-hour DJ set. */
 export const MAX_SONG_DURATION_SEC = 15 * 60;
+
+/**
+ * Ceiling on the Float32 PCM a decode is allowed to allocate.
+ *
+ * Duration alone is not the bound that matters. A decoder allocates
+ * `duration x sampleRate x channels x 4` bytes, so a *ten second* 192 kHz
+ * 8-channel WAV is 61 MB and passes any duration check you care to write, while
+ * the legitimate worst case here — 15 minutes of 48 kHz stereo — is 345 MB.
+ * 400 MB clears the legitimate case and stops the rest.
+ *
+ * Paired with {@link MAX_SONG_DURATION_SEC}, checked against
+ * `probeAudioDuration` BEFORE the decode rather than against what the decoder
+ * reports after it. See `lib/audio/probe.ts` for why that ordering is the whole
+ * point.
+ */
+export const MAX_DECODED_PCM_BYTES = 400 * 1024 * 1024;
+
+/**
+ * Ceiling on the whole multipart upload body, checked against `Content-Length`
+ * before `request.formData()` buffers it.
+ *
+ * Apache's `LimitRequestBody` is 1.5 GB site-wide, which is the right number for
+ * the largest thing the platform accepts and much too large for this route — a
+ * 1.5 GB POST here would be held in the web container's memory in full before
+ * the 50 MB audio ceiling got a chance to look at it.
+ */
+export const UPLOAD_BODY_MAX_BYTES = AUDIO_MAX_BYTES + COVER_MAX_BYTES + 2 * 1024 * 1024;
 
 export const SONG_TITLE_MAX = 200;
 export const SONG_ARTIST_MAX = 200;

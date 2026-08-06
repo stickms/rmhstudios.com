@@ -4,7 +4,6 @@ import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Heart, Image as ImageIcon, Loader2, Pause, Play, Search, Upload, X } from 'lucide-react';
-import { parseBlob } from 'music-metadata';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -97,7 +96,9 @@ export function SongLibrary({
 
         setSongs((previous) => (append ? [...previous, ...page.songs] : page.songs));
         setNextCursor(page.nextCursor);
-        setTotal(page.total);
+        // Only the first page carries a total; later pages of the same query
+        // would only recount the same rows, so the client keeps the number.
+        if (page.total !== undefined) setTotal(page.total);
       } catch {
         if (!append) setSongs([]);
         toast.error(t('library-load-failed', { defaultValue: 'Could not load the song library.' }));
@@ -508,7 +509,13 @@ function UploadForm({ onDone }: { onDone: () => void }) {
 
     // ID3 tags, including embedded artwork — most people's files already carry
     // a cover, and asking them to find one again is a step they will skip.
+    //
+    // Imported here rather than at the top of the file: `music-metadata` is a
+    // full container parser, it is reachable from `GameCanvas`, and it was
+    // therefore in the chunk every player downloads to *play* the game — to
+    // serve the one moment someone picks a file to upload.
     try {
+      const { parseBlob } = await import('music-metadata');
       const tags = await parseBlob(picked);
       if (tags.common.title) setTitle(tags.common.title);
       if (tags.common.artist) setArtist(tags.common.artist);
