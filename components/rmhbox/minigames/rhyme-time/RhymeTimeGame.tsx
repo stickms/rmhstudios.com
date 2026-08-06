@@ -10,9 +10,13 @@
  *   GAME_OVER    → RhymeTimeScoreboard (final scores + awards)
  *
  * Handles server actions:
- *   RT_ROUND_START, RT_INPUT_START, RT_RHYME_SUBMITTED,
+ *   RT_ROUND_START, RT_INPUT_START, RT_RHYME_SUBMITTED, RT_RHYME_REJECTED,
  *   RT_SUBMISSION_COUNT, RT_ROUND_RESULTS, RT_INTERMISSION,
  *   RT_GAME_OVER, TIMER_TICK
+ *
+ * The submission cap and the invalid-word penalty are host-configurable
+ * (see RHYME_TIME_SETTINGS), so both are read off the wire rather than from
+ * the shipped constants — the constants are only the pre-connection fallback.
  *
  * Props:
  *   playerId: string — Current player's user ID
@@ -26,6 +30,8 @@ import { m as motion, AnimatePresence } from 'framer-motion';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
 import { playSound } from '@/lib/rmhbox/audio';
+import { toast } from '@/lib/rmhbox/toast-store';
+import { RT_MAX_SUBMISSIONS, RT_INVALID_PENALTY } from '@/lib/rmhbox/constants';
 import RhymeTimeInput from './RhymeTimeInput';
 import RhymeTimeResults from './RhymeTimeResults';
 import RhymeTimeScoreboard from './RhymeTimeScoreboard';
@@ -34,6 +40,9 @@ import type { WordResult, PlayerBreakdown } from './RhymeTimeResults';
 import type { Standing, AwardEntry } from './RhymeTimeScoreboard';
 
 type Phase = 'ROUND_START' | 'INPUT' | 'SCORING' | 'INTERMISSION' | 'GAME_OVER';
+
+/** How long a rejected-submission toast stays up, in ms. */
+const REJECT_TOAST_MS = 1800;
 
 interface RhymeTimeGameProps {
   playerId: string;
@@ -51,6 +60,8 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
   const [totalDuration, setTotalDuration] = useState(60);
   const [mySubmissions, setMySubmissions] = useState<Submission[]>([]);
   const [submissionCounts, setSubmissionCounts] = useState<PlayerSubmissionCount[]>([]);
+  const [maxSubmissions, setMaxSubmissions] = useState(RT_MAX_SUBMISSIONS);
+  const [invalidPenalty, setInvalidPenalty] = useState(RT_INVALID_PENALTY);
   const [wordResults, setWordResults] = useState<WordResult[]>([]);
   const [playerBreakdowns, setPlayerBreakdowns] = useState<PlayerBreakdown[]>([]);
   const [standings, setStandings] = useState<Standing[]>([]);
@@ -92,8 +103,12 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
           break;
         }
         case 'RT_RHYME_SUBMITTED': {
-          // Server sends: { type, word, isValid, invalidReason?, submissionCount, maxSubmissions }
+          // Server sends: { type, word, isValid, invalidReason?, penalty, submissionCount, maxSubmissions }
+          if (typeof data.maxSubmissions === 'number') setMaxSubmissions(data.maxSubmissions);
           const rawReason = data.invalidReason as string | undefined;
+          // The penalty is whatever the host configured, not a fixed −1; older
+          // servers omit it, so fall back to the current setting.
+          const penalty = typeof data.penalty === 'number' ? data.penalty : invalidPenalty;
           const sub: Submission = {
             word: data.word as string,
             status: (data.isValid as boolean)
@@ -102,13 +117,32 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
                 ? 'not_in_dict'
                 : 'invalid',
             invalidReason: rawReason === 'not_in_dictionary'
-              ? 'Not in dictionary (no penalty)'
+              ? t("rt-not-in-dictionary", { defaultValue: "Not in dictionary (no penalty)" })
               : rawReason === 'does_not_rhyme'
-                ? "Doesn't rhyme (−1)"
+                ? t("rt-does-not-rhyme", { defaultValue: "Doesn't rhyme ({{penalty}})", penalty })
                 : undefined,
           };
           setMySubmissions((prev) => [...prev, sub]);
           playSound(data.isValid ? 'scoreDing' : 'buzzer');
+          break;
+        }
+        case 'RT_RHYME_REJECTED': {
+          // The word never became a submission — nothing lands in the pill list,
+          // so without this the input just silently swallowed what was typed.
+          // Server sends: { type, reason, word?, maxSubmissions? }
+          if (typeof data.maxSubmissions === 'number') setMaxSubmissions(data.maxSubmissions);
+          const reason = data.reason as string | undefined;
+          const word = typeof data.word === 'string' ? data.word : '';
+          playSound('buzzer');
+          // Short-lived: this is a nudge during a 45-second typing sprint, and
+          // the default 4s would leave a stack of them over the word list.
+          if (reason === 'duplicate') {
+            toast.warning(t("rt-rejected-duplicate", { defaultValue: "You already submitted \"{{word}}\"", word }), REJECT_TOAST_MS);
+          } else if (reason === 'max_submissions') {
+            toast.warning(t("rt-rejected-max", { defaultValue: "Submission limit reached ({{max}})", max: typeof data.maxSubmissions === 'number' ? data.maxSubmissions : maxSubmissions }), REJECT_TOAST_MS);
+          } else {
+            toast.warning(t("rt-rejected-invalid", { defaultValue: "That word can't be submitted" }), REJECT_TOAST_MS);
+          }
           break;
         }
         case 'RT_SUBMISSION_COUNT': {
@@ -243,7 +277,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
         }
       }
     },
-    [players],
+    [players, t, invalidPenalty, maxSubmissions],
   );
 
   // Also listen for GAME_ROUND_RESULTS for game-over standings/awards
@@ -297,23 +331,42 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
       if (data.currentRound) setCurrentRound(data.currentRound as number);
       if (data.totalRounds) setTotalRounds(data.totalRounds as number);
       if (data.timeRemaining != null) setTimeRemaining(data.timeRemaining as number);
+      if (typeof data.maxSubmissions === 'number') setMaxSubmissions(data.maxSubmissions);
+      if (typeof data.invalidPenalty === 'number') setInvalidPenalty(data.invalidPenalty);
       if (data.rootWord) {
         const rw = data.rootWord;
         setRootWord(typeof rw === 'string' ? rw : (rw as Record<string, unknown>)?.word as string ?? '');
       }
       if (Array.isArray(data.mySubmissions)) {
+        const penalty = typeof data.invalidPenalty === 'number' ? data.invalidPenalty : invalidPenalty;
         setMySubmissions(
-          (data.mySubmissions as Array<Record<string, unknown>>).map((s) => ({
-            word: s.word as string,
-            status: (s.isValid as boolean) ? 'valid' as const : 'invalid' as const,
-            invalidReason: s.invalidReason as string | undefined,
-          })),
+          (data.mySubmissions as Array<Record<string, unknown>>).map((s) => {
+            const reason = s.invalidReason as string | undefined;
+            // A dictionary miss is its own state (dimmed, no penalty). Folding
+            // it into 'invalid' here made every reconnect recolour those pills
+            // red and claim points the player never lost.
+            const status = (s.isValid as boolean)
+              ? 'valid' as const
+              : reason === 'not_in_dictionary'
+                ? 'not_in_dict' as const
+                : 'invalid' as const;
+            return {
+              word: s.word as string,
+              status,
+              invalidReason:
+                status === 'not_in_dict'
+                  ? t("rt-not-in-dictionary", { defaultValue: "Not in dictionary (no penalty)" })
+                  : status === 'invalid'
+                    ? t("rt-does-not-rhyme", { defaultValue: "Doesn't rhyme ({{penalty}})", penalty })
+                    : undefined,
+            };
+          }),
         );
       } else {
         setMySubmissions([]);
       }
     },
-    [],
+    [t, invalidPenalty],
   );
 
   // Subscribe to socket events and hydrate from store on mount
@@ -377,6 +430,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
             totalDuration={totalDuration}
             mySubmissions={mySubmissions}
             submissionCounts={submissionCounts}
+            maxSubmissions={maxSubmissions}
             disabled={isSpectator}
             onSubmit={handleSubmitWord}
           />

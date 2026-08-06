@@ -68,6 +68,7 @@ import { Route as DotwellKnownAssetlinksDotjsonRouteImport } from './routes/[.]w
 import { Route as SiteIndexRouteImport } from './routes/_site/index'
 import { Route as SiteAchievementsRouteImport } from './routes/_site/achievements'
 import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
+import { Route as SiteAlexdebtcounterRouteImport } from './routes/_site/alexdebtcounter'
 import { Route as SiteAnalyticsRouteImport } from './routes/_site/analytics'
 import { Route as SiteArcadeRouteImport } from './routes/_site/arcade'
 import { Route as SiteBookmarksRouteImport } from './routes/_site/bookmarks'
@@ -80,6 +81,7 @@ import { Route as SiteEventsRouteImport } from './routes/_site/events'
 import { Route as SiteExploreRouteImport } from './routes/_site/explore'
 import { Route as SiteHelpRouteImport } from './routes/_site/help'
 import { Route as SiteHistoryRouteImport } from './routes/_site/history'
+import { Route as SiteKaikaidebtcounterRouteImport } from './routes/_site/kaikaidebtcounter'
 import { Route as SiteLeaderboardRouteImport } from './routes/_site/leaderboard'
 import { Route as SiteMarketRouteImport } from './routes/_site/market'
 import { Route as SiteMusicTriviaRouteImport } from './routes/_site/music-trivia'
@@ -384,6 +386,11 @@ import { Route as ApiInternalNotifyMessageRouteImport } from './routes/api/inter
 import { Route as ApiInternalNotifyTypingRouteImport } from './routes/api/internal/notify-typing'
 import { Route as ApiInternalPredictionsTickRouteImport } from './routes/api/internal/predictions-tick'
 import { Route as ApiInternalStreakPushRouteImport } from './routes/api/internal/streak-push'
+import { Route as ApiKaikaiDebtIndexRouteImport } from './routes/api/kaikai-debt/index'
+import { Route as ApiKaikaiDebtAskRouteImport } from './routes/api/kaikai-debt/ask'
+import { Route as ApiKaikaiDebtEntriesRouteImport } from './routes/api/kaikai-debt/entries'
+import { Route as ApiKaikaiDebtLedgerRouteImport } from './routes/api/kaikai-debt/ledger'
+import { Route as ApiKaikaiDebtStreamRouteImport } from './routes/api/kaikai-debt/stream'
 import { Route as ApiLaundrySortLeaderboardRouteImport } from './routes/api/laundry-sort/leaderboard'
 import { Route as ApiLaundrySortScoreRouteImport } from './routes/api/laundry-sort/score'
 import { Route as ApiLeaderboardsGameIdRouteImport } from './routes/api/leaderboards/$gameId'
@@ -1122,6 +1129,11 @@ const SiteAdminRouteRoute = SiteAdminRouteRouteImport.update({
   path: '/admin',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteAlexdebtcounterRoute = SiteAlexdebtcounterRouteImport.update({
+  id: '/alexdebtcounter',
+  path: '/alexdebtcounter',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteAnalyticsRoute = SiteAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
@@ -1180,6 +1192,11 @@ const SiteHelpRoute = SiteHelpRouteImport.update({
 const SiteHistoryRoute = SiteHistoryRouteImport.update({
   id: '/history',
   path: '/history',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteKaikaidebtcounterRoute = SiteKaikaidebtcounterRouteImport.update({
+  id: '/kaikaidebtcounter',
+  path: '/kaikaidebtcounter',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteLeaderboardRoute = SiteLeaderboardRouteImport.update({
@@ -2711,6 +2728,31 @@ const ApiInternalPredictionsTickRoute =
 const ApiInternalStreakPushRoute = ApiInternalStreakPushRouteImport.update({
   id: '/api/internal/streak-push',
   path: '/api/internal/streak-push',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiKaikaiDebtIndexRoute = ApiKaikaiDebtIndexRouteImport.update({
+  id: '/api/kaikai-debt/',
+  path: '/api/kaikai-debt/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiKaikaiDebtAskRoute = ApiKaikaiDebtAskRouteImport.update({
+  id: '/api/kaikai-debt/ask',
+  path: '/api/kaikai-debt/ask',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiKaikaiDebtEntriesRoute = ApiKaikaiDebtEntriesRouteImport.update({
+  id: '/api/kaikai-debt/entries',
+  path: '/api/kaikai-debt/entries',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiKaikaiDebtLedgerRoute = ApiKaikaiDebtLedgerRouteImport.update({
+  id: '/api/kaikai-debt/ledger',
+  path: '/api/kaikai-debt/ledger',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiKaikaiDebtStreamRoute = ApiKaikaiDebtStreamRouteImport.update({
+  id: '/api/kaikai-debt/stream',
+  path: '/api/kaikai-debt/stream',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiLaundrySortLeaderboardRoute =
@@ -5084,6 +5126,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/achievements': typeof SiteAchievementsRoute
+  '/alexdebtcounter': typeof SiteAlexdebtcounterRoute
   '/analytics': typeof SiteAnalyticsRoute
   '/arcade': typeof SiteArcadeRoute
   '/bookmarks': typeof SiteBookmarksRoute
@@ -5095,6 +5138,7 @@ export interface FileRoutesByFullPath {
   '/explore': typeof SiteExploreRoute
   '/help': typeof SiteHelpRoute
   '/history': typeof SiteHistoryRoute
+  '/kaikaidebtcounter': typeof SiteKaikaidebtcounterRoute
   '/leaderboard': typeof SiteLeaderboardRoute
   '/market': typeof SiteMarketRoute
   '/music-trivia': typeof SiteMusicTriviaRoute
@@ -5360,6 +5404,10 @@ export interface FileRoutesByFullPath {
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
   '/api/internal/predictions-tick': typeof ApiInternalPredictionsTickRoute
   '/api/internal/streak-push': typeof ApiInternalStreakPushRoute
+  '/api/kaikai-debt/ask': typeof ApiKaikaiDebtAskRoute
+  '/api/kaikai-debt/entries': typeof ApiKaikaiDebtEntriesRoute
+  '/api/kaikai-debt/ledger': typeof ApiKaikaiDebtLedgerRoute
+  '/api/kaikai-debt/stream': typeof ApiKaikaiDebtStreamRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/leaderboards/$gameId': typeof ApiLeaderboardsGameIdRoute
@@ -5554,6 +5602,7 @@ export interface FileRoutesByFullPath {
   '/api/group-chats/': typeof ApiGroupChatsIndexRoute
   '/api/guides/': typeof ApiGuidesIndexRoute
   '/api/history/': typeof ApiHistoryIndexRoute
+  '/api/kaikai-debt/': typeof ApiKaikaiDebtIndexRoute
   '/api/lists/': typeof ApiListsIndexRoute
   '/api/moments/': typeof ApiMomentsIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
@@ -5879,6 +5928,7 @@ export interface FileRoutesByTo {
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/achievements': typeof SiteAchievementsRoute
+  '/alexdebtcounter': typeof SiteAlexdebtcounterRoute
   '/analytics': typeof SiteAnalyticsRoute
   '/arcade': typeof SiteArcadeRoute
   '/bookmarks': typeof SiteBookmarksRoute
@@ -5890,6 +5940,7 @@ export interface FileRoutesByTo {
   '/explore': typeof SiteExploreRoute
   '/help': typeof SiteHelpRoute
   '/history': typeof SiteHistoryRoute
+  '/kaikaidebtcounter': typeof SiteKaikaidebtcounterRoute
   '/leaderboard': typeof SiteLeaderboardRoute
   '/market': typeof SiteMarketRoute
   '/music-trivia': typeof SiteMusicTriviaRoute
@@ -6153,6 +6204,10 @@ export interface FileRoutesByTo {
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
   '/api/internal/predictions-tick': typeof ApiInternalPredictionsTickRoute
   '/api/internal/streak-push': typeof ApiInternalStreakPushRoute
+  '/api/kaikai-debt/ask': typeof ApiKaikaiDebtAskRoute
+  '/api/kaikai-debt/entries': typeof ApiKaikaiDebtEntriesRoute
+  '/api/kaikai-debt/ledger': typeof ApiKaikaiDebtLedgerRoute
+  '/api/kaikai-debt/stream': typeof ApiKaikaiDebtStreamRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/leaderboards/$gameId': typeof ApiLeaderboardsGameIdRoute
@@ -6347,6 +6402,7 @@ export interface FileRoutesByTo {
   '/api/group-chats': typeof ApiGroupChatsIndexRoute
   '/api/guides': typeof ApiGuidesIndexRoute
   '/api/history': typeof ApiHistoryIndexRoute
+  '/api/kaikai-debt': typeof ApiKaikaiDebtIndexRoute
   '/api/lists': typeof ApiListsIndexRoute
   '/api/moments': typeof ApiMomentsIndexRoute
   '/api/notifications': typeof ApiNotificationsIndexRoute
@@ -6695,6 +6751,7 @@ export interface FileRoutesById {
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/_site/achievements': typeof SiteAchievementsRoute
+  '/_site/alexdebtcounter': typeof SiteAlexdebtcounterRoute
   '/_site/analytics': typeof SiteAnalyticsRoute
   '/_site/arcade': typeof SiteArcadeRoute
   '/_site/bookmarks': typeof SiteBookmarksRoute
@@ -6706,6 +6763,7 @@ export interface FileRoutesById {
   '/_site/explore': typeof SiteExploreRoute
   '/_site/help': typeof SiteHelpRoute
   '/_site/history': typeof SiteHistoryRoute
+  '/_site/kaikaidebtcounter': typeof SiteKaikaidebtcounterRoute
   '/_site/leaderboard': typeof SiteLeaderboardRoute
   '/_site/market': typeof SiteMarketRoute
   '/_site/music-trivia': typeof SiteMusicTriviaRoute
@@ -6972,6 +7030,10 @@ export interface FileRoutesById {
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
   '/api/internal/predictions-tick': typeof ApiInternalPredictionsTickRoute
   '/api/internal/streak-push': typeof ApiInternalStreakPushRoute
+  '/api/kaikai-debt/ask': typeof ApiKaikaiDebtAskRoute
+  '/api/kaikai-debt/entries': typeof ApiKaikaiDebtEntriesRoute
+  '/api/kaikai-debt/ledger': typeof ApiKaikaiDebtLedgerRoute
+  '/api/kaikai-debt/stream': typeof ApiKaikaiDebtStreamRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/leaderboards/$gameId': typeof ApiLeaderboardsGameIdRoute
@@ -7166,6 +7228,7 @@ export interface FileRoutesById {
   '/api/group-chats/': typeof ApiGroupChatsIndexRoute
   '/api/guides/': typeof ApiGuidesIndexRoute
   '/api/history/': typeof ApiHistoryIndexRoute
+  '/api/kaikai-debt/': typeof ApiKaikaiDebtIndexRoute
   '/api/lists/': typeof ApiListsIndexRoute
   '/api/moments/': typeof ApiMomentsIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
@@ -7515,6 +7578,7 @@ export interface FileRouteTypes {
     | '/.well-known/apple-app-site-association'
     | '/.well-known/assetlinks.json'
     | '/achievements'
+    | '/alexdebtcounter'
     | '/analytics'
     | '/arcade'
     | '/bookmarks'
@@ -7526,6 +7590,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/help'
     | '/history'
+    | '/kaikaidebtcounter'
     | '/leaderboard'
     | '/market'
     | '/music-trivia'
@@ -7791,6 +7856,10 @@ export interface FileRouteTypes {
     | '/api/internal/notify-typing'
     | '/api/internal/predictions-tick'
     | '/api/internal/streak-push'
+    | '/api/kaikai-debt/ask'
+    | '/api/kaikai-debt/entries'
+    | '/api/kaikai-debt/ledger'
+    | '/api/kaikai-debt/stream'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/leaderboards/$gameId'
@@ -7985,6 +8054,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/'
     | '/api/guides/'
     | '/api/history/'
+    | '/api/kaikai-debt/'
     | '/api/lists/'
     | '/api/moments/'
     | '/api/notifications/'
@@ -8310,6 +8380,7 @@ export interface FileRouteTypes {
     | '/.well-known/apple-app-site-association'
     | '/.well-known/assetlinks.json'
     | '/achievements'
+    | '/alexdebtcounter'
     | '/analytics'
     | '/arcade'
     | '/bookmarks'
@@ -8321,6 +8392,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/help'
     | '/history'
+    | '/kaikaidebtcounter'
     | '/leaderboard'
     | '/market'
     | '/music-trivia'
@@ -8584,6 +8656,10 @@ export interface FileRouteTypes {
     | '/api/internal/notify-typing'
     | '/api/internal/predictions-tick'
     | '/api/internal/streak-push'
+    | '/api/kaikai-debt/ask'
+    | '/api/kaikai-debt/entries'
+    | '/api/kaikai-debt/ledger'
+    | '/api/kaikai-debt/stream'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/leaderboards/$gameId'
@@ -8778,6 +8854,7 @@ export interface FileRouteTypes {
     | '/api/group-chats'
     | '/api/guides'
     | '/api/history'
+    | '/api/kaikai-debt'
     | '/api/lists'
     | '/api/moments'
     | '/api/notifications'
@@ -9125,6 +9202,7 @@ export interface FileRouteTypes {
     | '/.well-known/apple-app-site-association'
     | '/.well-known/assetlinks.json'
     | '/_site/achievements'
+    | '/_site/alexdebtcounter'
     | '/_site/analytics'
     | '/_site/arcade'
     | '/_site/bookmarks'
@@ -9136,6 +9214,7 @@ export interface FileRouteTypes {
     | '/_site/explore'
     | '/_site/help'
     | '/_site/history'
+    | '/_site/kaikaidebtcounter'
     | '/_site/leaderboard'
     | '/_site/market'
     | '/_site/music-trivia'
@@ -9402,6 +9481,10 @@ export interface FileRouteTypes {
     | '/api/internal/notify-typing'
     | '/api/internal/predictions-tick'
     | '/api/internal/streak-push'
+    | '/api/kaikai-debt/ask'
+    | '/api/kaikai-debt/entries'
+    | '/api/kaikai-debt/ledger'
+    | '/api/kaikai-debt/stream'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/leaderboards/$gameId'
@@ -9596,6 +9679,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/'
     | '/api/guides/'
     | '/api/history/'
+    | '/api/kaikai-debt/'
     | '/api/lists/'
     | '/api/moments/'
     | '/api/notifications/'
@@ -10068,6 +10152,10 @@ export interface RootRouteChildren {
   ApiInternalNotifyTypingRoute: typeof ApiInternalNotifyTypingRoute
   ApiInternalPredictionsTickRoute: typeof ApiInternalPredictionsTickRoute
   ApiInternalStreakPushRoute: typeof ApiInternalStreakPushRoute
+  ApiKaikaiDebtAskRoute: typeof ApiKaikaiDebtAskRoute
+  ApiKaikaiDebtEntriesRoute: typeof ApiKaikaiDebtEntriesRoute
+  ApiKaikaiDebtLedgerRoute: typeof ApiKaikaiDebtLedgerRoute
+  ApiKaikaiDebtStreamRoute: typeof ApiKaikaiDebtStreamRoute
   ApiLaundrySortLeaderboardRoute: typeof ApiLaundrySortLeaderboardRoute
   ApiLaundrySortScoreRoute: typeof ApiLaundrySortScoreRoute
   ApiLeaderboardsGameIdRoute: typeof ApiLeaderboardsGameIdRoute
@@ -10206,6 +10294,7 @@ export interface RootRouteChildren {
   ApiGroupChatsIndexRoute: typeof ApiGroupChatsIndexRoute
   ApiGuidesIndexRoute: typeof ApiGuidesIndexRoute
   ApiHistoryIndexRoute: typeof ApiHistoryIndexRoute
+  ApiKaikaiDebtIndexRoute: typeof ApiKaikaiDebtIndexRoute
   ApiListsIndexRoute: typeof ApiListsIndexRoute
   ApiMomentsIndexRoute: typeof ApiMomentsIndexRoute
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
@@ -10779,6 +10868,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminRouteRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/alexdebtcounter': {
+      id: '/_site/alexdebtcounter'
+      path: '/alexdebtcounter'
+      fullPath: '/alexdebtcounter'
+      preLoaderRoute: typeof SiteAlexdebtcounterRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/analytics': {
       id: '/_site/analytics'
       path: '/analytics'
@@ -10861,6 +10957,13 @@ declare module '@tanstack/react-router' {
       path: '/history'
       fullPath: '/history'
       preLoaderRoute: typeof SiteHistoryRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/kaikaidebtcounter': {
+      id: '/_site/kaikaidebtcounter'
+      path: '/kaikaidebtcounter'
+      fullPath: '/kaikaidebtcounter'
+      preLoaderRoute: typeof SiteKaikaidebtcounterRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/leaderboard': {
@@ -12989,6 +13092,41 @@ declare module '@tanstack/react-router' {
       path: '/api/internal/streak-push'
       fullPath: '/api/internal/streak-push'
       preLoaderRoute: typeof ApiInternalStreakPushRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/kaikai-debt/': {
+      id: '/api/kaikai-debt/'
+      path: '/api/kaikai-debt'
+      fullPath: '/api/kaikai-debt/'
+      preLoaderRoute: typeof ApiKaikaiDebtIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/kaikai-debt/ask': {
+      id: '/api/kaikai-debt/ask'
+      path: '/api/kaikai-debt/ask'
+      fullPath: '/api/kaikai-debt/ask'
+      preLoaderRoute: typeof ApiKaikaiDebtAskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/kaikai-debt/entries': {
+      id: '/api/kaikai-debt/entries'
+      path: '/api/kaikai-debt/entries'
+      fullPath: '/api/kaikai-debt/entries'
+      preLoaderRoute: typeof ApiKaikaiDebtEntriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/kaikai-debt/ledger': {
+      id: '/api/kaikai-debt/ledger'
+      path: '/api/kaikai-debt/ledger'
+      fullPath: '/api/kaikai-debt/ledger'
+      preLoaderRoute: typeof ApiKaikaiDebtLedgerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/kaikai-debt/stream': {
+      id: '/api/kaikai-debt/stream'
+      path: '/api/kaikai-debt/stream'
+      fullPath: '/api/kaikai-debt/stream'
+      preLoaderRoute: typeof ApiKaikaiDebtStreamRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/laundry-sort/leaderboard': {
@@ -16185,6 +16323,7 @@ interface SiteRouteChildren {
   SiteAdminRouteRoute: typeof SiteAdminRouteRouteWithChildren
   SiteDeveloperRouteRoute: typeof SiteDeveloperRouteRouteWithChildren
   SiteAchievementsRoute: typeof SiteAchievementsRoute
+  SiteAlexdebtcounterRoute: typeof SiteAlexdebtcounterRoute
   SiteAnalyticsRoute: typeof SiteAnalyticsRoute
   SiteArcadeRoute: typeof SiteArcadeRoute
   SiteBookmarksRoute: typeof SiteBookmarksRoute
@@ -16196,6 +16335,7 @@ interface SiteRouteChildren {
   SiteExploreRoute: typeof SiteExploreRoute
   SiteHelpRoute: typeof SiteHelpRoute
   SiteHistoryRoute: typeof SiteHistoryRoute
+  SiteKaikaidebtcounterRoute: typeof SiteKaikaidebtcounterRoute
   SiteLeaderboardRoute: typeof SiteLeaderboardRoute
   SiteMarketRoute: typeof SiteMarketRoute
   SiteMusicTriviaRoute: typeof SiteMusicTriviaRoute
@@ -16290,6 +16430,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteAdminRouteRoute: SiteAdminRouteRouteWithChildren,
   SiteDeveloperRouteRoute: SiteDeveloperRouteRouteWithChildren,
   SiteAchievementsRoute: SiteAchievementsRoute,
+  SiteAlexdebtcounterRoute: SiteAlexdebtcounterRoute,
   SiteAnalyticsRoute: SiteAnalyticsRoute,
   SiteArcadeRoute: SiteArcadeRoute,
   SiteBookmarksRoute: SiteBookmarksRoute,
@@ -16301,6 +16442,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteExploreRoute: SiteExploreRoute,
   SiteHelpRoute: SiteHelpRoute,
   SiteHistoryRoute: SiteHistoryRoute,
+  SiteKaikaidebtcounterRoute: SiteKaikaidebtcounterRoute,
   SiteLeaderboardRoute: SiteLeaderboardRoute,
   SiteMarketRoute: SiteMarketRoute,
   SiteMusicTriviaRoute: SiteMusicTriviaRoute,
@@ -17788,6 +17930,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInternalNotifyTypingRoute: ApiInternalNotifyTypingRoute,
   ApiInternalPredictionsTickRoute: ApiInternalPredictionsTickRoute,
   ApiInternalStreakPushRoute: ApiInternalStreakPushRoute,
+  ApiKaikaiDebtAskRoute: ApiKaikaiDebtAskRoute,
+  ApiKaikaiDebtEntriesRoute: ApiKaikaiDebtEntriesRoute,
+  ApiKaikaiDebtLedgerRoute: ApiKaikaiDebtLedgerRoute,
+  ApiKaikaiDebtStreamRoute: ApiKaikaiDebtStreamRoute,
   ApiLaundrySortLeaderboardRoute: ApiLaundrySortLeaderboardRoute,
   ApiLaundrySortScoreRoute: ApiLaundrySortScoreRoute,
   ApiLeaderboardsGameIdRoute: ApiLeaderboardsGameIdRoute,
@@ -17926,6 +18072,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGroupChatsIndexRoute: ApiGroupChatsIndexRoute,
   ApiGuidesIndexRoute: ApiGuidesIndexRoute,
   ApiHistoryIndexRoute: ApiHistoryIndexRoute,
+  ApiKaikaiDebtIndexRoute: ApiKaikaiDebtIndexRoute,
   ApiListsIndexRoute: ApiListsIndexRoute,
   ApiMomentsIndexRoute: ApiMomentsIndexRoute,
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,

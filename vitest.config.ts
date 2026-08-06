@@ -19,6 +19,7 @@ export default defineConfig({
       'lib/rmhladder/**/*.test.ts',
       'lib/homes/**/*.test.ts',
       'lib/isleworks/__tests__/**/*.test.ts',
+      'lib/kaikai-debt/__tests__/**/*.test.ts',
       'lib/personas/__tests__/**/*.test.ts',
       'lib/predictions/__tests__/**/*.test.ts',
       'lib/tournaments/__tests__/**/*.test.ts',

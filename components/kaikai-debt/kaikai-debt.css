@@ -1,0 +1,476 @@
+/* ==========================================================================
+   The Kaikai Debt Counter — fire, aura, lasers.
+
+   Everything here is scoped under `.kd-root`. That scoping is the whole
+   licence for this file: the site tier renders in `--site-*` tokens so every
+   theme works, and the page cannot ask a themeable token to be "the orange
+   part of a flame". So this declares its OWN small palette, in one place, the
+   same way the games with a bespoke visual identity do (design-language.md
+   §12) — and it stays inside `.kd-root`, so nothing it names can leak into a
+   surface that is supposed to be themeable.
+
+   The page's *chrome* is still the site's: `.glass-pane`, `.glass-fill`,
+   `.glass-inset`, `--site-*` type and spacing. This file only paints the
+   spectacle behind and around it.
+
+   PERFORMANCE CONTRACT — every rule below obeys all four:
+
+     1. Animate `transform` and `opacity` only. No animated `filter`, no
+        animated `background-position`, no animated `box-shadow` — those repaint
+        the element every frame, and the repainting element here is full-bleed.
+     2. Nothing tracks the pointer. That whole class was retired 2026-08-01
+        (design-language.md §5.1.1): moving a gradient at pointer rate repaints
+        at pointer rate. Every motion here is on a fixed, unattended timeline.
+     3. No JavaScript writes a custom property per frame. There is no rAF loop
+        behind any of this — it is CSS keyframes start to finish.
+     4. `backdrop-filter` appears nowhere in this file. The FX layer sits
+        BEHIND the glass, and the ≤8-blurred-surfaces budget belongs to the
+        real UI on top of it.
+
+   DEGRADATION — three switches, all of which must fully stop the motion:
+     • `prefers-reduced-motion` / `html.reduce-motion` (the global 0.01ms reset
+       already lands on these, and the explicit block below removes the
+       remaining static glare so the page is calm rather than frozen mid-flare);
+     • `html.perf-lite` — the low-end tier drops to a single static wash;
+     • `html.style-high-contrast` — the whole decorative layer is removed,
+       because a legibility mode is not the place for a burning aura.
+   ========================================================================== */
+
+.kd-root {
+  /* --- The scoped palette ------------------------------------------------
+     Hue-forward and deliberately loud. Alpha is carried in the value rather
+     than applied with `opacity` on the layer, so each stop can be tuned
+     independently without dimming its neighbours. */
+  --kd-fire-core: rgba(255, 236, 168, 0.95);
+  --kd-fire-hot: rgba(255, 158, 46, 0.85);
+  --kd-fire-deep: rgba(226, 62, 24, 0.7);
+  --kd-fire-smoke: rgba(96, 18, 8, 0.35);
+
+  --kd-aura-1: rgba(255, 92, 168, 0.34);
+  --kd-aura-2: rgba(122, 92, 255, 0.32);
+  --kd-aura-3: rgba(46, 226, 214, 0.28);
+  --kd-aura-4: rgba(255, 196, 46, 0.3);
+
+  --kd-laser-1: rgba(255, 64, 128, 0.9);
+  --kd-laser-2: rgba(64, 224, 255, 0.9);
+  --kd-laser-3: rgba(180, 96, 255, 0.85);
+
+  /* One knob for how hard the whole spectacle is pushed. The FX layer reads it
+     for its own opacity, so a future "calm mode" is one declaration. */
+  --kd-intensity: 1;
+
+  position: relative;
+  isolation: isolate;
+}
+
+/* ==========================================================================
+   The FX layer
+   ==========================================================================
+   A single fixed, non-interactive element behind the page content. Fixed
+   rather than absolute so the aura stays put while the infinite ledger scrolls
+   past it — an aura that scrolled away would be gone by the second page, which
+   on a page designed to be scrolled forever is most of the time.
+   `contain: strict` keeps the whole thing out of the document's layout and
+   paint work: it can never reflow anything above it. */
+.kd-fx {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  contain: strict;
+  opacity: var(--kd-intensity);
+}
+
+/* --- Aura: two counter-rotating gradient fields --------------------------
+   Four coloured blobs per layer, the layers turning in opposite directions at
+   different speeds. Rotation (not translation) because a rotating radial field
+   never reveals an edge, so the layer can be sized to the viewport instead of
+   being oversized to hide its corners. */
+.kd-aura {
+  position: absolute;
+  /* Oversized and centred so the rotation's corners never sweep into view. */
+  inset: -40%;
+  background-image:
+    radial-gradient(38% 34% at 22% 26%, var(--kd-aura-1), transparent 68%),
+    radial-gradient(42% 36% at 78% 30%, var(--kd-aura-2), transparent 70%),
+    radial-gradient(36% 40% at 30% 76%, var(--kd-aura-3), transparent 68%),
+    radial-gradient(40% 34% at 74% 72%, var(--kd-aura-4), transparent 70%);
+  animation: kd-aura-spin 46s linear infinite;
+  will-change: transform;
+}
+
+.kd-aura--reverse {
+  inset: -50%;
+  filter: blur(30px);
+  opacity: 0.75;
+  animation: kd-aura-spin-reverse 71s linear infinite;
+}
+
+@keyframes kd-aura-spin {
+  from {
+    transform: rotate(0deg) scale(1.04);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.12);
+  }
+  to {
+    transform: rotate(360deg) scale(1.04);
+  }
+}
+
+@keyframes kd-aura-spin-reverse {
+  from {
+    transform: rotate(360deg) scale(1.1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1);
+  }
+  to {
+    transform: rotate(0deg) scale(1.1);
+  }
+}
+
+/* --- Fire: a stack of rising, guttering plumes ---------------------------
+   Each plume is one element with a conic-ish radial stack, scaled and skewed on
+   a loop. Real flame is turbulent and CSS is not, so the trick is three plumes
+   on co-prime durations: the composite never visibly repeats even though each
+   part does, which is what stops it reading as a looping GIF. */
+.kd-fire {
+  position: absolute;
+  inset-inline: 0;
+  bottom: -12%;
+  height: 52%;
+  background-image:
+    radial-gradient(60% 100% at 50% 100%, var(--kd-fire-hot), transparent 72%),
+    radial-gradient(34% 78% at 22% 100%, var(--kd-fire-deep), transparent 76%),
+    radial-gradient(30% 70% at 80% 100%, var(--kd-fire-deep), transparent 76%),
+    radial-gradient(80% 40% at 50% 100%, var(--kd-fire-smoke), transparent 80%);
+  filter: blur(14px);
+  transform-origin: 50% 100%;
+  animation: kd-flame-a 3.7s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.kd-fire--b {
+  height: 38%;
+  filter: blur(9px);
+  opacity: 0.8;
+  animation: kd-flame-b 2.9s ease-in-out infinite alternate;
+}
+
+.kd-fire--c {
+  height: 26%;
+  filter: blur(5px);
+  opacity: 0.85;
+  background-image: radial-gradient(48% 100% at 50% 100%, var(--kd-fire-core), transparent 70%);
+  animation: kd-flame-c 2.3s ease-in-out infinite alternate;
+}
+
+/* A second, upside-down set along the top edge, so the page reads as burning
+   from both ends rather than sitting in a campfire. */
+.kd-fire--top {
+  top: -12%;
+  bottom: auto;
+  transform-origin: 50% 0%;
+  rotate: 180deg;
+}
+
+@keyframes kd-flame-a {
+  from {
+    transform: scaleY(0.9) scaleX(1.02) skewX(-1.5deg);
+    opacity: 0.75;
+  }
+  to {
+    transform: scaleY(1.14) scaleX(0.97) skewX(2deg);
+    opacity: 1;
+  }
+}
+
+@keyframes kd-flame-b {
+  from {
+    transform: scaleY(1.12) skewX(3deg) translateX(1.5%);
+    opacity: 0.6;
+  }
+  to {
+    transform: scaleY(0.88) skewX(-2.5deg) translateX(-1.5%);
+    opacity: 0.95;
+  }
+}
+
+@keyframes kd-flame-c {
+  from {
+    transform: scaleY(0.82) skewX(-3deg);
+    opacity: 0.55;
+  }
+  to {
+    transform: scaleY(1.2) skewX(2deg);
+    opacity: 1;
+  }
+}
+
+/* --- Lasers: beams sweeping out past the page edge ------------------------
+   Each beam is a hairline gradient strip, rotated about a point off-canvas and
+   swept. `mix-blend-mode: screen` is what makes them read as light rather than
+   as coloured tape: overlapping beams brighten instead of occluding, and a beam
+   crossing the fire adds to it.
+
+   The strips are `200vmax` wide so the beam is still off-screen at both ends of
+   its sweep at any viewport aspect ratio — the alternative is a beam that
+   visibly starts and stops in mid-air on an ultrawide monitor. */
+.kd-laser {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 200vmax;
+  height: 2px;
+  margin-left: -100vmax;
+  mix-blend-mode: screen;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+}
+
+.kd-laser::after {
+  content: '';
+  position: absolute;
+  inset: -3px 0;
+  filter: blur(4px);
+  background: inherit;
+  opacity: 0.7;
+}
+
+.kd-laser--1 {
+  background: linear-gradient(90deg, transparent, var(--kd-laser-1) 42%, transparent);
+  animation: kd-laser-sweep-1 9.5s ease-in-out infinite;
+}
+
+.kd-laser--2 {
+  background: linear-gradient(90deg, transparent, var(--kd-laser-2) 55%, transparent);
+  animation: kd-laser-sweep-2 13.5s ease-in-out infinite;
+}
+
+.kd-laser--3 {
+  background: linear-gradient(90deg, transparent, var(--kd-laser-3) 48%, transparent);
+  animation: kd-laser-sweep-3 17s ease-in-out infinite;
+}
+
+/* Each sweep parks at zero opacity for most of its cycle, so the beams fire in
+   bursts rather than turning continuously like a lighthouse. The staggered
+   durations mean they rarely fire together, and when they do it is a moment
+   rather than the resting state. */
+@keyframes kd-laser-sweep-1 {
+  0%,
+  100% {
+    transform: rotate(-24deg) scaleX(0.4);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  28% {
+    transform: rotate(16deg) scaleX(1);
+    opacity: 0.9;
+  }
+  42% {
+    transform: rotate(30deg) scaleX(0.6);
+    opacity: 0;
+  }
+}
+
+@keyframes kd-laser-sweep-2 {
+  0%,
+  100% {
+    transform: rotate(64deg) scaleX(0.5);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.95;
+  }
+  34% {
+    transform: rotate(112deg) scaleX(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: rotate(134deg) scaleX(0.5);
+    opacity: 0;
+  }
+}
+
+@keyframes kd-laser-sweep-3 {
+  0%,
+  100% {
+    transform: rotate(160deg) scaleX(0.45);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  30% {
+    transform: rotate(122deg) scaleX(1);
+    opacity: 0.8;
+  }
+  46% {
+    transform: rotate(100deg) scaleX(0.5);
+    opacity: 0;
+  }
+}
+
+/* --- The counter's own glow ---------------------------------------------
+   Sits behind the odometer specifically, so the big number reads as the source
+   of the fire rather than as text laid on top of it. */
+.kd-counter-glow {
+  position: absolute;
+  inset: -18% -8%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(closest-side, var(--kd-fire-hot), transparent 78%);
+  filter: blur(34px);
+  opacity: 0.55;
+  animation: kd-glow-pulse 4.3s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+@keyframes kd-glow-pulse {
+  from {
+    transform: scale(0.94);
+    opacity: 0.38;
+  }
+  to {
+    transform: scale(1.08);
+    opacity: 0.68;
+  }
+}
+
+/* The digits themselves. `text-shadow` is static — it is never animated, so it
+   costs one paint. The tabular figures are load-bearing: without them every
+   digit change reflows the number's width and the row jitters sideways eight
+   times a second. */
+.kd-odometer {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  letter-spacing: -0.02em;
+  text-shadow:
+    0 0 12px var(--kd-fire-hot),
+    0 0 42px var(--kd-fire-deep);
+}
+
+/* The fractional cents, rolling too fast to read — dimmed and set smaller so
+   the eye lands on the dollars. */
+.kd-odometer__micro {
+  opacity: 0.62;
+  font-size: 0.52em;
+}
+
+/* --- A line landing in the log ------------------------------------------
+   One-shot, and deliberately NOT one of the `animate-in`/`fade-in-0` classes:
+   `tailwindcss-animate` is not installed here, those compile to nothing, and
+   CI fails the build on them (design-consistency rule 9). */
+.kd-flash {
+  animation: kd-flash-in 900ms ease-out 1;
+}
+
+@keyframes kd-flash-in {
+  0% {
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: 0 0 0 1px var(--kd-laser-1);
+  }
+  40% {
+    box-shadow: 0 0 22px 2px var(--kd-fire-hot);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+/* ==========================================================================
+   Degradation
+   ========================================================================== */
+
+/* Reduced motion. The global reset in globals.css already collapses every
+   animation to 0.01ms, which stops the movement but freezes each layer at its
+   first keyframe — a page mid-flare, held. These rules finish the job: the
+   aura becomes a soft static wash, and the parts that only make sense in motion
+   (the flames' gutter, the laser sweeps) are removed rather than paused. */
+@media (prefers-reduced-motion: reduce) {
+  .kd-root .kd-aura {
+    animation: none;
+    transform: none;
+    opacity: 0.5;
+  }
+  .kd-root .kd-fire {
+    animation: none;
+    transform: none;
+    opacity: 0.45;
+  }
+  .kd-root .kd-laser,
+  .kd-root .kd-counter-glow {
+    animation: none;
+  }
+  .kd-root .kd-laser {
+    display: none;
+  }
+  .kd-root .kd-counter-glow {
+    opacity: 0.4;
+    transform: none;
+  }
+  .kd-root .kd-flash {
+    animation: none;
+  }
+}
+
+html.reduce-motion .kd-root .kd-aura,
+html.reduce-motion .kd-root .kd-fire {
+  animation: none;
+  transform: none;
+  opacity: 0.45;
+}
+html.reduce-motion .kd-root .kd-laser {
+  display: none;
+}
+html.reduce-motion .kd-root .kd-counter-glow,
+html.reduce-motion .kd-root .kd-flash {
+  animation: none;
+}
+
+/* Low-end tier: one static wash, no blur, no beams. `filter: blur()` over a
+   full-bleed layer is the single most expensive thing on this page, and
+   perf-lite exists precisely to not pay for it. */
+html.perf-lite .kd-root .kd-fx {
+  opacity: 0.5;
+}
+html.perf-lite .kd-root .kd-aura,
+html.perf-lite .kd-root .kd-fire {
+  animation: none;
+  filter: none;
+  transform: none;
+}
+html.perf-lite .kd-root .kd-aura--reverse,
+html.perf-lite .kd-root .kd-laser,
+html.perf-lite .kd-root .kd-counter-glow {
+  display: none;
+}
+html.perf-lite .kd-root .kd-odometer {
+  text-shadow: none;
+}
+
+/* High contrast: the decorative layer goes entirely. A legibility mode that
+   still has a fire behind the text has not delivered legibility. */
+html.style-high-contrast .kd-root .kd-fx,
+html.style-high-contrast .kd-root .kd-counter-glow {
+  display: none;
+}
+html.style-high-contrast .kd-root .kd-odometer {
+  text-shadow: none;
+}
+
+/* Reduced transparency: keep the motion, drop the wash to something that cannot
+   compete with text sitting over it. */
+@media (prefers-reduced-transparency: reduce) {
+  .kd-root .kd-fx {
+    opacity: 0.28;
+  }
+}
+html.reduce-transparency .kd-root .kd-fx {
+  opacity: 0.28;
+}
