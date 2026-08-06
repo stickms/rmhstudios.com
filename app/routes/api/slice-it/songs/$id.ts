@@ -11,6 +11,7 @@ import {
   storeSongCover,
   toSliceSong,
 } from '@/lib/slice-it/songs.server';
+import { issueRunToken } from '@/lib/slice-it/run-token.server';
 
 /**
  * A single song: read, edit, delete.
@@ -42,7 +43,13 @@ export const Route = createFileRoute('/api/slice-it/songs/$id')({
           return Response.json({ error: 'Song not found' }, { status: 404 });
         }
 
-        return Response.json(toSliceSong(song, userId, { includeAnalysis: true }));
+        // Mint the run receipt here rather than from a dedicated endpoint:
+        // every run performs this read, so it costs no extra round trip on the
+        // path to starting a song. See `run-token.server.ts`.
+        return Response.json({
+          ...toSliceSong(song, userId, { includeAnalysis: true }),
+          ...(userId ? { runToken: issueRunToken(userId, song.id) } : {}),
+        });
       }),
 
       PATCH: defineHandler(

@@ -67,6 +67,23 @@ export const ScoreSubmissionZ = z.object({
   modifiers: ModifiersZ,
   /** True when this came from a multiplayer match, for the results attribution. */
   multiplayer: z.boolean().default(false),
+  /**
+   * The run's signed receipt, from the single-song read. Its timestamp is how
+   * the server knows how long the run took without asking the client.
+   */
+  runToken: z.string().max(512).optional(),
+  /**
+   * The run's hit-timing distribution. Three numbers, not per-note samples —
+   * enough to tell a person from a metronome, cheap enough to send with every
+   * score. See `lib/slice-it/integrity.ts`.
+   */
+  timing: z
+    .object({
+      samples: z.number().int().min(0).max(1_000_000),
+      meanMs: z.number().min(-10_000).max(10_000),
+      stdDevMs: z.number().min(0).max(10_000),
+    })
+    .optional(),
 });
 export type ScoreSubmission = z.infer<typeof ScoreSubmissionZ>;
 

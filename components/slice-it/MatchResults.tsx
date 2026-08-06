@@ -9,6 +9,7 @@ import { useRunSummary, useSubmitScore } from '@/lib/slice-it/useSubmitScore';
 import { gradeFor } from '@/lib/slice-it/scoring';
 import * as net from '@/lib/slice-it/net/client';
 import type { FinalStanding } from '@/lib/slice-it/net/events';
+import type { GameEngine } from '@/lib/slice-it/engine';
 
 /**
  * The multiplayer results card.
@@ -20,7 +21,14 @@ import type { FinalStanding } from '@/lib/slice-it/net/events';
  * arrived. There is one authority now, and it is the only thing that has ever
  * had the full picture.
  */
-export function MatchResults({ onBack }: { onBack: () => void }) {
+export function MatchResults({
+  onBack,
+  engine,
+}: {
+  onBack: () => void;
+  /** Source of the run's note count and timing distribution; see `GameOver`. */
+  engine?: GameEngine | null;
+}) {
   const { t } = useTranslation('c-game');
   const results = useSliceItStore((s) => s.matchResults);
   const lobby = useSliceItStore((s) => s.lobby);
@@ -33,7 +41,7 @@ export function MatchResults({ onBack }: { onBack: () => void }) {
   // players who reported a finish. Submitting from the client as well is what
   // covers a player whose `finish` was lost in a reconnect: the two paths write
   // the same personal-best row and the higher score wins.
-  const summary = useRunSummary(true);
+  const summary = useRunSummary(true, engine);
   const submission = useSubmitScore(summary);
 
   const standings = results?.standings ?? [];

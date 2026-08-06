@@ -148,11 +148,15 @@ class FakeServer {
     const targets = [...this.sockets.sockets.values()].filter(
       (socket) => socket.id === target || socket.rooms.has(target),
     );
-    return {
-      emit: (event: string, payload: unknown) => {
-        for (const socket of targets) socket.emit(event, payload);
-      },
+    const emit = (event: string, payload: unknown) => {
+      for (const socket of targets) socket.emit(event, payload);
     };
+    // `volatile` drops a packet rather than queueing it when a client's socket
+    // is backed up — the live score broadcast uses it, because a stale score is
+    // worth less than nothing once a newer one exists. Here every socket is
+    // always ready, so it delivers; what the harness has to model is that the
+    // property exists at all.
+    return { emit, volatile: { emit } };
   }
 }
 

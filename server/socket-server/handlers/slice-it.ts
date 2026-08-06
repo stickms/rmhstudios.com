@@ -145,6 +145,8 @@ interface Lobby {
   loadTimer: ReturnType<typeof setTimeout> | null;
   countdownTimer: ReturnType<typeof setTimeout> | null;
   scoreTimer: ReturnType<typeof setInterval> | null;
+  /** Last broadcast score frame, so an unchanged one is not re-sent. */
+  lastScoreDigest: string;
   deadlineTimer: ReturnType<typeof setTimeout> | null;
   pauseTimer: ReturnType<typeof setTimeout> | null;
 }
@@ -273,6 +275,7 @@ function createLobby(host: { userId: string; name: string }, isPublic: boolean):
     loadTimer: null,
     countdownTimer: null,
     scoreTimer: null,
+    lastScoreDigest: '',
     deadlineTimer: null,
     pauseTimer: null,
   };
@@ -620,6 +623,9 @@ function startMatch(io: Server, lobby: Lobby): void {
  */
 function startScoreTicker(io: Server, lobby: Lobby): void {
   if (lobby.scoreTimer) clearInterval(lobby.scoreTimer);
+  // A fresh match — or a resumed one — must not be silenced by the digest the
+  // previous run left behind.
+  lobby.lastScoreDigest = '';
   lobby.scoreTimer = setInterval(() => {
     const current = lobbies.get(lobby.code);
     if (!current || current.state !== 'playing' || current.pausedAt !== null) return;
@@ -628,8 +634,34 @@ function startScoreTicker(io: Server, lobby: Lobby): void {
       ...seat.report,
       done: seat.done,
     }));
-    io.to(lobbyRoom(current.code)).emit(S2C.SCORES, scores);
+
+    // Nothing moved — usually everyone finished and the room is waiting on one
+    // straggler. Sending the same numbers again is bandwidth the match is not
+    // using for anything.
+    const digest = scoreDigest(scores);
+    if (digest === current.lastScoreDigest) return;
+    current.lastScoreDigest = digest;
+
+    // `volatile`: drop rather than queue when a client's socket is backed up.
+    //
+    // Without it, a player on a bad connection accumulates a backlog of score
+    // frames and then receives them all at once, rendering each in turn — so
+    // the opponent board replays the last few seconds in fast-forward and
+    // arrives late anyway. A live score has no value once a newer one exists;
+    // the right thing to do with a stale one is throw it away. Nothing else in
+    // this handler is volatile, because everything else is a state transition
+    // that must not be lost.
+    io.to(lobbyRoom(current.code)).volatile.emit(S2C.SCORES, scores);
   }, SCORE_TICK_MS);
+}
+
+/** Cheap change detector for a score frame — see {@link startScoreTicker}. */
+function scoreDigest(scores: LiveScore[]): string {
+  let out = '';
+  for (const s of scores) {
+    out += `${s.socketId}:${s.score}:${s.combo}:${s.accuracy.toFixed(4)}:${s.done ? 1 : 0}|`;
+  }
+  return out;
 }
 
 function armDeadline(io: Server, lobby: Lobby): void {

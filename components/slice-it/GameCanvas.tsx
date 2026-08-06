@@ -274,8 +274,14 @@ export function GameCanvas() {
   }, []);
 
   // ── Input ──────────────────────────────────────────────────────────────────
+  /**
+   * @param pressTime  The originating event's `timeStamp` — when the input
+   *   actually happened, as opposed to when this handler got to run. On a busy
+   *   frame those differ by 5-15 ms, and 15 ms is the whole MARVELOUS window,
+   *   so without it the engine charges main-thread latency to the player.
+   */
   const handleInput = useCallback(
-    (lane: number) => {
+    (lane: number, pressTime?: number) => {
       if (!engine) return;
       // Block input during countdown
       if (useSliceItStore.getState().countdown > 0) return;
@@ -286,7 +292,7 @@ export function GameCanvas() {
       } else if (audio.getCurrentTime() === 0) {
         engine.start();
       }
-      engine.submitInput(lane);
+      engine.submitInput(lane, pressTime);
     },
     [engine],
   );
@@ -338,6 +344,11 @@ export function GameCanvas() {
           if (store.isPaused) return;
           if (store.countdown > 0) return;
 
+          // No press timestamp here, and there cannot be one: the Gamepad API
+          // is polled rather than evented, so a press is only observable on the
+          // next frame and `gamepad.timestamp` is neither in `performance.now()`
+          // units nor consistent across browsers. Pad players pay up to one
+          // frame; keyboard and touch do not.
           if (GAMEPAD_LANE0_BUTTONS.includes(btnIdx)) handleInput(0);
           else if (GAMEPAD_LANE1_BUTTONS.includes(btnIdx)) handleInput(1);
         });
@@ -385,14 +396,12 @@ export function GameCanvas() {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // RENDER FIRST (Even if update fails, we want to see something)
+        // Update first, then render what it produced. The other order showed a
+        // frame of stale state — a note that had just expired still drawn as
+        // live — and the `update()` call was duplicated below it, so everything
+        // in the engine that accumulates over time ran twice per frame.
+        newEngine.update();
         render(ctx, newEngine, keybindsRef.current);
-
-        // Then Update
-        newEngine.update();
-
-        // Then Update
-        newEngine.update();
       } catch (e: any) {
         console.error('GameCanvas Render Error:', e);
         setDebugInfo((prev) => ({ ...prev, error: e.message || 'Unknown Error' }));
@@ -564,8 +573,8 @@ export function GameCanvas() {
       if (status !== 'PLAYING') return;
       if (useSliceItStore.getState().countdown > 0) return;
       if (e.repeat) return; // Block held-key repeats: one press = one note
-      if (e.code === keybinds.lane1) handleInput(0);
-      else if (e.code === keybinds.lane2) handleInput(1);
+      if (e.code === keybinds.lane1) handleInput(0, e.timeStamp);
+      else if (e.code === keybinds.lane2) handleInput(1, e.timeStamp);
       if (e.code === 'Space') e.preventDefault();
     };
 
@@ -612,8 +621,8 @@ export function GameCanvas() {
         // Use keybind mapping to determine lane
         const btnCode = `Mouse${(e as MouseEvent).button}`;
         const kb = keybindsRef.current;
-        if (btnCode === kb.lane1) handleInput(0);
-        else if (btnCode === kb.lane2) handleInput(1);
+        if (btnCode === kb.lane1) handleInput(0, e.timeStamp);
+        else if (btnCode === kb.lane2) handleInput(1, e.timeStamp);
         return;
       }
 
@@ -631,7 +640,7 @@ export function GameCanvas() {
         : touch.clientY - rect.top < rect.height / 2
           ? 0
           : 1;
-      handleInput(lane);
+      handleInput(lane, e.timeStamp);
     };
 
     const handleGlobalRelease = (e: MouseEvent | TouchEvent) => {
@@ -733,11 +742,23 @@ export function GameCanvas() {
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
+  /** Wall-clock seconds since the previous rendered frame. See `lastFrameAt`. */
+  const lastFrameAt = useRef(0);
+
   const render = (
     ctx: CanvasRenderingContext2D,
     engine: GameEngine,
     currentKeybinds: { lane1: string; lane2: string },
   ) => {
+    // Anything that integrates over time uses this rather than assuming a
+    // frame is 1/60 s. Clamped so a tab that was backgrounded for a minute does
+    // not teleport every particle off screen on the frame it comes back.
+    const nowMs = performance.now();
+    const frameDelta = lastFrameAt.current
+      ? Math.min(0.1, (nowMs - lastFrameAt.current) / 1000)
+      : 1 / 60;
+    lastFrameAt.current = nowMs;
+
     const W = ctx.canvas.width;
     const H = ctx.canvas.height;
     // The same ratio the drawing buffer was sized with — see `sync()` above.
@@ -1190,12 +1211,18 @@ export function GameCanvas() {
     }
 
     // 4. Update & Draw Particles
+    //
+    // Integrated against wall-clock time, not frames. `p.x += p.vx` per frame
+    // means the burst falls 2.4x faster on a 144 Hz display than on a 60 Hz one
+    // and in slow motion on a device that is struggling — the velocities below
+    // are per-60Hz-frame, so `step` converts them without changing the tuning.
+    const step = frameDelta * 60;
     for (let i = particlesRef.current.length - 1; i >= 0; i--) {
       const p = particlesRef.current[i];
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 0.2; // Gravity
-      p.life -= 0.05;
+      p.x += p.vx * step;
+      p.y += p.vy * step;
+      p.vy += 0.2 * step; // Gravity
+      p.life -= 0.05 * step;
 
       if (p.life <= 0) {
         particlesRef.current.splice(i, 1);
@@ -1364,7 +1391,7 @@ export function GameCanvas() {
                 className="pointer-events-auto flex-1 h-full flex items-end justify-center pb-4 opacity-0 active:opacity-30 transition-opacity"
                 onTouchStart={(e) => {
                   e.preventDefault();
-                  handleInput(0);
+                  handleInput(0, e.timeStamp);
                 }}
                 onTouchEnd={(e) => {
                   e.preventDefault();
@@ -1372,7 +1399,7 @@ export function GameCanvas() {
                 }}
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  handleInput(0);
+                  handleInput(0, e.timeStamp);
                 }}
                 onMouseUp={(e) => {
                   e.preventDefault();
@@ -1392,7 +1419,7 @@ export function GameCanvas() {
                 className="pointer-events-auto flex-1 h-full flex items-end justify-center pb-4 opacity-0 active:opacity-30 transition-opacity"
                 onTouchStart={(e) => {
                   e.preventDefault();
-                  handleInput(1);
+                  handleInput(1, e.timeStamp);
                 }}
                 onTouchEnd={(e) => {
                   e.preventDefault();
@@ -1400,7 +1427,7 @@ export function GameCanvas() {
                 }}
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  handleInput(1);
+                  handleInput(1, e.timeStamp);
                 }}
                 onMouseUp={(e) => {
                   e.preventDefault();
@@ -1808,6 +1835,7 @@ export function GameCanvas() {
 
           {status === 'FINISHED' && isMultiplayer && (
             <MatchResults
+              engine={engine}
               onBack={() => {
                 const store = useSliceItStore.getState();
                 store.setMatchResults(null);
@@ -1821,6 +1849,7 @@ export function GameCanvas() {
 
           {status === 'FINISHED' && !isMultiplayer && (
             <GameOver
+              engine={engine}
               onRetry={() => {
                 if (!engine) return;
                 engine.reset();

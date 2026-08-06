@@ -8,6 +8,15 @@ import { ScoreSubmissionZ } from '@/lib/slice-it/api-schemas';
 import { RANKED_MIN_SPEED } from '@/lib/slice-it/constants';
 import { applyExclusions } from '@/lib/slice-it/modifiers';
 import { maxPlausibleCombo, maxPlausibleScore } from '@/lib/slice-it/scoring';
+import {
+  checkConsistency,
+  checkElapsed,
+  checkTiming,
+  mergeVerdicts,
+  type IntegrityVerdict,
+} from '@/lib/slice-it/integrity';
+import { verifyRunToken } from '@/lib/slice-it/run-token.server';
+import type { Difficulty } from '@/lib/slice-it/constants';
 
 /**
  * Score submission.
@@ -58,7 +67,13 @@ export const Route = createFileRoute('/api/slice-it/score')({
 
           const song = await prisma.song.findUnique({
             where: { id: body.songId },
-            select: { id: true, duration: true, isPublic: true, uploadedBy: true },
+            select: {
+              id: true,
+              duration: true,
+              isPublic: true,
+              uploadedBy: true,
+              analysisData: true,
+            },
           });
           if (!song || (!song.isPublic && song.uploadedBy !== userId)) {
             return Response.json({ error: 'Song not found' }, { status: 404 });
@@ -79,6 +94,49 @@ export const Route = createFileRoute('/api/slice-it/score')({
               comboCeiling,
             });
             return Response.json({ error: 'Score failed validation.' }, { status: 422 });
+          }
+
+          // ── Integrity ─────────────────────────────────────────────────────
+          //
+          // Three further checks, and the honest framing for all of them is in
+          // `lib/slice-it/integrity.ts`: this game judges hits on the client
+          // because it has to, so none of this stops someone determined. It
+          // stops the console one-liner, and it makes a bot visible.
+          const verdict = mergeVerdicts(
+            // Did enough real time pass? The token's timestamp is the server's
+            // own clock reading from when the run started.
+            checkRunTiming(body.runToken, userId, song.id, song.duration, modifiers.speed),
+            // Do the four numbers describe one run?
+            checkConsistency({
+              score: body.score,
+              accuracy: body.accuracy,
+              maxCombo: body.maxCombo,
+              notesResolved: body.notesResolved,
+              chartNotes: chartNoteCount(song.analysisData, modifiers.difficulty),
+              durationSeconds: song.duration,
+              modifiers,
+            }),
+            // Is the hit-timing distribution one a person produces?
+            { reject: false, suspicions: checkTiming(body.timing) },
+          );
+
+          if (verdict.reject) {
+            console.warn('[slice-it] score rejected by integrity checks', {
+              userId,
+              songId: song.id,
+              suspicions: verdict.suspicions,
+            });
+            return Response.json({ error: 'Score failed validation.' }, { status: 422 });
+          }
+          if (verdict.suspicions.length > 0) {
+            // Recorded, not refused. A false positive here costs a real player
+            // their record; the flag is for review, and review is a human.
+            console.warn('[slice-it] score flagged', {
+              userId,
+              songId: song.id,
+              suspicions: verdict.suspicions,
+              timing: body.timing,
+            });
           }
 
           const score = Math.round(body.score);
@@ -188,4 +246,51 @@ async function uniquePlayerName(userId: string): Promise<string> {
   // Five collisions means the base name is genuinely popular; fall back to
   // something that cannot collide rather than failing the submission.
   return `${base}-${userId.slice(-6)}`;
+}
+
+/**
+ * Verify the run receipt and check that the song had time to play.
+ *
+ * A missing token is tolerated rather than rejected: a run started before this
+ * shipped, or by a client that lost the token across a reconnect, is a real run
+ * by a real player, and refusing it would delete their score to catch nobody.
+ * A token that is present and *wrong* is a different matter — nothing legitimate
+ * forges one — so a bad signature rejects.
+ */
+function checkRunTiming(
+  token: string | undefined,
+  userId: string,
+  songId: string,
+  durationSeconds: number,
+  speed: number,
+): IntegrityVerdict {
+  if (!token) return { reject: false, suspicions: [] };
+
+  const verified = verifyRunToken(token, userId, songId);
+  if (!verified.ok) {
+    // An expired token means a very long session, not a forgery — the run is
+    // old, not fake, and there is nothing to check against.
+    if (verified.reason === 'expired') return { reject: false, suspicions: [] };
+    console.warn('[slice-it] run token rejected', { userId, songId, reason: verified.reason });
+    return { reject: true, suspicions: ['finished_too_fast'] };
+  }
+
+  return checkElapsed({ elapsedMs: verified.elapsedMs, durationSeconds, speed });
+}
+
+/**
+ * How many notes the difficulty the player chose actually contains.
+ *
+ * Charts are stored either as a flat array (legacy) or keyed by tier. Returns
+ * undefined when the shape is unrecognised, and the consistency check then skips
+ * the bounds that depend on it rather than inventing a number.
+ */
+function chartNoteCount(analysis: unknown, difficulty: Difficulty | undefined): number | undefined {
+  const slices = (analysis as { slices?: unknown } | null)?.slices;
+  if (Array.isArray(slices)) return slices.length;
+  if (slices && typeof slices === 'object') {
+    const tier = (slices as Record<string, unknown>)[difficulty ?? 'normal'];
+    if (Array.isArray(tier)) return tier.length;
+  }
+  return undefined;
 }

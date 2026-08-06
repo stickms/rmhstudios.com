@@ -115,6 +115,12 @@ export interface SliceSong {
   createdAt: string;
   /** Present only on the single-song read. */
   analysisData?: BeatMap | null;
+  /**
+   * Signed receipt that this run started now, returned to a signed-in caller by
+   * the single-song read and handed back with the score. See
+   * `lib/slice-it/run-token.server.ts`.
+   */
+  runToken?: string;
 }
 
 export interface SongPage {

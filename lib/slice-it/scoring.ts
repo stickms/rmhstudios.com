@@ -15,6 +15,7 @@ import {
   HIT_POINTS,
   HIT_WINDOWS,
   HOLD_RELEASE_POINTS,
+  HOLD_TICK_POINTS_PER_SECOND,
   MODIFIER_BONUSES,
   SPEED_BONUS_PER_X,
   STRICT_TIMING_FACTOR,
@@ -131,9 +132,11 @@ export function maxPlausibleScore(
 
   const perfectChain = HIT_POINTS.MARVELOUS * ((notes * (notes + 1)) / 2);
   const holdReleases = HOLD_RELEASE_POINTS * notes;
-  // Hold ticks accrue per rendered frame while a LONG note is held. Bounded by
-  // "every frame of the song is a held note at max combo", at 120 fps.
-  const holdTicks = 120 * duration * notes;
+  // Hold ticks accrue per second of audio, so the bound is "the entire song was
+  // one held note at the maximum combo". This used to be modelled per rendered
+  // frame at 120 fps — which the engine really did do, and which made the whole
+  // ceiling about 120x looser than it needed to be.
+  const holdTicks = HOLD_TICK_POINTS_PER_SECOND * duration * notes;
 
   return Math.ceil((perfectChain + holdReleases + holdTicks) * mult);
 }

@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2 } from 'lucide-react';
 import { useSliceItStore } from '@/lib/slice-it/store';
+import { AnimatedCount } from '@/components/ui/AnimatedCount';
 
 /**
  * The live opponent board.
@@ -22,7 +23,26 @@ import { useSliceItStore } from '@/lib/slice-it/store';
  * strange way to lose a rhythm game. Below `lg` it becomes a horizontal strip
  * of compact chips above the playfield instead: same information, ranked the
  * same way, in one line the player can glance at without giving up the field.
+ *
+ * ## Why the numbers are tweened
+ *
+ * A score arrives on the server's tick — a step every 250 ms, no matter how
+ * continuously the opponent is actually scoring. Painting each step as it lands
+ * makes a smooth run look like a stuttering one, which is the thing players
+ * describe as "lag" even when the packet arrived on time. `AnimatedCount` rolls
+ * between the samples, so the board reads as continuous, and it snaps instantly
+ * under `prefers-reduced-motion`. The tween is shorter than the tick so a number
+ * always finishes arriving before the next one starts.
  */
+/**
+ * Tween length for an opponent's score, ms.
+ *
+ * Shorter than `SCORE_TICK_MS` so a number always finishes rolling before the
+ * next sample lands — a tween longer than the tick would permanently lag the
+ * truth rather than smooth it.
+ */
+const SCORE_TWEEN_MS = 200;
+
 export function MultiplayerSidebar() {
   const { t } = useTranslation('c-game');
   const liveScores = useSliceItStore((s) => s.liveScores);
@@ -65,9 +85,12 @@ export function MultiplayerSidebar() {
               <span className="max-w-24 truncate text-slice-text">{row.name}</span>
               {row.done && <CheckCircle2 className="w-3 h-3 text-green-500" aria-hidden />}
             </span>
-            <span className="block text-sm font-black text-blue-600 leading-tight tabular-nums">
-              {row.score.toLocaleString()}
-            </span>
+            <AnimatedCount
+              value={row.score}
+              format={(n) => n.toLocaleString()}
+              durationMs={SCORE_TWEEN_MS}
+              className="block text-sm font-black text-blue-600 leading-tight tabular-nums"
+            />
           </li>
         ))}
       </ol>
@@ -105,8 +128,12 @@ export function MultiplayerSidebar() {
                   <dt className="text-[10px] font-bold text-slice-text-light">
                     {t('score', { defaultValue: 'SCORE' })}
                   </dt>
-                  <dd className="font-black text-blue-600 text-lg leading-none">
-                    {row.score.toLocaleString()}
+                  <dd className="font-black text-blue-600 text-lg leading-none tabular-nums">
+                    <AnimatedCount
+                      value={row.score}
+                      format={(n) => n.toLocaleString()}
+                      durationMs={SCORE_TWEEN_MS}
+                    />
                   </dd>
                 </div>
                 <div className="flex justify-between items-end">
