@@ -64,6 +64,7 @@ import esCVoidBreaker from "@/locales/es/c-void-breaker.json";
 import esCWager from "@/locales/es/c-wager.json";
 import esCWishlist from "@/locales/es/c-wishlist.json";
 import esCommon from "@/locales/es/common.json";
+import esErrors from "@/locales/es/errors.json";
 import esFeed from "@/locales/es/feed.json";
 import esGamesHub from "@/locales/es/games-hub.json";
 import esGroups from "@/locales/es/groups.json";
@@ -77,6 +78,7 @@ import esRRmhbox from "@/locales/es/r-rmhbox.json";
 import esRRmhcode from "@/locales/es/r-rmhcode.json";
 import esRSecret from "@/locales/es/r-secret.json";
 import esRSliceIt from "@/locales/es/r-slice-it.json";
+import esRSohumbum from "@/locales/es/r-sohumbum.json";
 import esRStrategies from "@/locales/es/r-strategies.json";
 import esRStudio from "@/locales/es/r-studio.json";
 import esRideshare from "@/locales/es/rideshare.json";
@@ -154,6 +156,7 @@ const esResources = {
   "c-wager": esCWager,
   "c-wishlist": esCWishlist,
   "common": esCommon,
+  "errors": esErrors,
   "feed": esFeed,
   "games-hub": esGamesHub,
   "groups": esGroups,
@@ -167,6 +170,7 @@ const esResources = {
   "r-rmhcode": esRRmhcode,
   "r-secret": esRSecret,
   "r-slice-it": esRSliceIt,
+  "r-sohumbum": esRSohumbum,
   "r-strategies": esRStrategies,
   "r-studio": esRStudio,
   "rideshare": esRideshare,
