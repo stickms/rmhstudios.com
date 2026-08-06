@@ -217,6 +217,33 @@ export const MIN_SONG_DURATION_SEC = 5;
 /** And a rhythm game does not want your three-hour DJ set. */
 export const MAX_SONG_DURATION_SEC = 15 * 60;
 
+/**
+ * Ceiling on the Float32 PCM a decode is allowed to allocate.
+ *
+ * Duration alone is not the bound that matters. A decoder allocates
+ * `duration x sampleRate x channels x 4` bytes, so a *ten second* 192 kHz
+ * 8-channel WAV is 61 MB and passes any duration check you care to write, while
+ * the legitimate worst case here — 15 minutes of 48 kHz stereo — is 345 MB.
+ * 400 MB clears the legitimate case and stops the rest.
+ *
+ * Paired with {@link MAX_SONG_DURATION_SEC}, checked against
+ * `probeAudioDuration` BEFORE the decode rather than against what the decoder
+ * reports after it. See `lib/audio/probe.ts` for why that ordering is the whole
+ * point.
+ */
+export const MAX_DECODED_PCM_BYTES = 400 * 1024 * 1024;
+
+/**
+ * Ceiling on the whole multipart upload body, checked against `Content-Length`
+ * before `request.formData()` buffers it.
+ *
+ * Apache's `LimitRequestBody` is 1.5 GB site-wide, which is the right number for
+ * the largest thing the platform accepts and much too large for this route — a
+ * 1.5 GB POST here would be held in the web container's memory in full before
+ * the 50 MB audio ceiling got a chance to look at it.
+ */
+export const UPLOAD_BODY_MAX_BYTES = AUDIO_MAX_BYTES + COVER_MAX_BYTES + 2 * 1024 * 1024;
+
 export const SONG_TITLE_MAX = 200;
 export const SONG_ARTIST_MAX = 200;
 export const SONG_DESCRIPTION_MAX = 2000;

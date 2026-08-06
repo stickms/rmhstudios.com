@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { optimizeImage } from '@/lib/image-optimize';
-import { COVER_SIZE } from '@/lib/slice-it/constants';
+import { COVER_MAX_BYTES, COVER_SIZE } from '@/lib/slice-it/constants';
 import { SongPatchZ } from '@/lib/slice-it/api-schemas';
 import { validateImageBuffer } from '@/lib/slice-it/upload-validation';
 import {
@@ -48,6 +48,13 @@ export const Route = createFileRoute('/api/slice-it/songs/$id')({
       PATCH: defineHandler(
         { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'slice-patch', scope: 'user' } },
         async ({ request, params, userId, isAdmin }) => {
+          // Before `formData()`, which buffers the whole body. Only a cover can
+          // be replaced here, so the ceiling is that plus form slack.
+          const declaredLength = Number(request.headers.get('content-length') ?? 0);
+          if (Number.isFinite(declaredLength) && declaredLength > COVER_MAX_BYTES + 1024 * 1024) {
+            return Response.json({ error: 'Upload too large.' }, { status: 413 });
+          }
+
           const song = await prisma.song.findUnique({
             where: { id: params.id },
             select: { id: true, uploadedBy: true, coverUrl: true },

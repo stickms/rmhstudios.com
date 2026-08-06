@@ -30,6 +30,16 @@ export const Route = createFileRoute('/api/admin/curated-builds/image')({
   server: {
     handlers: {
       POST: defineHandler({ auth: 'admin', rateLimit: 'upload' }, async ({ request, userId }) => {
+        // Before `formData()` buffers it. Apache's site-wide ceiling is 1.5 GB,
+        // and admin is an authorization boundary, not a memory one.
+        const declaredLength = Number(request.headers.get('content-length') ?? 0);
+        if (
+          Number.isFinite(declaredLength) &&
+          declaredLength > BUILD_IMAGE_MAX_BYTES + 1024 * 1024
+        ) {
+          return Response.json({ error: 'Upload too large.' }, { status: 413 });
+        }
+
         const formData = await request.formData();
 
         const file = formData.get('image');

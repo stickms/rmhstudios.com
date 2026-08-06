@@ -58,7 +58,11 @@ import {
   SCORE_TICK_MS,
 } from '../../../lib/slice-it/constants';
 import { DEFAULT_MODIFIERS, forMultiplayer } from '../../../lib/slice-it/modifiers';
-import { calculateScoreMultiplier } from '../../../lib/slice-it/scoring';
+import {
+  calculateScoreMultiplier,
+  maxPlausibleCombo,
+  maxPlausibleScore,
+} from '../../../lib/slice-it/scoring';
 import type { Modifiers } from '../../../lib/slice-it/types';
 import {
   EVENTS,
@@ -700,20 +704,49 @@ function buildStandings(lobby: Lobby): FinalStanding[] {
  * Write personal bests, fire-and-forget.
  *
  * Never blocks the results screen and never throws into the hub: a database
- * hiccup must not cost the room its match. These rows are *reported* scores —
- * the authoritative, bounds-checked path is `/api/slice-it/score`, which each
- * client also posts to. Recording them here as well is what makes a multiplayer
- * result show up on the song's board even if a client closes the tab on the
- * results screen.
+ * hiccup must not cost the room its match. Recording results here as well as at
+ * `/api/slice-it/score` is what makes a multiplayer result show up on the song's
+ * board even if a client closes the tab on the results screen.
+ *
+ * **These are client-reported scores, so they get the same ceiling the HTTP
+ * route applies.** `ScoreReportZ` bounds a live report only at
+ * `Number.MAX_SAFE_INTEGER` — the live number is cosmetic, it drives the
+ * opponent board and nothing else, and clamping it hard would make a legitimate
+ * high scorer's board readout wrong. That is fine right up until the same
+ * number is written to a leaderboard, which is what this function does: one
+ * `slice:score` emit of `{score: 9e15}` in a lobby of one was a permanent global
+ * first place, straight past every bound `/api/slice-it/score` exists to
+ * enforce. The song's duration comes from the database (`resolveSong`), so the
+ * ceiling here is derived from the same facts as the HTTP one.
  */
 async function persistResults(lobby: Lobby, standings: FinalStanding[]): Promise<void> {
   const songId = lobby.song?.id;
+  const duration = lobby.song?.duration ?? 0;
   if (!songId || standings.length === 0) return;
 
   try {
     const prisma = getPrismaClient();
     for (const standing of standings) {
       if (standing.score <= 0 || !standing.finished) continue;
+
+      const scoreCeiling = maxPlausibleScore(duration, standing.modifiers);
+      const comboCeiling = maxPlausibleCombo(duration);
+      if (standing.score > scoreCeiling || standing.maxCombo > comboCeiling) {
+        // Logged, not silently dropped: a legitimate run tripping this means
+        // the ceiling is wrong, and the only way to learn that is to see it.
+        logger.warn({
+          event: 'slice_implausible_score_rejected',
+          code: lobby.code,
+          userId: standing.userId,
+          songId,
+          score: standing.score,
+          scoreCeiling,
+          maxCombo: standing.maxCombo,
+          comboCeiling,
+        });
+        continue;
+      }
+
       const existing = await prisma.songLeaderboard.findUnique({
         where: { songId_userId: { songId, userId: standing.userId } },
         select: { id: true, score: true },

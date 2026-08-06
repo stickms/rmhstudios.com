@@ -8,6 +8,7 @@ import { GameEngine } from '@/lib/slice-it/engine';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import { AudioManager } from '@/lib/audio/AudioManager';
 import type { Slice } from '@/lib/slice-it/types';
+import { longestHoldSeconds, visibleSliceRange } from '@/lib/slice-it/visible-window';
 import { HUD } from './HUD';
 import { GameOver } from './GameOver';
 import { MainMenu } from './MainMenu';
@@ -897,14 +898,36 @@ export function GameCanvas() {
       ctx.shadowOffsetX = 4;
       ctx.shadowOffsetY = 4;
 
-      // Determine the targeted (next hittable) note per lane for glow
-      const targetedIds = new Set<string>();
-      const targeted0 = engine.getTargetedSlice(0);
-      const targeted1 = engine.getTargetedSlice(1);
-      if (targeted0) targetedIds.add(targeted0.id);
-      if (targeted1) targetedIds.add(targeted1.id);
+      // Determine the targeted (next hittable) note per lane for glow.
+      // Two ids, compared a few thousand times a frame — string equality beats
+      // allocating a Set per frame to hold them.
+      const targeted0 = engine.getTargetedSlice(0)?.id;
+      const targeted1 = engine.getTargetedSlice(1)?.id;
 
-      (map.slices as Slice[]).forEach((slice) => {
+      // ── Visible window ────────────────────────────────────────────────────
+      //
+      // The loop below walked EVERY note in the chart on EVERY frame and let
+      // each one cull itself. An expert chart is ~2000 notes, so that was
+      // ~120 000 scroll-position computations a second to draw the twenty that
+      // are actually on screen — paid on the weakest device running the game.
+      //
+      // `slices` is sorted by time (`charter.ts` sorts it, `prepareChart`
+      // preserves the order), so the visible span is a contiguous range and
+      // binary search finds it. The bounds come from the same thresholds the
+      // per-note cull uses, widened by the longest hold in the chart and a
+      // second of slack — a note wrongly skipped is a note that does not
+      // render, so the window errs outward and the per-note culls still decide.
+      const slices = map.slices as Slice[];
+      const { from, to } = visibleSliceRange(slices, currentTime, {
+        pixelsPerSecond: PPS,
+        axisLength: isMobileV ? h : w,
+        cursorPosition: CURSOR_MAIN,
+        vertical: isMobileV,
+        longestHold: longestHoldSeconds(map, slices),
+      });
+
+      for (let si = from; si < to; si++) {
+        const slice = slices[si];
         ctx.globalAlpha = 1;
 
         // Compute scroll position along the movement axis
@@ -925,7 +948,7 @@ export function GameCanvas() {
         if (slice.hit && slice.type !== 'LONG') {
           const elapsed = performance.now() - (slice.hitTime ?? 0);
           noteAlpha = Math.max(0, 1 - elapsed / 50);
-          if (noteAlpha <= 0) return; // Fully faded
+          if (noteAlpha <= 0) continue; // Fully faded
         } else {
           // Check if note is behind the cursor
           const distBehind = isMobileV
@@ -934,15 +957,15 @@ export function GameCanvas() {
           if (distBehind > 0 && !isHeldActive) {
             const fadeDist = (isMobileV ? h : w) * 0.08;
             noteAlpha *= Math.max(0, 1 - distBehind / fadeDist);
-            if (noteAlpha <= 0) return;
+            if (noteAlpha <= 0) continue;
           }
         }
 
         // Cull off-screen in the "future" direction
         if (isMobileV) {
-          if (scrollVal < -100) return; // above screen
+          if (scrollVal < -100) continue; // above screen
         } else {
-          if (scrollVal > w + 100) return; // right of screen
+          if (scrollVal > w + 100) continue; // right of screen
         }
 
         // Compute effective lane (SWITCH notes flip lanes near the hit line)
@@ -987,7 +1010,7 @@ export function GameCanvas() {
           if (travelRatio < 0.08) {
             ctx.globalAlpha = 0;
             // Skip rendering entirely
-            return;
+            continue;
           } else if (travelRatio < 0.2) {
             ctx.globalAlpha = noteAlpha * ((travelRatio - 0.08) / 0.12); // 0→1 over the fade range
           } else {
@@ -1015,7 +1038,7 @@ export function GameCanvas() {
         ctx.fillStyle = color;
 
         // Soft glow around the targeted (next hittable) note per lane
-        const isTargeted = targetedIds.has(slice.id);
+        const isTargeted = slice.id === targeted0 || slice.id === targeted1;
         if (isTargeted && slice.type !== 'BOMB') {
           ctx.save();
           ctx.shadowColor = color;
@@ -1162,7 +1185,7 @@ export function GameCanvas() {
           ctx.arc(nx - size * 0.15, ny - size * 0.15, size / 4, 0, Math.PI * 2);
           ctx.fill();
         }
-      });
+      }
       ctx.shadowColor = 'transparent'; // Reset
     }
 

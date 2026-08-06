@@ -71,6 +71,11 @@ export const Route = createFileRoute('/api/slice-it/songs')({
             if (!Number.isNaN(since.getTime())) where.createdAt = { lt: since };
           }
 
+          // The count is only for the "Load more (N total)" label, and under a
+          // `q` it is an unindexable `ILIKE '%…%'` scan of the table. Paying for
+          // it once, on the first page, gives the label the same number it would
+          // have had — every later page is the same query — for a fraction of
+          // the work on the scroll path that runs most.
           const [rows, total] = await Promise.all([
             prisma.song.findMany({
               where,
@@ -87,7 +92,7 @@ export const Route = createFileRoute('/api/slice-it/songs')({
                   : {}),
               },
             }),
-            prisma.song.count({ where }),
+            cursor ? Promise.resolve(null) : prisma.song.count({ where }),
           ]);
 
           const hasMore = rows.length > limit;
@@ -100,7 +105,7 @@ export const Route = createFileRoute('/api/slice-it/songs')({
                 ? page[page.length - 1].createdAt.toISOString()
                 : String(skip + limit)
               : null,
-            total,
+            ...(total === null ? {} : { total }),
           };
 
           return Response.json(body);

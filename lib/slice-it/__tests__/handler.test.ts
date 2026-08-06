@@ -34,12 +34,24 @@ const song = {
   bpm: 128,
 };
 
+/**
+ * Every leaderboard row the handler tries to write.
+ *
+ * The multiplayer results write is the *second* path to a leaderboard row, and
+ * the one that does not go through `/api/slice-it/score` — so what it does and
+ * does not persist has to be observable.
+ */
+const written: { songId: string; userId: string; score: number; maxCombo: number }[] = [];
+
 vi.mock('../../../server/socket-server/prisma-client', () => ({
   getPrismaClient: () => ({
     song: { findFirst: async () => song },
     songLeaderboard: {
       findUnique: async () => null,
-      create: async () => ({}),
+      create: async ({ data }: { data: (typeof written)[number] }) => {
+        written.push(data);
+        return {};
+      },
       update: async () => ({}),
     },
   }),
@@ -219,6 +231,7 @@ const snapshot = (socket: FakeSocket) => socket.last<LobbySnapshot>(S2C.LOBBY)!;
 
 beforeEach(() => {
   vi.useFakeTimers();
+  written.length = 0;
 });
 
 afterEach(() => {
@@ -645,5 +658,62 @@ describe('match', () => {
     startMatch(room);
     room.guests[0].send(C2S.REMATCH);
     expect(room.guests[0].last<LobbyError>(S2C.ERROR)?.code).toBe('not_host');
+  });
+});
+
+/* ─── Leaderboard writes ─────────────────────────────────────────────────── */
+
+/**
+ * The multiplayer path writes leaderboard rows too, and it is the path that
+ * does NOT go through `/api/slice-it/score`.
+ *
+ * `ScoreReportZ` deliberately bounds a live report only at
+ * `Number.MAX_SAFE_INTEGER` — the running number is cosmetic, it drives the
+ * opponent board and nothing else. That was fine until the same number reached
+ * `songLeaderboard`, at which point one emit was a permanent global first place
+ * past every ceiling the HTTP route exists to enforce. The fixture song is 120
+ * seconds long, so the ceiling is derived from that.
+ */
+describe('leaderboard writes', () => {
+  const finish = (room: Room, seat: FakeSocket, report: Partial<LiveScore> = {}) =>
+    seat.send(C2S.FINISH, {
+      score: 1000,
+      combo: 0,
+      maxCombo: 50,
+      accuracy: 1,
+      health: 100,
+      ...report,
+    });
+
+  it('persists a plausible run', async () => {
+    const room = await makeLobby(1);
+    startMatch(room);
+    for (const seat of room.seats) finish(room, seat);
+    await flush();
+
+    expect(written).toHaveLength(2);
+    expect(written[0]).toMatchObject({ songId: song.id, score: 1000, maxCombo: 50 });
+  });
+
+  it('refuses a forged score, and keeps the honest players in the same match', async () => {
+    const room = await makeLobby(1);
+    startMatch(room);
+
+    finish(room, room.host, { score: Number.MAX_SAFE_INTEGER });
+    finish(room, room.guests[0], { score: 2000 });
+    await flush();
+
+    // The cheat is dropped; the other player's row is unaffected.
+    expect(written.map((row) => row.score)).toEqual([2000]);
+  });
+
+  it('refuses a forged combo as well as a forged score', async () => {
+    const room = await makeLobby(1);
+    startMatch(room);
+    finish(room, room.host, { score: 500, maxCombo: 999_999 });
+    finish(room, room.guests[0], { score: 500, maxCombo: 10 });
+    await flush();
+
+    expect(written.map((row) => row.maxCombo)).toEqual([10]);
   });
 });

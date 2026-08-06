@@ -13,7 +13,7 @@
  * onset detector since ~2005 does it.
  */
 
-import { FFT, hannWindow } from './fft';
+import { RealFFT, hannWindow } from './fft';
 
 /** STFT frame length in samples at the analysis rate — ~46 ms at 22.05 kHz. */
 export const FRAME_SIZE = 1024;
@@ -45,7 +45,7 @@ export interface Spectrogram {
 function buildFilterbank(
   fftSize: number,
   sampleRate: number,
-): { edges: Int32Array; freqs: Float64Array; count: number } {
+): { spans: Int32Array; weights: Float64Array; freqs: Float64Array; count: number } {
   const nyquist = sampleRate / 2;
   const top = Math.min(MAX_FREQ, nyquist * 0.98);
   const bandCount = Math.max(1, Math.floor(Math.log2(top / MIN_FREQ) * BANDS_PER_OCTAVE));
@@ -56,8 +56,13 @@ function buildFilterbank(
   }
 
   const binOf = (hz: number) => Math.round((hz * fftSize) / sampleRate);
-  const edges: number[] = [];
   const freqs: number[] = [];
+  // Flattened `[startBin, weightOffset, binCount]` per band, with every
+  // triangle weight precomputed once. They are the same for every frame, and
+  // recomputing them inside the frame loop was two divides per bin per band per
+  // frame — about 40 million of them over a 15-minute track.
+  const spans: number[] = [];
+  const weights: number[] = [];
 
   for (let i = 1; i < centres.length - 1; i++) {
     const lo = binOf(centres[i - 1]);
@@ -65,12 +70,19 @@ function buildFilterbank(
     const hi = binOf(centres[i + 1]);
     if (mid <= lo || hi <= mid) continue;
     if (hi >= fftSize / 2) break;
-    edges.push(lo, mid, hi);
+
+    spans.push(lo, weights.length, hi - lo + 1);
+    // Rising then falling triangle — the standard weighting, so a partial
+    // sitting between two band centres contributes to both rather than jumping
+    // discontinuously from one to the other.
+    for (let k = lo; k < mid; k++) weights.push((k - lo) / (mid - lo));
+    for (let k = mid; k <= hi; k++) weights.push(1 - (k - mid) / (hi - mid + 1));
     freqs.push(centres[i]);
   }
 
   return {
-    edges: Int32Array.from(edges),
+    spans: Int32Array.from(spans),
+    weights: Float64Array.from(weights),
     freqs: Float64Array.from(freqs),
     count: freqs.length,
   };
@@ -92,44 +104,31 @@ export function computeSpectrogram(
   const frameSize = options.frameSize ?? FRAME_SIZE;
   const hopSize = options.hopSize ?? HOP_SIZE;
 
-  const fft = new FFT(frameSize);
+  // A real-input FFT: `im[]` was all zeros on every one of these transforms —
+  // ~78 000 of them for a 15-minute track — and a complex FFT spends half its
+  // work carrying those zeros. `RealFFT` also applies the window and reads
+  // straight from `samples` at an offset, so the per-frame copy is gone too.
+  const fft = new RealFFT(frameSize);
   const window = hannWindow(frameSize);
-  const { edges, freqs, count: bands } = buildFilterbank(frameSize, sampleRate);
+  const { spans, weights, freqs, count: bands } = buildFilterbank(frameSize, sampleRate);
 
   const frames = Math.max(0, Math.floor((samples.length - frameSize) / hopSize) + 1);
   const data = new Float32Array(Math.max(0, frames * bands));
 
-  const re = new Float64Array(frameSize);
-  const im = new Float64Array(frameSize);
   const magnitude = new Float64Array(frameSize / 2);
   const lambda = 20;
 
   for (let f = 0; f < frames; f++) {
-    const offset = f * hopSize;
-    for (let i = 0; i < frameSize; i++) {
-      re[i] = samples[offset + i] * window[i];
-      im[i] = 0;
-    }
-    fft.transform(re, im);
-
-    for (let k = 0; k < magnitude.length; k++) {
-      magnitude[k] = Math.sqrt(re[k] * re[k] + im[k] * im[k]);
-    }
+    fft.magnitudes(samples, magnitude, f * hopSize, window);
 
     const rowStart = f * bands;
     for (let b = 0; b < bands; b++) {
-      const lo = edges[b * 3];
-      const mid = edges[b * 3 + 1];
-      const hi = edges[b * 3 + 2];
+      const start = spans[b * 3];
+      const w = spans[b * 3 + 1];
+      const span = spans[b * 3 + 2];
       let sum = 0;
-      // Rising then falling triangle — the standard weighting, so a partial
-      // sitting between two band centres contributes to both rather than
-      // jumping discontinuously from one to the other.
-      for (let k = lo; k < mid; k++) {
-        sum += magnitude[k] * ((k - lo) / (mid - lo));
-      }
-      for (let k = mid; k <= hi; k++) {
-        sum += magnitude[k] * (1 - (k - mid) / (hi - mid + 1));
+      for (let i = 0; i < span; i++) {
+        sum += magnitude[start + i] * weights[w + i];
       }
       data[rowStart + b] = Math.log1p(lambda * sum);
     }
