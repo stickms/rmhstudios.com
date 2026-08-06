@@ -21,6 +21,7 @@ import arCGame from "@/locales/ar/c-game.json";
 import arCHistory from "@/locales/ar/c-history.json";
 import arCHouseAlwaysWins from "@/locales/ar/c-house-always-wins.json";
 import arCIsleworks from "@/locales/ar/c-isleworks.json";
+import arCKaikaiDebt from "@/locales/ar/c-kaikai-debt.json";
 import arCKowloonKnockout from "@/locales/ar/c-kowloon-knockout.json";
 import arCLaundrySort from "@/locales/ar/c-laundry-sort.json";
 import arCLayout from "@/locales/ar/c-layout.json";
@@ -65,6 +66,7 @@ import arCVoidBreaker from "@/locales/ar/c-void-breaker.json";
 import arCWager from "@/locales/ar/c-wager.json";
 import arCWishlist from "@/locales/ar/c-wishlist.json";
 import arCommon from "@/locales/ar/common.json";
+import arErrors from "@/locales/ar/errors.json";
 import arFeed from "@/locales/ar/feed.json";
 import arGamesHub from "@/locales/ar/games-hub.json";
 import arGroups from "@/locales/ar/groups.json";
@@ -79,6 +81,7 @@ import arRRmhbox from "@/locales/ar/r-rmhbox.json";
 import arRRmhcode from "@/locales/ar/r-rmhcode.json";
 import arRSecret from "@/locales/ar/r-secret.json";
 import arRSliceIt from "@/locales/ar/r-slice-it.json";
+import arRSohumbum from "@/locales/ar/r-sohumbum.json";
 import arRStrategies from "@/locales/ar/r-strategies.json";
 import arRStudio from "@/locales/ar/r-studio.json";
 import arRideshare from "@/locales/ar/rideshare.json";
@@ -113,6 +116,7 @@ const arResources = {
   "c-history": arCHistory,
   "c-house-always-wins": arCHouseAlwaysWins,
   "c-isleworks": arCIsleworks,
+  "c-kaikai-debt": arCKaikaiDebt,
   "c-kowloon-knockout": arCKowloonKnockout,
   "c-laundry-sort": arCLaundrySort,
   "c-layout": arCLayout,
@@ -157,6 +161,7 @@ const arResources = {
   "c-wager": arCWager,
   "c-wishlist": arCWishlist,
   "common": arCommon,
+  "errors": arErrors,
   "feed": arFeed,
   "games-hub": arGamesHub,
   "groups": arGroups,
@@ -171,6 +176,7 @@ const arResources = {
   "r-rmhcode": arRRmhcode,
   "r-secret": arRSecret,
   "r-slice-it": arRSliceIt,
+  "r-sohumbum": arRSohumbum,
   "r-strategies": arRStrategies,
   "r-studio": arRStudio,
   "rideshare": arRideshare,
