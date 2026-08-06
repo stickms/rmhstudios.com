@@ -58,6 +58,35 @@ let client: RealtimeClient | null = null;
  */
 let pendingCode: string | null = null;
 
+/**
+ * A Discord Activity access token, when the game is running inside one.
+ *
+ * Module-level rather than a `connectSliceIt()` argument because the reconnect
+ * path needs it too: the shared realtime client re-reads its credentials on
+ * every attempt, so a token passed once at connect time would be gone by the
+ * first reconnect and the socket would come back anonymous, mid-match.
+ *
+ * Set by the Discord Activity component before it connects; `null` everywhere
+ * else, which is what makes the standalone `/slice-it` page's behaviour exactly
+ * what it was.
+ */
+let discordAuth: { accessToken: string; channelId: string | null } | null = null;
+
+/**
+ * Hand the client a verified-server-side Discord identity to connect with.
+ *
+ * The token is Discord's own OAuth access token, straight from the SDK
+ * handshake (`lib/discord-sdk.ts`). It is a credential, not a claim: the hub
+ * verifies it against Discord and derives the user from Discord's answer, so
+ * nothing here can assert who the caller is. See
+ * `server/socket-server/index.ts` `verifyDiscordActivityToken`.
+ *
+ * Pass `null` on teardown.
+ */
+export function setDiscordAuth(auth: { accessToken: string; channelId: string | null } | null) {
+  discordAuth = auth;
+}
+
 /** Listeners for the events the UI reacts to imperatively (audio cues, chart load). */
 export type MatchListeners = {
   onStart?: (payload: MatchStartPayload) => void;
@@ -94,9 +123,16 @@ const store = () => useSliceItStore.getState();
 /**
  * Open the connection, or reuse the existing one.
  *
- * Multiplayer is signed-in only — matches write to a leaderboard, so an
- * anonymous seat would be a hole in it — and we fail fast rather than opening a
- * socket the hub will refuse to seat.
+ * Two credentials are accepted, mirroring the hub's soft auth. A Better Auth
+ * session is the normal one and still wins. A Discord Activity token is the
+ * fallback, and it is not a nicety: an Activity is served from Discord's proxy
+ * origin, so a cookie scoped to rmhstudios.com is never sent from it and
+ * `getSession()` is empty there for **every** player, linked account or not.
+ * Before this, that emptiness was indistinguishable from "not signed in" and
+ * every Discord player was thrown out of multiplayer at this line.
+ *
+ * With neither credential we still fail fast rather than opening a socket the
+ * hub will refuse to seat.
  */
 export async function connectSliceIt(): Promise<Socket> {
   if (client) {
@@ -106,7 +142,7 @@ export async function connectSliceIt(): Promise<Socket> {
 
   const session = await authClient.getSession();
   const token = session?.data?.session?.token;
-  if (!token) {
+  if (!token && !discordAuth) {
     store().setConnection('error');
     store().setLobbyError('auth_required');
     throw new Error('Not authenticated');
@@ -118,7 +154,15 @@ export async function connectSliceIt(): Promise<Socket> {
     path: '/socket/',
     auth: async () => {
       const current = await authClient.getSession();
-      return { token: current?.data?.session?.token };
+      return {
+        token: current?.data?.session?.token,
+        // Sent alongside, never instead: the hub prefers a valid session and
+        // only falls back to the Discord token, so a player who signs in
+        // mid-session is upgraded on their next reconnect rather than pinned
+        // to a guest seat.
+        discordToken: discordAuth?.accessToken,
+        channelId: discordAuth?.channelId,
+      };
     },
     onStatus: (status) => store().setConnection(status),
     onConnect: (socket, { isReconnect }) => {
@@ -139,6 +183,10 @@ export function disconnectSliceIt(): void {
   client?.destroy();
   client = null;
   pendingCode = null;
+  // Deliberately NOT cleared: the Discord Activity's own probe disconnects and
+  // reconnects while deciding whether multiplayer is reachable, and dropping
+  // the credential here would make the second attempt fail for a reason the
+  // first one did not. The Activity component clears it on unmount.
   store().resetMultiplayer();
   store().setConnection('idle');
 }
@@ -246,13 +294,24 @@ function emit(event: string, payload?: unknown, queue = false): boolean {
   return client.emit(event, payload, { queue });
 }
 
-export function createLobby(isPublic: boolean): void {
-  emit(C2S.CREATE, { isPublic }, true);
+/**
+ * @param code A *preferred* lobby code (`X9`). The server honours it when it is
+ *   free and answers `code_taken` when it is not — which for a caller deriving
+ *   the code from a Discord channel means "somebody beat you to it, join
+ *   instead", not "creating failed". Omit for a server-minted random code.
+ */
+export function createLobby(isPublic: boolean, code?: string): void {
+  emit(C2S.CREATE, { isPublic, code: code?.toUpperCase() }, true);
 }
 
 export function joinLobby(code: string): void {
   pendingCode = code.toUpperCase();
   emit(C2S.JOIN, { code: pendingCode }, true);
+}
+
+/** Watch a lobby without taking one of its eight seats (`N1`). */
+export function spectateLobby(code: string): void {
+  emit(C2S.SPECTATE, { code: code.toUpperCase() }, true);
 }
 
 export function quickplay(): void {

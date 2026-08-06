@@ -2,26 +2,59 @@
 
 import { memo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bomb, Ghost, RefreshCw, Layers, Crosshair, Flame, RotateCcw } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import {
+  Bomb,
+  Crosshair,
+  Flame,
+  Ghost,
+  HeartPulse,
+  Layers,
+  RefreshCw,
+  RotateCcw,
+} from 'lucide-react';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { DIFFICULTIES, type Difficulty } from '@/lib/slice-it/constants';
+import { MOD_POOLS, type ModPool } from '@/lib/slice-it/pools';
+import type { LeaderboardEntry } from '@/lib/slice-it/types';
 
-interface LeaderboardEntry {
-  username: string;
-  score: number;
-  accuracy?: number;
-  maxCombo?: number;
-  modifiers?: {
-    bombs: boolean;
-    switching: boolean;
-    suddenDeath: boolean;
-    invisible: boolean;
-    spin: boolean;
-    strictTiming: boolean;
-    oneTrack: boolean;
-    speed: number;
-  };
-  speedMod?: number;
+/**
+ * The song / global leaderboard panel.
+ *
+ * ## It was reading a response that no longer existed
+ *
+ * `fetch(...)` → `if (Array.isArray(data)) setLeaderboard(data)`. The route has
+ * returned `{ entries, total, nextCursor, self }` since it grew pagination, so
+ * `Array.isArray` was false on every successful request and this panel rendered
+ * "No scores yet" **for every song, permanently** — including songs with a full
+ * board. Nothing threw and nothing logged, and an empty leaderboard is a
+ * plausible thing to see, which is why it survived.
+ *
+ * ## Boards, not a board (R1)
+ *
+ * A song has one board per `(difficulty, modPool)` now — see the note on
+ * `SongLeaderboard` in the schema for why one row per player per song was a
+ * correctness bug rather than merely a coarse ranking. Both pickers default to
+ * "all", which is the merged view this panel has always shown; choosing a tier
+ * is what makes the numbers in it comparable to each other.
+ *
+ * ## Every row is a link (X11)
+ *
+ * Usernames were plain, unlinked text, so "who is this person who beat me, and
+ * what else do they play?" — the most natural social action in the game — was a
+ * dead end. A row links when the account has a handle and renders unlinked when
+ * it does not, which is also how a viewer tells a guest (`X10`) from a member.
+ */
+
+interface LeaderboardResponse {
+  entries?: LeaderboardEntry[];
+  total?: number;
+  self?: LeaderboardEntry | null;
+  scopeUnavailable?: 'signed-out' | 'no-location';
 }
+
+type Scope = 'global' | 'friends' | 'country';
+type TimeWindow = 'all' | 'month' | 'week';
 
 interface LeaderboardProps {
   songId?: string | null;
@@ -29,27 +62,57 @@ interface LeaderboardProps {
 
 export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProps) {
   const { t } = useTranslation('c-game');
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const { t: ts } = useTranslation('r-slice-it');
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [self, setSelf] = useState<LeaderboardEntry | null>(null);
+  const [unavailable, setUnavailable] = useState<LeaderboardResponse['scopeUnavailable']>();
   const [isLoading, setIsLoading] = useState(false);
 
+  const [difficulty, setDifficulty] = useState<Difficulty | 'all'>('all');
+  const [modPool, setModPool] = useState<ModPool | 'all'>('all');
+  const [scope, setScope] = useState<Scope>('global');
+  const [timeWindow, setTimeWindow] = useState<TimeWindow>('all');
+
   useEffect(() => {
-    const fetchLeaderboard = async () => {
+    const controller = new AbortController();
+
+    const load = async () => {
       setIsLoading(true);
       try {
-        const query = songId ? `?songId=${songId}` : '';
-        const res = await fetch(`/api/slice-it/leaderboard${query}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data)) setLeaderboard(data);
-        }
+        const params = new URLSearchParams();
+        if (songId) params.set('songId', songId);
+        // The filters only mean anything on a song board — the global career
+        // board is one list of lifetime totals with no tier and no modifiers.
+        if (songId && difficulty !== 'all') params.set('difficulty', difficulty);
+        if (songId && modPool !== 'all') params.set('modPool', modPool);
+        if (songId && scope !== 'global') params.set('scope', scope);
+        if (songId && timeWindow !== 'all') params.set('window', timeWindow);
+
+        const res = await fetch(`/api/slice-it/leaderboard?${params}`, {
+          signal: controller.signal,
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as LeaderboardResponse;
+        setEntries(Array.isArray(data.entries) ? data.entries : []);
+        setSelf(data.self ?? null);
+        setUnavailable(data.scopeUnavailable);
       } catch (err) {
+        // An abort is this effect cleaning up after a filter change, not a
+        // failure — logging it would put a console error on every selection.
+        if ((err as { name?: string })?.name === 'AbortError') return;
         console.error('Failed to load leaderboard:', err);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchLeaderboard();
-  }, [songId]);
+
+    void load();
+    return () => controller.abort();
+  }, [songId, difficulty, modPool, scope, timeWindow]);
+
+  // Only draw the self row when it is not already on screen; otherwise the
+  // player sees themselves twice, with two different rank numbers.
+  const showSelf = self && !entries.some((entry) => entry.isSelf);
 
   return (
     <div className="space-y-2 flex-1 overflow-auto flex flex-col min-h-0">
@@ -61,139 +124,293 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
           ? t('song-leaderboard', { defaultValue: 'Song Leaderboard' })
           : t('global-leaderboard', { defaultValue: 'Global Leaderboard' })}
       </label>
+
+      {songId && (
+        <div className="flex flex-wrap gap-1.5 shrink-0">
+          <FilterSelect
+            label={ts('board-difficulty', { defaultValue: 'Difficulty' })}
+            value={difficulty}
+            onChange={(value) => setDifficulty(value as Difficulty | 'all')}
+            options={[
+              { value: 'all', label: ts('board-all-difficulties', { defaultValue: 'All tiers' }) },
+              ...DIFFICULTIES.map((value) => ({ value, label: value })),
+            ]}
+          />
+          <FilterSelect
+            label={ts('board-mods', { defaultValue: 'Mods' })}
+            value={modPool}
+            onChange={(value) => setModPool(value as ModPool | 'all')}
+            options={[
+              { value: 'all', label: ts('board-all-mods', { defaultValue: 'All mods' }) },
+              ...MOD_POOLS.map((value) => ({ value, label: value })),
+            ]}
+          />
+          <FilterSelect
+            label={ts('board-scope', { defaultValue: 'Who' })}
+            value={scope}
+            onChange={(value) => setScope(value as Scope)}
+            options={[
+              { value: 'global', label: ts('board-scope-global', { defaultValue: 'Everyone' }) },
+              { value: 'friends', label: ts('board-scope-friends', { defaultValue: 'Following' }) },
+              { value: 'country', label: ts('board-scope-country', { defaultValue: 'My area' }) },
+            ]}
+          />
+          <FilterSelect
+            label={ts('board-window', { defaultValue: 'When' })}
+            value={timeWindow}
+            onChange={(value) => setTimeWindow(value as TimeWindow)}
+            options={[
+              { value: 'all', label: ts('board-window-all', { defaultValue: 'All time' }) },
+              { value: 'month', label: ts('board-window-month', { defaultValue: 'This month' }) },
+              { value: 'week', label: ts('board-window-week', { defaultValue: 'This week' }) },
+            ]}
+          />
+        </div>
+      )}
+
       <div className="bg-slice-bg rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] px-3 pb-3 pt-4 text-xs space-y-1 overflow-y-auto custom-scrollbar flex-1 min-h-[200px]">
         {isLoading ? (
           <div className="text-slice-text-light text-center py-4">
             {t('loading', { defaultValue: 'Loading...' })}
           </div>
-        ) : leaderboard.length === 0 ? (
+        ) : unavailable ? (
+          <div className="text-slice-text-light text-center py-4 px-2 leading-relaxed">
+            {unavailable === 'signed-out'
+              ? ts('board-scope-signed-out', {
+                  defaultValue: 'Sign in to see how you compare to people you follow.',
+                })
+              : ts('board-scope-no-location', {
+                  defaultValue: 'Add a location to your profile to see a board for your area.',
+                })}
+          </div>
+        ) : entries.length === 0 ? (
           <div className="text-slice-text-light text-center py-4">
             {t('no-scores-yet', { defaultValue: 'No scores yet' })}
           </div>
         ) : (
-          leaderboard.map((p, i) => (
-            <div
-              key={i}
-              className={`flex items-center gap-2 p-2 hover:bg-slice-shadow-dark/50 rounded cursor-default border-b border-slice-shadow-dark/30/50 last:border-0
-                            ${
-                              i === 0
-                                ? 'ring-2 ring-yellow-400 ring-inset shadow-[inset_0_0_8px_rgba(250,204,21,0.2)]'
-                                : i === 1
-                                  ? 'ring-2 ring-zinc-300 ring-inset shadow-[inset_0_0_8px_rgba(212,212,216,0.2)]'
-                                  : i === 2
-                                    ? 'ring-2 ring-amber-600 ring-inset shadow-[inset_0_0_8px_rgba(180,83,9,0.2)]'
-                                    : ''
-                            }
-                        `}
-            >
-              <span className="text-slice-text-light w-5 text-center font-bold shrink-0">
-                {i + 1}.
-              </span>
-              <span className="text-slice-text font-bold truncate flex-1 min-w-0">
-                {p.username}
-              </span>
-              <div className="flex flex-col items-end shrink-0 gap-0.5">
-                <div className="flex items-center gap-1 mb-0.5">
-                  {p.modifiers && (
-                    <div className="flex items-center gap-1">
-                      {p.modifiers.bombs && (
-                        <Tooltip content={t('mod-bombs', { defaultValue: 'Bombs' })}>
-                          <Bomb className="w-3 h-3 text-red-500" />
-                        </Tooltip>
-                      )}
-                      {p.modifiers.switching && (
-                        <Tooltip content={t('mod-switching', { defaultValue: 'Switching' })}>
-                          <RefreshCw className="w-3 h-3 text-blue-400" />
-                        </Tooltip>
-                      )}
-                      {p.modifiers.suddenDeath && (
-                        <Tooltip content={t('mod-sudden-death', { defaultValue: 'Sudden Death' })}>
-                          <Flame className="w-3 h-3 text-orange-500" />
-                        </Tooltip>
-                      )}
-                      {p.modifiers.invisible && (
-                        <Tooltip
-                          content={t('mod-invisible-notes', { defaultValue: 'Invisible Notes' })}
-                        >
-                          <Ghost className="w-3 h-3 text-purple-400" />
-                        </Tooltip>
-                      )}
-                      {p.modifiers.spin && (
-                        <Tooltip content={t('mod-spin', { defaultValue: 'Spin Mod' })}>
-                          <RotateCcw className="w-3 h-3 text-indigo-400" />
-                        </Tooltip>
-                      )}
-                      {p.modifiers.strictTiming && (
-                        <Tooltip
-                          content={t('mod-strict-timing', { defaultValue: 'Strict Timing' })}
-                        >
-                          <Crosshair className="w-3 h-3 text-emerald-500" />
-                        </Tooltip>
-                      )}
-                      {p.modifiers.oneTrack && (
-                        <Tooltip content={t('mod-one-track', { defaultValue: 'One Track' })}>
-                          <Layers className="w-3 h-3 text-amber-500" />
-                        </Tooltip>
-                      )}
-                    </div>
-                  )}
-                  {p.speedMod && p.speedMod !== 1.0 && (
-                    <Tooltip
-                      content={t('speed-mod-tooltip', {
-                        defaultValue: '{{speed}}x Speed',
-                        speed: p.speedMod.toFixed(1),
-                      })}
-                    >
-                      <span className="text-[10px] font-black text-purple-500 bg-purple-100 px-1.5 py-0.5 rounded-full">
-                        {p.speedMod.toFixed(1)}x
-                      </span>
-                    </Tooltip>
-                  )}
-                  <span className="text-blue-500 font-mono font-bold tabular-nums ml-1">
-                    {p.score.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  {p.accuracy !== undefined && (
-                    <Tooltip
-                      content={t('accuracy-tooltip', {
-                        defaultValue: '{{pct}}% Accuracy',
-                        pct: (p.accuracy * 100).toFixed(2),
-                      })}
-                    >
-                      <span
-                        className={`text-[10px] font-bold font-mono px-1.5 py-0.5 rounded-full ${
-                          p.accuracy >= 1
-                            ? 'bg-cyan-100 text-cyan-600'
-                            : p.accuracy >= 0.95
-                              ? 'bg-green-100 text-green-600'
-                              : p.accuracy >= 0.8
-                                ? 'bg-yellow-100 text-yellow-600'
-                                : 'bg-slice-shadow-dark text-slice-text-muted'
-                        }`}
-                      >
-                        {(p.accuracy * 100).toFixed(1)}%
-                      </span>
-                    </Tooltip>
-                  )}
-                  {p.maxCombo !== undefined && p.maxCombo > 0 && (
-                    <Tooltip
-                      content={t('max-combo-tooltip', {
-                        defaultValue: '{{combo}}x Max Combo',
-                        combo: p.maxCombo,
-                      })}
-                    >
-                      <span className="text-[10px] font-bold text-slice-text-light font-mono italic">
-                        {p.maxCombo}x
-                      </span>
-                    </Tooltip>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))
+          <>
+            {entries.map((entry) => (
+              <Row key={`${entry.userId}-${entry.rank}`} entry={entry} />
+            ))}
+            {showSelf && (
+              <>
+                <div className="h-px bg-slice-shadow-dark/40 my-1" role="presentation" />
+                <Row entry={self} />
+              </>
+            )}
+          </>
         )}
       </div>
     </div>
   );
 });
+
+/**
+ * A board filter.
+ *
+ * A native `<select>` deliberately. This panel is a fixed-width column inside
+ * the game shell, four of these have to fit above a 200px-tall list, and the
+ * platform's own picker is the only control that survives that while staying
+ * keyboard- and screen-reader-correct with no work.
+ */
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <label className="flex-1 min-w-[6.5rem]">
+      <span className="sr-only">{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-lg bg-slice-bg px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slice-text-light shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function Row({ entry }: { entry: LeaderboardEntry }) {
+  const { t } = useTranslation('c-game');
+  const rank = entry.rank;
+
+  return (
+    <div
+      className={`flex items-center gap-2 p-2 hover:bg-slice-shadow-dark/50 rounded border-b border-slice-shadow-dark/30 last:border-0
+        ${
+          rank === 1
+            ? 'ring-2 ring-yellow-400 ring-inset shadow-[inset_0_0_8px_rgba(250,204,21,0.2)]'
+            : rank === 2
+              ? 'ring-2 ring-zinc-300 ring-inset shadow-[inset_0_0_8px_rgba(212,212,216,0.2)]'
+              : rank === 3
+                ? 'ring-2 ring-amber-600 ring-inset shadow-[inset_0_0_8px_rgba(180,83,9,0.2)]'
+                : ''
+        }
+        ${entry.isSelf ? 'bg-blue-500/10' : ''}
+      `}
+    >
+      <span className="text-slice-text-light w-5 text-center font-bold shrink-0">{rank}.</span>
+
+      <PlayerName entry={entry} />
+
+      <div className="flex flex-col items-end shrink-0 gap-0.5">
+        <div className="flex items-center gap-1 mb-0.5">
+          {entry.modifiers && <ModifierIcons modifiers={entry.modifiers} />}
+          {entry.speedMod !== 1 && (
+            <Tooltip
+              content={t('speed-mod-tooltip', {
+                defaultValue: '{{speed}}x Speed',
+                speed: entry.speedMod.toFixed(1),
+              })}
+            >
+              <span className="text-[10px] font-black text-purple-500 bg-purple-100 px-1.5 py-0.5 rounded-full">
+                {entry.speedMod.toFixed(1)}x
+              </span>
+            </Tooltip>
+          )}
+          <span className="text-blue-500 font-mono font-bold tabular-nums ml-1">
+            {entry.score.toLocaleString()}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {entry.difficulty && (
+            <span className="text-[9px] font-black uppercase text-slice-text-muted">
+              {entry.difficulty}
+            </span>
+          )}
+          {entry.accuracy !== null && (
+            <Tooltip
+              content={t('accuracy-tooltip', {
+                defaultValue: '{{pct}}% Accuracy',
+                pct: (entry.accuracy * 100).toFixed(2),
+              })}
+            >
+              <span
+                className={`text-[10px] font-bold font-mono px-1.5 py-0.5 rounded-full ${
+                  entry.accuracy >= 1
+                    ? 'bg-cyan-100 text-cyan-600'
+                    : entry.accuracy >= 0.95
+                      ? 'bg-green-100 text-green-600'
+                      : entry.accuracy >= 0.8
+                        ? 'bg-yellow-100 text-yellow-600'
+                        : 'bg-slice-shadow-dark text-slice-text-muted'
+                }`}
+              >
+                {(entry.accuracy * 100).toFixed(1)}%
+              </span>
+            </Tooltip>
+          )}
+          {entry.maxCombo > 0 && (
+            <Tooltip
+              content={t('max-combo-tooltip', {
+                defaultValue: '{{combo}}x Max Combo',
+                combo: entry.maxCombo,
+              })}
+            >
+              <span className="text-[10px] font-bold text-slice-text-light font-mono italic">
+                {entry.maxCombo}x
+              </span>
+            </Tooltip>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The name cell — a link to the player page when the account has a handle.
+ *
+ * It never builds a URL from `username`: that is display text, it is not
+ * unique, and it changes whenever its owner changes it, so a link made from it
+ * points at whoever holds the name today rather than at the person who set the
+ * score.
+ */
+function PlayerName({ entry }: { entry: LeaderboardEntry }) {
+  const { t } = useTranslation('r-slice-it');
+  const nameClass = `font-bold truncate ${entry.isSelf ? 'text-blue-500' : 'text-slice-text'}`;
+
+  if (!entry.handle) {
+    return (
+      <span className="flex-1 min-w-0 flex items-center gap-1.5 opacity-80">
+        <span className={nameClass}>{entry.username}</span>
+        <span className="text-[9px] uppercase tracking-wide text-slice-text-muted shrink-0">
+          {t('guest', { defaultValue: 'guest' })}
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <Link
+      to="/slice-it/player/$handle"
+      params={{ handle: entry.handle }}
+      className="flex-1 min-w-0 hover:underline"
+      title={`@${entry.handle}`}
+    >
+      <span className={nameClass}>{entry.username}</span>
+    </Link>
+  );
+}
+
+function ModifierIcons({ modifiers }: { modifiers: NonNullable<LeaderboardEntry['modifiers']> }) {
+  const { t } = useTranslation('c-game');
+  const { t: ts } = useTranslation('r-slice-it');
+
+  return (
+    <div className="flex items-center gap-1">
+      {modifiers.bombs && (
+        <Tooltip content={t('mod-bombs', { defaultValue: 'Bombs' })}>
+          <Bomb className="w-3 h-3 text-red-500" />
+        </Tooltip>
+      )}
+      {modifiers.switching && (
+        <Tooltip content={t('mod-switching', { defaultValue: 'Switching' })}>
+          <RefreshCw className="w-3 h-3 text-blue-400" />
+        </Tooltip>
+      )}
+      {modifiers.suddenDeath && (
+        <Tooltip content={t('mod-sudden-death', { defaultValue: 'Sudden Death' })}>
+          <Flame className="w-3 h-3 text-orange-500" />
+        </Tooltip>
+      )}
+      {modifiers.invisible && (
+        <Tooltip content={t('mod-invisible-notes', { defaultValue: 'Invisible Notes' })}>
+          <Ghost className="w-3 h-3 text-purple-400" />
+        </Tooltip>
+      )}
+      {modifiers.spin && (
+        <Tooltip content={t('mod-spin', { defaultValue: 'Spin Mod' })}>
+          <RotateCcw className="w-3 h-3 text-indigo-400" />
+        </Tooltip>
+      )}
+      {modifiers.strictTiming && (
+        <Tooltip content={t('mod-strict-timing', { defaultValue: 'Strict Timing' })}>
+          <Crosshair className="w-3 h-3 text-emerald-500" />
+        </Tooltip>
+      )}
+      {modifiers.oneTrack && (
+        <Tooltip content={t('mod-one-track', { defaultValue: 'One Track' })}>
+          <Layers className="w-3 h-3 text-amber-500" />
+        </Tooltip>
+      )}
+      {modifiers.healthGauge && (
+        <Tooltip content={ts('mod-health-gauge', { defaultValue: 'Health Gauge' })}>
+          <HeartPulse className="w-3 h-3 text-rose-500" />
+        </Tooltip>
+      )}
+    </div>
+  );
+}

@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import { DarkModeWrapper } from '@/components/slice-it/DarkModeWrapper';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
+import { librarySearchSchema } from '@/lib/slice-it/library-filters';
 
 const GameCanvas = lazy(() =>
   import('@/components/slice-it/GameCanvas').then((m) => ({ default: m.GameCanvas })),
@@ -52,5 +53,10 @@ function SliceItPage() {
 }
 
 export const Route = createFileRoute('/slice-it/')({
+  // L18 — the library's search/sort/view state lives here now instead of in
+  // component state, so it survives navigation, is shareable, and is
+  // back-button correct. `librarySearchSchema` passes through `?lobby=` (the
+  // multiplayer join-code param `MultiplayerLobby.tsx` reads) untouched.
+  validateSearch: librarySearchSchema,
   component: SliceItPage,
 });

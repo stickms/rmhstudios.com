@@ -104,6 +104,22 @@ class FakeSocket {
     this.data = { userId, userName, avatarUrl: null };
   }
 
+  /**
+   * Re-cast this socket as a Discord guest: no `userId` at all, a display name
+   * and avatar on `socket.data.discordGuest`.
+   *
+   * That is exactly the shape `server/socket-server/index.ts`'s soft-auth
+   * middleware leaves behind after verifying a Discord Activity token whose
+   * account is not linked — the verification itself needs a live Discord API
+   * and is not what these tests are about.
+   */
+  asGuest(name: string, avatarUrl: string | null = null): this {
+    this.data.userId = undefined;
+    this.data.userName = undefined;
+    this.data.discordGuest = { name, avatarUrl };
+    return this;
+  }
+
   on(event: string, fn: (payload: unknown) => void): void {
     this.handlers.set(event, fn);
   }
@@ -175,6 +191,15 @@ let nextSocket = 0;
 function connect(io: FakeServer, name: string, userId?: string): FakeSocket {
   nextSocket++;
   const socket = new FakeSocket(`s${nextSocket}`, userId ?? `user-${nextSocket}`, name);
+  io.sockets.sockets.set(socket.id, socket);
+  registerSliceItHandlers(io as never, socket as never);
+  return socket;
+}
+
+/** A Discord Activity guest: verified by the hub, but with no site account. */
+function connectGuest(io: FakeServer, name: string): FakeSocket {
+  nextSocket++;
+  const socket = new FakeSocket(`s${nextSocket}`, '', name).asGuest(name);
   io.sockets.sockets.set(socket.id, socket);
   registerSliceItHandlers(io as never, socket as never);
   return socket;
@@ -662,6 +687,258 @@ describe('match', () => {
     startMatch(room);
     room.guests[0].send(C2S.REMATCH);
     expect(room.guests[0].last<LobbyError>(S2C.ERROR)?.code).toBe('not_host');
+  });
+});
+
+/* ─── Guests (X10) ───────────────────────────────────────────────────────── */
+
+/**
+ * A Discord Activity player with no linked site account.
+ *
+ * Three properties, and the third is the one worth the file: a guest can play
+ * (they used to get `auth_required` on every action), a guest's seat does not
+ * survive a reconnect (the deliberate downgrade — the seat key is a socket id,
+ * because the alternative is remembering them), and a guest's score is never
+ * written anywhere. The last one is a privacy claim, and a privacy claim that
+ * nothing checks is a comment.
+ */
+describe('guests', () => {
+  it('lets a guest create a lobby and be seated with no userId', () => {
+    const io = new FakeServer();
+    const guest = connectGuest(io, 'Nyx');
+    guest.send(C2S.CREATE, { isPublic: false });
+
+    const snap = guest.last<LobbySnapshot>(S2C.LOBBY)!;
+    expect(snap.players).toHaveLength(1);
+    const seat = snap.players[0];
+    expect(seat.userId).toBeNull();
+    // The Discord display name and avatar, carried for the session only.
+    expect(seat.guest).toEqual({ name: 'Nyx', avatarUrl: null });
+    expect(seat.name).toBe('Nyx');
+    // A guest who created the room still hosts it.
+    expect(seat.isHost).toBe(true);
+  });
+
+  it('lets a guest join an account holder’s lobby, and seats them separately', async () => {
+    const room = await makeLobby(0);
+    const guest = connectGuest(room.io, 'Nyx');
+    guest.send(C2S.JOIN, { code: room.code });
+
+    const after = snapshot(room.host);
+    expect(after.players).toHaveLength(2);
+    expect(after.players.map((p) => p.name).sort()).toEqual(['Host', 'Nyx']);
+    expect(after.players.find((p) => p.name === 'Nyx')?.userId).toBeNull();
+    expect(after.players.find((p) => p.name === 'Host')?.userId).toBeTruthy();
+  });
+
+  it('seats two guests separately rather than collapsing them onto one key', async () => {
+    const room = await makeLobby(0);
+    connectGuest(room.io, 'Nyx').send(C2S.JOIN, { code: room.code });
+    connectGuest(room.io, 'Vex').send(C2S.JOIN, { code: room.code });
+
+    // Both have `userId: null`; keying seats on the userId alone would have
+    // made the second guest overwrite the first.
+    expect(snapshot(room.host).players).toHaveLength(3);
+  });
+
+  it('does NOT hold a guest seat across a reconnect', async () => {
+    const room = await makeLobby(0);
+    const guest = connectGuest(room.io, 'Nyx');
+    guest.send(C2S.JOIN, { code: room.code });
+    expect(snapshot(room.host).players).toHaveLength(2);
+
+    drop(room.io, guest);
+
+    // Gone at once, not held: a guest seat is keyed by socket id, so a
+    // returning guest could never be matched back to it anyway. Holding it
+    // would park a phantom the room waits on — and remembering them well
+    // enough to do better is the thing X10 exists not to do.
+    const after = snapshot(room.host);
+    expect(after.players).toHaveLength(1);
+    expect(after.players.find((p) => p.name === 'Nyx')).toBeUndefined();
+
+    // And no grace timer fires later to remove an already-removed seat.
+    vi.advanceTimersByTime(MATCH_DISCONNECT_GRACE_MS + 1000);
+    expect(snapshot(room.host).players).toHaveLength(1);
+  });
+
+  it('does not pause a live match for a guest who drops', async () => {
+    const room = await makeLobby(1);
+    const guest = connectGuest(room.io, 'Nyx');
+    guest.send(C2S.JOIN, { code: room.code });
+    guest.send(C2S.READY, { ready: true });
+    startMatch(room);
+    room.host.clear();
+
+    drop(room.io, guest);
+
+    // There is nobody to wait for — the seat is already gone. Pausing would
+    // hold four people for a player who cannot come back.
+    expect(room.host.last<PausePayload>(S2C.PAUSE)).toBeUndefined();
+  });
+
+  it('writes no leaderboard row for a guest, and still writes one for the account beside them', async () => {
+    const room = await makeLobby(0);
+    const guest = connectGuest(room.io, 'Nyx');
+    guest.send(C2S.JOIN, { code: room.code });
+    guest.send(C2S.READY, { ready: true });
+    startMatch({ ...room, seats: [room.host, guest] });
+
+    const report = { score: 4000, combo: 0, maxCombo: 40, accuracy: 1, health: 100 };
+    room.host.send(C2S.FINISH, report);
+    guest.send(C2S.FINISH, { ...report, score: 9000 });
+    await flush();
+
+    // The guest placed first and it is shown…
+    const results = room.host.last<MatchResults>(S2C.RESULTS)!;
+    expect(results.standings[0].name).toBe('Nyx');
+    expect(results.standings[0].place).toBe(1);
+    expect(results.standings[0].score).toBe(9000);
+    expect(results.standings[0].userId).toBeNull();
+
+    // …and nothing about them was written down. Not a row with a null userId,
+    // not a shadow account: no row at all.
+    expect(written).toHaveLength(1);
+    expect(written[0].score).toBe(4000);
+    expect(written.every((row) => typeof row.userId === 'string' && row.userId)).toBe(true);
+  });
+
+  it('still refuses a socket with neither a session nor a Discord identity', () => {
+    const io = new FakeServer();
+    const anon = new FakeSocket('anon-2', '', 'Anon');
+    anon.data.userId = undefined;
+    io.sockets.sockets.set(anon.id, anon);
+    registerSliceItHandlers(io as never, anon as never);
+
+    // Guests widened who may play; they did not remove the check.
+    anon.send(C2S.CREATE, {});
+    expect(anon.last<LobbyError>(S2C.ERROR)?.code).toBe('auth_required');
+  });
+});
+
+/* ─── Preferred lobby codes (X9) ─────────────────────────────────────────── */
+
+/**
+ * `slice:create` can be asked for a specific code.
+ *
+ * A Discord Activity derives one deterministically from its voice channel id so
+ * a whole call lands in one lobby with nothing typed. The interesting case is
+ * the collision: two participants racing to create the same derived code. It
+ * has to be *answered*, because silently minting a random code instead looks
+ * like success while leaving everyone else retrying a code that will never
+ * exist — which was the pre-existing behaviour this replaces.
+ */
+describe('preferred lobby code', () => {
+  it('honours a well-formed code that is free', () => {
+    const io = new FakeServer();
+    const host = connect(io, 'Host');
+    host.send(C2S.CREATE, { isPublic: false, code: 'ABC123' });
+    expect(host.last<LobbySnapshot>(S2C.LOBBY)!.code).toBe('ABC123');
+  });
+
+  it('answers code_taken rather than quietly minting a different code', () => {
+    const io = new FakeServer();
+    connect(io, 'First').send(C2S.CREATE, { isPublic: false, code: 'DUPES1' });
+
+    const second = connect(io, 'Second');
+    second.send(C2S.CREATE, { isPublic: false, code: 'DUPES1' });
+
+    expect(second.last<LobbyError>(S2C.ERROR)?.code).toBe('code_taken');
+    // Nothing was created: the caller wanted *that* room, and the useful next
+    // move is to join it, not to sit alone in a room nobody else can find.
+    expect(second.last<LobbySnapshot>(S2C.LOBBY)).toBeUndefined();
+  });
+
+  it('lets the loser of that race join the winner’s lobby', () => {
+    const io = new FakeServer();
+    connect(io, 'First').send(C2S.CREATE, { isPublic: false, code: 'RACE01' });
+
+    const second = connect(io, 'Second');
+    second.send(C2S.CREATE, { isPublic: false, code: 'RACE01' });
+    second.send(C2S.JOIN, { code: 'RACE01' });
+
+    expect(second.last<LobbySnapshot>(S2C.LOBBY)!.players).toHaveLength(2);
+  });
+
+  it('rejects a malformed code instead of falling back to a random one', () => {
+    const io = new FakeServer();
+    const host = connect(io, 'Host');
+    // The schema strips to [A-Z0-9] and truncates, so this arrives as 'AB' —
+    // short, not six characters, and therefore not a lobby code.
+    host.send(C2S.CREATE, { isPublic: false, code: 'ab!' });
+
+    expect(host.last<LobbyError>(S2C.ERROR)?.code).toBe('invalid_code');
+    expect(host.last<LobbySnapshot>(S2C.LOBBY)).toBeUndefined();
+  });
+
+  it('still mints a random code when none is asked for', () => {
+    const io = new FakeServer();
+    const host = connect(io, 'Host');
+    host.send(C2S.CREATE, { isPublic: false });
+    expect(host.last<LobbySnapshot>(S2C.LOBBY)!.code).toMatch(/^[A-Z0-9]{6}$/);
+  });
+});
+
+/* ─── Spectating (N1) ────────────────────────────────────────────────────── */
+
+describe('spectating', () => {
+  it('sends a snapshot immediately and takes no seat', async () => {
+    const room = await makeLobby(1);
+    const watcher = connect(room.io, 'Watcher');
+    watcher.send(C2S.SPECTATE, { code: room.code });
+
+    // They missed every transition that built this room, so they get the
+    // current state rather than waiting for the next one.
+    expect(watcher.last<LobbySnapshot>(S2C.LOBBY)!.code).toBe(room.code);
+    // …and the roster is unchanged: a spectator is not a ninth player.
+    expect(snapshot(room.host).players).toHaveLength(2);
+  });
+
+  it('receives the live score tick without occupying a slot', async () => {
+    const room = await makeLobby(1);
+    const watcher = connect(room.io, 'Watcher');
+    watcher.send(C2S.SPECTATE, { code: room.code });
+    startMatch(room);
+    watcher.clear();
+
+    for (const seat of room.seats) {
+      seat.send(C2S.SCORE, { score: 700, combo: 7, maxCombo: 7, accuracy: 1, health: 100 });
+    }
+    vi.advanceTimersByTime(SCORE_TICK_MS + 10);
+
+    const ticks = watcher.all<LiveScore[]>(S2C.SCORES);
+    expect(ticks).toHaveLength(1);
+    expect(ticks[0]).toHaveLength(2);
+  });
+
+  it('sees the results without being in them', async () => {
+    const room = await makeLobby(1);
+    const watcher = connect(room.io, 'Watcher');
+    watcher.send(C2S.SPECTATE, { code: room.code });
+    startMatch(room);
+
+    const report = { score: 100, combo: 0, maxCombo: 1, accuracy: 1, health: 100 };
+    for (const seat of room.seats) seat.send(C2S.FINISH, report);
+
+    const results = watcher.last<MatchResults>(S2C.RESULTS)!;
+    expect(results.standings).toHaveLength(2);
+    expect(results.standings.map((s) => s.name)).not.toContain('Watcher');
+  });
+
+  it('refuses to spectate a lobby that does not exist', () => {
+    const io = new FakeServer();
+    const watcher = connect(io, 'Watcher');
+    watcher.send(C2S.SPECTATE, { code: 'NOPE12' });
+    expect(watcher.last<LobbyError>(S2C.ERROR)?.code).toBe('not_found');
+  });
+
+  it('gives up a seat when a seated player starts spectating', async () => {
+    const room = await makeLobby(1);
+    room.guests[0].send(C2S.SPECTATE, { code: room.code });
+
+    // Otherwise they would be both watched and waited on — counted in the
+    // ready check for a match they are no longer playing.
+    expect(snapshot(room.host).players).toHaveLength(1);
   });
 });
 

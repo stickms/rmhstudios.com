@@ -9,6 +9,7 @@
 import { z } from 'zod';
 import {
   COMMENT_MAX_LENGTH,
+  DIFFICULTIES,
   LEADERBOARD_PAGE_SIZE,
   LEADERBOARD_PAGE_SIZE_MAX,
   MAX_SONG_DURATION_SEC,
@@ -23,6 +24,7 @@ import {
   SONG_TITLE_MAX,
 } from './constants';
 import { ModifiersZ } from './modifiers';
+import { MOD_POOLS } from './pools';
 
 /** `?q=&sort=&cursor=&limit=&mine=` for the song library. */
 export const SongListQueryZ = z.object({
@@ -38,8 +40,35 @@ export const SongListQueryZ = z.object({
 });
 export type SongListQuery = z.infer<typeof SongListQueryZ>;
 
+/**
+ * `?songId=&difficulty=&modPool=&scope=&window=&cursor=&limit=`.
+ *
+ * Every board dimension `.catch()`es to its default rather than 400ing. A
+ * leaderboard is a read that a stale client, a shared link or a bookmark can
+ * reach with a value that no longer exists; answering "here is the default
+ * board" is strictly more useful than an error, and there is nothing to protect
+ * — the values are enum-narrowed before they reach a query either way.
+ */
 export const LeaderboardQueryZ = z.object({
   songId: z.string().max(64).optional(),
+  /**
+   * Which tier's board. Omitted means **every** tier merged, which is the old
+   * behaviour and what the global career board still needs — so a client that
+   * has not been updated keeps seeing what it saw.
+   */
+  difficulty: z.enum(DIFFICULTIES).optional().catch(undefined),
+  /** Which modifier pool (`lib/slice-it/pools.ts`). Omitted merges all three. */
+  modPool: z.enum(MOD_POOLS).optional().catch(undefined),
+  /**
+   * `friends` = accounts the caller follows (plus themself); `country` = accounts
+   * sharing the caller's profile location. Both are empty for a signed-out
+   * caller, and `country` is empty for a caller who has set no location — the
+   * response says so with `scopeUnavailable` rather than silently falling back
+   * to global, which would show a "Country" board full of strangers.
+   */
+  scope: z.enum(['global', 'friends', 'country']).default('global').catch('global'),
+  /** How recently the best was set. `SongLeaderboard.createdAt` is bumped on each new best. */
+  window: z.enum(['all', 'month', 'week']).default('all').catch('all'),
   cursor: z.coerce.number().int().min(0).max(10_000).default(0),
   limit: z.coerce
     .number()
@@ -48,6 +77,10 @@ export const LeaderboardQueryZ = z.object({
     .max(LEADERBOARD_PAGE_SIZE_MAX)
     .default(LEADERBOARD_PAGE_SIZE),
 });
+export type LeaderboardQuery = z.infer<typeof LeaderboardQueryZ>;
+
+/** Days in a `window`. `all` has no bound and is not in the map. */
+export const LEADERBOARD_WINDOW_DAYS = { week: 7, month: 30 } as const;
 
 /**
  * A submitted score.
@@ -67,6 +100,35 @@ export const ScoreSubmissionZ = z.object({
   modifiers: ModifiersZ,
   /** True when this came from a multiplayer match, for the results attribution. */
   multiplayer: z.boolean().default(false),
+  /**
+   * Which `Chart` row was played (C2/C12).
+   *
+   * Optional, and absent for every run today: nothing plays a `Chart` yet — the
+   * engine loads `Song.analysisData`, which has no identity. The server checks
+   * that the id belongs to the song being submitted and stores null if it does
+   * not, so this can never be used to attribute a run to somebody else's chart.
+   */
+  chartId: z.string().uuid().optional(),
+  /**
+   * Did the run reach the end without the gauge killing it (R9)?
+   *
+   * Defaults true, because that is what every submission before the gauge
+   * existed was — there was no way to submit a run that had not finished.
+   */
+  cleared: z.boolean().default(true),
+  /**
+   * The engine's derived lamps (H7). `GameEngine` computes both from the
+   * judgement histogram, so they cannot drift out of step with the numbers
+   * printed beside them on the results screen.
+   *
+   * **Client-declared and unverifiable, therefore decorative.** A full combo is
+   * a claim about a histogram the server never sees. They are stored and shown;
+   * they must never influence score, ranking, rewards or the plausibility
+   * ceiling, and nothing in `/api/slice-it/score` reads them before it has
+   * finished deciding whether the run is a new best.
+   */
+  isFullCombo: z.boolean().default(false),
+  isPerfect: z.boolean().default(false),
   /**
    * The run's signed receipt, from the single-song read. Its timestamp is how
    * the server knows how long the run took without asking the client.

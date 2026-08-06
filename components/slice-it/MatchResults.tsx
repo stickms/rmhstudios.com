@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from '@tanstack/react-router';
 import { CheckCircle2, Clock, Crown, Medal, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSliceItStore } from '@/lib/slice-it/store';
@@ -114,6 +115,40 @@ export function MatchResults({
   );
 }
 
+/**
+ * A racer's name, linked to their Slice It player page (`X11`).
+ *
+ * Linked by **user id**, not by handle: `FinalStanding` comes off the wire with
+ * `userId` and a display name and no handle, and its shape lives in
+ * `lib/slice-it/net/events.ts`, which this wave does not own. The player page
+ * resolves either form and emits the handle version as its canonical, so the id
+ * URL works without becoming the one search engines keep.
+ *
+ * An empty `userId` renders as plain text. That is the guest case (`X10`) once
+ * guest seats exist, and it is the right rendering for it: a guest has no page
+ * to link to precisely because nothing about them was stored.
+ */
+function PlayerLink({
+  userId,
+  name,
+  className,
+}: {
+  userId: string | null;
+  name: string;
+  className: string;
+}) {
+  if (!userId) return <span className={className}>{name}</span>;
+  return (
+    <Link
+      to="/slice-it/player/$handle"
+      params={{ handle: userId }}
+      className={`${className} hover:underline`}
+    >
+      {name}
+    </Link>
+  );
+}
+
 function StandingRow({ standing, isSelf }: { standing: FinalStanding; isSelf: boolean }) {
   const { t } = useTranslation('c-game');
   const place = standing.place;
@@ -140,11 +175,11 @@ function StandingRow({ standing, isSelf }: { standing: FinalStanding; isSelf: bo
 
       <span className="flex-1 min-w-0">
         <span className="flex items-center gap-2">
-          <span
+          <PlayerLink
+            userId={standing.userId}
+            name={standing.name}
             className={`font-bold text-sm truncate ${isSelf ? 'text-blue-500' : 'text-slice-text'}`}
-          >
-            {standing.name}
-          </span>
+          />
           {isSelf && (
             <span className="text-[9px] font-black bg-blue-500 text-white px-1.5 py-0.5 rounded-full shrink-0">
               {t('you-badge', { defaultValue: 'YOU' })}

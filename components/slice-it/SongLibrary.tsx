@@ -2,10 +2,26 @@
 
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { toast } from 'sonner';
-import { Heart, Image as ImageIcon, Loader2, Pause, Play, Search, Upload, X } from 'lucide-react';
+import {
+  Heart,
+  History,
+  Image as ImageIcon,
+  LayoutGrid,
+  Loader2,
+  Pause,
+  Play,
+  Search,
+  Shuffle,
+  Table2,
+  Upload,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import {
   Dialog,
   DialogContent,
@@ -15,15 +31,29 @@ import {
 } from '@/components/ui/dialog';
 import { useSession } from '@/components/Providers';
 import { useSliceItStore } from '@/lib/slice-it/store';
+import { timeAgoShort } from '@/lib/utils';
 import {
   AUDIO_MAX_BYTES,
   COVER_MAX_BYTES,
   MAX_SONG_DURATION_SEC,
+  SONGS_PAGE_SIZE_MAX,
   SONG_SORTS,
   type SongSort,
 } from '@/lib/slice-it/constants';
-import type { SliceSong, SongPage } from '@/lib/slice-it/types';
+import {
+  DEFAULT_RANDOM_CONSTRAINTS,
+  LIBRARY_TABLE_COLUMNS,
+  formatSongDuration,
+  normalizeLibrarySearch,
+  type LibrarySearch,
+  type LibrarySong,
+  type LibrarySongPage,
+  type LibrarySort,
+  type RandomConstraints,
+} from '@/lib/slice-it/library-filters';
+import type { SliceSong } from '@/lib/slice-it/types';
 import { NeumorphicModal } from './NeumorphicModal';
+import { SongTable } from './SongTable';
 
 interface SongLibraryProps {
   onSelect: (song: SliceSong) => void;
@@ -36,7 +66,7 @@ interface SongLibraryProps {
 /**
  * The song library.
  *
- * ## What changed
+ * ## What changed (original)
  *
  * - **Search and sort are the server's job now.** The old version fetched fifty
  *   songs once and `.filter()`ed them in the browser, so "search" only ever
@@ -50,6 +80,23 @@ interface SongLibraryProps {
  *   the literal string "Upload failed" for every non-2xx, discarding the
  *   server's message — including the ones a user can act on ("you have reached
  *   your upload limit", "you already uploaded this track").
+ *
+ * ## What changed (this pass — L13, L17, L18, S9)
+ *
+ * - **A table view (L13), alongside the grid.** `SongTable` is virtualized and
+ *   NOT paged (auto-fetches as you scroll) because a table exists to be
+ *   scanned; the grid keeps its "Load more" button and stays the default —
+ *   see the toggle below the search row.
+ * - **Filters live in the URL now (L18).** `search`/`sort`/`view` used to be
+ *   `useState` here, which is the exact thing this file's own history section
+ *   warns about not doing again for *sorting* — state that does not survive a
+ *   navigation is a smaller version of the same bug. They are now
+ *   `/slice-it/`'s validated search params (`lib/slice-it/library-filters.ts`),
+ *   so a shared link, a refresh, or the back button all land on the same view.
+ * - **A recently-played shelf (L17).** Reads the `SongPlay` rows that were
+ *   already written on every play and never read back as a list.
+ * - **A random/roulette pick (S9).** Constrained by duration range, unplayed,
+ *   or liked-only; picked server-side via `random=1` on the same route.
  */
 export function SongLibrary({
   onSelect,
@@ -59,40 +106,81 @@ export function SongLibrary({
   readOnly = false,
 }: SongLibraryProps) {
   const { t } = useTranslation('c-game');
+  const { t: ts } = useTranslation('r-slice-it');
   const { data: session } = useSession();
   const volume = useSliceItStore((s) => s.volume);
 
-  const [songs, setSongs] = React.useState<SliceSong[]>([]);
+  /* ── Filters (L18): URL search params, not component state ─────────────── */
+
+  const navigate = useNavigate();
+  const rawSearch = useSearch({ strict: false });
+  const filters = React.useMemo(() => normalizeLibrarySearch(rawSearch), [rawSearch]);
+
+  const setFilters = React.useCallback(
+    (patch: Partial<LibrarySearch>) => {
+      void navigate({
+        to: '/slice-it/',
+        // A filter change is a refinement of the same view, not a new page —
+        // `replace` keeps the back button one press per *navigation*, not one
+        // press per sort click.
+        replace: true,
+        search: (prev: Record<string, unknown>) => ({ ...prev, ...patch }),
+      });
+    },
+    [navigate],
+  );
+
+  const [songs, setSongs] = React.useState<LibrarySong[]>([]);
   const [nextCursor, setNextCursor] = React.useState<string | null>(null);
   const [total, setTotal] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
-  const [search, setSearch] = React.useState('');
-  const [sort, setSort] = React.useState<SongSort>('recent');
 
   const [uploadOpen, setUploadOpen] = React.useState(false);
   const [likingId, setLikingId] = React.useState<string | null>(null);
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
 
-  /* ── Fetching ────────────────────────────────────────────────────────── */
+  /* ── Search box: local keystrokes, debounced into the URL ──────────────── */
 
-  // Debounced so typing does not fire a request per keystroke.
-  const [debouncedSearch, setDebouncedSearch] = React.useState('');
+  const [searchInput, setSearchInput] = React.useState(filters.q);
+  const lastPushedQ = React.useRef(filters.q);
+
+  // Back/forward or a pasted link changes `filters.q` without going through
+  // this component's own debounce below — keep the box in sync with those.
   React.useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 250);
+    if (filters.q !== lastPushedQ.current) {
+      setSearchInput(filters.q);
+      lastPushedQ.current = filters.q;
+    }
+  }, [filters.q]);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      const trimmed = searchInput.trim();
+      if (trimmed === filters.q) return;
+      lastPushedQ.current = trimmed;
+      setFilters({ q: trimmed });
+    }, 250);
     return () => clearTimeout(timer);
-  }, [search]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `filters.q`/`setFilters` intentionally excluded: this timer reacts to typing, not to the URL it itself writes.
+  }, [searchInput]);
+
+  /* ── Fetching ────────────────────────────────────────────────────────── */
 
   const load = React.useCallback(
     async (cursor: string | null, append: boolean) => {
       setLoading(true);
       try {
-        const params = new URLSearchParams({ sort });
-        if (debouncedSearch) params.set('q', debouncedSearch);
+        const params = new URLSearchParams({ sort: filters.sort });
+        if (filters.dir) params.set('dir', filters.dir);
+        if (filters.q) params.set('q', filters.q);
         if (cursor) params.set('cursor', cursor);
+        // The table is scanned, not paged — a bigger page means fewer
+        // round-trips while scrolling instead of a "Load more" click.
+        if (filters.view === 'table') params.set('limit', String(SONGS_PAGE_SIZE_MAX));
 
         const response = await fetch(`/api/slice-it/songs?${params}`);
         if (!response.ok) throw new Error(String(response.status));
-        const page = (await response.json()) as SongPage;
+        const page = (await response.json()) as LibrarySongPage;
 
         setSongs((previous) => (append ? [...previous, ...page.songs] : page.songs));
         setNextCursor(page.nextCursor);
@@ -106,12 +194,82 @@ export function SongLibrary({
         setLoading(false);
       }
     },
-    [debouncedSearch, sort, t],
+    [filters.sort, filters.dir, filters.q, filters.view, t],
   );
 
   React.useEffect(() => {
     void load(null, false);
+    // Re-fetches whenever the *server-relevant* filters change — `view` is
+    // included because table view asks for a bigger page.
   }, [load]);
+
+  /* ── Recently played shelf (L17) ────────────────────────────────────────── */
+
+  const [recentSongs, setRecentSongs] = React.useState<LibrarySong[]>([]);
+
+  React.useEffect(() => {
+    if (!session) {
+      setRecentSongs([]);
+      return;
+    }
+    let cancelled = false;
+    fetch('/api/slice-it/songs?shelf=recent')
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error())))
+      .then((data: { songs: LibrarySong[] }) => {
+        if (!cancelled) setRecentSongs(data.songs);
+      })
+      .catch(() => {
+        if (!cancelled) setRecentSongs([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // Session id, not the object — Better Auth returns a fresh session object
+    // on unrelated refreshes and re-fetching a 12-row shelf on every one would
+    // be wasted work.
+  }, [session?.user?.id]);
+
+  const showRecentShelf =
+    !readOnly && session && filters.view === 'grid' && !filters.q && recentSongs.length > 0;
+
+  /* ── Random / roulette (S9) ─────────────────────────────────────────────── */
+
+  const [randomOpen, setRandomOpen] = React.useState(false);
+  const [randomLoading, setRandomLoading] = React.useState(false);
+  const [randomConstraints, setRandomConstraints] = React.useState<RandomConstraints>(
+    DEFAULT_RANDOM_CONSTRAINTS,
+  );
+
+  const rollRandom = async () => {
+    setRandomLoading(true);
+    try {
+      const params = new URLSearchParams({ random: '1' });
+      if (randomConstraints.durationMin !== undefined) {
+        params.set('durationMin', String(randomConstraints.durationMin));
+      }
+      if (randomConstraints.durationMax !== undefined) {
+        params.set('durationMax', String(randomConstraints.durationMax));
+      }
+      if (randomConstraints.unplayedOnly) params.set('unplayedOnly', 'true');
+      if (randomConstraints.likedOnly) params.set('likedOnly', 'true');
+
+      const response = await fetch(`/api/slice-it/songs?${params}`);
+      if (!response.ok) throw new Error(String(response.status));
+      const body = (await response.json()) as { song: LibrarySong | null };
+      if (!body.song) {
+        toast.error(
+          ts('random-no-match', { defaultValue: 'No song matches those constraints.' }),
+        );
+        return;
+      }
+      setRandomOpen(false);
+      onHighlight(body.song);
+    } catch {
+      toast.error(ts('random-failed', { defaultValue: 'Could not pick a random song.' }));
+    } finally {
+      setRandomLoading(false);
+    }
+  };
 
   /* ── Preview playback ────────────────────────────────────────────────── */
 
@@ -207,12 +365,41 @@ export function SongLibrary({
     }
   };
 
+  /* ── View toggle + sort handling ────────────────────────────────────────── */
+
+  const viewTabs: LiquidTab[] = [
+    { id: 'grid', label: ts('view-grid', { defaultValue: 'Grid' }), icon: LayoutGrid },
+    { id: 'table', label: ts('view-table', { defaultValue: 'Table' }), icon: Table2 },
+  ];
+
+  const handleViewChange = (next: string) => {
+    if (next !== 'grid' && next !== 'table') return;
+    // The grid's dropdown only ever offered the five base sorts — switching
+    // back to it while a table-only column (e.g. `bpm`) is active would leave
+    // the `<select>` with nothing matching, so land it back on `recent`.
+    const gridCompatible = (SONG_SORTS as readonly string[]).includes(filters.sort);
+    if (next === 'grid' && !gridCompatible) {
+      setFilters({ view: next, sort: 'recent', dir: undefined });
+    } else {
+      setFilters({ view: next });
+    }
+  };
+
+  const handleTableSort = (column: LibrarySort) => {
+    if (filters.sort === column) {
+      setFilters({ dir: filters.dir === 'asc' ? 'desc' : 'asc' });
+      return;
+    }
+    const col = LIBRARY_TABLE_COLUMNS.find((c) => c.key === column);
+    setFilters({ sort: column, dir: col?.defaultDir ?? 'asc' });
+  };
+
   /* ── Render ──────────────────────────────────────────────────────────── */
 
   return (
     <div className="w-full h-full bg-slice-bg flex flex-col">
-      <div className="flex gap-2 items-center shrink-0 p-3 border-b border-slice-shadow-dark/50">
-        <div className="relative flex-1 min-w-0">
+      <div className="flex flex-wrap gap-2 items-center shrink-0 p-3 border-b border-slice-shadow-dark/50">
+        <div className="relative flex-1 min-w-[10rem]">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-slice-text-light w-4 h-4"
             aria-hidden
@@ -224,24 +411,70 @@ export function SongLibrary({
           <Input
             placeholder={t('search-placeholder', { defaultValue: 'Search songs, artists...' })}
             className="pl-9 bg-slice-card-bg border border-slice-shadow-dark/50 rounded-lg h-9 pointer-coarse:h-11 text-sm text-slice-text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             aria-label={t('search-placeholder', { defaultValue: 'Search songs, artists...' })}
           />
         </div>
 
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value as SongSort)}
-          className="h-9 pointer-coarse:h-11 shrink-0 max-w-28 rounded-lg bg-slice-card-bg border border-slice-shadow-dark/50 text-xs font-bold text-slice-text px-2"
-          aria-label={t('sort-by', { defaultValue: 'Sort by' })}
-        >
-          {SONG_SORTS.map((option) => (
-            <option key={option} value={option}>
-              {sortLabel(option, t)}
-            </option>
-          ))}
-        </select>
+        {filters.view === 'grid' && (
+          <select
+            value={filters.sort}
+            onChange={(e) => setFilters({ sort: e.target.value as SongSort, dir: undefined })}
+            className="h-9 pointer-coarse:h-11 shrink-0 max-w-28 rounded-lg bg-slice-card-bg border border-slice-shadow-dark/50 text-xs font-bold text-slice-text px-2"
+            aria-label={t('sort-by', { defaultValue: 'Sort by' })}
+          >
+            {SONG_SORTS.map((option) => (
+              <option key={option} value={option}>
+                {sortLabel(option, t)}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {/* L13 — grid/table view toggle. `LiquidTabs` (not a hand-rolled
+            toggle group) sitting in a `.neumorphic-inset` well, the same
+            neumorphic-treatment-around-a-sanctioned-primitive pattern
+            `editor/DifficultyTabs.tsx` uses for its difficulty strip. */}
+        <div className="neumorphic-inset shrink-0 w-[9.5rem] p-1">
+          <LiquidTabs
+            tabs={viewTabs}
+            value={filters.view}
+            onChange={handleViewChange}
+            size="sm"
+            sheet={false}
+            aria-label={ts('view-toggle', { defaultValue: 'Library view' })}
+          />
+        </div>
+
+        {!readOnly && (
+          <Dialog open={randomOpen} onOpenChange={setRandomOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 rounded-lg p-0 touch-target"
+                aria-label={ts('random-button', { defaultValue: 'Pick a random song' })}
+                title={ts('random-button', { defaultValue: 'Pick a random song' })}
+              >
+                <Shuffle className="w-4 h-4" aria-hidden />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-slice-bg border-none shadow-2xl rounded-2xl max-w-sm">
+              <DialogHeader>
+                <DialogTitle className="text-slice-text font-black">
+                  {ts('random-title', { defaultValue: 'Surprise Me' })}
+                </DialogTitle>
+              </DialogHeader>
+              <RandomForm
+                constraints={randomConstraints}
+                onChange={setRandomConstraints}
+                onSubmit={() => void rollRandom()}
+                loading={randomLoading}
+                authed={Boolean(session)}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
 
         {!readOnly && session && (
           <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
@@ -270,173 +503,248 @@ export function SongLibrary({
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2">
-        {songs.length === 0 && !loading && (
-          <p className="text-center text-slice-text-light py-12 text-sm font-bold">
-            {debouncedSearch
-              ? t('no-search-results', {
-                  defaultValue: 'Nothing matches "{{query}}".',
-                  query: debouncedSearch,
-                })
-              : t('library-empty', { defaultValue: 'No tracks yet — upload the first one.' })}
-          </p>
-        )}
-
-        <ul>
-          {songs.map((song) => (
-            <li key={song.id}>
-              <div
-                className={`p-2 flex items-center justify-between gap-2 group hover:bg-slice-shadow-dark/40 cursor-pointer border-l-4 ${
-                  selectedSongId === song.id
-                    ? 'bg-blue-500/10 border-l-blue-500'
-                    : 'bg-transparent border-l-transparent'
-                }`}
+      {showRecentShelf && (
+        <div className="shrink-0 border-b border-slice-shadow-dark/50 p-3">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-slice-text-light mb-2">
+            <History className="w-3 h-3" aria-hidden />
+            {ts('recently-played', { defaultValue: 'Recently played' })}
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {recentSongs.map((song) => (
+              <button
+                key={song.id}
+                type="button"
                 onClick={() => onHighlight(song)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') onHighlight(song);
-                }}
-                role="button"
-                tabIndex={0}
+                className="neumorphic-sm shrink-0 w-24 p-1.5 text-left touch-target"
               >
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-8 h-8 rounded-full bg-slice-shadow-dark text-blue-500 shrink-0 touch-target"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      togglePreview(song);
-                    }}
-                    aria-label={t('preview', { defaultValue: 'Preview' })}
-                  >
-                    {previewId === song.id && !previewRef.current?.paused ? (
-                      <Pause className="w-4 h-4" />
-                    ) : (
-                      <Play className="w-4 h-4 ml-0.5" />
-                    )}
-                  </Button>
-
-                  <div className="w-10 h-10 rounded-md bg-slice-shadow-dark shrink-0 overflow-hidden relative">
-                    {song.coverUrl ? (
-                      <img
-                        src={song.coverUrl}
-                        alt=""
-                        loading="lazy"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="absolute inset-0 flex items-center justify-center text-slice-text-muted font-bold text-xs">
-                        {song.title.charAt(0)}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-slice-text text-sm leading-tight truncate">
-                      {song.title}
-                    </div>
-                    <div className="text-xs text-slice-text-muted truncate">
-                      {song.artist}
-                      {song.bpm > 0 ? ` • ${Math.round(song.bpm)} BPM` : ''} •{' '}
-                      {formatDuration(song.duration)}
-                    </div>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <span className="flex items-center gap-1 text-[10px] text-slice-text-light">
-                        <Play className="w-2.5 h-2.5 fill-current" aria-hidden />
-                        {song.plays}
-                      </span>
-                      <span
-                        className={`flex items-center gap-1 text-[10px] ${
-                          song.isLiked ? 'text-red-400' : 'text-slice-text-light'
-                        }`}
-                      >
-                        <Heart
-                          className={`w-2.5 h-2.5 ${song.isLiked ? 'fill-current' : ''}`}
-                          aria-hidden
-                        />
-                        {song.likeCount}
-                      </span>
-                      {song.isOwner && (
-                        <span className="text-[10px] text-blue-500 font-bold">
-                          {t('your-track', { defaultValue: 'YOUR TRACK' })}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1 shrink-0">
-                  {!readOnly && song.isOwner && (
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteId(song.id);
-                      }}
-                      // Visible by default and hover-revealed only where hover
-                      // exists. `opacity-0 group-hover:opacity-100` alone meant
-                      // the control was invisible on every touch device while
-                      // still taking its 32px of a row that had none to spare.
-                      className="h-8 w-8 rounded-lg touch-target sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
-                      aria-label={t('delete-song', { defaultValue: 'Delete Song' })}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
+                <div className="w-full aspect-square rounded-md bg-slice-shadow-dark overflow-hidden relative mb-1">
+                  {song.coverUrl ? (
+                    <img
+                      src={song.coverUrl}
+                      alt=""
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="absolute inset-0 flex items-center justify-center text-slice-text-muted font-bold text-xs">
+                      {song.title.charAt(0)}
+                    </span>
                   )}
-                  {session && (
+                </div>
+                <div className="text-[11px] font-bold text-slice-text truncate">{song.title}</div>
+                {song.lastPlayedAt && (
+                  <div className="text-[10px] text-slice-text-light truncate">
+                    {timeAgoShort(song.lastPlayedAt)}
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {filters.view === 'table' ? (
+        <>
+          {songs.length === 0 && !loading && (
+            <p className="text-center text-slice-text-light py-12 text-sm font-bold">
+              {filters.q
+                ? t('no-search-results', {
+                    defaultValue: 'Nothing matches "{{query}}".',
+                    query: filters.q,
+                  })
+                : t('library-empty', { defaultValue: 'No tracks yet — upload the first one.' })}
+            </p>
+          )}
+          {(songs.length > 0 || loading) && (
+            <SongTable
+              songs={songs}
+              sort={filters.sort}
+              dir={filters.dir ?? 'desc'}
+              onSortChange={handleTableSort}
+              onSelect={(song) => {
+                stopPreview();
+                onSelect(song);
+              }}
+              onHighlight={onHighlight}
+              selectedSongId={selectedSongId}
+              authed={Boolean(session)}
+              hasMore={Boolean(nextCursor)}
+              loading={loading}
+              onLoadMore={() => void load(nextCursor, true)}
+              readOnly={readOnly}
+              className="flex-1 min-h-0"
+            />
+          )}
+        </>
+      ) : (
+        <div className="flex-1 overflow-y-auto p-2">
+          {songs.length === 0 && !loading && (
+            <p className="text-center text-slice-text-light py-12 text-sm font-bold">
+              {filters.q
+                ? t('no-search-results', {
+                    defaultValue: 'Nothing matches "{{query}}".',
+                    query: filters.q,
+                  })
+                : t('library-empty', { defaultValue: 'No tracks yet — upload the first one.' })}
+            </p>
+          )}
+
+          <ul>
+            {songs.map((song) => (
+              <li key={song.id}>
+                <div
+                  className={`p-2 flex items-center justify-between gap-2 group hover:bg-slice-shadow-dark/40 cursor-pointer border-l-4 ${
+                    selectedSongId === song.id
+                      ? 'bg-blue-500/10 border-l-blue-500'
+                      : 'bg-transparent border-l-transparent'
+                  }`}
+                  onClick={() => onHighlight(song)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') onHighlight(song);
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className={`h-8 w-8 rounded-lg shrink-0 touch-target ${
-                        song.isLiked ? 'text-red-500' : 'text-slice-text-light'
-                      }`}
-                      onClick={(e) => void handleLike(e, song)}
-                      disabled={likingId === song.id}
-                      aria-label={
-                        song.isLiked
-                          ? t('unlike', { defaultValue: 'Unlike' })
-                          : t('like', { defaultValue: 'Like' })
-                      }
-                    >
-                      <Heart className={`w-4 h-4 ${song.isLiked ? 'fill-current' : ''}`} />
-                    </Button>
-                  )}
-                  {!readOnly && (
-                    <Button
+                      className="w-8 h-8 rounded-full bg-slice-shadow-dark text-blue-500 shrink-0 touch-target"
                       onClick={(e) => {
                         e.stopPropagation();
-                        stopPreview();
-                        onSelect(song);
+                        togglePreview(song);
                       }}
-                      className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-3 h-8 rounded-lg text-xs touch-target"
+                      aria-label={t('preview', { defaultValue: 'Preview' })}
                     >
-                      {t('play', { defaultValue: 'PLAY' })}
+                      {previewId === song.id && !previewRef.current?.paused ? (
+                        <Pause className="w-4 h-4" />
+                      ) : (
+                        <Play className="w-4 h-4 ml-0.5" />
+                      )}
                     </Button>
-                  )}
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
 
-        {nextCursor && (
-          <div className="p-4 flex justify-center">
-            <Button
-              variant="outline"
-              onClick={() => void load(nextCursor, true)}
-              disabled={loading}
-              className="rounded-xl"
-            >
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
-              ) : (
-                t('load-more', { defaultValue: 'Load more ({{count}} total)', count: total })
-              )}
-            </Button>
-          </div>
-        )}
-      </div>
+                    <div className="w-10 h-10 rounded-md bg-slice-shadow-dark shrink-0 overflow-hidden relative">
+                      {song.coverUrl ? (
+                        <img
+                          src={song.coverUrl}
+                          alt=""
+                          loading="lazy"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="absolute inset-0 flex items-center justify-center text-slice-text-muted font-bold text-xs">
+                          {song.title.charAt(0)}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-slice-text text-sm leading-tight truncate">
+                        {song.title}
+                      </div>
+                      <div className="text-xs text-slice-text-muted truncate">
+                        {song.artist}
+                        {song.bpm > 0 ? ` • ${Math.round(song.bpm)} BPM` : ''} •{' '}
+                        {formatSongDuration(song.duration)}
+                      </div>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <span className="flex items-center gap-1 text-[10px] text-slice-text-light">
+                          <Play className="w-2.5 h-2.5 fill-current" aria-hidden />
+                          {song.plays}
+                        </span>
+                        <span
+                          className={`flex items-center gap-1 text-[10px] ${
+                            song.isLiked ? 'text-red-400' : 'text-slice-text-light'
+                          }`}
+                        >
+                          <Heart
+                            className={`w-2.5 h-2.5 ${song.isLiked ? 'fill-current' : ''}`}
+                            aria-hidden
+                          />
+                          {song.likeCount}
+                        </span>
+                        {song.isOwner && (
+                          <span className="text-[10px] text-blue-500 font-bold">
+                            {t('your-track', { defaultValue: 'YOUR TRACK' })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    {!readOnly && song.isOwner && (
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteId(song.id);
+                        }}
+                        // Visible by default and hover-revealed only where hover
+                        // exists. `opacity-0 group-hover:opacity-100` alone meant
+                        // the control was invisible on every touch device while
+                        // still taking its 32px of a row that had none to spare.
+                        className="h-8 w-8 rounded-lg touch-target sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                        aria-label={t('delete-song', { defaultValue: 'Delete Song' })}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {session && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={`h-8 w-8 rounded-lg shrink-0 touch-target ${
+                          song.isLiked ? 'text-red-500' : 'text-slice-text-light'
+                        }`}
+                        onClick={(e) => void handleLike(e, song)}
+                        disabled={likingId === song.id}
+                        aria-label={
+                          song.isLiked
+                            ? t('unlike', { defaultValue: 'Unlike' })
+                            : t('like', { defaultValue: 'Like' })
+                        }
+                      >
+                        <Heart className={`w-4 h-4 ${song.isLiked ? 'fill-current' : ''}`} />
+                      </Button>
+                    )}
+                    {!readOnly && (
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          stopPreview();
+                          onSelect(song);
+                        }}
+                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-3 h-8 rounded-lg text-xs touch-target"
+                      >
+                        {t('play', { defaultValue: 'PLAY' })}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {nextCursor && (
+            <div className="p-4 flex justify-center">
+              <Button
+                variant="outline"
+                onClick={() => void load(nextCursor, true)}
+                disabled={loading}
+                className="rounded-xl"
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
+                ) : (
+                  t('load-more', { defaultValue: 'Load more ({{count}} total)', count: total })
+                )}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
 
       <NeumorphicModal
         isOpen={deleteId !== null}
@@ -451,6 +759,102 @@ export function SongLibrary({
         cancelText={t('cancel', { defaultValue: 'CANCEL' })}
         variant="danger"
       />
+    </div>
+  );
+}
+
+/* ─── Random / roulette form (S9) ───────────────────────────────────────────── */
+
+function RandomForm({
+  constraints,
+  onChange,
+  onSubmit,
+  loading,
+  authed,
+}: {
+  constraints: RandomConstraints;
+  onChange: (next: RandomConstraints) => void;
+  onSubmit: () => void;
+  loading: boolean;
+  authed: boolean;
+}) {
+  const { t: ts } = useTranslation('r-slice-it');
+
+  const setDuration = (key: 'durationMin' | 'durationMax', raw: string) => {
+    const value = raw === '' ? undefined : Math.max(0, Math.min(MAX_SONG_DURATION_SEC, Number(raw)));
+    onChange({ ...constraints, [key]: Number.isFinite(value) ? value : undefined });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <label className="block space-y-1">
+          <span className="text-xs font-bold text-slice-text-light uppercase">
+            {ts('random-duration-min', { defaultValue: 'Min length (sec)' })}
+          </span>
+          <Input
+            type="number"
+            min={0}
+            max={MAX_SONG_DURATION_SEC}
+            value={constraints.durationMin ?? ''}
+            onChange={(e) => setDuration('durationMin', e.target.value)}
+            className="bg-slice-card-bg text-slice-text border border-slice-shadow-dark/30"
+          />
+        </label>
+        <label className="block space-y-1">
+          <span className="text-xs font-bold text-slice-text-light uppercase">
+            {ts('random-duration-max', { defaultValue: 'Max length (sec)' })}
+          </span>
+          <Input
+            type="number"
+            min={0}
+            max={MAX_SONG_DURATION_SEC}
+            value={constraints.durationMax ?? ''}
+            onChange={(e) => setDuration('durationMax', e.target.value)}
+            className="bg-slice-card-bg text-slice-text border border-slice-shadow-dark/30"
+          />
+        </label>
+      </div>
+
+      <label className="flex items-center justify-between gap-3">
+        <span className="text-sm font-bold text-slice-text">
+          {ts('random-unplayed-only', { defaultValue: 'Only songs I have not played' })}
+        </span>
+        <Switch
+          checked={constraints.unplayedOnly ?? false}
+          onCheckedChange={(checked) => onChange({ ...constraints, unplayedOnly: checked })}
+          disabled={!authed}
+          aria-label={ts('random-unplayed-only', { defaultValue: 'Only songs I have not played' })}
+        />
+      </label>
+
+      <label className="flex items-center justify-between gap-3">
+        <span className="text-sm font-bold text-slice-text">
+          {ts('random-liked-only', { defaultValue: 'Only songs I have liked' })}
+        </span>
+        <Switch
+          checked={constraints.likedOnly ?? false}
+          onCheckedChange={(checked) => onChange({ ...constraints, likedOnly: checked })}
+          disabled={!authed}
+          aria-label={ts('random-liked-only', { defaultValue: 'Only songs I have liked' })}
+        />
+      </label>
+
+      {!authed && (
+        <p className="text-xs text-slice-text-light">
+          {ts('random-signin-hint', {
+            defaultValue: 'Sign in to constrain by unplayed or liked tracks.',
+          })}
+        </p>
+      )}
+
+      <Button
+        onClick={onSubmit}
+        loading={loading}
+        className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold h-12 rounded-xl"
+      >
+        {ts('random-submit', { defaultValue: 'Surprise Me' })}
+      </Button>
     </div>
   );
 }
@@ -753,11 +1157,6 @@ function Field({
 }
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
-
-function formatDuration(seconds: number): string {
-  const total = Math.max(0, Math.round(seconds));
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
-}
 
 function sortLabel(sort: SongSort, t: (key: string, opts: { defaultValue: string }) => string) {
   switch (sort) {

@@ -6,6 +6,7 @@
  */
 
 import type { Difficulty, HitResult, SliceType } from './constants';
+import type { ModPool } from './pools';
 
 export type { Difficulty, HitResult, SliceType };
 
@@ -144,6 +145,16 @@ export interface SliceSong {
   isLiked: boolean;
   /** How many times the signed-in caller has played it; 0 when anonymous. */
   userPlays: number;
+  /**
+   * The signed-in caller's best lamp on this song (`H8`), across every tier —
+   * `'none'` when anonymous, when they have never played it, or when the caller
+   * did not join the leaderboard rows (see `viewerSongJoins` in
+   * `songs.server.ts`). `userPlays` says how often you played; this says how it
+   * went, which is the part a library page could not previously show.
+   */
+  lamp: Lamp;
+  /** Best lamp per difficulty, for a card that breaks the tiers out. */
+  lampByDifficulty?: Partial<Record<Difficulty, Lamp>>;
   createdAt: string;
   /** Present only on the single-song read. */
   analysisData?: BeatMap | null;
@@ -174,13 +185,44 @@ export interface LeaderboardEntry {
   rank: number;
   userId: string;
   username: string;
+  /**
+   * The account's `@handle`, or null.
+   *
+   * Null for a guest (`X10`) and for an account that has none. **The presence of
+   * this field is what the UI branches on** — never construct a player URL from
+   * `username`, which is display text, is not unique, and is whatever the
+   * account's owner most recently set it to.
+   */
+  handle: string | null;
   image: string | null;
   score: number;
   maxCombo: number;
   accuracy: number | null;
   speedMod: number;
   modifiers: Partial<Modifiers> | null;
+  /** Which tier this run was played on. Absent on the global career board. */
+  difficulty?: Difficulty;
+  /** Which modifier pool the run landed in (`lib/slice-it/pools.ts`). */
+  modPool?: ModPool;
+  /**
+   * Client-declared lamps (`H7`), carried for the badge and **nothing else** —
+   * they never influence rank, and the row's position was decided by `score`
+   * before either was read.
+   */
+  isFullCombo?: boolean;
+  isPerfect?: boolean;
   achievedAt: string;
   /** True for the signed-in caller's own row. */
   isSelf: boolean;
 }
+
+/**
+ * The player's standing on one chart, in the genre's standard escalation
+ * (`H8`). IIDX calls these clear lamps; every rhythm game has some version.
+ *
+ * `none` means "never played", which is distinct from `failed` — a chart you
+ * have not attempted and a chart that has beaten you are different facts about
+ * a library, and collapsing them is what makes a library page uninformative.
+ */
+export const LAMPS = ['none', 'failed', 'cleared', 'fc', 'perfect'] as const;
+export type Lamp = (typeof LAMPS)[number];

@@ -1,9 +1,10 @@
 'use client';
 
 import * as React from 'react';
+import { Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Play, Settings, X, Check, ImagePlus, Heart } from 'lucide-react';
+import { Play, Settings, X, Check, ImagePlus, Heart, SlidersHorizontal } from 'lucide-react';
 import { Leaderboard } from './Leaderboard';
 import { SongComments } from './SongComments';
 import { useSliceItStore } from '@/lib/slice-it/store';
@@ -64,6 +65,12 @@ export function SongDetailsPanel({
   // user id to every anonymous visitor just so the owner could see an edit
   // button.
   const isOwner = Boolean(session.data?.user?.id) && Boolean(song?.isOwner);
+  // The chart editor's own authorisation (POST /api/slice-it/charts) allows the
+  // song's uploader *and* admins, so the entry point matches it rather than
+  // being narrower — an admin who can save a chart but cannot reach the editor
+  // is a worse bug than a stray link.
+  const canEditChart =
+    isOwner || Boolean((session.data?.user as { isAdmin?: boolean } | undefined)?.isAdmin);
 
   // Edit state
   const [showEdit, setShowEdit] = React.useState(false);
@@ -455,6 +462,17 @@ export function SongDetailsPanel({
                 </div>
               </div>
             </div>
+          )}
+
+          {!readOnly && canEditChart && (
+            <Link
+              to="/slice-it/edit/$songId"
+              params={{ songId: song.id }}
+              className="mt-3 flex items-center justify-center gap-2 h-10 rounded-lg border border-slice-shadow-dark/50 bg-slice-card-bg text-slice-text-light hover:text-slice-text text-xs font-bold uppercase tracking-wide transition-colors"
+            >
+              <SlidersHorizontal className="w-4 h-4" aria-hidden />
+              {t('edit-chart', { defaultValue: 'Edit chart' })}
+            </Link>
           )}
         </div>
 

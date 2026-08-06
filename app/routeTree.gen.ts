@@ -565,6 +565,7 @@ import { Route as LibraryAlbumsAlbumIdRouteImport } from './routes/library.album
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
 import { Route as SliceItEditSongIdRouteImport } from './routes/slice-it/edit.$songId'
+import { Route as SliceItPlayerHandleRouteImport } from './routes/slice-it/player.$handle'
 import { Route as StrategiesProfileIndexRouteImport } from './routes/strategies/profile/index'
 import { Route as StrategiesProfileReputationRouteImport } from './routes/strategies/profile/reputation'
 import { Route as StrategiesProfileSettingsRouteImport } from './routes/strategies/profile/settings'
@@ -3642,6 +3643,11 @@ const SliceItEditSongIdRoute = SliceItEditSongIdRouteImport.update({
   path: '/edit/$songId',
   getParentRoute: () => SliceItRoute,
 } as any)
+const SliceItPlayerHandleRoute = SliceItPlayerHandleRouteImport.update({
+  id: '/player/$handle',
+  path: '/player/$handle',
+  getParentRoute: () => SliceItRoute,
+} as any)
 const StrategiesProfileIndexRoute = StrategiesProfileIndexRouteImport.update({
   id: '/profile/',
   path: '/profile/',
@@ -5588,6 +5594,7 @@ export interface FileRoutesByFullPath {
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
+  '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
   '/strategies/profile/settings': typeof StrategiesProfileSettingsRoute
   '/strategies/puzzles/$mode': typeof StrategiesPuzzlesModeRoute
@@ -6393,6 +6400,7 @@ export interface FileRoutesByTo {
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
+  '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
   '/strategies/profile/settings': typeof StrategiesProfileSettingsRoute
   '/strategies/puzzles/$mode': typeof StrategiesPuzzlesModeRoute
@@ -7224,6 +7232,7 @@ export interface FileRoutesById {
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
+  '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
   '/strategies/profile/settings': typeof StrategiesProfileSettingsRoute
   '/strategies/puzzles/$mode': typeof StrategiesPuzzlesModeRoute
@@ -8055,6 +8064,7 @@ export interface FileRouteTypes {
     | '/embed/replay/$id'
     | '/library/albums/$albumId'
     | '/slice-it/edit/$songId'
+    | '/slice-it/player/$handle'
     | '/strategies/profile/reputation'
     | '/strategies/profile/settings'
     | '/strategies/puzzles/$mode'
@@ -8860,6 +8870,7 @@ export interface FileRouteTypes {
     | '/embed/replay/$id'
     | '/library/albums/$albumId'
     | '/slice-it/edit/$songId'
+    | '/slice-it/player/$handle'
     | '/strategies/profile/reputation'
     | '/strategies/profile/settings'
     | '/strategies/puzzles/$mode'
@@ -9690,6 +9701,7 @@ export interface FileRouteTypes {
     | '/embed/replay/$id'
     | '/library/albums/$albumId'
     | '/slice-it/edit/$songId'
+    | '/slice-it/player/$handle'
     | '/strategies/profile/reputation'
     | '/strategies/profile/settings'
     | '/strategies/puzzles/$mode'
@@ -14410,6 +14422,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SliceItEditSongIdRouteImport
       parentRoute: typeof SliceItRoute
     }
+    '/slice-it/player/$handle': {
+      id: '/slice-it/player/$handle'
+      path: '/player/$handle'
+      fullPath: '/slice-it/player/$handle'
+      preLoaderRoute: typeof SliceItPlayerHandleRouteImport
+      parentRoute: typeof SliceItRoute
+    }
     '/strategies/profile/': {
       id: '/strategies/profile/'
       path: '/profile'
@@ -16908,11 +16927,13 @@ const SecretRouteWithChildren =
 interface SliceItRouteChildren {
   SliceItIndexRoute: typeof SliceItIndexRoute
   SliceItEditSongIdRoute: typeof SliceItEditSongIdRoute
+  SliceItPlayerHandleRoute: typeof SliceItPlayerHandleRoute
 }
 
 const SliceItRouteChildren: SliceItRouteChildren = {
   SliceItIndexRoute: SliceItIndexRoute,
   SliceItEditSongIdRoute: SliceItEditSongIdRoute,
+  SliceItPlayerHandleRoute: SliceItPlayerHandleRoute,
 }
 
 const SliceItRouteWithChildren =

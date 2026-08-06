@@ -33,6 +33,28 @@
  *   and fanned out to the whole room; eight players hitting 8 notes/second is
  *   ~500 messages/second in one lobby. Scores are batched onto a 500ms tick.
  *
+ * ## Guests (`X10`)
+ *
+ * A Discord Activity player whose Discord account is not linked to a site
+ * account has no `userId` — not a missing one, none. The hub's auth middleware
+ * verifies their Discord token and hands this file a display name and an avatar
+ * URL on `socket.data.discordGuest` instead (`server/socket-server/index.ts`).
+ * They get a real seat, a real score and a real placing; what they do not get
+ * is anything written down. No `User` row, no `SongLeaderboard` row, no run —
+ * {@link persistResults} skips them explicitly — and their Discord name and
+ * avatar are referenced from memory for the life of the seat and never copied
+ * into a table or into object storage.
+ *
+ * The seat key is where that costs them something; see {@link seatKey}.
+ *
+ * ## Spectators (`N1`)
+ *
+ * A ninth person can watch without taking one of the eight seats. Spectators
+ * live in a parallel socket.io room (`slice:<code>:spec`) and receive the same
+ * broadcasts the room does, including the `volatile` score tick. They are not
+ * in `lobby.seats`, so they are counted by nothing: not the capacity check, not
+ * the ready check, not the set of players a match waits for.
+ *
  * NOTE: server code imports `lib/` RELATIVELY — `@/lib/...` is not resolvable
  * in the esbuild server bundle (see `server/CLAUDE.md` §Gotchas 7).
  */
@@ -49,6 +71,7 @@ import {
   COUNTDOWN_SECONDS,
   FINISH_GRACE_MS,
   LOAD_TIMEOUT_MS,
+  LOBBY_CODE_LENGTH,
   LOBBY_DISCONNECT_GRACE_MS,
   LOBBY_IDLE_TIMEOUT_MS,
   MATCH_DISCONNECT_GRACE_MS,
@@ -68,8 +91,10 @@ import {
   EVENTS,
   S2C,
   lobbyRoom,
+  specRoom,
   type ChatMessage,
   type FinalStanding,
+  type GuestIdentity,
   type LiveScore,
   type LobbyError,
   type LobbyErrorCode,
@@ -94,7 +119,12 @@ const EMPTY_REPORT: ScoreReport = { score: 0, combo: 0, maxCombo: 0, accuracy: 0
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 
 interface Seat {
-  userId: string;
+  /** This seat's key in {@link Lobby.seats}. See {@link seatKey}. */
+  key: string;
+  /** Null for a guest — there is no account behind the seat. */
+  userId: string | null;
+  /** Set exactly when `userId` is null. Memory-only, never persisted. */
+  guest: GuestIdentity | null;
   /** Null while the player is disconnected and their seat is being held. */
   socketId: string | null;
   name: string;
@@ -117,14 +147,15 @@ interface Seat {
 interface Lobby {
   code: string;
   /**
-   * Host is tracked by user, not by socket. A host who reconnects is still the
+   * Host is tracked by seat, not by socket. A host who reconnects is still the
    * host; under the old socket-keyed scheme a blip handed the lobby to whoever
-   * happened to be next in the map.
+   * happened to be next in the map. For an account that seat key *is* their
+   * userId, so this is the same guarantee it always was.
    */
-  hostUserId: string;
+  hostKey: string;
   isPublic: boolean;
   state: LobbyState;
-  /** Keyed by userId — the whole reconnect story depends on this. */
+  /** Keyed by {@link seatKey} — the whole reconnect story depends on this. */
   seats: Map<string, Seat>;
   song: LobbySong | null;
   chat: ChatMessage[];
@@ -153,22 +184,85 @@ interface Lobby {
 
 const lobbies = new Map<string, Lobby>();
 /** Reverse index: a socket is only ever seated in one lobby. */
-const socketLobby = new Map<string, { code: string; userId: string }>();
+const socketLobby = new Map<string, { code: string; key: string }>();
+/** Reverse index for the spectator role — a socket watches at most one lobby. */
+const socketSpectating = new Map<string, string>();
 
 let gcInterval: ReturnType<typeof setInterval> | null = null;
 
 /* ─── Helpers ───────────────────────────────────────────────────────────── */
 
-function identity(
-  socket: Socket,
-): { userId: string; name: string; avatarUrl: string | null } | null {
+/** Who a socket is, as far as this file is concerned. */
+interface Who {
+  /** Null for a guest. */
+  userId: string | null;
+  guest: GuestIdentity | null;
+  name: string;
+  avatarUrl: string | null;
+  socketId: string;
+}
+
+/**
+ * Resolve a socket to an identity, or null if it has none.
+ *
+ * Two paths, both established by the hub's auth middleware before this file
+ * ever sees the socket:
+ *
+ * - `socket.data.userId` — a validated Better Auth session, or a Discord
+ *   Activity token whose Discord account is linked to a site account. Identical
+ *   downstream; a linked Discord player is not a guest.
+ * - `socket.data.discordGuest` — a verified Discord Activity token with no
+ *   linked account. Display name and avatar only, and no id, because there is
+ *   no account for an id to refer to.
+ *
+ * Neither is ever taken from the payload. The old handler read `userId` off the
+ * wire, which is how scores became attributable to whoever you claimed to be.
+ */
+function identity(socket: Socket): Who | null {
   const userId = socket.data?.userId;
-  if (typeof userId !== 'string' || !userId) return null;
-  return {
-    userId,
-    name: sanitizeString(socket.data?.userName, 32) || 'Player',
-    avatarUrl: typeof socket.data?.avatarUrl === 'string' ? socket.data.avatarUrl : null,
-  };
+  if (typeof userId === 'string' && userId) {
+    return {
+      userId,
+      guest: null,
+      name: sanitizeString(socket.data?.userName, 32) || 'Player',
+      avatarUrl: typeof socket.data?.avatarUrl === 'string' ? socket.data.avatarUrl : null,
+      socketId: socket.id,
+    };
+  }
+
+  const guest = socket.data?.discordGuest as GuestIdentity | undefined;
+  if (guest && typeof guest.name === 'string') {
+    const name = sanitizeString(guest.name, 32) || 'Guest';
+    const avatarUrl = typeof guest.avatarUrl === 'string' ? guest.avatarUrl : null;
+    return { userId: null, guest: { name, avatarUrl }, name, avatarUrl, socketId: socket.id };
+  }
+
+  return null;
+}
+
+/**
+ * The key a seat lives under in {@link Lobby.seats}.
+ *
+ * Seats are keyed by `userId` because a reconnect mints a new socket id, and
+ * keying on THAT removed players mid-song — the failure this whole file was
+ * rewritten around (see the docblock at the top). That reasoning is unchanged
+ * and still applies to every seat that has a userId.
+ *
+ * A guest has no userId, so their seat is keyed by socket instead, and the
+ * consequence follows directly from the key: it cannot be found again after a
+ * reconnect, so a guest does NOT get the grace window in
+ * {@link handleSliceItDisconnect}. That is a real downgrade and it is the
+ * honest one — holding a seat for an identity this file refuses to store would
+ * mean storing it. The alternative, a stable `guest:<discord-id>` key, is
+ * exactly the persistent per-guest identifier `X10` exists to not create.
+ */
+function seatKey(who: { userId: string | null; socketId: string }): string {
+  return who.userId ?? `guest:${who.socketId}`;
+}
+
+/** True for a seat with no account behind it — see {@link seatKey}. */
+function isGuestSeat(seat: Seat): boolean {
+  return seat.userId === null;
 }
 
 function fail(socket: Socket, code: LobbyErrorCode, message: string): void {
@@ -180,10 +274,13 @@ function toPlayer(seat: Seat, lobby: Lobby): LobbyPlayer {
   return {
     socketId: seat.socketId ?? '',
     userId: seat.userId,
+    // Present exactly when there is no account behind the seat, which is what
+    // lets the client badge them without inventing a second signal for it.
+    guest: seat.guest ?? undefined,
     name: seat.name,
     avatarUrl: seat.avatarUrl,
     ready: seat.ready,
-    isHost: seat.userId === lobby.hostUserId,
+    isHost: seat.key === lobby.hostKey,
     disconnected: seat.disconnectedAt !== null,
     spectating: seat.spectating,
     modifiers: seat.modifiers,
@@ -194,7 +291,7 @@ function toPlayer(seat: Seat, lobby: Lobby): LobbyPlayer {
 function snapshot(lobby: Lobby): LobbySnapshot {
   return {
     code: lobby.code,
-    hostSocketId: lobby.seats.get(lobby.hostUserId)?.socketId ?? '',
+    hostSocketId: lobby.seats.get(lobby.hostKey)?.socketId ?? '',
     isPublic: lobby.isPublic,
     state: lobby.state,
     players: Array.from(lobby.seats.values()).map((seat) => toPlayer(seat, lobby)),
@@ -203,8 +300,22 @@ function snapshot(lobby: Lobby): LobbySnapshot {
   };
 }
 
+/**
+ * Emit to everyone watching this lobby: the seated players and the spectators.
+ *
+ * Two emits rather than `io.to([a, b])` so the fake io in
+ * `lib/slice-it/__tests__/handler.test.ts` stays a faithful model of the one
+ * call shape this file uses. Sending twice is safe because a socket is never in
+ * both rooms — {@link seatPlayer} leaves the spectator room and
+ * {@link spectate} gives up any seat.
+ */
+function emitAll(io: Server, code: string, event: string, payload: unknown): void {
+  io.to(lobbyRoom(code)).emit(event, payload);
+  io.to(specRoom(code)).emit(event, payload);
+}
+
 function broadcast(io: Server, lobby: Lobby): void {
-  io.to(lobbyRoom(lobby.code)).emit(S2C.LOBBY, snapshot(lobby));
+  emitAll(io, lobby.code, S2C.LOBBY, snapshot(lobby));
 }
 
 function touch(lobby: Lobby): void {
@@ -241,6 +352,9 @@ function destroyLobby(code: string): void {
     if (seat.graceTimer) clearTimeout(seat.graceTimer);
     if (seat.socketId) socketLobby.delete(seat.socketId);
   }
+  for (const [socketId, watching] of socketSpectating) {
+    if (watching === code) socketSpectating.delete(socketId);
+  }
   lobbies.delete(code);
 }
 
@@ -252,13 +366,29 @@ function mintCode(): string | null {
   return null;
 }
 
-function createLobby(host: { userId: string; name: string }, isPublic: boolean): Lobby | null {
-  const code = mintCode();
+/** A well-formed lobby code — the shape {@link mintCode} produces. */
+function isWellFormedCode(code: string): boolean {
+  return code.length === LOBBY_CODE_LENGTH && /^[A-Z0-9]+$/.test(code);
+}
+
+/**
+ * @param preferredCode A code the caller asked for. Callers must have already
+ *   established it is well-formed and free — {@link registerSliceItHandlers}'s
+ *   `slice:create` answers `invalid_code` / `code_taken` before getting here,
+ *   because "your code was not honoured" is a different outcome from "the
+ *   server ran out of codes" and only the caller can tell the client which.
+ */
+function createLobby(
+  host: Who,
+  isPublic: boolean,
+  preferredCode?: string,
+): Lobby | null {
+  const code = preferredCode ?? mintCode();
   if (!code) return null;
   const now = Date.now();
   const lobby: Lobby = {
     code,
-    hostUserId: host.userId,
+    hostKey: seatKey(host),
     isPublic,
     state: 'waiting',
     seats: new Map(),
@@ -292,13 +422,14 @@ function createLobby(host: { userId: string; name: string }, isPublic: boolean):
  * ready state, their modifiers, and — critically — the score they had already
  * reported, rather than starting them from zero halfway through a song.
  */
-function seatUser(
-  io: Server,
-  lobby: Lobby,
-  socket: Socket,
-  who: { userId: string; name: string; avatarUrl: string | null },
-): Seat {
-  const existing = lobby.seats.get(who.userId);
+function seatPlayer(io: Server, lobby: Lobby, socket: Socket, who: Who): Seat {
+  const key = seatKey(who);
+
+  // A seat and a spectator slot are mutually exclusive: taking one gives up the
+  // other, which is also what makes the two-room fan-out in `emitAll` safe.
+  stopSpectating(socket);
+
+  const existing = lobby.seats.get(key);
   if (existing) {
     if (existing.graceTimer) {
       clearTimeout(existing.graceTimer);
@@ -315,12 +446,14 @@ function seatUser(
     existing.avatarUrl = who.avatarUrl;
     existing.disconnectedAt = null;
     socket.join(lobbyRoom(lobby.code));
-    socketLobby.set(socket.id, { code: lobby.code, userId: who.userId });
+    socketLobby.set(socket.id, { code: lobby.code, key });
     return existing;
   }
 
   const seat: Seat = {
+    key,
     userId: who.userId,
+    guest: who.guest,
     socketId: socket.id,
     name: who.name,
     avatarUrl: who.avatarUrl,
@@ -336,34 +469,42 @@ function seatUser(
     disconnectedAt: null,
     graceTimer: null,
   };
-  lobby.seats.set(who.userId, seat);
+  lobby.seats.set(key, seat);
   socket.join(lobbyRoom(lobby.code));
-  socketLobby.set(socket.id, { code: lobby.code, userId: who.userId });
+  socketLobby.set(socket.id, { code: lobby.code, key });
   return seat;
+}
+
+/** Drop a socket's spectator role, if it has one. */
+function stopSpectating(socket: Socket): void {
+  const code = socketSpectating.get(socket.id);
+  if (!code) return;
+  socketSpectating.delete(socket.id);
+  socket.leave(specRoom(code));
 }
 
 /**
  * Remove a seat and repair the lobby around it: migrate the host, release a
  * pause that was being held for this player, and reap an empty room.
  */
-function removeSeat(io: Server, lobby: Lobby, userId: string, reason: string): void {
-  const seat = lobby.seats.get(userId);
+function removeSeat(io: Server, lobby: Lobby, key: string, reason: string): void {
+  const seat = lobby.seats.get(key);
   if (!seat) return;
   if (seat.graceTimer) clearTimeout(seat.graceTimer);
   if (seat.socketId) socketLobby.delete(seat.socketId);
-  lobby.seats.delete(userId);
+  lobby.seats.delete(key);
 
   if (lobby.seats.size === 0) {
     destroyLobby(lobby.code);
     return;
   }
 
-  if (lobby.hostUserId === userId) {
+  if (lobby.hostKey === key) {
     // Prefer a connected player — handing the lobby to someone who is
     // themselves mid-reconnect just moves the problem.
     const next = connectedSeats(lobby)[0] ?? Array.from(lobby.seats.values())[0];
-    lobby.hostUserId = next.userId;
-    logger.info({ event: 'slice_host_migrated', code: lobby.code, to: next.userId, reason });
+    lobby.hostKey = next.key;
+    logger.info({ event: 'slice_host_migrated', code: lobby.code, to: next.key, reason });
   }
 
   releasePauseIfSettled(io, lobby);
@@ -448,7 +589,7 @@ function pauseMatch(io: Server, lobby: Lobby): void {
       // room never learned who it had just stopped waiting for.
       current.droppedNames = expired.map((peer) => peer.name);
       for (const peer of expired) {
-        removeSeat(io, current, peer.userId, 'grace_expired');
+        removeSeat(io, current, peer.key, 'grace_expired');
       }
 
       // A lobby that emptied out is already destroyed; and if every held peer
@@ -459,7 +600,7 @@ function pauseMatch(io: Server, lobby: Lobby): void {
     Math.max(0, kickAt - Date.now()),
   );
 
-  io.to(lobbyRoom(lobby.code)).emit(S2C.PAUSE, {
+  emitAll(io, lobby.code, S2C.PAUSE, {
     peers: peers.map((p) => ({ userId: p.userId, userName: p.name })),
     kickAt,
     pausesLeft: Math.max(0, MAX_MATCH_PAUSES - lobby.pauseCount),
@@ -504,7 +645,7 @@ function resumeMatch(io: Server, lobby: Lobby): void {
   // held for 25 seconds still gets its full remaining song.
   lobby.deadline += pausedFor + RESUME_COUNTDOWN_SECONDS * 1000;
 
-  io.to(lobbyRoom(lobby.code)).emit(S2C.RESUME, {
+  emitAll(io, lobby.code, S2C.RESUME, {
     resumeAt,
     countdownSeconds: RESUME_COUNTDOWN_SECONDS,
     droppedNames: lobby.droppedNames,
@@ -539,7 +680,7 @@ function beginLoading(io: Server, lobby: Lobby): void {
     for (const seat of activeSeats(current)) {
       if (!seat.loaded) {
         seat.spectating = true;
-        logger.info({ event: 'slice_load_timeout', code: current.code, userId: seat.userId });
+        logger.info({ event: 'slice_load_timeout', code: current.code, seat: seat.key });
       }
     }
     beginCountdown(io, current);
@@ -549,7 +690,7 @@ function beginLoading(io: Server, lobby: Lobby): void {
 }
 
 function emitLoading(io: Server, lobby: Lobby, deadline: number): void {
-  io.to(lobbyRoom(lobby.code)).emit(S2C.LOADING, {
+  emitAll(io, lobby.code, S2C.LOADING, {
     players: activeSeats(lobby).map((seat) => ({
       socketId: seat.socketId ?? '',
       name: seat.name,
@@ -567,7 +708,7 @@ function beginCountdown(io: Server, lobby: Lobby): void {
   lobby.state = 'countdown';
 
   const startsAt = Date.now() + COUNTDOWN_SECONDS * 1000;
-  io.to(lobbyRoom(lobby.code)).emit(S2C.COUNTDOWN, {
+  emitAll(io, lobby.code, S2C.COUNTDOWN, {
     seconds: COUNTDOWN_SECONDS,
     startsAt,
   });
@@ -600,7 +741,7 @@ function startMatch(io: Server, lobby: Lobby): void {
   // forbids < 1.0x), so the un-scaled duration is the safe upper bound.
   lobby.deadline = lobby.matchStartedAt + duration * 1000 + FINISH_GRACE_MS;
 
-  io.to(lobbyRoom(lobby.code)).emit(S2C.START, {
+  emitAll(io, lobby.code, S2C.START, {
     song: lobby.song!,
     startedAt: lobby.matchStartedAt,
     roster: activeSeats(lobby).map((seat) => ({
@@ -652,6 +793,9 @@ function startScoreTicker(io: Server, lobby: Lobby): void {
     // this handler is volatile, because everything else is a state transition
     // that must not be lost.
     io.to(lobbyRoom(current.code)).volatile.emit(S2C.SCORES, scores);
+    // Spectators (`N1`) get the same frame on the same terms — one extra emit
+    // per tick rather than a filter over the roster on every tick.
+    io.to(specRoom(current.code)).volatile.emit(S2C.SCORES, scores);
   }, SCORE_TICK_MS);
 }
 
@@ -696,7 +840,7 @@ function finishMatch(io: Server, lobby: Lobby): void {
   lobby.pausedAt = null;
 
   const standings = buildStandings(lobby);
-  io.to(lobbyRoom(lobby.code)).emit(S2C.RESULTS, { standings, song: lobby.song });
+  emitAll(io, lobby.code, S2C.RESULTS, { standings, song: lobby.song });
   broadcast(io, lobby);
 
   void persistResults(lobby, standings);
@@ -750,6 +894,13 @@ function buildStandings(lobby: Lobby): FinalStanding[] {
  * first place, straight past every bound `/api/slice-it/score` exists to
  * enforce. The song's duration comes from the database (`resolveSong`), so the
  * ceiling here is derived from the same facts as the HTTP one.
+ *
+ * **Guests write nothing.** `SongLeaderboard.userId` is a required FK and a
+ * guest has no `User` row to point it at — but the reason is not the schema.
+ * The alternative (mint a shadow account per Discord guest) would hold a third
+ * party's display name and avatar indefinitely and turn "I tried a game in a
+ * voice call" into a data-retention question nobody asked. Their score is real,
+ * it is shown, and then it is gone.
  */
 async function persistResults(lobby: Lobby, standings: FinalStanding[]): Promise<void> {
   const songId = lobby.song?.id;
@@ -760,6 +911,9 @@ async function persistResults(lobby: Lobby, standings: FinalStanding[]): Promise
     const prisma = getPrismaClient();
     for (const standing of standings) {
       if (standing.score <= 0 || !standing.finished) continue;
+      // A guest seat. Not an error and not worth a log line — it is the
+      // designed outcome, on every match a guest plays.
+      if (!standing.userId) continue;
 
       const scoreCeiling = maxPlausibleScore(duration, standing.modifiers);
       const comboCeiling = maxPlausibleCombo(duration);
@@ -889,13 +1043,13 @@ function lobbyOf(socket: Socket): { lobby: Lobby; seat: Seat } | null {
     socketLobby.delete(socket.id);
     return null;
   }
-  const seat = lobby.seats.get(link.userId);
+  const seat = lobby.seats.get(link.key);
   if (!seat) return null;
   return { lobby, seat };
 }
 
 function isHost(lobby: Lobby, seat: Seat): boolean {
-  return lobby.hostUserId === seat.userId;
+  return lobby.hostKey === seat.key;
 }
 
 export function registerSliceItHandlers(io: Server, socket: Socket): void {
@@ -908,12 +1062,29 @@ export function registerSliceItHandlers(io: Server, socket: Socket): void {
       if (lobbies.size >= MAX_LOBBIES) {
         return fail(sock, 'lobby_limit', 'Too many lobbies right now. Try again shortly.');
       }
+
+      // A *preferred* code (`X9`). A Discord Activity derives one from its voice
+      // channel id so a whole call converges on one lobby with nothing typed.
+      // Both failure modes are answered rather than silently swallowed: minting
+      // a random code after being asked for a specific one looks like success
+      // and leaves every other participant retrying a code that will never
+      // exist, which is precisely the behaviour this replaces.
+      const preferred = payload?.code ?? '';
+      if (preferred) {
+        if (!isWellFormedCode(preferred)) {
+          return fail(sock, 'invalid_code', 'That lobby code is not a valid code.');
+        }
+        if (lobbies.has(preferred)) {
+          return fail(sock, 'code_taken', 'That lobby already exists — join it instead.');
+        }
+      }
+
       leaveCurrent(io, sock);
 
-      const lobby = createLobby(who, payload?.isPublic === true);
+      const lobby = createLobby(who, payload?.isPublic === true, preferred || undefined);
       if (!lobby) return fail(sock, 'lobby_limit', 'Could not create a lobby. Try again.');
 
-      seatUser(io, lobby, sock, who);
+      seatPlayer(io, lobby, sock, who);
       touch(lobby);
       sock.emit(S2C.JOINED, { code: lobby.code, socketId: sock.id });
       broadcast(io, lobby);
@@ -927,7 +1098,7 @@ export function registerSliceItHandlers(io: Server, socket: Socket): void {
       const lobby = lobbies.get(code);
       if (!lobby) return fail(sock, 'not_found', 'No lobby with that code.');
 
-      const existing = lobby.seats.get(who.userId);
+      const existing = lobby.seats.get(seatKey(who));
       if (!existing && lobby.seats.size >= MAX_LOBBY_PLAYERS) {
         return fail(sock, 'full', 'That lobby is full.');
       }
@@ -937,7 +1108,7 @@ export function registerSliceItHandlers(io: Server, socket: Socket): void {
       const current = socketLobby.get(sock.id);
       if (current && current.code !== code) leaveCurrent(io, sock);
 
-      const seat = seatUser(io, lobby, sock, who);
+      seatPlayer(io, lobby, sock, who);
       touch(lobby);
       sock.emit(S2C.JOINED, { code: lobby.code, socketId: sock.id });
       // Catch a returning player up on what was said while they were gone.
@@ -964,10 +1135,34 @@ export function registerSliceItHandlers(io: Server, socket: Socket): void {
       const lobby = open[0] ?? createLobby(who, true);
       if (!lobby) return fail(sock, 'lobby_limit', 'Could not find or create a lobby.');
 
-      seatUser(io, lobby, sock, who);
+      seatPlayer(io, lobby, sock, who);
       touch(lobby);
       sock.emit(S2C.JOINED, { code: lobby.code, socketId: sock.id });
       broadcast(io, lobby);
+    },
+
+    /**
+     * Watch a lobby without taking a seat (`N1`).
+     *
+     * No identity is required, matching `slice:browse`: spectating is read-only
+     * and a code is already all it takes to *join*, so this is strictly less
+     * permissive than what the same caller could do instead.
+     */
+    'slice:spectate': (payload, sock) => {
+      const lobby = lobbies.get(payload.code);
+      if (!lobby) return fail(sock, 'not_found', 'No lobby with that code.');
+
+      // Give up any seat first: a spectator who is also a player would be
+      // counted in the roster and waited on at the start of a match.
+      leaveCurrent(io, sock);
+      stopSpectating(sock);
+
+      socketSpectating.set(sock.id, lobby.code);
+      sock.join(specRoom(lobby.code));
+      touch(lobby);
+      // Immediately, not on the next transition: a spectator missed every state
+      // change that built the room they are now looking at.
+      sock.emit(S2C.LOBBY, snapshot(lobby));
     },
 
     'slice:browse': (_payload, sock) => {
@@ -977,7 +1172,7 @@ export function registerSliceItHandlers(io: Server, socket: Socket): void {
         .slice(0, BROWSE_CAP)
         .map((l) => ({
           code: l.code,
-          hostName: l.seats.get(l.hostUserId)?.name ?? 'Host',
+          hostName: l.seats.get(l.hostKey)?.name ?? 'Host',
           playerCount: l.seats.size,
           maxPlayers: MAX_LOBBY_PLAYERS,
           songTitle: l.song?.title ?? null,
@@ -987,6 +1182,7 @@ export function registerSliceItHandlers(io: Server, socket: Socket): void {
 
     'slice:leave': (_payload, sock) => {
       leaveCurrent(io, sock);
+      stopSpectating(sock);
     },
 
     'slice:ready': (payload, sock) => {
@@ -1142,12 +1338,12 @@ export function registerSliceItHandlers(io: Server, socket: Socket): void {
       if (!isHost(lobby, seat)) return fail(sock, 'not_host', 'Only the host can remove players.');
 
       const target = Array.from(lobby.seats.values()).find((s) => s.socketId === payload.socketId);
-      if (!target || target.userId === seat.userId) return;
+      if (!target || target.key === seat.key) return;
 
       const targetSocket = target.socketId ? io.sockets.sockets.get(target.socketId) : null;
       targetSocket?.emit(S2C.KICKED, { reason: 'removed_by_host' });
       targetSocket?.leave(lobbyRoom(lobby.code));
-      removeSeat(io, lobby, target.userId, 'kicked');
+      removeSeat(io, lobby, target.key, 'kicked');
     },
   };
 
@@ -1167,7 +1363,7 @@ function leaveCurrent(io: Server, socket: Socket): void {
   const lobby = lobbies.get(link.code);
   if (!lobby) return;
   socket.leave(lobbyRoom(lobby.code));
-  removeSeat(io, lobby, link.userId, 'left');
+  removeSeat(io, lobby, link.key, 'left');
 }
 
 /**
@@ -1178,14 +1374,32 @@ function leaveCurrent(io: Server, socket: Socket): void {
  * length depends on what is at stake — 30 seconds mid-song, 15 in a lobby.
  */
 export function handleSliceItDisconnect(io: Server, socket: Socket): void {
+  socketSpectating.delete(socket.id);
+
   const link = socketLobby.get(socket.id);
   if (!link) return;
   socketLobby.delete(socket.id);
 
   const lobby = lobbies.get(link.code);
   if (!lobby) return;
-  const seat = lobby.seats.get(link.userId);
+  const seat = lobby.seats.get(link.key);
   if (!seat || seat.socketId !== socket.id) return;
+
+  // A guest seat cannot be reclaimed, so there is nothing to hold it for.
+  //
+  // The grace window works by keeping the seat findable until the same player
+  // comes back — and "the same player" is a lookup by `userId`. A guest is keyed
+  // by socket (see {@link seatKey}), and a reconnect mints a new socket id, so a
+  // returning guest is by construction a new person to this file. Holding the
+  // seat anyway would just park a phantom the room waits on and, in a live
+  // match, pause everyone for a player who can never satisfy the wait. The only
+  // way to do better is to give guests a stable identifier and remember it,
+  // which is the one thing `X10` is built not to do.
+  if (isGuestSeat(seat)) {
+    socket.leave(lobbyRoom(lobby.code));
+    removeSeat(io, lobby, seat.key, 'guest_disconnect');
+    return;
+  }
 
   seat.socketId = null;
   seat.disconnectedAt = Date.now();
@@ -1198,10 +1412,10 @@ export function handleSliceItDisconnect(io: Server, socket: Socket): void {
   seat.graceTimer = setTimeout(() => {
     const current = lobbies.get(link.code);
     if (!current) return;
-    const held = current.seats.get(link.userId);
+    const held = current.seats.get(link.key);
     // They came back inside the window — nothing to do.
     if (!held || held.disconnectedAt === null) return;
-    removeSeat(io, current, link.userId, 'disconnect_grace_expired');
+    removeSeat(io, current, link.key, 'disconnect_grace_expired');
   }, graceMs);
 
   if (lobby.state === 'playing' || lobby.state === 'countdown') {
@@ -1221,6 +1435,7 @@ export function handleSliceItDisconnect(io: Server, socket: Socket): void {
 export function __resetSliceItLobbies(): void {
   for (const code of Array.from(lobbies.keys())) destroyLobby(code);
   socketLobby.clear();
+  socketSpectating.clear();
   if (gcInterval) {
     clearInterval(gcInterval);
     gcInterval = null;

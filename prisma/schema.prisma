@@ -91,6 +91,7 @@ model User {
   songComments  SongComment[]
   songScores    SongLeaderboard[]
   songPlays     SongPlay[]
+  sliceRuns     SliceRun[]
   authoredCharts Chart[]           @relation("ChartAuthor")
 
   // RmhTube Relations
@@ -906,6 +907,7 @@ model Song {
   likes     SongLike[]
   songPlays SongPlay[]
   charts    Chart[]
+  runs      SliceRun[]
 
   @@unique([uploadedBy, contentHash])
   @@index([title])
@@ -958,23 +960,158 @@ model SongComment {
   @@index([songId, createdAt(sort: Desc)])
 }
 
+/// A player's BEST run on one (song, difficulty, mod pool). The materialised
+/// "best" pointer over `SliceRun` — see that model for the append-only history.
+///
+/// ## Why the key changed (R1)
+///
+/// This was `@@unique([songId, userId])`: **one row per player per song**,
+/// across all four difficulties and every modifier combination. Two consequences,
+/// both silent:
+///
+///  - Setting a personal best on `normal` **overwrote** your `expert` record,
+///    because the upsert matched on the pair and replaced whatever it found.
+///  - An `easy` run with six modifiers ranked against an `expert` full combo.
+///    `calculateScoreMultiplier` partly compensated and could not do more than
+///    that — it prices a modifier, it cannot make two different charts one
+///    contest.
+///
+/// The key is now `(songId, difficulty, modPool, userId)`. `songId` and not
+/// `chartId` is load-bearing: `chartId` is nullable for every row predating the
+/// `Chart` model, and Postgres treats NULLs in a unique index as distinct — a
+/// key over a nullable column would enforce nothing at all on exactly the rows
+/// that exist today.
 model SongLeaderboard {
-  id        String @id @default(cuid())
-  songId    String
-  userId    String
+  id     String @id @default(cuid())
+  songId String
+  userId String
+
+  /// Which chart this best was set on (C2/C12). Nullable, and null on every row
+  /// written before the `Chart` model existed — those runs played
+  /// `Song.analysisData`, which has no identity, and inventing one would be a
+  /// claim about which notes were played that nothing can support.
+  chartId String? @db.Uuid
+  chart   Chart?  @relation(fields: [chartId], references: [id], onDelete: SetNull)
+  /// The chart's content hash at the time of the run, so a later edit is visible
+  /// as an edit rather than as everyone's scores silently becoming incomparable.
+  chartHash String? @db.Char(64)
+
+  /// Board dimension 1: the tier the run was played on. Backfilled from
+  /// `modifiers->>'difficulty'`, defaulting to `normal` exactly as
+  /// `ModifiersZ` does for a blob that never carried one.
+  difficulty String @default("normal") @db.VarChar(16)
+  /// Board dimension 2: the canonical modifier pool (`lib/slice-it/pools.ts`).
+  /// Three buckets rather than 2^7 boards of one entry each.
+  modPool String @default("none") @db.VarChar(16)
+
   score     Int
   maxCombo  Int
   accuracy  Float?
   speedMod  Float  @default(1.0)
   modifiers Json?
 
+  /// Did the run reach the end without the gauge killing it (R9)? Defaults true
+  /// because every row written before the gauge existed was, by construction, a
+  /// run that finished — there was no other way to submit one.
+  cleared Boolean @default(true)
+  /// Denormalised from the run so the badge survives into the board without a
+  /// join back to a `SliceRun` row that may not exist (H7).
+  ///
+  /// **Client-declared and therefore decorative.** A full combo is a claim about
+  /// a judgement histogram the server never sees. These must never influence
+  /// score, ranking, rewards or the plausibility ceiling.
+  isFullCombo Boolean @default(false)
+  isPerfect   Boolean @default(false)
+
   createdAt DateTime @default(now())
 
   song Song @relation(fields: [songId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([songId, userId], name: "songId_userId")
+  @@unique([songId, difficulty, modPool, userId])
+  /// The board read: one song, one tier, one pool, ordered by score.
+  @@index([songId, difficulty, modPool, score(sort: Desc)])
+  /// Kept: the "every score on this song" count and the legacy all-tier view.
   @@index([songId, score(sort: Desc)])
+  /// The player page (X12) reads a single account's bests, best first.
+  @@index([userId, score(sort: Desc)])
+  @@index([chartId, score(sort: Desc)])
+}
+
+/// Every submitted run, append-only (R6).
+///
+/// `SongLeaderboard` keeps only your best — the upsert overwrote `score`,
+/// `maxCombo`, `accuracy` and `createdAt` whenever a run beat it, so **every
+/// previous attempt was destroyed on submit**, including the Welford timing
+/// statistics the engine collects and the integrity verdict the server computes.
+/// No progress over time was visible anywhere, and none of it could be: the data
+/// was deleted at the moment it was created.
+///
+/// Time-sortable `BigInt` identity rather than `cuid()`, per the new-table PK
+/// policy in `lib/CLAUDE.md` §Database — this is the highest-volume table in the
+/// game (one row per run, not one per personal best) and every read of it is
+/// ordered by insertion.
+model SliceRun {
+  id BigInt @id @default(autoincrement())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  songId String
+  song   Song   @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  /// Null for a run of the generated `Song.analysisData` fallback — see the note
+  /// on `SongLeaderboard.chartId`.
+  chartId   String? @db.Uuid
+  chart     Chart?  @relation(fields: [chartId], references: [id], onDelete: SetNull)
+  chartHash String? @db.Char(64)
+
+  score         Int
+  accuracy      Float
+  maxCombo      Int
+  notesResolved Int?
+
+  difficulty String  @db.VarChar(16)
+  modPool    String  @db.VarChar(16)
+  modifiers  Json
+  /// True when the run came out of a multiplayer match, for attribution.
+  multiplayer Boolean @default(false)
+
+  cleared     Boolean @default(true)
+  /// Client-declared; decorative only. See `SongLeaderboard.isFullCombo`.
+  isFullCombo Boolean @default(false)
+  isPerfect   Boolean @default(false)
+
+  /// From `getTimingSummary()` — already computed by the engine and already
+  /// submitted with every score, and until now thrown away on arrival.
+  timingCount  Int?
+  timingMeanMs Float?
+  timingSdMs   Float?
+
+  /// R7's statistical flag, 0–1. **Null = not evaluated, 0 = clean.**
+  ///
+  /// Recorded and never acted on automatically: `integrity.ts` is explicit that
+  /// its statistical layer flags rather than rejects, because a false positive
+  /// on a legitimate record run costs a real person their record. Escalation is
+  /// a decision about a *pattern*, made by a human, and there is no code here
+  /// that makes it.
+  suspicion Float?
+  /// The `SuspicionCode`s behind `suspicion`. The evidence, not the verdict — a
+  /// moderator who cannot see why something is flagged cannot judge it.
+  suspicions String[] @default([])
+
+  createdAt DateTime @default(now())
+
+  /// The two hot reads: "my history on this chart" and "this chart's telemetry"
+  /// (R9's clear rate). `id desc` is the same order as `createdAt desc` here, so
+  /// neither needs a separate index.
+  @@index([userId, chartId, createdAt(sort: Desc)])
+  @@index([chartId, createdAt(sort: Desc)])
+  /// The player page's recent-runs list, and per-song telemetry for charts that
+  /// have no `Chart` row yet.
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([songId, createdAt(sort: Desc)])
+  @@map("slice_run")
 }
 
 model SongPlay {
@@ -1054,6 +1191,11 @@ model Chart {
   updatedAt DateTime @updatedAt
 
   revisions ChartRevision[]
+  /// Back-relations for R1/R6. Omitted when the model shipped, because giving
+  /// `SongLeaderboard` a `chartId` meant re-keying it, and re-keying it meant
+  /// touching the score route — see `docs/_handoff/chart-editor-requests.md` §3.
+  scores    SongLeaderboard[]
+  runs      SliceRun[]
 
   @@unique([songId, authorId, difficulty, keys, name])
   @@index([songId, status])
