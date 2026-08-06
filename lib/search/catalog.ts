@@ -47,7 +47,7 @@ export const SITE_DESTINATIONS: SiteDestination[] = [
   {
     id: 'explore',
     title: 'Explore & Search',
-    href: '/search',
+    href: '/explore',
     iconName: 'Compass',
     keywords: 'search find discover trending explore',
     description: 'Search people, posts, builds and writing across RMH Studios.',

@@ -47,7 +47,11 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
 
  return (
  <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
- <DialogContent className="max-w-sm p-0 gap-0 overflow-hidden bg-site-bg">
+ {/* No `overflow-hidden`: with the QR code expanded this sheet is taller than
+ a short phone, and the utility overrode the primitive's `overflow-y-auto`,
+ so the code and the URL preview under it were unreachable. A scroll
+ container clips to the rounded corners just the same. */}
+ <DialogContent className="max-w-sm p-0 gap-0 bg-site-bg">
  {/* Header */}
  <div className="flex items-center justify-between px-4 py-3 border-b border-site-border">
  <DialogTitle className="font-bold text-site-text">{t('share-title', { defaultValue:'Share'})}</DialogTitle>

@@ -21,6 +21,6 @@
   <Description>Search games, apps, posts and the library on RMH Studios</Description>
   <InputEncoding>UTF-8</InputEncoding>
   <Image width="16" height="16" type="image/svg+xml">https://rmhstudios.com/favicon.svg</Image>
-  <Url type="text/html" method="get" template="https://rmhstudios.com/search?q={searchTerms}"/>
-  <moz:SearchForm>https://rmhstudios.com/search</moz:SearchForm>
+  <Url type="text/html" method="get" template="https://rmhstudios.com/explore?q={searchTerms}"/>
+  <moz:SearchForm>https://rmhstudios.com/explore</moz:SearchForm>
 </OpenSearchDescription>

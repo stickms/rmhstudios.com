@@ -109,8 +109,13 @@ export function AIImageButton({
  aria-labelledby="ai-image-upgrade-title"
  onClick={() => setShowUpgrade(false)}
  >
+ {/* `.glass-overlay` rather than a hand-rolled surface+border+shadow box: it
+ is the tier this belongs to (floating UI), and the tier is also what
+ carries the viewport clamp and `overflow-y: auto`. The box it replaced
+ was `overflow-hidden` with no height cap, so on a short screen the
+ upgrade copy and its buttons were clipped away with nothing to scroll. */}
  <div
- className="relative w-full max-w-sm overflow-hidden rounded-site border border-site-border bg-site-surface text-center shadow-site"
+ className="glass-overlay relative w-full max-w-sm text-center"
  onClick={(e) => e.stopPropagation()}
  >
  {/* Decorative gradient header */}

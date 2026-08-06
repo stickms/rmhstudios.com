@@ -13,8 +13,7 @@ A post is an **RMHark**. The feed at `/` is the site's index route (`app/routes/
 | `/u/:userid/post/:postid` | A single post in the context of its author. |
 | `/moments/:id` | A moment. |
 | `/tag/:tag` | Everything tagged with a hashtag. |
-| `/explore` | Discovery surface. |
-| `/search` | Universal search. |
+| `/explore` | Discovery and universal search — one page (`/search` redirects here, carrying `q`/`tab`). |
 | `/bookmarks` | Posts you saved. |
 | `/lists`, `/lists/:id` | User-curated lists. |
 | `/embed/post/:id` | Embeddable single-post view (top-level, no shell). |

@@ -19,7 +19,7 @@
   "shortcuts": [
     { "name": "Daily Puzzle", "short_name": "Daily", "url": "/daily" },
     { "name": "Feed", "short_name": "Feed", "url": "/" },
-    { "name": "Search", "short_name": "Search", "url": "/search" },
+    { "name": "Explore & search", "short_name": "Explore", "url": "/explore" },
     { "name": "RMH Ladder Jobs", "short_name": "Jobs", "url": "/rmhladder/jobs" }
   ],
   "screenshots": [

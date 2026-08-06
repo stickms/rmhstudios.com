@@ -53,6 +53,46 @@ describe('spatial redesign — responsive layout contract', () => {
     expect(modal).toContain('w-full sm:ml-auto sm:w-auto');
   });
 
+  it('lets tall dialogs scroll instead of clipping what does not fit', () => {
+    // Every overlay is capped at the visible viewport by `.glass-overlay`
+    // (max-block-size), so a dialog taller than a phone has exactly two
+    // outcomes: it scrolls, or the overflow is unreachable. `overflow-hidden`
+    // on the content element picks the second one — it overrides the Dialog
+    // primitive's own `overflow-y-auto` — and that is how the announcement
+    // sheet shipped with its cards and its "Got it" button below the fold and
+    // nothing to scroll.
+    //
+    // The rule is therefore: a `DialogContent` may only clip if it also owns a
+    // scrolling region inside itself (the header + `flex-1 overflow-y-auto`
+    // body shape the list modals use). Asserted per file rather than by a tree
+    // walk so the failure names the dialog.
+    const clipping = [
+      'components/feed/WhatsNewModal.tsx',
+      'components/feed/ShareModal.tsx',
+      'components/feed/AIImageButton.tsx',
+    ].filter((file) => /<DialogContent[^>]*overflow-hidden/.test(source(file)));
+    expect(clipping).toEqual([]);
+
+    // The dialogs that DO clip pair it with an inner scroller, and cap
+    // themselves in dynamic viewport units — `vh` is the toolbar-less viewport
+    // on mobile Safari, which is not the one the sheet is being read in.
+    for (const file of [
+      'components/feed/EngagementListModal.tsx',
+      'components/feed/InsightsModal.tsx',
+      'components/feed/SocialListModal.tsx',
+    ]) {
+      const src = source(file);
+      expect({ file, capped: /max-h-\[\d+dvh\]/.test(src) }).toEqual({ file, capped: true });
+      expect({ file, scrolls: src.includes('overflow-y-auto') }).toEqual({ file, scrolls: true });
+    }
+
+    // …and the announcement's own stylesheet must not re-clip what the
+    // component stopped clipping.
+    const css = source('components/feed/feed.css');
+    const block = css.slice(css.indexOf('.spatial-whats-new {'));
+    expect(block.slice(0, block.indexOf('}'))).toContain('overflow-y: auto');
+  });
+
   it('gives carousel controls touch-sized hit areas', () => {
     const newsHero = source('components/news/NewsHero.tsx');
 
