@@ -146,6 +146,43 @@ export function isAdFreeTier(tier: string | null | undefined): boolean {
 }
 
 /**
+ * One source's answer to "what tier is this visitor on".
+ *
+ *   `undefined` — no answer (yet, or one we can't read). NOT the free tier.
+ *   `null`      — asked, and nobody is signed in.
+ *   a string    — the tier that source reported.
+ */
+export type TierAnswer = string | null | undefined;
+
+export interface ResolvedTier {
+  /** What to gate on. Meaningless unless `sessionResolved` is true. */
+  tier: string | null;
+  /** Whether either source actually answered. */
+  sessionResolved: boolean;
+}
+
+/**
+ * Reconcile the two places the client can learn a tier from.
+ *
+ * There are two because neither alone is both correct and timely:
+ *
+ *  - The **live session** is authoritative — it reflects a sign-in, a sign-out
+ *    or an upgrade that happened a second ago — but it resolves a round trip
+ *    after the first render, and gating on it alone delays every ad on the site,
+ *    including for the signed-out majority who were never going to have a tier.
+ *  - The **server's answer**, resolved from the session cookie during SSR and
+ *    carried down with the document, is there on the first render but is a
+ *    snapshot of that moment.
+ *
+ * So: live wins whenever it has an answer, the server's covers the window
+ * before that, and "neither" is its own state rather than a synonym for free.
+ */
+export function resolveTier(live: TierAnswer, server: TierAnswer): ResolvedTier {
+  const answer = live !== undefined ? live : server;
+  return { tier: answer ?? null, sessionResolved: answer !== undefined };
+}
+
+/**
  * Path prefixes that never carry ads, whatever a page asks for.
  *
  * Placements are explicit, so in practice a slot only exists where one was

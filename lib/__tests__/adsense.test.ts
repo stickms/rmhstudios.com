@@ -5,6 +5,7 @@ import {
   isAdExcludedPath,
   isAdFreeTier,
   parseSlotMap,
+  resolveTier,
   AD_PLACEMENTS,
   type AdGateInput,
 } from '@/lib/ads/adsense';
@@ -103,6 +104,34 @@ describe('adsAllowed', () => {
     expect(isAdExcludedPath('/settings-guide')).toBe(false);
     expect(isAdExcludedPath('/settings')).toBe(true);
     expect(isAdExcludedPath('/settings/')).toBe(true);
+  });
+});
+
+describe('resolveTier', () => {
+  it('prefers the live session, which is the authoritative one', () => {
+    // A sign-out, a sign-in or an upgrade shows up here first; the document's
+    // copy can be up to the root loader's staleTime old.
+    expect(resolveTier('free', 'pro')).toEqual({ tier: 'free', sessionResolved: true });
+    expect(resolveTier(null, 'pro')).toEqual({ tier: null, sessionResolved: true });
+    expect(resolveTier('pro', null)).toEqual({ tier: 'pro', sessionResolved: true });
+  });
+
+  it("falls back to the server's answer while the live session is in flight", () => {
+    // The whole point of the fallback: a signed-out visitor gets their ad on the
+    // first render instead of a round trip later, and a member is already known
+    // to be a member by then.
+    expect(resolveTier(undefined, null)).toEqual({ tier: null, sessionResolved: true });
+    expect(resolveTier(undefined, 'pro')).toEqual({ tier: 'pro', sessionResolved: true });
+  });
+
+  it('is unresolved only when neither source has an answer', () => {
+    expect(resolveTier(undefined, undefined)).toEqual({ tier: null, sessionResolved: false });
+  });
+
+  it('does not confuse "signed out" with "not known yet"', () => {
+    // Both would produce `tier: null`, and only one of them may show an ad.
+    expect(resolveTier(null, undefined).sessionResolved).toBe(true);
+    expect(resolveTier(undefined, undefined).sessionResolved).toBe(false);
   });
 });
 

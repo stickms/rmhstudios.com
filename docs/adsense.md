@@ -25,18 +25,18 @@ requests to Google.
 
 ## Files
 
-| File                                        | What it is                                                                                                   |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `lib/ads/adsense.ts`                        | Config + the pure gate (`adsAllowed`, `isAdFreeTier`, `adsPersonalized`, placements, the excluded-path list) |
-| `lib/ads/loader.ts`                         | Lazy script injection, the personalisation flag, `pushAd()`                                                  |
-| `lib/entitlements/tiers.ts`                 | `hasAdFree()` — which tiers have paid for the site, and `parseTier()`                                        |
-| `lib/entitlements/features.ts`              | The `ad-free` member feature, which is what the membership page advertises                                   |
-| `hooks/useAdsEnabled.ts`                    | Resolves the live inputs (path, tier, whether the tier is KNOWN, consent, Discord)                           |
-| `components/ads/AdSlot.tsx`                 | The unit itself: viewport-deferred load, reserved height, unfilled collapse, the label                       |
-| `app/routes/ads[.]txt.ts`                   | `/ads.txt`, generated from the publisher id                                                                  |
-| `components/site/CookieConsent.tsx`         | The banner whose answer gates all of the above, plus `clearCookieConsent()`                                  |
-| `components/site/CookieConsentControls.tsx` | Settings → Privacy: change or withdraw that answer                                                           |
-| `lib/__tests__/adsense.test.ts`             | The gate's test — every "an ad must not appear here" rule is pinned there                                    |
+| File                                        | What it is                                                                                                                  |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `lib/ads/adsense.ts`                        | Config + the pure gate (`adsAllowed`, `isAdFreeTier`, `resolveTier`, `adsPersonalized`, placements, the excluded-path list) |
+| `lib/ads/loader.ts`                         | Lazy script injection, the personalisation flag, `pushAd()`                                                                 |
+| `lib/entitlements/tiers.ts`                 | `hasAdFree()` — which tiers have paid for the site, and `parseTier()`                                                       |
+| `lib/entitlements/features.ts`              | The `ad-free` member feature, which is what the membership page advertises                                                  |
+| `hooks/useAdsEnabled.ts`                    | Resolves the live inputs (path, tier, whether the tier is KNOWN, consent, Discord)                                          |
+| `components/ads/AdSlot.tsx`                 | The unit itself: viewport-deferred load, reserved height, unfilled collapse, the label                                      |
+| `app/routes/ads[.]txt.ts`                   | `/ads.txt`, generated from the publisher id                                                                                 |
+| `components/site/CookieConsent.tsx`         | The banner whose answer gates all of the above, plus `clearCookieConsent()`                                                 |
+| `components/site/CookieConsentControls.tsx` | Settings → Privacy: change or withdraw that answer                                                                          |
+| `lib/__tests__/adsense.test.ts`             | The gate's test — every "an ad must not appear here" rule is pinned there                                                   |
 
 ## When an ad may render
 
@@ -91,10 +91,29 @@ snapshot (`localStorage`) while it loads — a snapshot written by an older buil
 can lack the `tier` field entirely. Both read as "signed-in, entitlement
 unknown", and both must show nothing.
 
-So that this costs the free tier nothing, `__root.tsx`'s `getInitialUser` sends
-`tier` down with the SSR-resolved user. The first client render then already
-knows what the visitor is entitled to, and a signed-in free account gets its ad
-without waiting for a round trip.
+#### Where the tier comes from
+
+Failing closed on an unknown tier is only affordable if the tier is rarely
+unknown, so `useAdsEnabled` reads it from two places and `resolveTier()`
+reconciles them:
+
+| Source                                           | Timely?                                      | Authoritative?                      |
+| ------------------------------------------------ | -------------------------------------------- | ----------------------------------- |
+| The live client session (`useSession`)           | No — resolves a round trip after first paint | Yes — reflects a sign-in or upgrade |
+| The root loader payload (`__root.tsx`, from SSR) | Yes — arrives with the document              | As of document render               |
+
+Live wins whenever it has an answer; the server's covers the window before that.
+Gating on the live session alone would delay every ad on the site, including for
+the signed-out majority who were never going to have a tier — so
+`getInitialUser` sends `tier` down with the SSR-resolved user, and the first
+client render already knows. Gating on the server's answer alone would keep
+serving ads to someone who subscribed thirty seconds ago, since the root loader
+holds its data for five minutes.
+
+Both are read defensively. A payload that is missing, reshaped, or from a
+session lookup that timed out yields "no answer" rather than a guess, and the
+gate waits for the client session — the failure direction is _an ad is late_,
+never _an ad leaks_.
 
 ### Personalisation
 
