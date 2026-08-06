@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { Flame, TrendingUp } from 'lucide-react';
+import { Receipt, TrendingUp } from 'lucide-react';
 import {
   ANNUAL_INTEREST_RATE,
   describeVelocity,
@@ -188,10 +188,8 @@ export function DebtCounter({ basisCents, asOfMs }: DebtCounterProps) {
 
   return (
     <div ref={containerRef} className="relative flex flex-col items-center gap-3 py-6 text-center">
-      <div className="kd-counter-glow" aria-hidden />
-
       <p className="site-kicker flex items-center gap-2 text-site-text-muted">
-        <Flame className="size-4" aria-hidden />
+        <Receipt className="size-4" aria-hidden />
         {t('counter.kicker', { defaultValue: 'Kaikai currently owes' })}
       </p>
 
@@ -211,8 +209,12 @@ export function DebtCounter({ basisCents, asOfMs }: DebtCounterProps) {
         )}
       </p>
 
-      <p className="flex items-center gap-2 text-sm text-site-text-muted">
-        <TrendingUp className="size-4 text-site-accent" aria-hidden />
+      {/* `inline` rather than a flex row: as a flex item the icon is its own
+          line box, so when the sentence wrapped on a phone the arrow was left
+          stranded on the far left of an empty row. Inline, it wraps with the
+          words it belongs to. */}
+      <p className="text-center text-sm text-pretty text-site-text-muted">
+        <TrendingUp className="mr-1.5 inline size-4 align-[-0.2em] text-site-accent" aria-hidden />
         {initial <= 0
           ? t('counter.clean', {
               defaultValue:

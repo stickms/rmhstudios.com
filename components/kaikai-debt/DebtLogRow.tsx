@@ -108,7 +108,7 @@ export function DebtLogRow({ entry, nowMs, fresh }: DebtLogRowProps) {
 
         <p className="mt-1 text-sm text-site-text-muted">{entry.note}</p>
 
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-site-text-dim">
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-site-text-muted">
           {/* Two different facts, deliberately worded differently. A member row
               names its AUTHOR ("added by") — they put it on the tab. A generated
               row has no author, so it names its CREDITOR ("owed to") instead:
