@@ -7271,10 +7271,16 @@ model CommunityPageRevision {
 /// go (abuse, a name that shouldn't be there) is a moderation action against the
 /// author, not an `UPDATE` here.
 ///
-/// `amountCents` is clamped to [MIN_ENTRY_CENTS, MAX_ENTRY_CENTS] — $5 to $250 —
-/// before insert. It is the exact, auditable figure; the live counter's
-/// compounded projection is derived from it at read time and is deliberately
-/// never written back (see `lib/kaikai-debt/debt.ts`).
+/// `amountCents` has no upper bound in policy — a member's debt is worth
+/// whatever the appraiser decides it is worth. The only ceiling is this column:
+/// `Int` tops out at 2^31 − 1 cents (~$21.47M), and `clampEntryCents` saturates
+/// there so an absurd appraisal is capped rather than throwing on insert.
+/// Generated rows are separately drawn from a $5–$250 band, which is the texture
+/// of his back history rather than a rule about what he can owe.
+///
+/// It is the exact, auditable figure; the live counter's compounded projection
+/// is derived from it at read time and is deliberately never written back (see
+/// `lib/kaikai-debt/debt.ts`).
 model KaikaiDebtEntry {
   /// UUIDv7 per the new-table PK policy — append-only and read newest-first, so
   /// a time-sortable key gives insert locality and makes the keyset scan cheap.
