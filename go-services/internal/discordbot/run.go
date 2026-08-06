@@ -12,35 +12,31 @@ import (
 // missing secret never takes down the supervisor.
 func Run(ctx context.Context, d worker.Deps) error {
 	cfg := Config{
-		Token:       firstNonEmpty(config.GetString("DISCORD_BOT_TOKEN", ""), config.GetString("DISCORD_ACTIVITY_BOT_TOKEN", "")),
-		DevGuildID:  config.GetString("DISCORD_DEV_GUILD_ID", ""),
-		DeepSeekKey: config.GetString("DEEPSEEK_API_KEY", ""),
-		DeepSeekMod: config.GetString("DEEPSEEK_MODEL", "deepseek-chat"),
-		XAIKey:      config.GetString("XAI_API_KEY", ""),
-		XAIImageMod: config.GetString("XAI_IMAGE_MODEL", defaultXAIImageModel),
-		XAIVisonMod: config.GetString("XAI_VISION_MODEL", defaultXAIVisionModel),
-		Cooldown:    config.GetDuration("LIQUID_COOLDOWN", defaultCooldown),
+		Token:          firstNonEmpty(config.GetString("DISCORD_BOT_TOKEN", ""), config.GetString("DISCORD_ACTIVITY_BOT_TOKEN", "")),
+		DevGuildID:     config.GetString("DISCORD_DEV_GUILD_ID", ""),
+		OwnerID:        config.GetString("OWNER_ID", ""),
+		DeepSeekKey:    config.GetString("DEEPSEEK_API_KEY", ""),
+		DeepSeekMod:    config.GetString("DEEPSEEK_MODEL", "deepseek-chat"),
+		MessageContent: config.GetBool("ALEX_MESSAGE_CONTENT", false),
 	}
 	if cfg.Token == "" {
 		d.Logger.Warn("no DISCORD_BOT_TOKEN/DISCORD_ACTIVITY_BOT_TOKEN set — discord bot disabled")
 		<-ctx.Done()
 		return nil
 	}
-	// Both keys are optional at boot: the bot still connects and registers
-	// /liquid, and the command explains which half is missing when it is run.
-	if cfg.XAIKey == "" {
-		d.Logger.Warn("no XAI_API_KEY set — /liquid cannot render")
-	}
-	if cfg.DeepSeekKey == "" {
-		d.Logger.Warn("no DEEPSEEK_API_KEY set — /liquid will ship a static caption instead of a design note")
-	}
 
-	budget := newBudgetRepo(d.DB)
-	xai := newXAIClient(cfg.XAIKey, cfg.XAIImageMod, cfg.XAIVisonMod, budget, d.Logger)
+	configurePetRates() // apply any env overrides to the tamagotchi pacing
+
 	deepseek := NewDeepSeekClient(cfg.DeepSeekKey, cfg.DeepSeekMod)
-	liquid := NewLiquidService(xai, deepseek, cfg.Cooldown, d.Logger)
+	repo := newPetRepo(d.DB)
+	imager := newAlexImager(repo, d.Logger)
+	// Base URL of the web app that renders the /caretakers leaderboard image.
+	imageBaseURL := config.GetString("ALEX_PUBLIC_BASE_URL", "https://rmhstudios.com")
+	pet := NewPetService(repo, imager, deepseek, d.Logger, imageBaseURL)
+	chat := NewChatService(deepseek, d.DB, d.Logger)
+	chat.pet = pet // let /chat reflect and record Alex's live state
 
-	bot, err := New(cfg, liquid, d.Logger)
+	bot, err := New(cfg, chat, pet, d.Logger)
 	if err != nil {
 		return err
 	}
@@ -55,6 +51,3 @@ func firstNonEmpty(vals ...string) string {
 	}
 	return ""
 }
-
-// compile-time assertion that Run matches the worker contract.
-var _ worker.RunFunc = Run
