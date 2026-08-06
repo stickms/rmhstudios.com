@@ -1,0 +1,387 @@
+/**
+ * sohumbum.css — the dossier page's own look.
+ *
+ * This page deliberately does NOT use the `--site-*` token contract. It is a
+ * pastiche of a specific single-purpose gripe site, so it carries a fixed
+ * palette and ignores the theme switcher entirely — which is why it lives at
+ * the top level of `app/routes/` (full-screen tier) rather than under `_site/`.
+ *
+ * Everything is scoped under `.sohumbum` so none of it can leak into the site
+ * tier if this stylesheet is ever loaded alongside another page.
+ */
+
+.sohumbum {
+  --sb-bg: #26262c;
+  --sb-slab: #0e0e10;
+  --sb-hairline: #333333;
+  --sb-text: #efeff1;
+  --sb-muted: #9a9aa2;
+  --sb-accent: #a970ff;
+  --sb-alarm: #eb0400;
+
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  width: 100%;
+  overflow-x: hidden;
+  background-color: var(--sb-bg);
+  color: var(--sb-text);
+  color-scheme: dark;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* The page paints its own background; without this the theme's body colour
+   shows through on overscroll and behind the fixed storm layers. */
+:root:has(.sohumbum) {
+  background-color: #26262c;
+}
+
+.sohumbum a {
+  color: var(--sb-text);
+}
+
+.sohumbum p {
+  text-align: center;
+}
+
+/* ── Nav ─────────────────────────────────────────────────────────────────── */
+
+.sohumbum-nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  width: 100%;
+  padding: 15px 20px;
+  background-color: var(--sb-slab);
+  border-bottom: 1px solid var(--sb-hairline);
+}
+
+.sohumbum-nav__inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.sohumbum-nav__link {
+  font-size: 18px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.sohumbum-nav__link:hover,
+.sohumbum-nav__link:focus-visible {
+  color: var(--sb-accent);
+}
+
+.sohumbum-nav__sound {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin-inline-start: auto;
+  border: 1px solid var(--sb-hairline);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sb-text);
+  cursor: pointer;
+  transition:
+    color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.sohumbum-nav__sound:hover,
+.sohumbum-nav__sound:focus-visible {
+  color: var(--sb-accent);
+  border-color: var(--sb-accent);
+}
+
+.sohumbum-nav__sound[data-on='true'] {
+  color: var(--sb-accent);
+  border-color: var(--sb-accent);
+}
+
+/* ── Main column ─────────────────────────────────────────────────────────── */
+
+.sohumbum-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  animation: sohumbum-fade-in-down 1s ease-out;
+}
+
+.sohumbum-title {
+  width: 100%;
+  margin-bottom: 15px;
+  font-size: clamp(28px, 8vw, 60px);
+  font-weight: bold;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+.sohumbum-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+  max-width: 1000px;
+  padding: 20px;
+}
+
+.sohumbum-body h2 {
+  margin-top: 20px;
+  font-size: clamp(20px, 4vw, 30px);
+  text-align: center;
+  scroll-margin-top: 80px;
+}
+
+/* ── Countdown ───────────────────────────────────────────────────────────── */
+
+.sohumbum-countdown {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  width: 100%;
+  max-width: 600px;
+}
+
+.sohumbum-box {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  padding: 10px 5px;
+  border-radius: 8px;
+  background: var(--sb-slab);
+  box-shadow: 0 4px 6px rgb(0 0 0 / 70%);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.sohumbum-box:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 12px 20px rgb(0 0 0 / 70%);
+}
+
+.sohumbum-box__value {
+  display: inline-block;
+  font-size: clamp(20px, 5vw, 50px);
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+  color: var(--sb-accent);
+  animation: sohumbum-pulse 1s infinite ease-in-out;
+}
+
+.sohumbum-box__label {
+  margin-top: 5px;
+  font-size: clamp(10px, 2.5vw, 15px);
+  text-transform: uppercase;
+  color: var(--sb-text);
+}
+
+/* ── The pledge ──────────────────────────────────────────────────────────── */
+
+.sohumbum-pledge {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 760px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: sohumbum-pledge;
+}
+
+.sohumbum-pledge__item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 6px 14px;
+  align-items: baseline;
+  padding: 16px 18px;
+  border-radius: 8px;
+  border-left: 3px solid var(--sb-alarm);
+  background: var(--sb-slab);
+  counter-increment: sohumbum-pledge;
+  /* Each term is a nav target, and the nav is sticky. */
+  scroll-margin-top: 80px;
+}
+
+.sohumbum-pledge__item::before {
+  content: counter(sohumbum-pledge) '.';
+  font-weight: bold;
+  color: var(--sb-accent);
+}
+
+.sohumbum-pledge__claim {
+  font-weight: bold;
+  text-align: start;
+}
+
+.sohumbum-pledge__status {
+  justify-self: end;
+  padding: 3px 8px;
+  border: 1px solid currentcolor;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  color: var(--sb-alarm);
+}
+
+.sohumbum-pledge__note {
+  grid-column: 2 / -1;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--sb-muted);
+  text-align: start;
+}
+
+/* ── Standings ───────────────────────────────────────────────────────────── */
+
+.sohumbum-standings {
+  width: 100%;
+  max-width: 760px;
+  margin: 0;
+  padding-inline-start: 24px;
+  color: var(--sb-alarm);
+}
+
+.sohumbum-standings li {
+  padding: 5px 0;
+}
+
+.sohumbum-standings li span {
+  color: var(--sb-text);
+}
+
+.sohumbum-standings__subject,
+.sohumbum-standings__subject span {
+  color: var(--sb-accent);
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+
+.sohumbum-footer {
+  width: 100%;
+  margin-top: auto;
+  padding: 30px 20px;
+  border-top: 1px solid var(--sb-hairline);
+  background-color: var(--sb-slab);
+  font-size: 14px;
+  color: var(--sb-text);
+}
+
+.sohumbum-footer__inner {
+  max-width: 1000px;
+  margin: 0 auto;
+  font-size: 14px;
+}
+
+/* ── Storm ───────────────────────────────────────────────────────────────── */
+
+.sohumbum-lightning,
+.sohumbum-flash {
+  position: fixed;
+  inset: 0;
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+}
+
+.sohumbum-lightning {
+  z-index: 30;
+}
+
+.sohumbum-flash {
+  z-index: 29;
+  background: #0044ff;
+  opacity: 0;
+  transition: opacity 0.05s ease-out;
+}
+
+/* ── Keyframes ───────────────────────────────────────────────────────────── */
+
+@keyframes sohumbum-pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+    color: var(--sb-alarm);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes sohumbum-fade-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-100px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* The storm layer is gated in JS (it also silences the thunder), but the CSS
+   animations need their own escape hatch — a full-viewport strobe and an
+   infinitely pulsing digit are exactly what this preference is asking about. */
+@media (prefers-reduced-motion: reduce) {
+  .sohumbum-main {
+    animation: none;
+  }
+
+  .sohumbum-box__value {
+    animation: none;
+  }
+
+  .sohumbum-box {
+    transition: none;
+  }
+
+  .sohumbum-box:hover {
+    transform: none;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .sohumbum-countdown {
+    gap: 5px;
+  }
+
+  .sohumbum-pledge__item {
+    grid-template-columns: auto 1fr;
+  }
+
+  .sohumbum-pledge__status {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

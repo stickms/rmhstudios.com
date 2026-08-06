@@ -54,6 +54,7 @@ import { Route as SecretRouteImport } from './routes/secret'
 import { Route as SecurityRouteImport } from './routes/security'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SliceItRouteImport } from './routes/slice-it'
+import { Route as SohumbumRouteImport } from './routes/sohumbum'
 import { Route as StrategiesRouteImport } from './routes/strategies'
 import { Route as StudioRouteImport } from './routes/studio'
 import { Route as SynapseStormRouteImport } from './routes/synapse-storm'
@@ -1047,6 +1048,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const SliceItRoute = SliceItRouteImport.update({
   id: '/slice-it',
   path: '/slice-it',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SohumbumRoute = SohumbumRouteImport.update({
+  id: '/sohumbum',
+  path: '/sohumbum',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StrategiesRoute = StrategiesRouteImport.update({
@@ -5065,6 +5071,7 @@ export interface FileRoutesByFullPath {
   '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/slice-it': typeof SliceItRouteWithChildren
+  '/sohumbum': typeof SohumbumRoute
   '/strategies': typeof StrategiesRouteWithChildren
   '/studio': typeof StudioRouteWithChildren
   '/synapse-storm': typeof SynapseStormRoute
@@ -5865,6 +5872,7 @@ export interface FileRoutesByTo {
   '/rochester-offensive': typeof RochesterOffensiveRoute
   '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sohumbum': typeof SohumbumRoute
   '/synapse-storm': typeof SynapseStormRoute
   '/terms': typeof TermsRoute
   '/velum2099': typeof Velum2099Route
@@ -6674,6 +6682,7 @@ export interface FileRoutesById {
   '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/slice-it': typeof SliceItRouteWithChildren
+  '/sohumbum': typeof SohumbumRoute
   '/strategies': typeof StrategiesRouteWithChildren
   '/studio': typeof StudioRouteWithChildren
   '/synapse-storm': typeof SynapseStormRoute
@@ -7493,6 +7502,7 @@ export interface FileRouteTypes {
     | '/security'
     | '/sitemap.xml'
     | '/slice-it'
+    | '/sohumbum'
     | '/strategies'
     | '/studio'
     | '/synapse-storm'
@@ -8293,6 +8303,7 @@ export interface FileRouteTypes {
     | '/rochester-offensive'
     | '/security'
     | '/sitemap.xml'
+    | '/sohumbum'
     | '/synapse-storm'
     | '/terms'
     | '/velum2099'
@@ -9101,6 +9112,7 @@ export interface FileRouteTypes {
     | '/security'
     | '/sitemap.xml'
     | '/slice-it'
+    | '/sohumbum'
     | '/strategies'
     | '/studio'
     | '/synapse-storm'
@@ -9919,6 +9931,7 @@ export interface RootRouteChildren {
   SecurityRoute: typeof SecurityRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SliceItRoute: typeof SliceItRouteWithChildren
+  SohumbumRoute: typeof SohumbumRoute
   StrategiesRoute: typeof StrategiesRouteWithChildren
   StudioRoute: typeof StudioRouteWithChildren
   SynapseStormRoute: typeof SynapseStormRoute
@@ -10667,6 +10680,13 @@ declare module '@tanstack/react-router' {
       path: '/slice-it'
       fullPath: '/slice-it'
       preLoaderRoute: typeof SliceItRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sohumbum': {
+      id: '/sohumbum'
+      path: '/sohumbum'
+      fullPath: '/sohumbum'
+      preLoaderRoute: typeof SohumbumRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/strategies': {
@@ -17630,6 +17650,7 @@ const rootRouteChildren: RootRouteChildren = {
   SecurityRoute: SecurityRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SliceItRoute: SliceItRouteWithChildren,
+  SohumbumRoute: SohumbumRoute,
   StrategiesRoute: StrategiesRouteWithChildren,
   StudioRoute: StudioRouteWithChildren,
   SynapseStormRoute: SynapseStormRoute,

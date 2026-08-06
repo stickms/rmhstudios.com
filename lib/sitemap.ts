@@ -296,6 +296,9 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/secret/cursed-logic': 'noindex',
   '/secret/signal-forge': 'noindex',
   '/secret/vega': 'noindex',
+  // A page about one named person, linked from their profile. It is meant to be
+  // found by people who already know them, not by a search for their name.
+  '/sohumbum': 'noindex',
 
   // ── ephemeral realtime rooms ──
   '/altair/multiplayer': 'ephemeral',
