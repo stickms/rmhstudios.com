@@ -21,6 +21,7 @@ import idCGame from "@/locales/id/c-game.json";
 import idCHistory from "@/locales/id/c-history.json";
 import idCHouseAlwaysWins from "@/locales/id/c-house-always-wins.json";
 import idCIsleworks from "@/locales/id/c-isleworks.json";
+import idCKaikaiDebt from "@/locales/id/c-kaikai-debt.json";
 import idCKowloonKnockout from "@/locales/id/c-kowloon-knockout.json";
 import idCLaundrySort from "@/locales/id/c-laundry-sort.json";
 import idCLayout from "@/locales/id/c-layout.json";
@@ -64,6 +65,7 @@ import idCVoidBreaker from "@/locales/id/c-void-breaker.json";
 import idCWager from "@/locales/id/c-wager.json";
 import idCWishlist from "@/locales/id/c-wishlist.json";
 import idCommon from "@/locales/id/common.json";
+import idErrors from "@/locales/id/errors.json";
 import idFeed from "@/locales/id/feed.json";
 import idGamesHub from "@/locales/id/games-hub.json";
 import idGroups from "@/locales/id/groups.json";
@@ -77,6 +79,7 @@ import idRRmhbox from "@/locales/id/r-rmhbox.json";
 import idRRmhcode from "@/locales/id/r-rmhcode.json";
 import idRSecret from "@/locales/id/r-secret.json";
 import idRSliceIt from "@/locales/id/r-slice-it.json";
+import idRSohumbum from "@/locales/id/r-sohumbum.json";
 import idRStrategies from "@/locales/id/r-strategies.json";
 import idRStudio from "@/locales/id/r-studio.json";
 import idRideshare from "@/locales/id/rideshare.json";
@@ -111,6 +114,7 @@ const idResources = {
   "c-history": idCHistory,
   "c-house-always-wins": idCHouseAlwaysWins,
   "c-isleworks": idCIsleworks,
+  "c-kaikai-debt": idCKaikaiDebt,
   "c-kowloon-knockout": idCKowloonKnockout,
   "c-laundry-sort": idCLaundrySort,
   "c-layout": idCLayout,
@@ -154,6 +158,7 @@ const idResources = {
   "c-wager": idCWager,
   "c-wishlist": idCWishlist,
   "common": idCommon,
+  "errors": idErrors,
   "feed": idFeed,
   "games-hub": idGamesHub,
   "groups": idGroups,
@@ -167,6 +172,7 @@ const idResources = {
   "r-rmhcode": idRRmhcode,
   "r-secret": idRSecret,
   "r-slice-it": idRSliceIt,
+  "r-sohumbum": idRSohumbum,
   "r-strategies": idRStrategies,
   "r-studio": idRStudio,
   "rideshare": idRideshare,

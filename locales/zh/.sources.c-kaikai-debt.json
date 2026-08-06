@@ -1,0 +1,9 @@
+{
+  "log.daysAgo_one": "{{count}}d ago",
+  "log.hoursAgo_one": "{{count}}h ago",
+  "log.minutesAgo_one": "{{count}}m ago",
+  "log.subtotal_one": "{{amount}} itemised across {{count}} lines",
+  "log.yearsAgo_one": "{{count}}y ago",
+  "stats.itemisedDetail_one": "{{count}} lines recovered",
+  "stats.membersDetail_one": "{{count}} lines"
+}

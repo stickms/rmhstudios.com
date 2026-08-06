@@ -46,7 +46,7 @@
   "select-words-prompt_one": "Wähle {{count}} Wort, um dein Gedicht zu verfassen",
   "select-words-prompt_other": "Wähle {{count}} Wörter, um dein Gedicht zu verfassen",
   "settings": "Einstellungen",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "Melden Sie sich an, um Ihre Geschichten in der Cloud zu speichern und sie überall wiederzugeben.",
   "sign-in-to-save": "Melde dich an, um deinen Fortschritt in der Cloud zu speichern",
   "skip": "Überspringen",
   "slot-auto": "Auto",
