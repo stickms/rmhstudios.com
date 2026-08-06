@@ -16,6 +16,7 @@ import {
   playRemoteDebt,
   subscribeMuted,
 } from '@/lib/kaikai-debt/sound';
+import { CreditScore } from './CreditScore';
 import { DebtCounter } from './DebtCounter';
 import { DebtFx } from './DebtFx';
 import { DebtLog, LedgerSubtotal } from './DebtLog';
@@ -211,6 +212,8 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
               />
             </dl>
           </section>
+
+          <CreditScore basisCents={basisCents} asOfMs={snapshot.asOfMs} />
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <AddDebtForm onAdded={onAdded} disabled={!snapshot.aiEnabled} />

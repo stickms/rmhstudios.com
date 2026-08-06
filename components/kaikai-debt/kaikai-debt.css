@@ -361,6 +361,42 @@
   font-size: 0.52em;
 }
 
+/* --- The credit score ----------------------------------------------------
+   The counter's smaller sibling. Same treatment, deliberately: tabular figures
+   so the falling digits do not jitter the row sideways, and a static text-shadow
+   (never animated — one paint) in the same fire palette, so the rating reads as
+   part of the same burning object rather than as a widget parked next to it.
+
+   Dimmer and smaller than `.kd-odometer` because it is the second number on the
+   page and the hierarchy should say so. */
+.kd-credit-score {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  letter-spacing: -0.02em;
+  text-shadow:
+    0 0 10px var(--kd-fire-hot),
+    0 0 30px var(--kd-fire-deep);
+}
+
+/* The fractional points. On the counter these digits are a blur; here they are
+   the ONLY thing moving at human timescales — a rating that falls ~33 points a
+   year does not visibly change its whole-point digits — so they are dimmed to
+   stay out of the way but never hidden. */
+.kd-credit-score__micro {
+  opacity: 0.62;
+  font-size: 0.5em;
+}
+
+/* The letter grade. One colour for every band: severity is already carried by
+   the number, the grade itself and the descriptor beside it, and a green AAA
+   turning red at CCC would be the one part of this page that encodes meaning in
+   hue alone. */
+.kd-credit-grade {
+  color: var(--kd-fire-hot);
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 14px var(--kd-fire-deep);
+}
+
 /* --- A line landing in the log ------------------------------------------
    One-shot, and deliberately NOT one of the `animate-in`/`fade-in-0` classes:
    `tailwindcss-animate` is not installed here, those compile to nothing, and
@@ -450,7 +486,9 @@ html.perf-lite .kd-root .kd-laser,
 html.perf-lite .kd-root .kd-counter-glow {
   display: none;
 }
-html.perf-lite .kd-root .kd-odometer {
+html.perf-lite .kd-root .kd-odometer,
+html.perf-lite .kd-root .kd-credit-score,
+html.perf-lite .kd-root .kd-credit-grade {
   text-shadow: none;
 }
 
@@ -460,8 +498,16 @@ html.style-high-contrast .kd-root .kd-fx,
 html.style-high-contrast .kd-root .kd-counter-glow {
   display: none;
 }
-html.style-high-contrast .kd-root .kd-odometer {
+html.style-high-contrast .kd-root .kd-odometer,
+html.style-high-contrast .kd-root .kd-credit-score,
+html.style-high-contrast .kd-root .kd-credit-grade {
   text-shadow: none;
+}
+
+/* The grade's fire colour is decorative, and a legibility mode is not the place
+   for it — hand it back to the theme's own ink. */
+html.style-high-contrast .kd-root .kd-credit-grade {
+  color: var(--site-text);
 }
 
 /* Reduced transparency: keep the motion, drop the wash to something that cannot
