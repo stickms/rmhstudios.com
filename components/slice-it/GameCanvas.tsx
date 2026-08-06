@@ -5,7 +5,8 @@ import { motion } from 'framer-motion';
 import { fadeRise, popIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 import { GameEngine } from '@/lib/slice-it/engine';
-import { useSliceItStore } from '@/lib/slice-it/store';
+import { useSliceItStore, approachSeconds, reactionWindowMs } from '@/lib/slice-it/store';
+import { visibilityAlpha } from '@/lib/slice-it/modifiers';
 import { AudioManager } from '@/lib/audio/AudioManager';
 import type { Slice } from '@/lib/slice-it/types';
 import { longestHoldSeconds, visibleSliceRange } from '@/lib/slice-it/visible-window';
@@ -27,6 +28,8 @@ import {
   HIT_WINDOWS,
   JUDGEMENT_COLORS,
   QUANT_COLORS,
+  MAX_LANE_COVER,
+  MIN_LANE_COVER,
 } from '@/lib/slice-it/constants';
 import { judge } from '@/lib/slice-it/scoring';
 
@@ -60,6 +63,30 @@ function interpolateHex(hex1: string, hex2: string, ratio: number): string {
   const b = Math.round(b1 + (b2 - b1) * ratio);
 
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+/**
+ * M1 — Mirror, applied at the render/input boundary rather than to the chart.
+ *
+ * `render` below draws directly from `map.slices` (`engine.getActiveMap()`),
+ * a different array from the one `GameEngine.loadMap` judges against
+ * (`prepareChart` copies it) — see `chart.ts`'s `applyMirror` for why
+ * rewriting the judged copy isn't reachable this wave, and for the reference
+ * transform this is the visual equivalent of. Flipping BOTH what a note is
+ * drawn at (`mirrorLane` applied to `slice.lane` in `render`) and which
+ * engine lane a keypress targets (`mirrorLane` applied in `handleInput`) is
+ * the same involution applied twice, so composing them reproduces exactly
+ * what swapping the chart itself would look like: a note that started life
+ * in lane 0 is drawn in, and only hittable from, the visual position for
+ * lane 1.
+ *
+ * A no-op under One Track — there is only one lane to mirror into, and
+ * mirroring it anyway would send every keypress to a lane nothing is ever
+ * queued on.
+ */
+function mirrorLane(lane: number): number {
+  const state = useSliceItStore.getState();
+  return state.mirror && !state.modifiers.oneTrack ? 1 - lane : lane;
 }
 
 /**
@@ -220,6 +247,7 @@ export function GameCanvas() {
   const [hasTouch, setHasTouch] = useState(false);
 
   const { t } = useTranslation('c-game');
+  const { t: ts } = useTranslation('r-slice-it');
   const {
     status,
     keybinds,
@@ -236,6 +264,8 @@ export function GameCanvas() {
     audioOffset,
     setAudioOffset,
     setKeybinds,
+    laneCoverHeight,
+    setLaneCoverHeight,
   } = useSliceItStore();
 
   // Per-player chart-load progress, from the server's `slice:loading` tick.
@@ -379,7 +409,7 @@ export function GameCanvas() {
       } else if (audio.getCurrentTime() === 0) {
         engine.start();
       }
-      engine.submitInput(lane, pressTime);
+      engine.submitInput(mirrorLane(lane), pressTime);
     },
     [engine],
   );
@@ -387,7 +417,7 @@ export function GameCanvas() {
   const handleInputRelease = useCallback(
     (lane: number) => {
       if (!engine) return;
-      engine.submitRelease(lane);
+      engine.submitRelease(mirrorLane(lane));
     },
     [engine],
   );
@@ -894,17 +924,23 @@ export function GameCanvas() {
     }
 
     // Constants - SCALING UPDATE
-    // We want ~3 seconds visibility at 1.0x speed.
-    // PPS = scroll-axis-length / 3.0, scaled by speed modifier.
-    const speedMod = useSliceItStore.getState().modifiers.speed || 1.0;
-    const isOneTrack = useSliceItStore.getState().modifiers.oneTrack;
-    const quantColorsOn = useSliceItStore.getState().quantColors;
+    // G9: the approach distance used to be a hard-coded ~3 seconds at 1.0x
+    // speed. `approachSeconds` reproduces that exactly at the setting's
+    // default (`scrollSpeed: 1.0`, `scrollMode: 'constant'`) and generalises
+    // it into the player-tunable "green number" — see `store.ts`.
+    const runState = useSliceItStore.getState();
+    const speedMod = runState.modifiers.speed || 1.0;
+    const isOneTrack = runState.modifiers.oneTrack;
+    const quantColorsOn = runState.quantColors;
+    const mirrorOn = runState.mirror && !isOneTrack;
     const isMobileV = h > w; // portrait canvas = mobile vertical mode
     const currentTime = AudioManager.getInstance().getCurrentTime();
+    const activeBpm = engine.getActiveMap()?.bpm || 120;
+    const approachSec = approachSeconds(activeBpm, runState.scrollSpeed, runState.scrollMode);
 
     // In mobile vertical mode, notes scroll top-to-bottom with lanes left/right.
     // In desktop mode, notes scroll right-to-left with lanes top/bottom.
-    const PPS = isMobileV ? (h / 3.0) * speedMod : (w / 3.0) * speedMod;
+    const PPS = isMobileV ? (h / approachSec) * speedMod : (w / approachSec) * speedMod;
     const CURSOR_MAIN = isMobileV ? h * 0.85 : w * 0.15;
     const LANE_POS = isMobileV
       ? isOneTrack
@@ -984,7 +1020,8 @@ export function GameCanvas() {
         latestFeedback.text !== 'BAD' &&
         latestFeedback.text !== 'RELEASED'
       ) {
-        const particleLaneIdx = Math.max(0, Math.min(latestFeedback.lane, LANE_POS.length - 1));
+        const rawParticleLane = mirrorOn ? 1 - latestFeedback.lane : latestFeedback.lane;
+        const particleLaneIdx = Math.max(0, Math.min(rawParticleLane, LANE_POS.length - 1));
         const particleLaneVal = isOneTrack ? LANE_POS[0] : LANE_POS[particleLaneIdx];
 
         // Offset particle emission based on timing offset
@@ -1037,6 +1074,11 @@ export function GameCanvas() {
 
       for (let si = from; si < to; si++) {
         const slice = slices[si];
+        // M1 — Mirror: the lane this note is DRAWN in and hittable from. Every
+        // downstream read of "which lane" (position, colour, switch/arrow
+        // direction) uses this instead of the raw `slice.lane` so the whole
+        // note stays self-consistent under the flip — see `mirrorLane` above.
+        const laneIdx = mirrorOn ? 1 - slice.lane : slice.lane;
         ctx.globalAlpha = 1;
 
         // Compute scroll position along the movement axis
@@ -1078,7 +1120,7 @@ export function GameCanvas() {
         }
 
         // Compute effective lane (SWITCH notes flip lanes near the hit line)
-        let effectiveLane = slice.lane;
+        let effectiveLane = laneIdx;
         let switchProgress = 0; // 0 = original lane, 1 = switched lane
         if (slice.type === 'SWITCH') {
           const switchLeadTime = 0.8 / speedMod;
@@ -1087,44 +1129,42 @@ export function GameCanvas() {
           const animDuration = 0.15 / speedMod;
           if (currentTime >= switchTime) {
             switchProgress = 1;
-            effectiveLane = slice.lane === 0 ? 1 : 0;
+            effectiveLane = laneIdx === 0 ? 1 : 0;
           } else if (timeUntilSwitch < animDuration) {
             switchProgress = 1 - timeUntilSwitch / animDuration;
-            effectiveLane = slice.lane;
+            effectiveLane = laneIdx;
           }
         }
 
         // Interpolate lane position for switch animation
-        const origLane = isOneTrack ? LANE_POS[0] : LANE_POS[slice.lane];
-        const destLane = isOneTrack ? LANE_POS[0] : LANE_POS[slice.lane === 0 ? 1 : 0];
+        const origLane = isOneTrack ? LANE_POS[0] : LANE_POS[laneIdx];
+        const destLane = isOneTrack ? LANE_POS[0] : LANE_POS[laneIdx === 0 ? 1 : 0];
         const laneVal =
           slice.type === 'SWITCH' && !isOneTrack
             ? origLane + (destLane - origLane) * switchProgress
             : isOneTrack
               ? LANE_POS[0]
-              : LANE_POS[slice.lane];
+              : LANE_POS[laneIdx];
 
         // Convert to canvas coordinates
         const { x: nx, y: ny } = toCanvas(scrollVal, laneVal);
 
-        // Invisible modifier: notes fade out as they approach the hit line
-        // Similar to osu! Hidden — notes appear, then fade to invisible
-        // Fade starts at ~60% of the visible distance, fully invisible at ~30%
-        const isInvisibleMod = useSliceItStore.getState().modifiers.invisible;
+        // M3 — the visibility family. `modifiers.invisible` still just gates
+        // whether ANY of the four effects plays (same field, same score
+        // weight as before the split); `visibilityMode` picks which one.
+        // Bombs always render — hiding the one note you must NOT hit is not
+        // a reading test, it is a trap.
+        const isInvisibleMod = runState.modifiers.invisible;
         if (isInvisibleMod && slice.type !== 'BOMB') {
           const timeUntilHit = slice.time - currentTime; // audio-seconds until hit
-          const visibleWindow = 3.0 / speedMod; // total visible window in audio-seconds
+          const visibleWindow = approachSec / speedMod; // total visible window, audio-seconds
           const travelRatio = timeUntilHit / visibleWindow; // 1.0 = just spawned, 0.0 = at hit line
-          // Fade: fully visible from 1.0 to 0.20, fade from 0.20 to 0.08, invisible below 0.08
-          if (travelRatio < 0.08) {
+          const alpha = visibilityAlpha(travelRatio, runState.visibilityMode, runState.laneCoverHeight);
+          if (alpha <= 0) {
             ctx.globalAlpha = 0;
-            // Skip rendering entirely
-            continue;
-          } else if (travelRatio < 0.2) {
-            ctx.globalAlpha = noteAlpha * ((travelRatio - 0.08) / 0.12); // 0→1 over the fade range
-          } else {
-            ctx.globalAlpha = noteAlpha;
+            continue; // Skip rendering entirely
           }
+          ctx.globalAlpha = noteAlpha * alpha;
         } else {
           ctx.globalAlpha = noteAlpha;
         }
@@ -1133,10 +1173,10 @@ export function GameCanvas() {
         let color = '#475569';
         if (slice.type === 'BOMB') color = '#ef4444';
         // Hold notes and standard notes match their lane color
-        else if (slice.type === 'LONG') color = slice.lane === 0 ? COLORS.lane1 : COLORS.lane2;
+        else if (slice.type === 'LONG') color = laneIdx === 0 ? COLORS.lane1 : COLORS.lane2;
         else if (slice.type === 'SWITCH') {
-          const startCol = slice.lane === 0 ? COLORS.lane1 : COLORS.lane2;
-          const endCol = slice.lane === 0 ? COLORS.lane2 : COLORS.lane1;
+          const startCol = laneIdx === 0 ? COLORS.lane1 : COLORS.lane2;
+          const endCol = laneIdx === 0 ? COLORS.lane2 : COLORS.lane1;
           color = interpolateHex(startCol, endCol, switchProgress);
         }
         // @ts-expect-error — COLORS.slice is typed loosely
@@ -1148,7 +1188,7 @@ export function GameCanvas() {
         // so on a tap the colour is free to say "this is the sixteenth".
         else if (quantColorsOn && slice.quant && QUANT_COLORS[slice.quant]) {
           color = QUANT_COLORS[slice.quant];
-        } else if (slice.lane === 0) color = COLORS.lane1;
+        } else if (laneIdx === 0) color = COLORS.lane1;
         else color = COLORS.lane2;
 
         ctx.fillStyle = color;
@@ -1279,10 +1319,10 @@ export function GameCanvas() {
           const arrow =
             switchProgress < 1
               ? isMobileV
-                ? slice.lane === 0
+                ? laneIdx === 0
                   ? '→'
                   : '←' // mobile: lanes are left/right
-                : slice.lane === 0
+                : laneIdx === 0
                   ? '↓'
                   : '↑' // desktop: lanes are top/bottom
               : '⇄';
@@ -1469,6 +1509,18 @@ export function GameCanvas() {
 
     ctx.restore();
   };
+
+  // V10 — the "green number": how long a note is visible before it must be
+  // hit, given the current song's tempo and every setting that touches the
+  // approach window. Recomputed every render this component is part of,
+  // which is exactly when it needs to be current — the player is dragging
+  // the lane-cover slider below while this is on screen.
+  const reactionMs = (() => {
+    const st = useSliceItStore.getState();
+    const bpm = engine?.getActiveMap()?.bpm || 120;
+    const approach = approachSeconds(bpm, st.scrollSpeed, st.scrollMode) / (st.modifiers.speed || 1);
+    return reactionWindowMs(approach, laneCoverHeight);
+  })();
 
   return (
     // Column below `lg` so the opponent board can sit as a strip ABOVE the
@@ -1663,6 +1715,31 @@ export function GameCanvas() {
                     </div>
                   </div>
 
+                  {/* Lane Cover (V10) — the readout is the point: IIDX players
+                      tune the "green number" (the reaction window in ms), not
+                      a percentage they cannot feel. */}
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[11px] font-black text-slice-text-muted uppercase tracking-wider">
+                        {ts('lane-cover', { defaultValue: 'Lane Cover' })}
+                      </span>
+                      <span className="text-sm font-bold text-blue-500 font-mono">
+                        {ts('lane-cover-reaction', {
+                          defaultValue: '{{ms}}ms',
+                          ms: reactionMs,
+                        })}
+                      </span>
+                    </div>
+                    <Slider
+                      value={[laneCoverHeight]}
+                      min={MIN_LANE_COVER}
+                      max={MAX_LANE_COVER}
+                      step={0.01}
+                      onValueChange={([v]) => setLaneCoverHeight(v)}
+                      className="w-full"
+                    />
+                  </div>
+
                   {/* Keybinds */}
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-black text-slice-text-muted uppercase tracking-wider">
@@ -1806,6 +1883,26 @@ export function GameCanvas() {
                       +
                     </button>
                   </div>
+                </div>
+
+                {/* Lane Cover (V10) */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black text-slice-text-muted uppercase tracking-wider">
+                      {ts('lane-cover', { defaultValue: 'Lane Cover' })}
+                    </span>
+                    <span className="text-xs font-bold text-blue-500 font-mono">
+                      {ts('lane-cover-reaction', { defaultValue: '{{ms}}ms', ms: reactionMs })}
+                    </span>
+                  </div>
+                  <Slider
+                    value={[laneCoverHeight]}
+                    min={MIN_LANE_COVER}
+                    max={MAX_LANE_COVER}
+                    step={0.01}
+                    onValueChange={([v]) => setLaneCoverHeight(v)}
+                    className="w-full"
+                  />
                 </div>
 
                 {/* Keybinds */}

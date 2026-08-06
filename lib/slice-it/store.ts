@@ -22,6 +22,15 @@ import { persist } from 'zustand/middleware';
 import type { RealtimeStatus } from '@/lib/shared/realtime/types';
 import { DEFAULT_MODIFIERS, applyExclusions } from './modifiers';
 import type { Modifiers } from './types';
+import {
+  BASE_APPROACH_SEC,
+  MAX_LANE_COVER,
+  MAX_SCROLL_SPEED,
+  MIN_LANE_COVER,
+  MIN_SCROLL_SPEED,
+  type ScrollMode,
+  type VisibilityMode,
+} from './constants';
 import type {
   ChatMessage,
   LiveScore,
@@ -55,6 +64,27 @@ interface SliceItState {
    */
   quantColors: boolean;
   modifiers: Modifiers;
+  /**
+   * M1 — Mirror. Swaps lanes for every run until turned off again.
+   *
+   * A player preference rather than a per-run `Modifiers` field on purpose:
+   * it earns no score bonus (see `chart.ts` `applyMirror`), so it does not
+   * belong in the schema the server verifies a submission's multiplier
+   * against — there is nothing there to verify.
+   */
+  mirror: boolean;
+  /** G9 — scroll speed. 1.0 reproduces today's fixed approach distance. */
+  scrollSpeed: number;
+  /** G9 — `constant` (BPM-independent) or `bpm` (speed scales with tempo). */
+  scrollMode: ScrollMode;
+  /**
+   * M3 — which visibility effect plays while the `invisible` modifier is on.
+   * Orthogonal to `modifiers.invisible` itself — see `modifiers.ts`
+   * `visibilityAlpha` for why it lives here instead of in `Modifiers`.
+   */
+  visibilityMode: VisibilityMode;
+  /** V10 — the lane cover's height, as a fraction of the approach distance. */
+  laneCoverHeight: number;
 
   /* ── Run state ────────────────────────────────────────────────────── */
   status: GameStatus;
@@ -109,6 +139,11 @@ interface SliceItState {
   setIsDarkMode: (isDark: boolean) => void;
   setQuantColors: (value: boolean) => void;
   setModifiers: (modifiers: Modifiers) => void;
+  setMirror: (value: boolean) => void;
+  setScrollSpeed: (value: number) => void;
+  setScrollMode: (mode: ScrollMode) => void;
+  setVisibilityMode: (mode: VisibilityMode) => void;
+  setLaneCoverHeight: (value: number) => void;
 
   setStatus: (status: GameStatus) => void;
   setSongId: (songId: string) => void;
@@ -192,6 +227,11 @@ export const useSliceItStore = create<SliceItState>()(
       isDarkMode: true,
       quantColors: true,
       modifiers: { ...DEFAULT_MODIFIERS },
+      mirror: false,
+      scrollSpeed: 1.0,
+      scrollMode: 'constant',
+      visibilityMode: 'fadeOut',
+      laneCoverHeight: 0.3,
 
       ...runDefaults,
       ...multiplayerDefaults,
@@ -207,6 +247,12 @@ export const useSliceItStore = create<SliceItState>()(
       setIsDarkMode: (isDarkMode) => set({ isDarkMode }),
       setQuantColors: (quantColors) => set({ quantColors }),
       setModifiers: (modifiers) => set({ modifiers: applyExclusions(modifiers) }),
+      setMirror: (mirror) => set({ mirror }),
+      setScrollSpeed: (scrollSpeed) => set({ scrollSpeed: clampScrollSpeed(scrollSpeed) }),
+      setScrollMode: (scrollMode) => set({ scrollMode }),
+      setVisibilityMode: (visibilityMode) => set({ visibilityMode }),
+      setLaneCoverHeight: (laneCoverHeight) =>
+        set({ laneCoverHeight: clampLaneCover(laneCoverHeight) }),
 
       setStatus: (status) => set({ status }),
       setSongId: (songId) => set({ songId }),
@@ -247,7 +293,7 @@ export const useSliceItStore = create<SliceItState>()(
     }),
     {
       name: 'slice-it-storage',
-      version: 3,
+      version: 4,
       // Settings only. Run and lobby state are per-session by definition, and
       // persisting a lobby snapshot would restore a room that no longer exists.
       partialize: (state) => ({
@@ -260,6 +306,11 @@ export const useSliceItStore = create<SliceItState>()(
         isDarkMode: state.isDarkMode,
         quantColors: state.quantColors,
         modifiers: state.modifiers,
+        mirror: state.mirror,
+        scrollSpeed: state.scrollSpeed,
+        scrollMode: state.scrollMode,
+        visibilityMode: state.visibilityMode,
+        laneCoverHeight: state.laneCoverHeight,
       }),
       /**
        * Every migration here has the same job: carry the old keys forward
@@ -275,6 +326,14 @@ export const useSliceItStore = create<SliceItState>()(
        *   modifier set with `healthGauge: undefined` — falsy, and therefore
        *   harmless today, but a shape that does not match its own type. Merging
        *   over the defaults fills that and any field a future version adds.
+       * - **v3 → v4** added five purely-visual settings (G9 scroll speed, M3
+       *   the visibility family, V10 lane cover, M1 mirror) — all new
+       *   top-level keys, so a v3 blob just needs them filled in.
+       *   `visibilityMode: 'fadeOut'` is the load-bearing one: it makes
+       *   `invisible` (unchanged, still a plain boolean in `Modifiers`)
+       *   continue to render exactly as it always has for a player whose mod
+       *   set already had `invisible: true` — the "alias" the split promises,
+       *   done by leaving the old field alone rather than renaming it.
        */
       migrate: (persisted, version) => {
         let state = (persisted ?? {}) as Record<string, unknown>;
@@ -289,6 +348,16 @@ export const useSliceItStore = create<SliceItState>()(
             quantColors: true,
           };
         }
+        if (version < 4) {
+          state = {
+            ...state,
+            mirror: false,
+            scrollSpeed: 1.0,
+            scrollMode: 'constant',
+            visibilityMode: 'fadeOut',
+            laneCoverHeight: 0.3,
+          };
+        }
         return state;
       },
     },
@@ -298,6 +367,45 @@ export const useSliceItStore = create<SliceItState>()(
 function clampPercent(value: number): number {
   if (!Number.isFinite(value)) return 100;
   return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function clampScrollSpeed(value: number): number {
+  if (!Number.isFinite(value)) return 1.0;
+  return Math.max(MIN_SCROLL_SPEED, Math.min(MAX_SCROLL_SPEED, Math.round(value * 10) / 10));
+}
+
+function clampLaneCover(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(MIN_LANE_COVER, Math.min(MAX_LANE_COVER, value));
+}
+
+/**
+ * G9 — how many seconds ahead of the judgement line a note becomes visible.
+ *
+ * The one number players actually tune ("green number" in IIDX), so every
+ * surface that shows a speed slider shows this next to it rather than the
+ * bare multiplier. `constant` is BPM-independent (osu!mania scroll speed,
+ * StepMania C-mod); `bpm` locks beat-spacing on screen instead, so a chart's
+ * visual density stays put across a tempo change (StepMania X-mod).
+ */
+export function approachSeconds(bpm: number, scrollSpeed: number, mode: ScrollMode): number {
+  const speed = scrollSpeed > 0 ? scrollSpeed : 1;
+  const base = BASE_APPROACH_SEC / speed;
+  if (mode !== 'bpm' || !(bpm > 0)) return base;
+  return base * (120 / bpm);
+}
+
+/**
+ * V10 — the lane cover's reaction window, in milliseconds.
+ *
+ * `approachSec` should already be the run's REAL (wall-clock) lead time —
+ * `approachSeconds(...)` further divided by the playback-speed modifier, the
+ * same `visibleWindow` `GameCanvas.tsx` computes for rendering — so the
+ * number shown next to the slider is the one the player actually feels, not
+ * an abstract fraction of an abstract distance.
+ */
+export function reactionWindowMs(approachSec: number, coverFraction: number): number {
+  return Math.round(approachSec * (1 - coverFraction) * 1000);
 }
 
 /** Non-reactive read, for the engine and other imperative callers. */

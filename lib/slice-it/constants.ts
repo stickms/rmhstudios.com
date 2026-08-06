@@ -199,6 +199,48 @@ export const MODIFIER_BONUSES = {
 /** Speed above 1.0x adds this much multiplier per 1.0x of extra rate. */
 export const SPEED_BONUS_PER_X = 0.5;
 
+/* ─── Visual-only settings (G9, M3, V10) ─────────────────────────────────────
+ *
+ * These never reach the server and never touch scoring — they only change
+ * what the renderer draws — but the enum/range they clamp to is the same for
+ * every consumer, which is the same reason every other clamp in this file
+ * lives here rather than beside its one caller.
+ */
+
+/**
+ * Scroll speed as a player setting (G9).
+ *
+ * `constant` — notes travel a fixed number of screen-heights per second,
+ * independent of the chart's tempo (osu!mania scroll speed, StepMania C-mod).
+ * `bpm` — speed scales with the chart's BPM, so beat spacing on screen stays
+ * visually consistent across songs of different tempo (StepMania X-mod, IIDX).
+ */
+export const SCROLL_MODES = ['constant', 'bpm'] as const;
+export type ScrollMode = (typeof SCROLL_MODES)[number];
+export const MIN_SCROLL_SPEED = 0.5;
+export const MAX_SCROLL_SPEED = 3.0;
+/**
+ * Seconds of lead time a note gets at `scrollSpeed: 1.0` — today's fixed
+ * value, preserved exactly so the new setting's default reproduces the old,
+ * unconfigurable behaviour bit-for-bit.
+ */
+export const BASE_APPROACH_SEC = 3.0;
+
+/**
+ * The visibility family (M3): what used to be one `invisible` toggle.
+ *
+ * `fadeOut` is the original behaviour and stays the default and the alias
+ * target for a persisted `invisible: true` from before this split existed —
+ * see the `migrate` in `store.ts`.
+ */
+export const VISIBILITY_MODES = ['fadeOut', 'fadeIn', 'flashlight', 'laneCover'] as const;
+export type VisibilityMode = (typeof VISIBILITY_MODES)[number];
+
+/** Fraction of the approach a lane cover (V10) may hide, 0 = no cover. */
+export const MIN_LANE_COVER = 0;
+/** Never the full window — a cover that hides everything is not a tool. */
+export const MAX_LANE_COVER = 0.85;
+
 /* ─── Multiplayer lobbies ────────────────────────────────────────────────── */
 
 export const MAX_LOBBY_PLAYERS = 8;

@@ -134,6 +134,34 @@ export function prepareChart(map: BeatMap, modifiers: Modifiers): Slice[] {
   }));
 }
 
+/**
+ * M1 — Mirror. Swap lanes across the whole chart.
+ *
+ * No difficulty change, so **no score bonus** — see `constants.ts`
+ * `MODIFIER_BONUSES`, which deliberately has no `mirror` entry. Mirror is not
+ * harder, and paying for it would make it a free multiplier on every chart.
+ * Its value is that it turns every chart into a second chart for practice and
+ * breaks memorised muscle patterns.
+ *
+ * Generalised over `keys` for when a wider layout (`G2`) exists; today's game
+ * is always 2K, where this is exactly `1 - lane`.
+ *
+ * Not wired into `applyChartModifiers`/`prepareChart`: the chart those feed
+ * is the one `GameEngine.loadMap` judges against, and rewriting it here would
+ * need a change to `engine.ts`, owned by another agent this wave. The live
+ * game gets the same *effect* — a note that started life in lane L is both
+ * drawn in, and only hittable from, the opposite visual position — via an
+ * equivalent bijective flip applied at the render/input boundary in
+ * `GameCanvas.tsx` (`mirrorLane`), which never has to touch the chart or the
+ * engine at all. This function is the reference transform: covered by its own
+ * tests, and there for a future caller that prepares the chart itself (a
+ * server-side render, a replay, or `engine.ts` if a later wave wires it in
+ * directly).
+ */
+export function applyMirror(slices: Slice[], keys: number): Slice[] {
+  return slices.map((s) => ({ ...s, lane: keys - 1 - s.lane }));
+}
+
 /** Notes that count toward accuracy — bombs and silent notes never do. */
 export function scorableNoteCount(slices: Slice[]): number {
   return slices.filter((s) => s.type !== 'BOMB' && s.type !== 'SILENT').length;

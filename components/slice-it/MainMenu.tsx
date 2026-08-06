@@ -10,6 +10,7 @@ import { useSliceItStore } from '@/lib/slice-it/store';
 import { GameEngine } from '@/lib/slice-it/engine';
 import { asset } from '@/lib/storage/asset';
 import { Slider } from '@/components/ui/slider';
+import { MAX_SCROLL_SPEED, MIN_SCROLL_SPEED } from '@/lib/slice-it/constants';
 import { AudioManager } from '@/lib/audio/AudioManager';
 import { addMatchListener } from '@/lib/slice-it/net/client';
 import { useStartRun } from '@/lib/slice-it/useStartRun';
@@ -145,6 +146,51 @@ const ToggleRow = ({
   </button>
 );
 
+/**
+ * A settings row that picks one of several options — the segmented-choice
+ * sibling of `ToggleRow` above. Independent `aria-pressed` buttons, not a tab
+ * strip: no tablist role, no selected-state ARIA attribute, because there is
+ * no shared panel being switched, only N buttons where turning one on means
+ * the others are understood to be off.
+ */
+const ChoiceRow = <T extends string,>({
+  label,
+  description,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  value: T;
+  options: { id: T; label: string }[];
+  onChange: (next: T) => void;
+}) => (
+  <div className="space-y-2">
+    <span className="block text-sm font-black text-slice-text-darker">{label}</span>
+    <span className="block text-[10px] text-slice-text-light font-bold leading-snug">
+      {description}
+    </span>
+    <div className="flex flex-wrap gap-2" role="group" aria-label={label}>
+      {options.map((opt) => (
+        <button
+          key={opt.id}
+          type="button"
+          aria-pressed={value === opt.id}
+          onClick={() => onChange(opt.id)}
+          className={`px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wide transition-shadow ${
+            value === opt.id
+              ? 'bg-blue-500 text-white shadow-[inset_3px_3px_6px_rgba(0,0,0,0.25)]'
+              : 'bg-slice-bg text-slice-text-darker shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]'
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
 export function MainMenu({ engine: propEngine }: MainMenuProps) {
   const { t } = useTranslation('c-game');
   const { t: ts } = useTranslation('r-slice-it');
@@ -154,6 +200,14 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
   const setModifiers = useSliceItStore((state) => state.setModifiers);
   const quantColors = useSliceItStore((state) => state.quantColors);
   const setQuantColors = useSliceItStore((state) => state.setQuantColors);
+  const mirror = useSliceItStore((state) => state.mirror);
+  const setMirror = useSliceItStore((state) => state.setMirror);
+  const scrollSpeed = useSliceItStore((state) => state.scrollSpeed);
+  const setScrollSpeed = useSliceItStore((state) => state.setScrollSpeed);
+  const scrollMode = useSliceItStore((state) => state.scrollMode);
+  const setScrollMode = useSliceItStore((state) => state.setScrollMode);
+  const visibilityMode = useSliceItStore((state) => state.visibilityMode);
+  const setVisibilityMode = useSliceItStore((state) => state.setVisibilityMode);
   const setSongId = useSliceItStore((state) => state.setSongId);
   const setIsMultiplayer = useSliceItStore((state) => state.setIsMultiplayer);
   const isDarkMode = useSliceItStore((state) => state.isDarkMode);
@@ -660,8 +714,98 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                   value={quantColors}
                   onChange={setQuantColors}
                 />
+                <ToggleRow
+                  label={ts('mod-mirror', { defaultValue: 'Mirror' })}
+                  description={ts('mod-mirror-hint', {
+                    defaultValue:
+                      'Swap every lane. Not harder, so it earns no score bonus — it just turns every chart into a second chart to practise on.',
+                  })}
+                  value={mirror}
+                  onChange={setMirror}
+                />
               </div>
             </div>
+
+            {/* Scroll Speed (G9) */}
+            <div className="space-y-4">
+              <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">
+                {ts('scroll-speed', { defaultValue: 'Scroll Speed' })}
+              </label>
+              <div className="bg-slice-bg p-6 rounded-3xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] space-y-5">
+                <ChoiceRow
+                  label={ts('scroll-speed-mode', { defaultValue: 'Mode' })}
+                  description={ts('scroll-speed-mode-hint', {
+                    defaultValue:
+                      "Constant keeps the same pace on every song. BPM-locked scales the pace with each song's tempo, so beat spacing looks the same everywhere.",
+                  })}
+                  value={scrollMode}
+                  options={[
+                    {
+                      id: 'constant' as const,
+                      label: ts('scroll-speed-mode-constant', { defaultValue: 'Constant' }),
+                    },
+                    {
+                      id: 'bpm' as const,
+                      label: ts('scroll-speed-mode-bpm', { defaultValue: 'BPM-Locked' }),
+                    },
+                  ]}
+                  onChange={setScrollMode}
+                />
+                <div>
+                  <div className="flex justify-between text-sm font-black text-slice-text-darker">
+                    <span>{ts('scroll-speed-value', { defaultValue: 'Speed' })}</span>
+                    <span className="text-blue-500 font-mono">x{scrollSpeed.toFixed(1)}</span>
+                  </div>
+                  <Slider
+                    value={[scrollSpeed]}
+                    min={MIN_SCROLL_SPEED}
+                    max={MAX_SCROLL_SPEED}
+                    step={0.1}
+                    onValueChange={(vals) => setScrollSpeed(vals[0])}
+                    className="mt-3"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Visibility (M3) — only meaningful while Invisible is on; the
+                toggle itself lives in the per-song modifier picker. */}
+            {modifiers.invisible && (
+              <div className="space-y-4">
+                <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">
+                  {ts('visibility-mode', { defaultValue: 'Visibility' })}
+                </label>
+                <div className="bg-slice-bg p-6 rounded-3xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]">
+                  <ChoiceRow
+                    label={ts('visibility-mode-label', { defaultValue: 'Effect' })}
+                    description={ts('visibility-mode-hint', {
+                      defaultValue:
+                        'Which way the Invisible modifier hides notes. Lane Cover is tuned live from the in-run pause menu, where the reaction window is shown in milliseconds.',
+                    })}
+                    value={visibilityMode}
+                    options={[
+                      {
+                        id: 'fadeOut' as const,
+                        label: ts('visibility-mode-fadeout', { defaultValue: 'Fade Out' }),
+                      },
+                      {
+                        id: 'fadeIn' as const,
+                        label: ts('visibility-mode-fadein', { defaultValue: 'Fade In' }),
+                      },
+                      {
+                        id: 'flashlight' as const,
+                        label: ts('visibility-mode-flashlight', { defaultValue: 'Flashlight' }),
+                      },
+                      {
+                        id: 'laneCover' as const,
+                        label: ts('visibility-mode-lanecover', { defaultValue: 'Lane Cover' }),
+                      },
+                    ]}
+                    onChange={setVisibilityMode}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Hit Sound Selector */}
             <div className="space-y-4">

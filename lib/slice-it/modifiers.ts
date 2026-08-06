@@ -23,6 +23,7 @@ import {
   MIN_SPEED,
   MULTIPLAYER_MIN_SPEED,
   type Difficulty,
+  type VisibilityMode,
 } from './constants';
 import type { Modifiers } from './types';
 
@@ -137,6 +138,52 @@ export function forMultiplayer(modifiers: Modifiers): Modifiers {
     speed: Math.max(MULTIPLAYER_MIN_SPEED, modifiers.speed),
     suddenDeath: false,
   });
+}
+
+/**
+ * M3 — the visibility family's shared alpha curve.
+ *
+ * `invisible` used to be one hard-coded fade; the genre has four distinct
+ * mods that train different reading skills. They stay ONE `Modifiers` field
+ * (`invisible: boolean`) rather than four, and deliberately do not touch
+ * `types.ts` or `MODIFIER_BONUSES`: which *visual* is playing is a rendering
+ * choice, not a difficulty choice, so it is a separate persisted setting
+ * (`visibilityMode` in `store.ts`) layered on top of the SAME `invisible`
+ * flag and the SAME 0.2 bonus every variant already earned.
+ *
+ * `travelRatio` is 1.0 at spawn and 0.0 at the judgement line — the domain
+ * `GameCanvas.tsx` already computed for the old fade-only implementation.
+ * One function, four `case`s, so a fifth mode is one more branch rather than
+ * a second render path that can quietly drift from the first.
+ */
+export function visibilityAlpha(
+  travelRatio: number,
+  mode: VisibilityMode,
+  /** V10 — the lane cover's height, 0 (no cover) to `MAX_LANE_COVER`. */
+  coverFraction: number,
+): number {
+  switch (mode) {
+    case 'fadeIn':
+      // Invisible at spawn, fades in on approach (IIDX SUDDEN+): the opposite
+      // read to fadeOut, testing a late read instead of a memorised one.
+      if (travelRatio > 0.55) return 0;
+      if (travelRatio > 0.35) return 1 - (travelRatio - 0.35) / 0.2;
+      return 1;
+    case 'flashlight':
+      // Only a narrow ring around the judgement line is ever visible.
+      return travelRatio < 0.15 ? 1 : 0;
+    case 'laneCover':
+      // The literal cover (V10): hidden until the note clears the covered
+      // fraction of the approach. `coverFraction` is what the player drags.
+      return travelRatio > 1 - coverFraction ? 0 : 1;
+    case 'fadeOut':
+    default:
+      // The original `invisible` behaviour, preserved bit-for-bit: fully
+      // visible until 20% of the approach remains, gone below 8%.
+      if (travelRatio < 0.08) return 0;
+      if (travelRatio < 0.2) return (travelRatio - 0.08) / 0.12;
+      return 1;
+  }
 }
 
 /** A compact label list for badges — only what differs from the defaults. */
