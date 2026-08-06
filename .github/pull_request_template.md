@@ -18,8 +18,11 @@ the checklist. Delete any section that doesn't apply.
 
 ## Checklist
 
+- [ ] `pnpm check:consistency --base main` passes (the commit gate, over the whole branch).
 - [ ] `pnpm exec tsc --noEmit` passes (no *new* type errors vs. the base branch).
 - [ ] `pnpm lint` passes (no new errors; a11y/`any` warnings noted if added).
+- [ ] UI uses `--site-*`/`--app-*` tokens, a glass elevation class by role, and `components/ui/` primitives — no hardcoded colours/radii, no second copy of a shared component.
+- [ ] UI was looked at in Daylight, `.style-graphite` and `.style-high-contrast`, at a phone and a desktop width.
 - [ ] New interactive UI is keyboard-operable, labeled, and respects `prefers-reduced-motion`.
 - [ ] New public route sets a unique title/description, a canonical, and (if content) JSON-LD.
 - [ ] User-facing errors are handled (route `errorComponent`/boundary) and reported.

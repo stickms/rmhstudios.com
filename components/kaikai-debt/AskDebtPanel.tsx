@@ -174,7 +174,7 @@ export function AskDebtPanel({ disabled }: { disabled?: boolean }) {
           ) : answer ? (
             <p className="text-site-text whitespace-pre-wrap">{answer}</p>
           ) : (
-            <p className="text-site-text-dim">
+            <p className="text-site-text-muted">
               {t('ask.thinking', { defaultValue: 'Consulting the ledger…' })}
             </p>
           )}

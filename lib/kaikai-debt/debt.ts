@@ -520,6 +520,18 @@ export interface DebtSnapshot {
   memberEntryCount: number;
   /** Distinct signed-in humans who have added something. */
   contributorCount: number;
+  /**
+   * Oldest row on the books, epoch millis, and how many of the eight categories
+   * are represented.
+   *
+   * Both exist for the credit meter under the counter, which is a pure function
+   * of the ledger and the clock (`lib/kaikai-debt/credit.ts`) and therefore has
+   * to have the ledger on the first paint — otherwise it renders one score
+   * server-side and a different one a moment later, which is precisely the
+   * hydration mismatch the whole model is built to avoid.
+   */
+  oldestMs: number;
+  categoryCount: number;
   /** Server clock when this was built. The client renders THIS first, then goes live. */
   asOfMs: number;
   entries: DebtEntryDto[];

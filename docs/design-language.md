@@ -1426,7 +1426,14 @@ subtree, not about the rule that sizes it.
 ## 13. What is enforced automatically
 
 Most of this document is convention. A slice of it is executable, and runs in
-the normal suite (`pnpm exec vitest run`, gated by `web-ci.yml`):
+the normal suite (`pnpm exec vitest run`, gated by `web-ci.yml`) — and, so that
+you meet it at the keyboard rather than in CI, on **every commit** through
+`pnpm check:consistency` (`scripts/check-consistency.sh`, wired into
+`git commit` by `.githooks/pre-commit` and, for agent sessions, by
+`.claude/hooks/commit-gate.sh`). That script previews these rules against the
+**added lines** of your diff — same rules, same allowlists, read from the test
+files themselves so the two cannot drift — and then runs the tests below, which
+remain the authority:
 
 - **`lib/__tests__/design-consistency.test.ts` — one tab-strip grammar.** A
   static source scan over `components/` + `app/routes/` that fails on:
@@ -1506,4 +1513,14 @@ the normal suite (`pnpm exec vitest run`, gated by `web-ci.yml`):
   warnings versus the base branch.
 
 A green suite means you did not regress the enforced rules. It does not mean
-the change looks right — §0.9 is still a human looking at three themes.
+the change looks right — §0.9 is still a human looking at three themes. That is
+why `check-consistency` ends by printing the unautomatable list rather than a
+bare "passed".
+
+**Adding a rule.** When a class of drift keeps coming back, the fix is a new
+executable rule here rather than another paragraph of prose: a source scan in
+`lib/__tests__/`, an allowlist whose entries are each justified in the file and
+that only ever shrinks, plus a "scanned > N files" assertion so a broken walker
+cannot make the rule pass vacuously. `check-consistency.sh` picks up anything
+added to its gate list, and the fast added-lines preview reads its path
+exemptions straight out of `design-consistency.test.ts`.

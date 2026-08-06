@@ -157,7 +157,7 @@ export function AddDebtForm({ onAdded, disabled }: AddDebtFormProps) {
       />
 
       <div className="flex items-center justify-between gap-3">
-        <span className="text-xs text-site-text-dim" aria-hidden>
+        <span className="text-xs text-site-text-muted" aria-hidden>
           {claim.length}/{MAX_CLAIM_CHARS}
         </span>
         <Button type="submit" size="sm" loading={submitting} disabled={!claim.trim() || disabled}>

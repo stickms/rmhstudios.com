@@ -131,6 +131,14 @@ export interface DebtTotals {
   entryCount: number;
   memberEntryCount: number;
   contributorCount: number;
+  /**
+   * Oldest row on the books, epoch millis — the length of his credit history.
+   * `Date.now()` on an empty ledger, so "no history" reads as "no history"
+   * rather than as fifty-five years of it (the epoch).
+   */
+  oldestMs: number;
+  /** How many of the eight categories he has managed to owe money in. */
+  categoryCount: number;
 }
 
 /**
@@ -167,6 +175,8 @@ async function readTotals(): Promise<DebtTotals> {
       entries: bigint;
       member_entries: bigint;
       contributors: bigint;
+      oldest_ms: number | null;
+      categories: bigint;
     }[]
   >`
     SELECT
@@ -184,7 +194,15 @@ async function readTotals(): Promise<DebtTotals> {
       SUM("amountCents") FILTER (WHERE "source" = 'member')::bigint      AS member_principal,
       COUNT(*)::bigint                                                   AS entries,
       COUNT(*) FILTER (WHERE "source" = 'member')::bigint                AS member_entries,
-      COUNT(DISTINCT "addedById")::bigint                                AS contributors
+      COUNT(DISTINCT "addedById")::bigint                                AS contributors,
+      -- The credit meter under the counter needs these on the FIRST paint, so
+      -- they ride the aggregate the page already makes rather than a second
+      -- request. EXTRACT(EPOCH ...) on a timestamp is the nominal seconds since
+      -- 1970 regardless of zone, which for a column Prisma stores in UTC is
+      -- exactly the epoch millis the client wants -- and it is the same reading
+      -- the basis term above already relies on.
+      (EXTRACT(EPOCH FROM MIN("createdAt")) * 1000)::double precision     AS oldest_ms,
+      COUNT(DISTINCT "category")::bigint                                 AS categories
     FROM kaikai_debt_entry
   `;
 
@@ -198,6 +216,8 @@ async function readTotals(): Promise<DebtTotals> {
     entryCount: Number(row?.entries ?? 0),
     memberEntryCount: Number(row?.member_entries ?? 0),
     contributorCount: Number(row?.contributors ?? 0),
+    oldestMs: row?.oldest_ms == null ? Date.now() : Number(row.oldest_ms),
+    categoryCount: Number(row?.categories ?? 0),
   };
 }
 
@@ -569,6 +589,8 @@ export async function getSnapshot(opts: { userId?: string | null } = {}): Promis
     entryCount: totals.entryCount,
     memberEntryCount: totals.memberEntryCount,
     contributorCount: totals.contributorCount,
+    oldestMs: totals.oldestMs,
+    categoryCount: totals.categoryCount,
     // Read AFTER the queries, so a client that starts ticking from this instant
     // is never ahead of the basis it was handed.
     asOfMs: Date.now(),

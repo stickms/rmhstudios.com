@@ -40,6 +40,30 @@
 - **Quality bar:** `pnpm exec tsc --noEmit` and `pnpm lint` must introduce no
   new warnings; never commit secrets.
 
+## The commit gate (the one habit that keeps the site consistent)
+
+**Run `pnpm check:consistency` before every commit.** One command
+(`scripts/check-consistency.sh`) scans the added lines for the rules CI fails
+on, runs the executable design gates in `lib/__tests__/`, lints the changed
+files, typechecks, checks the generated docs are current, and then prints the
+few things no script can check.
+
+```bash
+pnpm check:consistency               # the staged change
+pnpm check:consistency --fast        # design/style gates + eslint (what the hooks run)
+pnpm check:consistency --base main   # the whole branch, before a PR
+pnpm check:consistency:full          # + the full vitest suite
+```
+
+It also fires automatically: `.claude/settings.json` gates `git commit` in
+Claude Code sessions via `.claude/hooks/commit-gate.sh`, and `pnpm
+hooks:install` points git's `core.hooksPath` at `.githooks/` for everyone else.
+If your tooling honours neither, run the command by hand — the site's
+consistency is the point, not the mechanism.
+
+A failing gate is **fixed, not bypassed**. If a rule is genuinely wrong for the
+change, change the rule in the same commit and say so in the message.
+
 ## Directory guides
 
 | Area                               | Guide                                                          |
@@ -55,6 +79,7 @@
 | Design language (themes, tokens)   | [`docs/design-language.md`](./docs/design-language.md)         |
 | The radial shell + liquid globe    | [`components/radial/README.md`](./components/radial/README.md) |
 | New-page consistency checklist     | [`docs/page-consistency.md`](./docs/page-consistency.md)       |
+| The commit gate (script)           | [`scripts/check-consistency.sh`](./scripts/check-consistency.sh) |
 | RMH Capital leadership (canon)     | [`docs/people.md`](./docs/people.md)                           |
 | Docs index (incl. stale-doc flags) | [`docs/README.md`](./docs/README.md)                           |
 | Contribution rules                 | [`CONTRIBUTING.md`](./CONTRIBUTING.md)                         |
@@ -63,6 +88,7 @@
 
 ```bash
 pnpm install && pnpm db:push && pnpm dev   # run locally → http://localhost:7005
+pnpm check:consistency                     # the commit gate — before EVERY commit
 pnpm exec tsc --noEmit && pnpm lint        # gated by web-ci.yml — run them before pushing
 pnpm exec vitest run                       # tests (also run in web-ci.yml)
 make gazelle && make test                  # Go fleet (Bazel)

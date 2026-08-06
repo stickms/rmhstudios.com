@@ -104,3 +104,48 @@ feature lives in that feature's directory; genuinely shared primitives live in
 3. Feature-specific? Put it in that feature's directory next to its users.
 4. Needed by 2+ features? Then it belongs in `ui/` (primitive) or `shared/`
    (composite) — with `data-slot`, tokens, i18n, and a11y from day one.
+
+## Before you commit UI
+
+`pnpm check:consistency` (repo `CLAUDE.md` → "The commit gate") is the gate;
+`.claude/hooks/commit-gate.sh` and `.githooks/pre-commit` run it for you. It
+catches the mechanical half — raw palette colours, hardcoded radii,
+`transition-all`, dead `tailwindcss-animate` classes, a hand-rolled tab strip
+or `layoutId` capsule, floating UI below L4. Everything below is the half it
+cannot see, and it is the half that decides whether the change looks native:
+
+- [ ] **A primitive, not a second copy of one.** A duplicated button, modal,
+      spinner, empty state or copy button is this repo's most common defect
+      (design-language.md §0.3). Check `ui/` before writing anything.
+- [ ] **Elevation by role, not by eye** — `.glass-fill` repeated content ·
+      `.glass-pane` singular panels · `.glass-chrome` sticky chrome ·
+      `.glass-overlay` anything floating · `.glass-inset` fields. Never a
+      hand-rolled `bg-site-surface border rounded-site` box: it paints the box
+      and none of the material, and the degradation tiers have nothing to
+      switch off.
+- [ ] **Ink tracks its surface** (`bg-site-accent` → `text-site-accent-fg`),
+      never `text-white`/`text-black` on a themed surface.
+- [ ] **A switcher is a tab strip** even without `role="tablist"` — an accent
+      pill, a segmented control, a `flex-1` button row with an active tint all
+      belong on `<LiquidTabs>`. The gate only catches the obvious shapes; this
+      one is on you.
+- [ ] **Motion from `lib/motion.ts`** (`DURATION`/`EASE`/`SPRING`/
+      `APPLE_SPRING`, the named variants), not ad-hoc numbers; anything the
+      user drags is a spring, not a duration.
+- [ ] **Strings through `t("key", { defaultValue })`** in the `c-<area>`
+      namespace, `pnpm i18n:extract` run, key present in `locales/en/`. New
+      namespace ⇒ also register it in `NAMESPACES` (`lib/i18n/config.ts`).
+- [ ] **Looked at in three themes × two widths** — Daylight, `.style-graphite`,
+      `.style-high-contrast`, phone and desktop, once with reduced motion.
+      Nothing in CI can do this for you (design-language.md §0.9).
+- [ ] **Keyboard + screen reader**: icon-only controls named, decorative icons
+      `aria-hidden`, focus ring visible against the surface it lands on, no new
+      jsx-a11y warnings.
+- [ ] Full-screen game/app work also holds the §12.1 viewport contract —
+      `lib/__tests__/game-viewport-consistency.test.ts` gates three of its five
+      rules; safe-area insets, DPR clamping and per-frame canvas reallocation
+      are yours to check.
+
+When the system does not have what you need, **extend the system** — add the
+token, the variant, the primitive — and say so in the commit message. A magic
+number solved locally is how five apps ended up with five focus rings.

@@ -260,16 +260,22 @@ Work through this for every new or edited page:
       (`pb-[calc(env(safe-area-inset-bottom,0px)+92px)] md:pb-0` on the column —
       PageLayout does this); tap targets comfortable at 480px (`xs` breakpoint).
 
-### Before pushing
+### Before committing
 
+- [ ] **`pnpm check:consistency`** — the commit gate. It scans the added lines
+      for the rules CI fails on, runs the executable gates in `lib/__tests__/`
+      (design-language.md §13), lints the changed files, typechecks and checks
+      the generated docs, then prints what it cannot check. It runs itself on
+      `git commit` via `.githooks/pre-commit` (after `pnpm hooks:install`) and,
+      in agent sessions, `.claude/hooks/commit-gate.sh`. Fix what it reports —
+      don't reach for `--no-verify`.
 - [ ] `pnpm exec tsc --noEmit` and `pnpm lint` introduce no _new_ warnings.
-- [ ] `pnpm exec vitest run` — the suite carries the UI consistency gate
-      (`lib/__tests__/design-consistency.test.ts`, design-language.md §13),
-      which fails on hand-rolled tab strips and active-underline markers.
+- [ ] `pnpm exec vitest run` — the full suite, before you push.
 - [ ] Dev server run once so `app/routeTree.gen.ts` regenerates (never edit it
       by hand).
 - [ ] Walk design-language.md §0 (definition of done) once more against the
-      finished diff.
+      finished diff. A green gate means you did not regress an enforced rule;
+      it does not mean the page looks right.
 
 ---
 
