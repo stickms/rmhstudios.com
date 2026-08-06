@@ -26,6 +26,7 @@ import { TIER_RANK, type Tier } from '@/lib/entitlements/tiers';
 
 /** Stable ids. Persisted in analytics and referenced by upsell deep links. */
 export type MemberFeature =
+  | 'ad-free'
   | 'voice-messages'
   | 'custom-emoji'
   | 'sticker-packs'
@@ -59,6 +60,16 @@ export interface FeatureDef {
  * first, plumbing last.
  */
 export const MEMBER_FEATURES: readonly FeatureDef[] = [
+  {
+    id: 'ad-free',
+    minTier: 'starter',
+    labelKey: 'feature-ad-free',
+    label: 'No ads',
+    blurbKey: 'feature-ad-free-blurb',
+    blurb:
+      'Free accounts are paid for by ads. A membership removes them everywhere — and the ad script is never even fetched, so nothing is loaded to be blocked.',
+    icon: 'EyeOff',
+  },
   {
     id: 'custom-emoji',
     minTier: 'starter',

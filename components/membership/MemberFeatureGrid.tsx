@@ -68,6 +68,13 @@ function IconFor({ name, className }: { name: string; className?: string }) {
  */
 export function featureCopy(t: TFunction): Record<MemberFeature, { label: string; blurb: string }> {
   return {
+    'ad-free': {
+      label: t('feature-ad-free', { defaultValue: 'No ads' }),
+      blurb: t('feature-ad-free-blurb', {
+        defaultValue:
+          'Free accounts are paid for by ads. A membership removes them everywhere — and the ad script is never even fetched, so nothing is loaded to be blocked.',
+      }),
+    },
     'custom-emoji': {
       label: t('feature-custom-emoji', { defaultValue: 'Custom emoji' }),
       blurb: t('feature-custom-emoji-blurb', {

@@ -1,6 +1,11 @@
 import { prisma } from '@/lib/prisma.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
-import { TIER_RANK, mapPlanToTier, tierFromSubscription, type Tier } from '@/lib/entitlements/tiers';
+import {
+  TIER_RANK,
+  mapPlanToTier,
+  tierFromSubscription,
+  type Tier,
+} from '@/lib/entitlements/tiers';
 
 // The pure tier vocabulary lives in `lib/entitlements/tiers.ts` so it can be
 // imported without dragging `lib/prisma.server` in (see that file's header).
@@ -9,9 +14,11 @@ import { TIER_RANK, mapPlanToTier, tierFromSubscription, type Tier } from '@/lib
 export {
   TIER_RANK,
   mapPlanToTier,
+  parseTier,
   tierFromSubscription,
   hasApiAccess,
   hasApiImageUpload,
+  hasAdFree,
   hasBadge,
 } from '@/lib/entitlements/tiers';
 export type { Tier } from '@/lib/entitlements/tiers';

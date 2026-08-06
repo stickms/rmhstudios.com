@@ -1,10 +1,10 @@
 'use client';
 
 /**
- * The client-side half of the ad gate: resolves the four live inputs
+ * The client-side half of the ad gate: resolves the live inputs
  * (`lib/ads/adsense.ts` owns the decision itself) — publisher id, current path,
- * membership tier, cookie-consent answer — and re-evaluates when any of them
- * changes.
+ * membership tier and whether that tier is known yet, cookie-consent answer —
+ * and re-evaluates when any of them changes.
  *
  * Returns `enabled: false` on the server and on the first client render, on
  * purpose. Ads must never be part of the SSR HTML: the consent answer and the
@@ -32,8 +32,21 @@ export interface AdsGate {
 
 export function useAdsEnabled(): AdsGate {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { data: session } = useSession();
-  const tier = (session?.user as { tier?: string | null } | undefined)?.tier ?? null;
+  const { data: session, isPending } = useSession();
+  const user = session?.user as { tier?: string | null } | undefined;
+  const tier = user?.tier ?? null;
+
+  // Whether `tier` above is an answer. Two ways it isn't, and a member sees an
+  // ad for the length of either one if this is skipped:
+  //
+  //  - The session is still in flight (`isPending`). Nobody is signed out yet;
+  //    nobody is signed in yet either.
+  //  - There IS a user but no `tier` on it. `components/Providers` renders a
+  //    persisted session snapshot while the live one loads, and a snapshot
+  //    written by an older build — or by a request whose SSR session lookup
+  //    timed out — can be missing the field entirely. A signed-in account whose
+  //    entitlement we can't see is unknown, not free.
+  const sessionResolved = !isPending && (!user || typeof user.tier === 'string');
 
   // `undefined` = "not resolved on the client yet", which is distinct from
   // `null` = "resolved, and the visitor hasn't answered the banner". Both keep
@@ -62,6 +75,7 @@ export function useAdsEnabled(): AdsGate {
       clientId: ADSENSE_CLIENT_ID,
       pathname,
       tier,
+      sessionResolved,
       consent: resolvedConsent,
       discordActivity: isDiscordActivity(),
     });
