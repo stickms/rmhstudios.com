@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 542 files across 133 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 550 files across 135 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -520,6 +520,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/group-chats/:id/react` | `POST` | `app/routes/api/group-chats/$id/react.ts` |
 | `/api/group-chats/:id/stream` | `GET` | `app/routes/api/group-chats/$id/stream.ts` |
 
+## `/api/groupcalls`
+
+3 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/groupcalls/active` | `GET` | `app/routes/api/groupcalls/active.ts` |
+| `/api/groupcalls/history` | `GET` | `app/routes/api/groupcalls/history.ts` |
+| `/api/groupcalls/invitable` | `GET` | `app/routes/api/groupcalls/invitable.ts` |
+
 ## `/api/guides`
 
 3 routes.
@@ -600,6 +610,18 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/internal/notify-typing` | `POST` | `app/routes/api/internal/notify-typing.ts` |
 | `/api/internal/predictions-tick` | `POST` | `app/routes/api/internal/predictions-tick.ts` |
 | `/api/internal/streak-push` | `POST` | `app/routes/api/internal/streak-push.ts` |
+
+## `/api/kaikai-debt`
+
+5 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/kaikai-debt` | `GET` | `app/routes/api/kaikai-debt/index.ts` |
+| `/api/kaikai-debt/ask` | `POST` | `app/routes/api/kaikai-debt/ask.ts` |
+| `/api/kaikai-debt/entries` | `POST` | `app/routes/api/kaikai-debt/entries.ts` |
+| `/api/kaikai-debt/ledger` | `GET` | `app/routes/api/kaikai-debt/ledger.ts` |
+| `/api/kaikai-debt/stream` | `GET` | `app/routes/api/kaikai-debt/stream.ts` |
 
 ## `/api/laundry-sort`
 
