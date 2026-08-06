@@ -359,7 +359,7 @@ function removeSeat(io: Server, lobby: Lobby, userId: string, reason: string): v
     logger.info({ event: 'slice_host_migrated', code: lobby.code, to: next.userId, reason });
   }
 
-  releasePauseIfSettled(io, lobby, seat.name);
+  releasePauseIfSettled(io, lobby);
   maybeFinishMatch(io, lobby);
   broadcast(io, lobby);
 }
@@ -414,20 +414,40 @@ function pauseMatch(io: Server, lobby: Lobby): void {
   const earliest = Math.min(...peers.map((p) => p.disconnectedAt ?? Date.now()));
   const kickAt = earliest + MATCH_DISCONNECT_GRACE_MS;
 
+  // The lobby's pause timer takes over from the per-seat grace timers, which
+  // were armed for the same instant. Leaving both running is a race, and the
+  // seat timer wins it — it was armed first — so the removal happens through a
+  // path that does not know it is ending a pause, and the room is told to
+  // resume without being told who it stopped waiting for. One deadline, owned
+  // by the room, is also the one the clients are counting down to.
+  for (const peer of peers) {
+    if (peer.graceTimer) {
+      clearTimeout(peer.graceTimer);
+      peer.graceTimer = null;
+    }
+  }
+
   if (lobby.pauseTimer) clearTimeout(lobby.pauseTimer);
   lobby.pauseTimer = setTimeout(
     () => {
       const current = lobbies.get(lobby.code);
       if (!current) return;
-      const names: string[] = [];
-      for (const peer of heldPeers(current)) {
-        names.push(peer.name);
+      const expired = heldPeers(current);
+
+      // Recorded BEFORE the removals, not after. `removeSeat` calls
+      // `releasePauseIfSettled`, so the resume fires from inside the loop the
+      // moment the last held peer is gone — assigning the names afterwards set
+      // them on a lobby that had already sent an empty `droppedNames`, and the
+      // room never learned who it had just stopped waiting for.
+      current.droppedNames = expired.map((peer) => peer.name);
+      for (const peer of expired) {
         removeSeat(io, current, peer.userId, 'grace_expired');
       }
+
+      // A lobby that emptied out is already destroyed; and if every held peer
+      // somehow returned in the same tick, the resume already happened.
       const still = lobbies.get(lobby.code);
-      if (!still) return;
-      still.droppedNames = names;
-      resumeMatch(io, still);
+      if (still) resumeMatch(io, still);
     },
     Math.max(0, kickAt - Date.now()),
   );
@@ -439,11 +459,18 @@ function pauseMatch(io: Server, lobby: Lobby): void {
   });
 }
 
-/** Resume once nobody is being waited on any more. */
-function releasePauseIfSettled(io: Server, lobby: Lobby, returnedName?: string): void {
+/**
+ * Resume once nobody is being waited on any more.
+ *
+ * Deliberately does NOT touch `droppedNames`: whether the hold ended because
+ * someone came back (nobody dropped, the list is already empty) or because the
+ * window expired (the expiry path sets it just before removing them) is decided
+ * by the caller, and clearing it here erased the one case that had something to
+ * say.
+ */
+function releasePauseIfSettled(io: Server, lobby: Lobby): void {
   if (lobby.pausedAt === null) return;
   if (heldPeers(lobby).length > 0) return;
-  if (returnedName) lobby.droppedNames = [];
   resumeMatch(io, lobby);
 }
 
@@ -547,6 +574,13 @@ function beginCountdown(io: Server, lobby: Lobby): void {
 }
 
 function startMatch(io: Server, lobby: Lobby): void {
+  // Anyone who dropped between pressing Start and the countdown ending cannot
+  // have loaded the chart, so they watch this round rather than being counted
+  // as a racer the match then waits on.
+  for (const seat of lobby.seats.values()) {
+    if (seat.disconnectedAt !== null) seat.spectating = true;
+  }
+
   lobby.state = 'playing';
   lobby.matchStartedAt = Date.now();
   lobby.pausedTotalMs = 0;
@@ -845,7 +879,9 @@ export function registerSliceItHandlers(io: Server, socket: Socket): void {
       for (const message of lobby.chat.slice(-10)) sock.emit(S2C.CHAT, message);
 
       // They are back inside their grace window — put the room back in motion.
-      releasePauseIfSettled(io, lobby, seat.name);
+      // Nobody was dropped, so the resume banner has no names to report.
+      if (lobby.pausedAt !== null && heldPeers(lobby).length === 0) lobby.droppedNames = [];
+      releasePauseIfSettled(io, lobby);
       broadcast(io, lobby);
     },
 
