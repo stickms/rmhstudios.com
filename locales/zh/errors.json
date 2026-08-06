@@ -1,0 +1,18 @@
+{
+  "aiBudget": "您本月的AI配额已用完",
+  "aiUnavailable": "AI功能已离线",
+  "conflict": "其他人先修改了此项",
+  "forbidden": "您无权访问此内容",
+  "gone": "该内容已过期",
+  "insufficientCoins": "您的金币不足",
+  "internal": "我们这边出了点问题",
+  "invalidInput": "请检查表单后重试",
+  "notFound": "该内容不存在（或已被移除）",
+  "queryBudget": "该请求处理成本过高",
+  "quotaExceeded": "您的存储空间已用完",
+  "rateLimited": "请稍等片刻",
+  "stakeLimit": "您已达到设定的限额",
+  "storageUnavailable": "上传功能暂时不可用",
+  "unauthorized": "请登录后继续",
+  "upgradeRequired": "此功能需要会员资格"
+}
