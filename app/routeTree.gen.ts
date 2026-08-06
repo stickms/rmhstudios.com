@@ -801,10 +801,10 @@ import { Route as ApiRmhladderResumeIdConfirmRouteImport } from './routes/api/rm
 import { Route as ApiRmhmusicGuessIdIndexRouteImport } from './routes/api/rmhmusic/guess/$id/index'
 import { Route as ApiRmhmusicGuessIdAttemptRouteImport } from './routes/api/rmhmusic/guess/$id/attempt'
 import { Route as ApiSliceItSongsIdCommentsRouteImport } from './routes/api/slice-it/songs/$id/comments'
+import { Route as ApiSliceItSongsIdCoverRouteImport } from './routes/api/slice-it/songs/$id/cover'
 import { Route as ApiSliceItSongsIdLikeRouteImport } from './routes/api/slice-it/songs/$id/like'
 import { Route as ApiSliceItSongsIdPatchAnalysisRouteImport } from './routes/api/slice-it/songs/$id/patch-analysis'
 import { Route as ApiSliceItSongsIdPlayRouteImport } from './routes/api/slice-it/songs/$id/play'
-import { Route as ApiSliceItSongsCoverFilenameRouteImport } from './routes/api/slice-it/songs/cover/$filename'
 import { Route as ApiSliceItSongsStreamIdRouteImport } from './routes/api/slice-it/songs/stream/$id'
 import { Route as ApiStorefrontProductsIdIndexRouteImport } from './routes/api/storefront/products/$id/index'
 import { Route as ApiStorefrontProductsIdBuyRouteImport } from './routes/api/storefront/products/$id/buy'
@@ -4892,6 +4892,11 @@ const ApiSliceItSongsIdCommentsRoute =
     path: '/comments',
     getParentRoute: () => ApiSliceItSongsIdRoute,
   } as any)
+const ApiSliceItSongsIdCoverRoute = ApiSliceItSongsIdCoverRouteImport.update({
+  id: '/cover',
+  path: '/cover',
+  getParentRoute: () => ApiSliceItSongsIdRoute,
+} as any)
 const ApiSliceItSongsIdLikeRoute = ApiSliceItSongsIdLikeRouteImport.update({
   id: '/like',
   path: '/like',
@@ -4908,12 +4913,6 @@ const ApiSliceItSongsIdPlayRoute = ApiSliceItSongsIdPlayRouteImport.update({
   path: '/play',
   getParentRoute: () => ApiSliceItSongsIdRoute,
 } as any)
-const ApiSliceItSongsCoverFilenameRoute =
-  ApiSliceItSongsCoverFilenameRouteImport.update({
-    id: '/cover/$filename',
-    path: '/cover/$filename',
-    getParentRoute: () => ApiSliceItSongsRoute,
-  } as any)
 const ApiSliceItSongsStreamIdRoute = ApiSliceItSongsStreamIdRouteImport.update({
   id: '/stream/$id',
   path: '/stream/$id',
@@ -5814,10 +5813,10 @@ export interface FileRoutesByFullPath {
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
   '/api/slice-it/songs/$id/comments': typeof ApiSliceItSongsIdCommentsRoute
+  '/api/slice-it/songs/$id/cover': typeof ApiSliceItSongsIdCoverRoute
   '/api/slice-it/songs/$id/like': typeof ApiSliceItSongsIdLikeRoute
   '/api/slice-it/songs/$id/patch-analysis': typeof ApiSliceItSongsIdPatchAnalysisRoute
   '/api/slice-it/songs/$id/play': typeof ApiSliceItSongsIdPlayRoute
-  '/api/slice-it/songs/cover/$filename': typeof ApiSliceItSongsCoverFilenameRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
@@ -6607,10 +6606,10 @@ export interface FileRoutesByTo {
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
   '/api/slice-it/songs/$id/comments': typeof ApiSliceItSongsIdCommentsRoute
+  '/api/slice-it/songs/$id/cover': typeof ApiSliceItSongsIdCoverRoute
   '/api/slice-it/songs/$id/like': typeof ApiSliceItSongsIdLikeRoute
   '/api/slice-it/songs/$id/patch-analysis': typeof ApiSliceItSongsIdPatchAnalysisRoute
   '/api/slice-it/songs/$id/play': typeof ApiSliceItSongsIdPlayRoute
-  '/api/slice-it/songs/cover/$filename': typeof ApiSliceItSongsCoverFilenameRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
@@ -7426,10 +7425,10 @@ export interface FileRoutesById {
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
   '/api/slice-it/songs/$id/comments': typeof ApiSliceItSongsIdCommentsRoute
+  '/api/slice-it/songs/$id/cover': typeof ApiSliceItSongsIdCoverRoute
   '/api/slice-it/songs/$id/like': typeof ApiSliceItSongsIdLikeRoute
   '/api/slice-it/songs/$id/patch-analysis': typeof ApiSliceItSongsIdPatchAnalysisRoute
   '/api/slice-it/songs/$id/play': typeof ApiSliceItSongsIdPlayRoute
-  '/api/slice-it/songs/cover/$filename': typeof ApiSliceItSongsCoverFilenameRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
@@ -8245,10 +8244,10 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id/confirm'
     | '/api/rmhmusic/guess/$id/attempt'
     | '/api/slice-it/songs/$id/comments'
+    | '/api/slice-it/songs/$id/cover'
     | '/api/slice-it/songs/$id/like'
     | '/api/slice-it/songs/$id/patch-analysis'
     | '/api/slice-it/songs/$id/play'
-    | '/api/slice-it/songs/cover/$filename'
     | '/api/slice-it/songs/stream/$id'
     | '/api/storefront/products/$id/buy'
     | '/api/study/cards/$id/review'
@@ -9038,10 +9037,10 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id/confirm'
     | '/api/rmhmusic/guess/$id/attempt'
     | '/api/slice-it/songs/$id/comments'
+    | '/api/slice-it/songs/$id/cover'
     | '/api/slice-it/songs/$id/like'
     | '/api/slice-it/songs/$id/patch-analysis'
     | '/api/slice-it/songs/$id/play'
-    | '/api/slice-it/songs/cover/$filename'
     | '/api/slice-it/songs/stream/$id'
     | '/api/storefront/products/$id/buy'
     | '/api/study/cards/$id/review'
@@ -9856,10 +9855,10 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id/confirm'
     | '/api/rmhmusic/guess/$id/attempt'
     | '/api/slice-it/songs/$id/comments'
+    | '/api/slice-it/songs/$id/cover'
     | '/api/slice-it/songs/$id/like'
     | '/api/slice-it/songs/$id/patch-analysis'
     | '/api/slice-it/songs/$id/play'
-    | '/api/slice-it/songs/cover/$filename'
     | '/api/slice-it/songs/stream/$id'
     | '/api/storefront/products/$id/buy'
     | '/api/study/cards/$id/review'
@@ -15911,6 +15910,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSliceItSongsIdCommentsRouteImport
       parentRoute: typeof ApiSliceItSongsIdRoute
     }
+    '/api/slice-it/songs/$id/cover': {
+      id: '/api/slice-it/songs/$id/cover'
+      path: '/cover'
+      fullPath: '/api/slice-it/songs/$id/cover'
+      preLoaderRoute: typeof ApiSliceItSongsIdCoverRouteImport
+      parentRoute: typeof ApiSliceItSongsIdRoute
+    }
     '/api/slice-it/songs/$id/like': {
       id: '/api/slice-it/songs/$id/like'
       path: '/like'
@@ -15931,13 +15937,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/slice-it/songs/$id/play'
       preLoaderRoute: typeof ApiSliceItSongsIdPlayRouteImport
       parentRoute: typeof ApiSliceItSongsIdRoute
-    }
-    '/api/slice-it/songs/cover/$filename': {
-      id: '/api/slice-it/songs/cover/$filename'
-      path: '/cover/$filename'
-      fullPath: '/api/slice-it/songs/cover/$filename'
-      preLoaderRoute: typeof ApiSliceItSongsCoverFilenameRouteImport
-      parentRoute: typeof ApiSliceItSongsRoute
     }
     '/api/slice-it/songs/stream/$id': {
       id: '/api/slice-it/songs/stream/$id'
@@ -17243,6 +17242,7 @@ const ApiScheduledIdRouteWithChildren = ApiScheduledIdRoute._addFileChildren(
 
 interface ApiSliceItSongsIdRouteChildren {
   ApiSliceItSongsIdCommentsRoute: typeof ApiSliceItSongsIdCommentsRoute
+  ApiSliceItSongsIdCoverRoute: typeof ApiSliceItSongsIdCoverRoute
   ApiSliceItSongsIdLikeRoute: typeof ApiSliceItSongsIdLikeRoute
   ApiSliceItSongsIdPatchAnalysisRoute: typeof ApiSliceItSongsIdPatchAnalysisRoute
   ApiSliceItSongsIdPlayRoute: typeof ApiSliceItSongsIdPlayRoute
@@ -17250,6 +17250,7 @@ interface ApiSliceItSongsIdRouteChildren {
 
 const ApiSliceItSongsIdRouteChildren: ApiSliceItSongsIdRouteChildren = {
   ApiSliceItSongsIdCommentsRoute: ApiSliceItSongsIdCommentsRoute,
+  ApiSliceItSongsIdCoverRoute: ApiSliceItSongsIdCoverRoute,
   ApiSliceItSongsIdLikeRoute: ApiSliceItSongsIdLikeRoute,
   ApiSliceItSongsIdPatchAnalysisRoute: ApiSliceItSongsIdPatchAnalysisRoute,
   ApiSliceItSongsIdPlayRoute: ApiSliceItSongsIdPlayRoute,
@@ -17261,14 +17262,12 @@ const ApiSliceItSongsIdRouteWithChildren =
 interface ApiSliceItSongsRouteChildren {
   ApiSliceItSongsIdRoute: typeof ApiSliceItSongsIdRouteWithChildren
   ApiSliceItSongsUploadRoute: typeof ApiSliceItSongsUploadRoute
-  ApiSliceItSongsCoverFilenameRoute: typeof ApiSliceItSongsCoverFilenameRoute
   ApiSliceItSongsStreamIdRoute: typeof ApiSliceItSongsStreamIdRoute
 }
 
 const ApiSliceItSongsRouteChildren: ApiSliceItSongsRouteChildren = {
   ApiSliceItSongsIdRoute: ApiSliceItSongsIdRouteWithChildren,
   ApiSliceItSongsUploadRoute: ApiSliceItSongsUploadRoute,
-  ApiSliceItSongsCoverFilenameRoute: ApiSliceItSongsCoverFilenameRoute,
   ApiSliceItSongsStreamIdRoute: ApiSliceItSongsStreamIdRoute,
 }
 
@@ -18088,12 +18087,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

@@ -874,6 +874,17 @@ model Song {
   coverUrl      String?
   fileSizeBytes Int? // bytes of audio file (for 10 GB total storage cap)
 
+  /// SHA-256 of the uploaded source bytes, before transcoding.
+  ///
+  /// Re-uploading a file you already own used to create a second row and a
+  /// second copy in storage, against both the global and the per-account quota,
+  /// with no way for the uploader to tell the two apart in the library. Unique
+  /// per uploader rather than globally: two people independently uploading the
+  /// same track is not an error, and deduping across accounts would let one
+  /// user's deletion take away another's song. Nullable, and Postgres treats
+  /// NULLs as distinct, so rows predating this column do not collide.
+  contentHash String?
+
   // Audio Analysis Data (JSON for beatmap generation)
   analysisData Json?
 
@@ -892,9 +903,13 @@ model Song {
   likes     SongLike[]
   songPlays SongPlay[]
 
+  @@unique([uploadedBy, contentHash])
   @@index([title])
   @@index([artist])
   @@index([uploadedBy])
+  /// The library's default sort is `createdAt desc`; without this it was a full
+  /// scan and sort of the table on every open.
+  @@index([isPublic, createdAt(sort: Desc)])
 }
 
 model SongLike {

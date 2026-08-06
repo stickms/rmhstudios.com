@@ -156,6 +156,17 @@ COPY lib/gabriels-horn/constants.ts ./lib/gabriels-horn/constants.ts
 COPY lib/gabriels-horn/deck.ts ./lib/gabriels-horn/deck.ts
 COPY lib/gabriels-horn/house-rules.ts ./lib/gabriels-horn/house-rules.ts
 COPY lib/gabriels-horn/net/events.ts ./lib/gabriels-horn/net/events.ts
+# Slice It's lobby handler needs its wire protocol, the shared lobby/match
+# constants (grace windows, countdowns, density caps) and the modifier +
+# scoring rules — the server clamps modifiers and computes the multiplier it
+# shows in the lobby, so it must reach the same answer the client does. All
+# import-free apart from zod; the rest of lib/slice-it is the browser engine,
+# the store and the (server-side, but web-tier) beatmap analyser.
+COPY lib/slice-it/constants.ts ./lib/slice-it/constants.ts
+COPY lib/slice-it/types.ts ./lib/slice-it/types.ts
+COPY lib/slice-it/modifiers.ts ./lib/slice-it/modifiers.ts
+COPY lib/slice-it/scoring.ts ./lib/slice-it/scoring.ts
+COPY lib/slice-it/net/events.ts ./lib/slice-it/net/events.ts
 # Massive March goes in whole, unlike the games above, because for this one the
 # hub IS the simulation: the island's height field, its collision, the audibility
 # rule, the puzzle engine, the item catalogue and the campaign save are all

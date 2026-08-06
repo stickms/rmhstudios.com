@@ -1,111 +1,130 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-
 import { prisma } from '@/lib/prisma.server';
-import { unlink, writeFile, mkdir } from 'fs/promises';
-import path from 'path';
-import { resolvePathUnder, validateImageBuffer } from '@/lib/slice-it/upload-validation';
 import { optimizeImage } from '@/lib/image-optimize';
+import { COVER_SIZE } from '@/lib/slice-it/constants';
+import { SongPatchZ } from '@/lib/slice-it/api-schemas';
+import { validateImageBuffer } from '@/lib/slice-it/upload-validation';
+import {
+  deleteSongAssets,
+  songSelect,
+  storeSongCover,
+  toSliceSong,
+} from '@/lib/slice-it/songs.server';
 
-// Match the upload route: covers are stored as 1024px square WebP.
-const COVER_SIZE = 1024;
-
+/**
+ * A single song: read, edit, delete.
+ *
+ * The GET is new. Previously the only way to obtain a song's chart was the list
+ * endpoint, which returned `analysisData` for all fifty songs on every library
+ * open — several megabytes of note arrays to render a list of titles. The chart
+ * now travels exactly once, when a player is about to play that song.
+ */
 export const Route = createFileRoute('/api/slice-it/songs/$id')({
   server: {
     handlers: {
+      GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ params, userId }) => {
+        const song = await prisma.song.findUnique({
+          where: { id: params.id },
+          select: {
+            ...songSelect,
+            analysisData: true,
+            ...(userId
+              ? {
+                  likes: { where: { userId }, select: { id: true } },
+                  songPlays: { where: { userId }, select: { count: true } },
+                }
+              : {}),
+          },
+        });
+
+        if (!song || (!song.isPublic && userId !== song.uploadedBy)) {
+          return Response.json({ error: 'Song not found' }, { status: 404 });
+        }
+
+        return Response.json(toSliceSong(song, userId, { includeAnalysis: true }));
+      }),
+
       PATCH: defineHandler(
-        { rateLimit: { limit: 10, windowMs: 60_000, prefix: 'slice-patch' } },
-        async ({ request, params, session }) => {
-          const { id } = params;
-
+        { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'slice-patch', scope: 'user' } },
+        async ({ request, params, userId, isAdmin }) => {
           const song = await prisma.song.findUnique({
-            where: { id },
+            where: { id: params.id },
+            select: { id: true, uploadedBy: true, coverUrl: true },
           });
-
-          if (!song) {
-            return Response.json({ error: 'Song not found' }, { status: 404 });
-          }
-
-          if (song.uploadedBy !== session.user.id) {
+          if (!song) return Response.json({ error: 'Song not found' }, { status: 404 });
+          if (song.uploadedBy !== userId && !isAdmin) {
             return Response.json({ error: 'Forbidden' }, { status: 403 });
           }
 
           const formData = await request.formData();
-          const title = formData.get('title') as string | null;
-          const artist = formData.get('artist') as string | null;
-          const bpmRaw = formData.get('bpm') as string | null;
-          const bpm = bpmRaw ? parseFloat(bpmRaw) : null;
-          const description = formData.get('description') as string | null;
-          const coverFile = formData.get('cover') as File | null;
+          const fields = SongPatchZ.safeParse({
+            title: formData.get('title') ?? undefined,
+            artist: formData.get('artist') ?? undefined,
+            description: formData.get('description') ?? undefined,
+            bpm: formData.get('bpm') ?? undefined,
+            isPublic: formData.get('isPublic') ?? undefined,
+          });
+          if (!fields.success) {
+            return Response.json({ error: 'Invalid track details.' }, { status: 400 });
+          }
 
-          let coverUrl: string | null = song.coverUrl ?? null;
+          let coverUrl = song.coverUrl;
+          const coverFile = formData.get('cover');
+          if (coverFile instanceof File && coverFile.size > 0) {
+            const raw = Buffer.from(await coverFile.arrayBuffer());
+            const check = validateImageBuffer(raw);
+            if (!check.ok) return Response.json({ error: check.error }, { status: 400 });
 
-          if (coverFile && coverFile.size > 0) {
-            const coverBuffer = Buffer.from(await coverFile.arrayBuffer());
-            const coverValidation = validateImageBuffer(coverBuffer);
-            if (!coverValidation.ok) {
-              return Response.json({ error: coverValidation.error }, { status: 400 });
-            }
-            const { buffer: coverWebp } = await optimizeImage(coverBuffer, {
+            const { buffer } = await optimizeImage(raw, {
               width: COVER_SIZE,
               height: COVER_SIZE,
               format: 'webp',
               quality: 82,
               autoOrient: true,
             });
-            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-            const coverFileName = `${uniqueSuffix}-cover.webp`;
-            const coverDir = path.join(process.cwd(), 'db', 'music', 'covers');
-            await mkdir(coverDir, { recursive: true });
-            const coverPath = path.join(coverDir, coverFileName);
-            await writeFile(coverPath, coverWebp);
-            coverUrl = `/api/slice-it/songs/cover/${coverFileName}`;
+            const previous = song.coverUrl;
+            coverUrl = await storeSongCover(buffer);
+            // Only once the new cover is safely stored — an upload that failed
+            // halfway used to leave the song with no artwork at all.
+            if (previous) await deleteSongAssets({ audioUrl: null, coverUrl: previous });
           }
 
           const updated = await prisma.song.update({
-            where: { id },
+            where: { id: params.id },
             data: {
-              title: title ?? song.title,
-              artist: artist ?? song.artist,
-              bpm: bpm && bpm > 0 ? bpm : song.bpm,
-              description: description ?? song.description,
+              ...(fields.data.title !== undefined ? { title: fields.data.title } : {}),
+              ...(fields.data.artist !== undefined ? { artist: fields.data.artist } : {}),
+              ...(fields.data.description !== undefined
+                ? { description: fields.data.description || null }
+                : {}),
+              ...(fields.data.bpm !== undefined ? { bpm: fields.data.bpm } : {}),
+              ...(fields.data.isPublic !== undefined ? { isPublic: fields.data.isPublic } : {}),
               coverUrl,
             },
+            select: songSelect,
           });
 
-          return Response.json({ success: true, song: updated });
+          return Response.json({ success: true, song: toSliceSong(updated, userId) });
         },
       ),
-      DELETE: defineHandler({}, async ({ params, session }) => {
-        const { id } = params;
+
+      DELETE: defineHandler({ rateLimit: 'write' }, async ({ params, userId, isAdmin }) => {
         const song = await prisma.song.findUnique({
-          where: { id },
+          where: { id: params.id },
+          select: { id: true, uploadedBy: true, audioUrl: true, coverUrl: true },
         });
-
-        if (!song) {
-          return Response.json({ error: 'Song not found' }, { status: 404 });
-        }
-
-        if (song.uploadedBy !== session.user.id) {
+        if (!song) return Response.json({ error: 'Song not found' }, { status: 404 });
+        if (song.uploadedBy !== userId && !isAdmin) {
           return Response.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        const musicDir = path.join(process.cwd(), 'db', 'music');
-        const filePath = resolvePathUnder(musicDir, song.audioUrl);
-        if (!filePath) {
-          return Response.json({ error: 'Invalid path' }, { status: 400 });
-        }
-        try {
-          await unlink(filePath);
-        } catch (e) {
-          console.error('Failed to delete file from disk:', e);
-          // Continue to delete record even if file is missing
-        }
-
-        // Delete from DB
-        await prisma.song.delete({
-          where: { id },
-        });
+        // The row goes first. Cascades take the likes, scores, comments and
+        // plays with it; the files are best-effort cleanup after, because a
+        // storage hiccup must not leave the user staring at a song they just
+        // asked to delete.
+        await prisma.song.delete({ where: { id: params.id } });
+        await deleteSongAssets(song);
 
         return Response.json({ success: true });
       }),
