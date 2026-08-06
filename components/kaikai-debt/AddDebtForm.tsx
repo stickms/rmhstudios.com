@@ -137,9 +137,9 @@ export function AddDebtForm({ onAdded, disabled }: AddDebtFormProps) {
           {t('add.title', { defaultValue: 'Put something on his tab' })}
         </h2>
         <p className="mt-1 text-sm text-site-text-muted">
-          {t('add.help', {
+          {t('add.helpUncapped', {
             defaultValue:
-              'Describe what he owes you. The appraiser sets the price — somewhere between $5 and $250 — and it starts earning interest immediately.',
+              'Describe what he owes you. The appraiser sets the price — a coffee or a car, there’s no ceiling — and it starts earning interest immediately.',
           })}
         </p>
       </div>

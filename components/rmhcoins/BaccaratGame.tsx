@@ -2,11 +2,13 @@
 
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLobbyInviteJoin } from '@/hooks/useLobbyLink';
 import { Circle, Loader2 } from 'lucide-react';
 import { connectToBaccarat, disconnectFromBaccarat, getBaccaratSocket, onBaccaratBalanceUpdate } from '@/lib/baccarat/socket';
 import { useBaccaratStore } from '@/lib/baccarat/store';
 import { C2S } from '@/lib/baccarat/events';
 import { BaccaratLobby } from './BaccaratLobby';
+import { TableInvite } from './TableInvite';
 import { BaccaratTable } from './BaccaratTable';
 import { BaccaratControls } from './BaccaratControls';
 
@@ -45,6 +47,13 @@ export function BaccaratGame({ coins, setCoins }: Props) {
       disconnectFromBaccarat();
     };
   }, []);
+
+  // Arrived on a table invite link — sit down at the named table instead of
+  // showing the room list. The server rejects a code that no longer exists, and
+  // the lobby's own error path says so.
+  useLobbyInviteJoin(connectionStatus === 'connected' && !roomInfo, (code) => {
+    getBaccaratSocket()?.emit(C2S.JOIN_ROOM, { joinCode: code.toUpperCase() });
+  });
 
   useEffect(() => {
     return onBaccaratBalanceUpdate((newBalance) => {
@@ -110,11 +119,7 @@ export function BaccaratGame({ coins, setCoins }: Props) {
           </h3>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {roomInfo.joinCode && (
-            <span className="text-[10px] sm:text-xs text-site-text-dim hidden sm:inline">
-              {t("code-label", { defaultValue: "Code:" })} <span className="font-mono font-bold text-site-accent">{roomInfo.joinCode}</span>
-            </span>
-          )}
+          {roomInfo.joinCode && <TableInvite game="baccarat" joinCode={roomInfo.joinCode} />}
           <span className="text-[10px] sm:text-xs text-site-text-dim">
             {players.length}/{roomInfo.maxPlayers}
           </span>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearch } from '@tanstack/react-router';
 import { PlinkoGame } from './PlinkoGame';
 import { BlackjackGame } from './BlackjackGame';
 import { HoldemGame } from './HoldemGame';
@@ -15,9 +16,20 @@ interface Props {
 
 type GameChoice = 'plinko' | 'blackjack' | 'holdem' | 'baccarat' | 'roulette';
 
+const GAME_CHOICES: readonly GameChoice[] = ['plinko', 'blackjack', 'holdem', 'baccarat', 'roulette'];
+
+function isGameChoice(value: unknown): value is GameChoice {
+  return typeof value === 'string' && (GAME_CHOICES as readonly string[]).includes(value);
+}
+
 export function PlayTab({ coins, setCoins }: Props) {
   const { t } = useTranslation("c-rmhcoins");
-  const [selected, setSelected] = useState<GameChoice>('plinko');
+  // A table invite link names its game (`?game=holdem`) because the four tables
+  // share this one page — see `TableInvite`.
+  const search = useSearch({ strict: false }) as Record<string, unknown>;
+  const [selected, setSelected] = useState<GameChoice>(
+    isGameChoice(search.game) ? search.game : 'plinko',
+  );
 
   const games: { label: string; value: GameChoice; description: string }[] = [
     { label: 'Plinko', value: 'plinko', description: t("plinko-description", { defaultValue: "Drop the ball, pick a bin" }) },

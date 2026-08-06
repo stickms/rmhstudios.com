@@ -1199,12 +1199,12 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/slice-it/leaderboard` | `GET` | `app/routes/api/slice-it/leaderboard.ts` |
 | `/api/slice-it/score` | `POST` | `app/routes/api/slice-it/score.ts` |
 | `/api/slice-it/songs` | `GET` | `app/routes/api/slice-it/songs.ts` |
-| `/api/slice-it/songs/:id` | `DELETE` `PATCH` | `app/routes/api/slice-it/songs/$id.ts` |
-| `/api/slice-it/songs/:id/comments` | `GET` `POST` | `app/routes/api/slice-it/songs/$id/comments.ts` |
+| `/api/slice-it/songs/:id` | `DELETE` `GET` `PATCH` | `app/routes/api/slice-it/songs/$id.ts` |
+| `/api/slice-it/songs/:id/comments` | `DELETE` `GET` `POST` | `app/routes/api/slice-it/songs/$id/comments.ts` |
+| `/api/slice-it/songs/:id/cover` | `GET` | `app/routes/api/slice-it/songs/$id/cover.ts` |
 | `/api/slice-it/songs/:id/like` | `POST` | `app/routes/api/slice-it/songs/$id/like.ts` |
 | `/api/slice-it/songs/:id/patch-analysis` | `POST` | `app/routes/api/slice-it/songs/$id/patch-analysis.ts` |
 | `/api/slice-it/songs/:id/play` | `POST` | `app/routes/api/slice-it/songs/$id/play.ts` |
-| `/api/slice-it/songs/cover/:filename` | `GET` | `app/routes/api/slice-it/songs/cover/$filename.ts` |
 | `/api/slice-it/songs/stream/:id` | `GET` | `app/routes/api/slice-it/songs/stream/$id.ts` |
 | `/api/slice-it/songs/upload` | `POST` | `app/routes/api/slice-it/songs/upload.ts` |
 

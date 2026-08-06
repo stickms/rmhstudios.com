@@ -154,6 +154,8 @@ export class App {
         this._fpsFrames = 0;
         this._fpsTime = 0;
         this._fpsEl = null;
+        this._booted = false;
+        this._pendingInvite = null;
 
         this._init();
     }
@@ -166,6 +168,9 @@ export class App {
         await this.terminal.show();
 
         if (this._destroyed) return;
+
+        this._booted = true;
+        if (this._pendingInvite) void this._openLobby();
 
         // Pre-load simulation modules in background while user sees the terminal.
         // The segmenter is created but NOT initialised here — OpenCV.js only loads
@@ -197,6 +202,16 @@ export class App {
         }
     }
 
+    /**
+     * Open the lobby overlay already joining a room, for someone who arrived on
+     * an invite link. Held until the boot sequence finishes: the terminal is
+     * mid-animation before that and would draw itself back over the overlay.
+     */
+    openLobbyWithInvite(code) {
+        this._pendingInvite = code;
+        if (this._booted) void this._openLobby();
+    }
+
     /** Open the multiplayer lobby overlay (create / join a shared cruise). */
     async _openLobby() {
         const [{ LobbyUI }, { VelumMultiplayerClient }] = await Promise.all([
@@ -205,8 +220,12 @@ export class App {
         ]);
         if (this._destroyed) return;
 
+        const inviteCode = this._pendingInvite || null;
+        this._pendingInvite = null;
+
         this.terminal.hide();
         this._lobby = new LobbyUI(this._container, {
+            inviteCode,
             onStart: (roomId, selfInfo) => {
                 this._mpRoomId = roomId;
                 this._mpSelfColor = (selfInfo && selfInfo.colorIndex) || 0;

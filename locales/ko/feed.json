@@ -392,6 +392,8 @@
   "failed-to-upload-image": "이미지 업로드 실패",
   "failed-upload-avatar": "아바타를 업로드하지 못했습니다",
   "failed-upload-banner": "배너 업로드 실패",
+  "feature-ad-free": "No ads",
+  "feature-ad-free-blurb": "Free accounts are paid for by ads. A membership removes them everywhere — and the ad script is never even fetched, so nothing is loaded to be blocked.",
   "feature-api-access": "Developer API",
   "feature-api-access-blurb": "Programmatic access to the platform, with webhooks and image upload.",
   "feature-bulk-content": "Bulk content tools",

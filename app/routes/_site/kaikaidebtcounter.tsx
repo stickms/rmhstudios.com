@@ -31,15 +31,16 @@ import type { DebtSnapshot } from '@/lib/kaikai-debt/debt';
 import { getSnapshot } from '@/lib/kaikai-debt/ledger.server';
 
 /**
- * `canGenerate: false` — SSR never calls DeepSeek.
+ * The boot snapshot: the counter's basis plus the first page of the log.
  *
- * A model call on the render path would put a multi-second, third-party
- * dependency in front of the first byte of a page that is otherwise a database
- * read. The log extends itself on scroll, from the client, where a slow response
- * is a spinner at the bottom of a list instead of a blank page.
+ * In the steady state this is a pure database read — the archive always has
+ * thousands of cached rows past page one, so `getLedgerPage`'s generate-ahead
+ * check is satisfied and nothing reaches DeepSeek on the render path. The one
+ * time it does generate is the first visit to a fresh deployment, where the
+ * alternative is server-rendering an empty debt log.
  */
 const fetchSnapshot = createServerFn({ method: 'GET' }).handler(async (): Promise<DebtSnapshot> =>
-  getSnapshot({ canGenerate: false }),
+  getSnapshot(),
 );
 
 export const Route = createFileRoute('/_site/kaikaidebtcounter')({

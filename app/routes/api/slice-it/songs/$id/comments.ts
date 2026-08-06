@@ -1,102 +1,140 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
-
 import { prisma } from '@/lib/prisma.server';
-import { resolveUserDisplay } from '@/lib/user-display';
+import { resolveUserDisplay, userDisplaySelect } from '@/lib/user-display';
+import { CommentBodyZ } from '@/lib/slice-it/api-schemas';
 
-const MAX_COMMENT_LENGTH = 2000;
+const CommentQueryZ = z.object({
+  cursor: z.string().max(64).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(25),
+});
 
+/**
+ * Song comments.
+ *
+ * The GET was capped at a flat `take: 200` with no pagination — a cap chosen so
+ * a popular thread would not grow into the response forever, which is a real
+ * concern and the wrong fix: it made comment 201 unreachable instead of
+ * unloaded. Keyset pagination on `(createdAt desc, id desc)` gets both.
+ *
+ * The POST hand-rolled its own length and emptiness checks on an untyped body;
+ * `CommentBodyZ` is the same rules, declared where the client can read them.
+ */
 export const Route = createFileRoute('/api/slice-it/songs/$id/comments')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async ({ params }) => {
-        const { id } = params;
-        // Bounded: a public list with no pagination UI, so without a cap a popular
-        // song's thread grows into the response forever. 200 is far above any real
-        // thread and keeps the newest-first order the client already renders, so
-        // nothing observable changes today.
-        const comments = await prisma.songComment.findMany({
-          where: { songId: id },
-          orderBy: { createdAt: 'desc' },
-          take: 200,
-          include: {
-            user: {
-              select: {
-                name: true,
-                username: true,
-                image: true,
-                profile: { select: { displayName: true, customImage: true } },
-              },
-            },
-          },
-        });
+      GET: defineHandler(
+        { auth: 'optional', query: CommentQueryZ, rateLimit: 'read' },
+        async ({ params, query, userId }) => {
+          const song = await prisma.song.findUnique({
+            where: { id: params.id },
+            select: { isPublic: true, uploadedBy: true },
+          });
+          if (!song || (!song.isPublic && song.uploadedBy !== userId)) {
+            return Response.json({ error: 'Song not found' }, { status: 404 });
+          }
 
-        const formatted = comments.map((c: any) => {
-          const resolved = resolveUserDisplay(c.user);
-          return {
-            id: c.id,
-            content: c.content,
-            createdAt: c.createdAt,
-            user: {
-              name: resolved.name || c.user.username || 'Unknown',
-              image: resolved.image,
+          const cursorDate = query.cursor ? new Date(query.cursor) : null;
+          const rows = await prisma.songComment.findMany({
+            where: {
+              songId: params.id,
+              ...(cursorDate && !Number.isNaN(cursorDate.getTime())
+                ? { createdAt: { lt: cursorDate } }
+                : {}),
             },
-          };
-        });
+            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+            take: query.limit + 1,
+            select: {
+              id: true,
+              content: true,
+              createdAt: true,
+              userId: true,
+              user: { select: userDisplaySelect },
+            },
+          });
 
-        return Response.json(formatted);
-      }),
+          const hasMore = rows.length > query.limit;
+          const page = hasMore ? rows.slice(0, query.limit) : rows;
+
+          return Response.json({
+            comments: page.map((row) => format(row, userId)),
+            nextCursor: hasMore ? page[page.length - 1].createdAt.toISOString() : null,
+          });
+        },
+      ),
+
       POST: defineHandler(
-        { rateLimit: { limit: 10, windowMs: 60_000, prefix: 'slice-comments' } },
-        async ({ request, params, session }) => {
-          const { id } = params;
-          const body = await request.json();
-          const { content } = body;
-
-          if (!content || typeof content !== 'string') {
-            return Response.json({ error: 'Comment cannot be empty' }, { status: 400 });
-          }
-          const trimmed = content.trim();
-          if (!trimmed) {
-            return Response.json({ error: 'Comment cannot be empty' }, { status: 400 });
-          }
-          if (trimmed.length > MAX_COMMENT_LENGTH) {
-            return Response.json(
-              { error: `Comment must be at most ${MAX_COMMENT_LENGTH} characters` },
-              { status: 400 },
-            );
+        {
+          body: CommentBodyZ,
+          rateLimit: { limit: 15, windowMs: 60_000, prefix: 'slice-comments', scope: 'user' },
+        },
+        async ({ params, body, userId }) => {
+          const song = await prisma.song.findUnique({
+            where: { id: params.id },
+            select: { isPublic: true, uploadedBy: true },
+          });
+          if (!song || (!song.isPublic && song.uploadedBy !== userId)) {
+            return Response.json({ error: 'Song not found' }, { status: 404 });
           }
 
           const comment = await prisma.songComment.create({
-            data: {
-              content: trimmed,
-              songId: id,
-              userId: session.user.id,
-            },
-            include: {
-              user: {
-                select: {
-                  name: true,
-                  username: true,
-                  image: true,
-                  profile: { select: { displayName: true, customImage: true } },
-                },
-              },
+            data: { content: body.content, songId: params.id, userId },
+            select: {
+              id: true,
+              content: true,
+              createdAt: true,
+              userId: true,
+              user: { select: userDisplaySelect },
             },
           });
 
-          const resolved = resolveUserDisplay(comment.user);
-          return Response.json({
-            id: comment.id,
-            content: comment.content,
-            createdAt: comment.createdAt,
-            user: {
-              name: resolved.name || comment.user.username || 'Unknown',
-              image: resolved.image,
-            },
+          return Response.json(format(comment, userId));
+        },
+      ),
+
+      DELETE: defineHandler(
+        {
+          query: z.object({ commentId: z.string().min(1).max(64) }),
+          rateLimit: 'write',
+        },
+        async ({ query, userId, isAdmin }) => {
+          const comment = await prisma.songComment.findUnique({
+            where: { id: query.commentId },
+            select: { id: true, userId: true, song: { select: { uploadedBy: true } } },
           });
+          if (!comment) return Response.json({ error: 'Comment not found' }, { status: 404 });
+
+          // The author, the song's uploader (their track, their thread) or an
+          // admin. Deleting comments was previously impossible for anyone.
+          const canDelete =
+            comment.userId === userId || comment.song.uploadedBy === userId || isAdmin;
+          if (!canDelete) return Response.json({ error: 'Forbidden' }, { status: 403 });
+
+          await prisma.songComment.delete({ where: { id: comment.id } });
+          return Response.json({ success: true });
         },
       ),
     },
   },
 });
+
+function format(
+  row: {
+    id: string;
+    content: string;
+    createdAt: Date;
+    userId: string;
+    user: Parameters<typeof resolveUserDisplay>[0];
+  },
+  viewerId: string | null,
+) {
+  const display = resolveUserDisplay(row.user);
+  return {
+    id: row.id,
+    content: row.content,
+    createdAt: row.createdAt.toISOString(),
+    isOwn: viewerId !== null && row.userId === viewerId,
+    user: { name: display.name || 'Unknown', image: display.image ?? null },
+  };
+}

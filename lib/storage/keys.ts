@@ -159,6 +159,24 @@ export function vibeThumbUrl(slug: string, version: number | string): string {
 // stays for that lookup.
 export const BUILD_COVER_PREFIX = "build-covers/";
 
+// ─── Curated build thumbnails (admin-uploaded) ───────────────────────────────
+// Distinct from BUILD_COVER_PREFIX above, which is the user-submitted builds
+// feature. These were written to `db/builds` on the web container's local disk
+// until 2026-08-06 — and production runs blue/green web containers, so a
+// thumbnail uploaded to blue 404'd from green until the next deploy flipped
+// back. The proxy route still falls back to reading that disk for anything the
+// backfill has not moved yet.
+export const CURATED_BUILD_PREFIX = "curated-builds/";
+
+export function curatedBuildImageKey(filename: string): string {
+  return `${CURATED_BUILD_PREFIX}${filename}`;
+}
+
+/** True for a stored value that is one of our object keys, not a legacy name. */
+export function isCuratedBuildKey(value: string): boolean {
+  return value.startsWith(CURATED_BUILD_PREFIX);
+}
+
 // ─── Library albums ──────────────────────────────────────────────────────────
 // Album media (photos + clips) for the library carousel. Heavy originals live in
 // object storage keyed by album + slide id — never in the repo / build image —

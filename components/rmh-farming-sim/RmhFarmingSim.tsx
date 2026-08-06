@@ -3,7 +3,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { connect, disconnect } from '@/lib/rmh-farming-sim/socket';
+import { useLobbyInviteJoin } from '@/hooks/useLobbyLink';
+import { actions, connect, disconnect } from '@/lib/rmh-farming-sim/socket';
 import { useRfsStore } from '@/lib/rmh-farming-sim/store';
 import MainMenu from './MainMenu';
 import FarmCanvas from './FarmCanvas';
@@ -28,6 +29,7 @@ function Toasts() {
 
 export default function RmhFarmingSim() {
     const screen = useRfsStore((s) => s.screen);
+    const connection = useRfsStore((s) => s.connection);
 
     useEffect(() => {
         connect().catch(() => {
@@ -35,6 +37,12 @@ export default function RmhFarmingSim() {
         });
         return () => disconnect();
     }, []);
+
+    // Someone was sent a farm link. Knock on that farm's door once we are
+    // connected — the host still approves the request, same as a typed code.
+    useLobbyInviteJoin(connection === 'connected', (code) =>
+        actions.joinFarm(code.toUpperCase()),
+    );
 
     return (
         <div className="rfs-root">

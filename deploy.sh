@@ -624,6 +624,7 @@ step_done
 # reporting success. BG_R2_PID stays empty when the sync is skipped.
 BG_R2_PID=""
 BG_AVATAR_PID=""
+BG_MEDIA_PID=""
 if grep -qE '^VITE_CDN_BASE_URL=.+' "$ENV_FILE" 2>/dev/null; then
     log "Syncing static assets to R2 (incremental, in background)..."
     (
@@ -679,6 +680,32 @@ if grep -qE '^VITE_CDN_BASE_URL=.+' "$ENV_FILE" 2>/dev/null; then
         BG_AVATAR_PID=$!
     else
         log "No ${STORAGE_PATH_HOST}/avatars dir — skipping avatar backfill (nothing local to migrate)."
+    fi
+
+    # ── Step 2a.3: Backfill the remaining local media to R2 (idempotent) ─────
+    # Slice It songs + covers (db/music) and curated build thumbnails
+    # (db/builds) were written to the web container's own filesystem until
+    # 2026-08-06. That is worse than untidy here: web runs blue/green, so a file
+    # uploaded to one colour 404s from the other until the next deploy flips
+    # back. New uploads already go straight to R2; this moves what predates them
+    # and rewrites the Song rows. Same shape as the avatar backfill above —
+    # best-effort, idempotent, backgrounded, joined at Step 6.
+    if [ -d "$STORAGE_PATH_HOST/music" ] || [ -d "$STORAGE_PATH_HOST/builds" ]; then
+        log "Backfilling local media (songs, covers, build thumbnails) to R2 (idempotent, in background)..."
+        (
+            "$DOCKER_BIN" run --rm \
+                --env-file "$ENV_FILE" \
+                -e STORAGE_PATH=/app/db \
+                -v "${STORAGE_PATH_HOST}:/app/db:ro" \
+                --entrypoint node \
+                "${IMAGE_NAME}:latest" \
+                scripts/migrate-media-to-r2.ts \
+                && log "Media R2 backfill complete." \
+                || log "WARNING: media R2 backfill failed — existing songs/thumbnails keep being read from local disk until the next run."
+        ) &
+        BG_MEDIA_PID=$!
+    else
+        log "No ${STORAGE_PATH_HOST}/{music,builds} dirs — skipping media backfill (nothing local to migrate)."
     fi
 fi
 
@@ -1002,6 +1029,10 @@ fi
 if [ -n "${BG_AVATAR_PID:-}" ]; then
     log "Waiting for background avatar R2 backfill to finish (if still running)..."
     wait "$BG_AVATAR_PID" 2>/dev/null || true
+fi
+if [ -n "${BG_MEDIA_PID:-}" ]; then
+    log "Waiting for background media R2 backfill to finish (if still running)..."
+    wait "$BG_MEDIA_PID" 2>/dev/null || true
 fi
 
 # ── Cloudflare cache rules (best-effort, perf audit §1.2 / §5.4) ──────────────

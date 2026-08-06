@@ -19,6 +19,8 @@ import { Play, Users, Search, LogIn, Swords, WashingMachine } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { useLobbyInvite } from '@/hooks/useLobbyLink';
+import { lobbyReturnPath } from '@/lib/lobby-link';
 import {
   DIFFICULTIES,
   MATCH_DURATIONS,
@@ -52,6 +54,8 @@ export function MainMenu({
   onBrowse,
 }: Props) {
   const { t } = useTranslation('c-laundry-sort');
+  // Signing in is a detour, not a change of plan: come back to the invite.
+  const invite = useLobbyInvite();
   const durationSec = useLaundryStore((s) => s.durationSec);
   const difficulty = useLaundryStore((s) => s.difficulty);
   const setDuration = useLaundryStore((s) => s.setDuration);
@@ -180,7 +184,7 @@ export function MainMenu({
                 })}
               </p>
               <Button asChild size="lg" className="w-full sm:w-auto">
-                <Link to="/login" search={{ callbackURL: '/laundry-sort' }}>
+                <Link to="/login" search={{ callbackURL: lobbyReturnPath('/laundry-sort', invite) }}>
                   <LogIn className="size-4" aria-hidden="true" />
                   {t('sign-in', { defaultValue: 'Sign in' })}
                 </Link>

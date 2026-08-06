@@ -20,6 +20,8 @@
  * page with no ad unit on it all make zero requests to Google.
  */
 
+import { hasAdFree, parseTier } from '@/lib/entitlements/tiers';
+
 /**
  * Publisher id, e.g. `ca-pub-1234567890123456`. Exposed to the client bundle
  * (hence `VITE_`) because it is part of the ad tag's URL and of every `<ins>`.
@@ -119,12 +121,66 @@ export function slotIdFor(placement: AdPlacement): string {
 }
 
 /**
- * Membership tiers that pay for the site. Ads are one of the things a
- * membership buys the absence of, so any active paid tier switches them off —
- * including the coin-funded gift memberships, since `getUserTier` already folds
- * those into the same value.
+ * Whether this session's tier has paid for the site, and so sees no ads.
+ *
+ * The decision itself is `hasAdFree` in `lib/entitlements/tiers.ts` — the same
+ * rank comparison the membership page renders the `ad-free` feature card from,
+ * rather than a second list of tier names that could disagree with it. All this
+ * adds is the narrowing, because `tier` reaches here as a bare string off the
+ * session.
+ *
+ * The three cases and why they differ:
+ *
+ *  - **absent** (`null`/`undefined`/`''`) — a signed-out visitor. Ads on: this
+ *    is the traffic the free tier is funded by.
+ *  - **a known tier** — `hasAdFree` answers.
+ *  - **anything else** — a value we do not understand, which is NOT evidence of
+ *    a free account. A stale `localStorage` session snapshot or a renamed plan
+ *    id lands here, and the wrong guess is asymmetric: guessing "free" bills a
+ *    paying member in ads, guessing "paid" costs one impression. Fail closed.
  */
-const AD_FREE_TIERS = new Set(['starter', 'pro', 'enterprise']);
+export function isAdFreeTier(tier: string | null | undefined): boolean {
+  if (!tier) return false;
+  const known = parseTier(tier);
+  return known ? hasAdFree(known) : true;
+}
+
+/**
+ * One source's answer to "what tier is this visitor on".
+ *
+ *   `undefined` — no answer (yet, or one we can't read). NOT the free tier.
+ *   `null`      — asked, and nobody is signed in.
+ *   a string    — the tier that source reported.
+ */
+export type TierAnswer = string | null | undefined;
+
+export interface ResolvedTier {
+  /** What to gate on. Meaningless unless `sessionResolved` is true. */
+  tier: string | null;
+  /** Whether either source actually answered. */
+  sessionResolved: boolean;
+}
+
+/**
+ * Reconcile the two places the client can learn a tier from.
+ *
+ * There are two because neither alone is both correct and timely:
+ *
+ *  - The **live session** is authoritative — it reflects a sign-in, a sign-out
+ *    or an upgrade that happened a second ago — but it resolves a round trip
+ *    after the first render, and gating on it alone delays every ad on the site,
+ *    including for the signed-out majority who were never going to have a tier.
+ *  - The **server's answer**, resolved from the session cookie during SSR and
+ *    carried down with the document, is there on the first render but is a
+ *    snapshot of that moment.
+ *
+ * So: live wins whenever it has an answer, the server's covers the window
+ * before that, and "neither" is its own state rather than a synonym for free.
+ */
+export function resolveTier(live: TierAnswer, server: TierAnswer): ResolvedTier {
+  const answer = live !== undefined ? live : server;
+  return { tier: answer ?? null, sessionResolved: answer !== undefined };
+}
 
 /**
  * Path prefixes that never carry ads, whatever a page asks for.
@@ -170,6 +226,18 @@ export interface AdGateInput {
   pathname: string;
   /** Session tier (`free`/`starter`/`pro`/`enterprise`), or null when signed out. */
   tier: string | null | undefined;
+  /**
+   * Whether `tier` is an ANSWER rather than a placeholder — i.e. the session has
+   * resolved far enough to say what this visitor is entitled to.
+   *
+   * Required, and deliberately not defaulted, because the shape of the bug it
+   * exists to prevent is "nobody thought about the loading window": a session
+   * still in flight reports no tier, no tier reads as the free tier, and a
+   * paying member gets an ad requested on their behalf in the half-second
+   * before their membership loads. `false` means "don't know yet", which is not
+   * the same as "free" and must not be rounded down to it.
+   */
+  sessionResolved: boolean;
   /** Cookie-banner answer; `null` = the visitor hasn't chosen yet. */
   consent: AdConsent;
   /** True inside the Discord Activity iframe. */
@@ -179,24 +247,34 @@ export interface AdGateInput {
 /**
  * Whether an ad unit may render for this visitor, on this page, right now.
  *
- * Fails closed on every axis. In particular an UNANSWERED cookie banner
- * (`consent: null`) is not treated as permission: the ad tag reads and writes
- * storage the moment it loads, so it has to wait behind the same choice the
- * banner exists to collect. That is also why the banner's own surfaces are on
- * the excluded list — nothing may advertise at someone while they are being
- * asked whether advertising is okay.
+ * Fails closed on every axis, and "closed" means NO AD — the failures worth
+ * preventing here are all of the form "an ad appeared for someone it must not
+ * have", which costs a membership or a complaint, while the opposite failure
+ * costs one impression. Two axes are unobvious and both matter:
+ *
+ *  - An UNANSWERED cookie banner (`consent: null`) is not permission. The ad
+ *    tag reads and writes storage the moment it loads, so it waits behind the
+ *    choice the banner exists to collect. That is also why the banner's own
+ *    surfaces are on the excluded list — nothing may advertise at someone while
+ *    they are being asked whether advertising is okay.
+ *  - An UNRESOLVED session (`sessionResolved: false`) is not the free tier.
+ *    Entitlement arrives after the first client render, and treating "not known
+ *    yet" as "not a member" is how a member ends up with an ad request fired on
+ *    their behalf before their own membership finishes loading.
  */
 export function adsAllowed({
   clientId,
   pathname,
   tier,
+  sessionResolved,
   consent,
   discordActivity = false,
 }: AdGateInput): boolean {
   if (!clientId) return false;
   if (discordActivity) return false;
   if (consent === null) return false;
-  if (tier && AD_FREE_TIERS.has(tier)) return false;
+  if (!sessionResolved) return false;
+  if (isAdFreeTier(tier)) return false;
   if (isAdExcludedPath(pathname)) return false;
   return true;
 }

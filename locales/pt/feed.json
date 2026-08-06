@@ -408,6 +408,8 @@
   "failed-to-upload-image": "Falha ao enviar imagem",
   "failed-upload-avatar": "Falha ao enviar avatar",
   "failed-upload-banner": "Falha ao enviar banner",
+  "feature-ad-free": "No ads",
+  "feature-ad-free-blurb": "Free accounts are paid for by ads. A membership removes them everywhere — and the ad script is never even fetched, so nothing is loaded to be blocked.",
   "feature-api-access": "Developer API",
   "feature-api-access-blurb": "Programmatic access to the platform, with webhooks and image upload.",
   "feature-bulk-content": "Bulk content tools",

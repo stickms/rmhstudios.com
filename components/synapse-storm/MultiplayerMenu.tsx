@@ -1,7 +1,8 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMultiplayer } from '../../lib/synapse-storm/MultiplayerProvider';
+import { useLobbyInvite, useLobbyInviteJoin } from '@/hooks/useLobbyLink';
 
 interface MultiplayerMenuProps {
     onBack: () => void;
@@ -16,6 +17,18 @@ export const MultiplayerMenu: React.FC<MultiplayerMenuProps> = ({ onBack }) => {
     const { t } = useTranslation("c-synapse-storm");
     const [joinCode, setJoinCode] = useState('');
     const [step, setStep] = useState<'name' | 'choice'>('name');
+
+    // An invite link should not stall on the callsign prompt when this browser
+    // already has a callsign — but a first-time player still gets asked, and the
+    // join then happens the moment their connection lands.
+    const invite = useLobbyInvite();
+    useEffect(() => {
+        if (!invite || step !== 'name' || !displayName.trim()) return;
+        connect();
+        setStep('choice');
+    }, [invite, step, displayName, connect]);
+
+    useLobbyInviteJoin(connectionStatus === 'connected', (code) => joinLobby(code.toUpperCase()));
 
     const handleSetName = () => {
         if (!displayName.trim()) return;

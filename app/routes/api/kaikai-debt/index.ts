@@ -7,9 +7,11 @@
  * ticking correctly — it is the growth formula that is live, not the payload.
  * That is what makes this endpoint safe to cache at all.
  *
- * The route never extends the ledger. Boot is the worst possible moment to
- * discover DeepSeek is slow, and the scroll asks for more the instant it needs
- * it (`/api/kaikai-debt/ledger`).
+ * Boot may extend the ledger, but only if the archive is genuinely near empty —
+ * `getLedgerPage`'s generate-ahead check. In the steady state there are always
+ * thousands of cached rows past the first page, so this is a pure database read;
+ * the case it covers is the very first visit to a fresh deployment, where
+ * returning an empty log would be worse than waiting for one batch.
  */
 
 import { createFileRoute } from '@tanstack/react-router';
@@ -30,7 +32,7 @@ export const Route = createFileRoute('/api/kaikai-debt/')({
           cache: { visibility: 'public', maxAge: 5, sMaxAge: 5, staleWhileRevalidate: 30 },
           etag: false,
         },
-        async () => Response.json(await getSnapshot({ canGenerate: false })),
+        async () => Response.json(await getSnapshot()),
       ),
     },
   },

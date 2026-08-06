@@ -108,6 +108,15 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
         username: (u as { username?: string | null }).username ?? null,
         isAdmin: (u as { isAdmin?: boolean }).isAdmin ?? false,
         isVerified: (u as { isVerified?: boolean }).isVerified ?? false,
+        // Entitlement, resolved server-side by the `customSession` plugin. It
+        // is here so the FIRST client render already knows what this account
+        // paid for, which matters most for what a membership switches OFF:
+        // `hooks/useAdsEnabled` treats a signed-in user with no tier as unknown
+        // and shows no ad, so without this field a member's every hard load
+        // either flashed an ad (before) or held one back from a free account
+        // until the client session landed (after). Persisted alongside the rest
+        // of the snapshot by `components/Providers`.
+        tier: (u as { tier?: string | null }).tier ?? null,
       },
       resolved: true,
     };

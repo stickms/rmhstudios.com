@@ -179,7 +179,7 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     engine: '2d-canvas',
     demanding: false,
     save: 'none',
-    // The only game wired to a gamepad today (components/game/GameCanvas.tsx).
+    // The only game wired to a gamepad today (components/slice-it/GameCanvas.tsx).
     accessibility: [],
     descriptors: ['flashing', 'user-content'],
   },

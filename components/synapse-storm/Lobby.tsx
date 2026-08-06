@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMultiplayer } from '../../lib/synapse-storm/MultiplayerProvider';
-import { Copy, Check, Crown, Circle, CheckCircle } from 'lucide-react';
+import { useLobbyLink } from '@/hooks/useLobbyLink';
+import { Copy, Check, Crown, Circle, CheckCircle, Link2 } from 'lucide-react';
 
 interface LobbyProps {
     onLeave: () => void;
@@ -15,6 +16,7 @@ export const Lobby: React.FC<LobbyProps> = ({ onLeave }) => {
     } = useMultiplayer();
     const { t } = useTranslation("c-synapse-storm");
     const [copied, setCopied] = useState(false);
+    const { copied: linkCopied, copyLink } = useLobbyLink({ code: lobbyState?.code });
 
     if (!lobbyState) return null;
 
@@ -48,8 +50,16 @@ export const Lobby: React.FC<LobbyProps> = ({ onLeave }) => {
                     <span className="ss-lobby-code-label">{t("lobby-code", { defaultValue: "LOBBY CODE" })}</span>
                     <div className="ss-lobby-code-row">
                         <span className="ss-lobby-code">{lobbyState.code}</span>
-                        <button className="ss-lobby-copy-btn" onClick={handleCopy} title={t("copy-code", { defaultValue: "Copy code" })}>
+                        <button className="ss-lobby-copy-btn" onClick={handleCopy} title={t("copy-code", { defaultValue: "Copy code" })} aria-label={t("copy-code", { defaultValue: "Copy code" })}>
                             {copied ? <Check size={16} /> : <Copy size={16} />}
+                        </button>
+                        <button
+                            className="ss-lobby-copy-btn"
+                            onClick={() => void copyLink()}
+                            title={t("copy-invite-link", { defaultValue: "Copy invite link" })}
+                            aria-label={t("copy-invite-link", { defaultValue: "Copy invite link" })}
+                        >
+                            {linkCopied ? <Check size={16} /> : <Link2 size={16} />}
                         </button>
                     </div>
                 </div>

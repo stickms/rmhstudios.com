@@ -3,6 +3,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useLobbyLink } from '@/hooks/useLobbyLink';
 import { useRfsStore } from '@/lib/rmh-farming-sim/store';
 import { actions } from '@/lib/rmh-farming-sim/socket';
 
@@ -14,6 +15,12 @@ export default function MembersPanel() {
     const welcome = useRfsStore((s) => s.welcome);
     const pushToast = useRfsStore((s) => s.pushToast);
     const [rename, setRename] = useState('');
+    // The farm is a screen inside one route, so its link carries the code:
+    // /rmh-farming-sim?lobby=CODE walks a guest straight to the door.
+    const { copied: linkCopied, copyLink } = useLobbyLink({
+        code: farm?.code,
+        path: '/rmh-farming-sim',
+    });
 
     if (!open) return null;
     const isHost = members ? members.ownerUserId === welcome?.userId : farm?.id === welcome?.userId;
@@ -43,9 +50,21 @@ export default function MembersPanel() {
                             <div className="rfs-row-sub">Invite code</div>
                             <div className="rfs-share-code">{farm?.code}</div>
                         </div>
-                        <button className="rfs-mini" onClick={copyCode}>
-                            Copy
-                        </button>
+                        <div className="rfs-row-actions">
+                            <button className="rfs-mini" onClick={copyCode}>
+                                Copy
+                            </button>
+                            <button
+                                className="rfs-mini"
+                                onClick={() => {
+                                    void copyLink().then((ok) =>
+                                        pushToast(ok ? 'Invite link copied!' : 'Could not copy the link', ok ? 'success' : 'info'),
+                                    );
+                                }}
+                            >
+                                {linkCopied ? 'Copied' : 'Copy link'}
+                            </button>
+                        </div>
                     </div>
 
                     {isHost && (

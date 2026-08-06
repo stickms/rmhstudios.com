@@ -20,20 +20,28 @@ import { describe, expect, it } from 'vitest';
 import {
   ANNUAL_INTEREST_RATE,
   DEBT_EPOCH_MS,
-  MAX_ENTRY_CENTS,
+  MAX_RECEIPT_CENTS,
+  MAX_STORABLE_CENTS,
   MIN_ENTRY_CENTS,
+  MIN_RECEIPT_CENTS,
   SEED_DEBT_CENTS,
   accrualFactor,
   basisContribution,
   clampEntryCents,
   debtVelocityCentsPerSecond,
+  describeVelocity,
   entryValueCents,
   formatDebt,
+  formatMicroDigits,
   isDebtCategory,
+  odometerDecimals,
   projectDebtCents,
   sampleDebtCents,
   secondsSinceEpoch,
 } from '@/lib/kaikai-debt/debt';
+
+/** A ledger with `dollars` logged at the epoch — the shape most assertions want. */
+const basisOf = (dollars: number) => dollars * 100;
 
 const YEAR_MS = 365.2425 * 24 * 60 * 60 * 1000;
 
@@ -121,49 +129,126 @@ describe('the basis factorisation', () => {
   });
 });
 
+describe('the opening balance', () => {
+  it('is zero — he starts clean', () => {
+    // Every cent the counter shows must be traceable to a row in the log. A
+    // non-zero seed would be debt nobody can account for.
+    expect(SEED_DEBT_CENTS).toBe(0);
+  });
+
+  it('means an empty ledger stays at exactly zero, forever', () => {
+    // Not an edge case to tolerate — the launch-day state of the page. Nothing
+    // logged, nothing accruing, and no drip quietly inventing a balance.
+    for (const years of [0, 0.5, 5, 100]) {
+      expect(projectDebtCents(SEED_DEBT_CENTS, DEBT_EPOCH_MS + years * YEAR_MS)).toBe(0);
+    }
+    expect(debtVelocityCentsPerSecond(SEED_DEBT_CENTS, DEBT_EPOCH_MS + YEAR_MS)).toBe(0);
+  });
+});
+
 describe('projectDebtCents', () => {
   it('returns the basis unchanged at the epoch', () => {
-    expect(projectDebtCents(SEED_DEBT_CENTS, DEBT_EPOCH_MS)).toBeCloseTo(SEED_DEBT_CENTS, 6);
+    expect(projectDebtCents(basisOf(500), DEBT_EPOCH_MS)).toBeCloseTo(50_000, 6);
   });
 
   it('never decreases as time moves forward', () => {
     // A debt clock that ticks backwards is not a joke, it is a defect report.
     let previous = -Infinity;
     for (let i = 0; i <= 400; i++) {
-      const value = projectDebtCents(SEED_DEBT_CENTS, DEBT_EPOCH_MS + i * 0.01 * YEAR_MS);
+      const value = projectDebtCents(basisOf(500), DEBT_EPOCH_MS + i * 0.01 * YEAR_MS);
       expect(value).toBeGreaterThanOrEqual(previous);
       previous = value;
     }
   });
 
   it('holds flat rather than shrinking for a client whose clock is set early', () => {
-    const early = projectDebtCents(SEED_DEBT_CENTS, DEBT_EPOCH_MS - YEAR_MS);
-    expect(early).toBeCloseTo(SEED_DEBT_CENTS, 6);
+    expect(projectDebtCents(basisOf(500), DEBT_EPOCH_MS - YEAR_MS)).toBeCloseTo(50_000, 6);
   });
 
   it('multiplies by about 3.5 a year at the shipped rate', () => {
-    const start = projectDebtCents(SEED_DEBT_CENTS, DEBT_EPOCH_MS);
-    const end = projectDebtCents(SEED_DEBT_CENTS, DEBT_EPOCH_MS + YEAR_MS);
+    const start = projectDebtCents(basisOf(500), DEBT_EPOCH_MS);
+    const end = projectDebtCents(basisOf(500), DEBT_EPOCH_MS + YEAR_MS);
     expect(end / start).toBeCloseTo(Math.exp(ANNUAL_INTEREST_RATE), 4);
   });
 });
 
 describe('debtVelocityCentsPerSecond', () => {
   it('is the derivative of the projection', () => {
+    const basis = basisOf(500);
     const at = DEBT_EPOCH_MS + 0.6 * YEAR_MS;
     const dt = 0.001 * YEAR_MS;
-    const numeric =
-      (projectDebtCents(SEED_DEBT_CENTS, at + dt) - projectDebtCents(SEED_DEBT_CENTS, at)) /
-      (dt / 1000);
-    expect(debtVelocityCentsPerSecond(SEED_DEBT_CENTS, at)).toBeCloseTo(numeric, 1);
+    const numeric = (projectDebtCents(basis, at + dt) - projectDebtCents(basis, at)) / (dt / 1000);
+    expect(debtVelocityCentsPerSecond(basis, at)).toBeCloseTo(numeric, 3);
+  });
+});
+
+describe('odometerDecimals', () => {
+  it('shows no sub-cent digits when nothing is accruing', () => {
+    // `$0.000000` would be pretending a dead counter is alive.
+    expect(odometerDecimals(0)).toBe(0);
+    expect(odometerDecimals(Number.NaN)).toBe(0);
   });
 
-  it('moves the cents column several times a second at the opening balance', () => {
-    // The page's core claim is that interest ALONE makes the digits roll. If
-    // this drops below ~1, the counter reads as frozen and the temptation to
-    // bolt on a fake per-second drip comes back.
-    const rate = debtVelocityCentsPerSecond(SEED_DEBT_CENTS, DEBT_EPOCH_MS);
-    expect(rate).toBeGreaterThan(1);
+  it('keeps the last digit turning across five orders of magnitude', () => {
+    // The property that matters, asserted directly rather than by pinning digit
+    // counts: at every realistic size of the pile, the displayed resolution is
+    // fine enough that the final column actually moves.
+    for (const dollars of [20, 200, 2_000, 50_000, 2_000_000]) {
+      const cents = dollars * 100;
+      const digits = odometerDecimals(cents);
+      const perSecond = (cents * ANNUAL_INTEREST_RATE) / (365.2425 * 24 * 60 * 60);
+      const ticksPerSecond = perSecond * 10 ** digits;
+      expect(ticksPerSecond).toBeGreaterThan(0.5);
+    }
+  });
+
+  it('drops precision as the pile grows, never adds it', () => {
+    // Monotonic, so the readout's width only ever shrinks — one column at a
+    // time — and never oscillates between two lengths.
+    let previous = Infinity;
+    for (const dollars of [10, 100, 1_000, 10_000, 100_000, 1_000_000, 10_000_000]) {
+      const digits = odometerDecimals(dollars * 100);
+      expect(digits).toBeLessThanOrEqual(previous);
+      previous = digits;
+    }
+  });
+
+  it('never asks for more columns than the display can carry', () => {
+    expect(odometerDecimals(1)).toBeLessThanOrEqual(4);
+  });
+});
+
+describe('formatMicroDigits', () => {
+  it('renders the sub-cent remainder, zero-padded', () => {
+    expect(formatMicroDigits(1234.5678, 4)).toBe('5678');
+    expect(formatMicroDigits(1234.0071, 4)).toBe('0071');
+    expect(formatMicroDigits(1234.5, 2)).toBe('50');
+  });
+
+  it('renders nothing when no columns were asked for', () => {
+    expect(formatMicroDigits(1234.5678, 0)).toBe('');
+  });
+});
+
+describe('describeVelocity', () => {
+  it('widens the window until the figure has something in it', () => {
+    // The launch-day failure this exists to prevent: an honest rate of
+    // $0.0000079/s rendering as "+$0.00 every second", which reads as broken
+    // rather than as young.
+    for (const dollars of [5, 50, 500, 5_000, 500_000]) {
+      const { cents, unit } = describeVelocity(basisOf(dollars), DEBT_EPOCH_MS);
+      expect(cents).toBeGreaterThanOrEqual(1);
+      expect(['second', 'minute', 'hour', 'day']).toContain(unit);
+    }
+  });
+
+  it('quotes a large pile per second and a small one per day', () => {
+    expect(describeVelocity(basisOf(5_000_000), DEBT_EPOCH_MS).unit).toBe('second');
+    expect(describeVelocity(basisOf(5), DEBT_EPOCH_MS).unit).toBe('day');
+  });
+
+  it('reports a flat zero for an empty ledger rather than widening forever', () => {
+    expect(describeVelocity(0, DEBT_EPOCH_MS)).toEqual({ cents: 0, unit: 'second' });
   });
 });
 
@@ -174,8 +259,11 @@ describe('sampleDebtCents', () => {
   const quantile = (q: number) => sorted[Math.floor(q * (sorted.length - 1))]!;
 
   it('stays inside the $5–$250 band', () => {
-    expect(sorted[0]).toBeGreaterThanOrEqual(MIN_ENTRY_CENTS);
-    expect(sorted[sorted.length - 1]).toBeLessThanOrEqual(MAX_ENTRY_CENTS);
+    // The band applies to GENERATED receipts only — the texture of his back
+    // history. A debt a real person adds is priced by the appraiser and is not
+    // bounded by this (see the clampEntryCents block below).
+    expect(sorted[0]).toBeGreaterThanOrEqual(MIN_RECEIPT_CENTS);
+    expect(sorted[sorted.length - 1]).toBeLessThanOrEqual(MAX_RECEIPT_CENTS);
   });
 
   it('returns whole cents', () => {
@@ -205,10 +293,25 @@ describe('clampEntryCents', () => {
   it.each([
     [0, MIN_ENTRY_CENTS],
     [-9000, MIN_ENTRY_CENTS],
-    [1_000_000_000, MAX_ENTRY_CENTS],
     [1234.6, 1235],
   ])('clamps %s to %s', (input, expected) => {
     expect(clampEntryCents(input)).toBe(expected);
+  });
+
+  it('imposes NO ceiling on what a member can be owed, short of the column', () => {
+    // There is deliberately no policy cap: if the appraiser says he owes you a
+    // car, he owes you a car. These amounts would all have been flattened to
+    // $250 under the old band.
+    for (const dollars of [1_000, 50_000, 250_000, 5_000_000]) {
+      expect(clampEntryCents(dollars * 100)).toBe(dollars * 100);
+    }
+  });
+
+  it('saturates at the Int column rather than throwing on insert', () => {
+    // The one real ceiling, and it is a storage fact, not an editorial one.
+    expect(clampEntryCents(MAX_STORABLE_CENTS + 1)).toBe(MAX_STORABLE_CENTS);
+    expect(clampEntryCents(1e30)).toBe(MAX_STORABLE_CENTS);
+    expect(MAX_STORABLE_CENTS).toBe(2 ** 31 - 1);
   });
 
   it('floors EVERY non-finite amount to the minimum, including Infinity', () => {

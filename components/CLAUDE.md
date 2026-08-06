@@ -63,6 +63,15 @@ feature lives in that feature's directory; genuinely shared primitives live in
   already mounted in `Providers.tsx`.
 - **Session:** client components read auth via `useSession()` from
   `@/components/Providers` — don't fetch `/api/auth` manually.
+- **Multiplayer lobbies hand out a link, not just a code.** Every lobby has a
+  copy-the-invite-link control built on `hooks/useLobbyLink`, and every
+  multiplayer entry point consumes `?lobby=CODE` through `useLobbyInviteJoin`
+  (which joins once the socket is up and then strips the param). Two games —
+  RMHbox and Altair — address their lobby by path instead (`/rmhbox/<code>`), so
+  they pass `path` rather than `code`; casino tables need `tab` + `game` in the
+  link too (`components/rmhcoins/TableInvite`). A game that gates on sign-in
+  routes login back through `lobbyReturnPath()` so the invite survives the
+  detour. Don't hand-roll a share URL: `lib/lobby-link.ts` owns the shape.
 - **User display data:** render avatars/names via `useFreshUser` /
   `stores/userDisplayStore` so they update live; the shared Prisma select for
   user shapes is `userDisplaySelect` in `lib/user-display.ts`.

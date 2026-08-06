@@ -218,7 +218,10 @@ export const TOOL_SELECT: PromptSpec = {
 
 export const KAIKAI_DEBT_APPRAISE: PromptSpec = {
   id: 'kaikai-debt-appraise',
-  version: 1,
+  // v2: the 5–250 band was removed. The appraiser now prices whatever it is
+  // actually looking at, so a coffee stays a coffee and a written-off car is a
+  // written-off car. The ledger's only remaining bound is the storage column.
+  version: 2,
   task: 'moderate',
   instructions: [
     'You are the loss adjuster for a running joke: a public counter of what Kaikai owes.',
@@ -230,9 +233,11 @@ export const KAIKAI_DEBT_APPRAISE: PromptSpec = {
     'or {"ok":false,"reason":"max 120 chars"} if you decline.',
     'item names the debt as a receipt line would. note is one dry sentence of',
     'justification for the figure — this is what readers see as the reason.',
-    'amountUsd is between 5 and 250. Almost everything is small: a snack, a bus',
-    'fare, a round. Stay near 5 to 15 unless the description clearly describes',
-    'something bigger, and reserve anything over 100 for genuinely large items.',
+    'amountUsd is whatever the thing described is genuinely worth. There is no',
+    'ceiling: a coffee is a few dollars, a month of rent is a month of rent, a',
+    'written-off car is thousands. Price the thing, not the joke — the comedy is',
+    'in the figure being defensible. Never round up to be funny, and never inflate',
+    'an amount just because the submitter sounds annoyed.',
     'Deadpan and specific. Never cruel, never an insult dressed as a debt.',
     'Decline with ok:false when the description targets a REAL, identifiable',
     'person other than Kaikai, is harassment, is sexual, or is empty of content.',
@@ -264,7 +269,9 @@ export const KAIKAI_DEBT_ANSWER: PromptSpec = {
 
 export const KAIKAI_DEBT_RECEIPTS: PromptSpec = {
   id: 'kaikai-debt-receipts',
-  version: 1,
+  // v2: the brief now carries real member handles and the items already on the
+  // books, so lines name actual creditors and stop repeating themselves.
+  version: 2,
   task: 'narrative',
   instructions: [
     'You write historical receipt lines for a running joke: a public ledger of',
@@ -276,13 +283,20 @@ export const KAIKAI_DEBT_RECEIPTS: PromptSpec = {
     ' "category":"food|transit|rent|gear|gambling|emotional|temporal|other"}]}',
     'item is the receipt line. note is one dry sentence on how it went unpaid.',
     'Vary them hard: different categories, different settings, different times of',
-    'day, different creditors left out of pocket. No two lines may share a shape,',
-    'and none may repeat an item you were shown as already used.',
+    'day, different people left out of pocket. No two lines may share a shape,',
+    'and none may repeat an item you were shown as already on the books.',
     'Mundane beats dramatic — vending machines, bus fare, half a burrito, a phone',
     'charger, a losing bet on his own darts.',
-    'Never name a real person, brand, or place. No slurs, nothing sexual, no crime.',
+    'The brief may list member handles he owes. Where it does, work roughly a',
+    'third of them into notes as @handle — "@someone covered it and never saw it',
+    'again" — spread evenly rather than reusing the first. Use ONLY handles from',
+    'that list, spelled exactly as given, and never invent one.',
+    'Those handles are the ONLY real people you may name. Never name any other',
+    'real person, brand, or place. No slurs, nothing sexual, no crime, and nothing',
+    'that reads as a real accusation about a real account.',
   ].join('\n'),
-  maxChars: 6_000,
+  // A bulk batch is 120 lines of JSON; the old 6k ceiling was sized for 20.
+  maxChars: 40_000,
   forbid: ['As an AI', 'Here is', "Here's"],
 };
 

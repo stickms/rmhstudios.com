@@ -1,12 +1,23 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useLobbyInviteJoin } from '@/hooks/useLobbyLink';
 import './velum2099-global.css';
 import './velum2099-terminal.css';
 
+interface VelumApp {
+    destroy: () => void;
+    openLobbyWithInvite: (code: string) => void;
+}
+
 export function Velum2099Game() {
     const containerRef = useRef<HTMLDivElement>(null);
-    const appRef = useRef<{ destroy: () => void } | null>(null);
+    const appRef = useRef<VelumApp | null>(null);
+    const [appReady, setAppReady] = useState(false);
+
+    // An invite link. The game is plain DOM below this line, so the code is
+    // handed to it once it exists and the overlay does the joining.
+    useLobbyInviteJoin(appReady, (code) => appRef.current?.openLobbyWithInvite(code.toUpperCase()));
 
     useEffect(() => {
         const container = containerRef.current;
@@ -22,14 +33,16 @@ export function Velum2099Game() {
             const { App } = await import('./game/main');
             if (destroyed) return;
 
-            const app = new App(container);
+            const app = new App(container) as unknown as VelumApp;
             appRef.current = app;
+            setAppReady(true);
         };
 
         init();
 
         return () => {
             destroyed = true;
+            setAppReady(false);
             if (appRef.current) {
                 appRef.current.destroy();
                 appRef.current = null;

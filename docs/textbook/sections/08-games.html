@@ -22,7 +22,7 @@ browser nobody controls to a leaderboard everybody can see.</p>
 that advances state once per animation frame, a <b>renderer</b> that draws the current state, an
 <b>input</b> path that mutates state in response to the player, and some source of <b>content</b> — a
 level, a deck, a beatmap. The clearest reference implementation in the repository is the Slice-It
-rhythm engine, whose logic lives in <code>lib/game/GameEngine.ts</code> rather than in
+rhythm engine, whose logic lives in <code>lib/slice-it/engine.ts</code> rather than in
 <code>lib/slice-it/</code> (that directory holds only <code>upload-validation.ts</code>, the helper
 that vets user-uploaded songs).</p>
 
@@ -67,7 +67,7 @@ in <code>loadMap()</code> before play starts, leaving the per-frame path cheap.<
 cooldown (<code>INPUT_COOLDOWN_MS = 50</code>) guarantees one press maps to at most one note, and the
 engine only allows the <i>next sequential</i> unhit note in a lane to be struck — found by
 <code>getTargetedSlice(lane)</code>. The timing windows that grade a hit are constants in
-<code>lib/game/types.ts</code>:</p>
+<code>lib/slice-it/types.ts</code>:</p>
 
 <pre><code>export const HIT_WINDOWS = {
   MARVELOUS: 0.020,    // 20ms
@@ -138,7 +138,7 @@ to route them through <code>createSeededRandom</code> too.</div>
 <h2 id="beatmaps-and-content">Beatmaps and procedural content</h2>
 <p>A <b>beatmap</b> is the score sheet a rhythm game plays against: an ordered list of notes, each with
 a timestamp, a lane, and a type. In this engine the unit is a <code>Slice</code>
-(<code>lib/game/types.ts</code>): <code>{ id, time, type, lane, duration?, ... }</code>, where
+(<code>lib/slice-it/types.ts</code>): <code>{ id, time, type, lane, duration?, ... }</code>, where
 <code>type</code> is one of seven <code>SliceType</code>s (<code>STANDARD</code>, <code>LONG</code>,
 <code>SWITCH</code>, <code>BOMB</code>, and so on). A <code>BeatMap</code> bundles slices with track
 metadata, and crucially its <code>slices</code> field can be either a flat array <i>or</i> a
@@ -369,7 +369,7 @@ Rapier) change.</div>
 <table>
   <thead><tr><th>Game</th><th>Genre</th><th>2D/3D</th><th>Render / physics</th><th>Engine entry point</th></tr></thead>
   <tbody>
-    <tr><td>Slice It!</td><td>Rhythm</td><td>2D</td><td>Canvas 2D + Web Audio</td><td><code>lib/game/GameEngine.ts</code></td></tr>
+    <tr><td>Slice It!</td><td>Rhythm</td><td>2D</td><td>Canvas 2D + Web Audio</td><td><code>lib/slice-it/engine.ts</code></td></tr>
     <tr><td>Signal Forge</td><td>Deckbuilder roguelike</td><td>2D</td><td>Canvas 2D (pure render fn)</td><td><code>lib/signal-forge/index.ts</code></td></tr>
     <tr><td>Neon Driftway</td><td>Endless racer</td><td>3D</td><td>three.js (imperative), gyro head look</td><td><code>lib/neon-driftway/game.ts</code></td></tr>
     <tr><td>Altair</td><td>Survivors-like</td><td>2D</td><td>WebGL2 batches + howler</td><td><code>lib/altair/engine/game-loop.ts</code></td></tr>

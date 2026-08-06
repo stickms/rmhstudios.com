@@ -77,6 +77,16 @@ interface DebtLogRowProps {
 export function DebtLogRow({ entry, nowMs, fresh }: DebtLogRowProps) {
   const { t } = useTranslation('c-kaikai-debt');
 
+  // A member row is attributed to whoever wrote it; a generated one to whoever
+  // it is owed to. Either way there is at most one person on the row, so the
+  // choice is made once here rather than branched twice in the markup.
+  const person = entry.source === 'member' ? entry.addedBy : entry.creditor;
+  const personLabel = person
+    ? person.handle
+      ? `@${person.handle}`
+      : (person.name ?? t('log.someone', { defaultValue: 'someone' }))
+    : '';
+
   const nowCents = entryValueCents(entry.amountCents, entry.createdAtMs, nowMs);
   // 1% clear of face value — below that the two numbers render identically and
   // the row just looks like it is repeating itself.
@@ -99,22 +109,26 @@ export function DebtLogRow({ entry, nowMs, fresh }: DebtLogRowProps) {
         <p className="mt-1 text-sm text-site-text-muted">{entry.note}</p>
 
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-site-text-dim">
-          {entry.addedBy ? (
+          {/* Two different facts, deliberately worded differently. A member row
+              names its AUTHOR ("added by") — they put it on the tab. A generated
+              row has no author, so it names its CREDITOR ("owed to") instead:
+              saying "added by" there would be a false claim that the person
+              logged something they never touched. */}
+          {person && (
             <span className="flex items-center gap-1.5">
               <UserAvatar
-                src={entry.addedBy.image}
+                src={person.image}
                 alt=""
                 size={16}
-                fallbackName={entry.addedBy.name ?? undefined}
+                fallbackName={person.name ?? undefined}
               />
-              {t('log.addedBy', {
-                defaultValue: 'added by {{name}}',
-                name: entry.addedBy.handle
-                  ? `@${entry.addedBy.handle}`
-                  : (entry.addedBy.name ?? t('log.someone', { defaultValue: 'someone' })),
-              })}
+              {entry.source === 'member'
+                ? t('log.addedBy', { defaultValue: 'added by {{name}}', name: personLabel })
+                : t('log.owedTo', { defaultValue: 'owed to {{name}}', name: personLabel })}
             </span>
-          ) : (
+          )}
+
+          {entry.source === 'ledger' && (
             <span className="flex items-center gap-1.5">
               <Bot className="size-3.5" aria-hidden />
               {t('log.fromArchive', { defaultValue: 'recovered from the archive' })}

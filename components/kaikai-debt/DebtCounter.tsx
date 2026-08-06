@@ -2,14 +2,39 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Flame, TrendingUp } from 'lucide-react';
 import {
   ANNUAL_INTEREST_RATE,
-  debtVelocityCentsPerSecond,
+  describeVelocity,
   formatDebt,
+  formatMicroDigits,
+  odometerDecimals,
   projectDebtCents,
+  type VelocityUnit,
 } from '@/lib/kaikai-debt/debt';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+
+/**
+ * The growth window, translated.
+ *
+ * A lookup rather than an interpolated `{{unit}}` catalog key, because the four
+ * words have to exist as their own keys for a translator to ever see them —
+ * interpolating an English noun into a translated sentence leaves "every second"
+ * in English in all sixteen locales.
+ */
+function unitLabel(unit: VelocityUnit, t: TFunction): string {
+  switch (unit) {
+    case 'minute':
+      return t('counter.unit.minute', { defaultValue: 'minute' });
+    case 'hour':
+      return t('counter.unit.hour', { defaultValue: 'hour' });
+    case 'day':
+      return t('counter.unit.day', { defaultValue: 'day' });
+    default:
+      return t('counter.unit.second', { defaultValue: 'second' });
+  }
+}
 
 interface DebtCounterProps {
   /** The scalar the projection is evaluated against. Updated by SSE, never per frame. */
@@ -91,7 +116,7 @@ export function DebtCounter({ basisCents, asOfMs }: DebtCounterProps) {
   basisRef.current = basisCents;
 
   const initial = projectDebtCents(basisCents, asOfMs);
-  const [velocity, setVelocity] = useState(() => debtVelocityCentsPerSecond(basisCents, asOfMs));
+  const [velocity, setVelocity] = useState(() => describeVelocity(basisCents, asOfMs));
 
   useEffect(() => {
     const container = containerRef.current;
@@ -106,11 +131,12 @@ export function DebtCounter({ basisCents, asOfMs }: DebtCounterProps) {
 
       if (dollarsRef.current) dollarsRef.current.textContent = formatDebt(whole);
       if (microRef.current) {
-        // The sub-cent remainder, as two digits. This is the part that is
-        // genuinely too fast to read, and that is the point — it is what makes
-        // the number look alive rather than merely large.
-        const micro = Math.floor((cents - whole) * 100);
-        microRef.current.textContent = String(micro).padStart(2, '0');
+        // The sub-cent remainder — the part that is genuinely too fast to read,
+        // which is what makes the number look alive rather than merely large.
+        // How many digits is derived from the total, not fixed: with no opening
+        // balance the counter has to be legible at $12 and at $2M, and the
+        // growth rate differs by five orders of magnitude between them.
+        microRef.current.textContent = formatMicroDigits(cents, odometerDecimals(cents));
       }
 
       // The velocity readout is prose, not an odometer. Once a second is plenty,
@@ -118,7 +144,7 @@ export function DebtCounter({ basisCents, asOfMs }: DebtCounterProps) {
       // string around it.
       if (now - lastVelocityAt > 1_000) {
         lastVelocityAt = now;
-        setVelocity(debtVelocityCentsPerSecond(basisRef.current, now));
+        setVelocity(describeVelocity(basisRef.current, now));
       }
     };
 
@@ -180,27 +206,40 @@ export function DebtCounter({ basisCents, asOfMs }: DebtCounterProps) {
         <span ref={dollarsRef}>{formatDebt(Math.floor(initial))}</span>
         {!reducedMotion && (
           <span className="kd-odometer__micro align-super" ref={microRef} aria-hidden>
-            {String(Math.floor((initial - Math.floor(initial)) * 100)).padStart(2, '0')}
+            {formatMicroDigits(initial, odometerDecimals(initial))}
           </span>
         )}
       </p>
 
       <p className="flex items-center gap-2 text-sm text-site-text-muted">
         <TrendingUp className="size-4 text-site-accent" aria-hidden />
-        {t('counter.velocity', {
-          defaultValue: '+{{rate}} every second — {{percent}}% a year, compounded continuously',
-          rate: formatDebt(velocity),
-          percent: Math.round(ANNUAL_INTEREST_RATE * 100),
-        })}
+        {initial <= 0
+          ? t('counter.clean', {
+              defaultValue:
+                'He owes nothing yet. Interest compounds at {{percent}}% a year on whatever gets logged.',
+              percent: Math.round(ANNUAL_INTEREST_RATE * 100),
+            })
+          : t('counter.velocityRate', {
+              defaultValue:
+                '+{{rate}} every {{unit}} — {{percent}}% a year, compounded continuously',
+              rate: formatDebt(velocity.cents),
+              unit: unitLabel(velocity.unit, t),
+              percent: Math.round(ANNUAL_INTEREST_RATE * 100),
+            })}
       </p>
 
       <p className="sr-only">
-        {t('counter.screenReader', {
-          defaultValue:
-            'Kaikai owes approximately {{amount}}, growing by {{rate}} every second. The figure updates continuously.',
-          amount: formatDebt(initial),
-          rate: formatDebt(velocity),
-        })}
+        {initial <= 0
+          ? t('counter.screenReaderClean', {
+              defaultValue: 'Kaikai owes nothing yet. Nothing is accruing.',
+            })
+          : t('counter.screenReaderRate', {
+              defaultValue:
+                'Kaikai owes approximately {{amount}}, growing by {{rate}} every {{unit}}. The figure updates continuously.',
+              amount: formatDebt(initial),
+              rate: formatDebt(velocity.cents),
+              unit: unitLabel(velocity.unit, t),
+            })}
       </p>
     </div>
   );
