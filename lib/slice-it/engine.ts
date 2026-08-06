@@ -347,7 +347,19 @@ export class GameEngine {
     }
   }
 
-  reset(): void {
+  /**
+   * Clear the run.
+   *
+   * `startingHealth` exists for S2 courses, where the gauge is the mode: a
+   * course is 3-5 charts on ONE shared gauge, and that carry-over is the only
+   * thing separating it from a playlist. Without it `reset()` handed every song
+   * a full bar and `course.ts` could track a number that never reached the
+   * player — it computed the carried health, failed the course on it, and then
+   * song N+1 started at 100 anyway.
+   *
+   * Omitted, it is a full bar, which is every other caller.
+   */
+  reset(startingHealth?: number): void {
     this.processedSliceIds.clear();
     this.activeHolds.clear();
     this.holdBilledTo.clear();
@@ -363,7 +375,13 @@ export class GameEngine {
     this.finished = false;
     this.lastReportAt = 0;
     this.judgements = emptyJudgements();
-    this.health = HEALTH_MAX;
+    // Clamped rather than trusted: a course reducer that produced a negative or
+    // out-of-range number must not be able to start a run already dead, or
+    // already immortal.
+    this.health =
+      typeof startingHealth === 'number' && Number.isFinite(startingHealth)
+        ? Math.max(0, Math.min(HEALTH_MAX, startingHealth))
+        : HEALTH_MAX;
     this.gaugeBroken = false;
     this.failed = false;
     this.failReason = null;

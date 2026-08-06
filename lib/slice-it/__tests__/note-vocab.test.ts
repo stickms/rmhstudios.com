@@ -50,6 +50,7 @@ import { GameEngine } from '../engine';
 import { useSliceItStore } from '../store';
 import { DEFAULT_MODIFIERS, applyExclusions, forMultiplayer } from '../modifiers';
 import {
+  HEALTH_MAX,
   HIT_WINDOWS,
   LENIENT_TIMING_FACTOR,
   MODIFIER_BONUSES,
@@ -362,5 +363,31 @@ describe('M6: Perfectionist and Sudden Death are mutually exclusive', () => {
 
     expect(engine.getRunStats().failed).toBe(false);
     expect(useSliceItStore.getState().status).toBe('PLAYING');
+  });
+});
+
+/* ─── S2: the course gauge actually carries ─────────────────────────────── */
+
+describe('reset(startingHealth) — the S2 carry-over', () => {
+  it('starts a run at the carried health rather than a full bar', () => {
+    const engine = new GameEngine();
+    engine.reset(40);
+    expect(engine.getState().health).toBe(40);
+  });
+
+  it('still defaults to a full bar for every other caller', () => {
+    const engine = new GameEngine();
+    engine.reset();
+    expect(engine.getState().health).toBe(HEALTH_MAX);
+  });
+
+  it('clamps rather than trusting the reducer', () => {
+    const engine = new GameEngine();
+    engine.reset(-30);
+    expect(engine.getState().health).toBe(0);
+    engine.reset(9999);
+    expect(engine.getState().health).toBe(HEALTH_MAX);
+    engine.reset(Number.NaN);
+    expect(engine.getState().health).toBe(HEALTH_MAX);
   });
 });
