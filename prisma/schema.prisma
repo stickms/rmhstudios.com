@@ -400,7 +400,8 @@ model User {
   pools                  Pool[]
   poolContributions      PoolContribution[]
   communityPageRevisions CommunityPageRevision[]
-  kaikaiDebtEntries      KaikaiDebtEntry[]
+  kaikaiDebtEntries      KaikaiDebtEntry[]       @relation("KaikaiDebtAuthor")
+  kaikaiDebtsOwed        KaikaiDebtEntry[]       @relation("KaikaiDebtCreditor")
 
   @@index([isBot])
   @@index([followerCount])
@@ -7303,6 +7304,14 @@ model KaikaiDebtEntry {
   /// way to re-run an appraisal.
   claim       String?  @db.VarChar(500)
   addedById   String?
+  /// Who he owes it TO.
+  ///
+  /// On a member row this is the person who added it — they are the creditor by
+  /// construction. On a generated row it is a real member picked at random, so
+  /// the archive reads as debts to actual people rather than to nobody. Nullable
+  /// because a row can outlive the account (the FK is SetNull, not Cascade: the
+  /// debt still happened, it just stops naming anyone).
+  creditorId  String?
   /// Member rows use `now()`. Generated rows are back-dated, walking away from
   /// DEBT_EPOCH_MS in RECEIPT_STRIDE_MS steps, so the infinite scroll reads as
   /// history rather than as a pile of rows all stamped the same second. The
@@ -7310,7 +7319,8 @@ model KaikaiDebtEntry {
   /// pagination total — a tie is a page boundary that drops or repeats a row.
   createdAt   DateTime @default(now())
 
-  addedBy User? @relation(fields: [addedById], references: [id], onDelete: Cascade)
+  addedBy  User? @relation("KaikaiDebtAuthor", fields: [addedById], references: [id], onDelete: Cascade)
+  creditor User? @relation("KaikaiDebtCreditor", fields: [creditorId], references: [id], onDelete: SetNull)
 
   /// The one read this table serves: the infinite ledger, newest first.
   /// `id` breaks ties so the cursor can never stall on duplicate timestamps.
@@ -7319,5 +7329,7 @@ model KaikaiDebtEntry {
   @@index([addedById, createdAt(sort: Desc)])
   /// Backs the member-only subtotal and the frontier lookup for generation.
   @@index([source, createdAt])
+  /// "everything Kaikai owes this person", across both provenances.
+  @@index([creditorId, createdAt(sort: Desc)])
   @@map("kaikai_debt_entry")
 }

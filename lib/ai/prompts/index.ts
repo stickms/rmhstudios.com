@@ -269,7 +269,9 @@ export const KAIKAI_DEBT_ANSWER: PromptSpec = {
 
 export const KAIKAI_DEBT_RECEIPTS: PromptSpec = {
   id: 'kaikai-debt-receipts',
-  version: 1,
+  // v2: the brief now carries real member handles and the items already on the
+  // books, so lines name actual creditors and stop repeating themselves.
+  version: 2,
   task: 'narrative',
   instructions: [
     'You write historical receipt lines for a running joke: a public ledger of',
@@ -281,13 +283,20 @@ export const KAIKAI_DEBT_RECEIPTS: PromptSpec = {
     ' "category":"food|transit|rent|gear|gambling|emotional|temporal|other"}]}',
     'item is the receipt line. note is one dry sentence on how it went unpaid.',
     'Vary them hard: different categories, different settings, different times of',
-    'day, different creditors left out of pocket. No two lines may share a shape,',
-    'and none may repeat an item you were shown as already used.',
+    'day, different people left out of pocket. No two lines may share a shape,',
+    'and none may repeat an item you were shown as already on the books.',
     'Mundane beats dramatic — vending machines, bus fare, half a burrito, a phone',
     'charger, a losing bet on his own darts.',
-    'Never name a real person, brand, or place. No slurs, nothing sexual, no crime.',
+    'The brief may list member handles he owes. Where it does, work roughly a',
+    'third of them into notes as @handle — "@someone covered it and never saw it',
+    'again" — spread evenly rather than reusing the first. Use ONLY handles from',
+    'that list, spelled exactly as given, and never invent one.',
+    'Those handles are the ONLY real people you may name. Never name any other',
+    'real person, brand, or place. No slurs, nothing sexual, no crime, and nothing',
+    'that reads as a real accusation about a real account.',
   ].join('\n'),
-  maxChars: 6_000,
+  // A bulk batch is 120 lines of JSON; the old 6k ceiling was sized for 20.
+  maxChars: 40_000,
   forbid: ['As an AI', 'Here is', "Here's"],
 };
 

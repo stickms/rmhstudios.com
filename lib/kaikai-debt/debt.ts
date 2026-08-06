@@ -168,6 +168,35 @@ export const MAX_NOTE_CHARS = 180;
 export const LEDGER_PAGE_SIZE = 20;
 
 /**
+ * How many receipts one generation writes: six pages' worth.
+ *
+ * Batching is what makes the scroll seamless. A batch per page means the reader
+ * waits on DeepSeek every twenty rows — a visible stall, six times a minute, on
+ * the one interaction this page exists for. One call for six pages amortises
+ * that latency across the whole run, and because the result is cached forever
+ * the cost per page *falls* as the batch grows.
+ *
+ * The ceiling is the model's output window: at ~110 tokens a line, 120 lines is
+ * a ~13k-token completion, which is comfortable for `deepseek-chat` and still
+ * well inside the provider timeout.
+ */
+export const GENERATION_BATCH_SIZE = 120;
+
+/**
+ * Start generating when fewer than this many rows remain past the current page.
+ *
+ * Generation is triggered by *proximity*, not by running out: waiting for an
+ * empty page means the stall has already started by the time the work begins.
+ *
+ * Sized to a full batch, deliberately. At half a batch the reader consumes the
+ * runway faster than the throttle allows the next batch to be bought, catches
+ * the frontier, and takes a hard wait on a model call — which is precisely the
+ * stall the buffer exists to prevent. Keeping a whole batch in reserve means
+ * prefetch always has a batch's worth of scrolling to complete in.
+ */
+export const GENERATE_AHEAD_ROWS = GENERATION_BATCH_SIZE;
+
+/**
  * How far apart generated receipts sit in time, walking backwards from the
  * epoch. ~3.2 hours, so a page of 20 covers a bit under three days and scrolling
  * for a while genuinely walks back through years of small purchases.
@@ -429,6 +458,14 @@ export function formatMicroDigits(cents: number, digits: number): string {
 /* Wire contract                                                              */
 /* -------------------------------------------------------------------------- */
 
+/** A member as the log renders them — the author of a line, or its creditor. */
+export interface DebtPerson {
+  id: string;
+  name: string | null;
+  handle: string | null;
+  image: string | null;
+}
+
 /** One line of the debt log, as the API serialises it. */
 export interface DebtEntryDto {
   id: string;
@@ -443,12 +480,14 @@ export interface DebtEntryDto {
   claim: string | null;
   /** Epoch millis — a number, not an ISO string, because the client does maths with it. */
   createdAtMs: number;
-  addedBy: {
-    id: string;
-    name: string | null;
-    handle: string | null;
-    image: string | null;
-  } | null;
+  /** Who logged it. Null on a generated row — nobody wrote it. */
+  addedBy: DebtPerson | null;
+  /**
+   * Who he owes it to. The author on a member row; a real member picked at
+   * random on a generated one, so the archive names actual people. Null only
+   * when the account has since been deleted.
+   */
+  creditor: DebtPerson | null;
 }
 
 /** One page of the infinite ledger. */

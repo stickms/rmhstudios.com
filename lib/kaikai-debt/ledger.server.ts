@@ -34,6 +34,8 @@ import { createBus } from '@/lib/realtime-bus.server';
 import {
   ANNUAL_INTEREST_RATE,
   DEBT_EPOCH_MS,
+  GENERATE_AHEAD_ROWS,
+  GENERATION_BATCH_SIZE,
   LEDGER_PAGE_SIZE,
   RECEIPT_STRIDE_MS,
   SEED_DEBT_CENTS,
@@ -41,11 +43,13 @@ import {
   isDebtCategory,
   type DebtEntryDto,
   type DebtLedgerPage,
+  type DebtPerson,
   type DebtSnapshot,
   type DebtSource,
   type DebtStreamEvent,
 } from '@/lib/kaikai-debt/debt';
 import { generateReceipts, isAiConfigured } from '@/lib/kaikai-debt/ai.server';
+import { generateFallbackReceipts } from '@/lib/kaikai-debt/fallback';
 
 /* -------------------------------------------------------------------------- */
 /* Realtime                                                                   */
@@ -75,6 +79,7 @@ const entrySelect = {
   claim: true,
   createdAt: true,
   addedBy: { select: { id: true, name: true, handle: true, image: true } },
+  creditor: { select: { id: true, name: true, handle: true, image: true } },
 } as const satisfies Prisma.KaikaiDebtEntrySelect;
 
 type EntryRow = Prisma.KaikaiDebtEntryGetPayload<{ select: typeof entrySelect }>;
@@ -88,6 +93,15 @@ type EntryRow = Prisma.KaikaiDebtEntryGetPayload<{ select: typeof entrySelect }>
  * throwing: a row written by a future version of the code with a category this
  * one has never heard of should render as "other", not 500 the whole page.
  */
+function person(u: {
+  id: string;
+  name: string | null;
+  handle: string | null;
+  image: string | null;
+}): DebtPerson {
+  return { id: u.id, name: u.name, handle: u.handle, image: u.image };
+}
+
 function toDto(row: EntryRow): DebtEntryDto {
   return {
     id: row.id,
@@ -98,14 +112,11 @@ function toDto(row: EntryRow): DebtEntryDto {
     amountCents: row.amountCents,
     claim: row.claim,
     createdAtMs: row.createdAt.getTime(),
-    addedBy: row.addedBy
-      ? {
-          id: row.addedBy.id,
-          name: row.addedBy.name,
-          handle: row.addedBy.handle,
-          image: row.addedBy.image,
-        }
-      : null,
+    addedBy: row.addedBy ? person(row.addedBy) : null,
+    // A member row's creditor is its author — they are the one out of pocket —
+    // so it falls back rather than rendering "owed to nobody" on every line a
+    // person added.
+    creditor: row.creditor ? person(row.creditor) : row.addedBy ? person(row.addedBy) : null,
   };
 }
 
@@ -244,74 +255,163 @@ async function readPage(before: Date | null, take: number): Promise<EntryRow[]> 
  */
 const GENERATION_LOCK_KEY = 8_314_921_774_055_301n;
 
-/** Items shown to the model as "already used", so a batch does not repeat the last one. */
-const AVOID_SAMPLE_SIZE = 40;
+/** Items shown to the model as "already on the books", so a batch does not echo the last one. */
+const AVOID_SAMPLE_SIZE = 30;
+
+/** Real members a generated batch can be owed to. */
+const CREDITOR_POOL_SIZE = 40;
 
 /**
- * Generate and persist one more page of history, oldest-first from the current
- * frontier.
+ * Shortest gap between two *speculative* generations, in ms.
  *
- * Returns `[]` — never throws — when it cannot extend right now: the lock is
- * held, DeepSeek is unconfigured, or the call failed. Every one of those is
- * "ask again later", and the scroll's contract (`nextCursor: null`) already
- * expresses that. A model outage must not turn scrolling a joke page into a 500.
+ * Generation is no longer gated on having an account — that gate is what made
+ * the scroll dead-end for signed-out readers — so this is what bounds the bill
+ * instead. It is deliberately a **global** throttle rather than a per-user rate
+ * limit: the output is shared, since every batch is cached for everyone
+ * forever, so the thing worth limiting is how often the *site* buys history,
+ * not how often any one reader asks for it.
+ *
+ * It applies only to generate-ahead. A reader who has genuinely run out passes
+ * `urgent` and skips it — see {@link extendLedger}. Throttling that case would
+ * be throttling the page into a dead end, which is the whole bug being fixed:
+ * the cooldown exists to stop the site buying history it does not need yet,
+ * never to stop it buying history a reader is actively waiting on.
+ *
+ * Short, because prefetch is the cheap path and the expensive one is a reader
+ * catching the frontier. The real ceiling on spend is the advisory lock (one
+ * generation at a time site-wide) and the batch being cached forever.
  */
-async function extendLedger(userId: string | null): Promise<EntryRow[]> {
-  if (!isAiConfigured()) return [];
+const GENERATION_COOLDOWN_MS = 3_000;
+
+let lastGenerationAt = 0;
+
+/**
+ * Pick real members for a batch to be owed to.
+ *
+ * `ORDER BY random()` is a sequential scan, which is the wrong tool on a large
+ * table — but it runs at most once per {@link GENERATION_COOLDOWN_MS}, behind
+ * the generation lock, on a path that is already about to spend seconds in a
+ * model call. Correct sampling matters more than speed here: `TABLESAMPLE` would
+ * skew toward whatever happens to share a page, and a batch whose creditors are
+ * all the same handful of accounts is exactly the tell to avoid.
+ *
+ * Bots and handle-less accounts are excluded — the point is that the archive
+ * names people a reader might recognise.
+ */
+async function pickCreditors(
+  tx: Prisma.TransactionClient,
+): Promise<{ id: string; handle: string }[]> {
+  return tx.$queryRaw<{ id: string; handle: string }[]>`
+    SELECT id, handle
+    FROM "user"
+    WHERE handle IS NOT NULL
+      AND "isBot" = false
+      AND "deletionScheduledAt" IS NULL
+    ORDER BY random()
+    LIMIT ${CREDITOR_POOL_SIZE}
+  `;
+}
+
+/**
+ * Write another stretch of Kaikai's history, oldest-first from the frontier.
+ *
+ * **This does not depend on DeepSeek succeeding.** The model is asked first, and
+ * whatever it returns is used; the shortfall — a partial batch, or the whole
+ * batch when the key is unset or the call failed — is composed procedurally by
+ * `lib/kaikai-debt/fallback.ts`. The two are interleaved rather than
+ * concatenated, so a degraded batch reads as a normal stretch of ledger with a
+ * few plainer lines in it rather than as twenty good rows followed by an
+ * obviously mechanical block.
+ *
+ * The only cases that return `[]` are "somebody else is already generating" and
+ * "we generated very recently" — both meaning history is arriving from another
+ * request, not that there is none to be had.
+ */
+async function extendLedger(
+  userId: string | null,
+  opts: { urgent?: boolean } = {},
+): Promise<EntryRow[]> {
+  // `urgent` means the reader's page came back EMPTY — they are staring at the
+  // bottom of the list right now. Speculative top-ups wait their turn; this
+  // does not, because the alternative is a visible dead end.
+  if (!opts.urgent && Date.now() - lastGenerationAt < GENERATION_COOLDOWN_MS) return [];
 
   try {
-    return await prisma.$transaction(async (tx) => {
-      const [{ locked }] = await tx.$queryRaw<{ locked: boolean }[]>`
-        SELECT pg_try_advisory_xact_lock(${GENERATION_LOCK_KEY}::bigint) AS locked
-      `;
-      // Someone else is already buying this stretch of history. Let them.
-      if (!locked) return [];
+    return await prisma.$transaction(
+      async (tx) => {
+        const [{ locked }] = await tx.$queryRaw<{ locked: boolean }[]>`
+          SELECT pg_try_advisory_xact_lock(${GENERATION_LOCK_KEY}::bigint) AS locked
+        `;
+        // Someone else is already buying this stretch of history. Let them.
+        if (!locked) return [];
 
-      // The frontier: the oldest row on the books. New history is written
-      // strictly before it, so the keyset walk stays total and a page can never
-      // be inserted into the middle of a scroll someone is already partway down.
-      const oldest = await tx.kaikaiDebtEntry.findFirst({
-        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-        select: { createdAt: true },
-      });
-      const frontierMs = Math.min(oldest?.createdAt.getTime() ?? DEBT_EPOCH_MS, DEBT_EPOCH_MS);
+        // The frontier: the oldest row on the books. New history is written
+        // strictly before it, so the keyset walk stays total and a page can
+        // never be inserted into the middle of a scroll already in progress.
+        const oldest = await tx.kaikaiDebtEntry.findFirst({
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+          select: { createdAt: true },
+        });
+        const frontierMs = Math.min(oldest?.createdAt.getTime() ?? DEBT_EPOCH_MS, DEBT_EPOCH_MS);
 
-      const recentItems = await tx.kaikaiDebtEntry.findMany({
-        orderBy: [{ createdAt: 'asc' }],
-        take: AVOID_SAMPLE_SIZE,
-        select: { item: true },
-      });
+        const [existing, creditors] = await Promise.all([
+          tx.kaikaiDebtEntry.findMany({
+            orderBy: [{ createdAt: 'asc' }],
+            take: AVOID_SAMPLE_SIZE,
+            select: { item: true },
+          }),
+          pickCreditors(tx),
+        ]);
 
-      const lines = await generateReceipts(
-        LEDGER_PAGE_SIZE,
-        recentItems.map((r) => r.item),
-        { userId },
-      );
-      if (lines.length === 0) return [];
+        const handles = creditors.map((c) => c.handle);
+        const generated = await generateReceipts(
+          GENERATION_BATCH_SIZE,
+          { creditorHandles: handles, existingItems: existing.map((r) => r.item) },
+          { userId },
+        );
 
-      await tx.kaikaiDebtEntry.createMany({
-        data: lines.map((line, i) => ({
-          source: 'ledger',
-          item: line.item,
-          note: line.note,
-          category: line.category,
-          amountCents: line.amountCents,
-          claim: null,
-          addedById: null,
-          // Walk backwards a fixed stride per line. Deterministic spacing is
-          // what guarantees distinct timestamps, and distinct timestamps are
-          // what keep the cursor from dropping or repeating a row.
-          createdAt: new Date(frontierMs - (i + 1) * RECEIPT_STRIDE_MS),
-        })),
-      });
+        // Top up whatever the model did not deliver. `lines` is always exactly
+        // GENERATION_BATCH_SIZE long, which is what makes "the scroll never
+        // stops" a property of the code rather than a hope about uptime.
+        const shortfall = GENERATION_BATCH_SIZE - generated.length;
+        const lines =
+          shortfall > 0
+            ? interleave(generated, generateFallbackReceipts(shortfall, handles))
+            : generated;
 
-      return tx.kaikaiDebtEntry.findMany({
-        where: { createdAt: { lt: new Date(frontierMs) } },
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-        take: lines.length,
-        select: entrySelect,
-      });
-    });
+        if (lines.length === 0) return [];
+
+        await tx.kaikaiDebtEntry.createMany({
+          data: lines.map((line, i) => ({
+            source: 'ledger',
+            item: line.item,
+            note: line.note,
+            category: line.category,
+            amountCents: line.amountCents,
+            claim: null,
+            addedById: null,
+            creditorId: creditorFor(line.note, i, creditors),
+            // Walk backwards a fixed stride per line. Deterministic spacing is
+            // what guarantees distinct timestamps, and distinct timestamps are
+            // what keep the cursor from dropping or repeating a row.
+            createdAt: new Date(frontierMs - (i + 1) * RECEIPT_STRIDE_MS),
+          })),
+        });
+
+        lastGenerationAt = Date.now();
+
+        return tx.kaikaiDebtEntry.findMany({
+          where: { createdAt: { lt: new Date(frontierMs) } },
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          take: lines.length,
+          select: entrySelect,
+        });
+      },
+      // A bulk batch waits on a model call inside the transaction. The default
+      // 5s timeout would abort mid-generation and throw away work already paid
+      // for; the provider's own timeout is the real bound.
+      { timeout: 120_000, maxWait: 10_000 },
+    );
   } catch (err) {
     console.error('[kaikai-debt] ledger extension failed:', (err as Error)?.message);
     return [];
@@ -319,28 +419,111 @@ async function extendLedger(userId: string | null): Promise<EntryRow[]> {
 }
 
 /**
- * One page of the infinite ledger, generating more history when the cache runs
- * dry at the frontier.
+ * Which member a generated line is owed to.
  *
- * `canGenerate` is the caller's answer to "is this reader allowed to spend a
- * model call" — signed in, inside their budget. An anonymous reader still scrolls
- * the entire cached history, which after any real traffic is most of it; they
- * simply do not get to be the one who conjures the next page. That is the whole
- * cost story of an infinite AI-generated feed: **generated once, for everyone,
- * ever**, and only ever by an attributable account.
+ * **If the note names someone, that is the creditor.** Both generators like to
+ * write "@vik covered it and never saw it again", and assigning the row to
+ * somebody else round-robin produced lines that contradicted themselves on
+ * screen — the note crediting one member while the byline read "owed to"
+ * another. Reading the handle back out of the prose is what keeps the two
+ * halves of the row telling the same story.
+ *
+ * Only handles from this batch's pool are honoured, so a hallucinated or
+ * misspelled mention falls through to the round-robin rather than silently
+ * attaching a debt to whoever happens to own that handle.
+ *
+ * Round-robin, not random, for the unnamed lines: random leaves some members
+ * with nine debts and others with none over a 120-row batch, which reads as a
+ * bug even though it is just variance.
+ */
+function creditorFor(
+  note: string,
+  index: number,
+  pool: { id: string; handle: string }[],
+): string | null {
+  if (pool.length === 0) return null;
+  const mentioned = note.match(/@([\w-]+)/);
+  if (mentioned) {
+    const named = pool.find((c) => c.handle.toLowerCase() === mentioned[1]!.toLowerCase());
+    if (named) return named.id;
+  }
+  return pool[index % pool.length]!.id;
+}
+
+/**
+ * Blend two batches so the weaker one is not a visible block.
+ *
+ * Straight concatenation would put every fallback line together at one end,
+ * which on a page whose whole point is scrolling means the reader hits a wall of
+ * plainer prose and can see exactly where the model gave up. Alternating by
+ * ratio hides the seam: a batch that is 70% generated reads as generated with
+ * occasional terse entries.
+ */
+function interleave<T>(primary: T[], filler: T[]): T[] {
+  if (primary.length === 0) return filler;
+  if (filler.length === 0) return primary;
+
+  const out: T[] = [];
+  const step = (primary.length + filler.length) / filler.length;
+  let nextFiller = 0;
+  let f = 0;
+  for (let i = 0; i < primary.length; i++) {
+    while (f < filler.length && out.length >= nextFiller) {
+      out.push(filler[f++]!);
+      nextFiller += step;
+    }
+    out.push(primary[i]!);
+  }
+  while (f < filler.length) out.push(filler[f++]!);
+  return out;
+}
+
+/**
+ * One page of the infinite ledger, extending it when the reader gets close to
+ * the end of what has ever been written.
+ *
+ * Two things make the scroll seamless rather than merely infinite:
+ *
+ *  - **Generate ahead, not on empty.** The trigger is how many rows remain past
+ *    this page ({@link GENERATE_AHEAD_ROWS}), not whether this page came back
+ *    short. Waiting for an empty page means the stall has already started by the
+ *    time the work begins.
+ *  - **Generate in bulk.** One call writes six pages, so the latency is paid
+ *    once per few hundred rows rather than once per twenty.
+ *
+ * There is no `canGenerate` gate any more. Requiring a session to extend the
+ * ledger is what made the scroll dead-end for signed-out readers — the common
+ * case, and the one the page is most likely to be shared into. Spend is bounded
+ * by the global cooldown and the batch size instead, both of which limit how
+ * often the *site* buys history rather than how often any one reader asks.
+ *
+ * `nextCursor` is null only for a genuinely empty page, which now means
+ * "generation is in flight elsewhere, ask again" and never "that is all of it".
  */
 export async function getLedgerPage(opts: {
   cursor?: string | null;
   userId?: string | null;
-  canGenerate?: boolean;
 }): Promise<DebtLedgerPage> {
   const before = parseCursor(opts.cursor);
   let rows = await readPage(before, LEDGER_PAGE_SIZE);
   let generated = false;
 
-  // Short page = the reader has reached the end of what has ever been written.
-  if (rows.length < LEDGER_PAGE_SIZE && opts.canGenerate) {
-    const fresh = await extendLedger(opts.userId ?? null);
+  // How much runway is left past this page. `take` caps the count so it stays
+  // O(buffer) rather than O(table) — the answer only has to distinguish
+  // "plenty" from "nearly out".
+  const tailRow = rows[rows.length - 1];
+  const remaining = tailRow
+    ? await prisma.kaikaiDebtEntry.count({
+        where: { createdAt: { lt: tailRow.createdAt } },
+        take: GENERATE_AHEAD_ROWS,
+      })
+    : 0;
+
+  // Empty page = the reader has caught the frontier and is waiting. Anything
+  // else is a top-up with runway to spare.
+  const starved = rows.length === 0;
+  if (starved || remaining < GENERATE_AHEAD_ROWS) {
+    const fresh = await extendLedger(opts.userId ?? null, { urgent: starved });
     if (fresh.length > 0) {
       generated = true;
       invalidateTotals();
@@ -357,11 +540,12 @@ export async function getLedgerPage(opts: {
 
   return {
     entries: rows.map(toDto),
-    // A full page always offers a cursor. A short one only does when the reader
-    // could not have extended it themselves — so a signed-out reader at the
-    // frontier is told "sign in", while a signed-in reader who hit a held lock
-    // is told "try again", and neither is told the debt is finite.
-    nextCursor: rows.length === LEDGER_PAGE_SIZE && last ? String(last.createdAt.getTime()) : null,
+    // NEVER null while the reader has a position to resume from. A short or
+    // even empty page means they caught up with generation, not that the
+    // archive ended — so an empty page echoes back the cursor it was given and
+    // the client retries the same spot. Dropping the cursor here was the dead
+    // end: it threw away the reader's place and there was no way back.
+    nextCursor: last ? String(last.createdAt.getTime()) : (opts.cursor ?? null),
     generated,
     basisCents: totals.basisCents,
     principalCents: totals.principalCents,
@@ -374,10 +558,7 @@ export async function getLedgerPage(opts: {
 /* -------------------------------------------------------------------------- */
 
 /** Everything the page boots from, in one call. */
-export async function getSnapshot(opts: {
-  userId?: string | null;
-  canGenerate?: boolean;
-}): Promise<DebtSnapshot> {
+export async function getSnapshot(opts: { userId?: string | null } = {}): Promise<DebtSnapshot> {
   const page = await getLedgerPage({ cursor: null, ...opts });
   const totals = await getTotals();
 

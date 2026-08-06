@@ -40,6 +40,7 @@ import {
 import {
   clampEntryCents,
   formatDebt,
+  GENERATION_BATCH_SIZE,
   isDebtCategory,
   sampleDebtCents,
   MAX_ITEM_CHARS,
@@ -221,11 +222,25 @@ export async function* answerDebtQuestion(
 /* Receipt generation — the infinite scroll's supply                          */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * The cap is derived from the batch size, never hardcoded.
+ *
+ * A fixed `.max(64)` is what silently disabled the model when batches grew to
+ * 120: every response validated as too long, `runTaskJson` threw, the catch
+ * below swallowed it, and the page filled itself entirely from the fallback
+ * bank — working perfectly, costing nothing, and using none of the AI it was
+ * paying for. Nothing failed loudly because the fallback is *supposed* to cover
+ * failures. Tying the bound to `GENERATION_BATCH_SIZE` means raising the batch
+ * can never quietly turn the model off again.
+ *
+ * The small allowance on top absorbs a model that overshoots by a line or two;
+ * the slice in `generateReceipts` trims the excess.
+ */
 const receiptsSchema = z.object({
   lines: z
     .array(z.object({ item: itemField, note: noteField, category: categoryField }))
     .min(1)
-    .max(64),
+    .max(GENERATION_BATCH_SIZE + 8),
 });
 
 export interface GeneratedReceipt {
@@ -238,62 +253,94 @@ export interface GeneratedReceipt {
 /**
  * Tokens to allow per requested line, plus slack for the JSON envelope.
  *
- * A batch of 20 needs far more than the `narrative` route's default 700, and the
+ * A bulk batch needs far more than the `narrative` route's default 700, and the
  * failure mode of getting it wrong is silent: the model stops mid-array, the
- * JSON does not parse, and the page reports "could not extend the ledger" for
- * reasons no log line explains.
+ * JSON does not parse, and the batch is lost.
  */
 const TOKENS_PER_LINE = 110;
+
+/** Context handed to the model, capped so the prompt stays a fraction of the completion. */
+const MAX_CONTEXT_ITEMS = 30;
+const MAX_CONTEXT_HANDLES = 20;
+
+export interface ReceiptContext {
+  /** Handles of real members the lines may be owed to. */
+  creditorHandles: readonly string[];
+  /** Items already on the books, so the model can avoid repeating them. */
+  existingItems: readonly string[];
+}
 
 /**
  * Conjure `count` more lines of Kaikai's history.
  *
- * `alreadyUsed` is a sample of items already on the books, handed over so the
- * model can avoid repeating them. It is a nudge and not a guarantee — dedupe, if
- * it ever matters, belongs in the caller where the full set actually lives.
+ * **Never throws.** Returns `[]` on any failure — unconfigured key, timeout,
+ * rate limit, unparseable JSON. That is the contract the infinite scroll is
+ * built on: the caller responds to an empty array by composing the batch
+ * procedurally instead (`lib/kaikai-debt/fallback.ts`), so a model outage
+ * degrades the prose rather than stopping the page. Throwing here would make
+ * DeepSeek a hard dependency of scrolling, which is exactly what it must not be.
  *
- * Returns fewer lines than asked for rather than throwing when the model returns
- * a short array: a partial page of history is a perfectly good page of history,
- * and the scroll simply asks again.
+ * A short array is likewise fine and not an error: forty good lines out of a
+ * hundred still fills two pages, and the caller tops the rest up from the
+ * fallback bank.
  */
 export async function generateReceipts(
   count: number,
-  alreadyUsed: string[],
+  context: ReceiptContext,
   opts: { userId?: string | null; random?: () => number } = {},
 ): Promise<GeneratedReceipt[]> {
-  const amounts = Array.from({ length: count }, () => sampleDebtCents(opts.random));
+  if (count <= 0 || !isAiConfigured()) return [];
 
-  const avoid = alreadyUsed.slice(0, 40);
+  const amounts = Array.from({ length: count }, () => sampleDebtCents(opts.random));
+  const handles = context.creditorHandles.slice(0, MAX_CONTEXT_HANDLES);
+  const avoid = context.existingItems.slice(0, MAX_CONTEXT_ITEMS);
+
   const brief = [
     `Write ${count} receipt lines, one for each amount below, in this exact order.`,
     '',
     ...amounts.map((cents, i) => `${i + 1}. ${formatDebt(cents)}`),
+    ...(handles.length
+      ? [
+          '',
+          'Real members he owes. Name one in roughly a third of the notes, as',
+          '@handle, and spread them around rather than favouring the first:',
+          ...handles.map((h) => `- @${h}`),
+        ]
+      : []),
     ...(avoid.length
-      ? ['', 'Already on the books — do not repeat any of these:', ...avoid.map((a) => `- ${a}`)]
+      ? ['', 'Already on the books — do not repeat these:', ...avoid.map((a) => `- ${a}`)]
       : []),
   ].join('\n');
 
-  const parsed = await runTaskJson(
-    KAIKAI_DEBT_RECEIPTS.task,
-    systemFor(KAIKAI_DEBT_RECEIPTS),
-    brief,
-    (value) => receiptsSchema.parse(value),
-    {
-      userId: opts.userId ?? null,
-      promptId: KAIKAI_DEBT_RECEIPTS.id,
-      promptVer: KAIKAI_DEBT_RECEIPTS.version,
-      maxTokens: count * TOKENS_PER_LINE + 200,
-      temperature: 1,
-    },
-  );
+  try {
+    const parsed = await runTaskJson(
+      KAIKAI_DEBT_RECEIPTS.task,
+      systemFor(KAIKAI_DEBT_RECEIPTS),
+      brief,
+      (value) => receiptsSchema.parse(value),
+      {
+        userId: opts.userId ?? null,
+        promptId: KAIKAI_DEBT_RECEIPTS.id,
+        promptVer: KAIKAI_DEBT_RECEIPTS.version,
+        maxTokens: count * TOKENS_PER_LINE + 400,
+        temperature: 1,
+      },
+    );
 
-  // Zip against the amounts WE sampled, never against anything the model echoed
-  // back. A model that renumbers, reorders or drops a line then costs us a
-  // shorter batch, not a batch whose prices have drifted off the distribution.
-  return parsed.lines.slice(0, count).map((line, i) => ({
-    item: line.item,
-    note: line.note,
-    category: line.category,
-    amountCents: amounts[i]!,
-  }));
+    // Zip against the amounts WE sampled, never against anything the model
+    // echoed back. A model that renumbers, reorders or drops a line then costs
+    // us a shorter batch, not a batch whose prices have drifted off the
+    // distribution the page is built on.
+    return parsed.lines.slice(0, count).map((line, i) => ({
+      item: line.item,
+      note: line.note,
+      category: line.category,
+      amountCents: amounts[i]!,
+    }));
+  } catch (err) {
+    // Logged, not raised. The caller has a fallback and the reader has a scroll
+    // that must not stop; this is a quality event, not an outage.
+    console.warn('[kaikai-debt] receipt generation failed, falling back:', (err as Error)?.message);
+    return [];
+  }
 }
