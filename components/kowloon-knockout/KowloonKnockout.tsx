@@ -1,9 +1,10 @@
 'use client';
 
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/kowloon-knockout/store';
 import { useMultiplayerSync } from '@/lib/kowloon-knockout/useMultiplayerSync';
+import { useLobbyInvite } from '@/hooks/useLobbyLink';
 import MainMenu from '@/components/kowloon-knockout/MainMenu';
 import CharacterSelect from '@/components/kowloon-knockout/CharacterSelect';
 import MultiplayerLobby from '@/components/kowloon-knockout/MultiplayerLobby';
@@ -15,8 +16,15 @@ const GameView = lazy(() => import('@/components/kowloon-knockout/arena/GameView
 
 export default function KowloonKnockout() {
   const { t } = useTranslation("c-kowloon-knockout");
-  const { phase } = useGameStore();
+  const { phase, setPhase } = useGameStore();
   useMultiplayerSync();
+
+  // Someone opened an invite link. Put the lobby up; it does the joining once
+  // its socket is connected.
+  const invite = useLobbyInvite();
+  useEffect(() => {
+    if (invite) setPhase('lobby');
+  }, [invite, setPhase]);
 
   return (
     <div className="kowloon-knockout">

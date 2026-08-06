@@ -7,6 +7,7 @@
    ═══════════════════════════════════════════ */
 
 import { VelumMultiplayerClient } from '@/lib/velum2099/multiplayer';
+import { lobbyLink } from '@/lib/lobby-link';
 import { playerColor } from './RemotePlayers';
 
 const NEON_CYAN = '#00ffea';
@@ -15,7 +16,7 @@ const NEON_MAGENTA = '#ff00aa';
 export class LobbyUI {
     /**
      * @param container host element
-     * @param opts { onStart(roomId), onExit() }
+     * @param opts { onStart(roomId), onExit(), inviteCode }
      */
     constructor(container, opts = {}) {
         this.container = container;
@@ -34,6 +35,15 @@ export class LobbyUI {
         this._bindClient();
         this.client.connect();
         this.selfId = this.client.getSocketId();
+
+        // Opened from an invite link: join that room rather than showing the
+        // create/join menu. socket.io buffers the emit until the handshake
+        // finishes, which is the same thing the JOIN button relies on.
+        if (opts.inviteCode) {
+            this._statusLine.style.color = NEON_CYAN;
+            this._statusLine.textContent = `加入中 / JOINING ${opts.inviteCode}…`;
+            this.client.joinLobby(opts.inviteCode, this.playerName);
+        }
     }
 
     /* ── lifecycle ── */
@@ -142,6 +152,24 @@ export class LobbyUI {
             border:1px dashed ${NEON_MAGENTA}; border-radius:4px; padding:6px;`;
         this._roomView.appendChild(this._codeBadge);
 
+        // The code is what you read out; the link is what you paste. Both say
+        // the same thing, but only one of them survives being typed by hand.
+        const copyRow = document.createElement('div');
+        copyRow.style.cssText = 'display:flex; gap:10px;';
+        const copyCodeBtn = this._button('复制房间码 / COPY CODE', NEON_CYAN);
+        copyCodeBtn.style.flex = '1';
+        copyCodeBtn.addEventListener('click', () => {
+            if (this.roomId) void this._copy(this.roomId, copyCodeBtn, '复制房间码 / COPY CODE');
+        });
+        const copyLinkBtn = this._button('复制邀请链接 / COPY LINK', NEON_CYAN);
+        copyLinkBtn.style.flex = '1';
+        copyLinkBtn.addEventListener('click', () => {
+            if (this.roomId) void this._copy(lobbyLink(this.roomId, '/velum2099'), copyLinkBtn, '复制邀请链接 / COPY LINK');
+        });
+        copyRow.appendChild(copyCodeBtn);
+        copyRow.appendChild(copyLinkBtn);
+        this._roomView.appendChild(copyRow);
+
         const listTitle = document.createElement('div');
         listTitle.textContent = '在线驾驶员 / DRIVERS';
         listTitle.style.cssText = 'font-size:18px; opacity:0.8; margin-top:4px;';
@@ -215,6 +243,17 @@ export class LobbyUI {
             outline:none; flex:1;`;
     }
 
+    /** Copy, and say so on the button itself — there is no toast layer here. */
+    async _copy(text, button, label) {
+        try {
+            await navigator.clipboard.writeText(text);
+            button.textContent = '✓ 已复制 / COPIED';
+        } catch {
+            button.textContent = '复制失败 / COPY FAILED';
+        }
+        setTimeout(() => { button.textContent = label; }, 1600);
+    }
+
     _button(label, color) {
         const b = document.createElement('button');
         b.textContent = label;
@@ -236,7 +275,11 @@ export class LobbyUI {
             started: () => { if (!this._started) { this._started = true; this.onStart(this.roomId, { colorIndex: this._selfColorIndex }); } },
             left: () => {},
             chat: (m) => this._appendChat(m),
-            error: (e) => { this._statusLine.textContent = (e && e.message) || 'Connection error'; },
+            error: (e) => {
+                // The status line doubles as the "joining…" notice, which is cyan.
+                this._statusLine.style.color = '#ff6677';
+                this._statusLine.textContent = (e && e.message) || 'Connection error';
+            },
         };
         this.client.on('velum:lobbyCreated', this._h.created);
         this.client.on('velum:joined', this._h.joined);

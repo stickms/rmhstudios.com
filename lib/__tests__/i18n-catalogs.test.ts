@@ -129,6 +129,19 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   'c-rmhcalculator': ['back-to-builds'],
   'c-news': ['filters', 'no-articles-hint', 'no-articles-yet', 'no-articles-yet-hint'],
   'c-lights-out': ['cell-label', 'hint-described'],
+  // ── Direct lobby links (2026-08-06) ────────────────────────────────────
+  // The copy-the-invite-link affordance every multiplayer lobby grew beside
+  // its join code. English-only until `pnpm i18n:translate &&
+  // pnpm i18n:resources` runs — the pipeline needs DEEPSEEK_API_KEY, which is
+  // not available in this environment. Runtime falls back to English per key.
+  'c-gabriels-horn': ['copy-invite-link', 'copy-link-failed'],
+  'c-kowloon-knockout': ['copy-link'],
+  'c-laundry-sort': ['copy-invite-link', 'copy-link-failed', 'link-copied'],
+  'c-massive-march': ['copy-link'],
+  'c-neon-driftway': ['copy-code', 'copy-invite-link'],
+  'c-rmhbox': ['copy-invite-link'],
+  'c-rmhcoins': ['copy-invite-link'],
+  'c-synapse-storm': ['copy-invite-link'],
   // SortableList reorder controls (commit 443451a, the §15 groundwork
   // primitives) landed in en/c-ui.json but weren't machine-translated. Runtime
   // falls back to English per key. Remove once `pnpm i18n:translate &&

@@ -9,11 +9,12 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { Check, Copy, Crown, LogOut, Play, RefreshCw, UserX } from 'lucide-react';
+import { Check, Copy, Crown, Link2, LogOut, Play, RefreshCw, UserX } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { useLobbyLink } from '@/hooks/useLobbyLink';
 import {
   DIFFICULTIES,
   MATCH_DURATIONS,
@@ -33,6 +34,7 @@ export function LobbyPanel({ onLeave }: { onLeave: () => void }) {
   const selfSocketId = useLaundryStore((s) => s.selfSocketId);
   const countdown = useLaundryStore((s) => s.countdown);
   const error = useLaundryStore((s) => s.error);
+  const { copied: linkCopied, copyLink } = useLobbyLink({ code: lobby?.code });
 
   if (!lobby) return null;
 
@@ -58,6 +60,14 @@ export function LobbyPanel({ onLeave }: { onLeave: () => void }) {
     }
   };
 
+  const copyInviteLink = async () => {
+    if (await copyLink()) {
+      toast.success(t('link-copied', { defaultValue: 'Invite link copied' }));
+    } else {
+      toast.error(t('copy-link-failed', { defaultValue: 'Could not copy the link.' }));
+    }
+  };
+
   return (
     <div className="ls-overlay z-40 bg-black/60 backdrop-blur-[2px]">
       <div className="mx-auto grid min-h-full w-full content-center max-w-3xl gap-3 p-3 sm:p-6">
@@ -78,6 +88,18 @@ export function LobbyPanel({ onLeave }: { onLeave: () => void }) {
                   aria-label={t('copy-code', { defaultValue: 'Copy room code' })}
                 >
                   <Copy className="size-4" aria-hidden="true" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={copyInviteLink}
+                  aria-label={t('copy-invite-link', { defaultValue: 'Copy invite link' })}
+                >
+                  {linkCopied ? (
+                    <Check className="size-4" aria-hidden="true" />
+                  ) : (
+                    <Link2 className="size-4" aria-hidden="true" />
+                  )}
                 </Button>
               </div>
             </div>
