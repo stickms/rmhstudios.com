@@ -24,6 +24,7 @@ import { Route as DesignRouteImport } from './routes/design'
 import { Route as DreamRiftRouteImport } from './routes/dream-rift'
 import { Route as ForestExplorerRouteImport } from './routes/forest-explorer'
 import { Route as GabrielsHornRouteImport } from './routes/gabriels-horn'
+import { Route as HandleRouteImport } from './routes/handle'
 import { Route as HouseAlwaysWinsRouteImport } from './routes/house-always-wins'
 import { Route as IsleworksRouteImport } from './routes/isleworks'
 import { Route as KowloonKnockoutRouteImport } from './routes/kowloon-knockout'
@@ -896,6 +897,11 @@ const ForestExplorerRoute = ForestExplorerRouteImport.update({
 const GabrielsHornRoute = GabrielsHornRouteImport.update({
   id: '/gabriels-horn',
   path: '/gabriels-horn',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HandleRoute = HandleRouteImport.update({
+  id: '/handle',
+  path: '/handle',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HouseAlwaysWinsRoute = HouseAlwaysWinsRouteImport.update({
@@ -5029,6 +5035,7 @@ export interface FileRoutesByFullPath {
   '/dream-rift': typeof DreamRiftRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/gabriels-horn': typeof GabrielsHornRoute
+  '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
@@ -5840,6 +5847,7 @@ export interface FileRoutesByTo {
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
   '/gabriels-horn': typeof GabrielsHornRoute
+  '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
   '/laundry-sort': typeof LaundrySortRoute
@@ -6636,6 +6644,7 @@ export interface FileRoutesById {
   '/dream-rift': typeof DreamRiftRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/gabriels-horn': typeof GabrielsHornRoute
+  '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
@@ -7454,6 +7463,7 @@ export interface FileRouteTypes {
     | '/dream-rift'
     | '/forest-explorer'
     | '/gabriels-horn'
+    | '/handle'
     | '/house-always-wins'
     | '/isleworks'
     | '/kowloon-knockout'
@@ -8265,6 +8275,7 @@ export interface FileRouteTypes {
     | '/design'
     | '/dream-rift'
     | '/gabriels-horn'
+    | '/handle'
     | '/house-always-wins'
     | '/isleworks'
     | '/laundry-sort'
@@ -9060,6 +9071,7 @@ export interface FileRouteTypes {
     | '/dream-rift'
     | '/forest-explorer'
     | '/gabriels-horn'
+    | '/handle'
     | '/house-always-wins'
     | '/isleworks'
     | '/kowloon-knockout'
@@ -9877,6 +9889,7 @@ export interface RootRouteChildren {
   DreamRiftRoute: typeof DreamRiftRoute
   ForestExplorerRoute: typeof ForestExplorerRouteWithChildren
   GabrielsHornRoute: typeof GabrielsHornRoute
+  HandleRoute: typeof HandleRoute
   HouseAlwaysWinsRoute: typeof HouseAlwaysWinsRoute
   IsleworksRoute: typeof IsleworksRoute
   KowloonKnockoutRoute: typeof KowloonKnockoutRouteWithChildren
@@ -10444,6 +10457,13 @@ declare module '@tanstack/react-router' {
       path: '/gabriels-horn'
       fullPath: '/gabriels-horn'
       preLoaderRoute: typeof GabrielsHornRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/handle': {
+      id: '/handle'
+      path: '/handle'
+      fullPath: '/handle'
+      preLoaderRoute: typeof HandleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/house-always-wins': {
@@ -17580,6 +17600,7 @@ const rootRouteChildren: RootRouteChildren = {
   DreamRiftRoute: DreamRiftRoute,
   ForestExplorerRoute: ForestExplorerRouteWithChildren,
   GabrielsHornRoute: GabrielsHornRoute,
+  HandleRoute: HandleRoute,
   HouseAlwaysWinsRoute: HouseAlwaysWinsRoute,
   IsleworksRoute: IsleworksRoute,
   KowloonKnockoutRoute: KowloonKnockoutRouteWithChildren,

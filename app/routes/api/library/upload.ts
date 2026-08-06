@@ -11,6 +11,7 @@ import { effectiveQuota } from '@/lib/library/quota.server';
 import { libraryFileKey, libraryCoverKey, libraryPdfUrl } from '@/lib/library/keys';
 import { compressPdfForStorage } from '@/lib/library/compress.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
+import { pingIndexNow } from '@/lib/seo/indexnow.server';
 
 const COVER_MAX_BYTES = 2 * 1024 * 1024; // 2 MB
 
@@ -173,6 +174,12 @@ export const Route = createFileRoute('/api/library/upload')({
             detail: title.trim().slice(0, 120),
           });
         }
+        // A new document is public (and in the sitemap) as soon as the row
+        // exists — `hidden`/`reported` both start false. This is a creation, not
+        // an edit, so it is exactly the transition IndexNow wants to hear about.
+        // Fire-and-forget — never awaited.
+        pingIndexNow([`/library/${result.slug}`]);
+
         return Response.json({ slug: result.slug, url: libraryPdfUrl(id) }, { status: 201 });
       }),
     },

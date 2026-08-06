@@ -14,6 +14,7 @@
 
 import { prisma } from '@/lib/prisma.server';
 import { handleSchema } from '@/lib/handle';
+import { invalidateProfileLookup } from '@/lib/profile.server';
 import { invalidateUserDisplay } from '@/lib/user-display.server';
 import {
   PREVIOUS_HANDLE_WINDOW_MS,
@@ -132,6 +133,11 @@ export async function changeHandle(
   }
 
   invalidateUserDisplay(userId);
+  // A handle nobody held a moment ago may well have been looked up (and its
+  // absence cached) in that moment — a name being claimed is exactly the traffic
+  // pattern that precedes claiming it. Drop the negative entry so `/@next`
+  // resolves on the first request after the rename (OPT-47).
+  invalidateProfileLookup(next);
   return { ok: true, oldHandle: previousHandle ?? '', newHandle: next };
 }
 

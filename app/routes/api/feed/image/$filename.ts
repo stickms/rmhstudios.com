@@ -1,7 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { getObject } from "@/lib/storage/s3.server";
 import { feedImageKey, isSafeFilename, contentTypeForFilename } from "@/lib/storage/keys";
-import { optimizeImage, parseFormat, negotiateFormat } from "@/lib/image-optimize";
+import {
+  optimizeImage,
+  parseFormat,
+  negotiateFormat,
+  getCachedVariant,
+  setCachedVariant,
+  variantCacheKey,
+} from "@/lib/image-optimize";
 
 export const Route = createFileRoute('/api/feed/image/$filename')({
   server: {
@@ -10,10 +17,6 @@ export const Route = createFileRoute('/api/feed/image/$filename')({
         try {
           const { filename } = params;
           if (!isSafeFilename(filename)) {
-            return new Response("Not Found", { status: 404 });
-          }
-          const object = await getObject(feedImageKey(filename));
-          if (!object) {
             return new Response("Not Found", { status: 404 });
           }
 
@@ -35,11 +38,40 @@ export const Route = createFileRoute('/api/feed/image/$filename')({
             const quality = qParam ? Math.min(Math.max(parseInt(qParam, 10), 1), 100) : 80;
             const format = parseFormat(fParam) ?? negotiateFormat(request.headers.get('accept'));
 
+            // Checked BEFORE the storage read: a hit skips both the R2 GET and
+            // the sharp encode. Feed image filenames are content-addressed and
+            // the response is `immutable`, so a cached variant can't go stale.
+            const key = feedImageKey(filename);
+            const cacheKey = variantCacheKey('feed', key, { width, height, quality, format });
+            const cached = getCachedVariant(cacheKey);
+            if (cached) {
+              return new Response(cached.buffer as unknown as BodyInit, {
+                headers: {
+                  "Content-Type": cached.contentType,
+                  "Cache-Control": "public, max-age=31536000, immutable",
+                  "Access-Control-Allow-Origin": "*",
+                  // Required: the format above was negotiated from Accept, so a
+                  // shared cache must key on it or it serves AVIF to Safari 15.
+                  "Vary": "Accept",
+                },
+              });
+            }
+
+            const object = await getObject(key);
+            if (!object) {
+              return new Response("Not Found", { status: 404 });
+            }
+
             const result = await optimizeImage(object.body, {
               width,
               height,
               quality,
               format,
+            });
+
+            setCachedVariant(cacheKey, {
+              buffer: result.buffer,
+              contentType: result.contentType,
             });
 
             return new Response(result.buffer as unknown as BodyInit, {
@@ -50,6 +82,11 @@ export const Route = createFileRoute('/api/feed/image/$filename')({
                 "Vary": "Accept",
               },
             });
+          }
+
+          const object = await getObject(feedImageKey(filename));
+          if (!object) {
+            return new Response("Not Found", { status: 404 });
           }
 
           return new Response(new Uint8Array(object.body), {

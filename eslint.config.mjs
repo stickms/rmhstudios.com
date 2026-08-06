@@ -98,6 +98,11 @@ export default tseslint.config(
         FormData: 'readonly',
         Blob: 'readonly',
         crypto: 'readonly',
+        // `WorkerNavigator` — a real member of ServiceWorkerGlobalScope, not a
+        // DOM leak. The push handler reads `navigator.setAppBadge` so the
+        // unread count is right even when no page is open, which is the whole
+        // reason the badge lives here rather than only in the app.
+        navigator: 'readonly',
       },
     },
   },
@@ -195,6 +200,24 @@ export default tseslint.config(
     },
   },
 
+  // ── NOT ENABLED: raw <img> dimension rule (OPT-29) ────────────────────────
+  // The proposed rule is:
+  //
+  //   'no-restricted-syntax': ['warn', {
+  //     selector:
+  //       "JSXOpeningElement[name.name='img']:not(:has(JSXAttribute[name.name='width'])):not(:has(JSXAttribute[name.name='srcSet']))",
+  //     message: 'Raw <img> needs width+height (CLS) — or use <OptimizedImage>.',
+  //   }]
+  //
+  // Measured on 2026-08-05 it fires **98 times** across `app/` and
+  // `components/`. The quality bar in CONTRIBUTING.md is "add no new warnings
+  // relative to the base branch", so landing it here would hand every
+  // subsequent PR a 98-warning inheritance and the rule would be deleted rather
+  // than driven to zero — the failure mode the jsx-a11y block above is written
+  // to avoid. It belongs in its own change that fixes the 98 sites and enables
+  // the rule in the same commit. Left here as the record of the measurement so
+  // the next person does not have to re-derive it.
+
   // ── Project-wide rule overrides ───────────────────────────────────────────
   {
     rules: {
@@ -204,7 +227,18 @@ export default tseslint.config(
       '@typescript-eslint/no-require-imports': 'warn',
       '@typescript-eslint/no-unused-vars': [
         'warn',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          // `catch (_)` is this repo's established "deliberately ignored" marker
+          // — it appears throughout the service worker and the telemetry paths,
+          // where swallowing is the point (telemetry must never throw). The rule
+          // checks caught errors separately from vars and defaults to flagging
+          // ALL of them, so the `^_` convention was honoured everywhere EXCEPT
+          // the one place it is used most. Saying so removes the warnings rather
+          // than suppressing them case by case.
+          caughtErrorsIgnorePattern: '^_',
+        },
       ],
       // Downgrade pre-existing code quality issues to warnings.
       // Tighten these as the codebase is cleaned up.

@@ -29,12 +29,7 @@ import { installGlobalErrorHandlers } from '@/lib/client-errors';
 import { initWebVitals } from '@/lib/rum';
 import { registerServiceWorker } from '@/lib/sw-register';
 import { organizationSchema, websiteSchema, jsonLdScript } from '@/lib/schema';
-import {
-  DEFAULT_OG_IMAGE,
-  OG_IMAGE_HEIGHT,
-  OG_IMAGE_WIDTH,
-  absoluteUrl,
-} from '@/lib/seo';
+import { DEFAULT_OG_IMAGE, OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, absoluteUrl } from '@/lib/seo';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { APP_THEME_BG, THEME_BG, DEFAULT_STYLE } from '@/stores/themeStore';
 import { ACCENT_MAP } from '@/lib/appearance';
@@ -179,7 +174,103 @@ const bodyThemeScript = `if(window.__themeBg)document.body.style.backgroundColor
  * (Inter, the body/display font, is now self-hosted via @fontsource-variable/inter
  * imported in globals.css — no Google Fonts request on the critical path.)
  */
-const deferredFontsScript = `(function(){var u="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100..800&family=Playfair+Display:wght@400..900&family=Bangers&family=Bebas+Neue&family=Orbitron:wght@400..900&family=Cinzel:wght@400..900&family=Pacifico&family=Space+Grotesk:wght@300..700&family=Permanent+Marker&family=Caveat:wght@400..700&family=Dancing+Script:wght@400..700&family=Patrick+Hand&display=swap";function l(){var k=document.createElement("link");k.rel="stylesheet";k.href=u;document.head.appendChild(k)}if("requestIdleCallback"in window)requestIdleCallback(l);else setTimeout(l,200)})()`;
+const deferredFontsScript = `(function(){var u="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100..800&family=Playfair+Display:wght@400..900&family=Bangers&family=Bebas+Neue&family=Cinzel:wght@400..900&family=Patrick+Hand&display=swap";function l(){var k=document.createElement("link");k.rel="stylesheet";k.href=u;document.head.appendChild(k)}if("requestIdleCallback"in window)requestIdleCallback(l);else setTimeout(l,200)})()`;
+
+/**
+ * Paths that must never be speculatively prefetched (OPT-04).
+ *
+ * A prefetched document is fetched WITHOUT any user interaction and WITH the
+ * user's cookies, so anything whose GET has a side effect would fire on hover
+ * for a page the visitor may never open. `href_matches` takes URLPattern
+ * syntax, where `*` spans path separators — `/api/*` covers `/api/a/b/c`, and a
+ * trailing `*` with no slash (`/admin*`) covers both `/admin` and `/admin/…`.
+ *
+ * ## Why `/api/*` is wholesale, not decorative
+ *
+ * An audit of every GET handler under `app/routes/api/**` found eight that
+ * write or cost money on a plain GET:
+ *
+ *  - `api/email/unsubscribe.ts` — consumes a signed token and upserts
+ *    `NotificationPreference.emailDigest = false`. A prefetch unsubscribes you.
+ *  - `api/group-chats/$id/index.ts` and `api/group-chats/$id/messages.ts` —
+ *    both write `groupChatMember.lastReadAt` (mark-as-read) inside the GET.
+ *  - `api/messages/$conversationId.ts` — `updateMany` marking DMs read.
+ *  - `api/doctrine/safehouse/content.ts` — `doctrineAccessLog.createMany`.
+ *  - `api/doctrine/puzzles/today.ts` — creates the day's puzzle rows on demand.
+ *  - `api/doctrine/puzzles/replay.ts` — creates a `DoctrinePuzzleReplay` row.
+ *  - `api/ai/takeaways.ts` — `rateLimit: 'ai'`; on a cache miss it spends model
+ *    tokens. `api/rmhladder/prep.ts` documents the same hazard from the other
+ *    side: it is a POST *because* a read that costs money must not be
+ *    prefetchable.
+ *
+ * Page routes were audited too — no route loader or `beforeLoad` under
+ * `app/routes/**` writes, so the document tier is safe on its own merits. The
+ * remaining entries below are the auth/payment/admin classes the spec calls
+ * for, plus two pages excluded on cost rather than correctness (noted inline).
+ */
+const SPECULATION_EXCLUDED_PATHS = [
+  // Every JSON endpoint, auth flow and upload target — see the audit above.
+  '/api/*',
+  // Auth flows: session and token minting. `/logout*` has no route today; it is
+  // listed so adding one later can't silently become prefetchable.
+  '/login*',
+  '/logout*',
+  '/rmhcode/auth*',
+  // Payment. No `/checkout` route exists today (Stripe redirects off-site);
+  // listed for the same defensive reason as `/logout*`.
+  '/checkout*',
+  // Admin console.
+  '/admin*',
+  // Referral landing: a tracking link that stores an attribution code and
+  // immediately redirects. `noindex`, and disallowed in robots.txt.
+  '/ref/*',
+  // Not a correctness fix — a prefetch does not run scripts, so the mark-read
+  // that `ConversationView` fires on mount does not go off. These are excluded
+  // because they are per-viewer pages that miss the anonymous HTML cache: every
+  // hover would cost a session resolution plus the page's own queries for a
+  // view that is often never opened.
+  '/messages*',
+  '/settings*',
+] as const;
+
+/**
+ * Speculation Rules: let the *browser* prefetch whole documents on its own
+ * heuristics (OPT-04).
+ *
+ * `eagerness: "moderate"` is hover — the same intent signal the router already
+ * uses — but run off the main thread, with automatic backoff on Save-Data, low
+ * battery and constrained connections that the JS preload path cannot match.
+ * Deliberately prefetch only: `prerender` (OPT-05) additionally *runs* the next
+ * page's effects, which needs a `whenActivated` guard around every analytics,
+ * RUM and socket call first.
+ *
+ * `where.not` is the load-bearing half — see SPECULATION_EXCLUDED_PATHS.
+ * `[data-no-speculate]` is the per-link escape hatch: put it on an anchor (or
+ * any ancestor the selector matches) to opt that link out without touching this
+ * list.
+ *
+ * CSP: `script-src` in `deploy/apache/rmhstudios.conf` includes
+ * `'unsafe-inline'`, so this inline script is permitted as-is. Every speculated
+ * URL is same-origin, which `default-src 'self'` already allows. If script-src
+ * is ever tightened to nonces, this script needs the nonce too.
+ */
+const speculationRules = JSON.stringify({
+  prefetch: [
+    {
+      source: 'document',
+      where: {
+        and: [
+          { href_matches: '/*' },
+          ...SPECULATION_EXCLUDED_PATHS.map((path) => ({ not: { href_matches: path } })),
+          // Per-link opt-out, and respect an author's existing `nofollow`.
+          { not: { selector_matches: '[data-no-speculate]' } },
+          { not: { selector_matches: '[rel~="nofollow"]' } },
+        ],
+      },
+      eagerness: 'moderate',
+    },
+  ],
+});
 
 /**
  * Resolve the locale from the session cookie (explicit user preference) or
@@ -294,6 +385,14 @@ export const Route = createRootRoute({
       links: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
         { rel: 'manifest', href: '/manifest.webmanifest' },
+        // Registers the site as an address-bar search engine (type the domain,
+        // press Tab, search). The document is static in public/opensearch.xml.
+        {
+          rel: 'search',
+          type: 'application/opensearchdescription+xml',
+          title: 'RMH Studios',
+          href: '/opensearch.xml',
+        },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
         // Inter's Latin subset, requested in parallel with the stylesheet rather
@@ -323,6 +422,9 @@ export const Route = createRootRoute({
         // Inter (body font) is self-hosted via globals.css; decorative/theme fonts
         // stay idle-deferred (loaded from Google Fonts after the page is interactive).
         { children: deferredFontsScript },
+        // Browser-driven document prefetch on hover. Ignored by engines that
+        // don't implement it; see SPECULATION_EXCLUDED_PATHS for the safety list.
+        { type: 'speculationrules', children: speculationRules },
         // Site-wide structured data (Organization + WebSite w/ SearchAction).
         jsonLdScript([organizationSchema(), websiteSchema()]),
       ],

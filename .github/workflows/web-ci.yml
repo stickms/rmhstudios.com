@@ -16,10 +16,10 @@ name: web-ci
 on:
   pull_request:
     paths-ignore:
-      - "go-services/**"
-      - "deploy/**"
-      - "docs/**"
-      - "**/*.md"
+      - 'go-services/**'
+      - 'deploy/**'
+      - 'docs/**'
+      - '**/*.md'
   # NOTE: intentionally NO `push:` trigger. On a push to main, deploy.yml already
   # runs the SAME typecheck/lint/test as its in-workflow `ci` job AND builds the
   # real Docker image (which catches any build-time breakage) — so a push-run of
@@ -105,6 +105,10 @@ jobs:
   # Full frontend build (vibe packages → vite). Catches build-time breakage that
   # typecheck alone misses. Runs independently of `check` so a red test never
   # hides a build failure. No runtime env is read at build time.
+  #
+  # The two size gates below (OPT-01/OPT-02, docs/optimization-ideas-2026-08-05.md)
+  # measure THIS job's output — deliberately no second build, since CI wall-clock
+  # is a tracked concern (docs/ci-speed-audit-2026-07-17.md §3).
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -121,8 +125,23 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      # `--sourcemap` (vs the plain `build:frontend`) is what lets the
+      # entry-composition gate attribute chunk bytes back to a package: the
+      # client build is minified with no module boundaries left in it, so
+      # `<chunk>.js.map` is the only way to know what is inside a chunk. Same
+      # single build otherwise; the maps are never uploaded or deployed.
       - name: Build with Vite 8
-        run: pnpm run build:frontend
+        run: pnpm run build:frontend:sourcemap
+      # OPT-01 — the critical path (transitive STATIC closure of the client
+      # entry) must stay inside its budget. Sourcemap comments are stripped
+      # before measuring, so these numbers match a production build.
+      - name: Bundle budget
+        run: pnpm run check:bundle-budget
+      # OPT-02 — catches the CAUSE rather than the bytes: a package that must
+      # never be in the entry closure. `--strict` makes a missing sourcemap a
+      # failure rather than a skip, so this can never silently no-op in CI.
+      - name: Entry-chunk composition
+        run: pnpm exec tsx scripts/check-entry-composition.ts --strict
 
   # Production dependency vulnerability audit. Fast; kept separate so it never
   # gates (or is gated by) the build/test.

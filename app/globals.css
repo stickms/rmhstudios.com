@@ -27,10 +27,65 @@
 
 /* ── Font family variables ── */
 /* Inter is self-hosted (@fontsource-variable/inter, imported above); the rest
-   load via the idle-deferred Google Fonts CSS link in __root.tsx. */
+   load via the idle-deferred Google Fonts CSS link in __root.tsx.
+
+   Those deferred faces are declared in GOOGLE's stylesheet, which pins them with
+   `display=swap` in the request URL. `font-display` is an @font-face DESCRIPTOR,
+   not a property, so no rule in this file can override it: giving the decorative
+   families `font-display: optional` (OPT-19 — ~100ms, then the fallback for the
+   rest of the load, i.e. guaranteed zero CLS on a face nobody has to READ) is
+   blocked on self-hosting them first (OPT-18). There is no way to fake it from
+   here, so don't. */
+
+/* ── Metric-matched local fallback for Inter (OPT-17) ──────────────────────
+   `swap` guarantees the words paint immediately AND guarantees a reflow when
+   Inter lands, because whatever the browser painted first has different metrics.
+   This face IS that first paint, bent onto Inter's: the same system sans the
+   visitor already has, re-proportioned so an average run of text is exactly as
+   wide as Inter's (`size-adjust`) inside a line box exactly as tall
+   (`ascent-override` / `descent-override` / `line-gap-override`). The swap then
+   changes the letterforms and nothing else — same line breaks, same line boxes,
+   no layout shift.
+
+   The four numbers are GENERATED, never hand-tuned: run
+   `pnpm exec tsx scripts/gen-font-metrics.ts` and paste its output. It reads the
+   metrics out of the `.woff2` this stylesheet actually imports and out of an
+   Arial-metric font on disk, so they track whatever Fontsource ships instead of
+   a number somebody once copied off a blog post. Re-run it when Inter is
+   upgraded.
+
+   `local()` resolves differently per platform, which is why the src is a LIST:
+   Arial on Windows/macOS, Helvetica on older macOS, Liberation Sans on Linux,
+   Roboto on Android. Those are metric-compatible with each other by construction
+   (Liberation Sans was commissioned as a drop-in metric clone of Arial), so one
+   set of overrides serves all four; a platform with none of them falls through
+   to the generic behind this face and is simply un-corrected, exactly as before.
+
+   Scope note: `--site-font-body` / `--site-font-display` put `-apple-system`
+   FIRST, so Apple platforms never reach Inter at all and never reach this face
+   either. The shift this removes is the Windows / Linux / Android one. */
+@font-face {
+  font-family: 'Inter Fallback';
+  src:
+    local('Arial'), local('Helvetica Neue'), local('Helvetica'), local('Liberation Sans'),
+    local('Roboto');
+  size-adjust: 107.34%;
+  ascent-override: 90.25%;
+  descent-override: 22.47%;
+  line-gap-override: 0%;
+}
+
 :root {
   --font-nunito: 'Nunito', sans-serif;
-  --font-inter: 'Inter Variable', 'Inter', sans-serif;
+  /* The metric face rides HERE, inside the Inter token, rather than in the
+     `--site-font-*` stacks — and that placement is load-bearing. This token ends
+     in a GENERIC family, and a generic always resolves, so every entry written
+     after `var(--font-inter)` in a stack is unreachable: the
+     `'Inter Variable', system-ui, sans-serif` tails on `--site-font-body` and
+     `--site-font-display` below are already dead weight (left alone here — they
+     cost nothing and are not this change's business). Inside the token is the
+     one place a fallback can sit AFTER Inter and still be reached. */
+  --font-inter: 'Inter Variable', 'Inter', 'Inter Fallback', sans-serif;
   --font-jetbrains-mono: 'JetBrains Mono', monospace;
   --font-playfair: 'Playfair Display', serif;
   --font-bangers: 'Bangers', cursive;
@@ -1210,7 +1265,35 @@ html.app-route {
      Both layers clip to padding-box, unlike L2+: L1 keeps its visible hairline
      (the edge is what separates one repeated row from the next), and a border-box
      layer under an opaque border is painted over anyway. Cost is two background
-     layers and no filter, so the tier is still unlimited per page. */
+     layers and no filter, so the tier is still unlimited per page.
+
+     DO NOT add `contain: layout paint` here (OPT-15), and here is the audit that
+     says so, because "L1 is the repeated-card tier, therefore it is the safe set
+     to contain" is a very reasonable-sounding wrong answer.
+
+     `contain: paint` clips the subtree and makes the element the containing block
+     for `position: fixed` descendants. That is only safe if everything that
+     deliberately overflows a card is portalled out of it — which §5.1 asserts,
+     since floating UI must be `.glass-overlay` and L4 surfaces are portalled. The
+     assertion does not hold in the code. Portalled: `Dialog`, `Sheet`, `Select`
+     and `ProfileHoverCard` (Radix portals), `Tooltip`, `anchored-menu` and
+     `ReactionMenu` (explicit `createPortal`). NOT portalled — anchored `absolute
+     … top-full` inside their host, `.glass-overlay` or not: `RMHarkOverflowMenu`
+     and `RMHarkActions`' repost menu (both inside the `.glass-fill` feed card),
+     `CommentItem`, `ComposeModal`, `GroupChatView`, `ConversationView`,
+     `MentionTextarea`, `HandleInput`, `BuildFilters`, `PartyBar` and both
+     `LocationSearch`es. Containing the L1 role clips the first two outright.
+
+     The role is also not only repeated cards in practice: it is `Card`'s default
+     tier, so it is also on `NotFound`, `RouteErrorFallback`, `ProfileEditModal`'s
+     sections and its `sticky bottom-0` footer, `ProfileHero`'s absolutely-placed
+     song badge and a 12px avatar disc. One property on a selector with ~150 call
+     sites across 86 files, whose failure mode is silent clipping, is not a
+     containment win.
+
+     If containment is wanted, it belongs on a specific surface that is verifiably
+     already clipping (`.social-post` is `overflow: hidden` in feed.css, so paint
+     containment there is a visual no-op) — not on the tier class. */
   .glass-fill {
     --glass-glint-hover: var(--glass-glint-rest, 0.45);
     background-color: var(--site-glass-tint);
@@ -4432,16 +4515,8 @@ input[type='number'] {
     border: 1px solid var(--motion-cage-rim);
     border-radius: inherit;
     background-image:
-      repeating-linear-gradient(
-        90deg,
-        var(--motion-cage-line) 0 1px,
-        transparent 1px 16.6667%
-      ),
-      repeating-linear-gradient(
-        180deg,
-        var(--motion-cage-line) 0 1px,
-        transparent 1px 14.2857%
-      );
+      repeating-linear-gradient(90deg, var(--motion-cage-line) 0 1px, transparent 1px 16.6667%),
+      repeating-linear-gradient(180deg, var(--motion-cage-line) 0 1px, transparent 1px 14.2857%);
     opacity: 0;
     animation: motion-pop-cage var(--motion-open, var(--motion-bloom)) linear;
   }
@@ -4454,7 +4529,8 @@ input[type='number'] {
       [data-motion='rise'],
       [data-slot='dialog-content'],
       [data-slot='sheet-content']
-    ):not([data-state='closed']) > * {
+    ):not([data-state='closed'])
+    > * {
     animation: motion-pop-reveal var(--motion-open, var(--motion-bloom)) linear;
   }
 
@@ -4472,7 +4548,8 @@ input[type='number'] {
   html.perf-lite [data-motion='pop']:not([data-state='closed']) {
     animation: motion-pop-lite var(--motion-in) var(--motion-ease-in);
   }
-  html.perf-lite :is(
+  html.perf-lite
+    :is(
       .motion-cage,
       [data-motion='pop'],
       [data-motion='rise'],
@@ -4481,13 +4558,15 @@ input[type='number'] {
     ):not([data-state='closed'], .glass-liquid)::after {
     content: none;
   }
-  html.perf-lite :is(
+  html.perf-lite
+    :is(
       .motion-cage,
       [data-motion='pop'],
       [data-motion='rise'],
       [data-slot='dialog-content'],
       [data-slot='sheet-content']
-    ):not([data-state='closed']) > * {
+    ):not([data-state='closed'])
+    > * {
     animation: none;
   }
 }
@@ -4684,6 +4763,38 @@ html.vt-liquid::view-transition-group(*) {
 html.nav-restoring .feed-card-cv {
   content-visibility: visible;
 }
+/* This class stayed the ONLY consumer after an audit of every other long uniform
+ * list on the site (OPT-14). Recorded here so the next pass doesn't re-derive it.
+ *
+ * `content-visibility: auto` is not just "skip off-screen work": it turns on
+ * layout + style + PAINT containment permanently, on-screen included (Contain L2
+ * §4 — "similar to `contain: content`"). So it clips, and every candidate failed
+ * on one of three things:
+ *
+ *   - No selector to aim at. The doc's own example names `.comment-row` and
+ *     `.library-card`; neither exists. `CommentItem`'s root is `<div class="py-3">`
+ *     and `LeaderboardColumn`'s rows are an unnamed Tailwind string, so there is
+ *     nothing to hook without editing the components.
+ *   - Something deliberately overflows the box. `.lib-book` spins its cover out
+ *     past its own grid cell on hover (that is what its `z-index: 20` is for, and
+ *     `.lib-book__cover` is `overflow: visible`); `.lib-album`'s cover lifts 3px
+ *     and casts a 30px-blur shadow sideways past the card; `.builds-card` tilts in
+ *     3D under a 56px shadow. Containment clips all of it. `CommentItem` also
+ *     hangs a non-portalled `absolute … top-full` menu out of a ~130px row.
+ *   - JS owns the measurement. `.social-post` looks ideal — it is already
+ *     `overflow: hidden`, so paint containment would be a visual no-op — but
+ *     `FeedList` / `VirtualPostList` deliberately DROP `.feed-card-cv` in
+ *     windowed mode and hand height measurement to TanStack Virtual, and there is
+ *     no selector separating the windowed rows from the plain ones. A skipped card
+ *     inside a row being measured by `virtualizer.measureElement` reports its
+ *     estimate instead of its height, which corrupts every offset below it. Same
+ *     objection to the radial wheel: `.radial-wheel__slot` rakes cards from cached
+ *     document offsets, and skipped cards change those offsets.
+ *
+ * The remaining candidate, `.aa__tile` (album-admin photo grid), is fixed-aspect
+ * and already clipping, but every tile carries a focusable remove button — the
+ * one case the technique is documented not to help, since focus force-renders the
+ * subtree anyway. */
 
 /* Posts flushed in from the "N new posts" pill ease down into place instead of
  * popping. `backwards` applies the start frame immediately so there's no flash
@@ -5373,9 +5484,10 @@ body {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {.spatial-design-hero__art::before,
-.spatial-design-hero__art span,
-[data-animate] [data-spatial-reveal] {
+@media (prefers-reduced-motion: reduce) {
+  .spatial-design-hero__art::before,
+  .spatial-design-hero__art span,
+  [data-animate] [data-spatial-reveal] {
     opacity: 1;
     transform: none;
     transition: none;

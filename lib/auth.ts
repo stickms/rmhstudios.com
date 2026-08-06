@@ -185,6 +185,14 @@ export const auth = betterAuth({
               where: { id: user.id },
               data: { handle },
             });
+            // A handle derived from a display name is guessable, so someone may
+            // already have hit `/@handle` and had that 404 negative-cached
+            // (OPT-47). Creating the account is what makes the name resolve, so
+            // it is also what has to forget the miss. Dynamically imported to
+            // keep the profile module out of the auth boot graph.
+            void import('@/lib/profile.server')
+              .then((m) => m.invalidateProfileLookup(handle))
+              .catch((err) => console.error('[auth] profile lookup invalidate failed:', err));
           } catch (error) {
             // Two accounts racing for the same candidate lose the unique index
             // here. Signing up matters more than the handle, so swallow it —

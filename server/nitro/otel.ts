@@ -9,9 +9,22 @@
 //      the ONE response header a page can read for its own navigation from
 //      JavaScript — that is how `lib/rum.ts` stamps the beacon with the id the
 //      server used, with no meta tag and no inline script.
-//   3. Opens the per-request query budget (E3) and closes it on response, so a
+//   3. Sends the request's phase durations (OPT-49) in that same header, so a
+//      TTFB regression can be attributed instead of investigated. See the
+//      "WHICH PHASES ARE LIVE" note below — the plugin marks `total` itself and
+//      the rest arrive from `mark()` call sites inside the layers they measure.
+//   4. Opens the per-request query budget (E3) and closes it on response, so a
 //      request that issues an absurd number of queries names itself in the log.
-//   4. Tags the 500-path log line with the trace id.
+//   5. Tags the 500-path log line with the trace id.
+//
+// WHICH PHASES ARE LIVE: `total` (request hook → response hook) is marked here
+// and needs nothing from anyone. `sess` / `loader` / `cache` / `db` / `render`
+// cannot be seen from a Nitro plugin — this Nitro exposes exactly four runtime
+// hooks (`close`, `error`, `request`, `response`; see `NitroRuntimeHooks`), so
+// there is no seam here around a loader or a render. Each of those is one
+// `mark()` call inside the layer that owns it; until those land, the header
+// carries `trace` + `total` and nothing is silently wrong — an absent phase is
+// absent, not zero. The call sites are listed in `lib/otel/timing.ts`.
 //
 // WHAT IT IS NOT: the OpenTelemetry SDK. `@opentelemetry/*` is not in
 // package.json and adding ~40 transitive packages plus a collector to get a
@@ -28,12 +41,8 @@
 // Imports are RELATIVE, not `@/` aliased — Nitro plugin modules don't reliably
 // resolve the tsconfig path aliases (same reason as warmup.ts / drain.ts).
 
-import {
-  enterTrace,
-  serverTimingTrace,
-  spanFromHeader,
-  type SpanContext,
-} from '../../lib/otel/trace';
+import { markScope, serverTimingHeader } from '../../lib/otel/timing';
+import { enterTrace, spanFromHeader, type TraceScope } from '../../lib/otel/trace';
 
 /** The subset of Nitro's HTTPEvent this plugin touches. */
 interface TracedEvent {
@@ -48,13 +57,19 @@ interface NitroAppLike {
 }
 
 /**
- * The span for an in-flight request.
+ * The trace scope — ids plus phase durations — for an in-flight request.
  *
  * A WeakMap rather than a property on the event: the event object belongs to
  * h3, stamping our own keys onto it invites a collision, and a WeakMap needs no
  * cleanup — the entry disappears with the event.
+ *
+ * It is also what makes the response side correct. The `request` hook binds the
+ * scope to the async context with `enterWith`, but by the time the `response`
+ * hook runs we may no longer be in that context; holding the same scope OBJECT
+ * here means the durations marked downstream (which mutate `scope.timings` in
+ * place) are the ones read out below, whatever the ambient context says.
  */
-const spans = new WeakMap<object, SpanContext>();
+const scopes = new WeakMap<object, TraceScope>();
 
 /**
  * The query-budget API, loaded lazily.
@@ -104,8 +119,9 @@ export default function otelPlugin(nitroApp: NitroAppLike): void {
       const span = spanFromHeader(event.req?.headers?.get?.('traceparent') ?? null);
       // `enterTrace` (enterWith), not `withTrace`: a hook has no continuation to
       // wrap — Nitro calls us and then carries on itself. See lib/otel/trace.ts.
-      enterTrace(span);
-      spans.set(event as object, span);
+      // It returns the scope it entered, which is also the timing bag: its
+      // `startedAt` is the origin the `total` phase is measured from.
+      scopes.set(event as object, enterTrace(span));
 
       if (budgetApi) {
         budgets.set(
@@ -120,13 +136,20 @@ export default function otelPlugin(nitroApp: NitroAppLike): void {
 
   nitroApp.hooks.hook('response', ((_res: Response, event: TracedEvent) => {
     try {
-      const span = spans.get(event as object);
-      if (span) {
-        const headers =
-          event.res?.headers ?? (_res as { headers?: Headers } | undefined)?.headers;
+      const scope = scopes.get(event as object);
+      if (scope) {
+        // The one phase observable from here: everything Nitro did for this
+        // request. Marked before the header is composed, so it is always the
+        // last entry and always present — a response with `total` but no other
+        // phase means the call sites below it haven't landed, not that they
+        // took no time.
+        markScope(scope, 'total', performance.now() - scope.startedAt);
+
+        const headers = event.res?.headers ?? (_res as { headers?: Headers } | undefined)?.headers;
         // `append`, not `set`: Server-Timing is a list header and a route may
-        // already have added its own timing entries.
-        headers?.append?.('Server-Timing', serverTimingTrace(span));
+        // already have added its own timing entries. One append rather than one
+        // per phase — `serverTimingHeader` composes the whole list value.
+        headers?.append?.('Server-Timing', serverTimingHeader(scope));
       }
 
       const budget = budgets.get(event as object);
@@ -141,7 +164,7 @@ export default function otelPlugin(nitroApp: NitroAppLike): void {
   // one place a trace id can be attached to it without touching that wrapper.
   nitroApp.hooks.hook('error', ((error: unknown, ctx: { event?: TracedEvent }) => {
     try {
-      const span = ctx?.event ? spans.get(ctx.event as object) : undefined;
+      const span = ctx?.event ? scopes.get(ctx.event as object)?.span : undefined;
       if (!span) return;
       console.error(
         '[trace:error]',

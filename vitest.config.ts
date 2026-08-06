@@ -25,6 +25,7 @@ export default defineConfig({
       'lib/temple-of-joy/__tests__/**/*.test.ts',
       'lib/temple-of-joy/__tests__/**/*.test.tsx',
       'lib/__tests__/**/*.test.ts',
+      'lib/api/__tests__/**/*.test.ts',
       // The AI seam (provider routing, prompt registry, injection framing).
       // These deliberately never call the network — they test the framing and
       // the routing table, which are the parts that regress silently.

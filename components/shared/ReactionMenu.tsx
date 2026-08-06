@@ -29,7 +29,11 @@ export function ReactionMenu({ x, y, onSelect, onClose }: ReactionMenuProps) {
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('mousedown', onPointerDown);
-    document.addEventListener('touchstart', onPointerDown);
+    // Passive (OPT-39): this is a dismiss-on-outside-tap probe — it reads
+    // `e.target` and closes, and must never cancel the scroll the tap started.
+    // Declared rather than assumed, so the browser can begin scrolling without
+    // waiting to see whether this handler calls `preventDefault()`.
+    document.addEventListener('touchstart', onPointerDown, { passive: true });
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('mousedown', onPointerDown);

@@ -21,18 +21,28 @@
 # Verify drift only (no write): VERIFY_ONLY=1 bash deploy/apply-cloudflare-cache-rules.sh
 # Dry run (prints the request body, makes no call): DRY_RUN=1 bash deploy/apply-cloudflare-cache-rules.sh
 #
-# This ruleset now also caches the ANONYMOUS homepage HTML (perf audit §1.2 /
+# This ruleset now also caches the ANONYMOUS public HTML (perf audit §1.2 /
 # §5.4) so signed-out landing traffic is served from the edge instead of a full
 # origin SSR render each hit.
 #
-# SAFETY (HTML rule): it is scoped to `/` only, and it BYPASSES cache whenever a
-# session cookie (`session_token`) OR a locale-preference cookie (`rmh-lang`) is
-# present — so a signed-in shell or a non-default-language visitor is never
-# served someone else's cached page. It also RESPECTS the origin Cache-Control,
-# and the origin (server/nitro/anon-html-cache.ts) only emits a shared-cacheable
+# SAFETY (HTML rule): it is scoped to the SAME allowlist the origin enforces —
+# the exact paths in `CACHEABLE_ANON_PATHS` plus the `CACHEABLE_ANON_PREFIXES`
+# stems, both exported from server/nitro/anon-html-cache.ts — and it BYPASSES
+# cache whenever a session cookie (`session_token`) OR a locale-preference
+# cookie (`rmh-lang`) is present, so a signed-in shell or a non-default-language
+# visitor is never served someone else's cached page. It also RESPECTS the
+# origin Cache-Control, and the origin only emits a shared-cacheable
 # `public, s-maxage=…` header for exactly that anon/default-locale case and
-# `private, no-store` for authenticated requests — so the origin is the final
-# gate on what the edge may store. KNOWN TRADEOFF: a cookie-less visitor whose
+# `private, no-cache, max-age=0, must-revalidate` for authenticated requests
+# (`no-cache`, NOT `no-store`: `no-store` disqualifies the page from the
+# back/forward cache, which cost every signed-in user a full re-render on every
+# back navigation — see OPT-30). The origin is the final gate on what the edge
+# may store, so an edge rule NARROWER than the origin's list is merely a missed
+# optimization while a WIDER one is still caught by the origin.
+#
+# The two lists are kept in sync by `lib/__tests__/anon-html-cache.test.ts`,
+# which parses this file's expression and fails if it drifts from the plugin.
+# KNOWN TRADEOFF: a cookie-less visitor whose
 # browser prefers a non-English language sees the cached English homepage on
 # first paint (the cache key can't vary on Accept-Language without an Enterprise
 # custom cache key); choosing a language sets `rmh-lang` and bypasses the cache
@@ -51,9 +61,9 @@ PHASE="http_request_cache_settings"
 # The ruleset entrypoint body. This PUT REPLACES every rule in the phase, so both
 # rules must be present here:
 #   1. image paths — cache-eligible, respecting the origin Cache-Control.
-#   2. anonymous homepage HTML — cache-eligible ONLY when no session/locale
+#   2. anonymous public HTML — cache-eligible ONLY when no session/locale
 #      cookie is present, respecting the origin (which sets public s-maxage for
-#      the anon default-locale case and no-store when authenticated).
+#      the anon default-locale case and private/no-cache when authenticated).
 read -r -d '' BODY <<'JSON' || true
 {
   "rules": [
@@ -69,8 +79,8 @@ read -r -d '' BODY <<'JSON' || true
       }
     },
     {
-      "description": "perf audit §1.2 — cache anonymous default-locale homepage HTML (bypass on session/locale cookie)",
-      "expression": "(http.request.method eq \"GET\" and http.request.uri.path eq \"/\" and not (http.cookie contains \"session_token\") and not (http.cookie contains \"rmh-lang=\"))",
+      "description": "perf audit §1.2 — cache anonymous default-locale public HTML (bypass on session/locale cookie)",
+      "expression": "(http.request.method eq \"GET\" and (http.request.uri.path in {\"/\" \"/games\" \"/apps\" \"/news\" \"/library\" \"/optimization\" \"/security\" \"/privacy\" \"/terms\" \"/cookies\" \"/copyright\"} or starts_with(http.request.uri.path, \"/blog/\") or starts_with(http.request.uri.path, \"/news/\")) and not (http.cookie contains \"session_token\") and not (http.cookie contains \"rmh-lang=\"))",
       "action": "set_cache_settings",
       "action_parameters": {
         "cache": true,

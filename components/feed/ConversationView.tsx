@@ -32,6 +32,7 @@ import { ReactionChips } from '@/components/shared/ReactionChips';
 import { groupReactions, type ReactionRow } from '@/lib/social/reactions';
 import { useItemReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
 import { subscribeMessageStream } from '@/lib/useUnreadCount';
+import { yieldToMain } from '@/lib/scheduler';
 import { MessageActions } from '@/components/messages/MessageActions';
 import { MessageEditor } from '@/components/messages/MessageEditor';
 import { DeletedMessage } from '@/components/messages/DeletedMessage';
@@ -822,6 +823,17 @@ export function ConversationView({
     clearSuggestion();
     stopTyping();
     setTimeout(scrollToBottom, 50);
+
+    // OPT-34. Everything above is the bubble appearing and the composer
+    // emptying — eight state updates plus a typing-stop emit, one React commit,
+    // and the only thing the sender is waiting to see. Everything below is a
+    // POST whose body has to be stringified first (a message can carry several
+    // image URLs). Yielding here puts the render in its own task so the bubble
+    // lands, then sends. The scroll-to-bottom is left on its own 50ms timer, so
+    // no layout read moves across this boundary; the Enter-to-send path calls
+    // `preventDefault()` in `handleKeyDown` *before* invoking this function, so
+    // the yield cannot cost it its cancelability.
+    await yieldToMain();
 
     try {
       const res = await fetch(`/api/messages/${encodeURIComponent(conversationId)}`, {

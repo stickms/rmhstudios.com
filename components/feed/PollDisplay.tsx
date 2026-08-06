@@ -4,6 +4,7 @@ import { useState } from'react';
 import { useTranslation } from'react-i18next';
 import { Check } from'lucide-react';
 import { authClient } from'@/lib/auth-client';
+import { yieldToMain } from'@/lib/scheduler';
 import type { FeedPoll } from'@/lib/feed-types';
 
 interface PollDisplayProps {
@@ -64,6 +65,14 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  const optimistic = { ...localPoll, myVotes: newMyVotes, options: newOptions, totalVotes: newTotal };
  setLocalPoll(optimistic);
  onUpdate?.(optimistic);
+
+ // OPT-34. Casting a vote flips the poll from choices to results: every bar
+ // grows, the percentages appear, the check mark lands. That is two renders
+ // (this component and, through `onUpdate`, the feed card that owns the post)
+ // driven by the object built above. Sending the vote is bookkeeping the voter
+ // never sees, so give the results their own task first. Nothing below reads
+ // layout, and this runs from a button `onClick` that cancels nothing.
+ await yieldToMain();
 
  try {
  const res = await fetch(voteUrl ?? `/api/rmharks/${postId}/vote`, {

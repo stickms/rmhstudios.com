@@ -5,6 +5,8 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "launch_handler": { "client_mode": "navigate-existing" },
   "background_color": "#000000",
   "theme_color": "#000000",
   "categories": ["games", "entertainment", "social"],
@@ -36,6 +38,7 @@
       "label": "Play original games and party minigames directly in the browser"
     }
   ],
+  "protocol_handlers": [{ "protocol": "web+rmh", "url": "/handle?target=%s" }],
   "share_target": {
     "action": "/share",
     "method": "POST",

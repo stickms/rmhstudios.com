@@ -9,6 +9,14 @@ export const Route = createFileRoute('/api/void-breaker/leaderboard')({
         {
           auth: 'none',
           rateLimit: { limit: 20, windowMs: 60_000, prefix: 'void-breaker-leaderboard' },
+          // Anonymous-invariant: the global top ten, with no inputs at all — the
+          // same bytes for every caller, which is exactly what `public` claims.
+          cache: {
+            visibility: 'public',
+            maxAge: 30,
+            sMaxAge: 60,
+            staleWhileRevalidate: 300,
+          },
         },
         async () => {
           try {

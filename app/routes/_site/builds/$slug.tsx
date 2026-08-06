@@ -18,7 +18,7 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { BuildDetail } from '@/components/user-builds';
-import { BlurImage } from '@/components/ui/BlurImage';
+import { BlurImage, blurImagePreload } from '@/components/ui/BlurImage';
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
 import { stripTrailingSlash } from '@/lib/url';
@@ -69,7 +69,18 @@ export const Route = createFileRoute('/_site/builds/$slug')({
         imageSize: thumb ? null : undefined,
         type: 'article',
       }),
-      links: [buildCanonical(`/builds/${params.slug}`)],
+      links: [
+        buildCanonical(`/builds/${params.slug}`),
+        // The hero is this page's LCP element on both branches — a full-bleed
+        // 1280px image, the only large graphic above the fold — and the loader
+        // resolved its URL, so the fetch can start from the HTML. Both branches
+        // render it at the same width/quality/sizes, so one descriptor covers
+        // them; `blurImagePreload` derives the candidate list from the same
+        // helpers `BlurImage` uses, so nothing is downloaded twice.
+        ...(thumb
+          ? [blurImagePreload({ src: thumb, width: 1280, quality: 85, sizes: '100vw' })]
+          : []),
+      ],
     };
   },
   component: BuildPage,
@@ -138,6 +149,10 @@ function BuildPage() {
               sizes="100vw"
               className="w-full"
               imgClassName="w-full"
+              // The one priority image on the official-build page; the
+              // user-build branch's equivalent lives in `BuildDetail`. Keep
+              // these props identical to the preload in `head()`.
+              priority
             />
           </div>
         )}

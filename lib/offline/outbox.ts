@@ -8,7 +8,12 @@
  *  - `postWithOutbox` — issue a write with a client-generated `Idempotency-Key`,
  *    and tell the caller whether the response is a real one or a 202 receipt;
  *  - `subscribeOutbox` — observe what happened to a queued write, so a UI can
- *    show a pending row and then resolve it instead of pretending it posted;
+ *    show a pending row and then resolve it instead of pretending it posted.
+ *    Note the `blocked` event: a replay that comes back 401 means the session
+ *    expired while the write was queued, and the worker KEEPS the entry rather
+ *    than dropping it. Deleting someone's post because their cookie aged out is
+ *    the one outcome this queue exists to prevent, so that case is surfaced
+ *    (`outboxBlockedOnAuth`) and resolved by signing in, not by a retry;
  *  - `initOfflineOutbox` — the Safari path. Background Sync does not exist
  *    there, so the page nudges the worker to replay on load and on `online`.
  *
@@ -33,17 +38,36 @@ export type OutboxEvent =
       status?: number;
       pending: number;
     }
+  /**
+   * The write is still queued but cannot be sent: the server answered 401, so
+   * the session expired between composing and replaying. Distinct from `failed`
+   * on purpose — nothing was thrown away, and signing in is what resolves it.
+   */
+  | { type: 'blocked'; key: string | null; reason: 'auth'; pending: number }
   | { type: 'state'; pending: number };
 
 type Listener = (event: OutboxEvent) => void;
 
 const listeners = new Set<Listener>();
 let pendingCount = 0;
+let blockedOnAuth = false;
 let installed = false;
 
 /** How many writes are sitting in the queue, as of the last worker message. */
 export function outboxPending(): number {
   return pendingCount;
+}
+
+/**
+ * Whether the queue is stuck behind a sign-in, as of the last worker message.
+ *
+ * Exposed separately from the event stream because the event that set it fires
+ * during the replay the page kicks off on load — before most UI has mounted.
+ * A surface that wants to prompt ("your post is waiting — sign in to send it")
+ * reads this on mount and subscribes for the rest.
+ */
+export function outboxBlockedOnAuth(): boolean {
+  return blockedOnAuth;
 }
 
 /**
@@ -61,6 +85,8 @@ export function subscribeOutbox(listener: Listener): () => void {
 
 function emit(event: OutboxEvent): void {
   pendingCount = event.pending;
+  // An empty queue cannot be blocked on anything.
+  if (event.pending === 0) blockedOnAuth = false;
   for (const listener of listeners) {
     try {
       listener(event);
@@ -95,7 +121,13 @@ function installMessageBridge(): void {
         emit({ type: 'queued', key, pending });
         break;
       case 'RMH_OUTBOX_SENT':
+        // Anything got through, so the session is good again.
+        blockedOnAuth = false;
         emit({ type: 'sent', key, body: data.body ?? '', pending });
+        break;
+      case 'RMH_OUTBOX_BLOCKED':
+        blockedOnAuth = true;
+        emit({ type: 'blocked', key, reason: 'auth', pending });
         break;
       case 'RMH_OUTBOX_FAILED':
         emit({

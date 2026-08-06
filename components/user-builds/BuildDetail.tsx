@@ -261,7 +261,12 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
           className="overflow-hidden rounded-site border border-site-border shadow-site"
           style={{ viewTransitionName: liquidVTName('build', build.id) }}
         >
-          <BlurImage src={build.thumbnailUrl} alt={build.title} fit="cover" width={1280} quality={85} sizes="100vw" className="w-full" imgClassName="w-full" />
+          {/* `priority`: on both pages that render this body (/builds/$slug and
+              /user-builds/$slug) the thumbnail is the sole large graphic and
+              therefore the LCP element. Safe to hardcode because BuildDetail is
+              only ever the single-build view — never a list item. Both routes
+              emit a matching preload from `head()`; keep these props in sync. */}
+          <BlurImage src={build.thumbnailUrl} alt={build.title} fit="cover" width={1280} quality={85} sizes="100vw" className="w-full" imgClassName="w-full" priority />
         </div>
       )}
 

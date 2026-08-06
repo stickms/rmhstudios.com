@@ -1,4 +1,6 @@
 import { prisma } from '@/lib/prisma.server';
+import { cachedMiss, invalidateCached } from '@/lib/cached.server';
+import { hashTagged } from '@/lib/redis.server';
 import { resolveUserDisplay } from '@/lib/user-display';
 import { handleCooldownRemaining } from '@/lib/handle';
 import { getEquippedCosmetics } from '@/lib/shop/equipped.server';
@@ -111,6 +113,33 @@ export interface ProfilePayload {
 }
 
 /**
+ * Negative-cache key for "nothing answers to this handle-or-id" (OPT-47).
+ *
+ * Hash-tagged so the family shares one Redis Cluster slot. Only the ABSENCE is
+ * cached under this key — see `getProfile`.
+ */
+const profileMissKey = (idOrHandle: string) => hashTagged('profile-miss', idOrHandle);
+
+/**
+ * Forget that a handle-or-id resolved to nothing, so a name that has just
+ * become real is findable immediately rather than 404ing for the rest of the
+ * negative TTL.
+ *
+ * Call from every path that makes a handle start resolving: signup's
+ * auto-handle (`lib/auth.ts`), `changeHandle` (`lib/handles/history.server.ts`),
+ * and the handle backfill sweep. `app/routes/api/profile.ts` still renames
+ * handles directly instead of delegating to `changeHandle` (noted in
+ * `lib/handles/history.server.ts`), so a rename through that route is not
+ * announced here; the exposure is bounded by `NEGATIVE_TTL_MS` (10s) and closes
+ * when that route delegates.
+ */
+export function invalidateProfileLookup(idOrHandle: string | null | undefined): void {
+  if (!idOrHandle) return;
+  // Fire-and-forget: drops L1 locally and broadcasts the drop to every instance.
+  void invalidateCached(profileMissKey(idOrHandle));
+}
+
+/**
  * Resolve a public profile by handle (preferred) or id, annotated for the given
  * viewer (follow state, own-profile extras). Shared by the `/api/profile/$id`
  * GET handler and the `/u/$userid` route loader so the page can be
@@ -118,6 +147,13 @@ export interface ProfilePayload {
  *
  * Returns `null` when no such user exists (the caller maps that to a 404 /
  * not-found state).
+ *
+ * That not-found answer is negative-cached (`cachedMiss`), which is the only
+ * part of this that can be shared: the row itself carries the viewer's follow
+ * state, so a hit is never stored. A dead `/@handle` — crawlers, old links,
+ * deleted accounts — therefore costs its two `findUnique`s once per negative
+ * TTL instead of once per request, and a real profile keeps exactly the query
+ * shape it had.
  */
 export async function getProfile(
   id: string,
@@ -128,16 +164,17 @@ export async function getProfile(
     ? { followers: { where: { followerId: viewerId }, select: { id: true } } }
     : {};
 
-  let user = await prisma.user.findUnique({
-    where: { handle: id },
-    select: { ...profileSelect, ...followerFilter },
-  });
-  if (!user) {
-    user = await prisma.user.findUnique({
+  const user = await cachedMiss(profileMissKey(id), async () => {
+    const byHandle = await prisma.user.findUnique({
+      where: { handle: id },
+      select: { ...profileSelect, ...followerFilter },
+    });
+    if (byHandle) return byHandle;
+    return prisma.user.findUnique({
       where: { id },
       select: { ...profileSelect, ...followerFilter },
     });
-  }
+  });
   if (!user) return null;
 
   const resolved = resolveUserDisplay(user);
