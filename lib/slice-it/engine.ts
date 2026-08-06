@@ -69,9 +69,35 @@ import {
   timingScale,
 } from './scoring';
 import { reportFinish, reportScore } from './net/client';
+import { hapticsEnabled, hapticsIntensity, vibrate } from '@/lib/shared/platform';
 
 /** Colours the feedback text is drawn in, per judgement. */
 const FEEDBACK_COLORS: Record<HitResult, string> = JUDGEMENT_COLORS;
+
+/**
+ * V5 — combo milestones. Exported so `GameCanvas.tsx` can look up how far a
+ * given crossing sits up the list (for the escalating treatment) without a
+ * second copy of these numbers living in the renderer.
+ */
+export const COMBO_MILESTONES = [50, 100, 250, 500, 1000] as const;
+
+/**
+ * A8 — haptic duration per judgement, ms, before the intensity setting scales
+ * it down.
+ *
+ * Short and DISTINCT rather than proportional to how good the hit was: the
+ * hand cannot resolve 8 ms from 11 ms, so a linear scale over six judgements
+ * would be felt as one buzz. MISS is longest because it is the one result a
+ * player needs to notice without looking at the screen.
+ */
+const HAPTIC_MS: Record<Exclude<HitResult, 'NONE'>, number> = {
+  MARVELOUS: 6,
+  PERFECT: 6,
+  GREAT: 10,
+  GOOD: 14,
+  BAD: 18,
+  MISS: 28,
+};
 
 /**
  * How many recent hit offsets the error bar can draw.
@@ -203,6 +229,16 @@ export class GameEngine {
    * lost rather than firing identically for a 25-chain and a 400-chain.
    */
   private comboBreak: { at: number; magnitude: number } | null = null;
+
+  /**
+   * V5 — the highest combo milestone already celebrated this run, so a
+   * crossing fires once. Not reset on a combo break: rebuilding to a number
+   * already celebrated does not re-trigger it, the same way a game does not
+   * re-show an achievement toast for a thing you already unlocked.
+   */
+  private lastMilestone = 0;
+  /** The most recent milestone worth drawing, or null. Read once per frame. */
+  private comboMilestone: { value: number; at: number } | null = null;
 
   /* ── Replay capture (R3) ───────────────────────────────────────────────── *
    *
@@ -338,6 +374,8 @@ export class GameEngine {
     this.offsetRing.times.fill(0);
     this.offsetHead = 0;
     this.comboBreak = null;
+    this.lastMilestone = 0;
+    this.comboMilestone = null;
     // The log is emptied by moving one integer: the arrays keep their memory for
     // the next run, which is the whole reason they are pre-sized.
     this.replayCount = 0;
@@ -374,6 +412,29 @@ export class GameEngine {
     if (useSliceItStore.getState().status === 'PLAYING') {
       this.audioManager.play();
       useSliceItStore.getState().setIsPaused(false);
+    }
+  }
+
+  /**
+   * H6 — jump straight to a point in the song, e.g. 2s before the first
+   * hittable note when a chart's lead-in runs long.
+   *
+   * Only ever called into the *silent* stretch before the first note today,
+   * so the walk below never has anything to do — but it is here rather than
+   * a bare `audioManager.seek()` so a future caller landing mid-chart (a
+   * scrub bar, P1's practice mode) does not get free notes: anything between
+   * the old cursor and the new position is marked processed-without-judging
+   * instead of being left for the miss sweep to flag the instant playback
+   * resumes past it.
+   */
+  seek(seconds: number): void {
+    const target = Math.max(0, seconds);
+    this.audioManager.seek(target);
+    for (let i = this.cursor; i < this.slices.length; i++) {
+      const slice = this.slices[i];
+      if (slice.time >= target - this.missWindow) break;
+      this.processedSliceIds.add(slice.id);
+      this.cursor = i + 1;
     }
   }
 
@@ -627,6 +688,7 @@ export class GameEngine {
     }
     this.pushFeedback(result, lane, FEEDBACK_COLORS[result], offset);
     this.checkFailConditions(result);
+    this.feedbackHaptic(result);
     this.commit();
   }
 
@@ -729,6 +791,25 @@ export class GameEngine {
     } else {
       this.combo++;
       this.maxCombo = Math.max(this.maxCombo, this.combo);
+
+      // V5 — fires once per crossing, not every frame the combo sits on the
+      // number: this runs once per resolved note, and a note only ever pushes
+      // `combo` through a given value once (it always changes on the very
+      // next judgement, one way or the other).
+      if (
+        (COMBO_MILESTONES as readonly number[]).includes(this.combo) &&
+        this.combo !== this.lastMilestone
+      ) {
+        this.lastMilestone = this.combo;
+        this.comboMilestone = { value: this.combo, at: performance.now() };
+        const tier = COMBO_MILESTONES.indexOf(this.combo as (typeof COMBO_MILESTONES)[number]);
+        this.audioManager.playSfX(
+          660 + tier * 110,
+          'sine',
+          0.16 + tier * 0.02,
+          useSliceItStore.getState().sfxVolume / 100,
+        );
+      }
     }
 
     if (result !== 'MISS') {
@@ -772,6 +853,7 @@ export class GameEngine {
     if (result !== 'NONE') {
       this.applyHealth(result);
       this.checkFailConditions(result);
+      this.feedbackHaptic(result);
     }
     this.commit();
   }
@@ -809,6 +891,25 @@ export class GameEngine {
    */
   getComboBreak(): { at: number; magnitude: number } | null {
     return this.comboBreak;
+  }
+
+  /** The most recent combo-milestone crossing worth drawing, or null. */
+  getComboMilestone(): { value: number; at: number } | null {
+    return this.comboMilestone;
+  }
+
+  /**
+   * A8 — a short vibration scaled by how well the note was hit.
+   *
+   * Never during replay/autoplay review: this is feedback for a hand resting
+   * on a device right now, not a description of a run that already happened,
+   * and `stepReplay` re-runs every resolution from the original run through
+   * this same code path.
+   */
+  private feedbackHaptic(result: Exclude<HitResult, 'NONE'>): void {
+    if (this.replayInput !== null) return;
+    if (!hapticsEnabled()) return;
+    vibrate(Math.round(HAPTIC_MS[result] * hapticsIntensity()));
   }
 
   /* ── Health gauge ──────────────────────────────────────────────────────── */

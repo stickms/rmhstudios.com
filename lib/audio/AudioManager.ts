@@ -130,6 +130,33 @@ export class AudioManager {
      this.play(); // Play handles using pauseTime offset
   }
 
+  /**
+   * Move playback to an absolute position, in seconds, whether or not the
+   * track is currently playing.
+   *
+   * Requested twice over — by a replay viewer's scrubber
+   * (`docs/_handoff/replay-requests.md` #1) and by H6's lead-in skip
+   * (`docs/_handoff/presentation-requests.md`) — and both requests proposed
+   * this exact method, so it is added once here rather than worked around
+   * twice. `play()` already reads `pauseTime` as its start offset; seeking is
+   * just relocating that offset and, if we were mid-playback, restarting the
+   * source there.
+   */
+  public seek(seconds: number) {
+    const wasPlaying = this.isPlaying;
+    if (this.source) {
+      try {
+        this.source.stop();
+      } catch {
+        // Already stopped, or never started — nothing to clean up.
+      }
+      this.source = null;
+    }
+    this.isPlaying = false;
+    this.pauseTime = Math.max(0, Math.min(seconds, this.getDuration() || seconds));
+    if (wasPlaying) this.play();
+  }
+
   public stop() {
     if (this.source) {
       try { this.source.stop(); } catch(e) {}

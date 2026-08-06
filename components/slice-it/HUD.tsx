@@ -1,12 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import { AudioManager } from '@/lib/audio/AudioManager';
 import type { GameEngine } from '@/lib/slice-it/engine';
 import { HEALTH_MAX } from '@/lib/slice-it/constants';
 import { gradeFor, missesAllowedFor, nextGradeAbove } from '@/lib/slice-it/scoring';
+import type { BeatMap } from '@/lib/slice-it/types';
+import type { Section } from '@/lib/slice-it/beatmap/sections';
+
+/**
+ * H5 — a stored chart's `analysisData` is a `GeneratedBeatmap` (see
+ * `lib/slice-it/beatmap/index.ts`), which carries `artefacts.sections` — but
+ * `engine.getActiveMap()` is typed as the plainer `BeatMap` that every caller
+ * without a reason to know better should see. This is that reason, declared
+ * locally rather than by editing `types.ts` (not owned by this change): the
+ * shape the engine actually holds, for the one place that needs the extra
+ * field.
+ */
+interface MapWithSections extends BeatMap {
+  artefacts?: { sections?: Section[] };
+}
+
+/** Stable empty reference so a songless HUD render never allocates a new array. */
+const NO_SECTIONS: Section[] = [];
 
 function fmt(s: number) {
   const m = Math.floor(s / 60);
@@ -86,6 +104,16 @@ export function HUD({ engine }: HUDProps) {
   }, [engine]);
 
   const progress = duration > 0 ? Math.min(1, currentTime / duration) : 0;
+
+  // H5 — section markers on the progress bar. `getActiveMap()` returns the
+  // same object reference for the whole run (a new one only arrives with a
+  // new song via `loadMap`), so this only recomputes when it actually
+  // changes rather than on every one of the frame ticks above.
+  const activeMap = engine?.getActiveMap() as MapWithSections | null | undefined;
+  const sections = useMemo(
+    () => activeMap?.artefacts?.sections ?? NO_SECTIONS,
+    [activeMap],
+  );
 
   const grade = gradeFor(sample.accuracy);
   const next = nextGradeAbove(sample.accuracy);
@@ -217,7 +245,20 @@ export function HUD({ engine }: HUDProps) {
             <span className="text-xs font-bold text-slice-text-muted w-10 text-right shrink-0">
               {fmt(currentTime)}
             </span>
-            <div className="flex-1 h-2 bg-slice-bg rounded-full overflow-hidden shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)]">
+            <div className="relative flex-1 h-2 bg-slice-bg rounded-full overflow-hidden shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)]">
+              {/* H5 — section boundaries. Skipped at `start <= 0`: the first
+                  section always begins at the bar's own left edge, where a
+                  tick would just double the bar's rounded corner. */}
+              {duration > 0 &&
+                sections
+                  .filter((s) => s.start > 0)
+                  .map((s) => (
+                    <span
+                      key={s.start}
+                      className="absolute top-0 h-full w-px bg-slice-shadow-dark/60"
+                      style={{ left: `${Math.min(100, (s.start / duration) * 100)}%` }}
+                    />
+                  ))}
               <div
                 className="h-full bg-blue-400 rounded-full transition-none"
                 style={{ width: `${progress * 100}%` }}

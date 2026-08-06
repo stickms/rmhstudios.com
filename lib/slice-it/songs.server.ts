@@ -40,7 +40,7 @@ import { contentTypeForFilename } from '@/lib/storage/keys';
 import { resolveUserDisplay } from '@/lib/user-display';
 import { SONG_AUDIO_PREFIX, SONG_COVER_PREFIX } from './constants';
 import type { Difficulty } from './constants';
-import type { BeatMap, Lamp, SliceSong } from './types';
+import type { BeatMap, Lamp, Slice, SliceSong } from './types';
 
 /* ─── Keys ──────────────────────────────────────────────────────────────── */
 
@@ -394,4 +394,72 @@ function lampsFor(
     byDifficulty[tier] = bestLamp(byDifficulty[tier] ?? 'none', lamp);
   }
   return { lamp: overall, lampByDifficulty: byDifficulty };
+}
+
+/* ─── Chart preview density (V8) ─────────────────────────────────────────── */
+
+/**
+ * A note-density histogram over a chart's duration, as a fixed number of
+ * evenly-spaced buckets.
+ *
+ * 64 numbers — small enough to ride in a LIST response, which is the entire
+ * point of computing this instead of shipping the chart: `songSelect` above
+ * excludes `analysisData` because it is hundreds of kilobytes, and sending it
+ * just to animate a hover strip would undo exactly that.
+ */
+export function densityStrip(
+  notes: Pick<Slice, 'time'>[],
+  duration: number,
+  buckets = 64,
+): number[] {
+  const out = new Array<number>(buckets).fill(0);
+  if (!(duration > 0) || notes.length === 0) return out;
+
+  for (const note of notes) {
+    const bucket = Math.min(buckets - 1, Math.max(0, Math.floor((note.time / duration) * buckets)));
+    out[bucket]++;
+  }
+  const peak = Math.max(1, ...out);
+  return out.map((v) => Math.round((v / peak) * 255));
+}
+
+/**
+ * The density strip for one song, computed from its stored chart, or `null`
+ * when there is nothing to chart from.
+ *
+ * Deliberately takes `analysisData` rather than a song id: computing this
+ * needs the chart in memory regardless, and a function that fetched its own
+ * copy would tempt a list-response caller into fetching `analysisData` per
+ * row just to feed it — the one thing this feature exists to avoid.
+ *
+ * Not wired into any response yet. Doing that without shipping the chart
+ * itself needs either a persisted column (computed once, at chart-generation
+ * time, and added to `songSelect`) or a small per-song endpoint backed by a
+ * cache — both touch files outside this wave's ownership. See
+ * `docs/_handoff/presentation-requests.md`. This is the pure half of that
+ * feature, ready for whichever path lands it.
+ */
+export function songDensityStrip(
+  analysisData: Pick<BeatMap, 'slices'> | null | undefined,
+  duration: number,
+  difficulty: Difficulty = 'normal',
+): number[] | null {
+  if (!analysisData?.slices) return null;
+  const { slices } = analysisData;
+
+  let notes: Slice[] | undefined;
+  if (Array.isArray(slices)) {
+    notes = slices;
+  } else {
+    // Fall back to whichever tier actually has notes — an empty requested
+    // tier (not only a missing one) should not read as "nothing to chart".
+    const requested = slices[difficulty];
+    notes =
+      requested && requested.length > 0
+        ? requested
+        : Object.values(slices).find((tier) => tier.length > 0);
+  }
+
+  if (!notes || notes.length === 0) return null;
+  return densityStrip(notes, duration);
 }

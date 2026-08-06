@@ -142,6 +142,70 @@ describe('poolOfStoredRow — the migration backfill mirror', () => {
   });
 });
 
+/**
+ * The two flags that landed after the rekey migration's `CASE` was written, and
+ * the SQL that had to be taught about them.
+ *
+ * `perfectionist` (M6) and `lenientTiming` (A9) are both optional on
+ * `Modifiers`, so `poolOfStoredRow` had to name each one explicitly — it is a
+ * hand-written mirror, not something derived from `activeModifierKeys` the way
+ * `poolOf` is. The migration `CASE` is a third copy of the same rule, in a
+ * language nothing here can execute, so the assertions below read the SQL as
+ * text. That is not a test of the migration; it is the tripwire on
+ * "change one, change the other".
+ */
+describe('the modifiers that landed after the backfill was written', () => {
+  it('sorts a lenient-window run into `challenge`, live and stored', () => {
+    // A widened window is the same kind of incomparable as a narrowed one, and
+    // `strictTiming` has always been `challenge` for exactly that reason.
+    expect(poolOf(mods({ lenientTiming: true }))).toBe('challenge');
+    expect(poolOfStoredRow({ modifiers: { lenientTiming: true } })).toBe('challenge');
+    expect(poolOfStoredRow({ modifiers: { lenientTiming: true }, speedMod: 1.5 })).toBe(
+      'challenge',
+    );
+  });
+
+  it('sorts a perfect-or-die run into `standard`, live and stored', () => {
+    // All it can do is end the run early — it never reveals, moves or re-times
+    // a note — so it sits beside `suddenDeath`, not beside `invisible`.
+    expect(poolOf(mods({ perfectionist: true }))).toBe('standard');
+    expect(poolOfStoredRow({ modifiers: { perfectionist: true } })).toBe('standard');
+    expect(poolOfStoredRow({ modifiers: { perfectionist: true }, speedMod: 1 })).toBe('standard');
+  });
+
+  it('never files either one as a completely clean run', () => {
+    // The failure this replaced: a `perfectionist` row backfilled as `none`,
+    // mixed with untouched runs despite carrying the largest single-modifier
+    // bonus in the game.
+    expect(poolOfStoredRow({ modifiers: { perfectionist: true } })).not.toBe('none');
+    expect(poolOfStoredRow({ modifiers: { lenientTiming: true } })).not.toBe('none');
+  });
+
+  it('has a SQL mirror that knows about both', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const sql = readFileSync(
+      join(
+        process.cwd(),
+        'prisma/migrations/20260806180000_slice_it_pool_flags_backfill/migration.sql',
+      ),
+      'utf8',
+    );
+
+    // Just the CASE, so the module header's prose cannot satisfy an assertion
+    // about the expression.
+    const body = sql.slice(sql.indexOf('CASE'), sql.indexOf('END AS "newPool"'));
+    const [challengeBranch, afterChallenge] = body.split("THEN 'challenge'");
+    const [standardBranch] = afterChallenge.split("THEN 'standard'");
+
+    expect(challengeBranch).toContain("'lenientTiming'");
+    expect(standardBranch).toContain("'perfectionist'");
+    // …and neither flag in the branch it does not belong to.
+    expect(challengeBranch).not.toContain("'perfectionist'");
+    expect(standardBranch).not.toContain("'lenientTiming'");
+  });
+});
+
 describe('difficultyOfStoredRow', () => {
   it('keeps a recognised tier', () => {
     for (const difficulty of ['easy', 'normal', 'hard', 'expert'] as const) {

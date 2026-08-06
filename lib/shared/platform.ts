@@ -121,6 +121,65 @@ export function vibrate(pattern: number | number[]): void {
   }
 }
 
+/* ─── Haptic preferences ────────────────────────────────────────────────── */
+
+const HAPTICS_ENABLED_KEY = 'rmh:haptics:enabled';
+const HAPTICS_INTENSITY_KEY = 'rmh:haptics:intensity';
+
+/**
+ * Whether hit haptics are enabled, from the last explicit choice.
+ *
+ * Defaults to on: `vibrate()` already no-ops on every device without a motor
+ * (all of desktop, iOS Safari), so getting the default "wrong" there costs
+ * nothing, and a phone player with a motor generally wants to feel a hit.
+ *
+ * No settings surface exists for this yet (A8) — see
+ * `docs/_handoff/presentation-requests.md`. Once a toggle lands, write
+ * through {@link setHapticsEnabled} rather than the key directly, so every
+ * reader keeps agreeing on the storage format.
+ */
+export function hapticsEnabled(): boolean {
+  if (typeof localStorage === 'undefined') return true;
+  try {
+    const raw = localStorage.getItem(HAPTICS_ENABLED_KEY);
+    return raw === null ? true : raw === '1';
+  } catch {
+    return true;
+  }
+}
+
+export function setHapticsEnabled(enabled: boolean): void {
+  try {
+    localStorage.setItem(HAPTICS_ENABLED_KEY, enabled ? '1' : '0');
+  } catch {
+    // Private browsing / storage full — the in-memory default still applies
+    // for the rest of this tab's life, which is a fine place for this to fail.
+  }
+}
+
+/**
+ * 0–1. Defaults to 0.7 rather than 1: full-strength `vibrate()` reads as
+ * harsh on most phones, and the judgement-scaled durations in
+ * `lib/slice-it/engine.ts` are already tuned against that default.
+ */
+export function hapticsIntensity(): number {
+  if (typeof localStorage === 'undefined') return 0.7;
+  try {
+    const raw = Number(localStorage.getItem(HAPTICS_INTENSITY_KEY));
+    return Number.isFinite(raw) && raw > 0 && raw <= 1 ? raw : 0.7;
+  } catch {
+    return 0.7;
+  }
+}
+
+export function setHapticsIntensity(value: number): void {
+  try {
+    localStorage.setItem(HAPTICS_INTENSITY_KEY, String(Math.max(0, Math.min(1, value))));
+  } catch {
+    // See setHapticsEnabled.
+  }
+}
+
 /* ─── Idle work ─────────────────────────────────────────────────────────── */
 
 interface IdleWindow {

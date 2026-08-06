@@ -55,6 +55,45 @@ import type { SliceSong } from '@/lib/slice-it/types';
 import { NeumorphicModal } from './NeumorphicModal';
 import { SongTable } from './SongTable';
 
+/**
+ * V8 — a song carrying its precomputed density strip.
+ *
+ * A local extension rather than a change to `types.ts` or `library-filters.ts`
+ * (neither owned by this change), matching the pattern `LibrarySong` itself
+ * already uses. No response populates `densityStrip` yet — see
+ * `docs/_handoff/presentation-requests.md` — so `<DensityStrip>` below always
+ * renders nothing today; this is the shape it lights up for once one does.
+ */
+type SongWithDensity = LibrarySong & { densityStrip?: number[] };
+
+/**
+ * V8 — the hover density strip: sixty-four bars, one per bucket of
+ * `songs.server.ts#densityStrip`, previewing where a chart is busy without
+ * ever fetching the chart itself.
+ *
+ * Pure CSS opacity/height, not a canvas — this sits on a list row repeated
+ * dozens of times, which is exactly the surface `.glass-fill`/budget rules
+ * exist for, and a 64-bar CSS reveal costs nothing this screen's frame timing
+ * has to account for.
+ */
+function DensityStrip({ density }: { density?: number[] }) {
+  if (!density || density.length === 0) return null;
+  return (
+    <div
+      className="absolute inset-x-0 bottom-0 h-3.5 flex items-end gap-px px-0.5 opacity-0 group-hover:opacity-80 transition-opacity duration-150 pointer-events-none"
+      aria-hidden
+    >
+      {density.map((value, i) => (
+        <span
+          key={i}
+          className="flex-1 min-w-px bg-blue-300 rounded-t-[1px]"
+          style={{ height: `${Math.max(8, (value / 255) * 100)}%` }}
+        />
+      ))}
+    </div>
+  );
+}
+
 interface SongLibraryProps {
   onSelect: (song: SliceSong) => void;
   onHighlight: (song: SliceSong) => void;
@@ -636,6 +675,7 @@ export function SongLibrary({
                           {song.title.charAt(0)}
                         </span>
                       )}
+                      <DensityStrip density={(song as SongWithDensity).densityStrip} />
                     </div>
 
                     <div className="flex-1 min-w-0">

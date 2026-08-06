@@ -4,7 +4,8 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { fadeRise, popIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
-import { GameEngine } from '@/lib/slice-it/engine';
+import { COMBO_MILESTONES, GameEngine } from '@/lib/slice-it/engine';
+import { requestScreenWakeLock } from '@/lib/shared/platform';
 import { useSliceItStore, approachSeconds, reactionWindowMs } from '@/lib/slice-it/store';
 import { visibilityAlpha } from '@/lib/slice-it/modifiers';
 import { AudioManager } from '@/lib/audio/AudioManager';
@@ -15,7 +16,7 @@ import { GameOver } from './GameOver';
 import { MainMenu } from './MainMenu';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Settings, X } from 'lucide-react';
+import { RotateCcw, Settings, SkipForward, X } from 'lucide-react';
 import { MultiplayerSidebar } from './MultiplayerSidebar';
 import { MatchResults } from './MatchResults';
 import { addMatchListener, leaveLobby } from '@/lib/slice-it/net/client';
@@ -97,6 +98,31 @@ function mirrorLane(lane: number): number {
  * the difference between a feedback loop and a statistic.
  */
 const ERROR_BAR_FADE_MS = 2000;
+
+/**
+ * H6 — how long the restart key must be held, ms.
+ *
+ * HOLD, not press. A tap-to-restart bound near the lane keys costs someone a
+ * 300-combo run the first time they fat-finger it, and they will not come
+ * back to find out whether it was their fault.
+ */
+const RESTART_HOLD_MS = 600;
+
+/** H6 — a lead-in shorter than this is not worth a skip button for. */
+const SKIPPABLE_LEAD_IN_SEC = 5;
+
+/** H6 — a skip always lands this far before the first note, never into it. */
+const SKIP_TARGET_LEAD_SEC = 2;
+
+/**
+ * V5 — how long a combo-milestone crossing stays on screen, ms. Longer than a
+ * judgement popup (it is a rarer, bigger event) but still gone well before
+ * the next one could plausibly land, even on a dense Expert 1000-combo chart.
+ */
+const COMBO_MILESTONE_FEEDBACK_MS = 1100;
+
+/** V5 — one colour per tier, escalating with `COMBO_MILESTONES`' own order. */
+const MILESTONE_COLORS = ['#38bdf8', '#a78bfa', '#f472b6', '#facc15', '#fb7185'];
 
 /**
  * The early/late hit-error bar.
@@ -656,6 +682,117 @@ export function GameCanvas() {
     store.setStatus('MENU');
     engine.reset();
   }, [lobbyState, engine]);
+
+  // ── I10: session guards ─────────────────────────────────────────────────
+  //
+  // Wake lock, acquired at run start and released on finish. `PLAYING` covers
+  // a pause too — a paused run is still "a run sitting in a browser tab",
+  // which is the situation this exists for. `requestScreenWakeLock` already
+  // re-acquires itself on `visibilitychange` (see `lib/shared/platform.ts`):
+  // the browser drops the lock the instant the tab is hidden and does not
+  // restore it, so a run that only acquired once would keep the screen awake
+  // until the first notification banner and never again after.
+  useEffect(() => {
+    if (status !== 'PLAYING') return;
+    return requestScreenWakeLock();
+  }, [status]);
+
+  // Guard navigation during a run — the browser-level half of the same care
+  // the multiplayer pause handler already takes about not losing someone's
+  // run. This only reaches actual browser navigation (refresh, close tab, an
+  // outbound link); an in-app router guard would need to live wherever
+  // `app/routes/**` is owned this wave — see
+  // `docs/_handoff/presentation-requests.md`.
+  useEffect(() => {
+    if (status !== 'PLAYING' || countdown > 0) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [status, countdown]);
+
+  // ── H6: hold-to-restart ──────────────────────────────────────────────────
+  //
+  // Disabled in multiplayer — restarting is a solo notion; the match clock is
+  // the server's. `e.code` rather than `e.key`: every other keybind in this
+  // file is compared by `code` (see `keybinds`), and `key` is what a dead-key
+  // layout or a Shift held for another reason would rewrite.
+  const [restartHolding, setRestartHolding] = useState(false);
+  useEffect(() => {
+    if (isMultiplayer || status !== 'PLAYING' || !engine) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const down = (e: KeyboardEvent) => {
+      if (e.code !== 'Backquote' || timer !== undefined) return;
+      if (useSliceItStore.getState().isPaused) return;
+      setRestartHolding(true);
+      timer = setTimeout(() => {
+        timer = undefined;
+        setRestartHolding(false);
+        engine.reset();
+        engine.start();
+      }, RESTART_HOLD_MS);
+    };
+    const up = (e: KeyboardEvent) => {
+      if (e.code !== 'Backquote') return;
+      if (timer) {
+        clearTimeout(timer);
+        timer = undefined;
+      }
+      setRestartHolding(false);
+    };
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+    return () => {
+      if (timer) clearTimeout(timer);
+      window.removeEventListener('keydown', down);
+      window.removeEventListener('keyup', up);
+    };
+  }, [engine, isMultiplayer, status]);
+
+  // ── H6: lead-in skip ─────────────────────────────────────────────────────
+  //
+  // Only offered while there is still a skip left to take: past
+  // `leadIn - SKIP_TARGET_LEAD_SEC` the button would either do nothing or jump
+  // backwards, neither of which is a skip. Polled on a plain interval rather
+  // than `requestAnimationFrame` — a button's visibility does not need frame
+  // precision, and a `setInterval` that clears itself the moment the window
+  // closes never becomes a loop this screen has to justify keeping.
+  const [canSkipLeadIn, setCanSkipLeadIn] = useState(false);
+  useEffect(() => {
+    setCanSkipLeadIn(false);
+    if (isMultiplayer || status !== 'PLAYING' || !engine) return;
+
+    const map = engine.getActiveMap();
+    const slices = map?.slices;
+    const first = Array.isArray(slices) ? slices[0] : undefined;
+    const leadIn = first?.time ?? 0;
+    if (leadIn <= SKIPPABLE_LEAD_IN_SEC) return;
+
+    const id = window.setInterval(() => {
+      const store = useSliceItStore.getState();
+      const stillSkippable =
+        !store.isPaused &&
+        store.countdown === 0 &&
+        AudioManager.getInstance().getCurrentTime() < leadIn - SKIP_TARGET_LEAD_SEC;
+      setCanSkipLeadIn(stillSkippable);
+      // Settle: nothing in a song ever makes the window valid again once it
+      // has closed, so the interval has no more work to do.
+      if (!stillSkippable) window.clearInterval(id);
+    }, 200);
+    return () => window.clearInterval(id);
+  }, [engine, isMultiplayer, status]);
+
+  const skipLeadIn = useCallback(() => {
+    if (!engine) return;
+    const map = engine.getActiveMap();
+    const slices = map?.slices;
+    const first = Array.isArray(slices) ? slices[0] : undefined;
+    if (!first) return;
+    engine.seek(Math.max(0, first.time - SKIP_TARGET_LEAD_SEC));
+    setCanSkipLeadIn(false);
+  }, [engine]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1368,6 +1505,44 @@ export function GameCanvas() {
       }
     }
 
+    // 3c. V5 — combo milestones: an escalating flash + label at 50/100/250/
+    // 500/1000. Gated on `glow` exactly like the combo-break wash above — a
+    // screen flash tied to hitting a number is precisely what A2's
+    // photosensitivity mode (and reduced motion / perf-lite, which fold into
+    // the same flag) turns off.
+    const milestone = glow ? engine.getComboMilestone() : null;
+    if (milestone) {
+      const age = (nowMs - milestone.at) / COMBO_MILESTONE_FEEDBACK_MS;
+      if (age >= 0 && age < 1) {
+        const tier = Math.max(
+          0,
+          COMBO_MILESTONES.indexOf(milestone.value as (typeof COMBO_MILESTONES)[number]),
+        );
+        const tierColor = MILESTONE_COLORS[tier] ?? MILESTONE_COLORS[MILESTONE_COLORS.length - 1];
+        const tierRatio = tier / (COMBO_MILESTONES.length - 1);
+
+        ctx.save();
+        ctx.globalAlpha = (0.1 + tierRatio * 0.16) * (1 - age);
+        ctx.fillStyle = tierColor;
+        ctx.fillRect(0, 0, w, h);
+        ctx.restore();
+
+        ctx.save();
+        ctx.globalAlpha = 1 - age;
+        ctx.textAlign = 'center';
+        ctx.fillStyle = tierColor;
+        ctx.font = `900 ${26 + tier * 5}px sans-serif`;
+        ctx.shadowColor = tierColor;
+        ctx.shadowBlur = glow * (6 + tier * 3);
+        ctx.fillText(
+          ts('combo-milestone', { defaultValue: '{{n}} COMBO', n: milestone.value }),
+          w / 2,
+          h * 0.32,
+        );
+        ctx.restore();
+      }
+    }
+
     // 4. Update & Draw Particles
     //
     // Integrated against wall-clock time, not frames. `p.x += p.vx` per frame
@@ -1640,6 +1815,37 @@ export function GameCanvas() {
             >
               <Settings className="w-4 h-4" />
             </button>
+          )}
+
+          {/* H6 — skip a long lead-in, straight to 2s before the first note.
+              Disabled in multiplayer: the clock and the countdown both belong
+              to the server there. */}
+          {canSkipLeadIn && (
+            <button
+              className="absolute top-14 right-3 z-50 h-8 px-3 rounded-full bg-slice-bg shadow-[4px_4px_8px_var(--slice-shadow-dark),-4px_-4px_8px_var(--slice-shadow-light)] flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide text-slice-text-muted hover:text-slice-text transition-colors active:shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)]"
+              data-mobile-btn
+              onClick={skipLeadIn}
+            >
+              <SkipForward className="w-3.5 h-3.5" aria-hidden />
+              {ts('skip-intro', { defaultValue: 'Skip' })}
+            </button>
+          )}
+
+          {/* H6 — hold-to-restart feedback. Shown only while the key is
+              actually held, so it never competes with the HUD during
+              ordinary play; a tap alone never reaches this, only a hold past
+              `RESTART_HOLD_MS`. */}
+          {restartHolding && (
+            <div
+              className="absolute top-3 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-slice-bg rounded-full px-4 py-2 shadow-[4px_4px_8px_var(--slice-shadow-dark),-4px_-4px_8px_var(--slice-shadow-light)]"
+              role="status"
+              aria-live="polite"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-amber-500 animate-spin" aria-hidden />
+              <span className="text-xs font-black uppercase tracking-wide text-slice-text">
+                {ts('restarting', { defaultValue: 'Restarting…' })}
+              </span>
+            </div>
           )}
 
           {/* Singleplayer Pause Overlay (with settings) */}
