@@ -18,7 +18,6 @@
   "tip-dialog-description": "Envoyer des pièces{{recipient}} pour montrer votre appréciation.",
   "tip-dialog-title": "Envoyer un pourboire",
   "tip-error": "Impossible d'envoyer le pourboire",
-  "tip-invalid": "That tip amount isn't allowed.",
   "tip-sign-in": "Veuillez vous connecter pour donner un pourboire.",
   "tip-success": "{{amount}} pièces envoyées{{recipient}} !"
 }

@@ -15,7 +15,6 @@
   "submit-report": "Meldung absenden",
   "submitting": "Wird gesendet…",
   "toast-error": "Meldung konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
-  "toast-invalid": "That report is missing something. Please check and try again.",
   "toast-sign-in": "Bitte melden Sie sich an, um Inhalte zu melden.",
   "toast-success": "Vielen Dank – unser Team wird dies überprüfen."
 }

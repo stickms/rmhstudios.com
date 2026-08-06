@@ -18,7 +18,6 @@
   "tip-dialog-description": "प्रशंसा दिखाने के लिए {{recipient}} को सिक्के भेजें।",
   "tip-dialog-title": "टिप भेजें",
   "tip-error": "टिप नहीं भेज सके",
-  "tip-invalid": "That tip amount isn't allowed.",
   "tip-sign-in": "कृपया टिप देने के लिए साइन इन करें।",
   "tip-success": "{{recipient}} को {{amount}} सिक्के टिप दिए!"
 }

@@ -15,7 +15,6 @@
   "submit-report": "Gửi báo cáo",
   "submitting": "Đang gửi…",
   "toast-error": "Không thể gửi báo cáo. Vui lòng thử lại.",
-  "toast-invalid": "That report is missing something. Please check and try again.",
   "toast-sign-in": "Vui lòng đăng nhập để báo cáo nội dung.",
   "toast-success": "Cảm ơn — nhóm của chúng tôi sẽ xem xét nội dung này."
 }

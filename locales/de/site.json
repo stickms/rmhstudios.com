@@ -63,6 +63,8 @@
   "earnings-by-source": "Earnings by source",
   "empty-apps": "No apps match that search.",
   "empty-games": "No games match that search.",
+  "event-add-to-calendar": "Add to calendar",
+  "event-calendar": "Calendar",
   "event-canceled": "Canceled",
   "event-capacity": "Capacity (optional)",
   "event-capacity-placeholder": "No limit",

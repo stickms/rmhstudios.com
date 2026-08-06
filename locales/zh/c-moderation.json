@@ -15,7 +15,6 @@
   "submit-report": "提交报告",
   "submitting": "提交中…",
   "toast-error": "无法提交报告。请重试。",
-  "toast-invalid": "That report is missing something. Please check and try again.",
   "toast-sign-in": "请登录以举报内容。",
   "toast-success": "谢谢——我们的团队会审核这个。"
 }

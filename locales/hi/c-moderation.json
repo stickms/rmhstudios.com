@@ -15,7 +15,6 @@
   "submit-report": "रिपोर्ट सबमिट करें",
   "submitting": "सबमिट हो रहा है…",
   "toast-error": "रिपोर्ट सबमिट नहीं की जा सकी। कृपया पुनः प्रयास करें।",
-  "toast-invalid": "That report is missing something. Please check and try again.",
   "toast-sign-in": "सामग्री की रिपोर्ट करने के लिए कृपया साइन इन करें।",
   "toast-success": "धन्यवाद — हमारी टीम इसकी समीक्षा करेगी।"
 }

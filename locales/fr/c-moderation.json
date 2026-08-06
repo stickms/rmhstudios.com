@@ -15,7 +15,6 @@
   "submit-report": "Soumettre le signalement",
   "submitting": "Soumission en cours…",
   "toast-error": "Impossible de soumettre le signalement. Veuillez réessayer.",
-  "toast-invalid": "That report is missing something. Please check and try again.",
   "toast-sign-in": "Veuillez vous connecter pour signaler un contenu.",
   "toast-success": "Merci — notre équipe examinera ce signalement."
 }
