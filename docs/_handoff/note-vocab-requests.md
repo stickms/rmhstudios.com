@@ -237,3 +237,40 @@ no badge for it. Cosmetic, not a correctness issue — `activeModifierKeys`
 (this agent's file) already lists both, so any surface that reads it directly
 already picks them up; it's specifically the two hand-rolled tables that need
 a new row each.
+
+---
+
+## G3 — chords: attempted, reverted, and why
+
+Implemented and backed out in the same session. The code worked; it broke three
+things that are not bugs, and each is a design decision rather than a fix.
+
+**1. The charter guarantees a GLOBAL minimum gap, not a per-lane one.**
+`lib/slice-it/__tests__/beatmap.test.ts` ("never places two notes closer than
+the tier gap") asserts it across every note in a tier regardless of lane, and it
+predates this branch. A chord is two notes at gap zero by definition, so the
+feature and the invariant cannot both hold. Weakening a pre-existing contract to
+make a new feature pass is the wrong way round — if chords are wanted, that
+invariant has to be deliberately re-specified as per-lane, with whatever else
+reads it audited.
+
+**2. It contradicts G12.** `charter-vocab.test.ts` pins "a note tagged `low`
+sits in lane 0", which is the property that keeps the left hand matching the low
+sample. A chord partner is the same hit played with two hands: it should keep
+its register, which necessarily puts a `low` note in lane 1.
+
+**3. It perturbs the density budget.** G14's tests compare note totals between
+weightings within a small tolerance. Chords ADD notes after selection, at a rate
+that differs between two chart builds, so the totals move by more than the
+selection logic alone explains.
+
+None of these is hard to resolve. All three need someone to decide what this
+game's chart language actually is — whether two buttons at once is part of it —
+and that is worth deciding on purpose rather than as a side effect of adding a
+generator pass.
+
+The engine already supports it, for what it is worth: `getTargetedSlice` picks
+per lane and `INPUT_COOLDOWN_MS` is a per-lane debounce, so two simultaneous
+notes in different lanes resolve independently today. The judging refinement the
+plan describes (one judgement for the pair, so a 12 ms spread is not a GREAT and
+a MARVELOUS) is a separate change on top.
