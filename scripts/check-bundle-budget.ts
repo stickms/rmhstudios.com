@@ -58,10 +58,20 @@ const OUT_DIR = path.join(ROOT, '.output', 'public');
  *
  *   | metric                |    measured | this budget | headroom |
  *   | --------------------- | ----------: | ----------: | -------: |
- *   | entry, raw            |   269,212 B |   281,000 B |    +4.4% |
- *   | critical path, raw    | 1,231,285 B | 1,291,000 B |    +4.8% |
- *   | critical path, brotli |   352,292 B |   370,000 B |    +5.0% |
- *   | chunks on the path    |         114 |           — |        — |
+ *   | entry, raw            |   281,907 B |   294,000 B |    +4.3% |
+ *   | critical path, raw    | 1,246,997 B | 1,291,000 B |    +3.5% |
+ *   | critical path, brotli |   357,570 B |   370,000 B |    +3.5% |
+ *   | chunks on the path    |         116 |           — |        — |
+ *
+ * **2026-08-07 — entry raised 281,000 → 294,000 B (OPT-01 line).** The bytes
+ * were bought by the Slice It! feature branch: eight new route modules
+ * (`/games/slice-it`, two admin surfaces, the artist page, the chart editor,
+ * the developer-API pages) plus the client modules they reach — the chart
+ * picker, the library's genre/tag facets, the preview player and the lobby
+ * prefetch. `routeTree.gen.ts` imports every route module statically, so a
+ * route's top-level imports land here whatever the route is; the two heaviest
+ * new bodies (the admin content dashboard and the public hub) are lazy for
+ * exactly that reason and are NOT in this number.
  *
  * The band also absorbs ordinary build-to-build variance: three builds of this
  * tree produced entry chunks of 267,233 / 268,726 / 269,212 B (a 0.7% spread),
@@ -71,7 +81,7 @@ const OUT_DIR = path.join(ROOT, '.output', 'public');
  * a line in the PR body naming the user-visible feature that bought the bytes.
  */
 const BUDGETS = {
-  entryRaw: 281_000,
+  entryRaw: 294_000,
   criticalPathRaw: 1_291_000,
   criticalPathBrotli: 370_000,
 };
