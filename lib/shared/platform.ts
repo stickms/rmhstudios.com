@@ -356,3 +356,29 @@ export function isLowPowerDevice(): boolean {
   if (typeof nav.hardwareConcurrency === 'number' && nav.hardwareConcurrency <= 2) return true;
   return false;
 }
+
+/**
+ * I2 — gamepad rumble, scaled by the same haptics settings the touch path uses.
+ *
+ * `playEffect` returns a promise that must NOT be awaited on the input path,
+ * and whose rejection must be swallowed: a pad without an actuator rejects, and
+ * an unhandled rejection per note is a console full of noise on exactly the
+ * hardware that cannot do anything about it.
+ */
+export function rumble(pad: Gamepad | null, durationMs: number, strong = 0.2): void {
+  if (!pad || !hapticsEnabled()) return;
+  const actuator = (pad as Gamepad & { vibrationActuator?: GamepadHapticActuator })
+    .vibrationActuator as (GamepadHapticActuator & {
+    playEffect?: (type: string, params: Record<string, number>) => Promise<unknown>;
+  }) | undefined;
+  if (!actuator?.playEffect) return;
+
+  const intensity = hapticsIntensity();
+  void actuator
+    .playEffect('dual-rumble', {
+      duration: Math.max(1, Math.round(durationMs)),
+      weakMagnitude: 0.4 * intensity,
+      strongMagnitude: strong * intensity,
+    })
+    .catch(() => {});
+}

@@ -2,6 +2,7 @@
 
 import { laneColor, resolvePalette } from '@/lib/slice-it/palettes';
 import { clampLinePosition } from '@/lib/slice-it/constants';
+import { rumble } from '@/lib/shared/platform';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { fadeRise, popIn } from '@/lib/motion';
@@ -494,6 +495,13 @@ export function GameCanvas() {
           // next frame and `gamepad.timestamp` is neither in `performance.now()`
           // units nor consistent across browsers. Pad players pay up to one
           // frame; keyboard and touch do not.
+          // I2 — the pad that pressed gets the feedback. Short and fixed
+          // rather than judgement-scaled: the judgement is not known until the
+          // engine resolves, and waiting for it would put the rumble a frame
+          // after the press, which reads as lag rather than as confirmation.
+          if (GAMEPAD_LANE0_BUTTONS.includes(btnIdx) || GAMEPAD_LANE1_BUTTONS.includes(btnIdx)) {
+            rumble(gp, 8);
+          }
           if (GAMEPAD_LANE0_BUTTONS.includes(btnIdx)) handleInput(0);
           else if (GAMEPAD_LANE1_BUTTONS.includes(btnIdx)) handleInput(1);
         });
