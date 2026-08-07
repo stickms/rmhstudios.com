@@ -93,6 +93,7 @@ model User {
   songPlays     SongPlay[]
   sliceRuns     SliceRun[]
   authoredCharts Chart[]           @relation("ChartAuthor")
+  chartReviews  ChartReview[]
   sliceDailyEntries SliceDailyEntry[]
   sliceSetlists     SliceSetlist[]
   curatedChartPacks ChartPack[]       @relation("ChartPackCurator")
@@ -922,6 +923,22 @@ model Song {
   duration    Float
   bpm         Float?
 
+  /// L1 — a CURATED genre, not free text.
+  ///
+  /// A facet with four hundred spellings of "drum and bass" is not a facet, so
+  /// the vocabulary is `SONG_GENRES` in `lib/slice-it/taxonomy.ts` and is
+  /// validated on the way in. A string rather than an enum so adding one does
+  /// not need a migration on a 66-enum schema.
+  genre String? @db.VarChar(32)
+
+  /// L1 — free-form tags, normalised lowercase, capped at 8 per song by the API.
+  ///
+  /// Free-form is right here and wrong for `genre` above: a tag is how a
+  /// community names things the curated list did not anticipate ("anime",
+  /// "speedcore", "charted-by-hand"), and a facet built on tags is additive
+  /// rather than exclusive.
+  tags String[] @default([])
+
   audioUrl      String
   coverUrl      String?
   fileSizeBytes Int? // bytes of audio file (for 10 GB total storage cap)
@@ -988,6 +1005,24 @@ model Song {
   isPublic Boolean @default(true)
   plays    Int     @default(0)
 
+  /// L9 — when this song was taken down, and why.
+  ///
+  /// **Tombstone, never delete.** `onDelete: Cascade` on `SongLeaderboard`
+  /// means deleting a song for a DMCA claim silently erases every score anyone
+  /// ever set on it — a punishment aimed at one uploader that lands on hundreds
+  /// of players who did nothing. A takedown sets these, flips `isPublic`, and
+  /// removes the audio object; the row, its charts and every score survive.
+  takenDownAt    DateTime?
+  takedownReason String?   @db.VarChar(500)
+
+  /// L12 — when the audio was moved to cold storage.
+  ///
+  /// The chart is what makes a song a game; the audio is what makes it
+  /// expensive. Archiving the audio while keeping the chart leaves the library
+  /// entry browsable and its leaderboard intact, and costs one restore to play.
+  /// Null is the normal state.
+  archivedAt DateTime?
+
   /// C3 — the highest computed rating among this song's playable charts,
   /// denormalised so the library can sort by difficulty.
   ///
@@ -1048,6 +1083,51 @@ model Song {
   /// the migration, because `gin_trgm_ops` is an operator class Prisma's schema
   /// language has no way to name.
   @@index([searchVector], type: Gin)
+  /// L1 — the genre facet, in the library's default order. Without the
+  /// composite the planner falls back to a scan the moment a second facet is
+  /// active alongside it.
+  @@index([isPublic, genre, createdAt(sort: Desc)])
+  /// L1 — the tag facet. GIN, because the query is array containment
+  /// (`hasEvery`), which no B-tree can serve.
+  @@index([tags], type: Gin)
+}
+
+/// **L3 — a review of a CHART, not of a song.**
+///
+/// `SongRating` exists in this schema and is explicitly marked dead ("zero code
+/// references. Drop scheduled R1-T3; do not add writers"), so this is a new
+/// model rather than a revival — and it is a different thing anyway.
+///
+/// Two axes, because "this chart is bad" and "this song is bad" are different
+/// complaints with different remedies: `fit` asks whether the notes represent
+/// the music, `fun` asks whether playing them is any good. A single star rating
+/// collapses those into a number nobody can act on.
+///
+/// Only from players who cleared the chart — enforced in the route, not here,
+/// because it is a check against `SliceRun` rather than a constraint. A review
+/// from somebody who failed at 0:20 is a review of the first twenty seconds.
+model ChartReview {
+  chartId String @db.Uuid
+  chart   Chart  @relation(fields: [chartId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// 1–5: does the chart represent the music?
+  fit Int
+  /// 1–5: is it fun to play?
+  fun Int
+
+  body String? @db.VarChar(2000)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// One review per player per chart; editing replaces it.
+  @@id([chartId, userId])
+  /// The chart's review list, newest first.
+  @@index([chartId, createdAt(sort: Desc)])
+  @@map("chart_review")
 }
 
 model SongLike {
@@ -1081,6 +1161,15 @@ model SongComment {
   songId    String
   userId    String
   content   String
+
+  /// L5 — the position in the track this comment is about, in seconds.
+  ///
+  /// PARSED from the body (`01:42`) rather than collected by a separate field:
+  /// osu! modding taught a generation of players to type timestamps, and a
+  /// field nobody fills is worse than a convention they already have. Null
+  /// means the comment is about the song rather than a moment in it.
+  atSeconds Float?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1358,6 +1447,7 @@ model Chart {
 
   revisions ChartRevision[]
   noteStats SliceNoteStat[]
+  reviews   ChartReview[]
   /// Back-relations for R1/R6. Omitted when the model shipped, because giving
   /// `SongLeaderboard` a `chartId` meant re-keying it, and re-keying it meant
   /// touching the score route — see `docs/_handoff/chart-editor-requests.md` §3.

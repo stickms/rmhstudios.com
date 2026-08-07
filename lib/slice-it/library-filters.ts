@@ -28,6 +28,7 @@ import {
   SONG_SORTS,
   type SongSort,
 } from './constants';
+import { SONG_GENRES, normaliseTags } from './taxonomy';
 import type { SliceSong, SongPage } from './types';
 
 /* ─── Sorting ────────────────────────────────────────────────────────────── */
@@ -226,7 +227,34 @@ export const LibrarySongsQueryZ = z
 
     /** L17 — recently played. Presence of `shelf=recent` picks that branch. */
     shelf: z.enum(['recent']).optional(),
+
+    /** L1 — the curated genre facet. Exclusive: one genre at a time. */
+    genre: z.enum(SONG_GENRES).optional(),
+    /**
+     * L1 — the tag facet, additive. Comma-separated on the wire and matched
+     * with `hasEvery`, so adding a tag NARROWS the result. `hasSome` would
+     * widen it, which makes a second click feel like it did nothing.
+     */
+    tags: z
+      .string()
+      .max(200)
+      .optional()
+      .transform((value) => (value ? normaliseTags(value.split(',')) : undefined)),
+    /** L1 — BPM range. Both ends optional. */
+    bpmMin: z.coerce.number().min(20).max(400).optional(),
+    bpmMax: z.coerce.number().min(20).max(400).optional(),
+    /** L1 — C3 rating range, over the song's denormalised `chartRating`. */
+    ratingMin: z.coerce.number().min(0).max(20).optional(),
+    ratingMax: z.coerce.number().min(0).max(20).optional(),
   })
+  .refine((v) => v.bpmMin === undefined || v.bpmMax === undefined || v.bpmMin <= v.bpmMax, {
+    message: 'bpmMin must be <= bpmMax',
+    path: ['bpmMin'],
+  })
+  .refine(
+    (v) => v.ratingMin === undefined || v.ratingMax === undefined || v.ratingMin <= v.ratingMax,
+    { message: 'ratingMin must be <= ratingMax', path: ['ratingMin'] },
+  )
   .refine((v) => v.durationMin === undefined || v.durationMax === undefined || v.durationMin <= v.durationMax, {
     message: 'durationMin must be <= durationMax',
     path: ['durationMin'],

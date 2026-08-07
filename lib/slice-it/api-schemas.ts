@@ -25,6 +25,7 @@ import {
 } from './constants';
 import { ModifiersZ } from './modifiers';
 import { MOD_POOLS } from './pools';
+import { SONG_GENRES, normaliseTags } from './taxonomy';
 
 /** `?q=&sort=&cursor=&limit=&mine=` for the song library. */
 export const SongListQueryZ = z.object({
@@ -191,6 +192,15 @@ export const UploadFieldsZ = z.object({
    * existed. Refusing a 50 MB upload over a malformed number would be absurd.
    */
   densityBias: z.coerce.number().min(-2).max(2).optional().catch(undefined),
+  /** L1 — the curated genre. `.catch` for the same reason as `densityBias`. */
+  genre: z.enum(SONG_GENRES).optional().catch(undefined),
+  /** L1 — comma-separated tags, normalised and capped on the way in. */
+  tags: z
+    .string()
+    .max(200)
+    .optional()
+    .catch(undefined)
+    .transform((value) => (value ? normaliseTags(value.split(',')) : [])),
 });
 
 /* ─── Beatmap backfill ──────────────────────────────────────────────────── */

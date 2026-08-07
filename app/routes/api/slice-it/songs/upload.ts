@@ -145,6 +145,8 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
           description: formData.get('description') ?? '',
           bpm: formData.get('bpm') ?? undefined,
           densityBias: formData.get('densityBias') ?? undefined,
+          genre: formData.get('genre') ?? undefined,
+          tags: formData.get('tags') ?? undefined,
           duration: formData.get('duration') ?? undefined,
           isPublic: formData.get('isPublic') ?? undefined,
         });
@@ -421,6 +423,10 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
                   densityStrip: track.densityStrip ?? undefined,
                   // O3 — the worker moves this to 'ready' or 'failed'.
                   analysisState: 'pending',
+                  // L1 — validated and normalised by `UploadFieldsZ`, so a
+                  // 401st spelling of "drum and bass" never reaches the facet.
+                  genre: fields.data.genre ?? null,
+                  tags: fields.data.tags,
                   uploadedBy: userId,
                   isPublic: fields.data.isPublic,
                 },

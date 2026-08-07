@@ -184,6 +184,9 @@ export const Route = createFileRoute('/api/slice-it/songs')({
 
           /* ── The paged, sorted, searched list ───────────────────────── */
           const { q, sort, dir, cursor, limit, mine, artist, packId } = query;
+          // L1's facets, destructured separately so the line above stays the
+          // one that reads as "the browse query".
+          const { genre, tags, bpmMin, bpmMax, ratingMin, ratingMax } = query;
           // `yourScore` with nobody signed in has nothing to sort by — fall
           // back rather than run a join keyed on a null userId (every row would
           // simply go unmatched, making the "sort" a no-op).
@@ -208,6 +211,29 @@ export const Route = createFileRoute('/api/slice-it/songs')({
           // difference between "everything by this artist" and "every artist
           // whose name contains these letters".
           if (artist) where.artistKey = artist;
+          // L1 — the facets. A library of a thousand charts is otherwise
+          // navigable only by remembering a name.
+          //
+          // `hasEvery` for tags, not `hasSome`: adding a tag must NARROW the
+          // result, or a second click feels like it did nothing.
+          if (genre) where.genre = genre;
+          if (tags && tags.length > 0) where.tags = { hasEvery: tags };
+          if (bpmMin !== undefined || bpmMax !== undefined) {
+            where.bpm = {
+              ...(bpmMin !== undefined ? { gte: bpmMin } : {}),
+              ...(bpmMax !== undefined ? { lte: bpmMax } : {}),
+            };
+          }
+          if (ratingMin !== undefined || ratingMax !== undefined) {
+            // `chartRating` is the song's denormalised max across its charts
+            // (C3), so this filters songs that HAVE something at that level —
+            // which is what "show me 12s" means. A null sorts and filters out,
+            // correctly: an unrated song is not a 12.
+            where.chartRating = {
+              ...(ratingMin !== undefined ? { gte: ratingMin } : {}),
+              ...(ratingMax !== undefined ? { lte: ratingMax } : {}),
+            };
+          }
           // L16 — restrict to one pack's members. The pack read is separate
           // (`/api/slice-it/packs/$id`); this is the library filtered by it, so
           // the same card, lamp and score machinery serves a pack view.
