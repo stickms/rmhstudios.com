@@ -45,9 +45,7 @@ export function TimingPanel() {
   };
 
   const editTiming = (index: number, patch: Partial<TimingPoint>) => {
-    setTimingPoints(
-      timingPoints.map((point, i) => (i === index ? { ...point, ...patch } : point)),
-    );
+    setTimingPoints(timingPoints.map((point, i) => (i === index ? { ...point, ...patch } : point)));
   };
 
   return (
@@ -71,7 +69,10 @@ export function TimingPanel() {
 
       <ul className="flex flex-col gap-1.5">
         {timingPoints.map((point, index) => (
-          <li key={`${point.time}-${index}`} className="neumorphic-inset flex items-center gap-2 px-2 py-1.5">
+          <li
+            key={`${point.time}-${index}`}
+            className="neumorphic-inset flex items-center gap-2 px-2 py-1.5"
+          >
             <button
               type="button"
               onClick={() => setPlayhead(point.time)}

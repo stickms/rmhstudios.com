@@ -7,7 +7,12 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { PREVIEW_SECONDS, defaultPreviewStart, previewFragment, resolvePreviewStart } from '../preview';
+import {
+  PREVIEW_SECONDS,
+  defaultPreviewStart,
+  previewFragment,
+  resolvePreviewStart,
+} from '../preview';
 import type { Section } from '../beatmap/sections';
 
 const section = (start: number, end: number, energy: number, label = 'A'): Section => ({

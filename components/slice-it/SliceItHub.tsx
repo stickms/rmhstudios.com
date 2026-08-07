@@ -87,9 +87,7 @@ export function SliceItHub({ data }: { data: HubPayload }) {
                     <span className="size-12 rounded-site glass-inset shrink-0" aria-hidden />
                   )}
                   <span className="min-w-0">
-                    <span className="block truncate font-medium text-site-text">
-                      {chart.title}
-                    </span>
+                    <span className="block truncate font-medium text-site-text">{chart.title}</span>
                     <span className="block truncate text-sm text-site-text-secondary">
                       {chart.artist} · {duration(chart.duration)} ·{' '}
                       {t('hub-plays', { defaultValue: '{{count}} plays', count: chart.plays })}

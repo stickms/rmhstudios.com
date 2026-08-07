@@ -61,7 +61,8 @@ export function foldToKeys(notes: readonly Slice[], from: number, to: number): S
   const half = Math.ceil(from / 2);
   return notes.map((note) => ({
     ...note,
-    lane: to === 2 ? (note.lane < half ? 0 : 1) : Math.min(to - 1, Math.floor((note.lane * to) / from)),
+    lane:
+      to === 2 ? (note.lane < half ? 0 : 1) : Math.min(to - 1, Math.floor((note.lane * to) / from)),
   }));
 }
 

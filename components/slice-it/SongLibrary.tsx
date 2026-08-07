@@ -56,6 +56,9 @@ import {
 import type { SliceSong } from '@/lib/slice-it/types';
 import { artistPath } from '@/lib/slice-it/artist';
 import { NeumorphicModal } from './NeumorphicModal';
+import { AiSearchBar } from './ai/AiSearchBar';
+import { SetlistPanel } from './ai/SetlistPanel';
+import { MetadataAssist } from './ai/MetadataAssist';
 import { SongTable } from './SongTable';
 import { PackPanel } from './packs/PackPanel';
 
@@ -178,6 +181,16 @@ export function SongLibrary({
   const [total, setTotal] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
 
+  /**
+   * Results from a natural-language search, or null when one is not active.
+   *
+   * Held separately from `songs` rather than written into it: `songs` is owned
+   * by the filter-driven `load()`, which refetches whenever the query, sort,
+   * view or artist facet changes — an AI result placed there would vanish the
+   * moment anything touched a filter.
+   */
+  const [aiSongs, setAiSongs] = React.useState<LibrarySong[] | null>(null);
+
   const [uploadOpen, setUploadOpen] = React.useState(false);
   const [packsOpen, setPacksOpen] = React.useState(false);
   const [likingId, setLikingId] = React.useState<string | null>(null);
@@ -251,6 +264,23 @@ export function SongLibrary({
     // included because table view asks for a bigger page.
   }, [load]);
 
+  /* ── O3: let a "Charting…" row resolve itself ───────────────────────────── */
+
+  // Charting is a queued job now, so a freshly uploaded song arrives
+  // `analysisState: 'pending'` with no notes and no density strip. Without this
+  // the badge is a dead end: it says "Charting…" and stays that way until the
+  // player reloads by hand, which reads exactly like the notes failing to load.
+  //
+  // Polls only while something is actually pending, and stops the moment
+  // nothing is — an idle library issues no requests at all. 5s because charting
+  // a track takes single-digit seconds, so this is one or two polls in practice.
+  const hasPending = songs.some((song) => song.analysisState === 'pending');
+  React.useEffect(() => {
+    if (!hasPending) return;
+    const timer = setInterval(() => void load(null, false), 5000);
+    return () => clearInterval(timer);
+  }, [hasPending, load]);
+
   /* ── Artist facet (L15) ─────────────────────────────────────────────────── */
 
   /**
@@ -289,8 +319,14 @@ export function SongLibrary({
 
   const [recentSongs, setRecentSongs] = React.useState<LibrarySong[]>([]);
 
+  // The id, not the session object: Better Auth hands back a fresh object on
+  // unrelated refreshes, and re-fetching a twelve-row shelf on every one of
+  // those is wasted work. Reading the id here rather than inside the effect is
+  // what lets the dependency array say what the effect actually depends on.
+  const sessionUserId = session?.user?.id;
+
   React.useEffect(() => {
-    if (!session) {
+    if (!sessionUserId) {
       setRecentSongs([]);
       return;
     }
@@ -306,10 +342,7 @@ export function SongLibrary({
     return () => {
       cancelled = true;
     };
-    // Session id, not the object — Better Auth returns a fresh session object
-    // on unrelated refreshes and re-fetching a 12-row shelf on every one would
-    // be wasted work.
-  }, [session?.user?.id]);
+  }, [sessionUserId]);
 
   const showRecentShelf =
     !readOnly && session && filters.view === 'grid' && !filters.q && recentSongs.length > 0;
@@ -339,9 +372,7 @@ export function SongLibrary({
       if (!response.ok) throw new Error(String(response.status));
       const body = (await response.json()) as { song: LibrarySong | null };
       if (!body.song) {
-        toast.error(
-          ts('random-no-match', { defaultValue: 'No song matches those constraints.' }),
-        );
+        toast.error(ts('random-no-match', { defaultValue: 'No song matches those constraints.' }));
         return;
       }
       setRandomOpen(false);
@@ -466,6 +497,12 @@ export function SongLibrary({
   };
 
   /* ── View toggle + sort handling ────────────────────────────────────────── */
+
+  // An active natural-language search replaces the list wholesale, in both
+  // views. "Load more" is disabled alongside it: that button pages the filter
+  // query's cursor, and pressing it here would append page two of a different
+  // search onto these results.
+  const visibleSongs = aiSongs ?? songs;
 
   const viewTabs: LiquidTab[] = [
     { id: 'grid', label: ts('view-grid', { defaultValue: 'Grid' }), icon: LayoutGrid },
@@ -668,6 +705,32 @@ export function SongLibrary({
         </div>
       )}
 
+      {/*
+        The AI tools sit beside the plain search rather than replacing it.
+        Typing an artist's name into a substring filter is faster than a model
+        call and always will be; these are for the requests a filter cannot
+        express ("short fast tracks I haven't played"). Signed-in only, because
+        both are metered calls that need an account to bill.
+      */}
+      {!readOnly && session && (
+        <div className="shrink-0 p-3 border-b border-slice-shadow-dark/50 space-y-3">
+          <AiSearchBar onResults={setAiSongs} onClear={() => setAiSongs(null)} />
+          <details>
+            <summary className="cursor-pointer text-[10px] font-black uppercase tracking-widest text-slice-text-light hover:text-slice-text transition-colors list-none">
+              {t('ai-setlist-toggle', { defaultValue: 'Build a practice set' })}
+            </summary>
+            <div className="pt-3">
+              <SetlistPanel
+                onPick={(songId) => {
+                  const picked = (aiSongs ?? songs).find((song) => song.id === songId);
+                  if (picked) onHighlight(picked);
+                }}
+              />
+            </div>
+          </details>
+        </div>
+      )}
+
       {/* L15 — the artist facet. Hidden while a search is running: chips are a
           way to browse, and a query is a statement that you already know what
           you want. */}
@@ -721,19 +784,21 @@ export function SongLibrary({
 
       {filters.view === 'table' ? (
         <>
-          {songs.length === 0 && !loading && (
+          {visibleSongs.length === 0 && !loading && (
             <p className="text-center text-slice-text-light py-12 text-sm font-bold">
-              {filters.q
-                ? t('no-search-results', {
-                    defaultValue: 'Nothing matches "{{query}}".',
-                    query: filters.q,
-                  })
-                : t('library-empty', { defaultValue: 'No tracks yet — upload the first one.' })}
+              {aiSongs !== null
+                ? t('no-ai-results', { defaultValue: 'Nothing in the library matches that.' })
+                : filters.q
+                  ? t('no-search-results', {
+                      defaultValue: 'Nothing matches "{{query}}".',
+                      query: filters.q,
+                    })
+                  : t('library-empty', { defaultValue: 'No tracks yet — upload the first one.' })}
             </p>
           )}
-          {(songs.length > 0 || loading) && (
+          {(visibleSongs.length > 0 || loading) && (
             <SongTable
-              songs={songs}
+              songs={visibleSongs}
               sort={filters.sort}
               dir={filters.dir ?? 'desc'}
               onSortChange={handleTableSort}
@@ -744,7 +809,7 @@ export function SongLibrary({
               onHighlight={onHighlight}
               selectedSongId={selectedSongId}
               authed={Boolean(session)}
-              hasMore={Boolean(nextCursor)}
+              hasMore={aiSongs === null && Boolean(nextCursor)}
               loading={loading}
               onLoadMore={() => void load(nextCursor, true)}
               readOnly={readOnly}
@@ -754,19 +819,21 @@ export function SongLibrary({
         </>
       ) : (
         <div className="flex-1 overflow-y-auto p-2">
-          {songs.length === 0 && !loading && (
+          {visibleSongs.length === 0 && !loading && (
             <p className="text-center text-slice-text-light py-12 text-sm font-bold">
-              {filters.q
-                ? t('no-search-results', {
-                    defaultValue: 'Nothing matches "{{query}}".',
-                    query: filters.q,
-                  })
-                : t('library-empty', { defaultValue: 'No tracks yet — upload the first one.' })}
+              {aiSongs !== null
+                ? t('no-ai-results', { defaultValue: 'Nothing in the library matches that.' })
+                : filters.q
+                  ? t('no-search-results', {
+                      defaultValue: 'Nothing matches "{{query}}".',
+                      query: filters.q,
+                    })
+                  : t('library-empty', { defaultValue: 'No tracks yet — upload the first one.' })}
             </p>
           )}
 
           <ul>
-            {songs.map((song) => (
+            {visibleSongs.map((song) => (
               <li key={song.id}>
                 <div
                   className={`p-2 flex items-center justify-between gap-2 group hover:bg-slice-shadow-dark/40 cursor-pointer border-l-4 ${
@@ -992,7 +1059,8 @@ function RandomForm({
   const { t: ts } = useTranslation('r-slice-it');
 
   const setDuration = (key: 'durationMin' | 'durationMax', raw: string) => {
-    const value = raw === '' ? undefined : Math.max(0, Math.min(MAX_SONG_DURATION_SEC, Number(raw)));
+    const value =
+      raw === '' ? undefined : Math.max(0, Math.min(MAX_SONG_DURATION_SEC, Number(raw)));
     onChange({ ...constraints, [key]: Number.isFinite(value) ? value : undefined });
   };
 
@@ -1248,7 +1316,7 @@ function UploadForm({ onDone }: { onDone: () => void }) {
 
     xhr.addEventListener('load', () => {
       setUploading(false);
-      let body: { error?: string; notes?: Record<string, number> } = {};
+      let body: { error?: string; notes?: Record<string, number>; charting?: boolean } = {};
       try {
         body = JSON.parse(xhr.responseText);
       } catch {
@@ -1257,13 +1325,22 @@ function UploadForm({ onDone }: { onDone: () => void }) {
 
       if (xhr.status >= 200 && xhr.status < 300) {
         const expert = body.notes?.expert;
+        // O3 — charting is a queued job now, so the upload response carries no
+        // note count and `charting: true` instead. Saying "map generated" here
+        // would be a lie: the row exists, the notes do not yet. The `expert`
+        // branch survives for the inline path (no queue available), which does
+        // still chart before responding.
         toast.success(
           expert
             ? t('upload-success-notes', {
                 defaultValue: 'Track uploaded — {{count}} notes charted.',
                 count: expert,
               })
-            : t('upload-success', { defaultValue: 'Track uploaded and map generated.' }),
+            : body.charting
+              ? ts('upload-success-charting', {
+                  defaultValue: 'Track uploaded. Charting it now — this takes a moment.',
+                })
+              : t('upload-success', { defaultValue: 'Track uploaded and map generated.' }),
         );
         onDone();
         return;
@@ -1390,6 +1467,22 @@ function UploadForm({ onDone }: { onDone: () => void }) {
             placeholder={t('description-placeholder', {
               defaultValue: 'Tell us about this track…',
             })}
+          />
+
+          {/*
+            Suggestions only, and only for fields the uploader has left blank.
+            A guessed artist name is a credit on a real person, so the assist
+            fills the form and the uploader submits it — nothing here writes.
+          */}
+          <MetadataAssist
+            filename={file.name}
+            durationSec={duration}
+            typed={{ title, artist }}
+            onApply={(suggestion) => {
+              if (!title && suggestion.title) setTitle(suggestion.title);
+              if (!artist && suggestion.artist) setArtist(suggestion.artist);
+              if (!description && suggestion.description) setDescription(suggestion.description);
+            }}
           />
         </div>
       )}

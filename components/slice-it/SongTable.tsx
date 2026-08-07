@@ -88,7 +88,9 @@ export function SongTable({
   const virtualRows = virtualizer.getVirtualItems();
   const paddingTop = virtualRows.length > 0 ? virtualRows[0].start : 0;
   const paddingBottom =
-    virtualRows.length > 0 ? virtualizer.getTotalSize() - virtualRows[virtualRows.length - 1].end : 0;
+    virtualRows.length > 0
+      ? virtualizer.getTotalSize() - virtualRows[virtualRows.length - 1].end
+      : 0;
 
   // Auto-fetch the next page as the scroll nears the bottom — no "Load more"
   // button. A table exists to be scanned, and a button every N rows defeats
@@ -152,7 +154,9 @@ export function SongTable({
                     )}
                   >
                     {col.numeric && <Icon className="w-3 h-3 shrink-0" aria-hidden />}
-                    <span className="truncate">{t(col.labelKey, { defaultValue: col.defaultLabel })}</span>
+                    <span className="truncate">
+                      {t(col.labelKey, { defaultValue: col.defaultLabel })}
+                    </span>
                     {!col.numeric && <Icon className="w-3 h-3 shrink-0" aria-hidden />}
                   </button>
                 </th>
@@ -246,7 +250,10 @@ export function SongTable({
           )}
 
           <tr ref={sentinelRef} aria-hidden>
-            <td colSpan={LIBRARY_TABLE_COLUMNS.length + 1} style={{ padding: 0, height: 1, border: 0 }} />
+            <td
+              colSpan={LIBRARY_TABLE_COLUMNS.length + 1}
+              style={{ padding: 0, height: 1, border: 0 }}
+            />
           </tr>
         </tbody>
       </table>

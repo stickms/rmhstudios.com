@@ -295,8 +295,7 @@ export function PackPanel({ addSongId = null, onAdded }: PackPanelProps) {
                       defaultValue: '{{count}} tracks',
                       count: pack.songCount,
                     })}
-                    {!pack.isPublic &&
-                      ` • ${t('pack-draft', { defaultValue: 'Draft' })}`}
+                    {!pack.isPublic && ` • ${t('pack-draft', { defaultValue: 'Draft' })}`}
                     {pack.kind === 'album' &&
                       ` • ${t('pack-kind-album', { defaultValue: 'Album' })}`}
                   </span>

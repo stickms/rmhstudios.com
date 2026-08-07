@@ -125,10 +125,7 @@ export async function runAnalysis(job: AnalysisJob): Promise<void> {
         // re-analysis must not move a preview point somebody set by hand.
         ...(song.previewStart === null
           ? {
-              previewStart: defaultPreviewStart(
-                analysis.artefacts?.sections ?? [],
-                song.duration,
-              ),
+              previewStart: defaultPreviewStart(analysis.artefacts?.sections ?? [], song.duration),
             }
           : {}),
       },

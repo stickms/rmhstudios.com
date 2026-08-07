@@ -150,9 +150,7 @@ export async function auditChart(chartId: string): Promise<ChartAudit | null> {
 
   const accuracies = runs.map((run) => run.accuracy);
   const clearRate = runs.length > 0 ? runs.filter((run) => run.cleared).length / runs.length : 0;
-  const spikes = spikeBuckets(
-    missHeatmap(stats as NoteStat[], chart.song.duration),
-  ).length;
+  const spikes = spikeBuckets(missHeatmap(stats as NoteStat[], chart.song.duration)).length;
 
   return {
     ...looksBroken({ accuracies, clearRate, spikes }),
@@ -253,10 +251,12 @@ export async function contentDashboard(days = 30): Promise<ContentDashboard> {
       bytes: row._sum.fileSizeBytes ?? 0,
     })),
     staleCharts,
-    uploadRate: [...perDay.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([day, count]) => ({
-      day,
-      count,
-    })),
+    uploadRate: [...perDay.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([day, count]) => ({
+        day,
+        count,
+      })),
     totals: { songs, charts, runs },
   };
 }

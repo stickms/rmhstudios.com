@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { ReplayViewer } from './ReplayViewer';
+import { RivalPanel } from './ai/RivalPanel';
 import { DIFFICULTIES, type Difficulty } from '@/lib/slice-it/constants';
 import { MOD_POOLS, type ModPool } from '@/lib/slice-it/pools';
 import type { LeaderboardEntry } from '@/lib/slice-it/types';
@@ -291,6 +292,23 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
           </>
         )}
       </div>
+
+      {/*
+        Only on a song board, only when the caller is on it, and only when there
+        is a row above them to catch. Rank 1 has nobody to chase, and the global
+        board ranks a skill rating across charts rather than one run — there is
+        no "their loadout versus yours" to analyse there.
+      */}
+      {songId && self && self.rank > 1 ? (
+        <RivalPanel
+          songId={songId}
+          rivalRank={self.rank - 1}
+          // Only when the board is narrowed to one: 'all' is the combined view,
+          // and the server ranks it the same way by receiving neither filter.
+          {...(difficulty !== 'all' ? { difficulty } : {})}
+          {...(modPool !== 'all' ? { modPool } : {})}
+        />
+      ) : null}
 
       <DialogPrimitive.Root
         open={watching !== null}

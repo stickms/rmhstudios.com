@@ -20,10 +20,7 @@ import { runLint, type LintRequest, type LintResult } from './lint';
 
 interface WorkerScope {
   postMessage: (message: LintResult) => void;
-  addEventListener: (
-    type: 'message',
-    listener: (event: { data: LintRequest }) => void,
-  ) => void;
+  addEventListener: (type: 'message', listener: (event: { data: LintRequest }) => void) => void;
 }
 
 const scope = globalThis as unknown as WorkerScope;

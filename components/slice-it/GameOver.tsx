@@ -11,19 +11,8 @@ import type { TimingSummary } from '@/lib/slice-it/integrity';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { RotateCcw, Home, Trophy, Wand2 } from 'lucide-react';
-
-/**
- * The offset suggestion's three gates.
- *
- * Below {@link OFFSET_MIN_SAMPLES} notes the mean is noise. Under
- * {@link OFFSET_MIN_MEAN_MS} the bias is inside the MARVELOUS window (20 ms) and
- * not worth chasing. Above {@link OFFSET_MAX_STDDEV_MS} the run was *inconsistent*
- * rather than *shifted*, and moving the offset on that evidence would make it
- * worse — which is the failure mode that makes players stop trusting the feature.
- */
-const OFFSET_MIN_SAMPLES = 30;
-const OFFSET_MIN_MEAN_MS = 8;
-const OFFSET_MAX_STDDEV_MS = 60;
+import { offsetAdvice } from '@/lib/slice-it/ai/facts';
+import { CoachPanel } from './ai/CoachPanel';
 
 interface GameOverProps {
   onRetry?: () => void;
@@ -38,7 +27,7 @@ interface GameOverProps {
 export function GameOver({ onRetry, engine }: GameOverProps) {
   const { t } = useTranslation('c-game');
   const { t: ts } = useTranslation('r-slice-it');
-  const { score, multiplier, maxCombo, accuracy, modifiers, resetRun } = useSliceItStore();
+  const { score, songId, multiplier, maxCombo, accuracy, modifiers, resetRun } = useSliceItStore();
   const audioOffset = useSliceItStore((s) => s.audioOffset);
   const setAudioOffset = useSliceItStore((s) => s.setAudioOffset);
 
@@ -67,13 +56,20 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
   // and it is the one that decides whether the player presses Retry.
   const bestDelta = previousBest !== null ? score - previousBest : null;
 
-  const suggestedOffset =
-    timing &&
-    timing.samples >= OFFSET_MIN_SAMPLES &&
-    Math.abs(timing.meanMs) > OFFSET_MIN_MEAN_MS &&
-    timing.stdDevMs < OFFSET_MAX_STDDEV_MS
-      ? Math.round(-timing.meanMs)
-      : null;
+  /**
+   * The one-tap offset suggestion, from the SAME rule the calibration screen
+   * uses — `offsetAdvice()` in `lib/slice-it/ai/facts.ts`.
+   *
+   * This used to be three local constants (min samples, min mean, max stdDev).
+   * They were reasonable numbers and they were a *second* answer to "is this
+   * bias real", sitting one screen away from the calibration advisor's. Two
+   * rules for one judgement, both writing the same persisted setting, is the
+   * drift `lib/CLAUDE.md` exists to prevent — so the fixed spread cap is gone
+   * and both surfaces now compare the mean against its own standard error,
+   * which is the honest test and does not need a magic ceiling.
+   */
+  const advice = offsetAdvice(timing);
+  const suggestedOffset = advice?.confident ? advice.suggestedDeltaMs : null;
 
   const judgementPeak = stats ? Math.max(1, ...JUDGEMENT_ORDER.map((j) => stats.judgements[j])) : 1;
 
@@ -273,6 +269,29 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
               )}
             </div>
           )}
+
+          {/*
+            Coaching is opt-in on a press, never fetched on mount: it is a
+            metered model call against a per-user monthly budget, and a results
+            card that spent it automatically would charge every player for
+            advice most of them scroll straight past.
+
+            It reads the same `stats` and `timing` the panels above render, so
+            the numbers it cites are the numbers on screen.
+          */}
+          {songId ? (
+            <CoachPanel
+              songId={songId}
+              score={score}
+              maxCombo={maxCombo}
+              accuracy={accuracy}
+              notesResolved={stats?.notesResolved ?? 0}
+              modifiers={modifiers}
+              timing={timing}
+              sections={engine?.getSectionResults() ?? null}
+              judgements={stats?.judgements ?? null}
+            />
+          ) : null}
 
           <div className="flex gap-4">
             <Button

@@ -122,8 +122,9 @@ export function envelopePeak(
 const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 export function bytesToBase64(bytes: Uint8Array): string {
-  const maybeBuffer = (globalThis as { Buffer?: { from(b: Uint8Array): { toString(e: string): string } } })
-    .Buffer;
+  const maybeBuffer = (
+    globalThis as { Buffer?: { from(b: Uint8Array): { toString(e: string): string } } }
+  ).Buffer;
   if (maybeBuffer) return maybeBuffer.from(bytes).toString('base64');
 
   let out = '';
@@ -140,9 +141,8 @@ export function bytesToBase64(bytes: Uint8Array): string {
 }
 
 export function base64ToBytes(text: string): Uint8Array {
-  const maybeBuffer = (
-    globalThis as { Buffer?: { from(s: string, e: string): Uint8Array } }
-  ).Buffer;
+  const maybeBuffer = (globalThis as { Buffer?: { from(s: string, e: string): Uint8Array } })
+    .Buffer;
   if (maybeBuffer) return new Uint8Array(maybeBuffer.from(text, 'base64'));
 
   const clean = text.replace(/[^A-Za-z0-9+/]/g, '');

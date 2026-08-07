@@ -40,22 +40,22 @@ export const Route = createFileRoute('/api/slice-it/admin/takedown')({
         return Response.json({ candidates, reclaimableBytes: bytes });
       }),
 
-      POST: defineHandler({ auth: 'admin', rateLimit: 'write', body: BodyZ }, async ({
-        userId,
-        body,
-      }) => {
-        const result = await takeDownSong(body.songId, body.reason);
-        if (result.tookDown) {
-          // Audited, because a takedown is irreversible for the audio: the
-          // object is gone and only the row can say who decided that and why.
-          await logAdminAction(userId, 'slice_it.takedown', {
-            targetType: 'song',
-            targetId: body.songId,
-            detail: body.reason,
-          });
-        }
-        return Response.json({ success: true, ...result });
-      }),
+      POST: defineHandler(
+        { auth: 'admin', rateLimit: 'write', body: BodyZ },
+        async ({ userId, body }) => {
+          const result = await takeDownSong(body.songId, body.reason);
+          if (result.tookDown) {
+            // Audited, because a takedown is irreversible for the audio: the
+            // object is gone and only the row can say who decided that and why.
+            await logAdminAction(userId, 'slice_it.takedown', {
+              targetType: 'song',
+              targetId: body.songId,
+              detail: body.reason,
+            });
+          }
+          return Response.json({ success: true, ...result });
+        },
+      ),
     },
   },
 });

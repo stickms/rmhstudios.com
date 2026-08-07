@@ -107,7 +107,12 @@ describe('normalizeLibrarySearch', () => {
   });
 
   it('round-trips a well-formed search object', () => {
-    const result = normalizeLibrarySearch({ q: 'euphoria', sort: 'bpm', dir: 'asc', view: 'table' });
+    const result = normalizeLibrarySearch({
+      q: 'euphoria',
+      sort: 'bpm',
+      dir: 'asc',
+      view: 'table',
+    });
     expect(result).toEqual({ q: 'euphoria', sort: 'bpm', dir: 'asc', view: 'table' });
   });
 });
@@ -120,7 +125,9 @@ describe('LibrarySongsQueryZ (the API route schema)', () => {
   });
 
   it('rejects durationMin > durationMax (S9 constraints)', () => {
-    expect(LibrarySongsQueryZ.safeParse({ durationMin: 200, durationMax: 100 }).success).toBe(false);
+    expect(LibrarySongsQueryZ.safeParse({ durationMin: 200, durationMax: 100 }).success).toBe(
+      false,
+    );
   });
 
   it('accepts durationMin === durationMax and durationMin < durationMax', () => {

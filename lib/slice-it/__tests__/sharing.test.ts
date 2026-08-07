@@ -68,9 +68,9 @@ describe('X5 — posting a run to the feed', () => {
 
   it('respects the daily cap', () => {
     const noteworthy = run({ isFirstClearOfChart: true });
-    expect(
-      shouldAutoPost(noteworthy, { enabled: true, postsToday: MAX_AUTO_POSTS_PER_DAY }),
-    ).toBe(false);
+    expect(shouldAutoPost(noteworthy, { enabled: true, postsToday: MAX_AUTO_POSTS_PER_DAY })).toBe(
+      false,
+    );
   });
 });
 

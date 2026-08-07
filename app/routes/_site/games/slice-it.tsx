@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
+import { Suspense, lazy } from 'react';
 
 import { PageLayout } from '@/components/feed/PageLayout';
-import { SliceItHub } from '@/components/slice-it/SliceItHub';
 import { GAMES_INDEX_PATH } from '@/lib/seo-catalog';
 import { breadcrumbSchema, jsonLdScript, videoGameSchema } from '@/lib/schema';
 import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
@@ -64,11 +64,24 @@ export const Route = createFileRoute('/_site/games/slice-it')({
   component: SliceItHubPage,
 });
 
+/**
+ * Lazy for the same reason the admin dashboard is: `routeTree.gen.ts` imports
+ * every route module statically, so a top-level import here lands in the entry
+ * chunk every page downloads (OPT-01). The loader still runs server-side, so
+ * the page's SEO and its data are unaffected — only the client component split
+ * moves.
+ */
+const SliceItHub = lazy(() =>
+  import('@/components/slice-it/SliceItHub').then((m) => ({ default: m.SliceItHub })),
+);
+
 function SliceItHubPage() {
   const data = Route.useLoaderData();
   return (
     <PageLayout title="Slice It!" backTo="/">
-      <SliceItHub data={data} />
+      <Suspense fallback={null}>
+        <SliceItHub data={data} />
+      </Suspense>
     </PageLayout>
   );
 }

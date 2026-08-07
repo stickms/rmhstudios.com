@@ -107,9 +107,7 @@ export function runXp(input: {
 }): number {
   const difficulty = DIFFICULTY_MULTIPLIERS[input.difficulty] ?? 1;
   const accuracy = Number.isFinite(input.accuracy) ? Math.max(0, Math.min(1, input.accuracy)) : 0;
-  const weight = input.failed
-    ? MIN_ACCURACY_WEIGHT
-    : Math.max(MIN_ACCURACY_WEIGHT, accuracy);
+  const weight = input.failed ? MIN_ACCURACY_WEIGHT : Math.max(MIN_ACCURACY_WEIGHT, accuracy);
   return Math.max(1, Math.round(BASE_RUN_XP * difficulty * weight));
 }
 

@@ -18,11 +18,7 @@
 
 import { prisma } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect, type ResolvedUser } from '@/lib/user-display';
-import {
-  ESCALATE_WINDOW_DAYS,
-  REVIEW_SUSPICION,
-  shouldEscalate,
-} from './sharing';
+import { ESCALATE_WINDOW_DAYS, REVIEW_SUSPICION, shouldEscalate } from './sharing';
 
 export interface ReviewRun {
   runId: string;

@@ -1330,7 +1330,11 @@ export function GameCanvas() {
           const timeUntilHit = slice.time - currentTime; // audio-seconds until hit
           const visibleWindow = approachSec / speedMod; // total visible window, audio-seconds
           const travelRatio = timeUntilHit / visibleWindow; // 1.0 = just spawned, 0.0 = at hit line
-          const alpha = visibilityAlpha(travelRatio, runState.visibilityMode, runState.laneCoverHeight);
+          const alpha = visibilityAlpha(
+            travelRatio,
+            runState.visibilityMode,
+            runState.laneCoverHeight,
+          );
           if (alpha <= 0) {
             ctx.globalAlpha = 0;
             continue; // Skip rendering entirely
@@ -1727,7 +1731,8 @@ export function GameCanvas() {
   const reactionMs = (() => {
     const st = useSliceItStore.getState();
     const bpm = engine?.getActiveMap()?.bpm || 120;
-    const approach = approachSeconds(bpm, st.scrollSpeed, st.scrollMode) / (st.modifiers.speed || 1);
+    const approach =
+      approachSeconds(bpm, st.scrollSpeed, st.scrollMode) / (st.modifiers.speed || 1);
     return reactionWindowMs(approach, laneCoverHeight);
   })();
 

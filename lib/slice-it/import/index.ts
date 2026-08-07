@@ -423,7 +423,11 @@ export function importChart(text: string, minGapSeconds: number): ImportedChart 
   if (!format) throw new ImportError('That file is not a recognised chart format.');
 
   const parsed =
-    format === 'osu' ? parseOsu(text) : format === 'stepmania' ? parseStepMania(text) : parseChart(text);
+    format === 'osu'
+      ? parseOsu(text)
+      : format === 'stepmania'
+        ? parseStepMania(text)
+        : parseChart(text);
 
   const { notes, dropped } = dedupeFolded(parsed.notes, minGapSeconds);
   const warnings = [...parsed.warnings];

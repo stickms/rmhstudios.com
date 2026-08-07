@@ -74,7 +74,9 @@ describe('G14 — section-aware density', () => {
     // minimum-gap constraint, so changing WHICH notes win changes how tightly
     // the survivors pack against that gap. 360 vs 362 out of a 360 budget is
     // the constraint interacting with the reweighting, not the budget moving.
-    expect(Math.abs(shaped.slices.expert.length - flat.slices.expert.length)).toBeLessThanOrEqual(4);
+    expect(Math.abs(shaped.slices.expert.length - flat.slices.expert.length)).toBeLessThanOrEqual(
+      4,
+    );
 
     const inDrop = (list: { time: number }[]) => list.filter((s) => s.time >= 30).length;
     expect(inDrop(shaped.slices.expert)).toBeGreaterThan(inDrop(flat.slices.expert));

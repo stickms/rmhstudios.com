@@ -48,10 +48,7 @@ export function defaultPreviewStart(sections: readonly Section[], duration: numb
 }
 
 /** Narrow a stored or user-supplied preview point against the real duration. */
-export function resolvePreviewStart(
-  stored: number | null | undefined,
-  duration: number,
-): number {
+export function resolvePreviewStart(stored: number | null | undefined, duration: number): number {
   if (typeof stored !== 'number' || !Number.isFinite(stored) || stored < 0) return 0;
   if (!(duration > PREVIEW_SECONDS)) return 0;
   return clamp(stored, 0, duration - PREVIEW_SECONDS);

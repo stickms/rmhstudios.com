@@ -70,7 +70,10 @@ export async function sliceItShowcaseStats(userId: string): Promise<SliceItShowc
   }
 
   const byTier = new Map<Difficulty, SliceItLampCounts>(
-    DIFFICULTIES.map((difficulty) => [difficulty, { difficulty, cleared: 0, fullCombo: 0, perfect: 0 }]),
+    DIFFICULTIES.map((difficulty) => [
+      difficulty,
+      { difficulty, cleared: 0, fullCombo: 0, perfect: 0 },
+    ]),
   );
   let chartsCleared = 0;
   let bestAccuracy: number | null = null;
