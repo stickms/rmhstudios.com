@@ -20,7 +20,7 @@ import { RANKED_MIN_SPEED } from './constants';
 import type { GameEngine } from './engine';
 import { useSliceItStore } from './store';
 import type { Modifiers } from './types';
-import type { TimingSummary } from './integrity';
+import { MIN_TIMING_SAMPLES, type TimingSummary } from './integrity';
 
 export interface SubmitResult {
   status: 'idle' | 'submitting' | 'ok' | 'unranked' | 'failed';
@@ -41,6 +41,16 @@ export interface RunSummary {
   runToken?: string;
   /** Hit-timing distribution; see `integrity.ts`. */
   timing?: TimingSummary;
+  /**
+   * Song identity for the local timing history, from the engine's loaded map.
+   *
+   * Not sent to the score endpoint — the server reads the title off the `Song`
+   * row and has for a while, deliberately. It is here because
+   * {@link useSubmitScore} is the one place that already knows a run has ended
+   * exactly once, and the calibration history wants the same moment.
+   */
+  songTitle?: string;
+  durationSec?: number;
 }
 
 /**
@@ -97,15 +107,32 @@ export function useSubmitScore(run: RunSummary | null): SubmitResult {
     if (!run) return;
     if (!run.songId || run.score <= 0) return;
 
+    const key = `${run.songId}:${run.score}:${run.multiplayer}`;
+    const isNewRun = submittedKey.current !== key;
+
+    // Recorded before the unranked check, and for every run: a slowed-down run
+    // still measures this device's audio latency perfectly well, and the whole
+    // point of a local timing history is to have enough samples to pool. It is
+    // the leaderboard that cares about speed, not the calibration advisor.
+    if (isNewRun && run.timing && run.timing.samples >= MIN_TIMING_SAMPLES) {
+      useSliceItStore.getState().recordTiming({
+        songTitle: run.songTitle || 'a run',
+        durationSec: run.durationSec ?? 0,
+        accuracy: run.accuracy,
+        timing: run.timing,
+        at: Date.now(),
+      });
+    }
+
     // Below 1.0x is unranked, which the server also enforces — checked here too
     // so an unranked run does not spend a rate-limit slot to be told so.
     if (run.modifiers.speed < RANKED_MIN_SPEED) {
+      submittedKey.current = key;
       setResult({ status: 'unranked', isNewBest: false, previousBest: null });
       return;
     }
 
-    const key = `${run.songId}:${run.score}:${run.multiplayer}`;
-    if (submittedKey.current === key) return;
+    if (!isNewRun) return;
     submittedKey.current = key;
     void submit(run);
   }, [run, submit]);
@@ -124,6 +151,9 @@ export function useRunSummary(multiplayer: boolean, engine?: GameEngine | null):
   const runToken = useSliceItStore((s) => s.runToken);
 
   if (status !== 'FINISHED' || !songId) return null;
+
+  const map = engine?.getActiveMap() ?? null;
+  const slices = engine?.getSlices() ?? [];
   return {
     songId,
     score,
@@ -136,5 +166,9 @@ export function useRunSummary(multiplayer: boolean, engine?: GameEngine | null):
     // submits without them and the server simply has less to check.
     ...(engine ? { notesResolved: engine.getState().notesResolved } : {}),
     ...(engine?.getTimingSummary() ? { timing: engine.getTimingSummary()! } : {}),
+    ...(map ? { songTitle: map.name } : {}),
+    // The chart's own span. The `Song` row's duration is not on the client here,
+    // and the last note is close enough for a line in a calibration log.
+    ...(slices.length > 0 ? { durationSec: Math.ceil(slices[slices.length - 1]!.time) } : {}),
   };
 }

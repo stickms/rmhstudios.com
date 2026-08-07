@@ -22,6 +22,7 @@ import { persist } from 'zustand/middleware';
 import type { RealtimeStatus } from '@/lib/shared/realtime/types';
 import { DEFAULT_MODIFIERS, applyExclusions } from './modifiers';
 import type { Modifiers } from './types';
+import type { TimingSummary } from './integrity';
 import type {
   ChatMessage,
   LiveScore,
@@ -37,6 +38,32 @@ export interface Keybinds {
 
 export type GameStatus = 'MENU' | 'PLAYING' | 'FINISHED';
 
+/**
+ * One finished run's hit timing, kept for the calibration advisor.
+ *
+ * Persisted **locally**, alongside the settings, rather than sent to the server
+ * — and that is the correct home for it rather than a convenience. Audio
+ * latency is a property of this machine: its output device, its buffer size,
+ * whether the player is on bluetooth headphones today. An account-level history
+ * pooled across a desktop and a phone would average two different latencies
+ * into one number that is wrong for both.
+ */
+export interface TimingSample {
+  songTitle: string;
+  durationSec: number;
+  /** 0–1. */
+  accuracy: number;
+  timing: TimingSummary;
+  /** Epoch ms, so the newest runs can be preferred. */
+  at: number;
+}
+
+/**
+ * How many samples to keep. Enough that the pooled statistic means something,
+ * few enough that a change of headphones works its way out within an evening.
+ */
+const TIMING_SAMPLES_KEPT = 8;
+
 interface SliceItState {
   /* ── Settings (persisted) ─────────────────────────────────────────── */
   userName: string;
@@ -48,6 +75,8 @@ interface SliceItState {
   audioOffset: number;
   isDarkMode: boolean;
   modifiers: Modifiers;
+  /** Recent runs' hit timing, newest last. See {@link TimingSample}. */
+  recentTiming: TimingSample[];
 
   /* ── Run state ────────────────────────────────────────────────────── */
   status: GameStatus;
@@ -101,6 +130,7 @@ interface SliceItState {
   setAudioOffset: (offset: number) => void;
   setIsDarkMode: (isDark: boolean) => void;
   setModifiers: (modifiers: Modifiers) => void;
+  recordTiming: (sample: TimingSample) => void;
 
   setStatus: (status: GameStatus) => void;
   setSongId: (songId: string) => void;
@@ -183,6 +213,7 @@ export const useSliceItStore = create<SliceItState>()(
       audioOffset: 0,
       isDarkMode: true,
       modifiers: { ...DEFAULT_MODIFIERS },
+      recentTiming: [],
 
       ...runDefaults,
       ...multiplayerDefaults,
@@ -197,6 +228,10 @@ export const useSliceItStore = create<SliceItState>()(
         set({ audioOffset: Math.max(-500, Math.min(500, Math.round(audioOffset))) }),
       setIsDarkMode: (isDarkMode) => set({ isDarkMode }),
       setModifiers: (modifiers) => set({ modifiers: applyExclusions(modifiers) }),
+      recordTiming: (sample) =>
+        set((state) => ({
+          recentTiming: [...state.recentTiming, sample].slice(-TIMING_SAMPLES_KEPT),
+        })),
 
       setStatus: (status) => set({ status }),
       setSongId: (songId) => set({ songId }),
@@ -237,7 +272,7 @@ export const useSliceItStore = create<SliceItState>()(
     }),
     {
       name: 'slice-it-storage',
-      version: 2,
+      version: 3,
       // Settings only. Run and lobby state are per-session by definition, and
       // persisting a lobby snapshot would restore a room that no longer exists.
       partialize: (state) => ({
@@ -249,17 +284,27 @@ export const useSliceItStore = create<SliceItState>()(
         audioOffset: state.audioOffset,
         isDarkMode: state.isDarkMode,
         modifiers: state.modifiers,
+        recentTiming: state.recentTiming,
       }),
       /**
        * v1 stored the same settings minus `modifiers`, which lived in
-       * un-persisted run state. Carrying the old keys forward and filling in
-       * the new one keeps every existing player's keybinds and calibration
-       * offset — the two settings nobody wants to re-enter.
+       * un-persisted run state. v2 added them. v3 added `recentTiming`.
+       *
+       * Each step only fills in what its version introduced, and the steps fall
+       * through — carrying the old keys forward is what keeps every existing
+       * player's keybinds and calibration offset, the two settings nobody wants
+       * to re-enter.
        */
       migrate: (persisted, version) => {
-        const state = (persisted ?? {}) as Record<string, unknown>;
+        let state = (persisted ?? {}) as Record<string, unknown>;
         if (version < 2) {
-          return { ...state, modifiers: { ...DEFAULT_MODIFIERS } };
+          state = { ...state, modifiers: { ...DEFAULT_MODIFIERS } };
+        }
+        if (version < 3) {
+          // Starting empty rather than synthesising history: the advisor
+          // refuses to answer below its sample threshold, which is the correct
+          // behaviour for a player who has no measured runs yet.
+          state = { ...state, recentTiming: [] };
         }
         return state;
       },

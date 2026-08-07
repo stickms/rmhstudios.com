@@ -4,8 +4,10 @@ import { memo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bomb, Ghost, RefreshCw, Layers, Crosshair, Flame, RotateCcw } from 'lucide-react';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { RivalPanel } from './ai/RivalPanel';
 
 interface LeaderboardEntry {
+  rank?: number;
   username: string;
   score: number;
   accuracy?: number;
@@ -21,6 +23,23 @@ interface LeaderboardEntry {
     speed: number;
   };
   speedMod?: number;
+  isSelf?: boolean;
+}
+
+/**
+ * What `/api/slice-it/leaderboard` actually returns.
+ *
+ * This component used to do `if (Array.isArray(data)) setLeaderboard(data)`
+ * against a route that answers with an OBJECT, so the guard was never true and
+ * the board rendered "No scores yet" on every song regardless of how many
+ * scores it had. It failed silently in exactly the way a defensive type check
+ * is supposed to prevent — the shape was wrong, nothing threw, and the empty
+ * state is indistinguishable from a genuinely empty board.
+ */
+interface LeaderboardResponse {
+  entries: LeaderboardEntry[];
+  /** The caller's own row and rank, present when signed in and on the board. */
+  self: (LeaderboardEntry & { rank: number }) | null;
 }
 
 interface LeaderboardProps {
@@ -30,6 +49,7 @@ interface LeaderboardProps {
 export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProps) {
   const { t } = useTranslation('c-game');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [self, setSelf] = useState<(LeaderboardEntry & { rank: number }) | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -39,8 +59,9 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
         const query = songId ? `?songId=${songId}` : '';
         const res = await fetch(`/api/slice-it/leaderboard${query}`);
         if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data)) setLeaderboard(data);
+          const data = (await res.json()) as LeaderboardResponse;
+          if (Array.isArray(data?.entries)) setLeaderboard(data.entries);
+          setSelf(data?.self ?? null);
         }
       } catch (err) {
         console.error('Failed to load leaderboard:', err);
@@ -194,6 +215,16 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
           ))
         )}
       </div>
+
+      {/*
+        Only on a song board, only when the caller is on it, and only when
+        there is a row above them to catch. Rank 1 has nobody to chase, and the
+        global career board is a sum across songs rather than a single run —
+        there is no "their loadout vs yours" to analyse there.
+      */}
+      {songId && self && self.rank > 1 ? (
+        <RivalPanel songId={songId} rivalRank={self.rank - 1} />
+      ) : null}
     </div>
   );
 });

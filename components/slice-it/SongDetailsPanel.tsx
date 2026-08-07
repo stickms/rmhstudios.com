@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Play, Settings, X, Check, ImagePlus, Heart } from 'lucide-react';
 import { Leaderboard } from './Leaderboard';
 import { SongComments } from './SongComments';
+import { ChartBriefPanel } from './ai/ChartBriefPanel';
+import { LoadoutPanel } from './ai/LoadoutPanel';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import type { Difficulty, SliceSong } from '@/lib/slice-it/types';
 import { Slider } from '@/components/ui/slider';
@@ -591,6 +593,16 @@ export function SongDetailsPanel({
               </div>
             </div>
           </div>
+        </div>
+
+        {/*
+          AI reads of this chart. Both are opt-in on a press — a song panel is
+          opened far more often than a run is finished, and fetching on mount
+          would make these the most-called metered routes in the game.
+        */}
+        <div className="p-4 border-b border-slice-shadow-dark/30 space-y-3">
+          <ChartBriefPanel songId={song.id} difficulty={modifiers.difficulty} />
+          {!readOnly && <LoadoutPanel songId={song.id} difficulty={modifiers.difficulty} />}
         </div>
 
         {/* Leaderboard Section */}

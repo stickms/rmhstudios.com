@@ -735,6 +735,15 @@ import { Route as ApiRmhtubeSubscribeChannelIdRouteImport } from './routes/api/r
 import { Route as ApiSavesFoldersIdRouteImport } from './routes/api/saves/folders.$id'
 import { Route as ApiScheduledIdPublishRouteImport } from './routes/api/scheduled/$id/publish'
 import { Route as ApiSearchSavedIdRouteImport } from './routes/api/search/saved.$id'
+import { Route as ApiSliceItAiCalibrationRouteImport } from './routes/api/slice-it/ai/calibration'
+import { Route as ApiSliceItAiChartBriefRouteImport } from './routes/api/slice-it/ai/chart-brief'
+import { Route as ApiSliceItAiCoachRouteImport } from './routes/api/slice-it/ai/coach'
+import { Route as ApiSliceItAiLoadoutRouteImport } from './routes/api/slice-it/ai/loadout'
+import { Route as ApiSliceItAiMatchRecapRouteImport } from './routes/api/slice-it/ai/match-recap'
+import { Route as ApiSliceItAiMetadataRouteImport } from './routes/api/slice-it/ai/metadata'
+import { Route as ApiSliceItAiRivalRouteImport } from './routes/api/slice-it/ai/rival'
+import { Route as ApiSliceItAiSearchRouteImport } from './routes/api/slice-it/ai/search'
+import { Route as ApiSliceItAiSetlistRouteImport } from './routes/api/slice-it/ai/setlist'
 import { Route as ApiSliceItSongsIdRouteImport } from './routes/api/slice-it/songs/$id'
 import { Route as ApiSliceItSongsUploadRouteImport } from './routes/api/slice-it/songs/upload'
 import { Route as ApiSpacesIdIndexRouteImport } from './routes/api/spaces/$id/index'
@@ -4542,6 +4551,51 @@ const ApiSearchSavedIdRoute = ApiSearchSavedIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiSearchSavedRoute,
 } as any)
+const ApiSliceItAiCalibrationRoute = ApiSliceItAiCalibrationRouteImport.update({
+  id: '/api/slice-it/ai/calibration',
+  path: '/api/slice-it/ai/calibration',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSliceItAiChartBriefRoute = ApiSliceItAiChartBriefRouteImport.update({
+  id: '/api/slice-it/ai/chart-brief',
+  path: '/api/slice-it/ai/chart-brief',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSliceItAiCoachRoute = ApiSliceItAiCoachRouteImport.update({
+  id: '/api/slice-it/ai/coach',
+  path: '/api/slice-it/ai/coach',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSliceItAiLoadoutRoute = ApiSliceItAiLoadoutRouteImport.update({
+  id: '/api/slice-it/ai/loadout',
+  path: '/api/slice-it/ai/loadout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSliceItAiMatchRecapRoute = ApiSliceItAiMatchRecapRouteImport.update({
+  id: '/api/slice-it/ai/match-recap',
+  path: '/api/slice-it/ai/match-recap',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSliceItAiMetadataRoute = ApiSliceItAiMetadataRouteImport.update({
+  id: '/api/slice-it/ai/metadata',
+  path: '/api/slice-it/ai/metadata',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSliceItAiRivalRoute = ApiSliceItAiRivalRouteImport.update({
+  id: '/api/slice-it/ai/rival',
+  path: '/api/slice-it/ai/rival',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSliceItAiSearchRoute = ApiSliceItAiSearchRouteImport.update({
+  id: '/api/slice-it/ai/search',
+  path: '/api/slice-it/ai/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSliceItAiSetlistRoute = ApiSliceItAiSetlistRouteImport.update({
+  id: '/api/slice-it/ai/setlist',
+  path: '/api/slice-it/ai/setlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSliceItSongsIdRoute = ApiSliceItSongsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -5776,6 +5830,15 @@ export interface FileRoutesByFullPath {
   '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/search/saved/$id': typeof ApiSearchSavedIdRoute
+  '/api/slice-it/ai/calibration': typeof ApiSliceItAiCalibrationRoute
+  '/api/slice-it/ai/chart-brief': typeof ApiSliceItAiChartBriefRoute
+  '/api/slice-it/ai/coach': typeof ApiSliceItAiCoachRoute
+  '/api/slice-it/ai/loadout': typeof ApiSliceItAiLoadoutRoute
+  '/api/slice-it/ai/match-recap': typeof ApiSliceItAiMatchRecapRoute
+  '/api/slice-it/ai/metadata': typeof ApiSliceItAiMetadataRoute
+  '/api/slice-it/ai/rival': typeof ApiSliceItAiRivalRoute
+  '/api/slice-it/ai/search': typeof ApiSliceItAiSearchRoute
+  '/api/slice-it/ai/setlist': typeof ApiSliceItAiSetlistRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/spaces/$id/end': typeof ApiSpacesIdEndRoute
@@ -6577,6 +6640,15 @@ export interface FileRoutesByTo {
   '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/search/saved/$id': typeof ApiSearchSavedIdRoute
+  '/api/slice-it/ai/calibration': typeof ApiSliceItAiCalibrationRoute
+  '/api/slice-it/ai/chart-brief': typeof ApiSliceItAiChartBriefRoute
+  '/api/slice-it/ai/coach': typeof ApiSliceItAiCoachRoute
+  '/api/slice-it/ai/loadout': typeof ApiSliceItAiLoadoutRoute
+  '/api/slice-it/ai/match-recap': typeof ApiSliceItAiMatchRecapRoute
+  '/api/slice-it/ai/metadata': typeof ApiSliceItAiMetadataRoute
+  '/api/slice-it/ai/rival': typeof ApiSliceItAiRivalRoute
+  '/api/slice-it/ai/search': typeof ApiSliceItAiSearchRoute
+  '/api/slice-it/ai/setlist': typeof ApiSliceItAiSetlistRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/spaces/$id/end': typeof ApiSpacesIdEndRoute
@@ -7404,6 +7476,15 @@ export interface FileRoutesById {
   '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/search/saved/$id': typeof ApiSearchSavedIdRoute
+  '/api/slice-it/ai/calibration': typeof ApiSliceItAiCalibrationRoute
+  '/api/slice-it/ai/chart-brief': typeof ApiSliceItAiChartBriefRoute
+  '/api/slice-it/ai/coach': typeof ApiSliceItAiCoachRoute
+  '/api/slice-it/ai/loadout': typeof ApiSliceItAiLoadoutRoute
+  '/api/slice-it/ai/match-recap': typeof ApiSliceItAiMatchRecapRoute
+  '/api/slice-it/ai/metadata': typeof ApiSliceItAiMetadataRoute
+  '/api/slice-it/ai/rival': typeof ApiSliceItAiRivalRoute
+  '/api/slice-it/ai/search': typeof ApiSliceItAiSearchRoute
+  '/api/slice-it/ai/setlist': typeof ApiSliceItAiSetlistRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/spaces/$id/end': typeof ApiSpacesIdEndRoute
@@ -8231,6 +8312,15 @@ export interface FileRouteTypes {
     | '/api/saves/folders/$id'
     | '/api/scheduled/$id/publish'
     | '/api/search/saved/$id'
+    | '/api/slice-it/ai/calibration'
+    | '/api/slice-it/ai/chart-brief'
+    | '/api/slice-it/ai/coach'
+    | '/api/slice-it/ai/loadout'
+    | '/api/slice-it/ai/match-recap'
+    | '/api/slice-it/ai/metadata'
+    | '/api/slice-it/ai/rival'
+    | '/api/slice-it/ai/search'
+    | '/api/slice-it/ai/setlist'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
     | '/api/spaces/$id/end'
@@ -9032,6 +9122,15 @@ export interface FileRouteTypes {
     | '/api/saves/folders/$id'
     | '/api/scheduled/$id/publish'
     | '/api/search/saved/$id'
+    | '/api/slice-it/ai/calibration'
+    | '/api/slice-it/ai/chart-brief'
+    | '/api/slice-it/ai/coach'
+    | '/api/slice-it/ai/loadout'
+    | '/api/slice-it/ai/match-recap'
+    | '/api/slice-it/ai/metadata'
+    | '/api/slice-it/ai/rival'
+    | '/api/slice-it/ai/search'
+    | '/api/slice-it/ai/setlist'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
     | '/api/spaces/$id/end'
@@ -9858,6 +9957,15 @@ export interface FileRouteTypes {
     | '/api/saves/folders/$id'
     | '/api/scheduled/$id/publish'
     | '/api/search/saved/$id'
+    | '/api/slice-it/ai/calibration'
+    | '/api/slice-it/ai/chart-brief'
+    | '/api/slice-it/ai/coach'
+    | '/api/slice-it/ai/loadout'
+    | '/api/slice-it/ai/match-recap'
+    | '/api/slice-it/ai/metadata'
+    | '/api/slice-it/ai/rival'
+    | '/api/slice-it/ai/search'
+    | '/api/slice-it/ai/setlist'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
     | '/api/spaces/$id/end'
@@ -10418,6 +10526,15 @@ export interface RootRouteChildren {
   ApiRmhladderResumeIdRoute: typeof ApiRmhladderResumeIdRouteWithChildren
   ApiRmhmusicSpotifySearchRoute: typeof ApiRmhmusicSpotifySearchRoute
   ApiRmhtubeSubscribeChannelIdRoute: typeof ApiRmhtubeSubscribeChannelIdRoute
+  ApiSliceItAiCalibrationRoute: typeof ApiSliceItAiCalibrationRoute
+  ApiSliceItAiChartBriefRoute: typeof ApiSliceItAiChartBriefRoute
+  ApiSliceItAiCoachRoute: typeof ApiSliceItAiCoachRoute
+  ApiSliceItAiLoadoutRoute: typeof ApiSliceItAiLoadoutRoute
+  ApiSliceItAiMatchRecapRoute: typeof ApiSliceItAiMatchRecapRoute
+  ApiSliceItAiMetadataRoute: typeof ApiSliceItAiMetadataRoute
+  ApiSliceItAiRivalRoute: typeof ApiSliceItAiRivalRoute
+  ApiSliceItAiSearchRoute: typeof ApiSliceItAiSearchRoute
+  ApiSliceItAiSetlistRoute: typeof ApiSliceItAiSetlistRoute
   ApiSpacesIdEndRoute: typeof ApiSpacesIdEndRoute
   ApiSpacesIdStartRoute: typeof ApiSpacesIdStartRoute
   ApiStorefrontCreatorUseridRoute: typeof ApiStorefrontCreatorUseridRoute
@@ -15551,6 +15668,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSearchSavedIdRouteImport
       parentRoute: typeof ApiSearchSavedRoute
     }
+    '/api/slice-it/ai/calibration': {
+      id: '/api/slice-it/ai/calibration'
+      path: '/api/slice-it/ai/calibration'
+      fullPath: '/api/slice-it/ai/calibration'
+      preLoaderRoute: typeof ApiSliceItAiCalibrationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/ai/chart-brief': {
+      id: '/api/slice-it/ai/chart-brief'
+      path: '/api/slice-it/ai/chart-brief'
+      fullPath: '/api/slice-it/ai/chart-brief'
+      preLoaderRoute: typeof ApiSliceItAiChartBriefRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/ai/coach': {
+      id: '/api/slice-it/ai/coach'
+      path: '/api/slice-it/ai/coach'
+      fullPath: '/api/slice-it/ai/coach'
+      preLoaderRoute: typeof ApiSliceItAiCoachRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/ai/loadout': {
+      id: '/api/slice-it/ai/loadout'
+      path: '/api/slice-it/ai/loadout'
+      fullPath: '/api/slice-it/ai/loadout'
+      preLoaderRoute: typeof ApiSliceItAiLoadoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/ai/match-recap': {
+      id: '/api/slice-it/ai/match-recap'
+      path: '/api/slice-it/ai/match-recap'
+      fullPath: '/api/slice-it/ai/match-recap'
+      preLoaderRoute: typeof ApiSliceItAiMatchRecapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/ai/metadata': {
+      id: '/api/slice-it/ai/metadata'
+      path: '/api/slice-it/ai/metadata'
+      fullPath: '/api/slice-it/ai/metadata'
+      preLoaderRoute: typeof ApiSliceItAiMetadataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/ai/rival': {
+      id: '/api/slice-it/ai/rival'
+      path: '/api/slice-it/ai/rival'
+      fullPath: '/api/slice-it/ai/rival'
+      preLoaderRoute: typeof ApiSliceItAiRivalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/ai/search': {
+      id: '/api/slice-it/ai/search'
+      path: '/api/slice-it/ai/search'
+      fullPath: '/api/slice-it/ai/search'
+      preLoaderRoute: typeof ApiSliceItAiSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/ai/setlist': {
+      id: '/api/slice-it/ai/setlist'
+      path: '/api/slice-it/ai/setlist'
+      fullPath: '/api/slice-it/ai/setlist'
+      preLoaderRoute: typeof ApiSliceItAiSetlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/slice-it/songs/$id': {
       id: '/api/slice-it/songs/$id'
       path: '/$id'
@@ -18204,6 +18384,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhladderResumeIdRoute: ApiRmhladderResumeIdRouteWithChildren,
   ApiRmhmusicSpotifySearchRoute: ApiRmhmusicSpotifySearchRoute,
   ApiRmhtubeSubscribeChannelIdRoute: ApiRmhtubeSubscribeChannelIdRoute,
+  ApiSliceItAiCalibrationRoute: ApiSliceItAiCalibrationRoute,
+  ApiSliceItAiChartBriefRoute: ApiSliceItAiChartBriefRoute,
+  ApiSliceItAiCoachRoute: ApiSliceItAiCoachRoute,
+  ApiSliceItAiLoadoutRoute: ApiSliceItAiLoadoutRoute,
+  ApiSliceItAiMatchRecapRoute: ApiSliceItAiMatchRecapRoute,
+  ApiSliceItAiMetadataRoute: ApiSliceItAiMetadataRoute,
+  ApiSliceItAiRivalRoute: ApiSliceItAiRivalRoute,
+  ApiSliceItAiSearchRoute: ApiSliceItAiSearchRoute,
+  ApiSliceItAiSetlistRoute: ApiSliceItAiSetlistRoute,
   ApiSpacesIdEndRoute: ApiSpacesIdEndRoute,
   ApiSpacesIdStartRoute: ApiSpacesIdStartRoute,
   ApiStorefrontCreatorUseridRoute: ApiStorefrontCreatorUseridRoute,

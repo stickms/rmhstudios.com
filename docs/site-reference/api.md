@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 548 files across 134 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 557 files across 134 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1183,10 +1183,19 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/slice-it`
 
-11 routes.
+20 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/slice-it/ai/calibration` | `POST` | `app/routes/api/slice-it/ai/calibration.ts` |
+| `/api/slice-it/ai/chart-brief` | `POST` | `app/routes/api/slice-it/ai/chart-brief.ts` |
+| `/api/slice-it/ai/coach` | `POST` | `app/routes/api/slice-it/ai/coach.ts` |
+| `/api/slice-it/ai/loadout` | `POST` | `app/routes/api/slice-it/ai/loadout.ts` |
+| `/api/slice-it/ai/match-recap` | `POST` | `app/routes/api/slice-it/ai/match-recap.ts` |
+| `/api/slice-it/ai/metadata` | `POST` | `app/routes/api/slice-it/ai/metadata.ts` |
+| `/api/slice-it/ai/rival` | `POST` | `app/routes/api/slice-it/ai/rival.ts` |
+| `/api/slice-it/ai/search` | `POST` | `app/routes/api/slice-it/ai/search.ts` |
+| `/api/slice-it/ai/setlist` | `POST` | `app/routes/api/slice-it/ai/setlist.ts` |
 | `/api/slice-it/leaderboard` | `GET` | `app/routes/api/slice-it/leaderboard.ts` |
 | `/api/slice-it/score` | `POST` | `app/routes/api/slice-it/score.ts` |
 | `/api/slice-it/songs` | `GET` | `app/routes/api/slice-it/songs.ts` |

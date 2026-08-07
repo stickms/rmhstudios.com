@@ -9,6 +9,7 @@ import { RANKED_MIN_SPEED } from '@/lib/slice-it/constants';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { RotateCcw, Home, Trophy } from 'lucide-react';
+import { CoachPanel } from './ai/CoachPanel';
 
 interface GameOverProps {
   onRetry?: () => void;
@@ -22,7 +23,7 @@ interface GameOverProps {
 
 export function GameOver({ onRetry, engine }: GameOverProps) {
   const { t } = useTranslation('c-game');
-  const { score, multiplier, maxCombo, accuracy, modifiers, resetRun } = useSliceItStore();
+  const { score, songId, multiplier, maxCombo, accuracy, modifiers, resetRun } = useSliceItStore();
 
   // Submission (and its once-only guard) lives in one place now — both results
   // screens used to carry their own copy with different guards.
@@ -115,6 +116,26 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
               </div>
             </div>
           </div>
+
+          {/*
+            Coaching is opt-in on a press, never fetched on mount: it is a
+            metered model call against a per-user monthly budget, and a results
+            card that spent it automatically would charge every player for
+            advice most of them scroll straight past.
+          */}
+          {songId ? (
+            <CoachPanel
+              songId={songId}
+              score={score}
+              maxCombo={maxCombo}
+              accuracy={accuracy}
+              notesResolved={engine?.getState().notesResolved ?? 0}
+              modifiers={modifiers}
+              timing={engine?.getTimingSummary() ?? null}
+              sections={engine?.getSectionResults() ?? null}
+              judgements={engine?.getRunJudgements() ?? null}
+            />
+          ) : null}
 
           <div className="flex gap-4">
             <Button

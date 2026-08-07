@@ -4,6 +4,9 @@ import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Heart, Image as ImageIcon, Loader2, Pause, Play, Search, Upload, X } from 'lucide-react';
+import { AiSearchBar } from './ai/AiSearchBar';
+import { SetlistPanel } from './ai/SetlistPanel';
+import { MetadataAssist } from './ai/MetadataAssist';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -68,6 +71,15 @@ export function SongLibrary({
   const [loading, setLoading] = React.useState(true);
   const [search, setSearch] = React.useState('');
   const [sort, setSort] = React.useState<SongSort>('recent');
+
+  /**
+   * Results from a natural-language search, or null when one is not active.
+   *
+   * A separate list rather than writing into `songs`: the plain search owns
+   * that state and reloads it whenever its term or sort changes, so an AI
+   * result placed there would vanish the moment anything touched the filters.
+   */
+  const [aiSongs, setAiSongs] = React.useState<SliceSong[] | null>(null);
 
   const [uploadOpen, setUploadOpen] = React.useState(false);
   const [likingId, setLikingId] = React.useState<string | null>(null);
@@ -209,6 +221,11 @@ export function SongLibrary({
 
   /* ── Render ──────────────────────────────────────────────────────────── */
 
+  // An active AI search replaces the list wholesale. "Load more" is hidden with
+  // it: that button pages the plain query's cursor, and pressing it here would
+  // append page two of a different search to these results.
+  const visibleSongs = aiSongs ?? songs;
+
   return (
     <div className="w-full h-full bg-slice-bg flex flex-col">
       <div className="flex gap-2 items-center shrink-0 p-3 border-b border-slice-shadow-dark/50">
@@ -270,20 +287,48 @@ export function SongLibrary({
         )}
       </div>
 
+      {/*
+        The AI tools sit beside the plain search rather than replacing it.
+        Typing an artist's name into a substring filter is faster than a model
+        call and always will be; these are for the requests a substring cannot
+        express. Signed-in only, because both are metered calls that need an
+        account to bill.
+      */}
+      {session ? (
+        <div className="shrink-0 p-3 border-b border-slice-shadow-dark/50 space-y-3">
+          <AiSearchBar onResults={setAiSongs} onClear={() => setAiSongs(null)} />
+          <details className="group">
+            <summary className="cursor-pointer text-[10px] font-black uppercase tracking-widest text-slice-text-light hover:text-slice-text transition-colors list-none">
+              {t('ai-setlist-toggle', { defaultValue: 'Build a practice set' })}
+            </summary>
+            <div className="pt-3">
+              <SetlistPanel
+                onPick={(songId) => {
+                  const picked = (aiSongs ?? songs).find((song) => song.id === songId);
+                  if (picked) onHighlight(picked);
+                }}
+              />
+            </div>
+          </details>
+        </div>
+      ) : null}
+
       <div className="flex-1 overflow-y-auto p-2">
-        {songs.length === 0 && !loading && (
+        {visibleSongs.length === 0 && !loading && (
           <p className="text-center text-slice-text-light py-12 text-sm font-bold">
-            {debouncedSearch
-              ? t('no-search-results', {
-                  defaultValue: 'Nothing matches "{{query}}".',
-                  query: debouncedSearch,
-                })
-              : t('library-empty', { defaultValue: 'No tracks yet — upload the first one.' })}
+            {aiSongs !== null
+              ? t('no-ai-results', { defaultValue: 'Nothing in the library matches that.' })
+              : debouncedSearch
+                ? t('no-search-results', {
+                    defaultValue: 'Nothing matches "{{query}}".',
+                    query: debouncedSearch,
+                  })
+                : t('library-empty', { defaultValue: 'No tracks yet — upload the first one.' })}
           </p>
         )}
 
         <ul>
-          {songs.map((song) => (
+          {visibleSongs.map((song) => (
             <li key={song.id}>
               <div
                 className={`p-2 flex items-center justify-between gap-2 group hover:bg-slice-shadow-dark/40 cursor-pointer border-l-4 ${
@@ -420,7 +465,7 @@ export function SongLibrary({
           ))}
         </ul>
 
-        {nextCursor && (
+        {nextCursor && aiSongs === null && (
           <div className="p-4 flex justify-center">
             <Button
               variant="outline"
@@ -696,6 +741,22 @@ function UploadForm({ onDone }: { onDone: () => void }) {
             placeholder={t('description-placeholder', {
               defaultValue: 'Tell us about this track…',
             })}
+          />
+
+          {/*
+            Suggestions only, and only for what the uploader has not typed. A
+            guessed artist name is a credit on a real person, so the assist
+            fills the field and the uploader submits it — nothing here writes.
+          */}
+          <MetadataAssist
+            filename={file.name}
+            durationSec={duration}
+            typed={{ title, artist }}
+            onApply={(suggestion) => {
+              if (!title && suggestion.title) setTitle(suggestion.title);
+              if (!artist && suggestion.artist) setArtist(suggestion.artist);
+              if (!description && suggestion.description) setDescription(suggestion.description);
+            }}
           />
         </div>
       )}

@@ -41,6 +41,7 @@ import {
 } from './constants';
 import type { BeatMap, HitResult, Slice } from './types';
 import { MIN_TIMING_SAMPLES, type TimingSummary } from './integrity';
+import { SECTION_SECONDS, type SectionResult } from './ai/facts';
 import { prepareChart } from './chart';
 import { useSliceItStore } from './store';
 import {
@@ -52,6 +53,11 @@ import {
   timingScale,
 } from './scoring';
 import { reportFinish, reportScore } from './net/client';
+
+/** A zeroed judgement histogram. Rebuilt on every `reset()`. */
+function emptyJudgements(): Record<Exclude<HitResult, 'NONE'>, number> {
+  return { MARVELOUS: 0, PERFECT: 0, GREAT: 0, GOOD: 0, BAD: 0, MISS: 0 };
+}
 
 /** Colours the feedback text is drawn in, per judgement. */
 const FEEDBACK_COLORS: Record<HitResult, string> = {
@@ -131,6 +137,17 @@ export class GameEngine {
   private offsetMean = 0;
   private offsetM2 = 0;
 
+  /** Judgement histogram for the run. See `getRunJudgements`. */
+  private judgements: Record<Exclude<HitResult, 'NONE'>, number> = emptyJudgements();
+  /**
+   * Per-section tally, keyed by `floor(noteTime / SECTION_SECONDS)`.
+   *
+   * Keyed on the note's time in the CHART, not on the wall clock, so a run at
+   * 1.5x speed reports the same sections as one at 1.0x — "the bit at 1:40" has
+   * to mean the same place in the song however fast it was played.
+   */
+  private sections = new Map<number, { hit: number; missed: number; weight: number }>();
+
   constructor() {
     this.audioManager = AudioManager.getInstance();
   }
@@ -199,6 +216,8 @@ export class GameEngine {
     this.offsetCount = 0;
     this.offsetMean = 0;
     this.offsetM2 = 0;
+    this.judgements = emptyJudgements();
+    this.sections.clear();
 
     for (const slice of this.slices) {
       slice.hit = false;
@@ -487,7 +506,10 @@ export class GameEngine {
     const scoreMultiplier = calculateScoreMultiplier(store.modifiers);
 
     this.notesResolved++;
-    this.hitPoints += accuracyWeight(result);
+    const weight = accuracyWeight(result);
+    this.hitPoints += weight;
+    this.recordSection(slice.time, result, weight);
+    if (result !== 'NONE') this.judgements[result]++;
 
     if (result === 'MISS' || result === 'BAD') {
       this.combo = 0;
@@ -553,6 +575,50 @@ export class GameEngine {
       meanMs: this.offsetMean * 1000,
       stdDevMs: Math.sqrt(Math.max(0, this.offsetM2 / this.offsetCount)) * 1000,
     };
+  }
+
+  /**
+   * Tally one resolved note into the section of the chart it belongs to.
+   *
+   * A tally rather than a list of notes, for the reason `integrity.ts` gives
+   * about timing samples: three counters per ten seconds of song is a handful
+   * of numbers on the wire, while per-note results are a payload proportional
+   * to the chart. It is enough to answer the only question the coach asks of
+   * it — *where* in the song did this run come apart.
+   */
+  private recordSection(noteTime: number, result: HitResult, weight: number): void {
+    if (!Number.isFinite(noteTime)) return;
+    const index = Math.max(0, Math.floor(noteTime / SECTION_SECONDS));
+    const bucket = this.sections.get(index) ?? { hit: 0, missed: 0, weight: 0 };
+    if (result === 'MISS') bucket.missed++;
+    else bucket.hit++;
+    bucket.weight += weight;
+    this.sections.set(index, bucket);
+  }
+
+  /** The run's judgement histogram. */
+  getRunJudgements(): Record<Exclude<HitResult, 'NONE'>, number> {
+    return { ...this.judgements };
+  }
+
+  /**
+   * How each section of the chart went, ascending by section.
+   *
+   * Sections the run never reached are absent rather than reported as 0% — an
+   * abandoned run should not read as one that missed the whole back half.
+   */
+  getSectionResults(): SectionResult[] {
+    return [...this.sections.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([index, bucket]) => {
+        const notes = bucket.hit + bucket.missed;
+        return {
+          index,
+          hit: bucket.hit,
+          missed: bucket.missed,
+          accuracy: notes > 0 ? bucket.weight / (notes * 100) : 0,
+        };
+      });
   }
 
   private pushFeedback(text: string, lane: number, color: string, offset?: number): void {
